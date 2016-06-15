@@ -23,6 +23,8 @@
 //= require spin.min
 //= require_tree .
 
+var fileUploading = false;
+
 // toggle chevron glyphs on clicks
 function toggleGlyph(el) {
     el.toggleClass('fa-chevron-right fa-chevron-down');

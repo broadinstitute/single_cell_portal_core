@@ -86,6 +86,7 @@
 			type: 'PATCH',
 			acceptFileTypes: setAcceptedFiletypes(fileType),
 			add: function (e, data) {
+				fileUploading = true;
 				var that = this;
 				var fileName = data.files[0].name.replace(/ /g, '_');
 				var ext = fileName.split('.').slice(-1)[0];
@@ -116,6 +117,7 @@
 				});
 				// replace form with updated values, as IDs may have incremented
 				$.get(result_path, {file: fileName, selector: uploader});
+				fileUploading = false;
 			}
 		});
 

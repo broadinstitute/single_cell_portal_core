@@ -9,8 +9,8 @@
 
 </div>
 <p><%= link_to "<span class='fa fa-plus'></span> Add a Study File".html_safe, new_study_file_study_path(@study._id), class: 'btn btn-sm btn-primary', 'data-remote' => true %></p>
-<p><%= link_to "<span class='fa fa-edit'></span> Edit Study".html_safe, edit_study_path(@study), class: 'btn btn-primary' %>
-	<%= link_to "<span class='fa fa-chevron-left'></span> Back".html_safe, studies_path, class: 'btn btn-warning' %></p>
+<p><%= link_to "<span class='fa fa-edit'></span> Edit Study".html_safe, edit_study_path(@study), class: 'btn btn-primary check-upload' %>
+	<%= link_to "<span class='fa fa-chevron-left'></span> Back".html_safe, studies_path, class: 'btn btn-warning check-upload' %></p>
 <div id="study-files-notice-target"></div>
 
 <div id="download-target"></div>
@@ -30,6 +30,19 @@
 			return /.*/
 		}
 	}
+
+	// add click listener to ask for confirmation of leaving page if file is uploading
+	$(function() {
+		$('.check-upload').click(function() {
+			if (fileUploading) {
+				if (confirm("You still have file uploads in progress - leaving the page will cancel any incomplete uploads.  click 'OK' to leave or 'Cancel' to stay.  You may open another tab to continue browsing if you wish.")) {
+					return true;
+				} else {
+					return false;
+				}
+			}
+		});
+	});
 
 </script>
 

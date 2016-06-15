@@ -6,19 +6,19 @@
 			<span class="icon-bar"></span>
 			<span class="icon-bar"></span>
 		</button>
-		<%= link_to "<span class='fa fa-home'></span> Single Cell Portal".html_safe, site_path, class: "navbar-brand hidden-xs" %>
+		<%= link_to "<span class='fa fa-home'></span> Single Cell Portal".html_safe, site_path, class: "navbar-brand hidden-xs check-upload" %>
 	</div>
 	<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 		<ul class="nav navbar-nav">
 			<% set_breadcrumbs.each do |breadcrumb| %>
-				<li><%= link_to "<span class='fa fa-chevron-right'></span> 	#{breadcrumb[:title]}".html_safe, breadcrumb[:link] %></li>
+				<li><%= link_to "<span class='fa fa-chevron-right'></span> 	#{breadcrumb[:title]}".html_safe, breadcrumb[:link], class: 'check-upload' %></li>
 			<% end %>
 		</ul>
 		<ul class="nav navbar-nav pull-right">
 			<% if user_signed_in? %>
-				<li><%= link_to "<span class='fa fa-sign-out'></span> Logout: #{current_user.email.split('@').first}".html_safe, destroy_user_session_path, method: :delete %></li>
+				<li><%= link_to "<span class='fa fa-sign-out'></span> Logout: #{current_user.email.split('@').first}".html_safe, destroy_user_session_path, method: :delete, class: 'check-upload' %></li>
 			<% end %>
-			<li><%= link_to "<span class='fa fa-book'></span> My Studies".html_safe, studies_path %>
+			<li><%= link_to "<span class='fa fa-book'></span> My Studies".html_safe, studies_path, class: 'check-upload' %>
 		</ul>
 	</div>
 </nav>
