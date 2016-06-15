@@ -5,7 +5,9 @@ class ApplicationController < ActionController::Base
 
   before_action :populate_studies
 
-  # http_basic_authenticate_with name: 'singlecell', password: 'singlecell'
+  if Rails.env == 'production'
+    http_basic_authenticate_with name: 'singlecell', password: 'singlecell'
+  end
 
   # get all studies, needed for nav and home page downloads
   def populate_studies

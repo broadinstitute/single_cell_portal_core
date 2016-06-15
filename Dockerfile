@@ -10,6 +10,9 @@ RUN bundle install
 COPY set_user_permissions.bash /etc/my_init.d/01_set_user_permissions.bash
 COPY rails_startup.bash /etc/my_init.d/02_rails_startup.bash
 
+# configure sstmp for emails
+COPY ssmtp.conf /etc/ssmtp/ssmtp.conf
+
 # Configure NGINX
 RUN rm /etc/nginx/sites-enabled/default
 COPY webapp.conf /etc/nginx/sites-enabled/webapp.conf
