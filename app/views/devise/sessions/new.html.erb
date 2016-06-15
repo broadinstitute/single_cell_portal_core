@@ -26,11 +26,16 @@
 				<%= f.submit "Log in", class: 'btn btn-success' %>
 			</div>
 		<% end %>
-		<hr />
+	</div>
+	<div class="col-md-6">
 		<h3 class="study-lead">Or you can sign in using Google:</h3>
-
+		<br />
 		<%= link_to "Sign in with <span class='fa fa-google-plus'></span>".html_safe, user_omniauth_authorize_path(:google_oauth2), class: 'btn btn-lg btn-danger' %>
 
+	</div>
+</div>
+<div class="row">
+	<div class="col-md-12">
 		<%= render "devise/shared/links" %>
 	</div>
 </div>
