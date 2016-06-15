@@ -31,19 +31,6 @@
 		}
 	}
 
-	// add click listener to ask for confirmation of leaving page if file is uploading
-	$(function() {
-		$('.check-upload').click(function() {
-			if (fileUploading) {
-				if (confirm("You still have file uploads in progress - leaving the page will cancel any incomplete uploads.  click 'OK' to leave or 'Cancel' to stay.  You may open another tab to continue browsing if you wish.")) {
-					return true;
-				} else {
-					return false;
-				}
-			}
-		});
-	});
-
 </script>
 
 <script id="template-upload" type="text/x-tmpl">

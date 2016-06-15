@@ -38,6 +38,17 @@ $(function() {
 
     $('[data-toggle="tooltip"]').tooltip({container: 'body'});
     $('[data-toggle="popover"]').popover();
+
+    // warns user of in progress uploads, fileUploading is set to true from fileupload().add()
+    $('.check-upload').click(function() {
+        if (fileUploading) {
+            if (confirm("You still have file uploads in progress - leaving the page will cancel any incomplete uploads.  click 'OK' to leave or 'Cancel' to stay.  You may open another tab to continue browsing if you wish.")) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    });
 });
 
 // toggle the Search/View options panel
