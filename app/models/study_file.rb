@@ -24,6 +24,7 @@ class StudyFile
   field :path, type: String
   field :description, type: String
   field :file_type, type: String
+  field :cluster_type, type: String, default: 'parent'
   field :url_safe_name, type: String
   field :status, type: String
   field :parse_status, type: String, default: 'unparsed'

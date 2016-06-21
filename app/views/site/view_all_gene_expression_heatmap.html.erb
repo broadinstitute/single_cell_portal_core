@@ -12,7 +12,7 @@
 	</div>
 </div>
 
-<%= javascript_tag do %>
+<script type="text/javascript">
 
 	$('#row_centered').change(function() {
 		if ( $(this).prop('checked') ) {
@@ -36,4 +36,4 @@
 		renderMorpheus(dataPath, annotPath, '#heatmap-plot', false);
 	});
 
-<% end %>
+</script>

@@ -1,0 +1,13 @@
+$('<%= params[:modal_target]%>').data('spinner').stop();
+$('<%= params[:modal_target]%>-modal').modal('hide');
+
+setTimeout(function(){
+	// render error message
+	$('#messages').html("<%= escape_javascript(render 'error_modal') %>");
+	$('#error-modal').modal('show');
+
+	if ('<%= params[:study_file_type]%>' == 'parent_cluster_file') {
+		$("<%= params[:selector] %>").parent().html("<%= escape_javascript( render 'initialize_clusters_form') %>");
+	}
+}, 1000);
+

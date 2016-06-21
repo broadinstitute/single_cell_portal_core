@@ -1,0 +1,78 @@
+<h1>Initialize Study Data for '<%= @study.name %>'</h1>
+
+<div id="rootwizard">
+	<ul class="nav wizard-nav">
+		<li role="presentation"><a href="#assignment" data-toggle="tab">Cluster Assignments</a></li>
+		<li role="presentation"><a href="#clusters" data-toggle="tab">Primary Cluster Coordinates</a></li>
+		<li role="presentation"><a href="#sub-clusters" data-toggle="tab">Sub-Cluster Coordinates</a></li>
+		<li role="presentation"><a href="#expression" data-toggle="tab">Expression Matrix</a></li>
+		<li role="presentation"><a href="#marker-genes" data-toggle="tab">Marker Gene Lists</a></li>
+		<li role="presentation"><a href="#fastq" data-toggle="tab">Fastq Data</a></li>
+		<li role="presentation"><a href="#misc" data-toggle="tab">Miscellaneous</a></li>
+	</ul>
+
+	<div id="bar" class="progress progress-striped active">
+		<div class="progress-bar"></div>
+	</div>
+	<div class="tab-content">
+		<div class="tab-pane" id="assignment">
+			<%= render 'initialize_assignments_form' %>
+		</div>
+		<div class="tab-pane" id="clusters">
+			<%= render 'initialize_clusters_form' %>
+		</div>
+		<div class="tab-pane" id="sub-clusters">
+			2
+		</div>
+		<div class="tab-pane" id="expression">
+			3
+		</div>
+		<div class="tab-pane" id="marker-genes">
+			4
+		</div>
+		<div class="tab-pane" id="fastq">
+			5
+		</div>
+		<div class="tab-pane" id="misc">
+			6
+		</div>
+		<ul class="pager wizard">
+			<li class="previous"><a href="#">Previous</a></li>
+			<li class="next"><a href="#">Next</a></li>
+			<li class="next finish" style="display:none;"><a href="javascript:;">Finish</a></li>
+		</ul>
+	</div>
+</div>
+<div id="messages"></div>
+<%= render 'fileupload_templates' %>
+
+<script>
+	$(document).ready(function() {
+		var wizard = $('#rootwizard');
+		wizard.bootstrapWizard({'tabClass': 'nav-tabs',
+			onTabShow: function(tab, navigation, index) {
+				var total = navigation.find('li').length;
+				var current = index+1;
+				var percent = (current/total) * 100;
+				wizard.find('.progress-bar').css({width:percent+'%'});
+
+				if(current >= total) {
+					wizard.find('.pager .next').hide();
+					wizard.find('.pager .finish').show();
+					wizard.find('.pager .finish').removeClass('disabled');
+				} else {
+					wizard.find('.pager .next').show();
+					wizard.find('.pager .finish').hide();
+				}
+		},
+			// disable tabs
+			onTabClick: function() {return false},
+			onNext: function(tab, navigation, index) {
+				if (index > completed) {
+					alert('You must complete your current step before continuing');
+					return false;
+				}
+			}
+		});
+	});
+</script>

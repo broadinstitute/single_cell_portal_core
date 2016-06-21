@@ -1,5 +1,5 @@
 class StudiesController < ApplicationController
-  before_action :set_study, only: [:show, :edit, :update, :destroy, :upload, :do_upload, :resume_upload, :update_status, :reset_upload, :new_study_file, :update_study_file, :delete_study_file, :retrieve_upload, :parse_study_files, :launch_parse_job]
+  before_action :set_study, only: [:show, :edit, :update, :initialize_study, :destroy, :upload, :do_upload, :resume_upload, :update_status, :reset_upload, :new_study_file, :update_study_file, :delete_study_file, :retrieve_upload, :parse, :launch_parse_job]
   before_filter :authenticate_user!
 
   # GET /studies
@@ -29,13 +29,20 @@ class StudiesController < ApplicationController
 
     respond_to do |format|
       if @study.save
-        format.html { redirect_to upload_study_path(@study), notice: "Your study '#{@study.name}' was successfully created.  You may now upload and parse data files." }
+        format.html { redirect_to initialize_study_path(@study), notice: "Your study '#{@study.name}' was successfully created." }
         format.json { render :show, status: :ok, location: @study }
       else
         format.html { render :new }
         format.json { render json: @study.errors, status: :unprocessable_entity }
       end
     end
+  end
+
+  # wizard for adding study files after user creates a study
+  def initialize_study
+    @assignment_file = StudyFile.find_or_create_by({study_id: @study._id, file_type: 'Cluster Assignments'})
+    @parent_cluster = StudyFile.find_or_create_by({study_id: @study._id, file_type: 'Cluster Coordinates', cluster_type: 'parent'})
+    @expression_file = StudyFile.find_or_create_by({study_id: @study._id, file_type: 'Expression Matrix'})
   end
 
   # PATCH/PUT /studies/1
@@ -60,6 +67,30 @@ class StudiesController < ApplicationController
     respond_to do |format|
       format.html { redirect_to studies_path, notice: "Study '#{name}'was successfully destroyed.  All uploaded data & parsed database records have also been destroyed." }
       format.json { head :no_content }
+    end
+  end
+
+  # parses file in foreground to maintain UI state for immediate messaging
+  def parse
+    logger.info "PARSING"
+    @study_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
+    begin
+      case @study_file.file_type
+        when 'Cluster Coordinates'
+          @study.make_cluster_points(@study.cluster_assignment_file, @study_file, @study_file.cluster_type)
+        when 'Expression Matrix'
+          @study.make_expression_scores(@study_file)
+        when 'Marker Gene List'
+          @study.make_precomputed_scores(@study_file, params[:list_name])
+      end
+    rescue StandardError => e
+      logger.error "ERROR: #{e.message}"
+      @error = e.message
+      # remove bad study file, reload good entries
+      @study_file.destroy
+      @parent_cluster = StudyFile.find_or_create_by({study_id: @study._id, file_type: 'Cluster Coordinates', cluster_type: 'parent'})
+      @expression_file = StudyFile.find_or_create_by({study_id: @study._id, file_type: 'Expression Matrix'})
+      render 'parse_error'
     end
   end
 
@@ -99,7 +130,8 @@ class StudiesController < ApplicationController
 
   # create a new study_file for requested study
   def new_study_file
-    @study_file = @study.study_files.build
+    file_type = params[:file_type] ? params[:file_type] : 'Cluster Assignments'
+    @study_file = @study.study_files.build(file_type: file_type)
   end
 
   # update an existing study file; cannot be called until file is uploaded, so there is no create
@@ -187,6 +219,21 @@ class StudiesController < ApplicationController
   def retrieve_upload
     @study_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
   end
+
+  # retrieve study file by filename during initializer wizard
+  def retrieve_wizard_upload
+    case params[:object]
+      when 'assignment_file'
+        @assignment_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
+      when 'cluster_file'
+
+      when 'expression_file'
+
+      else
+        @study_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
+    end
+  end
+
 
   # method to download files if study is private, will create temporary symlink and remove after timeout
   def download_private_file

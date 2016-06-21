@@ -1,0 +1,19 @@
+<div class="modal fade" id="error-modal" tabindex="-1" role="dialog" aria-labelledby="error-modal-label" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header error-header">
+				<h3 class="text-danger text-center">PARSE ERROR</h3>
+			</div>
+			<div class="modal-body">
+				<p class="lead">Your file failed to properly parse at the following line:</p>
+				<div class="bs-callout bs-callout-danger">
+					<p class="text-danger"><%= @error %></p>
+				</div>
+				<p class="lead text-danger">This file has been deleted from your study.  Please check the contents and try again.</p>
+			</div>
+			<div class="modal-footer">
+				<button class="close" data-dismiss="modal">x</button>
+			</div>
+		</div>
+	</div>
+</div>

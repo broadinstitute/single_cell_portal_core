@@ -6,15 +6,18 @@ Rails.application.routes.draw do
     devise_for :users, :controllers => { :omniauth_callbacks => 'users/omniauth_callbacks' }
     resources :studies do
 			member do
+				  get 'initialize', to: 'studies#initialize_study', as: :initialize
           get 'upload', to: 'studies#upload'
           patch 'upload', to: 'studies#do_upload'
           get 'resume_upload', to: 'studies#resume_upload'
           patch 'update_status', to: 'studies#update_status'
           get 'reset_upload', to: 'studies#reset_upload'
 				  get 'retrieve_upload', to: 'studies#retrieve_upload', as: :retrieve_upload
+					get 'retrieve_wizard_upload', to: 'studies#retrieve_wizard_upload', as: :retrieve_wizard_upload
           get 'study_files/new', to: 'studies#new_study_file', as: :new_study_file
           match 'study_files', to: 'studies#update_study_file', via: [:post, :patch], as: :update_study_file
 				  delete 'study_files/:study_file_id', to: 'studies#delete_study_file', as: :delete_study_file
+					post 'parse', to: 'studies#parse', as: :parse_study_file
 				  post 'parse_study_files', to: 'studies#launch_parse_job', as: :launch_parse_job
 			end
 		end

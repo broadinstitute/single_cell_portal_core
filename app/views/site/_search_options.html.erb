@@ -20,7 +20,7 @@
 					</div>
 					<%= link_to "<span class='fa fa-ban'></span> Clear Search".html_safe, "javascript:clearForm('search_genes');", class: 'btn btn-warning pull-right' %>
 					<%= link_to "<span class='fa fa-search'></span> Search Genes ".html_safe, "javascript:;", class: 'btn btn-success loading', id: 'submit-gene-search' %>
-					<%= javascript_tag do %>
+					<script type="text/javascript">
 						$('#submit-gene-search').click(function() {
 							if ( $('#search_genes').val() == '' && $('#search_upload').val() == '' ) {
 								alert('You must specify at least one gene or upload a list of genes to search');
@@ -29,7 +29,7 @@
 								$('#search-genes-form').submit();
 							}
 						});
-					<% end %>
+					</script>
 				<% end %>
 			</div>
 		</div>
@@ -39,13 +39,13 @@
 				<%= form_tag(view_gene_set_expression_path(study_name: params[:study_name]), id: 'gene-sets', method: :get) do %>
 					<%= label_tag :gene_set, 'View curated marker gene lists as mean-centered expression (box & scatter plots)' %>
 					<%= select_tag :gene_set, options_for_select(@precomputed, params[:gene_set]), {include_blank: true, class: 'form-control spin'} %>
-					<%= javascript_tag do %>
+					<script type="text/javascript">
 
 						$('#gene_set').change(function() {
 							$('#gene-sets').submit();
 						});
 
-					<% end %>
+					</script>
 				<% end %>
 			</div>
 		</div>
@@ -56,12 +56,12 @@
 					<%= label_tag :gene, 'Load single gene-level expression' %><br />
 					<%= select_tag :gene, options_for_select(load_gene_nav(@genes, params[:cluster])), {class: 'form-control spin'} %>
 					<br />
-					<%= javascript_tag do %>
+					<script type="text/javascript">
 						$('#gene').change(function() {
 							window.location.href = $(this).val();
 						});
 
-					<% end %>
+					</script>
 				</div>
 			</div>
 			<hr />
@@ -72,13 +72,13 @@
 					<%= label_tag :expression, 'View curated marker gene lists as heatmaps' %><br />
 					<%= select_tag :expression, options_for_select(@precomputed, params[:precomputed]), {include_blank: true, class: "form-control #{action_name !~ /precomputed/ ? 'spin' : nil }"} %>
 					<% if action_name !~ /precomputed/ %>
-						<%= javascript_tag do %>
+						<script type="text/javascript">
 
 							$('#expression').change(function() {
 								$('#precomputed-expression').submit();
 							});
 
-						<% end %>
+						</script>
 					<% end %>
 				<% end %>
 			</div>

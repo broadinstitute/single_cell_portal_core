@@ -13,11 +13,12 @@
 		</div>
 	</div>
 
-	<%= javascript_tag do %>
+	<script type="text/javascript">
 		$("#message_modal").modal("show");
 
 		setTimeout(function() {
-		$("#message_modal").modal("hide");
+			$("#message_modal").modal("hide");
 		}, 3000);
-	<% end %>
+	</script>
+
 <% end %>

@@ -27,7 +27,7 @@
 </div>
 
 
-<%= javascript_tag do %>
+<script type="text/javascript">
 
 	$('#row_centered, #expression').change(function() {
 		var newDataPath = '<%= precomputed_results_path(study_name: params[:study_name]) %>';
@@ -44,4 +44,4 @@
 		renderMorpheus(dataPath, '', '#heatmap-plot', 'both');
 	});
 
-<% end %>
+</script>

@@ -1,0 +1,106 @@
+<div class="well well-sm">
+	<h2>Step 2. Upload Primary Cluster Coordinates File</h2>
+	<p class="lead">Upload a tab-delimited text file containing your primary cluster coordinates.  The file must be a plain text (.txt) file with 3 columns and a header row containing the values 'CELL_NAME', 'X', and 'Y'.</p>
+</div>
+
+<%= form_for(@parent_cluster, url: update_study_file_study_path(@study._id), html: {id: "parent_cluster_form", class: 'upload-form', remote: true}) do |f| %>
+	<%= f.hidden_field :study_id, value: params[:id] %>
+	<div class="form-group row">
+		<div class="col-sm-4">
+			<%= f.label :name %><br />
+			<%= f.text_field :name, class: 'form-control filename', readonly: true, placeholder: 'Filename is taken from uploaded file...' %>
+		</div>
+		<div class="col-sm-8">
+			<%= f.label :description %><br />
+			<%= f.text_field :description, class: 'form-control' %>
+		</div>
+	</div>
+	<div class="form-group row">
+		<div class="col-sm-2">
+			<%= f.label :file_type %><br />
+			<%= f.text_field :file_type, readonly: true, class: 'form-control' %>
+		</div>
+		<div class="col-sm-2">
+			<%= f.label :cluster_type %><br />
+			<%= f.select :cluster_type, options_for_select([['Primary cluster','parent'], ['Sub-cluster','sub']]), {}, class: 'form-control', disabled: true %>
+			<%= f.hidden_field :cluster_type %>
+		</div>
+		<div class="col-sm-5 upload-field">
+			<%= f.label :upload, 'Upload Data File' %><br />
+			<%= f.file_field :upload, class: 'btn btn-default fileinput-button', id: 'upload-assignments' %>
+			<%= f.hidden_field :status, value: 'uploading' %>
+		</div>
+		<div class="col-sm-3">
+			<%= f.label :save, "&nbsp;".html_safe %><br />
+			<%= f.submit 'Save', class: 'btn btn-success pull-right save-study-file', disabled: @parent_cluster.upload_file_name.nil? %>
+		</div>
+	</div>
+	<% if @parent_cluster.upload_file_name.nil? %>
+		<div class="form-group upload-progress">
+			<table class="table table-condensed">
+				<tbody class="files"></tbody>
+			</table>
+		</div>
+	<% else %>
+		<p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: @parent_cluster} %></p>
+		<script type="text/javascript">
+			completed++;
+		</script>
+	<% end %>
+<% end %>
+<div class="modal fade" id="parent-cluster-parse-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="text-center">Parsing Upload... Please Wait</h4>
+			</div>
+			<div class="modal-body">
+				<div id="parent-cluster-parse" class="spinner-target"></div>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+
+	$(function() {
+		$('#parent_cluster_form').fileupload({
+			url: "<%= upload_study_path(@study._id) %>",
+			maxChunkSize: 10000000, // 10 MB
+			type: 'PATCH',
+			acceptFileTypes: /(\.|\/)(txt|text)$/i,
+			add: function (e, data) {
+				fileUploading = true;
+				var that = this;
+				var fileName = data.files[0].name.replace(/ /g, '_');
+				// this is the chunked upload callback, will upload 10MB at a time until finished
+				$.getJSON("<%= resume_upload_study_path %>", { file: fileName }, function (result) {
+					var file = result.file;
+					data.uploadedBytes = file && file.size;
+					$.blueimp.fileupload.prototype.options.add.call(that, e, data);
+				});
+			},
+			// on each chunk completion, update status
+			chunkdone: function(e, data) {
+				var perc = parseInt(data.loaded / data.total * 100, 10);
+				$(data.context).find('h1').html(perc + "%");
+			},
+			// file upload is done, now clean up
+			done: function(e, data) {
+				var fileName = data.files[0].name.replace(/ /g, '_');
+				// update upload status
+				$.ajax({
+					url: "<%= update_status_study_path %>",
+					type: "PATCH",
+					data: { status: 'uploaded', file: fileName}
+				});
+				fileUploading = false;
+				$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#parent-cluster-parse', study_file_type: 'parent_cluster_file', selector: "#parent_cluster_form"});
+				var target = $('#parent-cluster-parse')[0];
+				var spinner = new Spinner(opts).spin(target);
+				$(target).data('spinner', spinner);
+				$('#parent-cluster-parse-modal').modal({show: true, backdrop: 'static'});
+			}
+		});
+	});
+
+</script>

@@ -13,7 +13,7 @@
 			</div>
 			<div class="col-md-2">
 				<%= f.label :cluster_type, 'Cluster type' %><br />
-				<%= f.select :cluster_type, options_for_select(['primary', 'sub']), {}, class: 'form-control' %>
+				<%= f.select :cluster_type, options_for_select([['Primary cluster','parent'], ['Sub-cluster','sub']]), {}, class: 'form-control' %>
 			</div>
 			<div class="col-md-2">
 				<%= f.label :parse, 'Actions' %><br />

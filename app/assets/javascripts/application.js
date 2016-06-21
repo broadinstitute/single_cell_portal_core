@@ -16,6 +16,7 @@
 //= require ckeditor/init
 //= require dataTables/jquery.dataTables
 //= require dataTables/bootstrap/3/jquery.dataTables.bootstrap
+//= require jquery.bootstrap.wizard
 //= require jquery-fileupload
 //= require jquery-fileupload/basic-plus
 //= require jquery_nested_form
@@ -24,6 +25,9 @@
 //= require_tree .
 
 var fileUploading = false;
+
+// used for keeping track of
+var completed = 0;
 
 // toggle chevron glyphs on clicks
 function toggleGlyph(el) {
@@ -36,13 +40,17 @@ $(function() {
         toggleGlyph($(this).prev().find('span.toggle-glyph'));
     });
 
+    $('.datepicker').datepicker({dateFormat: 'yy-mm-dd'});
+
     $('[data-toggle="tooltip"]').tooltip({container: 'body'});
     $('[data-toggle="popover"]').popover();
 
     // warns user of in progress uploads, fileUploading is set to true from fileupload().add()
     $('.check-upload').click(function() {
         if (fileUploading) {
-            if (confirm("You still have file uploads in progress - leaving the page will cancel any incomplete uploads.  click 'OK' to leave or 'Cancel' to stay.  You may open another tab to continue browsing if you wish.")) {
+            if (confirm("You still have file uploads in progress - leaving the page will cancel any incomplete uploads.  " +
+                "Click 'OK' to leave or 'Cancel' to stay.  You may open another tab to continue browsing if you wish."))
+            {
                 return true;
             } else {
                 return false;
@@ -68,26 +76,26 @@ function toggleSearch() {
 
 // options for Spin.js
 var opts = {
-    lines: 13 // The ~number of lines to draw
-    , length: 56 // The length of each line
-    , width: 14 // The line thickness
-    , radius: 42 // The radius of the inner circle
-    , scale: 1 // Scales overall size of the spinner
-    , corners: 1 // Corner roundness (0..1)
-    , color: '#000' // #rgb or #rrggbb or array of colors
-    , opacity: 0.25 // Opacity of the lines
-    , rotate: 0 // The rotation offset
-    , direction: 1 // 1: clockwise, -1: counterclockwise
-    , speed: 1 // Rounds per second
-    , trail: 60 // Afterglow percentage
-    , fps: 20 // Frames per second when using setTimeout() as a fallback for CSS
-    , zIndex: 2e9 // The z-index (defaults to 2000000000)
-    , className: 'spinner' // The CSS class to assign to the spinner
-    , top: '50%' // Top position relative to parent
-    , left: '50%' // Left position relative to parent
-    , shadow: false // Whether to render a shadow
-    , hwaccel: false // Whether to use hardware acceleration
-    , position: 'absolute' // Element positioning
+    lines: 13, // The number of lines to draw
+    length: 56, // The length of each line
+    width: 14, // The line thickness
+    radius: 42, // The radius of the inner circle
+    scale: 1, // Scales overall size of the spinner
+    corners: 1, // Corner roundness (0..1)
+    color: '#000', // #rgb or #rrggbb or array of colors
+    opacity: 0.25, // Opacity of the lines
+    rotate: 0, // The rotation offset
+    direction: 1, // 1: clockwise, -1: counterclockwise
+    speed: 1, // Rounds per second
+    trail: 60, // Afterglow percentage
+    fps: 20, // Frames per second when using setTimeout() as a fallback for CSS
+    zIndex: 2e9, // The z-index (defaults to 2000000000)
+    className: 'spinner', // The CSS class to assign to the spinner
+    top: '50%', // Top position relative to parent
+    left: '50%', // Left position relative to parent
+    shadow: false, // Whether to render a shadow
+    hwaccel: false, // Whether to use hardware acceleration
+    position: 'absolute' // Element positioning
 };
 
 var smallOpts = {
@@ -95,22 +103,22 @@ var smallOpts = {
     length: 9, // The length of each line
     width: 3, // The line thickness
     radius: 4, // The radius of the inner circle
-    scale: 1 // Scales overall size of the spinner
-    , corners: 1 // Corner roundness (0..1)
-    , color: '#000' // #rgb or #rrggbb or array of colors
-    , opacity: 0.25 // Opacity of the lines
-    , rotate: 0 // The rotation offset
-    , direction: 1 // 1: clockwise, -1: counterclockwise
-    , speed: 1 // Rounds per second
-    , trail: 60 // Afterglow percentage
-    , fps: 20 // Frames per second when using setTimeout() as a fallback for CSS
-    , zIndex: 2e9 // The z-index (defaults to 2000000000)
-    , className: 'spinner' // The CSS class to assign to the spinner
-    , top: '7px' // Top position relative to parent
-    , left: '50%' // Left position relative to parent
-    , shadow: false // Whether to render a shadow
-    , hwaccel: false // Whether to use hardware acceleration
-    , position: 'relative' // Element positioning
+    scale: 1,  // Scales overall size of the spinner
+    corners: 1, // Corner roundness (0..1)
+    color: '#000',  // #rgb or #rrggbb or array of colors
+    opacity: 0.25,  // Opacity of the lines
+    rotate: 0, // The rotation offset
+    direction: 1, // 1: clockwise, -1: counterclockwise
+    speed: 1, // Rounds per second
+    trail: 60, // Afterglow percentage
+    fps: 20,  // Frames per second when using setTimeout() as a fallback for CSS
+    zIndex: 2e9,  // The z-index (defaults to 2000000000)
+    className: 'spinner',  // The CSS class to assign to the spinner
+    top: '7px',  // Top position relative to parent
+    left: '50%',  // Left position relative to parent
+    shadow: false,  // Whether to render a shadow
+    hwaccel: false,  // Whether to use hardware acceleration
+    position: 'relative' // Element positioning
 };
 
 // launch a modal spinner whenever a select changes that will take more than a few seconds
@@ -160,18 +168,6 @@ function clearForm(target) {
 function validateFields(selector) {
     var values = selector.map(function() {return $(this).val()}).get();
     return values.indexOf("") === -1;
-}
-
-// check if all checkboxes are checked
-function validateChecks(selector) {
-    var values = selector.map(function() {return $(this).prop('checked')}).get();
-    return values.indexOf(false) === -1;
-}
-
-// check if at least one radio is selected in a group
-function validateRadios(selector) {
-    var values = selector.map(function() {return $(this).prop('checked')}).get();
-    return values.indexOf(true) >= 0;
 }
 
 // set error state for items that have a property of 'checked' == false
@@ -252,9 +248,10 @@ function computeColorScale(clusterColor, clusters) {
 
 // toggles visibility and disabled status of file upload and fastq url fields
 function toggleFastqFields(target) {
-    var fileField = $("#" + target).find('.upload-field');
+    var selector = $("#" + target);
+    var fileField = selector.find('.upload-field');
     $(fileField).toggleClass('hidden');
-    var fastqField = $("#" + target).find('.fastq-field');
+    var fastqField = selector.find('.fastq-field');
     $(fastqField).toggleClass('hidden');
     // toggle disabled status by returning inverse of current state
     $(fastqField).find('input').attr('disabled', !$(fastqField).find('input').is('[disabled=disabled]'));
@@ -262,9 +259,9 @@ function toggleFastqFields(target) {
     var humanData = $(fastqField).find('input[type=hidden]');
     $(humanData).val($(humanData).val() == 'true' ? 'false' : 'true' );
     // enable name field & update button to allow saving
-    var saveBtn = $('#' + target).find('.save-study-file');
+    var saveBtn = selector.find('.save-study-file');
     $(saveBtn).attr('disabled', !$(saveBtn).is('[disabled=disabled]'));
-    var nameField = $('#' + target).find('.filename');
+    var nameField = selector.find('.filename');
     $(nameField).attr('readonly', !$(nameField).is('[readonly=readonly]'));
     $(nameField).attr('placeholder', '');
     // animate highlight effect to show fields that need changing

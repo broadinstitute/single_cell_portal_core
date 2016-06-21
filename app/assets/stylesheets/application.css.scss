@@ -161,7 +161,7 @@ html, body {
   min-height: 570px;
 }
 
-#spinner_target {
+#spinner_target, .spinner-target {
   min-height: 200px;
   position: relative;
   margin: 20px 0;
@@ -269,4 +269,18 @@ html, body {
 
 .dark {
   border-top: 1px dashed #888;
+}
+
+#bar {
+  margin-top: 10px;
+}
+
+.wizard-nav li a:hover {
+  cursor: not-allowed;
+}
+
+.error-header {
+  background-color: #f2dede;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
 }

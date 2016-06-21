@@ -1,0 +1,20 @@
+if ('<%= params[:object ] %>' == 'assignment_file') {
+	$("<%= params[:selector] %>").replaceWith("<%= escape_javascript( render 'initialize_assignments_form') %>");
+} else if ('<%= params[:object ] %>' == 'parent_cluster_file') {
+	$("<%= params[:selector] %>").replaceWith("<%= escape_javascript( render 'initialize_clusters_form') %>");
+} else if ('<%= params[:object ] %>' == 'sub_cluster_file') {
+
+} else if ('<%= params[:object ] %>' == 'expression_file') {
+
+} else if ('<%= params[:object ] %>' == 'fastq_file') {
+
+} else if ('<%= params[:object ] %>' == 'misc') {
+
+}
+
+$("<%= params[:selector] %>").effect('highlight', {}, 1000);
+// reattach click listener to download a file when private, will open modal for timed HTML5 download
+$("<%= params[:selector] %>").find('.download-btn').click(function() {
+	var url = $(this).data('filepath');
+	$.get(url);
+});

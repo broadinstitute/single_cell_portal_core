@@ -27,7 +27,7 @@
 </div>
 
 
-<%= javascript_tag do %>
+<script type="text/javascript">
 
 	$(document).ready(function() {
 		var dataPath = '<%= javascript_safe_url(expression_query_path(study_name: params[:study_name], search: {genes: params[:search][:genes] })) %>';
@@ -53,6 +53,4 @@
 		});
 	});
 
-
-
-<% end %>
+</script>

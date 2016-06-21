@@ -3,7 +3,7 @@
 	<%= select_tag :boxpoints_select, options_for_select([['None', ''], ['All', 'all'], ['Outliers', 'outliers'] , ['Suspected Outliers','suspectedoutliers']], params[:boxpoints]), class: 'form-control' %>
 </div>
 
-<%= javascript_tag do %>
+<script type="text/javascript">
 
 	$("#boxpoints_select").change(function() {
 		var mode = $(this).val();
@@ -20,4 +20,4 @@
 		Plotly.newPlot('box-plot', expressionData, expressionLayout);
 	});
 
-<% end %>
+</script>
