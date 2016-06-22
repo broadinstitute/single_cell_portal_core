@@ -26,8 +26,15 @@
 
 var fileUploading = false;
 
-// used for keeping track of
+// used for keeping track of position in wizard
 var completed = 0;
+function completeWizardStep() {
+    completed++;
+    return completed;
+}
+
+// used to disable next button in wizard dynamically
+function disableNext() {return false};
 
 // toggle chevron glyphs on clicks
 function toggleGlyph(el) {

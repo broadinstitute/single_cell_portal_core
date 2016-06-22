@@ -51,7 +51,7 @@
 	<% else %>
 		<p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: @parent_cluster} %></p>
 		<script type="text/javascript">
-			completed++;
+			completeWizardStep();
 		</script>
 	<% end %>
 <% end %>

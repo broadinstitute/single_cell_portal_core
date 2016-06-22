@@ -33,6 +33,11 @@
 				<% @sub_clusters.each do |study_file| %>
 					<%= render partial: 'initialize_sub_clusters_form', locals: {study_file: study_file} %>
 				<% end %>
+				<% if !@sub_clusters.first.nil? && !@sub_clusters.first.upload_file_name.nil? %>
+					<script type="text/javascript">
+						completeWizardStep();
+					</script>
+				<% end %>
 			</div>
 			<p><%= link_to "<span class='fa fa-plus'></span> Add a Sub-Cluster File".html_safe, new_study_file_study_path(@study._id, file_type: 'Cluster Coordinates', cluster_type: 'sub', target: '#sub-clusters-target', form: 'initialize_sub_clusters_form'), class: 'btn btn-sm btn-primary', 'data-remote' => true %></p>
 		</div>
@@ -47,9 +52,9 @@
 		</div>
 		<ul class="pager wizard">
 			<li class="previous"><a href="#">Previous</a></li>
-			<li class="next skip"><a href="#" id="next-btn">Next</a></li>
-			<li class="next"><a href="#" id="skip-btn">Skip</a></li>
-			<li class="next finish" style="display:none;"><a href="javascript:;">Finish</a></li>
+			<li class="next"><a href="#" id="next-btn">Next</a></li>
+			<li class="next skip"><a href="#" id="skip-btn">Skip</a></li>
+			<li class="next finish" style="display:none;"><%= link_to "Finish", study_path(@study) %></li>
 		</ul>
 	</div>
 </div>
@@ -59,29 +64,31 @@
 <script>
 	$(document).ready(function() {
 		var wizard = $('#rootwizard');
+
 		wizard.bootstrapWizard({'tabClass': 'nav-tabs',
 			onTabShow: function(tab, navigation, index) {
 				var total = navigation.find('li').length;
 				var current = index+1;
 				var percent = (current/total) * 100;
 				wizard.find('.progress-bar').css({width:percent+'%'});
-
 				if(current >= total) {
 					wizard.find('.pager .next').hide();
 					wizard.find('.pager .skip').hide();
 					wizard.find('.pager .finish').show();
 					wizard.find('.pager .finish').removeClass('disabled');
-				} else if (current <= completed && completed < 3 && current < 3) {
-					wizard.find('.pager .next').show();
-				} else if (current <= completed && completed >= 3 && current >= 3) {
+				} else if (current <= completed && current <= 3) {
+					wizard.find('.pager .skip').hide();
+				} else if (current <= completed && completed > 3 && current >= 3) {
+					wizard.find('.pager .skip').show();
+				} else if (current > completed && completed >= 3) {
 					wizard.find('.pager .next').show();
 					wizard.find('.pager .skip').show();
-				} else if (current == completed && completed < 3) {
-					wizard.find('.pager .next').show();
-					wizard.find('.pager .next').addClass('disabled');
-				} else if (current == completed && completed >= 3) {
-					wizard.find('.pager .next').show();
-					wizard.find('.pager .skip').show();
+					$('#next-btn').parent().addClass('disabled');
+					$('#next-btn').click(disableNext());
+				} else {
+					wizard.find('.pager .skip').hide();
+					$('#next-btn').parent().addClass('disabled');
+					$('#next-btn').click(disableNext());
 				}
 		},
 			// disable tabs
@@ -90,6 +97,12 @@
 				if (index > completed && completed < 3) {
 					alert('You must complete your current step before continuing');
 					return false;
+				}
+			},
+			onPrevious: function(tab, navigation, index) {
+				if (completed >= index  || completed >= 3) {
+					$('#next-btn').parent().removeClass('disabled');
+					$('#next-btn').off(disableNext());
 				}
 			}
 		});
