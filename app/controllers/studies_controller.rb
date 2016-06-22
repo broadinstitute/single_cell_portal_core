@@ -147,7 +147,7 @@ class StudiesController < ApplicationController
   def new_study_file
     file_type = params[:file_type] ? params[:file_type] : 'Cluster Assignments'
     cluster_type = params[:cluster_type] ? params[:cluster_type] : nil
-    @study_file = @study.build_study_file(file_type, cluster_type)
+    @study_file = @study.build_study_file({file_type: file_type, cluster_type: cluster_type})
   end
 
   # update an existing study file; cannot be called until file is uploaded, so there is no create

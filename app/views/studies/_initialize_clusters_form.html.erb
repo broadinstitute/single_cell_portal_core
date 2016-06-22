@@ -37,7 +37,7 @@
 					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: @parent_cluster.upload_file_name.nil? %>
 				</div>
 				<div class="col-xs-6">
-					<%= link_to 'Delete', delete_study_file_study_path(@study._id, @parent_cluster._id), method: :delete, class: 'btn btn-block btn-danger', data: {remote: true, confirm: 'Are you sure? This cannot be undone.'} %>
+					<%= link_to 'Delete', delete_study_file_study_path(@study._id, @parent_cluster._id), method: :delete, class: 'btn btn-block btn-danger', disabled: @parent_cluster.upload_file_name.nil?, data: {remote: true, confirm: 'Are you sure? This cannot be undone.'} %>
 				</div>
 			</div>
 		</div>

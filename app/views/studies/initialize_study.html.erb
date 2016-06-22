@@ -47,7 +47,8 @@
 		</div>
 		<ul class="pager wizard">
 			<li class="previous"><a href="#">Previous</a></li>
-			<li class="next"><a href="#" id="next-btn">Next</a></li>
+			<li class="next skip"><a href="#" id="next-btn">Next</a></li>
+			<li class="next"><a href="#" id="skip-btn">Skip</a></li>
 			<li class="next finish" style="display:none;"><a href="javascript:;">Finish</a></li>
 		</ul>
 	</div>
@@ -67,17 +68,26 @@
 
 				if(current >= total) {
 					wizard.find('.pager .next').hide();
+					wizard.find('.pager .skip').hide();
 					wizard.find('.pager .finish').show();
 					wizard.find('.pager .finish').removeClass('disabled');
-				} else {
+				} else if (current <= completed && completed < 3 && current < 3) {
 					wizard.find('.pager .next').show();
-					wizard.find('.pager .finish').hide();
+				} else if (current <= completed && completed >= 3 && current >= 3) {
+					wizard.find('.pager .next').show();
+					wizard.find('.pager .skip').show();
+				} else if (current == completed && completed < 3) {
+					wizard.find('.pager .next').show();
+					wizard.find('.pager .next').addClass('disabled');
+				} else if (current == completed && completed >= 3) {
+					wizard.find('.pager .next').show();
+					wizard.find('.pager .skip').show();
 				}
 		},
 			// disable tabs
 			onTabClick: function() {return false},
 			onNext: function(tab, navigation, index) {
-				if (index > completed) {
+				if (index > completed && completed < 3) {
 					alert('You must complete your current step before continuing');
 					return false;
 				}
