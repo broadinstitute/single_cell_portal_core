@@ -167,7 +167,7 @@ class Study
           end
         end
         # create expression score object
-        @records << {gene: gene_name, searchable_gene: gene_name.downcase, scores: significant_scores, study_id: study_id}
+        @records << {gene: gene_name, searchable_gene: gene_name.downcase, scores: significant_scores, study_id: study_id, study_file_id: expression_file._id}
         @count += 1
         if @count % 1000 == 0
           ExpressionScore.create(@records)
