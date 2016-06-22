@@ -6,8 +6,7 @@ setTimeout(function(){
 	$('#messages').html("<%= escape_javascript(render 'error_modal') %>");
 	$('#error-modal').modal('show');
 
-	if ('<%= params[:study_file_type]%>' == 'parent_cluster_file') {
-		$("<%= params[:selector] %>").parent().html("<%= escape_javascript( render 'initialize_clusters_form') %>");
-	}
+	// replace form
+	$("<%= params[:selector] %>").parent().html("<%= escape_javascript( render params[:partial]) %>");
 }, 1000);
 

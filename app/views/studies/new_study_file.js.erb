@@ -1,1 +1,1 @@
-$('#uploads-target').append("<%= escape_javascript(render partial: 'studies/study_file_fields', locals: {study_file: @study_file }) %>");
+$('<%= params[:target] %>').append("<%= escape_javascript(render partial: params[:form], locals: {study_file: @study_file }) %>");

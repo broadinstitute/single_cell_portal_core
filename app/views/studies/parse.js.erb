@@ -2,4 +2,4 @@ $('<%= params[:modal_target]%>').data('spinner').stop();
 $('<%= params[:modal_target]%>-modal').modal('toggle');
 
 // re-render form upload to get download button and increment completed status
-$.get("<%= retrieve_wizard_upload_study_path(@study._id) %>", {file: '<%= params[:file] %>', selector: '<%= params[:selector] %>', object: '<%= params[:study_file_type] %>'});
+$.get("<%= retrieve_wizard_upload_study_path(@study._id) %>", {file: '<%= params[:file] %>', selector: '<%= params[:selector] %>', partial: '<%= params[:partial] %>'});

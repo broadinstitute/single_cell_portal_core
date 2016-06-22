@@ -1,5 +1,5 @@
 class StudiesController < ApplicationController
-  before_action :set_study, only: [:show, :edit, :update, :initialize_study, :destroy, :upload, :do_upload, :resume_upload, :update_status, :reset_upload, :new_study_file, :update_study_file, :delete_study_file, :retrieve_upload, :parse, :launch_parse_job]
+  before_action :set_study, only: [:show, :edit, :update, :initialize_study, :destroy, :upload, :do_upload, :resume_upload, :update_status, :reset_upload, :new_study_file, :update_study_file, :delete_study_file, :retrieve_upload, :retrieve_wizard_upload, :parse, :launch_parse_job]
   before_filter :authenticate_user!
 
   # GET /studies
@@ -40,9 +40,25 @@ class StudiesController < ApplicationController
 
   # wizard for adding study files after user creates a study
   def initialize_study
-    @assignment_file = StudyFile.find_or_create_by({study_id: @study._id, file_type: 'Cluster Assignments'})
-    @parent_cluster = StudyFile.find_or_create_by({study_id: @study._id, file_type: 'Cluster Coordinates', cluster_type: 'parent'})
-    @expression_file = StudyFile.find_or_create_by({study_id: @study._id, file_type: 'Expression Matrix'})
+    # load any existing files if user restarted for some reason (unlikely)
+    intitialize_wizard_files
+
+    # if files don't exist, build them for use later
+    if @assignment_file.nil?
+      @assignment_file = @study.build_study_file({file_type: 'Cluster Assignments'})
+    end
+    if @parent_cluster.nil?
+      @parent_cluster = @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'parent'})
+    end
+    if @sub_clusters.empty?
+      @sub_clusters << @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'sub'})
+    end
+    if @expression_file.nil?
+      @expression_file = @study.build_study_file({file_type: 'Expression Matrix'})
+    end
+    if @marker_lists.empty?
+      @marker_lists << @study.build_study_file({file_type: 'Marker Gene List'})
+    end
   end
 
   # PATCH/PUT /studies/1
@@ -72,8 +88,8 @@ class StudiesController < ApplicationController
 
   # parses file in foreground to maintain UI state for immediate messaging
   def parse
-    logger.info "PARSING"
     @study_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
+    logger.info "Parsing #{@study_file.name} as #{@study_file.file_type} in study #{@study.name}"
     begin
       case @study_file.file_type
         when 'Cluster Coordinates'
@@ -88,8 +104,7 @@ class StudiesController < ApplicationController
       @error = e.message
       # remove bad study file, reload good entries
       @study_file.destroy
-      @parent_cluster = StudyFile.find_or_create_by({study_id: @study._id, file_type: 'Cluster Coordinates', cluster_type: 'parent'})
-      @expression_file = StudyFile.find_or_create_by({study_id: @study._id, file_type: 'Expression Matrix'})
+      intitialize_wizard_files
       render 'parse_error'
     end
   end
@@ -131,7 +146,8 @@ class StudiesController < ApplicationController
   # create a new study_file for requested study
   def new_study_file
     file_type = params[:file_type] ? params[:file_type] : 'Cluster Assignments'
-    @study_file = @study.study_files.build(file_type: file_type)
+    cluster_type = params[:cluster_type] ? params[:cluster_type] : nil
+    @study_file = @study.build_study_file(file_type, cluster_type)
   end
 
   # update an existing study file; cannot be called until file is uploaded, so there is no create
@@ -139,6 +155,7 @@ class StudiesController < ApplicationController
   def update_study_file
     @study_file = StudyFile.where(study_id: study_file_params[:study_id], name: study_file_params[:name]).first
     if @study_file.nil?
+      # don't use helper as we're about to mass-assign params
       @study_file = @study.study_files.build
     end
     @study_file.update_attributes(study_file_params)
@@ -162,6 +179,7 @@ class StudiesController < ApplicationController
     # If no file has been uploaded or the uploaded file has a different filename,
     # do a new upload from scratch
     if study_file.nil?
+      # don't use helper as we're about to mass-assign params
       study_file = @study.study_files.build
       study_file.update(study_file_params)
       render json: { file: { name: study_file.errors,size: nil } } and return
@@ -222,13 +240,13 @@ class StudiesController < ApplicationController
 
   # retrieve study file by filename during initializer wizard
   def retrieve_wizard_upload
-    case params[:object]
-      when 'assignment_file'
+    case params[:partial]
+      when 'initialize_assignments_form'
         @assignment_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
-      when 'cluster_file'
-
-      when 'expression_file'
-
+      when 'initialize_clusters_form'
+        @parent_cluster = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
+      when 'initialize_expression_form'
+        @expression_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
       else
         @study_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
     end
@@ -256,7 +274,7 @@ class StudiesController < ApplicationController
 
   # study file params whitelist
   def study_file_params
-    params.require(:study_file).permit(:_id, :study_id, :name, :upload, :description, :file_type, :status, :human_fastq_url, :human_data)
+    params.require(:study_file).permit(:_id, :study_id, :name, :upload, :description, :file_type, :status, :human_fastq_url, :human_data, :cluster_type)
   end
 
   def clusters_params
@@ -274,5 +292,14 @@ class StudiesController < ApplicationController
   # return upload object from study params
   def get_upload
     study_file_params.to_h['upload']
+  end
+
+  # set up variables for wizard
+  def intitialize_wizard_files
+    @assignment_file = @study.cluster_assignment_file
+    @parent_cluster = @study.study_files.select {|sf| sf.file_type == 'Cluster Coordinates' && sf.cluster_type == 'parent'}.first
+    @sub_clusters = @study.study_files.select {|sf| sf.file_type == 'Cluster Coordinates' && sf.cluster_type == 'sub'}
+    @expression_file = @study.study_files.select {|sf| sf.file_type == 'Expression Matrix'}.first
+    @marker_lists = @study.study_files.select {|sf| sf.file_type == 'Marker Gene List'}
   end
 end

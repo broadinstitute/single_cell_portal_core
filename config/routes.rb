@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-	scope 'single_cell_demo' do
+	scope 'single_cell' do
 
 		# admin actions
 		mount Ckeditor::Engine => 'ckeditor'

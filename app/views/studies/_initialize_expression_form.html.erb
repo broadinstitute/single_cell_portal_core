@@ -1,9 +1,9 @@
 <div class="well well-sm">
-	<h2>Step 2. Upload Primary Cluster Coordinates File</h2>
-	<p class="lead">Upload a tab-delimited text file containing your primary cluster coordinates.  The file must be a plain text (.txt) file with 3 columns and a header row containing the values 'CELL_NAME', 'X', and 'Y'.</p>
+	<h2>Step 3. Upload Expression Matrix File</h2>
+	<p class="lead">Upload a tab-delimited text file containing all of your gene expression scores for all genes and single cells.  The file must be a plain text (.txt) file with with gene names in the first column, and single cell names in each successive column.</p>
 </div>
 
-<%= form_for(@parent_cluster, url: update_study_file_study_path(@study._id), html: {id: "parent_cluster_form", class: 'upload-form', remote: true}) do |f| %>
+<%= form_for(@expression_file, url: update_study_file_study_path(@study._id), html: {id: "expression_form", class: 'upload-form', remote: true}) do |f| %>
 	<%= f.hidden_field :study_id, value: params[:id] %>
 	<div class="form-group row">
 		<div class="col-sm-4">
@@ -16,14 +16,9 @@
 		</div>
 	</div>
 	<div class="form-group row">
-		<div class="col-sm-2">
+		<div class="col-sm-4">
 			<%= f.label :file_type %><br />
 			<%= f.text_field :file_type, readonly: true, class: 'form-control' %>
-		</div>
-		<div class="col-sm-2">
-			<%= f.label :cluster_type %><br />
-			<%= f.select :cluster_type, options_for_select([['Primary cluster','parent'], ['Sub-cluster','sub']]), {}, class: 'form-control', disabled: true %>
-			<%= f.hidden_field :cluster_type %>
 		</div>
 		<div class="col-sm-5 upload-field">
 			<%= f.label :upload, 'Upload Data File' %><br />
@@ -34,35 +29,35 @@
 			<%= f.label :actions %>
 			<div class="row">
 				<div class="col-xs-6">
-					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: @parent_cluster.upload_file_name.nil? %>
+					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: @expression_file.upload_file_name.nil? %>
 				</div>
 				<div class="col-xs-6">
-					<%= link_to 'Delete', delete_study_file_study_path(@study._id, @parent_cluster._id), method: :delete, class: 'btn btn-block btn-danger', data: {remote: true, confirm: 'Are you sure? This cannot be undone.'} %>
+					<%= link_to 'Delete', delete_study_file_study_path(@study._id, @expression_file._id), method: :delete, class: 'btn btn-block btn-danger', data: {remote: true, confirm: 'Are you sure? This cannot be undone.'} %>
 				</div>
 			</div>
 		</div>
 	</div>
-	<% if @parent_cluster.upload_file_name.nil? %>
+	<% if @expression_file.upload_file_name.nil? %>
 		<div class="form-group upload-progress">
 			<table class="table table-condensed">
 				<tbody class="files"></tbody>
 			</table>
 		</div>
 	<% else %>
-		<p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: @parent_cluster} %></p>
+		<p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: @expression_file} %></p>
 		<script type="text/javascript">
 			completed++;
 		</script>
 	<% end %>
 <% end %>
-<div class="modal fade" id="parent-cluster-parse-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
+<div class="modal fade" id="expression-parse-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h4 class="text-center">Parsing Upload... Please Wait</h4>
 			</div>
 			<div class="modal-body">
-				<div id="parent-cluster-parse" class="spinner-target"></div>
+				<div id="expression-parse" class="spinner-target"></div>
 			</div>
 		</div>
 	</div>
@@ -70,7 +65,7 @@
 <script type="text/javascript">
 
 	$(function() {
-		$('#parent_cluster_form').fileupload({
+		$('#expression_form').fileupload({
 			url: "<%= upload_study_path(@study._id) %>",
 			maxChunkSize: 10000000, // 10 MB
 			type: 'PATCH',
@@ -101,11 +96,11 @@
 					data: { status: 'uploaded', file: fileName}
 				});
 				fileUploading = false;
-				$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#parent-cluster-parse', partial: 'initialize_clusters_form', selector: "#parent_cluster_form"});
-				var target = $('#parent-cluster-parse')[0];
+				$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#expression-parse', partial: 'initialize_expression_form', selector: "#expression_form"});
+				var target = $('#expression-parse')[0];
 				var spinner = new Spinner(opts).spin(target);
 				$(target).data('spinner', spinner);
-				$('#parent-cluster-parse-modal').modal({show: true, backdrop: 'static'});
+				$('#expression-parse-modal').modal({show: true, backdrop: 'static'});
 			}
 		});
 	});

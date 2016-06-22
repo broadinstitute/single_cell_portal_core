@@ -2,13 +2,13 @@
 
 <div id="rootwizard">
 	<ul class="nav wizard-nav">
-		<li role="presentation"><a href="#assignment" data-toggle="tab">Cluster Assignments</a></li>
-		<li role="presentation"><a href="#clusters" data-toggle="tab">Primary Cluster Coordinates</a></li>
-		<li role="presentation"><a href="#sub-clusters" data-toggle="tab">Sub-Cluster Coordinates</a></li>
-		<li role="presentation"><a href="#expression" data-toggle="tab">Expression Matrix</a></li>
-		<li role="presentation"><a href="#marker-genes" data-toggle="tab">Marker Gene Lists</a></li>
-		<li role="presentation"><a href="#fastq" data-toggle="tab">Fastq Data</a></li>
-		<li role="presentation"><a href="#misc" data-toggle="tab">Miscellaneous</a></li>
+		<li role="presentation"><a href="#assignment" data-toggle="tab">1. Cluster Assignments </a></li>
+		<li role="presentation"><a href="#clusters" data-toggle="tab">2. Primary Cluster Coordinates </a></li>
+		<li role="presentation"><a href="#expression" data-toggle="tab">3. Expression Matrix </a></li>
+		<li role="presentation"><a href="#sub-clusters" data-toggle="tab">4. Sub-Cluster Coordinates </a></li>
+		<li role="presentation"><a href="#marker-genes" data-toggle="tab">5. Marker Gene Lists </a></li>
+		<li role="presentation"><a href="#fastq" data-toggle="tab">6. Fastq Data </a></li>
+		<li role="presentation"><a href="#misc" data-toggle="tab">7. Miscellaneous </a></li>
 	</ul>
 
 	<div id="bar" class="progress progress-striped active">
@@ -21,11 +21,20 @@
 		<div class="tab-pane" id="clusters">
 			<%= render 'initialize_clusters_form' %>
 		</div>
-		<div class="tab-pane" id="sub-clusters">
-			2
-		</div>
 		<div class="tab-pane" id="expression">
-			3
+			<%= render 'initialize_expression_form' %>
+		</div>
+		<div class="tab-pane" id="sub-clusters">
+			<div id="sub-clusters-target">
+				<div class="well well-sm">
+					<h2>Step 4. Upload Sub Cluster Coordinates File (optional)</h2>
+					<p class="lead">Upload a tab-delimited text file containing any sub-cluster coordinates.  These sub-clusters must be identified in your cluster assignment file.  The file must be a plain text (.txt) file with 3 columns and a header row containing the values 'CELL_NAME', 'X', and 'Y'.</p>
+				</div>
+				<% @sub_clusters.each do |study_file| %>
+					<%= render partial: 'initialize_sub_clusters_form', locals: {study_file: study_file} %>
+				<% end %>
+			</div>
+			<p><%= link_to "<span class='fa fa-plus'></span> Add a Sub-Cluster File".html_safe, new_study_file_study_path(@study._id, file_type: 'Cluster Coordinates', cluster_type: 'sub', target: '#sub-clusters-target', form: 'initialize_sub_clusters_form'), class: 'btn btn-sm btn-primary', 'data-remote' => true %></p>
 		</div>
 		<div class="tab-pane" id="marker-genes">
 			4
@@ -38,7 +47,7 @@
 		</div>
 		<ul class="pager wizard">
 			<li class="previous"><a href="#">Previous</a></li>
-			<li class="next"><a href="#">Next</a></li>
+			<li class="next"><a href="#" id="next-btn">Next</a></li>
 			<li class="next finish" style="display:none;"><a href="javascript:;">Finish</a></li>
 		</ul>
 	</div>

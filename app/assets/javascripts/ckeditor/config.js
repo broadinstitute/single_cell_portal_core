@@ -11,25 +11,25 @@ CKEDITOR.editorConfig = function( config )
 
     /* Filebrowser routes */
     // The location of an external file browser, that should be launched when "Browse Server" button is pressed.
-    config.filebrowserBrowseUrl = "/single_cell_demo/ckeditor/attachment_files";
+    config.filebrowserBrowseUrl = "/single_cell/ckeditor/attachment_files";
 
     // The location of an external file browser, that should be launched when "Browse Server" button is pressed in the Flash dialog.
-    config.filebrowserFlashBrowseUrl = "/single_cell_demo/ckeditor/attachment_files";
+    config.filebrowserFlashBrowseUrl = "/single_cell/ckeditor/attachment_files";
 
     // The location of a script that handles file uploads in the Flash dialog.
-    config.filebrowserFlashUploadUrl = "/single_cell_demo/ckeditor/attachment_files";
+    config.filebrowserFlashUploadUrl = "/single_cell/ckeditor/attachment_files";
 
     // The location of an external file browser, that should be launched when "Browse Server" button is pressed in the Link tab of Image dialog.
-    config.filebrowserImageBrowseLinkUrl = "/single_cell_demo/ckeditor/pictures";
+    config.filebrowserImageBrowseLinkUrl = "/single_cell/ckeditor/pictures";
 
     // The location of an external file browser, that should be launched when "Browse Server" button is pressed in the Image dialog.
-    config.filebrowserImageBrowseUrl = "/single_cell_demo/ckeditor/pictures";
+    config.filebrowserImageBrowseUrl = "/single_cell/ckeditor/pictures";
 
     // The location of a script that handles file uploads in the Image dialog.
-    config.filebrowserImageUploadUrl = "/single_cell_demo/ckeditor/pictures";
+    config.filebrowserImageUploadUrl = "/single_cell/ckeditor/pictures";
 
     // The location of a script that handles file uploads.
-    config.filebrowserUploadUrl = "/single_cell_demo/ckeditor/attachment_files";
+    config.filebrowserUploadUrl = "/single_cell/ckeditor/attachment_files";
 
     config.allowedContent = true;
     // Rails CSRF token

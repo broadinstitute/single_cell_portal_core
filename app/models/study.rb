@@ -89,7 +89,7 @@ class Study
 
   # file path to study public folder
   def data_public_path
-    Rails.root.join('public', 'single_cell_demo', 'data', self.url_safe_name)
+    Rails.root.join('public', 'single_cell', 'data', self.url_safe_name)
   end
 
   # file path to upload storage directory
@@ -122,6 +122,11 @@ class Study
     self.embargo.nil? || self.embargo.blank? ? false : Date.today <= self.embargo
   end
 
+  # helper to build a study file of the requested type
+  def build_study_file(attributes)
+    self.study_files.build(attributes)
+  end
+
   # helper method to directly access cluster assignment file
   def cluster_assignment_file
     self.study_files.where(file_type:'Cluster Assignments').to_a.first
@@ -141,7 +146,7 @@ class Study
       # open data file and grab header row with name of all cells, deleting 'GENE' at start
       expression_data = File.open(expression_file.upload.path)
       cells = expression_data.readline.chomp.split("\t")
-      @last_line = "#{marker_file.name}, line 1: #{cells.join("\t")}"
+      @last_line = "#{expression_file.name}, line 1: #{cells.join("\t")}"
 
       cells.shift
       # store study id for later to save memory

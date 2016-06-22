@@ -24,7 +24,7 @@ class StudyFile
   field :path, type: String
   field :description, type: String
   field :file_type, type: String
-  field :cluster_type, type: String, default: 'parent'
+  field :cluster_type, type: String
   field :url_safe_name, type: String
   field :status, type: String
   field :parse_status, type: String, default: 'unparsed'
@@ -39,7 +39,7 @@ class StudyFile
 
   has_mongoid_attached_file :upload,
                             :path => ":rails_root/data/:url_safe_name/:filename",
-                            :url => "/single_cell_demo/data/:url_safe_name/:filename"
+                            :url => "/single_cell/data/:url_safe_name/:filename"
 
   # turning off validation to allow any kind of data file to be uploaded
   do_not_validate_attachment_file_type :upload

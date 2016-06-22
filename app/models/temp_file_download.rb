@@ -21,7 +21,7 @@ class TempFileDownload
 
   # public path to file for browser
   def download_url
-    File.join('/single_cell_demo', 'data', self.study_file.url_safe_name, self.token, self.study_file.upload_file_name)
+    File.join('/single_cell', 'data', self.study_file.url_safe_name, self.token, self.study_file.upload_file_name)
   end
 
   # source path of uploaded study_file

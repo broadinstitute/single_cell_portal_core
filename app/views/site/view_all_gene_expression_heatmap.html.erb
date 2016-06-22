@@ -16,23 +16,23 @@
 
 	$('#row_centered').change(function() {
 		if ( $(this).prop('checked') ) {
-			var newDataPath = '/single_cell_demo/data/<%= @study.url_safe_name %>/<%= @study.url_safe_name %>_row_centered.gct'
+			var newDataPath = '/single_cell/data/<%= @study.url_safe_name %>/<%= @study.url_safe_name %>_row_centered.gct'
 		} else {
-			var newDataPath = '/single_cell_demo/data/<%= @study.url_safe_name %>/<%= @study.url_safe_name %>.gct'
+			var newDataPath = '/single_cell/data/<%= @study.url_safe_name %>/<%= @study.url_safe_name %>.gct'
 		}
 
-		var annotPath = '/single_cell_demo/data/<%= @study.url_safe_name %>/CLUSTER_AND_SUBCLUSTER_INDEX.txt';
+		var annotPath = '/single_cell/data/<%= @study.url_safe_name %>/CLUSTER_AND_SUBCLUSTER_INDEX.txt';
 		renderMorpheus(newDataPath, annotPath, '#heatmap-plot', false);
 	});
 
 	$(document).ready(function() {
 
 		if ( <%= params[:row_centered].to_i %> == 1 ) {
-			var dataPath = '/single_cell_demo/data/<%= @study.url_safe_name %>/<%= @study.url_safe_name %>_row_centered.gct'
+			var dataPath = '/single_cell/data/<%= @study.url_safe_name %>/<%= @study.url_safe_name %>_row_centered.gct'
 		} else {
-			var dataPath = '/single_cell_demo/data/<%= @study.url_safe_name %>/<%= @study.url_safe_name %>.gct'
+			var dataPath = '/single_cell/data/<%= @study.url_safe_name %>/<%= @study.url_safe_name %>.gct'
 		}
-		var annotPath = '/single_cell_demo/data/<%= @study.url_safe_name %>/CLUSTER_AND_SUBCLUSTER_INDEX.txt';
+		var annotPath = '/single_cell/data/<%= @study.url_safe_name %>/CLUSTER_AND_SUBCLUSTER_INDEX.txt';
 		renderMorpheus(dataPath, annotPath, '#heatmap-plot', false);
 	});
 
