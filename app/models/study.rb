@@ -174,6 +174,7 @@ class Study
           @records = []
         end
       end
+      ExpressionScore.create(@records)
       # clean up, print stats
       expression_data.close
       expression_file.update(parse_status: 'parsed')
