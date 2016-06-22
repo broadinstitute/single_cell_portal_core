@@ -320,7 +320,7 @@ class Study
     # begin parse
     begin
       marker_file.update(parse_status: 'parsing')
-      precomputed_score = self.precomputed_scores.build(name: list_name)
+      precomputed_score = self.precomputed_scores.build(name: list_name, study_file_id: marker_file._id)
       marker_scores = File.open(marker_file.upload.path).readlines.map(&:strip).delete_if {|line| line.blank? }
       clusters = marker_scores.shift.split("\t")
       @last_line = "#{marker_file.name}, line 1: #{clusters.join("\t")}"
