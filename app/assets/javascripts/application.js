@@ -30,6 +30,15 @@ var fileUploading = false;
 var completed = 0;
 function completeWizardStep() {
     completed++;
+    $('#next-btn').parent().removeClass('disabled');
+    $('#next-btn').off(disableNext());
+    return completed;
+}
+
+function resetWizardStep() {
+    completed--;
+    $('#next-btn').parent().addClass('disabled');
+    $('#next-btn').click(disableNext());
     return completed;
 }
 

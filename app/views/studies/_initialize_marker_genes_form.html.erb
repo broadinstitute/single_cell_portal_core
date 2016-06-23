@@ -1,14 +1,9 @@
-<div class="well well-sm">
-	<h2>Step 3. Upload Expression Matrix File</h2>
-	<p class="lead">Upload a tab-delimited text file containing all of your gene expression scores for all genes and single cells.  The file must be a plain text (.txt) file with with gene names in the first column, and single cell names in each successive column.</p>
-</div>
-
-<%= form_for(@expression_file, url: update_study_file_study_path(@study._id), html: {id: "expression_form", class: 'upload-form', remote: true}) do |f| %>
+<%= form_for(study_file, url: update_study_file_study_path(@study._id), html: {id: "marker_gene_form_#{study_file._id}", class: 'bs-callout bs-callout-info', remote: true}) do |f| %>
 	<%= f.hidden_field :study_id, value: params[:id] %>
 	<div class="form-group row">
 		<div class="col-sm-4">
 			<%= f.label :name %><br />
-			<%= f.text_field :name, class: 'form-control filename', readonly: true, placeholder: 'Filename is taken from uploaded file...' %>
+			<%= f.text_field :name, class: 'form-control filename', placeholder: 'Enter name of marker list...' %>
 		</div>
 		<div class="col-sm-8">
 			<%= f.label :description %><br />
@@ -29,35 +24,32 @@
 			<%= f.label :actions %>
 			<div class="row">
 				<div class="col-xs-6">
-					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: @expression_file.upload_file_name.nil? %>
+					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: study_file.upload_file_name.nil? %>
 				</div>
 				<div class="col-xs-6">
-					<%= link_to 'Delete', delete_study_file_study_path(@study._id, @expression_file._id), method: :delete, disabled: @expression_file.upload_file_name.nil?, class: 'btn btn-block btn-danger', data: {remote: true, confirm: 'Are you sure? This cannot be undone.'} %>
+					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id), method: :delete, disabled: study_file.upload_file_name.nil?, class: 'btn btn-block btn-danger', data: {remote: true, confirm: 'Are you sure? This cannot be undone.'} %>
 				</div>
 			</div>
 		</div>
 	</div>
-	<% if @expression_file.upload_file_name.nil? %>
+	<% if study_file.upload_file_name.nil? %>
 		<div class="form-group upload-progress">
 			<table class="table table-condensed">
 				<tbody class="files"></tbody>
 			</table>
 		</div>
 	<% else %>
-		<p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: @expression_file} %></p>
+		<p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: study_file} %></p>
 	<% end %>
 <% end %>
-<div class="modal fade" id="expression-parse-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
+<div class="modal fade" id="sub-cluster-parse-<%= study_file._id %>-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h4 class="text-center">Parsing Upload... Please Wait</h4>
-				<div id="expression-parse-progress" class="progress progress-striped active">
-					<div class="progress-bar"></div>
-				</div>
 			</div>
 			<div class="modal-body">
-				<div id="expression-parse" class="spinner-target"></div>
+				<div id="sub-cluster-parse-<%= study_file._id %>" class="spinner-target"></div>
 			</div>
 		</div>
 	</div>
@@ -65,7 +57,7 @@
 <script type="text/javascript">
 
 	$(function() {
-		$('#expression_form').fileupload({
+		$('#marker_gene_form_<%= study_file._id %>').fileupload({
 			url: "<%= upload_study_path(@study._id) %>",
 			maxChunkSize: 10000000, // 10 MB
 			type: 'PATCH',
@@ -96,12 +88,11 @@
 					data: { status: 'uploaded', file: fileName}
 				});
 				fileUploading = false;
-				completeWizardStep();
-				$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#expression-parse', partial: 'initialize_expression_form', selector: "#expression_form"});
-				var target = $('#expression-parse')[0];
+				$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#sub-cluster-parse-<%= study_file._id %>', partial: 'initialize_marker_genes_form', selector: "#marker_gene_form_<%= study_file._id %>"});
+				var target = $('#sub-cluster-<%= study_file._id %>-parse')[0];
 				var spinner = new Spinner(opts).spin(target);
 				$(target).data('spinner', spinner);
-				$('#expression-parse-modal').modal({show: true, backdrop: 'static'});
+				$('#sub-cluster-parse-<%= study_file._id %>-modal').modal({show: true, backdrop: 'static'});
 			}
 		});
 	});

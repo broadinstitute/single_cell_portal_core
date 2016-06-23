@@ -56,6 +56,7 @@ class Study
   before_save     :set_url_safe_name
   after_save      :check_public?
   before_destroy  :remove_public_symlinks
+  after_destroy   :remove_data_dir
 
   # return all studies that are editable by a given user
   def self.editable(user)
@@ -136,6 +137,7 @@ class Study
   def make_expression_scores(expression_file, user=nil)
     Rails.logger.level = 4
     @count = 0
+    @bytes_parsed = 0
     @message = ["Parsing expression file: #{expression_file.name}", "..."]
     @last_line = ""
     start_time = Time.now
@@ -168,9 +170,11 @@ class Study
         end
         # create expression score object
         @records << {gene: gene_name, searchable_gene: gene_name.downcase, scores: significant_scores, study_id: study_id, study_file_id: expression_file._id}
+        @bytes_parsed += row.length
         @count += 1
         if @count % 1000 == 0
           ExpressionScore.create(@records)
+          expression_file.update(bytes_parsed: @bytes_parsed)
           @records = []
         end
       end
@@ -383,5 +387,9 @@ class Study
     if self.public?
       FileUtils.rm_rf(self.data_public_path)
     end
+  end
+
+  def remove_data_dir
+    FileUtils.rm_rf(self.data_store_path)
   end
 end

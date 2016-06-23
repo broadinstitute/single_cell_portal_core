@@ -28,6 +28,7 @@ class StudyFile
   field :url_safe_name, type: String
   field :status, type: String
   field :parse_status, type: String, default: 'unparsed'
+  field :bytes_parsed, type: Integer, default: 0
   field :human_fastq_url, type: String
   field :human_data, type: Boolean, default: false
 
@@ -83,6 +84,12 @@ class StudyFile
   def parsed?
     self.parse_status == 'parsed'
   end
+
+  def percent_parsed
+    (self.bytes_parsed / self.upload_file_size).floor * 100
+  end
+
+  # method to return number of lines in a file, uses built-in unix
 
   private
 

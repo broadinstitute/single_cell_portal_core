@@ -33,16 +33,19 @@
 				<% @sub_clusters.each do |study_file| %>
 					<%= render partial: 'initialize_sub_clusters_form', locals: {study_file: study_file} %>
 				<% end %>
-				<% if !@sub_clusters.first.nil? && !@sub_clusters.first.upload_file_name.nil? %>
-					<script type="text/javascript">
-						completeWizardStep();
-					</script>
-				<% end %>
 			</div>
 			<p><%= link_to "<span class='fa fa-plus'></span> Add a Sub-Cluster File".html_safe, new_study_file_study_path(@study._id, file_type: 'Cluster Coordinates', cluster_type: 'sub', target: '#sub-clusters-target', form: 'initialize_sub_clusters_form'), class: 'btn btn-sm btn-primary', 'data-remote' => true %></p>
 		</div>
 		<div class="tab-pane" id="marker-genes">
-			4
+			<div id="marker-genes-target">
+				<div class="well well-sm">
+					<h2>Step 5. Upload Marker Genes List File (optional)</h2>
+					<p class="lead">Upload a tab-delimited text file containing a list of marker genes and their expression values across any clusters.  The file must be a plain text (.txt) with gene names in the first column, and cluster names in each successive column.</p>
+				</div>
+				<% @marker_lists.each do |study_file| %>
+					<%= render partial: 'initialize_marker_genes_form', locals: {study_file: study_file} %>
+				<% end %>
+			</div>
 		</div>
 		<div class="tab-pane" id="fastq">
 			5
@@ -70,7 +73,7 @@
 				var total = navigation.find('li').length;
 				var current = index+1;
 				var percent = (current/total) * 100;
-				wizard.find('.progress-bar').css({width:percent+'%'});
+				$('#bar').find('.progress-bar').css({width:percent+'%'});
 				if(current >= total) {
 					wizard.find('.pager .next').hide();
 					wizard.find('.pager .skip').hide();

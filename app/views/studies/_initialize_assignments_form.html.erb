@@ -45,9 +45,6 @@
 		</div>
 	<% else %>
 		<p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: @assignment_file} %></p>
-		<script type="text/javascript">
-			completeWizardStep();
-		</script>
 	<% end %>
 <% end %>
 
@@ -87,7 +84,7 @@
 				// replace form with updated values, as IDs may have incremented
 				$.get("<%= retrieve_wizard_upload_study_path(@study._id) %>", {file: fileName, selector: '#assignments_form', partial: 'initialize_assignments_form'});
 				fileUploading = false;
-				completed++;
+				completeWizardStep();
 			}
 		});
 	});

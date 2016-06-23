@@ -51,7 +51,9 @@
 	<% else %>
 		<p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: @parent_cluster} %></p>
 		<script type="text/javascript">
-			completeWizardStep();
+			$(function(){
+				completeWizardStep();
+			})
 		</script>
 	<% end %>
 <% end %>
@@ -101,6 +103,7 @@
 					data: { status: 'uploaded', file: fileName}
 				});
 				fileUploading = false;
+				completeWizardStep();
 				$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#parent-cluster-parse', partial: 'initialize_clusters_form', selector: "#parent_cluster_form"});
 				var target = $('#parent-cluster-parse')[0];
 				var spinner = new Spinner(opts).spin(target);

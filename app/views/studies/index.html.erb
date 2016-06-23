@@ -21,7 +21,7 @@
 							<td><%= truncate_html(study.description, length: 50) %></td>
 							<td><%= study.visibility %></td>
 							<td><%= study.study_files.count %></td>
-							<td><%= link_to "<span class='fa fa-info-circle'></span> Show Details".html_safe, study_path(study), class: 'btn btn-xs btn-info' %> <%= link_to "<span class='fa fa-upload'></span> Upload/Edit Data".html_safe, upload_study_path(study), class: 'btn btn-xs btn-success' %> <%= link_to "<span class='fa fa-edit'></span> Edit Study".html_safe, edit_study_path(study), class: 'btn btn-xs btn-primary' %> <%= link_to "<span class='fa fa-trash'></span> Delete".html_safe, study, class: 'btn btn-xs btn-danger', method: :delete, data: { confirm: 'Are you sure? This will remove all uploaded data and associated database records.' } %></td>
+							<td><%= link_to "<span class='fa fa-info-circle'></span> Show Details".html_safe, study_path(study), class: 'btn btn-xs btn-info' %> <%= link_to "<span class='fa fa-upload'></span> Upload/Edit Data".html_safe, upload_study_path(study), class: 'btn btn-xs btn-success' %> <%= link_to "<span class='fa fa-edit'></span> Edit Study".html_safe, edit_study_path(study), class: 'btn btn-xs btn-primary' %> <%= link_to "<span class='fa fa-trash'></span> Delete".html_safe, study, class: 'btn btn-xs btn-danger delete-btn', method: :delete %></td>
 						</tr>
 					<% end %>
 					</tbody>
@@ -32,13 +32,36 @@
 
 	</div>
 </div>
-
+<div class="modal fade" id="delete-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="text-center">Deleting All Entries... Please Wait</h4>
+			</div>
+			<div class="modal-body">
+				<div id="spinner_target"></div>
+			</div>
+			<div class="modal-footer">
+				<button class="close" data-dismiss="modal">×</button>
+			</div>
+		</div>
+	</div>
+</div>
 <script type="text/javascript">
 
 	$('#studies').dataTable({
 		"pagingType": "full_numbers",
 		'order': [[0, 'asc']],
 		"oLanguage": {"sSearch": "Filter Results By: "}
+	});
+
+	// ask user to confirm delete, then show modal
+	$('.delete-btn').click(function(){
+		if ( confirm('Are you sure? This will remove all uploaded data and associated database records.')) {
+			var target = $('#spinner_target')[0];
+			new Spinner(opts).spin(target);
+			$('#delete-modal').modal('show');
+		}
 	});
 
 </script>

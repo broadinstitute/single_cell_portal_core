@@ -1,6 +1,16 @@
 $('<%= params[:modal_target]%>').data('spinner').stop();
 $('<%= params[:modal_target]%>-modal').modal('hide');
 
+// reset wizard step if parse failed (check if there are other instances of a file type in which case step has still succeeded)
+if (
+				('<%= params[:partial] %>' == 'initialize_clusters_form') ||
+				('<%= params[:partial] %>' == 'initialize_expression_form') ||
+				('<%= params[:partial] %>' == 'initialize_sub_clusters_form' && <%= @study.study_files.select {|sf| sf.file_type == 'Cluster Coordinates' && sf.cluster_type == 'sub'}.count %> == 0) ||
+				('<%= params[:partial] %>' == 'initialize_marker_genes_form' && <%= @study.study_files.select {|sf| sf.file_type == 'Marker Gene List'}.count %> == 0)
+) {
+	resetWizardStep();
+}
+
 setTimeout(function(){
 	// render error message
 	$('#messages').html("<%= escape_javascript(render 'error_modal') %>");
