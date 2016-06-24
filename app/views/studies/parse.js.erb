@@ -1,11 +1,13 @@
-$('<%= params[:modal_target]%>').data('spinner').stop();
-$('<%= params[:modal_target]%>-modal').modal('toggle');
+$('<%= params[:modal_target]%>').find('.spinner-target').data('spinner').stop();
+$('<%= params[:modal_target]%>').modal('hide');
 
 // completed wizard step the first time a user uploads a sub-cluster or marker gene list file
 // other calls to completeWizardStep are in the success callback of fileuploader
 if (
 				('<%= params[:partial] %>' == 'initialize_sub_clusters_form' && <%= @study.study_files.select {|sf| sf.file_type == 'Cluster Coordinates' && sf.cluster_type == 'sub'}.count %> == 1) ||
-				('<%= params[:partial] %>' == 'initialize_marker_genes_form' && <%= @study.study_files.select {|sf| sf.file_type == 'Marker Gene List'}.count %> == 1)
+				('<%= params[:partial] %>' == 'initialize_marker_genes_form' && <%= @study.study_files.select {|sf| sf.file_type == 'Marker Gene List'}.count %> == 1) ||
+				('<%= params[:partial] %>' == 'initialize_fastq_form' && <%= @study.study_files.select {|sf| sf.file_type == 'Fastq'}.count %> == 1) ||
+				('<%= params[:partial] %>' == 'initialize_misc_form' && <%= @study.study_files.select {|sf| %w(Documentation Other).include?(sf.file_type)}.count %> == 1)
 ) {
 	completeWizardStep();
 }

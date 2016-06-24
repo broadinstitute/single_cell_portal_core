@@ -73,6 +73,16 @@ $(function() {
             }
         }
     });
+
+    // generic warning and spinner for deleting files
+    $('.delete-file').click(function() {
+        if ( confirm('Are you sure?  This file will be deleted and any associated database records removed.  This cannot be undone.')) {
+            var modal = $('#delete-modal');
+            var target = modal.find('.spinner-target')[0];
+            new Spinner(opts).spin(target);
+            modal.modal('show');
+        }
+    })
 });
 
 // toggle the Search/View options panel

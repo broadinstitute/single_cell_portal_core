@@ -33,7 +33,7 @@
 						<%= f.submit 'Update', class: 'btn btn-success btn-block save-study-file' %>
 					</div>
 					<div class="col-xs-6">
-						<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id), method: :delete, class: 'btn btn-block btn-danger', data: {remote: true, confirm: 'Are you sure? This cannot be undone.'} %>
+						<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id), method: :delete, class: 'btn btn-block btn-danger delete-file', data: {remote: true} %>
 					</div>
 				</div>
 			</div>

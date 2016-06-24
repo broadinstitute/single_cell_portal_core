@@ -48,6 +48,8 @@ module ApplicationHelper
 					breadcrumbs << {title: "Editing '#{@study.name}'", link: 'javascript:;'}
 				when 'show'
 					breadcrumbs << {title: "Showing '#{@study.name}'", link: 'javascript:;'}
+				when 'initialize_study'
+					breadcrumbs << {title: "Initializing '#{@study.name}'", link: 'javascript:;'}
 			end
 		end
 		breadcrumbs

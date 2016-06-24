@@ -1,5 +1,5 @@
-$('<%= params[:modal_target]%>').data('spinner').stop();
-$('<%= params[:modal_target]%>-modal').modal('hide');
+$('<%= params[:modal_target]%>').find('.spinner-target').data('spinner').stop();
+$('<%= params[:modal_target]%>').modal('hide');
 
 // reset wizard step if parse failed (check if there are other instances of a file type in which case step has still succeeded)
 if (
@@ -13,7 +13,7 @@ if (
 
 setTimeout(function(){
 	// render error message
-	$('#messages').html("<%= escape_javascript(render 'error_modal') %>");
+	$('#study-file-notices-target').html("<%= escape_javascript(render 'error_modal') %>");
 	$('#error-modal').modal('show');
 
 	// replace form

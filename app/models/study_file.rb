@@ -85,8 +85,9 @@ class StudyFile
     self.parse_status == 'parsed'
   end
 
+  # return an integer percentage of the parsing status
   def percent_parsed
-    (self.bytes_parsed / self.upload_file_size).floor * 100
+    (self.bytes_parsed / self.upload_file_size.to_f * 100).floor
   end
 
   # method to return number of lines in a file, uses built-in unix

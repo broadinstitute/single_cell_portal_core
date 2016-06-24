@@ -1,5 +1,5 @@
 class StudiesController < ApplicationController
-  before_action :set_study, only: [:show, :edit, :update, :initialize_study, :destroy, :upload, :do_upload, :resume_upload, :update_status, :reset_upload, :new_study_file, :update_study_file, :delete_study_file, :retrieve_upload, :retrieve_wizard_upload, :parse, :launch_parse_job]
+  before_action :set_study, only: [:show, :edit, :update, :initialize_study, :destroy, :upload, :do_upload, :resume_upload, :update_status, :reset_upload, :new_study_file, :update_study_file, :delete_study_file, :retrieve_upload, :retrieve_wizard_upload, :parse, :launch_parse_job, :parse_progress]
   before_filter :authenticate_user!
 
   # GET /studies
@@ -59,6 +59,12 @@ class StudiesController < ApplicationController
     if @marker_lists.empty?
       @marker_lists << @study.build_study_file({file_type: 'Marker Gene List'})
     end
+    if @fastq_files.empty?
+      @fastq_files << @study.build_study_file({file_type: 'Fastq'})
+    end
+    if @other_files.empty?
+      @other_files << @study.build_study_file({file_type: 'Documentation'})
+    end
   end
 
   # PATCH/PUT /studies/1
@@ -107,6 +113,10 @@ class StudiesController < ApplicationController
       intitialize_wizard_files
       render 'parse_error'
     end
+  end
+
+  def parse_progress
+    @study_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
   end
 
   # launches parse job via delayed_job
@@ -240,18 +250,8 @@ class StudiesController < ApplicationController
 
   # retrieve study file by filename during initializer wizard
   def retrieve_wizard_upload
-    case params[:partial]
-      when 'initialize_assignments_form'
-        @assignment_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
-      when 'initialize_clusters_form'
-        @parent_cluster = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
-      when 'initialize_expression_form'
-        @expression_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
-      else
-        @study_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
-    end
+    @study_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
   end
-
 
   # method to download files if study is private, will create temporary symlink and remove after timeout
   def download_private_file
@@ -301,5 +301,7 @@ class StudiesController < ApplicationController
     @sub_clusters = @study.study_files.select {|sf| sf.file_type == 'Cluster Coordinates' && sf.cluster_type == 'sub'}
     @expression_file = @study.study_files.select {|sf| sf.file_type == 'Expression Matrix'}.first
     @marker_lists = @study.study_files.select {|sf| sf.file_type == 'Marker Gene List'}
+    @fastq_files = @study.study_files.select {|sf| sf.file_type == 'Fastq'}
+    @other_files = @study.study_files.select {|sf| %w(Documentation Other).include?(sf.file_type)}
   end
 end

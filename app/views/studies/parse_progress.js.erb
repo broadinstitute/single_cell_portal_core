@@ -1,0 +1,8 @@
+$('<%= params[:modal_target]%>').find('.progress-bar').css({width: "<%= @study_file.percent_parsed %>%"});
+$('<%= params[:modal_target]%>').find('.percent').html("<%= @study_file.percent_parsed %>%"});
+
+if (<%= @study_file.parse_status != 'parsed' %>) {
+	setTimeout(function() {
+		$.get("<%= parse_progress_study_path(@study._id, file: @study_file.name, modal_target: params[:modal_target])%>");
+	}, 1000);
+}

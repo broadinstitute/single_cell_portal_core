@@ -1,5 +1,5 @@
 // find form, select parent and replace contents with updated values
-$("<%= params[:selector] %>").parent().html("<%= escape_javascript( render params[:partial]) %>");
+$("<%= params[:selector] %>").replaceWith("<%= escape_javascript( render params[:partial], {study_file: @study_file}) %>");
 
 // reattach click listener to download a file when private, will open modal for timed HTML5 download
 $("<%= params[:selector] %>").find('.download-btn').click(function() {
@@ -8,4 +8,6 @@ $("<%= params[:selector] %>").find('.download-btn').click(function() {
 });
 
 // go to next step in wizard
-$('#next-btn').click();
+if (completed <= 3) {
+	$('#next-btn').click();
+}

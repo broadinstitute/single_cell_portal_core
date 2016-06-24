@@ -156,7 +156,8 @@ class Study
       @records = []
       while !expression_data.eof?
         # grab single row of scores, parse out gene name at beginning
-        row = expression_data.readline.chomp.split("\t")
+        line = expression_data.readline.chomp
+        row = line.split("\t")
         @last_line = "#{expression_file.name}, line #{expression_data.lineno}: #{row.join("\t")}"
 
         gene_name = row.shift
@@ -170,7 +171,7 @@ class Study
         end
         # create expression score object
         @records << {gene: gene_name, searchable_gene: gene_name.downcase, scores: significant_scores, study_id: study_id, study_file_id: expression_file._id}
-        @bytes_parsed += row.length
+        @bytes_parsed += line.length
         @count += 1
         if @count % 1000 == 0
           ExpressionScore.create(@records)
@@ -181,7 +182,7 @@ class Study
       ExpressionScore.create(@records)
       # clean up, print stats
       expression_data.close
-      expression_file.update(parse_status: 'parsed')
+      expression_file.update(parse_status: 'parsed', bytes_parsed: expression_file.upload_file_size)
       end_time = Time.now
       time = (end_time - start_time).divmod 60.0
       @message << "Completed!"
@@ -205,6 +206,7 @@ class Study
     @cell_count = 0
     @cluster_count = 0
     @cluster_point_count = 0
+    @bytes_parsed = 0
     start_time = Time.now
     cluster_file.update(parse_status: 'parsing')
     @last_line = ""
@@ -261,6 +263,7 @@ class Study
       cell_name_index = headers.index('CELL_NAME')
       x_index = headers.index('X')
       y_index = headers.index('Y')
+      @records = []
       lines.each_with_index do |line, index|
         @last_line = "#{cluster_file.name}, line #{index + 2}: #{line}"
 
@@ -286,13 +289,20 @@ class Study
 
         unless cell.nil?
           # finally, create cluster point with association to cluster & single_cell
-          cluster_point = cluster.cluster_points.build(x: x, y: y, single_cell_id: cell._id, study_file_id: cluster_file._id, study_id: self._id)
-          cluster_point.save
+          @records << {x: x, y: y, single_cell_id: cell._id, cluster_id: cluster._id, study_file_id: cluster_file._id, study_id: self._id}
           @cluster_point_count += 1
+          @bytes_parsed += line.length
+        end
+        if @cluster_point_count % 100 == 0
+          ClusterPoint.create(@records)
+          @records = []
+          cluster_file.update(bytes_parsed: @bytes_parsed)
         end
       end
+      # clean up last few records
+      ClusterPoint.create(@records)
       # mark cluster file as parsed
-      cluster_file.update(parse_status: 'parsed')
+      cluster_file.update(parse_status: 'parsed', bytes_parsed: cluster_file.upload_file_size)
 
       # clean up
       end_time = Time.now
@@ -332,8 +342,8 @@ class Study
       clusters.shift # remove 'Gene Name' at start
       precomputed_score.clusters = clusters
       rows = []
-      marker_scores.each_with_index do |line, index|
-        @last_line = "#{marker_file.name}, line #{index + 2}: #{line}"
+      marker_scores.each_with_index do |line, i|
+        @last_line = "#{marker_file.name}, line #{i + 2}: #{line}"
         vals = line.split("\t")
         gene = vals.shift
         row = {"#{gene}" => {}}
@@ -345,7 +355,7 @@ class Study
       end
       precomputed_score.gene_scores = rows
       precomputed_score.save
-      marker_file.update(parse_status: 'parsed')
+      marker_file.update(parse_status: 'parsed', bytes_parsed: marker_file.upload_file_size)
       end_time = Time.now
       time = (end_time - start_time).divmod 60.0
       @message << "Completed!"

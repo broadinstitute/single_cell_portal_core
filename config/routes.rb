@@ -17,7 +17,8 @@ Rails.application.routes.draw do
           get 'study_files/new', to: 'studies#new_study_file', as: :new_study_file
           match 'study_files', to: 'studies#update_study_file', via: [:post, :patch], as: :update_study_file
 				  delete 'study_files/:study_file_id', to: 'studies#delete_study_file', as: :delete_study_file
-					post 'parse', to: 'studies#parse', as: :parse_study_file
+          get 'parse_progress', to: 'studies#parse_progress', as: :parse_progress
+          post 'parse', to: 'studies#parse', as: :parse_study_file
 				  post 'parse_study_files', to: 'studies#launch_parse_job', as: :launch_parse_job
 			end
 		end

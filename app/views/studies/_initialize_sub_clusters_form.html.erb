@@ -32,7 +32,7 @@
 					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: study_file.upload_file_name.nil? %>
 				</div>
 				<div class="col-xs-6">
-					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id), method: :delete, disabled: study_file.upload_file_name.nil?, class: 'btn btn-block btn-danger', data: {remote: true, confirm: 'Are you sure? This cannot be undone.'} %>
+					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: "#sub_cluster_form_#{study_file._id}"), method: :delete, class: 'btn btn-block btn-danger delete-file', data: {remote: true} %>
 				</div>
 			</div>
 		</div>
@@ -48,16 +48,7 @@
 	<% end %>
 <% end %>
 <div class="modal fade" id="sub-cluster-parse-<%= study_file._id %>-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h4 class="text-center">Parsing Upload... Please Wait</h4>
-			</div>
-			<div class="modal-body">
-				<div id="sub-cluster-parse-<%= study_file._id %>" class="spinner-target"></div>
-			</div>
-		</div>
-	</div>
+	<%= render 'parse_modal_content' %>
 </div>
 <script type="text/javascript">
 
@@ -93,11 +84,13 @@
 					data: { status: 'uploaded', file: fileName}
 				});
 				fileUploading = false;
-				$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#sub-cluster-parse-<%= study_file._id %>', partial: 'initialize_sub_clusters_form', selector: "#sub_cluster_form_<%= study_file._id %>"});
-				var target = $('#sub-cluster-<%= study_file._id %>-parse')[0];
+				$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#sub-cluster-parse-<%= study_file._id %>-modal', partial: 'initialize_sub_clusters_form', selector: "#sub_cluster_form_<%= study_file._id %>"});
+				var target = $('#sub-cluster-parse-<%= study_file._id %>-modal').find('.spinner-target')[0];
 				var spinner = new Spinner(opts).spin(target);
 				$(target).data('spinner', spinner);
 				$('#sub-cluster-parse-<%= study_file._id %>-modal').modal({show: true, backdrop: 'static'});
+				var statusUrl = "<%= parse_progress_study_path(@study._id) %>?file=" + fileName + "&modal_target=%23sub-cluster-parse-<%= study_file._id %>-modal";
+				$.get(statusUrl);
 			}
 		});
 	});
