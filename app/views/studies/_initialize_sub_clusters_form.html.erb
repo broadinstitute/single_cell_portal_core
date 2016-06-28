@@ -89,8 +89,7 @@
 				var spinner = new Spinner(opts).spin(target);
 				$(target).data('spinner', spinner);
 				$('#sub-cluster-parse-<%= study_file._id %>-modal').modal({show: true, backdrop: 'static'});
-				var statusUrl = "<%= parse_progress_study_path(@study._id) %>?file=" + fileName + "&modal_target=%23sub-cluster-parse-<%= study_file._id %>-modal";
-				$.get(statusUrl);
+				$.get("<%= parse_progress_study_path(@study._id) %>", {file: fileName, modal_target: '#sub-cluster-parse-<%= study_file._id %>-modal'});
 			}
 		});
 	});

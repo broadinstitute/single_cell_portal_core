@@ -142,6 +142,23 @@ class Study
     @last_line = ""
     start_time = Time.now
 
+    # validate headers
+    begin
+      file = File.open(expression_file.upload.path)
+      cells = file.readline.chomp.split("\t")
+      @last_line = "#{expression_file.name}, line 1: #{cells.join("\t")}"
+      if cells.first != 'GENE' || cells.size <= 1
+        expression_file.update(parse_status: 'failed')
+        puts "Study: #{self.name}, #{@last_line} ERROR: header validation failed"
+        raise StandardError, "file header validation failed: #{@last_line}"
+      end
+      file.close
+    rescue => e
+      expression_file.update(parse_status: 'failed')
+      puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
+      raise StandardError, "file header validation failed: #{@last_line}"
+    end
+
     # begin parse
     begin
       expression_file.update(parse_status: 'parsing')
@@ -210,6 +227,33 @@ class Study
     start_time = Time.now
     cluster_file.update(parse_status: 'parsing')
     @last_line = ""
+
+    # validate headers of assignment file & cluster file
+    begin
+      a_file = File.open(assignment_file.upload.path)
+      a_headers = a_file.readline.chomp.split("\t")
+      @last_line = "#{assignment_file.name}, line 1: #{a_headers.join("\t")}"
+      if a_headers.sort != %w(CELL_NAME CLUSTER SUB-CLUSTER)
+        assignment_file.update(parse_status: 'failed')
+        puts "Study: #{self.name}, #{@last_line} ERROR: assignment file header validation failed"
+        raise StandardError, "file header validation failed: #{@last_line}"
+      end
+      a_file.close
+
+      c_file = File.open(cluster_file.upload.path)
+      c_headers = c_file.readline.chomp.split("\t")
+      @last_line = "#{cluster_file.name}, line 1: #{c_headers.join("\t")}"
+      if c_headers.sort != %w(CELL_NAME X Y)
+        cluster_file.update(parse_status: 'failed')
+        puts "Study: #{self.name}, #{@last_line} ERROR: cluster coordinate file header validation failed"
+        raise StandardError, "file header validation failed: #{@last_line}"
+      end
+      c_file.close
+    rescue => e
+      assignment_file.update(parse_status: 'failed')
+      puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
+      raise StandardError, "file header validation failed: #{@last_line}"
+    end
 
     # begin parse
     begin
@@ -323,7 +367,7 @@ class Study
   end
 
   # parse precomputed marker gene files and create documents to render in Morpheus
-  def make_precomputed_scores(marker_file, list_name, user=nil)
+  def make_precomputed_scores(marker_file, user=nil)
     # turn off logging to make data load faster
     Rails.logger.level = 4
     @count = 0
@@ -331,9 +375,30 @@ class Study
     start_time = Time.now
     @last_line = ""
 
+    # validate headers
+    begin
+      file = File.open(marker_file.upload.path)
+      headers = file.readline.chomp.split("\t")
+      @last_line = "#{marker_file.name}, line 1: #{headers.join("\t")}"
+      if cells.first != 'GENE NAMES' || cells.size <= 1
+        marker_file.update(parse_status: 'failed')
+        puts "Study: #{self.name}, #{@last_line} ERROR: header validation failed"
+        raise StandardError, "file header validation failed: #{@last_line}"
+      end
+      file.close
+    rescue => e
+      marker_file.update(parse_status: 'failed')
+      puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
+      raise StandardError, "file header validation failed: #{@last_line}"
+    end
+
     # begin parse
     begin
       marker_file.update(parse_status: 'parsing')
+      list_name = marker_file.name
+      if list_name.nil? || list_name.blank?
+        list_name = marker_file.upload_file_name.gsub(/(-|_)+/, ' ').chomp('.txt')
+      end
       precomputed_score = self.precomputed_scores.build(name: list_name, study_file_id: marker_file._id)
       marker_scores = File.open(marker_file.upload.path).readlines.map(&:strip).delete_if {|line| line.blank? }
       clusters = marker_scores.shift.split("\t")

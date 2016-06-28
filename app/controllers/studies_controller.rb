@@ -43,28 +43,6 @@ class StudiesController < ApplicationController
     # load any existing files if user restarted for some reason (unlikely)
     intitialize_wizard_files
 
-    # if files don't exist, build them for use later
-    if @assignment_file.nil?
-      @assignment_file = @study.build_study_file({file_type: 'Cluster Assignments'})
-    end
-    if @parent_cluster.nil?
-      @parent_cluster = @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'parent'})
-    end
-    if @sub_clusters.empty?
-      @sub_clusters << @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'sub'})
-    end
-    if @expression_file.nil?
-      @expression_file = @study.build_study_file({file_type: 'Expression Matrix'})
-    end
-    if @marker_lists.empty?
-      @marker_lists << @study.build_study_file({file_type: 'Marker Gene List'})
-    end
-    if @fastq_files.empty?
-      @fastq_files << @study.build_study_file({file_type: 'Fastq'})
-    end
-    if @other_files.empty?
-      @other_files << @study.build_study_file({file_type: 'Documentation'})
-    end
   end
 
   # PATCH/PUT /studies/1
@@ -103,7 +81,7 @@ class StudiesController < ApplicationController
         when 'Expression Matrix'
           @study.make_expression_scores(@study_file)
         when 'Marker Gene List'
-          @study.make_precomputed_scores(@study_file, params[:list_name])
+          @study.make_precomputed_scores(@study_file)
       end
     rescue StandardError => e
       logger.error "ERROR: #{e.message}"
@@ -117,6 +95,10 @@ class StudiesController < ApplicationController
 
   def parse_progress
     @study_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
+    # gotcha in case parsing has failed and study file as been destroyed
+    if @study_file.nil?
+      render nothing: true
+    end
   end
 
   # launches parse job via delayed_job
@@ -303,5 +285,28 @@ class StudiesController < ApplicationController
     @marker_lists = @study.study_files.select {|sf| sf.file_type == 'Marker Gene List'}
     @fastq_files = @study.study_files.select {|sf| sf.file_type == 'Fastq'}
     @other_files = @study.study_files.select {|sf| %w(Documentation Other).include?(sf.file_type)}
+
+    # if files don't exist, build them for use later
+    if @assignment_file.nil?
+      @assignment_file = @study.build_study_file({file_type: 'Cluster Assignments'})
+    end
+    if @parent_cluster.nil?
+      @parent_cluster = @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'parent'})
+    end
+    if @sub_clusters.empty?
+      @sub_clusters << @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'sub'})
+    end
+    if @expression_file.nil?
+      @expression_file = @study.build_study_file({file_type: 'Expression Matrix'})
+    end
+    if @marker_lists.empty?
+      @marker_lists << @study.build_study_file({file_type: 'Marker Gene List'})
+    end
+    if @fastq_files.empty?
+      @fastq_files << @study.build_study_file({file_type: 'Fastq'})
+    end
+    if @other_files.empty?
+      @other_files << @study.build_study_file({file_type: 'Documentation'})
+    end
   end
 end

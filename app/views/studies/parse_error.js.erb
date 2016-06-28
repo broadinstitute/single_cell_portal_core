@@ -1,22 +1,14 @@
-$('<%= params[:modal_target]%>').find('.spinner-target').data('spinner').stop();
 $('<%= params[:modal_target]%>').modal('hide');
 
-// reset wizard step if parse failed (check if there are other instances of a file type in which case step has still succeeded)
-if (
-				('<%= params[:partial] %>' == 'initialize_clusters_form') ||
-				('<%= params[:partial] %>' == 'initialize_expression_form') ||
-				('<%= params[:partial] %>' == 'initialize_sub_clusters_form' && <%= @study.study_files.select {|sf| sf.file_type == 'Cluster Coordinates' && sf.cluster_type == 'sub'}.count %> == 0) ||
-				('<%= params[:partial] %>' == 'initialize_marker_genes_form' && <%= @study.study_files.select {|sf| sf.file_type == 'Marker Gene List'}.count %> == 0)
-) {
-	resetWizardStep();
+// replace form if expression file or primary cluster file, otherwise let user click button to create new instance
+if ( '<%= params[:partial] %>' == 'initialize_clusters_form') {
+	$("<%= params[:selector] %>").replaceWith("<%= escape_javascript( render params[:partial], study_file: @parent_cluster) %>");
+} else if ( '<%= params[:partial] %>' == 'initialize_expression_form') {
+	$("<%= params[:selector] %>").replaceWith("<%= escape_javascript( render params[:partial], study_file: @expression_file) %>");
+} else {
+	$("<%= params[:selector] %>").remove();
 }
 
-setTimeout(function(){
-	// render error message
-	$('#study-file-notices-target').html("<%= escape_javascript(render 'error_modal') %>");
-	$('#error-modal').modal('show');
-
-	// replace form
-	$("<%= params[:selector] %>").parent().html("<%= escape_javascript( render params[:partial]) %>");
-}, 1000);
-
+// render error message
+$('#study-files-notice-target').html("<%= escape_javascript(render 'error_modal') %>");
+$('#error-modal').modal({show: true, backdrop: 'static'});

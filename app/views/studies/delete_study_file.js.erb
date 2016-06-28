@@ -1,7 +1,7 @@
 if (<%= params[:target].nil? %>) {
 	$("#<%= params[:study_file_id] %>").parent().remove();
 } else {
-	$("<%= params[:target] %>").remove();
+	$("#<%= params[:target] %>").remove();
 }
 
 if (<%= !@message.nil? %>) {

@@ -1,12 +1,15 @@
 <div class="modal-dialog">
 	<div class="modal-content">
 		<div class="modal-header">
-			<h4 class="text-center">Parsing Upload... Please Wait</h4>
-			<div class="progress progress-striped active">
-				<div class="progress-bar"><span class="percent">0%</span></div>
-			</div>
+			<h4 class="text-center">Parsing Uploaded File</h4>
 		</div>
 		<div class="modal-body">
+			<div class="progress-wrapper hidden">
+				<div class="progress progress-striped active">
+					<div class="progress-bar" style="min-width: 2em;"><span class="percent">0%</span></div>
+				</div>
+				<small class="help-block text-center">Parsing successfully initiated... please wait</small>
+			</div>
 			<div class="spinner-target"></div>
 		</div>
 	</div>

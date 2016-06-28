@@ -93,8 +93,7 @@
 				var spinner = new Spinner(opts).spin(target);
 				$(target).data('spinner', spinner);
 				$('#parent-cluster-parse-modal').modal({show: true, backdrop: 'static'});
-				var statusUrl = "<%= parse_progress_study_path(@study._id) %>?file=" + fileName + "&modal_target=%23parent-cluster-parse-modal";
-				$.get(statusUrl);
+				$.get("<%= parse_progress_study_path(@study._id) %>", {file: fileName, modal_target: '#parent-cluster-parse-modal'});
 			}
 		});
 	});
