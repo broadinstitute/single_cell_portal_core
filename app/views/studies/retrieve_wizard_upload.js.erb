@@ -1,10 +1,23 @@
 // find form, select parent and replace contents with updated values
 $("<%= params[:selector] %>").replaceWith("<%= escape_javascript( render params[:partial], {study_file: @study_file}) %>");
 
+// get instance of new form as ID has changed
+var wizForm = $('.<%= params[:partial] %>').slice(-1)[0];
+
 // reattach click listener to download a file when private, will open modal for timed HTML5 download
-$("<%= params[:selector] %>").find('.download-btn').click(function() {
+$(wizForm).find('.download-btn').click(function() {
 	var url = $(this).data('filepath');
 	$.get(url);
+});
+
+// reattach click handler for deleting
+$(wizForm).find('.delete-file').click(function() {
+	if ( confirm('Are you sure?  This file will be deleted and any associated database records removed.  This cannot be undone.')) {
+		var mt = $('#delete-modal').find('.spinner-target')[0];
+		var s = new Spinner(opts).spin(mt);
+		$(mt).data('spinner', s);
+		$('#delete-modal').modal('show');
+	}
 });
 
 // go to next step in wizard

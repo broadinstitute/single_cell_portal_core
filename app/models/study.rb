@@ -380,7 +380,7 @@ class Study
       file = File.open(marker_file.upload.path)
       headers = file.readline.chomp.split("\t")
       @last_line = "#{marker_file.name}, line 1: #{headers.join("\t")}"
-      if cells.first != 'GENE NAMES' || cells.size <= 1
+      if headers.first != 'GENE NAMES' || headers.size <= 1
         marker_file.update(parse_status: 'failed')
         puts "Study: #{self.name}, #{@last_line} ERROR: header validation failed"
         raise StandardError, "file header validation failed: #{@last_line}"

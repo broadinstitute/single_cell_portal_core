@@ -4,6 +4,9 @@ if (<%= params[:target].nil? %>) {
 	$("#<%= params[:target] %>").remove();
 }
 
+$('#delete-modal').find('.spinner-target').data('spinner').stop();
+$('#delete-modal').modal('hide');
+
 if (<%= !@message.nil? %>) {
 	$("#study-files-notice-target").html("<%= escape_javascript( render partial: 'studies/study_file_notices', locals: {message: @message}) %>");
 };

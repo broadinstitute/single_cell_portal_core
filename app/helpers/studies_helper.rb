@@ -12,8 +12,8 @@ module StudiesHelper
 		{
 				'Cluster Assignments' => "<strong><span class='fa fa-exclamation-triangle'></span> Requirements:</strong> A tab-delimited .txt file with the following column headers: 'CELL_NAME', 'CLUSTER', and 'SUB-CLUSTER'",
 				'Cluster Coordinates' => "<strong><span class='fa fa-exclamation-triangle'></span> Requirements:</strong> A tab-delimited .txt file with the following column headers: 'CELL_NAME', 'X', and 'Y'<br/><strong><span class='fa fa-exclamation-triangle'></span> Requirements:</strong> Must have also uploaded a cluster assignments file in order to parse",
-				'Expression Matrix' => "<strong><span class='fa fa-exclamation-triangle'></span> Requirements:</strong> A tab-delimited .txt file with gene names in the first column, and single cell names in each successive column",
-				'Marker Gene List' => "<strong><span class='fa fa-exclamation-triangle'></span> Requirements:</strong> A tab-delimited .txt file with gene names in the first column, and cluster names in each successive column",
+				'Expression Matrix' => "<strong><span class='fa fa-exclamation-triangle'></span> Requirements:</strong> A tab-delimited .txt file with with a header row containing the value 'GENE' in the first column, and single cell names in each successive column.",
+				'Marker Gene List' => "<strong><span class='fa fa-exclamation-triangle'></span> Requirements:</strong> A tab-delimited .txt file with the value 'GENE NAMES' in the first column, and cluster names in each successive column",
 				'Fastq' => "<strong><span class='fa fa-exclamation-triangle'></span> Requirements:</strong> Must be non-human data to upload; can link externally to primary human data",
 				'Documentation' => 'No requirements',
 				'Other' => 'No requirements'
