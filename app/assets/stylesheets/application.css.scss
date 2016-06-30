@@ -289,3 +289,7 @@ html, body {
   position: relative;
   top: -5px;
 }
+
+.disabled > a {
+  color: #999 !important;
+}

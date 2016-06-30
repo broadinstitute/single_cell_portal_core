@@ -7,7 +7,7 @@ COPY Gemfile /home/app/webapp/Gemfile
 COPY Gemfile.lock /home/app/webapp/Gemfile.lock
 WORKDIR /home/app/webapp
 RUN bundle install
-COPY set_user_permissions.bash /etc/my_init.d/01_set_user_permissions.bash
+# COPY set_user_permissions.bash /etc/my_init.d/01_set_user_permissions.bash
 COPY rails_startup.bash /etc/my_init.d/02_rails_startup.bash
 
 # Configure NGINX

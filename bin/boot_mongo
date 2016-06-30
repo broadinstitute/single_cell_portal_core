@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# usage error message
+usage=$(
+cat <<EOF
+$0 [OPTION]
+-n VALUE	set the name of the docker container, defaults to 'mysql'
+-d VALUE	set the data directory to mount inside the MySQL Docker container (no default value)
+-u VALUE	set the MONGO_USERNAME variable (no default value)
+-p VALUE	set the MONGO_PASSWORD variable (no default value)
+-H COMMAND	print this text
+EOF
+)
+
+# defaults
+CONTAINER_NAME="mongodb"
+DATA_DIR="$HOME/Documents/Data/docker-mongo"
+
+while getopts "n:d:p:H" OPTION; do
+case $OPTION in
+	n)
+		CONTAINER_NAME="$OPTARG"
+		;;
+	d)
+		DATA_DIR="$OPTARG"
+		;;
+	u)
+		MONGO_USERNAME="$OPTARG"
+		;;
+	p)
+		MONGO_PASSWORD="$OPTARG"
+		;;
+	H)
+		echo "$usage"
+		exit 0
+		;;
+	*)
+    echo "unrecognized option"
+    echo "$usage"
+    ;;
+	esac
+done
+
+docker run --name $CONTAINER_NAME -p 27017:27017 -v $DATA_DIR:/data/db:rw -d mongo

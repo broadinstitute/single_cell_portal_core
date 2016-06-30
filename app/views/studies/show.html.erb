@@ -1,4 +1,4 @@
-<h1><%= @study.name %> <%= @study.visibility %> <%= link_to "<span class='fa fa-area-chart'></span> View Study Live".html_safe, view_study_path(@study.url_safe_name), class: 'btn btn-lg btn-info pull-right' %></h1>
+<h1><%= @study.name %> <%= @study.visibility %> <%= link_to "<span class='fa fa-area-chart'></span> View Study".html_safe, view_study_path(@study.url_safe_name), class: 'btn btn-lg btn-info pull-right' %></h1>
 <%= @study.description.html_safe %>
 <div class="panel panel-default" id="stats-panel">
 	<div class="panel-heading">
