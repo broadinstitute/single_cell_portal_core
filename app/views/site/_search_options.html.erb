@@ -11,7 +11,7 @@
 					<%= f.hidden_field :cluster, value: params[:cluster] %>
 					<%= f.hidden_field :boxpoints, value: params[:boxpoints] %>
 					<div class="form-group">
-						<%= f.label :genes, 'Search for genes of interest (space delimited)' %>
+						<%= f.label :genes, 'Search for genes of interest (comma/space delimited)' %>
 						<%= f.text_field :genes, {class: 'form-control search-genes-input', placeholder: 'Search genes...', value: set_search_value} %>
 					</div>
 					<div class="form-group">
@@ -19,13 +19,16 @@
 						<%= f.file_field :upload, class: 'form-control' %>
 					</div>
 					<%= link_to "<span class='fa fa-ban'></span> Clear Search".html_safe, "javascript:clearForm('search_genes');", class: 'btn btn-warning pull-right' %>
-					<%= link_to "<span class='fa fa-search'></span> Search Genes ".html_safe, "javascript:;", class: 'btn btn-success loading', id: 'submit-gene-search' %>
+					<%= link_to "<span class='fa fa-search'></span> Search Genes ".html_safe, "javascript:;", class: 'btn btn-success', id: 'submit-gene-search' %>
 					<script type="text/javascript">
 						$('#submit-gene-search').click(function() {
 							if ( $('#search_genes').val() == '' && $('#search_upload').val() == '' ) {
 								alert('You must specify at least one gene or upload a list of genes to search');
 								setErrorOnBlank($('.search-genes-input'));
 							} else {
+								var target = $('#spinner_target')[0];
+								new Spinner(opts).spin(target);
+								$('#loading-modal').modal('show');
 								$('#search-genes-form').submit();
 							}
 						});

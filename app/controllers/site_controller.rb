@@ -39,7 +39,7 @@ class SiteController < ApplicationController
       @genes = ExpressionScore.where(:study_id => @study._id, :searchable_gene.in => terms).to_a
     else
       geneset_file = params[:search][:upload]
-      terms = geneset_file.read.split("\n").map {|gene| gene.chomp.downcase}
+      terms = geneset_file.read.split(/[\s\n,]/).map {|gene| gene.chomp.downcase}
       @genes = ExpressionScore.where(:study_id => @study._id, :searchable_gene.in => terms).to_a
     end
     # grab saved params for loaded cluster and boxpoints mode
@@ -358,7 +358,7 @@ class SiteController < ApplicationController
 
   # generic search term parser
   def parse_search_terms(key)
-    params[:search][key].split.map {|gene| gene.chomp.downcase}
+    params[:search][key].split(/[\s\n,]/).map {|gene| gene.chomp.downcase}
   end
 
   # search genes and save terms not found

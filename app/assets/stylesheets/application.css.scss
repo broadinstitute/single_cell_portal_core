@@ -293,3 +293,11 @@ html, body {
 .disabled > a {
   color: #999 !important;
 }
+
+.enabled > a {
+  background-color: #F5F9FA !important;
+}
+
+.enabled > a:hover {
+  background-color: #E6EFF2 !important;
+}

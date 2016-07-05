@@ -11,7 +11,7 @@
 		<li role="presentation"><a href="#misc" data-toggle="tab">7. Miscellaneous </a></li>
 	</ul>
 
-	<div id="bar" class="progress progress-striped active">
+	<div id="bar" class="progress">
 		<div class="progress-bar"></div>
 	</div>
 	<div class="tab-content">
@@ -131,18 +131,24 @@
 					wizard.find('.pager .skip').hide();
 					wizard.find('.pager .finish').show();
 					wizard.find('.pager .finish').removeClass('disabled');
+					wizard.find('.pager .finish').addClass('enabled');
 				} else if (current <= completed && current <= 3) {
 					wizard.find('.pager .skip').hide();
+					$('#next-btn').parent().addClass('enabled');
 				} else if (current <= completed && completed > 3 && current >= 3) {
 					wizard.find('.pager .skip').show();
+					$('#next-btn').parent().addClass('enabled');
 				} else if (current > completed && completed >= 3) {
 					wizard.find('.pager .next').show();
+					$('#next-btn').parent().addClass('enabled');
 					wizard.find('.pager .skip').show();
 					$('#next-btn').parent().addClass('disabled');
+					$('#next-btn').parent().removeClass('enabled');
 					$('#next-btn').click(disableNext());
 				} else {
 					wizard.find('.pager .skip').hide();
 					$('#next-btn').parent().addClass('disabled');
+					$('#next-btn').parent().removeClass('enabled');
 					$('#next-btn').click(disableNext());
 				}
 		},

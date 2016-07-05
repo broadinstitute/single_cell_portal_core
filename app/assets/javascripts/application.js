@@ -31,6 +31,7 @@ var completed = 0;
 function completeWizardStep() {
     completed++;
     $('#next-btn').parent().removeClass('disabled');
+    $('#next-btn').parent().addClass('enabled');
     $('#next-btn').off(disableNext());
     return completed;
 }
@@ -38,6 +39,7 @@ function completeWizardStep() {
 function resetWizardStep() {
     completed--;
     $('#next-btn').parent().addClass('disabled');
+    $('#next-btn').parent().removeClass('enabled');
     $('#next-btn').click(disableNext());
     return completed;
 }
@@ -151,15 +153,6 @@ var smallOpts = {
 // launch a modal spinner whenever a select changes that will take more than a few seconds
 $(function() {
    $('.spin').change(function(){
-        var target = $('#spinner_target')[0];
-        new Spinner(opts).spin(target);
-        $('#loading-modal').modal('show');
-    });
-});
-
-// launch a small spinner on elements with 'loading' class
-$(function() {
-    $('.loading').click(function(){
         var target = $('#spinner_target')[0];
         new Spinner(opts).spin(target);
         $('#loading-modal').modal('show');
