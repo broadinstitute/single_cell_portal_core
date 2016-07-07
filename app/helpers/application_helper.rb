@@ -49,7 +49,7 @@ module ApplicationHelper
 				when 'show'
 					breadcrumbs << {title: "Showing '#{@study.name}'", link: 'javascript:;'}
 				when 'initialize_study'
-					breadcrumbs << {title: "Initializing '#{@study.name}'", link: 'javascript:;'}
+					breadcrumbs << {title: "Upload/Edit Study Data for '#{@study.name}'", link: 'javascript:;'}
 			end
 		end
 		breadcrumbs

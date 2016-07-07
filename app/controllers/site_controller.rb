@@ -413,6 +413,6 @@ class SiteController < ApplicationController
 
   # load all precomputed options for a study
   def load_precomputed_options
-     @precomputed = @study.precomputed_scores.map(&:name).sort
+     @precomputed = ['Please select a gene list', ''] + @study.precomputed_scores.map(&:name).sort.map {|n| [n, n]}
   end
 end

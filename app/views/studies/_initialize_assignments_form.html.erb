@@ -70,7 +70,7 @@
 			// on each chunk completion, update status
 			chunkdone: function(e, data) {
 				var perc = parseInt(data.loaded / data.total * 100, 10);
-				$(data.context).find('h1').html(perc + "%");
+				$(data.context).find('h1').html(perc + "% uploaded");
 			},
 			// file upload is done, now clean up
 			done: function(e, data) {

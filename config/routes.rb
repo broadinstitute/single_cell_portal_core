@@ -6,8 +6,7 @@ Rails.application.routes.draw do
     devise_for :users, :controllers => { :omniauth_callbacks => 'users/omniauth_callbacks' }
     resources :studies do
 			member do
-				  get 'initialize', to: 'studies#initialize_study', as: :initialize
-          get 'upload', to: 'studies#upload'
+				  get 'upload', to: 'studies#initialize_study', as: :initialize
           patch 'upload', to: 'studies#do_upload'
           get 'resume_upload', to: 'studies#resume_upload'
           patch 'update_status', to: 'studies#update_status'

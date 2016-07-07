@@ -28,8 +28,10 @@ var fileUploading = false;
 
 // used for keeping track of position in wizard
 var completed = 0;
+
 function completeWizardStep() {
     completed++;
+    $($('li.wizard-nav')[completed]).removeClass('disabled');
     $('#next-btn').parent().removeClass('disabled');
     $('#next-btn').parent().addClass('enabled');
     $('#next-btn').off(disableNext());
@@ -38,9 +40,15 @@ function completeWizardStep() {
 
 function resetWizardStep() {
     completed--;
+    $($('li.wizard-nav')[completed]).addClass('disabled');
     $('#next-btn').parent().addClass('disabled');
     $('#next-btn').parent().removeClass('enabled');
     $('#next-btn').click(disableNext());
+    return completed;
+}
+
+// get current status of upload/initializer wizard
+function getWizardStatus() {
     return completed;
 }
 

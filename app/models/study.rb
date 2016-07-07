@@ -38,7 +38,7 @@ class Study
   field :public, type: Boolean, default: true
 
   accepts_nested_attributes_for :study_files, allow_destroy: true
-  accepts_nested_attributes_for :study_shares, allow_destroy: true
+  accepts_nested_attributes_for :study_shares, allow_destroy: true, reject_if: proc { |attributes| attributes['email'].blank? }
 
   validates_uniqueness_of :name
 

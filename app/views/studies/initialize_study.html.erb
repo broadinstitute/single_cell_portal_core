@@ -1,18 +1,18 @@
-<h1>Initialize Study Data for '<%= @study.name %>'</h1>
+<h1>Upload/Edit Study Data for '<%= @study.name %>'</h1>
 
 <div id="rootwizard">
 	<ul class="nav wizard-nav">
-		<li role="presentation"><a href="#assignment" data-toggle="tab">1. Cluster Assignments </a></li>
-		<li role="presentation"><a href="#clusters" data-toggle="tab">2. Primary Cluster Coordinates </a></li>
-		<li role="presentation"><a href="#expression" data-toggle="tab">3. Expression Matrix </a></li>
-		<li role="presentation"><a href="#sub-clusters" data-toggle="tab">4. Sub-Cluster Coordinates </a></li>
-		<li role="presentation"><a href="#marker-genes" data-toggle="tab">5. Marker Gene Lists </a></li>
-		<li role="presentation"><a href="#fastq" data-toggle="tab">6. Fastq Data </a></li>
-		<li role="presentation"><a href="#misc" data-toggle="tab">7. Miscellaneous </a></li>
+		<li role="presentation" class="wizard-nav"><a href="#assignment" data-toggle="tab">1. Cluster Assignments </a></li>
+		<li role="presentation" class="disabled wizard-nav"><a href="#clusters" data-toggle="tab">2. Primary Cluster Coordinates </a></li>
+		<li role="presentation" class="disabled wizard-nav"><a href="#expression" data-toggle="tab">3. Expression Matrix </a></li>
+		<li role="presentation" class="disabled wizard-nav"><a href="#sub-clusters" data-toggle="tab">4. Sub-Cluster Coordinates </a></li>
+		<li role="presentation" class="disabled wizard-nav"><a href="#marker-genes" data-toggle="tab">5. Marker Gene Lists </a></li>
+		<li role="presentation" class="disabled wizard-nav"><a href="#fastq" data-toggle="tab">6. Fastq Data </a></li>
+		<li role="presentation" class="disabled wizard-nav"><a href="#misc" data-toggle="tab">7. Miscellaneous </a></li>
 	</ul>
 
 	<div id="bar" class="progress">
-		<div class="progress-bar"></div>
+		<div class="progress-bar"><span id="progress-count"></span></div>
 	</div>
 	<div class="tab-content">
 		<div class="tab-pane" id="assignment">
@@ -126,24 +126,26 @@
 		var wizard = $('#rootwizard');
 
 		wizard.bootstrapWizard({'tabClass': 'nav-tabs',
-			onTabShow: function(tab, navigation, index) {
+			onTabShow: function(tab, navigation, index, clickedIndex, clickedTab) {
 				var total = navigation.find('li').length;
-				var current = index+1;
-				var percent = (current/total) * 100;
-				$('#bar').find('.progress-bar').css({width:percent+'%'});
+				var done = getWizardStatus();
+				var current = index + 1;
+				var completed = Math.round((done/total) * 100);
+				$('#bar').find('.progress-bar').css({width:completed+'%'});
+				$('#progress-count').html(completed+'% Completed');
 				if(current >= total) {
 					wizard.find('.pager .next').hide();
 					wizard.find('.pager .skip').hide();
 					wizard.find('.pager .finish').show();
 					wizard.find('.pager .finish').removeClass('disabled');
 					wizard.find('.pager .finish').addClass('enabled');
-				} else if (current <= completed && current <= 3) {
+				} else if (current <= done && current <= 3) {
 					wizard.find('.pager .skip').hide();
 					$('#next-btn').parent().addClass('enabled');
-				} else if (current <= completed && completed > 3 && current >= 3) {
+				} else if (current <= done && done > 3 && current >= 3) {
 					wizard.find('.pager .skip').show();
 					$('#next-btn').parent().addClass('enabled');
-				} else if (current > completed && completed >= 3) {
+				} else if (current > done && done >= 3) {
 					wizard.find('.pager .next').show();
 					$('#next-btn').parent().addClass('enabled');
 					wizard.find('.pager .skip').show();
@@ -157,8 +159,13 @@
 					$('#next-btn').click(disableNext());
 				}
 		},
-			// disable tabs
-			onTabClick: function() {return false},
+			onTabClick: function(tab, navigation, index, clickedIndex, clickedTab) {
+				if ( getWizardStatus() < clickedIndex && getWizardStatus() <= 3) {
+					return false;
+				} else {
+					return true;
+				}
+			},
 			onNext: function(tab, navigation, index) {
 				if (index > completed && completed < 3) {
 					alert('You must complete your current step before continuing');
