@@ -37,61 +37,66 @@
 			</div>
 		</div>
 	</div>
-	<% if study_file.upload_file_name.nil? %>
-		<div class="form-group upload-progress">
-			<table class="table table-condensed">
-				<tbody class="files"></tbody>
-			</table>
-		</div>
-	<% else %>
+	<div class="form-group upload-progress">
+		<table class="table table-condensed">
+			<tbody class="files"></tbody>
+		</table>
+	</div>
+	<script type="text/javascript">
+
+		$(function() {
+			$('#sub_cluster_form_<%= study_file._id %>').fileupload({
+				url: "<%= upload_study_path(@study._id) %>",
+				maxChunkSize: 10000000, // 10 MB
+				type: 'PATCH',
+				acceptFileTypes: /(\.|\/)(txt|text)$/i,
+				add: function (e, data) {
+					fileUploading = true;
+					var that = this;
+					var fileName = data.files[0].name.replace(/ /g, '_');
+					// this is the chunked upload callback, will upload 10MB at a time until finished
+					$.getJSON("<%= resume_upload_study_path %>", { file: fileName }, function (result) {
+						var file = result.file;
+						data.uploadedBytes = file && file.size;
+						$.blueimp.fileupload.prototype.options.add.call(that, e, data);
+					});
+				},
+				// on each chunk completion, update status
+				chunkdone: function(e, data) {
+					var perc = parseInt(data.loaded / data.total * 100, 10);
+					$(data.context).find('h1').html(perc + "% uploaded");
+				},
+				// file upload is done, now clean up
+				done: function(e, data) {
+					var fileName = data.files[0].name.replace(/ /g, '_');
+					// update upload status
+					$.ajax({
+						url: "<%= update_status_study_path %>",
+						type: "PATCH",
+						data: { status: 'uploaded', file: fileName}
+					});
+					fileUploading = false;
+					// increment wizard
+					if (getWizardStatus() == 3) {
+						completeWizardStep();
+					}
+					$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#sub-cluster-parse-<%= study_file._id %>-modal', partial: 'initialize_sub_clusters_form', selector: "#sub_cluster_form_<%= study_file._id %>"});
+					var target = $('#sub-cluster-parse-<%= study_file._id %>-modal').find('.spinner-target')[0];
+					var spinner = new Spinner(opts).spin(target);
+					$(target).data('spinner', spinner);
+					$('#sub-cluster-parse-<%= study_file._id %>-modal').modal({show: true, backdrop: 'static'});
+					$.get("<%= parse_progress_study_path(@study._id) %>", {file: fileName, modal_target: '#sub-cluster-parse-<%= study_file._id %>-modal'});
+
+				}
+			});
+		});
+
+	</script>
+	<% if !study_file.upload_file_name.nil? %>
 		<p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: study_file} %></p>
 	<% end %>
 <% end %>
 <div class="modal fade" id="sub-cluster-parse-<%= study_file._id %>-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
 	<%= render 'parse_modal_content' %>
 </div>
-<script type="text/javascript">
 
-	$(function() {
-		$('#sub_cluster_form_<%= study_file._id %>').fileupload({
-			url: "<%= upload_study_path(@study._id) %>",
-			maxChunkSize: 10000000, // 10 MB
-			type: 'PATCH',
-			acceptFileTypes: /(\.|\/)(txt|text)$/i,
-			add: function (e, data) {
-				fileUploading = true;
-				var that = this;
-				var fileName = data.files[0].name.replace(/ /g, '_');
-				// this is the chunked upload callback, will upload 10MB at a time until finished
-				$.getJSON("<%= resume_upload_study_path %>", { file: fileName }, function (result) {
-					var file = result.file;
-					data.uploadedBytes = file && file.size;
-					$.blueimp.fileupload.prototype.options.add.call(that, e, data);
-				});
-			},
-			// on each chunk completion, update status
-			chunkdone: function(e, data) {
-				var perc = parseInt(data.loaded / data.total * 100, 10);
-				$(data.context).find('h1').html(perc + "%");
-			},
-			// file upload is done, now clean up
-			done: function(e, data) {
-				var fileName = data.files[0].name.replace(/ /g, '_');
-				// update upload status
-				$.ajax({
-					url: "<%= update_status_study_path %>",
-					type: "PATCH",
-					data: { status: 'uploaded', file: fileName}
-				});
-				fileUploading = false;
-				$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#sub-cluster-parse-<%= study_file._id %>-modal', partial: 'initialize_sub_clusters_form', selector: "#sub_cluster_form_<%= study_file._id %>"});
-				var target = $('#sub-cluster-parse-<%= study_file._id %>-modal').find('.spinner-target')[0];
-				var spinner = new Spinner(opts).spin(target);
-				$(target).data('spinner', spinner);
-				$('#sub-cluster-parse-<%= study_file._id %>-modal').modal({show: true, backdrop: 'static'});
-				$.get("<%= parse_progress_study_path(@study._id) %>", {file: fileName, modal_target: '#sub-cluster-parse-<%= study_file._id %>-modal'});
-			}
-		});
-	});
-
-</script>

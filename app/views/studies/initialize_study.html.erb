@@ -83,6 +83,7 @@
 				<div class="well well-sm">
 					<h2>Step 6. Upload Fastq Files <small class="initialize-label"><span class="label label-info">Optional</span></small></h2>
 					<p class="lead">Upload any non-primary human fastq data files.  If your data is primary human data, you can link to it here by selecting 'Yes' in the 'Primary Human Data' field.</p>
+					<p><%= link_to "FASTQ File Format <span class='fa fa-info-circle'></span>".html_safe, 'https://en.wikipedia.org/wiki/FASTQ_format#Format', class: 'btn btn-default' %></p>
 				</div>
 				<% @fastq_files.each do |study_file| %>
 					<%= render partial: 'initialize_fastq_form', locals: {study_file: study_file} %>
@@ -106,6 +107,12 @@
 				<% @other_files.each do |study_file| %>
 					<%= render partial: 'initialize_misc_form', locals: {study_file: study_file} %>
 				<% end %>
+				<script type="text/javascript">
+					// check if upload has already happened
+					if (<%= !@other_files.first.upload_file_name.nil? %>) {
+						completeWizardStep();
+					}
+				</script>
 			</div>
 			<p><%= link_to "<span class='fa fa-plus'></span> Add a Study File".html_safe, new_study_file_study_path(@study._id, file_type: 'Documentation',  target: '#misc-target', form: 'initialize_misc_form'), class: 'btn btn-sm btn-primary', 'data-remote' => true %></p>
 
@@ -133,25 +140,31 @@
 				var completed = Math.round((done/total) * 100);
 				$('#bar').find('.progress-bar').css({width:completed+'%'});
 				$('#progress-count').html(completed+'% Completed');
-				if(current >= total) {
+				// user has finished wizard
+				if (current == 7) {
 					wizard.find('.pager .next').hide();
 					wizard.find('.pager .skip').hide();
 					wizard.find('.pager .finish').show();
 					wizard.find('.pager .finish').removeClass('disabled');
 					wizard.find('.pager .finish').addClass('enabled');
-				} else if (current <= done && current <= 3) {
+					// user is within first 3 steps and has completed a step to move forward
+				} else if ( done >= current && current < 4) {
 					wizard.find('.pager .skip').hide();
+					$('#next-btn').parent().removeClass('disabled');
 					$('#next-btn').parent().addClass('enabled');
-				} else if (current <= done && done > 3 && current >= 3) {
+					// user is past first 3 steps and has completed a step to move forward
+				} else if ( done >= current && current >= 4) {
 					wizard.find('.pager .skip').show();
+					$('#next-btn').parent().removeClass('disabled');
 					$('#next-btn').parent().addClass('enabled');
-				} else if (current > done && done >= 3) {
+					// user is past first 3 steps but has not completed a step to move forward (allow skip)
+				} else if ( done < current && current >= 4) {
 					wizard.find('.pager .next').show();
-					$('#next-btn').parent().addClass('enabled');
 					wizard.find('.pager .skip').show();
 					$('#next-btn').parent().addClass('disabled');
 					$('#next-btn').parent().removeClass('enabled');
 					$('#next-btn').click(disableNext());
+				// user is within first 3 steps of wizard and needs to complete items
 				} else {
 					wizard.find('.pager .skip').hide();
 					$('#next-btn').parent().addClass('disabled');
@@ -163,21 +176,29 @@
 				if ( getWizardStatus() < clickedIndex && getWizardStatus() <= 3) {
 					return false;
 				} else {
+					if ($('#next-btn').parent().css('display') == 'none') {
+						wizard.find('.pager .next').show();
+					}
 					return true;
 				}
 			},
 			onNext: function(tab, navigation, index) {
-				if (index > completed && completed < 3) {
+				if (index > getWizardStatus() && getWizardStatus() < 3) {
 					alert('You must complete your current step before continuing');
 					return false;
 				}
 			},
-			onPrevious: function(tab, navigation, index) {
-				if (completed >= index  || completed >= 3) {
-					$('#next-btn').parent().removeClass('disabled');
-					$('#next-btn').off(disableNext());
-				}
+			onPrevious: function() {
+				wizard.find('.pager .next').show();
+				$('#next-btn').parent().removeClass('disabled');
+				$('#next-btn').off(disableNext());
 			}
 		});
+
+		$('#skip-btn').click(function() {
+			completeWizardStep();
+			wizard.find('.pager .next').show();
+			$('#next-btn').parent().addClass('enabled');
+		})
 	});
 </script>

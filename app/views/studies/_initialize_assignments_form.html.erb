@@ -27,65 +27,64 @@
 					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: study_file.upload_file_name.nil? %>
 				</div>
 				<div class="col-xs-6">
-					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: '#assignments_form'), method: :delete, class: 'btn btn-block btn-danger', disabled: true, data: {remote: true, confirm: 'Are you sure? This cannot be undone.'} %>
+					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: '#assignments_form'), method: :delete, disabled: study_file.upload_file_name.nil? ,class: 'btn btn-block btn-danger delete-file', data: {remote: true} %>
 				</div>
 			</div>
 		</div>
 	</div>
-	<% if study_file.upload_file_name.nil? %>
-		<div class="form-group upload-progress">
-			<table class="table table-condensed">
-				<tbody class="files"></tbody>
-			</table>
-		</div>
-	<% else %>
+	<div class="form-group upload-progress">
+		<table class="table table-condensed">
+			<tbody class="files"></tbody>
+		</table>
+	</div>
+	<% if !study_file.upload_file_name.nil? %>
 		<p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: study_file} %></p>
 	<% end %>
-<% end %>
 
-<script type="text/javascript">
+	<script type="text/javascript">
 
-	$(function() {
-		// check if upload has already happened
-		if (<%= !study_file.upload_file_name.nil? %>) {
-			completeWizardStep();
-		}
-
-		$('#assignments_form').fileupload({
-			url: "<%= upload_study_path(@study._id) %>",
-			maxChunkSize: 10000000, // 10 MB
-			type: 'PATCH',
-			acceptFileTypes: /(\.|\/)(txt|text)$/i,
-			add: function (e, data) {
-				fileUploading = true;
-				var that = this;
-				var fileName = data.files[0].name.replace(/ /g, '_');
-				// this is the chunked upload callback, will upload 10MB at a time until finished
-				$.getJSON("<%= resume_upload_study_path %>", { file: fileName }, function (result) {
-					var file = result.file;
-					data.uploadedBytes = file && file.size;
-					$.blueimp.fileupload.prototype.options.add.call(that, e, data);
-				});
-			},
-			// on each chunk completion, update status
-			chunkdone: function(e, data) {
-				var perc = parseInt(data.loaded / data.total * 100, 10);
-				$(data.context).find('h1').html(perc + "% uploaded");
-			},
-			// file upload is done, now clean up
-			done: function(e, data) {
-				var fileName = data.files[0].name.replace(/ /g, '_');
-				// update upload status
-				$.ajax({
-					url: "<%= update_status_study_path %>",
-					type: "PATCH",
-					data: { status: 'uploaded', file: fileName}
-				});
-				// replace form with updated values, as IDs may have incremented
-				$.get("<%= retrieve_wizard_upload_study_path(@study._id) %>", {file: fileName, selector: '#assignments_form', partial: 'initialize_assignments_form'});
-				fileUploading = false;
+		$(function() {
+			// check if upload has already happened
+			if (<%= !study_file.upload_file_name.nil? %>) {
+				completeWizardStep();
 			}
-		});
-	});
 
-</script>
+			$('#assignments_form').fileupload({
+				url: "<%= upload_study_path(@study._id) %>",
+				maxChunkSize: 10000000, // 10 MB
+				type: 'PATCH',
+				acceptFileTypes: /(\.|\/)(txt|text)$/i,
+				add: function (e, data) {
+					fileUploading = true;
+					var that = this;
+					var fileName = data.files[0].name.replace(/ /g, '_');
+					// this is the chunked upload callback, will upload 10MB at a time until finished
+					$.getJSON("<%= resume_upload_study_path %>", { file: fileName }, function (result) {
+						var file = result.file;
+						data.uploadedBytes = file && file.size;
+						$.blueimp.fileupload.prototype.options.add.call(that, e, data);
+					});
+				},
+				// on each chunk completion, update status
+				chunkdone: function(e, data) {
+					var perc = parseInt(data.loaded / data.total * 100, 10);
+					$(data.context).find('h1').html(perc + "% uploaded");
+				},
+				// file upload is done, now clean up
+				done: function(e, data) {
+					var fileName = data.files[0].name.replace(/ /g, '_');
+					// update upload status
+					$.ajax({
+						url: "<%= update_status_study_path %>",
+						type: "PATCH",
+						data: { status: 'uploaded', file: fileName}
+					});
+					// replace form with updated values, as IDs may have incremented
+					$.get("<%= retrieve_wizard_upload_study_path(@study._id) %>", {file: fileName, selector: '#assignments_form', partial: 'initialize_assignments_form'});
+					fileUploading = false;
+				}
+			});
+		});
+
+	</script>
+<% end %>

@@ -40,58 +40,61 @@
 			</div>
 		</div>
 	</div>
-	<% if study_file.upload_file_name.nil? %>
-		<div class="form-group upload-progress">
-			<table class="table table-condensed">
-				<tbody class="files"></tbody>
-			</table>
-		</div>
-	<% else %>
+	<div class="form-group upload-progress">
+		<table class="table table-condensed">
+			<tbody class="files"></tbody>
+		</table>
+	</div>
+	<script type="text/javascript">
+
+		$('#fastq_form_<%= study_file._id %>').find('.human-data').change(function() {
+			toggleFastqFields('fastq_form_<%= study_file._id %>');
+		});
+
+		$(function() {
+			$('#fastq_form_<%= study_file._id %>').fileupload({
+				url: "<%= upload_study_path(@study._id) %>",
+				maxChunkSize: 10000000, // 10 MB
+				type: 'PATCH',
+				acceptFileTypes: /(\.|\/)(fq|fastq)$/i,
+				add: function (e, data) {
+					fileUploading = true;
+					var that = this;
+					var fileName = data.files[0].name.replace(/ /g, '_');
+					// this is the chunked upload callback, will upload 10MB at a time until finished
+					$.getJSON("<%= resume_upload_study_path %>", { file: fileName }, function (result) {
+						var file = result.file;
+						data.uploadedBytes = file && file.size;
+						$.blueimp.fileupload.prototype.options.add.call(that, e, data);
+					});
+				},
+				// on each chunk completion, update status
+				chunkdone: function(e, data) {
+					var perc = parseInt(data.loaded / data.total * 100, 10);
+					$(data.context).find('h1').html(perc + "%");
+				},
+				// file upload is done, now clean up
+				done: function(e, data) {
+					var fileName = data.files[0].name.replace(/ /g, '_');
+					// update upload status
+					$.ajax({
+						url: "<%= update_status_study_path %>",
+						type: "PATCH",
+						data: { status: 'uploaded', file: fileName}
+					});
+					fileUploading = false;
+					// increment wizard
+					if (getWizardStatus() == 5) {
+						completeWizardStep();
+					}
+					$.get("<%= retrieve_wizard_upload_study_path(@study._id) %>", {file: fileName, selector: '#fastq_form_<%= study_file._id %>', partial: 'initialize_fastq_form'});
+				}
+			});
+		});
+
+	</script>
+
+	<% if !study_file.upload_file_name.nil? %>
 		<p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: study_file} %></p>
 	<% end %>
 <% end %>
-<script type="text/javascript">
-
-	$('#fastq_form_<%= study_file._id %>').find('.human-data').change(function() {
-		toggleFastqFields('fastq_form_<%= study_file._id %>');
-	});
-
-	$(function() {
-		$('#fastq_form_<%= study_file._id %>').fileupload({
-			url: "<%= upload_study_path(@study._id) %>",
-			maxChunkSize: 10000000, // 10 MB
-			type: 'PATCH',
-			acceptFileTypes: /(\.|\/)(fq|fastq)$/i,
-			add: function (e, data) {
-				fileUploading = true;
-				var that = this;
-				var fileName = data.files[0].name.replace(/ /g, '_');
-				// this is the chunked upload callback, will upload 10MB at a time until finished
-				$.getJSON("<%= resume_upload_study_path %>", { file: fileName }, function (result) {
-					var file = result.file;
-					data.uploadedBytes = file && file.size;
-					$.blueimp.fileupload.prototype.options.add.call(that, e, data);
-				});
-			},
-			// on each chunk completion, update status
-			chunkdone: function(e, data) {
-				var perc = parseInt(data.loaded / data.total * 100, 10);
-				$(data.context).find('h1').html(perc + "%");
-			},
-			// file upload is done, now clean up
-			done: function(e, data) {
-				var fileName = data.files[0].name.replace(/ /g, '_');
-				// update upload status
-				$.ajax({
-					url: "<%= update_status_study_path %>",
-					type: "PATCH",
-					data: { status: 'uploaded', file: fileName}
-				});
-				$.get("<%= retrieve_wizard_upload_study_path(@study._id) %>", {file: fileName, selector: '#fastq_form_<%= study_file._id %>', partial: 'initialize_fastq_form'});
-				fileUploading = false;
-				completeWizardStep();
-			}
-		});
-	});
-
-</script>

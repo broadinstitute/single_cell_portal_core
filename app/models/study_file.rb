@@ -105,7 +105,7 @@ class StudyFile
   def set_file_name_and_url_safe_name
     if self.upload_file_name.nil?
       self.status = 'uploaded'
-    elsif self.name.nil? || self.name.blank?
+    elsif (self.name.nil? || self.name.blank?) || (!self.new_record? && self.upload_file_name != self.name)
       self.name = self.upload_file_name
     end
     self.url_safe_name = self.study.url_safe_name

@@ -14,7 +14,7 @@
 <div class="panel panel-primary">
 	<div class="panel-heading">
 		<div class="panel-title">
-			<h4><%= link_to "#{@study.name} Data <span class='fa fa-chevron-right toggle-glyph'></span>".html_safe, '#files', 'data-toggle' => 'collapse', class: 'white'  %></h4>
+			<h4><%= link_to "<span class='fa fa-download'></span> Download #{@study.name} Data <span class='fa fa-chevron-right toggle-glyph'></span>".html_safe, '#files', 'data-toggle' => 'collapse', class: 'white'  %></h4>
 		</div>
 	</div>
 	<div id="files" class="panel-collapse collapse">

@@ -183,9 +183,10 @@ var plotlyLabelFont = {
 
 var plotlyDefaultLineColor = 'rgb(40, 40, 40)';
 
-// default scatter plot colors, a combination of colorbrewer sets 1-3
-var colorBrewerSet = [];
-Array.prototype.push.apply(colorBrewerSet, colorbrewer['Set1'][9], colorbrewer['Set2'][8], colorbrewer['Set3'][12]);
+// default scatter plot colors, a combination of colorbrewer sets 1-3 with tweaks to the yellow members
+var colorBrewerSet = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#a65628", "#f781bf", "#999999",
+    "#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854", "#ffd92f", "#e5c494", "#b3b3b3", "#8dd3c7",
+    "#bebada", "#fb8072", "#80b1d3", "#fdb462", "#b3de69", "#fccde5", "#d9d9d9", "#bc80bd", "#ccebc5", "#ffed6f"];
 
 // clear out text area in a form
 function clearForm(target) {
@@ -269,7 +270,7 @@ function computeColorScale(clusterColor, clusters) {
     if (start.luminance() > 0.5) {
         return chroma.scale([clusterColor, start.darken(clusters / 2).saturate(clusters / 2)]).colors(clusters);
     } else {
-        return chroma.scale([start.brighten(clusters / 2).desaturate( clusters / 2), clusterColor]).colors(clusters);
+        return chroma.scale([start.brighten(clusters / 3).desaturate( clusters / 3), clusterColor]).colors(clusters);
     }
 
 }

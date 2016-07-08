@@ -101,40 +101,6 @@ class StudiesController < ApplicationController
     end
   end
 
-  # launches parse job via delayed_job
-  def launch_parse_job
-    if params.include?(:clusters)
-      assignment_file = @study.cluster_assignment_file
-      cluster_file = @study.study_files.where(name: clusters_params[:cluster_file]).first
-      # queue delayed job to parse clusters using ClusterFileParseJob class for error handling & emails
-      Delayed::Job.enqueue ClusterFileParseJob.new(@study, assignment_file, cluster_file, clusters_params[:cluster_type], current_user)
-      logger.info "Launching parse job on study id: '#{@study.name}', parse_type: 'clusters', file: '#{cluster_file.name}', cluster_type: '#{clusters_params[:cluster_type]}'"
-      @message = "Cluster file: #{clusters_params[:cluster_file]} is now being parsed.  You will receive an email when this has completed with the details."
-      @target = "##{cluster_file._id}_parse"
-    end
-    if params.include?(:expression)
-      expression_file = @study.study_files.where(name: expression_params[:expression_file]).first
-      # queue delayed job
-      Delayed::Job.enqueue ExpressionFileParseJob.new(@study, expression_file, current_user)
-      logger.info "Launching parse job on study id: '#{@study.name}', parse_type: 'expression', file: '#{expression_file.name}'"
-      @message = "Expression matrix file: #{expression_params[:expression_file]} is now being parsed.  You will receive an email when this has completed with the details."
-      @target = "##{expression_file._id}_parse"
-    end
-    if params.include?(:precomputed)
-      precomputed_file = @study.study_files.where(name: precomputed_params[:precomputed_file]).first
-      # queue delayed job
-      Delayed::Job.enqueue MarkerFileParseJob.new(@study, precomputed_file, precomputed_params[:precomputed_name], current_user)
-      logger.info "Launching parse job on study id: '#{@study.name}', parse_type: 'marker_genes', file: '#{precomputed_file.name}', list_name: '#{precomputed_params[:precomputed_name]}'"
-      @message = "Marker gene list file: #{precomputed_params[:precomputed_file]} is now being parsed.  You will receive an email when this has completed with the details."
-      @target = "##{precomputed_file._id}_parse"
-    end
-  end
-
-  # upload study files to study
-  def upload
-    @study_files = @study.study_files.sort_by(&:created_at)
-  end
-
   # create a new study_file for requested study
   def new_study_file
     file_type = params[:file_type] ? params[:file_type] : 'Cluster Assignments'
@@ -145,7 +111,7 @@ class StudiesController < ApplicationController
   # update an existing study file; cannot be called until file is uploaded, so there is no create
   # if adding an external fastq file link, will create entry from scratch to update
   def update_study_file
-    @study_file = StudyFile.where(study_id: study_file_params[:study_id], name: study_file_params[:name]).first
+    @study_file = StudyFile.where(study_id: study_file_params[:study_id], upload_file_name: study_file_params[:name]).first
     if @study_file.nil?
       # don't use helper as we're about to mass-assign params
       @study_file = @study.study_files.build
@@ -160,6 +126,14 @@ class StudiesController < ApplicationController
     unless @study_file.nil?
       @message = "'#{@study_file.name}' has been successfully deleted."
       @study_file.destroy
+    end
+    case params[:target]
+      when '#assignment_form'
+        @study_file = @study.build_study_file({file_type: 'Cluster Assignments'})
+      when '#parent_cluster_form'
+        @study_file = @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'parent'})
+      when '#expression_form'
+        @study_file = @study.build_study_file({file_type: 'Expression Matrix'})
     end
   end
 

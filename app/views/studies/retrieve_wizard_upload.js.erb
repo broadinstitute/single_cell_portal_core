@@ -21,6 +21,6 @@ $(wizForm).find('.delete-file').click(function() {
 });
 
 // go to next step in wizard
-if (completed <= 3) {
+if (getWizardStatus() <= 3) {
 	$('#next-btn').click();
 }

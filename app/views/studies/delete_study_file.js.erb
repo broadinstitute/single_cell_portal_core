@@ -1,5 +1,12 @@
-if (<%= params[:target].nil? %>) {
-	$("#<%= params[:study_file_id] %>").parent().remove();
+if ('<%= params[:target] %>' == '#assignments_form') {
+	$("<%= params[:target] %>").replaceWith("<%= escape_javascript( render partial: 'initialize_assignments_form', locals: {study_file: @study_file}) %>");
+	resetWizardStep();
+} else if ('<%= params[:target] %>' == '#parent_cluster_form') {
+	$("<%= params[:target] %>").replaceWith("<%= escape_javascript( render partial: 'initialize_clusters_form', locals: {study_file: @study_file}) %>");
+	resetWizardStep();
+} else if ('<%= params[:target] %>' == '#expression_form') {
+	$("<%= params[:target] %>").replaceWith("<%= escape_javascript( render partial: 'initialize_expression_form', locals: {study_file: @study_file}) %>");
+	resetWizardStep();
 } else {
 	$("#<%= params[:target] %>").remove();
 }
@@ -10,3 +17,4 @@ $('#delete-modal').modal('hide');
 if (<%= !@message.nil? %>) {
 	$("#study-files-notice-target").html("<%= escape_javascript( render partial: 'studies/study_file_notices', locals: {message: @message}) %>");
 };
+

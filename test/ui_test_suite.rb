@@ -5,7 +5,7 @@ class UiTestSuite < Test::Unit::TestCase
 # Unit Test that is actually a user flow test using the Selenium Webdriver to test dev UI directly
 	def setup
 		@driver = Selenium::WebDriver.for :firefox
-		@base_url = "https://docker-host.com/single_cell"
+		@base_url = "https://localhost/single_cell"
 		@accept_next_alert = true
 		@driver.manage.timeouts.implicit_wait = 20
 		@test_user = {

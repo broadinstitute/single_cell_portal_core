@@ -232,7 +232,7 @@ class SiteController < ApplicationController
       coordinates[cluster.name] = {x: [], y: [], text: [], name: "#{cluster.name}  (#{cluster.cluster_points.size} points)"}
       points = cluster.cluster_points
       points.each do |point|
-        coordinates[cluster.name][:text] << point.single_cell.name
+        coordinates[cluster.name][:text] << "#{point.single_cell.name} <br>[#{cluster.name}]"
         coordinates[cluster.name][:x] << point.x
         coordinates[cluster.name][:y] << point.y
       end
@@ -413,6 +413,6 @@ class SiteController < ApplicationController
 
   # load all precomputed options for a study
   def load_precomputed_options
-     @precomputed = ['Please select a gene list', ''] + @study.precomputed_scores.map(&:name).sort.map {|n| [n, n]}
+     @precomputed = @study.precomputed_scores.map(&:name)
   end
 end

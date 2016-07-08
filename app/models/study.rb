@@ -130,7 +130,7 @@ class Study
 
   # helper method to directly access cluster assignment file
   def cluster_assignment_file
-    self.study_files.where(file_type:'Cluster Assignments').to_a.first
+    self.study_files.where(file_type:'Cluster Assignments').first
   end
 
   # method to parse master expression scores file for study and populate collection
