@@ -15,8 +15,8 @@ fi
 if [[ -e /home/app/webapp/bin/delayed_job ]]
 then
     echo "*** STARTING DELAYED_JOB ***"
-    # sudo -E -u app -H bin/delayed_job start $PASSENGER_APP_ENV -n 4
+    sudo -E -u app -H bin/delayed_job start $PASSENGER_APP_ENV -n 4
     echo "*** ADDING CRONTAB TO CHECK DELAYED_JOB ***"
-    # echo "* * * * */15 /home/app/webapp/bin/job_monitor.rb $PASSENGER_APP_ENV" | crontab -u app -
+    echo "* * * * */15 /home/app/webapp/bin/job_monitor.rb $PASSENGER_APP_ENV" | crontab -u app -
     echo "*** COMPLETED ***"
 fi
