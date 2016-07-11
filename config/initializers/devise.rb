@@ -12,7 +12,7 @@ Devise.setup do |config|
   # Configure the e-mail address which will be shown in Devise::Mailer,
   # note that it will be overwritten if you use your own mailer class
   # with default "from" parameter.
-  config.mailer_sender = Rails.env == 'production' ? "no-reply@broadinstitute.org" : "no-reply@docker-host.com"
+  config.mailer_sender = Rails.env == 'production' ? "no-reply@broadinstitute.org" : "no-reply@localhost"
 
   # Configure the class responsible to send e-mails.
   # config.mailer = 'Devise::Mailer'
@@ -241,7 +241,7 @@ Devise.setup do |config|
   # config.omniauth :github, 'APP_ID', 'APP_SECRET', scope: 'user,public_repo'
 
 
-	config.omniauth :google_oauth2, "177991045523-77hjm3r7r8mvb7trclmgb6c6oc3pqn8d.apps.googleusercontent.com", "siPDnAS_fZor8Fz5ap61GoKN",
+	config.omniauth :google_oauth2, "116798894341-0ds31rblt3ie73ko64i6vomc71ealmt3.apps.googleusercontent.com", "Oygv1udGXpNQQ5kyMEw0e-pO",
                     {:client_options => {:ssl => {:ca_file => '/etc/pki/tls/certs/ca-bundle.crt'} }}
 
   # ==> Warden configuration
