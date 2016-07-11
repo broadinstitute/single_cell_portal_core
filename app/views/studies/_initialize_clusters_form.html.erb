@@ -49,6 +49,7 @@
 		// check if upload has already happened
 		if (<%= !study_file.upload_file_name.nil? %>) {
 			completeWizardStep();
+			console.log('incrementing status for primary cluster file upload')
 		}
 
 		$(function() {

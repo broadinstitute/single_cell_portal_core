@@ -4,7 +4,15 @@ class Study
 
   # associations and scopes
   belongs_to :user
-  has_many :study_files, dependent: :destroy
+  has_many :study_files, dependent: :destroy do
+    def by_type(file_type)
+      if file_type.is_a?(Array)
+        where(:file_type.in => file_type).to_a
+      else
+        where(file_type: file_type).to_a
+      end
+    end
+  end
   has_many :clusters, dependent: :destroy
   has_many :cluster_points, dependent: :destroy
   has_many :single_cells, dependent: :destroy

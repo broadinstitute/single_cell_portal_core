@@ -35,7 +35,7 @@
 					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: !study_file.human_data? %>
 				</div>
 				<div class="col-xs-6">
-					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: "fastq_form_#{study_file._id}"), method: :delete, class: 'btn btn-block btn-danger delete-file', data: {remote: true, confirm: 'Are you sure? This cannot be undone.'} %>
+					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: "fastq_form_#{study_file._id}"), method: :delete, class: 'btn btn-block btn-danger delete-file', data: {remote: true} %>
 				</div>
 			</div>
 		</div>
@@ -52,6 +52,18 @@
 		});
 
 		$(function() {
+			// check if upload has already happened
+			if (getWizardStatus() == 5 && <%= !study_file.new_record? %>) {
+				var status = completeWizardStep();
+				setWizardProgress(status);
+				console.log('incrementing status for fastq file upload')
+			// gotcha in case user has skipped fastq files but uploaded misc. files
+			} else if (getWizardStatus() == 5 && <%= @study.study_files.by_type(['Other', 'Documentation']).count >= 1 %>) {
+				var status = completeWizardStep();
+				setWizardProgress(status);
+				console.log('incrementing status for fastq file upload')
+			}
+
 			$('#fastq_form_<%= study_file._id %>').fileupload({
 				url: "<%= upload_study_path(@study._id) %>",
 				maxChunkSize: 10000000, // 10 MB
@@ -83,10 +95,6 @@
 						data: { status: 'uploaded', file: fileName}
 					});
 					fileUploading = false;
-					// increment wizard
-					if (getWizardStatus() == 5) {
-						completeWizardStep();
-					}
 					$.get("<%= retrieve_wizard_upload_study_path(@study._id) %>", {file: fileName, selector: '#fastq_form_<%= study_file._id %>', partial: 'initialize_fastq_form'});
 				}
 			});

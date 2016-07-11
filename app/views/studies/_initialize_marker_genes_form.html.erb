@@ -40,7 +40,12 @@
 	<script type="text/javascript">
 
 		$(function() {
-
+			// check if upload has already happened
+			if (getWizardStatus() == 4 && <%= !study_file.new_record? %>) {
+				var status = completeWizardStep();
+				setWizardProgress(status);
+				console.log('incrementing status for marker gene list upload')
+			}
 			$('#marker_gene_form_<%= study_file._id %>').fileupload({
 				url: "<%= upload_study_path(@study._id) %>",
 				maxChunkSize: 10000000, // 10 MB
@@ -72,10 +77,6 @@
 						data: { status: 'uploaded', file: fileName}
 					});
 					fileUploading = false;
-					// increment wizard
-					if (getWizardStatus() == 4) {
-						completeWizardStep();
-					}
 					$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#marker-gene-parse-<%= study_file._id %>-modal', partial: 'initialize_marker_genes_form', selector: "#marker_gene_form_<%= study_file._id %>"});
 					var target = $('#marker-gene-parse-<%= study_file._id %>-modal').find('.spinner-target')[0];
 					var spinner = new Spinner(opts).spin(target);

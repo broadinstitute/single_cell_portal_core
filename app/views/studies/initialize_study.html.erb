@@ -49,12 +49,6 @@
 				<% @sub_clusters.each do |study_file| %>
 					<%= render partial: 'initialize_sub_clusters_form', locals: {study_file: study_file} %>
 				<% end %>
-				<script type="text/javascript">
-					// check if upload has already happened
-					if (<%= !@sub_clusters.first.upload_file_name.nil? %>) {
-						completeWizardStep();
-					}
-				</script>
 			</div>
 			<p><%= link_to "<span class='fa fa-plus'></span> Add a Sub-Cluster File".html_safe, new_study_file_study_path(@study._id, file_type: 'Cluster Coordinates', cluster_type: 'sub', target: '#sub-clusters-target', form: 'initialize_sub_clusters_form'), class: 'btn btn-sm btn-primary', 'data-remote' => true %></p>
 		</div>
@@ -68,12 +62,6 @@
 				<% @marker_lists.each do |study_file| %>
 					<%= render partial: 'initialize_marker_genes_form', locals: {study_file: study_file} %>
 				<% end %>
-				<script type="text/javascript">
-					// check if upload has already happened
-					if (<%= !@marker_lists.first.upload_file_name.nil? %>) {
-						completeWizardStep();
-					}
-				</script>
 			</div>
 			<p><%= link_to "<span class='fa fa-plus'></span> Add a Marker Gene List File".html_safe, new_study_file_study_path(@study._id, file_type: 'Marker Gene List', target: '#marker-genes-target', form: 'initialize_marker_genes_form'), class: 'btn btn-sm btn-primary', 'data-remote' => true %></p>
 
@@ -88,12 +76,6 @@
 				<% @fastq_files.each do |study_file| %>
 					<%= render partial: 'initialize_fastq_form', locals: {study_file: study_file} %>
 				<% end %>
-				<script type="text/javascript">
-					// check if upload has already happened
-					if (<%= !@fastq_files.first.upload_file_name.nil? %>) {
-						completeWizardStep();
-					}
-				</script>
 			</div>
 			<p><%= link_to "<span class='fa fa-plus'></span> Add a Fastq File".html_safe, new_study_file_study_path(@study._id, file_type: 'Fastq', target: '#fastq-target', form: 'initialize_fastq_form'), class: 'btn btn-sm btn-primary', 'data-remote' => true %></p>
 
@@ -107,12 +89,6 @@
 				<% @other_files.each do |study_file| %>
 					<%= render partial: 'initialize_misc_form', locals: {study_file: study_file} %>
 				<% end %>
-				<script type="text/javascript">
-					// check if upload has already happened
-					if (<%= !@other_files.first.upload_file_name.nil? %>) {
-						completeWizardStep();
-					}
-				</script>
 			</div>
 			<p><%= link_to "<span class='fa fa-plus'></span> Add a Study File".html_safe, new_study_file_study_path(@study._id, file_type: 'Documentation',  target: '#misc-target', form: 'initialize_misc_form'), class: 'btn btn-sm btn-primary', 'data-remote' => true %></p>
 

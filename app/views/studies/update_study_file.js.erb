@@ -1,3 +1,9 @@
 $("#<%= @study_file._id %>").parent().replaceWith("<%= escape_javascript( render partial: 'study_file_fields', locals: {study_file: @study_file })%>");
 $("#<%= @study_file._id %>").parent().effect('highlight', {}, 1000);
 $("#study-files-notice-target").html("<%= escape_javascript( render partial: 'studies/study_file_notices', locals: {message: @message}) %>");
+
+// increment progress bar if this is the first upload of a given type
+if (getWizardStatus() >= 4 && <%= @study.study_files.select {|sf| sf.file_type == @study_file.file_type}.size == 1 %> && <%= !@study_file.new_record? %>) {
+	var status = getWizardStatus();
+	setWizardProgress(status);
+}

@@ -52,6 +52,14 @@ function getWizardStatus() {
     return completed;
 }
 
+function setWizardProgress(stepsDone) {
+    var steps = parseInt(stepsDone);
+    var totalSteps = $('li.wizard-nav').length;
+    var totalCompletion = Math.round((stepsDone/totalSteps) * 100);
+    $('#bar').find('.progress-bar').css({width:totalCompletion+'%'});
+    $('#progress-count').html(totalCompletion+'% Completed');
+}
+
 // used to disable next button in wizard dynamically
 function disableNext() {return false};
 

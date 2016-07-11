@@ -1,14 +1,11 @@
 $('<%= params[:modal_target]%>').modal('hide');
 
-// completed wizard step the first time a user uploads a sub-cluster or marker gene list file
-// other calls to completeWizardStep are in the success callback of fileuploader
-if (
-				('<%= params[:partial] %>' == 'initialize_sub_clusters_form' && <%= @study.study_files.select {|sf| sf.file_type == 'Cluster Coordinates' && sf.cluster_type == 'sub'}.count %> == 1) ||
-				('<%= params[:partial] %>' == 'initialize_marker_genes_form' && <%= @study.study_files.select {|sf| sf.file_type == 'Marker Gene List'}.count %> == 1) ||
-				('<%= params[:partial] %>' == 'initialize_fastq_form' && <%= @study.study_files.select {|sf| sf.file_type == 'Fastq'}.count %> == 1) ||
-				('<%= params[:partial] %>' == 'initialize_misc_form' && <%= @study.study_files.select {|sf| %w(Documentation Other).include?(sf.file_type)}.count %> == 1)
-) {
+// when uploading a file that can have multiple instances, only call completeWizardStep the first time
+// also update progress bar
+if (<%= %w(initialize_sub_clusters_form initialize_marker_genes_form initialize_fastq_form initialize_misc_form).include?(params[:partial]) %> && <%= @study.study_files.select {|sf| sf.file_type == @study_file.file_type && sf.cluster_type == @study_file.cluster_type}.count %> == 1) {
 	completeWizardStep();
+	var status = getWizardStatus();
+	setWizardProgress(status);
 }
 
 // re-render form upload to get download button and increment completed status
