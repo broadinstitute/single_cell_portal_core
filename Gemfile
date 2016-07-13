@@ -42,7 +42,7 @@ end
 
 gem 'devise'
 gem 'omniauth-google-oauth2'
-gem 'selenium-webdriver'
+gem 'selenium-webdriver', '2.53.4'
 gem 'jquery-ui-rails', :git => 'git://github.com/joliss/jquery-ui-rails.git'
 gem 'bootstrap-sass', :git => 'git://github.com/twbs/bootstrap-sass.git'
 gem 'font-awesome-sass', git: 'git://github.com/FortAwesome/font-awesome-sass.git'

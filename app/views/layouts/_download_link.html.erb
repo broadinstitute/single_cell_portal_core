@@ -2,7 +2,7 @@
 	<%= link_to "<span class='fa fa-cloud-download'></span> External".html_safe, study_file.download_path, class: 'btn btn-primary' %>
 <% else %>
 	<% if study.public? %>
-		<%= link_to "<span class='fa fa-download'></span> #{number_to_human_size(study_file.upload_file_size, prefix: :si)}".html_safe, study_file.download_path, class: 'btn btn-primary', download: study_file.name %>
+		<%= link_to "<span class='fa fa-download'></span> #{number_to_human_size(study_file.upload_file_size, prefix: :si)}".html_safe, study_file.download_path, class: 'btn btn-primary dl-link', download: study_file.name %>
 	<% else %>
 		<%= link_to "Get Access <span class='fa fa-lock'></span>".html_safe, "javascript:;", class: 'btn btn-primary download-btn', data: {filepath: study_file.download_path} %>
 	<% end %>

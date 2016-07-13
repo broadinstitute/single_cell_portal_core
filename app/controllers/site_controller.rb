@@ -36,11 +36,11 @@ class SiteController < ApplicationController
   def search_genes
     if params[:search][:upload].blank?
       terms = parse_search_terms(:genes)
-      @genes = ExpressionScore.where(:study_id => @study._id, :searchable_gene.in => terms).to_a
+      @genes = load_expression_scores(terms)
     else
       geneset_file = params[:search][:upload]
       terms = geneset_file.read.split(/[\s\n,]/).map {|gene| gene.chomp.downcase}
-      @genes = ExpressionScore.where(:study_id => @study._id, :searchable_gene.in => terms).to_a
+      @genes = load_expression_scores(terms)
     end
     # grab saved params for loaded cluster and boxpoints mode
     cluster = params[:search][:cluster]
@@ -150,10 +150,10 @@ class SiteController < ApplicationController
     end
   end
 
-  # load data in gct form to render in Morpheus
+  # load data in gct form to render in Morpheus, preserving query order
   def expression_query
     terms = parse_search_terms(:genes)
-    @genes = ExpressionScore.where(:study_id => @study._id, :searchable_gene.in => terms).to_a
+    @genes = load_expression_scores(terms)
     @cols = @clusters.map {|c| c.single_cells.size}.inject(0) {|sum, x| sum += x}
     @headers = ["Name", "Description"]
     @clusters.each do |cluster|
@@ -359,6 +359,16 @@ class SiteController < ApplicationController
   # generic search term parser
   def parse_search_terms(key)
     params[:search][key].split(/[\s\n,]/).map {|gene| gene.chomp.downcase}
+  end
+
+  # generic expression score getter, preserves order and discards empty matches
+  def load_expression_scores(terms)
+    genes = []
+    terms.each do |term|
+      g = ExpressionScore.where(study_id: @study._id, searchable_gene: term).first
+      genes << g unless g.nil?
+    end
+    genes
   end
 
   # search genes and save terms not found

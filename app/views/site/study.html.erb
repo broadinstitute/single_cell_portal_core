@@ -2,7 +2,7 @@
 <div class="panel panel-primary">
 	<div class="panel-heading">
 		<div class="panel-title">
-			<h4><%= link_to "Overview <span class='fa fa-chevron-down toggle-glyph'></span>".html_safe, '#overview', 'data-toggle' => 'collapse', class: 'white'  %></h4>
+			<h4><%= link_to "Overview <span class='fa fa-chevron-down toggle-glyph'></span>".html_safe, '#overview', 'data-toggle' => 'collapse', class: 'white', id: 'study-overview'  %></h4>
 		</div>
 	</div>
 	<div id="overview" class="panel-collapse collapse in">
@@ -14,7 +14,7 @@
 <div class="panel panel-primary">
 	<div class="panel-heading">
 		<div class="panel-title">
-			<h4><%= link_to "<span class='fa fa-download'></span> Download #{@study.name} Data <span class='fa fa-chevron-right toggle-glyph'></span>".html_safe, '#files', 'data-toggle' => 'collapse', class: 'white'  %></h4>
+			<h4><%= link_to "<span class='fa fa-download'></span> Download #{@study.name} Data <span class='fa fa-chevron-right toggle-glyph'></span>".html_safe, '#files', 'data-toggle' => 'collapse', class: 'white', id: 'study-data-files'  %></h4>
 		</div>
 	</div>
 	<div id="files" class="panel-collapse collapse">
