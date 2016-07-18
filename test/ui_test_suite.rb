@@ -7,15 +7,18 @@ class UiTestSuite < Test::Unit::TestCase
 # Unit Test that is actually a user flow test using the Selenium Webdriver to test dev UI directly
 	def setup
 		@driver = Selenium::WebDriver.for :firefox
-		@base_url = "https://localhost/single_cell"
+		@base_url = 'https://localhost/single_cell'
 		@accept_next_alert = true
 		@driver.manage.timeouts.implicit_wait = 20
+		# test user needs to be created manually before this will work
 		@test_user = {
 				email: 'test.user@gmail.com',
 				password: 'password'
 		}
 		@genes = %w(Leprel1 Dpf1 Erp29 Dpysl5 Ak7 Dgat2 Lsm11 Mamld1 Rbm17 Gad1 Prox1)
 		@wait = Selenium::WebDriver::Wait.new(:timeout => 20)
+		# configure path to sample data as appropriate for your system
+		@snuc_seq_path = '/Users/bistline/Documents/Data/single_cell/snuc-seq'
 	end
 
 	def teardown
@@ -39,6 +42,14 @@ class UiTestSuite < Test::Unit::TestCase
 		@wait.until { @driver.current_url == path }
 	end
 
+	# method to close a bootstrap modal by id
+	def close_modal(id)
+		modal = @driver.find_element(:id, id)
+		dismiss = modal.find_element(:class, 'close')
+		dismiss.click
+	end
+
+	# front end tests
 	test 'get home page' do
 		@driver.get(@base_url)
 		assert element_present?(:id, 'main-banner'), 'could not find index page title text'
@@ -95,7 +106,7 @@ class UiTestSuite < Test::Unit::TestCase
 		@driver.get(path)
 		wait_until_page_loads(path)
 		# load random genes to search
-		genes = @genes.shuffle.take(rand(@genes.size) + 1)
+		genes = @genes.shuffle.take(1 + rand(@genes.size) + 1)
 		search_box = @driver.find_element(:id, 'search_genes')
 		search_box.send_keys(genes.join(' '))
 		search_form = @driver.find_element(:id, 'search-genes-form')
@@ -124,6 +135,25 @@ class UiTestSuite < Test::Unit::TestCase
 		list = opts.sample
 		list.click
 		assert element_present?(:id, 'plots'), 'could not find marker list expression heatmap'
+	end
+
+	# admin backend test of entire study creation process as order needs to be maintained throughout
+	# logs in, creates study, and deletes new study on completion
+	# uses sNuc-Seq data as test study
+	test 'create a study' do
+		# log in first
+		path = @base_url + '/studies/new'
+		@driver.get path
+		close_modal('message_modal')
+		# send login info
+		email = @driver.find_element(:id, 'user_email')
+		email.send_keys(@test_user[:email])
+		password = @driver.find_element(:id, 'user_password')
+		password.send_keys(@test_user[:password])
+		form = @driver.find_element(:id, 'new_user')
+		form.submit
+		wait_until_page_loads(path)
+		# fill out study form
 	end
 
 end
