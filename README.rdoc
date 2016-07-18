@@ -2,42 +2,42 @@
 
 == SETUP
 
-This application is built and deployed using Docker[https://www.docker.com].  Please refer to their online documentation for instructions on installing and creating a default VM for managing Docker images.
-
-Additionally, you must have {MongoDB v3}[https://www.mongodb.com] or greater installed on your local machine.
+This application is built and deployed using Docker[https://www.docker.com], specifically native {Docker for Mac OSX}[https://docs.docker.com/docker-for-mac/].
+Please refer to their online documentation for instructions on installing and creating a default VM for managing Docker images.
 
 == BUILDING THE DOCKER IMAGE
 
-Once all source files are checked out and your default Docker VM has been built, open a terminal window and execute the following steps:
+Once all source files are checked out and Docker has been installed and your VM configured, open a terminal window and execute the following steps:
 
-1. Start the VM (if not already running): <code>docker-machine start default</code>
-2. Start the Docker daemon: <code>eval "$(docker-machine env default)"</code>
-3. Navigate to the project directory
-4. Build the Single Cell Portal image: <code>docker build -t single_cell_docker -f Dockerfile .</code>
+1. Navigate to the project directory
+2. Build the Single Cell Portal image: <code>docker build -t single_cell_docker -f Dockerfile .</code>
 
 This will start the automated process of building the Docker image for running the portal.  The image is built off of the {Passenger-docker baseimage}[https://github.com/phusion/passenger-docker] and comes with Ruby, Nginx, and Passenger by default, with additional packages added to the {Broad Institute KDUX Rails baseimage}[https://hub.docker.com/r/broadinstitute/kdux-rails-baseimage/] which pulls from the original baseimage.  The extended image contains Oracle Instant Client, ImageMagick, and Sphinx Search.
 
 <em>If this is your first time building the image, it may take several minutes to download and install everything.</em>
 
+== BEFORE RUNNING THE CONTAINER
+
+Since this project utilizes native Docker for Mac OSX, any resources on the host machine cannot be reached by the running container (specifically, any database resources).
+Therefore, we will need to deploy a database container using Docker as well.  This project uses {MongoDB}[https://hub.docker.com/_/mongo/] as the primary datastore.
+
+To deploy the database container:
+
+1. Pull the image: <code>docker pull mongo</code>
+2. Navigate to the project directory
+3. Run the helper script to start the DB container: <code>bin/boot_mongo</code>
+
+Note: Once the container has been once, you can stop & restart it using: <code>docker stop mongodb</code> or <code>docker restart mongodb</code>
+
 == RUNNING THE CONTAINER
 
-Before running the container, you will need to alias the Docker VM to a hostname to make accessing applications running inside Docker containers via a browser window easier, and to allow callbacks from authentication services.  This only needs to be done once per machine if you have not already done so.  To set this up:
-1. Open a new terminal window
-2. Type <code>docker-machine env default</code> and record the default VM DOCKER_HOST IP address (without the port at the end, e.g. 192.168.99.100)
-3. Open your OS's hosts file for editing (<b>note: you will likely have to sudo -u root to edit this file (or your OS's equivalent)</b>)
-- Mac: <code>/etc/hosts</code>
-- Windows: <code>c:\\Windows\\System32\\Drivers\\etc\\hosts</code>
-- Linux/Others: <code>Consult your OS documentation</code>
-4. Add a new entry at the end with the following values: <code>docker-host.com [YOUR DOCKER VM IP ADDRESS]</code>
-<b>We need the hostname be docker-host.com (without www.) for Google OAuth2 to function as this callback host is defined in the Google Dev Console for the Single Cell project.</b>
-
-Once the image has successfully built, use the following command to start the container:
-  docker run --rm -it --name [CONTAINER_NAME] -p 80:80 -p 443:443 -p 27017:27017 -p 587:587 -h docker-host.com -v [PROJECT_DIR]:/home/app/webapp:rw -e PASSENGER_APP_ENV=[PASSENGER_APP_ENV] -e MONGO_LOCALHOST=[MONGO_LOCALHOST] -e SENDGRID_USERNAME=[SENDGRID_USERNAME] -e SENDGRID_PASSWORD=[SENDGRID_PASSWORD] single_cell_docker
-The container will then start running, and will execute its local startup scripts that will run all migrations and configure the application automatically.
-
-Alternatively, you can use the shortcut script to start Docker that will grab all necessary environment variables from your machine and run the above command.
+Once the image has successfully built and the database container is running, use the following command to start the container:
   bin/boot_docker
-You can also run the script in help mode by passing <code>-H</code> to print the help text which will show you how to pass specific values to the above env variables.
+This sets up several environment variables in your shell and then runs the following command:
+  docker run --rm -it --name $CONTAINER_NAME -p 80:80 -p 443:443 --link mongodb:mongodb -p 587:587 -h $HOST -v $PROJECT_DIR:/home/app/webapp:rw -e PASSENGER_APP_ENV=$PASSENGER_APP_ENV -e MONGO_LOCALHOST=$MONGO_LOCALHOST -e SENDGRID_USERNAME=$SENDGRID_USERNAME -e SENDGRID_PASSWORD=$SENDGRID_PASSWORD -e PROD_DATABASE_PASSWORD=$PROD_DATABASE_PASSWORD -e SECRET_KEY_BASE=$SECRET_KEY_BASE single_cell_docker
+The container will then start running, and will execute its local startup scripts that will configure the application automatically.
+
+You can also run the <code>bin/boot_docker</code> script in help mode by passing <code>-H</code> to print the help text which will show you how to pass specific values to the above env variables.
 <em>Note: running the shortcut script with an environment of 'production' will cause the container to spawn headlessly by passing the <code>-d</code> flag, rather than <code>--rm -it</code>.</em>
 
 === DOCKER RUN COMMAND ENVIRONMENT VARIABLES
@@ -45,20 +45,23 @@ There are several variables that need to be passed to the API Docker container i
 1. *CONTAINER_NAME* (passed with --name): This names your container to whatever you want.  This is useful when linking containers.
 3. *PROJECT_DIR* (passed with -v): This mounts your local working directory inside the Docker container.  Makes doing local development via hot deployment possible.
 4. *PASSENGER_APP_ENV* (passed with -e): The Rails environment you wish to load.  Can be either development or production (default is development).
-5. *MONGO_LOCALHOST* (passed with -e): This can either be the name of your local machine (MyComputer, wmc1a-e8c, etc.) or the special 10.0.2.2 alias for connecting back to a host machine from a local VM running inside an emulator (default is 10.0.2.2 as it is the most generic).
+5. *MONGO_LOCALHOST* (passed with -e): Name of the container running MongoDB.  Even though our two containers are linked, this needs to be set to allow Rails to communicate with the database.
 6. *SENDGRID_USERNAME* (passed with -e): The username associated with the Sendgrid account (for sending emails).
 7. *SENDGRID_PASSWORD* (passed with -e): The password associated with the Sendgrid account (for sending emails).
+8. *SECRET_KEY_BASE* (passed with -e): Sets the Rails SECRET_KEY_BASE environment variable, used mostly by Devise in authentication for cookies.
 
 === RUN COMMAND IN DETAIL
 The run command explained in its entirety:
 * *--rm:* This tells Docker to automatically clean up the container after exiting.
 * *-it:* Leaves an interactive shell running in the foreground where the output of Nginx can be seen.
 * <b>--name CONTAINER_NAME:</b> This names your container to whatever you want.  This is useful when linking other Docker containers to the portal container, or when connecting to a running container to check logs or environment variables.
-* <b>-p 80:80 -p 443:443 -p 27017:27017 -p 587:587:</b> Maps ports 80 (HTTP), 443 (HTTPS), 27017 (MongoDB) and 587 (smtp) on the host machine to the corresponding ports inside the Docker container.
+* <b>-p 80:80 -p 443:443 -p 587:587:</b> Maps ports 80 (HTTP), 443 (HTTPS), and 587 (smtp) on the host machine to the corresponding ports inside the Docker container.
+* <b>--link mongodb:mongodb</b>: Connects our webapp container to the mongodb container, creating a virtual hostname inside the single_cell_docker container called mongodb.
 * <b>-v [PROJECT_DIR]/:/home/app/webapp:</b> This mounts your local working directory inside the running Docker container in the correct location for the portal to run.  This accomplishes two things:
   - Enables hot deployment for local development
   - Persists all project data past destruction of Docker container (since we're running with --rm), but not system-level log or tmp files.
 * <b>-e PASSENGER_APP_ENV= [RAILS_ENV]:</b> The Rails environment.  Will default to production, so if you're doing local development, set this accordingly.
-* <b>-e MONGO_LOCALHOST= [MONGO_LOCALHOST]:</b> The name of the host machine for connecting to MongoDB (since we're not running MongoDB inside docker, we need the alias back to the host computer).
+* <b>-e MONGO_LOCALHOST= [MONGO_LOCALHOST]:</b> Name of the container running MongoDB.  Even though our two containers are linked, this needs to be set to allow Rails to communicate with the database.
 * <b>-e SENDGRID_USERNAME= [SENDGRID_USERNAME] -e SENDGRID_PASSWORD= [SENDGRID_PASSWORD]:</b> The credentials for Sendgrid to send emails.  Alternatively, you could decide to not use Sendgrid and configure the application to use a different SMTP server (would be done inside your environment's config file).
+* <b>-e SECRET_KEY_BASE= [SECRET_KEY_BASE]:</b> Setting the SECRET_KEY_BASE variable is necessary for creating secure cookies for authentication.  This variable automatically resets every time we restart the container.
 * *single_cell_docker*: This is the name of the image we created earlier.  If you chose a different name, please use that here.
