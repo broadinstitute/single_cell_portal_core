@@ -62,6 +62,7 @@ class Study
 
   # callbacks
   before_save     :set_url_safe_name
+  before_update   :check_data_links
   after_save      :check_public?
   before_destroy  :remove_public_symlinks
   after_destroy   :remove_data_dir
@@ -461,6 +462,18 @@ class Study
     elsif !self.public?
       if Dir.exists?(self.data_public_path)
         FileUtils.remove_entry_secure(self.data_public_path, force: true)
+      end
+    end
+  end
+
+  # in case user has renamed study, validate link to data store
+  # check_public? is fired after this, so symlinks will be checked next
+  def check_data_links
+    if self.url_safe_name != self.url_safe_name_was
+      FileUtils.mv Rails.root.join('data', self.url_safe_name_was).to_s, Rails.root.join('data', self.url_safe_name).to_s
+      # remove old symlink if changed
+      if self.public?
+        FileUtils.rm_rf(Rails.root.join('public', 'single_cell', 'data', self.url_safe_name_was))
       end
     end
   end
