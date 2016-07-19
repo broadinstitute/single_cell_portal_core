@@ -15,6 +15,10 @@ class UiTestSuite < Test::Unit::TestCase
 				email: 'test.user@gmail.com',
 				password: 'password'
 		}
+		@share_user = {
+				email: 'share.user@gmail.com',
+				password: 'password'
+		}
 		@genes = %w(Leprel1 Dpf1 Erp29 Dpysl5 Ak7 Dgat2 Lsm11 Mamld1 Rbm17 Gad1 Prox1)
 		@wait = Selenium::WebDriver::Wait.new(:timeout => 20)
 		# configure path to sample data as appropriate for your system
@@ -49,6 +53,13 @@ class UiTestSuite < Test::Unit::TestCase
 		dismiss.click
 	end
 
+	# method to click element and wait for click to complete
+	def wait_for_click(element)
+		click = element.click
+		@wait.until {click == 'ok'}
+		click
+	end
+
 	# front end tests
 	test 'get home page' do
 		@driver.get(@base_url)
@@ -62,7 +73,7 @@ class UiTestSuite < Test::Unit::TestCase
 		wait_until_page_loads(path)
 		assert element_present?(:class, 'study-lead'), 'could not find study title'
 		assert element_present?(:id, 'cluster-plot'), 'could not find study cluster plot'
-		# load subcluster
+		# load CA1 subcluster
 		clusters = @driver.find_element(:id, 'cluster').find_elements(:tag_name, 'option')
 		assert clusters.size == 6, 'incorrect number of sub-clusters found'
 		clusters.select {|opt| opt.text == 'CA1'}.first.click
@@ -81,8 +92,7 @@ class UiTestSuite < Test::Unit::TestCase
 		@wait.until { opened == 'ok'}
 		files = @driver.find_elements(:class, 'dl-link')
 		file_link = files.sample
-		downloaded = file_link.click
-		@wait.until {downloaded == 'ok'}
+		downloaded = wait_for_click(file_link)
 		assert downloaded == 'ok', 'could not click download link'
 		assert file_link.displayed?, 'file link was not found'
 	end
@@ -150,10 +160,30 @@ class UiTestSuite < Test::Unit::TestCase
 		email.send_keys(@test_user[:email])
 		password = @driver.find_element(:id, 'user_password')
 		password.send_keys(@test_user[:password])
-		form = @driver.find_element(:id, 'new_user')
-		form.submit
+		login_form = @driver.find_element(:id, 'new_user')
+		login_form.submit
 		wait_until_page_loads(path)
+		close_modal('message_modal')
 		# fill out study form
+		study_form = @driver.find_element(:id, 'new_study')
+		study_form.find_element(:id, 'study_name').send_keys('Test Study')
+		study_form.find_element(:id, 'study_embargo').send_keys('2016-12-31')
+		public = study_form.find_element(:id, 'study_public')
+		public.send_keys('No')
+		# add a share
+		share = study_form.find_element(:id, 'add-study-share')
+		wait_for_click(share)
+		share_email = study_form.find_element(:class, 'share-email')
+		share_email.send_keys(@share_user[:email])
+		# save study
+		study_form.submit
+
+
+
+		# delete study
+		@driver.get(@base_url + '/studies')
+		wait_until_page_loads(@base_url + '/studies')
+		@driver.find_element(:class, 'delete-btn').click
 	end
 
 end

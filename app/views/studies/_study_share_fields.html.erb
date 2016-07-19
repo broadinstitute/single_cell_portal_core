@@ -2,11 +2,11 @@
 	<div class="form-group row">
 		<div class="col-sm-6">
 			<%= f.label :email %><br />
-			<%= f.text_field :email, class: 'form-control' %>
+			<%= f.text_field :email, class: 'form-control share-email' %>
 		</div>
 		<div class="col-sm-5">
 			<%= f.label :permission %><br />
-			<%= f.select :permission, options_for_select(StudyShare::PERMISSION_TYPES, f.object.permission), {}, class: 'form-control' %>
+			<%= f.select :permission, options_for_select(StudyShare::PERMISSION_TYPES, f.object.permission), {}, class: 'form-control share-permission' %>
 		</div>
 		<div class="col-sm-1">
 			<%= f.label :delete, "&nbsp;".html_safe %><br />
