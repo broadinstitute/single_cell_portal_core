@@ -22,7 +22,7 @@ class UiTestSuite < Test::Unit::TestCase
 		@genes = %w(Leprel1 Dpf1 Erp29 Dpysl5 Ak7 Dgat2 Lsm11 Mamld1 Rbm17 Gad1 Prox1)
 		@wait = Selenium::WebDriver::Wait.new(:timeout => 20)
 		# configure path to sample data as appropriate for your system
-		@snuc_seq_path = '/Users/bistline/Documents/Data/single_cell/snuc-seq'
+		@snuc_seq_path = '/Users/bistline/Documents/Data/single_cell/snuc-seq/'
 	end
 
 	def teardown
@@ -164,6 +164,7 @@ class UiTestSuite < Test::Unit::TestCase
 		login_form.submit
 		wait_until_page_loads(path)
 		close_modal('message_modal')
+
 		# fill out study form
 		study_form = @driver.find_element(:id, 'new_study')
 		study_form.find_element(:id, 'study_name').send_keys('Test Study')
@@ -173,17 +174,26 @@ class UiTestSuite < Test::Unit::TestCase
 		# add a share
 		share = study_form.find_element(:id, 'add-study-share')
 		wait_for_click(share)
+
 		share_email = study_form.find_element(:class, 'share-email')
 		share_email.send_keys(@share_user[:email])
 		# save study
 		study_form.submit
 
-
+		# upload cluster assignments
+		# @wait.until {@driver.find_element(:id, 'assignments_form')}
+		# close_modal('message_modal')
+		# study_id = @driver.current_url.split('/')[5]
+		# upload_assignments = @driver.find_element(:id, 'upload-assignments')
+		# upload_assignments.send_keys(@snuc_seq_path + 'CLUSTER_AND_SUBCLUSTER_INDEX.txt')
+		# @wait.until {@driver.find_element(:id, 'start-file-upload')}
+		# upload_btn = @driver.find_element(:id, 'start-file-upload')
+		# upload_btn.click
 
 		# delete study
 		@driver.get(@base_url + '/studies')
 		wait_until_page_loads(@base_url + '/studies')
 		@driver.find_element(:class, 'delete-btn').click
+		@driver.switch_to.alert.accept
 	end
-
 end
