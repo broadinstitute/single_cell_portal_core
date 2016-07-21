@@ -9,7 +9,7 @@ class UiTestSuite < Test::Unit::TestCase
 		@driver = Selenium::WebDriver.for :firefox
 		@base_url = 'https://localhost/single_cell'
 		@accept_next_alert = true
-		@driver.manage.timeouts.implicit_wait = 20
+		@driver.manage.timeouts.implicit_wait = 120
 		# test user needs to be created manually before this will work
 		@test_user = {
 				email: 'test.user@gmail.com',
@@ -20,7 +20,7 @@ class UiTestSuite < Test::Unit::TestCase
 				password: 'password'
 		}
 		@genes = %w(Leprel1 Dpf1 Erp29 Dpysl5 Ak7 Dgat2 Lsm11 Mamld1 Rbm17 Gad1 Prox1)
-		@wait = Selenium::WebDriver::Wait.new(:timeout => 20)
+		@wait = Selenium::WebDriver::Wait.new(:timeout => 120)
 		# configure path to sample data as appropriate for your system
 		@snuc_seq_path = '/Users/bistline/Documents/Data/single_cell/snuc-seq/'
 	end
@@ -58,6 +58,17 @@ class UiTestSuite < Test::Unit::TestCase
 		click = element.click
 		@wait.until {click == 'ok'}
 		click
+	end
+
+	# wait until element is rendered and visible
+	def wait_for_render(id)
+		@wait.until {@driver.find_element(:id, id).displayed? == true}
+	end
+
+	# wait until next button is enabled
+	def wait_for_next
+		n = @driver.find_element(id: 'next-btn')
+		@wait.until {n[:class].include?('enabled')}
 	end
 
 	# front end tests
@@ -172,7 +183,8 @@ class UiTestSuite < Test::Unit::TestCase
 		public = study_form.find_element(:id, 'study_public')
 		public.send_keys('No')
 		# add a share
-		share = study_form.find_element(:id, 'add-study-share')
+		share = @driver.find_element(:id, 'add-study-share')
+		@wait.until {share.displayed? == true}
 		wait_for_click(share)
 
 		share_email = study_form.find_element(:class, 'share-email')
@@ -181,14 +193,75 @@ class UiTestSuite < Test::Unit::TestCase
 		study_form.submit
 
 		# upload cluster assignments
-		# @wait.until {@driver.find_element(:id, 'assignments_form')}
-		# close_modal('message_modal')
-		# study_id = @driver.current_url.split('/')[5]
-		# upload_assignments = @driver.find_element(:id, 'upload-assignments')
-		# upload_assignments.send_keys(@snuc_seq_path + 'CLUSTER_AND_SUBCLUSTER_INDEX.txt')
-		# @wait.until {@driver.find_element(:id, 'start-file-upload')}
-		# upload_btn = @driver.find_element(:id, 'start-file-upload')
-		# upload_btn.click
+		wait_for_render('assignments_form')
+		close_modal('message_modal')
+		upload_assignments = @driver.find_element(:id, 'upload-assignments')
+		upload_assignments.send_keys(@snuc_seq_path + 'CLUSTER_AND_SUBCLUSTER_INDEX.txt')
+		wait_for_render('start-file-upload')
+		upload_btn = @driver.find_element(:id, 'start-file-upload')
+		upload_btn.click
+		# wait for upload to complete and wizard to step forward
+		wait_for_render('parent_cluster_form')
+
+		# upload cluster coordinates
+		upload_clusters = @driver.find_element(:id, 'upload-clusters')
+		upload_clusters.send_keys(@snuc_seq_path + 'Coordinates_Major_cell_types.txt')
+		wait_for_render('start-file-upload')
+		upload_btn = @driver.find_element(:id, 'start-file-upload')
+		upload_btn.click
+		wait_for_render('expression_form')
+
+		# upload expression matrix
+		upload_expression = @driver.find_element(:id, 'upload-expression')
+		upload_expression.send_keys(@snuc_seq_path + 'DATA_MATRIX_LOG_TPM.txt')
+		wait_for_render('start-file-upload')
+		upload_btn = @driver.find_element(:id, 'start-file-upload')
+		upload_btn.click
+		@wait.until {@driver.find_element(class: 'initialize_sub_clusters_form').displayed? == true}
+
+		# upload sub-cluster
+		upload_clusters = @driver.find_element(:class, 'upload-sub-clusters')
+		upload_clusters.send_keys(@snuc_seq_path + 'Coordinates_CA1.txt')
+		wait_for_render('start-file-upload')
+		upload_btn = @driver.find_element(:id, 'start-file-upload')
+		upload_btn.click
+		@wait.until {@driver.find_element(class: 'download-btn').displayed? == true}
+		next_btn = @driver.find_element(:id, 'next-btn')
+		@wait.until {next_btn[:class].include?('enabled')}
+		next_btn.click
+		@wait.until {@driver.find_element(class: 'initialize_marker_genes_form').displayed? == true}
+
+		# upload marker gene list
+		upload_clusters = @driver.find_element(:class, 'upload-marker-genes')
+		upload_clusters.send_keys(@snuc_seq_path + 'Major_cell_types_marker_genes.txt')
+		wait_for_render('start-file-upload')
+		upload_btn = @driver.find_element(:id, 'start-file-upload')
+		upload_btn.click
+		@wait.until {@driver.find_element(class: 'download-btn').displayed? == true}
+		next_btn = @driver.find_element(:id, 'next-btn')
+		@wait.until {next_btn[:class].include?('enabled')}
+		next_btn.click
+		@wait.until {@driver.find_element(class: 'initialize_fastq_form').displayed? == true}
+
+		# upload fastq
+		upload_clusters = @driver.find_element(:class, 'upload-fastq')
+		upload_clusters.send_keys(@snuc_seq_path + 'e_coli_1000_1.fq')
+		wait_for_render('start-file-upload')
+		upload_btn = @driver.find_element(:id, 'start-file-upload')
+		upload_btn.click
+		@wait.until {@driver.find_element(class: 'download-btn').displayed? == true}
+		next_btn = @driver.find_element(:id, 'next-btn')
+		@wait.until {next_btn[:class].include?('enabled')}
+		next_btn.click
+		@wait.until {@driver.find_element(class: 'initialize_misc_form').displayed? == true}
+
+		# upload doc file
+		upload_clusters = @driver.find_element(:class, 'upload-misc')
+		upload_clusters.send_keys(@snuc_seq_path + 'README.txt')
+		wait_for_render('start-file-upload')
+		upload_btn = @driver.find_element(:id, 'start-file-upload')
+		upload_btn.click
+		@wait.until {@driver.find_element(class: 'download-btn').displayed? == true}
 
 		# delete study
 		@driver.get(@base_url + '/studies')

@@ -21,7 +21,7 @@
 		</div>
 		<div class="col-sm-5 upload-field <%= study_file.human_data? ? 'hidden' : nil %>">
 			<%= f.label :upload, 'Upload Data File' %><br />
-			<%= f.file_field :upload, class: 'btn btn-info fileinput-button' %>
+			<%= f.file_field :upload, class: 'btn btn-info fileinput-button upload-fastq' %>
 			<%= f.hidden_field :status, value: 'uploading' %>
 		</div>
 		<div class="col-sm-5 fastq-field <%= study_file.human_data? ? nil : 'hidden' %>">
