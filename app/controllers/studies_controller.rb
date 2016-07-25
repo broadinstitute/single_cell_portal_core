@@ -42,7 +42,10 @@ class StudiesController < ApplicationController
   def initialize_study
     # load any existing files if user restarted for some reason (unlikely)
     intitialize_wizard_files
-
+    # check if study has been properly initialized yet, set to true if not
+    if !@assignment_file.new_record? && !@parent_cluster.new_record? && !@expression_file.new_record? && !@study.initialized?
+      @study.update({initialized: true})
+    end
   end
 
   # PATCH/PUT /studies/1
@@ -253,9 +256,9 @@ class StudiesController < ApplicationController
   # set up variables for wizard
   def intitialize_wizard_files
     @assignment_file = @study.cluster_assignment_file
-    @parent_cluster = @study.study_files.select {|sf| sf.file_type == 'Cluster Coordinates' && sf.cluster_type == 'parent'}.first
+    @parent_cluster = @study.parent_cluster_coordinates_file
+    @expression_file = @study.expression_matrix_file
     @sub_clusters = @study.study_files.select {|sf| sf.file_type == 'Cluster Coordinates' && sf.cluster_type == 'sub'}
-    @expression_file = @study.study_files.select {|sf| sf.file_type == 'Expression Matrix'}.first
     @marker_lists = @study.study_files.select {|sf| sf.file_type == 'Marker Gene List'}
     @fastq_files = @study.study_files.select {|sf| sf.file_type == 'Fastq'}
     @other_files = @study.study_files.select {|sf| %w(Documentation Other).include?(sf.file_type)}

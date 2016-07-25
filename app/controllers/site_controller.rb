@@ -20,9 +20,11 @@ class SiteController < ApplicationController
   # load single study and view top-level clusters
   def study
     # parse all coordinates out into hash using generic method
-    @coordinates = load_cluster_points
-    @options = load_sub_cluster_options
-    @range = set_range(@coordinates.values)
+    if @study.initialized?
+      @coordinates = load_cluster_points
+      @options = load_sub_cluster_options
+      @range = set_range(@coordinates.values)
+    end
   end
 
   # render a single cluster and its constituent sub-clusters

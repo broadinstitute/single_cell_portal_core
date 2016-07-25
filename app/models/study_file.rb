@@ -90,6 +90,11 @@ class StudyFile
     (self.bytes_parsed / self.upload_file_size.to_f * 100).floor
   end
 
+  # file type as a css class
+  def file_type_class
+    self.file_type.downcase.split.join('-') + '-file'
+  end
+
   # method to return number of lines in a file, uses built-in unix
 
   private
@@ -105,6 +110,9 @@ class StudyFile
   def set_file_name_and_url_safe_name
     if self.upload_file_name.nil?
       self.status = 'uploaded'
+      if self.name.nil?
+        self.name = ''
+      end
     elsif (self.name.nil? || self.name.blank?) || (!self.new_record? && self.upload_file_name != self.name)
       self.name = self.upload_file_name
     end

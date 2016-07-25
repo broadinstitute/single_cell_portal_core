@@ -1,4 +1,4 @@
-<nav class="navbar fluid navbar-inverse navbar-fixed-top sc-navbar" role="navigation">
+<nav class="navbar fluid navbar-inverse navbar-fixed-top sc-navbar" role="navigation" id="single-cell-navbar">
 	<div class="navbar-header">
 		<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
 			<span class="sr-only">Toggle navigation</span>
@@ -8,7 +8,7 @@
 		</button>
 		<%= link_to "<span class='fa fa-home'></span> Single Cell Portal".html_safe, site_path, class: "navbar-brand hidden-xs check-upload" %>
 	</div>
-	<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+	<div class="collapse navbar-collapse">
 		<ul class="nav navbar-nav">
 			<% set_breadcrumbs.each do |breadcrumb| %>
 				<li><%= link_to "<span class='fa fa-chevron-right'></span> 	#{breadcrumb[:title]}".html_safe, breadcrumb[:link], class: 'check-upload' %></li>

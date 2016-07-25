@@ -53,16 +53,15 @@ class UiTestSuite < Test::Unit::TestCase
 		dismiss.click
 	end
 
-	# method to click element and wait for click to complete
-	def wait_for_click(element)
-		click = element.click
-		@wait.until {click == 'ok'}
-		click
-	end
-
 	# wait until element is rendered and visible
 	def wait_for_render(how, what)
 		@wait.until {@driver.find_element(how, what).displayed? == true}
+	end
+
+	# method to wait for next button to enable
+	def wait_for_next(btn)
+		parent = btn.find_element(:xpath, '..')
+		@wait.until {parent[:class].include?('enabled') == true}
 	end
 
 	# front end tests
@@ -87,7 +86,7 @@ class UiTestSuite < Test::Unit::TestCase
 		assert legend.size == 8, "incorrect number of subclusters found in CA1, expected 8 - found #{legend.size}"
 	end
 
-	test 'download study data file' do
+	test 'a. download study data file' do
 		path = @base_url + '/study/snuc-seq'
 		@driver.get(path)
 		wait_until_page_loads(path)
@@ -96,10 +95,10 @@ class UiTestSuite < Test::Unit::TestCase
 		opened = download_section.click
 		@wait.until { opened == 'ok'}
 		files = @driver.find_elements(:class, 'dl-link')
-		file_link = files.sample
-		downloaded = wait_for_click(file_link)
+		file_link = files.first
+		@wait.until { file_link.displayed? }
+		downloaded = file_link.click
 		assert downloaded == 'ok', 'could not click download link'
-		assert file_link.displayed?, 'file link was not found'
 	end
 
 	test 'search for single gene' do
@@ -153,8 +152,8 @@ class UiTestSuite < Test::Unit::TestCase
 	end
 
 	# admin backend test of entire study creation process as order needs to be maintained throughout
-	# logs in, creates study, and deletes new study on completion
-	# uses sNuc-Seq data as test study
+	# logs test user in, creates study, and deletes study on completion
+	# uses sNuc-Seq data as inputs
 	test 'create a study' do
 		# log in first
 		path = @base_url + '/studies/new'
@@ -179,8 +178,8 @@ class UiTestSuite < Test::Unit::TestCase
 		# add a share
 		share = @driver.find_element(:id, 'add-study-share')
 		@wait.until {share.displayed? == true}
-		wait_for_click(share)
-
+		share_study = share.click
+		@wait.until {share_study == 'ok'}
 		share_email = study_form.find_element(:class, 'share-email')
 		share_email.send_keys(@share_user[:email])
 		# save study
@@ -224,8 +223,7 @@ class UiTestSuite < Test::Unit::TestCase
 		@wait.until {@driver.find_element(:class, 'sub-cluster-modal').style(:display) == 'none'}
 		@wait.until {@driver.find_element(:tag_name, 'body')[:class].include?('modal-open') == false}
 		next_btn = @driver.find_element(:id, 'next-btn')
-		parent = next_btn.find_element(:xpath, '..')
-		@wait.until {parent[:class].include?('enabled') == true}
+		wait_for_next(next_btn)
 		next_btn.click
 		wait_for_render(:class, 'initialize_marker_genes_form')
 
@@ -238,8 +236,7 @@ class UiTestSuite < Test::Unit::TestCase
 		@wait.until {@driver.find_element(:class, 'sub-cluster-modal').style(:display) == 'none'}
 		@wait.until {@driver.find_element(:tag_name, 'body')[:class].include?('modal-open') == false}
 		next_btn = @driver.find_element(:id, 'next-btn')
-		parent = next_btn.find_element(:xpath, '..')
-		@wait.until {parent[:class].include?('enabled') == true}
+		wait_for_next(next_btn)
 		next_btn.click
 		wait_for_render(:class, 'initialize_fastq_form')
 
@@ -249,9 +246,9 @@ class UiTestSuite < Test::Unit::TestCase
 		wait_for_render(:id, 'start-file-upload')
 		upload_btn = @driver.find_element(:id, 'start-file-upload')
 		upload_btn.click
+		wait_for_render(:class, 'fastq-file')
 		next_btn = @driver.find_element(:id, 'next-btn')
-		parent = next_btn.find_element(:xpath, '..')
-		@wait.until {parent[:class].include?('enabled') == true}
+		wait_for_next(next_btn)
 		next_btn.click
 		wait_for_render(:class, 'initialize_misc_form')
 
@@ -261,7 +258,7 @@ class UiTestSuite < Test::Unit::TestCase
 		wait_for_render(:id, 'start-file-upload')
 		upload_btn = @driver.find_element(:id, 'start-file-upload')
 		upload_btn.click
-		@wait.until {@driver.find_element(:class, 'download-btn').displayed? == true}
+		wait_for_render(:class, 'documentation-file')
 
 		# delete study
 		@driver.get(@base_url + '/studies')

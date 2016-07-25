@@ -44,6 +44,7 @@ class Study
   field :url_safe_name, type: String
   field :description, type: String
   field :public, type: Boolean, default: true
+  field :initialized, type: Boolean, default: false
 
   accepts_nested_attributes_for :study_files, allow_destroy: true
   accepts_nested_attributes_for :study_shares, allow_destroy: true, reject_if: proc { |attributes| attributes['email'].blank? }
@@ -142,6 +143,16 @@ class Study
     self.study_files.where(file_type:'Cluster Assignments').first
   end
 
+  # helper method to directly access cluster assignment file
+  def parent_cluster_coordinates_file
+    self.study_files.where(file_type:'Cluster Coordinates', cluster_type: 'parent').first
+  end
+
+  # helper method to directly access cluster assignment file
+  def expression_matrix_file
+    self.study_files.where(file_type:'Expression Matrix').first
+  end
+
   # method to parse master expression scores file for study and populate collection
   def make_expression_scores(expression_file, user=nil)
     Rails.logger.level = 4
@@ -214,6 +225,10 @@ class Study
       @message << "Completed!"
       @message << "ExpressionScores created: #{@count}"
       @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
+      # set initialized to true if possible
+      if !self.cluster_assignment_file.nil? && !self.parent_cluster_coordinates_file.nil? && !self.initialized?
+        self.update(initialized: true)
+      end
       unless user.nil?
         SingleCellMailer.notify_user_parse_complete(user.email, "Expression file: '#{expression_file.name}' has completed parsing", @message).deliver_now
       end
@@ -365,6 +380,10 @@ class Study
       @message << "Clusters created: #{@cluster_count}"
       @message << "Cluster Points created: #{@cluster_point_count}"
       @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
+      # set initialized to true if possible
+      if !self.cluster_assignment_file.nil? && !self.parent_cluster_coordinates_file.nil? && !self.expression_matrix_file.nil? && !self.initialized?
+        self.update(initialized: true)
+      end
       unless user.nil?
         SingleCellMailer.notify_user_parse_complete(user.email, "Cluster file: '#{cluster_file.name}' has completed parsing", @message).deliver_now
       end

@@ -104,11 +104,12 @@
 <%= render partial: '/layouts/download_helper' %>
 <div id="study-files-notice-target"></div>
 <%= render 'fileupload_templates' %>
+<%= render 'required_modal' %>
 
 <script>
 	$(document).ready(function() {
 		var wizard = $('#rootwizard');
-
+		var requiredDialogShow = false;
 		wizard.bootstrapWizard({'tabClass': 'nav-tabs',
 			onTabShow: function(tab, navigation, index, clickedIndex, clickedTab) {
 				var total = navigation.find('li').length;
@@ -126,24 +127,20 @@
 					wizard.find('.pager .finish').addClass('enabled');
 					// user is within first 3 steps and has completed a step to move forward
 				} else if ( done >= current && current < 4) {
-					wizard.find('.pager .skip').hide();
 					$('#next-btn').parent().removeClass('disabled');
 					$('#next-btn').parent().addClass('enabled');
 					// user is past first 3 steps and has completed a step to move forward
 				} else if ( done >= current && current >= 4) {
-					wizard.find('.pager .skip').show();
 					$('#next-btn').parent().removeClass('disabled');
 					$('#next-btn').parent().addClass('enabled');
 					// user is past first 3 steps but has not completed a step to move forward (allow skip)
 				} else if ( done < current && current >= 4) {
 					wizard.find('.pager .next').show();
-					wizard.find('.pager .skip').show();
 					$('#next-btn').parent().addClass('disabled');
 					$('#next-btn').parent().removeClass('enabled');
 					$('#next-btn').click(disableNext());
 				// user is within first 3 steps of wizard and needs to complete items
 				} else {
-					wizard.find('.pager .skip').hide();
 					$('#next-btn').parent().addClass('disabled');
 					$('#next-btn').parent().removeClass('enabled');
 					$('#next-btn').click(disableNext());
@@ -173,7 +170,17 @@
 		});
 
 		$('#skip-btn').click(function() {
-			completeWizardStep();
+			var stepsDone = 7 - $('li.wizard-nav.disabled').length
+			var activeStep = $('li.wizard-nav').index($('li.wizard-nav.active')) + 1;
+			// alert user about skipping required steps
+			if (stepsDone <= 3 && !requiredDialogShow) {
+				$('#required-modal').modal({show: true, backdrop: 'static'});
+				requiredDialogShow = true;
+			}
+			// increment navigation
+			if (activeStep == stepsDone) {
+				completeWizardStep();
+			}
 			wizard.find('.pager .next').show();
 			$('#next-btn').parent().addClass('enabled');
 		})

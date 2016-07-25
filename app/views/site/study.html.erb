@@ -48,52 +48,54 @@
 		</div>
 	</div>
 </div>
-<div class="row">
-	<div class="col-md-3" id="search-target">
-		<%= render partial: 'search_options' %>
-	</div>
-	<div class="col-md-9" id="render-target">
-		<%= render partial: 'view_options' %>
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<div class="panel-title">
-					<h4><%= link_to "#{@study.name} Clusters <span class='fa fa-chevron-down toggle-glyph'></span>".html_safe, '#plots', 'data-toggle' => 'collapse' %></h4>
+<% if @study.initialized? %>
+	<div class="row">
+		<div class="col-md-3" id="search-target">
+			<%= render partial: 'search_options' %>
+		</div>
+		<div class="col-md-9" id="render-target">
+			<%= render partial: 'view_options' %>
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<div class="panel-title">
+						<h4><%= link_to "#{@study.name} Clusters <span class='fa fa-chevron-down toggle-glyph'></span>".html_safe, '#plots', 'data-toggle' => 'collapse' %></h4>
+					</div>
 				</div>
-			</div>
-			<div id="plots" class="panel-collapse collapse in">
-				<div class="panel-body">
-					<div class="col-md-12">
-						<div id="cluster-plot"></div>
+				<div id="plots" class="panel-collapse collapse in">
+					<div class="panel-body">
+						<div class="col-md-12">
+							<div id="cluster-plot"></div>
+						</div>
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
-</div>
-<%= render partial: '/layouts/download_helper' %>
+	<%= render partial: '/layouts/download_helper' %>
 
-<script type="text/javascript">
+	<script type="text/javascript">
 
-	<%= render partial: 'study_scatter_plot' %>
+		<%= render partial: 'study_scatter_plot' %>
 
-	// listener for cluster nav, specific to study page
-	$("#cluster").change(function() {
-		var url = '<%= render_cluster_path(study_name: params[:study_name]) %>';
-		var target = document.getElementById('cluster-plot');
-		var spinner = new Spinner(opts).spin(target);
-		$(target).data('spinner', spinner);
-		var cluster = $('#cluster').val();
-		if (cluster == "") {
-			$.get(url);
-		} else {
-			$.get(url + '?cluster=' + cluster);
-		}
-	});
+		// listener for cluster nav, specific to study page
+		$("#cluster").change(function() {
+			var url = '<%= render_cluster_path(study_name: params[:study_name]) %>';
+			var target = document.getElementById('cluster-plot');
+			var spinner = new Spinner(opts).spin(target);
+			$(target).data('spinner', spinner);
+			var cluster = $('#cluster').val();
+			if (cluster == "") {
+				$.get(url);
+			} else {
+				$.get(url + '?cluster=' + cluster);
+			}
+		});
 
-	$( window ).on('resizeEnd', function() {
-		<%= render 'study_scatter_layout' %>
+		$( window ).on('resizeEnd', function() {
+			<%= render 'study_scatter_layout' %>
 
-		Plotly.newPlot('cluster-plot', data, layout);
-	});
+			Plotly.newPlot('cluster-plot', data, layout);
+		});
 
-</script>
+	</script>
+<% end %>
