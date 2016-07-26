@@ -70,7 +70,7 @@
 			<div id="fastq-target">
 				<div class="well well-sm">
 					<h2>Step 6. Upload Fastq Files <small class="initialize-label"><span class="label label-info">Optional</span></small></h2>
-					<p class="lead">Upload any non-primary human fastq data files.  If your data is primary human data, you can link to it here by selecting 'Yes' in the 'Primary Human Data' field.<br /><strong class="text-info">If you are uploading fastq files, it is strongly recommended to compress them first using gzip.</strong></p>
+					<p class="lead">Upload any non-primary human fastq data files.  If your data is primary human data, you can link to it here by selecting 'Yes' in the 'Primary Human Data' field.<br /><strong class="text-danger">If you are uploading fastq files, they must be compressed first using gzip.</strong></p>
 					<p><%= link_to "FASTQ File Format <span class='fa fa-info-circle'></span>".html_safe, 'https://en.wikipedia.org/wiki/FASTQ_format#Format', class: 'btn btn-default' %>&nbsp;<%= link_to "gzip Documentation <span class='fa fa-info-circle'></span>".html_safe, 'http://www.gnu.org/software/gzip/manual/gzip.html', class: 'btn btn-default' %></p>
 				</div>
 				<% @fastq_files.each do |study_file| %>
