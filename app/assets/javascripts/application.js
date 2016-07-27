@@ -27,20 +27,31 @@
 var fileUploading = false;
 
 // used for keeping track of position in wizard
-var completed = 0;
+var completed = {
+    initialize_assignments_form_nav: false,
+    initialize_clusters_form_nav: false,
+    initialize_expression_form_nav: false,
+    initialize_sub_clusters_form_nav: false,
+    initialize_marker_genes_form_nav: false,
+    initialize_fastq_form_nav: false,
+    initialize_misc_form_nav: false
+};
 
-function completeWizardStep() {
-    completed++;
-    $($('li.wizard-nav')[completed]).removeClass('disabled');
+function completeWizardStep(step) {
+    console.log('completeWizardStep: ' + step);
+    completed[step] = true;
+    // determine next step
+    var index = $('.wizard-nav').index($('#' + step));
+    $($('.wizard-nav')[index]).removeClass('disabled');
     $('#next-btn').parent().removeClass('disabled');
     $('#next-btn').parent().addClass('enabled');
     $('#next-btn').off(disableNext());
     return completed;
 }
 
-function resetWizardStep() {
-    completed--;
-    $($('li.wizard-nav')[completed]).addClass('disabled');
+function resetWizardStep(step) {
+    completed[step] = false;
+    $('#' + step).addClass('disabled');
     $('#next-btn').parent().addClass('disabled');
     $('#next-btn').parent().removeClass('enabled');
     $('#next-btn').click(disableNext());
@@ -49,7 +60,14 @@ function resetWizardStep() {
 
 // get current status of upload/initializer wizard
 function getWizardStatus() {
-    return completed;
+    var done = 0;
+    var steps = Object.values(completed);
+    for (var i = 0; i < steps.length; ++i) {
+        if (steps[i] == true) {
+            done++;
+        }
+    }
+    return done;
 }
 
 function setWizardProgress(stepsDone) {

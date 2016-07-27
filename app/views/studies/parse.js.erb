@@ -3,9 +3,11 @@ $('<%= params[:modal_target]%>').modal('hide');
 // when uploading a file that can have multiple instances, only call completeWizardStep the first time
 // also update progress bar
 if (<%= %w(initialize_sub_clusters_form initialize_marker_genes_form initialize_fastq_form initialize_misc_form).include?(params[:partial]) %> && <%= @study.study_files.select {|sf| sf.file_type == @study_file.file_type && sf.cluster_type == @study_file.cluster_type}.count %> == 1) {
-	completeWizardStep();
+	var step = '<%= params[:partial] %>_nav';
+	completeWizardStep(step);
 	var status = getWizardStatus();
 	setWizardProgress(status);
+	console.log('incrementing status for ' + step + ' upload')
 }
 
 // re-render form upload to get download button and increment completed status

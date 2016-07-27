@@ -46,7 +46,7 @@
 		$(function() {
 			// check if upload has already happened
 			if (<%= !study_file.upload_file_name.nil? %>) {
-				completeWizardStep();
+				completeWizardStep('initialize_assignments_form_nav');
 				console.log('incrementing status for assignment file upload')
 			}
 

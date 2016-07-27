@@ -1,14 +1,14 @@
 <h1>Upload/Edit Study Data for '<%= @study.name %>'</h1>
 
 <div id="rootwizard">
-	<ul class="nav wizard-nav">
-		<li role="presentation" class="wizard-nav"><a href="#assignment" data-toggle="tab">1. Cluster Assignments </a></li>
-		<li role="presentation" class="disabled wizard-nav"><a href="#clusters" data-toggle="tab">2. Primary Cluster Coordinates </a></li>
-		<li role="presentation" class="disabled wizard-nav"><a href="#expression" data-toggle="tab">3. Expression Matrix </a></li>
-		<li role="presentation" class="disabled wizard-nav"><a href="#sub-clusters" data-toggle="tab">4. Sub-Cluster Coordinates </a></li>
-		<li role="presentation" class="disabled wizard-nav"><a href="#marker-genes" data-toggle="tab">5. Marker Gene Lists </a></li>
-		<li role="presentation" class="disabled wizard-nav"><a href="#fastq" data-toggle="tab">6. Fastq Data </a></li>
-		<li role="presentation" class="disabled wizard-nav"><a href="#misc" data-toggle="tab">7. Miscellaneous </a></li>
+	<ul class="nav wizard">
+		<li role="presentation" class="wizard-nav" id="initialize_assignments_form_nav"><a href="#assignment" data-toggle="tab">1. Cluster Assignments </a></li>
+		<li role="presentation" class="<%= @parent_cluster.new_record? ? 'disabled' : nil %> wizard-nav" id="initialize_clusters_form_nav"><a href="#clusters" data-toggle="tab">2. Primary Cluster Coordinates </a></li>
+		<li role="presentation" class="<%= @expression_file.new_record? ? 'disabled' : nil %> wizard-nav" id="initialize_expression_form_nav"><a href="#expression" data-toggle="tab">3. Expression Matrix </a></li>
+		<li role="presentation" class="<%= @sub_clusters.first.new_record? ? 'disabled' : nil %> wizard-nav" id="initialize_sub_clusters_form_nav"><a href="#sub-clusters" data-toggle="tab">4. Sub-Cluster Coordinates </a></li>
+		<li role="presentation" class="<%= @marker_lists.first.new_record? ? 'disabled' : nil %> wizard-nav" id="initialize_marker_genes_form_nav"><a href="#marker-genes" data-toggle="tab">5. Marker Gene Lists </a></li>
+		<li role="presentation" class="<%= @fastq_files.first.new_record? ? 'disabled' : nil %> wizard-nav" id="initialize_fastq_form_nav"><a href="#fastq" data-toggle="tab">6. Fastq Data </a></li>
+		<li role="presentation" class="<%= @other_files.first.new_record? ? 'disabled' : nil %> wizard-nav" id="initialize_misc_form_nav"><a href="#misc" data-toggle="tab">7. Miscellaneous </a></li>
 	</ul>
 
 	<div id="bar" class="progress">
@@ -49,6 +49,12 @@
 				<% @sub_clusters.each do |study_file| %>
 					<%= render partial: 'initialize_sub_clusters_form', locals: {study_file: study_file} %>
 				<% end %>
+				<script type="text/javascript">
+					if (<%= !@sub_clusters.first.new_record? %>) {
+						completeWizardStep('initialize_sub_clusters_form_nav');
+						console.log('incrementing status for sub cluster upload')
+					}
+				</script>
 			</div>
 			<p><%= link_to "<span class='fa fa-plus'></span> Add a Sub-Cluster File".html_safe, new_study_file_study_path(@study._id, file_type: 'Cluster Coordinates', cluster_type: 'sub', target: '#sub-clusters-target', form: 'initialize_sub_clusters_form'), class: 'btn btn-sm btn-primary', 'data-remote' => true %></p>
 		</div>
@@ -62,6 +68,12 @@
 				<% @marker_lists.each do |study_file| %>
 					<%= render partial: 'initialize_marker_genes_form', locals: {study_file: study_file} %>
 				<% end %>
+				<script type="text/javascript">
+					if (<%= !@marker_lists.first.new_record? %>) {
+						completeWizardStep('initialize_marker_genes_form_nav');
+						console.log('incrementing status for marker gene upload')
+					}
+				</script>
 			</div>
 			<p><%= link_to "<span class='fa fa-plus'></span> Add a Marker Gene List File".html_safe, new_study_file_study_path(@study._id, file_type: 'Marker Gene List', target: '#marker-genes-target', form: 'initialize_marker_genes_form'), class: 'btn btn-sm btn-primary', 'data-remote' => true %></p>
 
@@ -76,6 +88,13 @@
 				<% @fastq_files.each do |study_file| %>
 					<%= render partial: 'initialize_fastq_form', locals: {study_file: study_file} %>
 				<% end %>
+				<script type="text/javascript">
+					if (<%= !@fastq_files.first.new_record? %>) {
+						completeWizardStep('initialize_fastq_form_nav');
+						console.log('incrementing status for fastq upload')
+
+					}
+				</script>
 			</div>
 			<p><%= link_to "<span class='fa fa-plus'></span> Add a Fastq File".html_safe, new_study_file_study_path(@study._id, file_type: 'Fastq', target: '#fastq-target', form: 'initialize_fastq_form'), class: 'btn btn-sm btn-primary', 'data-remote' => true %></p>
 
@@ -89,6 +108,13 @@
 				<% @other_files.each do |study_file| %>
 					<%= render partial: 'initialize_misc_form', locals: {study_file: study_file} %>
 				<% end %>
+				<script type="text/javascript">
+					if (<%= !@other_files.first.new_record? %>) {
+						completeWizardStep('initialize_misc_form_nav');
+						console.log('incrementing status for other upload')
+
+					}
+				</script>
 			</div>
 			<p><%= link_to "<span class='fa fa-plus'></span> Add a Study File".html_safe, new_study_file_study_path(@study._id, file_type: 'Documentation',  target: '#misc-target', form: 'initialize_misc_form'), class: 'btn btn-sm btn-primary', 'data-remote' => true %></p>
 
@@ -112,34 +138,29 @@
 		var requiredDialogShow = false;
 		wizard.bootstrapWizard({'tabClass': 'nav-tabs',
 			onTabShow: function(tab, navigation, index, clickedIndex, clickedTab) {
+				var step = $(tab[0]).attr('id');
+				var current = index + 1;
+				var prevStep = $($('li.wizard-nav')[index]).attr('id');
 				var total = navigation.find('li').length;
 				var done = getWizardStatus();
-				var current = index + 1;
-				var completed = Math.round((done/total) * 100);
-				$('#bar').find('.progress-bar').css({width:completed+'%'});
-				$('#progress-count').html(completed+'% Completed');
-				// user has finished wizard
-				if (current == 7) {
+				var pctCompleted = Math.round((done/total) * 100);
+				$('#bar').find('.progress-bar').css({width:pctCompleted+'%'});
+				$('#progress-count').html(pctCompleted+'% Completed');
+				// user has finished wizard, show finish button
+				if (index > 0) {
+					wizard.find('.pager .previous').removeClass('disabled');
+				}
+				if (step == 'initialize_misc_form_nav') {
 					wizard.find('.pager .next').hide();
 					wizard.find('.pager .skip').hide();
 					wizard.find('.pager .finish').show();
 					wizard.find('.pager .finish').removeClass('disabled');
 					wizard.find('.pager .finish').addClass('enabled');
-					// user is within first 3 steps and has completed a step to move forward
-				} else if ( done >= current && current < 4) {
+					// next step is ready to be done, enable button
+				} else if ( completed[step]) {
 					$('#next-btn').parent().removeClass('disabled');
 					$('#next-btn').parent().addClass('enabled');
-					// user is past first 3 steps and has completed a step to move forward
-				} else if ( done >= current && current >= 4) {
-					$('#next-btn').parent().removeClass('disabled');
-					$('#next-btn').parent().addClass('enabled');
-					// user is past first 3 steps but has not completed a step to move forward (allow skip)
-				} else if ( done < current && current >= 4) {
-					wizard.find('.pager .next').show();
-					$('#next-btn').parent().addClass('disabled');
-					$('#next-btn').parent().removeClass('enabled');
-					$('#next-btn').click(disableNext());
-				// user is within first 3 steps of wizard and needs to complete items
+					// next step is not ready, disable button
 				} else {
 					$('#next-btn').parent().addClass('disabled');
 					$('#next-btn').parent().removeClass('enabled');
@@ -147,7 +168,8 @@
 				}
 		},
 			onTabClick: function(tab, navigation, index, clickedIndex, clickedTab) {
-				if ( getWizardStatus() < clickedIndex && getWizardStatus() <= 3) {
+				var step = $(clickedTab[0]).attr('id');
+				if ( !completed[step] && step != 'initialize_assignments_form_nav') {
 					return false;
 				} else {
 					if ($('#next-btn').parent().css('display') == 'none') {
