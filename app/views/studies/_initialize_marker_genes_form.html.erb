@@ -1,4 +1,4 @@
-<%= form_for(study_file, url: update_study_file_study_path(@study._id), html: {id: "marker_gene_form_#{study_file._id}", class: 'bs-callout bs-callout-info initialize_marker_genes_form', remote: true}) do |f| %>
+<%= form_for(study_file, url: update_study_file_study_path(@study._id), html: {id: "marker_genes_form_#{study_file._id}", class: 'bs-callout bs-callout-info initialize_marker_genes_form', remote: true}) do |f| %>
 	<%= f.hidden_field :study_id, value: params[:id] %>
 	<div class="form-group row">
 		<div class="col-sm-4">
@@ -27,7 +27,7 @@
 					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: study_file.upload_file_name.nil? %>
 				</div>
 				<div class="col-xs-6">
-					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: "marker_gene_form_#{study_file._id}"), method: :delete, class: 'btn btn-block btn-danger delete-file', data: {remote: true} %>
+					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: "marker_genes_form_#{study_file._id}"), method: :delete, class: 'btn btn-block btn-danger delete-file', data: {remote: true} %>
 				</div>
 			</div>
 		</div>
@@ -40,13 +40,7 @@
 	<script type="text/javascript">
 
 		$(function() {
-			// check if upload has already happened
-			if (getWizardStatus() == 4 && <%= !study_file.new_record? %>) {
-				var status = completeWizardStep();
-				setWizardProgress(status);
-				console.log('incrementing status for marker gene list upload')
-			}
-			$('#marker_gene_form_<%= study_file._id %>').fileupload({
+			$('#marker_genes_form_<%= study_file._id %>').fileupload({
 				url: "<%= upload_study_path(@study._id) %>",
 				maxChunkSize: 10000000, // 10 MB
 				type: 'PATCH',
@@ -77,7 +71,7 @@
 						data: { status: 'uploaded', file: fileName}
 					});
 					fileUploading = false;
-					$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#marker-gene-parse-<%= study_file._id %>-modal', partial: 'initialize_marker_genes_form', selector: "#marker_gene_form_<%= study_file._id %>"});
+					$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#marker-gene-parse-<%= study_file._id %>-modal', partial: 'initialize_marker_genes_form', selector: "#marker_genes_form_<%= study_file._id %>"});
 					var target = $('#marker-gene-parse-<%= study_file._id %>-modal').find('.spinner-target')[0];
 					var spinner = new Spinner(opts).spin(target);
 					$(target).data('spinner', spinner);

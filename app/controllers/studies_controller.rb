@@ -127,6 +127,8 @@ class StudiesController < ApplicationController
   def delete_study_file
     @study_file = StudyFile.find(params[:study_file_id])
     unless @study_file.nil?
+      @file_type = @study_file.file_type
+      @cluster_type = @study_file.cluster_type
       @message = "'#{@study_file.name}' has been successfully deleted."
       @study_file.destroy
     end
@@ -137,6 +139,13 @@ class StudiesController < ApplicationController
         @study_file = @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'parent'})
       when '#expression_form'
         @study_file = @study.build_study_file({file_type: 'Expression Matrix'})
+      else
+        @study_file = @study.build_study_file({})
+        unless @file_type.nil?
+          @reset_status = @study.study_files.select {|sf| sf.file_type == @file_type && sf.cluster_type == @cluster_type && !sf.new_record?}.count == 0
+        else
+          @reset_status = false
+        end
     end
   end
 
@@ -164,8 +173,8 @@ class StudiesController < ApplicationController
       unless begin_of_chunk == current_size
         render json: study_file.to_jq_upload and return
       end
-      # Add the following chunk to the incomplete upload
-      File.open(study_file.upload.path, "ab") { |f| f.write(upload.read) }
+      # Add the following chunk to the incomplete upload, converting to unix line endings
+      File.open(study_file.upload.path, "ab") { |f| f.write(upload.read.gsub(/\r\n?/, "\n")) }
 
       # Update the upload_file_size attribute
       study_file.upload_file_size = study_file.upload_file_size.nil? ? upload.size : study_file.upload_file_size + upload.size

@@ -40,13 +40,6 @@
 	<script type="text/javascript">
 
 		$(function() {
-			// check if upload has already happened
-			if (getWizardStatus() == 6 && <%= !study_file.new_record? %>) {
-				var status = completeWizardStep();
-				setWizardProgress(status);
-				console.log('incrementing status for miscellaneous file upload')
-			}
-
 			$('#misc_form_<%= study_file._id %>').fileupload({
 				url: "<%= upload_study_path(@study._id) %>",
 				maxChunkSize: 10000000, // 10 MB

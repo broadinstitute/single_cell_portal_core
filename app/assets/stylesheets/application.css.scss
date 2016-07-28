@@ -305,3 +305,7 @@ html, body {
 .enabled > a:hover {
   background-color: #E6EFF2 !important;
 }
+
+.not-enabled > a {
+  color: #9999A1 !important;
+}

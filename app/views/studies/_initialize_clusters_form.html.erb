@@ -49,7 +49,9 @@
 		// check if upload has already happened
 		if (<%= !study_file.upload_file_name.nil? %>) {
 			completeWizardStep('initialize_clusters_form_nav');
-			console.log('incrementing status for primary cluster file upload')
+			console.log('incrementing status for primary cluster file upload');
+			$('#initialize_clusters_form_completed').replaceWith("<%= escape_javascript(render partial: 'step_completed', locals: {id: 'initialize_clusters_form_completed'}) %>");
+			$('#initialize_clusters_form_nav_completed').html("<span class='fa fa-check text-success'></span>");
 		}
 
 		$(function() {

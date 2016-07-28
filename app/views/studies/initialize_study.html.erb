@@ -1,14 +1,14 @@
-<h1>Upload/Edit Study Data for '<%= @study.name %>'</h1>
+<h1>Upload/Edit Study Data for '<%= @study.name %>' <%= render partial: 'initialize_study_label' %></h1>
 
 <div id="rootwizard">
 	<ul class="nav wizard">
-		<li role="presentation" class="wizard-nav" id="initialize_assignments_form_nav"><a href="#assignment" data-toggle="tab">1. Cluster Assignments </a></li>
-		<li role="presentation" class="<%= @parent_cluster.new_record? ? 'disabled' : nil %> wizard-nav" id="initialize_clusters_form_nav"><a href="#clusters" data-toggle="tab">2. Primary Cluster Coordinates </a></li>
-		<li role="presentation" class="<%= @expression_file.new_record? ? 'disabled' : nil %> wizard-nav" id="initialize_expression_form_nav"><a href="#expression" data-toggle="tab">3. Expression Matrix </a></li>
-		<li role="presentation" class="<%= @sub_clusters.first.new_record? ? 'disabled' : nil %> wizard-nav" id="initialize_sub_clusters_form_nav"><a href="#sub-clusters" data-toggle="tab">4. Sub-Cluster Coordinates </a></li>
-		<li role="presentation" class="<%= @marker_lists.first.new_record? ? 'disabled' : nil %> wizard-nav" id="initialize_marker_genes_form_nav"><a href="#marker-genes" data-toggle="tab">5. Marker Gene Lists </a></li>
-		<li role="presentation" class="<%= @fastq_files.first.new_record? ? 'disabled' : nil %> wizard-nav" id="initialize_fastq_form_nav"><a href="#fastq" data-toggle="tab">6. Fastq Data </a></li>
-		<li role="presentation" class="<%= @other_files.first.new_record? ? 'disabled' : nil %> wizard-nav" id="initialize_misc_form_nav"><a href="#misc" data-toggle="tab">7. Miscellaneous </a></li>
+		<li role="presentation" class="wizard-nav" id="initialize_assignments_form_nav"><a href="#assignment" data-toggle="tab">1. Cluster Assignments <span id="initialize_assignments_form_nav_completed"></span></a></li>
+		<li role="presentation" class="wizard-nav" id="initialize_clusters_form_nav"><a href="#clusters" data-toggle="tab">2. Primary Cluster Coordinates <span id="initialize_clusters_form_nav_completed"></span></a></li>
+		<li role="presentation" class="wizard-nav" id="initialize_expression_form_nav"><a href="#expression" data-toggle="tab">3. Expression Matrix <span id="initialize_expression_form_nav_completed"></span></a></li>
+		<li role="presentation" class="wizard-nav" id="initialize_sub_clusters_form_nav"><a href="#sub-clusters" data-toggle="tab">4. Sub-Cluster Coordinates <span id="initialize_sub_clusters_form_nav_completed"></span></a></li>
+		<li role="presentation" class="wizard-nav" id="initialize_marker_genes_form_nav"><a href="#marker-genes" data-toggle="tab">5. Marker Gene Lists <span id="initialize_marker_genes_form_nav_completed"></span></a></li>
+		<li role="presentation" class="wizard-nav" id="initialize_fastq_form_nav"><a href="#fastq" data-toggle="tab">6. Fastq Data <span id="initialize_fastq_form_nav_completed"></span></a></li>
+		<li role="presentation" class="wizard-nav" id="initialize_misc_form_nav"><a href="#misc" data-toggle="tab">7. Miscellaneous <span id="initialize_misc_form_nav_completed"></span></a></li>
 	</ul>
 
 	<div id="bar" class="progress">
@@ -17,7 +17,7 @@
 	<div class="tab-content">
 		<div class="tab-pane" id="assignment">
 			<div class="well well-sm">
-				<h2>Step 1. Upload Cluster Assignments File <small class="initialize-label"><span class="label label-danger">Required</span></small></h2>
+				<h2>Step 1. Upload Cluster Assignments File <small class="initialize-label" id="initialize_assignments_form_completed"><span class="label label-danger">Required</span></small></h2>
 				<p class="lead">Upload a tab-delimited text file containing all of your cluster and sub-cluster assignments for each single cell.  The file must be a plain text (.txt) file with 3 columns and a header row containing the values 'CELL_NAME', 'CLUSTER', and 'SUB-CLUSTER'.</p>
 				<p><%= link_to "Example Assignment File <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/cluster_assignments_example.txt', class: 'btn btn-default', download: 'cluster_assignments_example.txt' %></p>
 			</div>
@@ -25,7 +25,7 @@
 		</div>
 		<div class="tab-pane" id="clusters">
 			<div class="well well-sm">
-				<h2>Step 2. Upload Primary Cluster Coordinates File <small class="initialize-label"><span class="label label-danger">Required</span></small></h2>
+				<h2>Step 2. Upload Primary Cluster Coordinates File <small class="initialize-label" id="initialize_clusters_form_completed"><span class="label label-danger">Required</span></small></h2>
 				<p class="lead">Upload a tab-delimited text file containing your primary cluster coordinates.  The file must be a plain text (.txt) file with 3 columns and a header row containing the values 'CELL_NAME', 'X', and 'Y'.</p>
 				<p><%= link_to "Example Coordinates File <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/cluster_coordinates_example.txt', class: 'btn btn-default', download: 'cluster_coordinates_example.txt' %></p>
 			</div>
@@ -33,7 +33,7 @@
 		</div>
 		<div class="tab-pane" id="expression">
 			<div class="well well-sm">
-				<h2>Step 3. Upload Expression Matrix File <small class="initialize-label"><span class="label label-danger">Required</span></small></h2>
+				<h2>Step 3. Upload Expression Matrix File <small class="initialize-label" id="initialize_expression_form_completed"><span class="label label-danger">Required</span></small></h2>
 				<p class="lead">Upload a tab-delimited text file containing all of your gene expression scores for all genes and single cells.  The file must be a plain text (.txt) file with with a header row containing the value 'GENE' in the first column, and single cell names in each successive column.</p>
 				<p><%= link_to "Example Expression Matrix <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/expression_matrix_example.txt', class: 'btn btn-default', download: 'expression_matrix_example.txt' %></p>
 			</div>
@@ -42,7 +42,7 @@
 		<div class="tab-pane" id="sub-clusters">
 			<div id="sub-clusters-target">
 				<div class="well well-sm">
-					<h2>Step 4. Upload Sub Cluster Coordinates File <small class="initialize-label"><span class="label label-info">Optional</span></small></h2>
+					<h2>Step 4. Upload Sub Cluster Coordinates File <small class="initialize-label" id="initialize_sub_clusters_form_completed"><span class="label label-info">Optional</span></small></h2>
 					<p class="lead">Upload a tab-delimited text file containing any sub-cluster coordinates.  These sub-clusters must be identified in your cluster assignment file.  The file must be a plain text (.txt) file with 3 columns and a header row containing the values 'CELL_NAME', 'X', and 'Y'.</p>
 					<p><%= link_to "Example Coordinates File <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/cluster_coordinates_example.txt', class: 'btn btn-default', download: 'cluster_coordinates_example.txt' %></p>
 				</div>
@@ -52,7 +52,9 @@
 				<script type="text/javascript">
 					if (<%= !@sub_clusters.first.new_record? %>) {
 						completeWizardStep('initialize_sub_clusters_form_nav');
-						console.log('incrementing status for sub cluster upload')
+						console.log('incrementing status for sub cluster upload');
+						$('#initialize_sub_clusters_form_completed').replaceWith("<%= escape_javascript(render partial: 'step_completed', locals: {id: 'initialize_sub_clusters_form_completed'}) %>");
+						$('#initialize_sub_clusters_form_nav_completed').html("<span class='fa fa-check text-success'></span>");
 					}
 				</script>
 			</div>
@@ -61,7 +63,7 @@
 		<div class="tab-pane" id="marker-genes">
 			<div id="marker-genes-target">
 				<div class="well well-sm">
-					<h2>Step 5. Upload Marker Genes List File <small class="initialize-label"><span class="label label-info">Optional</span></small></h2>
+					<h2>Step 5. Upload Marker Genes List File <small class="initialize-label" id="initialize_marker_genes_form_completed"><span class="label label-info">Optional</span></small></h2>
 					<p class="lead">Upload a tab-delimited text file containing a list of marker genes and their expression values across any clusters.  The file must be a plain text (.txt) with the value 'GENE NAMES' in the first column, and cluster names in each successive column.</p>
 					<p><%= link_to "Example Marker Gene List <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/marker_gene_list_example.txt', class: 'btn btn-default', download: 'marker_gene_list_example.txt' %></p>
 				</div>
@@ -71,7 +73,9 @@
 				<script type="text/javascript">
 					if (<%= !@marker_lists.first.new_record? %>) {
 						completeWizardStep('initialize_marker_genes_form_nav');
-						console.log('incrementing status for marker gene upload')
+						console.log('incrementing status for marker gene upload');
+						$('#initialize_marker_genes_form_completed').replaceWith("<%= escape_javascript(render partial: 'step_completed', locals: {id: 'initialize_marker_genes_form_completed'}) %>");
+						$('#initialize_marker_genes_form_nav_completed').html("<span class='fa fa-check text-success'></span>");
 					}
 				</script>
 			</div>
@@ -81,7 +85,7 @@
 		<div class="tab-pane" id="fastq">
 			<div id="fastq-target">
 				<div class="well well-sm">
-					<h2>Step 6. Upload Fastq Files <small class="initialize-label"><span class="label label-info">Optional</span></small></h2>
+					<h2>Step 6. Upload Fastq Files <small class="initialize-label" id="initialize_fastq_form_completed"><span class="label label-info">Optional</span></small></h2>
 					<p class="lead">Upload any non-primary human fastq data files.  If your data is primary human data, you can link to it here by selecting 'Yes' in the 'Primary Human Data' field.<br /><strong class="text-danger">If you are uploading fastq files, they must be compressed first using gzip.</strong></p>
 					<p><%= link_to "FASTQ File Format <span class='fa fa-info-circle'></span>".html_safe, 'https://en.wikipedia.org/wiki/FASTQ_format#Format', class: 'btn btn-default' %>&nbsp;<%= link_to "gzip Documentation <span class='fa fa-info-circle'></span>".html_safe, 'http://www.gnu.org/software/gzip/manual/gzip.html', class: 'btn btn-default' %></p>
 				</div>
@@ -91,8 +95,9 @@
 				<script type="text/javascript">
 					if (<%= !@fastq_files.first.new_record? %>) {
 						completeWizardStep('initialize_fastq_form_nav');
-						console.log('incrementing status for fastq upload')
-
+						console.log('incrementing status for fastq upload');
+						$('#initialize_fastq_form_completed').replaceWith("<%= escape_javascript(render partial: 'step_completed', locals: {id: 'initialize_fastq_form_completed'}) %>");
+						$('#initialize_fastq_form_nav_completed').html("<span class='fa fa-check text-success'></span>");
 					}
 				</script>
 			</div>
@@ -102,7 +107,7 @@
 		<div class="tab-pane" id="misc">
 			<div id="misc-target">
 				<div class="well well-sm">
-					<h2>Step 7. Upload Documentation/Other Files <small class="initialize-label"><span class="label label-info">Optional</span></small></h2>
+					<h2>Step 7. Upload Documentation/Other Files <small class="initialize-label" id="initialize_misc_form_completed"><span class="label label-info">Optional</span></small></h2>
 					<p class="lead">Upload any documentation or other support files you have.</p>
 				</div>
 				<% @other_files.each do |study_file| %>
@@ -111,8 +116,9 @@
 				<script type="text/javascript">
 					if (<%= !@other_files.first.new_record? %>) {
 						completeWizardStep('initialize_misc_form_nav');
-						console.log('incrementing status for other upload')
-
+						console.log('incrementing status for other upload');
+						$('#initialize_misc_form_completed').replaceWith("<%= escape_javascript(render partial: 'step_completed', locals: {id: 'initialize_misc_form_completed'}) %>");
+						$('#initialize_misc_form_nav_completed').html("<span class='fa fa-check text-success'></span>");
 					}
 				</script>
 			</div>
@@ -120,9 +126,8 @@
 
 		</div>
 		<ul class="pager wizard">
-			<li class="previous"><a href="#">Previous</a></li>
+			<li class="previous"><a href="#" id="prev-btn">Previous</a></li>
 			<li class="next"><a href="#" id="next-btn">Next</a></li>
-			<li class="next skip"><a href="#" id="skip-btn">Skip</a></li>
 			<li class="next finish" style="display:none;"><%= link_to "Finish", study_path(@study), id: 'finish-btn' %></li>
 		</ul>
 	</div>
@@ -139,8 +144,6 @@
 		wizard.bootstrapWizard({'tabClass': 'nav-tabs',
 			onTabShow: function(tab, navigation, index, clickedIndex, clickedTab) {
 				var step = $(tab[0]).attr('id');
-				var current = index + 1;
-				var prevStep = $($('li.wizard-nav')[index]).attr('id');
 				var total = navigation.find('li').length;
 				var done = getWizardStatus();
 				var pctCompleted = Math.round((done/total) * 100);
@@ -152,59 +155,31 @@
 				}
 				if (step == 'initialize_misc_form_nav') {
 					wizard.find('.pager .next').hide();
-					wizard.find('.pager .skip').hide();
 					wizard.find('.pager .finish').show();
 					wizard.find('.pager .finish').removeClass('disabled');
 					wizard.find('.pager .finish').addClass('enabled');
 					// next step is ready to be done, enable button
-				} else if ( completed[step]) {
-					$('#next-btn').parent().removeClass('disabled');
-					$('#next-btn').parent().addClass('enabled');
-					// next step is not ready, disable button
 				} else {
-					$('#next-btn').parent().addClass('disabled');
-					$('#next-btn').parent().removeClass('enabled');
-					$('#next-btn').click(disableNext());
+					wizard.find('.pager .next').show();
 				}
-		},
+			},
 			onTabClick: function(tab, navigation, index, clickedIndex, clickedTab) {
-				var step = $(clickedTab[0]).attr('id');
-				if ( !completed[step] && step != 'initialize_assignments_form_nav') {
-					return false;
-				} else {
-					if ($('#next-btn').parent().css('display') == 'none') {
-						wizard.find('.pager .next').show();
-					}
+				var step = $(tab[0]).attr('id');
+				if (showSkipWarning(step) && !requiredDialogShow && !completed[step]) {
+					$('#required-modal').modal({show: true, backdrop: 'static'});
+					requiredDialogShow = true;
 					return true;
 				}
 			},
 			onNext: function(tab, navigation, index) {
-				if (index > getWizardStatus() && getWizardStatus() < 3) {
-					alert('You must complete your current step before continuing');
-					return false;
+				var step = $(tab[0]).attr('id');
+				if (showSkipWarning(step) && !requiredDialogShow && !completed[step]) {
+					$('#required-modal').modal({show: true, backdrop: 'static'});
+					requiredDialogShow = true;
 				}
-			},
-			onPrevious: function() {
-				wizard.find('.pager .next').show();
-				$('#next-btn').parent().removeClass('disabled');
-				$('#next-btn').off(disableNext());
+				wizard.find('.pager .previous').removeClass('disabled');
+				return true;
 			}
 		});
-
-		$('#skip-btn').click(function() {
-			var stepsDone = 7 - $('li.wizard-nav.disabled').length
-			var activeStep = $('li.wizard-nav').index($('li.wizard-nav.active')) + 1;
-			// alert user about skipping required steps
-			if (stepsDone <= 3 && !requiredDialogShow) {
-				$('#required-modal').modal({show: true, backdrop: 'static'});
-				requiredDialogShow = true;
-			}
-			// increment navigation
-			if (activeStep == stepsDone) {
-				completeWizardStep();
-			}
-			wizard.find('.pager .next').show();
-			$('#next-btn').parent().addClass('enabled');
-		})
 	});
 </script>

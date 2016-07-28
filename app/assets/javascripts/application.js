@@ -38,23 +38,13 @@ var completed = {
 };
 
 function completeWizardStep(step) {
-    console.log('completeWizardStep: ' + step);
     completed[step] = true;
-    // determine next step
-    var index = $('.wizard-nav').index($('#' + step));
-    $($('.wizard-nav')[index]).removeClass('disabled');
-    $('#next-btn').parent().removeClass('disabled');
-    $('#next-btn').parent().addClass('enabled');
-    $('#next-btn').off(disableNext());
     return completed;
 }
 
 function resetWizardStep(step) {
     completed[step] = false;
-    $('#' + step).addClass('disabled');
-    $('#next-btn').parent().addClass('disabled');
-    $('#next-btn').parent().removeClass('enabled');
-    $('#next-btn').click(disableNext());
+    $('#' + step + '_completed').html("");
     return completed;
 }
 
@@ -78,8 +68,13 @@ function setWizardProgress(stepsDone) {
     $('#progress-count').html(totalCompletion+'% Completed');
 }
 
-// used to disable next button in wizard dynamically
-function disableNext() {return false};
+function showSkipWarning(step) {
+    if (['initialize_assignments_form_nav','initialize_clusters_form_nav','initialize_expression_form_nav'].indexOf(step) >= 0) {
+        return (!completed.initialize_assignments_form_nav || !completed.initialize_clusters_form_nav || !completed.initialize_expression_form_nav)
+    } else {
+        return false;
+    }
+}
 
 // toggle chevron glyphs on clicks
 function toggleGlyph(el) {

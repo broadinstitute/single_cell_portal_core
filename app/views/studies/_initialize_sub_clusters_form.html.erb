@@ -1,4 +1,4 @@
-<%= form_for(study_file, url: update_study_file_study_path(@study._id), html: {id: "sub_cluster_form_#{study_file._id}", class: 'bs-callout bs-callout-info initialize_sub_clusters_form', remote: true}) do |f| %>
+<%= form_for(study_file, url: update_study_file_study_path(@study._id), html: {id: "sub_clusters_form_#{study_file._id}", class: 'bs-callout bs-callout-info initialize_sub_clusters_form', remote: true}) do |f| %>
 	<%= f.hidden_field :study_id, value: params[:id] %>
 	<div class="form-group row">
 		<div class="col-sm-4">
@@ -32,7 +32,7 @@
 					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: study_file.upload_file_name.nil? %>
 				</div>
 				<div class="col-xs-6">
-					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: "sub_cluster_form_#{study_file._id}"), method: :delete, class: 'btn btn-block btn-danger delete-file', data: {remote: true} %>
+					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: "sub_clusters_form_#{study_file._id}"), method: :delete, class: 'btn btn-block btn-danger delete-file', data: {remote: true} %>
 				</div>
 			</div>
 		</div>
@@ -52,7 +52,7 @@
 				console.log('incrementing status for sub-cluster file upload')
 			}
 
-			$('#sub_cluster_form_<%= study_file._id %>').fileupload({
+			$('#sub_clusters_form_<%= study_file._id %>').fileupload({
 				url: "<%= upload_study_path(@study._id) %>",
 				maxChunkSize: 10000000, // 10 MB
 				type: 'PATCH',
@@ -83,7 +83,7 @@
 						data: { status: 'uploaded', file: fileName}
 					});
 					fileUploading = false;
-					$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#sub-cluster-parse-<%= study_file._id %>-modal', partial: 'initialize_sub_clusters_form', selector: "#sub_cluster_form_<%= study_file._id %>"});
+					$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#sub-cluster-parse-<%= study_file._id %>-modal', partial: 'initialize_sub_clusters_form', selector: "#sub_clusters_form_<%= study_file._id %>"});
 					var target = $('#sub-cluster-parse-<%= study_file._id %>-modal').find('.spinner-target')[0];
 					var spinner = new Spinner(opts).spin(target);
 					$(target).data('spinner', spinner);

@@ -19,3 +19,5 @@ $(form).find('.delete-file').click(function() {
 		$('#delete-modal').modal('show');
 	}
 });
+
+$("#initialized").replaceWith("<%= escape_javascript(render partial: 'initialize_study_label') %>");

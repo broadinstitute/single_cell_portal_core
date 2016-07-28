@@ -47,7 +47,9 @@
 			// check if upload has already happened
 			if (<%= !study_file.upload_file_name.nil? %>) {
 				completeWizardStep('initialize_expression_form_nav');
-				console.log('incrementing status for expression matrix upload')
+				console.log('incrementing status for expression matrix upload');
+				$('#initialize_expression_form_completed').replaceWith("<%= escape_javascript(render partial: 'step_completed', locals: {id: 'initialize_expression_form_completed'}) %>");
+				$('#initialize_expression_form_nav_completed').html("<span class='fa fa-check text-success'></span>");
 			}
 
 			$('#expression_form').fileupload({

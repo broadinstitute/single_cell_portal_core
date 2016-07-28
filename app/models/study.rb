@@ -165,7 +165,7 @@ class Study
     # validate headers
     begin
       file = File.open(expression_file.upload.path)
-      cells = file.readline.chomp.split("\t")
+      cells = file.readline.strip.split(/[\t,]/)
       @last_line = "#{expression_file.name}, line 1: #{cells.join("\t")}"
       if cells.first != 'GENE' || cells.size <= 1
         expression_file.update(parse_status: 'failed')
@@ -184,7 +184,7 @@ class Study
       expression_file.update(parse_status: 'parsing')
       # open data file and grab header row with name of all cells, deleting 'GENE' at start
       expression_data = File.open(expression_file.upload.path)
-      cells = expression_data.readline.chomp.split("\t")
+      cells = expression_data.readline.chomp.split(/[\t,]/)
       @last_line = "#{expression_file.name}, line 1: #{cells.join("\t")}"
 
       cells.shift
@@ -194,7 +194,7 @@ class Study
       while !expression_data.eof?
         # grab single row of scores, parse out gene name at beginning
         line = expression_data.readline.chomp
-        row = line.split("\t")
+        row = line.split(/[\t,]/)
         @last_line = "#{expression_file.name}, line #{expression_data.lineno}: #{row.join("\t")}"
 
         gene_name = row.shift
@@ -239,23 +239,11 @@ class Study
     end
   end
 
-  def make_cluster_points(assignment_file, cluster_file, cluster_type, user=nil)
-    # turn off logging to make data load faster
-    Rails.logger.level = 4
-    # set up variables
-    @message = ["Parsing cluster file: #{cluster_file.name}", "Using assignment file: #{assignment_file.name}", "Cluster type: #{cluster_type}", "..."]
-    @cell_count = 0
-    @cluster_count = 0
-    @cluster_point_count = 0
-    @bytes_parsed = 0
-    start_time = Time.now
-    cluster_file.update(parse_status: 'parsing')
-    @last_line = ""
-
+  def make_clusters(assignment_file, user=nil)
     # validate headers of assignment file & cluster file
     begin
       a_file = File.open(assignment_file.upload.path)
-      a_headers = a_file.readline.chomp.split("\t")
+      a_headers = a_file.readline.chomp.split(/[\t,]/)
       @last_line = "#{assignment_file.name}, line 1: #{a_headers.join("\t")}"
       if a_headers.sort != %w(CELL_NAME CLUSTER SUB-CLUSTER)
         assignment_file.update(parse_status: 'failed')
@@ -263,28 +251,19 @@ class Study
         raise StandardError, "file header validation failed: #{@last_line}"
       end
       a_file.close
-
-      c_file = File.open(cluster_file.upload.path)
-      c_headers = c_file.readline.chomp.split("\t")
-      @last_line = "#{cluster_file.name}, line 1: #{c_headers.join("\t")}"
-      if c_headers.sort != %w(CELL_NAME X Y)
-        cluster_file.update(parse_status: 'failed')
-        puts "Study: #{self.name}, #{@last_line} ERROR: cluster coordinate file header validation failed"
-        raise StandardError, "file header validation failed: #{@last_line}"
-      end
-      c_file.close
     rescue => e
       assignment_file.update(parse_status: 'failed')
       puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
       raise StandardError, "file header validation failed: #{@last_line}"
     end
-
+    @cluster_count = 0
     # begin parse
     begin
       # load cluster assignments
-      clusters_data = File.open(assignment_file.upload.path).readlines.map(&:chomp).delete_if {|line| line.blank? }
+      raw_data = File.open(assignment_file.upload.path)
+      clusters_data = raw_data.readlines.map(&:strip).delete_if {|line| line.empty? }
       @all_clusters = {}
-      assignment_headers = clusters_data.shift.split("\t").map(&:strip)
+      assignment_headers = clusters_data.shift.split(/[\t,]/).map(&:strip)
       @last_line = "#{assignment_file.name}, line 1: #{assignment_headers.join("\t")}"
       cell_index = assignment_headers.index('CELL_NAME')
       cluster_index = assignment_headers.index('CLUSTER')
@@ -292,7 +271,7 @@ class Study
       clusters_data.each_with_index do |line, index|
         @last_line = "#{assignment_file.name}, line #{index + 2}: #{line}"
 
-        vals = line.split("\t")
+        vals = line.split(/[\t,]/)
         cluster_name = vals[cluster_index]
         sub_cluster_name = vals[sub_index]
         cell_name = vals[cell_index]
@@ -311,23 +290,45 @@ class Study
           sub_cluster.save
           @cluster_count += 1
         end
-        parent_cell = SingleCell.where(name: cell_name, study_id: self._id, cluster_id: parent_cluster._id).first
-        sub_cell = SingleCell.where(name: cell_name, study_id: self._id, cluster_id: sub_cluster._id).first
-        if parent_cell.blank?
-          parent_cell = self.single_cells.build(name: cell_name, cluster_id: parent_cluster._id, study_file_id: assignment_file._id)
-          parent_cell.save
-          @cell_count += 1
-        end
-        if sub_cell.blank?
-          sub_cell = self.single_cells.build(name: cell_name, cluster_id: sub_cluster._id, study_file_id: assignment_file._id)
-          sub_cell.save
-          @cell_count += 1
-        end
       end
+    end
+  end
 
+  def make_cluster_points(assignment_file, cluster_file, cluster_type, user=nil)
+    # turn off logging to make data load faster
+    Rails.logger.level = 4
+    # set up variables
+    @message = ["Parsing cluster file: #{cluster_file.name}", "Using assignment file: #{assignment_file.name}", "Cluster type: #{cluster_type}", "..."]
+    @cell_count = 0
+    @cluster_count = 0
+    @cluster_point_count = 0
+    @bytes_parsed = 0
+    start_time = Time.now
+    cluster_file.update(parse_status: 'parsing')
+    @last_line = ""
+
+    # validate headers of cluster file
+    begin
+      c_file = File.open(cluster_file.upload.path)
+      c_headers = c_file.readline.chomp.split(/[\t,]/)
+      @last_line = "#{cluster_file.name}, line 1: #{c_headers.join("\t")}"
+      if c_headers.sort != %w(CELL_NAME X Y)
+        cluster_file.update(parse_status: 'failed')
+        puts "Study: #{self.name}, #{@last_line} ERROR: cluster coordinate file header validation failed"
+        raise StandardError, "file header validation failed: #{@last_line}"
+      end
+      c_file.close
+    rescue => e
+      assignment_file.update(parse_status: 'failed')
+      puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
+      raise StandardError, "file header validation failed: #{@last_line}"
+    end
+
+    # begin parse
+    begin
       # get all lines and proper indices
       lines = File.open(cluster_file.upload.path).readlines.map(&:chomp).delete_if {|line| line.blank? }
-      headers = lines.shift.split("\t")
+      headers = lines.shift.split(/[\t,]/)
       cell_name_index = headers.index('CELL_NAME')
       x_index = headers.index('X')
       y_index = headers.index('Y')
@@ -336,7 +337,7 @@ class Study
         @last_line = "#{cluster_file.name}, line #{index + 2}: #{line}"
 
         # parse each line and get values
-        vals = line.split("\t")
+        vals = line.split(/[\t,]/)
         name = vals[cell_name_index]
         x = vals[x_index]
         y = vals[y_index]
@@ -406,7 +407,7 @@ class Study
     # validate headers
     begin
       file = File.open(marker_file.upload.path)
-      headers = file.readline.chomp.split("\t")
+      headers = file.readline.strip.split(/[\t,]/)
       @last_line = "#{marker_file.name}, line 1: #{headers.join("\t")}"
       if headers.first != 'GENE NAMES' || headers.size <= 1
         marker_file.update(parse_status: 'failed')
@@ -429,7 +430,7 @@ class Study
       end
       precomputed_score = self.precomputed_scores.build(name: list_name, study_file_id: marker_file._id)
       marker_scores = File.open(marker_file.upload.path).readlines.map(&:strip).delete_if {|line| line.blank? }
-      clusters = marker_scores.shift.split("\t")
+      clusters = marker_scores.shift.split(/[\t,]/)
       @last_line = "#{marker_file.name}, line 1: #{clusters.join("\t")}"
 
       clusters.shift # remove 'Gene Name' at start
@@ -437,7 +438,7 @@ class Study
       rows = []
       marker_scores.each_with_index do |line, i|
         @last_line = "#{marker_file.name}, line #{i + 2}: #{line}"
-        vals = line.split("\t")
+        vals = line.split(/[\t,]/)
         gene = vals.shift
         row = {"#{gene}" => {}}
         clusters.each_with_index do |cluster, index|

@@ -1,14 +1,22 @@
 if ('<%= params[:target] %>' == '#assignments_form') {
 	$("<%= params[:target] %>").replaceWith("<%= escape_javascript( render partial: 'initialize_assignments_form', locals: {study_file: @study_file}) %>");
-	resetWizardStep();
+	resetWizardStep('initialize_assigment_form_nav');
 } else if ('<%= params[:target] %>' == '#parent_cluster_form') {
 	$("<%= params[:target] %>").replaceWith("<%= escape_javascript( render partial: 'initialize_clusters_form', locals: {study_file: @study_file}) %>");
-	resetWizardStep();
+	resetWizardStep('initialize_cluster_form_nav');
 } else if ('<%= params[:target] %>' == '#expression_form') {
 	$("<%= params[:target] %>").replaceWith("<%= escape_javascript( render partial: 'initialize_expression_form', locals: {study_file: @study_file}) %>");
-	resetWizardStep();
+	resetWizardStep('initialize_expression_form_nav');
 } else {
 	$("#<%= params[:target] %>").remove();
+	// reset wizard status if needed
+	if (<%= @reset_status %>) {
+		var parts = "<%= params[:target] %>".split('_');
+		parts.pop();
+		var target = 'initialize_' + parts.join('_');
+		resetWizardStep(target + '_nav');
+		$('#' + target + '_completed').replaceWith("<small class='initialize-label' id=" + target + "><span class='label label-info'>Optional</span></small>");
+	}
 }
 
 $('#delete-modal').find('.spinner-target').data('spinner').stop();
