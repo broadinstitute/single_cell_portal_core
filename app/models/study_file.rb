@@ -5,8 +5,8 @@ class StudyFile
   include Rails.application.routes.url_helpers
 
   # constants, used for statuses and file types
-  STUDY_FILE_TYPES = ['Cluster Coordinates', 'Cluster Assignments', 'Expression Matrix', 'Marker Gene List', 'Fastq', 'Documentation', 'Other']
-  PARSEABLE_TYPES = ['Cluster Coordinates', 'Expression Matrix', 'Marker Gene List']
+  STUDY_FILE_TYPES = ['Cluster Coordinates', 'Cluster Assignments', 'Expression Matrix', 'Gene List', 'Fastq', 'Documentation', 'Other']
+  PARSEABLE_TYPES = ['Cluster Coordinates', 'Expression Matrix', 'Gene List']
   UPLOAD_STATUSES = %w(new uploading uploaded)
   PARSE_STATUSES = %w(unparsed parsing parsed)
 

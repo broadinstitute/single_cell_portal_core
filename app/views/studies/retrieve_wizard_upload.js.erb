@@ -24,3 +24,5 @@ $(wizForm).find('.delete-file').click(function() {
 if (getWizardStatus() <= 3) {
 	$('#next-btn').click();
 }
+
+$("#initialized").replaceWith("<%= escape_javascript(render partial: 'initialize_study_label') %>");

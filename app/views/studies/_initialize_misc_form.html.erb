@@ -27,7 +27,7 @@
 					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: study_file.upload_file_name.nil? %>
 				</div>
 				<div class="col-xs-6">
-					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: "misc_form_#{study_file._id}"), method: :delete, class: 'btn btn-block btn-danger delete-file', data: {remote: true} %>
+					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: "#misc_form_#{study_file._id}"), method: :delete, class: 'btn btn-block btn-danger delete-file', data: {remote: true} %>
 				</div>
 			</div>
 		</div>
@@ -71,7 +71,13 @@
 					});
 					fileUploading = false;
 					$.get("<%= retrieve_wizard_upload_study_path(@study._id) %>", {file: fileName, selector: '#misc_form_<%= study_file._id %>', partial: 'initialize_misc_form'});
-
+					if (<%= @study.study_files.select {|sf| %w(Documentation Other).include?(sf.file_type) }.size == 1 %>) {
+						completeWizardStep('initialize_misc_form_nav');
+						setWizardProgress(getWizardStatus());
+						console.log('incrementing status for other upload');
+						$('#initialize_misc_form_completed').replaceWith("<%= escape_javascript(render partial: 'step_completed', locals: {id: 'initialize_misc_form_completed'}) %>");
+						$('#initialize_misc_form_nav_completed').html("<span class='fa fa-check text-success'></span>");
+					}
 				}
 			});
 		});

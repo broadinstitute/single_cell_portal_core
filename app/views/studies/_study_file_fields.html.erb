@@ -63,7 +63,7 @@
 		</div>
 	<% elsif study_file.file_type == 'Expression Matrix' %>
 		<%= render 'parse_expression_form', study_file: study_file %>
-	<% elsif study_file.file_type == 'Marker Gene List' %>
+	<% elsif study_file.file_type == 'Gene List' %>
 		<%= render 'parse_precomputed_form', study_file: study_file %>
 	<% end %>
 

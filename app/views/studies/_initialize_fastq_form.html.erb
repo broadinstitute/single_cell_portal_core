@@ -35,7 +35,7 @@
 					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: !study_file.human_data? %>
 				</div>
 				<div class="col-xs-6">
-					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: "fastq_form_#{study_file._id}"), method: :delete, class: 'btn btn-block btn-danger delete-file', data: {remote: true} %>
+					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: "#fastq_form_#{study_file._id}"), method: :delete, class: 'btn btn-block btn-danger delete-file', data: {remote: true} %>
 				</div>
 			</div>
 		</div>
@@ -52,18 +52,6 @@
 		});
 
 		$(function() {
-			// check if upload has already happened
-			if (getWizardStatus() == 5 && <%= !study_file.new_record? %>) {
-				var status = completeWizardStep();
-				setWizardProgress(status);
-				console.log('incrementing status for fastq file upload')
-			// gotcha in case user has skipped fastq files but uploaded misc. files
-			} else if (getWizardStatus() == 5 && <%= @study.study_files.by_type(['Other', 'Documentation']).count >= 1 %>) {
-				var status = completeWizardStep();
-				setWizardProgress(status);
-				console.log('incrementing status for fastq file upload')
-			}
-
 			$('#fastq_form_<%= study_file._id %>').fileupload({
 				url: "<%= upload_study_path(@study._id) %>",
 				maxChunkSize: 10000000, // 10 MB
@@ -96,6 +84,13 @@
 					});
 					fileUploading = false;
 					$.get("<%= retrieve_wizard_upload_study_path(@study._id) %>", {file: fileName, selector: '#fastq_form_<%= study_file._id %>', partial: 'initialize_fastq_form'});
+					if (<%= @study.study_files.select {|sf| sf.file_type == 'Fastq'}.size == 1 %>) {
+						completeWizardStep('initialize_fastq_form_nav');
+						setWizardProgress(getWizardStatus());
+						console.log('incrementing status for fastq upload');
+						$('#initialize_fastq_form_completed').replaceWith("<%= escape_javascript(render partial: 'step_completed', locals: {id: 'initialize_fastq_form_completed'}) %>");
+						$('#initialize_fastq_form_nav_completed').html("<span class='fa fa-check text-success'></span>");
+					}
 				}
 			});
 		});

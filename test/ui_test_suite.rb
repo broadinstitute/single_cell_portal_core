@@ -86,7 +86,7 @@ class UiTestSuite < Test::Unit::TestCase
 		assert legend.size == 8, "incorrect number of subclusters found in CA1, expected 8 - found #{legend.size}"
 	end
 
-	test 'a. download study data file' do
+	test 'download study data file' do
 		path = @base_url + '/study/snuc-seq'
 		@driver.get(path)
 		wait_until_page_loads(path)
@@ -223,7 +223,6 @@ class UiTestSuite < Test::Unit::TestCase
 		@wait.until {@driver.find_element(:class, 'sub-cluster-modal').style(:display) == 'none'}
 		@wait.until {@driver.find_element(:tag_name, 'body')[:class].include?('modal-open') == false}
 		next_btn = @driver.find_element(:id, 'next-btn')
-		wait_for_next(next_btn)
 		next_btn.click
 		wait_for_render(:class, 'initialize_marker_genes_form')
 
@@ -236,7 +235,6 @@ class UiTestSuite < Test::Unit::TestCase
 		@wait.until {@driver.find_element(:class, 'sub-cluster-modal').style(:display) == 'none'}
 		@wait.until {@driver.find_element(:tag_name, 'body')[:class].include?('modal-open') == false}
 		next_btn = @driver.find_element(:id, 'next-btn')
-		wait_for_next(next_btn)
 		next_btn.click
 		wait_for_render(:class, 'initialize_fastq_form')
 
@@ -248,7 +246,6 @@ class UiTestSuite < Test::Unit::TestCase
 		upload_btn.click
 		wait_for_render(:class, 'fastq-file')
 		next_btn = @driver.find_element(:id, 'next-btn')
-		wait_for_next(next_btn)
 		next_btn.click
 		wait_for_render(:class, 'initialize_misc_form')
 

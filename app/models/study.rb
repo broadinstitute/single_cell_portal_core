@@ -239,7 +239,7 @@ class Study
     end
   end
 
-  def make_clusters(assignment_file, user=nil)
+  def make_clusters_and_cells(assignment_file, user=nil)
     # validate headers of assignment file & cluster file
     begin
       a_file = File.open(assignment_file.upload.path)
@@ -256,13 +256,16 @@ class Study
       puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
       raise StandardError, "file header validation failed: #{@last_line}"
     end
+    @message = ["Parsing assignments file: #{assignment_file.name}", "..."]
     @cluster_count = 0
+    @cell_count = 0
+    @bytes_parsed = 0
+    start_time = Time.now
     # begin parse
     begin
       # load cluster assignments
       raw_data = File.open(assignment_file.upload.path)
       clusters_data = raw_data.readlines.map(&:strip).delete_if {|line| line.empty? }
-      @all_clusters = {}
       assignment_headers = clusters_data.shift.split(/[\t,]/).map(&:strip)
       @last_line = "#{assignment_file.name}, line 1: #{assignment_headers.join("\t")}"
       cell_index = assignment_headers.index('CELL_NAME')
@@ -275,22 +278,56 @@ class Study
         cluster_name = vals[cluster_index]
         sub_cluster_name = vals[sub_index]
         cell_name = vals[cell_index]
-        @all_clusters[cell_name] = {cluster: cluster_name, sub_cluster: sub_cluster_name}
 
         # create cluster and single_cell objects now to associate later as some cells/clusters have no coordinate data
         parent_cluster = Cluster.where(name: cluster_name, cluster_type: 'parent', study_id: self._id).first
         sub_cluster = Cluster.where(name: sub_cluster_name, cluster_type: 'sub_cluster', study_id: self._id).first
-        if parent_cluster.blank?
+        if parent_cluster.nil?
           parent_cluster = self.clusters.build(name: cluster_name, cluster_type: 'parent', study_file_id: assignment_file._id)
           parent_cluster.save
           @cluster_count += 1
         end
-        if sub_cluster.blank?
+        if sub_cluster.nil?
           sub_cluster = self.clusters.build(name: sub_cluster_name, parent_cluster: cluster_name, cluster_type: 'sub_cluster', study_file_id: assignment_file._id)
           sub_cluster.save
           @cluster_count += 1
         end
+        parent_cell = SingleCell.where(name: cell_name, study_id: self._id, cluster_id: parent_cluster._id).first
+        sub_cell = SingleCell.where(name: cell_name, study_id: self._id, cluster_id: sub_cluster._id).first
+        if parent_cell.nil?
+          parent_cell = self.single_cells.build(name: cell_name, cluster_id: parent_cluster._id, study_file_id: assignment_file._id)
+          parent_cell.save
+          @cell_count += 1
+        end
+        if sub_cell.nil?
+          sub_cell = self.single_cells.build(name: cell_name, cluster_id: sub_cluster._id, study_file_id: assignment_file._id)
+          sub_cell.save
+          @cell_count += 1
+        end
+
+        @bytes_parsed += line.length
+        assignment_file.update(bytes_parsed: @bytes_parsed)
       end
+      # clean up
+      assignment_file.update(parse_status: 'parsed', bytes_parsed: assignment_file.upload_file_size)
+      end_time = Time.now
+      time = (end_time - start_time).divmod 60.0
+      @message << "Completed!"
+      @message << "Single Cells created: #{@cell_count}"
+      @message << "Clusters created: #{@cluster_count}"
+      @message << "Cluster Points created: #{@cluster_point_count}"
+      @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
+      # set initialized to true if possible
+      if !self.cluster_assignment_file.nil? && !self.parent_cluster_coordinates_file.nil? && !self.expression_matrix_file.nil? && !self.initialized?
+        self.update(initialized: true)
+      end
+      unless user.nil?
+        SingleCellMailer.notify_user_parse_complete(user.email, "Cluster file: '#{cluster_file.name}' has completed parsing", @message).deliver_now
+      end
+    rescue => e
+      assignment_file.update(parse_status: 'failed')
+      puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
+      raise StandardError, "#{@last_line} ERROR: #{e.message}"
     end
   end
 
@@ -319,7 +356,7 @@ class Study
       end
       c_file.close
     rescue => e
-      assignment_file.update(parse_status: 'failed')
+      cluster_file.update(parse_status: 'failed')
       puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
       raise StandardError, "file header validation failed: #{@last_line}"
     end
@@ -343,14 +380,18 @@ class Study
         y = vals[y_index]
 
         # load correct cluster & single_cell
+        cells = SingleCell.where(name: name).to_a
+
         if cluster_type == 'parent'
-          @cluster_name = @all_clusters[name][:cluster]
+          clst = cells.map(&:cluster).select {|c| c.cluster_type == 'parent'}.first
+          @cluster_name = clst.name
           @cluster_type = 'parent'
           @parent_cluster = nil
         else
-          @cluster_name = @all_clusters[name][:sub_cluster]
+          clst = cells.map(&:cluster).select {|c| c.cluster_type == 'sub_cluster'}.first
+          @cluster_name = clst.name
           @cluster_type = 'sub_cluster'
-          @parent_cluster = @all_clusters[name][:cluster]
+          @parent_cluster = clst.parent_cluster
         end
 
         cluster = Cluster.where(name: @cluster_name, cluster_type: @cluster_type, study_id: self._id, study_file_id: assignment_file._id).first
@@ -391,7 +432,7 @@ class Study
     rescue => e
       cluster_file.update(parse_status: 'failed')
       puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
-      raise StandardError, @last_line
+      raise StandardError, "#{@last_line} ERROR: #{e.message}"
     end
   end
 
@@ -456,12 +497,12 @@ class Study
       @message << "Total scores created: #{@count}"
       @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
       unless user.nil?
-        SingleCellMailer.notify_user_parse_complete(user.email, "Marker gene list file: '#{marker_file.name}' has completed parsing", @message).deliver_now
+        SingleCellMailer.notify_user_parse_complete(user.email, "Gene list file: '#{marker_file.name}' has completed parsing", @message).deliver_now
       end
     rescue => e
       marker_file.update(parse_status: 'failed')
       puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
-      raise StandardError, @last_line
+      raise StandardError, "#{@last_line} ERROR: #{e.message}"
     end
   end
 

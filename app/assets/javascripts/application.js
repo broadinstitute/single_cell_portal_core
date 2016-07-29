@@ -45,6 +45,7 @@ function completeWizardStep(step) {
 function resetWizardStep(step) {
     completed[step] = false;
     $('#' + step + '_completed').html("");
+    setWizardProgress(getWizardStatus());
     return completed;
 }
 

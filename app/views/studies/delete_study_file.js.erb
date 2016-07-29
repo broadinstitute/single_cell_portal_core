@@ -1,23 +1,28 @@
 if ('<%= params[:target] %>' == '#assignments_form') {
 	$("<%= params[:target] %>").replaceWith("<%= escape_javascript( render partial: 'initialize_assignments_form', locals: {study_file: @study_file}) %>");
-	resetWizardStep('initialize_assigment_form_nav');
+	resetWizardStep('initialize_assignments_form_nav');
+	$('#initialize_assignments_form_completed').replaceWith("<small class='initialize-label' id='initialize_assignments_form_completed'><span class='label label-danger'>Required</span></small>");
 } else if ('<%= params[:target] %>' == '#parent_cluster_form') {
 	$("<%= params[:target] %>").replaceWith("<%= escape_javascript( render partial: 'initialize_clusters_form', locals: {study_file: @study_file}) %>");
-	resetWizardStep('initialize_cluster_form_nav');
-} else if ('<%= params[:target] %>' == '#expression_form') {
+	resetWizardStep('initialize_clusters_form_nav');
+	$('#initialize_clusters_form_completed').replaceWith("<small class='initialize-label' id='initialize_clusters_form_completed'><span class='label label-danger'>Required</span></small>");
+	} else if ('<%= params[:target] %>' == '#expression_form') {
 	$("<%= params[:target] %>").replaceWith("<%= escape_javascript( render partial: 'initialize_expression_form', locals: {study_file: @study_file}) %>");
 	resetWizardStep('initialize_expression_form_nav');
+	$('#initialize_expression_form_completed').replaceWith("<small class='initialize-label' id='initialize_expression_form_completed'><span class='label label-danger'>Required</span></small>");
 } else {
-	$("#<%= params[:target] %>").remove();
+	$("<%= params[:target] %>").replaceWith("");
 	// reset wizard status if needed
 	if (<%= @reset_status %>) {
-		var parts = "<%= params[:target] %>".split('_');
+		var parts = "<%= params[:target] %>".replace(/#/, '').split('_');
 		parts.pop();
 		var target = 'initialize_' + parts.join('_');
 		resetWizardStep(target + '_nav');
 		$('#' + target + '_completed').replaceWith("<small class='initialize-label' id=" + target + "><span class='label label-info'>Optional</span></small>");
 	}
 }
+
+$("#initialized").replaceWith("<%= escape_javascript(render partial: 'initialize_study_label') %>");
 
 $('#delete-modal').find('.spinner-target').data('spinner').stop();
 $('#delete-modal').modal('hide');

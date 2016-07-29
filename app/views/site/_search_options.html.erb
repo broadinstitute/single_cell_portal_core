@@ -40,7 +40,7 @@
 		<div class="row">
 			<div class="col-sm-12">
 				<%= form_tag(view_gene_set_expression_path(study_name: params[:study_name]), id: 'gene-sets', method: :get) do %>
-					<%= label_tag :gene_set, 'View curated marker gene lists as mean-centered expression (box & scatter plots)' %>
+					<%= label_tag :gene_set, 'View curated gene lists as mean-centered expression (box & scatter plots)' %>
 					<%= select_tag :gene_set, options_for_select(@precomputed, params[:gene_set]), {include_blank: 'Please select a gene list', class: 'form-control spin'} %>
 					<script type="text/javascript">
 
@@ -74,7 +74,7 @@
 		<div class="row">
 			<div class="col-sm-12">
 				<%= form_tag(search_precomputed_results_path(study_name: params[:study_name]), id: 'precomputed-expression') do %>
-					<%= label_tag :expression, 'View curated marker gene lists as heatmaps' %><br />
+					<%= label_tag :expression, 'View curated gene lists as heatmaps' %><br />
 					<%= select_tag :expression, options_for_select(@precomputed, params[:precomputed]), {include_blank: 'Please select a gene list', class: "form-control #{action_name !~ /precomputed/ ? 'spin' : nil }"} %>
 					<% if action_name !~ /precomputed/ %>
 						<script type="text/javascript">

@@ -79,11 +79,13 @@ class StudiesController < ApplicationController
     logger.info "Parsing #{@study_file.name} as #{@study_file.file_type} in study #{@study.name}"
     begin
       case @study_file.file_type
+        when 'Cluster Assignments'
+          @study.make_clusters_and_cells(@study_file)
         when 'Cluster Coordinates'
           @study.make_cluster_points(@study.cluster_assignment_file, @study_file, @study_file.cluster_type)
         when 'Expression Matrix'
           @study.make_expression_scores(@study_file)
-        when 'Marker Gene List'
+        when 'Gene List'
           @study.make_precomputed_scores(@study_file)
       end
     rescue StandardError => e
@@ -131,14 +133,20 @@ class StudiesController < ApplicationController
       @cluster_type = @study_file.cluster_type
       @message = "'#{@study_file.name}' has been successfully deleted."
       @study_file.destroy
+      if @study.cluster_assignment_file.nil? || @study.parent_cluster_coordinates_file.nil? || @study.expression_matrix_file.nil?
+        @study.update(initialized: false)
+      end
     end
     case params[:target]
       when '#assignment_form'
         @study_file = @study.build_study_file({file_type: 'Cluster Assignments'})
+        @required = true
       when '#parent_cluster_form'
         @study_file = @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'parent'})
+        @required = true
       when '#expression_form'
         @study_file = @study.build_study_file({file_type: 'Expression Matrix'})
+        @required = true
       else
         @study_file = @study.build_study_file({})
         unless @file_type.nil?
@@ -268,7 +276,7 @@ class StudiesController < ApplicationController
     @parent_cluster = @study.parent_cluster_coordinates_file
     @expression_file = @study.expression_matrix_file
     @sub_clusters = @study.study_files.select {|sf| sf.file_type == 'Cluster Coordinates' && sf.cluster_type == 'sub'}
-    @marker_lists = @study.study_files.select {|sf| sf.file_type == 'Marker Gene List'}
+    @marker_lists = @study.study_files.select {|sf| sf.file_type == 'Gene List'}
     @fastq_files = @study.study_files.select {|sf| sf.file_type == 'Fastq'}
     @other_files = @study.study_files.select {|sf| %w(Documentation Other).include?(sf.file_type)}
 
@@ -286,7 +294,7 @@ class StudiesController < ApplicationController
       @expression_file = @study.build_study_file({file_type: 'Expression Matrix'})
     end
     if @marker_lists.empty?
-      @marker_lists << @study.build_study_file({file_type: 'Marker Gene List'})
+      @marker_lists << @study.build_study_file({file_type: 'Gene List'})
     end
     if @fastq_files.empty?
       @fastq_files << @study.build_study_file({file_type: 'Fastq'})

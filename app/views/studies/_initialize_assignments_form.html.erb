@@ -83,11 +83,19 @@
 						data: { status: 'uploaded', file: fileName}
 					});
 					// replace form with updated values, as IDs may have incremented
-					$.get("<%= retrieve_wizard_upload_study_path(@study._id) %>", {file: fileName, selector: '#assignments_form', partial: 'initialize_assignments_form'});
 					fileUploading = false;
+					$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#assignment-parse-modal', partial: 'initialize_assignments_form', selector: "#assignments_form"});
+					var target = $('#assignment-parse-modal').find('.spinner-target')[0];
+					var spinner = new Spinner(opts).spin(target);
+					$(target).data('spinner', spinner);
+					$('#assignment-parse-modal').modal({show: true, backdrop: 'static'});
+					$.get("<%= parse_progress_study_path(@study._id) %>", {file: fileName, modal_target: '#assignment-parse-modal'});
 				}
 			});
 		});
 
 	</script>
 <% end %>
+<div class="modal fade" id="assignment-parse-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
+	<%= render 'parse_modal_content' %>
+</div>
