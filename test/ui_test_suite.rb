@@ -240,7 +240,7 @@ class UiTestSuite < Test::Unit::TestCase
 
 		# upload fastq
 		upload_clusters = @driver.find_element(:class, 'upload-fastq')
-		upload_clusters.send_keys(@snuc_seq_path + 'e_coli_1000_1.fq')
+		upload_clusters.send_keys(@snuc_seq_path + 'e_coli_1000.fq.gz')
 		wait_for_render(:id, 'start-file-upload')
 		upload_btn = @driver.find_element(:id, 'start-file-upload')
 		upload_btn.click

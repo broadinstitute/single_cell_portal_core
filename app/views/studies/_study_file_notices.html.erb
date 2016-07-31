@@ -2,7 +2,7 @@
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-body">
-				<p class="text-success text-center"><%= message %></p>
+				<p class="text-success text-center"><%= message.html_safe %></p>
 			</div>
 			<div class="modal-footer">
 				<button class="close" data-dismiss="modal">×</button>
@@ -13,8 +13,4 @@
 
 <script type="text/javascript">
 	$("#study-file-notices").modal("show");
-
-	setTimeout(function() {
-		$("#study-file-notices").modal("hide");
-	}, 3000);
 </script>

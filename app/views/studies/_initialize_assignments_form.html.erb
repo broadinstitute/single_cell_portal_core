@@ -50,6 +50,9 @@
 				console.log('incrementing status for assignment file upload')
 				$('#initialize_assignments_form_completed').replaceWith("<%= escape_javascript(render partial: 'step_completed', locals: {id: 'initialize_assignments_form_completed'}) %>");
 				$('#initialize_assignments_form_nav_completed').html("<span class='fa fa-check text-success'></span>");
+				// enable all cluster uploads now that we have asssignments
+				$('.cluster-upload').attr('disabled', false);
+				$('.cluster-upload').tooltip('destroy');
 			}
 
 			$('#assignments_form').fileupload({

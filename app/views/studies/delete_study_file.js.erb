@@ -1,32 +1,24 @@
-if ('<%= params[:target] %>' == '#assignments_form') {
-	$("<%= params[:target] %>").replaceWith("<%= escape_javascript( render partial: 'initialize_assignments_form', locals: {study_file: @study_file}) %>");
-	resetWizardStep('initialize_assignments_form_nav');
-	$('#initialize_assignments_form_completed').replaceWith("<small class='initialize-label' id='initialize_assignments_form_completed'><span class='label label-danger'>Required</span></small>");
-} else if ('<%= params[:target] %>' == '#parent_cluster_form') {
-	$("<%= params[:target] %>").replaceWith("<%= escape_javascript( render partial: 'initialize_clusters_form', locals: {study_file: @study_file}) %>");
-	resetWizardStep('initialize_clusters_form_nav');
-	$('#initialize_clusters_form_completed').replaceWith("<small class='initialize-label' id='initialize_clusters_form_completed'><span class='label label-danger'>Required</span></small>");
-	} else if ('<%= params[:target] %>' == '#expression_form') {
-	$("<%= params[:target] %>").replaceWith("<%= escape_javascript( render partial: 'initialize_expression_form', locals: {study_file: @study_file}) %>");
-	resetWizardStep('initialize_expression_form_nav');
-	$('#initialize_expression_form_completed').replaceWith("<small class='initialize-label' id='initialize_expression_form_completed'><span class='label label-danger'>Required</span></small>");
+// replace form with fresh instance if needed
+if (<%= !@message.nil? %>) {
+	$("<%= params[:target] %>").replaceWith("<%= escape_javascript( render partial: @partial, locals: {study_file: @study_file}) %>");
 } else {
-	$("<%= params[:target] %>").replaceWith("");
-	// reset wizard status if needed
-	if (<%= @reset_status %>) {
-		var parts = "<%= params[:target] %>".replace(/#/, '').split('_');
-		parts.pop();
-		var target = 'initialize_' + parts.join('_');
-		resetWizardStep(target + '_nav');
-		$('#' + target + '_completed').replaceWith("<small class='initialize-label' id=" + target + "><span class='label label-info'>Optional</span></small>");
-	}
+	$("<%= params[:target] %>").remove();
+}
+// if status needs to be decremented, reset necessary fields
+if (<%= @reset_status %>) {
+	resetWizardStep('<%= @partial %>_nav');
+	var statusLabel = '<%= @partial %>_completed';
+	$('#' + statusLabel).replaceWith("<small class='initialize-label' id='" + statusLabel + "'><span class='label label-<%= @color %>'><%= @status %></span></small>");
 }
 
+// check study initialization status
 $("#initialized").replaceWith("<%= escape_javascript(render partial: 'initialize_study_label') %>");
 
+// close modal
 $('#delete-modal').find('.spinner-target').data('spinner').stop();
 $('#delete-modal').modal('hide');
 
+// show message
 if (<%= !@message.nil? %>) {
 	$("#study-files-notice-target").html("<%= escape_javascript( render partial: 'studies/study_file_notices', locals: {message: @message}) %>");
 };
