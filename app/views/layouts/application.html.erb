@@ -12,7 +12,7 @@
   <%= csrf_meta_tags %>
 
 	<% if Rails.env == 'production' %>
-		<%= render 'ga_script' %>
+		<%= render '/layouts/ga_script' %>
 	<% end %>
 </head>
 <body>
