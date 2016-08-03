@@ -18,7 +18,7 @@
 		<div class="tab-pane" id="assignment">
 			<div class="well well-sm">
 				<h2>Step 1. Upload Cluster Assignments File <small class="initialize-label" id="initialize_assignments_form_completed"><span class="label label-danger">Required</span></small></h2>
-				<p class="lead">Upload a tab-delimited text file containing all of your cluster and sub-cluster assignments for each single cell.  The file must be a plain text (.txt) file with 3 columns and a header row containing the values 'CELL_NAME', 'CLUSTER', and 'SUB-CLUSTER'.</p>
+				<p class="lead">Upload a tab- or comma-delimited text file containing all of your cluster and sub-cluster assignments for each single cell.  The file must be a plain text (.txt) file with 3 columns and a header row containing the values 'CELL_NAME', 'CLUSTER', and 'SUB-CLUSTER'.</p>
 				<p><%= link_to "Example Assignment File <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/cluster_assignments_example.txt', class: 'btn btn-default', download: 'cluster_assignments_example.txt' %></p>
 			</div>
 			<%= render partial: 'initialize_assignments_form', locals: {study_file: @assignment_file} %>
@@ -26,7 +26,7 @@
 		<div class="tab-pane" id="clusters">
 			<div class="well well-sm">
 				<h2>Step 2. Upload Primary Cluster Coordinates File <small class="initialize-label" id="initialize_clusters_form_completed"><span class="label label-danger">Required</span></small></h2>
-				<p class="lead">Upload a tab-delimited text file containing your primary cluster coordinates.  The file must be a plain text (.txt) file with 3 columns and a header row containing the values 'CELL_NAME', 'X', and 'Y'.</p>
+				<p class="lead">Upload a tab- or comma-delimited text file containing your primary cluster coordinates.  The file must be a plain text (.txt) file with 3 columns and a header row containing the values 'CELL_NAME', 'X', and 'Y'.</p>
 				<p><%= link_to "Example Coordinates File <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/cluster_coordinates_example.txt', class: 'btn btn-default', download: 'cluster_coordinates_example.txt' %></p>
 			</div>
 			<%= render partial: 'initialize_clusters_form', locals: {study_file: @parent_cluster} %>
@@ -34,7 +34,7 @@
 		<div class="tab-pane" id="expression">
 			<div class="well well-sm">
 				<h2>Step 3. Upload Expression Matrix File <small class="initialize-label" id="initialize_expression_form_completed"><span class="label label-danger">Required</span></small></h2>
-				<p class="lead">Upload a tab-delimited text file containing all of your gene expression scores for all genes and single cells.  The file must be a plain text (.txt) file with with a header row containing the value 'GENE' in the first column, and single cell names in each successive column.</p>
+				<p class="lead">Upload a tab- or comma-delimited text file containing all of your gene expression scores for all genes and single cells.  The file must be a plain text (.txt) file with with a header row containing the value 'GENE' in the first column, and single cell names in each successive column.</p>
 				<p><%= link_to "Example Expression Matrix <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/expression_matrix_example.txt', class: 'btn btn-default', download: 'expression_matrix_example.txt' %></p>
 			</div>
 			<%= render partial: 'initialize_expression_form', locals: {study_file: @expression_file} %>
@@ -43,7 +43,7 @@
 			<div id="sub-clusters-target">
 				<div class="well well-sm">
 					<h2>Step 4. Upload Sub Cluster Coordinates File <small class="initialize-label" id="initialize_sub_clusters_form_completed"><span class="label label-info">Optional</span></small></h2>
-					<p class="lead">Upload a tab-delimited text file containing any sub-cluster coordinates.  These sub-clusters must be identified in your cluster assignment file.  The file must be a plain text (.txt) file with 3 columns and a header row containing the values 'CELL_NAME', 'X', and 'Y'.</p>
+					<p class="lead">Upload a tab- or comma-delimited text file containing any sub-cluster coordinates.  These sub-clusters must be identified in your cluster assignment file.  The file must be a plain text (.txt) file with 3 columns and a header row containing the values 'CELL_NAME', 'X', and 'Y'.</p>
 					<p><%= link_to "Example Coordinates File <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/cluster_coordinates_example.txt', class: 'btn btn-default', download: 'cluster_coordinates_example.txt' %></p>
 				</div>
 				<% @sub_clusters.each do |study_file| %>
@@ -64,7 +64,7 @@
 			<div id="marker-genes-target">
 				<div class="well well-sm">
 					<h2>Step 5. Upload Gene List File <small class="initialize-label" id="initialize_marker_genes_form_completed"><span class="label label-info">Optional</span></small></h2>
-					<p class="lead">Upload a tab-delimited text file containing a list of genes and their mean expression values across any clusters.  The file must be a plain text (.txt) with the value 'GENE NAMES' in the first column, and cluster names in each successive column.</p>
+					<p class="lead">Upload a tab- or comma-delimited text file containing a list of genes and their mean expression values across any clusters.  The file must be a plain text (.txt) with the value 'GENE NAMES' in the first column, and cluster names in each successive column.</p>
 					<p><%= link_to "Example Marker List <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/gene_list_example.txt', class: 'btn btn-default', download: 'marker_gene_list_example.txt' %></p>
 				</div>
 				<% @marker_lists.each do |study_file| %>

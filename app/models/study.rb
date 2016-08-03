@@ -167,7 +167,7 @@ class Study
       file = File.open(expression_file.upload.path)
       cells = file.readline.strip.split(/[\t,]/)
       @last_line = "#{expression_file.name}, line 1: #{cells.join("\t")}"
-      if cells.first != 'GENE' || cells.size <= 1
+      if !['gene', ''].include?(cells.first.downcase) || cells.size <= 1
         expression_file.update(parse_status: 'failed')
         puts "Study: #{self.name}, #{@last_line} ERROR: header validation failed"
         raise StandardError, "file header validation failed: #{@last_line}"

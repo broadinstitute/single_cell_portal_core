@@ -11,8 +11,9 @@ if (<%= @reset_status %>) {
 	$('#' + statusLabel).replaceWith("<small class='initialize-label' id='" + statusLabel + "'><span class='label label-<%= @color %>'><%= @status %></span></small>");
 }
 
-// check study initialization status
+// check study initialization status and re-attach tooltip
 $("#initialized").replaceWith("<%= escape_javascript(render partial: 'initialize_study_label') %>");
+$('.initialize-label').tooltip({container: 'body'});
 
 // close modal
 $('#delete-modal').find('.spinner-target').data('spinner').stop();

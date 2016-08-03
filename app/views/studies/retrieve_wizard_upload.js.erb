@@ -25,4 +25,6 @@ if (getWizardStatus() <= 3) {
 	$('#next-btn').click();
 }
 
+// update initialized status and re-enable tooltip
 $("#initialized").replaceWith("<%= escape_javascript(render partial: 'initialize_study_label') %>");
+$('.initialize-label').tooltip({container: 'body'});

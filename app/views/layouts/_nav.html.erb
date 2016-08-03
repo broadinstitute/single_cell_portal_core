@@ -18,6 +18,7 @@
 			<% if user_signed_in? %>
 				<li><%= link_to "<span class='fa fa-sign-out'></span> Logout: #{current_user.email.split('@').first}".html_safe, destroy_user_session_path, method: :delete, class: 'check-upload' %></li>
 			<% end %>
+			<li><%= link_to "<span class='fa fa-question-circle'></span> Help".html_safe, 'https://github.com/broadinstitute/single_cell_portal/wiki', class: 'check-upload', target: '_blank' %>
 			<li><%= link_to "<span class='fa fa-plus'></span> Add a Study".html_safe, new_study_path, class: 'check-upload' %>
 			<li><%= link_to "<span class='fa fa-book'></span> My Studies".html_safe, studies_path, class: 'check-upload', id: 'my-studies' %>
 		</ul>
