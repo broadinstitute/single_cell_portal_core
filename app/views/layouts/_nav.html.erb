@@ -15,12 +15,23 @@
 			<% end %>
 		</ul>
 		<ul class="nav navbar-nav pull-right">
+			<li class='dropdown'><%= link_to "<span class='fa fa-question-circle'></span> Help <span class='caret'></span>".html_safe, "#", class: "dropdown-toggle", "data-toggle" => "dropdown" %>
+				<ul class="dropdown-menu dropdown-menu-right">
+					<li><%= link_to "<span class='fa fa-info-circle fa-fw'></span> Documentation/Wiki".html_safe, 'https://github.com/broadinstitute/single_cell_portal/wiki', class: 'check-upload', target: '_blank' %></li>
+					<li><%= link_to "<span class='fa fa-github fa-fw'></span> Issues".html_safe, 'https://github.com/broadinstitute/single_cell_portal/issues', class: 'check-upload', target: '_blank' %></li>
+				</ul>
+			</li>
 			<% if user_signed_in? %>
-				<li><%= link_to "<span class='fa fa-sign-out'></span> Logout: #{current_user.email.split('@').first}".html_safe, destroy_user_session_path, method: :delete, class: 'check-upload' %></li>
+				<li class="dropdown"><%= link_to "<span class='fa fa-user'></span> #{current_user.email.split('@').first} <span class='caret'></span>".html_safe, "#", class: "dropdown-toggle", "data-toggle" => "dropdown" %>
+					<ul class="dropdown-menu dropdown-menu-right">
+						<li><%= link_to "<span class='fa fa-sign-out fa-fw'></span> Logout".html_safe, destroy_user_session_path, method: :delete, class: 'check-upload' %></li>
+						<li><%= link_to "<span class='fa fa-book fa-fw'></span> My Studies".html_safe, studies_path, class: 'check-upload', id: 'my-studies' %>
+						<li><%= link_to "<span class='fa fa-plus fa-fw'></span> Add a Study".html_safe, new_study_path, class: 'check-upload' %></li>
+					</ul>
+				</li>
+			<% else %>
+				<li><%= link_to "<span class='fa fa-sign-in fa-fw'></span> Login".html_safe, new_user_session_path %></li>
 			<% end %>
-			<li><%= link_to "<span class='fa fa-question-circle'></span> Help".html_safe, 'https://github.com/broadinstitute/single_cell_portal/wiki', class: 'check-upload', target: '_blank' %>
-			<li><%= link_to "<span class='fa fa-plus'></span> Add a Study".html_safe, new_study_path, class: 'check-upload' %>
-			<li><%= link_to "<span class='fa fa-book'></span> My Studies".html_safe, studies_path, class: 'check-upload', id: 'my-studies' %>
 		</ul>
 	</div>
 </nav>
