@@ -161,6 +161,7 @@ class Study
     @message = ["Parsing expression file: #{expression_file.name}", "..."]
     @last_line = ""
     start_time = Time.now
+    @validation_error = false
 
     # validate headers
     begin
@@ -169,14 +170,17 @@ class Study
       @last_line = "#{expression_file.name}, line 1: #{cells.join("\t")}"
       if !['gene', ''].include?(cells.first.downcase) || cells.size <= 1
         expression_file.update(parse_status: 'failed')
-        puts "Study: #{self.name}, #{@last_line} ERROR: header validation failed"
-        raise StandardError, "file header validation failed: #{@last_line}"
+        @validation_error = true
       end
       file.close
     rescue => e
       expression_file.update(parse_status: 'failed')
-      puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
-      raise StandardError, "file header validation failed: #{@last_line}"
+      raise StandardError, "Unexpected error: #{e.message}"
+    end
+
+    # raise validation error if needed
+    if @validation_error
+      raise StandardError, "file header validation failed: #{@last_line}; first header should be GENE or blank followed by cell names"
     end
 
     # begin parse
@@ -184,7 +188,7 @@ class Study
       expression_file.update(parse_status: 'parsing')
       # open data file and grab header row with name of all cells, deleting 'GENE' at start
       expression_data = File.open(expression_file.upload.path)
-      cells = expression_data.readline.chomp.split(/[\t,]/)
+      cells = expression_data.readline.strip.split(/[\t,]/)
       @last_line = "#{expression_file.name}, line 1: #{cells.join("\t")}"
 
       cells.shift
@@ -193,7 +197,7 @@ class Study
       @records = []
       while !expression_data.eof?
         # grab single row of scores, parse out gene name at beginning
-        line = expression_data.readline.chomp
+        line = expression_data.readline.strip
         row = line.split(/[\t,]/)
         @last_line = "#{expression_file.name}, line #{expression_data.lineno}: #{row.join("\t")}"
 
@@ -234,28 +238,32 @@ class Study
       end
     rescue => e
       expression_file.update(parse_status: 'failed')
-      puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
-      raise StandardError, @last_line
+      raise StandardError, "#{@last_line} ERROR: #{e.message}"
     end
   end
 
   def make_clusters_and_cells(assignment_file, user=nil)
     # validate headers of assignment file & cluster file
+    @validation_error = false
     begin
       a_file = File.open(assignment_file.upload.path)
-      a_headers = a_file.readline.chomp.split(/[\t,]/)
+      a_headers = a_file.readline.strip.split(/[\t,]/)
       @last_line = "#{assignment_file.name}, line 1: #{a_headers.join("\t")}"
       if a_headers.sort != %w(CELL_NAME CLUSTER SUB-CLUSTER)
         assignment_file.update(parse_status: 'failed')
-        puts "Study: #{self.name}, #{@last_line} ERROR: assignment file header validation failed"
-        raise StandardError, "file header validation failed: #{@last_line}"
+        @validation_error = true
       end
       a_file.close
     rescue => e
       assignment_file.update(parse_status: 'failed')
-      puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
-      raise StandardError, "file header validation failed: #{@last_line}"
+      raise StandardError, "Unexpected error: #{e.message}"
     end
+
+    # raise validation error if needed
+    if @validation_error
+      raise StandardError, "file header validation failed: #{@last_line}; should be CELL_NAME, CLUSTER, SUB-CLUSTER"
+    end
+
     @message = ["Parsing assignments file: #{assignment_file.name}", "..."]
     @cluster_count = 0
     @cell_count = 0
@@ -326,7 +334,6 @@ class Study
       end
     rescue => e
       assignment_file.update(parse_status: 'failed')
-      puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
       raise StandardError, "#{@last_line} ERROR: #{e.message}"
     end
   end
@@ -343,28 +350,32 @@ class Study
     start_time = Time.now
     cluster_file.update(parse_status: 'parsing')
     @last_line = ""
+    @validation_error = false
 
     # validate headers of cluster file
     begin
       c_file = File.open(cluster_file.upload.path)
-      c_headers = c_file.readline.chomp.split(/[\t,]/)
+      c_headers = c_file.readline.strip.split(/[\t,]/)
       @last_line = "#{cluster_file.name}, line 1: #{c_headers.join("\t")}"
       if c_headers.sort != %w(CELL_NAME X Y)
         cluster_file.update(parse_status: 'failed')
-        puts "Study: #{self.name}, #{@last_line} ERROR: cluster coordinate file header validation failed"
-        raise StandardError, "file header validation failed: #{@last_line}"
+        @validation_error = true
       end
       c_file.close
     rescue => e
       cluster_file.update(parse_status: 'failed')
-      puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
-      raise StandardError, "file header validation failed: #{@last_line}"
+      raise StandardError, "Unexpected error: #{e.message}"
+    end
+
+    # raise validation error if needed
+    if @validation_error
+      raise StandardError, "file header validation failed: #{@last_line}: should be CELL_NAME, X, Y"
     end
 
     # begin parse
     begin
       # get all lines and proper indices
-      lines = File.open(cluster_file.upload.path).readlines.map(&:chomp).delete_if {|line| line.blank? }
+      lines = File.open(cluster_file.upload.path).readlines.map(&:strip).delete_if {|line| line.blank? }
       headers = lines.shift.split(/[\t,]/)
       cell_name_index = headers.index('CELL_NAME')
       x_index = headers.index('X')
@@ -431,7 +442,6 @@ class Study
       end
     rescue => e
       cluster_file.update(parse_status: 'failed')
-      puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
       raise StandardError, "#{@last_line} ERROR: #{e.message}"
     end
   end
@@ -444,6 +454,7 @@ class Study
     @message = ["Parsing marker list file: #{marker_file.name}", "..."]
     start_time = Time.now
     @last_line = ""
+    @validation_error = false
 
     # validate headers
     begin
@@ -452,14 +463,17 @@ class Study
       @last_line = "#{marker_file.name}, line 1: #{headers.join("\t")}"
       if headers.first != 'GENE NAMES' || headers.size <= 1
         marker_file.update(parse_status: 'failed')
-        puts "Study: #{self.name}, #{@last_line} ERROR: header validation failed"
-        raise StandardError, "file header validation failed: #{@last_line}"
+        @validation_error = true
       end
       file.close
     rescue => e
       marker_file.update(parse_status: 'failed')
-      puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
-      raise StandardError, "file header validation failed: #{@last_line}"
+      raise StandardError, "Unexpected error: #{e.message}"
+    end
+
+    # raise validation error if needed
+    if @validation_error
+      raise StandardError, "file header validation failed: #{@last_line}: first header must be 'GENE NAMES' followed by clusters"
     end
 
     # begin parse
@@ -501,7 +515,6 @@ class Study
       end
     rescue => e
       marker_file.update(parse_status: 'failed')
-      puts "Study: #{self.name}, #{@last_line} ERROR: #{e.message}"
       raise StandardError, "#{@last_line} ERROR: #{e.message}"
     end
   end

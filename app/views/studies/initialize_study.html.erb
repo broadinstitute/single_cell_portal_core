@@ -65,7 +65,7 @@
 				<div class="well well-sm">
 					<h2>Step 5. Upload Gene List File <small class="initialize-label" id="initialize_marker_genes_form_completed"><span class="label label-info">Optional</span></small></h2>
 					<p class="lead">Upload a tab- or comma-delimited text file containing a list of genes and their mean expression values across any clusters.  The file must be a plain text (.txt) with the value 'GENE NAMES' in the first column, and cluster names in each successive column.</p>
-					<p><%= link_to "Example Marker List <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/gene_list_example.txt', class: 'btn btn-default', download: 'marker_gene_list_example.txt' %></p>
+					<p><%= link_to "Example Gene List <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/gene_list_example.txt', class: 'btn btn-default', download: 'marker_gene_list_example.txt' %></p>
 				</div>
 				<% @marker_lists.each do |study_file| %>
 					<%= render partial: 'initialize_marker_genes_form', locals: {study_file: study_file} %>

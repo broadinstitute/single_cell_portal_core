@@ -1,17 +1,10 @@
 $('<%= params[:modal_target]%>').modal('hide');
 
-// replace form if expression file or primary cluster file, otherwise let user click button to create new instance
-if ( '<%= params[:partial] %>' == 'initialize_assignments_form') {
-	$("<%= params[:selector] %>").replaceWith("<%= escape_javascript( render params[:partial], study_file: @assignment_file) %>");
-	resetWizardStep("<%= params[:partial] %>_nav");
-else if ( '<%= params[:partial] %>' == 'initialize_clusters_form') {
-	$("<%= params[:selector] %>").replaceWith("<%= escape_javascript( render params[:partial], study_file: @parent_cluster) %>");
-	resetWizardStep("<%= params[:partial] %>_nav");
-} else if ( '<%= params[:partial] %>' == 'initialize_expression_form') {
-	$("<%= params[:selector] %>").replaceWith("<%= escape_javascript( render params[:partial], study_file: @expression_file) %>");
-	resetWizardStep("<%= params[:partial] %>_nav");
-} else {
-	$("<%= params[:selector] %>").remove();
+// replace form with new instance
+$("<%= params[:selector] %>").replaceWith("<%= escape_javascript( render params[:partial], study_file: @study_file) %>");
+
+if (<%= params[:partial] == 'initialize_clusters_form' && !@study.cluster_assignment_file.new_record? %>) {
+
 }
 
 // render error message

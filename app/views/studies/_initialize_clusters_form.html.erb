@@ -22,7 +22,7 @@
 		</div>
 		<div class="col-sm-5 upload-field">
 			<%= f.label :upload, 'Upload Data File' %><br />
-			<%= f.file_field :upload, class: 'btn btn-info fileinput-button cluster-upload', id: 'upload-clusters', disabled: 'true', 'data-toggle' => 'tooltip', title: 'You must upload a cluster assigments file first before continuing.' %>
+			<%= f.file_field :upload, class: 'btn btn-info fileinput-button cluster-upload', id: 'upload-clusters', disabled: @study.cluster_assignment_file.nil?, 'data-toggle' => 'tooltip', title: 'You must upload a cluster assigments file first before continuing.' %>
 			<%= f.hidden_field :status, value: 'uploading' %>
 		</div>
 		<div class="col-sm-3">

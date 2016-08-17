@@ -89,11 +89,29 @@ class StudiesController < ApplicationController
           @study.make_precomputed_scores(@study_file)
       end
     rescue StandardError => e
-      logger.error "ERROR: #{e.message}"
+      logger.info "ERROR: #{e.message}"
       @error = e.message
       # remove bad study file, reload good entries
       @study_file.destroy
       intitialize_wizard_files
+      case params[:partial]
+        when 'initialize_assignments_form'
+          @study_file = @assignment_file
+        when 'initialize_clusters_form'
+          @study_file = @parent_cluster
+        when 'initialize_expression_form'
+          @study_file = @expression_file
+        when 'initialize_sub_clusters_form'
+          @study_file = @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'sub'})
+        when 'initialize_marker_genes_form'
+          @study_file = @study.build_study_file({file_type: 'Gene List'})
+        when 'initialize_fastq_form'
+          @study_file = @study.build_study_file({file_type: 'Fastq'})
+        when 'initialize_misc_form'
+          @study_file = @study.build_study_file({file_type: 'Other'})
+        else
+          @study_file = @study.build_study_file({file_type: 'Other'})
+      end
       render 'parse_error'
     end
   end
