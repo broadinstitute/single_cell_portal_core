@@ -52,9 +52,8 @@ function resetWizardStep(step) {
 // get current status of upload/initializer wizard
 function getWizardStatus() {
     var done = 0;
-    var steps = Object.values(completed);
-    for (var i = 0; i < steps.length; ++i) {
-        if (steps[i] == true) {
+    for (var step in completed) {
+        if (completed[step] == true) {
             done++;
         }
     }
