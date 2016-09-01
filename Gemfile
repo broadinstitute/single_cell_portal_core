@@ -38,9 +38,11 @@ group :development do
 
   # Spring speeds up development by keeping your application running in the background. Read more: https://github.com/rails/spring
   gem 'spring'
+	gem 'ruby-debug-ide'
+	gem 'debase'
 end
 
-gem 'devise'
+gem 'devise', '4.1.1'
 gem 'omniauth-google-oauth2'
 gem 'selenium-webdriver', '2.53.4'
 gem 'jquery-ui-rails', :git => 'git://github.com/joliss/jquery-ui-rails.git'
