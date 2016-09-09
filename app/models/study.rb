@@ -167,7 +167,7 @@ class Study
     begin
       file = File.open(expression_file.upload.path)
       cells = file.readline.strip.split(/[\t,]/)
-      @last_line = "#{expression_file.name}, line 1: #{cells.join("\t")}"
+      @last_line = "#{expression_file.name}, line 1"
       if !['gene', ''].include?(cells.first.downcase) || cells.size <= 1
         expression_file.update(parse_status: 'failed')
         @validation_error = true
@@ -199,7 +199,7 @@ class Study
         # grab single row of scores, parse out gene name at beginning
         line = expression_data.readline.strip
         row = line.split(/[\t,]/)
-        @last_line = "#{expression_file.name}, line #{expression_data.lineno}: #{row.join("\t")}"
+        @last_line = "#{expression_file.name}, line #{expression_data.lineno}"
 
         gene_name = row.shift
         # convert all remaining strings to floats, then store only significant values (!= 0)
@@ -248,7 +248,7 @@ class Study
     begin
       a_file = File.open(assignment_file.upload.path)
       a_headers = a_file.readline.strip.split(/[\t,]/)
-      @last_line = "#{assignment_file.name}, line 1: #{a_headers.join("\t")}"
+      @last_line = "#{assignment_file.name}, line 1"
       if a_headers.sort != %w(CELL_NAME CLUSTER SUB-CLUSTER)
         assignment_file.update(parse_status: 'failed')
         @validation_error = true
@@ -275,12 +275,12 @@ class Study
       raw_data = File.open(assignment_file.upload.path)
       clusters_data = raw_data.readlines.map(&:strip).delete_if {|line| line.empty? }
       assignment_headers = clusters_data.shift.split(/[\t,]/).map(&:strip)
-      @last_line = "#{assignment_file.name}, line 1: #{assignment_headers.join("\t")}"
+      @last_line = "#{assignment_file.name}, line 1"
       cell_index = assignment_headers.index('CELL_NAME')
       cluster_index = assignment_headers.index('CLUSTER')
       sub_index = assignment_headers.index('SUB-CLUSTER')
       clusters_data.each_with_index do |line, index|
-        @last_line = "#{assignment_file.name}, line #{index + 2}: #{line}"
+        @last_line = "#{assignment_file.name}, line #{index + 2}"
 
         vals = line.split(/[\t,]/)
         cluster_name = vals[cluster_index]
@@ -356,7 +356,7 @@ class Study
     begin
       c_file = File.open(cluster_file.upload.path)
       c_headers = c_file.readline.strip.split(/[\t,]/)
-      @last_line = "#{cluster_file.name}, line 1: #{c_headers.join("\t")}"
+      @last_line = "#{cluster_file.name}, line 1"
       if c_headers.sort != %w(CELL_NAME X Y)
         cluster_file.update(parse_status: 'failed')
         @validation_error = true
@@ -382,7 +382,7 @@ class Study
       y_index = headers.index('Y')
       @records = []
       lines.each_with_index do |line, index|
-        @last_line = "#{cluster_file.name}, line #{index + 2}: #{line}"
+        @last_line = "#{cluster_file.name}, line #{index + 2}"
 
         # parse each line and get values
         vals = line.split(/[\t,]/)
@@ -460,7 +460,7 @@ class Study
     begin
       file = File.open(marker_file.upload.path)
       headers = file.readline.strip.split(/[\t,]/)
-      @last_line = "#{marker_file.name}, line 1: #{headers.join("\t")}"
+      @last_line = "#{marker_file.name}, line 1"
       if headers.first != 'GENE NAMES' || headers.size <= 1
         marker_file.update(parse_status: 'failed')
         @validation_error = true
@@ -486,13 +486,13 @@ class Study
       precomputed_score = self.precomputed_scores.build(name: list_name, study_file_id: marker_file._id)
       marker_scores = File.open(marker_file.upload.path).readlines.map(&:strip).delete_if {|line| line.blank? }
       clusters = marker_scores.shift.split(/[\t,]/)
-      @last_line = "#{marker_file.name}, line 1: #{clusters.join("\t")}"
+      @last_line = "#{marker_file.name}, line 1"
 
       clusters.shift # remove 'Gene Name' at start
       precomputed_score.clusters = clusters
       rows = []
       marker_scores.each_with_index do |line, i|
-        @last_line = "#{marker_file.name}, line #{i + 2}: #{line}"
+        @last_line = "#{marker_file.name}, line #{i + 2}"
         vals = line.split(/[\t,]/)
         gene = vals.shift
         row = {"#{gene}" => {}}

@@ -28,3 +28,7 @@ if (getWizardStatus() <= 3) {
 // update initialized status and re-enable tooltip
 $("#initialized").replaceWith("<%= escape_javascript(render partial: 'initialize_study_label') %>");
 $('.initialize-label').tooltip({container: 'body'});
+
+// show success modal
+$('#study-files-notice-target').html("<%= escape_javascript(render partial: 'upload_success_modal_content') %>");
+$('#upload-success-modal').modal({show: true, backdrop: 'static'});

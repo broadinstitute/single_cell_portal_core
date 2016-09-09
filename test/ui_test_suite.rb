@@ -51,6 +51,7 @@ class UiTestSuite < Test::Unit::TestCase
 		modal = @driver.find_element(:id, id)
 		dismiss = modal.find_element(:class, 'close')
 		dismiss.click
+		@wait.until {@driver.find_element(:tag_name, 'body')[:class].include?('modal-open') == false}
 	end
 
 	# wait until element is rendered and visible
@@ -197,6 +198,9 @@ class UiTestSuite < Test::Unit::TestCase
 		upload_btn.click
 		# wait for upload to complete and wizard to step forward
 		wait_for_render(:id, 'parent_cluster_form')
+		# close success modal
+		wait_for_render(:id, 'upload-success-modal')
+		close_modal('upload-success-modal')
 
 		# upload cluster coordinates
 		upload_clusters = @driver.find_element(:id, 'upload-clusters')
@@ -205,6 +209,9 @@ class UiTestSuite < Test::Unit::TestCase
 		upload_btn = @driver.find_element(:id, 'start-file-upload')
 		upload_btn.click
 		wait_for_render(:id, 'expression_form')
+		# close success modal
+		wait_for_render(:id, 'upload-success-modal')
+		close_modal('upload-success-modal')
 
 		# upload expression matrix
 		upload_expression = @driver.find_element(:id, 'upload-expression')
@@ -213,6 +220,9 @@ class UiTestSuite < Test::Unit::TestCase
 		upload_btn = @driver.find_element(:id, 'start-file-upload')
 		upload_btn.click
 		wait_for_render(:class, 'initialize_sub_clusters_form')
+		# close success modal
+		wait_for_render(:id, 'upload-success-modal')
+		close_modal('upload-success-modal')
 
 		# upload sub-cluster
 		upload_clusters = @driver.find_element(:class, 'upload-sub-clusters')
@@ -225,6 +235,9 @@ class UiTestSuite < Test::Unit::TestCase
 		next_btn = @driver.find_element(:id, 'next-btn')
 		next_btn.click
 		wait_for_render(:class, 'initialize_marker_genes_form')
+		# close success modal
+		wait_for_render(:id, 'upload-success-modal')
+		close_modal('upload-success-modal')
 
 		# upload marker gene list
 		upload_clusters = @driver.find_element(:class, 'upload-marker-genes')
@@ -237,6 +250,9 @@ class UiTestSuite < Test::Unit::TestCase
 		next_btn = @driver.find_element(:id, 'next-btn')
 		next_btn.click
 		wait_for_render(:class, 'initialize_fastq_form')
+		# close success modal
+		wait_for_render(:id, 'upload-success-modal')
+		close_modal('upload-success-modal')
 
 		# upload fastq
 		upload_clusters = @driver.find_element(:class, 'upload-fastq')
@@ -245,10 +261,14 @@ class UiTestSuite < Test::Unit::TestCase
 		upload_btn = @driver.find_element(:id, 'start-file-upload')
 		upload_btn.click
 		wait_for_render(:class, 'fastq-file')
+		# close success modal
+		wait_for_render(:id, 'upload-success-modal')
+		close_modal('upload-success-modal')
+		@wait.until {@driver.find_element(:tag_name, 'body')[:class].include?('modal-open') == false}
+
 		next_btn = @driver.find_element(:id, 'next-btn')
 		next_btn.click
 		wait_for_render(:class, 'initialize_misc_form')
-
 		# upload doc file
 		upload_clusters = @driver.find_element(:class, 'upload-misc')
 		upload_clusters.send_keys(@snuc_seq_path + 'README.txt')
@@ -256,6 +276,9 @@ class UiTestSuite < Test::Unit::TestCase
 		upload_btn = @driver.find_element(:id, 'start-file-upload')
 		upload_btn.click
 		wait_for_render(:class, 'documentation-file')
+		# close success modal
+		wait_for_render(:id, 'upload-success-modal')
+		close_modal('upload-success-modal')
 
 		# delete study
 		@driver.get(@base_url + '/studies')

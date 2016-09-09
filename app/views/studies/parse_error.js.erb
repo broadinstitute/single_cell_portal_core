@@ -3,9 +3,6 @@ $('<%= params[:modal_target]%>').modal('hide');
 // replace form with new instance
 $("<%= params[:selector] %>").replaceWith("<%= escape_javascript( render params[:partial], study_file: @study_file) %>");
 
-if (<%= params[:partial] == 'initialize_clusters_form' && !@study.cluster_assignment_file.new_record? %>) {
-
-}
 
 // render error message
 $('#study-files-notice-target').html("<%= escape_javascript(render 'error_modal') %>");
