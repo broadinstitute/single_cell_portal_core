@@ -13,11 +13,24 @@ class Study
       end
     end
   end
-  has_many :clusters, dependent: :destroy
   has_many :cluster_points, dependent: :destroy
   has_many :single_cells, dependent: :destroy
-  has_many :expression_scores, dependent: :destroy
-  has_many :precomputed_scores, dependent: :destroy
+  has_many :expression_scores, dependent: :destroy do
+    def by_gene(gene)
+      where(gene: gene).first
+    end
+
+    def by_searchable_gene(gene)
+      where(searchable_gene: gene).first
+    end
+  end
+
+  has_many :precomputed_scores, dependent: :destroy do
+    def by_name(name)
+      where(name: name).first
+    end
+  end
+
   has_many :study_shares, dependent: :destroy do
     def can_edit
       where(permission: 'Edit').map(&:email)
@@ -28,7 +41,7 @@ class Study
     end
   end
 
-  has_many :clusters do
+  has_many :clusters, dependent: :destroy do
     def parent_clusters
       where(cluster_type: 'parent').to_a.delete_if {|c| c.cluster_points.empty? }
     end

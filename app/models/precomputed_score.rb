@@ -8,6 +8,8 @@ class PrecomputedScore
 	field :clusters, type: Array
 	field :gene_scores, type: Array
 
+	index({ study_id: 1 }, { unique: false })
+
 	def gene_list
 		self.gene_scores.map(&:keys).flatten
 	end

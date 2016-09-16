@@ -11,5 +11,6 @@ class ClusterPoint
 
   index({ single_cell_id: 1 }, { unique: false })
   index({ cluster_id: 1 }, { unique: false })
+  index({ study_id: 1 }, { unique: false })
 
 end

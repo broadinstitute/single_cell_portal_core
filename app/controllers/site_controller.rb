@@ -68,7 +68,7 @@ class SiteController < ApplicationController
 
   # render box and scatter plots for parent clusters or a particular sub cluster
   def view_gene_expression
-    @gene = ExpressionScore.where(gene: params[:gene]).first
+    @gene = @study.expression_scores.by_gene(params[:gene])
     @y_axis_title = 'log(TPM) Expression Values'
     @values = load_expression_boxplot_scores
     @coordinates = load_cluster_points
@@ -84,7 +84,7 @@ class SiteController < ApplicationController
 
   # re-renders plots when changing cluster selection
   def render_gene_expression_plots
-    @gene = ExpressionScore.where(gene: params[:gene]).first
+    @gene = @study.expression_scores.by_gene(params[:gene])
     @y_axis_title = 'log(TPM) Expression Values'
     @values = load_expression_boxplot_scores
     @coordinates = load_cluster_points
@@ -100,9 +100,9 @@ class SiteController < ApplicationController
 
   # view set of genes (scores averaged) as box and scatter plots
   def view_gene_set_expression
-    precomputed = PrecomputedScore.where(study_id: @study._id, name: params[:gene_set]).first
+    precomputed = @study.precomputed_scores.by_name(params[:gene_set])
     @genes = []
-    precomputed.gene_list.map {|gene| @genes << ExpressionScore.find_by(gene: gene)}
+    precomputed.gene_list.map {|gene| @genes << @study.expression_scores.by_gene(gene)}
     @y_axis_title = 'Mean-centered average of log(TPM) Expression Values'
     @values = load_gene_set_expression_boxplot_scores
     @coordinates = load_cluster_points
@@ -122,9 +122,9 @@ class SiteController < ApplicationController
 
   # re-renders plots when changing cluster selection
   def render_gene_set_expression_plots
-    precomputed = PrecomputedScore.where(study_id: @study._id, name: params[:gene_set]).first
+    precomputed = @study.precomputed_scores.by_name(params[:gene_set])
     @genes = []
-    precomputed.gene_list.map {|gene| @genes << ExpressionScore.find_by(gene: gene)}
+    precomputed.gene_list.map {|gene| @genes << @study.expression_scores.by_gene(gene)}
     @y_axis_title = 'Mean-centered average of log(TPM) Expression Values'
     @values = load_gene_set_expression_boxplot_scores
     @coordinates = load_cluster_points
@@ -186,7 +186,7 @@ class SiteController < ApplicationController
 
   # load precomputed data in gct form to render in Morpheus
   def precomputed_results
-    @precomputed_score = PrecomputedScore.where(name: params[:precomputed]).first
+    @precomputed_score = @study.precomputed_scores.by_name(params[:precomputed])
 
     @headers = ["Name", "Description"]
     @precomputed_score.clusters.each do |cluster|
@@ -222,7 +222,7 @@ class SiteController < ApplicationController
 
   # view all genes as heatmap in morpheus, will pull from pre-computed gct file
   def view_precomputed_gene_expression_heatmap
-    @precomputed_score = PrecomputedScore.where(study_id: @study._id, name: params[:precomputed]).first
+    @precomputed_score = @study.precomputed_scores.by_name(params[:precomputed])
   end
 
   private
@@ -367,7 +367,7 @@ class SiteController < ApplicationController
   def load_expression_scores(terms)
     genes = []
     terms.each do |term|
-      g = ExpressionScore.where(study_id: @study._id, searchable_gene: term).first
+      g = @study.expression_scores.by_searchable_gene(term)
       genes << g unless g.nil?
     end
     genes
@@ -378,7 +378,7 @@ class SiteController < ApplicationController
     genes = []
     not_found = []
     terms.each do |term|
-      gene = ExpressionScore.where(study_id: @study._id, searchable_gene: term).first
+      gene = @study.expression_scores.by_searchable_gene(term)
       unless gene.nil?
         genes << gene
       else

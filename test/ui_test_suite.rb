@@ -6,10 +6,16 @@ class UiTestSuite < Test::Unit::TestCase
 
 # Unit Test that is actually a user flow test using the Selenium Webdriver to test dev UI directly
 	def setup
+		prefs = {
+				:download => {
+						:prompt_for_download => false,
+						:default_directory => "/usr/local/bin/chromedriver"
+				}
+		}
 		@driver = Selenium::WebDriver.for :firefox
 		@base_url = 'https://localhost/single_cell'
 		@accept_next_alert = true
-		@driver.manage.timeouts.implicit_wait = 120
+		@driver.manage.timeouts.implicit_wait = 180
 		# test user needs to be created manually before this will work
 		@test_user = {
 				email: 'test.user@gmail.com',
@@ -20,7 +26,7 @@ class UiTestSuite < Test::Unit::TestCase
 				password: 'password'
 		}
 		@genes = %w(Leprel1 Dpf1 Erp29 Dpysl5 Ak7 Dgat2 Lsm11 Mamld1 Rbm17 Gad1 Prox1)
-		@wait = Selenium::WebDriver::Wait.new(:timeout => 120)
+		@wait = Selenium::WebDriver::Wait.new(:timeout => 180)
 		# configure path to sample data as appropriate for your system
 		@snuc_seq_path = '/Users/bistline/Documents/Data/single_cell/snuc-seq/'
 	end
