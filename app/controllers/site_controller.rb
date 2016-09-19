@@ -41,7 +41,7 @@ class SiteController < ApplicationController
       @genes = load_expression_scores(terms)
     else
       geneset_file = params[:search][:upload]
-      terms = geneset_file.read.gsub(/\r\n?/, "\n").split.(/[\s\n,]/).map {|gene| gene.strip.downcase}
+      terms = geneset_file.read.split(/[\s\r\n?,]/).map {|gene| gene.strip.downcase}
       @genes = load_expression_scores(terms)
     end
     # grab saved params for loaded cluster and boxpoints mode

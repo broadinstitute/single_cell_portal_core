@@ -545,6 +545,11 @@ class Study
       if !Dir.exists?(self.data_public_path)
         FileUtils.mkdir_p(self.data_public_path)
         FileUtils.ln_sf(Dir.glob("#{self.data_store_path}/*"), self.data_public_path)
+      else
+        entries = Dir.entries(self.data_public_path).delete_if {|e| e.start_with?('.')}
+        if entries.map {|e| File.directory?(Rails.root.join(self.data_public_path, e))}.uniq == [true] || entries.empty?
+          FileUtils.ln_sf(Dir.glob("#{self.data_store_path}/*"), self.data_public_path)
+        end
       end
     elsif !self.public?
       if Dir.exists?(self.data_public_path)
