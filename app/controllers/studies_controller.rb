@@ -246,7 +246,7 @@ class StudiesController < ApplicationController
 
   # PATCH /courses/:id/update_upload_status
   def update_status
-    study_file = StudyFile.where(study_id: params[:id], name: params[:file]).first
+    study_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
     raise ArgumentError, "Wrong status provided " + params[:status] unless study_file.status == 'uploading' && params[:status] == 'uploaded'
     study_file.update!(status: params[:status])
     head :ok
