@@ -52,8 +52,12 @@
 					// this is the chunked upload callback, will upload 10MB at a time until finished
 					$.getJSON("<%= resume_upload_study_path %>", { file: fileName }, function (result) {
 						var file = result.file;
-						data.uploadedBytes = file && file.size;
-						$.blueimp.fileupload.prototype.options.add.call(that, e, data);
+            if (file == null) {
+              $("#study-files-notice-target").html("<%= escape_javascript( render partial: 'studies/study_file_notices', locals: {message: "You have already uploaded this file.  Please select another file."}) %>");
+            } else {
+              data.uploadedBytes = file && file.size;
+              $.blueimp.fileupload.prototype.options.add.call(that, e, data);
+            }
 					});
 				},
 				// on each chunk completion, update status

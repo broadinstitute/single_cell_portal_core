@@ -1,5 +1,5 @@
 <% @coordinates.sort_by {|k,v| k}.each_with_index do |(cluster, data), index| %>
-	var <%= cluster %> = {
+	var cluster_<%= index %> = {
 		x: <%= raw data[:x] %>,
 		y: <%= raw data[:y] %>,
 		text: <%= raw data[:text] %>,
@@ -17,8 +17,8 @@
 <% end %>
 
 var data = [];
-<% @clusters.each do |cluster| %>
-	data.push(<%= cluster.name %>);
+<% @clusters.each_with_index do |cluster, index| %>
+	data.push(cluster_<%= index %>);
 <% end %>
 
 // use partial for layouts to avoid code duplication

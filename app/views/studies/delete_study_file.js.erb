@@ -1,5 +1,5 @@
 // replace form with fresh instance if needed
-if (<%= !@message.nil? %>) {
+if (<%= !@message.blank? %>) {
 	$("<%= params[:target] %>").replaceWith("<%= escape_javascript( render partial: @partial, locals: {study_file: @study_file}) %>");
 } else {
 	$("<%= params[:target] %>").remove();
@@ -20,7 +20,7 @@ $('#delete-modal').find('.spinner-target').data('spinner').stop();
 $('#delete-modal').modal('hide');
 
 // show message
-if (<%= !@message.nil? %>) {
+if (<%= !@message.blank? %>) {
 	$("#study-files-notice-target").html("<%= escape_javascript( render partial: 'studies/study_file_notices', locals: {message: @message}) %>");
 };
 

@@ -66,7 +66,7 @@ class StudyFile
   end
 
   # JSON response for jQuery uploader
-  def to_jq_upload
+  def to_jq_upload(error=nil)
     {
         '_id' => self._id,
         'name' => read_attribute(:upload_file_name),

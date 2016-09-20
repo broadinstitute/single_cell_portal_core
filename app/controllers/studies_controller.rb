@@ -146,6 +146,7 @@ class StudiesController < ApplicationController
   # delete the requested study file
   def delete_study_file
     @study_file = StudyFile.find(params[:study_file_id])
+    @message = ""
     unless @study_file.nil?
       @file_type = @study_file.file_type
       @cluster_type = @study_file.cluster_type
@@ -237,10 +238,12 @@ class StudiesController < ApplicationController
   # GET /courses/:id/resume_upload.json
   def resume_upload
     study_file = StudyFile.where(study_id: params[:id], name: params[:file]).first
-    unless study_file.nil?
-      render json: { file: { name: study_file.upload.url, size: study_file.upload_file_size } } and return
-    else
+    if study_file.nil?
       render json: { file: { name: "/uploads/default/missing.png",size: nil } } and return
+    elsif study_file.status == 'uploaded'
+      render json: {file: nil } and return
+    else
+      render json: { file: { name: study_file.upload.url, size: study_file.upload_file_size } } and return
     end
   end
 

@@ -1,6 +1,6 @@
 // load box plot data
 <% @values.sort_by {|k,v| k}.each_with_index do |(cluster, data), index| %>
-	var <%= cluster %>_exp = {
+	var cluster_<%= index %>_exp = {
 		y: <%= raw data[:y] %>,
 		name: "<%= data[:name] %>",
 		<% if params[:boxpoints].blank? %>
@@ -21,8 +21,8 @@
 <% end %>
 
 var expressionData = [];
-<% @clusters.each do |cluster| %>
-	expressionData.push(<%= cluster.name %>_exp);
+<% @clusters.each_with_index do |cluster, index| %>
+	expressionData.push(cluster_<%= index %>_exp);
 <% end %>
 
 <% if params[:cluster] %>
@@ -66,7 +66,7 @@ $("#colorscale").change(function() {
 
 // load static cluster scatter for reference
 <% @coordinates.sort_by {|k,v| k}.each_with_index do |(cluster, data), index| %>
-	var <%= cluster %>_clst = {
+	var cluster_<%= index %>_clst = {
 		x: <%= raw data[:x] %>,
 		y: <%= raw data[:y] %>,
 		text: <%= raw data[:text] %>,
@@ -84,8 +84,8 @@ $("#colorscale").change(function() {
 <% end %>
 
 var data = [];
-<% @clusters.each do |cluster| %>
-	data.push(<%= cluster.name %>_clst);
+<% @clusters.each_with_index do |cluster, index| %>
+	data.push(cluster_<%= index %>_clst);
 <% end %>
 
 <% if params[:cluster] %>
