@@ -91,7 +91,7 @@ CKEDITOR.editorConfig = function( config )
         }
     });
 
-    config.contentsCss = "/single_cell/assets/application.css";
+    config.contentsCss = "/software.broadinstitute.org/morpheus/css/morpheus-latest.min.css";
 
     config.bodyClass = 'container-fluid';
     // Toolbar groups configuration.
