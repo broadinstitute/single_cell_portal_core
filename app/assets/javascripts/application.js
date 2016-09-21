@@ -10,9 +10,10 @@
 // Read Sprockets README (https://github.com/rails/sprockets#sprockets-directives) for details
 // about supported directives.
 //
+//= require morpheus-latest.min
+//= require morpheus-external-latest.min
 //= require jquery_ujs
-//= require jquery-ui/effect
-//= require jquery-ui/effect-highlight
+//= require jquery-ui/core
 //= require ckeditor/init
 //= require dataTables/jquery.dataTables
 //= require dataTables/bootstrap/3/jquery.dataTables.bootstrap

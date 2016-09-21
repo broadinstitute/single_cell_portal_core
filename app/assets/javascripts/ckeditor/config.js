@@ -91,7 +91,7 @@ CKEDITOR.editorConfig = function( config )
         }
     });
 
-    config.contentsCss = "//www.broadinstitute.org/cancer/software/morpheus/css/morpheus-latest.min.css";
+    config.contentsCss = "/single_cell/assets/application.css";
 
     config.bodyClass = 'container-fluid';
     // Toolbar groups configuration.
