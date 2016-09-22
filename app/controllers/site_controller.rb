@@ -150,6 +150,11 @@ class SiteController < ApplicationController
     if @genes.size > 5
       @main_genes, @other_genes = divide_genes_for_header
     end
+    if @study.public?
+      @clusters_url = @study.cluster_assignment_file.download_path
+    else
+      @clusters_url = TempFileDownload.create!({study_file_id: @study.cluster_assignment_file._id}).download_url
+    end
   end
 
   # load data in gct form to render in Morpheus, preserving query order

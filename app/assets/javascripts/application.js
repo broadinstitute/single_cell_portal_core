@@ -21,6 +21,7 @@
 //= require jquery_nested_form
 //= require jquery-ui/datepicker
 //= require spin.min
+//= require chroma.min
 //= require_tree .
 
 var fileUploading = false;

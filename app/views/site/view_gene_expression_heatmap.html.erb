@@ -34,7 +34,8 @@
 		if ( '<%= params[:cluster] %>' != '' ) {
 			dataPath += '&cluster=<%= params[:cluster ]%>';
 		};
-		var annotPath = '/single_cell/data/<%= @study.url_safe_name %>/CLUSTER_AND_SUBCLUSTER_INDEX.txt';
+
+		var annotPath = '<%= @clusters_url %>';
 		renderMorpheus(dataPath, annotPath, '#heatmap-plot', 'both');
 
 		$("#cluster, #row_centered").change(function() {
@@ -46,7 +47,6 @@
 			$("#search_cluster").val(cluster);
 			if (cluster != "") {
 				newDataPath += '&cluster=' + cluster;
-
 			};
 
 			renderMorpheus(newDataPath, annotPath, '#heatmap-plot', 'both');
