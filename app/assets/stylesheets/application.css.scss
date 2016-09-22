@@ -10,10 +10,10 @@
  * defined in the other CSS/SCSS files in this directory. It is generally better to create a new
  * file per style scope.
  *
+ *= require morpheus-latest.min
  *= require dataTables/bootstrap/3/jquery.dataTables.bootstrap
  *= require jquery.fileupload
  *= require jquery.fileupload-ui
- *= require jquery-ui/core
  *= require jquery-ui/datepicker
  *= require_self
  */

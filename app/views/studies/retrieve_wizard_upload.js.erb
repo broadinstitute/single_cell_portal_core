@@ -31,4 +31,6 @@ $('.initialize-label').tooltip({container: 'body'});
 
 // show success modal
 $('#study-files-notice-target').html("<%= escape_javascript(render partial: 'upload_success_modal_content') %>");
-$('#upload-success-modal').modal({show: true, backdrop: 'static'});
+setTimeout(function() {
+  $('#upload-success-modal').modal('show');
+}, 500);

@@ -572,7 +572,7 @@ class Study
 
   # clean up any symlinks before deleting a study
   def remove_public_symlinks
-    if self.public?
+    if Dir.exist?(self.data_public_path)
       FileUtils.rm_rf(self.data_public_path)
     end
   end
