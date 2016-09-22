@@ -46,7 +46,10 @@ class TempFileDownload
   end
 
   # removes symlink before record is deleted
+  # first check if file still exists as study or file may have been deleted
   def remove_symbolic_link
-    FileUtils.rm_rf self.download_path
+    if !self.study_file.nil?
+      FileUtils.rm_rf self.download_path
+    end
   end
 end
