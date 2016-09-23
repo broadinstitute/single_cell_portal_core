@@ -9,13 +9,13 @@
 
                 {% if (!i && !o.options.autoUpload) { %}
                     <button id='start-file-upload' class="btn btn-success start" disabled>
-                        <i class="glyphicon glyphicon-upload"></i>
+                        <i class="fa fa-upload"></i>
                         Upload & Save File
                     </button>
                 {% } %}
                 {% if (!i) { %}
                     <button class="btn btn-danger cancel">
-                        <i class="glyphicon glyphicon-ban-circle"></i>
+                        <i class="fa fa-ban"></i>
                         Cancel Upload
                     </button>
                 {% } %}
@@ -56,13 +56,13 @@
 				<td>
 						{% if (file.deleteUrl) { %}
 								<button class="btn btn-danger delete" data-type="{%=file.deleteType%}" data-url="{%=file.deleteUrl%}"{% if (file.deleteWithCredentials) { %} data-xhr-fields='{"withCredentials":true}'{% } %}>
-										<i class="glyphicon glyphicon-trash"></i>
+										<i class="fa fa-trash"></i>
 										<span>Delete</span>
 								</button>
 								<input type="checkbox" name="delete" value="1" class="toggle">
 						{% } else { %}
 								<button class="btn btn-warning cancel">
-										<i class="glyphicon glyphicon-ban-circle"></i>
+										<i class="fa fa-ban"></i>
 										<span>Cancel</span>
 								</button>
 						{% } %}

@@ -10,8 +10,9 @@
 // Read Sprockets README (https://github.com/rails/sprockets#sprockets-directives) for details
 // about supported directives.
 //
+//= require morpheus-external-latest.min
+//= require morpheus-latest.min
 //= require jquery_ujs
-//= require jquery-ui/core
 //= require ckeditor/init
 //= require dataTables/jquery.dataTables
 //= require dataTables/bootstrap/3/jquery.dataTables.bootstrap
@@ -19,10 +20,9 @@
 //= require jquery-fileupload
 //= require jquery-fileupload/basic-plus
 //= require jquery_nested_form
-//= require jquery-ui/datepicker
 //= require spin.min
 //= require chroma.min
-//= require_tree .
+//= require jquery-ui/datepicker
 
 var fileUploading = false;
 
