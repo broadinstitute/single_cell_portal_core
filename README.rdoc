@@ -38,7 +38,8 @@ Once the image has successfully built and the database container is running, use
 <em>Contact bistline@broadinstitute.org[mailto:bistline@broadinstitute.org] for credentials to use in development and production.</em>
 
 This sets up several environment variables in your shell and then runs the following command:
-	docker run --rm -it --name $CONTAINER_NAME -p 80:80 -p 443:443 -p 587:587 --link mongodb:mongodb -h localhost -v $PROJECT_DIR:/home/app/webapp:rw -e PASSENGER_APP_ENV=$PASSENGER_APP_ENV -e MONGO_LOCALHOST=$MONGO_LOCALHOST -e SENDGRID_USERNAME=$SENDGRID_USERNAME -e SENDGRID_PASSWORD=$SENDGRID_PASSWORD -e SECRET_KEY_BASE=$SECRET_KEY_BASE single_cell_docker
+  docker run --rm -it --name $CONTAINER_NAME -p 80:80 -p 443:443 -p 587:587 --link mongodb:mongodb -h localhost -v $PROJECT_DIR:/home/app/webapp:rw -e PASSENGER_APP_ENV=$PASSENGER_APP_ENV -e MONGO_LOCALHOST=$MONGO_LOCALHOST -e SENDGRID_USERNAME=$SENDGRID_USERNAME -e SENDGRID_PASSWORD=$SENDGRID_PASSWORD -e SECRET_KEY_BASE=$SECRET_KEY_BASE single_cell_docker
+
 The container will then start running, and will execute its local startup scripts that will configure the application automatically.
 
 You can also run the <code>bin/boot_docker</code> script in help mode by passing <code>-H</code> to print the help text which will show you how to pass specific values to the above env variables.
