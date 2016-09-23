@@ -21,27 +21,31 @@ This will start the automated process of building the Docker image for running t
 Since this project utilizes native Docker for Mac OSX, any resources on the host machine cannot be reached by the running container (specifically, any database resources).
 Therefore, we will need to deploy a database container using Docker as well.  This project uses {MongoDB}[https://hub.docker.com/_/mongo/] as the primary datastore.
 
+First, create a directory somewhere on your computer in which to store the raw database content (it doesn't matter where as long as it has rw permissions, but preferably it would be inside your home directory).
+
 To deploy the database container:
 
 1. Pull the image: <code>docker pull mongo</code>
 2. Navigate to the project directory
-3. Run the helper script to start the DB container: <code>bin/boot_mongo</code>
+3. Run the helper script to start the DB container: <code>bin/boot_mongo -d (path to data store directory) </code>
 
-Note: Once the container has been once, you can stop & restart it using: <code>docker stop mongodb</code> or <code>docker restart mongodb</code>
+Note: Once the container has been run once, you can stop & restart it using: <code>docker stop mongodb</code> or <code>docker restart mongodb</code>
 
 == RUNNING THE CONTAINER
 
 Once the image has successfully built and the database container is running, use the following command to start the container:
-  bin/boot_docker
+  bin/boot_docker -u (sendgrid username) -P (sendgrid password)
+<em>Contact bistline@broadinstitute.org[mailto:bistline@broadinstitute.org] for credentials to use in development and production.</em>
+
 This sets up several environment variables in your shell and then runs the following command:
-  docker run --rm -it --name $CONTAINER_NAME -p 80:80 -p 443:443 --link mongodb:mongodb -p 587:587 -h $HOST -v $PROJECT_DIR:/home/app/webapp:rw -e PASSENGER_APP_ENV=$PASSENGER_APP_ENV -e MONGO_LOCALHOST=$MONGO_LOCALHOST -e SENDGRID_USERNAME=$SENDGRID_USERNAME -e SENDGRID_PASSWORD=$SENDGRID_PASSWORD -e PROD_DATABASE_PASSWORD=$PROD_DATABASE_PASSWORD -e SECRET_KEY_BASE=$SECRET_KEY_BASE single_cell_docker
+	docker run --rm -it --name $CONTAINER_NAME -p 80:80 -p 443:443 -p 587:587 --link mongodb:mongodb -h localhost -v $PROJECT_DIR:/home/app/webapp:rw -e PASSENGER_APP_ENV=$PASSENGER_APP_ENV -e MONGO_LOCALHOST=$MONGO_LOCALHOST -e SENDGRID_USERNAME=$SENDGRID_USERNAME -e SENDGRID_PASSWORD=$SENDGRID_PASSWORD -e SECRET_KEY_BASE=$SECRET_KEY_BASE single_cell_docker
 The container will then start running, and will execute its local startup scripts that will configure the application automatically.
 
 You can also run the <code>bin/boot_docker</code> script in help mode by passing <code>-H</code> to print the help text which will show you how to pass specific values to the above env variables.
 <em>Note: running the shortcut script with an environment of 'production' will cause the container to spawn headlessly by passing the <code>-d</code> flag, rather than <code>--rm -it</code>.</em>
 
 === DOCKER RUN COMMAND ENVIRONMENT VARIABLES
-There are several variables that need to be passed to the API Docker container in order to run properly:
+There are several variables that need to be passed to the Docker container in order to run properly:
 1. *CONTAINER_NAME* (passed with --name): This names your container to whatever you want.  This is useful when linking containers.
 3. *PROJECT_DIR* (passed with -v): This mounts your local working directory inside the Docker container.  Makes doing local development via hot deployment possible.
 4. *PASSENGER_APP_ENV* (passed with -e): The Rails environment you wish to load.  Can be either development or production (default is development).
@@ -60,8 +64,49 @@ The run command explained in its entirety:
 * <b>-v [PROJECT_DIR]/:/home/app/webapp:</b> This mounts your local working directory inside the running Docker container in the correct location for the portal to run.  This accomplishes two things:
   - Enables hot deployment for local development
   - Persists all project data past destruction of Docker container (since we're running with --rm), but not system-level log or tmp files.
-* <b>-e PASSENGER_APP_ENV= [RAILS_ENV]:</b> The Rails environment.  Will default to production, so if you're doing local development, set this accordingly.
+* <b>-e PASSENGER_APP_ENV= [RAILS_ENV]:</b> The Rails environment.  Will default to development, so if you're doing a production deployment, set this accordingly.
 * <b>-e MONGO_LOCALHOST= [MONGO_LOCALHOST]:</b> Name of the container running MongoDB.  Even though our two containers are linked, this needs to be set to allow Rails to communicate with the database.
 * <b>-e SENDGRID_USERNAME= [SENDGRID_USERNAME] -e SENDGRID_PASSWORD= [SENDGRID_PASSWORD]:</b> The credentials for Sendgrid to send emails.  Alternatively, you could decide to not use Sendgrid and configure the application to use a different SMTP server (would be done inside your environment's config file).
 * <b>-e SECRET_KEY_BASE= [SECRET_KEY_BASE]:</b> Setting the SECRET_KEY_BASE variable is necessary for creating secure cookies for authentication.  This variable automatically resets every time we restart the container.
 * *single_cell_docker*: This is the name of the image we created earlier.  If you chose a different name, please use that here.
+
+=== GOOGLE DEPLOYMENT
+The production Single Cell portal is deployed in Google Cloud Platform.  The project name is *broad-singlecellportal*.
+If you need to access the production instance for maintenance purposes:
+* Go to the broad-singlecellportal[https://console.cloud.google.com/home/dashboard?project=broad-singlecellportal] GCP page
+* Select "Compute Engine" from the top-left nav dropdown
+* At the bottom of the page is the entry for the production VM (called singlecell-production)
+* Click the SSH button under the Connect heading (this will launch an SSH tunnel in a browser window)
+
+Once you have connected, the portal is running in this directory: <code>/home/docker-user/single_cell_portal</code>.  All source files are owned by <code>docker-user</code>, so if you need to pull from git, make sure you <code>sudo -u docker-user -Hs</code> first to preserve the correct file permissions.  Any docker commands need to be run as <code>root</code>, so exit out of the shell before running them.
+
+==== PRODUCTION DOCKER COMMANDS
+
+* To bounce MongoDB: <code>docker restart mongodb</code>
+* To bounce the portal: <code>docker restart single_cell</code> <em>Note: MongoDB must be running to restart the portal, otherwise it cannot instantiate the link to the database.</em>
+* To connect to the running MongoDB container: <code>docker exec -it mongodb mongo</code>
+* To connect to the running portal container: <code>docker exec -it single_cell bash</code>
+
+If you have pulled changes from source that require re-building the container, follow this checklist from inside the project directory as <code>root</code>:
+1. Rebuild the docker image: <code>docker build -t single_cell_docker -f Dockerfile .</code>
+2. Stop the portal: <code>docker stop single_cell</code>
+3. Remove the container instance: <code>docker rm single_cell</code>
+4. Launch a new instance of the portal with the updated container:
+  bin/boot_docker -u (sendgrid username) -P (sendgrid password) -e production -p (prod database password) -h portals.broadinstitute.org
+
+<em>Contact bistline@broadinstitute.org[mailto:bistline@broadinstitute.org] for credentials to use with production</em>
+
+<b>You will need to rebuild the docker image if you do any of the following:</b>
+* Edit the Dockerfile
+* Edit any scripts or configuration files listed in the Dockerfile:
+  - Gemfile (including Gemfile.lock if versions have changed)
+  - set_user_permissions.bash
+  - rails_startup.bash
+  - nginx.conf
+  - webapp.conf
+
+When you launch a new instance of the portal, you should get a response that is looks like a giant hexadecimal string - this is the instance ID of the new container.
+Once the container is running, you can connect to it with the docker exec command and perform various Rails-specific actions, like:
+
+* Re-index the database: <code>bin/rake RAILS_ENV=production db:mongoid:create_indexes</code>
+* Launch the Rails console (to inspect database records, for instance): <code>bin/rails console production</code>
