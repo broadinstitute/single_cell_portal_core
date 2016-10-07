@@ -81,6 +81,8 @@ If you need to access the production instance for maintenance purposes:
 
 Once you have connected, the portal is running in this directory: <code>/home/docker-user/single_cell_portal</code>.  All source files are owned by <code>docker-user</code>, so if you need to pull from git, make sure you <code>sudo -u docker-user -Hs</code> first to preserve the correct file permissions.  Any docker commands need to be run as <code>root</code>, so exit out of the shell before running them.
 
+The production URL is: https://portals.broadinstitute.org/single_cell
+
 ==== PRODUCTION DOCKER COMMANDS
 
 * To bounce MongoDB: <code>docker restart mongodb</code>
