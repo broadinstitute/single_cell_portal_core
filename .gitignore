@@ -16,3 +16,4 @@
 /db/*.json
 /data/*
 /public/single_cell/assets
+/public/single_cell/ckeditor_assets
