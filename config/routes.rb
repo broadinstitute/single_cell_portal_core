@@ -37,6 +37,7 @@ Rails.application.routes.draw do
     post 'study/:study_name/precomputed_gene_expression', to: 'site#search_precomputed_results', as: :search_precomputed_results
     get 'study/:study_name/precomputed_gene_expression', to: 'site#view_precomputed_gene_expression_heatmap', as: :view_precomputed_gene_expression_heatmap
     get 'study/:study_name/precomputed_results', to: 'site#precomputed_results', as: :precomputed_results
+		get 'search', to: 'site#search', as: :search
     get '/', to: 'site#index', as: :site
     root to: 'site#index'
   end

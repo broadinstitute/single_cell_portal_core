@@ -2,19 +2,38 @@ class SiteController < ApplicationController
 
   respond_to :html, :js
 
-  before_action :set_study, except: :index
-  before_action :load_precomputed_options, except: :index
-  before_action :set_clusters, except: [:index, :view_all_gene_expression_heatmap, :precomputed_results]
+  before_action :set_study, except: [:index, :search]
+  before_action :load_precomputed_options, except: [:index, :search]
+  before_action :set_clusters, except: [:index, :search, :view_all_gene_expression_heatmap, :precomputed_results]
 
   COLORSCALE_THEMES = ['Blackbody', 'Bluered', 'Blues', 'Earth', 'Electric', 'Greens', 'Hot', 'Jet', 'Picnic', 'Portland', 'Rainbow', 'RdBu', 'Reds', 'Viridis', 'YlGnBu', 'YlOrRd']
 
   # view study overviews and downloads
   def index
-    if user_signed_in?
-      @studies = Study.viewable(current_user).sort_by(&:name)
-    else
-      @studies = Study.where(public: true).order('name ASC')
+    # set study order
+    case params[:order]
+      when 'recent'
+        @order = :created_at.desc
+      when 'popular'
+        @order = :view_count.desc
+      else
+        @order = :name.asc
     end
+
+    # load viewable studies in requested order
+    if user_signed_in?
+      @studies = Study.viewable(current_user).order_by(@order).paginate(page: params[:page], per_page: 2)
+    else
+      @studies = Study.where(public: true).order_by(@order).paginate(page: params[:page], per_page: 2)
+    end
+  end
+
+  # search for matching studies
+  def search
+    # use built-in MongoDB text index (supports quoting terms & case sensitivity)
+    @studies = Study.where({:$text => {:$search => params[:search_terms]}})
+    puts @studies.map(&:name)
+    render nothing: true
   end
 
   # load single study and view top-level clusters

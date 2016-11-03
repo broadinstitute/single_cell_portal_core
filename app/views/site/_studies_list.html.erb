@@ -1,0 +1,21 @@
+<% @studies.each do |study| %>
+  <div class="panel panel-primary study-panel" data-page="<%= params[:page].nil? ? 1 : params[:page] %>">
+    <div class="panel-heading">
+      <div class="panel-title">
+        <h4><%= link_to "#{study.name} <span class='fa fa-chevron-down toggle-glyph'></span>".html_safe, "##{study.url_safe_name}", "data-toggle" => "collapse", 'data-parent' => '#downloads', style: 'color: white;'  %></h4>
+      </div>
+    </div>
+    <div id="<%= study.url_safe_name %>" class="panel-collapse collapse in">
+      <div class="panel-body">
+        <div class="row">
+          <div class="col-sm-2">
+            <%= link_to "View Study".html_safe, view_study_path(study_name: study.url_safe_name), class: 'btn btn-success btn-lg btn-block' %>
+          </div>
+          <div class="col-sm-9">
+            <%= study.description.html_safe %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

@@ -58,6 +58,7 @@ class Study
   field :description, type: String
   field :public, type: Boolean, default: true
   field :initialized, type: Boolean, default: false
+  field :view_count, type: Integer, default: 0
 
   accepts_nested_attributes_for :study_files, allow_destroy: true
   accepts_nested_attributes_for :study_shares, allow_destroy: true, reject_if: proc { |attributes| attributes['email'].blank? }
@@ -81,6 +82,9 @@ class Study
   before_destroy  :remove_public_symlinks
   after_destroy   :remove_data_dir
 
+  # search definitions
+  index({"name" => "text", "description" => "text"})
+
   # return all studies that are editable by a given user
   def self.editable(user)
     studies = self.where(user_id: user._id).to_a
@@ -90,10 +94,12 @@ class Study
 
   # return all studies that are viewable by a given user
   def self.viewable(user)
-    public = self.where(public: true).to_a
-    owned = self.where(user_id: user._id, public: false).to_a
-    shares = StudyShare.where(email: user.email).map(&:study)
-    [public + owned + shares].flatten.uniq
+    public = self.where(public: true).map(&:_id)
+    owned = self.where(user_id: user._id, public: false).map(&:_id)
+    shares = StudyShare.where(email: user.email).map(&:study_id)
+    intersection = public + owned + shares
+    # return Mongoid criterion object to use with pagination
+    Study.in(:_id => intersection)
   end
 
   # check if a give use can edit study
