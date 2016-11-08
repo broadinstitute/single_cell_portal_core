@@ -2,26 +2,27 @@
 	<h1 class="lead text-center">Single Cell Portal <sup><small>BETA</small></sup></h1>
 	<p class="lead text-center">Visualization portal for single cell RNA-seq data.</p>
 </div>
-<h2 class="study-lead"><span class="fa fa-book"></span> Browse Studies</h2>
+<h2 class="study-lead"><span class="fa fa-book"></span> Browse Studies <%= link_to "<span class='fa fa-question-circle'></span> Search Help".html_safe, 'javascript:;', class: 'btn btn-default pull-right', title: 'Search Help', data: {toggle: 'popover', content: render(partial: 'search_help'), placement: 'left', html: true, trigger: 'hover focus'} %></h2>
 <div class="row form-group">
   <div class="col-md-6 col-sm-12 col-xs-12">
-    <%= form_tag(search_path, method: :get, class: 'form') do %>
+    <%= form_tag(site_path, method: :get, class: 'form') do %>
       <div class="input-group">
         <%= text_field_tag :search_terms, nil, class: 'form-control', placeholder: 'Search Studies...' %>
+        <%= hidden_field_tag :order, params[:order].nil? ? "" : params[:order] %>
         <div class="input-group-btn">
-          <button class="btn btn-info" type="submit" name="commit" data-toggle="tooltip" title="Execute Search"><span class="fa fa-search"></span></button>
+          <button class="btn btn-info" type="submit" name="commit"><span class="fa fa-search"></span></button>
         </div>
       </div>
     <% end %>
   </div>
   <div class="col-md-2 col-sm-4 col-xs-12">
-    <%= link_to "<span class='fa fa-clock-o'></span> Most Recent".html_safe, site_path(order: 'recent'), class: 'btn btn-default btn-block' %>
+    <%= link_to "<span class='fa fa-clock-o'></span> Most Recent".html_safe, get_site_path_with_params(params[:search_terms].to_s, 'recent'), class: 'btn btn-default btn-block' %>
   </div>
   <div class="col-md-2 col-sm-4 col-xs-12">
-    <%= link_to "<span class='fa fa-star-o'></span> Most Popular".html_safe, site_path(order: 'popular'), class: 'btn btn-default btn-block' %>
+    <%= link_to "<span class='fa fa-star-o'></span> Most Popular".html_safe, get_site_path_with_params(params[:search_terms].to_s, 'popular'), class: 'btn btn-default btn-block' %>
   </div>
   <div class="col-md-2 col-sm-4 col-xs-12">
-    <%= link_to "<span class='fa fa-ban'></span> Reset Order".html_safe, site_path, class: 'btn btn-default btn-block' %>
+    <%= link_to "<span class='fa fa-ban'></span> Reset Filters".html_safe, site_path, class: 'btn btn-default btn-block' %>
   </div>
 </div>
 <div class="panel-group" id="studies">
@@ -40,12 +41,12 @@
   var totalPages = <%= @studies.total_pages %>;
   var currentPage = "<%= params[:page] %>";
   var order = "<%= params[:order] %>";
-  var search = "<%= params[:search] %>";
+  var search = "<%= params[:search_terms] %>";
 
   function bindScroll(){
     if($(window).scrollTop() + $(window).height() > $(document).height() - 1) {
       $(window).unbind('scroll');
-      paginateStudies(totalPages, order);
+      paginateStudies(totalPages, order, search);
     }
   }
 
@@ -56,10 +57,10 @@
 
   $("#pagination").click(function() {
     $(window).unbind('scroll');
-    paginateStudies(totalPages, order);
+    paginateStudies(totalPages, order, search);
   });
 
   if ( search != "" ) {
-    $("#search").val(search);
+    $("#search_terms").val($('<div/>').html(search).text());
   }
 </script>

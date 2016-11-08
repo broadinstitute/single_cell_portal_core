@@ -2,6 +2,11 @@ class Study
   include Mongoid::Document
   include Mongoid::Timestamps
 
+  # pagination
+  def self.per_page
+    3
+  end
+
   # associations and scopes
   belongs_to :user
   has_many :study_files, dependent: :destroy do

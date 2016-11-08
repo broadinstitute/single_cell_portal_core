@@ -22,9 +22,16 @@ class SiteController < ApplicationController
 
     # load viewable studies in requested order
     if user_signed_in?
-      @studies = Study.viewable(current_user).order_by(@order).paginate(page: params[:page], per_page: 2)
+      @viewable = Study.viewable(current_user).order_by(@order)
     else
-      @studies = Study.where(public: true).order_by(@order).paginate(page: params[:page], per_page: 2)
+      @viewable = Study.where(public: true).order_by(@order)
+    end
+
+    # if search params are present, filter accordingly
+    if !params[:search_terms].blank?
+      @studies = @viewable.where({:$text => {:$search => params[:search_terms]}}).paginate(page: params[:page], per_page: Study.per_page)
+    else
+      @studies = @viewable.paginate(page: params[:page], per_page: Study.per_page)
     end
   end
 
@@ -32,12 +39,12 @@ class SiteController < ApplicationController
   def search
     # use built-in MongoDB text index (supports quoting terms & case sensitivity)
     @studies = Study.where({:$text => {:$search => params[:search_terms]}})
-    puts @studies.map(&:name)
-    render nothing: true
+    render 'index'
   end
 
   # load single study and view top-level clusters
   def study
+    @study.update(view_count: @study.view_count + 1)
     # parse all coordinates out into hash using generic method
     if @study.initialized?
       @coordinates = load_cluster_points
