@@ -25,7 +25,7 @@ module ApplicationHelper
 		breadcrumbs = []
 		if controller_name == 'site'
 			if @study
-				breadcrumbs << {title: @study.name, link: view_study_path(study_name: @study.url_safe_name)}
+				breadcrumbs << {title: truncate(@study.name, length: 40), link: view_study_path(study_name: @study.url_safe_name)}
 			end
 			case action_name
 				when 'view_gene_expression'
@@ -45,11 +45,11 @@ module ApplicationHelper
 				when 'new'
 					breadcrumbs << {title: "New Study", link: 'javascript:;'}
 				when 'edit'
-					breadcrumbs << {title: "Editing '#{@study.name}'", link: 'javascript:;'}
+					breadcrumbs << {title: "Editing '#{truncate(@study.name, length: 20)}'", link: 'javascript:;'}
 				when 'show'
-					breadcrumbs << {title: "Showing '#{@study.name}'", link: 'javascript:;'}
+					breadcrumbs << {title: "Showing '#{truncate(@study.name, length: 20)}'", link: 'javascript:;'}
 				when 'initialize_study'
-					breadcrumbs << {title: "Upload/Edit Study Data for '#{@study.name}'", link: 'javascript:;'}
+					breadcrumbs << {title: "Upload/Edit Study Data", link: 'javascript:;'}
 			end
 		end
 		breadcrumbs
