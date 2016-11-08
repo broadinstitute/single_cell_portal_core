@@ -46,7 +46,9 @@
 			var target = $('.spinner-target')[0];
 			new Spinner(opts).spin(target);
 			$('#delete-modal').modal('show');
-		}
+		} else {
+		  return false;
+    }
 	});
 
 </script>
