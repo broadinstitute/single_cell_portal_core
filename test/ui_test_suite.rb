@@ -6,12 +6,6 @@ class UiTestSuite < Test::Unit::TestCase
 
 # Unit Test that is actually a user flow test using the Selenium Webdriver to test dev UI directly
 	def setup
-		prefs = {
-				:download => {
-						:prompt_for_download => false,
-						:default_directory => "/usr/local/bin/chromedriver"
-				}
-		}
 		@driver = Selenium::WebDriver.for :firefox
 		@base_url = 'https://localhost/single_cell'
 		@accept_next_alert = true
@@ -76,6 +70,16 @@ class UiTestSuite < Test::Unit::TestCase
 		@driver.get(@base_url)
 		assert element_present?(:id, 'main-banner'), 'could not find index page title text'
 		assert @driver.find_elements(:class, 'panel-primary').size >= 1, 'did not find any studies'
+	end
+
+	test 'perforn search' do
+		@driver.get(@base_url)
+		search_box = @driver.find_element(:id, 'search_terms')
+		search_box.send_keys('sNuc-Seq')
+		submit = @driver.find_element(:id, 'submit-search')
+		submit.click
+		@wait.until { @driver.find_elements(:class, 'study-panel').size == 1 }
+		assert @driver.find_elements(:class, 'study-panel').size == 1, 'incorrect number of studies found'
 	end
 
 	test 'load sNuc-Seq study' do
@@ -194,9 +198,7 @@ class UiTestSuite < Test::Unit::TestCase
 
 		# upload cluster assignments
 		wait_for_render(:id, 'assignments_form')
-		modal = @driver.find_element(:id, 'message_modal')
-		dismiss = modal.find_element(:class, 'close')
-		dismiss.click
+		close_modal('message_modal')
 		upload_assignments = @driver.find_element(:id, 'upload-assignments')
 		upload_assignments.send_keys(@test_data_path + 'cluster_assignments_example.txt')
 		wait_for_render(:id, 'start-file-upload')

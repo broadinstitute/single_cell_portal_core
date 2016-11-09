@@ -2,7 +2,7 @@
 	<h1 class="lead text-center">Single Cell Portal <sup><small>BETA</small></sup></h1>
 	<p class="lead text-center">Visualization portal for single cell RNA-seq data.</p>
 </div>
-<h2 class="study-lead"><span class="fa fa-book"></span> Browse Studies <%= link_to "<span class='fa fa-question-circle'></span> Search Help".html_safe, 'javascript:;', class: 'btn btn-default pull-right', title: 'Search Help', data: {toggle: 'popover', content: render(partial: 'search_help'), placement: 'left', html: true, trigger: 'hover focus'} %></h2>
+<h2 class="study-lead"><span class="fa fa-book"></span> Browse Studies <%= link_to "<span class='fa fa-question-circle'></span>".html_safe, 'javascript:;', class: 'text-info', title: 'Search Help', data: {toggle: 'popover', content: render(partial: 'search_help'), html: true, trigger: 'hover focus'} %></h2>
 <div class="row form-group">
   <div class="col-md-6 col-sm-12 col-xs-12">
     <%= form_tag(site_path, method: :get, class: 'form') do %>
@@ -10,7 +10,7 @@
         <%= text_field_tag :search_terms, nil, class: 'form-control', placeholder: 'Search Studies...' %>
         <%= hidden_field_tag :order, params[:order].nil? ? "" : params[:order] %>
         <div class="input-group-btn">
-          <button class="btn btn-info" type="submit" name="commit"><span class="fa fa-search"></span></button>
+          <button class="btn btn-info" type="submit" name="commit" id="submit-search"><span class="fa fa-search"></span></button>
         </div>
       </div>
     <% end %>

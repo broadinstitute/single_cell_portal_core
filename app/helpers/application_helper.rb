@@ -25,7 +25,7 @@ module ApplicationHelper
 		breadcrumbs = []
 		if controller_name == 'site'
 			if @study
-				breadcrumbs << {title: truncate(@study.name, length: 40), link: view_study_path(study_name: @study.url_safe_name)}
+				breadcrumbs << {title: "Study Overview", link: view_study_path(study_name: @study.url_safe_name)}
 			end
 			case action_name
 				when 'view_gene_expression'
