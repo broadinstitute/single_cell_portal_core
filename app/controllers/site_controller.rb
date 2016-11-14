@@ -2,23 +2,49 @@ class SiteController < ApplicationController
 
   respond_to :html, :js
 
-  before_action :set_study, except: :index
-  before_action :load_precomputed_options, except: :index
-  before_action :set_clusters, except: [:index, :view_all_gene_expression_heatmap, :precomputed_results]
+  before_action :set_study, except: [:index, :search]
+  before_action :load_precomputed_options, except: [:index, :search]
+  before_action :set_clusters, except: [:index, :search, :view_all_gene_expression_heatmap, :precomputed_results]
 
   COLORSCALE_THEMES = ['Blackbody', 'Bluered', 'Blues', 'Earth', 'Electric', 'Greens', 'Hot', 'Jet', 'Picnic', 'Portland', 'Rainbow', 'RdBu', 'Reds', 'Viridis', 'YlGnBu', 'YlOrRd']
 
   # view study overviews and downloads
   def index
-    if user_signed_in?
-      @studies = Study.viewable(current_user).sort_by(&:name)
-    else
-      @studies = Study.where(public: true).order('name ASC')
+    # set study order
+    case params[:order]
+      when 'recent'
+        @order = :created_at.desc
+      when 'popular'
+        @order = :view_count.desc
+      else
+        @order = :name.asc
     end
+
+    # load viewable studies in requested order
+    if user_signed_in?
+      @viewable = Study.viewable(current_user).order_by(@order)
+    else
+      @viewable = Study.where(public: true).order_by(@order)
+    end
+
+    # if search params are present, filter accordingly
+    if !params[:search_terms].blank?
+      @studies = @viewable.where({:$text => {:$search => params[:search_terms]}}).paginate(page: params[:page], per_page: Study.per_page)
+    else
+      @studies = @viewable.paginate(page: params[:page], per_page: Study.per_page)
+    end
+  end
+
+  # search for matching studies
+  def search
+    # use built-in MongoDB text index (supports quoting terms & case sensitivity)
+    @studies = Study.where({:$text => {:$search => params[:search_terms]}})
+    render 'index'
   end
 
   # load single study and view top-level clusters
   def study
+    @study.update(view_count: @study.view_count + 1)
     # parse all coordinates out into hash using generic method
     if @study.initialized?
       @coordinates = load_cluster_points

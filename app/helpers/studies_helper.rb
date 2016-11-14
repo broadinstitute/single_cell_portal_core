@@ -19,4 +19,12 @@ module StudiesHelper
 				'Other' => 'No requirements'
 		}
 	end
+
+	def get_site_path_with_params(search_val, order_val)
+		if search_val.blank?
+			site_path(order: order_val)
+		else
+			site_path(order: order_val, search_terms: search_val)
+		end
+	end
 end

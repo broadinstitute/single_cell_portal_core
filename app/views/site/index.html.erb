@@ -2,27 +2,65 @@
 	<h1 class="lead text-center">Single Cell Portal <sup><small>BETA</small></sup></h1>
 	<p class="lead text-center">Visualization portal for single cell RNA-seq data.</p>
 </div>
-<h2 class="study-lead"><span class="fa fa-book"></span> Studies</h2>
-<div class="panel-group" id="studies">
-	<% @studies.each_with_index do |study, index| %>
-		<div class="panel panel-primary">
-			<div class="panel-heading">
-				<div class="panel-title">
-					<h4><%= link_to "#{study.name} <span class='fa fa-chevron-#{ index == 0 ? 'down' : 'right' } toggle-glyph'></span>".html_safe, "##{study.url_safe_name}", "data-toggle" => "collapse", 'data-parent' => '#downloads', style: 'color: white;'  %></h4>
-				</div>
-			</div>
-			<div id="<%= study.url_safe_name %>" class="panel-collapse collapse <%= index == 0 ? 'in' : nil %>">
-				<div class="panel-body">
-					<div class="row">
-						<div class="col-sm-2">
-							<%= link_to "View Study".html_safe, view_study_path(study_name: study.url_safe_name), class: 'btn btn-success btn-lg btn-block' %>
-						</div>
-						<div class="col-sm-9">
-							<%= study.description.html_safe %>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	<% end %>
+<h2 class="study-lead"><span class="fa fa-book"></span> Browse Studies <%= link_to "<span class='fa fa-question-circle'></span>".html_safe, 'javascript:;', class: 'text-info', title: 'Search Help', data: {toggle: 'popover', content: render(partial: 'search_help'), html: true, trigger: 'hover focus'} %></h2>
+<div class="row form-group">
+  <div class="col-md-6 col-sm-12 col-xs-12">
+    <%= form_tag(site_path, method: :get, class: 'form') do %>
+      <div class="input-group">
+        <%= text_field_tag :search_terms, nil, class: 'form-control', placeholder: 'Search Studies...' %>
+        <%= hidden_field_tag :order, params[:order].nil? ? "" : params[:order] %>
+        <div class="input-group-btn">
+          <button class="btn btn-info" type="submit" name="commit" id="submit-search"><span class="fa fa-search"></span></button>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  <div class="col-md-2 col-sm-4 col-xs-12">
+    <%= link_to "<span class='fa fa-clock-o'></span> Most Recent".html_safe, get_site_path_with_params(params[:search_terms].to_s, 'recent'), class: 'btn btn-default btn-block' %>
+  </div>
+  <div class="col-md-2 col-sm-4 col-xs-12">
+    <%= link_to "<span class='fa fa-star-o'></span> Most Popular".html_safe, get_site_path_with_params(params[:search_terms].to_s, 'popular'), class: 'btn btn-default btn-block' %>
+  </div>
+  <div class="col-md-2 col-sm-4 col-xs-12">
+    <%= link_to "<span class='fa fa-ban'></span> Reset Filters".html_safe, site_path, class: 'btn btn-default btn-block' %>
+  </div>
 </div>
+<div class="panel-group" id="studies">
+	<%= render partial: 'studies_list' %>
+</div>
+<div class="row">
+  <div class="col-sm-offset-4 col-sm-4">
+    <%= link_to "Load More Studies", "javascript:void(0);", class: "btn btn-lg btn-block btn-default", id: "pagination" %>
+  </div>
+</div>
+
+<%= link_to "<span class='fa fa-chevron-up'></span>".html_safe, "#", class: "btn btn-default btn-xs" %>
+<script type="text/javascript">
+  $(window).scroll(bindScroll);
+
+  var totalPages = <%= @studies.total_pages %>;
+  var currentPage = "<%= params[:page] %>";
+  var order = "<%= params[:order] %>";
+  var search = "<%= params[:search_terms] %>";
+
+  function bindScroll(){
+    if($(window).scrollTop() + $(window).height() > $(document).height() - 1) {
+      $(window).unbind('scroll');
+      paginateStudies(totalPages, order, search);
+    }
+  }
+
+  if ( currentPage == "" && totalPages == 1) {
+    $(window).unbind('scroll');
+    $("#pagination").toggle();
+  }
+
+  $("#pagination").click(function() {
+    $(window).unbind('scroll');
+    paginateStudies(totalPages, order, search);
+  });
+
+  if ( search != "" ) {
+    $("#search_terms").val($('<div/>').html(search).text());
+  }
+</script>
