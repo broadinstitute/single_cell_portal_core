@@ -12,7 +12,7 @@
             <%= link_to "View Study".html_safe, view_study_path(study_name: study.url_safe_name), class: 'btn btn-success btn-lg btn-block' %>
           </div>
           <div class="col-sm-9">
-            <%= study.description.html_safe %>
+            <%= strip_tags(study.description).truncate_words(100, omission: '... (continued)') %>
           </div>
         </div>
       </div>
