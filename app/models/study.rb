@@ -64,6 +64,7 @@ class Study
   field :public, type: Boolean, default: true
   field :initialized, type: Boolean, default: false
   field :view_count, type: Integer, default: 0
+  field :cell_count, type: Integer, default: 0
 
   accepts_nested_attributes_for :study_files, allow_destroy: true
   accepts_nested_attributes_for :study_shares, allow_destroy: true, reject_if: proc { |attributes| attributes['email'].blank? }
