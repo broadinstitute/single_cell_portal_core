@@ -10,6 +10,8 @@ class SiteController < ApplicationController
 
   # view study overviews and downloads
   def index
+    @study_count = Study.count
+    @cell_count = Study.all.map(&:cell_count).inject(&:+)
     # set study order
     case params[:order]
       when 'recent'

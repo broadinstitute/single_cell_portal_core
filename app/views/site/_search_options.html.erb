@@ -41,13 +41,16 @@
 			<div class="col-sm-12">
 				<%= form_tag(view_gene_set_expression_path(study_name: params[:study_name]), id: 'gene-sets', method: :get) do %>
 					<%= label_tag :gene_set, 'View curated gene lists as mean-centered expression (box & scatter plots)' %>
-					<%= select_tag :gene_set, options_for_select(@precomputed, params[:gene_set]), {include_blank: 'Please select a gene list', class: 'form-control spin'} %>
+					<%= select_tag :gene_set, options_for_select(@precomputed, params[:gene_set]), {include_blank: 'Please select a gene list', class: 'form-control'} %>
 					<script type="text/javascript">
 
 						$('#gene_set').change(function() {
 							if ($(this).val() != '') {
+                launchSpinner('spinner_target');
 								$('#gene-sets').submit();
-							}
+							} else {
+                alert('Please select ')
+              }
 						});
 
 					</script>
@@ -59,11 +62,14 @@
 			<div class="row">
 				<div class="col-sm-12">
 					<%= label_tag :gene, 'Load single gene-level expression' %><br />
-					<%= select_tag :gene, options_for_select(load_gene_nav(@genes, params[:cluster])), {class: 'form-control spin'} %>
+					<%= select_tag :gene, options_for_select(load_gene_nav(@genes, params[:cluster])), {class: 'form-control'} %>
 					<br />
 					<script type="text/javascript">
 						$('#gene').change(function() {
-							window.location.href = $(this).val();
+              if ($(this).val() != '') {
+                launchSpinner('spinner_target');
+                window.location.href = $(this).val();
+              }
 						});
 
 					</script>
@@ -75,12 +81,13 @@
 			<div class="col-sm-12">
 				<%= form_tag(search_precomputed_results_path(study_name: params[:study_name]), id: 'precomputed-expression') do %>
 					<%= label_tag :expression, 'View curated gene lists as heatmaps' %><br />
-					<%= select_tag :expression, options_for_select(@precomputed, params[:precomputed]), {include_blank: 'Please select a gene list', class: "form-control #{action_name !~ /precomputed/ ? 'spin' : nil }"} %>
+					<%= select_tag :expression, options_for_select(@precomputed, params[:precomputed]), {include_blank: 'Please select a gene list', class: "form-control"} %>
 					<% if action_name !~ /precomputed/ %>
 						<script type="text/javascript">
 
 							$('#expression').change(function() {
 								if ($(this).val() != '') {
+                  launchSpinner('spinner_target');
 									$('#precomputed-expression').submit();
 								}
 							});

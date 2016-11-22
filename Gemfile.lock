@@ -195,8 +195,6 @@ GEM
       mimemagic (= 0.3.0)
     power_assert (0.2.2)
     rack (1.6.4)
-    rack-mini-profiler (0.10.1)
-      rack (>= 1.2.0)
     rack-test (0.6.3)
       rack (>= 1.0)
     rails (4.2.6)
@@ -296,7 +294,6 @@ DEPENDENCIES
   nested_form!
   non-stupid-digest-assets
   omniauth-google-oauth2
-  rack-mini-profiler
   rails (= 4.2.6)
   ruby-debug-ide
   ruby-prof

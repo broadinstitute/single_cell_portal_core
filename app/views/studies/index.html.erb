@@ -10,7 +10,6 @@
 						<th>Description</th>
 						<th>Visibility</th>
             <th># Files</th>
-            <th># Cells</th>
 						<th class="actions">Actions</th>
 					</tr>
 					</thead>
@@ -22,7 +21,6 @@
 							<td><%= truncate_html(study.description, length: 50) %></td>
 							<td><%= study.visibility %></td>
               <td><%= study.study_files.count %></td>
-              <td><%= study.cell_count %></td>
 							<td><%= link_to "<span class='fa fa-info-circle'></span> Show Details".html_safe, study_path(study), class: 'btn btn-xs btn-info' %> <%= link_to "<span class='fa fa-upload'></span> Upload/Edit Data".html_safe, initialize_study_path(study), class: 'btn btn-xs btn-success' %> <%= link_to "<span class='fa fa-edit'></span> Edit Study".html_safe, edit_study_path(study), class: 'btn btn-xs btn-primary' %> <%= link_to "<span class='fa fa-trash'></span> Delete".html_safe, study, class: 'btn btn-xs btn-danger delete-btn', method: :delete %></td>
 						</tr>
 					<% end %>

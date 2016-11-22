@@ -14,6 +14,7 @@ $('#reference-plot').data('spinner').stop();
 
 // clear listeners and reattach
 $( window ).off('resizeEnd');
+
 $( window ).on('resizeEnd', function() {
 
 	<%= render partial: 'expression_box_layout' %>

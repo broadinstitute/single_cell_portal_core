@@ -30,12 +30,14 @@
 <script type="text/javascript">
 
 	$('#row_centered, #expression').change(function() {
-		var newDataPath = '<%= precomputed_results_path(study_name: params[:study_name]) %>';
-		var precomputed = $('#expression').val();
-		var row_centered = $('#row_centered').prop('checked') ? 1 : 0;
-		newDataPath += '?precomputed=' + precomputed + '&row_centered=' + row_centered;
+    if ($('#expression').val() != '') {
+      var newDataPath = '<%= precomputed_results_path(study_name: params[:study_name]) %>';
+      var precomputed = $('#expression').val();
+      var row_centered = $('#row_centered').prop('checked') ? 1 : 0;
+      newDataPath += '?precomputed=' + precomputed + '&row_centered=' + row_centered;
 
-		renderMorpheus(newDataPath, '', '#heatmap-plot', 'both');
+      renderMorpheus(newDataPath, '', '#heatmap-plot', 'both');
+    }
 	});
 
 	$(document).ready(function() {

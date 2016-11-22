@@ -235,14 +235,19 @@ var smallOpts = {
     position: 'relative' // Element positioning
 };
 
-// launch a modal spinner whenever a select changes that will take more than a few seconds
-$(function() {
-   $('.spin').change(function(){
-        var target = $('#spinner_target')[0];
-        new Spinner(opts).spin(target);
-        $('#loading-modal').modal('show');
-    });
-});
+// functions to show/hide loading modals with spinners
+function launchSpinner(divId) {
+    var target = $('#' + divId)[0];
+    var spinner = new Spinner(opts).spin(target);
+    $(target).data('spinner', spinner);
+    $('#loading-modal').modal('show');
+};
+
+function stopSpinner(divId) {
+    $('#' + divId).data('spinner').stop();
+    $('#loading-modal').modal('hide');
+}
+
 
 // default title font settings for axis titles in plotly
 var plotlyTitleFont = {

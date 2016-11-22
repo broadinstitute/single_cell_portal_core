@@ -64,7 +64,6 @@ class Study
   field :public, type: Boolean, default: true
   field :initialized, type: Boolean, default: false
   field :view_count, type: Integer, default: 0
-  field :cell_count, type: Integer, default: 0
 
   accepts_nested_attributes_for :study_files, allow_destroy: true
   accepts_nested_attributes_for :study_shares, allow_destroy: true, reject_if: proc { |attributes| attributes['email'].blank? }
@@ -156,6 +155,23 @@ class Study
   # helper method to check embargo status
   def check_embargo
     self.embargo.nil? || self.embargo.blank? ? false : Date.today <= self.embargo
+  end
+
+  # helper method to get number of unique single cells
+  def cell_count
+    if self.single_cells.empty?
+      0
+    else
+      if self.expression_matrix_file.nil?
+        self.single_cells.uniq!(&:name).count
+      else
+        file = File.open(self.expression_matrix_file.upload.path)
+        cells = file.readline.split("\t")
+        file.close
+        cells.shift
+        cells.size
+      end
+    end
   end
 
   # helper to build a study file of the requested type

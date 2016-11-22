@@ -281,7 +281,7 @@ class StudiesController < ApplicationController
 
   # study params whitelist
   def study_params
-    params.require(:study).permit(:name, :description, :public, :user_id, :embargo, :cell_count, study_files_attributes: [:id, :_destroy, :name, :path, :upload, :description, :file_type, :status], study_shares_attributes: [:id, :_destroy, :email, :permission])
+    params.require(:study).permit(:name, :description, :public, :user_id, :embargo, study_files_attributes: [:id, :_destroy, :name, :path, :upload, :description, :file_type, :status], study_shares_attributes: [:id, :_destroy, :email, :permission])
   end
 
   # study file params whitelist
