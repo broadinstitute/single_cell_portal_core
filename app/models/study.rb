@@ -432,7 +432,7 @@ class Study
         y = vals[y_index]
 
         # load correct cluster & single_cell
-        cells = SingleCell.where(name: name).to_a
+        cells = SingleCell.where(name: name, study_id: self._id, study_file_id: assignment_file._id).to_a
 
         if cluster_type == 'parent'
           clst = cells.map(&:cluster).select {|c| c.cluster_type == 'parent'}.first
