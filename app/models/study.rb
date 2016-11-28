@@ -583,6 +583,10 @@ class Study
   def check_data_links
     if self.url_safe_name != self.url_safe_name_was
       FileUtils.mv Rails.root.join('data', self.url_safe_name_was).to_s, Rails.root.join('data', self.url_safe_name).to_s
+      # change url_safe_name in all study files
+      self.study_files.each do |study_file|
+        study_file.update(url_safe_name: self.url_safe_name)
+      end
       # remove old symlink if changed
       if self.public?
         FileUtils.rm_rf(Rails.root.join('public', 'single_cell', 'data', self.url_safe_name_was))
