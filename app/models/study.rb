@@ -162,7 +162,15 @@ class Study
     if self.single_cells.empty?
       0
     else
-      self.single_cells.uniq!(&:name).count
+      if self.expression_matrix_file.nil?
+        self.single_cells.uniq!(&:name).count
+      else
+        file = File.open(self.expression_matrix_file.upload.path)
+        cells = file.readline.split("\t")
+        file.close
+        cells.shift
+        cells.size
+      end
     end
   end
 
