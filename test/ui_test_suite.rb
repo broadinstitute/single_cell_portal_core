@@ -72,7 +72,7 @@ class UiTestSuite < Test::Unit::TestCase
 		assert @driver.find_elements(:class, 'panel-primary').size >= 1, 'did not find any studies'
 	end
 
-	test 'perforn search' do
+	test 'perform search' do
 		@driver.get(@base_url)
 		search_box = @driver.find_element(:id, 'search_terms')
 		search_box.send_keys('sNuc-Seq')
@@ -233,8 +233,8 @@ class UiTestSuite < Test::Unit::TestCase
 		close_modal('upload-success-modal')
 
 		# upload sub-cluster
-		upload_clusters = @driver.find_element(:class, 'upload-sub-clusters')
-		upload_clusters.send_keys(@test_data_path + 'sub_cluster_1_coordinates_example.txt')
+		upload_sub_clusters = @driver.find_element(:class, 'upload-sub-clusters')
+		upload_sub_clusters.send_keys(@test_data_path + 'sub_cluster_1_coordinates_example.txt')
 		wait_for_render(:id, 'start-file-upload')
 		upload_btn = @driver.find_element(:id, 'start-file-upload')
 		upload_btn.click
@@ -246,8 +246,8 @@ class UiTestSuite < Test::Unit::TestCase
 
 
 		# upload marker gene list
-		upload_clusters = @driver.find_element(:class, 'upload-marker-genes')
-		upload_clusters.send_keys(@test_data_path + 'marker_1_gene_list.txt')
+		upload_markers = @driver.find_element(:class, 'upload-marker-genes')
+		upload_markers.send_keys(@test_data_path + 'marker_1_gene_list.txt')
 		wait_for_render(:id, 'start-file-upload')
 		upload_btn = @driver.find_element(:id, 'start-file-upload')
 		upload_btn.click
@@ -258,8 +258,8 @@ class UiTestSuite < Test::Unit::TestCase
 		wait_for_render(:class, 'initialize_fastq_form')
 
 		# upload fastq
-		upload_clusters = @driver.find_element(:class, 'upload-fastq')
-		upload_clusters.send_keys(@test_data_path + 'cell_1_L1.fastq.gz')
+		upload_fastq = @driver.find_element(:class, 'upload-fastq')
+		upload_fastq.send_keys(@test_data_path + 'cell_1_L1.fastq.gz')
 		wait_for_render(:id, 'start-file-upload')
 		upload_btn = @driver.find_element(:id, 'start-file-upload')
 		upload_btn.click
@@ -271,8 +271,8 @@ class UiTestSuite < Test::Unit::TestCase
 		wait_for_render(:class, 'initialize_misc_form')
 
 		# upload doc file
-		upload_clusters = @driver.find_element(:class, 'upload-misc')
-		upload_clusters.send_keys(@test_data_path + 'table_1.xlsx')
+		upload_doc = @driver.find_element(:class, 'upload-misc')
+		upload_doc.send_keys(@test_data_path + 'table_1.xlsx')
 		wait_for_render(:id, 'start-file-upload')
 		upload_btn = @driver.find_element(:id, 'start-file-upload')
 		upload_btn.click
@@ -280,6 +280,15 @@ class UiTestSuite < Test::Unit::TestCase
 		# close success modal
 		wait_for_render(:id, 'upload-success-modal')
 		close_modal('upload-success-modal')
+
+		# change attributes on file to validate update function
+		misc_form = @driver.find_element(:class, 'initialize_misc_form')
+		desc_field = misc_form.find_element(:id, 'study_file_description')
+		desc_field.send_keys('Supplementary table')
+		save_btn = misc_form.find_element(:class, 'save-study-file')
+		save_btn.click
+		wait_for_render(:id, 'study-file-notices')
+		close_modal('study-file-notices')
 
 		# delete study
 		@driver.get(@base_url + '/studies')

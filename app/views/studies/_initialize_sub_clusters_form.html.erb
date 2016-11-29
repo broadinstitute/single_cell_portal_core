@@ -1,5 +1,8 @@
-<%= form_for(study_file, url: update_study_file_study_path(@study._id), html: {id: "sub_clusters_form_#{study_file._id}", class: 'bs-callout bs-callout-info initialize_sub_clusters_form', remote: true}) do |f| %>
+<%= form_for(study_file, url: update_study_file_study_path(@study._id), html: {id: "sub_clusters_form_#{study_file._id}", class: 'bs-callout bs-callout-info initialize_sub_clusters_form', data: {remote: true}}) do |f| %>
 	<%= f.hidden_field :study_id, value: params[:id] %>
+  <%= f.hidden_field :_id, value: study_file._id %>
+  <%= hidden_field_tag :selector, "#sub_clusters_form_#{study_file._id}" %>
+  <%= hidden_field_tag :partial, 'initialize_sub_clusters_form' %>
 	<div class="form-group row">
 		<div class="col-sm-4">
 			<%= f.label :name %><br />
@@ -23,7 +26,7 @@
 		<div class="col-sm-5 upload-field">
 			<%= f.label :upload, 'Upload Data File' %><br />
 			<%= f.file_field :upload, class: 'btn btn-info fileinput-button cluster-upload upload-sub-clusters', disabled: @study.cluster_assignment_file.nil?, 'data-toggle' => 'tooltip', title: 'You must upload a cluster assigments file first before continuing.' %>
-			<%= f.hidden_field :status, value: 'uploading' %>
+      <%= f.hidden_field :status, value: study_file.new_record? ? 'uploading' : 'uploaded' %>
 		</div>
 		<div class="col-sm-3">
 			<%= f.label :actions %>

@@ -134,13 +134,20 @@ class StudiesController < ApplicationController
   # update an existing study file; cannot be called until file is uploaded, so there is no create
   # if adding an external fastq file link, will create entry from scratch to update
   def update_study_file
-    @study_file = StudyFile.where(study_id: study_file_params[:study_id], upload_file_name: study_file_params[:name]).first
+    @study_file = StudyFile.where(study_id: study_file_params[:study_id], id: study_file_params[:_id]).first
     if @study_file.nil?
       # don't use helper as we're about to mass-assign params
       @study_file = @study.study_files.build
     end
     @study_file.update_attributes(study_file_params)
+    # if a gene list got updated, we need to update the precomputed_score entry
+    if study_file_params[:file_type] == 'Gene List'
+      @precomputed_entry = PrecomputedScore.where(study_file_id: study_file_params[:_id])
+      @precomputed_entry.update(name: study_file_params[:name])
+    end
     @message = "'#{@study_file.name}' has been successfully updated."
+    @selector = params[:selector]
+    @partial = params[:partial]
   end
 
   # delete the requested study file

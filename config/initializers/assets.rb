@@ -11,4 +11,4 @@ Rails.application.config.assets.version = '1.0'
 # Rails.application.config.assets.precompile += %w( search.js )
 Rails.application.config.autoload_paths += %W(#{Rails.root}/app/models/ckeditor)
 Rails.application.config.assets.precompile += Ckeditor.assets
-Rails.application.config.assets.precompile += %w(ckeditor/*)
+Rails.application.config.assets.precompile += %w(morpheus-latest.min.js morpheus-external-latest.min.js ckeditor/*)
