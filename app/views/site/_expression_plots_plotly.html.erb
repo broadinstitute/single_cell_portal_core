@@ -4,7 +4,7 @@
 		y: <%= raw data[:y] %>,
 		name: "<%= data[:name] %>",
 		<% if params[:boxpoints].blank? %>
-			boxpoints: false,
+			boxpoints: 'all',
 		<% else %>
 			boxpoints: "<%= params[:boxpoints] %>",
 		<% end %>

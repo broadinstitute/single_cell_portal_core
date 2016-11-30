@@ -1,6 +1,6 @@
 <div class='form-inline navigation-form'>
 	<%= label_tag :boxpoints_select, 'Data Points' %><br />
-	<%= select_tag :boxpoints_select, options_for_select([['None', ''], ['All', 'all'], ['Outliers', 'outliers'] , ['Suspected Outliers','suspectedoutliers']], params[:boxpoints]), class: 'form-control' %>
+	<%= select_tag :boxpoints_select, options_for_select([['None', ''], ['All', 'all'], ['Outliers', 'outliers'] , ['Suspected Outliers','suspectedoutliers']], params[:boxpoints].blank? ? 'all' : params[:boxpoints]), class: 'form-control' %>
 </div>
 
 <script type="text/javascript">
