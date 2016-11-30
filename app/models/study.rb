@@ -196,10 +196,9 @@ class Study
 
   # method to parse master expression scores file for study and populate collection
   def make_expression_scores(expression_file, user=nil)
-    Rails.logger.level = 4
     @count = 0
     @bytes_parsed = 0
-    @message = ["Parsing expression file: #{expression_file.name}", "..."]
+    @message = []
     @last_line = ""
     start_time = Time.now
     @validation_error = false
@@ -216,16 +215,21 @@ class Study
       file.close
     rescue => e
       expression_file.update(parse_status: 'failed')
-      raise StandardError, "Unexpected error: #{e.message}"
+      error_message = "Unexpected error: #{e.message}"
+      Rails.logger.info @last_line + ' ' + error_message
+      raise StandardError, error_message
     end
 
     # raise validation error if needed
     if @validation_error
-      raise StandardError, "file header validation failed: #{@last_line}; first header should be GENE or blank followed by cell names"
+      error_message = "file header validation failed: #{@last_line}; first header should be GENE or blank followed by cell names"
+      Rails.logger.info error_message
+      raise StandardError, error_message
     end
 
     # begin parse
     begin
+      Rails.logger.info "Beginning expression score parse from #{expression_file.name} for #{self.name}"
       expression_file.update(parse_status: 'parsing')
       # open data file and grab header row with name of all cells, deleting 'GENE' at start
       expression_data = File.open(expression_file.upload.path)
@@ -236,6 +240,7 @@ class Study
       # store study id for later to save memory
       study_id = self._id
       @records = []
+      Rails.logger.info "Expression scores loaded, starting record creation for #{self.name}"
       while !expression_data.eof?
         # grab single row of scores, parse out gene name at beginning
         line = expression_data.readline.strip
@@ -259,6 +264,7 @@ class Study
           ExpressionScore.create(@records)
           expression_file.update(bytes_parsed: @bytes_parsed)
           @records = []
+          Rails.logger.info "Processed #{@count} expression scores from #{expression_file.name} for #{self.name}"
         end
       end
       ExpressionScore.create(@records)
@@ -267,9 +273,10 @@ class Study
       expression_file.update(parse_status: 'parsed', bytes_parsed: expression_file.upload_file_size)
       end_time = Time.now
       time = (end_time - start_time).divmod 60.0
-      @message << "Completed!"
+      @message << "#{expression_file.name} parse completed!"
       @message << "ExpressionScores created: #{@count}"
       @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
+      Rails.logger.info @message.join("\n")
       # set initialized to true if possible
       if !self.cluster_assignment_file.nil? && !self.parent_cluster_coordinates_file.nil? && !self.initialized?
         self.update(initialized: true)
@@ -279,7 +286,9 @@ class Study
       end
     rescue => e
       expression_file.update(parse_status: 'failed')
-      raise StandardError, "#{@last_line} ERROR: #{e.message}"
+      error_message = "#{@last_line} ERROR: #{e.message}"
+      Rails.logger.info @last_line + ' ' + error_message
+      raise StandardError, error_message
     end
   end
 
@@ -297,21 +306,26 @@ class Study
       a_file.close
     rescue => e
       assignment_file.update(parse_status: 'failed')
-      raise StandardError, "Unexpected error: #{e.message}"
+      error_message = "Unexpected error: #{e.message}"
+      Rails.logger.info @last_line + ' ' + error_message
+      raise StandardError, error_message
     end
 
     # raise validation error if needed
     if @validation_error
-      raise StandardError, "file header validation failed: #{@last_line}; should be CELL_NAME, CLUSTER, SUB-CLUSTER"
+      error_message = "file header validation failed: #{@last_line}; should be CELL_NAME, CLUSTER, SUB-CLUSTER"
+      Rails.logger.info error_message
+      raise StandardError, error_message
     end
 
-    @message = ["Parsing assignments file: #{assignment_file.name}", "..."]
+    @message = []
     @cluster_count = 0
     @cell_count = 0
     @bytes_parsed = 0
     start_time = Time.now
     # begin parse
     begin
+      Rails.logger.info "Beginning cluster/cell parse using #{assignment_file.name} for #{self.name}"
       # load cluster assignments
       raw_data = File.open(assignment_file.upload.path)
       clusters_data = raw_data.readlines.map(&:strip).delete_if {|line| line.empty? }
@@ -320,6 +334,7 @@ class Study
       cell_index = assignment_headers.index('CELL_NAME')
       cluster_index = assignment_headers.index('CLUSTER')
       sub_index = assignment_headers.index('SUB-CLUSTER')
+      Rails.logger.info "Clusters/cells loaded, starting record creation for #{self.name}"
       clusters_data.each_with_index do |line, index|
         @last_line = "#{assignment_file.name}, line #{index + 2}"
 
@@ -356,16 +371,21 @@ class Study
 
         @bytes_parsed += line.length
         assignment_file.update(bytes_parsed: @bytes_parsed)
+        if index > 0 && index % 100 == 0
+          Rails.logger.info "Processed #{index} lines from #{assignment_file.name} for #{self.name}"
+          Rails.logger.info "Created #{@cluster_count} clusters from #{assignment_file.name} for #{self.name}"
+          Rails.logger.info "Created #{@cell_count} cells from #{assignment_file.name} for #{self.name}"
+        end
       end
       # clean up
       assignment_file.update(parse_status: 'parsed', bytes_parsed: assignment_file.upload_file_size)
       end_time = Time.now
       time = (end_time - start_time).divmod 60.0
-      @message << "Completed!"
+      @message << "#{assignment_file.name} parse completed!"
       @message << "Single Cells created: #{@cell_count}"
       @message << "Clusters created: #{@cluster_count}"
-      @message << "Cluster Points created: #{@cluster_point_count}"
       @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
+      Rails.logger.info @message.join("\n")
       # set initialized to true if possible
       if !self.cluster_assignment_file.nil? && !self.parent_cluster_coordinates_file.nil? && !self.expression_matrix_file.nil? && !self.initialized?
         self.update(initialized: true)
@@ -375,15 +395,15 @@ class Study
       end
     rescue => e
       assignment_file.update(parse_status: 'failed')
-      raise StandardError, "#{@last_line} ERROR: #{e.message}"
+      error_message = "#{@last_line} ERROR: #{e.message}"
+      Rails.logger.info error_message
+      raise StandardError, error_message
     end
   end
 
   def make_cluster_points(assignment_file, cluster_file, cluster_type, user=nil)
-    # turn off logging to make data load faster
-    Rails.logger.level = 4
     # set up variables
-    @message = ["Parsing cluster file: #{cluster_file.name}", "Using assignment file: #{assignment_file.name}", "Cluster type: #{cluster_type}", "..."]
+    @message = []
     @cell_count = 0
     @cluster_count = 0
     @cluster_point_count = 0
@@ -405,16 +425,21 @@ class Study
       c_file.close
     rescue => e
       cluster_file.update(parse_status: 'failed')
-      raise StandardError, "Unexpected error: #{e.message}"
+      error_message = "Unexpected error: #{e.message}"
+      Rails.logger.info @last_line + ' ' + error_message
+      raise StandardError, error_message
     end
 
     # raise validation error if needed
     if @validation_error
-      raise StandardError, "file header validation failed: #{@last_line}: should be CELL_NAME, X, Y"
+      error_message = "file header validation failed: #{@last_line}: should be CELL_NAME, X, Y"
+      Rails.logger.info error_message
+      raise StandardError, error_message
     end
 
     # begin parse
     begin
+      Rails.logger.info "Beginning parsing cluster file: #{cluster_file.name} using assignment file: #{assignment_file.name}, cluster type: #{cluster_type} for #{self.name}"
       # get all lines and proper indices
       lines = File.open(cluster_file.upload.path).readlines.map(&:strip).delete_if {|line| line.blank? }
       headers = lines.shift.split(/[\t,]/)
@@ -422,6 +447,7 @@ class Study
       x_index = headers.index('X')
       y_index = headers.index('Y')
       @records = []
+      Rails.logger.info "Beginning cluster point record creation for #{self.name}"
       lines.each_with_index do |line, index|
         @last_line = "#{cluster_file.name}, line #{index + 2}"
 
@@ -458,6 +484,7 @@ class Study
         if @cluster_point_count % 100 == 0
           ClusterPoint.create(@records)
           @records = []
+          Rails.logger.info "Created #{@cluster_point_count} cluster points from #{cluster_file.name} for #{self.name}"
           cluster_file.update(bytes_parsed: @bytes_parsed)
         end
       end
@@ -469,11 +496,10 @@ class Study
       # clean up
       end_time = Time.now
       time = (end_time - start_time).divmod 60.0
-      @message << "Completed!"
-      @message << "Single Cells created: #{@cell_count}"
-      @message << "Clusters created: #{@cluster_count}"
+      @message << "#{cluster_file.name} parse completed!"
       @message << "Cluster Points created: #{@cluster_point_count}"
       @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
+      Rails.logger.info @message.join("\n")
       # set initialized to true if possible
       if !self.cluster_assignment_file.nil? && !self.parent_cluster_coordinates_file.nil? && !self.expression_matrix_file.nil? && !self.initialized?
         self.update(initialized: true)
@@ -483,16 +509,16 @@ class Study
       end
     rescue => e
       cluster_file.update(parse_status: 'failed')
-      raise StandardError, "#{@last_line} ERROR: #{e.message}"
+      error_message = "#{@last_line} ERROR: #{e.message}"
+      Rails.logger.info error_message
+      raise StandardError, error_message
     end
   end
 
   # parse precomputed marker gene files and create documents to render in Morpheus
   def make_precomputed_scores(marker_file, user=nil)
-    # turn off logging to make data load faster
-    Rails.logger.level = 4
     @count = 0
-    @message = ["Parsing marker list file: #{marker_file.name}", "..."]
+    @message = []
     start_time = Time.now
     @last_line = ""
     @validation_error = false
@@ -509,16 +535,21 @@ class Study
       file.close
     rescue => e
       marker_file.update(parse_status: 'failed')
-      raise StandardError, "Unexpected error: #{e.message}"
+      error_message = "Unexpected error: #{e.message}"
+      Rails.logger.info @last_line + ' ' + error_message
+      raise StandardError, error_message
     end
 
     # raise validation error if needed
     if @validation_error
-      raise StandardError, "file header validation failed: #{@last_line}: first header must be 'GENE NAMES' followed by clusters"
+      error_message = "file header validation failed: #{@last_line}: first header must be 'GENE NAMES' followed by clusters"
+      Rails.logger.info error_message
+      raise StandardError, error_message
     end
 
     # begin parse
     begin
+      Rails.logger.info "Beginning precomputed score parse using #{marker_file.name} for #{self.name}"
       marker_file.update(parse_status: 'parsing')
       list_name = marker_file.name
       if list_name.nil? || list_name.blank?
@@ -548,15 +579,18 @@ class Study
       marker_file.update(parse_status: 'parsed', bytes_parsed: marker_file.upload_file_size)
       end_time = Time.now
       time = (end_time - start_time).divmod 60.0
-      @message << "Completed!"
+      @message << "#{marker_file.name} parse completed!"
       @message << "Total scores created: #{@count}"
       @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
+      Rails.logger.info @message.join("\n")
       unless user.nil?
         SingleCellMailer.notify_user_parse_complete(user.email, "Gene list file: '#{marker_file.name}' has completed parsing", @message).deliver_now
       end
     rescue => e
       marker_file.update(parse_status: 'failed')
-      raise StandardError, "#{@last_line} ERROR: #{e.message}"
+      error_message = "#{@last_line} ERROR: #{e.message}"
+      Rails.logger.info error_message
+      raise StandardError, error_message
     end
   end
 

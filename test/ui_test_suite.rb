@@ -246,6 +246,9 @@ class UiTestSuite < Test::Unit::TestCase
 
 
 		# upload marker gene list
+		marker_form = @driver.find_element(:class, 'initialize_marker_genes_form')
+		marker_file_name = marker_form.find_element(:id, 'study_file_name')
+		marker_file_name.send_keys('Test Gene List')
 		upload_markers = @driver.find_element(:class, 'upload-marker-genes')
 		upload_markers.send_keys(@test_data_path + 'marker_1_gene_list.txt')
 		wait_for_render(:id, 'start-file-upload')

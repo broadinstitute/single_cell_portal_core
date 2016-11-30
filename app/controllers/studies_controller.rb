@@ -89,7 +89,7 @@ class StudiesController < ApplicationController
           @study.make_precomputed_scores(@study_file)
       end
     rescue StandardError => e
-      logger.info "ERROR: #{e.message}"
+      logger.info "ERROR: Parse has failed for #{@study_file.name} in study: #{@study.name}; file deleted"
       @error = e.message
       # remove bad study file, reload good entries
       @study_file.destroy

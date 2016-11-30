@@ -42,6 +42,15 @@
 	</div>
 	<script type="text/javascript">
 
+    var thisFormId = "#marker_genes_form_<%= study_file._id %>";
+    $(thisFormId).find('.upload-marker-genes').click(function() {
+      var markerFileName = $(thisFormId).find('#study_file_name').val();
+        if (markerFileName == '') {
+          alert('You must provide a name for this gene list before uploading a file.');
+          return false;
+        }
+    });
+
 		$(function() {
 			$('#marker_genes_form_<%= study_file._id %>').fileupload({
 				url: "<%= upload_study_path(@study._id) %>",
