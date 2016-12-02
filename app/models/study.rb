@@ -64,11 +64,13 @@ class Study
   field :public, type: Boolean, default: true
   field :initialized, type: Boolean, default: false
   field :view_count, type: Integer, default: 0
+  field :cell_count, type: Integer, default: 0
 
   accepts_nested_attributes_for :study_files, allow_destroy: true
   accepts_nested_attributes_for :study_shares, allow_destroy: true, reject_if: proc { |attributes| attributes['email'].blank? }
 
   validates_uniqueness_of :name
+  validates_presence_of :name
 
   # populate specific errors for study shares since they share the same form
   validate do |study|
@@ -158,20 +160,18 @@ class Study
   end
 
   # helper method to get number of unique single cells
-  def cell_count
-    if self.single_cells.empty?
-      0
-    else
-      if self.expression_matrix_file.nil?
-        self.single_cells.uniq!(&:name).count
-      else
-        file = File.open(self.expression_matrix_file.upload.path)
-        cells = file.readline.split("\t")
-        file.close
-        cells.shift
-        cells.size
-      end
+  def set_cell_count
+    @cell_count = 0
+    if self.expression_matrix_file.nil? && !self.single_cells.empty?
+      @cell_count = self.single_cells.uniq!(&:name).count
+    elsif !self.expression_matrix_file.nil?
+      file = File.open(self.expression_matrix_file.upload.path)
+      cells = file.readline.split(/[\t,]/)
+      file.close
+      cells.shift
+      @cell_count = cells.size
     end
+    self.update(cell_count: @cell_count)
   end
 
   # helper to build a study file of the requested type

@@ -35,7 +35,7 @@ class StudyFile
   # callbacks
   before_create   :make_data_dir
   before_create   :set_file_name_and_url_safe_name
-  after_save      :check_public?
+  after_save      :check_public?, :update_cell_count
   before_destroy  :remove_public_symlink
 
   has_mongoid_attached_file :upload,
@@ -145,6 +145,14 @@ class StudyFile
       if self.upload.content_type != 'text/plain'
         errors.add(:base, "Only text files are allowed for study files of type: '#{self.file_type}'")
       end
+    end
+  end
+
+  # update a study's cell count if uploading an expression matrix or cluster assignment file
+  def update_cell_count
+    if ['Cluster Assignments', 'Expression Matrix'].include?(self.file_type) && self.status == 'uploaded' && self.parsed?
+      study = self.study
+      study.set_cell_count
     end
   end
 end

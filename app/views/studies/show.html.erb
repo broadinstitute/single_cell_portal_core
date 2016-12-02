@@ -1,4 +1,4 @@
-<h1><%= @study.name %> <%= @study.visibility %> <%= link_to "<span class='fa fa-area-chart'></span> View Study".html_safe, view_study_path(@study.url_safe_name), class: 'btn btn-lg btn-info pull-right' %></h1>
+<h1><%= @study.name %> <%= @study.visibility %> <span class="badge" id="cell-count"><%= @study.cell_count %> cells</span><%= link_to "<span class='fa fa-area-chart'></span> View Study".html_safe, view_study_path(@study.url_safe_name), class: 'btn btn-lg btn-info pull-right' %></h1>
 <%= @study.description.html_safe %>
 <div class="panel panel-default" id="stats-panel">
 	<div class="panel-heading">
@@ -55,7 +55,6 @@
 							<% end %>
 							</tbody>
 						</table>
-            <h4>Approx. Cell Count <span class="badge"><%= @study.cell_count %></span></h4>
 					</div>
 				</div>
 			</div>

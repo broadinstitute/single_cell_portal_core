@@ -14,12 +14,12 @@
 		</div>
 	</div>
 	<div class="form-group row">
-		<div class="col-sm-2">
+		<div class="col-sm-1">
 			<%= f.label :file_type %><br />
 			<%= f.text_field :file_type, readonly: true, class: 'form-control' %>
 		</div>
 		<div class="col-sm-2">
-			<%= f.label :human_data, "Primary Human Data?" %><br />
+			<%= f.label :human_data, "Primary Human Data / Over 50GB?" %><br />
 			<%= f.select :human_data, options_for_select([['Yes', true],['No', false]], study_file.human_data), {}, class: 'form-control human-data' %>
 		</div>
 		<div class="col-sm-5 upload-field <%= study_file.human_data? ? 'hidden' : nil %>">
@@ -28,7 +28,7 @@
       <%= f.hidden_field :status, value: study_file.new_record? ? 'uploading' : 'uploaded' %>
 		</div>
 		<div class="col-sm-5 fastq-field <%= study_file.human_data? ? nil : 'hidden' %>">
-			<%= f.label :human_fastq_url, 'Link to primary human fastq file' %><br />
+			<%= f.label :human_fastq_url, 'Link to primary human / large external fastq file' %><br />
 			<%= f.text_field :human_fastq_url, class: 'form-control', disabled: !f.object.human_data? %>
 		</div>
 		<div class="col-sm-3">
@@ -60,6 +60,7 @@
 				maxChunkSize: 10000000, // 10 MB
 				type: 'PATCH',
 				acceptFileTypes: /\.(fq|fastq)(\.tar)?\.gz$/i,
+        maxFileSize: 50000000000, // 50 GB
 				add: function (e, data) {
 					fileUploading = true;
 					var that = this;
