@@ -100,7 +100,6 @@ class SiteController < ApplicationController
     @y_axis_title = 'log(TPM) Expression Values'
     @values = load_expression_boxplot_scores
     @coordinates = load_cluster_points
-    @annotations = load_cluster_annotations
     @expression = load_expression_scatter_points
     color_minmax =  @expression[:all][:marker][:color].minmax
     @expression[:all][:marker][:cmin], @expression[:all][:marker][:cmax] = color_minmax
@@ -108,6 +107,7 @@ class SiteController < ApplicationController
     @options = load_sub_cluster_options
     @range = set_range([@expression[:all]])
     @static_range = set_range(@coordinates.values)
+    @annotations = load_cluster_annotations(@static_range)
   end
 
   # re-renders plots when changing cluster selection
@@ -116,7 +116,6 @@ class SiteController < ApplicationController
     @y_axis_title = 'log(TPM) Expression Values'
     @values = load_expression_boxplot_scores
     @coordinates = load_cluster_points
-    @annotations = load_cluster_annotations
     @expression = load_expression_scatter_points
     color_minmax =  @expression[:all][:marker][:color].minmax
     @expression[:all][:marker][:cmin], @expression[:all][:marker][:cmax] = color_minmax
@@ -124,6 +123,7 @@ class SiteController < ApplicationController
     @options = load_sub_cluster_options
     @range = set_range([@expression[:all]])
     @static_range = set_range(@coordinates.values)
+    @annotations = load_cluster_annotations(@static_range)
   end
 
   # view set of genes (scores averaged) as box and scatter plots
@@ -264,33 +264,37 @@ class SiteController < ApplicationController
   def load_cluster_points
     coordinates = {}
     @clusters.each do |cluster|
-      coordinates[cluster.name] = {x: [], y: [], text: [], name: "#{cluster.name}  (#{cluster.cluster_points.size} points)"}
+      coordinates[cluster.name] = {x: [], y: [], text: [], marker_size: [], name: "#{cluster.name}  (#{cluster.cluster_points.size} points)"}
       points = cluster.cluster_points
       points.each do |point|
-        coordinates[cluster.name][:text] << "#{point.single_cell.name} <br>[#{cluster.name}]"
+        coordinates[cluster.name][:text] << "#{point.cell_name} <br>[#{cluster.name}]"
         coordinates[cluster.name][:x] << point.x
         coordinates[cluster.name][:y] << point.y
+        coordinates[cluster.name][:marker_size] << 6
       end
     end
     coordinates
   end
 
   # loads annotations array if being used for reference plot
-  def load_cluster_annotations
+  def load_cluster_annotations(range)
     annotations = []
     @clusters.each do |cluster|
       # calculate median position for cluster labels
-      x_postions = cluster.cluster_points.map(&:x).sort
-      y_postions = cluster.cluster_points.map(&:y).sort
-      x_len = x_postions.size
-      y_len = y_postions.size
-      x_pos = (x_postions[(x_len - 1) / 2] + x_postions[x_len / 2]) / 2.0
-      y_pos = (y_postions[(y_len - 1) / 2] + y_postions[y_len / 2]) / 2.0
+      full_range = range.first.abs + range.last.abs
+      x_positions = cluster.cluster_points.map(&:x).sort
+      y_positions = cluster.cluster_points.map(&:y).sort
+      x_len = x_positions.size
+      y_len = y_positions.size
+      x_mid = x_positions.inject(0.0) { |sum, el| sum + el } / x_len
+      y_mid = y_positions.inject(0.0) { |sum, el| sum + el } / y_len
+      x_pos = (x_mid + range.first.abs) / full_range
+      y_pos = (y_mid + range.first.abs) / full_range
       annotations << {
+          xref: 'paper',
+          yref: 'paper',
           x: x_pos,
           y: y_pos,
-          xref: 'x',
-          yref: 'y',
           text: cluster.name,
           showarrow: false,
           borderpad: 4,
@@ -322,16 +326,17 @@ class SiteController < ApplicationController
   def load_expression_scatter_points
     expression = {}
 
-    expression[:all] = {x: [], y: [], text: [], marker: {cmax: 0, cmin: 0, color: [], showscale: true, colorbar: {title: @y_axis_title , titleside: 'right'}}}
+    expression[:all] = {x: [], y: [], text: [], marker: {cmax: 0, cmin: 0, color: [], size: [], showscale: true, colorbar: {title: @y_axis_title , titleside: 'right'}}}
     @clusters.each do |cluster|
       points = cluster.cluster_points
       points.each do |point|
-        expression[:all][:text] << "<b>#{point.single_cell.name}</b> [#{cluster.name}]<br>log(TPM) expression: #{@gene.scores[point.single_cell.name].to_f}".html_safe
+        expression[:all][:text] << "<b>#{point.cell_name}</b> [#{cluster.name}]<br>log(TPM) expression: #{@gene.scores[point.cell_name].to_f}".html_safe
         expression[:all][:x] << point.x
         expression[:all][:y] << point.y
         # load in expression score to use as color value
-        expression[:all][:marker][:color] << @gene.scores[point.single_cell.name].to_f
+        expression[:all][:marker][:color] << @gene.scores[point.cell_name].to_f
         expression[:all][:marker][:line] = { color: 'rgb(40,40,40)', width: 0.5}
+        expression[:all][:marker][:size] << 6
       end
     end
     expression
@@ -355,17 +360,18 @@ class SiteController < ApplicationController
   def load_gene_set_expression_scatter_points
     expression = {}
 
-    expression[:all] = {x: [], y: [], text: [], marker: {cmax: 0, cmin: 0, color: [], showscale: true, colorbar: {title: @y_axis_title, titleside: 'right'}}}
+    expression[:all] = {x: [], y: [], text: [], marker: {cmax: 0, cmin: 0, size: [], color: [], showscale: true, colorbar: {title: @y_axis_title, titleside: 'right'}}}
     @clusters.each do |cluster|
       points = cluster.cluster_points
       points.each do |point|
-        score = calculate_mean(@genes, point.single_cell.name)
-        expression[:all][:text] << "<b>#{point.single_cell.name}</b> [#{cluster.name}]<br>avg log(TPM) expression: #{score}".html_safe
+        score = calculate_mean(@genes, point.cell_name)
+        expression[:all][:text] << "<b>#{point.cell_name}</b> [#{cluster.name}]<br>avg log(TPM) expression: #{score}".html_safe
         expression[:all][:x] << point.x
         expression[:all][:y] << point.y
         # load in expression score to use as color value
         expression[:all][:marker][:color] << score
         expression[:all][:marker][:line] = { color: 'rgb(40,40,40)', width: 0.5}
+        expression[:all][:marker][:size] << 6
       end
     end
     expression

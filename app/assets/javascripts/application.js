@@ -24,6 +24,9 @@
 
 var fileUploading = false;
 
+// used for calculating size of plotly graphs to maintain square aspect ratio
+var SCATTER_RATIO = 0.65;
+
 function paginateStudies(totalPages, order, searchString) {
 
     var paginationOpts = {

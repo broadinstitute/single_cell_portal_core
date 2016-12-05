@@ -41,7 +41,7 @@ Plotly.newPlot('box-plot', expressionData, expressionLayout);
 		text: <%= raw data[:text] %>,
 		name: "<%= data[:name] %>",
 		mode: 'markers',
-		type: 'scatter',
+		type: 'scattergl',
 		hoverinfo: 'text',
 		marker: <%= raw data[:marker].to_json %>
 	};
@@ -72,7 +72,7 @@ $("#colorscale").change(function() {
 		text: <%= raw data[:text] %>,
 		name: "<%= data[:name] %>",
 		mode: 'markers',
-		type: 'scatter',
+		type: 'scattergl',
 		marker: {
 			color: colorBrewerSet[<%= index %>],
 			line:{

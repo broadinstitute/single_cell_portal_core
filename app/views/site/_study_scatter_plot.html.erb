@@ -5,9 +5,10 @@
 		text: <%= raw data[:text] %>,
 		name: "<%= data[:name] %>",
 		mode: 'markers',
-		type: 'scatter',
+		type: 'scattergl',
 		marker: {
 			color: colorBrewerSet[<%= index %>],
+      size: <%= raw data[:marker_size] %>,
 			line: {
 				color: plotlyDefaultLineColor,
 				width: 0.5
@@ -30,3 +31,9 @@ var data = [];
 <% end %>
 
 Plotly.newPlot('cluster-plot', data, layout);
+
+// now that we have the legend size, recalculate adding this to the overall size
+var legendW = parseInt($('#cluster-plot g.legend rect.bg').attr('width'));
+var curSize = $('#cluster-plot').width() * SCATTER_RATIO;
+var newWidth = legendW + curSize;
+Plotly.relayout('cluster-plot', {width: newWidth});
