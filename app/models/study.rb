@@ -477,7 +477,7 @@ class Study
 
         unless cell.nil?
           # finally, create cluster point with association to cluster & single_cell
-          @records << {x: x, y: y, single_cell_id: cell._id, cluster_id: cluster._id, study_file_id: cluster_file._id, study_id: self._id}
+          @records << {x: x, y: y, cell_name: cell.name, single_cell_id: cell._id, cluster_id: cluster._id, study_file_id: cluster_file._id, study_id: self._id}
           @cluster_point_count += 1
           @bytes_parsed += line.length
         end
@@ -513,6 +513,52 @@ class Study
       Rails.logger.info error_message
       raise StandardError, error_message
     end
+  end
+
+  # helper method to re-parse all cluster points
+  def reparse_cluster_points
+    # remove all existing cluster points
+    if !self.cluster_points.empty?
+      self.cluster_points.destroy_all
+
+      # get necessary files
+      @assignment_file = self.cluster_assignment_file
+      @parent_cluster_file = self.parent_cluster_coordinates_file
+      @sub_cluster_files = self.study_files.select {|sf| sf.cluster_type == 'sub'}
+
+      # reset parent cluster points
+      begin
+        # reset parse status
+        @parent_cluster_file.update(parse_status: 'unparsed')
+        puts "Reparsing parent cluster points for #{self.name}"
+        self.make_cluster_points(@assignment_file, @parent_cluster_file, @parent_cluster_file.cluster_type)
+      rescue => e
+        error_message = "Error while reparsing parent clusters for #{self.name}"
+        puts error_message
+        raise StandardError error_message
+      end
+
+      # reparse all sub-cluster files
+      @sub_cluster_files.each do |sub_cluster_file|
+        begin
+          # reset parse status
+          sub_cluster_file.update(parse_status: 'unparsed')
+          puts = "Reparsing sub clusters using #{sub_cluster_file.name} for #{self.name}"
+          self.make_cluster_points(@assignment_file, sub_cluster_file, sub_cluster_file.cluster_type)
+        rescue => e
+          error_message = "Error while reparsing sub clusters using #{sub_cluster_file.name} for #{self.name}"
+          Rails.logger.info error_message
+          raise StandardError error_message
+        end
+      end
+
+      # completion message
+      puts "Cluster reparsing complete for #{self.name}"
+    else
+      puts "No cluster points for #{self.name}; Skipping"
+    end
+    puts "Finished!"
+    true
   end
 
   # parse precomputed marker gene files and create documents to render in Morpheus

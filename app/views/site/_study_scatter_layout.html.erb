@@ -1,15 +1,18 @@
-	var size = $('#cluster-plot').width() * 0.65;
+var size = $('#cluster-plot').width() * SCATTER_RATIO;
 
-	var layout = {
-		hovermode: 'closest',
-		font: plotlyLabelFont,
-		// use size * 1.14 to try to square up axes along with legend
-		width: size * 1.14,
-		height: size,
-		xaxis: {
-			range: <%= raw @range %>
-		},
-		yaxis: {
-			range: <%= raw @range %>
-		}
-	}
+var layout = {
+  hovermode: 'closest',
+  font: plotlyLabelFont,
+  width: size,
+  height: size,
+  xaxis: {
+    range: <%= raw @range %>
+  },
+  yaxis: {
+    range: <%= raw @range %>
+  },
+  legend: {
+    x: 100,
+    y: 1
+  }
+}

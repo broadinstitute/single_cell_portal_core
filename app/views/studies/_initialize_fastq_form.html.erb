@@ -19,7 +19,7 @@
 			<%= f.text_field :file_type, readonly: true, class: 'form-control' %>
 		</div>
 		<div class="col-sm-2">
-			<%= f.label :human_data, "Primary Human Data / Over 50GB?" %><br />
+			<%= f.label :human_data, "Primary Human Data / Over 80GB?" %><br />
 			<%= f.select :human_data, options_for_select([['Yes', true],['No', false]], study_file.human_data), {}, class: 'form-control human-data' %>
 		</div>
 		<div class="col-sm-5 upload-field <%= study_file.human_data? ? 'hidden' : nil %>">
@@ -60,7 +60,7 @@
 				maxChunkSize: 10000000, // 10 MB
 				type: 'PATCH',
 				acceptFileTypes: /\.(fq|fastq)(\.tar)?\.gz$/i,
-        maxFileSize: 50000000000, // 50 GB
+        maxFileSize: 80000000000, // 50 GB
 				add: function (e, data) {
 					fileUploading = true;
 					var that = this;
