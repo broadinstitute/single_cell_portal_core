@@ -327,17 +327,16 @@ class Study
     begin
       Rails.logger.info "Beginning cluster/cell parse using #{assignment_file.name} for #{self.name}"
       # load cluster assignments
-      raw_data = File.open(assignment_file.upload.path)
-      clusters_data = raw_data.readlines.map(&:strip).delete_if {|line| line.empty? }
-      assignment_headers = clusters_data.shift.split(/[\t,]/).map(&:strip)
+      clusters_data = File.open(assignment_file.upload.path)
+      assignment_headers = clusters_data.readline.split(/[\t,]/).map(&:strip)
       @last_line = "#{assignment_file.name}, line 1"
       cell_index = assignment_headers.index('CELL_NAME')
       cluster_index = assignment_headers.index('CLUSTER')
       sub_index = assignment_headers.index('SUB-CLUSTER')
       Rails.logger.info "Clusters/cells loaded, starting record creation for #{self.name}"
-      clusters_data.each_with_index do |line, index|
-        @last_line = "#{assignment_file.name}, line #{index + 2}"
-
+      while !clusters_data.eof?
+        @last_line = "#{assignment_file.name}, line #{clusters_data.lineno}"
+        line = clusters_data.readline.strip
         vals = line.split(/[\t,]/)
         cluster_name = vals[cluster_index]
         sub_cluster_name = vals[sub_index]
@@ -371,8 +370,8 @@ class Study
 
         @bytes_parsed += line.length
         assignment_file.update(bytes_parsed: @bytes_parsed)
-        if index > 0 && index % 100 == 0
-          Rails.logger.info "Processed #{index} lines from #{assignment_file.name} for #{self.name}"
+        if clusters_data.lineno > 0 && clusters_data.lineno % 100 == 0
+          Rails.logger.info "Processed #{clusters_data.lineno} lines from #{assignment_file.name} for #{self.name}"
           Rails.logger.info "Created #{@cluster_count} clusters from #{assignment_file.name} for #{self.name}"
           Rails.logger.info "Created #{@cell_count} cells from #{assignment_file.name} for #{self.name}"
         end
@@ -416,7 +415,7 @@ class Study
     # validate headers of cluster file
     begin
       c_file = File.open(cluster_file.upload.path)
-      c_headers = c_file.readline.strip.split(/[\t,]/)
+      c_headers = c_file.readline.split(/[\t,]/).map(&:strip)
       @last_line = "#{cluster_file.name}, line 1"
       if c_headers.sort != %w(CELL_NAME X Y)
         cluster_file.update(parse_status: 'failed')
@@ -441,16 +440,17 @@ class Study
     begin
       Rails.logger.info "Beginning parsing cluster file: #{cluster_file.name} using assignment file: #{assignment_file.name}, cluster type: #{cluster_type} for #{self.name}"
       # get all lines and proper indices
-      lines = File.open(cluster_file.upload.path).readlines.map(&:strip).delete_if {|line| line.blank? }
-      headers = lines.shift.split(/[\t,]/)
+      points_data = File.open(cluster_file.upload.path)
+      headers = points_data.readline.split(/[\t,]/).map(&:strip)
       cell_name_index = headers.index('CELL_NAME')
       x_index = headers.index('X')
       y_index = headers.index('Y')
+
       @records = []
       Rails.logger.info "Beginning cluster point record creation for #{self.name}"
-      lines.each_with_index do |line, index|
-        @last_line = "#{cluster_file.name}, line #{index + 2}"
-
+      while !points_data.eof?
+        @last_line = "#{cluster_file.name}, line #{points_data.lineno}"
+        line = points_data.readline.strip
         # parse each line and get values
         vals = line.split(/[\t,]/)
         name = vals[cell_name_index]
@@ -599,7 +599,7 @@ class Study
       marker_file.update(parse_status: 'parsing')
       list_name = marker_file.name
       if list_name.nil? || list_name.blank?
-        list_name = marker_file.upload_file_name.gsub(/(-|_)+/, ' ').chomp('.txt')
+        list_name = marker_file.upload_file_name.gsub(/(-|_)+/, ' ')
       end
       precomputed_score = self.precomputed_scores.build(name: list_name, study_file_id: marker_file._id)
       marker_scores = File.open(marker_file.upload.path).readlines.map(&:strip).delete_if {|line| line.blank? }

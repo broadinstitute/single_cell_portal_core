@@ -10,4 +10,12 @@ class StudyShare
 	validates_uniqueness_of :email, scope: :study_id
 
 	PERMISSION_TYPES = %w(Edit View)
+
+	before_save :clean_email
+
+	private
+
+	def clean_email
+		self.email.strip!
+	end
 end
