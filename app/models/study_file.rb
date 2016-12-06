@@ -6,7 +6,7 @@ class StudyFile
 
   # constants, used for statuses and file types
   STUDY_FILE_TYPES = ['Cluster Coordinates', 'Cluster Assignments', 'Expression Matrix', 'Gene List', 'Fastq', 'Documentation', 'Other']
-  PARSEABLE_TYPES = ['Cluster Coordinates', 'Expression Matrix', 'Gene List']
+  PARSEABLE_TYPES = ['Cluster Assignments', 'Cluster Coordinates', 'Expression Matrix', 'Gene List']
   UPLOAD_STATUSES = %w(new uploading uploaded)
   PARSE_STATUSES = %w(unparsed parsing parsed)
 
