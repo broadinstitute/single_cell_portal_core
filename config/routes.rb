@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+
 	scope 'single_cell' do
 
 		# admin actions
@@ -22,6 +23,11 @@ Rails.application.routes.draw do
 			end
 		end
     get 'private/data/:study_name/:filename', to: 'studies#download_private_file', as: :download_private_file, constraints: {filename: /.*/}
+
+		# autocomplete
+		resources :expression_score, only: [:show, :index] do
+			get :autocomplete_expression_score_gene, on: :collection
+		end
 
 		# public site actions
     get 'study/:study_name', to: 'site#study', as: :view_study

@@ -1,7 +1,7 @@
 <% if params[:gene] %>
-	<em><%= link_to @gene.gene, "http://www.ncbi.nlm.nih.gov/gene/?term=#{@gene.gene}[sym]", 'data-toggle' => 'tooltip', title: "Search Entrez for '#{@gene.gene}'", 'data-placement' => 'right' %></em>
+	<em><%= link_to @gene.gene, "http://www.ncbi.nlm.nih.gov/gene/?term=#{@gene.gene}[sym]", 'data-toggle' => 'tooltip', title: "Search Entrez for '#{@gene.gene}'", 'data-placement' => 'right', target: :_blank %></em>
 <% elsif @main_genes.nil? %>
-	<em><%= @genes.map {|g| link_to g.gene, "http://www.ncbi.nlm.nih.gov/gene/?term=#{g.gene}[sym]", 'data-toggle' => 'tooltip', title: "Search Entrez for '#{g.gene}'", 'data-placement' => 'right'}.join(', ').html_safe %></em>
+	<em><%= @genes.map {|g| link_to g.gene, "http://www.ncbi.nlm.nih.gov/gene/?term=#{g.gene}[sym]", 'data-toggle' => 'tooltip', title: "Search Entrez for '#{g.gene}'", 'data-placement' => 'right', target: :_blank}.join(', ').html_safe %></em>
 <% else %>
-	<em><%= @main_genes.map {|g| link_to g.gene, "http://www.ncbi.nlm.nih.gov/gene/?term=#{g.gene}[sym]", 'data-toggle' => 'tooltip', title: "Search Entrez for '#{g.gene}'", 'data-placement' => 'right'}.join(', ').html_safe %></em>... <%= link_to "#{@other_genes.size} more", '#', 'data-toggle' => 'popover', 'data-trigger' => 'focus', 'data-content' => "#{@other_genes.map {|g| link_to g.gene, "http://www.ncbi.nlm.nih.gov/gene/?term=#{g.gene}[sym]"}.join(', ') }", 'data-html' => true, class: 'btn btn-primary more-genes' %>
+	<em><%= @main_genes.map {|g| link_to g.gene, "http://www.ncbi.nlm.nih.gov/gene/?term=#{g.gene}[sym]", 'data-toggle' => 'tooltip', title: "Search Entrez for '#{g.gene}'", 'data-placement' => 'right', target: :_blank}.join(', ').html_safe %></em>... <%= link_to "#{@other_genes.size} more", '#', 'data-toggle' => 'popover', 'data-trigger' => 'focus', 'data-content' => "#{@other_genes.map {|g| link_to g.gene, "http://www.ncbi.nlm.nih.gov/gene/?term=#{g.gene}[sym]", target: :_blank}.join(', ') }", 'data-html' => true, class: 'btn btn-primary more-genes' %>
 <% end %>

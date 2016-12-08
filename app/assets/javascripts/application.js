@@ -21,8 +21,12 @@
 //= require spin.min
 //= require chroma.min
 //= require jquery-ui/datepicker
+//= require jquery-ui/autocomplete
+//= require autocomplete-rails
 
 var fileUploading = false;
+
+jQuery.railsAutocomplete.options.noMatchesLabel = "No matches in this study";
 
 // used for calculating size of plotly graphs to maintain square aspect ratio
 var SCATTER_RATIO = 0.65;

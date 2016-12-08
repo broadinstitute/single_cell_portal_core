@@ -134,7 +134,7 @@ class SiteController < ApplicationController
     @y_axis_title = 'Mean-centered average of log(TPM) Expression Values'
     @values = load_gene_set_expression_boxplot_scores
     @coordinates = load_cluster_points
-    @annotations = load_cluster_annotations
+
     @expression = load_gene_set_expression_scatter_points
     color_minmax =  @expression[:all][:marker][:color].minmax
     @expression[:all][:marker][:cmin], @expression[:all][:marker][:cmax] = color_minmax
@@ -142,6 +142,7 @@ class SiteController < ApplicationController
     @options = load_sub_cluster_options
     @range = set_range([@expression[:all]])
     @static_range = set_range(@coordinates.values)
+    @annotations = load_cluster_annotations(@static_range)
     if @genes.size > 5
       @main_genes, @other_genes = divide_genes_for_header
     end
@@ -399,7 +400,12 @@ class SiteController < ApplicationController
 
   # generic search term parser
   def parse_search_terms(key)
-    params[:search][key].split(/[\s\n,]/).map {|gene| gene.chomp.downcase}
+    terms = params[:search][key]
+    if terms.is_a?(Array)
+      terms.first.split(/[\s\n,]/).map {|gene| gene.chomp.downcase}
+    else
+      terms.split(/[\s\n,]/).map {|gene| gene.chomp.downcase}
+    end
   end
 
   # generic expression score getter, preserves order and discards empty matches

@@ -105,12 +105,11 @@ class UiTestSuite < Test::Unit::TestCase
 		download_section = @driver.find_element(:id, 'study-data-files')
 		# gotcha when clicking, must wait until completes
 		opened = download_section.click
-		@wait.until { opened == 'ok'}
 		files = @driver.find_elements(:class, 'dl-link')
 		file_link = files.first
 		@wait.until { file_link.displayed? }
 		downloaded = file_link.click
-		assert downloaded == 'ok', 'could not click download link'
+		assert downloaded == nil, 'could not click download link'
 	end
 
 	test 'search for single gene' do
@@ -170,6 +169,7 @@ class UiTestSuite < Test::Unit::TestCase
 		# log in first
 		path = @base_url + '/studies/new'
 		@driver.get path
+		@driver.manage.window.maximize
 		close_modal('message_modal')
 		# send login info
 		email = @driver.find_element(:id, 'user_email')
@@ -191,7 +191,6 @@ class UiTestSuite < Test::Unit::TestCase
 		share = @driver.find_element(:id, 'add-study-share')
 		@wait.until {share.displayed? == true}
 		share_study = share.click
-		@wait.until {share_study == 'ok'}
 		share_email = study_form.find_element(:class, 'share-email')
 		share_email.send_keys(@share_user[:email])
 		# save study
@@ -299,5 +298,7 @@ class UiTestSuite < Test::Unit::TestCase
 		wait_until_page_loads(@base_url + '/studies')
 		@driver.find_element(:class, 'delete-btn').click
 		@driver.switch_to.alert.accept
+		wait_for_render(:id, 'message_modal')
+		close_modal('message_modal')
 	end
 end

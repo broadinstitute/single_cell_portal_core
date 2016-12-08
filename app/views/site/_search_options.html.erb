@@ -11,8 +11,8 @@
 					<%= f.hidden_field :cluster, value: params[:cluster] %>
 					<%= f.hidden_field :boxpoints, value: params[:boxpoints] %>
 					<div class="form-group">
-						<%= f.label :genes, 'Search for genes of interest (comma/space delimited)' %>
-						<%= f.text_field :genes, {class: 'form-control search-genes-input', placeholder: 'Search genes...', value: set_search_value} %>
+						<%= f.label :genes, 'Search for genes of interest (autocomplete)' %>
+						<%= f.autocomplete_field :genes, autocomplete_expression_score_gene_expression_score_index_path(study_id: @study._id), {multiple: true, class: 'form-control search-genes-input', placeholder: 'Search genes...', value: set_search_value, data: {delimiter: ' '}} %>
 					</div>
 					<div class="form-group">
 						<%= f.label :upload, "Or upload a list of genes (one gene per line)" %><br>

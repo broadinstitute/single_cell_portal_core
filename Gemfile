@@ -63,3 +63,4 @@ gem 'mongoid-paperclip', :require => 'mongoid_paperclip', git: 'https://github.c
 # gem 'rack-mini-profiler'
 gem 'non-stupid-digest-assets'
 gem 'will_paginate_mongoid'
+gem 'rails-jquery-autocomplete', git: 'git://github.com/bigtunacan/rails-jquery-autocomplete.git'

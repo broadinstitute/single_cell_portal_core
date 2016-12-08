@@ -16,7 +16,7 @@
 
 					<tbody>
 					<% @studies.each do |study| %>
-						<tr>
+						<tr class="study-entry">
 							<td><%= study.name %></td>
 							<td><%= truncate_html(study.description, length: 50) %></td>
 							<td><%= study.visibility %></td>
