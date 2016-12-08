@@ -19,7 +19,7 @@ class SiteController < ApplicationController
       when 'popular'
         @order = :view_count.desc
       else
-        @order = :name.asc
+        @order = [:view_order.asc, :name.asc]
     end
 
     # load viewable studies in requested order
