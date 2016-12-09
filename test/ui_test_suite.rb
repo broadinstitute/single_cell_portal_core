@@ -53,17 +53,13 @@ class UiTestSuite < Test::Unit::TestCase
 		dismiss = modal.find_element(:class, 'close')
 		dismiss.click
 		@wait.until {@driver.find_element(:tag_name, 'body')[:class].include?('modal-open') == false}
+		# this is a hack, but different browsers behave differently so this lets the fade animation clear
+		sleep(1)
 	end
 
 	# wait until element is rendered and visible
 	def wait_for_render(how, what)
 		@wait.until {@driver.find_element(how, what).displayed? == true}
-	end
-
-	# method to wait for next button to enable
-	def wait_for_next(btn)
-		parent = btn.find_element(:xpath, '..')
-		@wait.until {parent[:class].include?('enabled') == true}
 	end
 
 	# front end tests
@@ -162,9 +158,9 @@ class UiTestSuite < Test::Unit::TestCase
 		assert element_present?(:id, 'plots'), 'could not find marker list expression heatmap'
 	end
 
-	# admin backend test of entire study creation process as order needs to be maintained throughout
+	# admin backend tests of entire study creation process as order needs to be maintained throughout
 	# logs test user in, creates study, and deletes study on completion
-	# uses sNuc-Seq data as inputs
+	# uses example data as inputs
 	test 'create a study' do
 		# log in first
 		path = @base_url + '/studies/new'
@@ -190,7 +186,7 @@ class UiTestSuite < Test::Unit::TestCase
 		# add a share
 		share = @driver.find_element(:id, 'add-study-share')
 		@wait.until {share.displayed? == true}
-		share_study = share.click
+		share.click
 		share_email = study_form.find_element(:class, 'share-email')
 		share_email.send_keys(@share_user[:email])
 		# save study
@@ -244,7 +240,6 @@ class UiTestSuite < Test::Unit::TestCase
 		next_btn.click
 		wait_for_render(:class, 'initialize_marker_genes_form')
 
-
 		# upload marker gene list
 		marker_form = @driver.find_element(:class, 'initialize_marker_genes_form')
 		marker_file_name = marker_form.find_element(:id, 'study_file_name')
@@ -292,6 +287,125 @@ class UiTestSuite < Test::Unit::TestCase
 		save_btn.click
 		wait_for_render(:id, 'study-file-notices')
 		close_modal('study-file-notices')
+
+		# delete study
+		@driver.get(@base_url + '/studies')
+		wait_until_page_loads(@base_url + '/studies')
+		@driver.find_element(:class, 'delete-btn').click
+		@driver.switch_to.alert.accept
+		wait_for_render(:id, 'message_modal')
+		close_modal('message_modal')
+	end
+
+	# negative tests to validate that error checks & messaging is functioning properly
+	test 'study error messaging' do
+		# log in first
+		path = @base_url + '/studies/new'
+		@driver.get path
+		@driver.manage.window.maximize
+		close_modal('message_modal')
+		# send login info
+		email = @driver.find_element(:id, 'user_email')
+		email.send_keys(@test_user[:email])
+		password = @driver.find_element(:id, 'user_password')
+		password.send_keys(@test_user[:password])
+		login_form = @driver.find_element(:id, 'new_user')
+		login_form.submit
+		wait_until_page_loads(path)
+		close_modal('message_modal')
+
+		# fill out study form
+		study_form = @driver.find_element(:id, 'new_study')
+		study_form.find_element(:id, 'study_name').send_keys('Error Messaging Test Study')
+		# save study
+		study_form.submit
+
+		# upload bad cluster assignments
+		wait_for_render(:id, 'assignments_form')
+		close_modal('message_modal')
+		upload_assignments = @driver.find_element(:id, 'upload-assignments')
+		upload_assignments.send_keys(@test_data_path + 'cluster_assignments_example_bad.txt')
+		wait_for_render(:id, 'start-file-upload')
+		upload_btn = @driver.find_element(:id, 'start-file-upload')
+		upload_btn.click
+		# close error modal
+		wait_for_render(:id, 'error-modal')
+		close_modal('error-modal')
+
+		# upload valid cluster assignments (needed for cluster points tests)
+		upload_assignments = @driver.find_element(:id, 'upload-assignments')
+		upload_assignments.send_keys(@test_data_path + 'cluster_assignments_example.txt')
+		wait_for_render(:id, 'start-file-upload')
+		upload_btn = @driver.find_element(:id, 'start-file-upload')
+		upload_btn.click
+		# wait for upload to complete and wizard to step forward
+		wait_for_render(:id, 'parent_cluster_form')
+		# close success modal
+		wait_for_render(:id, 'upload-success-modal')
+		close_modal('upload-success-modal')
+
+		# upload bad cluster coordinates
+		upload_clusters = @driver.find_element(:id, 'upload-clusters')
+		upload_clusters.send_keys(@test_data_path + 'cluster_coordinates_example_bad.txt')
+		wait_for_render(:id, 'start-file-upload')
+		upload_btn = @driver.find_element(:id, 'start-file-upload')
+		upload_btn.click
+		# close error modal
+		wait_for_render(:id, 'error-modal')
+		close_modal('error-modal')
+
+		# navigate forward
+		next_btn = @driver.find_element(:id, 'next-btn')
+		next_btn.click
+		wait_for_render(:class, 'initialize_expression_form')
+		# close required step modal
+		wait_for_render(:id, 'required-modal')
+		ok = @driver.find_element(:id, 'accept-skip-required')
+		ok.click
+		sleep(1)
+
+		# upload bad expression matrix
+		upload_expression = @driver.find_element(:id, 'upload-expression')
+		upload_expression.send_keys(@test_data_path + 'expression_matrix_example_bad.txt')
+		wait_for_render(:id, 'start-file-upload')
+		upload_btn = @driver.find_element(:id, 'start-file-upload')
+		upload_btn.click
+		# close error modal
+		wait_for_render(:id, 'error-modal')
+		close_modal('error-modal')
+
+		# navigate forward
+		next_btn = @driver.find_element(:id, 'next-btn')
+		next_btn.click
+		wait_for_render(:class, 'initialize_sub_clusters_form')
+
+		# upload bad sub-cluster
+		upload_sub_clusters = @driver.find_element(:class, 'upload-sub-clusters')
+		upload_sub_clusters.send_keys(@test_data_path + 'sub_cluster_1_coordinates_example_bad.txt')
+		wait_for_render(:id, 'start-file-upload')
+		upload_btn = @driver.find_element(:id, 'start-file-upload')
+		upload_btn.click
+		# close error modal
+		wait_for_render(:id, 'error-modal')
+		close_modal('error-modal')
+
+		# navigate forward
+		next_btn = @driver.find_element(:id, 'next-btn')
+		next_btn.click
+		wait_for_render(:class, 'initialize_marker_genes_form')
+
+		# upload bad marker gene list
+		marker_form = @driver.find_element(:class, 'initialize_marker_genes_form')
+		marker_file_name = marker_form.find_element(:id, 'study_file_name')
+		marker_file_name.send_keys('Test Gene List')
+		upload_markers = @driver.find_element(:class, 'upload-marker-genes')
+		upload_markers.send_keys(@test_data_path + 'marker_1_gene_list_bad.txt')
+		wait_for_render(:id, 'start-file-upload')
+		upload_btn = @driver.find_element(:id, 'start-file-upload')
+		upload_btn.click
+		# close error modal
+		wait_for_render(:id, 'error-modal')
+		close_modal('error-modal')
 
 		# delete study
 		@driver.get(@base_url + '/studies')

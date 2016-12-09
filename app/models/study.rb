@@ -241,6 +241,9 @@ class Study
       # store study id for later to save memory
       study_id = self._id
       @records = []
+      # keep a running record of genes already parsed to catch validation errors before they happen
+      # this is needed since we're creating records in batch and won't know which gene was responsible
+      @genes_parsed = []
       Rails.logger.info "Expression scores loaded, starting record creation for #{self.name}"
       while !expression_data.eof?
         # grab single row of scores, parse out gene name at beginning
@@ -249,6 +252,19 @@ class Study
         @last_line = "#{expression_file.name}, line #{expression_data.lineno}"
 
         gene_name = row.shift
+        # check to see if gene has already been recorded and raise error if so
+        uniq_gene_name = gene_name.downcase
+        if @genes_parsed.include?(uniq_gene_name)
+          expression_file.update(parse_status: 'failed')
+          user_error_message = "You have a duplicate gene entry (#{gene_name}) in your expression matrix.  Please check your file and try again."
+          error_message = "Duplicate gene #{gene_name} in #{expression_file.name} (#{expression_file._id}) for study: #{self.name}"
+          Rails.logger.info error_message
+          raise StandardError, user_error_message
+        else
+          # gene is unique so far so add to list
+          @genes_parsed << uniq_gene_name
+        end
+
         # convert all remaining strings to floats, then store only significant values (!= 0)
         scores = row.map(&:to_f)
         significant_scores = {}
@@ -258,7 +274,7 @@ class Study
           end
         end
         # create expression score object
-        @records << {gene: gene_name, searchable_gene: gene_name.downcase, scores: significant_scores, study_id: study_id, study_file_id: expression_file._id}
+        @records << {gene: gene_name, searchable_gene: uniq_gene_name, scores: significant_scores, study_id: study_id, study_file_id: expression_file._id}
         @bytes_parsed += line.length
         @count += 1
         if @count % 1000 == 0
@@ -268,7 +284,7 @@ class Study
           Rails.logger.info "Processed #{@count} expression scores from #{expression_file.name} for #{self.name}"
         end
       end
-      ExpressionScore.create(@records)
+      ExpressionScore.create!(@records)
       # clean up, print stats
       expression_data.close
       expression_file.update(parse_status: 'parsed', bytes_parsed: expression_file.upload_file_size)
@@ -288,7 +304,7 @@ class Study
     rescue => e
       expression_file.update(parse_status: 'failed')
       error_message = "#{@last_line} ERROR: #{e.message}"
-      Rails.logger.info @last_line + ' ' + error_message
+      Rails.logger.info error_message
       raise StandardError, error_message
     end
   end
@@ -336,8 +352,8 @@ class Study
       sub_index = assignment_headers.index('SUB-CLUSTER')
       Rails.logger.info "Clusters/cells loaded, starting record creation for #{self.name}"
       while !clusters_data.eof?
-        @last_line = "#{assignment_file.name}, line #{clusters_data.lineno}"
         line = clusters_data.readline.strip
+        @last_line = "#{assignment_file.name}, line #{clusters_data.lineno}"
         vals = line.split(/[\t,]/)
         cluster_name = vals[cluster_index]
         sub_cluster_name = vals[sub_index]
@@ -357,7 +373,20 @@ class Study
           @cluster_count += 1
         end
         parent_cell = SingleCell.where(name: cell_name, study_id: self._id, cluster_id: parent_cluster._id).first
+        if !parent_cell.nil?
+          # duplicate cell entry
+          user_error_message = "You have duplicate cell entries for #{cell_name}.  Please check your assignments file and try again."
+          Rails.logger.info "Duplicate parent cell entry for #{cell_name} in study #{self.name} using assignment file #{assignment_file.name} (#{assignment_file._id})"
+          raise StandardError, user_error_message
+        end
         sub_cell = SingleCell.where(name: cell_name, study_id: self._id, cluster_id: sub_cluster._id).first
+        if !sub_cell.nil?
+          # duplicate cell entry
+          user_error_message = "You have duplicate cell entries for #{cell_name}.  Please check your assignments file and try again."
+          Rails.logger.info "Duplicate sub cell entry for #{cell_name} in study #{self.name} using assignment file #{assignment_file.name} (#{assignment_file._id})"
+          raise StandardError, user_error_message
+        end
+
         if parent_cell.nil?
           parent_cell = self.single_cells.build(name: cell_name, cluster_id: parent_cluster._id, study_file_id: assignment_file._id)
           parent_cell.save
@@ -448,10 +477,11 @@ class Study
       y_index = headers.index('Y')
 
       @records = []
+      @cell_names = []
       Rails.logger.info "Beginning cluster point record creation for #{self.name}"
       while !points_data.eof?
-        @last_line = "#{cluster_file.name}, line #{points_data.lineno}"
         line = points_data.readline.strip
+        @last_line = "#{cluster_file.name}, line #{points_data.lineno}"
         # parse each line and get values
         vals = line.split(/[\t,]/)
         name = vals[cell_name_index]
@@ -461,13 +491,32 @@ class Study
         # load correct cluster & single_cell
         cells = SingleCell.where(name: name, study_id: self._id, study_file_id: assignment_file._id).to_a
 
+        # raise error if cells cannot be found, likely an error happened when parsing assigments
+        if cells.empty?
+          user_error_message = "No cells were found matching #{name} in this study.  Please check your assignments file (#{assignment_file.name}) and try again."
+          Rails.logger.info "No cells found matching: #{name} in study: #{self.name} from assignment file #{assignment_file.name} (#{assignment_file._id})"
+          raise StandardError, user_error_message
+        end
+
         if cluster_type == 'parent'
-          clst = cells.map(&:cluster).select {|c| c.cluster_type == 'parent'}.first
+          all_clst = cells.map(&:cluster).compact
+          clst = all_clst.select {|c| c.cluster_type == 'parent'}.first
+          if clst.nil?
+            user_error_message = "No corresponding top-level cluster was found for cell: #{name}.  Please check your assignment file (#{assignment_file.name}) and try again."
+            Rails.logger.info "No parent clusters found for cell: #{name} in study: #{self.name} from assignment file #{assignment_file.name} (#{assignment_file._id}), cluster file: #{cluster_file.name} (#{cluster_file._id})"
+            raise StandardError, user_error_message
+          end
           @cluster_name = clst.name
           @cluster_type = 'parent'
           @parent_cluster = nil
         else
-          clst = cells.map(&:cluster).select {|c| c.cluster_type == 'sub_cluster'}.first
+          all_clst = cells.map(&:cluster).compact
+          clst = all_clst.select {|c| c.cluster_type == 'sub_cluster'}.first
+          if clst.nil?
+            user_error_message = "No corresponding sub-cluster was found for cell: #{name}.  Please check your assignment file (#{assignment_file.name}) and try again."
+            Rails.logger.info "No sub clusters found for cell: #{name} in study: #{self.name} from assignment file #{assignment_file.name} (#{assignment_file._id}), cluster file: #{cluster_file.name} (#{cluster_file._id})"
+            raise StandardError, user_error_message
+          end
           @cluster_name = clst.name
           @cluster_type = 'sub_cluster'
           @parent_cluster = clst.parent_cluster
@@ -476,11 +525,19 @@ class Study
         cluster = Cluster.where(name: @cluster_name, cluster_type: @cluster_type, study_id: self._id, study_file_id: assignment_file._id).first
         cell = SingleCell.where(name: name, study_id: self._id, cluster_id: cluster._id, study_file_id: assignment_file._id).first
 
+
         unless cell.nil?
+          # make sure this isn't a duplicate cell first
+          if @cell_names.include?(cell.name)
+            user_error_message = "You have a duplicate entry for cell: #{name} in this cluster.  Please check your coordinates file and try again."
+            Rails.logger.info "Duplicate cell: #{name} in coordinate file #{cluster_file.name} (#{cluster_file.id}) for study: #{self.name}"
+            raise StandardError, user_error_message
+          end
           # finally, create cluster point with association to cluster & single_cell
           @records << {x: x, y: y, cell_name: cell.name, single_cell_id: cell._id, cluster_id: cluster._id, study_file_id: cluster_file._id, study_id: self._id}
           @cluster_point_count += 1
           @bytes_parsed += line.length
+          @cell_names << cell.name
         end
         if @cluster_point_count % 100 == 0
           ClusterPoint.create(@records)
@@ -544,7 +601,7 @@ class Study
         begin
           # reset parse status
           sub_cluster_file.update(parse_status: 'unparsed')
-          puts = "Reparsing sub clusters using #{sub_cluster_file.name} for #{self.name}"
+          puts "Reparsing sub clusters using #{sub_cluster_file.name} for #{self.name}"
           self.make_cluster_points(@assignment_file, sub_cluster_file, sub_cluster_file.cluster_type)
         rescue => e
           error_message = "Error while reparsing sub clusters using #{sub_cluster_file.name} for #{self.name}"
@@ -610,10 +667,25 @@ class Study
       clusters.shift # remove 'Gene Name' at start
       precomputed_score.clusters = clusters
       rows = []
+      # keep a running record of genes already parsed; same as expression_scores except precomputed_scores
+      # have no built-in validations due to structure of gene_scores array
+      @genes_parsed = []
       marker_scores.each_with_index do |line, i|
         @last_line = "#{marker_file.name}, line #{i + 2}"
         vals = line.split(/[\t,]/)
         gene = vals.shift
+        uniq_gene_name = gene.downcase
+        if @genes_parsed.include?(uniq_gene_name)
+          marker_file.update(parse_status: 'failed')
+          user_error_message = "You have a duplicate gene entry (#{gene}) in your gene list.  Please check your file and try again."
+          error_message = "Duplicate gene #{gene} in #{marker_file.name} (#{marker_file._id}) for study: #{self.name}"
+          Rails.logger.info error_message
+          raise StandardError, user_error_message
+        else
+          # gene is unique so far so add to list
+          @genes_parsed << uniq_gene_name
+        end
+
         row = {"#{gene}" => {}}
         clusters.each_with_index do |cluster, index|
           row[gene][cluster] = vals[index].to_f

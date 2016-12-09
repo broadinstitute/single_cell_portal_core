@@ -6,10 +6,12 @@ var layout = {
   width: size,
   height: size,
   xaxis: {
-    range: <%= raw @range %>
+    range: <%= raw @range %>,
+    title: '<%= @axes[:x] %>'
   },
   yaxis: {
-    range: <%= raw @range %>
+    range: <%= raw @range %>,
+    title: '<%= @axes[:y] %>'
   },
   legend: {
     x: 100,

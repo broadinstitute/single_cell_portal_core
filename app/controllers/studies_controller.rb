@@ -162,6 +162,8 @@ class StudiesController < ApplicationController
       # gotcha in case user deletes assignments file, must remove all clusters too due to associations
       if @file_type == 'Cluster Assignments'
         StudyFile.destroy_all(study_id: @study._id, file_type: 'Cluster Coordinates')
+        # reset study cell count
+        @study.update(cell_count: 0)
         @message += "  Since you deleted the cluster assignments for your study, all coordinates files have also been deleted.<br/></br/><strong class='text-danger'>Please refresh your screen to update the status accordingly.</strong>"
       end
       if @study.cluster_assignment_file.nil? || @study.parent_cluster_coordinates_file.nil? || @study.expression_matrix_file.nil?
@@ -293,7 +295,7 @@ class StudiesController < ApplicationController
 
   # study file params whitelist
   def study_file_params
-    params.require(:study_file).permit(:_id, :study_id, :name, :upload, :description, :file_type, :status, :human_fastq_url, :human_data, :cluster_type)
+    params.require(:study_file).permit(:_id, :study_id, :name, :upload, :description, :file_type, :status, :human_fastq_url, :human_data, :cluster_type, :x_axis_label, :y_axis_label)
   end
 
   def clusters_params

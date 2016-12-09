@@ -13,6 +13,16 @@
 			<%= f.text_field :description, class: 'form-control' %>
 		</div>
 	</div>
+  <div class="form-group row">
+    <div class="col-sm-6">
+      <%= f.label :x_axis_label, 'X Axis Label' %><br />
+      <%= f.text_field :x_axis_label, class: 'form-control' %>
+    </div>
+    <div class="col-sm-6">
+      <%= f.label :y_axis_label, 'Y Axis Label' %><br />
+      <%= f.text_field :y_axis_label, class: 'form-control' %>
+    </div>
+  </div>
 	<div class="form-group row">
 		<div class="col-sm-2">
 			<%= f.label :file_type %><br />

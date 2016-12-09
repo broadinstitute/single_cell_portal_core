@@ -52,6 +52,7 @@ class SiteController < ApplicationController
       @coordinates = load_cluster_points
       @options = load_sub_cluster_options
       @range = set_range(@coordinates.values)
+      @axes = load_axis_labels
     end
   end
 
@@ -60,6 +61,7 @@ class SiteController < ApplicationController
     @coordinates = load_cluster_points
     @options = load_sub_cluster_options
     @range = set_range(@coordinates.values)
+    @axes = load_axis_labels
   end
 
   # search for one or more genes to view expression information
@@ -97,7 +99,7 @@ class SiteController < ApplicationController
   # render box and scatter plots for parent clusters or a particular sub cluster
   def view_gene_expression
     @gene = @study.expression_scores.by_gene(params[:gene])
-    @y_axis_title = 'log(TPM) Expression Values'
+    @y_axis_title = @study.expression_matrix_file.y_axis_label
     @values = load_expression_boxplot_scores
     @coordinates = load_cluster_points
     @expression = load_expression_scatter_points
@@ -113,7 +115,7 @@ class SiteController < ApplicationController
   # re-renders plots when changing cluster selection
   def render_gene_expression_plots
     @gene = @study.expression_scores.by_gene(params[:gene])
-    @y_axis_title = 'log(TPM) Expression Values'
+    @y_axis_title = @study.expression_matrix_file.y_axis_label
     @values = load_expression_boxplot_scores
     @coordinates = load_cluster_points
     @expression = load_expression_scatter_points
@@ -471,5 +473,14 @@ class SiteController < ApplicationController
   # load all precomputed options for a study
   def load_precomputed_options
      @precomputed = @study.precomputed_scores.map(&:name)
+  end
+
+  # retrieve axis labels from cluster coordinates file (if provided)
+  def load_axis_labels
+    coordinates_file = @clusters.first.cluster_points.first.study_file
+    {
+        x: coordinates_file.x_axis_label,
+        y: coordinates_file.y_axis_label
+    }
   end
 end
