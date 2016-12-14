@@ -277,9 +277,16 @@ class StudiesController < ApplicationController
   # method to download files if study is private, will create temporary symlink and remove after timeout
   def download_private_file
     @study = Study.find_by(url_safe_name: params[:study_name])
-    @study_file = @study.study_files.select {|sf| sf.upload_file_name == params[:filename]}.first
-    @templink = TempFileDownload.create!({study_file_id: @study_file._id})
-    @valid_until = @templink.created_at + TempFileDownloadCleanup::DEFAULT_THRESHOLD.minutes
+    # check if user has permission in case someone is phishing
+    if current_user.nil? || !@study.can_view?(current_user)
+      redirect_to site_path, alert: 'You do not have permission to perform that action' and return
+    else
+      @study_file = @study.study_files.select {|sf| sf.upload_file_name == params[:filename]}.first
+      @templink = TempFileDownload.create!({study_file_id: @study_file._id})
+      @valid_until = @templink.created_at + TempFileDownloadCleanup::DEFAULT_THRESHOLD.minutes
+      # redirect directly to file to trigger download
+      redirect_to @templink.download_url
+    end
   end
 
   private

@@ -1,10 +1,6 @@
 <% if study_file.upload_file_name.nil? %>
 	<%= link_to "<span class='fa fa-cloud-download'></span> External".html_safe, study_file.download_path, class: 'btn btn-primary', target: :_blank %>
 <% else %>
-	<% if study.public? %>
-		<%= link_to "<span class='fa fa-download'></span> #{number_to_human_size(study_file.upload_file_size, prefix: :si)}".html_safe, study_file.download_path, class: "btn btn-primary dl-link #{study_file.file_type_class}", download: study_file.name %>
-	<% else %>
-		<%= link_to "Get Access <span class='fa fa-lock'></span>".html_safe, "javascript:;", class: "btn btn-primary download-btn #{study_file.file_type_class}", data: {filepath: study_file.download_path} %>
-	<% end %>
+  <%= link_to "<span class='fa fa-download'></span> #{number_to_human_size(study_file.upload_file_size, prefix: :si)}".html_safe, study_file.download_path, class: "btn btn-primary dl-link #{study_file.file_type_class}", download: study_file.name %>
 <% end %>
 
