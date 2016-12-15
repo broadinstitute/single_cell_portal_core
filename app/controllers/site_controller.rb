@@ -318,7 +318,9 @@ class SiteController < ApplicationController
       values[cluster.name] = {y: [], name: cluster.name }
       # grab all cells present in the cluster, and use as keys to load expression scores
       # if a cell is not present for the gene, score gets set as 0.0
-      cluster.single_cells.map(&:name).each do |cell|
+      # will check if there are more than Cluster::SUBSAMPLE_THRESHOLD cells present in the cluster, and subsample accordingly
+      cells = cluster.single_cells.count > Cluster::SUBSAMPLE_THRESHOLD ? cluster.single_cells.shuffle(random: Random.new(1)).take(Cluster::SUBSAMPLE_THRESHOLD) : cluster.single_cells
+      cells.map(&:name).each do |cell|
         values[cluster.name][:y] << @gene.scores[cell].to_f
       end
     end
@@ -352,7 +354,9 @@ class SiteController < ApplicationController
       values[cluster.name] = {y: [], name: cluster.name }
       # grab all cells present in the cluster, and use as keys to load expression scores
       # if a cell is not present for the gene, score gets set as 0.0
-      cluster.single_cells.map(&:name).each do |cell|
+      # will check if there are more than Cluster::SUBSAMPLE_THRESHOLD cells present in the cluster, and subsample accordingly
+      cells = cluster.single_cells.count > Cluster::SUBSAMPLE_THRESHOLD ? cluster.single_cells.shuffle(random: Random.new(1)).take(Cluster::SUBSAMPLE_THRESHOLD) : cluster.single_cells
+      cells.single_cells.map(&:name).each do |cell|
         values[cluster.name][:y] << calculate_mean(@genes, cell)
       end
     end

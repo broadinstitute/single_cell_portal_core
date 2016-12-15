@@ -174,6 +174,9 @@ $(function() {
             var spin = new Spinner(opts).spin(modalTgt);
             $(modalTgt).data('spinner', spin);
             modal.modal('show');
+            return true;
+        } else {
+            return false;
         }
     });
 });
