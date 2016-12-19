@@ -159,13 +159,13 @@ class SiteController < ApplicationController
     @y_axis_title = 'Mean-centered average of log(TPM) Expression Values'
     @values = load_gene_set_expression_boxplot_scores
     @coordinates = load_cluster_points
-    @annotations = load_cluster_annotations
     @expression = load_gene_set_expression_scatter_points
     color_minmax =  @expression[:all][:marker][:color].minmax
     @expression[:all][:marker][:cmin], @expression[:all][:marker][:cmax] = color_minmax
     @expression[:all][:marker][:colorscale] = 'Reds'
     @options = load_sub_cluster_options
     @range = set_range([@expression[:all]])
+    @annotations = load_cluster_annotations(@range)
     @static_range = set_range(@coordinates.values)
     if @genes.size > 5
       @main_genes, @other_genes = divide_genes_for_header
@@ -356,7 +356,7 @@ class SiteController < ApplicationController
       # if a cell is not present for the gene, score gets set as 0.0
       # will check if there are more than Cluster::SUBSAMPLE_THRESHOLD cells present in the cluster, and subsample accordingly
       cells = cluster.single_cells.count > Cluster::SUBSAMPLE_THRESHOLD ? cluster.single_cells.shuffle(random: Random.new(1)).take(Cluster::SUBSAMPLE_THRESHOLD) : cluster.single_cells
-      cells.single_cells.map(&:name).each do |cell|
+      cells.map(&:name).each do |cell|
         values[cluster.name][:y] << calculate_mean(@genes, cell)
       end
     end
