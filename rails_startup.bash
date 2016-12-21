@@ -21,5 +21,5 @@ then
     echo "*** COMPLETED ***"
 fi
 echo "*** REINDEXING COLLECTIONS ***"
-sudo -E -u app -H bundle exec rake RAILS_ENV=$PASSENGER_APP_ENV db:mongoind:create_indexes
+sudo -E -u app -H bundle exec rake RAILS_ENV=$PASSENGER_APP_ENV db:mongoid:create_indexes
 echo "*** COMPLETED ***"
