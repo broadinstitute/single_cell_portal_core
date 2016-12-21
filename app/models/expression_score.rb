@@ -5,13 +5,11 @@ class ExpressionScore
   belongs_to :study_file
 
   field :gene, type: String
-  field :searchable_gene, type: String
   field :scores, type: Hash
 
-  index({searchable_gene: 1}, {unique: false})
   index({ gene: 1, study_id: 1 }, { unique: true })
 
-  validates_uniqueness_of :searchable_gene, scope: :study_id
+  validates_uniqueness_of :gene, scope: :study_id
 
   def mean(cells)
     sum = 0.0

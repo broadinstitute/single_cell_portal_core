@@ -24,10 +24,6 @@ class Study
     def by_gene(gene)
       where(gene: gene).first
     end
-
-    def by_searchable_gene(gene)
-      where(searchable_gene: gene).first
-    end
   end
 
   has_many :precomputed_scores, dependent: :destroy do
@@ -252,18 +248,6 @@ class Study
         @last_line = "#{expression_file.name}, line #{expression_data.lineno}"
 
         gene_name = row.shift
-        # check to see if gene has already been recorded and raise error if so
-        uniq_gene_name = gene_name.downcase
-        if @genes_parsed.include?(uniq_gene_name)
-          expression_file.update(parse_status: 'failed')
-          user_error_message = "You have a duplicate gene entry (#{gene_name}) in your expression matrix.  Please check your file and try again."
-          error_message = "Duplicate gene #{gene_name} in #{expression_file.name} (#{expression_file._id}) for study: #{self.name}"
-          Rails.logger.info error_message
-          raise StandardError, user_error_message
-        else
-          # gene is unique so far so add to list
-          @genes_parsed << uniq_gene_name
-        end
 
         # convert all remaining strings to floats, then store only significant values (!= 0)
         scores = row.map(&:to_f)
@@ -274,7 +258,7 @@ class Study
           end
         end
         # create expression score object
-        @records << {gene: gene_name, searchable_gene: uniq_gene_name, scores: significant_scores, study_id: study_id, study_file_id: expression_file._id}
+        @records << {gene: gene_name, scores: significant_scores, study_id: study_id, study_file_id: expression_file._id}
         @bytes_parsed += line.length
         @count += 1
         if @count % 1000 == 0

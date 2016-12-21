@@ -78,7 +78,7 @@ class SiteController < ApplicationController
     cluster = params[:search][:cluster]
     boxpoints = params[:search][:boxpoints]
     if @genes.empty?
-      redirect_to request.referrer, alert: "No matches found for: #{terms.join(', ')}"
+      redirect_to request.referrer, alert: "No matches found for: #{terms.join(', ')}."
     elsif @genes.size > 1
       if !cluster.blank?
         redirect_to view_gene_expression_heatmap_path(search: {genes: terms.join(' ')}, cluster: cluster)
@@ -408,9 +408,9 @@ class SiteController < ApplicationController
   def parse_search_terms(key)
     terms = params[:search][key]
     if terms.is_a?(Array)
-      terms.first.split(/[\s\n,]/).map {|gene| gene.chomp.downcase}
+      terms.first.split(/[\s\n,]/).map {|gene| gene.strip}
     else
-      terms.split(/[\s\n,]/).map {|gene| gene.chomp.downcase}
+      terms.split(/[\s\n,]/).map {|gene| gene.strip}
     end
   end
 
@@ -418,7 +418,7 @@ class SiteController < ApplicationController
   def load_expression_scores(terms)
     genes = []
     terms.each do |term|
-      g = @study.expression_scores.by_searchable_gene(term)
+      g = @study.expression_scores.by_gene(term)
       genes << g unless g.nil?
     end
     genes
@@ -429,7 +429,7 @@ class SiteController < ApplicationController
     genes = []
     not_found = []
     terms.each do |term|
-      gene = @study.expression_scores.by_searchable_gene(term)
+      gene = @study.expression_scores.by_gene(term)
       unless gene.nil?
         genes << gene
       else

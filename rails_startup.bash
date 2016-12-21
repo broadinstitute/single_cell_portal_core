@@ -20,3 +20,6 @@ then
     echo "* * * * */15 /home/app/webapp/bin/job_monitor.rb $PASSENGER_APP_ENV" | crontab -u app -
     echo "*** COMPLETED ***"
 fi
+echo "*** REINDEXING COLLECTIONS ***"
+sudo -E -u app -H bundle exec rake RAILS_ENV=$PASSENGER_APP_ENV db:mongoind:create_indexes
+echo "*** COMPLETED ***"

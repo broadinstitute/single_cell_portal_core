@@ -108,6 +108,8 @@
 
 	</script>
 <% end %>
-<div class="modal fade" id="expression-parse-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
-	<%= render 'parse_modal_content' %>
-</div>
+<% if study_file.new_record? %>
+  <div class="modal fade" id="expression-parse-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
+    <%= render 'parse_modal_content' %>
+  </div>
+<% end %>

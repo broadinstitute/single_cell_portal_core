@@ -166,20 +166,30 @@ $(function() {
         }
     });
 
-    // generic warning and spinner for deleting files
+    // handler for file deletion clicks, need to grab return value and pass to window
     $('.delete-file').click(function() {
-        if ( confirm('Are you sure?  This file will be deleted and any associated database records removed.  This cannot be undone.')) {
-            var modal = $('#delete-modal');
-            var modalTgt = modal.find('.spinner-target')[0];
-            var spin = new Spinner(opts).spin(modalTgt);
-            $(modalTgt).data('spinner', spin);
-            modal.modal('show');
+        if (deleteFileConfirmation()) {
             return true;
         } else {
             return false;
         }
     });
 });
+
+// generic warning and spinner for deleting files
+function deleteFileConfirmation() {
+    var conf = confirm('Are you sure?  This file will be deleted and any associated database records removed.  Deleting assignment files also removes and cluster coordinate files (and records) as well.  This cannot be undone.');
+    if ( conf == true) {
+        var modal = $('#delete-modal');
+        var modalTgt = modal.find('.spinner-target')[0];
+        var spin = new Spinner(opts).spin(modalTgt);
+        $(modalTgt).data('spinner', spin);
+        modal.modal('show');
+        return true;
+    } else {
+        return false;
+    }
+}
 
 // toggle the Search/View options panel
 function toggleSearch() {

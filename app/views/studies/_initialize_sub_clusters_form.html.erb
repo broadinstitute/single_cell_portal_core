@@ -110,7 +110,8 @@
 		<p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: study_file} %></p>
 	<% end %>
 <% end %>
-<div class="modal fade sub-cluster-modal" id="sub-cluster-parse-<%= study_file._id %>-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
-	<%= render 'parse_modal_content' %>
-</div>
-
+<% if study_file.new_record? %>
+  <div class="modal fade sub-cluster-modal" id="sub-cluster-parse-<%= study_file._id %>-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
+    <%= render 'parse_modal_content' %>
+  </div>
+<% end %>
