@@ -65,7 +65,7 @@ case $OPTION in
 	esac
 done
 
-if [[ $PASSENGER_APP_ENV = "production" ]]
+if [[ $PASSENGER_APP_ENV = "production" ]] || [[ $PASSENGER_APP_ENV = "staging" ]]
 then
 	# generate random secret key for secure cookies
 	docker run -d --name $CONTAINER_NAME -p 80:80 -p 443:443 --link mongodb:mongodb -h $PROD_HOSTNAME -v $PROJECT_DIR:/home/app/webapp:rw -e PASSENGER_APP_ENV=$PASSENGER_APP_ENV -e MONGO_LOCALHOST=$MONGO_LOCALHOST -e PROD_DATABASE_PASSWORD=$PROD_DATABASE_PASSWORD -e SECRET_KEY_BASE=$SECRET_KEY_BASE -e PROD_HOSTNAME=$PROD_HOSTNAME -e SENDGRID_USERNAME=$SENDGRID_USERNAME -e SENDGRID_PASSWORD=$SENDGRID_PASSWORD single_cell_docker
