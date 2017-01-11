@@ -1,5 +1,5 @@
 #!/bin/bash
-if [[ $PASSENGER_APP_ENV = "production" ]]
+if [[ $PASSENGER_APP_ENV = "production" ]] || [[ $PASSENGER_APP_ENV = "staging" ]]
 then
 	set -e # fail on any error
 
