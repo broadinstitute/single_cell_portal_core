@@ -134,7 +134,17 @@ production:
         password: '<%= ENV['PROD_DATABASE_PASSWORD'] %>'
   options:
     raise_not_found_error: false
-
+staging:
+  clients:
+    default:
+      database: single_cell_portal_staging
+      hosts:
+        - mongodb:27017
+      options:
+        user: 'single_cell'
+        password: '<%= ENV['PROD_DATABASE_PASSWORD'] %>'
+  options:
+    raise_not_found_error: false
 test:
   clients:
     default:
