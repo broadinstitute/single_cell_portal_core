@@ -136,7 +136,7 @@
 			} else {
 				if ($(uploader).find('.upload-field').css('display') == 'none' ) {
 					console.log('Toggling Fastq fields for ' + uploader);
-					toggleFastqFields("<%= study_file._id %>");
+					toggleFastqFields("fastq_form_<%= study_file._id %>");
 				}
 			}
 			var allowedTypes = setAcceptedFiletypes(selected);

@@ -1,2 +1,23 @@
 $("<%= @selector %>").replaceWith("<%= escape_javascript( render @partial, {study_file: @study_file}) %>");
 $("#study-files-notice-target").html("<%= escape_javascript( render partial: 'studies/study_file_notices', locals: {message: @message}) %>");
+
+// get instance of new form as ID has changed
+var wizForm = $('.<%= params[:partial] %>').slice(-1)[0];
+
+// reattach click listener to download a file when private, will open modal for timed HTML5 download
+$(wizForm).find('.download-btn').click(function() {
+  var url = $(this).data('filepath');
+  $.get(url);
+});
+
+$(wizForm).find('[data-toggle="tooltip"]').tooltip({container: 'body'});
+
+// reattach click handler for deleting
+$(wizForm).find('.delete-file').click(function() {
+  // handler for file deletion clicks
+  if (deleteFileConfirmation()) {
+    return true;
+  } else {
+    return false;
+  }
+});

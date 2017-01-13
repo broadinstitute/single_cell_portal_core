@@ -47,7 +47,7 @@ class StudyFile
   # turning off validation to allow any kind of data file to be uploaded
   do_not_validate_attachment_file_type :upload
 
-  validates_uniqueness_of :upload_file_name, scope: :study_id
+  validates_uniqueness_of :upload_file_name, scope: :study_id, unless: Proc.new {|f| f.human_data?}
 
   # use custom content type validator for more control
   validate :check_upload_content_type

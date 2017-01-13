@@ -134,7 +134,7 @@ class StudiesController < ApplicationController
   # update an existing study file; cannot be called until file is uploaded, so there is no create
   # if adding an external fastq file link, will create entry from scratch to update
   def update_study_file
-    @study_file = StudyFile.where(study_id: study_file_params[:study_id], id: study_file_params[:_id]).first
+    @study_file = StudyFile.where(study_id: study_file_params[:study_id], _id: study_file_params[:_id]).first
     if @study_file.nil?
       # don't use helper as we're about to mass-assign params
       @study_file = @study.study_files.build

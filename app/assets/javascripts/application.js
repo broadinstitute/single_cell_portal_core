@@ -22,6 +22,7 @@
 //= require chroma.min
 //= require jquery-ui/datepicker
 //= require jquery-ui/autocomplete
+//= require jquery-ui/effect-highlight
 //= require autocomplete-rails
 
 var fileUploading = false;
