@@ -1,3 +1,4 @@
+var data = [];
 <% @coordinates.sort_by {|k,v| k}.each_with_index do |(cluster, data), index| %>
 	var cluster_<%= index %> = {
 		x: <%= raw data[:x] %>,
@@ -6,29 +7,27 @@
 		name: "<%= data[:name] %>",
 		mode: 'markers',
 		type: 'scattergl',
-		marker: {
-			color: colorBrewerSet[<%= index %>],
-      size: <%= raw data[:marker_size] %>,
-			line: {
-				color: plotlyDefaultLineColor,
-				width: 0.5
-			}
-		}
-	};
-<% end %>
+    <% if !data[:marker].nil? %>
+      marker: <%= raw data[:marker].to_json %>
+    <% else %>
+      marker: {
+        color: colorBrewerSet[<%= index %>],
+        size: <%= raw data[:marker_size] %>,
+        line: {
+          color: plotlyDefaultLineColor,
+          width: 0.5
+        }
+      }
+    <% end %>
 
-var data = [];
-<% @clusters.each_with_index do |cluster, index| %>
-	data.push(cluster_<%= index %>);
+	};
+
+  data.push(cluster_<%= index %>);
 <% end %>
 
 // use partial for layouts to avoid code duplication
 <%= render 'study_scatter_layout' %>
 
-
-<% if params[:cluster] %>
-	<%= render 'new_scatter_color_vals' %>
-<% end %>
 
 Plotly.newPlot('cluster-plot', data, layout);
 

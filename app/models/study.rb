@@ -351,7 +351,6 @@ class Study
       # determine if 3d coordinates have been provided
       is_3d = header_data.include?('Z')
       cluster_type = is_3d ? '3d' : '2d'
-      Rails.logger.info "Cluster type: #{cluster_type}"
 
       # grad header indices, z index will be nil if no 3d data
       name_index = header_data.index('NAME')
@@ -377,17 +376,19 @@ class Study
 			@cluster_group = self.cluster_groups.build(name: cluster_name, study_file_id: ordinations_file._id, cluster_type: cluster_type)
 
       # add cell-level annotation definitions and save (will be used to populate dropdown menu)
+      # this object will not be saved until after parse is done as we need to collect all possible values
+      # for group annotations (not needed for numeric)
       cell_annotations = []
       @cluster_metadata.each do |metadata|
         cell_annotations << {
             name: metadata[:name],
-            type: metadata[:type]
+            type: metadata[:type],
+            values: []
         }
       end
-      @cluster_group.cell_annotations = cell_annotations
       @cluster_group.save
 
-			Rails.logger.info "Headers/Metadata loaded for cluster initialization using #{ordinations_file.upload_file_name} for cluster: #{cluster_name} in #{self.name}"
+      Rails.logger.info "Headers/Metadata loaded for cluster initialization using #{ordinations_file.upload_file_name} for cluster: #{cluster_name} in #{self.name}"
 			# begin reading data
 			while !cluster_data.eof?
 				line = cluster_data.readline.strip
@@ -414,11 +415,19 @@ class Study
 
         # add individual annotation entries for given cell
 				@cluster_metadata.each do |metadata|
-					metadata_vals = {
-							value: metadata[:type] == 'numeric' ? vals[metadata[:index]].to_f : vals[metadata[:index]],
-							type: metadata[:type]
-					}
-					cluster_point[:cell_annotations]["#{metadata[:name]}"] = metadata_vals
+					metadata_val = vals[metadata[:index]]
+          cluster_point[:cell_annotations]["#{metadata[:name]}"] = metadata[:type] == 'numeric' ? metadata_val.to_f : metadata_val
+
+          # append to list of possible values if of type 'group'
+          if metadata[:type] == 'group'
+            existing_vals = cell_annotations.select {|annot| annot[:name] == metadata[:name]}.first
+            metadata_idx = cell_annotations.index(existing_vals)
+            unless existing_vals[:values].include?(metadata_val)
+              cell_annotations[metadata_idx][:values] << metadata_val
+              Rails.logger.info "Adding #{metadata_val} to #{@cluster_group.name} list of group values for #{metadata[:name]}"
+              Rails.logger.info cell_annotations
+            end
+          end
 				end
 
 				@records << cluster_point
@@ -436,6 +445,10 @@ class Study
       # clean up
       ClusterPoint.create(@records)
       cluster_data.close
+
+      # save cell_annotations to cluster_group object
+      @cluster_group.update_attributes(cell_annotations: cell_annotations)
+
       ordinations_file.update(parse_status: 'parsed', bytes_parsed: ordinations_file.upload_file_size)
       # set initialized to true if possible
       if !self.expression_matrix_file.nil? && !self.initialized?

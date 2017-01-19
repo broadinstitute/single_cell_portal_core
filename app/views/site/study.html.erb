@@ -78,16 +78,17 @@
 		<%= render partial: 'study_scatter_plot' %>
 
 		// listener for cluster nav, specific to study page
-		$("#cluster").change(function() {
+		$("#cluster, #annotation").change(function() {
 			var url = '<%= render_cluster_path(study_name: params[:study_name]) %>';
 			var target = document.getElementById('cluster-plot');
 			var spinner = new Spinner(opts).spin(target);
 			$(target).data('spinner', spinner);
 			var cluster = $('#cluster').val();
+      var annotation = $('#annotation').val();
 			if (cluster == "") {
 				$.get(url);
 			} else {
-				$.get(url + '?cluster=' + cluster);
+				$.get(url + '?cluster=' + cluster + '&annotation=' + annotation);
 			}
 		});
 

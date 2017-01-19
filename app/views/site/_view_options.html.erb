@@ -8,13 +8,19 @@
 		<div class="panel-body">
 			<div class="row">
 				<% if action_name !~ /(all|precomputed)/ %>
-					<div class="col-sm-6">
-						<%= label_tag :cluster, 'Load a sub-cluster' %><br />
+					<div class="col-sm-4">
+						<%= label_tag :cluster, 'Load a cluster' %><br />
 						<%= select_tag :cluster, options_for_select(@options, params[:cluster]), class: 'form-control' %>
 					</div>
 				<% end %>
+        <% if action_name !~ /(all|precomputed)/ %>
+          <div class="col-sm-4">
+            <%= label_tag :annotation, 'Select an annotation' %><br />
+            <%= select_tag :annotation, options_for_select(@annotations, params[:annotation]), class: 'form-control' %>
+          </div>
+        <% end %>
 				<% if action_name =~ /heatmap/ %>
-					<div class="col-sm-6">
+					<div class="col-sm-4">
 						<%= label_tag :row_centered, 'Row centering' %> <span class="fa fa-question-circle" data-toggle="tooltip" data-placement="right" title="For every value in each row, subtract the mean of the entire row from the value"></span><br />
 						<%= check_box_tag :row_centered, nil, params[:row_centered] == "1" %>
 					</div>

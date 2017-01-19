@@ -4,7 +4,8 @@ class SiteController < ApplicationController
 
   before_action :set_study, except: [:index, :search]
   before_action :load_precomputed_options, except: [:index, :search]
-  before_action :set_clusters, except: [:index, :search, :view_all_gene_expression_heatmap, :precomputed_results]
+  # before_action :set_clusters, except: [:index, :search, :view_all_gene_expression_heatmap, :precomputed_results]
+  before_action :set_cluster_group, except: [:index, :search, :view_all_gene_expression_heatmap, :precomputed_results]
 
   COLORSCALE_THEMES = ['Blackbody', 'Bluered', 'Blues', 'Earth', 'Electric', 'Greens', 'Hot', 'Jet', 'Picnic', 'Portland', 'Rainbow', 'RdBu', 'Reds', 'Viridis', 'YlGnBu', 'YlOrRd']
 
@@ -49,8 +50,9 @@ class SiteController < ApplicationController
     @study.update(view_count: @study.view_count + 1)
     # parse all coordinates out into hash using generic method
     if @study.initialized?
-      @coordinates = load_cluster_points
-      @options = load_sub_cluster_options
+      @coordinates = load_cluster_group_points
+      @options = load_cluster_group_options
+      @annotations = load_cluster_group_annotations
       @range = set_range(@coordinates.values)
       @axes = load_axis_labels
     end
@@ -58,8 +60,9 @@ class SiteController < ApplicationController
 
   # render a single cluster and its constituent sub-clusters
   def render_cluster
-    @coordinates = load_cluster_points
-    @options = load_sub_cluster_options
+    @coordinates = load_cluster_group_points
+    @options = load_cluster_group_options
+    @annotations = load_cluster_group_annotations
     @range = set_range(@coordinates.values)
     @axes = load_axis_labels
   end
@@ -279,6 +282,42 @@ class SiteController < ApplicationController
     coordinates
   end
 
+  def load_cluster_group_points
+    coordinates = {}
+    annotation = @cluster.cell_annotations.first
+    if !params[:annotation].nil?
+      annotation = @cluster.cell_annotations.select {|a| a[:name] == params[:annotation]}.first
+    end
+    annotation_type = annotation[:type]
+    annotation_name = annotation[:name]
+    if annotation_type == 'numeric'
+      coordinates[:all] = {x: [], y: [], text: [], marker: {cmax: 0, cmin: 0, color: [], size: [], showscale: true, colorbar: {title: annotation_name , titleside: 'right'}}}
+      @cluster.cluster_points.each do |point|
+        coordinates[:all][:text] << "<b>#{point.cell_name}</b><br>#{annotation_name}: #{point.cell_annotations[annotation_name]}".html_safe
+        coordinates[:all][:x] << point.x
+        coordinates[:all][:y] << point.y
+        coordinates[:all][:marker][:color] << point.cell_annotations[annotation_name]
+        coordinates[:all][:marker][:line] = { color: 'rgb(40,40,40)', width: 0.5}
+        coordinates[:all][:marker][:size] << 6
+      end
+    else
+      annotation[:values].each do |value|
+        coordinates[value] = {x: [], y: [], text: [], name: "#{annotation[:name]}: #{value}", marker_size: []}
+      end
+      @cluster.cluster_points.each do |point|
+        point_annotation_name = point.cell_annotations[annotation_name]
+        coordinates[point_annotation_name][:text] << "<b>#{point.cell_name}</b><br>#{annotation_name}: #{point.cell_annotations[annotation_name]}".html_safe
+        coordinates[point_annotation_name][:x] << point.x
+        coordinates[point_annotation_name][:y] << point.y
+        coordinates[point_annotation_name][:marker_size] << 6
+      end
+      coordinates.each do |key, data|
+        data[:name] << " (#{data[:x].size} points)"
+      end
+    end
+    coordinates
+  end
+
   # loads annotations array if being used for reference plot
   def load_cluster_annotations(range)
     annotations = []
@@ -404,6 +443,10 @@ class SiteController < ApplicationController
     @clusters.sort_by!(&:name)
   end
 
+  def set_cluster_group
+    @cluster = params[:cluster] ? @study.cluster_groups.select {|c| c.name == params[:cluster]}.first : @study.cluster_groups.first
+  end
+
   # generic search term parser
   def parse_search_terms(key)
     terms = params[:search][key]
@@ -450,6 +493,16 @@ class SiteController < ApplicationController
     opts
   end
 
+  # helper method to load all possible cluster groups for a study
+  def load_cluster_group_options
+    @study.cluster_groups.map(&:name)
+  end
+
+  # helper method to load all available cluster_group-specific annotations
+  def load_cluster_group_annotations
+    @cluster.cell_annotations.map {|annot| ["#{annot[:name]} (#{annot[:type]})", annot[:name]]}
+  end
+
   # defaults for annotation fonts
   def annotation_font
     {
@@ -481,7 +534,7 @@ class SiteController < ApplicationController
 
   # retrieve axis labels from cluster coordinates file (if provided)
   def load_axis_labels
-    coordinates_file = @clusters.first.cluster_points.first.study_file
+    coordinates_file = @cluster.study_file
     {
         x: coordinates_file.x_axis_label,
         y: coordinates_file.y_axis_label

@@ -13,6 +13,7 @@ class StudyFile
   # associations
   belongs_to :study, index: true
   has_many :clusters, dependent: :destroy
+  has_many :cluster_groups, dependent: :destroy
   has_many :single_cells, dependent: :destroy
   has_many :cluster_points, dependent: :destroy
   has_many :expression_scores, dependent: :destroy
