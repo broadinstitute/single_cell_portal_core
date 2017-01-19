@@ -90,10 +90,8 @@ function paginateStudies(totalPages, order, searchString) {
 
 // used for keeping track of position in wizard
 var completed = {
-    initialize_assignments_form_nav: false,
-    initialize_clusters_form_nav: false,
     initialize_expression_form_nav: false,
-    initialize_sub_clusters_form_nav: false,
+    initialize_ordinations_form_nav: false,
     initialize_marker_genes_form_nav: false,
     initialize_fastq_form_nav: false,
     initialize_misc_form_nav: false
@@ -131,8 +129,8 @@ function setWizardProgress(stepsDone) {
 }
 
 function showSkipWarning(step) {
-    if (['initialize_assignments_form_nav','initialize_clusters_form_nav','initialize_expression_form_nav'].indexOf(step) >= 0) {
-        return (!completed.initialize_assignments_form_nav || !completed.initialize_clusters_form_nav || !completed.initialize_expression_form_nav)
+    if (['initialize_ordinations_form_nav','initialize_expression_form_nav'].indexOf(step) >= 0) {
+        return (!completed.initialize_ordinations_form_nav || !completed.initialize_expression_form_nav)
     } else {
         return false;
     }

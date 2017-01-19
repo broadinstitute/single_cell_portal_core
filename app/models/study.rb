@@ -42,6 +42,8 @@ class Study
     end
   end
 
+  has_many :cluster_groups, dependent: :destroy
+
   has_many :clusters, dependent: :destroy do
     def parent_clusters
       where(cluster_type: 'parent').to_a.delete_if {|c| c.cluster_points.empty? }
@@ -137,6 +139,7 @@ class Study
   end
 
   # check whether or not user has uploaded necessary files to parse cluster coords.
+  # DEPRECATED
   def can_parse_clusters
     self.study_files.size > 1 && self.study_files.where(file_type:'Cluster Assignments').exists? && self.study_files.where(file_type:'Cluster Coordinates').exists?
   end
@@ -174,6 +177,16 @@ class Study
   # helper to build a study file of the requested type
   def build_study_file(attributes)
     self.study_files.build(attributes)
+  end
+
+  # helper method to access all cluster definitions files
+  def cluster_ordinations_files
+    self.study_files.where(file_type: 'Cluster').to_a
+  end
+
+  # helper method to access cluster definitions file by name
+  def cluster_ordinations_file(name)
+    self.study_files.where(file_type: 'Cluster', name: name).first
   end
 
   # helper method to directly access cluster assignment file
@@ -279,7 +292,7 @@ class Study
       @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
       Rails.logger.info @message.join("\n")
       # set initialized to true if possible
-      if !self.cluster_assignment_file.nil? && !self.parent_cluster_coordinates_file.nil? && !self.initialized?
+      if !self.cluster_ordinations_files.empty? && !self.initialized?
         self.update(initialized: true)
       end
       unless user.nil?
@@ -293,6 +306,150 @@ class Study
     end
   end
 
+  # parse single cluster coordinate & metadata file (name, x, y, z, metadata_cols* format)
+  # uses cluster_group model instead of single clusters; group membership now defined by metadata
+  def initialize_cluster_group(ordinations_file, cluster_name)
+    # validate headers of definition file
+    @validation_error = false
+    begin
+      d_file = File.open(ordinations_file.upload.path)
+      headers = d_file.readline.split(/[\t,]/).map(&:strip)
+      second_header = d_file.readline.split(/[\t,]/).map(&:strip)
+      @last_line = "#{d_file.to_path}, line 1"
+      # must have at least NAME, X and Y fields
+      unless (headers & %w(NAME X Y)).size == 3 && second_header.include?('TYPE')
+        ordinations_file.update(parse_status: 'failed')
+        @validation_error = true
+      end
+      d_file.close
+    rescue => e
+      ordinations_file.update(parse_status: 'failed')
+      error_message = "Unexpected error: #{e.message}"
+      Rails.logger.info @last_line + ' ' + error_message
+      raise StandardError, error_message
+    end
+
+    # raise validation error if needed
+    if @validation_error
+      error_message = "file header validation failed: #{@last_line}; should be at least NAME, X, Y with second line starting with TYPE"
+      Rails.logger.info error_message
+      raise StandardError, error_message
+    end
+
+    @bytes_parsed = 0
+		@cluster_point_count = 0
+    @cluster_metadata = []
+		@records = []
+    # begin parse
+    begin
+      Rails.logger.info "Beginning cluster initialization using #{ordinations_file.upload_file_name} for cluster: #{cluster_name} in #{self.name}"
+
+      cluster_data = File.open(ordinations_file.upload.path)
+      header_data = cluster_data.readline.split(/[\t,]/).map(&:strip)
+      type_data = cluster_data.readline.split(/[\t,]/).map(&:strip)
+
+      # determine if 3d coordinates have been provided
+      is_3d = header_data.include?('Z')
+      cluster_type = is_3d ? '3d' : '2d'
+      Rails.logger.info "Cluster type: #{cluster_type}"
+
+      # grad header indices, z index will be nil if no 3d data
+      name_index = header_data.index('NAME')
+      x_index = header_data.index('X')
+      y_index = header_data.index('Y')
+      z_index = header_data.index('Z')
+
+      # determine what extra metadata has been provided
+      metadata_headers = header_data - %w(NAME X Y Z)
+      metadata_headers.each do |metadata|
+        idx = header_data.index(metadata)
+        # store temporary object with metadata name, index location and data type (group or numeric)
+        point_metadata = {
+            name: metadata,
+            index: idx,
+            type: type_data[idx].downcase # downcase type to avoid case matching issues later
+        }
+        @cluster_metadata << point_metadata
+			end
+
+			# create cluster object for use later
+      Rails.logger.info "Creating cluster group object: #{cluster_name} in study: #{self.name}"
+			@cluster_group = self.cluster_groups.build(name: cluster_name, study_file_id: ordinations_file._id, cluster_type: cluster_type)
+
+      # add cell-level annotation definitions and save (will be used to populate dropdown menu)
+      cell_annotations = []
+      @cluster_metadata.each do |metadata|
+        cell_annotations << {
+            name: metadata[:name],
+            type: metadata[:type]
+        }
+      end
+      @cluster_group.cell_annotations = cell_annotations
+      @cluster_group.save
+
+			Rails.logger.info "Headers/Metadata loaded for cluster initialization using #{ordinations_file.upload_file_name} for cluster: #{cluster_name} in #{self.name}"
+			# begin reading data
+			while !cluster_data.eof?
+				line = cluster_data.readline.strip
+				@last_line = "#{ordinations_file.name}, line #{cluster_data.lineno}"
+				vals = line.split(/[\t,]/)
+				cell_name = vals[name_index]
+				# create cell record, call create! to error out on validation failure
+				@cell = SingleCell.create!(name: cell_name, cluster_group_id: @cluster_group._id, study_file_id: ordinations_file._id, study_id: self._id)
+				# start creation of cluster_point object
+				cluster_point = {
+					cell_name: cell_name,
+					x: vals[x_index],
+					y: vals[y_index],
+					single_cell_id: @cell._id,
+					cluster_group_id: @cluster_group._id,
+					study_file_id: ordinations_file._id,
+					study_id: self._id,
+					cell_annotations: {}
+				}
+        # add z coord if present
+				if is_3d
+					cluster_point[:z] = vals[z_index]
+        end
+
+        # add individual annotation entries for given cell
+				@cluster_metadata.each do |metadata|
+					metadata_vals = {
+							value: metadata[:type] == 'numeric' ? vals[metadata[:index]].to_f : vals[metadata[:index]],
+							type: metadata[:type]
+					}
+					cluster_point[:cell_annotations]["#{metadata[:name]}"] = metadata_vals
+				end
+
+				@records << cluster_point
+				@cluster_point_count += 1
+				@bytes_parsed += line.length
+
+				# create in batches to speed up execution
+				if @cluster_point_count % 100 == 0
+					ClusterPoint.create(@records)
+					@records = []
+					Rails.logger.info "Created #{@cluster_point_count} cluster points from #{ordinations_file.name} for cluster: #{cluster_name} in #{self.name}"
+					ordinations_file.update(bytes_parsed: @bytes_parsed)
+				end
+      end
+      # clean up
+      ClusterPoint.create(@records)
+      cluster_data.close
+      ordinations_file.update(parse_status: 'parsed', bytes_parsed: ordinations_file.upload_file_size)
+      # set initialized to true if possible
+      if !self.expression_matrix_file.nil? && !self.initialized?
+        self.update(initialized: true)
+      end
+    rescue => e
+      ordinations_file.update(parse_status: 'failed')
+      error_message = "#{@last_line} ERROR: #{e.message}"
+      Rails.logger.info error_message
+      raise StandardError, error_message
+    end
+  end
+
+  # DEPRECATED, use initialize_cluster_group
   def make_clusters_and_cells(assignment_file, user=nil)
     # validate headers of assignment file & cluster file
     @validation_error = false
@@ -414,6 +571,7 @@ class Study
     end
   end
 
+  # DEPRECATED, use initialize_cluster_group
   def make_cluster_points(assignment_file, cluster_file, cluster_type, user=nil)
     # set up variables
     @message = []
@@ -558,6 +716,7 @@ class Study
   end
 
   # helper method to re-parse all cluster points
+  # DEPRECATED
   def reparse_cluster_points
     # remove all existing cluster points
     if !self.cluster_points.empty?

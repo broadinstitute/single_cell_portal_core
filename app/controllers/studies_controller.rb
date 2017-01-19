@@ -43,7 +43,7 @@ class StudiesController < ApplicationController
     # load any existing files if user restarted for some reason (unlikely)
     intitialize_wizard_files
     # check if study has been properly initialized yet, set to true if not
-    if !@assignment_file.new_record? && !@parent_cluster.new_record? && !@expression_file.new_record? && !@study.initialized?
+    if !@cluster_ordinations.last.new_record? && !@expression_file.new_record? && !@study.initialized?
       @study.update({initialized: true})
     end
   end
@@ -79,10 +79,8 @@ class StudiesController < ApplicationController
     logger.info "Parsing #{@study_file.name} as #{@study_file.file_type} in study #{@study.name}"
     begin
       case @study_file.file_type
-        when 'Cluster Assignments'
-          @study.make_clusters_and_cells(@study_file)
-        when 'Cluster Coordinates'
-          @study.make_cluster_points(@study.cluster_assignment_file, @study_file, @study_file.cluster_type)
+        when 'Cluster'
+          @study.initialize_cluster_group(@study_file, @study_file.name)
         when 'Expression Matrix'
           @study.make_expression_scores(@study_file)
         when 'Gene List'
@@ -95,14 +93,10 @@ class StudiesController < ApplicationController
       @study_file.destroy
       intitialize_wizard_files
       case params[:partial]
-        when 'initialize_assignments_form'
-          @study_file = @assignment_file
-        when 'initialize_clusters_form'
-          @study_file = @parent_cluster
         when 'initialize_expression_form'
           @study_file = @expression_file
-        when 'initialize_sub_clusters_form'
-          @study_file = @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'sub'})
+        when 'initialize_ordinations_form'
+          @study_file = @study.build_study_file({file_type: 'Cluster'})
         when 'initialize_marker_genes_form'
           @study_file = @study.build_study_file({file_type: 'Gene List'})
         when 'initialize_fastq_form'
@@ -159,44 +153,32 @@ class StudiesController < ApplicationController
       @cluster_type = @study_file.cluster_type
       @message = "'#{@study_file.name}' has been successfully deleted."
       @study_file.destroy
-      # gotcha in case user deletes assignments file, must remove all clusters too due to associations
-      if @file_type == 'Cluster Assignments'
-        StudyFile.destroy_all(study_id: @study._id, file_type: 'Cluster Coordinates')
-        # reset study cell count
-        @study.update(cell_count: 0)
-        @message += "  Since you deleted the cluster assignments for your study, all coordinates files have also been deleted.<br/></br/><strong class='text-danger'>Please refresh your screen to update the status accordingly.</strong>"
-      end
-      if @study.cluster_assignment_file.nil? || @study.parent_cluster_coordinates_file.nil? || @study.expression_matrix_file.nil?
+      if @study.cluster_ordinations_files.empty? || @study.expression_matrix_file.nil?
         @study.update(initialized: false)
       end
     end
-    @color = 'danger'
-    @status = 'Required'
-    case params[:target]
-      when '#assignments_form'
-        @study_file = @study.build_study_file({file_type: 'Cluster Assignments'})
-        @reset_status = true
-        @partial = 'initialize_assignments_form'
-      when '#parent_cluster_form'
-        @study_file = @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'parent'})
-        @reset_status = true
-        @partial = 'initialize_clusters_form'
-      when '#expression_form'
-        @study_file = @study.build_study_file({file_type: 'Expression Matrix'})
-        @reset_status = true
+    is_required = ['Cluster', 'Expression Matrix'].include?(@file_type)
+    case @file_type
+      when 'Cluster'
+        @partial = 'initialize_ordinations_form'
+      when 'Expression Matrix'
         @partial = 'initialize_expression_form'
+      when 'Fastq'
+        @partial = 'initialize_fastq_form'
+      when 'Gene List'
+        @partial = 'initialize_marker_genes_form'
       else
-        @color = 'info'
-        @status = 'Optional'
-        @study_file = @study.build_study_file({file_type: @file_type, cluster_type: @cluster_type})
-        parts = params[:target].gsub(/#/, '').split('_')
-        parts.pop
-        @partial = 'initialize_' + parts.join('_');
-        unless @file_type.nil?
-          @reset_status = @study.study_files.select {|sf| sf.file_type == @file_type && sf.cluster_type == @cluster_type && !sf.new_record?}.count == 0
-        else
-          @reset_status = false
-        end
+        @partial = 'initialize_misc_form'
+    end
+
+    @color = is_required ? 'danger' : 'info'
+    @status = is_required ? 'Required' : 'Optional'
+    @study_file = @study.build_study_file({file_type: @file_type})
+
+    unless @file_type.nil?
+      @reset_status = @study.study_files.select {|sf| sf.file_type == @file_type && !sf.new_record?}.count == 0
+    else
+      @reset_status = false
     end
   end
 
@@ -324,26 +306,19 @@ class StudiesController < ApplicationController
 
   # set up variables for wizard
   def intitialize_wizard_files
-    @assignment_file = @study.cluster_assignment_file
-    @parent_cluster = @study.parent_cluster_coordinates_file
     @expression_file = @study.expression_matrix_file
+    @cluster_ordinations = @study.study_files.select {|sf| sf.file_type == 'Cluster'}
     @sub_clusters = @study.study_files.select {|sf| sf.file_type == 'Cluster Coordinates' && sf.cluster_type == 'sub'}
     @marker_lists = @study.study_files.select {|sf| sf.file_type == 'Gene List'}
     @fastq_files = @study.study_files.select {|sf| sf.file_type == 'Fastq'}
     @other_files = @study.study_files.select {|sf| %w(Documentation Other).include?(sf.file_type)}
 
     # if files don't exist, build them for use later
-    if @assignment_file.nil?
-      @assignment_file = @study.build_study_file({file_type: 'Cluster Assignments'})
-    end
-    if @parent_cluster.nil?
-      @parent_cluster = @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'parent'})
-    end
-    if @sub_clusters.empty?
-      @sub_clusters << @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'sub'})
-    end
     if @expression_file.nil?
       @expression_file = @study.build_study_file({file_type: 'Expression Matrix'})
+    end
+    if @cluster_ordinations.empty?
+      @cluster_ordinations << @study.build_study_file({file_type: 'Cluster'})
     end
     if @marker_lists.empty?
       @marker_lists << @study.build_study_file({file_type: 'Gene List'})
