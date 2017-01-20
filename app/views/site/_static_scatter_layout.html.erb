@@ -1,7 +1,7 @@
 	var staticSize = $('#reference-plot').width();
 
 	var staticLayout = {
-		title: '<%= params[:cluster] ? params[:cluster] : 'All Cell Types' %> Cluster Reference',
+		title: '<%= "#{params[:cluster]} (#{@selected_annotation[:name]})" %> Cluster Reference',
 		font: plotlyLabelFont,
 		titlefont: plotlyTitleFont,
 		showlegend: false,

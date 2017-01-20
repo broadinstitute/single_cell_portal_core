@@ -36,20 +36,23 @@
 		};
 
 		var annotPath = '<%= @clusters_url %>';
-		renderMorpheus(dataPath, annotPath, '#heatmap-plot', 'both');
+    var selectedAnnot = '<%= params[:annotation] %>';
+    var selectedAnnotType = '<%= @selected_annotation[:type] %>';
+		renderMorpheus(dataPath, annotPath, selectedAnnot, selectedAnnotType, '#heatmap-plot', 'both');
 
-		$("#cluster, #row_centered").change(function() {
+		$("#cluster, #row_centered, #annotation").change(function() {
 			// re-render Morpheus on cluster selection
 			var newDataPath = '<%= javascript_safe_url(expression_query_path(study_name: params[:study_name], search: {genes: params[:search][:genes] })) %>';
 			var row_centered = $('#row_centered').prop('checked') ? 1 : 0;
+      var newAnnot = $('#annotation').val();
+      var newAnnotType = $('#annotation option:selected').text().split('(').slice(-1)[0].replace(')', '');
 			newDataPath += '&row_centered=' + row_centered;
 			var cluster = $('#cluster').val();
-			$("#search_cluster").val(cluster);
-			if (cluster != "") {
-				newDataPath += '&cluster=' + cluster;
-			};
+      $("#search_cluster").val(cluster);
+      $("#search_annotation").val(newAnnot);
+      newDataPath += '&cluster=' + cluster + '&annotation=' + newAnnot;
 
-			renderMorpheus(newDataPath, annotPath, '#heatmap-plot', 'both');
+			renderMorpheus(newDataPath, annotPath, newAnnot, newAnnotType, '#heatmap-plot', 'both');
 		});
 	});
 

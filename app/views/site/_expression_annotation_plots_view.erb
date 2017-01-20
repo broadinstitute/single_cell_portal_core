@@ -1,12 +1,11 @@
 <div class="panel panel-default">
 	<div class="panel-heading">
 		<div class="panel-title">
-			<h4><%= link_to "Expression Values for #{params[:cluster]} (#{@selected_annotation[:name]}) <span class='fa fa-chevron-down toggle-glyph'></span>".html_safe, '#box-controls', 'data-toggle' => 'collapse'  %> <%= render partial: 'show_search_options_button' %></h4>
+			<h4><%= link_to "#{params[:cluster]}: #{@selected_annotation[:name]} Values vs. Expression Values <span class='fa fa-chevron-down toggle-glyph'></span>".html_safe, '#expression-annotation-controls', 'data-toggle' => 'collapse'  %> <%= render partial: 'show_search_options_button' %></h4>
 		</div>
 	</div>
-	<div id="box-controls" class="panel-collapse collapse in">
+	<div id="expression-annotation-controls" class="panel-collapse collapse in">
 		<div class="panel-body">
-			<%= render partial: 'boxpoints_picker' %>
 			<div class="row">
 				<div class="col-md-12">
 					<div id="box-plot"></div>

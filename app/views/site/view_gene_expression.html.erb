@@ -13,17 +13,16 @@
 	<div class="col-md-9" id="render-target">
 		<%= render partial: 'view_options' %>
 		<div id="expression-plots">
-			<%= render partial: 'expression_plots_view' %>
-		</div>
+      <%= render partial: @top_plot_partial %>
+    </div>
 	</div>
 </div>
 
 <script type="text/javascript">
 
-	<%= render partial: 'expression_plots_plotly' %>
-
+  <%= render partial: @top_plot_plotly %>
 	// listener for cluster nav, specific to expression pages
-	$("#cluster").change(function() {
+	$("#cluster, #annotation").change(function() {
 		var url = '<%= params[:gene] ? render_gene_expression_plots_path(study_name: params[:study_name], gene: params[:gene]) : render_gene_set_expression_plots_path(study_name: params[:study_name], gene_set: params[:gene_set]) %>';
 		var target1 = document.getElementById('box-plot');
 		var target2 = document.getElementById('scatter-plot');
@@ -36,13 +35,12 @@
 		$(target2).data('spinner', spinner2);
 		$(target3).data('spinner', spinner3);
 		var cluster = $('#cluster').val();
-		$("#search_cluster").val(cluster);
-		if (cluster == "") {
-			$.get(url);
-		} else {
-			var delimeter = "<%= params[:gene] ? "?".html_safe : "&".html_safe %>";
-			$.get(url + delimeter + 'cluster=' + cluster);
-		}
+    var annotation = $('#annotation').val();
+    $("#search_cluster").val(cluster);
+    $("#search_annotation").val(annotation);
+    var delimeter = "<%= params[:gene] ? "?".html_safe : "&".html_safe %>";
+    $.get(url + delimeter + 'cluster=' + cluster + '&annotation=' + annotation);
+
 	});
 
 </script>

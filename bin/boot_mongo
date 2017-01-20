@@ -41,4 +41,4 @@ case $OPTION in
 	esac
 done
 
-docker run --name $CONTAINER_NAME -p 27017:27017 -v $DATA_DIR:/data/db:rw -d mongo
+docker run --name $CONTAINER_NAME -p 27017:27017 -v $DATA_DIR:/data/db:rw -d mongo --logpath /var/log/mongodb/mongodb.log

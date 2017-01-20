@@ -2,6 +2,7 @@ class SingleCell
   include Mongoid::Document
 
   field :name, type: String
+  field :cell_annotations, type: Hash
 
   has_many :cluster_points
 

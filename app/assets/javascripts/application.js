@@ -330,7 +330,7 @@ $(window).resize(function() {
 });
 
 // generic function to render Morpheus
-function renderMorpheus(dataPath, annotPath, target, fitType) {
+function renderMorpheus(dataPath, annotPath, selectedAnnot, selectedAnnotType, target, fitType) {
     $(target).empty();
     var config = {dataset: dataPath, el: $(target)};
 
@@ -349,11 +349,15 @@ function renderMorpheus(dataPath, annotPath, target, fitType) {
         config.columnAnnotations = [{
             file : annotPath,
             datasetField : 'id',
-            fileField : 'CELL_NAME'}
+            fileField : 'NAME',
+            include: [selectedAnnot]}
         ];
         config.columnSortBy = [
-            {field:'CLUSTER', order:0},
-            {field:'SUB-CLUSTER', order:0}
+            {field: selectedAnnot, order:0}
+        ];
+        config.columns = [
+            {field:'id', display:'text'},
+            {field: selectedAnnot, display: selectedAnnotType == 'group' ? 'color' : 'bar'}
         ];
     }
 

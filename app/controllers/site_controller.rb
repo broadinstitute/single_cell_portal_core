@@ -4,9 +4,8 @@ class SiteController < ApplicationController
 
   before_action :set_study, except: [:index, :search]
   before_action :load_precomputed_options, except: [:index, :search]
-  # before_action :set_clusters, except: [:index, :search, :view_all_gene_expression_heatmap, :precomputed_results]
   before_action :set_cluster_group, except: [:index, :search, :view_all_gene_expression_heatmap, :precomputed_results]
-
+  before_action :set_selected_annotation, except: [:index, :search, :precomputed_results]
   COLORSCALE_THEMES = ['Blackbody', 'Bluered', 'Blues', 'Earth', 'Electric', 'Greens', 'Hot', 'Jet', 'Picnic', 'Portland', 'Rainbow', 'RdBu', 'Reds', 'Viridis', 'YlGnBu', 'YlOrRd']
 
   # view study overviews and downloads
@@ -50,9 +49,9 @@ class SiteController < ApplicationController
     @study.update(view_count: @study.view_count + 1)
     # parse all coordinates out into hash using generic method
     if @study.initialized?
-      @coordinates = load_cluster_group_points
+      @coordinates = load_cluster_group_points(@selected_annotation)
       @options = load_cluster_group_options
-      @annotations = load_cluster_group_annotations
+      @cluster_annotations = load_cluster_group_annotations
       @range = set_range(@coordinates.values)
       @axes = load_axis_labels
     end
@@ -60,9 +59,9 @@ class SiteController < ApplicationController
 
   # render a single cluster and its constituent sub-clusters
   def render_cluster
-    @coordinates = load_cluster_group_points
+    @coordinates = load_cluster_group_points(@selected_annotation)
     @options = load_cluster_group_options
-    @annotations = load_cluster_group_annotations
+    @cluster_annotations = load_cluster_group_annotations
     @range = set_range(@coordinates.values)
     @axes = load_axis_labels
   end
@@ -79,23 +78,15 @@ class SiteController < ApplicationController
     end
     # grab saved params for loaded cluster and boxpoints mode
     cluster = params[:search][:cluster]
+    annotation = params[:search][:annotation]
     boxpoints = params[:search][:boxpoints]
     if @genes.empty?
       redirect_to request.referrer, alert: "No matches found for: #{terms.join(', ')}."
     elsif @genes.size > 1
-      if !cluster.blank?
-        redirect_to view_gene_expression_heatmap_path(search: {genes: terms.join(' ')}, cluster: cluster)
-      else
-        redirect_to view_gene_expression_heatmap_path(search: {genes: terms.join(' ')})
-      end
+      redirect_to view_gene_expression_heatmap_path(search: {genes: terms.join(' ')}, cluster: cluster, annotation: annotation)
     else
       gene = @genes.first
-      # determine whether to show all sub-clusters grouped by parent, or an individual sub-cluster
-      if !cluster.blank?
-        redirect_to view_gene_expression_path(study_name: params[:study_name], gene: gene.gene, cluster: cluster, boxpoints: boxpoints)
-      else
-        redirect_to view_gene_expression_path(study_name: params[:study_name], gene: gene.gene, boxpoints: boxpoints)
-      end
+      redirect_to view_gene_expression_path(study_name: params[:study_name], gene: gene.gene, cluster: cluster, boxpoints: boxpoints, annotation: annotation)
     end
   end
 
@@ -103,32 +94,66 @@ class SiteController < ApplicationController
   def view_gene_expression
     @gene = @study.expression_scores.by_gene(params[:gene])
     @y_axis_title = @study.expression_matrix_file.y_axis_label
-    @values = load_expression_boxplot_scores
-    @coordinates = load_cluster_points
-    @expression = load_expression_scatter_points
+    # depending on annotation type selection, set up necessary partial names to use in rendering
+    if @selected_annotation[:type] == 'group'
+      @values = load_expression_boxplot_scores(@selected_annotation)
+      @top_plot_partial = 'expression_plots_view'
+      @top_plot_plotly = 'expression_plots_plotly'
+      @top_plot_layout = 'expression_box_layout'
+    else
+      @values = load_annotation_based_scatter(@selected_annotation)
+      @top_plot_partial = 'expression_annotation_plots_view'
+      @top_plot_plotly = 'expression_annotation_plots_plotly'
+      @top_plot_layout = 'expression_annotation_scatter_layout'
+      @annotation_scatter_range = set_range(@values.values)
+    end
+    @coordinates = load_cluster_group_points(@selected_annotation)
+    @expression = load_expression_scatter_points(@selected_annotation)
     color_minmax =  @expression[:all][:marker][:color].minmax
     @expression[:all][:marker][:cmin], @expression[:all][:marker][:cmax] = color_minmax
     @expression[:all][:marker][:colorscale] = 'Reds'
-    @options = load_sub_cluster_options
+    @options = load_cluster_group_options
     @range = set_range([@expression[:all]])
     @static_range = set_range(@coordinates.values)
-    @annotations = load_cluster_annotations(@static_range)
+    if @selected_annotation[:type] == 'group'
+      @annotations = load_cluster_annotations(@static_range, @selected_annotation)
+    else
+      @annotation = []
+    end
+    @cluster_annotations = load_cluster_group_annotations
   end
 
   # re-renders plots when changing cluster selection
   def render_gene_expression_plots
     @gene = @study.expression_scores.by_gene(params[:gene])
     @y_axis_title = @study.expression_matrix_file.y_axis_label
-    @values = load_expression_boxplot_scores
-    @coordinates = load_cluster_points
-    @expression = load_expression_scatter_points
+    # depending on annotation type selection, set up necessary partial names to use in rendering
+    if @selected_annotation[:type] == 'group'
+      @values = load_expression_boxplot_scores(@selected_annotation)
+      @top_plot_partial = 'expression_plots_view'
+      @top_plot_plotly = 'expression_plots_plotly'
+      @top_plot_layout = 'expression_box_layout'
+    else
+      @values = load_annotation_based_scatter(@selected_annotation)
+      @top_plot_partial = 'expression_annotation_plots_view'
+      @top_plot_plotly = 'expression_annotation_plots_plotly'
+      @top_plot_layout = 'expression_annotation_scatter_layout'
+      @annotation_scatter_range = set_range(@values.values)
+    end
+    @coordinates = load_cluster_group_points(@selected_annotation)
+    @expression = load_expression_scatter_points(@selected_annotation)
     color_minmax =  @expression[:all][:marker][:color].minmax
     @expression[:all][:marker][:cmin], @expression[:all][:marker][:cmax] = color_minmax
     @expression[:all][:marker][:colorscale] = 'Reds'
-    @options = load_sub_cluster_options
+    @options = load_cluster_group_options
     @range = set_range([@expression[:all]])
     @static_range = set_range(@coordinates.values)
-    @annotations = load_cluster_annotations(@static_range)
+    if @selected_annotation[:type] == 'group'
+      @annotations = load_cluster_annotations(@static_range, @selected_annotation)
+    else
+      @annotation = []
+    end
+    @cluster_annotations = load_cluster_group_annotations
   end
 
   # view set of genes (scores averaged) as box and scatter plots
@@ -136,18 +161,18 @@ class SiteController < ApplicationController
     precomputed = @study.precomputed_scores.by_name(params[:gene_set])
     @genes = []
     precomputed.gene_list.map {|gene| @genes << @study.expression_scores.by_gene(gene)}
-    @y_axis_title = 'Mean-centered average of log(TPM) Expression Values'
-    @values = load_gene_set_expression_boxplot_scores
-    @coordinates = load_cluster_points
-
-    @expression = load_gene_set_expression_scatter_points
+    @y_axis_title = @study.expression_matrix_file.y_axis_title
+    @values = load_gene_set_expression_boxplot_scores(@selected_annotation)
+    @coordinates = load_cluster_group_points(@selected_annotation)
+    @expression = load_gene_set_expression_scatter_points(@selected_annotation)
     color_minmax =  @expression[:all][:marker][:color].minmax
     @expression[:all][:marker][:cmin], @expression[:all][:marker][:cmax] = color_minmax
     @expression[:all][:marker][:colorscale] = 'Reds'
-    @options = load_sub_cluster_options
+    @options = load_cluster_group_options
     @range = set_range([@expression[:all]])
     @static_range = set_range(@coordinates.values)
-    @annotations = load_cluster_annotations(@static_range)
+    @annotations = load_cluster_annotations(@static_range, @selected_annotation)
+    @cluster_annotations = load_cluster_group_annotations
     if @genes.size > 5
       @main_genes, @other_genes = divide_genes_for_header
     end
@@ -159,16 +184,17 @@ class SiteController < ApplicationController
     precomputed = @study.precomputed_scores.by_name(params[:gene_set])
     @genes = []
     precomputed.gene_list.map {|gene| @genes << @study.expression_scores.by_gene(gene)}
-    @y_axis_title = 'Mean-centered average of log(TPM) Expression Values'
-    @values = load_gene_set_expression_boxplot_scores
-    @coordinates = load_cluster_points
-    @expression = load_gene_set_expression_scatter_points
+    @y_axis_title = @study.expression_matrix_file.y_axis_title
+    @values = load_gene_set_expression_boxplot_scores(@selected_annotation)
+    @coordinates = load_cluster_group_points(@selected_annotation)
+    @expression = load_gene_set_expression_scatter_points(@selected_annotation)
     color_minmax =  @expression[:all][:marker][:color].minmax
     @expression[:all][:marker][:cmin], @expression[:all][:marker][:cmax] = color_minmax
     @expression[:all][:marker][:colorscale] = 'Reds'
-    @options = load_sub_cluster_options
+    @options = load_cluster_group_options
     @range = set_range([@expression[:all]])
-    @annotations = load_cluster_annotations(@range)
+    @annotations = load_cluster_annotations(@static_range, @selected_annotation)
+    @cluster_annotations = load_cluster_group_annotations
     @static_range = set_range(@coordinates.values)
     if @genes.size > 5
       @main_genes, @other_genes = divide_genes_for_header
@@ -178,16 +204,23 @@ class SiteController < ApplicationController
 
   # view genes in Morpheus as heatmap
   def view_gene_expression_heatmap
+    # parse and divide up genes
     terms = parse_search_terms(:genes)
     @genes, @not_found = search_expression_scores(terms)
-    @options = load_sub_cluster_options
+
+    # load dropdown options
+    @options = load_cluster_group_options
+    @cluster_annotations = load_cluster_group_annotations
     if @genes.size > 5
       @main_genes, @other_genes = divide_genes_for_header
     end
+
+    # select cluster file to load annotations from
+    @cluster_file = @study.cluster_ordinations_file(params[:cluster])
     if @study.public?
-      @clusters_url = @study.cluster_assignment_file.download_path
+      @clusters_url = @cluster_file.download_path
     else
-      @clusters_url = TempFileDownload.create!({study_file_id: @study.cluster_assignment_file._id}).download_url
+      @clusters_url = TempFileDownload.create!({study_file_id: @cluster_file._id}).download_url
     end
   end
 
@@ -195,27 +228,25 @@ class SiteController < ApplicationController
   def expression_query
     terms = parse_search_terms(:genes)
     @genes = load_expression_scores(terms)
-    @cols = @clusters.map {|c| c.single_cells.size}.inject(0) {|sum, x| sum += x}
+    @cols = @cluster.single_cells.size
     @headers = ["Name", "Description"]
-    @clusters.each do |cluster|
-      cluster.single_cells.each do |cell|
-        @headers << cell.name
-      end
+    @cluster.single_cells.each do |cell|
+      @headers << cell.name
     end
+
     @rows = []
     @genes.each do |gene|
       row = [gene.gene, ""]
-      @clusters.each do |cluster|
-        cells = cluster.single_cells
-        # calculate mean to perform row centering if requested
-        mean = 0.0
-        if params[:row_centered] == '1'
-          mean = gene.mean(cells.map(&:name))
-        end
-        cells.each do |cell|
-          row << gene.scores[cell.name].to_f - mean
-        end
+      cells = @cluster.single_cells
+      # calculate mean to perform row centering if requested
+      mean = 0.0
+      if params[:row_centered] == '1'
+        mean = gene.mean(cells.map(&:name))
       end
+      cells.each do |cell|
+        row << gene.scores[cell.name].to_f - mean
+      end
+
       @rows << row.join("\t")
     end
     @data = ['#1.2', [@rows.size, @cols].join("\t"), @headers.join("\t"), @rows.join("\n")].join("\n")
@@ -266,37 +297,30 @@ class SiteController < ApplicationController
 
   private
 
-  # generic method to populate data structure to render a cluster scatterplot
-  def load_cluster_points
-    coordinates = {}
-    @clusters.each do |cluster|
-      coordinates[cluster.name] = {x: [], y: [], text: [], marker_size: [], name: "#{cluster.name}  (#{cluster.cluster_points.size} points)"}
-      points = cluster.cluster_points
-      points.each do |point|
-        coordinates[cluster.name][:text] << "#{point.cell_name} <br>[#{cluster.name}]"
-        coordinates[cluster.name][:x] << point.x
-        coordinates[cluster.name][:y] << point.y
-        coordinates[cluster.name][:marker_size] << 6
-      end
-    end
-    coordinates
+  # SETTERS
+  def set_study
+    @study = Study.where(url_safe_name: params[:study_name]).first
   end
 
-  def load_cluster_group_points
+  def set_cluster_group
+    @cluster = params[:cluster] ? @study.cluster_groups.select {|c| c.name == params[:cluster]}.first : @study.cluster_groups.first
+  end
+
+  def set_selected_annotation
+    @selected_annotation = params[:annotation] ? @cluster.cell_annotations.select {|ca| ca[:name] == params[:annotation]}.first : @cluster.cell_annotations.first
+  end
+
+  # generic method to populate data structure to render a cluster scatterplot
+  # uses cluster_group model and loads annotation for both group & numeric plots
+  def load_cluster_group_points(annotation)
     coordinates = {}
-    annotation = @cluster.cell_annotations.first
-    if !params[:annotation].nil?
-      annotation = @cluster.cell_annotations.select {|a| a[:name] == params[:annotation]}.first
-    end
-    annotation_type = annotation[:type]
-    annotation_name = annotation[:name]
-    if annotation_type == 'numeric'
-      coordinates[:all] = {x: [], y: [], text: [], marker: {cmax: 0, cmin: 0, color: [], size: [], showscale: true, colorbar: {title: annotation_name , titleside: 'right'}}}
+    if annotation[:type] == 'numeric'
+      coordinates[:all] = {x: [], y: [], text: [], marker: {cmax: 0, cmin: 0, color: [], size: [], showscale: true, colorbar: {title: annotation[:name] , titleside: 'right'}}}
       @cluster.cluster_points.each do |point|
-        coordinates[:all][:text] << "<b>#{point.cell_name}</b><br>#{annotation_name}: #{point.cell_annotations[annotation_name]}".html_safe
+        coordinates[:all][:text] << "<b>#{point.cell_name}</b><br>#{annotation[:name]}: #{point.cell_annotations[annotation[:name]]}".html_safe
         coordinates[:all][:x] << point.x
         coordinates[:all][:y] << point.y
-        coordinates[:all][:marker][:color] << point.cell_annotations[annotation_name]
+        coordinates[:all][:marker][:color] << point.cell_annotations[annotation[:name]]
         coordinates[:all][:marker][:line] = { color: 'rgb(40,40,40)', width: 0.5}
         coordinates[:all][:marker][:size] << 6
       end
@@ -305,8 +329,8 @@ class SiteController < ApplicationController
         coordinates[value] = {x: [], y: [], text: [], name: "#{annotation[:name]}: #{value}", marker_size: []}
       end
       @cluster.cluster_points.each do |point|
-        point_annotation_name = point.cell_annotations[annotation_name]
-        coordinates[point_annotation_name][:text] << "<b>#{point.cell_name}</b><br>#{annotation_name}: #{point.cell_annotations[annotation_name]}".html_safe
+        point_annotation_name = point.cell_annotations[annotation[:name]]
+        coordinates[point_annotation_name][:text] << "<b>#{point.cell_name}</b><br>#{annotation[:name]}: #{point.cell_annotations[annotation[:name]]}".html_safe
         coordinates[point_annotation_name][:x] << point.x
         coordinates[point_annotation_name][:y] << point.y
         coordinates[point_annotation_name][:marker_size] << 6
@@ -318,14 +342,32 @@ class SiteController < ApplicationController
     coordinates
   end
 
+  # method to load a 2-d scatter of selected numeric annotation vs. gene expression
+  def load_annotation_based_scatter(annotation)
+    values = {}
+    values[:all] = {x: [], y: [], text: [], marker_size: []}
+    @cluster.cluster_points.each do |point|
+      annotation_value = point.cell_annotations[annotation[:name]]
+      expression_value = @gene.scores[point.cell_name].to_f
+      values[:all][:text] << "<b>#{point.cell_name}</b><br>#{annotation[:name]}: #{annotation_value}<br>#{@y_axis_title}: #{expression_value}".html_safe
+      values[:all][:x] << annotation_value
+      values[:all][:y] << expression_value
+      values[:all][:marker_size] << 6
+    end
+    values
+  end
+
   # loads annotations array if being used for reference plot
-  def load_cluster_annotations(range)
+  def load_cluster_annotations(range, annotation)
+    # initialize objects and divide cluster points by annotation values
     annotations = []
-    @clusters.each do |cluster|
+    cell_groups = divide_by_annotation_value(@cluster.cluster_points, annotation)
+    # create plotly annotation objects
+    cell_groups.each do |annot_val, cells|
       # calculate median position for cluster labels
       full_range = range.first.abs + range.last.abs
-      x_positions = cluster.cluster_points.map(&:x).sort
-      y_positions = cluster.cluster_points.map(&:y).sort
+      x_positions = cells.map(&:x).sort
+      y_positions = cells.map(&:y).sort
       x_len = x_positions.size
       y_len = y_positions.size
       x_mid = x_positions.inject(0.0) { |sum, el| sum + el } / x_len
@@ -337,7 +379,7 @@ class SiteController < ApplicationController
           yref: 'paper',
           x: x_pos,
           y: y_pos,
-          text: cluster.name,
+          text: "#{annotation[:name]}: #{annot_val}",
           showarrow: false,
           borderpad: 4,
           bgcolor: '#efefef',
@@ -351,76 +393,88 @@ class SiteController < ApplicationController
   end
 
   # generic method to populate data structure to render a box plot
-  def load_expression_boxplot_scores
-    values = {}
-    @clusters.each do |cluster|
-      values[cluster.name] = {y: [], name: cluster.name }
-      # grab all cells present in the cluster, and use as keys to load expression scores
-      # if a cell is not present for the gene, score gets set as 0.0
-      # will check if there are more than Cluster::SUBSAMPLE_THRESHOLD cells present in the cluster, and subsample accordingly
-      cells = cluster.single_cells.count > Cluster::SUBSAMPLE_THRESHOLD ? cluster.single_cells.shuffle(random: Random.new(1)).take(Cluster::SUBSAMPLE_THRESHOLD) : cluster.single_cells
-      cells.map(&:name).each do |cell|
-        values[cluster.name][:y] << @gene.scores[cell].to_f
-      end
+  def load_expression_boxplot_scores(annotation)
+    values = initialize_plotly_objects_by_annotation(annotation)
+
+    # grab all cells present in the cluster, and use as keys to load expression scores
+    # if a cell is not present for the gene, score gets set as 0.0
+    # will check if there are more than Cluster::SUBSAMPLE_THRESHOLD cells present in the cluster, and subsample accordingly
+    cells = @cluster.single_cells.count > Cluster::SUBSAMPLE_THRESHOLD ? @cluster.single_cells.shuffle(random: Random.new(1)).take(Cluster::SUBSAMPLE_THRESHOLD) : @cluster.single_cells
+    cells.each do |cell|
+      values[cell.cell_annotations[annotation[:name]]][:y] << @gene.scores[cell.name].to_f
     end
     values
   end
 
   # load cluster plot, but use expression scores to set numerical color array
-  def load_expression_scatter_points
+  def load_expression_scatter_points(annotation)
     expression = {}
-
     expression[:all] = {x: [], y: [], text: [], marker: {cmax: 0, cmin: 0, color: [], size: [], showscale: true, colorbar: {title: @y_axis_title , titleside: 'right'}}}
-    @clusters.each do |cluster|
-      points = cluster.cluster_points
-      points.each do |point|
-        expression[:all][:text] << "<b>#{point.cell_name}</b> [#{cluster.name}]<br>log(TPM) expression: #{@gene.scores[point.cell_name].to_f}".html_safe
-        expression[:all][:x] << point.x
-        expression[:all][:y] << point.y
-        # load in expression score to use as color value
-        expression[:all][:marker][:color] << @gene.scores[point.cell_name].to_f
-        expression[:all][:marker][:line] = { color: 'rgb(40,40,40)', width: 0.5}
-        expression[:all][:marker][:size] << 6
-      end
+    points = @cluster.cluster_points
+    points.each do |point|
+      expression[:all][:text] << "<b>#{point.cell_name}</b> [#{annotation[:name]}: #{point.cell_annotations[annotation[:name]]}]<br>#{@y_axis_title}: #{@gene.scores[point.cell_name].to_f}".html_safe
+      expression[:all][:x] << point.x
+      expression[:all][:y] << point.y
+      # load in expression score to use as color value
+      expression[:all][:marker][:color] << @gene.scores[point.cell_name].to_f
+      expression[:all][:marker][:line] = { color: 'rgb(40,40,40)', width: 0.5}
+      expression[:all][:marker][:size] << 6
     end
     expression
   end
 
   # load boxplot expression scores with average of scores across each gene for all cells
-  def load_gene_set_expression_boxplot_scores
-    values = {}
-    @clusters.each do |cluster|
-      values[cluster.name] = {y: [], name: cluster.name }
-      # grab all cells present in the cluster, and use as keys to load expression scores
-      # if a cell is not present for the gene, score gets set as 0.0
-      # will check if there are more than Cluster::SUBSAMPLE_THRESHOLD cells present in the cluster, and subsample accordingly
-      cells = cluster.single_cells.count > Cluster::SUBSAMPLE_THRESHOLD ? cluster.single_cells.shuffle(random: Random.new(1)).take(Cluster::SUBSAMPLE_THRESHOLD) : cluster.single_cells
-      cells.map(&:name).each do |cell|
-        values[cluster.name][:y] << calculate_mean(@genes, cell)
-      end
+  def load_gene_set_expression_boxplot_scores(annotation)
+    values = initialize_plotly_objects_by_annotation(annotation)
+    # grab all cells present in the cluster, and use as keys to load expression scores
+    # if a cell is not present for the gene, score gets set as 0.0
+    # will check if there are more than Cluster::SUBSAMPLE_THRESHOLD cells present in the cluster, and subsample accordingly
+    cells = @cluster.single_cells.count > Cluster::SUBSAMPLE_THRESHOLD ? @cluster.single_cells.shuffle(random: Random.new(1)).take(Cluster::SUBSAMPLE_THRESHOLD) : @cluster.single_cells
+    cells.each do |cell|
+      values[cell.cell_annotations[annotation[:name]]][:y] << calculate_mean(@genes, cell)
     end
     values
   end
 
   # load scatter expression scores with average of scores across each gene for all cells
-  def load_gene_set_expression_scatter_points
+  def load_gene_set_expression_scatter_points(annotation)
     expression = {}
-
     expression[:all] = {x: [], y: [], text: [], marker: {cmax: 0, cmin: 0, size: [], color: [], showscale: true, colorbar: {title: @y_axis_title, titleside: 'right'}}}
-    @clusters.each do |cluster|
-      points = cluster.cluster_points
-      points.each do |point|
-        score = calculate_mean(@genes, point.cell_name)
-        expression[:all][:text] << "<b>#{point.cell_name}</b> [#{cluster.name}]<br>avg log(TPM) expression: #{score}".html_safe
-        expression[:all][:x] << point.x
-        expression[:all][:y] << point.y
-        # load in expression score to use as color value
-        expression[:all][:marker][:color] << score
-        expression[:all][:marker][:line] = { color: 'rgb(40,40,40)', width: 0.5}
-        expression[:all][:marker][:size] << 6
-      end
+    points = @cluster.cluster_points
+    points.each do |point|
+      score = calculate_mean(@genes, point.cell_name)
+      expression[:all][:text] << "<b>#{point.cell_name}</b> [#{annotation[:name]}: #{point.cell_annotations[annotation[:name]]}]<br>#{@y_axis_title}: #{score}".html_safe
+      expression[:all][:x] << point.x
+      expression[:all][:y] << point.y
+      # load in expression score to use as color value
+      expression[:all][:marker][:color] << score
+      expression[:all][:marker][:line] = { color: 'rgb(40,40,40)', width: 0.5}
+      expression[:all][:marker][:size] << 6
     end
+
     expression
+  end
+
+  # generic method to divide a collection of cells/points by an annotation value
+  def divide_by_annotation_value(group, annotation)
+    annotation_groups = {}
+    annotation[:values].each do |annot|
+      annotation_groups[annot] = []
+    end
+    # divide up points by selected annotation value
+    group.each do |obj|
+      annotation_groups[obj.cell_annotations[annotation[:name]]] << obj
+    end
+    annotation_groups
+  end
+
+  # method to initialize containers for plotly by annotation values
+  def initialize_plotly_objects_by_annotation(annotation)
+    values = {}
+    annotation[:values].each do |value|
+      values["#{value}"] = {y: [], name: "#{annotation[:name]}: #{value}" }
+    end
+    values
   end
 
   # find mean of expression scores for a given cell
@@ -430,21 +484,6 @@ class SiteController < ApplicationController
       sum += gene.scores[cell].to_f
     end
     sum / genes.size
-  end
-
-  # set the current study
-  def set_study
-    @study = Study.where(url_safe_name: params[:study_name]).first
-  end
-
-  # return clusters, depending on whether top- or sub-level clusters are requested
-  def set_clusters
-    @clusters = params[:cluster] ? @study.clusters.sub_cluster(params[:cluster]) : @study.clusters.parent_clusters
-    @clusters.sort_by!(&:name)
-  end
-
-  def set_cluster_group
-    @cluster = params[:cluster] ? @study.cluster_groups.select {|c| c.name == params[:cluster]}.first : @study.cluster_groups.first
   end
 
   # generic search term parser
@@ -499,8 +538,12 @@ class SiteController < ApplicationController
   end
 
   # helper method to load all available cluster_group-specific annotations
-  def load_cluster_group_annotations
-    @cluster.cell_annotations.map {|annot| ["#{annot[:name]} (#{annot[:type]})", annot[:name]]}
+  def load_cluster_group_annotations(type=nil)
+    if type.nil?
+      @cluster.cell_annotations.map {|annot| ["#{annot[:name]} (#{annot[:type]})", annot[:name]]}
+    else
+      @cluster.cell_annotations.select {|ca| ca[:type] == type}.map {|annot| ["#{annot[:name]} (#{annot[:type]})", annot[:name]]}
+    end
   end
 
   # defaults for annotation fonts

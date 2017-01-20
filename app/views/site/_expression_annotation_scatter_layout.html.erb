@@ -1,0 +1,16 @@
+var size = $('#box-plot').width() * SCATTER_RATIO;
+
+var expressionLayout = {
+  hovermode: 'closest',
+  font: plotlyLabelFont,
+  width: size,
+  height: size,
+  xaxis: {
+    range: <%= raw @annotation_scatter_range %>,
+    title: '<%= @selected_annotation[:name] %>'
+  },
+  yaxis: {
+    range: <%= raw @annotation_scatter_range %>,
+    title: '<%= @study.expression_matrix_file.y_axis_label %>'
+  }
+}

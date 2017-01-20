@@ -383,6 +383,7 @@ class Study
         cell_annotations << {
             name: metadata[:name],
             type: metadata[:type],
+            header_index: metadata[:index],
             values: []
         }
       end
@@ -414,10 +415,13 @@ class Study
         end
 
         # add individual annotation entries for given cell
+        # also store in single_cell object for use in expression visualizations
+
+        single_cell_metadata = {}
 				@cluster_metadata.each do |metadata|
 					metadata_val = vals[metadata[:index]]
           cluster_point[:cell_annotations]["#{metadata[:name]}"] = metadata[:type] == 'numeric' ? metadata_val.to_f : metadata_val
-
+          single_cell_metadata["#{metadata[:name]}"] = metadata[:type] == 'numeric' ? metadata_val.to_f : metadata_val
           # append to list of possible values if of type 'group'
           if metadata[:type] == 'group'
             existing_vals = cell_annotations.select {|annot| annot[:name] == metadata[:name]}.first
@@ -430,6 +434,8 @@ class Study
           end
 				end
 
+        # update single_cell object
+        @cell.update_attributes(cell_annotations: single_cell_metadata)
 				@records << cluster_point
 				@cluster_point_count += 1
 				@bytes_parsed += line.length
