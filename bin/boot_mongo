@@ -41,4 +41,4 @@ case $OPTION in
 	esac
 done
 
-docker run --name $CONTAINER_NAME -p 27017:27017 -v $DATA_DIR:/data/db:rw -v $DATA_DIR/log:/var/log/mongodb:rw -d mongo --logpath /var/log/mongodb/mongodb.log
+docker run --name $CONTAINER_NAME -p 27017:27017 -v $DATA_DIR:/data/db:rw -v $DATA_DIR/log:/var/log/mongodb:rw -d mongo --logpath /var/log/mongodb/mongodb.log --wiredTigerCacheSizeGB 12.0
