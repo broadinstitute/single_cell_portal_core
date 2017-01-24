@@ -7,12 +7,17 @@ var layout = {
   height: size,
   xaxis: {
     range: <%= raw @range %>,
-    title: '<%= @axes[:x] %>'
+    title: '<%= @axes[:x].blank? ? 'X' : @axes[:x] %>'
   },
   yaxis: {
     range: <%= raw @range %>,
-    title: '<%= @axes[:y] %>'
+    title: '<%= @axes[:y].blank? ? 'Y' : @axes[:y] %>'
   },
+  <% if @cluster.cluster_type == '3d' %>
+    zaxis: {
+      title: 'Z'
+    },
+  <% end %>
   legend: {
     x: 100,
     y: 1

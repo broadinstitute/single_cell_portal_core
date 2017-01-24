@@ -3,10 +3,14 @@ var data = [];
 	var cluster_<%= index %> = {
 		x: <%= raw data[:x] %>,
 		y: <%= raw data[:y] %>,
+    <% if @cluster.cluster_type == '3d' %>
+      z: <%= raw data[:z] %>,
+      textposition: 'bottom right',
+    <% end %>
 		text: <%= raw data[:text] %>,
 		name: "<%= data[:name] %>",
 		mode: 'markers',
-		type: 'scattergl',
+		type: '<%= @plot_type %>',
     <% if !data[:marker].nil? %>
       marker: <%= raw data[:marker].to_json %>
     <% else %>

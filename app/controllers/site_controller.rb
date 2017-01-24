@@ -50,6 +50,7 @@ class SiteController < ApplicationController
     # parse all coordinates out into hash using generic method
     if @study.initialized?
       @coordinates = load_cluster_group_points(@selected_annotation)
+      @plot_type = @cluster.cluster_type == '3d' ? 'scatter3d' : 'scattergl'
       @options = load_cluster_group_options
       @cluster_annotations = load_cluster_group_annotations
       @range = set_range(@coordinates.values)
@@ -60,6 +61,7 @@ class SiteController < ApplicationController
   # render a single cluster and its constituent sub-clusters
   def render_cluster
     @coordinates = load_cluster_group_points(@selected_annotation)
+    @plot_type = @cluster.cluster_type == '3d' ? 'scatter3d' : 'scattergl'
     @options = load_cluster_group_options
     @cluster_annotations = load_cluster_group_annotations
     @range = set_range(@coordinates.values)
@@ -368,24 +370,30 @@ class SiteController < ApplicationController
   def load_cluster_group_points(annotation)
     coordinates = {}
     if annotation[:type] == 'numeric'
-      coordinates[:all] = {x: [], y: [], text: [], marker: {cmax: 0, cmin: 0, color: [], size: [], showscale: true, colorbar: {title: annotation[:name] , titleside: 'right'}}}
+      coordinates[:all] = {x: [], y: [], z: [], text: [], marker: {cmax: 0, cmin: 0, color: [], size: [], showscale: true, colorbar: {title: annotation[:name] , titleside: 'right'}}}
       @cluster.cluster_points.each do |point|
         coordinates[:all][:text] << "<b>#{point.cell_name}</b><br>#{annotation[:name]}: #{point.cell_annotations[annotation[:name]]}".html_safe
         coordinates[:all][:x] << point.x
         coordinates[:all][:y] << point.y
+        if @cluster.cluster_type == '3d'
+          coordinates[:all][:z] << point.z
+        end
         coordinates[:all][:marker][:color] << point.cell_annotations[annotation[:name]]
         coordinates[:all][:marker][:line] = { color: 'rgb(40,40,40)', width: 0.5}
         coordinates[:all][:marker][:size] << 6
       end
     else
       annotation[:values].each do |value|
-        coordinates[value] = {x: [], y: [], text: [], name: "#{annotation[:name]}: #{value}", marker_size: []}
+        coordinates[value] = {x: [], y: [], z: [], text: [], name: "#{annotation[:name]}: #{value}", marker_size: []}
       end
       @cluster.cluster_points.each do |point|
         point_annotation_name = point.cell_annotations[annotation[:name]]
         coordinates[point_annotation_name][:text] << "<b>#{point.cell_name}</b><br>#{annotation[:name]}: #{point.cell_annotations[annotation[:name]]}".html_safe
         coordinates[point_annotation_name][:x] << point.x
         coordinates[point_annotation_name][:y] << point.y
+        if @cluster.cluster_type == '3d'
+          coordinates[point_annotation_name][:z] << point.z
+        end
         coordinates[point_annotation_name][:marker_size] << 6
       end
       coordinates.each do |key, data|
@@ -477,12 +485,15 @@ class SiteController < ApplicationController
   # load cluster plot, but use expression scores to set numerical color array
   def load_expression_scatter_points(annotation)
     expression = {}
-    expression[:all] = {x: [], y: [], text: [], marker: {cmax: 0, cmin: 0, color: [], size: [], showscale: true, colorbar: {title: @y_axis_title , titleside: 'right'}}}
+    expression[:all] = {x: [], y: [], z: [], text: [], marker: {cmax: 0, cmin: 0, color: [], size: [], showscale: true, colorbar: {title: @y_axis_title , titleside: 'right'}}}
     points = @cluster.cluster_points
     points.each do |point|
       expression[:all][:text] << "<b>#{point.cell_name}</b> [#{annotation[:name]}: #{point.cell_annotations[annotation[:name]]}]<br>#{@y_axis_title}: #{@gene.scores[point.cell_name].to_f}".html_safe
       expression[:all][:x] << point.x
       expression[:all][:y] << point.y
+      if @cluster.cluster_type == '3d'
+        expression[:all][:z] << point.z
+      end
       # load in expression score to use as color value
       expression[:all][:marker][:color] << @gene.scores[point.cell_name].to_f
       expression[:all][:marker][:line] = { color: 'rgb(40,40,40)', width: 0.5}
@@ -507,13 +518,16 @@ class SiteController < ApplicationController
   # load scatter expression scores with average of scores across each gene for all cells
   def load_gene_set_expression_scatter_points(annotation)
     expression = {}
-    expression[:all] = {x: [], y: [], text: [], marker: {cmax: 0, cmin: 0, size: [], color: [], showscale: true, colorbar: {title: @y_axis_title, titleside: 'right'}}}
+    expression[:all] = {x: [], y: [], z: [], text: [], marker: {cmax: 0, cmin: 0, size: [], color: [], showscale: true, colorbar: {title: @y_axis_title, titleside: 'right'}}}
     points = @cluster.cluster_points
     points.each do |point|
       score = calculate_mean(@genes, point.cell_name)
       expression[:all][:text] << "<b>#{point.cell_name}</b> [#{annotation[:name]}: #{point.cell_annotations[annotation[:name]]}]<br>#{@y_axis_title}: #{score}".html_safe
       expression[:all][:x] << point.x
       expression[:all][:y] << point.y
+      if @cluster.cluster_type == '3d'
+        expression[:all][:z] << point.z
+      end
       # load in expression score to use as color value
       expression[:all][:marker][:color] << score
       expression[:all][:marker][:line] = { color: 'rgb(40,40,40)', width: 0.5}

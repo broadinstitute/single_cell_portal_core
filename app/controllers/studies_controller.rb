@@ -120,7 +120,7 @@ class StudiesController < ApplicationController
 
   # create a new study_file for requested study
   def new_study_file
-    file_type = params[:file_type] ? params[:file_type] : 'Cluster Assignments'
+    file_type = params[:file_type] ? params[:file_type] : 'Cluster'
     cluster_type = params[:cluster_type] ? params[:cluster_type] : nil
     @study_file = @study.build_study_file({file_type: file_type, cluster_type: cluster_type})
   end
