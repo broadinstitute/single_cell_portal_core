@@ -6,7 +6,8 @@ cat <<EOF
 $0 [OPTION]
 -n VALUE	set the name of the docker container, defaults to 'mysql'
 -d VALUE	set the data directory to mount inside the MySQL Docker container (no default value)
--m VALUE	set the max memory allocation size (in GB)
+-m VALUE	set the max memory cache size (in GB) for wiredTiger
+-r VALUE	set the max memory allocation size (in GB) for container
 -c VALUE	set the max memory cache allocation size (in GB)
 -u VALUE	set the MONGO_USERNAME variable (no default value)
 -p VALUE	set the MONGO_PASSWORD variable (no default value)
@@ -20,7 +21,7 @@ DATA_DIR="$HOME/Documents/Data/docker-mongo"
 MAX_RAM=16G
 MAX_RAM_CACHE_GB=12
 
-while getopts "n:d:m:p:H" OPTION; do
+while getopts "n:d:m:r:p:H" OPTION; do
 case $OPTION in
 	n)
 		CONTAINER_NAME="$OPTARG"
@@ -31,8 +32,11 @@ case $OPTION in
 	u)
 		MONGO_USERNAME="$OPTARG"
 		;;
+	r)
+		MAX_RAM="$OPTARG"
+		;;
 	m)
-		MAX_RAM_GB="$OPTARG"
+		MAX_RAM_CACHE_GB="$OPTARG"
 		;;
 	p)
 		MONGO_PASSWORD="$OPTARG"
