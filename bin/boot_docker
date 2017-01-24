@@ -8,6 +8,7 @@ $0 [OPTION]
 -e VALUE	set the environment, defaults to 'development'. Running in 'production' will cause container to spawn headlessly.
 -d VALUE	set the project directory to mount inside Docker container, defaults to current working directory (`pwd`)
 -m VALUE	set the MONGO_LOCALHOST variable, only used in development, defaults to 10.0.2.2
+-r VALUE	set the maximum allowable RAM to be allocated to portal
 -s VALUE	set the SECRET_KEY variable, necessary for decrypting DatStat connection info from the database (no default value)
 -p VALUE	set the PROD_DATABASE_PASSWORD variable, used in production only (no default value)
 -h VALUE	set the PROD_HOSTNAME variable (used for callbacks)
@@ -24,8 +25,9 @@ PASSENGER_APP_ENV="development"
 MONGO_LOCALHOST="mongodb"
 PROD_HOSTNAME="104.197.210.235"
 SECRET_KEY_BASE=`openssl rand -hex 64`
+MAX_RAM=8GB
 
-while getopts "n:e:d:m:s:k:p:h:u:P:H" OPTION; do
+while getopts "n:e:d:m:r:s:k:p:h:u:P:H" OPTION; do
 case $OPTION in
 	n)
 		CONTAINER_NAME="$OPTARG"
@@ -39,6 +41,9 @@ case $OPTION in
 	m)
   	MONGO_LOCALHOST="$OPTARG"
   	;;
+	m)
+		MAX_RAM="$OPTARG"
+		;;
 	s)
 		SECRET_KEY_BASE="$OPTARG"
 		;;
@@ -68,7 +73,7 @@ done
 if [[ $PASSENGER_APP_ENV = "production" ]] || [[ $PASSENGER_APP_ENV = "staging" ]]
 then
 	# generate random secret key for secure cookies
-	docker run -d --name $CONTAINER_NAME -p 80:80 -p 443:443 --link mongodb:mongodb -h $PROD_HOSTNAME -v $PROJECT_DIR:/home/app/webapp:rw -v $PROJECT_DIR/data:/home/app/webapp/data:rw -e PASSENGER_APP_ENV=$PASSENGER_APP_ENV -e MONGO_LOCALHOST=$MONGO_LOCALHOST -e PROD_DATABASE_PASSWORD=$PROD_DATABASE_PASSWORD -e SECRET_KEY_BASE=$SECRET_KEY_BASE -e PROD_HOSTNAME=$PROD_HOSTNAME -e SENDGRID_USERNAME=$SENDGRID_USERNAME -e SENDGRID_PASSWORD=$SENDGRID_PASSWORD single_cell_docker
+	docker run -d --name $CONTAINER_NAME -p 80:80 -p 443:443 --link mongodb:mongodb -h $PROD_HOSTNAME -v $PROJECT_DIR:/home/app/webapp:rw -v $PROJECT_DIR/data:/home/app/webapp/data:rw -m $MAX_RAM -e PASSENGER_APP_ENV=$PASSENGER_APP_ENV -e MONGO_LOCALHOST=$MONGO_LOCALHOST -e PROD_DATABASE_PASSWORD=$PROD_DATABASE_PASSWORD -e SECRET_KEY_BASE=$SECRET_KEY_BASE -e PROD_HOSTNAME=$PROD_HOSTNAME -e SENDGRID_USERNAME=$SENDGRID_USERNAME -e SENDGRID_PASSWORD=$SENDGRID_PASSWORD single_cell_docker
 else
 	docker run --rm -it --name $CONTAINER_NAME -p 80:80 -p 443:443 -p 587:587 --link mongodb:mongodb -h localhost -v $PROJECT_DIR:/home/app/webapp:rw -e PASSENGER_APP_ENV=$PASSENGER_APP_ENV -e MONGO_LOCALHOST=$MONGO_LOCALHOST -e SENDGRID_USERNAME=$SENDGRID_USERNAME -e SENDGRID_PASSWORD=$SENDGRID_PASSWORD -e SECRET_KEY_BASE=$SECRET_KEY_BASE single_cell_docker
 fi
