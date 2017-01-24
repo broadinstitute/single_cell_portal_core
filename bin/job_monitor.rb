@@ -53,7 +53,7 @@ if @running == false
 	system("bin/delayed_job restart #{@env} -n #{@num_workers}")
 
 	# send email to admin
-	Net::SMTP.start('smtp.sendgrid.net', 587, ENV['SENDGRID_USERNAME'], ENV['SENDGRID_PASSWORD'], :plain) do |smtp|
+	Net::SMTP.start('smtp.sendgrid.net', 2525, ENV['SENDGRID_USERNAME'], ENV['SENDGRID_PASSWORD'], :plain) do |smtp|
 		smtp.open_message_stream(@from_email, @to_email) do |contents|
 			contents.puts "From: #{@from_email}"
 			contents.puts "To: #{@to_email}"

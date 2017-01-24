@@ -27,7 +27,7 @@
 								alert('You must specify at least one gene or upload a list of genes to search');
 								setErrorOnBlank($('.search-genes-input'));
 							} else {
-								var target = $('#spinner_target')[0];
+								var target = $('#spinner_target')[0];cl
 								new Spinner(opts).spin(target);
 								$('#loading-modal').modal('show');
 								$('#search-genes-form').submit();
@@ -43,11 +43,16 @@
 				<%= form_tag(view_gene_set_expression_path(study_name: params[:study_name]), id: 'gene-sets', method: :get) do %>
 					<%= label_tag :gene_set, 'View curated gene lists as mean-centered expression (box & scatter plots)' %>
 					<%= select_tag :gene_set, options_for_select(@precomputed, params[:gene_set]), {include_blank: 'Please select a gene list', class: 'form-control'} %>
+          <%= hidden_field_tag :gene_set_cluster %>
+          <%= hidden_field_tag :gene_set_annotation %>
 					<script type="text/javascript">
 
 						$('#gene_set').change(function() {
 							if ($(this).val() != '') {
                 launchSpinner('spinner_target');
+                // grab values for cluster & annotation from view/filter dropdowns
+                $('#gene_set_cluster').val($('#cluster').val());
+                $('#gene_set_annotation').val($('#annotation').val());
 								$('#gene-sets').submit();
 							} else {
                 alert('Please select ')
@@ -63,13 +68,16 @@
 			<div class="row">
 				<div class="col-sm-12">
 					<%= label_tag :gene, 'Load single gene-level expression' %><br />
-					<%= select_tag :gene, options_for_select(load_gene_nav(@genes, params[:cluster])), {class: 'form-control'} %>
+					<%= select_tag :gene, options_for_select(load_gene_nav(@genes)), {class: 'form-control'} %>
 					<br />
 					<script type="text/javascript">
 						$('#gene').change(function() {
               if ($(this).val() != '') {
                 launchSpinner('spinner_target');
-                window.location.href = $(this).val();
+                var url = $(this).val();
+                var cluster = $('#cluster').val();
+                var annotation = $('#annotation').val();
+                window.location.href = url + '?cluster=' + cluster + '&annotation=' + annotation;
               }
 						});
 

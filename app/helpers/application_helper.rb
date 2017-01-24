@@ -56,14 +56,10 @@ module ApplicationHelper
 	end
 
 	# construct a dropdown for navigating to single gene-level expression views
-	def load_gene_nav(genes, cluster=nil)
+	def load_gene_nav(genes)
 		nav = [['All queried genes', '']]
 		genes.map(&:gene).each do |gene|
-			if cluster
-				nav << [gene, view_gene_expression_url(study_name: params[:study_name], gene: gene, cluster: cluster)]
-			else
-				nav << [gene, view_gene_expression_url(study_name: params[:study_name], gene: gene)]
-			end
+			nav << [gene, view_gene_expression_url(study_name: params[:study_name], gene: gene)]
 		end
 		nav
 	end
