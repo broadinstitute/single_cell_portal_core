@@ -27,7 +27,7 @@
 								alert('You must specify at least one gene or upload a list of genes to search');
 								setErrorOnBlank($('.search-genes-input'));
 							} else {
-								var target = $('#spinner_target')[0];cl
+								var target = $('#spinner_target')[0];
 								new Spinner(opts).spin(target);
 								$('#loading-modal').modal('show');
 								$('#search-genes-form').submit();
