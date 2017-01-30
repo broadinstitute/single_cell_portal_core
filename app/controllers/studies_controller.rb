@@ -80,7 +80,7 @@ class StudiesController < ApplicationController
     begin
       case @study_file.file_type
         when 'Cluster'
-          @study.initialize_cluster_group(@study_file, @study_file.name)
+          @study.initialize_cluster_group_and_data_arrays(@study_file, @study_file.name)
         when 'Expression Matrix'
           @study.make_expression_scores(@study_file)
         when 'Gene List'

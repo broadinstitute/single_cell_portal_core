@@ -12,6 +12,9 @@
 		},
 		yaxis: {
 			range: <%= raw @static_range %>
-		},
-		annotations: <%= raw @annotations.to_json %>
+		}
 	};
+
+  <% if @selected_annotation[:type] == 'group' %>
+    staticLayout['annotations'] = <%= raw @annotations.to_json %>;
+  <% end %>

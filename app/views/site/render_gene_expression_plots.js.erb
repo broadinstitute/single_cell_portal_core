@@ -12,7 +12,7 @@ $('#box-controls, #scatter-plots').on('show.bs.collapse hide.bs.collapse', funct
 <%= render partial: @top_plot_plotly %>
 
 // clear listeners and reattach
-$( window ).off('resizeEnd');
+$( window ).off('resizeEnd', "**");
 
 $( window ).on('resizeEnd', function() {
 

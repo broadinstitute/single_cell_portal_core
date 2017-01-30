@@ -43,6 +43,11 @@ class Study
   end
 
   has_many :cluster_groups, dependent: :destroy
+  has_many :data_arrays, dependent: :destroy do
+    def by_name_and_type(name, type)
+      where(name: name, array_type: type).order_by(&:array_index).to_a
+    end
+  end
 
   has_many :clusters, dependent: :destroy do
     def parent_clusters
@@ -174,6 +179,16 @@ class Study
     self.update(cell_count: @cell_count)
   end
 
+  # return an array of all single cell names in study
+  def all_cells
+    cell_arrays = self.data_arrays.where(name: 'All Cells').order('array_index asc').to_a
+    all_values = []
+    cell_arrays.each do |array|
+      all_values += array.values
+    end
+    all_values
+  end
+
   # helper to build a study file of the requested type
   def build_study_file(attributes)
     self.study_files.build(attributes)
@@ -282,6 +297,17 @@ class Study
         end
       end
       ExpressionScore.create!(@records)
+      # create array of all cells for study
+      @cell_data_array = self.data_arrays.build(name: 'All Cells', array_type: 'cells', array_index: 1, study_file_id: expression_file._id)
+      # chunk into pieces as necessary
+      cells.each_slice(DataArray::MAX_ENTRIES) do |slice|
+        new_array_index = @cell_data_array.array_index + 1
+        @cell_data_array.values = slice
+        Rails.logger.info "Saving all cells data array ##{@cell_data_array.array_index} using #{expression_file.name} for #{self.name}"
+        @cell_data_array.save
+        @cell_data_array = self.data_arrays.build(name: 'All Cells', array_type: 'cells', array_index: new_array_index, study_file_id: expression_file._id)
+      end
+
       # clean up, print stats
       expression_data.close
       expression_file.update(parse_status: 'parsed', bytes_parsed: expression_file.upload_file_size)
@@ -300,6 +326,165 @@ class Study
       end
     rescue => e
       expression_file.update(parse_status: 'failed')
+      error_message = "#{@last_line} ERROR: #{e.message}"
+      Rails.logger.info error_message
+      raise StandardError, error_message
+    end
+  end
+
+  # parse single cluster coordinate & metadata file (name, x, y, z, metadata_cols* format)
+  # uses cluster_group model instead of single clusters; group membership now defined by metadata
+  # stores point data in cluster_group_data_arrays instead of single_cells and cluster_points
+  def initialize_cluster_group_and_data_arrays(ordinations_file, cluster_name)
+    # validate headers of definition file
+    @validation_error = false
+    begin
+      d_file = File.open(ordinations_file.upload.path)
+      headers = d_file.readline.split(/[\t,]/).map(&:strip)
+      second_header = d_file.readline.split(/[\t,]/).map(&:strip)
+      @last_line = "#{d_file.to_path}, line 1"
+      # must have at least NAME, X and Y fields
+      unless (headers & %w(NAME X Y)).size == 3 && second_header.include?('TYPE')
+        ordinations_file.update(parse_status: 'failed')
+        @validation_error = true
+      end
+      d_file.close
+    rescue => e
+      ordinations_file.update(parse_status: 'failed')
+      error_message = "Unexpected error: #{e.message}"
+      Rails.logger.info @last_line + ' ' + error_message
+      raise StandardError, error_message
+    end
+
+    # raise validation error if needed
+    if @validation_error
+      error_message = "file header validation failed: #{@last_line}; should be at least NAME, X, Y with second line starting with TYPE"
+      Rails.logger.info error_message
+      raise StandardError, error_message
+    end
+
+    @bytes_parsed = 0
+    @cluster_point_count = 0
+    @cluster_metadata = []
+    @records = []
+    # begin parse
+    begin
+      Rails.logger.info "Beginning cluster initialization using #{ordinations_file.upload_file_name} for cluster: #{cluster_name} in #{self.name}"
+
+      cluster_data = File.open(ordinations_file.upload.path)
+      header_data = cluster_data.readline.split(/[\t,]/).map(&:strip)
+      type_data = cluster_data.readline.split(/[\t,]/).map(&:strip)
+
+      # determine if 3d coordinates have been provided
+      is_3d = header_data.include?('Z')
+      cluster_type = is_3d ? '3d' : '2d'
+
+      # grad header indices, z index will be nil if no 3d data
+      name_index = header_data.index('NAME')
+      x_index = header_data.index('X')
+      y_index = header_data.index('Y')
+      z_index = header_data.index('Z')
+
+      # determine what extra metadata has been provided
+      metadata_headers = header_data - %w(NAME X Y Z)
+      metadata_headers.each do |metadata|
+        idx = header_data.index(metadata)
+        # store temporary object with metadata name, index location and data type (group or numeric)
+        point_metadata = {
+            name: metadata,
+            index: idx,
+            type: type_data[idx].downcase # downcase type to avoid case matching issues later
+        }
+        @cluster_metadata << point_metadata
+      end
+
+      # create cluster object for use later
+      Rails.logger.info "Creating cluster group object: #{cluster_name} in study: #{self.name}"
+      @cluster_group = self.cluster_groups.build(name: cluster_name, study_file_id: ordinations_file._id, cluster_type: cluster_type)
+
+      # add cell-level annotation definitions and save (will be used to populate dropdown menu)
+      # this object will not be saved until after parse is done as we need to collect all possible values
+      # for group annotations (not needed for numeric)
+      cell_annotations = []
+      @cluster_metadata.each do |metadata|
+        cell_annotations << {
+            name: metadata[:name],
+            type: metadata[:type],
+            header_index: metadata[:index],
+            values: []
+        }
+      end
+      @cluster_group.save
+
+      # container to store temporary data arrays until ready to save
+      @data_arrays = []
+      # create required data_arrays (name, x, y)
+      @data_arrays[name_index] = self.data_arrays.build(name: 'text', cluster_name: cluster_name, array_type: 'cells', array_index: 1, study_file_id: ordinations_file._id, cluster_group_id: @cluster_group._id, values: [])
+      @data_arrays[x_index] = self.data_arrays.build(name: 'x', cluster_name: cluster_name, array_type: 'coordinates', array_index: 1, study_file_id: ordinations_file._id, cluster_group_id: @cluster_group._id, values: [])
+      @data_arrays[y_index] = self.data_arrays.build(name: 'y', cluster_name: cluster_name, array_type: 'coordinates', array_index: 1, study_file_id: ordinations_file._id, cluster_group_id: @cluster_group._id, values: [])
+
+      # add optional data arrays (z, metadata)
+      if is_3d
+        @data_arrays[z_index] = self.data_arrays.build(name: 'z', cluster_name: cluster_name, array_type: 'coordinates', array_index: 1, study_file_id: ordinations_file._id, cluster_group_id: @cluster_group._id, values: [])
+      end
+      @cluster_metadata.each do |metadata|
+        @data_arrays[metadata[:index]] = self.data_arrays.build(name: metadata[:name], cluster_name: cluster_name, array_type: 'annotations', array_index: 1, study_file_id: ordinations_file._id, cluster_group_id: @cluster_group._id, values: [])
+      end
+
+      Rails.logger.info "Headers/Metadata loaded for cluster initialization using #{ordinations_file.upload_file_name} for cluster: #{cluster_name} in #{self.name}"
+      # begin reading data
+      while !cluster_data.eof?
+        line = cluster_data.readline.strip
+        @last_line = "#{ordinations_file.name}, line #{cluster_data.lineno}"
+        vals = line.split(/[\t,]/)
+        # assign value to corresponding data_array by column index
+        vals.each_with_index do |val, index|
+          if @data_arrays[index].values.size >= DataArray::MAX_ENTRIES
+            # array already has max number of values, so save it and replace it with a new data array
+            # of same name & type with array_index incremented by 1
+            current_data_array_index = @data_arrays[index].array_index
+            data_array = @data_arrays[index]
+            Rails.logger.info "Saving data array: #{data_array.name}-#{data_array.array_type}-#{data_array.array_index} using #{ordinations_file.upload_file_name} for cluster: #{cluster_name} in #{self.name}"
+            data_array.save
+            new_data_array = self.data_arrays.build(name: data_array.name, cluster_name: data_array.cluster_name ,array_type: data_array.array_type, array_index: current_data_array_index + 1, study_file_id: ordinations_file._id, cluster_group_id: @cluster_group._id, values: [])
+            @data_arrays[index] = new_data_array
+          end
+          # determine whether or not value needs to be cast as a float or not
+          if type_data[index] == 'numeric'
+            @data_arrays[index].values << val.to_f
+          else
+            @data_arrays[index].values << val
+            # check if this is a group annotation, and if so store its value in the cluster_group.cell_annotations
+            # hash if the value is not already present
+            if type_data[index] == 'group'
+              existing_vals = cell_annotations.select {|annot| annot[:name] == header_data[index]}.first
+              metadata_idx = cell_annotations.index(existing_vals)
+              unless existing_vals[:values].include?(val)
+                cell_annotations[metadata_idx][:values] << val
+                Rails.logger.info "Adding #{val} to #{@cluster_group.name} list of group values for #{header_data[index]}"
+                Rails.logger.info cell_annotations
+              end
+            end
+          end
+        end
+      end
+      # clean up
+      @data_arrays.each do |data_array|
+        Rails.logger.info "Saving data array: #{data_array.name}-#{data_array.array_type}-#{data_array.array_index} using #{ordinations_file.upload_file_name} for cluster: #{cluster_name} in #{self.name}"
+        data_array.save
+      end
+      cluster_data.close
+
+      # save cell_annotations to cluster_group object
+      @cluster_group.update_attributes(cell_annotations: cell_annotations)
+
+      ordinations_file.update(parse_status: 'parsed', bytes_parsed: ordinations_file.upload_file_size)
+      # set initialized to true if possible
+      if !self.expression_matrix_file.nil? && !self.initialized?
+        self.update(initialized: true)
+      end
+    rescue => e
+      ordinations_file.update(parse_status: 'failed')
       error_message = "#{@last_line} ERROR: #{e.message}"
       Rails.logger.info error_message
       raise StandardError, error_message

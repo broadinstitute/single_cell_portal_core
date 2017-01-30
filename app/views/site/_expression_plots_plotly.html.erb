@@ -28,20 +28,20 @@ var expressionData = [];
 Plotly.newPlot('box-plot', expressionData, expressionLayout);
 
 // load expression scatter plot
-<% @expression.sort_by {|k,v| k}.each do |cluster, data| %>
-	var <%= cluster %> = {
-		x: <%= raw data[:x] %>,
-		y: <%= raw data[:y] %>,
-		text: <%= raw data[:text] %>,
-		name: "<%= data[:name] %>",
-		mode: 'markers',
-		type: 'scattergl',
-		hoverinfo: 'text',
-		marker: <%= raw data[:marker].to_json %>
-	};
-<% end %>
+var exp = {
+  x: <%= raw @expression[:all][:x] %>,
+  y: <%= raw @expression[:all][:y] %>,
+  <% if @cluster.is_3d? %>
+    z: <%= raw @expression[:all][:z] %>,
+  <% end %>
+  text: <%= raw @expression[:all][:text] %>,
+  mode: 'markers',
+  type: '<%= @cluster.is_3d? ? 'scatter3d' : 'scattergl' %>',
+  hoverinfo: 'text',
+  marker: <%= raw @expression[:all][:marker].to_json %>
+};
 
-var clusterData = [all];
+var clusterData = [exp];
 
 <%= render partial: 'expression_scatter_layout' %>
 
@@ -51,7 +51,7 @@ Plotly.newPlot('scatter-plot', clusterData, scatterLayout);
 $("#colorscale").change(function() {
 
 	var theme = $(this).val();
-	all.marker.colorscale = theme;
+	exp.marker.colorscale = theme;
 	console.log("setting colorscale to " + theme);
 	var clusterData = [all];
 
@@ -60,14 +60,16 @@ $("#colorscale").change(function() {
 
 // load static cluster scatter for reference
 var data = [];
-<% @coordinates.sort_by {|k,v| k}.each_with_index do |(cluster, data), index| %>
-	var cluster_<%= index %>_clst = {
-		x: <%= raw data[:x] %>,
-		y: <%= raw data[:y] %>,
-		text: <%= raw data[:text] %>,
-		name: "<%= data[:name] %>",
+<% @coordinates.each_key.sort.each_with_index do |key, index| %>
+  var cluster_<%= index %>_clst = {
+		x: <%= raw @coordinates[key][:x] %>,
+		y: <%= raw @coordinates[key][:y] %>,
+    <% if @cluster.is_3d? %>
+      z: <%= raw @coordinates[key][:z] %>,
+    <% end %>
+		name: "<%= @coordinates[key][:name] %>",
 		mode: 'markers',
-		type: 'scattergl',
+		type: '<%= @cluster.is_3d? ? 'scatter3d' : 'scattergl' %>',
 		marker: {
 			color: colorBrewerSet[<%= index %>],
 			line:{
@@ -83,17 +85,3 @@ var data = [];
 <%= render partial: 'static_scatter_layout' %>
 
 Plotly.newPlot('reference-plot', data, staticLayout, {staticPlot: true});
-
-// re-render expression plots on window resize to use available area
-$( window ).on('resizeEnd', function() {
-
-	<%= render partial: 'expression_box_layout' %>
-
-	<%= render partial: 'expression_scatter_layout' %>
-
-	<%= render partial: 'static_scatter_layout' %>
-
-	Plotly.newPlot('box-plot', expressionData, expressionLayout);
-	Plotly.newPlot('scatter-plot', clusterData, scatterLayout);
-	Plotly.newPlot('reference-plot', data, staticLayout, {staticPlot: true});
-});

@@ -20,27 +20,32 @@
 
 <script type="text/javascript">
 
-  <%= render partial: @top_plot_plotly %>
+  function renderGeneExpressionPlots() {
+      var url = '<%= params[:gene] ? render_gene_expression_plots_path(study_name: params[:study_name], gene: params[:gene]) : render_gene_set_expression_plots_path(study_name: params[:study_name], gene_set: params[:gene_set]) %>';
+      var target1 = document.getElementById('box-plot');
+      var target2 = document.getElementById('scatter-plot');
+      var target3 = document.getElementById('reference-plot');
+
+      var spinner1 = new Spinner(opts).spin(target1);
+      var spinner2 = new Spinner(opts).spin(target2);
+      var spinner3 = new Spinner(opts).spin(target3);
+      $(target1).data('spinner', spinner1);
+      $(target2).data('spinner', spinner2);
+      $(target3).data('spinner', spinner3);
+      var cluster = $('#cluster').val();
+      var annotation = $('#annotation').val();
+      $("#search_cluster").val(cluster);
+      $("#search_annotation").val(annotation);
+      var delimeter = "<%= params[:gene] ? "?".html_safe : "&".html_safe %>";
+      $.get(url + delimeter + 'cluster=' + cluster + '&annotation=' + annotation);
+  }
+
+  $(document).ready(function() {
+     renderGeneExpressionPlots();
+  });
 	// listener for cluster nav, specific to expression pages
 	$("#cluster, #annotation").change(function() {
-		var url = '<%= params[:gene] ? render_gene_expression_plots_path(study_name: params[:study_name], gene: params[:gene]) : render_gene_set_expression_plots_path(study_name: params[:study_name], gene_set: params[:gene_set]) %>';
-		var target1 = document.getElementById('box-plot');
-		var target2 = document.getElementById('scatter-plot');
-		var target3 = document.getElementById('reference-plot');
-
-		var spinner1 = new Spinner(opts).spin(target1);
-		var spinner2 = new Spinner(opts).spin(target2);
-		var spinner3 = new Spinner(opts).spin(target3);
-		$(target1).data('spinner', spinner1);
-		$(target2).data('spinner', spinner2);
-		$(target3).data('spinner', spinner3);
-		var cluster = $('#cluster').val();
-    var annotation = $('#annotation').val();
-    $("#search_cluster").val(cluster);
-    $("#search_annotation").val(annotation);
-    var delimeter = "<%= params[:gene] ? "?".html_safe : "&".html_safe %>";
-    $.get(url + delimeter + 'cluster=' + cluster + '&annotation=' + annotation);
-
+      renderGeneExpressionPlots();
 	});
 
 </script>

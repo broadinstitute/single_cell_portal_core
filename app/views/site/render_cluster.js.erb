@@ -3,13 +3,18 @@
 // set the cluster field in the search box to scope search correctly
 $('#search_cluster').val("<%= params[:cluster] %>");
 
-
 // clear listener and reattach
 $(window).off('resizeEnd', "**");
 $(window).on('resizeEnd', function() {
-	<%= render 'study_scatter_layout' %>
-
-	Plotly.newPlot('cluster-plot', data, layout);
+    <%= render 'study_scatter_layout' %>
+    var target = $('#cluster-plot')[0];
+    $(target).data('spinner').spin();
+    Plotly.newPlot('cluster-plot', data, layout);
+    var legendW = parseInt($('#cluster-plot g.legend rect.bg').attr('width'));
+    var curSize = $('#cluster-plot').width() * SCATTER_RATIO;
+    var newWidth = legendW + curSize;
+    Plotly.relayout('cluster-plot', {width: newWidth});
+    $(target).data('spinner').stop();
 });
 
 // stop spinner
