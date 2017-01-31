@@ -118,7 +118,7 @@ class SiteController < ApplicationController
     @range = set_range([@expression[:all]])
     @coordinates = load_cluster_group_data_array_points(@selected_annotation)
     @static_range = set_range(@coordinates.values)
-    if @selected_annotation[:type] == 'group'
+    if @selected_annotation[:type] == 'group' && !@cluster.is_3d?
       @annotations = load_static_annotations(@static_range, @selected_annotation)
     end
     @cluster_annotations = load_cluster_group_annotations
@@ -300,7 +300,15 @@ class SiteController < ApplicationController
     if selector.nil?
       @selected_annotation = @cluster.cell_annotations.first
     else
-      @selected_annotation = @cluster.cell_annotations.select {|ca| ca[:name] == selector}.first
+      # determine whether cluster- or study-level annotations are requested
+      annot_name, annot_type, annot_scope = selector.split('--')
+      if annot_scope == 'cluster'
+        @selected_annotation = @cluster.cell_annotations.select {|ca| ca[:name] == annot_name && ca[:type] == annot_type}.first
+      else
+        @selected_annotation = {name: annot_name, type: annot_type, scope: annot_scope}
+      end
+      @selected_annotation[:scope] = annot_scope
+      @selected_annotation
     end
 	end
 
@@ -314,13 +322,32 @@ class SiteController < ApplicationController
     y_array = @cluster.concatenate_data_arrays('y', 'coordinates')
     z_array = @cluster.concatenate_data_arrays('z', 'coordinates')
     cells = @cluster.concatenate_data_arrays('text', 'cells')
-    annotation_array = @cluster.concatenate_data_arrays(annotation[:name], 'annotations')
+    annotation_array = []
+    annotation_hash = {}
+    if annotation[:scope] == 'cluster'
+      annotation_array = @cluster.concatenate_data_arrays(annotation[:name], 'annotations')
+    else
+      # for study-wide annotations, load from study_metadata values instead of cluster-specific annotations
+      annotation_hash = @study.study_metadata_values(annotation[:name], annotation[:type])
+      annotation[:values] = @study.study_metadata_keys(annotation[:name], annotation[:type])
+    end
     coordinates = {}
     if annotation[:type] == 'numeric'
       text_array = []
+      color_array = []
+      # load text & color value from correct object depending on annotation scope
       cells.each_with_index do |cell, index|
-        text_array << "#{cell}: (#{annotation_array[index]})"
+        if annotation[:scope] == 'cluster'
+          val = annotation_array[index]
+          text_array << "#{cell}: (#{val})"
+        else
+          val = annotation_hash[cell]
+          text_array <<  "#{cell}: (#{val})"
+          color_array << val
+        end
       end
+      # if we didn't assign anything to the color array, we know the annotation_array is good to use
+      color_array.empty? ? color_array = annotation_array : nil
       coordinates[:all] = {
           x: x_array,
           y: y_array,
@@ -330,8 +357,8 @@ class SiteController < ApplicationController
           marker: {
               cmax: annotation_array.max,
               cmin: annotation_array.min,
-              color: annotation_array,
-              size: annotation_array.map {|a| 6},
+              color: color_array,
+              size: color_array.map {|a| 6},
               line: { color: 'rgb(40,40,40)', width: 0.5},
               showscale: true,
               colorbar: {
@@ -341,20 +368,41 @@ class SiteController < ApplicationController
           }
       }
     else
+      # assemble containers for each trace
       annotation[:values].each do |value|
         coordinates[value] = {x: [], y: [], z: [], text: [], name: "#{annotation[:name]}: #{value}", marker_size: []}
       end
-      annotation_array.each_with_index do |annotation_value, index|
-        coordinates[annotation_value][:text] << "<b>#{cells[index]}</b><br>#{annotation[:name]}: #{annotation_value}".html_safe
-        coordinates[annotation_value][:x] << x_array[index]
-        coordinates[annotation_value][:y] << y_array[index]
-        if @cluster.cluster_type == '3d'
-          coordinates[annotation_value][:z] << z_array[index]
+      if annotation[:scope] == 'cluster'
+        annotation_array.each_with_index do |annotation_value, index|
+          coordinates[annotation_value][:text] << "<b>#{cells[index]}</b><br>#{annotation[:name]}: #{annotation_value}"
+          coordinates[annotation_value][:x] << x_array[index]
+          coordinates[annotation_value][:y] << y_array[index]
+          if @cluster.cluster_type == '3d'
+            coordinates[annotation_value][:z] << z_array[index]
+          end
+          coordinates[annotation_value][:marker_size] << 6
         end
-        coordinates[annotation_value][:marker_size] << 6
-      end
-      coordinates.each do |key, data|
-        data[:name] << " (#{data[:x].size} points)"
+        coordinates.each do |key, data|
+          data[:name] << " (#{data[:x].size} points)"
+        end
+      else
+        cells.each_with_index do |cell, index|
+          if annotation_hash.has_key?(cell)
+            annotation_value = annotation_hash[cell]
+            coordinates[annotation_value][:text] << "<b>#{cell}</b><br>#{annotation[:name]}: #{annotation_value}"
+            coordinates[annotation_value][:x] << x_array[index]
+            coordinates[annotation_value][:y] << y_array[index]
+            if @cluster.cluster_type == '3d'
+              coordinates[annotation_value][:z] << z_array[index]
+            end
+            coordinates[annotation_value][:marker_size] << 6
+          end
+        end
+        coordinates.each do |key, data|
+          data[:name] << " (#{data[:x].size} points)"
+        end
+        # gotcha to remove entries in case a particular annotation value comes up blank since this is study-wide
+        coordinates.delete_if {|key, data| data[:x].empty?}
       end
     end
     coordinates
@@ -363,17 +411,34 @@ class SiteController < ApplicationController
   # method to load a 2-d scatter of selected numeric annotation vs. gene expression
   def load_annotation_based_data_array_scatter(annotation)
     cells = @cluster.concatenate_data_arrays('text', 'cells')
-    annotation_array = @cluster.concatenate_data_arrays(annotation[:name], 'annotations')
+    if annotation[:scope] == 'cluster'
+      annotation_array = @cluster.concatenate_data_arrays(annotation[:name], 'annotations')
+    else
+      annotation_hash = @study.study_metadata_values(annotation[:name], annotation[:type])
+    end
     values = {}
     values[:all] = {x: [], y: [], text: [], marker_size: []}
-    annotation_array.each_with_index do |annot, index|
-      annotation_value = annot
-      cell_name = cells[index]
-      expression_value = @gene.scores[cell_name].to_f.round(4)
-      values[:all][:text] << "<b>#{cell_name}</b><br>#{annotation[:name]}: #{annotation_value}<br>#{@y_axis_title}: #{expression_value}"
-      values[:all][:x] << annotation_value
-      values[:all][:y] << expression_value
-      values[:all][:marker_size] << 6
+    if annotation[:scope] == 'cluster'
+      annotation_array.each_with_index do |annot, index|
+        annotation_value = annot
+        cell_name = cells[index]
+        expression_value = @gene.scores[cell_name].to_f.round(4)
+        values[:all][:text] << "<b>#{cell_name}</b><br>#{annotation[:name]}: #{annotation_value}<br>#{@y_axis_title}: #{expression_value}"
+        values[:all][:x] << annotation_value
+        values[:all][:y] << expression_value
+        values[:all][:marker_size] << 6
+      end
+    else
+      cells.each_with_index do |cell, index|
+        if annotation_hash.has_key?(cell)
+          annotation_value = annotation_hash[cell]
+          expression_value = @gene.scores[cell].to_f.round(4)
+          values[:all][:text] << "<b>#{cell}</b><br>#{annotation[:name]}: #{annotation_value}<br>#{@y_axis_title}: #{expression_value}"
+          values[:all][:x] << annotation_value
+          values[:all][:y] << expression_value
+          values[:all][:marker_size] << 6
+        end
+      end
     end
     values
   end
@@ -412,12 +477,6 @@ class SiteController < ApplicationController
       y_mid = y_positions.inject(0.0) { |sum, el| sum + el } / y_len
       x_pos = (x_mid + range.first.abs) / full_range
       y_pos = (y_mid + range.first.abs) / full_range
-      if @cluster.is_3d?
-        z_positions = values[:z].sort
-        z_len = z_positions.size
-        z_mid = z_positions.inject(0.0) { |sum, el| sum + el } / z_len
-        @z_pos = (z_mid + range.first.abs) / full_range
-      end
       annot = {
           xref: 'paper',
           yref: 'paper',
@@ -432,9 +491,6 @@ class SiteController < ApplicationController
           opacity: 0.6,
           font: annotation_font
       }
-      if @cluster.is_3d?
-        annot[:z] = @z_pos
-      end
       annotations << annot
     end
     annotations
@@ -610,12 +666,12 @@ class SiteController < ApplicationController
   end
 
   # helper method to load all available cluster_group-specific annotations
-  def load_cluster_group_annotations(type=nil)
-    if type.nil?
-      @cluster.cell_annotations.map {|annot| ["#{annot[:name]} (#{annot[:type]})", annot[:name]]}
-    else
-      @cluster.cell_annotations.select {|ca| ca[:type] == type}.map {|annot| ["#{annot[:name]} (#{annot[:type]})", annot[:name]]}
-    end
+  def load_cluster_group_annotations()
+    grouped_options = {
+        'Cluster-based' => @cluster.cell_annotations.map {|annot| ["#{annot[:name]} (#{annot[:type]})", "#{annot[:name]}--#{annot[:type]}--cluster"]},
+        'Study Wide' => @study.study_metadatas.map {|metadata| ["#{metadata.name} (#{metadata.annotation_type})", "#{metadata.name}--#{metadata.annotation_type}--study"] }.uniq
+    }
+    grouped_options
   end
 
   # defaults for annotation fonts
@@ -652,7 +708,8 @@ class SiteController < ApplicationController
     coordinates_file = @cluster.study_file
     {
         x: coordinates_file.x_axis_label,
-        y: coordinates_file.y_axis_label
+        y: coordinates_file.y_axis_label,
+        z: coordinates_file.z_axis_label
     }
   end
 end

@@ -91,6 +91,7 @@ function paginateStudies(totalPages, order, searchString) {
 // used for keeping track of position in wizard
 var completed = {
     initialize_expression_form_nav: false,
+    initialize_metadata_form_nav: false,
     initialize_ordinations_form_nav: false,
     initialize_marker_genes_form_nav: false,
     initialize_fastq_form_nav: false,
@@ -129,8 +130,8 @@ function setWizardProgress(stepsDone) {
 }
 
 function showSkipWarning(step) {
-    if (['initialize_ordinations_form_nav','initialize_expression_form_nav'].indexOf(step) >= 0) {
-        return (!completed.initialize_ordinations_form_nav || !completed.initialize_expression_form_nav)
+    if (['initialize_ordinations_form_nav', 'initialize_metadata_form_nav', 'initialize_expression_form_nav'].indexOf(step) >= 0) {
+        return (!completed.initialize_ordinations_form_nav || !completed.initialize_metadata_form_nav || !completed.initialize_expression_form_nav)
     } else {
         return false;
     }
@@ -177,7 +178,7 @@ $(function() {
 
 // generic warning and spinner for deleting files
 function deleteFileConfirmation() {
-    var conf = confirm('Are you sure?  This file will be deleted and any associated database records removed.  Deleting assignment files also removes and cluster coordinate files (and records) as well.  This cannot be undone.');
+    var conf = confirm('Are you sure?  This file will be deleted and any associated database records removed.  This cannot be undone.');
     if ( conf == true) {
         var modal = $('#delete-modal');
         var modalTgt = modal.find('.spinner-target')[0];

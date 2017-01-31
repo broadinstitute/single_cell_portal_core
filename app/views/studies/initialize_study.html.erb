@@ -3,7 +3,8 @@
 <div id="rootwizard">
 	<ul class="nav wizard">
     <li role="presentation" class="wizard-nav" id="initialize_expression_form_nav"><a href="#expression" data-toggle="tab">1. Expression Matrix <span id="initialize_expression_form_nav_completed"></span></a></li>
-		<li role="presentation" class="wizard-nav" id="initialize_ordinations_form_nav"><a href="#ordinations" data-toggle="tab">2. Clusters <span id="initialize_ordinations_form_nav_completed"></span></a></li>
+    <li role="presentation" class="wizard-nav" id="initialize_metadata_form_nav"><a href="#metadata" data-toggle="tab">2. Metadata <span id="initialize_metadata_form_nav_completed"></span></a></li>
+    <li role="presentation" class="wizard-nav" id="initialize_ordinations_form_nav"><a href="#ordinations" data-toggle="tab">3. Clusters <span id="initialize_ordinations_form_nav_completed"></span></a></li>
 		<li role="presentation" class="wizard-nav" id="initialize_fastq_form_nav"><a href="#fastq" data-toggle="tab">3. Fastq Data <span id="initialize_fastq_form_nav_completed"></span></a></li>
     <li role="presentation" class="wizard-nav" id="initialize_marker_genes_form_nav"><a href="#marker-genes" data-toggle="tab">4. Gene Lists <span id="initialize_marker_genes_form_nav_completed"></span></a></li>
 		<li role="presentation" class="wizard-nav" id="initialize_misc_form_nav"><a href="#misc" data-toggle="tab">5. Miscellaneous <span id="initialize_misc_form_nav_completed"></span></a></li>
@@ -20,6 +21,16 @@
         <p><%= link_to "Example Expression Matrix <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/expression_matrix_example.txt', class: 'btn btn-default', download: 'expression_matrix_example.txt' %></p>
       </div>
       <%= render partial: 'initialize_expression_form', locals: {study_file: @expression_file} %>
+    </div>
+    <div class="tab-pane" id="metadata">
+      <div class="well well-sm">
+        <h2>Step 2. Upload Metadata File <small class="initialize-label" id="initialize_metadata_form_completed"><span class="label label-danger">Required</span></small></h2>
+        <p class="lead">Upload a tab- or comma-delimited text file containing all of your single cells and at least one additional metadata column.  The file must be a plain text (.txt) file with at least 2 columns and a header row containing the value '<strong>NAME</strong>' and a second row with the header of '<strong>TYPE</strong>' to declare metadata types (see below).</p>
+        <h3>Metadata Columns</h3>
+        <p class="lead">The second row in this file (beginning with the header 'TYPE') must contain a value for each metadata column declaring its datatype.  The two accepted values are <strong>group</strong> (set membership) or <strong>numeric</strong> (continuous scores).  Group values are treated as literal strings, and numerics as floating-point numbers.</p>
+        <p><%= link_to "Example Metadata File <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/expression_matrix_example.txt', class: 'btn btn-default', download: 'expression_matrix_example.txt' %></p>
+      </div>
+      <%= render partial: 'initialize_metadata_form', locals: {study_file: @metadata_file} %>
     </div>
 		<div class="tab-pane" id="ordinations">
 			<div id="ordinations-target">

@@ -5,8 +5,8 @@ class StudyFile
   include Rails.application.routes.url_helpers
 
   # constants, used for statuses and file types
-  STUDY_FILE_TYPES = ['Cluster', 'Expression Matrix', 'Gene List', 'Fastq', 'Documentation', 'Other']
-  PARSEABLE_TYPES = ['Cluster', 'Expression Matrix', 'Gene List']
+  STUDY_FILE_TYPES = ['Cluster', 'Expression Matrix', 'Gene List', 'Metadata', 'Fastq', 'Documentation', 'Other']
+  PARSEABLE_TYPES = ['Cluster', 'Expression Matrix', 'Gene List', 'Metadata']
   UPLOAD_STATUSES = %w(new uploading uploaded)
   PARSE_STATUSES = %w(unparsed parsing parsed)
 
@@ -19,6 +19,7 @@ class StudyFile
   has_many :expression_scores, dependent: :destroy
   has_many :precomputed_scores, dependent: :destroy
   has_many :temp_file_downloads
+  has_many :study_metadatas, dependent: :destroy
 
   # field definitions
   field :name, type: String
@@ -34,6 +35,7 @@ class StudyFile
   field :human_data, type: Boolean, default: false
   field :x_axis_label, type: String, default: ''
   field :y_axis_label, type: String, default: ''
+  field :z_axis_label, type: String, default: ''
 
   # callbacks
   before_create   :make_data_dir

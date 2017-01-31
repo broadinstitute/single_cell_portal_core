@@ -15,6 +15,6 @@
 		}
 	};
 
-  <% if @selected_annotation[:type] == 'group' %>
+  <% if @selected_annotation[:type] == 'group' && !@cluster.is_3d? %>
     staticLayout['annotations'] = <%= raw @annotations.to_json %>;
   <% end %>

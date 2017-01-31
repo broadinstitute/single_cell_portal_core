@@ -1,32 +1,18 @@
-<%= form_for(study_file, url: update_study_file_study_path(@study._id), html: {id: "ordinations_form_#{study_file._id}", class: 'bs-callout bs-callout-info initialize_ordinations_form', data: {remote: true}}) do |f| %>
+<%= form_for(study_file, url: update_study_file_study_path(@study._id), html: {id: "metadata_form", class: 'initialize_metadata_form', data: {remote: true}}) do |f| %>
 	<%= f.hidden_field :study_id, value: params[:id] %>
   <%= f.hidden_field :_id, value: study_file._id %>
-  <%= hidden_field_tag :selector, "#ordinations_form_#{study_file._id}" %>
-  <%= hidden_field_tag :partial, 'initialize_ordinations_form' %>
+  <%= hidden_field_tag :selector, '#metadata_form' %>
+  <%= hidden_field_tag :partial, 'initialize_metadata_form' %>
 	<div class="form-group row">
 		<div class="col-sm-4">
 			<%= f.label :name %><br />
-			<%= f.text_field :name, class: 'form-control filename', placeholder: 'Please provide a name for this group of ordinations...' %>
+			<%= f.text_field :name, class: 'form-control filename', readonly: true, placeholder: 'Filename is taken from uploaded file...' %>
 		</div>
 		<div class="col-sm-8">
 			<%= f.label :description %><br />
 			<%= f.text_field :description, class: 'form-control' %>
 		</div>
 	</div>
-  <div class="form-group row">
-    <div class="col-sm-4">
-      <%= f.label :x_axis_label, 'X Axis Label' %><br />
-      <%= f.text_field :x_axis_label, class: 'form-control' %>
-    </div>
-    <div class="col-sm-4">
-      <%= f.label :y_axis_label, 'Y Axis Label' %><br />
-      <%= f.text_field :y_axis_label, class: 'form-control' %>
-    </div>
-    <div class="col-sm-4">
-      <%= f.label :z_axis_label, 'Z Axis Label' %><br />
-      <%= f.text_field :z_axis_label, class: 'form-control' %>
-    </div>
-  </div>
 	<div class="form-group row">
 		<div class="col-sm-4">
 			<%= f.label :file_type %><br />
@@ -34,7 +20,7 @@
 		</div>
 		<div class="col-sm-5 upload-field">
 			<%= f.label :upload, 'Upload Data File' %><br />
-			<%= f.file_field :upload, class: 'btn btn-info fileinput-button cluster-upload upload-sub-clusters' %>
+			<%= f.file_field :upload, class: 'btn btn-info fileinput-button', id: 'upload-expression' %>
       <%= f.hidden_field :status, value: study_file.new_record? ? 'uploading' : 'uploaded' %>
 		</div>
 		<div class="col-sm-3">
@@ -44,7 +30,7 @@
 					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: study_file.upload_file_name.nil? %>
 				</div>
 				<div class="col-xs-6">
-					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: "#ordinations_form_#{study_file._id}"), method: :delete, class: 'btn btn-block btn-danger delete-file', data: {remote: true} %>
+					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: '#metadata_form'), method: :delete, class: 'btn btn-block btn-danger delete-file', disabled: study_file.upload_file_name.nil?, data: {remote: true} %>
 				</div>
 			</div>
 		</div>
@@ -54,11 +40,22 @@
 			<tbody class="files"></tbody>
 		</table>
 	</div>
+	<% if !study_file.upload_file_name.nil? %>
+		<p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: study_file} %></p>
+	<% end %>
+
 	<script type="text/javascript">
 
 		$(function() {
+			// check if upload has already happened
+			if (<%= !study_file.upload_file_name.nil? %>) {
+				completeWizardStep('initialize_metadata_form_nav');
+				console.log('incrementing status for metadata upload');
+				$('#initialize_metadata_form_completed').replaceWith("<%= escape_javascript(render partial: 'step_completed', locals: {id: 'initialize_metadata_form_completed'}) %>");
+				$('#initialize_metadata_form_nav_completed').html("<span class='fa fa-check text-success'></span>");
+			}
 
-			$('#ordinations_form_<%= study_file._id %>').fileupload({
+			$('#metadata_form').fileupload({
 				url: "<%= upload_study_path(@study._id) %>",
 				maxChunkSize: 10000000, // 10 MB
 				type: 'PATCH',
@@ -93,24 +90,20 @@
 						data: { status: 'uploaded', file: fileName}
 					});
 					fileUploading = false;
-					$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#ordinations-parse-<%= study_file._id %>-modal', partial: 'initialize_ordinations_form', selector: "#ordinations_form_<%= study_file._id %>"});
-					var target = $('#ordinations-parse-<%= study_file._id %>-modal').find('.spinner-target')[0];
+					$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#metadata-parse-modal', partial: 'initialize_metadata_form', selector: "#metadata_form"});
+					var target = $('#metadata-parse-modal').find('.spinner-target')[0];
 					var spinner = new Spinner(opts).spin(target);
 					$(target).data('spinner', spinner);
-					$('#ordinations-parse-<%= study_file._id %>-modal').modal({show: true, backdrop: 'static'});
-					$.get("<%= parse_progress_study_path(@study._id) %>", {file: fileName, modal_target: '#ordinations-parse-<%= study_file._id %>-modal'});
-
+					$('#metadata-parse-modal').modal({show: true, backdrop: 'static'});
+					$.get("<%= parse_progress_study_path(@study._id) %>", {file: fileName, modal_target: '#metadata-parse-modal'});
 				}
 			});
 		});
 
 	</script>
-	<% if !study_file.upload_file_name.nil? %>
-		<p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: study_file} %></p>
-	<% end %>
 <% end %>
 <% if study_file.new_record? %>
-  <div class="modal fade sub-cluster-modal" id="ordinations-parse-<%= study_file._id %>-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
+  <div class="modal fade" id="metadata-parse-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
     <%= render 'parse_modal_content' %>
   </div>
 <% end %>

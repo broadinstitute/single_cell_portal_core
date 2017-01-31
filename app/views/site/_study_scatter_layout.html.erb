@@ -15,7 +15,7 @@ var layout = {
   },
   <% if @cluster.cluster_type == '3d' %>
     zaxis: {
-      title: 'Z'
+      title: '<%= @axes[:z].blank? ? 'Y' : @axes[:z] %>'
     },
   <% end %>
   legend: {

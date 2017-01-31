@@ -43,8 +43,8 @@ class StudiesController < ApplicationController
     # load any existing files if user restarted for some reason (unlikely)
     intitialize_wizard_files
     # check if study has been properly initialized yet, set to true if not
-    if !@cluster_ordinations.last.new_record? && !@expression_file.new_record? && !@study.initialized?
-      @study.update({initialized: true})
+    if !@cluster_ordinations.last.new_record? && !@expression_file.new_record? && !@metadata_file.new_record? && !@study.initialized?
+      @study.update_attributes(initialized: true)
     end
   end
 
@@ -80,11 +80,13 @@ class StudiesController < ApplicationController
     begin
       case @study_file.file_type
         when 'Cluster'
-          @study.initialize_cluster_group_and_data_arrays(@study_file, @study_file.name)
+          @study.initialize_cluster_group_and_data_arrays(@study_file)
         when 'Expression Matrix'
           @study.make_expression_scores(@study_file)
         when 'Gene List'
           @study.make_precomputed_scores(@study_file)
+        when 'Metadata'
+          @study.initialize_study_metadata(@study_file)
       end
     rescue StandardError => e
       logger.info "ERROR: Parse has failed for #{@study_file.name} in study: #{@study.name}; file deleted"
@@ -95,6 +97,8 @@ class StudiesController < ApplicationController
       case params[:partial]
         when 'initialize_expression_form'
           @study_file = @expression_file
+        when 'initialize_metadata_form'
+          @study_file = @metadata_file
         when 'initialize_ordinations_form'
           @study_file = @study.build_study_file({file_type: 'Cluster'})
         when 'initialize_marker_genes_form'
@@ -150,19 +154,20 @@ class StudiesController < ApplicationController
     @message = ""
     unless @study_file.nil?
       @file_type = @study_file.file_type
-      @cluster_type = @study_file.cluster_type
       @message = "'#{@study_file.name}' has been successfully deleted."
       @study_file.destroy
-      if @study.cluster_ordinations_files.empty? || @study.expression_matrix_file.nil?
+      if @study.cluster_ordinations_files.empty? || @study.expression_matrix_file.nil? || @study.metadata_file.nil?
         @study.update(initialized: false)
       end
     end
-    is_required = ['Cluster', 'Expression Matrix'].include?(@file_type)
+    is_required = ['Cluster', 'Expression Matrix', 'Metadata'].include?(@file_type)
     case @file_type
       when 'Cluster'
         @partial = 'initialize_ordinations_form'
       when 'Expression Matrix'
         @partial = 'initialize_expression_form'
+      when 'Metadata'
+        @partial = 'initialize_metadata_form'
       when 'Fastq'
         @partial = 'initialize_fastq_form'
       when 'Gene List'
@@ -284,7 +289,7 @@ class StudiesController < ApplicationController
 
   # study file params whitelist
   def study_file_params
-    params.require(:study_file).permit(:_id, :study_id, :name, :upload, :description, :file_type, :status, :human_fastq_url, :human_data, :cluster_type, :x_axis_label, :y_axis_label)
+    params.require(:study_file).permit(:_id, :study_id, :name, :upload, :description, :file_type, :status, :human_fastq_url, :human_data, :cluster_type, :x_axis_label, :y_axis_label, :z_axis_label)
   end
 
   def clusters_params
@@ -307,6 +312,7 @@ class StudiesController < ApplicationController
   # set up variables for wizard
   def intitialize_wizard_files
     @expression_file = @study.expression_matrix_file
+    @metadata_file = @study.metadata_file
     @cluster_ordinations = @study.study_files.select {|sf| sf.file_type == 'Cluster'}
     @sub_clusters = @study.study_files.select {|sf| sf.file_type == 'Cluster Coordinates' && sf.cluster_type == 'sub'}
     @marker_lists = @study.study_files.select {|sf| sf.file_type == 'Gene List'}
@@ -316,6 +322,9 @@ class StudiesController < ApplicationController
     # if files don't exist, build them for use later
     if @expression_file.nil?
       @expression_file = @study.build_study_file({file_type: 'Expression Matrix'})
+    end
+    if @metadata_file.nil?
+      @metadata_file = @study.build_study_file({file_type: 'Metadata'})
     end
     if @cluster_ordinations.empty?
       @cluster_ordinations << @study.build_study_file({file_type: 'Cluster'})

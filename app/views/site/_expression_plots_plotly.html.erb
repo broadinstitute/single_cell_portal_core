@@ -60,28 +60,54 @@ $("#colorscale").change(function() {
 
 // load static cluster scatter for reference
 var data = [];
-<% @coordinates.each_key.sort.each_with_index do |key, index| %>
-  var cluster_<%= index %>_clst = {
-		x: <%= raw @coordinates[key][:x] %>,
-		y: <%= raw @coordinates[key][:y] %>,
-    <% if @cluster.is_3d? %>
+<% if @cluster.is_3d? %>
+  <% @coordinates.each_key.sort.each_with_index do |key, index| %>
+    var cluster_<%= index %>_clst = {
+      x: <%= raw @coordinates[key][:x] %>,
+      y: <%= raw @coordinates[key][:y] %>,
       z: <%= raw @coordinates[key][:z] %>,
-    <% end %>
-		name: "<%= @coordinates[key][:name] %>",
-		mode: 'markers',
-		type: '<%= @cluster.is_3d? ? 'scatter3d' : 'scattergl' %>',
-		marker: {
-			color: colorBrewerSet[<%= index %>],
-			line:{
-				color: plotlyDefaultLineColor,
-				width: 0.5
-			}
-		}
-	};
+      text: <%= raw @coordinates[key][:text] %>,
+      textposition: 'bottom right',
+      name: "<%= @coordinates[key][:name] %>",
+      mode: 'markers',
+      type: 'scatter3d',
+      marker: {
+        color: colorBrewerSet[<%= index %>],
+        size: <%= raw @coordinates[key][:marker_size] %>,
+        line:{
+          color: plotlyDefaultLineColor,
+          width: 0.5
+        }
+      }
+    };
 
-  data.push(cluster_<%= index %>_clst);
+    data.push(cluster_<%= index %>_clst);
+  <% end %>
+<% else %>
+  <% @coordinates.each_key.sort.each_with_index do |key, index| %>
+    var cluster_<%= index %>_clst = {
+      x: <%= raw @coordinates[key][:x] %>,
+      y: <%= raw @coordinates[key][:y] %>,
+      name: "<%= @coordinates[key][:name] %>",
+      mode: 'markers',
+      type: 'scattergl',
+      marker: {
+        color: colorBrewerSet[<%= index %>],
+        line:{
+          color: plotlyDefaultLineColor,
+          width: 0.5
+        }
+      }
+    };
+
+    data.push(cluster_<%= index %>_clst);
+  <% end %>
 <% end %>
 
-<%= render partial: 'static_scatter_layout' %>
 
-Plotly.newPlot('reference-plot', data, staticLayout, {staticPlot: true});
+<%= render partial: 'static_scatter_layout' %>
+<% if @cluster.is_3d? %>
+  Plotly.newPlot('reference-plot', data, staticLayout);
+<% else %>
+  Plotly.newPlot('reference-plot', data, staticLayout, {staticPlot: true});
+<% end %>

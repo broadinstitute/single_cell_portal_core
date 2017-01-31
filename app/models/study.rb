@@ -59,6 +59,12 @@ class Study
     end
   end
 
+  has_many :study_metadatas, dependent: :destroy do
+    def by_name_and_type(name, type)
+      where(name: name, annotation_type: type).to_a
+    end
+  end
+
   # field definitions
   field :name, type: String
   field :embargo, type: Date
@@ -189,6 +195,28 @@ class Study
     all_values
   end
 
+  # return a hash keyed by cell name of the requested study_metadata values
+  def study_metadata_values(metadata_name, metadata_type)
+    metadata_objects = self.study_metadatas.by_name_and_type(metadata_name, metadata_type)
+    vals = {}
+    metadata_objects.each do |metadata|
+      vals.merge!(metadata.cell_annotations)
+    end
+    vals
+  end
+
+  # return array of possible values for a given study_metadata annotation (only for group-based)
+  def study_metadata_keys(metadata_name, metadata_type)
+    vals = []
+    unless metadata_type == 'numeric'
+      metadata_objects = self.study_metadatas.by_name_and_type(metadata_name, metadata_type)
+      metadata_objects.each do |metadata|
+        vals += metadata.values
+      end
+    end
+    vals.uniq
+  end
+
   # helper to build a study file of the requested type
   def build_study_file(attributes)
     self.study_files.build(attributes)
@@ -204,19 +232,14 @@ class Study
     self.study_files.where(file_type: 'Cluster', name: name).first
   end
 
-  # helper method to directly access cluster assignment file
-  def cluster_assignment_file
-    self.study_files.where(file_type:'Cluster Assignments').first
-  end
-
-  # helper method to directly access cluster assignment file
-  def parent_cluster_coordinates_file
-    self.study_files.where(file_type:'Cluster Coordinates', cluster_type: 'parent').first
-  end
-
-  # helper method to directly access cluster assignment file
+  # helper method to directly access expression matrix file
   def expression_matrix_file
     self.study_files.where(file_type:'Expression Matrix').first
+  end
+
+  # helper method to directly access expression matrix file
+  def metadata_file
+    self.study_files.where(file_type:'Metadata').first
   end
 
   # method to parse master expression scores file for study and populate collection
@@ -318,7 +341,7 @@ class Study
       @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
       Rails.logger.info @message.join("\n")
       # set initialized to true if possible
-      if !self.cluster_ordinations_files.empty? && !self.initialized?
+      if !self.cluster_ordinations_files.empty? && !self.metadata_file.nil? && !self.initialized?
         self.update(initialized: true)
       end
       unless user.nil?
@@ -335,14 +358,14 @@ class Study
   # parse single cluster coordinate & metadata file (name, x, y, z, metadata_cols* format)
   # uses cluster_group model instead of single clusters; group membership now defined by metadata
   # stores point data in cluster_group_data_arrays instead of single_cells and cluster_points
-  def initialize_cluster_group_and_data_arrays(ordinations_file, cluster_name)
+  def initialize_cluster_group_and_data_arrays(ordinations_file)
     # validate headers of definition file
     @validation_error = false
     begin
       d_file = File.open(ordinations_file.upload.path)
       headers = d_file.readline.split(/[\t,]/).map(&:strip)
       second_header = d_file.readline.split(/[\t,]/).map(&:strip)
-      @last_line = "#{d_file.to_path}, line 1"
+      @last_line = "#{ordinations_file.name}, line 1"
       # must have at least NAME, X and Y fields
       unless (headers & %w(NAME X Y)).size == 3 && second_header.include?('TYPE')
         ordinations_file.update(parse_status: 'failed')
@@ -364,11 +387,13 @@ class Study
     end
 
     @bytes_parsed = 0
-    @cluster_point_count = 0
+    @update_chunk = ordinations_file.upload_file_size / 4.0
+    @current_chunk = 0
     @cluster_metadata = []
     @records = []
     # begin parse
     begin
+      cluster_name = ordinations_file.name
       Rails.logger.info "Beginning cluster initialization using #{ordinations_file.upload_file_name} for cluster: #{cluster_name} in #{self.name}"
 
       cluster_data = File.open(ordinations_file.upload.path)
@@ -436,7 +461,7 @@ class Study
       while !cluster_data.eof?
         line = cluster_data.readline.strip
         @last_line = "#{ordinations_file.name}, line #{cluster_data.lineno}"
-        vals = line.split(/[\t,]/)
+        vals = line.split(/[\t,]/).map(&:strip)
         # assign value to corresponding data_array by column index
         vals.each_with_index do |val, index|
           if @data_arrays[index].values.size >= DataArray::MAX_ENTRIES
@@ -462,10 +487,17 @@ class Study
               unless existing_vals[:values].include?(val)
                 cell_annotations[metadata_idx][:values] << val
                 Rails.logger.info "Adding #{val} to #{@cluster_group.name} list of group values for #{header_data[index]}"
-                Rails.logger.info cell_annotations
               end
             end
           end
+        end
+        @bytes_parsed += line.length
+        @current_chunk += line.length
+        # since parsing happens quickly, only update status in ~25% increments
+        # updating after every line slows down parsing
+        if @current_chunk / @update_chunk > 1
+          ordinations_file.update(bytes_parsed: @bytes_parsed)
+          @current_chunk = 0
         end
       end
       # clean up
@@ -480,7 +512,7 @@ class Study
 
       ordinations_file.update(parse_status: 'parsed', bytes_parsed: ordinations_file.upload_file_size)
       # set initialized to true if possible
-      if !self.expression_matrix_file.nil? && !self.initialized?
+      if !self.expression_matrix_file.nil? && !self.metadata_file.nil? && !self.initialized?
         self.update(initialized: true)
       end
     rescue => e
@@ -491,24 +523,27 @@ class Study
     end
   end
 
-  # parse single cluster coordinate & metadata file (name, x, y, z, metadata_cols* format)
-  # uses cluster_group model instead of single clusters; group membership now defined by metadata
-  def initialize_cluster_group(ordinations_file, cluster_name)
+  # parse a study metadata file and create necessary study_metadata objects
+  # study_metadata objects are hashes that store annotations in cell_name/annotation_value pairs
+  # call @study.study_metadata_values(metadata_name, metadata_type) to return all values as one hash
+  def initialize_study_metadata(metadata_file, user=nil)
     # validate headers of definition file
     @validation_error = false
     begin
-      d_file = File.open(ordinations_file.upload.path)
-      headers = d_file.readline.split(/[\t,]/).map(&:strip)
-      second_header = d_file.readline.split(/[\t,]/).map(&:strip)
-      @last_line = "#{d_file.to_path}, line 1"
-      # must have at least NAME, X and Y fields
-      unless (headers & %w(NAME X Y)).size == 3 && second_header.include?('TYPE')
-        ordinations_file.update(parse_status: 'failed')
+      Rails.logger.info "Validating metadata file headers for #{metadata_file.name} in #{self.name}"
+      m_file = File.open(metadata_file.upload.path)
+      headers = m_file.readline.split(/[\t,]/).map(&:strip)
+      @last_line = "#{metadata_file.name}, line 1"
+      second_header = m_file.readline.split(/[\t,]/).map(&:strip)
+      @last_line = "#{metadata_file.name}, line 2"
+      # must have at least NAME and one column, plus TYPE and one value of group or numeric in second line
+      unless headers.include?('NAME') && headers.size > 1 && (second_header.uniq.sort - %w(group numeric TYPE)).size == 0 && second_header.size > 1
+        metadata_file.update(parse_status: 'failed')
         @validation_error = true
       end
-      d_file.close
+      m_file.close
     rescue => e
-      ordinations_file.update(parse_status: 'failed')
+      metadata_file.update(parse_status: 'failed')
       error_message = "Unexpected error: #{e.message}"
       Rails.logger.info @last_line + ' ' + error_message
       raise StandardError, error_message
@@ -516,137 +551,89 @@ class Study
 
     # raise validation error if needed
     if @validation_error
-      error_message = "file header validation failed: #{@last_line}; should be at least NAME, X, Y with second line starting with TYPE"
+      error_message = "file header validation failed: #{@last_line}; should be at least NAME and one other column with second line starting with TYPE followed by either 'group' or 'numeric'"
       Rails.logger.info error_message
       raise StandardError, error_message
     end
 
     @bytes_parsed = 0
-		@cluster_point_count = 0
-    @cluster_metadata = []
-		@records = []
+    @current_chunk = 0
+    @update_chunk = metadata_file.upload_file_size / 4.0
+    @metadata_records = []
     # begin parse
     begin
-      Rails.logger.info "Beginning cluster initialization using #{ordinations_file.upload_file_name} for cluster: #{cluster_name} in #{self.name}"
+      Rails.logger.info "Beginning metadata initialization using #{metadata_file.upload_file_name} in #{self.name}"
 
-      cluster_data = File.open(ordinations_file.upload.path)
-      header_data = cluster_data.readline.split(/[\t,]/).map(&:strip)
-      type_data = cluster_data.readline.split(/[\t,]/).map(&:strip)
-
-      # determine if 3d coordinates have been provided
-      is_3d = header_data.include?('Z')
-      cluster_type = is_3d ? '3d' : '2d'
-
-      # grad header indices, z index will be nil if no 3d data
+      # open files for parsing and grab header & type data
+      metadata_data = File.open(metadata_file.upload.path)
+      header_data = metadata_data.readline.split(/[\t,]/).map(&:strip)
+      type_data = metadata_data.readline.split(/[\t,]/).map(&:strip)
       name_index = header_data.index('NAME')
-      x_index = header_data.index('X')
-      y_index = header_data.index('Y')
-      z_index = header_data.index('Z')
 
-      # determine what extra metadata has been provided
-      metadata_headers = header_data - %w(NAME X Y Z)
-      metadata_headers.each do |metadata|
-        idx = header_data.index(metadata)
-        # store temporary object with metadata name, index location and data type (group or numeric)
-        point_metadata = {
-            name: metadata,
-            index: idx,
-            type: type_data[idx].downcase # downcase type to avoid case matching issues later
-        }
-        @cluster_metadata << point_metadata
-			end
-
-			# create cluster object for use later
-      Rails.logger.info "Creating cluster group object: #{cluster_name} in study: #{self.name}"
-			@cluster_group = self.cluster_groups.build(name: cluster_name, study_file_id: ordinations_file._id, cluster_type: cluster_type)
-
-      # add cell-level annotation definitions and save (will be used to populate dropdown menu)
-      # this object will not be saved until after parse is done as we need to collect all possible values
-      # for group annotations (not needed for numeric)
-      cell_annotations = []
-      @cluster_metadata.each do |metadata|
-        cell_annotations << {
-            name: metadata[:name],
-            type: metadata[:type],
-            header_index: metadata[:index],
-            values: []
-        }
-      end
-      @cluster_group.save
-
-      Rails.logger.info "Headers/Metadata loaded for cluster initialization using #{ordinations_file.upload_file_name} for cluster: #{cluster_name} in #{self.name}"
-			# begin reading data
-			while !cluster_data.eof?
-				line = cluster_data.readline.strip
-				@last_line = "#{ordinations_file.name}, line #{cluster_data.lineno}"
-				vals = line.split(/[\t,]/)
-				cell_name = vals[name_index]
-				# create cell record, call create! to error out on validation failure
-				@cell = SingleCell.create!(name: cell_name, cluster_group_id: @cluster_group._id, study_file_id: ordinations_file._id, study_id: self._id)
-				# start creation of cluster_point object
-				cluster_point = {
-					cell_name: cell_name,
-					x: vals[x_index],
-					y: vals[y_index],
-					single_cell_id: @cell._id,
-					cluster_group_id: @cluster_group._id,
-					study_file_id: ordinations_file._id,
-					study_id: self._id,
-					cell_annotations: {}
-				}
-        # add z coord if present
-				if is_3d
-					cluster_point[:z] = vals[z_index]
+      # build study_metadata objects for use later
+      header_data.each_with_index do |header, index|
+        # don't need an object for the cell names, only metadata values
+        unless index == name_index
+          m_obj = self.study_metadatas.build(name: header, annotation_type: type_data[index], study_file_id: metadata_file._id, cell_annotations: {}, values: [])
+          @metadata_records[index] = m_obj
         end
+      end
 
-        # add individual annotation entries for given cell
-        # also store in single_cell object for use in expression visualizations
+      Rails.logger.info "Study metadata objects initialized using: #{metadata_file.name} for #{self.name}; beginning parse"
+      # read file data
+      while !metadata_data.eof?
+        line = metadata_data.readline.strip
+        @last_line = "#{metadata_file.name}, line #{metadata_data.lineno}"
+        vals = line.split(/[\t,]/).map(&:strip)
 
-        single_cell_metadata = {}
-				@cluster_metadata.each do |metadata|
-					metadata_val = vals[metadata[:index]]
-          cluster_point[:cell_annotations]["#{metadata[:name]}"] = metadata[:type] == 'numeric' ? metadata_val.to_f : metadata_val
-          single_cell_metadata["#{metadata[:name]}"] = metadata[:type] == 'numeric' ? metadata_val.to_f : metadata_val
-          # append to list of possible values if of type 'group'
-          if metadata[:type] == 'group'
-            existing_vals = cell_annotations.select {|annot| annot[:name] == metadata[:name]}.first
-            metadata_idx = cell_annotations.index(existing_vals)
-            unless existing_vals[:values].include?(metadata_val)
-              cell_annotations[metadata_idx][:values] << metadata_val
-              Rails.logger.info "Adding #{metadata_val} to #{@cluster_group.name} list of group values for #{metadata[:name]}"
-              Rails.logger.info cell_annotations
+        # assign values to correct study_metadata object
+        vals.each_with_index do |val, index|
+          unless index == name_index
+            if @metadata_records[index].cell_annotations.size >= StudyMetadata::MAX_ENTRIES
+              # study metadata already has max number of values, so save it and replace it with a new study_metadata of same name & type
+              metadata = @metadata_records[index]
+              Rails.logger.info "Saving study metadata: #{metadata.name}-#{metadata.annotation_type} using #{metadata_file.upload_file_name} in #{self.name}"
+              metadata.save
+              new_metadata = self.study_metadatas.build(name: metadata.name, annotation_type: metadata.annotation_type, study_file_id: metadata_file._id, cell_annotations: {}, values: [])
+              @metadata_records[index] = new_metadata
+            end
+            # determine whether or not value needs to be cast as a float or not
+            if type_data[index] == 'numeric'
+              @metadata_records[index].cell_annotations.merge!({"#{vals[name_index]}" => val.to_f})
+            else
+              @metadata_records[index].cell_annotations.merge!({"#{vals[name_index]}" => val})
+              # determine if a new unique value needs to be stored in values array
+              if type_data[index] == 'group' && !@metadata_records[index].values.include?(val)
+                @metadata_records[index].values << val
+                Rails.logger.info "Adding #{val} to #{@metadata_records[index].name} list of group values for #{header_data[index]}"
+              end
             end
           end
-				end
-
-        # update single_cell object
-        @cell.update_attributes(cell_annotations: single_cell_metadata)
-				@records << cluster_point
-				@cluster_point_count += 1
-				@bytes_parsed += line.length
-
-				# create in batches to speed up execution
-				if @cluster_point_count % 100 == 0
-					ClusterPoint.create(@records)
-					@records = []
-					Rails.logger.info "Created #{@cluster_point_count} cluster points from #{ordinations_file.name} for cluster: #{cluster_name} in #{self.name}"
-					ordinations_file.update(bytes_parsed: @bytes_parsed)
-				end
+        end
+        # since parsing happens quickly, only update status in ~25% increments
+        # updating after every line slows down parsing
+        if @current_chunk / @update_chunk > 1
+          metadata_file.update(bytes_parsed: @bytes_parsed)
+          @current_chunk = 0
+        end
       end
       # clean up
-      ClusterPoint.create(@records)
-      cluster_data.close
+      @metadata_records.each do |metadata|
+        # since first element is nil to preserve index order from file...
+        unless metadata.nil?
+          Rails.logger.info "Saving study metadata: #{metadata.name}-#{metadata.annotation_type} using #{metadata_file.upload_file_name} in #{self.name}"
+          metadata.save
+        end
+      end
+      metadata_data.close
+      metadata_file.update(parse_status: 'parsed', bytes_parsed: metadata_file.upload_file_size)
 
-      # save cell_annotations to cluster_group object
-      @cluster_group.update_attributes(cell_annotations: cell_annotations)
-
-      ordinations_file.update(parse_status: 'parsed', bytes_parsed: ordinations_file.upload_file_size)
       # set initialized to true if possible
-      if !self.expression_matrix_file.nil? && !self.initialized?
+      if !self.expression_matrix_file.nil? && !self.cluster_ordinations_files.empty? && !self.initialized?
         self.update(initialized: true)
       end
     rescue => e
-      ordinations_file.update(parse_status: 'failed')
+      metadata_file.update(parse_status: 'failed')
       error_message = "#{@last_line} ERROR: #{e.message}"
       Rails.logger.info error_message
       raise StandardError, error_message

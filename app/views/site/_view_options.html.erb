@@ -16,7 +16,7 @@
         <% if action_name !~ /(all|precomputed)/ %>
           <div class="col-sm-4">
             <%= label_tag :annotation, 'Select an annotation' %><br />
-            <%= select_tag :annotation, options_for_select(@cluster_annotations, params[:annotation]), class: 'form-control' %>
+            <%= select_tag :annotation, grouped_options_for_select(@cluster_annotations, params[:annotation]), class: 'form-control' %>
           </div>
         <% end %>
 				<% if action_name =~ /heatmap/ %>

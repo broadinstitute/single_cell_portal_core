@@ -24,6 +24,6 @@ $( window ).on('resizeEnd', function() {
 
 	Plotly.newPlot('box-plot', expressionData, expressionLayout);
 	Plotly.newPlot('scatter-plot', clusterData, scatterLayout);
-	Plotly.newPlot('reference-plot', data, staticLayout, {staticPlot: true});
+	Plotly.newPlot('reference-plot', data, staticLayout);
 });
 
