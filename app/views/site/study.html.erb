@@ -31,7 +31,7 @@
 					<tbody>
 					<% @study.study_files.sort_by(&:name).each do |study_file| %>
 						<tr>
-							<td><%= study_file.name %></td>
+							<td><%= study_file.upload_file_name.nil? ? study_file.name : study_file.upload_file_name %> <%= study_file.file_type == 'Cluster' ? "<strong>(#{study_file.name})</strong>".html_safe : nil %></td>
 							<td><%= study_file.description %></td>
 							<td>
 								<% if @study.embargoed?(current_user) %>
