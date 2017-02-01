@@ -12,4 +12,5 @@ class StudyMetadata
   index({ name: 1, annotation_type: 1, study_id: 1 }, { unique: false })
 
   MAX_ENTRIES = 100000
+  SUBSAMPLE_THRESHOLD = 1000
 end

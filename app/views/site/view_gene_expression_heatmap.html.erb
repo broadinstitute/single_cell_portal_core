@@ -28,32 +28,55 @@
 
 
 <script type="text/javascript">
+    function drawHeatmap() {
+        var dataPath = '<%= javascript_safe_url(expression_query_path(study_name: params[:study_name], search: {genes: params[:search][:genes] })) %>';
+        var row_centered = $('#row_centered').prop('checked') ? 1 : 0;
+        var selectedAnnot = $('#annotation').val();
+        var annotName = selectedAnnot.split('--')[0];
+        var annotType = selectedAnnot.split('--')[1];
+        dataPath += '&row_centered=' + row_centered;
+        var cluster = $('#cluster').val();
+        $("#search_cluster").val(cluster);
+        $('#search_annotation').val(''); // clear value first
+        $("#search_annotation").val(selectedAnnot);
+        dataPath += '&cluster=' + cluster + '&annotation=' + annotName;
+        // call get_annotation_url to load new annotation file url if user has switched from cluster- to study-based or vice versa
+        $.getJSON("<%= get_annotation_url_path %>?annotation=" + selectedAnnot + "&cluster=" + cluster, function (data) {
+            var newAnnotPath = data.url;
+            renderMorpheus(dataPath, newAnnotPath, annotName, annotType, '#heatmap-plot', 'both');
+        } );
+    }
 
-	$(document).ready(function() {
-		var dataPath = '<%= javascript_safe_url(expression_query_path(study_name: params[:study_name], search: {genes: params[:search][:genes] })) %>';
-		if ( '<%= params[:cluster] %>' != '' ) {
-			dataPath += '&cluster=<%= params[:cluster ]%>';
-		};
+    var path = '<%= javascript_safe_url(expression_query_path(study_name: params[:study_name], search: {genes: params[:search][:genes] })) %>';
+    if ( '<%= params[:cluster] %>' != '' ) {
+        path += '&cluster=<%= params[:cluster ]%>';
+    };
 
-		var annotPath = '<%= @clusters_url %>';
-    var selectedAnnot = '<%= params[:annotation] %>';
+    var annotPath = '<%= @clusters_url %>';
+    var selectedAnnotName = '<%= params[:annotation].split('--').first %>';
     var selectedAnnotType = '<%= @selected_annotation[:type] %>';
-		renderMorpheus(dataPath, annotPath, selectedAnnot, selectedAnnotType, '#heatmap-plot', 'both');
+    renderMorpheus(path, annotPath, selectedAnnotName, selectedAnnotType, '#heatmap-plot', 'both');
 
-		$("#cluster, #row_centered, #annotation").change(function() {
-			// re-render Morpheus on cluster selection
-			var newDataPath = '<%= javascript_safe_url(expression_query_path(study_name: params[:study_name], search: {genes: params[:search][:genes] })) %>';
-			var row_centered = $('#row_centered').prop('checked') ? 1 : 0;
-      var newAnnot = $('#annotation').val();
-      var newAnnotType = $('#annotation option:selected').text().split('(').slice(-1)[0].replace(')', '');
-			newDataPath += '&row_centered=' + row_centered;
-			var cluster = $('#cluster').val();
-      $("#search_cluster").val(cluster);
-      $("#search_annotation").val(newAnnot);
-      newDataPath += '&cluster=' + cluster + '&annotation=' + newAnnot;
+    $("#row_centered, #annotation").change(function() {
 
-			renderMorpheus(newDataPath, annotPath, newAnnot, newAnnotType, '#heatmap-plot', 'both');
-		});
-	});
+        if ($(this).attr('id') == 'annotation') {
+            var an = $(this).val();
+            // keep track for search purposes
+            $('#search_annotation').val(an);
+        }
+        drawHeatmap();
+    });
+    // when changing cluster, re-render annotation options and call render function
+    $("#cluster").change(function(){
+        var newCluster = $(this).val();
+        // keep track for search purposes
+        $('#search_cluster').val(newCluster);
+        $.get("<%= get_new_annotations_path(study: params[:study])%>?cluster=" + newCluster, function () {
+            $(document).ready(function () {
+                drawHeatmap();
+            })
+        });
+    });
+
 
 </script>

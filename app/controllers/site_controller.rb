@@ -1,11 +1,11 @@
 class SiteController < ApplicationController
 
-  respond_to :html, :js
+  respond_to :html, :js, :json
 
   before_action :set_study, except: [:index, :search]
   before_action :load_precomputed_options, except: [:index, :search]
   before_action :set_cluster_group, except: [:index, :search, :view_all_gene_expression_heatmap, :precomputed_results]
-  before_action :set_selected_annotation, except: [:index, :search, :precomputed_results]
+  before_action :set_selected_annotation, except: [:index, :search, :precomputed_results, :get_new_annotations]
   COLORSCALE_THEMES = ['Blackbody', 'Bluered', 'Blues', 'Earth', 'Electric', 'Greens', 'Hot', 'Jet', 'Picnic', 'Portland', 'Rainbow', 'RdBu', 'Reds', 'Viridis', 'YlGnBu', 'YlOrRd']
 
   # view study overviews and downloads
@@ -64,6 +64,11 @@ class SiteController < ApplicationController
     @axes = load_axis_labels
   end
 
+  # dynamically reload cluster-based annotations list when changing clusters
+  def get_new_annotations
+    @cluster_annotations = load_cluster_group_annotations
+  end
+
   # search for one or more genes to view expression information
   def search_genes
     if params[:search][:upload].blank?
@@ -118,9 +123,6 @@ class SiteController < ApplicationController
     @range = set_range([@expression[:all]])
     @coordinates = load_cluster_group_data_array_points(@selected_annotation)
     @static_range = set_range(@coordinates.values)
-    if @selected_annotation[:type] == 'group' && !@cluster.is_3d?
-      @annotations = load_static_annotations(@static_range, @selected_annotation)
-    end
     @cluster_annotations = load_cluster_group_annotations
   end
 
@@ -172,9 +174,6 @@ class SiteController < ApplicationController
     @range = set_range([@expression[:all]])
     @static_range = set_range(@coordinates.values)
     @cluster_annotations = load_cluster_group_annotations
-    if @selected_annotation[:type] == 'group'
-      @annotations = load_static_annotations(@static_range, @selected_annotation)
-    end
 
     if @genes.size > 5
       @main_genes, @other_genes = divide_genes_for_header
@@ -196,7 +195,11 @@ class SiteController < ApplicationController
     end
 
     # select cluster file to load annotations from
-    @cluster_file = @study.cluster_ordinations_file(params[:cluster])
+    if @selected_annotation[:scope] == 'cluster'
+      @cluster_file = @study.cluster_ordinations_file(params[:cluster])
+    else
+      @cluster_file = @study.metadata_file
+    end
     if @study.public?
       @clusters_url = @cluster_file.download_path
     else
@@ -232,6 +235,22 @@ class SiteController < ApplicationController
     @data = ['#1.2', [@rows.size, @cols].join("\t"), @headers.join("\t"), @rows.join("\n")].join("\n")
 
     send_data @data, type: 'text/plain'
+  end
+
+  # dynamically return a URL to a file based on annotation type (cluster- or study-based)
+  def get_annotation_url
+    # select cluster file to load annotations from
+    if @selected_annotation[:scope] == 'cluster'
+      @cluster_file = @study.cluster_ordinations_file(params[:cluster])
+    else
+      @cluster_file = @study.metadata_file
+    end
+    if @study.public?
+      @clusters_url = @cluster_file.download_path
+    else
+      @clusters_url = TempFileDownload.create!({study_file_id: @cluster_file._id}).download_url
+    end
+    render json: {url: @clusters_url}
   end
 
   # load precomputed data in gct form to render in Morpheus
@@ -306,6 +325,9 @@ class SiteController < ApplicationController
         @selected_annotation = @cluster.cell_annotations.select {|ca| ca[:name] == annot_name && ca[:type] == annot_type}.first
       else
         @selected_annotation = {name: annot_name, type: annot_type, scope: annot_scope}
+        if annot_type == 'group'
+          @selected_annotation[:values] = @study.study_metadata_keys(annot_name, annot_type)
+        end
       end
       @selected_annotation[:scope] = annot_scope
       @selected_annotation
@@ -502,13 +524,27 @@ class SiteController < ApplicationController
 
     # grab all cells present in the cluster, and use as keys to load expression scores
     # if a cell is not present for the gene, score gets set as 0.0
-    # will check if there are more than ClusterGroup::SUBSAMPLE_THRESHOLD cells present in the cluster, and subsample accordingly
+    # will check if there are more than SUBSAMPLE_THRESHOLD cells present in the cluster, and subsample accordingly
+    # values hash will be assembled differently depending on annotation scope (cluster-based is array, study-based is a hash)
     all_cells = @cluster.concatenate_data_arrays('text', 'cells')
-    all_annotations = @cluster.concatenate_data_arrays(annotation[:name], 'annotations')
     cells = all_cells.count > ClusterGroup::SUBSAMPLE_THRESHOLD ? all_cells.shuffle(random: Random.new(1)).take(ClusterGroup::SUBSAMPLE_THRESHOLD) : all_cells
-    annotations = all_annotations.count > ClusterGroup::SUBSAMPLE_THRESHOLD ? all_annotations.shuffle(random: Random.new(1)).take(ClusterGroup::SUBSAMPLE_THRESHOLD) : all_annotations
-    cells.each_with_index do |cell, index|
-      values[annotations[index]][:y] << @gene.scores[cell].to_f.round(4)
+    if annotation[:scope] == 'cluster'
+      all_annotations = @cluster.concatenate_data_arrays(annotation[:name], 'annotations')
+      annotations = all_annotations.count > ClusterGroup::SUBSAMPLE_THRESHOLD ? all_annotations.shuffle(random: Random.new(1)).take(ClusterGroup::SUBSAMPLE_THRESHOLD) : all_annotations
+      cells.each_with_index do |cell, index|
+        values[annotations[index]][:y] << @gene.scores[cell].to_f.round(4)
+      end
+    else
+      all_annotations = @study.study_metadata_values(annotation[:name], annotation[:type])
+      # since annotations are in hash format, we must cast as an array to subsample then cast back to a hash
+      annotations = all_annotations.count > StudyMetadata::SUBSAMPLE_THRESHOLD ? Hash[all_annotations.to_a.shuffle(random: Random.new(1)).take(StudyMetadata::SUBSAMPLE_THRESHOLD)] : all_annotations
+      cells.each do |cell|
+        val = annotations[cell]
+        # must check if key exists
+        if values.has_key?(val)
+          values[annotations[cell]][:y] << @gene.scores[cell].to_f.round(4)
+        end
+      end
     end
     values
   end
@@ -666,11 +702,12 @@ class SiteController < ApplicationController
   end
 
   # helper method to load all available cluster_group-specific annotations
-  def load_cluster_group_annotations()
+  def load_cluster_group_annotations
     grouped_options = {
-        'Cluster-based' => @cluster.cell_annotations.map {|annot| ["#{annot[:name]} (#{annot[:type]})", "#{annot[:name]}--#{annot[:type]}--cluster"]},
-        'Study Wide' => @study.study_metadatas.map {|metadata| ["#{metadata.name} (#{metadata.annotation_type})", "#{metadata.name}--#{metadata.annotation_type}--study"] }.uniq
+        'Cluster-based' => @cluster.cell_annotations.map {|annot| ["#{annot[:name]}", "#{annot[:name]}--#{annot[:type]}--cluster"]},
+        'Study Wide' => @study.study_metadatas.map {|metadata| ["#{metadata.name}", "#{metadata.name}--#{metadata.annotation_type}--study"] }.uniq
     }
+    logger.info grouped_options
     grouped_options
   end
 

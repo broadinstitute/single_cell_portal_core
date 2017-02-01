@@ -640,319 +640,6 @@ class Study
     end
   end
 
-  # DEPRECATED, use initialize_cluster_group
-  def make_clusters_and_cells(assignment_file, user=nil)
-    # validate headers of assignment file & cluster file
-    @validation_error = false
-    begin
-      a_file = File.open(assignment_file.upload.path)
-      a_headers = a_file.readline.strip.split(/[\t,]/)
-      @last_line = "#{assignment_file.name}, line 1"
-      if a_headers.sort != %w(CELL_NAME CLUSTER SUB-CLUSTER)
-        assignment_file.update(parse_status: 'failed')
-        @validation_error = true
-      end
-      a_file.close
-    rescue => e
-      assignment_file.update(parse_status: 'failed')
-      error_message = "Unexpected error: #{e.message}"
-      Rails.logger.info @last_line + ' ' + error_message
-      raise StandardError, error_message
-    end
-
-    # raise validation error if needed
-    if @validation_error
-      error_message = "file header validation failed: #{@last_line}; should be CELL_NAME, CLUSTER, SUB-CLUSTER"
-      Rails.logger.info error_message
-      raise StandardError, error_message
-    end
-
-    @message = []
-    @cluster_count = 0
-    @cell_count = 0
-    @bytes_parsed = 0
-    start_time = Time.now
-    # begin parse
-    begin
-      Rails.logger.info "Beginning cluster/cell parse using #{assignment_file.name} for #{self.name}"
-      # load cluster assignments
-      clusters_data = File.open(assignment_file.upload.path)
-      assignment_headers = clusters_data.readline.split(/[\t,]/).map(&:strip)
-      @last_line = "#{assignment_file.name}, line 1"
-      cell_index = assignment_headers.index('CELL_NAME')
-      cluster_index = assignment_headers.index('CLUSTER')
-      sub_index = assignment_headers.index('SUB-CLUSTER')
-      Rails.logger.info "Clusters/cells loaded, starting record creation for #{self.name}"
-      while !clusters_data.eof?
-        line = clusters_data.readline.strip
-        @last_line = "#{assignment_file.name}, line #{clusters_data.lineno}"
-        vals = line.split(/[\t,]/)
-        cluster_name = vals[cluster_index]
-        sub_cluster_name = vals[sub_index]
-        cell_name = vals[cell_index]
-
-        # create cluster and single_cell objects now to associate later as some cells/clusters have no coordinate data
-        parent_cluster = Cluster.where(name: cluster_name, cluster_type: 'parent', study_id: self._id).first
-        sub_cluster = Cluster.where(name: sub_cluster_name, cluster_type: 'sub_cluster', study_id: self._id).first
-        if parent_cluster.nil?
-          parent_cluster = self.clusters.build(name: cluster_name, cluster_type: 'parent', study_file_id: assignment_file._id)
-          parent_cluster.save
-          @cluster_count += 1
-        end
-        if sub_cluster.nil?
-          sub_cluster = self.clusters.build(name: sub_cluster_name, parent_cluster: cluster_name, cluster_type: 'sub_cluster', study_file_id: assignment_file._id)
-          sub_cluster.save
-          @cluster_count += 1
-        end
-        parent_cell = SingleCell.where(name: cell_name, study_id: self._id, cluster_id: parent_cluster._id).first
-        if !parent_cell.nil?
-          # duplicate cell entry
-          user_error_message = "You have duplicate cell entries for #{cell_name}.  Please check your assignments file and try again."
-          Rails.logger.info "Duplicate parent cell entry for #{cell_name} in study #{self.name} using assignment file #{assignment_file.name} (#{assignment_file._id})"
-          raise StandardError, user_error_message
-        end
-        sub_cell = SingleCell.where(name: cell_name, study_id: self._id, cluster_id: sub_cluster._id).first
-        if !sub_cell.nil?
-          # duplicate cell entry
-          user_error_message = "You have duplicate cell entries for #{cell_name}.  Please check your assignments file and try again."
-          Rails.logger.info "Duplicate sub cell entry for #{cell_name} in study #{self.name} using assignment file #{assignment_file.name} (#{assignment_file._id})"
-          raise StandardError, user_error_message
-        end
-
-        if parent_cell.nil?
-          parent_cell = self.single_cells.build(name: cell_name, cluster_id: parent_cluster._id, study_file_id: assignment_file._id)
-          parent_cell.save
-          @cell_count += 1
-        end
-        if sub_cell.nil?
-          sub_cell = self.single_cells.build(name: cell_name, cluster_id: sub_cluster._id, study_file_id: assignment_file._id)
-          sub_cell.save
-          @cell_count += 1
-        end
-
-        @bytes_parsed += line.length
-        assignment_file.update(bytes_parsed: @bytes_parsed)
-        if clusters_data.lineno > 0 && clusters_data.lineno % 100 == 0
-          Rails.logger.info "Processed #{clusters_data.lineno} lines from #{assignment_file.name} for #{self.name}"
-          Rails.logger.info "Created #{@cluster_count} clusters from #{assignment_file.name} for #{self.name}"
-          Rails.logger.info "Created #{@cell_count} cells from #{assignment_file.name} for #{self.name}"
-        end
-      end
-      # clean up
-      assignment_file.update(parse_status: 'parsed', bytes_parsed: assignment_file.upload_file_size)
-      end_time = Time.now
-      time = (end_time - start_time).divmod 60.0
-      @message << "#{assignment_file.name} parse completed!"
-      @message << "Single Cells created: #{@cell_count}"
-      @message << "Clusters created: #{@cluster_count}"
-      @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
-      Rails.logger.info @message.join("\n")
-      # set initialized to true if possible
-      if !self.cluster_assignment_file.nil? && !self.parent_cluster_coordinates_file.nil? && !self.expression_matrix_file.nil? && !self.initialized?
-        self.update(initialized: true)
-      end
-      unless user.nil?
-        SingleCellMailer.notify_user_parse_complete(user.email, "Cluster file: '#{cluster_file.name}' has completed parsing", @message).deliver_now
-      end
-    rescue => e
-      assignment_file.update(parse_status: 'failed')
-      error_message = "#{@last_line} ERROR: #{e.message}"
-      Rails.logger.info error_message
-      raise StandardError, error_message
-    end
-  end
-
-  # DEPRECATED, use initialize_cluster_group
-  def make_cluster_points(assignment_file, cluster_file, cluster_type, user=nil)
-    # set up variables
-    @message = []
-    @cell_count = 0
-    @cluster_count = 0
-    @cluster_point_count = 0
-    @bytes_parsed = 0
-    start_time = Time.now
-    cluster_file.update(parse_status: 'parsing')
-    @last_line = ""
-    @validation_error = false
-
-    # validate headers of cluster file
-    begin
-      c_file = File.open(cluster_file.upload.path)
-      c_headers = c_file.readline.split(/[\t,]/).map(&:strip)
-      @last_line = "#{cluster_file.name}, line 1"
-      if c_headers.sort != %w(CELL_NAME X Y)
-        cluster_file.update(parse_status: 'failed')
-        @validation_error = true
-      end
-      c_file.close
-    rescue => e
-      cluster_file.update(parse_status: 'failed')
-      error_message = "Unexpected error: #{e.message}"
-      Rails.logger.info @last_line + ' ' + error_message
-      raise StandardError, error_message
-    end
-
-    # raise validation error if needed
-    if @validation_error
-      error_message = "file header validation failed: #{@last_line}: should be CELL_NAME, X, Y"
-      Rails.logger.info error_message
-      raise StandardError, error_message
-    end
-
-    # begin parse
-    begin
-      Rails.logger.info "Beginning parsing cluster file: #{cluster_file.name} using assignment file: #{assignment_file.name}, cluster type: #{cluster_type} for #{self.name}"
-      # get all lines and proper indices
-      points_data = File.open(cluster_file.upload.path)
-      headers = points_data.readline.split(/[\t,]/).map(&:strip)
-      cell_name_index = headers.index('CELL_NAME')
-      x_index = headers.index('X')
-      y_index = headers.index('Y')
-
-      @records = []
-      @cell_names = []
-      Rails.logger.info "Beginning cluster point record creation for #{self.name}"
-      while !points_data.eof?
-        line = points_data.readline.strip
-        @last_line = "#{cluster_file.name}, line #{points_data.lineno}"
-        # parse each line and get values
-        vals = line.split(/[\t,]/)
-        name = vals[cell_name_index]
-        x = vals[x_index]
-        y = vals[y_index]
-
-        # load correct cluster & single_cell
-        cells = SingleCell.where(name: name, study_id: self._id, study_file_id: assignment_file._id).to_a
-
-        # raise error if cells cannot be found, likely an error happened when parsing assigments
-        if cells.empty?
-          user_error_message = "No cells were found matching #{name} in this study.  Please check your assignments file (#{assignment_file.name}) and try again."
-          Rails.logger.info "No cells found matching: #{name} in study: #{self.name} from assignment file #{assignment_file.name} (#{assignment_file._id})"
-          raise StandardError, user_error_message
-        end
-
-        if cluster_type == 'parent'
-          all_clst = cells.map(&:cluster).compact
-          clst = all_clst.select {|c| c.cluster_type == 'parent'}.first
-          if clst.nil?
-            user_error_message = "No corresponding top-level cluster was found for cell: #{name}.  Please check your assignment file (#{assignment_file.name}) and try again."
-            Rails.logger.info "No parent clusters found for cell: #{name} in study: #{self.name} from assignment file #{assignment_file.name} (#{assignment_file._id}), cluster file: #{cluster_file.name} (#{cluster_file._id})"
-            raise StandardError, user_error_message
-          end
-          @cluster_name = clst.name
-          @cluster_type = 'parent'
-          @parent_cluster = nil
-        else
-          all_clst = cells.map(&:cluster).compact
-          clst = all_clst.select {|c| c.cluster_type == 'sub_cluster'}.first
-          if clst.nil?
-            user_error_message = "No corresponding sub-cluster was found for cell: #{name}.  Please check your assignment file (#{assignment_file.name}) and try again."
-            Rails.logger.info "No sub clusters found for cell: #{name} in study: #{self.name} from assignment file #{assignment_file.name} (#{assignment_file._id}), cluster file: #{cluster_file.name} (#{cluster_file._id})"
-            raise StandardError, user_error_message
-          end
-          @cluster_name = clst.name
-          @cluster_type = 'sub_cluster'
-          @parent_cluster = clst.parent_cluster
-        end
-
-        cluster = Cluster.where(name: @cluster_name, cluster_type: @cluster_type, study_id: self._id, study_file_id: assignment_file._id).first
-        cell = SingleCell.where(name: name, study_id: self._id, cluster_id: cluster._id, study_file_id: assignment_file._id).first
-
-
-        unless cell.nil?
-          # make sure this isn't a duplicate cell first
-          if @cell_names.include?(cell.name)
-            user_error_message = "You have a duplicate entry for cell: #{name} in this cluster.  Please check your coordinates file and try again."
-            Rails.logger.info "Duplicate cell: #{name} in coordinate file #{cluster_file.name} (#{cluster_file.id}) for study: #{self.name}"
-            raise StandardError, user_error_message
-          end
-          # finally, create cluster point with association to cluster & single_cell
-          @records << {x: x, y: y, cell_name: cell.name, single_cell_id: cell._id, cluster_id: cluster._id, study_file_id: cluster_file._id, study_id: self._id}
-          @cluster_point_count += 1
-          @bytes_parsed += line.length
-          @cell_names << cell.name
-        end
-        if @cluster_point_count % 100 == 0
-          ClusterPoint.create(@records)
-          @records = []
-          Rails.logger.info "Created #{@cluster_point_count} cluster points from #{cluster_file.name} for #{self.name}"
-          cluster_file.update(bytes_parsed: @bytes_parsed)
-        end
-      end
-      # clean up last few records
-      ClusterPoint.create(@records)
-      # mark cluster file as parsed
-      cluster_file.update(parse_status: 'parsed', bytes_parsed: cluster_file.upload_file_size)
-
-      # clean up
-      end_time = Time.now
-      time = (end_time - start_time).divmod 60.0
-      @message << "#{cluster_file.name} parse completed!"
-      @message << "Cluster Points created: #{@cluster_point_count}"
-      @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
-      Rails.logger.info @message.join("\n")
-      # set initialized to true if possible
-      if !self.cluster_assignment_file.nil? && !self.parent_cluster_coordinates_file.nil? && !self.expression_matrix_file.nil? && !self.initialized?
-        self.update(initialized: true)
-      end
-      unless user.nil?
-        SingleCellMailer.notify_user_parse_complete(user.email, "Cluster file: '#{cluster_file.name}' has completed parsing", @message).deliver_now
-      end
-    rescue => e
-      cluster_file.update(parse_status: 'failed')
-      error_message = "#{@last_line} ERROR: #{e.message}"
-      Rails.logger.info error_message
-      raise StandardError, error_message
-    end
-  end
-
-  # helper method to re-parse all cluster points
-  # DEPRECATED
-  def reparse_cluster_points
-    # remove all existing cluster points
-    if !self.cluster_points.empty?
-      self.cluster_points.destroy_all
-
-      # get necessary files
-      @assignment_file = self.cluster_assignment_file
-      @parent_cluster_file = self.parent_cluster_coordinates_file
-      @sub_cluster_files = self.study_files.select {|sf| sf.cluster_type == 'sub'}
-
-      # reset parent cluster points
-      begin
-        # reset parse status
-        @parent_cluster_file.update(parse_status: 'unparsed')
-        puts "Reparsing parent cluster points for #{self.name}"
-        self.make_cluster_points(@assignment_file, @parent_cluster_file, @parent_cluster_file.cluster_type)
-      rescue => e
-        error_message = "Error while reparsing parent clusters for #{self.name}"
-        puts error_message
-        raise StandardError error_message
-      end
-
-      # reparse all sub-cluster files
-      @sub_cluster_files.each do |sub_cluster_file|
-        begin
-          # reset parse status
-          sub_cluster_file.update(parse_status: 'unparsed')
-          puts "Reparsing sub clusters using #{sub_cluster_file.name} for #{self.name}"
-          self.make_cluster_points(@assignment_file, sub_cluster_file, sub_cluster_file.cluster_type)
-        rescue => e
-          error_message = "Error while reparsing sub clusters using #{sub_cluster_file.name} for #{self.name}"
-          Rails.logger.info error_message
-          raise StandardError error_message
-        end
-      end
-
-      # completion message
-      puts "Cluster reparsing complete for #{self.name}"
-    else
-      puts "No cluster points for #{self.name}; Skipping"
-    end
-    puts "Finished!"
-    true
-  end
-
   # parse precomputed marker gene files and create documents to render in Morpheus
   def make_precomputed_scores(marker_file, user=nil)
     @count = 0
@@ -1045,6 +732,43 @@ class Study
       Rails.logger.info error_message
       raise StandardError, error_message
     end
+  end
+
+  # one-time helper to reformat files of an older type into newer current form with 2 header lines
+  # preserves old file as .bak for disaster recovery
+  def reformat_study_file(study_file)
+    orig_file = File.open(study_file.upload.path)
+    new_file_name = study_file.upload.path + '.new'
+    new_file = File.new(new_file_name, 'w+')
+    Rails.logger.info "Opening #{study_file.upload_file_name} in #{self.name} for reading, writing new data to #{new_file_name}"
+    while !orig_file.eof?
+      line = orig_file.readline
+      # write correct new header information based on file type
+      if orig_file.lineno == 1
+        vals = line.split(/[\t,]/).map(&:strip)
+        name_index = vals.index('CELL_NAME')
+        vals[name_index] = 'NAME'
+        new_file.puts vals.join("\t")
+        if study_file.file_type == 'Cluster Assignments'
+          new_file.puts "TYPE\tgroup\tgroup"
+        elsif study_file.file_type == 'Cluster Coordinates'
+          new_file.puts "TYPE\tnumeric\tnumeric"
+        end
+      else
+        # write rest of contents
+        new_file.puts line
+      end
+    end
+    # clean up
+    orig_file.close
+    new_file.close
+    # move old file to .bak, then new file to original filename
+    Rails.logger.info "Write complete, moving  #{study_file.upload.path} to #{study_file.upload.path + '.bak'} in #{self.name}"
+    FileUtils.mv study_file.upload.path, study_file.upload.path + '.bak'
+    Rails.logger.info "Finishing up, moving  #{new_file_name} to #{study_file.upload.path} in #{self.name}"
+    FileUtils.mv study_file.upload.path + '.new', study_file.upload.path
+    new_file_type = study_file.file_type == 'Cluster Assignments' ? 'Metadata' : 'Cluster'
+    study_file.update_attributes(file_type: new_file_type)
   end
 
   private

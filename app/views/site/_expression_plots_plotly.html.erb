@@ -88,11 +88,13 @@ var data = [];
     var cluster_<%= index %>_clst = {
       x: <%= raw @coordinates[key][:x] %>,
       y: <%= raw @coordinates[key][:y] %>,
+      text: <%= raw @coordinates[key][:text] %>,
       name: "<%= @coordinates[key][:name] %>",
       mode: 'markers',
       type: 'scattergl',
       marker: {
         color: colorBrewerSet[<%= index %>],
+        size: <%= raw @coordinates[key][:marker_size] %>,
         line:{
           color: plotlyDefaultLineColor,
           width: 0.5
@@ -106,8 +108,4 @@ var data = [];
 
 
 <%= render partial: 'static_scatter_layout' %>
-<% if @cluster.is_3d? %>
-  Plotly.newPlot('reference-plot', data, staticLayout);
-<% else %>
-  Plotly.newPlot('reference-plot', data, staticLayout, {staticPlot: true});
-<% end %>
+Plotly.newPlot('reference-plot', data, staticLayout);

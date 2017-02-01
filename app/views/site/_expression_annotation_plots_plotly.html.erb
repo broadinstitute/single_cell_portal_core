@@ -57,6 +57,7 @@ var data = [];
     y: <%= raw @coordinates[:all][:y] %>,
     z: <%= raw @coordinates[:all][:z] %>,
     text: <%= raw @coordinates[:all][:text] %>,
+    name: '<%= raw @coordinates[:all][:name] %>',
     textposition: 'bottom left',
     mode: 'markers',
     type: 'scatter3d',
@@ -66,6 +67,8 @@ var data = [];
   var static_clst = {
     x: <%= raw @coordinates[:all][:x] %>,
     y: <%= raw @coordinates[:all][:y] %>,
+    text: <%= raw @coordinates[:all][:text] %>,
+    name: '<%= raw @coordinates[:all][:name] %>',
     mode: 'markers',
     type: 'scattergl',
     marker: <%= raw @coordinates[:all][:marker].to_json %>
@@ -77,8 +80,4 @@ data.push(static_clst);
 
 <%= render partial: 'static_scatter_layout' %>
 
-<% if @cluster.is_3d? %>
-  Plotly.newPlot('reference-plot', data, staticLayout);
-<% else %>
-  Plotly.newPlot('reference-plot', data, staticLayout, {staticPlot: true});
-<% end %>
+Plotly.newPlot('reference-plot', data, staticLayout);

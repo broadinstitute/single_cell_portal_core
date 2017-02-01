@@ -10,7 +10,7 @@
 				<%= form_for(:search, url: search_genes_path(@study.url_safe_name), html: {class: 'form', id: 'search-genes-form'}) do |f| %>
 					<%= f.hidden_field :cluster, value: params[:cluster].nil? ? @options.first : params[:cluster] %>
           <%= f.hidden_field :boxpoints, value: params[:boxpoints].nil? ? 'all' : params[:boxpoints] %>
-          <%= f.hidden_field :annotation, value: params[:annotation].nil? ? @cluster_annotations.first.last : params[:annotation] %>
+          <%= f.hidden_field :annotation, value: params[:annotation].nil? ? get_default_annotation(@cluster_annotations) : params[:annotation] %>
 					<div class="form-group">
 						<%= f.label :genes, 'Search for genes of interest (autocomplete)' %>
 						<%= f.autocomplete_field :genes, autocomplete_expression_score_gene_expression_score_index_path(study_id: @study._id), {multiple: true, class: 'form-control search-genes-input', placeholder: 'Search genes...', value: set_search_value, data: {delimiter: ' '}} %>
@@ -48,15 +48,15 @@
 					<script type="text/javascript">
 
 						$('#gene_set').change(function() {
-							if ($(this).val() != '') {
-                launchSpinner('spinner_target');
-                // grab values for cluster & annotation from view/filter dropdowns
-                $('#gene_set_cluster').val($('#cluster').val());
-                $('#gene_set_annotation').val($('#annotation').val());
-								$('#gene-sets').submit();
-							} else {
-                alert('Please select ')
-              }
+						    if ($(this).val() != '') {
+						        launchSpinner('spinner_target');
+						        // grab values for cluster & annotation from view/filter dropdowns
+                    var geneSetCluster = $('#search_cluster').val();
+                    var geneSetAnnot = $('#search_annotation').val();
+                    $('#gene_set_cluster').val(geneSetCluster);
+                    $('#gene_set_annotation').val(geneSetAnnot);
+                    $('#gene-sets').submit();
+							  }
 						});
 
 					</script>
@@ -75,8 +75,8 @@
               if ($(this).val() != '') {
                 launchSpinner('spinner_target');
                 var url = $(this).val();
-                var cluster = $('#cluster').val();
-                var annotation = $('#annotation').val();
+                var cluster = $('#search_cluster').val();
+                var annotation = $('#search_annotation').val();
                 window.location.href = url + '?cluster=' + cluster + '&annotation=' + annotation;
               }
 						});

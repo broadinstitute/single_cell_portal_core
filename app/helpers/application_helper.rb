@@ -64,4 +64,10 @@ module ApplicationHelper
 		nav
 	end
 
+	# method to load a 'default' annotation when first loading a study (none have been selected yet)
+	# will load the first cluster-based annotation if available, otherwise will default to first study-based instead
+	def get_default_annotation(annotations)
+		annotations['Cluster-based'].empty? ? annotations['Study Wide'].first.last : annotations['Cluster-based'].first.last
+	end
+
 end

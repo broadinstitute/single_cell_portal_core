@@ -82,21 +82,31 @@
         $(target).data('spinner', spinner);
         var cluster = $('#cluster').val();
         var annotation = $('#annotation').val();
-        if (cluster == "") {
-            $.get(url);
-        } else {
-            $.get(url + '?cluster=' + cluster + '&annotation=' + annotation);
-        }
+        $.get(url + '?cluster=' + cluster + '&annotation=' + annotation);
     }
 
 		$(document).ready(function() {
-      renderScatter();
+        renderScatter();
     });
 
 		// listener for cluster nav, specific to study page
-		$("#cluster, #annotation").change(function() {
-      renderScatter();
+		$("#annotation").change(function() {
+		    var an = $(this).val();
+        // keep track for search purposes
+		    $('#search_annotation').val(an);
+        renderScatter();
 		});
+
+		$("#cluster").change(function() {
+		    var newCluster = $(this).val();
+		    // keep track for search purposes
+        $('#search_cluster').val(newCluster);
+        $.get("<%= get_new_annotations_path(study: params[:study])%>?cluster=" + newCluster, function () {
+            $(document).ready(function () {
+                renderScatter();
+            })
+        });
+    });
 
 	</script>
 <% end %>
