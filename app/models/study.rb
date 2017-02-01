@@ -740,7 +740,10 @@ class Study
     orig_file = File.open(study_file.upload.path)
     new_file_name = study_file.upload.path + '.new'
     new_file = File.new(new_file_name, 'w+')
-    Rails.logger.info "Opening #{study_file.upload_file_name} in #{self.name} for reading, writing new data to #{new_file_name}"
+    # double logging for persistence
+    message = "Opening #{study_file.upload_file_name} in #{self.name} for reading, writing new data to #{new_file_name}"
+    Rails.logger.info message
+    puts message
     while !orig_file.eof?
       line = orig_file.readline
       # write correct new header information based on file type
@@ -763,10 +766,15 @@ class Study
     orig_file.close
     new_file.close
     # move old file to .bak, then new file to original filename
-    Rails.logger.info "Write complete, moving  #{study_file.upload.path} to #{study_file.upload.path + '.bak'} in #{self.name}"
+    message = "Write complete, moving  #{study_file.upload.path} to #{study_file.upload.path + '.bak'} in #{self.name}"
+    Rails.logger.info message
+    puts message
     FileUtils.mv study_file.upload.path, study_file.upload.path + '.bak'
-    Rails.logger.info "Finishing up, moving  #{new_file_name} to #{study_file.upload.path} in #{self.name}"
+    message = "Finishing up, moving  #{new_file_name} to #{study_file.upload.path} in #{self.name}"
+    Rails.logger.info message
+    puts message
     FileUtils.mv study_file.upload.path + '.new', study_file.upload.path
+    # update file type accordingly
     new_file_type = study_file.file_type == 'Cluster Assignments' ? 'Metadata' : 'Cluster'
     study_file.update_attributes(file_type: new_file_type)
   end
