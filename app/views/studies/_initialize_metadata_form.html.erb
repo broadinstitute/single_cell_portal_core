@@ -20,7 +20,7 @@
 		</div>
 		<div class="col-sm-5 upload-field">
 			<%= f.label :upload, 'Upload Data File' %><br />
-			<%= f.file_field :upload, class: 'btn btn-info fileinput-button', id: 'upload-expression' %>
+			<%= f.file_field :upload, class: 'btn btn-info fileinput-button', id: 'upload-metadata' %>
       <%= f.hidden_field :status, value: study_file.new_record? ? 'uploading' : 'uploaded' %>
 		</div>
 		<div class="col-sm-3">
