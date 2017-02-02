@@ -353,6 +353,7 @@ class Study
       Rails.logger.info error_message
       raise StandardError, error_message
     end
+    true
   end
 
   # parse single cluster coordinate & metadata file (name, x, y, z, metadata_cols* format)
@@ -521,6 +522,7 @@ class Study
       Rails.logger.info error_message
       raise StandardError, error_message
     end
+    true
   end
 
   # parse a study metadata file and create necessary study_metadata objects
@@ -638,6 +640,7 @@ class Study
       Rails.logger.info error_message
       raise StandardError, error_message
     end
+    true
   end
 
   # parse precomputed marker gene files and create documents to render in Morpheus
@@ -732,6 +735,7 @@ class Study
       Rails.logger.info error_message
       raise StandardError, error_message
     end
+    true
   end
 
   # one-time helper to reformat files of an older type into newer current form with 2 header lines
@@ -776,7 +780,65 @@ class Study
     FileUtils.mv study_file.upload.path + '.new', study_file.upload.path
     # update file type accordingly
     new_file_type = study_file.file_type == 'Cluster Assignments' ? 'Metadata' : 'Cluster'
+    message = "Updating file type of #{study_file.upload.path} to #{new_file_type} in #{self.name}"
+    Rails.logger.info message
+    puts message
     study_file.update_attributes(file_type: new_file_type)
+    true
+  end
+
+  # Single-use method to migrate all studies without study_metadata or data_arrays into new collections
+  def self.migrate_all_studies
+    # collect all studies and determine which need to be migrated - will have both single_cells and cluster_points
+    self.all.to_a.each do |study|
+      if study.single_cells.any? && study.cluster_points.any?
+        message = "Beginning migration for #{study.name}"
+        Rails.logger.info message
+        puts message
+        # cluster assignments & coordinates files need to be re-formatted & re-parsed
+        eligible_files = study.study_files.where(file_type: /(Coordinates|Assignments)/).to_a
+        message = "Found #{eligible_files.size} eligible files: #{eligible_files.map(&:upload_file_name).join(', ')}"
+        Rails.logger.info message
+        puts message
+        # re-format and re-parse all matching files
+        eligible_files.each do |file|
+          message = "Beginning reformatting of #{file.upload_file_name}"
+          Rails.logger.info message
+          puts message
+          study.reformat_study_file(file)
+          # reload file to make sure we have updated attributes
+          new_file = StudyFile.find(file._id)
+          # re-parse file to populate database
+          message = "Beginning re-parsing of #{new_file.upload_file_name}"
+          Rails.logger.info message
+          puts message
+          case new_file.file_type
+            when 'Metadata'
+              message = "Parsing #{new_file.upload_file_name} as #{new_file.file_type}"
+              Rails.logger.info message
+              puts message
+              study.initialize_study_metadata(new_file)
+            when 'Cluster'
+              message = "Parsing #{new_file.upload_file_name} as #{new_file.file_type}"
+              Rails.logger.info message
+              puts message
+              study.initialize_cluster_group_and_data_arrays(new_file)
+            else
+              puts "Ineligible file type for #{new_file.upload_file_name}: #{new_file.file_type}; skipping parse"
+          end
+          message = "Parsing of #{new_file.upload_file_name} complete"
+          Rails.logger.info message
+          puts message
+        end
+        message = "Migration complete for #{study.name}"
+        Rails.logger.info message
+        puts message
+      end
+    end
+    message = "All eligible studies migrated; Finishing"
+    Rails.logger.info message
+    puts message
+    true
   end
 
   private

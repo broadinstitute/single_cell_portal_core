@@ -64,10 +64,28 @@ module ApplicationHelper
 		nav
 	end
 
-	# method to load a 'default' annotation when first loading a study (none have been selected yet)
+	# method to set cluster value based on options and parameters
+	# will default to first cluster if none are specified
+	def set_cluster_value(clusters, parameters)
+		if !parameters[:gene_set_cluster].nil?
+			parameters[:gene_set_cluster]
+		elsif !parameters[:cluster].nil?
+			parameters[:cluster]
+		else
+			clusters.first
+		end
+	end
+
+	# method to set annotation value by parameters or load a 'default' annotation when first loading a study (none have been selected yet)
 	# will load the first cluster-based annotation if available, otherwise will default to first study-based instead
-	def get_default_annotation(annotations)
-		annotations['Cluster-based'].empty? ? annotations['Study Wide'].first.last : annotations['Cluster-based'].first.last
+	def set_annotation_value(annotations, parameters)
+		if !parameters[:gene_set_annotation].nil?
+			parameters[:gene_set_annotation]
+		elsif !parameters[:annotation].nil?
+			parameters[:annotation]
+		else
+			annotations['Cluster-based'].empty? ? annotations['Study Wide'].first.last : annotations['Cluster-based'].first.last
+		end
 	end
 
 end

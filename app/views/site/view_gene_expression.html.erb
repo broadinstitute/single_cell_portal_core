@@ -49,6 +49,8 @@
         // keep track for search purposes
         var val = $(this).val();
         $('#search_annotation').val(val);
+        $('#gene_set_annotation').val(val);
+
         renderGeneExpressionPlots();
     });
 
@@ -57,8 +59,14 @@
         var newCluster = $(this).val();
         // keep track for search purposes
         $('#search_cluster').val(newCluster);
+        $('#gene_set_cluster').val(newCluster);
+        // get new annotation options and re-render
         $.get("<%= get_new_annotations_path(study: params[:study])%>?cluster=" + newCluster, function () {
             $(document).ready(function () {
+                // since we now have new annotations, we need to set them in the search form for persistence
+                var an = $('#annotation').val();
+                $('#search_annotation').val(an);
+                $('#gene_set_annotation').val(an);
                 renderGeneExpressionPlots();
             })
         });

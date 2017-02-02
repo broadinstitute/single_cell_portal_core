@@ -8,9 +8,9 @@
 		<div class="row">
 			<div class="col-sm-12">
 				<%= form_for(:search, url: search_genes_path(@study.url_safe_name), html: {class: 'form', id: 'search-genes-form'}) do |f| %>
-					<%= f.hidden_field :cluster, value: params[:cluster].nil? ? @options.first : params[:cluster] %>
+					<%= f.hidden_field :cluster, value: set_cluster_value(@options, params) %>
           <%= f.hidden_field :boxpoints, value: params[:boxpoints].nil? ? 'all' : params[:boxpoints] %>
-          <%= f.hidden_field :annotation, value: params[:annotation].nil? ? get_default_annotation(@cluster_annotations) : params[:annotation] %>
+          <%= f.hidden_field :annotation, value: set_annotation_value(@cluster_annotations, params) %>
 					<div class="form-group">
 						<%= f.label :genes, 'Search for genes of interest (autocomplete)' %>
 						<%= f.autocomplete_field :genes, autocomplete_expression_score_gene_expression_score_index_path(study_id: @study._id), {multiple: true, class: 'form-control search-genes-input', placeholder: 'Search genes...', value: set_search_value, data: {delimiter: ' '}} %>
@@ -47,14 +47,13 @@
           <%= hidden_field_tag :gene_set_annotation %>
 					<script type="text/javascript">
 
+            // set default values on render
+            $('#gene_set_cluster').val($('#search_cluster').val());
+            $('#gene_set_annotation').val($('#search_annotation').val());
+
 						$('#gene_set').change(function() {
 						    if ($(this).val() != '') {
 						        launchSpinner('spinner_target');
-						        // grab values for cluster & annotation from view/filter dropdowns
-                    var geneSetCluster = $('#search_cluster').val();
-                    var geneSetAnnot = $('#search_annotation').val();
-                    $('#gene_set_cluster').val(geneSetCluster);
-                    $('#gene_set_annotation').val(geneSetAnnot);
                     $('#gene-sets').submit();
 							  }
 						});

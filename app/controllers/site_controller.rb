@@ -382,6 +382,7 @@ class SiteController < ApplicationController
               color: color_array,
               size: color_array.map {|a| 6},
               line: { color: 'rgb(40,40,40)', width: 0.5},
+              colorscale: 'Reds',
               showscale: true,
               colorbar: {
                   title: annotation[:name] ,
@@ -433,6 +434,8 @@ class SiteController < ApplicationController
   # method to load a 2-d scatter of selected numeric annotation vs. gene expression
   def load_annotation_based_data_array_scatter(annotation)
     cells = @cluster.concatenate_data_arrays('text', 'cells')
+    annotation_array = []
+    annotation_hash = {}
     if annotation[:scope] == 'cluster'
       annotation_array = @cluster.concatenate_data_arrays(annotation[:name], 'annotations')
     else
@@ -470,9 +473,15 @@ class SiteController < ApplicationController
     values = {}
     values[:all] = {x: [], y: [], text: [], marker_size: []}
 		cells = @cluster.concatenate_data_arrays('text', 'cells')
-		annotation_array = @cluster.concatenate_data_arrays(annotation[:name], 'annotations')
+    annotation_array = []
+    annotation_hash = {}
+    if annotation[:scope] == 'cluster'
+      annotation_array = @cluster.concatenate_data_arrays(annotation[:name], 'annotations')
+    else
+      annotation_hash = @study.study_metadata_values(annotation[:name], annotation[:type])
+    end
     cells.each_with_index do |cell|
-      annotation_value = annotation_array[index]
+      annotation_value = annotation[:scope] == 'cluster' ? annotation_array[index] : annotation_hash[cell]
       expression_value = calculate_mean(@genes, cell)
       values[:all][:text] << "<b>#{cell}</b><br>#{annotation[:name]}: #{annotation_value}<br>#{@y_axis_title}: #{expression_value}"
       values[:all][:x] << annotation_value
@@ -480,42 +489,6 @@ class SiteController < ApplicationController
       values[:all][:marker_size] << 6
     end
     values
-  end
-
-  # loads annotations array if being used for reference plot
-  def load_static_annotations(range, annotation)
-    # initialize objects and divide cluster points by annotation values
-    annotations = []
-    cell_groups = divide_data_array_by_annotation_value(annotation)
-    # create plotly annotation objects
-    cell_groups.each do |annot_val, values|
-      # calculate median position for cluster labels
-      full_range = range.first.abs + range.last.abs
-      x_positions = values[:x].sort
-      y_positions = values[:y].sort
-      x_len = x_positions.size
-      y_len = y_positions.size
-      x_mid = x_positions.inject(0.0) { |sum, el| sum + el } / x_len
-      y_mid = y_positions.inject(0.0) { |sum, el| sum + el } / y_len
-      x_pos = (x_mid + range.first.abs) / full_range
-      y_pos = (y_mid + range.first.abs) / full_range
-      annot = {
-          xref: 'paper',
-          yref: 'paper',
-          x: x_pos,
-          y: y_pos,
-          text: "#{annotation[:name]}: #{annot_val}",
-          showarrow: false,
-          borderpad: 4,
-          bgcolor: '#efefef',
-          bordercolor: '#ccc',
-          borderwidth: 1,
-          opacity: 0.6,
-          font: annotation_font
-      }
-      annotations << annot
-    end
-    annotations
   end
 
   # load box plot scores from gene expression values using data array of cell names for given cluster
@@ -545,6 +518,8 @@ class SiteController < ApplicationController
           values[annotations[cell]][:y] << @gene.scores[cell].to_f.round(4)
         end
       end
+      # remove any empty values as annotations may have created keys that don't exist in cluster
+      values.delete_if {|key, data| data[:y].empty?}
     end
     values
   end
@@ -555,7 +530,14 @@ class SiteController < ApplicationController
     y_array = @cluster.concatenate_data_arrays('y', 'coordinates')
     z_array = @cluster.concatenate_data_arrays('z', 'coordinates')
     cells = @cluster.concatenate_data_arrays('text', 'cells')
-    annotation_array = @cluster.concatenate_data_arrays(annotation[:name], 'annotations')
+    annotation_array = []
+    annotation_hash = {}
+    if annotation[:scope] == 'cluster'
+      annotation_array = @cluster.concatenate_data_arrays(annotation[:name], 'annotations')
+    else
+      # for study-wide annotations, load from study_metadata values instead of cluster-specific annotations
+      annotation_hash = @study.study_metadata_values(annotation[:name], annotation[:type])
+    end
     expression = {}
     expression[:all] = {
         x: x_array,
@@ -566,7 +548,9 @@ class SiteController < ApplicationController
     }
     cells.each_with_index do |cell, index|
       expression_score = @gene.scores[cell].to_f.round(4)
-      text_value = "#{cell} (#{annotation[:name]}: #{annotation_array[index]})<br />#{@y_axis_title}: #{expression_score}"
+      # load correct annotation value based on scope
+      annotation_value = annotation[:scope] == 'cluster' ? annotation_array[index] : annotation_hash[cell]
+      text_value = "#{cell} (#{annotation[:name]}: #{annotation_value})<br />#{@y_axis_title}: #{expression_score}"
       expression[:all][:text] << text_value
       expression[:all][:marker][:color] << expression_score
       expression[:all][:marker][:size] << 6
@@ -581,15 +565,31 @@ class SiteController < ApplicationController
   def load_gene_set_expression_boxplot_scores(annotation)
 		values = initialize_plotly_objects_by_annotation(annotation)
 
-		# grab all cells present in the cluster, and use as keys to load expression scores
-		# if a cell is not present for the gene, score gets set as 0.0
-		# will check if there are more than ClusterGroup::SUBSAMPLE_THRESHOLD cells present in the cluster, and subsample accordingly
-		all_cells = @cluster.concatenate_data_arrays('text', 'cells')
-		all_annotations = @cluster.concatenate_data_arrays(annotation[:name], 'annotations')
-		cells = all_cells.count > ClusterGroup::SUBSAMPLE_THRESHOLD ? all_cells.shuffle(random: Random.new(1)).take(ClusterGroup::SUBSAMPLE_THRESHOLD) : all_cells
-		annotations = all_annotations.count > ClusterGroup::SUBSAMPLE_THRESHOLD ? all_annotations.shuffle(random: Random.new(1)).take(ClusterGroup::SUBSAMPLE_THRESHOLD) : all_annotations
-		cells.each_with_index do |cell, index|
-      values[annotations[index]][:y] << calculate_mean(@genes, cell)
+    # grab all cells present in the cluster, and use as keys to load expression scores
+    # if a cell is not present for the gene, score gets set as 0.0
+    # will check if there are more than SUBSAMPLE_THRESHOLD cells present in the cluster, and subsample accordingly
+    # values hash will be assembled differently depending on annotation scope (cluster-based is array, study-based is a hash)
+    all_cells = @cluster.concatenate_data_arrays('text', 'cells')
+    cells = all_cells.count > ClusterGroup::SUBSAMPLE_THRESHOLD ? all_cells.shuffle(random: Random.new(1)).take(ClusterGroup::SUBSAMPLE_THRESHOLD) : all_cells
+    if annotation[:scope] == 'cluster'
+      all_annotations = @cluster.concatenate_data_arrays(annotation[:name], 'annotations')
+      annotations = all_annotations.count > ClusterGroup::SUBSAMPLE_THRESHOLD ? all_annotations.shuffle(random: Random.new(1)).take(ClusterGroup::SUBSAMPLE_THRESHOLD) : all_annotations
+      cells.each_with_index do |cell, index|
+        values[annotations[index]][:y] << calculate_mean(@genes, cell)
+      end
+    else
+      all_annotations = @study.study_metadata_values(annotation[:name], annotation[:type])
+      # since annotations are in hash format, we must cast as an array to subsample then cast back to a hash
+      annotations = all_annotations.count > StudyMetadata::SUBSAMPLE_THRESHOLD ? Hash[all_annotations.to_a.shuffle(random: Random.new(1)).take(StudyMetadata::SUBSAMPLE_THRESHOLD)] : all_annotations
+      cells.each do |cell|
+        val = annotations[cell]
+        # must check if key exists
+        if values.has_key?(val)
+          values[annotations[cell]][:y] << calculate_mean(@genes, cell)
+        end
+      end
+      # remove any empty values as annotations may have created keys that don't exist in cluster
+      values.delete_if {|key, data| data[:y].empty?}
     end
     values
   end
@@ -601,7 +601,14 @@ class SiteController < ApplicationController
 		y_array = @cluster.concatenate_data_arrays('y', 'coordinates')
 		z_array = @cluster.concatenate_data_arrays('z', 'coordinates')
 		cells = @cluster.concatenate_data_arrays('text', 'cells')
-		annotation_array = @cluster.concatenate_data_arrays(annotation[:name], 'annotations')
+    annotation_array = []
+    annotation_hash = {}
+    if annotation[:scope] == 'cluster'
+      annotation_array = @cluster.concatenate_data_arrays(annotation[:name], 'annotations')
+    else
+      # for study-wide annotations, load from study_metadata values instead of cluster-specific annotations
+      annotation_hash = @study.study_metadata_values(annotation[:name], annotation[:type])
+    end
 		expression = {}
 		expression[:all] = {
 				x: x_array,
@@ -612,7 +619,9 @@ class SiteController < ApplicationController
 		}
 		cells.each_with_index do |cell, index|
 			expression_score = calculate_mean(@genes, cell)
-			text_value = "#{cell} (#{annotation[:name]}: #{annotation_array[index]})<br />#{@y_axis_title}: #{expression_score}"
+      # load correct annotation value based on scope
+      annotation_value = annotation[:scope] == 'cluster' ? annotation_array[index] : annotation_hash[cell]
+      text_value = "#{cell} (#{annotation[:name]}: #{annotation_value})<br />#{@y_axis_title}: #{expression_score}"
 			expression[:all][:text] << text_value
 			expression[:all][:marker][:color] << expression_score
 			expression[:all][:marker][:line] = { color: 'rgb(40,40,40)', width: 0.5}
@@ -623,25 +632,6 @@ class SiteController < ApplicationController
 		expression[:all][:marker][:colorscale] = 'Reds'
 		expression
 	end
-
-  # generic method to divide a collection of cells/points by an annotation value
-  def divide_data_array_by_annotation_value(annotation)
-    x_array = @cluster.concatenate_data_arrays('x', 'coordinates')
-    y_array = @cluster.concatenate_data_arrays('y', 'coordinates')
-    z_array = @cluster.concatenate_data_arrays('z', 'coordinates')
-    annotation_array = @cluster.concatenate_data_arrays(annotation[:name], 'annotations')
-    annotation_groups = {}
-    annotation[:values].each do |annot|
-      annotation_groups[annot] = {x: [], y: [], z: []}
-    end
-    # divide up points by selected annotation value
-    annotation_array.each_with_index do |annot, index|
-      annotation_groups[annot][:x] << x_array[index]
-      annotation_groups[annot][:y] << y_array[index]
-      annotation_groups[annot][:z] << z_array[index]
-    end
-    annotation_groups
-  end
 
   # method to initialize containers for plotly by annotation values
   def initialize_plotly_objects_by_annotation(annotation)
@@ -707,7 +697,6 @@ class SiteController < ApplicationController
         'Cluster-based' => @cluster.cell_annotations.map {|annot| ["#{annot[:name]}", "#{annot[:name]}--#{annot[:type]}--cluster"]},
         'Study Wide' => @study.study_metadatas.map {|metadata| ["#{metadata.name}", "#{metadata.name}--#{metadata.annotation_type}--study"] }.uniq
     }
-    logger.info grouped_options
     grouped_options
   end
 

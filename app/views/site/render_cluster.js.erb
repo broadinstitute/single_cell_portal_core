@@ -1,3 +1,10 @@
+// render colorscale picker if needed
+if (<%= @selected_annotation[:type] == 'numeric' %>) {
+    $('#colorscale-picker').html("<%= escape_javascript(render partial: 'colorscale_picker') %>");
+} else {
+    $('#colorscale-picker').html("");
+}
+
 <%= render partial: 'study_scatter_plot' %>
 
 // set the cluster field in the search box to scope search correctly

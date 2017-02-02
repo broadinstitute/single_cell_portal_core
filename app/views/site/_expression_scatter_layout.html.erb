@@ -5,6 +5,9 @@
 		font: plotlyLabelFont,
 		width: size,
 		height: size,
+    <% if @cluster.is_3d? %>
+      scene: {aspectmode: 'cube'},
+    <% end %>
 		xaxis: {
 			range: <%= raw @range %>
 		},

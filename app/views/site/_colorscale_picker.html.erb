@@ -1,4 +1,4 @@
-<div class='form-inline navigation-form'>
+<div class='form-inline navigation-form' id="colorscale-picker">
 	<%= label_tag :colorscale, 'Color profile' %><br />
 	<%= select_tag :colorscale, options_for_select(SiteController::COLORSCALE_THEMES, 'Reds'), class: 'form-control' %>
 </div>

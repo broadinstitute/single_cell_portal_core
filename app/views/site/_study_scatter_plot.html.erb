@@ -32,11 +32,23 @@ var data = [];
 // use partial for layouts to avoid code duplication
 <%= render 'study_scatter_layout' %>
 
-
 Plotly.newPlot('cluster-plot', data, layout);
+
+// listener to redraw expression scatter with new color profile
+$("#colorscale").change(function() {
+
+    var theme = $(this).val();
+    data[0].marker.colorscale = theme;
+    console.log("setting colorscale to " + theme);
+
+    Plotly.newPlot('cluster-plot', data, layout);
+});
+
+
 
 // now that we have the legend size, recalculate adding this to the overall size
 var legendW = parseInt($('#cluster-plot g.legend rect.bg').attr('width'));
 var curSize = $('#cluster-plot').width() * SCATTER_RATIO;
 var newWidth = legendW + curSize;
 Plotly.relayout('cluster-plot', {width: newWidth});
+

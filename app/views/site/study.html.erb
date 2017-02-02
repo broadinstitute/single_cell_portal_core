@@ -65,6 +65,7 @@
 				<div id="plots" class="panel-collapse collapse in">
 					<div class="panel-body">
 						<div class="col-md-12">
+              <div id="colorscale-picker"></div>
 							<div id="cluster-plot"></div>
 						</div>
 					</div>
@@ -93,7 +94,8 @@
 		$("#annotation").change(function() {
 		    var an = $(this).val();
         // keep track for search purposes
-		    $('#search_annotation').val(an);
+        $('#search_annotation').val(an);
+        $('#gene_set_annotation').val(an);
         renderScatter();
 		});
 
@@ -101,8 +103,14 @@
 		    var newCluster = $(this).val();
 		    // keep track for search purposes
         $('#search_cluster').val(newCluster);
+        $('#gene_set_cluster').val(newCluster);
+        // get new annotation options and re-render
         $.get("<%= get_new_annotations_path(study: params[:study])%>?cluster=" + newCluster, function () {
             $(document).ready(function () {
+                // since we now have new annotations, we need to set them in the search form for persistence
+                var an = $('#annotation').val();
+                $('#search_annotation').val(an);
+                $('#gene_set_annotation').val(an);
                 renderScatter();
             })
         });
