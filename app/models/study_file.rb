@@ -155,7 +155,7 @@ class StudyFile
 
   # update a study's cell count if uploading an expression matrix or cluster assignment file
   def update_cell_count
-    if ['Cluster Assignments', 'Expression Matrix'].include?(self.file_type) && self.status == 'uploaded' && self.parsed?
+    if ['Metadata', 'Expression Matrix'].include?(self.file_type) && self.status == 'uploaded' && self.parsed?
       study = self.study
       study.set_cell_count
     end

@@ -1,4 +1,4 @@
-<%= form_for(study_file, url: update_study_file_study_path(@study._id), html: {id: "marker_genes_form_#{study_file._id}", class: 'bs-callout bs-callout-info initialize_marker_genes_form', data: {remote: true}}) do |f| %>
+<%= form_for(study_file, url: update_study_file_study_path(@study._id), html: {id: "marker_genes_form_#{study_file._id}", class: "bs-callout bs-callout-info initialize_marker_genes_form #{study_file.new_record? ? 'new-gene-list-form' : nil}", data: {remote: true}}) do |f| %>
 	<%= f.hidden_field :study_id, value: params[:id] %>
   <%= f.hidden_field :_id, value: study_file._id %>
   <%= hidden_field_tag :selector, "#marker_genes_form_#{study_file._id}" %>
@@ -42,10 +42,8 @@
 	</div>
 	<script type="text/javascript">
 
-    var thisFormId = "#marker_genes_form_<%= study_file._id %>";
-    $(thisFormId).find('.upload-marker-genes').click(function() {
-      var markerFileName = $(thisFormId).find('#study_file_name').val();
-        if (markerFileName == '') {
+    $("#marker_genes_form_<%= study_file._id %>").find('.upload-marker-genes').click(function() {
+        if ($("#marker_genes_form_<%= study_file._id %>").find('#study_file_name').val() == '') {
           alert('You must provide a name for this gene list before uploading a file.');
           return false;
         }

@@ -1,4 +1,4 @@
-<%= form_for(study_file, url: update_study_file_study_path(@study._id), html: {id: "misc_form_#{study_file._id}", class: 'bs-callout bs-callout-info initialize_misc_form', data: {remote: true}}) do |f| %>
+<%= form_for(study_file, url: update_study_file_study_path(@study._id), html: {id: "misc_form_#{study_file._id}", class: "bs-callout bs-callout-info initialize_misc_form #{study_file.new_record? ? 'new-misc-form' : nil}", data: {remote: true}}) do |f| %>
 	<%= f.hidden_field :study_id, value: params[:id] %>
   <%= f.hidden_field :_id, value: study_file._id %>
   <%= hidden_field_tag :selector, "#misc_form_#{study_file._id}" %>

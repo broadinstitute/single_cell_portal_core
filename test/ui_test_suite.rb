@@ -62,6 +62,12 @@ class UiTestSuite < Test::Unit::TestCase
 		@wait.until {@driver.find_element(how, what).displayed? == true}
 	end
 
+	# scroll to bottom of page as needed
+	def scroll_to_bottom
+		@driver.execute_script('window.scrollBy(0,1000)')
+		sleep(1)
+	end
+
 	# front end tests
 	test 'get home page' do
 		@driver.get(@base_url)
@@ -85,9 +91,9 @@ class UiTestSuite < Test::Unit::TestCase
 		wait_until_page_loads(path)
 		assert element_present?(:class, 'study-lead'), 'could not find study title'
 		assert element_present?(:id, 'cluster-plot'), 'could not find study cluster plot'
-		# load CA1 subcluster
+		# load subclusters
 		clusters = @driver.find_element(:id, 'cluster').find_elements(:tag_name, 'option')
-		assert clusters.size == 1, 'incorrect number of clusters found'
+		assert clusters.size == 2, 'incorrect number of clusters found'
 		annotations = @driver.find_element(:id, 'annotation').find_elements(:tag_name, 'option')
 		assert annotations.size == 5, 'incorrect number of annotations found'
 		annotations.select {|opt| opt.text == 'Sub-Cluster'}.first.click
@@ -102,7 +108,7 @@ class UiTestSuite < Test::Unit::TestCase
 		wait_until_page_loads(path)
 		download_section = @driver.find_element(:id, 'study-data-files')
 		# gotcha when clicking, must wait until completes
-		opened = download_section.click
+		download_section.click
 		files = @driver.find_elements(:class, 'dl-link')
 		file_link = files.first
 		@wait.until { file_link.displayed? }
@@ -160,6 +166,34 @@ class UiTestSuite < Test::Unit::TestCase
 		assert element_present?(:id, 'plots'), 'could not find marker list expression heatmap'
 	end
 
+	test 'load different cluster and annotation then search gene expression' do
+		path = @base_url + '/study/test-study'
+		@driver.get(path)
+		wait_until_page_loads(path)
+		clusters = @driver.find_element(:id, 'cluster').find_elements(:tag_name, 'option')
+		cluster = clusters.last
+		cluster_name = cluster['text']
+		cluster.click
+		# wait for 3 seconds as new annotation options load
+		sleep(3)
+		annotations = @driver.find_element(:id, 'annotation').find_elements(:tag_name, 'option')
+		annotation = annotations.sample
+		annotation_name = annotation['text']
+		annotation_value = annotation['value']
+		annotation.click
+		gene = @genes.sample
+		search_box = @driver.find_element(:id, 'search_genes')
+		search_box.send_key(gene)
+		search_form = @driver.find_element(:id, 'search-genes-form')
+		search_form.submit
+		new_path = "#{@base_url}/study/test-study/gene_expression/#{gene}?annotation=#{annotation_value.split.join('+')}&boxpoints=all&cluster=#{cluster_name.split.join('+')}"
+		wait_until_page_loads(new_path)
+		loaded_cluster = @driver.find_element(:id, 'cluster')
+		loaded_annotation = @driver.find_element(:id, 'annotation')
+		assert loaded_cluster['value'] == cluster_name, "did not load correct cluster; expected #{cluster_name} but loaded #{loaded_cluster['value']}"
+		assert loaded_annotation['value'] == annotation_value, "did not load correct annotation; expected #{annotation_value} but loaded #{loaded_annotation['value']}"
+	end
+
 	# admin backend tests of entire study creation process as order needs to be maintained throughout
 	# logs test user in, creates study, and deletes study on completion
 	# uses example data as inputs
@@ -211,17 +245,38 @@ class UiTestSuite < Test::Unit::TestCase
 		wait_for_render(:id, 'start-file-upload')
 		upload_btn = @driver.find_element(:id, 'start-file-upload')
 		upload_btn.click
-		# close success modal
 		wait_for_render(:id, 'upload-success-modal')
 		close_modal('upload-success-modal')
 
 		# upload cluster
-		wait_for_render(:class, 'initialize_ordinations_form')
-		upload_sub_clusters = @driver.find_element(:class, 'upload-clusters')
-		upload_sub_clusters.send_keys(@test_data_path + 'cluster_example.txt')
+		cluster_form_1 = @driver.find_element(:class, 'initialize_ordinations_form')
+		cluster_name = cluster_form_1.find_element(:class, 'filename')
+		cluster_name.send_keys('Test Cluster 1')
+		upload_cluster = cluster_form_1.find_element(:class, 'upload-clusters')
+		upload_cluster.send_keys(@test_data_path + 'cluster_example.txt')
 		wait_for_render(:id, 'start-file-upload')
-		upload_btn = @driver.find_element(:id, 'start-file-upload')
+		upload_btn = cluster_form_1.find_element(:id, 'start-file-upload')
 		upload_btn.click
+		wait_for_render(:id, 'upload-success-modal')
+		close_modal('upload-success-modal')
+
+		# upload a second cluster
+		prev_btn = @driver.find_element(:id, 'prev-btn')
+		prev_btn.click
+		new_cluster = @driver.find_element(:class, 'add-cluster')
+		new_cluster.click
+		sleep(1)
+		scroll_to_bottom
+		# will be second instance since there are two forms
+		cluster_form_2 = @driver.find_element(:class, 'new-cluster-form')
+		cluster_name_2 = cluster_form_2.find_element(:class, 'filename')
+		cluster_name_2.send_keys('Test Cluster 2')
+		upload_cluster_2 = cluster_form_2.find_element(:class, 'upload-clusters')
+		upload_cluster_2.send_keys(@test_data_path + 'cluster_2_example.txt')
+		wait_for_render(:id, 'start-file-upload')
+		scroll_to_bottom
+		upload_btn_2 = cluster_form_2.find_element(:id, 'start-file-upload')
+		upload_btn_2.click
 		wait_for_render(:id, 'upload-success-modal')
 		close_modal('upload-success-modal')
 
@@ -243,10 +298,10 @@ class UiTestSuite < Test::Unit::TestCase
 		marker_form = @driver.find_element(:class, 'initialize_marker_genes_form')
 		marker_file_name = marker_form.find_element(:id, 'study_file_name')
 		marker_file_name.send_keys('Test Gene List')
-		upload_markers = @driver.find_element(:class, 'upload-marker-genes')
+		upload_markers = marker_form.find_element(:class, 'upload-marker-genes')
 		upload_markers.send_keys(@test_data_path + 'marker_1_gene_list.txt')
 		wait_for_render(:id, 'start-file-upload')
-		upload_btn = @driver.find_element(:id, 'start-file-upload')
+		upload_btn = marker_form.find_element(:id, 'start-file-upload')
 		upload_btn.click
 		wait_for_render(:id, 'upload-success-modal')
 		close_modal('upload-success-modal')
@@ -279,6 +334,7 @@ class UiTestSuite < Test::Unit::TestCase
 	# negative tests to validate that error checks & messaging is functioning properly
 	test 'create study error messaging' do
 		# log in first
+		@driver.execute_script("document.body.style.zoom='50%'")
 		path = @base_url + '/studies/new'
 		@driver.get path
 		close_modal('message_modal')

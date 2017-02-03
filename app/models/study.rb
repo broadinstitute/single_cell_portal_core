@@ -173,16 +173,19 @@ class Study
   # helper method to get number of unique single cells
   def set_cell_count
     @cell_count = 0
-    if self.expression_matrix_file.nil? && !self.single_cells.empty?
-      @cell_count = self.single_cells.uniq!(&:name).count
-    elsif !self.expression_matrix_file.nil?
+    if !self.expression_matrix_file.nil?
       file = File.open(self.expression_matrix_file.upload.path)
       cells = file.readline.split(/[\t,]/)
       file.close
       cells.shift
       @cell_count = cells.size
+    elsif self.expression_matrix_file.nil? && !self.metadata_file.nil?
+      # we have no expression matrix, but we do have a metadata file
+      metadata_name, metadata_type = StudyMetadata.where(study_id: self.id).pluck(:name, :annotation_type).flatten
+      @cell_count = self.study_metadata_values(metadata_name, metadata_type).keys.size
     end
     self.update(cell_count: @cell_count)
+    Rails.logger.info "Setting cell count in #{self.name} to #{@cell_count}"
   end
 
   # return an array of all single cell names in study
