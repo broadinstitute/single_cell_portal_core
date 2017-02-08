@@ -1,0 +1,21 @@
+<table>
+  <thead>
+    <tr>
+      <% @table_header.each do |header| %>
+        <th><%= header %></th>
+      <% end %>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <% @portal_row.each do |cell| %>
+        <td><%= cell %></td>
+      <% end %>
+    </tr>
+    <tr>
+      <% @data_disk_row.each do |cell| %>
+        <td><%= cell %></td>
+      <% end %>
+    </tr>
+  </tbody>
+</table>

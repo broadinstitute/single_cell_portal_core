@@ -66,6 +66,17 @@ class StudiesController < ApplicationController
   # DELETE /studies/1.json
   def destroy
     name = @study.name
+    ### GOTCHA ON MEMORY USAGE
+    # calling @study.destroy will load all dependent objects into memory and call their dependent removal methods
+    # even if the association is dependent: :delete, it still has to be loaded into memory and removed one at a time
+    # instead, manually remove any documents with Model.delete_all that will consume a lot of RAM (expression_scores,
+    # study_metadatas, data_arrays and precomputed_scores) before calling @study.destroy to remove all other objects
+    ExpressionScore.where(study_id: @study.id).delete_all
+    DataArray.where(study_id: @study.id).delete_all
+    StudyMetadata.where(study_id: @study.id).delete_all
+    PrecomputedScore.where(study_id: @study.id).delete_all
+
+    # now we can delete the study to remove study_files, cluster_groups and any other children
     @study.destroy
     respond_to do |format|
       format.html { redirect_to studies_path, notice: "Study '#{name}'was successfully destroyed.  All uploaded data & parsed database records have also been destroyed." }

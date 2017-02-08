@@ -45,6 +45,9 @@ class User
   # field :unlock_token,    type: String # Only if unlock strategy is :email or :both
   # field :locked_at,       type: Time
 
+  ## Custom
+  field :admin, type: Boolean
+
   def self.from_omniauth(access_token)
     data = access_token.info
     provider = access_token.provider

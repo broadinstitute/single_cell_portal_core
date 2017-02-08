@@ -1,27 +1,35 @@
 GIT
-  remote: git://github.com/FortAwesome/font-awesome-sass.git
-  revision: b15a8a38d4bddebc904402a017e11efca6637210
+  remote: https://github.com/FortAwesome/font-awesome-sass
+  revision: 2200fc61adba2ba78556ce04783a19d48bac82f4
   specs:
-    font-awesome-sass (4.5.0)
+    font-awesome-sass (4.7.0)
       sass (>= 3.2)
 
 GIT
-  remote: git://github.com/bigtunacan/rails-jquery-autocomplete.git
+  remote: https://github.com/bigtunacan/rails-jquery-autocomplete
   revision: 8b33b11222300b138d4d8318bb74c070905c6b4c
   specs:
     rails-jquery-autocomplete (1.0.3)
       rails (>= 3.2)
 
 GIT
-  remote: git://github.com/joliss/jquery-ui-rails.git
-  revision: de88822408371b678f346338d18f9f4eb7635456
+  remote: https://github.com/joliss/jquery-ui-rails
+  revision: 0b22d46622c6615334cdfcd86d0d3ea22d9841ca
   specs:
-    jquery-ui-rails (5.0.5)
+    jquery-ui-rails (6.0.1)
       railties (>= 3.2.16)
 
 GIT
-  remote: git://github.com/rweng/jquery-datatables-rails.git
-  revision: b8e6b6fa51e0074ea44b4771a68b1817a14023fc
+  remote: https://github.com/mrrooijen/mongoid-paperclip
+  revision: 225764062f607a29df4ec030edee7f654904252a
+  specs:
+    mongoid-paperclip (1.0.0.pre)
+      mongoid
+      paperclip (>= 2.3.6, != 4.3.3, != 4.3.0)
+
+GIT
+  remote: https://github.com/rweng/jquery-datatables-rails
+  revision: d486b31b192a2924b1913e080ad23460e6b96d31
   specs:
     jquery-datatables-rails (3.4.0)
       actionpack (>= 3.1)
@@ -30,25 +38,18 @@ GIT
       sass-rails
 
 GIT
-  remote: git://github.com/ryanb/nested_form.git
+  remote: https://github.com/ryanb/nested_form
   revision: 1b0689dfb4d230ceabd278eba159fcb02f23c68a
   specs:
     nested_form (0.3.2)
 
 GIT
-  remote: git://github.com/twbs/bootstrap-sass.git
-  revision: 0a64ad76107e0363e0d504287c0f9b88c6679399
+  remote: https://github.com/twbs/bootstrap-sass
+  revision: 5d6b2ebba0c2a5885ce2f0e01e9218db3d3b5e47
   specs:
-    bootstrap-sass (3.3.6)
+    bootstrap-sass (3.3.7)
       autoprefixer-rails (>= 5.2.1)
       sass (>= 3.3.4)
-
-GIT
-  remote: https://github.com/mrrooijen/mongoid-paperclip.git
-  revision: 7eb32a3a887f3866787a8ccd780c5f2631e6c300
-  specs:
-    mongoid-paperclip (0.0.10)
-      paperclip (>= 2.3.6, != 4.3.0)
 
 GEM
   remote: https://rubygems.org/
@@ -89,7 +90,7 @@ GEM
       thread_safe (~> 0.3, >= 0.3.4)
       tzinfo (~> 1.1)
     arel (6.0.3)
-    autoprefixer-rails (6.3.6.1)
+    autoprefixer-rails (6.7.2)
       execjs
     bcrypt (3.1.11)
     bson (4.1.0)
@@ -155,7 +156,7 @@ GEM
     mail (2.6.4)
       mime-types (>= 1.16, < 4)
     mime-types (2.99.1)
-    mimemagic (0.3.0)
+    mimemagic (0.3.2)
     mini_portile2 (2.0.0)
     minitest (5.9.0)
     mongo (2.2.4)
@@ -194,12 +195,12 @@ GEM
       omniauth (~> 1.2)
     origin (2.2.0)
     orm_adapter (0.5.0)
-    paperclip (4.3.6)
-      activemodel (>= 3.2.0)
-      activesupport (>= 3.2.0)
+    paperclip (5.1.0)
+      activemodel (>= 4.2.0)
+      activesupport (>= 4.2.0)
       cocaine (~> 0.5.5)
       mime-types
-      mimemagic (= 0.3.0)
+      mimemagic (~> 0.3.0)
     power_assert (0.2.2)
     rack (1.6.4)
     rack-test (0.6.3)
@@ -315,4 +316,4 @@ DEPENDENCIES
   will_paginate_mongoid
 
 BUNDLED WITH
-   1.11.2
+   1.13.7

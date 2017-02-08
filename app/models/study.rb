@@ -9,7 +9,7 @@ class Study
 
   # associations and scopes
   belongs_to :user
-  has_many :study_files, dependent: :destroy do
+  has_many :study_files, dependent: :delete do
     def by_type(file_type)
       if file_type.is_a?(Array)
         where(:file_type.in => file_type).to_a
@@ -18,21 +18,21 @@ class Study
       end
     end
   end
-  has_many :cluster_points, dependent: :destroy
-  has_many :single_cells, dependent: :destroy
-  has_many :expression_scores, dependent: :destroy do
+  has_many :cluster_points, dependent: :delete
+  has_many :single_cells, dependent: :delete
+  has_many :expression_scores, dependent: :delete do
     def by_gene(gene)
       where(gene: gene).first
     end
   end
 
-  has_many :precomputed_scores, dependent: :destroy do
+  has_many :precomputed_scores, dependent: :delete do
     def by_name(name)
       where(name: name).first
     end
   end
 
-  has_many :study_shares, dependent: :destroy do
+  has_many :study_shares, dependent: :delete do
     def can_edit
       where(permission: 'Edit').map(&:email)
     end
@@ -42,14 +42,14 @@ class Study
     end
   end
 
-  has_many :cluster_groups, dependent: :destroy
-  has_many :data_arrays, dependent: :destroy do
+  has_many :cluster_groups, dependent: :delete
+  has_many :data_arrays, dependent: :delete do
     def by_name_and_type(name, type)
       where(name: name, array_type: type).order_by(&:array_index).to_a
     end
   end
 
-  has_many :clusters, dependent: :destroy do
+  has_many :clusters, dependent: :delete do
     def parent_clusters
       where(cluster_type: 'parent').to_a.delete_if {|c| c.cluster_points.empty? }
     end
@@ -59,7 +59,7 @@ class Study
     end
   end
 
-  has_many :study_metadatas, dependent: :destroy do
+  has_many :study_metadatas, dependent: :delete do
     def by_name_and_type(name, type)
       where(name: name, annotation_type: type).to_a
     end
@@ -79,7 +79,7 @@ class Study
   accepts_nested_attributes_for :study_files, allow_destroy: true
   accepts_nested_attributes_for :study_shares, allow_destroy: true, reject_if: proc { |attributes| attributes['email'].blank? }
 
-  validates_uniqueness_of :name
+  validates_uniqueness_of :name, :url_safe_name
   validates_presence_of :name
 
   # populate specific errors for study shares since they share the same form
@@ -93,30 +93,38 @@ class Study
   end
 
   # callbacks
-  before_save     :set_url_safe_name
-  before_update   :check_data_links
-  after_save      :check_public?
-  before_destroy  :remove_public_symlinks
-  after_destroy   :remove_data_dir
+  before_validation :set_url_safe_name
+  before_update     :check_data_links
+  after_save        :check_public?
+  before_destroy    :remove_public_symlinks
+  after_destroy     :remove_data_dir
 
   # search definitions
   index({"name" => "text", "description" => "text"})
 
   # return all studies that are editable by a given user
   def self.editable(user)
-    studies = self.where(user_id: user._id).to_a
-    shares = StudyShare.where(email: user.email, permission: 'Edit').map(&:study)
-    [studies + shares].flatten.uniq
+    if user.admin?
+      self.all.to_a
+    else
+      studies = self.where(user_id: user._id).to_a
+      shares = StudyShare.where(email: user.email, permission: 'Edit').map(&:study)
+      [studies + shares].flatten.uniq
+    end
   end
 
   # return all studies that are viewable by a given user
   def self.viewable(user)
-    public = self.where(public: true).map(&:_id)
-    owned = self.where(user_id: user._id, public: false).map(&:_id)
-    shares = StudyShare.where(email: user.email).map(&:study_id)
-    intersection = public + owned + shares
-    # return Mongoid criterion object to use with pagination
-    Study.in(:_id => intersection)
+    if user.admin?
+      self.all
+    else
+      public = self.where(public: true).map(&:_id)
+      owned = self.where(user_id: user._id, public: false).map(&:_id)
+      shares = StudyShare.where(email: user.email).map(&:study_id)
+      intersection = public + owned + shares
+      # return Mongoid criterion object to use with pagination
+      Study.in(:_id => intersection)
+    end
   end
 
   # check if a give use can edit study
@@ -129,9 +137,14 @@ class Study
     self.can_edit?(user) || self.study_shares.can_view.include?(user.email)
   end
 
+  # check if user can delete a study - only owners can
+  def can_delete?(user)
+    self.user_id == user.id
+  end
+
   # list of emails for accounts that can edit this study
   def admins
-    [self.user.email, self.study_shares.can_edit].flatten.uniq
+    [self.user.email, self.study_shares.can_edit, User.where(admin: true).pluck(:email)].flatten.uniq
   end
 
   # file path to study public folder
@@ -365,6 +378,7 @@ class Study
   def initialize_cluster_group_and_data_arrays(ordinations_file)
     # validate headers of definition file
     @validation_error = false
+    start_time = Time.now
     begin
       d_file = File.open(ordinations_file.upload.path)
       headers = d_file.readline.split(/[\t,]/).map(&:strip)
@@ -393,6 +407,7 @@ class Study
     @bytes_parsed = 0
     @update_chunk = ordinations_file.upload_file_size / 4.0
     @current_chunk = 0
+    @message = []
     @cluster_metadata = []
     @records = []
     # begin parse
@@ -513,8 +528,9 @@ class Study
 
       # save cell_annotations to cluster_group object
       @cluster_group.update_attributes(cell_annotations: cell_annotations)
-
       ordinations_file.update(parse_status: 'parsed', bytes_parsed: ordinations_file.upload_file_size)
+      end_time = Time.now
+      time = (end_time - start_time).divmod 60.0
       # set initialized to true if possible
       if !self.expression_matrix_file.nil? && !self.metadata_file.nil? && !self.initialized?
         self.update(initialized: true)
@@ -893,7 +909,10 @@ class Study
     end
   end
 
+  # remove data directory on delete
   def remove_data_dir
-    FileUtils.rm_rf(self.data_store_path)
+    if Dir.exists?(self.data_store_path)
+      FileUtils.rm_rf(self.data_store_path)
+    end
   end
 end

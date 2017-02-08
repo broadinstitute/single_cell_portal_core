@@ -20,9 +20,9 @@
 //= require jquery_nested_form
 //= require spin.min
 //= require chroma.min
-//= require jquery-ui/datepicker
-//= require jquery-ui/autocomplete
-//= require jquery-ui/effect-highlight
+//= require jquery-ui/widgets/datepicker
+//= require jquery-ui/widgets/autocomplete
+//= require jquery-ui/effects/effect-highlight
 //= require autocomplete-rails
 
 var fileUploading = false;
