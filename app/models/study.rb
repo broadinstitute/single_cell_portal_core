@@ -259,7 +259,7 @@ class Study
   end
 
   # method to parse master expression scores file for study and populate collection
-  def make_expression_scores(expression_file, user=nil)
+  def make_expression_scores(expression_file, user)
     @count = 0
     @bytes_parsed = 0
     @message = []
@@ -278,16 +278,21 @@ class Study
       end
       file.close
     rescue => e
-      expression_file.update(parse_status: 'failed')
       error_message = "Unexpected error: #{e.message}"
-      Rails.logger.info @last_line + ' ' + error_message
+      filename = expression_file.name
+      expression_file.destroy
+      Rails.logger.info error_message
+      SingleCellMailer.notify_user_parse_fail(user.email, "Expression file: '#{filename}' parse has failed", error_message).deliver_now
       raise StandardError, error_message
     end
 
     # raise validation error if needed
     if @validation_error
-      error_message = "file header validation failed: #{@last_line}; first header should be GENE or blank followed by cell names"
+      error_message = "file header validation failed: first header should be GENE or blank followed by cell names"
+      filename = expression_file.name
+      expression_file.destroy
       Rails.logger.info error_message
+      SingleCellMailer.notify_user_parse_fail(user.email, "Expression file: '#{filename}' parse has failed", error_message).deliver_now
       raise StandardError, error_message
     end
 
@@ -315,6 +320,15 @@ class Study
         @last_line = "#{expression_file.name}, line #{expression_data.lineno}"
 
         gene_name = row.shift
+        # check for duplicate genes
+        if @genes_parsed.include?(gene_name)
+          user_error_message = "You have a duplicate gene entry (#{gene_name}) in your gene list.  Please check your file and try again."
+          error_message = "Duplicate gene #{gene_name} in #{expression_file.name} (#{expression_file._id}) for study: #{self.name}"
+          Rails.logger.info error_message
+          raise StandardError, user_error_message
+        else
+          @genes_parsed << gene_name
+        end
 
         # convert all remaining strings to floats, then store only significant values (!= 0)
         scores = row.map(&:to_f)
@@ -360,14 +374,16 @@ class Study
       if !self.cluster_ordinations_files.empty? && !self.metadata_file.nil? && !self.initialized?
         self.update(initialized: true)
       end
-      unless user.nil?
-        SingleCellMailer.notify_user_parse_complete(user.email, "Expression file: '#{expression_file.name}' has completed parsing", @message).deliver_now
-      end
+      SingleCellMailer.notify_user_parse_complete(user.email, "Expression file: '#{expression_file.name}' has completed parsing", @message).deliver_now
     rescue => e
-      expression_file.update(parse_status: 'failed')
-      error_message = "#{@last_line} ERROR: #{e.message}"
+      # error has occurred, so clean up records and remove file
+      ExpressionScore.where(study_id: self.id).delete_all
+      DataArray.where(study_id: self.id, study_file_id: expression_file.id).delete_all
+      filename = expression_file.name
+      expression_file.destroy
+      error_message = "#{@last_line}: #{e.message}"
       Rails.logger.info error_message
-      raise StandardError, error_message
+      SingleCellMailer.notify_user_parse_fail(user.email, "Expression file: '#{filename}' parse has failed", error_message).deliver_now
     end
     true
   end
@@ -375,7 +391,7 @@ class Study
   # parse single cluster coordinate & metadata file (name, x, y, z, metadata_cols* format)
   # uses cluster_group model instead of single clusters; group membership now defined by metadata
   # stores point data in cluster_group_data_arrays instead of single_cells and cluster_points
-  def initialize_cluster_group_and_data_arrays(ordinations_file)
+  def initialize_cluster_group_and_data_arrays(ordinations_file, user)
     # validate headers of definition file
     @validation_error = false
     start_time = Time.now
@@ -392,15 +408,21 @@ class Study
       d_file.close
     rescue => e
       ordinations_file.update(parse_status: 'failed')
-      error_message = "Unexpected error: #{e.message}"
-      Rails.logger.info @last_line + ' ' + error_message
+      error_message = "#{e.message}"
+      Rails.logger.info error_message
+      filename = ordinations_file.upload_file_name
+      ordinations_file.destroy
+      SingleCellMailer.notify_user_parse_fail(user.email, "Cluster file: '#{filename}' parse has failed", error_message).deliver_now
       raise StandardError, error_message
     end
 
     # raise validation error if needed
     if @validation_error
-      error_message = "file header validation failed: #{@last_line}; should be at least NAME, X, Y with second line starting with TYPE"
+      error_message = "file header validation failed: should be at least NAME, X, Y with second line starting with TYPE"
       Rails.logger.info error_message
+      filename = ordinations_file.upload_file_name
+      ordinations_file.destroy
+      SingleCellMailer.notify_user_parse_fail(user.email, "Cluster file: '#{filename}' parse has failed", error_message).deliver_now
       raise StandardError, error_message
     end
 
@@ -409,7 +431,7 @@ class Study
     @current_chunk = 0
     @message = []
     @cluster_metadata = []
-    @records = []
+    @point_count = 0
     # begin parse
     begin
       cluster_name = ordinations_file.name
@@ -479,6 +501,7 @@ class Study
       # begin reading data
       while !cluster_data.eof?
         line = cluster_data.readline.strip
+        @point_count += 1
         @last_line = "#{ordinations_file.name}, line #{cluster_data.lineno}"
         vals = line.split(/[\t,]/).map(&:strip)
         # assign value to corresponding data_array by column index
@@ -528,18 +551,36 @@ class Study
 
       # save cell_annotations to cluster_group object
       @cluster_group.update_attributes(cell_annotations: cell_annotations)
+      # reload cluster_group to use in messaging
+      @cluster_group = ClusterGroup.find_by(study_id: self.id, study_file_id: ordinations_file.id, name: ordinations_file.name)
       ordinations_file.update(parse_status: 'parsed', bytes_parsed: ordinations_file.upload_file_size)
       end_time = Time.now
       time = (end_time - start_time).divmod 60.0
+      # assemble email message parts
+      @message << "#{ordinations_file.upload_file_name} parse completed!"
+      @message << "Cluster created: #{@cluster_group.name}, type: #{@cluster_group.cluster_type}"
+      if @cluster_group.cell_annotations.any?
+        @message << "Annotations:"
+        @cluster_group.cell_annotations.each do |annot|
+          @message << "#{annot['name']}: #{annot['type']}#{annot['type'] == 'group' ? ' (' + annot['values'].join(',') + ')' : nil}"
+        end
+      end
+      @message << "Total points in cluster: #{@point_count}"
+      @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
       # set initialized to true if possible
       if !self.expression_matrix_file.nil? && !self.metadata_file.nil? && !self.initialized?
         self.update(initialized: true)
       end
+      SingleCellMailer.notify_user_parse_complete(user.email, "Cluster file: '#{ordinations_file.upload_file_name}' has completed parsing", @message).deliver_now
     rescue => e
-      ordinations_file.update(parse_status: 'failed')
+      # error has occurred, so clean up records and remove file
+      ClusterGroup.where(study_file_id: ordinations_file.id).delete_all
+      DataArray.where(study_file_id: ordinations_file.id).delete_all
+      filename = ordinations_file.upload_file_name
+      ordinations_file.destroy
       error_message = "#{@last_line} ERROR: #{e.message}"
       Rails.logger.info error_message
-      raise StandardError, error_message
+      SingleCellMailer.notify_user_parse_fail(user.email, "Cluster file: '#{filename}' parse has failed", error_message).deliver_now
     end
     true
   end
@@ -547,9 +588,10 @@ class Study
   # parse a study metadata file and create necessary study_metadata objects
   # study_metadata objects are hashes that store annotations in cell_name/annotation_value pairs
   # call @study.study_metadata_values(metadata_name, metadata_type) to return all values as one hash
-  def initialize_study_metadata(metadata_file, user=nil)
+  def initialize_study_metadata(metadata_file, user)
     # validate headers of definition file
     @validation_error = false
+    start_time = Time.now
     begin
       Rails.logger.info "Validating metadata file headers for #{metadata_file.name} in #{self.name}"
       m_file = File.open(metadata_file.upload.path)
@@ -564,16 +606,21 @@ class Study
       end
       m_file.close
     rescue => e
-      metadata_file.update(parse_status: 'failed')
-      error_message = "Unexpected error: #{e.message}"
-      Rails.logger.info @last_line + ' ' + error_message
+      filename = metadata_file.upload_file_name
+      metadata_file.destroy
+      error_message = "#{@last_line} ERROR: #{e.message}"
+      Rails.logger.info error_message
+      SingleCellMailer.notify_user_parse_fail(user.email, "Metadata file: '#{filename}' parse has failed", error_message).deliver_now
       raise StandardError, error_message
     end
 
     # raise validation error if needed
     if @validation_error
-      error_message = "file header validation failed: #{@last_line}; should be at least NAME and one other column with second line starting with TYPE followed by either 'group' or 'numeric'"
+      error_message = "file header validation failed: should be at least NAME and one other column with second line starting with TYPE followed by either 'group' or 'numeric'"
+      filename = metadata_file.upload_file_name
+      metadata_file.destroy
       Rails.logger.info error_message
+      SingleCellMailer.notify_user_parse_fail(user.email, "Metadata file: '#{filename}' parse has failed", error_message).deliver_now
       raise StandardError, error_message
     end
 
@@ -581,6 +628,7 @@ class Study
     @current_chunk = 0
     @update_chunk = metadata_file.upload_file_size / 4.0
     @metadata_records = []
+    @message = []
     # begin parse
     begin
       Rails.logger.info "Beginning metadata initialization using #{metadata_file.upload_file_name} in #{self.name}"
@@ -653,17 +701,35 @@ class Study
       if !self.expression_matrix_file.nil? && !self.cluster_ordinations_files.empty? && !self.initialized?
         self.update(initialized: true)
       end
+
+      # assemble message
+      end_time = Time.now
+      time = (end_time - start_time).divmod 60.0
+      # assemble email message parts
+      @message << "#{metadata_file.upload_file_name} parse completed!"
+      @message << "Entries created:"
+      @metadata_records.each do |metadata|
+        unless metadata.nil?
+          @message << "#{metadata.name}: #{metadata.annotation_type}#{metadata.values.any? ? ' (' + metadata.values.join(', ') + ')' : nil}"
+        end
+      end
+      @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
+      # send email on completion
+      SingleCellMailer.notify_user_parse_complete(user.email, "Metadata file: '#{metadata_file.upload_file_name}' has completed parsing", @message).deliver_now
     rescue => e
-      metadata_file.update(parse_status: 'failed')
+      # parse has failed, so clean up records and remove file
+      StudyMetadata.where(study_id: self.id).delete_all
+      filename = metadata_file.upload_file_name
+      metadata_file.destroy
       error_message = "#{@last_line} ERROR: #{e.message}"
       Rails.logger.info error_message
-      raise StandardError, error_message
+      SingleCellMailer.notify_user_parse_fail(user.email, "Metadata file: '#{filename}' parse has failed", error_message).deliver_now
     end
     true
   end
 
   # parse precomputed marker gene files and create documents to render in Morpheus
-  def make_precomputed_scores(marker_file, user=nil)
+  def make_precomputed_scores(marker_file, user)
     @count = 0
     @message = []
     start_time = Time.now
@@ -681,16 +747,22 @@ class Study
       end
       file.close
     rescue => e
-      marker_file.update(parse_status: 'failed')
-      error_message = "Unexpected error: #{e.message}"
-      Rails.logger.info @last_line + ' ' + error_message
+      filename = marker_file.upload_file_name
+      marker_file.destroy
+      error_message = "#{@last_line} ERROR: #{e.message}"
+      Rails.logger.info error_message
+      SingleCellMailer.notify_user_parse_fail(user.email, "Gene List file: '#{filename}' parse has failed", error_message).deliver_now
+      # raise standard error to halt execution
       raise StandardError, error_message
     end
 
     # raise validation error if needed
     if @validation_error
       error_message = "file header validation failed: #{@last_line}: first header must be 'GENE NAMES' followed by clusters"
+      filename = marker_file.upload_file_name
+      marker_file.destroy
       Rails.logger.info error_message
+      SingleCellMailer.notify_user_parse_fail(user.email, "Gene List file: '#{filename}' parse has failed", error_message).deliver_now
       raise StandardError, error_message
     end
 
@@ -717,8 +789,7 @@ class Study
         @last_line = "#{marker_file.name}, line #{i + 2}"
         vals = line.split(/[\t,]/)
         gene = vals.shift
-        uniq_gene_name = gene.downcase
-        if @genes_parsed.include?(uniq_gene_name)
+        if @genes_parsed.include?(gene)
           marker_file.update(parse_status: 'failed')
           user_error_message = "You have a duplicate gene entry (#{gene}) in your gene list.  Please check your file and try again."
           error_message = "Duplicate gene #{gene} in #{marker_file.name} (#{marker_file._id}) for study: #{self.name}"
@@ -726,7 +797,7 @@ class Study
           raise StandardError, user_error_message
         else
           # gene is unique so far so add to list
-          @genes_parsed << uniq_gene_name
+          @genes_parsed << gene
         end
 
         row = {"#{gene}" => {}}
@@ -739,20 +810,24 @@ class Study
       precomputed_score.gene_scores = rows
       precomputed_score.save
       marker_file.update(parse_status: 'parsed', bytes_parsed: marker_file.upload_file_size)
+
+      # assemble message
       end_time = Time.now
       time = (end_time - start_time).divmod 60.0
       @message << "#{marker_file.name} parse completed!"
       @message << "Total scores created: #{@count}"
       @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
       Rails.logger.info @message.join("\n")
-      unless user.nil?
-        SingleCellMailer.notify_user_parse_complete(user.email, "Gene list file: '#{marker_file.name}' has completed parsing", @message).deliver_now
-      end
+      # send email
+      SingleCellMailer.notify_user_parse_complete(user.email, "Gene list file: '#{marker_file.name}' has completed parsing", @message).deliver_now
     rescue => e
-      marker_file.update(parse_status: 'failed')
+      # parse has failed, so clean up records and remove file
+      PrecomputedScore.where(study_file_id: marker_file.id).delete_all
+      filename = marker_file.upload_file_name
+      marker_file.destroy
       error_message = "#{@last_line} ERROR: #{e.message}"
       Rails.logger.info error_message
-      raise StandardError, error_message
+      SingleCellMailer.notify_user_parse_fail(user.email, "Gene List file: '#{filename}' parse has failed", error_message).deliver_now
     end
     true
   end

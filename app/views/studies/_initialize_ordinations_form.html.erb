@@ -41,7 +41,7 @@
 			<%= f.label :actions %>
 			<div class="row">
 				<div class="col-xs-6">
-					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: study_file.upload_file_name.nil? %>
+					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: (study_file.upload_file_name.nil? || study_file.parse_status == 'parsing' ) %>
 				</div>
 				<div class="col-xs-6">
 					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: "#ordinations_form_#{study_file._id}"), method: :delete, class: 'btn btn-block btn-danger delete-file', data: {remote: true} %>
@@ -101,12 +101,6 @@
 					});
 					fileUploading = false;
 					$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#ordinations-parse-<%= study_file._id %>-modal', partial: 'initialize_ordinations_form', selector: "#ordinations_form_<%= study_file._id %>"});
-					var target = $('#ordinations-parse-<%= study_file._id %>-modal').find('.spinner-target')[0];
-					var spinner = new Spinner(opts).spin(target);
-					$(target).data('spinner', spinner);
-					$('#ordinations-parse-<%= study_file._id %>-modal').modal({show: true, backdrop: 'static'});
-					$.get("<%= parse_progress_study_path(@study._id) %>", {file: fileName, modal_target: '#ordinations-parse-<%= study_file._id %>-modal'});
-
 				}
 			});
 		});
@@ -115,9 +109,4 @@
 	<% if !study_file.upload_file_name.nil? %>
 		<p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: study_file} %></p>
 	<% end %>
-<% end %>
-<% if study_file.new_record? %>
-  <div class="modal fade sub-cluster-modal" id="ordinations-parse-<%= study_file._id %>-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
-    <%= render 'parse_modal_content' %>
-  </div>
 <% end %>

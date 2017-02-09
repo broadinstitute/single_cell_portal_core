@@ -1,3 +1,7 @@
-<p>Your parse job has failed with the following error:</p>
+<p>Your <%= link_to 'Single Cell Portal', ActionMailer::Base.default_url_options[:host] + '/single_cell/studies' %> parse job has failed with the following error:</p>
 
 <p><%= @error %></p>
+
+<p>This file has been deleted from your study, and any child database records removed.
+  If you have any questions about this error, you can contact the Single Cell Portal Team at
+  <%= mail_to 'single_cell_portal@broadinstitute.org', 'single_cell_portal@broadinstitute.org' %>.</p>

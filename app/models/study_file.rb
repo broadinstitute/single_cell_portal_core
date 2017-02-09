@@ -102,7 +102,10 @@ class StudyFile
     self.file_type.downcase.split.join('-') + '-file'
   end
 
-  # method to return number of lines in a file, uses built-in unix
+  # return path to a file's 'public data' path (which will be a symlink to data dir)
+  def public_data_path
+    File.join(self.study.data_public_path, self.upload_file_name)
+  end
 
   private
 
@@ -126,11 +129,11 @@ class StudyFile
     self.url_safe_name = self.study.url_safe_name
   end
 
-  # add symlink if study is public
+  # add symlink if study is public and doesn't already exist
   def check_public?
     unless self.upload_file_name.nil?
-      if self.study.public? && self.status == 'uploaded'
-        FileUtils.ln_sf(self.upload.path, File.join(self.study.data_public_path, self.upload_file_name))
+      if self.study.public? && self.status == 'uploaded' && !File.exists?(self.public_data_path)
+        FileUtils.ln_sf(self.upload.path, self.public_data_path)
       end
     end
   end
@@ -139,7 +142,7 @@ class StudyFile
   def remove_public_symlink
     unless self.upload_file_name.nil?
       if self.study.public?
-        FileUtils.rm_f(File.join(self.study.data_public_path, self.upload_file_name))
+        FileUtils.rm_f(self.public_data_path)
       end
     end
   end

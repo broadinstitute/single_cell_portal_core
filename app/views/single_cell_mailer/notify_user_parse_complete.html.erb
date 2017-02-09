@@ -1,2 +1,2 @@
-<p>Your parse job has completed with the following results:</p>
+<p>Your <%= link_to 'Single Cell Portal', ActionMailer::Base.default_url_options[:host] + '/single_cell/studies' %> parse job has completed with the following results:</p>
 <%= @message.join('<br />').html_safe %>

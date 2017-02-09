@@ -20,7 +20,7 @@
 							<td><%= study.name %></td>
 							<td><%= truncate_html(study.description, length: 50) %></td>
 							<td><%= study.visibility %></td>
-              <td><%= study.study_files.count %></td>
+              <td id="<%= study.url_safe_name %>-study-file-count"><%= study.study_files.count %></td>
 							<td><%= link_to "<span class='fa fa-info-circle'></span> Show Details".html_safe, study_path(study), class: 'btn btn-xs btn-info' %>
                   <%= link_to "<span class='fa fa-upload'></span> Upload/Edit Data".html_safe, initialize_study_path(study), class: 'btn btn-xs btn-success' %>
                   <%= link_to "<span class='fa fa-edit'></span> Edit Study".html_safe, edit_study_path(study), class: 'btn btn-xs btn-primary' %>

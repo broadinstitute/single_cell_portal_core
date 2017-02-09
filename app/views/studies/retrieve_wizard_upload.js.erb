@@ -32,7 +32,7 @@ $("#initialized").replaceWith("<%= escape_javascript(render partial: 'initialize
 $('.initialize-label').tooltip({container: 'body'});
 
 // show success modal
-$('#study-files-notice-target').html("<%= escape_javascript(render partial: 'upload_success_modal_content') %>");
+$('#study-files-notice-target').html("<%= escape_javascript(render partial: 'upload_success_modal_content', locals: {study_file: @study_file}) %>");
 setTimeout(function() {
   $('#upload-success-modal').modal('show');
 }, 500);

@@ -88,40 +88,15 @@ class StudiesController < ApplicationController
   def parse
     @study_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
     logger.info "Parsing #{@study_file.name} as #{@study_file.file_type} in study #{@study.name}"
-    begin
-      case @study_file.file_type
-        when 'Cluster'
-          @study.initialize_cluster_group_and_data_arrays(@study_file)
-        when 'Expression Matrix'
-          @study.make_expression_scores(@study_file)
-        when 'Gene List'
-          @study.make_precomputed_scores(@study_file)
-        when 'Metadata'
-          @study.initialize_study_metadata(@study_file)
-      end
-    rescue StandardError => e
-      logger.info "ERROR: Parse has failed for #{@study_file.name} in study: #{@study.name}; file deleted"
-      @error = e.message
-      # remove bad study file, reload good entries
-      @study_file.destroy
-      intitialize_wizard_files
-      case params[:partial]
-        when 'initialize_expression_form'
-          @study_file = @expression_file
-        when 'initialize_metadata_form'
-          @study_file = @metadata_file
-        when 'initialize_ordinations_form'
-          @study_file = @study.build_study_file({file_type: 'Cluster'})
-        when 'initialize_marker_genes_form'
-          @study_file = @study.build_study_file({file_type: 'Gene List'})
-        when 'initialize_fastq_form'
-          @study_file = @study.build_study_file({file_type: 'Fastq'})
-        when 'initialize_misc_form'
-          @study_file = @study.build_study_file({file_type: 'Other'})
-        else
-          @study_file = @study.build_study_file({file_type: 'Other'})
-      end
-      render 'parse_error'
+    case @study_file.file_type
+      when 'Cluster'
+        @study.delay.initialize_cluster_group_and_data_arrays(@study_file, current_user)
+      when 'Expression Matrix'
+        @study.delay.make_expression_scores(@study_file, current_user)
+      when 'Gene List'
+        @study.delay.make_precomputed_scores(@study_file, current_user)
+      when 'Metadata'
+        @study.delay.initialize_study_metadata(@study_file, current_user)
     end
   end
 
@@ -166,27 +141,34 @@ class StudiesController < ApplicationController
     unless @study_file.nil?
       @file_type = @study_file.file_type
       @message = "'#{@study_file.name}' has been successfully deleted."
+      # clean up records before removing file (for memory optimization)
+      case @file_type
+        when 'Cluster'
+          ClusterGroup.where(study_file_id: @study_file.id, study_id: @study.id).delete_all
+          DataArray.where(study_file_id: @study_file.id, study_id: @study.id).delete_all
+          @partial = 'initialize_ordinations_form'
+        when 'Expression Matrix'
+          ExpressionScore.where(study_file_id: @study_file.id, study_id: @study.id).delete_all
+          DataArray.where(study_file_id: @study_file.id, study_id: @study.id).delete_all
+          @partial = 'initialize_expression_form'
+        when 'Metadata'
+          StudyMetadata.where(study_file_id: @study_file.id, study_id: @study.id).delete_all
+          @partial = 'initialize_metadata_form'
+        when 'Fastq'
+          @partial = 'initialize_fastq_form'
+        when 'Gene List'
+          PrecomputedScore.where(study_file_id: @study_file.id, study_id: @study.id).delete_all
+          @partial = 'initialize_marker_genes_form'
+        else
+          @partial = 'initialize_misc_form'
+      end
+      # remove record to also delete uploaded source file
       @study_file.destroy
       if @study.cluster_ordinations_files.empty? || @study.expression_matrix_file.nil? || @study.metadata_file.nil?
         @study.update(initialized: false)
       end
     end
     is_required = ['Cluster', 'Expression Matrix', 'Metadata'].include?(@file_type)
-    case @file_type
-      when 'Cluster'
-        @partial = 'initialize_ordinations_form'
-      when 'Expression Matrix'
-        @partial = 'initialize_expression_form'
-      when 'Metadata'
-        @partial = 'initialize_metadata_form'
-      when 'Fastq'
-        @partial = 'initialize_fastq_form'
-      when 'Gene List'
-        @partial = 'initialize_marker_genes_form'
-      else
-        @partial = 'initialize_misc_form'
-    end
-
     @color = is_required ? 'danger' : 'info'
     @status = is_required ? 'Required' : 'Optional'
     @study_file = @study.build_study_file({file_type: @file_type})
@@ -254,10 +236,9 @@ class StudiesController < ApplicationController
     end
   end
 
-  # PATCH /courses/:id/update_upload_status
+  # update a study_file's upload status to 'uploaded'
   def update_status
     study_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
-    raise ArgumentError, "Wrong status provided " + params[:status] unless study_file.status == 'uploading' && params[:status] == 'uploaded'
     study_file.update!(status: params[:status])
     head :ok
   end

@@ -50,7 +50,7 @@ if @running == false
 	@log_message = "#{@date}: One or more delayed_job workers have died.  Restarting daemon.\n"
 
 	# restart delayed job workers
-	system("bin/delayed_job restart #{@env} -n #{@num_workers}")
+	system("sudo -E -u app -H bin/delayed_job restart #{@env} -n #{@num_workers}")
 
 	# send email to admin
 	Net::SMTP.start('smtp.sendgrid.net', 2525, ENV['SENDGRID_USERNAME'], ENV['SENDGRID_PASSWORD'], :plain) do |smtp|

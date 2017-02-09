@@ -331,10 +331,11 @@ class UiTestSuite < Test::Unit::TestCase
 
 	end
 
-	# negative tests to validate that error checks & messaging is functioning properly
+	# negative tests to check file parsing & validation
+	# since parsing happens in background, all messaging is handled through emails
+	# this test just makes sure that parsing fails and removed entries appropriately
 	test 'create study error messaging' do
 		# log in first
-		@driver.execute_script("document.body.style.zoom='50%'")
 		path = @base_url + '/studies/new'
 		@driver.get path
 		close_modal('message_modal')
@@ -361,18 +362,9 @@ class UiTestSuite < Test::Unit::TestCase
 		wait_for_render(:id, 'start-file-upload')
 		upload_btn = @driver.find_element(:id, 'start-file-upload')
 		upload_btn.click
-		# close error modal
-		wait_for_render(:id, 'error-modal')
-		close_modal('error-modal')
-
-		# navigate forward
-		next_btn = @driver.find_element(:id, 'next-btn')
-		next_btn.click
-		# close required step modal
-		wait_for_render(:id, 'required-modal')
-		ok = @driver.find_element(:id, 'accept-skip-required')
-		ok.click
-		sleep(1)
+		# close modal
+		wait_for_render(:id, 'upload-success-modal')
+		close_modal('upload-success-modal')
 
 		# upload bad metadata assignments
 		wait_for_render(:id, 'metadata_form')
@@ -381,18 +373,7 @@ class UiTestSuite < Test::Unit::TestCase
 		wait_for_render(:id, 'start-file-upload')
 		upload_btn = @driver.find_element(:id, 'start-file-upload')
 		upload_btn.click
-		# close error modal
-		wait_for_render(:id, 'error-modal')
-		close_modal('error-modal')
-
-		# upload metadata
-		wait_for_render(:id, 'metadata_form')
-		upload_metadata = @driver.find_element(:id, 'upload-metadata')
-		upload_metadata.send_keys(@test_data_path + 'metadata_example.txt')
-		wait_for_render(:id, 'start-file-upload')
-		upload_btn = @driver.find_element(:id, 'start-file-upload')
-		upload_btn.click
-		# close success modal
+		# close modal
 		wait_for_render(:id, 'upload-success-modal')
 		close_modal('upload-success-modal')
 
@@ -402,20 +383,9 @@ class UiTestSuite < Test::Unit::TestCase
 		wait_for_render(:id, 'start-file-upload')
 		upload_btn = @driver.find_element(:id, 'start-file-upload')
 		upload_btn.click
-		# close error modal
-		wait_for_render(:id, 'error-modal')
-		close_modal('error-modal')
-
-		# upload cluster
-		upload_clusters = @driver.find_element(:class, 'upload-clusters')
-		upload_clusters.send_keys(@test_data_path + 'cluster_example.txt')
-		wait_for_render(:id, 'start-file-upload')
-		upload_btn = @driver.find_element(:id, 'start-file-upload')
-		upload_btn.click
+		# close modal
 		wait_for_render(:id, 'upload-success-modal')
 		close_modal('upload-success-modal')
-
-		# navigate forward
 		next_btn = @driver.find_element(:id, 'next-btn')
 		next_btn.click
 		wait_for_render(:class, 'initialize_marker_genes_form')
@@ -429,13 +399,15 @@ class UiTestSuite < Test::Unit::TestCase
 		wait_for_render(:id, 'start-file-upload')
 		upload_btn = @driver.find_element(:id, 'start-file-upload')
 		upload_btn.click
-		# close error modal
-		wait_for_render(:id, 'error-modal')
-		close_modal('error-modal')
+		# close modal
+		wait_for_render(:id, 'upload-success-modal')
+		close_modal('upload-success-modal')
 
-		# delete study
+		# assert parses all failed and delete study
 		@driver.get(@base_url + '/studies')
 		wait_until_page_loads(@base_url + '/studies')
+		study_file_count = @driver.find_element(:id, 'error-messaging-test-study-study-file-count')
+		assert study_file_count.text == '0', "found incorrect number of study files; expected 0 and found #{study_file_count.text}"
 		@driver.find_element(:class, 'error-messaging-test-study-delete').click
 		@driver.switch_to.alert.accept
 		wait_for_render(:id, 'message_modal')

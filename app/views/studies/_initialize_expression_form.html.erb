@@ -36,7 +36,7 @@
 					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: study_file.upload_file_name.nil? %>
 				</div>
 				<div class="col-xs-6">
-					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: '#expression_form'), method: :delete, class: 'btn btn-block btn-danger delete-file', disabled: study_file.upload_file_name.nil?, data: {remote: true} %>
+					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: '#expression_form'), method: :delete, class: 'btn btn-block btn-danger delete-file', disabled: (study_file.upload_file_name.nil? || study_file.parse_status == 'parsing' ), data: {remote: true} %>
 				</div>
 			</div>
 		</div>
@@ -97,19 +97,9 @@
 					});
 					fileUploading = false;
 					$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#expression-parse-modal', partial: 'initialize_expression_form', selector: "#expression_form"});
-					var target = $('#expression-parse-modal').find('.spinner-target')[0];
-					var spinner = new Spinner(opts).spin(target);
-					$(target).data('spinner', spinner);
-					$('#expression-parse-modal').modal({show: true, backdrop: 'static'});
-					$.get("<%= parse_progress_study_path(@study._id) %>", {file: fileName, modal_target: '#expression-parse-modal'});
 				}
 			});
 		});
 
 	</script>
-<% end %>
-<% if study_file.new_record? %>
-  <div class="modal fade" id="expression-parse-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
-    <%= render 'parse_modal_content' %>
-  </div>
 <% end %>

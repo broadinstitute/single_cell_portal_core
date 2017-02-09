@@ -104,19 +104,9 @@
 					});
 					fileUploading = false;
 					$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#parent-cluster-parse-modal', partial: 'initialize_clusters_form', selector: "#parent_cluster_form"});
-					var target = $('#parent-cluster-parse-modal').find('.spinner-target')[0];
-					var spinner = new Spinner(opts).spin(target);
-					$(target).data('spinner', spinner);
-					$('#parent-cluster-parse-modal').modal({show: true, backdrop: 'static'});
-					$.get("<%= parse_progress_study_path(@study._id) %>", {file: fileName, modal_target: '#parent-cluster-parse-modal'});
 				}
 			});
 		});
 
 	</script>
-<% end %>
-<% if study_file.new_record? %>
-  <div class="modal fade" id="parent-cluster-parse-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
-    <%= render 'parse_modal_content' %>
-  </div>
 <% end %>

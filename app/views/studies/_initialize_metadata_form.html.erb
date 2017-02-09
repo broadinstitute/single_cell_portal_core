@@ -27,7 +27,7 @@
 			<%= f.label :actions %>
 			<div class="row">
 				<div class="col-xs-6">
-					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: study_file.upload_file_name.nil? %>
+					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: (study_file.upload_file_name.nil? || study_file.parse_status == 'parsing' ) %>
 				</div>
 				<div class="col-xs-6">
 					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: '#metadata_form'), method: :delete, class: 'btn btn-block btn-danger delete-file', disabled: study_file.upload_file_name.nil?, data: {remote: true} %>
@@ -91,19 +91,9 @@
 					});
 					fileUploading = false;
 					$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#metadata-parse-modal', partial: 'initialize_metadata_form', selector: "#metadata_form"});
-					var target = $('#metadata-parse-modal').find('.spinner-target')[0];
-					var spinner = new Spinner(opts).spin(target);
-					$(target).data('spinner', spinner);
-					$('#metadata-parse-modal').modal({show: true, backdrop: 'static'});
-					$.get("<%= parse_progress_study_path(@study._id) %>", {file: fileName, modal_target: '#metadata-parse-modal'});
 				}
 			});
 		});
 
 	</script>
-<% end %>
-<% if study_file.new_record? %>
-  <div class="modal fade" id="metadata-parse-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
-    <%= render 'parse_modal_content' %>
-  </div>
 <% end %>

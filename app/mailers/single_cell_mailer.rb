@@ -3,12 +3,12 @@ class SingleCellMailer < ApplicationMailer
 
   def notify_user_parse_complete(email, title, message)
     @message = message
-    mail(to: email, subject: title)
+    mail(to: email, subject: '[Single Cell Portal Notifier] ' + title)
   end
 
   def notify_user_parse_fail(email, title, error)
     @error = error
-    mail(to: email, subject: title)
+    mail(to: email, subject: '[Single Cell Portal Notifier] ' + title)
   end
 
   def daily_disk_status
