@@ -883,7 +883,7 @@ class Study
 
   def migrate_study(user)
     if self.single_cells.any? && self.cluster_points.any?
-      message = "Beginning migration for #{study.name}"
+      message = "Beginning migration for #{self.name}"
       Rails.logger.info message
       puts message
       # cluster assignments & coordinates files need to be re-formatted & re-parsed
@@ -921,7 +921,7 @@ class Study
         Rails.logger.info message
         puts message
       end
-      message = "Migration complete for #{study.name}"
+      message = "Migration complete for #{self.name}"
       Rails.logger.info message
       puts message
     end
