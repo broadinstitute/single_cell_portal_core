@@ -882,7 +882,7 @@ class Study
   end
 
   # Single-use method to migrate all studies without study_metadata or data_arrays into new collections
-  def self.migrate_all_studies
+  def self.migrate_all_studies(user)
     # collect all studies and determine which need to be migrated - will have both single_cells and cluster_points
     self.all.to_a.each do |study|
       if study.single_cells.any? && study.cluster_points.any?
@@ -911,12 +911,12 @@ class Study
               message = "Parsing #{new_file.upload_file_name} as #{new_file.file_type}"
               Rails.logger.info message
               puts message
-              study.initialize_study_metadata(new_file)
+              study.initialize_study_metadata(new_file, user)
             when 'Cluster'
               message = "Parsing #{new_file.upload_file_name} as #{new_file.file_type}"
               Rails.logger.info message
               puts message
-              study.initialize_cluster_group_and_data_arrays(new_file)
+              study.initialize_cluster_group_and_data_arrays(new_file, user)
             else
               puts "Ineligible file type for #{new_file.upload_file_name}: #{new_file.file_type}; skipping parse"
           end
