@@ -25,7 +25,7 @@ PASSENGER_APP_ENV="development"
 MONGO_LOCALHOST="mongodb"
 PROD_HOSTNAME="104.197.210.235"
 SECRET_KEY_BASE=`openssl rand -hex 64`
-MAX_RAM=8GB
+MAX_RAM=12GB
 
 while getopts "n:e:d:m:r:s:k:p:h:u:P:H" OPTION; do
 case $OPTION in
@@ -41,7 +41,7 @@ case $OPTION in
 	m)
   	MONGO_LOCALHOST="$OPTARG"
   	;;
-	m)
+	r)
 		MAX_RAM="$OPTARG"
 		;;
 	s)

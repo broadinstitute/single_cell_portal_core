@@ -18,8 +18,8 @@ EOF
 # defaults
 CONTAINER_NAME="mongodb"
 DATA_DIR="$HOME/Documents/Data/docker-mongo"
-MAX_RAM=16G
-MAX_RAM_CACHE_GB=12
+MAX_RAM=12G
+MAX_RAM_CACHE_GB=10
 
 while getopts "n:d:m:r:p:H" OPTION; do
 case $OPTION in
