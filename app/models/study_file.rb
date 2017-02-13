@@ -5,19 +5,21 @@ class StudyFile
   include Rails.application.routes.url_helpers
 
   # constants, used for statuses and file types
-  STUDY_FILE_TYPES = ['Cluster Coordinates', 'Cluster Assignments', 'Expression Matrix', 'Gene List', 'Fastq', 'Documentation', 'Other']
-  PARSEABLE_TYPES = ['Cluster Assignments', 'Cluster Coordinates', 'Expression Matrix', 'Gene List']
+  STUDY_FILE_TYPES = ['Cluster', 'Expression Matrix', 'Gene List', 'Metadata', 'Fastq', 'Documentation', 'Other']
+  PARSEABLE_TYPES = ['Cluster', 'Expression Matrix', 'Gene List', 'Metadata']
   UPLOAD_STATUSES = %w(new uploading uploaded)
   PARSE_STATUSES = %w(unparsed parsing parsed)
 
   # associations
   belongs_to :study, index: true
   has_many :clusters, dependent: :destroy
+  has_many :cluster_groups, dependent: :destroy
   has_many :single_cells, dependent: :destroy
   has_many :cluster_points, dependent: :destroy
   has_many :expression_scores, dependent: :destroy
   has_many :precomputed_scores, dependent: :destroy
   has_many :temp_file_downloads
+  has_many :study_metadatas, dependent: :destroy
 
   # field definitions
   field :name, type: String
@@ -33,6 +35,7 @@ class StudyFile
   field :human_data, type: Boolean, default: false
   field :x_axis_label, type: String, default: ''
   field :y_axis_label, type: String, default: ''
+  field :z_axis_label, type: String, default: ''
 
   # callbacks
   before_create   :make_data_dir
@@ -99,7 +102,10 @@ class StudyFile
     self.file_type.downcase.split.join('-') + '-file'
   end
 
-  # method to return number of lines in a file, uses built-in unix
+  # return path to a file's 'public data' path (which will be a symlink to data dir)
+  def public_data_path
+    File.join(self.study.data_public_path, self.upload_file_name)
+  end
 
   private
 
@@ -123,11 +129,11 @@ class StudyFile
     self.url_safe_name = self.study.url_safe_name
   end
 
-  # add symlink if study is public
+  # add symlink if study is public and doesn't already exist
   def check_public?
     unless self.upload_file_name.nil?
-      if self.study.public? && self.status == 'uploaded'
-        FileUtils.ln_sf(self.upload.path, File.join(self.study.data_public_path, self.upload_file_name))
+      if self.study.public? && self.status == 'uploaded' && !File.exists?(self.public_data_path)
+        FileUtils.ln_sf(self.upload.path, self.public_data_path)
       end
     end
   end
@@ -136,7 +142,7 @@ class StudyFile
   def remove_public_symlink
     unless self.upload_file_name.nil?
       if self.study.public?
-        FileUtils.rm_f(File.join(self.study.data_public_path, self.upload_file_name))
+        FileUtils.rm_f(self.public_data_path)
       end
     end
   end
@@ -152,7 +158,7 @@ class StudyFile
 
   # update a study's cell count if uploading an expression matrix or cluster assignment file
   def update_cell_count
-    if ['Cluster Assignments', 'Expression Matrix'].include?(self.file_type) && self.status == 'uploaded' && self.parsed?
+    if ['Metadata', 'Expression Matrix'].include?(self.file_type) && self.status == 'uploaded' && self.parsed?
       study = self.study
       study.set_cell_count
     end

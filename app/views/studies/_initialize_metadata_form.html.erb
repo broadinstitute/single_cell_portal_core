@@ -1,0 +1,99 @@
+<%= form_for(study_file, url: update_study_file_study_path(@study._id), html: {id: "metadata_form", class: 'initialize_metadata_form', data: {remote: true}}) do |f| %>
+	<%= f.hidden_field :study_id, value: params[:id] %>
+  <%= f.hidden_field :_id, value: study_file._id %>
+  <%= hidden_field_tag :selector, '#metadata_form' %>
+  <%= hidden_field_tag :partial, 'initialize_metadata_form' %>
+	<div class="form-group row">
+		<div class="col-sm-4">
+			<%= f.label :name %><br />
+			<%= f.text_field :name, class: 'form-control filename', readonly: true, placeholder: 'Filename is taken from uploaded file...' %>
+		</div>
+		<div class="col-sm-8">
+			<%= f.label :description %><br />
+			<%= f.text_field :description, class: 'form-control' %>
+		</div>
+	</div>
+	<div class="form-group row">
+		<div class="col-sm-4">
+			<%= f.label :file_type %><br />
+			<%= f.text_field :file_type, readonly: true, class: 'form-control' %>
+		</div>
+		<div class="col-sm-5 upload-field">
+			<%= f.label :upload, 'Upload Data File' %><br />
+			<%= f.file_field :upload, class: 'btn btn-info fileinput-button', id: 'upload-metadata' %>
+      <%= f.hidden_field :status, value: study_file.new_record? ? 'uploading' : 'uploaded' %>
+		</div>
+		<div class="col-sm-3">
+			<%= f.label :actions %>
+			<div class="row">
+				<div class="col-xs-6">
+					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: (study_file.upload_file_name.nil? || study_file.parse_status == 'parsing' ) %>
+				</div>
+				<div class="col-xs-6">
+					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: '#metadata_form'), method: :delete, class: 'btn btn-block btn-danger delete-file', disabled: study_file.upload_file_name.nil?, data: {remote: true} %>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="form-group upload-progress">
+		<table class="table table-condensed">
+			<tbody class="files"></tbody>
+		</table>
+	</div>
+	<% if !study_file.upload_file_name.nil? %>
+		<p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: study_file} %></p>
+	<% end %>
+
+	<script type="text/javascript">
+
+		$(function() {
+			// check if upload has already happened
+			if (<%= !study_file.upload_file_name.nil? %>) {
+				completeWizardStep('initialize_metadata_form_nav');
+				console.log('incrementing status for metadata upload');
+				$('#initialize_metadata_form_completed').replaceWith("<%= escape_javascript(render partial: 'step_completed', locals: {id: 'initialize_metadata_form_completed'}) %>");
+				$('#initialize_metadata_form_nav_completed').html("<span class='fa fa-check text-success'></span>");
+			}
+
+			$('#metadata_form').fileupload({
+				url: "<%= upload_study_path(@study._id) %>",
+				maxChunkSize: 10000000, // 10 MB
+				type: 'PATCH',
+				acceptFileTypes: /(\.|\/)(txt|text)$/i,
+				add: function (e, data) {
+					fileUploading = true;
+					var that = this;
+					var fileName = data.files[0].name.replace(/ /g, '_');
+					// this is the chunked upload callback, will upload 10MB at a time until finished
+					$.getJSON("<%= resume_upload_study_path %>", { file: fileName }, function (result) {
+						var file = result.file;
+            if (file == null) {
+              $("#study-files-notice-target").html("<%= escape_javascript( render partial: 'studies/study_file_notices', locals: {message: "You have already uploaded this file.  Please select another file."}) %>");
+            } else {
+              data.uploadedBytes = file && file.size;
+              $.blueimp.fileupload.prototype.options.add.call(that, e, data);
+            }
+					});
+				},
+				// on each chunk completion, update status
+				chunkdone: function(e, data) {
+					var perc = parseInt(data.loaded / data.total * 100, 10);
+					$(data.context).find('h1').html(perc + "% uploaded");
+				},
+				// file upload is done, now clean up
+				done: function(e, data) {
+					var fileName = data.files[0].name.replace(/ /g, '_');
+					// update upload status
+					$.ajax({
+						url: "<%= update_status_study_path %>",
+						type: "PATCH",
+						data: { status: 'uploaded', file: fileName}
+					});
+					fileUploading = false;
+					$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#metadata-parse-modal', partial: 'initialize_metadata_form', selector: "#metadata_form"});
+				}
+			});
+		});
+
+	</script>
+<% end %>

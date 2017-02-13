@@ -43,8 +43,8 @@ class StudiesController < ApplicationController
     # load any existing files if user restarted for some reason (unlikely)
     intitialize_wizard_files
     # check if study has been properly initialized yet, set to true if not
-    if !@assignment_file.new_record? && !@parent_cluster.new_record? && !@expression_file.new_record? && !@study.initialized?
-      @study.update({initialized: true})
+    if !@cluster_ordinations.last.new_record? && !@expression_file.new_record? && !@metadata_file.new_record? && !@study.initialized?
+      @study.update_attributes(initialized: true)
     end
   end
 
@@ -66,6 +66,17 @@ class StudiesController < ApplicationController
   # DELETE /studies/1.json
   def destroy
     name = @study.name
+    ### GOTCHA ON MEMORY USAGE
+    # calling @study.destroy will load all dependent objects into memory and call their dependent removal methods
+    # even if the association is dependent: :delete, it still has to be loaded into memory and removed one at a time
+    # instead, manually remove any documents with Model.delete_all that will consume a lot of RAM (expression_scores,
+    # study_metadatas, data_arrays and precomputed_scores) before calling @study.destroy to remove all other objects
+    ExpressionScore.where(study_id: @study.id).delete_all
+    DataArray.where(study_id: @study.id).delete_all
+    StudyMetadata.where(study_id: @study.id).delete_all
+    PrecomputedScore.where(study_id: @study.id).delete_all
+
+    # now we can delete the study to remove study_files, cluster_groups and any other children
     @study.destroy
     respond_to do |format|
       format.html { redirect_to studies_path, notice: "Study '#{name}'was successfully destroyed.  All uploaded data & parsed database records have also been destroyed." }
@@ -77,42 +88,15 @@ class StudiesController < ApplicationController
   def parse
     @study_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
     logger.info "Parsing #{@study_file.name} as #{@study_file.file_type} in study #{@study.name}"
-    begin
-      case @study_file.file_type
-        when 'Cluster Assignments'
-          @study.make_clusters_and_cells(@study_file)
-        when 'Cluster Coordinates'
-          @study.make_cluster_points(@study.cluster_assignment_file, @study_file, @study_file.cluster_type)
-        when 'Expression Matrix'
-          @study.make_expression_scores(@study_file)
-        when 'Gene List'
-          @study.make_precomputed_scores(@study_file)
-      end
-    rescue StandardError => e
-      logger.info "ERROR: Parse has failed for #{@study_file.name} in study: #{@study.name}; file deleted"
-      @error = e.message
-      # remove bad study file, reload good entries
-      @study_file.destroy
-      intitialize_wizard_files
-      case params[:partial]
-        when 'initialize_assignments_form'
-          @study_file = @assignment_file
-        when 'initialize_clusters_form'
-          @study_file = @parent_cluster
-        when 'initialize_expression_form'
-          @study_file = @expression_file
-        when 'initialize_sub_clusters_form'
-          @study_file = @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'sub'})
-        when 'initialize_marker_genes_form'
-          @study_file = @study.build_study_file({file_type: 'Gene List'})
-        when 'initialize_fastq_form'
-          @study_file = @study.build_study_file({file_type: 'Fastq'})
-        when 'initialize_misc_form'
-          @study_file = @study.build_study_file({file_type: 'Other'})
-        else
-          @study_file = @study.build_study_file({file_type: 'Other'})
-      end
-      render 'parse_error'
+    case @study_file.file_type
+      when 'Cluster'
+        @study.delay.initialize_cluster_group_and_data_arrays(@study_file, current_user)
+      when 'Expression Matrix'
+        @study.delay.make_expression_scores(@study_file, current_user)
+      when 'Gene List'
+        @study.delay.make_precomputed_scores(@study_file, current_user)
+      when 'Metadata'
+        @study.delay.initialize_study_metadata(@study_file, current_user)
     end
   end
 
@@ -126,7 +110,7 @@ class StudiesController < ApplicationController
 
   # create a new study_file for requested study
   def new_study_file
-    file_type = params[:file_type] ? params[:file_type] : 'Cluster Assignments'
+    file_type = params[:file_type] ? params[:file_type] : 'Cluster'
     cluster_type = params[:cluster_type] ? params[:cluster_type] : nil
     @study_file = @study.build_study_file({file_type: file_type, cluster_type: cluster_type})
   end
@@ -156,47 +140,43 @@ class StudiesController < ApplicationController
     @message = ""
     unless @study_file.nil?
       @file_type = @study_file.file_type
-      @cluster_type = @study_file.cluster_type
       @message = "'#{@study_file.name}' has been successfully deleted."
-      @study_file.destroy
-      # gotcha in case user deletes assignments file, must remove all clusters too due to associations
-      if @file_type == 'Cluster Assignments'
-        StudyFile.destroy_all(study_id: @study._id, file_type: 'Cluster Coordinates')
-        # reset study cell count
-        @study.update(cell_count: 0)
-        @message += "  Since you deleted the cluster assignments for your study, all coordinates files have also been deleted.<br/></br/><strong class='text-danger'>Please refresh your screen to update the status accordingly.</strong>"
+      # clean up records before removing file (for memory optimization)
+      case @file_type
+        when 'Cluster'
+          ClusterGroup.where(study_file_id: @study_file.id, study_id: @study.id).delete_all
+          DataArray.where(study_file_id: @study_file.id, study_id: @study.id).delete_all
+          @partial = 'initialize_ordinations_form'
+        when 'Expression Matrix'
+          ExpressionScore.where(study_file_id: @study_file.id, study_id: @study.id).delete_all
+          DataArray.where(study_file_id: @study_file.id, study_id: @study.id).delete_all
+          @partial = 'initialize_expression_form'
+        when 'Metadata'
+          StudyMetadata.where(study_file_id: @study_file.id, study_id: @study.id).delete_all
+          @partial = 'initialize_metadata_form'
+        when 'Fastq'
+          @partial = 'initialize_fastq_form'
+        when 'Gene List'
+          PrecomputedScore.where(study_file_id: @study_file.id, study_id: @study.id).delete_all
+          @partial = 'initialize_marker_genes_form'
+        else
+          @partial = 'initialize_misc_form'
       end
-      if @study.cluster_assignment_file.nil? || @study.parent_cluster_coordinates_file.nil? || @study.expression_matrix_file.nil?
+      # remove record to also delete uploaded source file
+      @study_file.destroy
+      if @study.cluster_ordinations_files.empty? || @study.expression_matrix_file.nil? || @study.metadata_file.nil?
         @study.update(initialized: false)
       end
     end
-    @color = 'danger'
-    @status = 'Required'
-    case params[:target]
-      when '#assignments_form'
-        @study_file = @study.build_study_file({file_type: 'Cluster Assignments'})
-        @reset_status = true
-        @partial = 'initialize_assignments_form'
-      when '#parent_cluster_form'
-        @study_file = @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'parent'})
-        @reset_status = true
-        @partial = 'initialize_clusters_form'
-      when '#expression_form'
-        @study_file = @study.build_study_file({file_type: 'Expression Matrix'})
-        @reset_status = true
-        @partial = 'initialize_expression_form'
-      else
-        @color = 'info'
-        @status = 'Optional'
-        @study_file = @study.build_study_file({file_type: @file_type, cluster_type: @cluster_type})
-        parts = params[:target].gsub(/#/, '').split('_')
-        parts.pop
-        @partial = 'initialize_' + parts.join('_');
-        unless @file_type.nil?
-          @reset_status = @study.study_files.select {|sf| sf.file_type == @file_type && sf.cluster_type == @cluster_type && !sf.new_record?}.count == 0
-        else
-          @reset_status = false
-        end
+    is_required = ['Cluster', 'Expression Matrix', 'Metadata'].include?(@file_type)
+    @color = is_required ? 'danger' : 'info'
+    @status = is_required ? 'Required' : 'Optional'
+    @study_file = @study.build_study_file({file_type: @file_type})
+
+    unless @file_type.nil?
+      @reset_status = @study.study_files.select {|sf| sf.file_type == @file_type && !sf.new_record?}.count == 0
+    else
+      @reset_status = false
     end
   end
 
@@ -256,10 +236,9 @@ class StudiesController < ApplicationController
     end
   end
 
-  # PATCH /courses/:id/update_upload_status
+  # update a study_file's upload status to 'uploaded'
   def update_status
     study_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
-    raise ArgumentError, "Wrong status provided " + params[:status] unless study_file.status == 'uploading' && params[:status] == 'uploaded'
     study_file.update!(status: params[:status])
     head :ok
   end
@@ -302,7 +281,7 @@ class StudiesController < ApplicationController
 
   # study file params whitelist
   def study_file_params
-    params.require(:study_file).permit(:_id, :study_id, :name, :upload, :description, :file_type, :status, :human_fastq_url, :human_data, :cluster_type, :x_axis_label, :y_axis_label)
+    params.require(:study_file).permit(:_id, :study_id, :name, :upload, :description, :file_type, :status, :human_fastq_url, :human_data, :cluster_type, :x_axis_label, :y_axis_label, :z_axis_label)
   end
 
   def clusters_params
@@ -324,26 +303,23 @@ class StudiesController < ApplicationController
 
   # set up variables for wizard
   def intitialize_wizard_files
-    @assignment_file = @study.cluster_assignment_file
-    @parent_cluster = @study.parent_cluster_coordinates_file
     @expression_file = @study.expression_matrix_file
+    @metadata_file = @study.metadata_file
+    @cluster_ordinations = @study.study_files.select {|sf| sf.file_type == 'Cluster'}
     @sub_clusters = @study.study_files.select {|sf| sf.file_type == 'Cluster Coordinates' && sf.cluster_type == 'sub'}
     @marker_lists = @study.study_files.select {|sf| sf.file_type == 'Gene List'}
     @fastq_files = @study.study_files.select {|sf| sf.file_type == 'Fastq'}
     @other_files = @study.study_files.select {|sf| %w(Documentation Other).include?(sf.file_type)}
 
     # if files don't exist, build them for use later
-    if @assignment_file.nil?
-      @assignment_file = @study.build_study_file({file_type: 'Cluster Assignments'})
-    end
-    if @parent_cluster.nil?
-      @parent_cluster = @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'parent'})
-    end
-    if @sub_clusters.empty?
-      @sub_clusters << @study.build_study_file({file_type: 'Cluster Coordinates', cluster_type: 'sub'})
-    end
     if @expression_file.nil?
       @expression_file = @study.build_study_file({file_type: 'Expression Matrix'})
+    end
+    if @metadata_file.nil?
+      @metadata_file = @study.build_study_file({file_type: 'Metadata'})
+    end
+    if @cluster_ordinations.empty?
+      @cluster_ordinations << @study.build_study_file({file_type: 'Cluster'})
     end
     if @marker_lists.empty?
       @marker_lists << @study.build_study_file({file_type: 'Gene List'})

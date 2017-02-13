@@ -56,16 +56,36 @@ module ApplicationHelper
 	end
 
 	# construct a dropdown for navigating to single gene-level expression views
-	def load_gene_nav(genes, cluster=nil)
+	def load_gene_nav(genes)
 		nav = [['All queried genes', '']]
 		genes.map(&:gene).each do |gene|
-			if cluster
-				nav << [gene, view_gene_expression_url(study_name: params[:study_name], gene: gene, cluster: cluster)]
-			else
-				nav << [gene, view_gene_expression_url(study_name: params[:study_name], gene: gene)]
-			end
+			nav << [gene, view_gene_expression_url(study_name: params[:study_name], gene: gene)]
 		end
 		nav
+	end
+
+	# method to set cluster value based on options and parameters
+	# will default to first cluster if none are specified
+	def set_cluster_value(clusters, parameters)
+		if !parameters[:gene_set_cluster].nil?
+			parameters[:gene_set_cluster]
+		elsif !parameters[:cluster].nil?
+			parameters[:cluster]
+		else
+			clusters.first
+		end
+	end
+
+	# method to set annotation value by parameters or load a 'default' annotation when first loading a study (none have been selected yet)
+	# will load the first cluster-based annotation if available, otherwise will default to first study-based instead
+	def set_annotation_value(annotations, parameters)
+		if !parameters[:gene_set_annotation].nil?
+			parameters[:gene_set_annotation]
+		elsif !parameters[:annotation].nil?
+			parameters[:annotation]
+		else
+			annotations['Cluster-based'].empty? ? annotations['Study Wide'].first.last : annotations['Cluster-based'].first.last
+		end
 	end
 
 end

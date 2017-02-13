@@ -1,0 +1,1 @@
+$("#annotation").html("<%= escape_javascript(select_tag :annotation, grouped_options_for_select(@cluster_annotations, params[:annotation]), class: 'form-control' )%>");

@@ -6,6 +6,9 @@
       </div>
       <div class="modal-body">
         <h4 class="text-center text-success">Your file has successfully been uploaded.</h4>
+        <% if study_file.parseable? %>
+          <p class="lead text-center">Your file is currently being parsed.  You will receive and email at <%= current_user.email %> when the parse has completed.</p>
+        <% end %>
       </div>
       <div class="modal-footer">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="parse-modal-dismiss"><span aria-hidden="true">&times;</span></button>

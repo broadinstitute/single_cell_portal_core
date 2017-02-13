@@ -1,4 +1,4 @@
-<%= form_for(study_file, url: update_study_file_study_path(@study._id), html: {id: "marker_genes_form_#{study_file._id}", class: 'bs-callout bs-callout-info initialize_marker_genes_form', data: {remote: true}}) do |f| %>
+<%= form_for(study_file, url: update_study_file_study_path(@study._id), html: {id: "marker_genes_form_#{study_file._id}", class: "bs-callout bs-callout-info initialize_marker_genes_form #{study_file.new_record? ? 'new-gene-list-form' : nil}", data: {remote: true}}) do |f| %>
 	<%= f.hidden_field :study_id, value: params[:id] %>
   <%= f.hidden_field :_id, value: study_file._id %>
   <%= hidden_field_tag :selector, "#marker_genes_form_#{study_file._id}" %>
@@ -27,7 +27,7 @@
 			<%= f.label :actions %>
 			<div class="row">
 				<div class="col-xs-6">
-					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: study_file.upload_file_name.nil? %>
+					<%= f.submit 'Save', class: 'btn btn-block btn-success save-study-file', disabled: (study_file.upload_file_name.nil? || study_file.parse_status == 'parsing' ) %>
 				</div>
 				<div class="col-xs-6">
 					<%= link_to 'Delete', delete_study_file_study_path(@study._id, study_file._id, target: "#marker_genes_form_#{study_file._id}"), method: :delete, class: 'btn btn-block btn-danger delete-file', data: {remote: true} %>
@@ -42,10 +42,8 @@
 	</div>
 	<script type="text/javascript">
 
-    var thisFormId = "#marker_genes_form_<%= study_file._id %>";
-    $(thisFormId).find('.upload-marker-genes').click(function() {
-      var markerFileName = $(thisFormId).find('#study_file_name').val();
-        if (markerFileName == '') {
+    $("#marker_genes_form_<%= study_file._id %>").find('.upload-marker-genes').click(function() {
+        if ($("#marker_genes_form_<%= study_file._id %>").find('#study_file_name').val() == '') {
           alert('You must provide a name for this gene list before uploading a file.');
           return false;
         }
@@ -88,12 +86,6 @@
 					});
 					fileUploading = false;
 					$.post("<%= parse_study_file_study_path(@study._id) %>", {file: fileName, modal_target: '#marker-gene-parse-<%= study_file._id %>-modal', partial: 'initialize_marker_genes_form', selector: "#marker_genes_form_<%= study_file._id %>"});
-					var target = $('#marker-gene-parse-<%= study_file._id %>-modal').find('.spinner-target')[0];
-					var spinner = new Spinner(opts).spin(target);
-					$(target).data('spinner', spinner);
-					$('#marker-gene-parse-<%= study_file._id %>-modal').modal({show: true, backdrop: 'static'});
-					var statusUrl = "<%= parse_progress_study_path(@study._id) %>?file=" + fileName + "&modal_target=%23marker-gene-parse-<%= study_file._id %>-modal";
-					$.get(statusUrl);
 				}
 			});
 		});
@@ -103,9 +95,4 @@
 	<% if !study_file.upload_file_name.nil? %>
 		<p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: study_file} %></p>
 	<% end %>
-<% end %>
-<% if study_file.new_record? %>
-  <div class="modal fade marker-gene-modal" id="marker-gene-parse-<%= study_file._id %>-modal" tabindex="-1" role="dialog" aria-labelledby="loading-modal" aria-hidden="true">
-    <%= render 'parse_modal_content' %>
-  </div>
 <% end %>

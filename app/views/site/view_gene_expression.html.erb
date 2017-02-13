@@ -13,36 +13,63 @@
 	<div class="col-md-9" id="render-target">
 		<%= render partial: 'view_options' %>
 		<div id="expression-plots">
-			<%= render partial: 'expression_plots_view' %>
-		</div>
+      <%= render partial: @top_plot_partial %>
+    </div>
 	</div>
 </div>
 
 <script type="text/javascript">
 
-	<%= render partial: 'expression_plots_plotly' %>
+    function renderGeneExpressionPlots() {
+        var url = '<%= params[:gene] ? render_gene_expression_plots_path(study_name: params[:study_name], gene: params[:gene]) : render_gene_set_expression_plots_path(study_name: params[:study_name], gene_set: params[:gene_set]) %>';
+        var target1 = document.getElementById('box-plot');
+        var target2 = document.getElementById('scatter-plot');
+        var target3 = document.getElementById('reference-plot');
 
-	// listener for cluster nav, specific to expression pages
-	$("#cluster").change(function() {
-		var url = '<%= params[:gene] ? render_gene_expression_plots_path(study_name: params[:study_name], gene: params[:gene]) : render_gene_set_expression_plots_path(study_name: params[:study_name], gene_set: params[:gene_set]) %>';
-		var target1 = document.getElementById('box-plot');
-		var target2 = document.getElementById('scatter-plot');
-		var target3 = document.getElementById('reference-plot');
+        var spinner1 = new Spinner(opts).spin(target1);
+        var spinner2 = new Spinner(opts).spin(target2);
+        var spinner3 = new Spinner(opts).spin(target3);
+        $(target1).data('spinner', spinner1);
+        $(target2).data('spinner', spinner2);
+        $(target3).data('spinner', spinner3);
+        var cluster = $('#cluster').val();
+        var annotation = $('#annotation').val();
+        $("#search_cluster").val(cluster);
+        $("#search_annotation").val(''); // clear value first
+        $("#search_annotation").val(annotation);
+        var delimeter = "<%= params[:gene] ? "?".html_safe : "&".html_safe %>";
+        $.get(url + delimeter + 'cluster=' + cluster + '&annotation=' + annotation);
+    }
 
-		var spinner1 = new Spinner(opts).spin(target1);
-		var spinner2 = new Spinner(opts).spin(target2);
-		var spinner3 = new Spinner(opts).spin(target3);
-		$(target1).data('spinner', spinner1);
-		$(target2).data('spinner', spinner2);
-		$(target3).data('spinner', spinner3);
-		var cluster = $('#cluster').val();
-		$("#search_cluster").val(cluster);
-		if (cluster == "") {
-			$.get(url);
-		} else {
-			var delimeter = "<%= params[:gene] ? "?".html_safe : "&".html_safe %>";
-			$.get(url + delimeter + 'cluster=' + cluster);
-		}
-	});
+    $(document).ready(function() {
+        renderGeneExpressionPlots();
+    });
+    // listener for annotation nav, specific to expression pages
+    $("#annotation").change(function() {
+        // keep track for search purposes
+        var val = $(this).val();
+        $('#search_annotation').val(val);
+        $('#gene_set_annotation').val(val);
+
+        renderGeneExpressionPlots();
+    });
+
+    // when changing cluster, re-render annotation options and call render function
+    $("#cluster").change(function() {
+        var newCluster = $(this).val();
+        // keep track for search purposes
+        $('#search_cluster').val(newCluster);
+        $('#gene_set_cluster').val(newCluster);
+        // get new annotation options and re-render
+        $.get("<%= get_new_annotations_path(study: params[:study])%>?cluster=" + newCluster, function () {
+            $(document).ready(function () {
+                // since we now have new annotations, we need to set them in the search form for persistence
+                var an = $('#annotation').val();
+                $('#search_annotation').val(an);
+                $('#gene_set_annotation').val(an);
+                renderGeneExpressionPlots();
+            })
+        });
+    });
 
 </script>

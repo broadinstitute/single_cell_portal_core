@@ -17,4 +17,4 @@ COPY nginx.conf /etc/nginx/nginx.conf
 RUN rm -f /etc/service/nginx/down
 
 # Compile native support for passenger for Ruby 2.2
-RUN sudo -E -u app passenger-config build-native-support
+RUN passenger-config build-native-support

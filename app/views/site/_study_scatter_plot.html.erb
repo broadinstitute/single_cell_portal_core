@@ -1,39 +1,54 @@
+var data = [];
 <% @coordinates.sort_by {|k,v| k}.each_with_index do |(cluster, data), index| %>
 	var cluster_<%= index %> = {
 		x: <%= raw data[:x] %>,
 		y: <%= raw data[:y] %>,
+    <% if @cluster.cluster_type == '3d' %>
+      z: <%= raw data[:z] %>,
+      textposition: 'bottom right',
+    <% end %>
 		text: <%= raw data[:text] %>,
 		name: "<%= data[:name] %>",
 		mode: 'markers',
-		type: 'scattergl',
-		marker: {
-			color: colorBrewerSet[<%= index %>],
-      size: <%= raw data[:marker_size] %>,
-			line: {
-				color: plotlyDefaultLineColor,
-				width: 0.5
-			}
-		}
-	};
-<% end %>
+		type: '<%= @plot_type %>',
+    <% if !data[:marker].nil? %>
+      marker: <%= raw data[:marker].to_json %>
+    <% else %>
+      marker: {
+        color: colorBrewerSet[<%= index %>],
+        size: <%= raw data[:marker_size] %>,
+        line: {
+          color: plotlyDefaultLineColor,
+          width: 0.5
+        }
+      }
+    <% end %>
 
-var data = [];
-<% @clusters.each_with_index do |cluster, index| %>
-	data.push(cluster_<%= index %>);
+	};
+
+  data.push(cluster_<%= index %>);
 <% end %>
 
 // use partial for layouts to avoid code duplication
 <%= render 'study_scatter_layout' %>
 
-
-<% if params[:cluster] %>
-	<%= render 'new_scatter_color_vals' %>
-<% end %>
-
 Plotly.newPlot('cluster-plot', data, layout);
+
+// listener to redraw expression scatter with new color profile
+$("#colorscale").change(function() {
+
+    var theme = $(this).val();
+    data[0].marker.colorscale = theme;
+    console.log("setting colorscale to " + theme);
+
+    Plotly.newPlot('cluster-plot', data, layout);
+});
+
+
 
 // now that we have the legend size, recalculate adding this to the overall size
 var legendW = parseInt($('#cluster-plot g.legend rect.bg').attr('width'));
 var curSize = $('#cluster-plot').width() * SCATTER_RATIO;
 var newWidth = legendW + curSize;
 Plotly.relayout('cluster-plot', {width: newWidth});
+

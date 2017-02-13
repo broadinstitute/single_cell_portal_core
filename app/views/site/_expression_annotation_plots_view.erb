@@ -1,0 +1,36 @@
+<div class="panel panel-default">
+	<div class="panel-heading">
+		<div class="panel-title">
+			<h4><%= link_to "#{params[:cluster]}: #{@selected_annotation[:name]} Values vs. Expression Values <span class='fa fa-chevron-down toggle-glyph'></span>".html_safe, '#expression-annotation-controls', 'data-toggle' => 'collapse'  %> <%= render partial: 'show_search_options_button' %></h4>
+		</div>
+	</div>
+	<div id="expression-annotation-controls" class="panel-collapse collapse in">
+		<div class="panel-body">
+			<div class="row">
+				<div class="col-md-12">
+					<div id="box-plot"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="panel panel-default">
+	<div class="panel-heading">
+		<div class="panel-title">
+			<h4><%= link_to "Expression Values as Scatter Plot <span class='fa fa-chevron-down toggle-glyph'></span>".html_safe, '#scatter-plots', 'data-toggle' => 'collapse'  %></h4>
+		</div>
+	</div>
+	<div id="scatter-plots" class="panel-collapse collapse in">
+		<div class="panel-body">
+			<%= render partial: 'colorscale_picker' %>
+			<div class="row" id="scatter-wrapper">
+				<div class="col-md-7">
+					<div id="scatter-plot"></div>
+				</div>
+				<div class="col-md-5">
+					<div id="reference-plot"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

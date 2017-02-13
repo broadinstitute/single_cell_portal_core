@@ -1,23 +1,22 @@
-$('#expression-plots').html("<%= escape_javascript(render partial: 'expression_plots_view')%>");
-
-$('#box-controls, #scatter-plots').on('show.bs.collapse hide.bs.collapse', function() {
-	toggleGlyph($(this).prev().find('span.toggle-glyph'));
-});
-
-<%= render partial: 'expression_plots_plotly' %>
-
 // stop spinners
 $('#box-plot').data('spinner').stop();
 $('#scatter-plot').data('spinner').stop();
 $('#reference-plot').data('spinner').stop();
 
+$('#expression-plots').html("<%= escape_javascript(render partial: @top_plot_partial)%>");
+
+$('#box-controls, #scatter-plots').on('show.bs.collapse hide.bs.collapse', function() {
+	toggleGlyph($(this).prev().find('span.toggle-glyph'));
+});
+
+<%= render partial: @top_plot_plotly %>
 
 // clear listeners and reattach
-$( window ).off('resizeEnd');
+$( window ).off('resizeEnd', "**");
 
 $( window ).on('resizeEnd', function() {
 
-	<%= render partial: 'expression_box_layout' %>
+	<%= render partial: @top_plot_layout %>
 
 	<%= render partial: 'expression_scatter_layout' %>
 
@@ -25,6 +24,6 @@ $( window ).on('resizeEnd', function() {
 
 	Plotly.newPlot('box-plot', expressionData, expressionLayout);
 	Plotly.newPlot('scatter-plot', clusterData, scatterLayout);
-	Plotly.newPlot('reference-plot', data, staticLayout, {staticPlot: true});
+	Plotly.newPlot('reference-plot', data, staticLayout);
 });
 

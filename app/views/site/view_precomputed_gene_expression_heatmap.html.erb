@@ -12,7 +12,7 @@
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<div class="panel-title">
-					<h4><%= link_to "Marker Gene Heatmap <span class='fa fa-chevron-down toggle-glyph'></span>".html_safe, '#plots', 'data-toggle' => 'collapse' %> <%= render partial: 'show_search_options_button' %></h4>
+					<h4><%= link_to "Gene List Heatmap <span class='fa fa-chevron-down toggle-glyph'></span>".html_safe, '#plots', 'data-toggle' => 'collapse' %> <%= render partial: 'show_search_options_button' %></h4>
 				</div>
 			</div>
 			<div id="plots" class="panel-collapse collapse in">
@@ -36,14 +36,14 @@
       var row_centered = $('#row_centered').prop('checked') ? 1 : 0;
       newDataPath += '?precomputed=' + precomputed + '&row_centered=' + row_centered;
 
-      renderMorpheus(newDataPath, '', '#heatmap-plot', 'both');
+      renderMorpheus(newDataPath, '', '', '', '#heatmap-plot', 'both');
     }
 	});
 
 	$(document).ready(function() {
 		var dataPath = "<%= precomputed_results_path(study_name: params[:study_name], precomputed: params[:precomputed]) %>";
 
-		renderMorpheus(dataPath, '', '#heatmap-plot', 'both');
+		renderMorpheus(dataPath, '', '', '', '#heatmap-plot', 'both');
 	});
 
 </script>

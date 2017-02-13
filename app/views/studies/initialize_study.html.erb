@@ -2,64 +2,82 @@
 
 <div id="rootwizard">
 	<ul class="nav wizard">
-		<li role="presentation" class="wizard-nav" id="initialize_assignments_form_nav"><a href="#assignment" data-toggle="tab">1. Cluster Assignments <span id="initialize_assignments_form_nav_completed"></span></a></li>
-		<li role="presentation" class="wizard-nav" id="initialize_clusters_form_nav"><a href="#clusters" data-toggle="tab">2. Primary Cluster Coordinates <span id="initialize_clusters_form_nav_completed"></span></a></li>
-		<li role="presentation" class="wizard-nav" id="initialize_expression_form_nav"><a href="#expression" data-toggle="tab">3. Expression Matrix <span id="initialize_expression_form_nav_completed"></span></a></li>
-		<li role="presentation" class="wizard-nav" id="initialize_sub_clusters_form_nav"><a href="#sub-clusters" data-toggle="tab">4. Sub-Cluster Coordinates <span id="initialize_sub_clusters_form_nav_completed"></span></a></li>
-		<li role="presentation" class="wizard-nav" id="initialize_marker_genes_form_nav"><a href="#marker-genes" data-toggle="tab">5. Gene Lists <span id="initialize_marker_genes_form_nav_completed"></span></a></li>
-		<li role="presentation" class="wizard-nav" id="initialize_fastq_form_nav"><a href="#fastq" data-toggle="tab">6. Fastq Data <span id="initialize_fastq_form_nav_completed"></span></a></li>
-		<li role="presentation" class="wizard-nav" id="initialize_misc_form_nav"><a href="#misc" data-toggle="tab">7. Miscellaneous <span id="initialize_misc_form_nav_completed"></span></a></li>
+    <li role="presentation" class="wizard-nav" id="initialize_expression_form_nav"><a href="#expression" data-toggle="tab">1. Expression Matrix <span id="initialize_expression_form_nav_completed"></span></a></li>
+    <li role="presentation" class="wizard-nav" id="initialize_metadata_form_nav"><a href="#metadata" data-toggle="tab">2. Metadata <span id="initialize_metadata_form_nav_completed"></span></a></li>
+    <li role="presentation" class="wizard-nav" id="initialize_ordinations_form_nav"><a href="#ordinations" data-toggle="tab">3. Clusters <span id="initialize_ordinations_form_nav_completed"></span></a></li>
+		<li role="presentation" class="wizard-nav" id="initialize_fastq_form_nav"><a href="#fastq" data-toggle="tab">3. Fastq Data <span id="initialize_fastq_form_nav_completed"></span></a></li>
+    <li role="presentation" class="wizard-nav" id="initialize_marker_genes_form_nav"><a href="#marker-genes" data-toggle="tab">4. Gene Lists <span id="initialize_marker_genes_form_nav_completed"></span></a></li>
+		<li role="presentation" class="wizard-nav" id="initialize_misc_form_nav"><a href="#misc" data-toggle="tab">5. Miscellaneous <span id="initialize_misc_form_nav_completed"></span></a></li>
 	</ul>
 
 	<div id="bar" class="progress">
 		<div class="progress-bar"><span id="progress-count"></span></div>
 	</div>
 	<div class="tab-content">
-		<div class="tab-pane" id="assignment">
-			<div class="well well-sm">
-				<h2>Step 1. Upload Cluster Assignments File <small class="initialize-label" id="initialize_assignments_form_completed"><span class="label label-danger">Required</span></small></h2>
-				<p class="lead">Upload a tab- or comma-delimited text file containing all of your cluster and sub-cluster assignments for each single cell.  The file must be a plain text (.txt) file with 3 columns and a header row containing the values 'CELL_NAME', 'CLUSTER', and 'SUB-CLUSTER'.</p>
-				<p><%= link_to "Example Assignment File <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/cluster_assignments_example.txt', class: 'btn btn-default', download: 'cluster_assignments_example.txt' %></p>
-			</div>
-			<%= render partial: 'initialize_assignments_form', locals: {study_file: @assignment_file} %>
-		</div>
-		<div class="tab-pane" id="clusters">
-			<div class="well well-sm">
-				<h2>Step 2. Upload Primary Cluster Coordinates File <small class="initialize-label" id="initialize_clusters_form_completed"><span class="label label-danger">Required</span></small></h2>
-				<p class="lead">Upload a tab- or comma-delimited text file containing your primary cluster coordinates.  The file must be a plain text (.txt) file with 3 columns and a header row containing the values 'CELL_NAME', 'X', and 'Y'.</p>
-				<p><%= link_to "Example Coordinates File <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/cluster_coordinates_example.txt', class: 'btn btn-default', download: 'cluster_coordinates_example.txt' %></p>
-			</div>
-			<%= render partial: 'initialize_clusters_form', locals: {study_file: @parent_cluster} %>
-		</div>
-		<div class="tab-pane" id="expression">
-			<div class="well well-sm">
-				<h2>Step 3. Upload Expression Matrix File <small class="initialize-label" id="initialize_expression_form_completed"><span class="label label-danger">Required</span></small></h2>
-				<p class="lead">Upload a tab- or comma-delimited text file containing all of your gene expression scores for all genes and single cells.  The file must be a plain text (.txt) file with with a header row containing the value 'GENE' in the first column, and single cell names in each successive column.</p>
-				<p><%= link_to "Example Expression Matrix <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/expression_matrix_example.txt', class: 'btn btn-default', download: 'expression_matrix_example.txt' %></p>
-			</div>
-			<%= render partial: 'initialize_expression_form', locals: {study_file: @expression_file} %>
-		</div>
-		<div class="tab-pane" id="sub-clusters">
-			<div id="sub-clusters-target">
+    <div class="tab-pane" id="expression">
+      <div class="well well-sm">
+        <h2>Step 1. Upload Expression Matrix File <small class="initialize-label" id="initialize_expression_form_completed"><span class="label label-danger">Required</span></small></h2>
+        <p class="lead">Upload a tab- or comma-delimited text file containing all of your gene expression scores for all genes and single cells.  The file must be a plain text (.txt) file with with a header row containing the value '<strong>GENE</strong>' in the first column, and single cell names in each successive column.</p>
+        <p><%= link_to "Example Expression Matrix <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/expression_matrix_example.txt', class: 'btn btn-default', download: 'expression_matrix_example.txt' %></p>
+      </div>
+      <%= render partial: 'initialize_expression_form', locals: {study_file: @expression_file} %>
+    </div>
+    <div class="tab-pane" id="metadata">
+      <div class="well well-sm">
+        <h2>Step 2. Upload Metadata File <small class="initialize-label" id="initialize_metadata_form_completed"><span class="label label-danger">Required</span></small></h2>
+        <p class="lead">Upload a tab- or comma-delimited text file containing all of your single cells and at least one additional metadata column.  The file must be a plain text (.txt) file with at least 2 columns and a header row containing the value '<strong>NAME</strong>' and a second row with the header of '<strong>TYPE</strong>' to declare metadata types (see below).</p>
+        <h3>Metadata Columns</h3>
+        <p class="lead">The second row in this file (beginning with the header 'TYPE') must contain a value for each metadata column declaring its datatype.  The two accepted values are <strong>group</strong> (set membership) or <strong>numeric</strong> (continuous scores).  Group values are treated as literal strings, and numerics as floating-point numbers.</p>
+        <p><%= link_to "Example Metadata File <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/metadata_example.txt', class: 'btn btn-default', download: 'expression_matrix_example.txt' %></p>
+      </div>
+      <%= render partial: 'initialize_metadata_form', locals: {study_file: @metadata_file} %>
+    </div>
+		<div class="tab-pane" id="ordinations">
+			<div id="ordinations-target">
 				<div class="well well-sm">
-					<h2>Step 4. Upload Sub Cluster Coordinates File <small class="initialize-label" id="initialize_sub_clusters_form_completed"><span class="label label-info">Optional</span></small></h2>
-					<p class="lead">Upload a tab- or comma-delimited text file containing any sub-cluster coordinates.  These sub-clusters must be identified in your cluster assignment file.  The file must be a plain text (.txt) file with 3 columns and a header row containing the values 'CELL_NAME', 'X', and 'Y'.</p>
-					<p><%= link_to "Example Coordinates File <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/cluster_coordinates_example.txt', class: 'btn btn-default', download: 'cluster_coordinates_example.txt' %></p>
+					<h2>Step 3. Upload Cluster File <small class="initialize-label" id="initialize_ordinations_form_completed"><span class="label label-danger">Required</span></small></h2>
+					<p class="lead">Upload a tab- or comma-delimited text file containing any cluster ordinations and optional cluster-specific metadata.  The file must be a plain text (.txt) file with at least 3 columns and a header row containing the values '<strong>NAME</strong>', '<strong>X</strong>', and '<strong>Y</strong>', and a second row with the header of '<strong>TYPE</strong>' to declare metadata types (see below). The file may have an optional column of '<strong>Z</strong>' (for 3d clusters) and an arbitrary number of columns containing cell-level metadata specific to this cluster.  The column headers for metadata will be used as display names in dropdown menus.</p>
+          <h3>Metadata Columns</h3>
+          <p class="lead">The second row in this file (beginning with the header 'TYPE') must contain a value for each coordinate or metadata column declaring its datatype.  The two accepted values are <strong>group</strong> (set membership) or <strong>numeric</strong> (continuous scores).  The values for the 'X', 'Y', and 'Z' columns must be set to 'numeric'.  Group values are treated as literal strings, and numerics as floating-point numbers.</p>
+					<p><%= link_to "Example Cluster File <span class='fa fa-download'></span>".html_safe, '/single_cell/example_data/cluster_example.txt', class: 'btn btn-default', download: 'cluster_coordinates_example.txt' %></p>
 				</div>
-				<% @sub_clusters.each do |study_file| %>
-					<%= render partial: 'initialize_sub_clusters_form', locals: {study_file: study_file} %>
+				<% @cluster_ordinations.each do |study_file| %>
+					<%= render partial: 'initialize_ordinations_form', locals: {study_file: study_file} %>
 				<% end %>
 				<script type="text/javascript">
-					if (<%= !@sub_clusters.first.new_record? %>) {
-						completeWizardStep('initialize_sub_clusters_form_nav');
-						console.log('incrementing status for sub cluster upload');
-						$('#initialize_sub_clusters_form_completed').replaceWith("<%= escape_javascript(render partial: 'step_completed', locals: {id: 'initialize_sub_clusters_form_completed'}) %>");
-						$('#initialize_sub_clusters_form_nav_completed').html("<span class='fa fa-check text-success'></span>");
+					if (<%= !@cluster_ordinations.first.new_record? %>) {
+						completeWizardStep('initialize_ordinations_form_nav');
+						console.log('incrementing status for cluster ordinations upload');
+						$('#initialize_ordinations_form_completed').replaceWith("<%= escape_javascript(render partial: 'step_completed', locals: {id: 'initialize_ordinations_form_completed'}) %>");
+						$('#initialize_ordinations_form_nav_completed').html("<span class='fa fa-check text-success'></span>");
 					}
 				</script>
 			</div>
-			<p><%= link_to "<span class='fa fa-plus'></span> Add a Sub-Cluster File".html_safe, new_study_file_study_path(@study._id, file_type: 'Cluster Coordinates', cluster_type: 'sub', target: '#sub-clusters-target', form: 'initialize_sub_clusters_form'), class: 'btn btn-sm btn-primary', 'data-remote' => true %></p>
+			<p><%= link_to "<span class='fa fa-plus'></span> Add a Cluster File".html_safe, new_study_file_study_path(@study._id, file_type: 'Cluster', target: '#ordinations-target', form: 'initialize_ordinations_form'), class: 'btn btn-sm btn-primary add-cluster', 'data-remote' => true %></p>
 		</div>
+    <div class="tab-pane" id="fastq">
+      <div id="fastq-target">
+        <div class="well well-sm">
+          <h2>Step 4. Upload Fastq Files <small class="initialize-label" id="initialize_fastq_form_completed"><span class="label label-info">Optional</span></small></h2>
+          <p class="lead">Upload any non-primary human fastq data files <strong>under 80GB in size</strong>.  If your data is primary human data, or over 80GB, you can link to it here by selecting 'Yes' in the 'Primary Human Data / Over 80GB' field and then entering the URL in the corresponding text box.<br /><strong class="text-danger">If you are uploading fastq files, they must be compressed first using gzip.</strong></p>
+          <p class="lead">For more help uploading files, please refer to our <%= link_to 'wiki', 'https://github.com/broadinstitute/single_cell_portal/wiki/Uploading-Data' %>.</p>
+          <p><%= link_to "FASTQ File Format <span class='fa fa-info-circle'></span>".html_safe, 'https://en.wikipedia.org/wiki/FASTQ_format#Format', class: 'btn btn-default' %>&nbsp;<%= link_to "gzip Documentation <span class='fa fa-info-circle'></span>".html_safe, 'http://www.gnu.org/software/gzip/manual/gzip.html', class: 'btn btn-default' %></p>
+        </div>
+        <% @fastq_files.each do |study_file| %>
+          <%= render partial: 'initialize_fastq_form', locals: {study_file: study_file} %>
+        <% end %>
+        <script type="text/javascript">
+          if (<%= !@fastq_files.first.new_record? %>) {
+            completeWizardStep('initialize_fastq_form_nav');
+            console.log('incrementing status for fastq upload');
+            $('#initialize_fastq_form_completed').replaceWith("<%= escape_javascript(render partial: 'step_completed', locals: {id: 'initialize_fastq_form_completed'}) %>");
+            $('#initialize_fastq_form_nav_completed').html("<span class='fa fa-check text-success'></span>");
+          }
+        </script>
+      </div>
+      <p><%= link_to "<span class='fa fa-plus'></span> Add a Fastq File".html_safe, new_study_file_study_path(@study._id, file_type: 'Fastq', target: '#fastq-target', form: 'initialize_fastq_form'), class: 'btn btn-sm btn-primary add-fastq', 'data-remote' => true %></p>
+
+    </div>
 		<div class="tab-pane" id="marker-genes">
 			<div id="marker-genes-target">
 				<div class="well well-sm">
@@ -79,36 +97,13 @@
 					}
 				</script>
 			</div>
-			<p><%= link_to "<span class='fa fa-plus'></span> Add a Gene List File".html_safe, new_study_file_study_path(@study._id, file_type: 'Gene List', target: '#marker-genes-target', form: 'initialize_marker_genes_form'), class: 'btn btn-sm btn-primary', 'data-remote' => true %></p>
-
-		</div>
-		<div class="tab-pane" id="fastq">
-			<div id="fastq-target">
-				<div class="well well-sm">
-					<h2>Step 6. Upload Fastq Files <small class="initialize-label" id="initialize_fastq_form_completed"><span class="label label-info">Optional</span></small></h2>
-					<p class="lead">Upload any non-primary human fastq data files <strong>under 80GB in size</strong>.  If your data is primary human data, or over 80GB, you can link to it here by selecting 'Yes' in the 'Primary Human Data / Over 80GB' field and then entering the URL in the corresponding text box.<br /><strong class="text-danger">If you are uploading fastq files, they must be compressed first using gzip.</strong></p>
-          <p class="lead">For more help uploading files, please refer to our <%= link_to 'wiki', 'https://github.com/broadinstitute/single_cell_portal/wiki/Uploading-Data' %>.</p>
-					<p><%= link_to "FASTQ File Format <span class='fa fa-info-circle'></span>".html_safe, 'https://en.wikipedia.org/wiki/FASTQ_format#Format', class: 'btn btn-default' %>&nbsp;<%= link_to "gzip Documentation <span class='fa fa-info-circle'></span>".html_safe, 'http://www.gnu.org/software/gzip/manual/gzip.html', class: 'btn btn-default' %></p>
-				</div>
-				<% @fastq_files.each do |study_file| %>
-					<%= render partial: 'initialize_fastq_form', locals: {study_file: study_file} %>
-				<% end %>
-				<script type="text/javascript">
-					if (<%= !@fastq_files.first.new_record? %>) {
-						completeWizardStep('initialize_fastq_form_nav');
-						console.log('incrementing status for fastq upload');
-						$('#initialize_fastq_form_completed').replaceWith("<%= escape_javascript(render partial: 'step_completed', locals: {id: 'initialize_fastq_form_completed'}) %>");
-						$('#initialize_fastq_form_nav_completed').html("<span class='fa fa-check text-success'></span>");
-					}
-				</script>
-			</div>
-			<p><%= link_to "<span class='fa fa-plus'></span> Add a Fastq File".html_safe, new_study_file_study_path(@study._id, file_type: 'Fastq', target: '#fastq-target', form: 'initialize_fastq_form'), class: 'btn btn-sm btn-primary', 'data-remote' => true %></p>
+			<p><%= link_to "<span class='fa fa-plus'></span> Add a Gene List File".html_safe, new_study_file_study_path(@study._id, file_type: 'Gene List', target: '#marker-genes-target', form: 'initialize_marker_genes_form'), class: 'btn btn-sm btn-primary add-gene-list', 'data-remote' => true %></p>
 
 		</div>
 		<div class="tab-pane" id="misc">
 			<div id="misc-target">
 				<div class="well well-sm">
-					<h2>Step 7. Upload Documentation/Other Files <small class="initialize-label" id="initialize_misc_form_completed"><span class="label label-info">Optional</span></small></h2>
+					<h2>Step 6. Upload Documentation/Other Files <small class="initialize-label" id="initialize_misc_form_completed"><span class="label label-info">Optional</span></small></h2>
 					<p class="lead">Upload any documentation or other support files you have.</p>
 				</div>
 				<% @other_files.each do |study_file| %>
@@ -123,7 +118,7 @@
 					}
 				</script>
 			</div>
-			<p><%= link_to "<span class='fa fa-plus'></span> Add a Study File".html_safe, new_study_file_study_path(@study._id, file_type: 'Documentation',  target: '#misc-target', form: 'initialize_misc_form'), class: 'btn btn-sm btn-primary', 'data-remote' => true %></p>
+			<p><%= link_to "<span class='fa fa-plus'></span> Add a Study File".html_safe, new_study_file_study_path(@study._id, file_type: 'Documentation',  target: '#misc-target', form: 'initialize_misc_form'), class: 'btn btn-sm btn-primary add-misc', 'data-remote' => true %></p>
 
 		</div>
 		<ul class="pager wizard">

@@ -1,7 +1,7 @@
 <div class="panel panel-default">
 	<div class="panel-heading">
 		<div class="panel-title">
-			<h4><%= link_to "Expression Values for #{params[:cluster] ? params[:cluster] : 'All Cell Types'} <span class='fa fa-chevron-down toggle-glyph'></span>".html_safe, '#box-controls', 'data-toggle' => 'collapse'  %> <%= render partial: 'show_search_options_button' %></h4>
+			<h4><%= link_to "Expression Values for #{params[:cluster]} (#{@selected_annotation[:name]}) <span class='fa fa-chevron-down toggle-glyph'></span>".html_safe, '#box-controls', 'data-toggle' => 'collapse'  %> <%= render partial: 'show_search_options_button' %></h4>
 		</div>
 	</div>
 	<div id="box-controls" class="panel-collapse collapse in">

@@ -1,4 +1,5 @@
 // load box plot data
+var expressionData = [];
 <% @values.sort_by {|k,v| k}.each_with_index do |(cluster, data), index| %>
 	var cluster_<%= index %>_exp = {
 		y: <%= raw data[:y] %>,
@@ -18,15 +19,8 @@
 			}
 		}
 	};
-<% end %>
 
-var expressionData = [];
-<% @clusters.each_with_index do |cluster, index| %>
-	expressionData.push(cluster_<%= index %>_exp);
-<% end %>
-
-<% if params[:cluster] %>
-	<%= render 'new_box_color_vals' %>
+  expressionData.push(cluster_<%= index %>_exp);
 <% end %>
 
 <%= render partial: 'expression_box_layout' %>
@@ -34,78 +28,89 @@ var expressionData = [];
 Plotly.newPlot('box-plot', expressionData, expressionLayout);
 
 // load expression scatter plot
-<% @expression.sort_by {|k,v| k}.each do |cluster, data| %>
-	var <%= cluster %> = {
-		x: <%= raw data[:x] %>,
-		y: <%= raw data[:y] %>,
-		text: <%= raw data[:text] %>,
-		name: "<%= data[:name] %>",
-		mode: 'markers',
-		type: 'scattergl',
-		hoverinfo: 'text',
-		marker: <%= raw data[:marker].to_json %>
-	};
-<% end %>
+var exp = {
+  x: <%= raw @expression[:all][:x] %>,
+  y: <%= raw @expression[:all][:y] %>,
+  <% if @cluster.is_3d? %>
+    z: <%= raw @expression[:all][:z] %>,
+  <% end %>
+  text: <%= raw @expression[:all][:text] %>,
+  mode: 'markers',
+  type: '<%= @cluster.is_3d? ? 'scatter3d' : 'scattergl' %>',
+  hoverinfo: 'text',
+  marker: <%= raw @expression[:all][:marker].to_json %>
+};
 
-var clusterData = [all];
+var clusterData = [exp];
 
 <%= render partial: 'expression_scatter_layout' %>
 
 Plotly.newPlot('scatter-plot', clusterData, scatterLayout);
 
-// listener to redraw expression scatter with new color profile
-$("#colorscale").change(function() {
-
-	var theme = $(this).val();
-	all.marker.colorscale = theme;
-	console.log("setting colorscale to " + theme);
-	var clusterData = [all];
-
-	Plotly.newPlot('scatter-plot', clusterData, scatterLayout);
-});
-
 // load static cluster scatter for reference
-<% @coordinates.sort_by {|k,v| k}.each_with_index do |(cluster, data), index| %>
-	var cluster_<%= index %>_clst = {
-		x: <%= raw data[:x] %>,
-		y: <%= raw data[:y] %>,
-		text: <%= raw data[:text] %>,
-		name: "<%= data[:name] %>",
-		mode: 'markers',
-		type: 'scattergl',
-		marker: {
-			color: colorBrewerSet[<%= index %>],
-			line:{
-				color: plotlyDefaultLineColor,
-				width: 0.5
-			}
-		}
-	};
-<% end %>
-
 var data = [];
-<% @clusters.each_with_index do |cluster, index| %>
-	data.push(cluster_<%= index %>_clst);
+<% if @cluster.is_3d? %>
+  <% @coordinates.each_key.sort.each_with_index do |key, index| %>
+    var cluster_<%= index %>_clst = {
+      x: <%= raw @coordinates[key][:x] %>,
+      y: <%= raw @coordinates[key][:y] %>,
+      z: <%= raw @coordinates[key][:z] %>,
+      text: <%= raw @coordinates[key][:text] %>,
+      textposition: 'bottom right',
+      name: "<%= @coordinates[key][:name] %>",
+      mode: 'markers',
+      type: 'scatter3d',
+      marker: {
+        color: colorBrewerSet[<%= index %>],
+        size: <%= raw @coordinates[key][:marker_size] %>,
+        line:{
+          color: plotlyDefaultLineColor,
+          width: 0.5
+        }
+      }
+    };
+
+    data.push(cluster_<%= index %>_clst);
+  <% end %>
+<% else %>
+  <% @coordinates.each_key.sort.each_with_index do |key, index| %>
+    var cluster_<%= index %>_clst = {
+      x: <%= raw @coordinates[key][:x] %>,
+      y: <%= raw @coordinates[key][:y] %>,
+      text: <%= raw @coordinates[key][:text] %>,
+      name: "<%= @coordinates[key][:name] %>",
+      mode: 'markers',
+      type: 'scattergl',
+      marker: {
+        color: colorBrewerSet[<%= index %>],
+        size: <%= raw @coordinates[key][:marker_size] %>,
+        line:{
+          color: plotlyDefaultLineColor,
+          width: 0.5
+        }
+      }
+    };
+
+    data.push(cluster_<%= index %>_clst);
+  <% end %>
 <% end %>
 
-<% if params[:cluster] %>
-	<%= render 'new_scatter_color_vals' %>
-<% end %>
 
 <%= render partial: 'static_scatter_layout' %>
+Plotly.newPlot('reference-plot', data, staticLayout);
 
-Plotly.newPlot('reference-plot', data, staticLayout, {staticPlot: true});
+// listener to redraw expression scatter with new color profile
+// will also redraw reference plot if needed
+$("#colorscale").change(function() {
 
-// re-render expression plots on window resize to use available area
-$( window ).on('resizeEnd', function() {
+	  var theme = $(this).val();
+    clusterData[0].marker.colorscale = theme;
+	  console.log("setting colorscale to " + theme);
+	  Plotly.newPlot('scatter-plot', clusterData, scatterLayout);
 
-	<%= render partial: 'expression_box_layout' %>
-
-	<%= render partial: 'expression_scatter_layout' %>
-
-	<%= render partial: 'static_scatter_layout' %>
-
-	Plotly.newPlot('box-plot', expressionData, expressionLayout);
-	Plotly.newPlot('scatter-plot', clusterData, scatterLayout);
-	Plotly.newPlot('reference-plot', data, staticLayout, {staticPlot: true});
+    // re-render reference plot if showing numeric annotations
+    if (<%= @selected_annotation[:type] == 'numeric' %>) {
+        data[0].marker.colorscale = theme;
+        Plotly.newPlot('reference-plot', data, staticLayout);
+    }
 });

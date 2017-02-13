@@ -8,8 +8,9 @@
 		<div class="row">
 			<div class="col-sm-12">
 				<%= form_for(:search, url: search_genes_path(@study.url_safe_name), html: {class: 'form', id: 'search-genes-form'}) do |f| %>
-					<%= f.hidden_field :cluster, value: params[:cluster] %>
-					<%= f.hidden_field :boxpoints, value: params[:boxpoints] %>
+					<%= f.hidden_field :cluster, value: set_cluster_value(@options, params) %>
+          <%= f.hidden_field :boxpoints, value: params[:boxpoints].nil? ? 'all' : params[:boxpoints] %>
+          <%= f.hidden_field :annotation, value: set_annotation_value(@cluster_annotations, params) %>
 					<div class="form-group">
 						<%= f.label :genes, 'Search for genes of interest (autocomplete)' %>
 						<%= f.autocomplete_field :genes, autocomplete_expression_score_gene_expression_score_index_path(study_id: @study._id), {multiple: true, class: 'form-control search-genes-input', placeholder: 'Search genes...', value: set_search_value, data: {delimiter: ' '}} %>
@@ -42,15 +43,19 @@
 				<%= form_tag(view_gene_set_expression_path(study_name: params[:study_name]), id: 'gene-sets', method: :get) do %>
 					<%= label_tag :gene_set, 'View curated gene lists as mean-centered expression (box & scatter plots)' %>
 					<%= select_tag :gene_set, options_for_select(@precomputed, params[:gene_set]), {include_blank: 'Please select a gene list', class: 'form-control'} %>
+          <%= hidden_field_tag :gene_set_cluster %>
+          <%= hidden_field_tag :gene_set_annotation %>
 					<script type="text/javascript">
 
+            // set default values on render
+            $('#gene_set_cluster').val($('#search_cluster').val());
+            $('#gene_set_annotation').val($('#search_annotation').val());
+
 						$('#gene_set').change(function() {
-							if ($(this).val() != '') {
-                launchSpinner('spinner_target');
-								$('#gene-sets').submit();
-							} else {
-                alert('Please select ')
-              }
+						    if ($(this).val() != '') {
+						        launchSpinner('spinner_target');
+                    $('#gene-sets').submit();
+							  }
 						});
 
 					</script>
@@ -62,13 +67,16 @@
 			<div class="row">
 				<div class="col-sm-12">
 					<%= label_tag :gene, 'Load single gene-level expression' %><br />
-					<%= select_tag :gene, options_for_select(load_gene_nav(@genes, params[:cluster])), {class: 'form-control'} %>
+					<%= select_tag :gene, options_for_select(load_gene_nav(@genes)), {class: 'form-control'} %>
 					<br />
 					<script type="text/javascript">
 						$('#gene').change(function() {
               if ($(this).val() != '') {
                 launchSpinner('spinner_target');
-                window.location.href = $(this).val();
+                var url = $(this).val();
+                var cluster = $('#search_cluster').val();
+                var annotation = $('#search_annotation').val();
+                window.location.href = url + '?cluster=' + cluster + '&annotation=' + annotation;
               }
 						});
 

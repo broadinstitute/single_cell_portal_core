@@ -1,3 +1,7 @@
-<p>Your parse job has failed with the following error:</p>
+<p>Your Single Cell Portal parse job has failed with the following error:</p>
 
 <p><%= @error %></p>
+
+<p>This file has been deleted from your study, and any child database records removed.
+  If you have any questions about this error, you can contact the Single Cell Portal Team at
+  <%= mail_to 'single_cell_portal@broadinstitute.org', 'single_cell_portal@broadinstitute.org' %>.</p>

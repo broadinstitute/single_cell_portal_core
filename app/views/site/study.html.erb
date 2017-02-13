@@ -31,7 +31,7 @@
 					<tbody>
 					<% @study.study_files.sort_by(&:name).each do |study_file| %>
 						<tr>
-							<td><%= study_file.name %></td>
+							<td><%= study_file.upload_file_name.nil? ? study_file.name : study_file.upload_file_name %> <%= study_file.file_type == 'Cluster' ? "<strong>(#{study_file.name})</strong>".html_safe : nil %></td>
 							<td><%= study_file.description %></td>
 							<td>
 								<% if @study.embargoed?(current_user) %>
@@ -65,6 +65,7 @@
 				<div id="plots" class="panel-collapse collapse in">
 					<div class="panel-body">
 						<div class="col-md-12">
+              <div id="colorscale-picker"></div>
 							<div id="cluster-plot"></div>
 						</div>
 					</div>
@@ -75,31 +76,45 @@
 
 	<script type="text/javascript">
 
-		<%= render partial: 'study_scatter_plot' %>
+    function renderScatter() {
+        var url = '<%= render_cluster_path(study_name: params[:study_name]) %>';
+        var target = $('#cluster-plot')[0];
+        var spinner = new Spinner(opts).spin(target);
+        $(target).data('spinner', spinner);
+        var cluster = $('#cluster').val();
+        var annotation = $('#annotation').val();
+        $.get(url + '?cluster=' + cluster + '&annotation=' + annotation);
+    }
+
+		$(document).ready(function() {
+        renderScatter();
+    });
 
 		// listener for cluster nav, specific to study page
+		$("#annotation").change(function() {
+		    var an = $(this).val();
+        // keep track for search purposes
+        $('#search_annotation').val(an);
+        $('#gene_set_annotation').val(an);
+        renderScatter();
+		});
+
 		$("#cluster").change(function() {
-			var url = '<%= render_cluster_path(study_name: params[:study_name]) %>';
-			var target = document.getElementById('cluster-plot');
-			var spinner = new Spinner(opts).spin(target);
-			$(target).data('spinner', spinner);
-			var cluster = $('#cluster').val();
-			if (cluster == "") {
-				$.get(url);
-			} else {
-				$.get(url + '?cluster=' + cluster);
-			}
-		});
-
-		$( window ).on('resizeEnd', function() {
-			<%= render 'study_scatter_layout' %>
-
-			Plotly.newPlot('cluster-plot', data, layout);
-      var legendW = parseInt($('#cluster-plot g.legend rect.bg').attr('width'));
-      var curSize = $('#cluster-plot').width() * SCATTER_RATIO;
-      var newWidth = legendW + curSize;
-      Plotly.relayout('cluster-plot', {width: newWidth})
-		});
+		    var newCluster = $(this).val();
+		    // keep track for search purposes
+        $('#search_cluster').val(newCluster);
+        $('#gene_set_cluster').val(newCluster);
+        // get new annotation options and re-render
+        $.get("<%= get_new_annotations_path(study: params[:study])%>?cluster=" + newCluster, function () {
+            $(document).ready(function () {
+                // since we now have new annotations, we need to set them in the search form for persistence
+                var an = $('#annotation').val();
+                $('#search_annotation').val(an);
+                $('#gene_set_annotation').val(an);
+                renderScatter();
+            })
+        });
+    });
 
 	</script>
 <% end %>

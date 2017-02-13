@@ -20,9 +20,9 @@
 //= require jquery_nested_form
 //= require spin.min
 //= require chroma.min
-//= require jquery-ui/datepicker
-//= require jquery-ui/autocomplete
-//= require jquery-ui/effect-highlight
+//= require jquery-ui/widgets/datepicker
+//= require jquery-ui/widgets/autocomplete
+//= require jquery-ui/effects/effect-highlight
 //= require autocomplete-rails
 
 var fileUploading = false;
@@ -90,10 +90,9 @@ function paginateStudies(totalPages, order, searchString) {
 
 // used for keeping track of position in wizard
 var completed = {
-    initialize_assignments_form_nav: false,
-    initialize_clusters_form_nav: false,
     initialize_expression_form_nav: false,
-    initialize_sub_clusters_form_nav: false,
+    initialize_metadata_form_nav: false,
+    initialize_ordinations_form_nav: false,
     initialize_marker_genes_form_nav: false,
     initialize_fastq_form_nav: false,
     initialize_misc_form_nav: false
@@ -131,8 +130,8 @@ function setWizardProgress(stepsDone) {
 }
 
 function showSkipWarning(step) {
-    if (['initialize_assignments_form_nav','initialize_clusters_form_nav','initialize_expression_form_nav'].indexOf(step) >= 0) {
-        return (!completed.initialize_assignments_form_nav || !completed.initialize_clusters_form_nav || !completed.initialize_expression_form_nav)
+    if (['initialize_ordinations_form_nav', 'initialize_metadata_form_nav', 'initialize_expression_form_nav'].indexOf(step) >= 0) {
+        return (!completed.initialize_ordinations_form_nav || !completed.initialize_metadata_form_nav || !completed.initialize_expression_form_nav)
     } else {
         return false;
     }
@@ -179,7 +178,7 @@ $(function() {
 
 // generic warning and spinner for deleting files
 function deleteFileConfirmation() {
-    var conf = confirm('Are you sure?  This file will be deleted and any associated database records removed.  Deleting assignment files also removes and cluster coordinate files (and records) as well.  This cannot be undone.');
+    var conf = confirm('Are you sure?  This file will be deleted and any associated database records removed.  This cannot be undone.');
     if ( conf == true) {
         var modal = $('#delete-modal');
         var modalTgt = modal.find('.spinner-target')[0];
@@ -332,7 +331,7 @@ $(window).resize(function() {
 });
 
 // generic function to render Morpheus
-function renderMorpheus(dataPath, annotPath, target, fitType) {
+function renderMorpheus(dataPath, annotPath, selectedAnnot, selectedAnnotType, target, fitType) {
     $(target).empty();
     var config = {dataset: dataPath, el: $(target)};
 
@@ -351,11 +350,15 @@ function renderMorpheus(dataPath, annotPath, target, fitType) {
         config.columnAnnotations = [{
             file : annotPath,
             datasetField : 'id',
-            fileField : 'CELL_NAME'}
+            fileField : 'NAME',
+            include: [selectedAnnot]}
         ];
         config.columnSortBy = [
-            {field:'CLUSTER', order:0},
-            {field:'SUB-CLUSTER', order:0}
+            {field: selectedAnnot, order:0}
+        ];
+        config.columns = [
+            {field:'id', display:'text'},
+            {field: selectedAnnot, display: selectedAnnotType == 'group' ? 'color' : 'bar'}
         ];
     }
 
