@@ -7,7 +7,7 @@ class UiTestSuite < Test::Unit::TestCase
 # Unit Test that is actually a user flow test using the Selenium Webdriver to test dev UI directly
 	def setup
 
-		@driver = Selenium::WebDriver::Driver.for :chrome
+		@driver = Selenium::WebDriver::Driver.for :chrome, driver_path: '/usr/local/opt/chromedriver/bin/chromedriver'
 		@driver.manage.window.maximize
 		@base_url = 'https://localhost/single_cell'
 		@accept_next_alert = true

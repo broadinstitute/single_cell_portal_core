@@ -6,6 +6,7 @@ class SiteController < ApplicationController
   before_action :load_precomputed_options, except: [:index, :search]
   before_action :set_cluster_group, except: [:index, :search, :view_all_gene_expression_heatmap, :precomputed_results]
   before_action :set_selected_annotation, except: [:index, :search, :study, :precomputed_results, :get_new_annotations]
+  before_action :check_view_permissions, except: [:index, :search]
   COLORSCALE_THEMES = ['Blackbody', 'Bluered', 'Blues', 'Earth', 'Electric', 'Greens', 'Hot', 'Jet', 'Picnic', 'Portland', 'Rainbow', 'RdBu', 'Reds', 'Viridis', 'YlGnBu', 'YlOrRd']
 
   # view study overviews and downloads
@@ -334,7 +335,13 @@ class SiteController < ApplicationController
       @selected_annotation[:scope] = annot_scope
       @selected_annotation
     end
-	end
+  end
+
+  def check_view_permissions
+    if (!user_signed_in? && !@study.public?) || (user_signed_in? && !@study.can_view?(current_user))
+      redirect_to site_path, alert: 'You do not have permission to view the requested page' and return
+    end
+  end
 
 	# SUB METHODS
 
