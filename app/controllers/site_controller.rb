@@ -5,7 +5,7 @@ class SiteController < ApplicationController
   before_action :set_study, except: [:index, :search]
   before_action :load_precomputed_options, except: [:index, :search]
   before_action :set_cluster_group, except: [:index, :search, :view_all_gene_expression_heatmap, :precomputed_results]
-  before_action :set_selected_annotation, except: [:index, :search, :precomputed_results, :get_new_annotations]
+  before_action :set_selected_annotation, except: [:index, :search, :study, :precomputed_results, :get_new_annotations]
   COLORSCALE_THEMES = ['Blackbody', 'Bluered', 'Blues', 'Earth', 'Electric', 'Greens', 'Hot', 'Jet', 'Picnic', 'Portland', 'Rainbow', 'RdBu', 'Reds', 'Viridis', 'YlGnBu', 'YlOrRd']
 
   # view study overviews and downloads
@@ -51,6 +51,8 @@ class SiteController < ApplicationController
     if @study.initialized?
       @options = load_cluster_group_options
       @cluster_annotations = load_cluster_group_annotations
+      # call set_selected_annotation manually
+      set_selected_annotation
     end
   end
 
