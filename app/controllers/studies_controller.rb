@@ -303,7 +303,7 @@ class StudiesController < ApplicationController
   end
 
   def check_edit_permissions
-    if !@study.can_edit?(current_user)
+    if !user_signed_in? || !@study.can_edit?(current_user)
       redirect_to studies_path, alert: 'You do not have permission to perform that action' and return
     end
   end

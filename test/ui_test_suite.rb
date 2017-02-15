@@ -81,7 +81,6 @@ class UiTestSuite < Test::Unit::TestCase
 		search_box.send_keys('Test Study')
 		submit = @driver.find_element(:id, 'submit-search')
 		submit.click
-		@wait.until { @driver.find_elements(:class, 'study-panel').size == 1 }
 		assert @driver.find_elements(:class, 'study-panel').size == 1, 'incorrect number of studies found'
 	end
 
@@ -197,7 +196,8 @@ class UiTestSuite < Test::Unit::TestCase
 	# admin backend tests of entire study creation process as order needs to be maintained throughout
 	# logs test user in, creates study, and deletes study on completion
 	# uses example data as inputs
-	test 'a create a study' do
+	# must be run before other tests, so numbered accordingly
+	test '1. create a study' do
 		# log in first
 		path = @base_url + '/studies/new'
 		@driver.get path
@@ -416,7 +416,9 @@ class UiTestSuite < Test::Unit::TestCase
 		close_modal('message_modal')
 	end
 
-	test 'aa create private study' do
+	# create private study for testing visibility/edit restrictions
+	# must be run before other tests, so numbered accordingly
+	test '2. create private study' do
 		# log in first
 		path = @base_url + '/studies/new'
 		@driver.get path
@@ -441,6 +443,7 @@ class UiTestSuite < Test::Unit::TestCase
 		study_form.submit
 	end
 
+	# check visibility & edit restrictions as well as share access
 	test 'create share and check view and edit' do
 		# check view visibility for unauthenticated users
 		path = @base_url + '/study/private-study'
@@ -490,7 +493,6 @@ class UiTestSuite < Test::Unit::TestCase
 		password.send_keys(@share_user[:password])
 		login_form = @driver.find_element(:id, 'new_user')
 		login_form.submit
-		wait_until_page_loads(@base_url)
 		close_modal('message_modal')
 
 		# view study
@@ -518,6 +520,7 @@ class UiTestSuite < Test::Unit::TestCase
 	end
 
 	# final test, remove test study that was created and used for front-end tests
+	# runs last to clean up data for next test run
 	test 'zzz delete test and private study' do
 		# log in first
 		path = @base_url + '/studies'

@@ -39,13 +39,17 @@
 <script type="text/javascript">
 
 	$('#studies').dataTable({
-		"pagingType": "full_numbers",
-		'order': [[0, 'asc']],
-		"oLanguage": {"sSearch": "Filter Results By: "}
+		  pagingType: "full_numbers",
+      order: [[0, 'asc']],
+		  language: {
+		      search: "Filter Results By: "
+		  }
 	});
 
 	// ask user to confirm delete, then show modal
-	$('.delete-btn').click(function(){
+  // use event delegation to attach to all delete-btn regardless
+  // of whether they are visible yet or not
+	$('#studies').on('click', '.delete-btn', function(){
 		if ( confirm('Are you sure? This will remove all uploaded data and associated database records.')) {
 			var target = $('.spinner-target')[0];
 			new Spinner(opts).spin(target);
