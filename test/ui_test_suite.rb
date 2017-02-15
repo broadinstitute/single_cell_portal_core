@@ -197,7 +197,7 @@ class UiTestSuite < Test::Unit::TestCase
 	# admin backend tests of entire study creation process as order needs to be maintained throughout
 	# logs test user in, creates study, and deletes study on completion
 	# uses example data as inputs
-	test 'create a study' do
+	test 'a create a study' do
 		# log in first
 		path = @base_url + '/studies/new'
 		@driver.get path
@@ -224,6 +224,8 @@ class UiTestSuite < Test::Unit::TestCase
 		share.click
 		share_email = study_form.find_element(:class, 'share-email')
 		share_email.send_keys(@share_user[:email])
+		share_permission = study_form.find_element(:class, 'share-permission')
+		share_permission.send_keys('Edit')
 		# save study
 		study_form.submit
 
@@ -414,8 +416,109 @@ class UiTestSuite < Test::Unit::TestCase
 		close_modal('message_modal')
 	end
 
+	test 'aa create private study' do
+		# log in first
+		path = @base_url + '/studies/new'
+		@driver.get path
+		@driver.manage.window.maximize
+		close_modal('message_modal')
+		# send login info
+		email = @driver.find_element(:id, 'user_email')
+		email.send_keys(@test_user[:email])
+		password = @driver.find_element(:id, 'user_password')
+		password.send_keys(@test_user[:password])
+		login_form = @driver.find_element(:id, 'new_user')
+		login_form.submit
+		wait_until_page_loads(path)
+		close_modal('message_modal')
+
+		# fill out study form
+		study_form = @driver.find_element(:id, 'new_study')
+		study_form.find_element(:id, 'study_name').send_keys('Private Study')
+		public = study_form.find_element(:id, 'study_public')
+		public.send_keys('No')
+		# save study
+		study_form.submit
+	end
+
+	test 'create share and check view and edit' do
+		# check view visibility for unauthenticated users
+		path = @base_url + '/study/private-study'
+		@driver.get path
+		assert @driver.current_url == @base_url, 'did not redirect'
+		assert element_present?(:id, 'message_modal'), 'did not find alert modal'
+		close_modal('message_modal')
+
+		# log in and get study ids for use later
+		path = @base_url + '/studies'
+		@driver.get path
+		@driver.manage.window.maximize
+		close_modal('message_modal')
+		# send login info
+		email = @driver.find_element(:id, 'user_email')
+		email.send_keys(@test_user[:email])
+		password = @driver.find_element(:id, 'user_password')
+		password.send_keys(@test_user[:password])
+		login_form = @driver.find_element(:id, 'new_user')
+		login_form.submit
+		wait_until_page_loads(path)
+		close_modal('message_modal')
+		edit = @driver.find_element(:class, 'private-study-edit')
+		edit.click
+		sleep(2)
+		private_study_id = @driver.current_url.split('/')[5]
+		@driver.get @base_url + '/studies'
+		edit = @driver.find_element(:class, 'test-study-edit')
+		edit.click
+		sleep(2)
+		share_study_id = @driver.current_url.split('/')[5]
+
+		# logout
+		profile = @driver.find_element(:id, 'profile-nav')
+		profile.click
+		logout = @driver.find_element(:id, 'logout-nav')
+		logout.click
+		wait_until_page_loads(@base_url)
+		close_modal('message_modal')
+
+		# login as share user
+		login_link = @driver.find_element(:id, 'login-nav')
+		login_link.click
+		email = @driver.find_element(:id, 'user_email')
+		email.send_keys(@share_user[:email])
+		password = @driver.find_element(:id, 'user_password')
+		password.send_keys(@share_user[:password])
+		login_form = @driver.find_element(:id, 'new_user')
+		login_form.submit
+		wait_until_page_loads(@base_url)
+		close_modal('message_modal')
+
+		# view study
+		path = @base_url + '/study/private-study'
+		@driver.get path
+		assert @driver.current_url == @base_url, 'did not redirect'
+		assert element_present?(:id, 'message_modal'), 'did not find alert modal'
+		close_modal('message_modal')
+
+		# edit study
+		edit_path = @base_url + '/studies/' + private_study_id + '/edit'
+		@driver.get edit_path
+		assert @driver.current_url == @base_url + '/studies', 'did not redirect'
+		assert element_present?(:id, 'message_modal'), 'did not find alert modal'
+		close_modal('message_modal')
+
+		# test share
+		share_view_path = @base_url + '/study/test-study'
+		@driver.get share_view_path
+		assert @driver.current_url == share_view_path, 'did not load share study view'
+		share_edit_path = @base_url + '/studies/' + share_study_id + '/edit'
+		@driver.get share_edit_path
+		assert @driver.current_url == share_edit_path, 'did not load share study edit'
+
+	end
+
 	# final test, remove test study that was created and used for front-end tests
-	test 'zzz delete test study' do
+	test 'zzz delete test and private study' do
 		# log in first
 		path = @base_url + '/studies'
 		@driver.get path
@@ -431,7 +534,14 @@ class UiTestSuite < Test::Unit::TestCase
 		wait_until_page_loads(path)
 		close_modal('message_modal')
 
+		# delete test
 		@driver.find_element(:class, 'test-study-delete').click
+		@driver.switch_to.alert.accept
+		wait_for_render(:id, 'message_modal')
+		close_modal('message_modal')
+
+		# delete private
+		@driver.find_element(:class, 'private-study-delete').click
 		@driver.switch_to.alert.accept
 		wait_for_render(:id, 'message_modal')
 		close_modal('message_modal')

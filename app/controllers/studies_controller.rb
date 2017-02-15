@@ -1,5 +1,6 @@
 class StudiesController < ApplicationController
   before_action :set_study, only: [:show, :edit, :update, :initialize_study, :destroy, :upload, :do_upload, :resume_upload, :update_status, :reset_upload, :new_study_file, :update_study_file, :delete_study_file, :retrieve_upload, :retrieve_wizard_upload, :parse, :launch_parse_job, :parse_progress]
+  before_filter :check_edit_permissions, except: [:index, :new, :create, :download_private_file]
   before_filter :authenticate_user!
 
   # GET /studies
@@ -299,6 +300,12 @@ class StudiesController < ApplicationController
   # return upload object from study params
   def get_upload
     study_file_params.to_h['upload']
+  end
+
+  def check_edit_permissions
+    if !@study.can_edit?(current_user)
+      redirect_to studies_path, alert: 'You do not have permission to perform that action' and return
+    end
   end
 
   # set up variables for wizard

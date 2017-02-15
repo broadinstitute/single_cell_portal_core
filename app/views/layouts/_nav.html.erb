@@ -22,15 +22,15 @@
 				</ul>
 			</li>
 			<% if user_signed_in? %>
-				<li class="dropdown"><%= link_to "<span class='fa fa-user'></span> #{current_user.email.split('@').first} <span class='caret'></span>".html_safe, "#", class: "dropdown-toggle", "data-toggle" => "dropdown" %>
+				<li class="dropdown"><%= link_to "<span class='fa fa-user'></span> #{current_user.email.split('@').first} <span class='caret'></span>".html_safe, "#", class: "dropdown-toggle", "data-toggle" => "dropdown", id: 'profile-nav' %>
 					<ul class="dropdown-menu dropdown-menu-right">
-						<li><%= link_to "<span class='fa fa-sign-out fa-fw'></span> Logout".html_safe, destroy_user_session_path, method: :delete, class: 'check-upload' %></li>
+						<li><%= link_to "<span class='fa fa-sign-out fa-fw'></span> Logout".html_safe, destroy_user_session_path, method: :delete, class: 'check-upload', id: 'logout-nav' %></li>
 						<li><%= link_to "<span class='fa fa-book fa-fw'></span> My Studies".html_safe, studies_path, class: 'check-upload', id: 'my-studies' %>
 						<li><%= link_to "<span class='fa fa-plus fa-fw'></span> Add a Study".html_safe, new_study_path, class: 'check-upload' %></li>
 					</ul>
 				</li>
 			<% else %>
-				<li><%= link_to "<span class='fa fa-sign-in fa-fw'></span> Login".html_safe, new_user_session_path %></li>
+				<li><%= link_to "<span class='fa fa-sign-in fa-fw'></span> Login".html_safe, new_user_session_path, id: 'login-nav' %></li>
 			<% end %>
 		</ul>
 	</div>
