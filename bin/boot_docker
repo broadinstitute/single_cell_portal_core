@@ -4,14 +4,14 @@
 usage=$(
 cat <<EOF
 $0 [OPTION]
--n VALUE	set the name of the docker container
--e VALUE	set the environment, defaults to 'development'. Running in 'production' will cause container to spawn headlessly.
--d VALUE	set the project directory to mount inside Docker container, defaults to current working directory (`pwd`)
--m VALUE	set the MONGO_LOCALHOST variable, only used in development, defaults to 10.0.2.2
--r VALUE	set the maximum allowable RAM to be allocated to portal
+-n VALUE	set the name of the docker container (defaults to 'single_cell')
+-e VALUE	set the environment (defaults to 'development'. Running in 'production' will cause container to spawn headlessly)
+-d VALUE	set the project directory to mount inside Docker container (defaults to current working directory: `pwd`)
+-m VALUE	set the MONGO_LOCALHOST variable, only used in development (defaults to 'mongodb')
+-r VALUE	set the maximum allowable RAM to be allocated to portal (defaults to 12GB)
 -s VALUE	set the SECRET_KEY variable, necessary for decrypting DatStat connection info from the database (no default value)
 -p VALUE	set the PROD_DATABASE_PASSWORD variable, used in production only (no default value)
--h VALUE	set the PROD_HOSTNAME variable (used for callbacks)
+-h VALUE	set the PROD_HOSTNAME variable (used for callbacks, defaults to 'portals.broadinstitute.org')
 -u VALUE	set the SENDGRID_USERNAME variable (used for emails)
 -P VALUE	set the SENDGRID_PASSWORD variable (used for emails)
 -H COMMAND	print this text
@@ -23,7 +23,7 @@ CONTAINER_NAME="single_cell"
 PROJECT_DIR=`pwd`
 PASSENGER_APP_ENV="development"
 MONGO_LOCALHOST="mongodb"
-PROD_HOSTNAME="104.197.210.235"
+PROD_HOSTNAME="portals.broadinstitute.org"
 SECRET_KEY_BASE=`openssl rand -hex 64`
 MAX_RAM=12GB
 

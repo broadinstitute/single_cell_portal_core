@@ -4,11 +4,10 @@
 usage=$(
 cat <<EOF
 $0 [OPTION]
--n VALUE	set the name of the docker container, defaults to 'mysql'
--d VALUE	set the data directory to mount inside the MySQL Docker container (no default value)
--m VALUE	set the max memory cache size (in GB) for wiredTiger
--r VALUE	set the max memory allocation size (in GB) for container
--c VALUE	set the max memory cache allocation size (in GB)
+-n VALUE	set the name of the docker container (defaults to 'mongodb')
+-d VALUE	set the data directory to mount inside the MySQL Docker container (defaults to $HOME/Documents/Data/docker-mongo)
+-m VALUE	set the max memory cache size (in GB) for wiredTiger (defaults to 10GB)
+-r VALUE	set the max memory allocation size (in GB) for container (defaults to 12GB)
 -u VALUE	set the MONGO_USERNAME variable (no default value)
 -p VALUE	set the MONGO_PASSWORD variable (no default value)
 -H COMMAND	print this text
