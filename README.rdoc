@@ -100,7 +100,7 @@ you may wish to override these depending on resources available.
 === ADMIN USER ACCOUNTS
 The Single Cell Portal has the concept of a 'super-admin' user account, which will allow portal admins to view & edit any
 studies in the portal for QA purposes, as well as receive certain admin-related emails (see PRODUCTION PERSISTENT DISKS
-below[#user-content-production-persistent-disks]).  This can only be enabled manually through the console.
+below[#production-persistent-disks]).  This can only be enabled manually through the console.
 
 To create an admin user account:
 1. Create a user account normally through the UI (using sign-up or Google auth features)
