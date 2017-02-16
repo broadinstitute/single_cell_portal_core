@@ -30,7 +30,6 @@ class StudyFile
   field :url_safe_name, type: String
   field :status, type: String
   field :parse_status, type: String, default: 'unparsed'
-  field :bytes_parsed, type: Integer, default: 0
   field :human_fastq_url, type: String
   field :human_data, type: Boolean, default: false
   field :x_axis_label, type: String, default: ''
@@ -51,9 +50,6 @@ class StudyFile
   do_not_validate_attachment_file_type :upload
 
   validates_uniqueness_of :upload_file_name, scope: :study_id, unless: Proc.new {|f| f.human_data?}
-
-  # use custom content type validator for more control
-  validate :check_upload_content_type
 
   Paperclip.interpolates :url_safe_name do |attachment, style|
     attachment.instance.url_safe_name
@@ -143,15 +139,6 @@ class StudyFile
     unless self.upload_file_name.nil?
       if self.study.public?
         FileUtils.rm_f(self.public_data_path)
-      end
-    end
-  end
-
-  # validate text/plain content type for parseable files
-  def check_upload_content_type
-    if self.parseable?
-      if self.upload.content_type != 'text/plain'
-        errors.add(:base, "Only text files are allowed for study files of type: '#{self.file_type}'")
       end
     end
   end

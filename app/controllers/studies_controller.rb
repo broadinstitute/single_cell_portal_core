@@ -206,7 +206,13 @@ class StudiesController < ApplicationController
         render json: study_file.to_jq_upload and return
       end
       # Add the following chunk to the incomplete upload, converting to unix line endings
-      File.open(study_file.upload.path, "ab") { |f| f.write(upload.read.gsub(/\r\n?/, "\n")) }
+      File.open(study_file.upload.path, "ab") do |f|
+        if study_file.upload_content_type == 'text/plain'
+          f.write(upload.read.gsub(/\r\n?/, "\n"))
+        else
+          f.write upload.read
+        end
+      end
 
       # Update the upload_file_size attribute
       study_file.upload_file_size = study_file.upload_file_size.nil? ? upload.size : study_file.upload_file_size + upload.size

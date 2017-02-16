@@ -187,9 +187,13 @@ class Study
   def set_cell_count
     @cell_count = 0
     if !self.expression_matrix_file.nil?
-      file = File.open(self.expression_matrix_file.upload.path)
-      cells = file.readline.split(/[\t,]/)
-      file.close
+      if self.expression_matrix_file.upload_content_type == 'application/gzip'
+        @file = Zlib::GzipReader.open(self.expression_matrix_file.upload.path)
+      else
+        @file = File.open(self.expression_matrix_file.upload.path)
+      end
+      cells = @file.readline.split(/[\t,]/)
+      @file.close
       cells.shift
       @cell_count = cells.size
     elsif self.expression_matrix_file.nil? && !self.metadata_file.nil?
@@ -261,7 +265,6 @@ class Study
   # method to parse master expression scores file for study and populate collection
   def make_expression_scores(expression_file, user)
     @count = 0
-    @bytes_parsed = 0
     @message = []
     @last_line = ""
     start_time = Time.now
@@ -269,7 +272,13 @@ class Study
 
     # validate headers
     begin
-      file = File.open(expression_file.upload.path)
+      if expression_file.upload_content_type == 'application/gzip'
+        Rails.logger.info "Parsing #{expression_file.name} as application/gzip"
+        file = Zlib::GzipReader.open(expression_file.upload.path)
+      else
+        Rails.logger.info "Parsing #{expression_file.name} as text/plain"
+        file = File.open(expression_file.upload.path)
+      end
       cells = file.readline.strip.split(/[\t,]/)
       @last_line = "#{expression_file.name}, line 1"
       if !['gene', ''].include?(cells.first.downcase) || cells.size <= 1
@@ -301,7 +310,12 @@ class Study
       Rails.logger.info "Beginning expression score parse from #{expression_file.name} for #{self.name}"
       expression_file.update(parse_status: 'parsing')
       # open data file and grab header row with name of all cells, deleting 'GENE' at start
-      expression_data = File.open(expression_file.upload.path)
+      # determine proper reader
+      if expression_file.upload_content_type == 'application/gzip'
+        expression_data = Zlib::GzipReader.open(expression_file.upload.path)
+      else
+        expression_data = File.open(expression_file.upload.path)
+      end
       cells = expression_data.readline.strip.split(/[\t,]/)
       @last_line = "#{expression_file.name}, line 1: #{cells.join("\t")}"
 
@@ -315,7 +329,7 @@ class Study
       Rails.logger.info "Expression scores loaded, starting record creation for #{self.name}"
       while !expression_data.eof?
         # grab single row of scores, parse out gene name at beginning
-        line = expression_data.readline.strip
+        line = expression_data.readline.strip.encode('UTF-8', invalid: :replace, undef: :replace, replace: '')
         row = line.split(/[\t,]/)
         @last_line = "#{expression_file.name}, line #{expression_data.lineno}"
 
@@ -340,15 +354,15 @@ class Study
         end
         # create expression score object
         @records << {gene: gene_name, scores: significant_scores, study_id: study_id, study_file_id: expression_file._id}
-        @bytes_parsed += line.length
         @count += 1
         if @count % 1000 == 0
           ExpressionScore.create(@records)
-          expression_file.update(bytes_parsed: @bytes_parsed)
           @records = []
           Rails.logger.info "Processed #{@count} expression scores from #{expression_file.name} for #{self.name}"
         end
       end
+      Rails.logger.info "Creating last #{@records.size} expression scores from #{expression_file.name} for #{self.name}"
+      Rails.logger.info "#{@records}"
       ExpressionScore.create!(@records)
       # create array of all cells for study
       @cell_data_array = self.data_arrays.build(name: 'All Cells', array_type: 'cells', array_index: 1, study_file_id: expression_file._id)
@@ -357,13 +371,14 @@ class Study
         new_array_index = @cell_data_array.array_index + 1
         @cell_data_array.values = slice
         Rails.logger.info "Saving all cells data array ##{@cell_data_array.array_index} using #{expression_file.name} for #{self.name}"
+        Rails.logger.info "#{@cell_data_array.attributes}"
         @cell_data_array.save
         @cell_data_array = self.data_arrays.build(name: 'All Cells', array_type: 'cells', array_index: new_array_index, study_file_id: expression_file._id)
       end
 
       # clean up, print stats
       expression_data.close
-      expression_file.update(parse_status: 'parsed', bytes_parsed: expression_file.upload_file_size)
+      expression_file.update(parse_status: 'parsed')
       end_time = Time.now
       time = (end_time - start_time).divmod 60.0
       @message << "#{expression_file.name} parse completed!"
@@ -426,9 +441,7 @@ class Study
       raise StandardError, error_message
     end
 
-    @bytes_parsed = 0
     @update_chunk = ordinations_file.upload_file_size / 4.0
-    @current_chunk = 0
     @message = []
     @cluster_metadata = []
     @point_count = 0
@@ -438,8 +451,8 @@ class Study
       Rails.logger.info "Beginning cluster initialization using #{ordinations_file.upload_file_name} for cluster: #{cluster_name} in #{self.name}"
 
       cluster_data = File.open(ordinations_file.upload.path)
-      header_data = cluster_data.readline.split(/[\t,]/).map(&:strip)
-      type_data = cluster_data.readline.split(/[\t,]/).map(&:strip)
+      header_data = cluster_data.readline.encode('UTF-8', invalid: :replace, undef: :replace, replace: '').split(/[\t,]/).map(&:strip)
+      type_data = cluster_data.readline.encode('UTF-8', invalid: :replace, undef: :replace, replace: '').split(/[\t,]/).map(&:strip)
 
       # determine if 3d coordinates have been provided
       is_3d = header_data.include?('Z')
@@ -500,7 +513,7 @@ class Study
       Rails.logger.info "Headers/Metadata loaded for cluster initialization using #{ordinations_file.upload_file_name} for cluster: #{cluster_name} in #{self.name}"
       # begin reading data
       while !cluster_data.eof?
-        line = cluster_data.readline.strip
+        line = cluster_data.readline.strip.encode('UTF-8', invalid: :replace, undef: :replace, replace: '')
         @point_count += 1
         @last_line = "#{ordinations_file.name}, line #{cluster_data.lineno}"
         vals = line.split(/[\t,]/).map(&:strip)
@@ -533,14 +546,7 @@ class Study
             end
           end
         end
-        @bytes_parsed += line.length
-        @current_chunk += line.length
-        # since parsing happens quickly, only update status in ~25% increments
-        # updating after every line slows down parsing
-        if @current_chunk / @update_chunk > 1
-          ordinations_file.update(bytes_parsed: @bytes_parsed)
-          @current_chunk = 0
-        end
+
       end
       # clean up
       @data_arrays.each do |data_array|
@@ -553,7 +559,7 @@ class Study
       @cluster_group.update_attributes(cell_annotations: cell_annotations)
       # reload cluster_group to use in messaging
       @cluster_group = ClusterGroup.find_by(study_id: self.id, study_file_id: ordinations_file.id, name: ordinations_file.name)
-      ordinations_file.update(parse_status: 'parsed', bytes_parsed: ordinations_file.upload_file_size)
+      ordinations_file.update(parse_status: 'parsed')
       end_time = Time.now
       time = (end_time - start_time).divmod 60.0
       # assemble email message parts
@@ -624,8 +630,6 @@ class Study
       raise StandardError, error_message
     end
 
-    @bytes_parsed = 0
-    @current_chunk = 0
     @update_chunk = metadata_file.upload_file_size / 4.0
     @metadata_records = []
     @message = []
@@ -635,8 +639,8 @@ class Study
 
       # open files for parsing and grab header & type data
       metadata_data = File.open(metadata_file.upload.path)
-      header_data = metadata_data.readline.split(/[\t,]/).map(&:strip)
-      type_data = metadata_data.readline.split(/[\t,]/).map(&:strip)
+      header_data = metadata_data.readline.encode('UTF-8', invalid: :replace, undef: :replace, replace: '').split(/[\t,]/).map(&:strip)
+      type_data = metadata_data.readline.encode('UTF-8', invalid: :replace, undef: :replace, replace: '').split(/[\t,]/).map(&:strip)
       name_index = header_data.index('NAME')
 
       # build study_metadata objects for use later
@@ -651,7 +655,7 @@ class Study
       Rails.logger.info "Study metadata objects initialized using: #{metadata_file.name} for #{self.name}; beginning parse"
       # read file data
       while !metadata_data.eof?
-        line = metadata_data.readline.strip
+        line = metadata_data.readline.strip.encode('UTF-8', invalid: :replace, undef: :replace, replace: '')
         @last_line = "#{metadata_file.name}, line #{metadata_data.lineno}"
         vals = line.split(/[\t,]/).map(&:strip)
 
@@ -679,12 +683,6 @@ class Study
             end
           end
         end
-        # since parsing happens quickly, only update status in ~25% increments
-        # updating after every line slows down parsing
-        if @current_chunk / @update_chunk > 1
-          metadata_file.update(bytes_parsed: @bytes_parsed)
-          @current_chunk = 0
-        end
       end
       # clean up
       @metadata_records.each do |metadata|
@@ -695,7 +693,7 @@ class Study
         end
       end
       metadata_data.close
-      metadata_file.update(parse_status: 'parsed', bytes_parsed: metadata_file.upload_file_size)
+      metadata_file.update(parse_status: 'parsed')
 
       # set initialized to true if possible
       if !self.expression_matrix_file.nil? && !self.cluster_ordinations_files.empty? && !self.initialized?
@@ -809,7 +807,7 @@ class Study
       end
       precomputed_score.gene_scores = rows
       precomputed_score.save
-      marker_file.update(parse_status: 'parsed', bytes_parsed: marker_file.upload_file_size)
+      marker_file.update(parse_status: 'parsed')
 
       # assemble message
       end_time = Time.now
