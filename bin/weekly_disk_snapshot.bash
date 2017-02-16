@@ -3,8 +3,8 @@
 TODAY="$(date +%Y-%m-%d)"
 
 # create the snapshots for portal and data disk
-echo "gcloud compute disks snapshot singlecell-production-disk --snapshot-names portal-backup-${TODAY} --zone us-central1-a"
-echo "gcloud compute disks snapshot singlecell-production-data --snapshot-names data-backup-${TODAY} --zone us-central1-a"
+echo "$(gcloud compute disks snapshot singlecell-production-disk --snapshot-names portal-backup-${TODAY} --zone us-central1-a)"
+echo "$(gcloud compute disks snapshot singlecell-production-data --snapshot-names data-backup-${TODAY} --zone us-central1-a)"
 
 #
 # DELETE OLD SNAPSHOTS (OLDER THAN 1 MONTH)
@@ -31,7 +31,6 @@ echo "${SNAPSHOT_LIST}" | while read line ; do
 	if [ $SNAPSHOT_EXPIRY -ge $SNAPSHOT_DATETIME ];
 	then
 	 # delete the snapshot
-		# echo "$(gcloud compute snapshots delete ${SNAPSHOT_NAME} --quiet)"
-		echo "$SNAPSHOT_NAME would be deleted - created at $SNAPSHOT_DATETIME"
+		echo "$(gcloud compute snapshots delete ${SNAPSHOT_NAME} --quiet)"
 	fi
 done
