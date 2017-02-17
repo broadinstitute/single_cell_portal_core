@@ -96,8 +96,9 @@ class UiTestSuite < Test::Unit::TestCase
 		annotations = @driver.find_element(:id, 'annotation').find_elements(:tag_name, 'option')
 		assert annotations.size == 5, 'incorrect number of annotations found'
 		annotations.select {|opt| opt.text == 'Sub-Cluster'}.first.click
-		legend = @driver.find_elements(:class, 'traces')
-		assert legend.size == 6, "incorrect number of traces found in Sub-Cluster, expected 6 - found #{legend.size}"
+		@wait.until {@driver.find_elements(:class, 'traces').size == 6}
+		legend = @driver.find_elements(:class, 'traces').size
+		assert legend == 6, "incorrect number of traces found in Sub-Cluster, expected 6 - found #{legend}"
 	end
 
 	test 'download study data file' do
