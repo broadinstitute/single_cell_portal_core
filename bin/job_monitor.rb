@@ -1,7 +1,4 @@
 #! /usr/bin/env ruby
-
-require 'net/smtp'
-
 WEB_DIR = File.expand_path(File.join(File.dirname(__FILE__), '..'))
 Dir.chdir(WEB_DIR)
 
@@ -13,10 +10,9 @@ Dir.chdir(WEB_DIR)
 # parse args
 ARGV.each do |arg|
 	arg =~ /\-e\=/ ? @env = arg.gsub(/\-e\=/, "") : nil
-	arg =~ /\-n\=/ ? @num_workers = arg.gsub(/\-p\=/, "") : nil
+	arg =~ /\-n\=/ ? @num_workers = arg.gsub(/\-n\=/, "") : nil
 	arg =~ /\-i/ ? @interactive = true : false
 end
-
 @from_email = 'no-reply@broadinstitute.org'
 @to_email = 'bistline@broadinstitute.org'
 
@@ -47,22 +43,14 @@ end
 # checks to see if any workers have been killed
 @date = Time.now.strftime("%Y-%m-%d %H:%M:%S")
 if @running == false
-	@log_message = "#{@date}: One or more delayed_job workers have died.  Restarting daemon.\n"
+	@log_message = "#{@date}: One or more delayed_job workers have died.  Restarting daemon."
 
 	# restart delayed job workers
-	system("sudo -E -u app -H bin/delayed_job restart #{@env} -n #{@num_workers}")
+	system(". /home/app/.cron_env ; cd /home/app/webapp ; bin/delayed_job restart #{@env} -n #{@num_workers}")
 
-	# send email to admin
-	Net::SMTP.start('smtp.sendgrid.net', 2525, ENV['SENDGRID_USERNAME'], ENV['SENDGRID_PASSWORD'], :plain) do |smtp|
-		smtp.open_message_stream(@from_email, @to_email) do |contents|
-			contents.puts "From: #{@from_email}"
-			contents.puts "To: #{@to_email}"
-			contents.puts "Content-Type: text/html; charset=utf-8"
-			contents.puts "Subject: Single Cell DelayedJob workers died as of #{@date}"
-			contents.puts ""
-			contents.puts "#{@log_message.gsub(/\n/, '<br />')}"
-		end
-	end
+	# send email via mailer to handle auth correctly
+	system(". /home/app/.cron_env ; /home/app/webapp/bin/rails runner -e #{@env} \"SingleCellMailer.delayed_job_email('#{@log_message}').deliver_now\"")
+
 elsif @interactive && @running
 	puts "All jobs are running normally in #{@env}"
 	processes.each do |pid, command|

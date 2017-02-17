@@ -34,6 +34,11 @@ class ClusterGroup
 		all_values
 	end
 
+	# return number of points in cluster_group, use x axis as all cluster_groups must have either x or y
+	def points
+		self.concatenate_data_arrays('x', 'coordinates').count
+	end
+
 	def is_3d?
 		self.cluster_type == '3d'
 	end

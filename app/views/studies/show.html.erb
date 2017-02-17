@@ -1,4 +1,4 @@
-<h1><%= @study.name %> <%= @study.visibility %> <span class="badge" id="cell-count"><%= @study.cell_count %> cells</span><%= link_to "<span class='fa fa-area-chart'></span> View Study".html_safe, view_study_path(@study.url_safe_name), class: 'btn btn-lg btn-info pull-right' %></h1>
+<h1><%= @study.name %> <%= @study.visibility %> <span class="badge" id="cell-count"><%= @study.cell_count %> cells</span> <span class="badge"><%= @study.expression_scores.size %> genes</span><%= link_to "<span class='fa fa-area-chart'></span> View Study".html_safe, view_study_path(@study.url_safe_name), class: 'btn btn-lg btn-info pull-right' %></h1>
 <%= @study.description.html_safe %>
 <div class="panel panel-default" id="stats-panel">
 	<div class="panel-heading">
@@ -10,24 +10,24 @@
 		<div class="panel-body">
 			<div class="row">
 				<div class="col-md-6">
-					<h4>Clusters <span class="badge"><%= @study.clusters.count %></span></h4>
+					<h4>Clusters <span class="badge"><%= @study.cluster_groups.count %></span></h4>
 					<div class="table-responsive">
 						<table class="table table-condensed" id="clusters">
 							<thead>
 								<tr>
 									<th>Name</th>
 									<th>Type</th>
-									<th>Parent</th>
-									<th>Size</th>
+                  <th>Points</th>
+                  <th>Annotations</th>
 								</tr>
 							</thead>
 							<tbody>
-								<% @study.clusters.each do |cluster| %>
+								<% @study.cluster_groups.each do |cluster| %>
 									<tr>
 										<td><%= cluster.name %></td>
 										<td><%= cluster.cluster_type %></td>
-										<td><%= cluster.parent_cluster %></td>
-										<td><%= cluster.cluster_points.count %></td>
+                    <td><%= cluster.points %></td>
+                    <td><%= cluster.cell_annotations.size %></td>
 									</tr>
 								<% end %>
 							</tbody>
@@ -61,10 +61,55 @@
 		</div>
 	</div>
 </div>
-<div class="panel panel-info" id="study-files-panel">
+<div class="panel panel-info" id="metadatas-annotations-panel">
+  <div class="panel-heading">
+    <div class="panel-title">
+      <h4><%= link_to "Metadata <span class='badge'>#{@study.study_metadatas.count}</span> & Cluster Annotations <span class='badge'>#{@study.cluster_groups.keep_if {|c| c.cell_annotations.any?}.count}</span> <span class='fa fa-chevron-down toggle-glyph'></span>".html_safe, '#metadatas-annotations', 'data-toggle' => 'collapse' %></h4>
+    </div>
+  </div>
+
+  <div class="panel-collapse collapse in" id="metadatas-annotations">
+    <div class="panel-body table-responsive">
+      <table class="table table-striped">
+        <thead>
+        <tr>
+          <th>Kind</th>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Size/Range</th>
+          <th>Values</th>
+        </tr>
+        </thead>
+        <tbody>
+          <% @study.study_metadatas.each do |metadata| %>
+            <tr>
+              <td>Metadata</td>
+              <td><%= metadata.name %></td>
+              <td><%= metadata.annotation_type %></td>
+              <td><%= metadata.annotation_type == 'group' ? metadata.values.size : metadata.cell_annotations.values.minmax.join(', ') %></td>
+              <td><%= Naturally.sort(metadata.values).join(', ') %></td>
+            </tr>
+          <% end %>
+          <% @study.cluster_groups.keep_if {|c| c.cell_annotations.any?}.each do |cluster_group| %>
+            <% cluster_group.cell_annotations.each do |annotation| %>
+              <tr>
+                <td class="actions">Cluster Annotation: <%= cluster_group.name %></td>
+                <td><%= annotation[:name] %></td>
+                <td><%= annotation[:type] %></td>
+                <td><%= annotation[:type] == 'group' ? annotation[:values].size : cluster_group.concatenate_data_arrays(annotation[:name], 'annotations').minmax.join(', ') %></td>
+                <td><%= Naturally.sort(annotation[:values]).join(', ') %></td>
+              </tr>
+            <% end %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div class="panel panel-primary" id="study-files-panel">
 	<div class="panel-heading">
 		<div class="panel-title">
-			<h4><%= link_to "Study Files <span class='badge'>#{@study.study_files.size}</span> <span class='fa fa-chevron-down toggle-glyph'></span>".html_safe, '#study-files', 'data-toggle' => 'collapse' %></h4>
+			<h4><%= link_to "Study Files <span class='badge'>#{@study.study_files.size}</span> <span class='fa fa-chevron-down toggle-glyph'></span>".html_safe, '#study-files', 'data-toggle' => 'collapse', class: 'white' %></h4>
 		</div>
 	</div>
 
@@ -132,15 +177,7 @@
 
 <script type="text/javascript">
 
-		$('#clusters').dataTable({
-			pagingType: "simple",
-			order: [[1, 'asc'],[3, 'desc']],
-			language: {
-				search: "Filter records:"
-			}
-		});
-
-		$('#precomputed').dataTable({
+		$('#clusters, #precomputed').dataTable({
 			pagingType: "simple",
 			order: [[0, 'asc']],
 			language: {

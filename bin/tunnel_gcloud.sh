@@ -27,4 +27,4 @@ case $OPTION in
 	esac
 done
 
-gcloud compute ssh singlecell-$ENV --project broad-singlecellportal --zone us-central1-a
+gcloud compute ssh root@singlecell-$ENV --project broad-singlecellportal --zone us-central1-a

@@ -1,67 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>The change you wanted was rejected (422)</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <style>
-  body {
-    background-color: #EFEFEF;
-    color: #2E2F30;
-    text-align: center;
-    font-family: arial, sans-serif;
-    margin: 0;
-  }
-
-  div.dialog {
-    width: 95%;
-    max-width: 33em;
-    margin: 4em auto 0;
-  }
-
-  div.dialog > div {
-    border: 1px solid #CCC;
-    border-right-color: #999;
-    border-left-color: #999;
-    border-bottom-color: #BBB;
-    border-top: #B00100 solid 4px;
-    border-top-left-radius: 9px;
-    border-top-right-radius: 9px;
-    background-color: white;
-    padding: 7px 12% 0;
-    box-shadow: 0 3px 8px rgba(50, 50, 50, 0.17);
-  }
-
-  h1 {
-    font-size: 100%;
-    color: #730E15;
-    line-height: 1.5em;
-  }
-
-  div.dialog > p {
-    margin: 0 0 1em;
-    padding: 1em;
-    background-color: #F7F7F7;
-    border: 1px solid #CCC;
-    border-right-color: #999;
-    border-left-color: #999;
-    border-bottom-color: #999;
-    border-bottom-left-radius: 4px;
-    border-bottom-right-radius: 4px;
-    border-top-color: #DADADA;
-    color: #666;
-    box-shadow: 0 3px 8px rgba(50, 50, 50, 0.17);
-  }
-  </style>
+  <title>Single Cell Portal</title>
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <link rel="stylesheet" media="all" href="/single_cell/assets/application.css?body=1">
+  <script src="/single_cell/assets/morpheus-external-latest.min.js"></script>
+  <script src="/single_cell/assets/morpheus-latest.min.js"></script>
+  <script src="/single_cell/assets/application.js?body=1"></script>
 </head>
-
 <body>
-  <!-- This file lives in public/422.html -->
-  <div class="dialog">
-    <div>
-      <h1>The change you wanted was rejected.</h1>
-      <p>Maybe you tried to change something you didn't have access to.</p>
-    </div>
-    <p>If you are the application owner check the logs for more information.</p>
+<nav class="navbar fluid navbar-inverse navbar-fixed-top sc-navbar" role="navigation" id="single-cell-navbar">
+  <div class="navbar-header">
+    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+      <span class="sr-only">Toggle navigation</span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </button>
+    <a href="/single_cell" class="navbar-brand hidden-xs check-upload"><span class='fa fa-home'></span> Single Cell Portal<sup class='text-danger'><small> BETA</small></sup></a>
   </div>
+  <div class="collapse navbar-collapse">
+    <ul class="nav navbar-nav pull-right">
+      <li class='dropdown'><a href="#" class=dropdown-toggle" data-toggle="dropdown"><span class='fa fa-question-circle'></span> Help <span class='caret'></span></a>
+        <ul class="dropdown-menu dropdown-menu-right">
+          <li><a href="https://github.com/broadinstitute/single_cell_portal/wiki" class='check-upload', target='_blank'><span class='fa fa-info-circle fa-fw'></span> Documentation/Wiki</a></li>
+          <li><a href="https://github.com/broadinstitute/single_cell_portal/issues" class='check-upload', target='_blank'><span class='fa fa-github fa-fw'></span> Issues</a></li>
+        </ul>
+      </li>
+      <li><a href="/users/sign_in" id='login-nav'><span class='fa fa-sign-in fa-fw'></span> Login</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container-fluid" id="wrap">
+  <div class="row section-pad" id="main-body">
+    <div class="col-md-12">
+      <h3 class="alert alert-danger text-center">We're sorry, but the change you wanted was rejected.</h3>
+      <p class="lead text-center">Please contact the <a href="mailto:single_cell_portal@broadinstitute.org">webmaster</a> if this problem persists.</p>
+    </div>
+  </div>
+</div>
+<div class="footer container-fluid">
+  <div class="row">
+    <div class="col-md-12 text-center">
+
+      <a href="http://www.broadinstitute.org"><img class="center-block img-responsive" src="/single_cell/assets/broad-logo.png" alt="Broad logo"></a>
+      <p class="text-muted">&copy; 2017 The Broad Institute of MIT & Harvard</p>
+    </div>
+  </div>
+</div>
 </body>
 </html>

@@ -22,4 +22,12 @@ class SingleCellMailer < ApplicationMailer
       format.html
     end
   end
+
+  def delayed_job_email(message)
+    @users = User.where(admin: true).map(&:email)
+
+    mail(to: @users, subject: 'Single Cell Portal DelayedJob workers automatically restarted') do |format|
+      format.text {render text: message}
+    end
+  end
 end

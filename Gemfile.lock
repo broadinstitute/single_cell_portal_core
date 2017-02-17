@@ -172,6 +172,7 @@ GEM
     multi_json (1.11.2)
     multi_xml (0.5.5)
     multipart-post (2.0.0)
+    naturally (2.1.0)
     nokogiri (1.6.7.2)
       mini_portile2 (~> 2.0.0.rc2)
     non-stupid-digest-assets (1.0.8)
@@ -299,6 +300,7 @@ DEPENDENCIES
   jquery-ui-rails!
   mongoid (= 5.1)
   mongoid-paperclip!
+  naturally
   nested_form!
   non-stupid-digest-assets
   omniauth-google-oauth2
