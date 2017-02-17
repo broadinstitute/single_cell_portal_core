@@ -79,7 +79,8 @@ class Study
   accepts_nested_attributes_for :study_files, allow_destroy: true
   accepts_nested_attributes_for :study_shares, allow_destroy: true, reject_if: proc { |attributes| attributes['email'].blank? }
 
-  validates_uniqueness_of :name, :url_safe_name
+  validates_uniqueness_of :name
+  validates_uniqueness_of :url_safe_name, message: "and data directory: %{value} is already assigned.  Please rename your study to a different value."
   validates_presence_of :name
 
   # populate specific errors for study shares since they share the same form

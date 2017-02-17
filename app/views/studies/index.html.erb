@@ -6,7 +6,8 @@
 				<table class="table table-striped" id="studies">
 					<thead>
 					<tr>
-						<th>Name</th>
+            <th>Name</th>
+            <th>Owner</th>
 						<th>Description</th>
 						<th>Visibility</th>
             <th># Files</th>
@@ -17,7 +18,8 @@
 					<tbody>
 					<% @studies.each do |study| %>
 						<tr class="study-entry">
-							<td><%= study.name %></td>
+              <td><%= study.name %></td>
+              <td><%= study.user.email %></td>
 							<td><%= truncate_html(study.description, length: 50) %></td>
 							<td><%= study.visibility %></td>
               <td id="<%= study.url_safe_name %>-study-file-count"><%= study.study_files.count %></td>

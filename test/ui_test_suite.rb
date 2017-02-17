@@ -96,7 +96,6 @@ class UiTestSuite < Test::Unit::TestCase
 		annotations = @driver.find_element(:id, 'annotation').find_elements(:tag_name, 'option')
 		assert annotations.size == 5, 'incorrect number of annotations found'
 		annotations.select {|opt| opt.text == 'Sub-Cluster'}.first.click
-		@wait.until { @driver.find_elements(:class, 'traces').size == 6 }
 		legend = @driver.find_elements(:class, 'traces')
 		assert legend.size == 6, "incorrect number of traces found in Sub-Cluster, expected 6 - found #{legend.size}"
 	end
@@ -333,10 +332,51 @@ class UiTestSuite < Test::Unit::TestCase
 
 	end
 
+	# text gzip parsing of expression matrices
+	test '2. parse gzip expression matrix' do
+		# log in first
+		path = @base_url + '/studies/new'
+		@driver.get path
+		close_modal('message_modal')
+		# send login info
+		email = @driver.find_element(:id, 'user_email')
+		email.send_keys(@test_user[:email])
+		password = @driver.find_element(:id, 'user_password')
+		password.send_keys(@test_user[:password])
+		login_form = @driver.find_element(:id, 'new_user')
+		login_form.submit
+		wait_until_page_loads(path)
+		close_modal('message_modal')
+
+		# fill out study form
+		study_form = @driver.find_element(:id, 'new_study')
+		study_form.find_element(:id, 'study_name').send_keys('Gzip Parse')
+		# save study
+		study_form.submit
+
+		# upload bad expression matrix
+		close_modal('message_modal')
+		upload_expression = @driver.find_element(:id, 'upload-expression')
+		upload_expression.send_keys(@test_data_path + 'expression_matrix_example_gzipped.txt.gz')
+		wait_for_render(:id, 'start-file-upload')
+		upload_btn = @driver.find_element(:id, 'start-file-upload')
+		upload_btn.click
+		# close modal
+		wait_for_render(:id, 'upload-success-modal')
+		close_modal('upload-success-modal')
+
+		# verify parse completed
+		studies_path = @base_url + '/studies'
+		@driver.get studies_path
+		wait_until_page_loads(studies_path)
+		study_file_count = @driver.find_element(:id, 'gzip-parse-study-file-count')
+		assert study_file_count.text == '1', "found incorrect number of study files; expected 1 and found #{study_file_count.text}"
+	end
+
 	# negative tests to check file parsing & validation
 	# since parsing happens in background, all messaging is handled through emails
 	# this test just makes sure that parsing fails and removed entries appropriately
-	test 'create study error messaging' do
+	test '3. create study error messaging' do
 		# log in first
 		path = @base_url + '/studies/new'
 		@driver.get path
@@ -390,7 +430,6 @@ class UiTestSuite < Test::Unit::TestCase
 		close_modal('upload-success-modal')
 		next_btn = @driver.find_element(:id, 'next-btn')
 		next_btn.click
-		wait_for_render(:class, 'initialize_marker_genes_form')
 
 		# upload bad marker gene list
 		marker_form = @driver.find_element(:class, 'initialize_marker_genes_form')
@@ -404,6 +443,8 @@ class UiTestSuite < Test::Unit::TestCase
 		# close modal
 		wait_for_render(:id, 'upload-success-modal')
 		close_modal('upload-success-modal')
+		# wait for a few seconds to allow parses to fail fully
+		sleep(3)
 
 		# assert parses all failed and delete study
 		@driver.get(@base_url + '/studies')
@@ -501,6 +542,10 @@ class UiTestSuite < Test::Unit::TestCase
 		assert @driver.current_url == @base_url, 'did not redirect'
 		assert element_present?(:id, 'message_modal'), 'did not find alert modal'
 		close_modal('message_modal')
+		# check public visibility when logged in
+		path = @base_url + '/study/gzip-parse'
+		@driver.get path
+		assert @driver.current_url == path, 'did not load public study without share'
 
 		# edit study
 		edit_path = @base_url + '/studies/' + private_study_id + '/edit'
@@ -545,6 +590,12 @@ class UiTestSuite < Test::Unit::TestCase
 
 		# delete private
 		@driver.find_element(:class, 'private-study-delete').click
+		@driver.switch_to.alert.accept
+		wait_for_render(:id, 'message_modal')
+		close_modal('message_modal')
+
+		# delete gzip parse
+		@driver.find_element(:class, 'gzip-parse-delete').click
 		@driver.switch_to.alert.accept
 		wait_for_render(:id, 'message_modal')
 		close_modal('message_modal')

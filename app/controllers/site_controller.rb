@@ -338,8 +338,10 @@ class SiteController < ApplicationController
   end
 
   def check_view_permissions
-    if (!user_signed_in? && !@study.public?) || (user_signed_in? && !@study.can_view?(current_user))
-      redirect_to site_path, alert: 'You do not have permission to view the requested page' and return
+    unless @study.public?
+      if (!user_signed_in? && !@study.public?) || (user_signed_in? && !@study.can_view?(current_user))
+        redirect_to site_path, alert: 'You do not have permission to view the requested page' and return
+      end
     end
   end
 

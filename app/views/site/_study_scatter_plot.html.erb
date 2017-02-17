@@ -52,3 +52,4 @@ var curSize = $('#cluster-plot').width() * SCATTER_RATIO;
 var newWidth = legendW + curSize;
 Plotly.relayout('cluster-plot', {width: newWidth});
 
+$('#cluster-figure-legend').html("<p class='text-center help-block'><%= escape_javascript(render text: @cluster.study_file.description) %></p>");
