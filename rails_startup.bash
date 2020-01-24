@@ -20,6 +20,12 @@ elif [[ $PASSENGER_APP_ENV = "development" ]]; then
     # force upgrade in local development to ensure yarn.lock is continually updated
     sudo -E -u app -H yarn upgrade
     sudo -E -u app -H /home/app/webapp/bin/webpack
+    if [ $? -ne 0 ]; then
+        echo "***Webpack failed, attempting clean reinstall***"
+        # rebuild sass in case you are switching between containerized/non containerized (this is a no-op if the correct files are already built)
+        sudo -E -u app -H yarn install --force
+        sudo -E -u app -H /home/app/webapp/bin/webpack
+    fi
 fi
 if [[ -n $TCELL_AGENT_APP_ID ]] && [[ -n $TCELL_AGENT_API_KEY ]] ; then
     echo "*** CONFIGURING TCELL WAF ***"

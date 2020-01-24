@@ -47,7 +47,7 @@ SecureHeaders::Configuration.default do |config|
                      https://use.fontawesome.com https://api.tcell.io https://us.browser.tcell.insight.rapid7.com
                      https://us.jsagent.tcell.insight.rapid7.com https://us.agent.tcell.insight.rapid7.com https://js-agent.newrelic.com
                      https://bam.nr-data.net),
-      style_src: %w('self' https://maxcdn.bootstrapcdn.com 'unsafe-inline'),
+      style_src: %w('self' blob: https://maxcdn.bootstrapcdn.com 'unsafe-inline'),
       upgrade_insecure_requests: true, # see https://www.w3.org/TR/upgrade-insecure-requests/
   }
 

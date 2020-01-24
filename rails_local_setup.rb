@@ -1,5 +1,4 @@
 # Run the rails server in non-dockerized form
-require 'pry'
 if ARGV[0].nil?
   puts 'You must specify your username'
   exit
@@ -7,6 +6,7 @@ end
 username = ARGV[0]
 source_file_string = "#!/bin/bash\n"
 source_file_string += "export NOT_DOCKERIZED=true\n"
+source_file_string += "export HOSTNAME=localhost\n"
 
 base_vault_path = "secret/kdux/scp/development/#{username}"
 vault_secret_path = "#{base_vault_path}/scp_config.json"

@@ -1,0 +1,634 @@
+
+/* SCP-specific styles */
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background-color: #eff2f5;
+}
+
+label {
+  margin-bottom: 2px;
+}
+
+#main-body {
+  padding-bottom: 98px;
+  overflow-x: hidden;
+}
+
+#wrap {
+  min-height: 100%;
+}
+
+.section-pad {
+  margin-top: 50px;
+  margin-bottom: 20px;
+}
+
+.white {
+  color: #ffffff;
+}
+
+.white:hover {
+  color: palegoldenrod;
+}
+
+.red {
+  color: #d9534f;
+}
+
+.red:hover {
+  color: #c9302c;
+}
+
+.sc-navbar {
+  a {
+    color: white !important;
+    font-weight: lighter !important;
+  }
+  a:hover {
+    color: #99979c !important;
+  }
+  min-height: 50px !important;
+  .navbar-header {
+    position: relative;
+    top: 10px;
+  }
+  .nav {
+    margin-top: 0px;
+    font-size: 16px;
+  }
+}
+
+.navbar-brand {
+  padding: 0 15px;
+}
+
+.bs-callout{
+  margin:20px 0;
+  padding:20px 15px 15px 20px;
+  border-left:3px solid #eee
+}
+
+.bs-callout p:last-child{
+  margin-bottom:0;
+}
+
+.bs-callout code{
+  background-color:#fff;
+  border-radius:3px
+}
+
+.bs-callout h4 {
+  font-weight: bold;
+  margin-top:0;
+  margin-bottom:5px
+}
+
+.bs-callout ul{
+  padding-left: 20px;
+  color: inherit;
+}
+
+.bs-callout-danger{
+  background-color:#fdf7f7;
+  border-left: 5px solid #d9534f;
+  color: #d9534f
+}
+
+.bs-callout-danger ul{
+  color: #d9534f;
+}
+
+.bs-callout-warning{
+  background-color:#fcf8f2;
+  border-left: 5px solid #f0ad4e;
+  color: #f0ad4e
+}
+
+.bs-callout-warning ul{
+  color: #f0ad4e;
+}
+
+.bs-callout-info{
+  background-color:#f4f8fa;
+  border-left: 5px solid #5bc0de;
+  color: #5bc0de
+}
+
+.bs-callout-info ul{
+  color: #5bc0de;
+}
+
+.bs-callout-default {
+  background-color: #f0f0f0;
+  border-left: 5px solid #777;
+  color: #777
+}
+
+.bs-callout-default ul{
+  color: #777;
+}
+
+.bs-callout-primary {
+  background-color: lighten(#428bca, 40%);
+  border-left: 5px solid #428bca;
+  color: #428bca
+}
+
+.bs-callout-primary ul{
+  color: #428bca;
+}
+
+.bs-callout-success {
+  background-color: lighten(#5cb85c, 40%);
+  border-left: 5px solid #5cb85c;
+  color: #5cb85c
+}
+
+.bs-callout-success ul{
+  color: #5cb85c;
+}
+
+#google-auth {
+  margin-top: 15px;
+  border-radius: 9px;
+  font-size: 32px;
+}
+
+.actions {
+  white-space: nowrap;
+}
+
+.ui-widget-content, .ui-widget-header, .ui-widget input, .ui-widget select, .ui-widget textarea, .ui-widget button {
+  font-family: "Lato", sans-serif;
+  font-size: 16px;
+}
+
+.devise-btn {
+  margin-top: 20px;
+}
+
+.fastq-label {
+  font-size: 100% !important;
+}
+
+#main-banner {
+  margin-top: 50px;
+  background-image: url('../../assets/images/SCP-Header-resize.png');
+  background-repeat: no-repeat;
+  background-position: right bottom;
+  min-width: 1200px;
+}
+
+#main-banner h1 sup small {
+  color: #a94442 !important;
+}
+
+#iframe_wrapper {
+  min-height: 570px;
+}
+
+#spinner_target, .spinner-target {
+  min-height: 200px;
+  position: relative;
+  margin: 20px 0;
+}
+
+.study-lead {
+  font-weight: 200;
+}
+
+.navigation-form {
+  display: inline-block;
+  margin-right: 15px;
+}
+
+#colorscale-picker{
+  display: inline-block;
+  float: left;
+}
+
+#toggle-plots {
+  display: inline-block;
+  float: right;
+}
+
+.top-pad {
+  margin-top: 10px;
+}
+
+.top-margin-5 {
+  margin-top: 5px;
+}
+
+.table-responsive .dataTables_wrapper .row {
+  margin: 0;
+}
+
+.svg-container {
+  margin: 0 auto !important;
+}
+
+.more-genes {
+  vertical-align: top !important;
+  margin-top: 2px;
+}
+
+#gene-set-modal textarea {
+  width: 100%;
+  min-height: 300px;
+  margin-bottom: 25px;
+}
+
+.btn-file {
+  position: relative;
+  overflow: hidden;
+}
+.btn-file input[type=file] {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 100%;
+  min-height: 100%;
+  font-size: 100px;
+  text-align: right;
+  filter: alpha(opacity=0);
+  opacity: 0;
+  outline: none;
+  background: white;
+  cursor: inherit;
+  display: block;
+}
+
+.right-border {
+  border-right: 1px solid #DADADA;
+}
+
+#show-search-options {
+  margin-top: -4px;
+}
+
+#heatmap-plot {
+  padding-bottom: 25px;
+}
+
+#heatmap-plot li.active, #morpheus-fullscreen li.active {
+  display: none;
+}
+
+.delete-btn {
+  position: relative;
+}
+
+.sc-badge {
+  display: inline-block;
+  border-radius: 10px;
+  font-size: 14px;
+  min-width: 10px;
+  padding: 3px 7px;
+  vertical-align: middle;
+}
+
+.dark {
+  border-top: 1px dashed #888;
+}
+
+#bar {
+  margin-top: 10px;
+}
+
+.wizard li.disabled a:hover {
+  cursor: not-allowed;
+}
+
+.error-header {
+  background-color: #f2dede;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+
+.initialize-label {
+  position: relative;
+  top: -5px;
+}
+
+.disabled > a {
+  color: #999 !important;
+}
+
+.enabled > a {
+  background-color: #F5F9FA !important;
+}
+
+.enabled > a:hover {
+  background-color: #E6EFF2 !important;
+}
+
+.not-enabled > a {
+  color: #9999A1 !important;
+}
+
+#cell-count {
+  background-color: #337ab7;
+  color: #fff;
+}
+
+#gsutil-command-wrapper {
+  display: none;
+}
+
+#gsutil-command {
+  padding: 7px 13px;
+  margin-left: 20px;
+  background-color: #2b2b2b;
+}
+
+#panic-modal {
+  background: rgba(255, 128, 128, 0.4);
+}
+
+#heatmap-plot .morpheus-nav, #morpheus-fullscreen .morpheus-nav {
+  border: none !important;
+}
+
+.no-padding {
+  padding: 0 !important;
+}
+
+.no-side-padding{
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.no-margin {
+  margin: 0 !important;
+}
+
+.no-vertical-padding{
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.no-bottom-margin{
+  margin-bottom: 0 !important;
+}
+
+.no-top-border {
+  border-top: 0 !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+}
+
+.well-red{
+  background-color: #fcf8e3;
+}
+
+#search-target {
+  padding-right: 0;
+  z-index: 2;
+}
+
+#search-parent {
+  margin-top: 8px;
+  z-index: 500;
+}
+
+.gene-panel {
+  margin-bottom: 25px !important;
+}
+
+.gene-result-view-plot {
+  min-height: 400px;
+}
+
+#perform-gene-search {
+  background-color: #337ab7;
+  color: white;
+}
+
+#wdl-contents pre {
+  height: 400px;
+}
+
+#render-target.col-md-13 {
+  padding: 0 15px;
+}
+
+.workflow-tab {
+  margin: 15px 0;
+}
+
+h1, .h1 {
+  font-size: 32px;
+}
+
+h1, .h1, h2, .h2, h3, .h3 {
+  margin-top: 10px;
+}
+
+h4, .h4, h5, .h5, h6, .h6 {
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+@media (min-width: 768px) {
+  #view-options .col-sm-4, #view-options .col-md-3, #view-options .col-xs-12 {
+    width: inherit;
+    float: inherit;
+  }
+}
+
+#view-options-nav {
+  float: right;
+  margin-top: 16px;
+  margin-right: 4px;
+}
+
+#view-options-panel {
+  background-color: transparent;
+  z-index: 1000;
+  border-bottom: none;
+  box-shadow: none;
+}
+
+#search-omnibar-menu i {
+  float: left;
+  margin-right: 7px;
+  font-size: 20px;
+  margin-top: 5px;
+  width: 25px;
+  height: 25px;
+  padding: 3px 4px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+#search-omnibar-menu i.open {
+  background-color: #e6e6e6;
+}
+
+#search_genes, #perform-gene-search:focus {
+  border: 1px solid #ccc;
+  box-shadow: none;
+  outline: none;
+}
+
+#view-options-panel {
+  padding-left: 15px;
+}
+
+/*
+ * Off Canvas, a collapsible side bar used for e.g. 'View Options' menu
+ * --------------------------------------------------
+ */
+
+@media (min-width: 992px) {
+  .row-offcanvas {
+    position: relative;
+  }
+
+  .row-offcanvas-right {
+    right: 0;
+  }
+
+  .row-offcanvas-left {
+    left: 0;
+  }
+
+  .row-offcanvas-right
+  .sidebar-offcanvas {
+    right: -22%;
+  }
+
+  .contracted-for-sidebar {
+    width: 80%;
+    margin-left: 22%;
+  }
+
+  .row-offcanvas-left
+  .sidebar-offcanvas {
+    left: -22%;
+  }
+
+  .offcanvas-right-inactive {
+    width: 80%;
+  }
+
+  .row-offcanvas-right.active {
+    right: 22%;
+  }
+
+  .row-offcanvas-left.active {
+    left: 22%;
+  }
+
+  .sidebar-offcanvas {
+    position: absolute;
+    top: 0;
+    width: 20%;
+  }
+
+  #view-tabs li:first-child {
+    margin-left: 13px;
+  }
+
+  #view-tabs li:first-child {margin-left: 13px;}
+  .left-menu-open #view-tabs li:first-child {margin-left: 0;}
+  .right-menu-open #view-tabs li:first-child {margin-left: 21%;}
+  .left-menu-open.right-menu-open #view-tabs li:first-child {margin-left: 0;}
+}
+
+@media (max-width: 993px) {
+  .right-menu-open #view-tabs li:first-child {
+    margin-left: 0;
+  }
+}
+
+#render-target > .active #view-options-panel {
+  display: block;
+}
+#view-options-panel {
+  display: none;
+}
+
+#branding-group-demo {
+  margin: 10px 0;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.table-striped {
+  background-color: white !important;
+}
+
+.bam-browse-genome {
+  margin-bottom: 3px;
+}
+
+.ck-editor__editable {
+  min-height: 300px;
+  max-height: 700px;
+  min-width: 100%;
+}
+
+.bottom-pad {
+  margin-bottom: 10px;
+}
+
+.white-bg {
+  background-color: white !important;
+}
+
+.preview-hidden-input {
+  padding-bottom: 10px;
+  border: 1px dashed #666666;
+  border-radius: 4px;
+}
+
+.code-div{
+  float: none;
+  margin: 0 auto;
+}
+
+.code-example {
+  padding: 2px 4px;
+  font-size: 90%;
+  color: #c7254e;
+  background-color: #f9f2f4;
+  border-radius: 4px;
+}
+
+.upload-wizard {
+  font-size: 18px;
+}
+
+#deployment_notification_message{
+  width: 100%;
+}
+#message-area{
+  max-height: 80px;
+  text-align: center;
+}
+#display-time, #display-time-label{
+  vertical-align: -webkit-baseline-middle;
+  display: inline-block;
+}
+.notification-banner{
+  color: white;
+  height: 50px;
+  padding: 5px;
+  background: #ff5252;
+}
+#deployment-form-group{
+  padding-bottom: 10px;
+}
+
+#tos-content {
+  height: 500px;
+  max-height: 500px;
+  overflow-y: scroll;
+  margin-bottom: 15px;
+}
