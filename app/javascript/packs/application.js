@@ -7,18 +7,6 @@
 // To reference this file, add <%= javascript_pack_tag 'application' %> to the appropriate
 // layout file, like app/views/layouts/application.html.erb
 
-import React from 'react';
-import ReactDOM from 'react-dom';
-import ScpSearchStudies from 'components/ScpSearchStudies';
-
-document.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('scp-search-studies-root-element')) {
-    ReactDOM.render(
-      <ScpSearchStudies />, document.getElementById('scp-search-studies-root-element'),
-    )
-  }
-});
-
 import 'styles/application.scss'
 
 import $ from 'jquery';
@@ -32,9 +20,25 @@ import 'jquery-ui/ui/effects/effect-highlight';
 import igv from 'igv';
 import morpheus from 'morpheus-app';
 import Ideogram from 'ideogram';
+import React from 'react';
+import ReactDOM from 'react-dom';
 
-// Per https://ckeditor.com/docs/ckeditor5/latest/builds/guides/integration/advanced-setup.html#scenario-1-integrating-existing-builds
-import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+
+import ScpSearchStudies from 'components/ScpSearchStudies';
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('scp-search-studies-root-element')) {
+    ReactDOM.render(
+      <ScpSearchStudies />, document.getElementById('scp-search-studies-root-element'),
+    )
+  }
+});
+
+
+
+
+
+
 
 // Per https://github.com/rails/jquery-ujs#installation-using-rails-and-webpacker
 // import {} from 'jquery-ujs';
