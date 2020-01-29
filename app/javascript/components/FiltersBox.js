@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Button from 'react-bootstrap/Button';
 import InputGroup from 'react-bootstrap/InputGroup';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
+
+import FiltersSearchBar from './FiltersSearchBar';
 
 function arraysEqual(a, b) {
   if (a === b) return true;
@@ -43,15 +47,16 @@ export default function FiltersBox(props) {
   //   * save-facet-species (for calls-to-action use ID: <action> <component>)
   //   * filter-species-NCBItaxon9606
   const facetName = props.facet.name;
-  const facetID = `facet-${facetName}`;
-  const saveID = `save-${facetID}`;
+  const componentName = 'filters-box';
+  const filtersBoxID = `${componentName}-${facetName}`;
+  const saveID = `save-${filtersBoxID}`;
 
   /**
    * Returns IDs of selected filters.
    * Enables comparing current vs. saved filters
    */
   function getCheckedFilterIDs() {
-    const checkedSelector = `#${facetID} input:checked`;
+    const checkedSelector = `#${filtersBoxID} input:checked`;
     const checkedFilterIDs =
       [...document.querySelectorAll(checkedSelector)].map((filter) => {
         return filter.id;
@@ -72,29 +77,45 @@ export default function FiltersBox(props) {
   };
 
   return (
-    <div id={facetID} style={{width: '200px', display: props.show ? '' : 'none'}}>
-      {props.facet.filters.map((d) => {
-        const id = `filter-${facetName}-${d.id}`;
-        return (
-          <li key={'li-' + id}>
-            <InputGroup.Checkbox
-              id={id}
-              aria-label="Checkbox"
-              name={id}
-              onClick={handleFilterClick}
-            />
-            <label htmlFor={id}>{d.name}</label>
-          </li>
-        );
-      })}
-      <span>Clear</span>
-      <Button 
-        id={saveID}
-        className={canSave ? 'enabled' : 'disabled'}
-        onClick={handleSaveClick}
-        >
-        SAVE
-      </Button>
+    <div class={componentName} id={`${filtersBoxID}`} style={{display: props.show ? '' : 'none'}}>
+      <FiltersSearchBar filtersBoxID={filtersBoxID} />
+      <p class='filters-box-header'>
+        <span class='default-filters-list-name'>FREQUENTLY SEARCHED</span>
+        <span class='facet-ontology-links'>
+          {props.facet.links.map((link) => {
+            return (
+              <a href={link.url} target='_blank'>
+                {link.name}&nbsp;&nbsp;<FontAwesomeIcon icon={faExternalLinkAlt}/><br/>
+              </a>
+            );
+          })}
+        </span>
+      </p>
+      <ul>
+        {props.facet.filters.map((d) => {
+          const id = `filter-${facetName}-${d.id}`;
+          return (
+            <li key={'li-' + id}>
+              <InputGroup.Checkbox
+                id={id}
+                aria-label="Checkbox"
+                name={id}
+                onClick={handleFilterClick}
+              />
+              <label htmlFor={id}>{d.name}</label>
+            </li>
+          );
+        })}
+      </ul>
+      <div class="filters-box-footer">
+        <span>Clear</span>
+        <Button 
+          id={saveID}
+          className={'facet-save-button ' + (canSave ? 'enabled' : 'disabled')}
+          onClick={handleSaveClick}>
+          SAVE
+        </Button>
+      </div>
     </div>
   );
 }

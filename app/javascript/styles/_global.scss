@@ -480,6 +480,65 @@ h4, .h4, h5, .h5, h6, .h6 {
   padding-left: 15px;
 }
 
+/**
+* Styles for React-based faceted search UI for studies
+*/
+
+#search-studies .facet > span {
+  padding: 8px 16px;
+  margin-right: 8px;
+  border-radius: 15px;
+  border: 0.64px solid #4d72aa;
+  box-sizing: border-box;
+  color: #4d72aa;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+#search-studies .facet.active > span {
+  color: #fff;
+  background-color: #4d72aa;
+}
+
+
+#search-studies .facet ul {
+  list-style-type: none;
+  padding-left: 15px;
+}
+
+#search-studies .facet li {
+  width: 250px;
+}
+
+#search-studies .default-filters-list-name {
+  padding-left: 15px;
+  font-weight: bold;
+}
+
+#search-studies .facet-ontology-links {
+  float: right;
+}
+
+#search-studies .filters-box label {
+  margin-left: 8px;
+  font-weight: normal;
+}
+
+#search-studies .filters-box {
+  width: 500px;
+  border: 1px solid #aaa;
+  background: #fff;
+}
+
+#search-studies .facet-save-button {
+  float: right;
+  margin: 0 10px 10px 0;
+}
+
+#search-studies .filters-box-footer {
+  height: 40px;
+}
+
 /*
  * Off Canvas, a collapsible side bar used for e.g. 'View Options' menu
  * --------------------------------------------------
