@@ -1,5 +1,6 @@
 import React from 'react';
 import Facet from './Facet';
+import SearchBar from './KeyWordSearch'
 
 const facets = [
   {
@@ -30,6 +31,7 @@ const facets = [
 function ScpSearchStudies() {
   return (
     <div className="ScpSearch">
+    <div><SearchBar/></div>
       {
         facets.map((facet) => {
           return <Facet facet={facet} />
