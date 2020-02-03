@@ -82,13 +82,14 @@ export default function FiltersBox(props) {
       <p class='filters-box-header'>
         <span class='default-filters-list-name'>FREQUENTLY SEARCHED</span>
         <span class='facet-ontology-links'>
-          {props.facet.links.map((link) => {
-            return (
-              <a href={link.url} target='_blank'>
-                {link.name}&nbsp;&nbsp;<FontAwesomeIcon icon={faExternalLinkAlt}/><br/>
-              </a>
-            );
-          })}
+          {//props.facet.links.map((link) => {
+          //   return (
+          //     <a href={link.url} target='_blank'>
+          //       {link.name}&nbsp;&nbsp;<FontAwesomeIcon icon={faExternalLinkAlt}/><br/>
+          //     </a>
+          //   );
+          })
+        }
         </span>
       </p>
       <ul>

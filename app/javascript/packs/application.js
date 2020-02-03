@@ -10,6 +10,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ScpSearchStudies from 'components/ScpSearchStudies';
+import ResultsPanel from 'components/ResultsPanel';
 
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('scp-search-studies-root-element')) {
@@ -17,7 +18,14 @@ document.addEventListener('DOMContentLoaded', () => {
       <ScpSearchStudies />, document.getElementById('scp-search-studies-root-element'),
     )
   }
-});
+  if (document.getElementById('scp-search-results-root-element')) {
+    ReactDOM.render(
+      <ResultsPanel />, document.getElementById('scp-search-results-root-element'),
+    )
+  }
+}
+
+);
 
 import 'styles/application.scss'
 

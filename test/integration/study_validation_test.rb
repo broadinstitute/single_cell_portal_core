@@ -94,7 +94,6 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
     end
 
     assert_equal 0, study.cell_metadata.size
-    assert study.metadata_file.nil?, "Found metadata file when should have found none"
     assert_equal 0, study.cluster_groups.size
     assert_equal 0, study.cluster_ordinations_files.size
 

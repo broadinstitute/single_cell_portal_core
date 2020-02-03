@@ -153,5 +153,6 @@ class DeleteQueueJob < Struct.new(:object)
   # subsamples to be regenerated
   def delete_subsampled_data(cluster)
     cluster.find_subsampled_data_arrays.delete_all
+    cluster.update(subsampled: false)
   end
 end

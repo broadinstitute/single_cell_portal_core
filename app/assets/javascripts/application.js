@@ -213,7 +213,8 @@ function split(val) {
 
 // extract last term from a string of autocomplete entries
 function extractLast(term) {
-    return split(term).pop();
+    sanitizedTerm = term.trim(); // remove trailing whitespace to prevent returning all results
+    return split(sanitizedTerm).pop();
 }
 
 var keydownIsFromAutocomplete = false;
@@ -224,7 +225,7 @@ var keydownIsFromAutocomplete = false;
  * @param selector: DOM selector for form element
  * @param entities: Array of pre-populated values to search
  **/
-function initializeAutocomplete(selector, entities, maxGenes, errorMsg) {
+function initializeAutocomplete(selector) {
 
     var jqObject = $(selector);
     jqObject.on("keydown", function(event) {
@@ -240,7 +241,7 @@ function initializeAutocomplete(selector, entities, maxGenes, errorMsg) {
             source: function(request, response) {
                 // delegate back to autocomplete, but extract the last term
                 response(
-                    $.ui.autocomplete.filter(entities, extractLast(request.term))
+                    $.ui.autocomplete.filter(window.uniqueGenes, extractLast(request.term))
                 );
             },
             minLength: 2,
@@ -260,10 +261,10 @@ function initializeAutocomplete(selector, entities, maxGenes, errorMsg) {
                 var terms = split(this.value);
                 // remove the current input
                 terms.pop();
-                // check if user has added more that 20 genes, in which case alert and remove the last term
-                if (terms.length - 1 > maxGenes) {
+                // check if user has added more that 50 genes, in which case alert and remove the last term
+                if (terms.length - 1 > window.MAX_GENE_SEARCH) {
                     console.log('Too many genes selected, aborting autocomplete');
-                    alert(errorMsg);
+                    alert(window.MAX_GENE_SEARCH_MSG);
                 } else {
                     // add the selected item
                     terms.push(ui.item.value);
