@@ -79,6 +79,8 @@ class ResultsPanel extends React.Component{
   }
 
 const StudyResults = (props) => {
+  // This component may have state/props where onMount a API call is made
+  // to get the initial results on the home page.
   return(
     <Tab.Content>
        { props.results.length &&
