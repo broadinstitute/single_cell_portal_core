@@ -1,0 +1,95 @@
+/**
+* Styles for React-based faceted search UI for studies
+*/
+
+// TODO: Consider removing this min-height once study result list can be shown
+#main-body {
+  min-height: 300px;
+}
+
+#search-panel {
+  .facet > span,
+  #more-filters-button > span {
+    padding: 8px 16px;
+    margin-right: 8px;
+    border-radius: 15px;
+    border: 0.64px solid #4d72aa;
+    box-sizing: border-box;
+    color: #4d72aa;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .facet.active > span,
+  #more-filters-button.active > span {
+    color: #fff;
+    background-color: #4d72aa;
+  }
+
+  ul {
+    list-style-type: none;
+    padding-left: 15px;
+  }
+
+  li {
+    width: 250px;
+  }
+
+  .default-filters-list-name {
+    padding-left: 15px;
+    font-weight: bold;
+  }
+
+  .facet-ontology-links {
+    float: right;
+  }
+
+  .filters-box {
+    width: 400px;
+    border: 1px solid #aaa;
+    background: #fff;
+    position: absolute;
+    z-index: 9000;
+    height: 225px;
+  }
+
+  label {
+    margin-left: 8px;
+    font-weight: normal;
+  }
+
+  .facet-save-button {
+    float: right;
+    margin: 0 10px 10px 0;
+  }
+
+  .filters-box-footer {
+    height: 40px;
+  }
+
+  #facets-accordion-box {
+    background: #fff;
+    height: 300px;
+    width: 400px;
+    position: relative;
+    top: 15px;
+    padding-top: 1px;
+  }
+
+  .accordion .card {
+    margin: 10px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+  }
+
+  .accordion .card-header {
+    padding: 5px;
+    color: #4d72aa;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .icon-left {
+    margin-right: 8px;
+  }
+}

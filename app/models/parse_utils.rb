@@ -165,7 +165,7 @@ class ParseUtils
       @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
       Rails.logger.info @message.join("\n")
       begin
-        SingleCellMailer.notify_user_parse_complete(user.email, "Gene-barcode matrix expression data has completed parsing", @message, self).deliver_now
+        SingleCellMailer.notify_user_parse_complete(user.email, "Gene-barcode matrix expression data has completed parsing", @message, study).deliver_now
       rescue => e
         ErrorTracker.report_exception(e, user, {message: @message})
         Rails.logger.error "#{Time.zone.now}: Unable to deliver email: #{e.message}"

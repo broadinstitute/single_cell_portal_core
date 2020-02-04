@@ -81,7 +81,7 @@ $("#<%= @target %>-cluster").change(function() {
     var currAnnot = $('#<%= @target %>-annotation').val();
     // get new annotation options and re-render
     $.ajax({
-        url: "<%= get_new_annotations_path(study_name: @study.url_safe_name)%>?cluster=" + newCluster + '&target=<%= @target %>',
+        url: "<%= get_new_annotations_path(study_name: @study.url_safe_name)%>?cluster=" + encodeURIComponent(newCluster) + '&target=<%= @target %>',
         method: 'GET',
         dataType: 'script',
         success: function (data) {

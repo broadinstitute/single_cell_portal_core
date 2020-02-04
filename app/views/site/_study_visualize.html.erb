@@ -127,7 +127,7 @@
         var currSubsample = $('#subsample').val();
         // get new annotation options and re-render
         $.ajax({
-            url: "<%= get_new_annotations_path(accession: @study.accession, study_name: @study.url_safe_name)%>?cluster=" + newCluster + '&subsample=' + currSubsample,
+            url: "<%= get_new_annotations_path(accession: @study.accession, study_name: @study.url_safe_name)%>?cluster=" + encodeURIComponent(newCluster) + '&subsample=' + encodeURIComponent(currSubsample),
             method: 'GET',
             dataType: 'script',
             success: function (data) {

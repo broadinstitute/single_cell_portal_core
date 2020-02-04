@@ -3,38 +3,29 @@ import Button from 'react-bootstrap/Button';
 import InputGroup from 'react-bootstrap/InputGroup';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
+import isEqual from 'lodash/isEqual';
 
 import FiltersSearchBar from './FiltersSearchBar';
 
-function arraysEqual(a, b) {
-  if (a === b) return true;
-  if (a == null || b == null) return false;
-  if (a.length != b.length) return false;
 
-  // If you don't care about the order of the elements inside
-  // the array, you should sort both arrays here.
-  // Please note that calling sort on an array will modify that array.
-  // you might want to clone your array first.
-
-  for (var i = 0; i < a.length; ++i) {
-    if (a[i] !== b[i]) return false;
-  }
-  return true;
-}
-
+/**
+ * Component for filter search and filter lists, and related functionality
+ */
 export default function FiltersBox(props) {
   const [canSave, setCanSave] = useState(false);
   const [savedSelection, setSavedSelection] = useState([]);
   const [selection, setSelection] = useState([]);
 
   useEffect(() => {
-    setCanSave(!arraysEqual(selection, savedSelection));
+    setCanSave(!isEqual(selection, savedSelection));
   }, [selection]);
 
   useEffect(() => {
     setCanSave(false);
   }, [savedSelection]);
 
+  // TODO: Get opinions, perhaps move to a UI code style guide.
+  //
   // Systematic, predictable IDs help UX research and UI development.
   //
   // Form of IDs: <general name> <specific name(s)>
@@ -53,7 +44,7 @@ export default function FiltersBox(props) {
 
   /**
    * Returns IDs of selected filters.
-   * Enables comparing current vs. saved filters
+   * Enables comparing current vs. saved filters to enable/disable SAVE button
    */
   function getCheckedFilterIDs() {
     const checkedSelector = `#${filtersBoxID} input:checked`;
@@ -77,37 +68,47 @@ export default function FiltersBox(props) {
   };
 
   return (
-    <div class={componentName} id={`${filtersBoxID}`} style={{display: props.show ? '' : 'none'}}>
+    <div className={componentName} id={filtersBoxID} style={{display: props.show ? '' : 'none'}}>
       <FiltersSearchBar filtersBoxID={filtersBoxID} />
       <p class='filters-box-header'>
         <span class='default-filters-list-name'>FREQUENTLY SEARCHED</span>
         <span class='facet-ontology-links'>
-          {//props.facet.links.map((link) => {
-          //   return (
-          //     <a href={link.url} target='_blank'>
-          //       {link.name}&nbsp;&nbsp;<FontAwesomeIcon icon={faExternalLinkAlt}/><br/>
-          //     </a>
-          //   );
+          {
+          props.facet.links.map((link, i) => {
+            return (
+              <a key={`link-${i}`} href={link.url} target='_blank'>
+                {link.name}&nbsp;&nbsp;<FontAwesomeIcon icon={faExternalLinkAlt}/><br/>
+              </a>
+            );
           })
-        }
+          }
         </span>
       </p>
       <ul>
-        {props.facet.filters.map((d) => {
-          const id = `filter-${facetName}-${d.id}`;
-          return (
-            <li key={'li-' + id}>
-              <InputGroup.Checkbox
-                id={id}
-                aria-label="Checkbox"
-                name={id}
-                onClick={handleFilterClick}
-              />
-              <label htmlFor={id}>{d.name}</label>
-            </li>
-          );
-        })}
+        {
+          // TODO: Abstract to use Filters component 
+          // after passing through function for onClick interaction
+          // (SCP-2109)
+          props.facet.filters.map((d) => {
+            const id = `filter-${facetName}-${d.id}`;
+            return (
+              <li key={'li-' + id}>
+                <InputGroup.Checkbox
+                  id={id}
+                  aria-label="Checkbox"
+                  name={id}
+                  onClick={handleFilterClick}
+                />
+                <label htmlFor={id}>{d.name}</label>
+              </li>
+            );
+          })
+        }
       </ul>
+      {/* 
+      TODO: abstracting this and similar code block in
+      FacetsAccordionBox into new component (SCP-2109)
+       */}
       <div class="filters-box-footer">
         <span>Clear</span>
         <Button 

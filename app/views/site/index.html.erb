@@ -1,11 +1,30 @@
 <%= render partial: 'main_banner_content' %>
 <div class="container-fluid home-page-fix" id="wrap">
   <div class="row section-pad" id="main-body">
-    <div class="col-md-12">
-        <div id ="scp-search-studies-root-element"></div>
-      <div id="scp-search-results-root-element">
-      </div>
-      </div>
+  <div id="scp-search-results-root-element">  
+  </div>
+  <div class="col-md-12">
+      <ul class="nav nav-tabs sc-tabs" role="tablist" id="home-page-tabs">
+        <li role="presentation" class="home-nav active" id="search-studies-nav">
+          <a href="#search-studies" class="home-nav-tab" data-toggle="tab">Search Studies <span class="fas fa-book"></span></a>
+        </li>
+        <li role="presentation" class="home-nav" id="search-genes-nav">
+          <a href="#search-genes" class="home-nav-tab" data-toggle="tab">Search Genes <span class="fas fa-dna"></span></a>
+        </li>
+      </ul>
+      <div class="tab-content top-pad">
+        <div class="tab-pane active in" id="search-studies" role="tabpanel">
+          <!--
+            This is where React integrates into Rails.
+
+            Ensure any updates to this ID are reflected in the ReactDOM.render call
+            in app/javascript/packs/application.js
+          -->
+          <div id="scp-search-studies-root-element"></div>
+        </div>
+        <div class="tab-pane" id="search-genes" role="tabpanel">
+          <%= render partial: '/site/search/search_genes' %>
+        </div>
       </div>
 </div>
 

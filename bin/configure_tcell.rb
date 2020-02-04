@@ -19,7 +19,8 @@ unless ENV['TCELL_AGENT_APP_ID'].nil? || ENV['TCELL_AGENT_API_KEY'].nil?
       ]
   }
 
-  tcell_config_file = File.new('/home/app/webapp/config/tcell_agent.config', 'w+')
+  app_root_path = ENV['NOT_DOCKERIZED'] ? '.' : '/home/app/webapp/'
+  tcell_config_file = File.new("#{app_root_path}/config/tcell_agent.config", 'w+')
   tcell_config_file.write(tcell_config_json.to_json)
   tcell_config_file.close
 

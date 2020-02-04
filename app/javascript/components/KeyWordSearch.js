@@ -37,7 +37,6 @@ class KeyWordSearch extends React.Component{
   }
 
   render(){
-    console.log(this.state.searchTerms)
     return(
       <div>
       <Form onSubmit = {this.handleSubmit}>

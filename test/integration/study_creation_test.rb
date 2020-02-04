@@ -34,11 +34,10 @@ class StudyCreationTest < ActionDispatch::IntegrationTest
     assert study.present?, "Study did not successfully save"
 
     bqc = ApplicationController.bigquery_client
-    assert_equal 1, bqc.datasets.count
-    bq_dataset = bqc.datasets.first
-    assert_equal 'cell_metadata', bq_dataset.dataset_id
-    assert_equal 1, bq_dataset.tables.count
-    assert_equal 'alexandria_convention', bq_dataset.tables.first.table_id
+    bq_dataset = bqc.datasets.detect {|dataset| dataset.dataset_id == CellMetadatum::BIGQUERY_DATASET}
+    assert_not_nil bq_dataset, "Did not find #{CellMetadatum::BIGQUERY_DATASET} dataset in BigQuery"
+    bq_table = bq_dataset.tables.detect {|table| table.table_id == CellMetadatum::BIGQUERY_TABLE}
+    assert_not_nil bq_table, "Did not find #{CellMetadatum::BIGQUERY_TABLE} table in #{CellMetadatum::BIGQUERY_DATASET}"
     initial_bq_row_count = get_bq_row_count(bq_dataset, study)
 
     example_files = {
@@ -118,7 +117,6 @@ class StudyCreationTest < ActionDispatch::IntegrationTest
     assert_equal 19, study.genes.size, 'Did not parse all genes from expression matrix'
 
     # verify that counts are correct, this will ensure that everything uploaded & parsed correctly
-    gene_count = study.gene_count
     cluster_count = study.cluster_groups.size
     metadata_count = study.cell_metadata.size
     cluster_annot_count = study.cluster_annotation_count
@@ -156,7 +154,7 @@ class StudyCreationTest < ActionDispatch::IntegrationTest
   end
 
   def get_bq_row_count(bq_dataset, study)
-    bq_dataset.query("SELECT COUNT(*) count FROM alexandria_convention WHERE study_accession = '#{study.accession}'", cache: false)[0][:count]
+    bq_dataset.query("SELECT COUNT(*) count FROM #{CellMetadatum::BIGQUERY_TABLE} WHERE study_accession = '#{study.accession}'", cache: false)[0][:count]
   end
 
 end

@@ -1,6 +1,12 @@
 import React from 'react';
+<<<<<<< HEAD
 import Facet from './Facet';
 import KeyWordSearch from './KeyWordSearch'
+=======
+
+import FacetControl from './FacetControl';
+import MoreFiltersButton from './MoreFiltersButton';
+>>>>>>> d4857781fecf2ede1d17befe5d2ecd99b5d6b52a
 
 const facets = [
   {
@@ -28,6 +34,7 @@ const facets = [
   }
 ];
 
+<<<<<<< HEAD
 const studies = [
   {
     name: 'Single nucleus RNA-seq',
@@ -65,13 +72,37 @@ function SearchPanel() {
   return (
     <div className="ScpSearch">
     <div><KeyWordSearch/></div>
+=======
+const defaultFacetIDs = ['disease', 'organ', 'species', 'cell_type'];
+const moreFacetIDs = ['sex', 'race', 'library_preparation_protocol', 'organism_age'];
+
+const defaultFacets = facets.filter(facet => defaultFacetIDs.includes(facet.id));
+const moreFacets = facets.filter(facet => moreFacetIDs.includes(facet.id));
+
+window.searchFiltersResponse = searchFiltersResponseMock;
+
+/**
+ * Component for SCP advanced search UI
+ *
+ * This is the entry point into React code from the traditional JS code
+ * See related integration at /app/javascript/packs/application.js
+ */
+function ScpSearchStudies() {
+  return (
+    <div id='search-panel'>
+>>>>>>> d4857781fecf2ede1d17befe5d2ecd99b5d6b52a
       {
-        facets.map((facet) => {
-          return <Facet facet={facet} />
+        defaultFacets.map((facet) => {
+          return <FacetControl facet={facet} />
         })
       }
+      <MoreFiltersButton facets={moreFacets} />
     </div>
   );
 }
 
+<<<<<<< HEAD
 export default SearchPanel;
+=======
+export default ScpSearchStudies;
+>>>>>>> d4857781fecf2ede1d17befe5d2ecd99b5d6b52a

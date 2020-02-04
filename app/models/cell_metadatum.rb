@@ -9,6 +9,13 @@ class CellMetadatum
       'annotation_type' => %w(group numeric)
   }
 
+  # Name of BigQuery dataset/table in which to run inserts/deletes/queries for 'convention' metadata
+  # Production dataset name is 'cell_metadata', whereas all other environments append "_#{environment}"
+  # to the end of the dataset name.  This prevents comingling data from different environments in one table
+  # For now, table is only 'alexandria_convention'
+  BIGQUERY_DATASET = "cell_metadata#{Rails.env != 'production' ? "_#{Rails.env}" : nil}"
+  BIGQUERY_TABLE = 'alexandria_convention'
+
   belongs_to :study
   belongs_to :study_file
   has_many :data_arrays, as: :linear_data

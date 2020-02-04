@@ -1,10 +1,17 @@
 require 'json'
 
 # Run the rails server in non-dockerized form
+# usage:
+# ruby rails_local_setup.rb <username>
+# you may also specify --no-tcell to run locally without tcell, which currently clutters the console with CSP warnings in development mode
+
 if ARGV[0].nil?
   puts 'You must specify your username'
   exit
 end
+
+exclude_tcell = ARGV.include?('--no-tcell')
+
 username = ARGV[0]
 source_file_string = "#!/bin/bash\n"
 source_file_string += "export NOT_DOCKERIZED=true\n"
@@ -25,7 +32,12 @@ secret_string = `vault read -format=json #{vault_secret_path}`
 secret_data_hash = JSON.parse(secret_string)['data']
 
 secret_data_hash.each do |key, value|
-  source_file_string += "export #{key}=#{value}\n"
+  # if tcell is excluded, set the related environment variables to empty -- this means tcell will not be active
+  if exclude_tcell && key.include?('TCELL')
+    source_file_string += "export #{key}=\n"
+  else
+    source_file_string += "export #{key}=#{value}\n"
+  end
 end
 
 puts 'Processing service account info'
@@ -46,6 +58,13 @@ source_file_string += "export READ_ONLY_SERVICE_ACCOUNT_KEY=#{CONFIG_DIR}/.read_
 puts 'Setting secret_key_base'
 source_file_string += "export SECRET_KEY_BASE=#{`openssl rand -hex 64`}\n"
 
+if !exclude_tcell
+  puts 'Configuring TCell'
+  `bin/configure_tcell.rb`
+else
+  puts "****\nYou are developing with TCell disabled--be sure to test that any third-party scripts or connection sources you add are also added to TCell\n****\n"
+end
+
 File.open("#{CONFIG_DIR}/secrets/.source_env.bash", 'w') { |file| file.write(source_file_string) }
 
-puts "Load Complete!\n  Run 'source config/secrets/.source_env.bash' to load it into your shell"
+puts "Load Complete!\n  Run the command below to load the environment variables you need into your shell\n\nsource config/secrets/.source_env.bash\n\n"

@@ -265,7 +265,7 @@ class PapiClient < Struct.new(:project, :service_account_credentials, :service)
     when 'ingest_cell_metadata'
       command_line += " --cell-metadata-file #{study_file.gs_url} --study-accession #{study.accession} --ingest-cell-metadata"
       if study_file.use_metadata_convention
-        command_line += " --validate-convention --bq-dataset cell_metadata --bq-table alexandria_convention"
+        command_line += " --validate-convention --bq-dataset #{CellMetadatum::BIGQUERY_DATASET} --bq-table #{CellMetadatum::BIGQUERY_TABLE}"
       end
     when 'ingest_cluster'
       command_line += " --cluster-file #{study_file.gs_url} --ingest-cluster"

@@ -28,6 +28,10 @@ class ProfilesController < ApplicationController
             @fire_cloud_profile.send("#{attribute['key']}=", attribute['value'])
           end
         end
+        # patch to make sure that email gets set if user has not registered yet
+        if @fire_cloud_profile.email.blank?
+          @fire_cloud_profile.email = current_user.email
+        end
       rescue => e
         ErrorTracker.report_exception(e, current_user, params)
         logger.info "#{Time.zone.now}: unable to retrieve FireCloud profile for #{current_user.email}: #{e.message}"

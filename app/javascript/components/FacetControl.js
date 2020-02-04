@@ -9,7 +9,7 @@ function slug(value) {
   return value.toLowerCase().replace(/ /g, '-');
 }
 
-function Facet(props) {
+export default function FacetControl(props) {
   
   const [showFilters, setShowFilters] = useState(false);
   
@@ -33,5 +33,3 @@ function Facet(props) {
     );
   
 }
-
-export default Facet;
