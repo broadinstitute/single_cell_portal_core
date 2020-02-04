@@ -91,6 +91,15 @@ class User
   field :registered_for_firecloud, type: Boolean, default: false
   field :api_access_token, type: Hash
 
+  # feature_flags should be a hash of true/false values.  If unspecified for a given flag, the
+  # value from DEFAULT_FEATURE_FLAGS should be used.  Accordingly, the helper method feature_flags_with_defaults
+  # is provided
+  field :feature_flags, default: {}
+
+  DEFAULT_FEATURE_FLAGS = {
+    "faceted_search" => false
+  }
+
   ###
   #
   # OAUTH2 METHODS
@@ -258,6 +267,21 @@ class User
       Rails.logger.info "#{Time.zone.now}: adding #{self.email} to #{group_name} user group"
       Study.firecloud_client.add_user_to_group(group_name, 'member', self.email)
       Rails.logger.info "#{Time.zone.now}: user group registration complete"
+    end
+  end
+
+  # merges the user flags with the defaults -- this should  always be used in place of feature_flags
+  # for determining whether to enable a feature for a given user.
+  def feature_flags_with_defaults
+    DEFAULT_FEATURE_FLAGS.merge(feature_flags ? feature_flags : {})
+  end
+
+  # gets the feature flag value for a given user, and the default value if no user is given
+  def self.feature_flag_for_user(user, flag_key)
+    if user.present?
+      user.feature_flags_with_defaults[flag_key]
+    else
+      DEFAULT_FEATURE_FLAGS[flag_key]
     end
   end
 

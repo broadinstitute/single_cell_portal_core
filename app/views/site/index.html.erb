@@ -20,7 +20,11 @@
             Ensure any updates to this ID are reflected in the ReactDOM.render call
             in app/javascript/packs/application.js
           -->
-          <div id="scp-search-studies-root-element"></div>
+          <% if User.feature_flag_for_user(current_user, "faceted_search") %>
+            <div id="scp-search-studies-root-element"></div>
+          <% else %>
+            <%= render partial: '/site/search/search_studies' %>
+          <% end %>
         </div>
         <div class="tab-pane" id="search-genes" role="tabpanel">
           <%= render partial: '/site/search/search_genes' %>

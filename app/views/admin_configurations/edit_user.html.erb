@@ -29,6 +29,25 @@
   </div>
   <div class="form-group row">
     <div class="col-md-12">
+      <label>Feature flags</label>
+    </div>
+    <% @user.feature_flags_with_defaults.each do |key, value| %>
+      <div class="row <%= @user.feature_flags.key?(key) ? 'highlight' : '' %>">
+        <div class="col-md-3 text-right">
+          <label><%= key %>:</label>
+        </div>
+        <div class="col-md-6">
+          <select name="feature_flag_<%= key %>">
+            <option value="0" <%= @user.feature_flags[key] == false ? 'selected' : '' %>>False</option>
+            <option value="1" <%= @user.feature_flags[key] == true ? 'selected' : '' %>>True</option>
+            <option value="-" <%= @user.feature_flags.key?(key) ? '' : 'selected' %>>Default (<%= User::DEFAULT_FEATURE_FLAGS[key] %>)</option>
+          </select>
+        </div>
+      </div>
+     <% end %>
+  </div>
+  <div class="form-group row">
+    <div class="col-md-12">
       <%= f.submit 'Update User', class: 'btn btn-lg btn-success', id: 'save-user' %>
     </div>
   </div>
