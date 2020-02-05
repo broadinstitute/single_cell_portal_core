@@ -1,33 +1,15 @@
 import React from 'react';
-import KeyWordSearch from './KeyWordSearch'
+import KeyWordSearch from './KeyWordSearch';
 import FacetControl from './FacetControl';
 import MoreFiltersButton from './MoreFiltersButton';
+import Grid from 'react-bootstrap/lib/Grid';
+import Row from 'react-bootstrap/lib/Row';
+import { faNewspaper, faChevronLeft } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
-const facets = [
-  {
-    name: 'Species',
-    filters: [
-      {name: 'Human', id: 'NCBItaxon9606'},
-      {name: 'Mouse', id: 'NCBItaxon10090'},
-      {name: 'Cow', id: 'NCBItaxon5555'},
-    ]
-  },
-  {
-    name: 'Disease',
-    filters: [
-      {name: 'tubercolosis', id: 'DOID0000123'},
-      {name: 'ocular tubercolosis', id: 'DOID0000123'},
-      {name: 'tuberculosis, spinal', id: 'DOID0000123'},
-      {name: 'endocrime tuberculosis', id: 'DOID0000123'},
-      {name: 'inactive tuberculosis', id: 'DOID0000123'},
-      {name: 'tubercolosis, bovine', id: 'DOID0000123'},
-      {name: 'tuberculosis, avian', id: 'DOID0000123'},
-      {name: 'esophageal tubercolosis', id: 'DOID0000123'},
-      {name: 'intestinal tuberculosis', id: 'DOID0000123'},
-      {name: 'abdominal tuberculosis', id: 'DOID0000123'},
-    ]
-  }
-];
+// Only for development!  We'll fetch data once API endpoints are available.
+import {facetsResponseMock, searchFiltersResponseMock} from './FacetsMockData';
+const facets = facetsResponseMock;
 
 const defaultFacetIDs = ['disease', 'organ', 'species', 'cell_type'];
 const moreFacetIDs = ['sex', 'race', 'library_preparation_protocol', 'organism_age'];
@@ -43,9 +25,14 @@ window.searchFiltersResponse = searchFiltersResponseMock;
  * This is the entry point into React code from the traditional JS code
  * See related integration at /app/javascript/packs/application.js
  */
-function ScpSearchStudies() {
+function SearchPanel() {
   return (
     <div id='search-panel'>
+      <div>
+      <button><FontAwesomeIcon icon={faChevronLeft} /></button>
+        <FontAwesomeIcon icon={faNewspaper} />
+        <h3>Studies</h3>
+        </div>
     <KeyWordSearch/>
       {
         defaultFacets.map((facet) => {

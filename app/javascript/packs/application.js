@@ -9,7 +9,6 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import ResultsPanel from 'components/ResultsPanel';
 import 'styles/application.scss'
 import $ from 'jquery';
 import jQuery from 'jquery';
@@ -26,12 +25,13 @@ import Ideogram from 'ideogram';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 
 // Note 'components/ScpSearchStudies' is '/app/javascript/components/ScpSearchStudies.js'
-import ScpSearchStudies from 'components/ScpSearchStudies';
+import SearchPanel from 'components/ScpSearchStudies';
+import ResultsPanel from 'components/ResultsPanel';
 
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('scp-search-studies-root-element')) {
     ReactDOM.render(
-      <ScpSearchStudies />, document.getElementById('scp-search-studies-root-element'),
+      <SearchPanel />, document.getElementById('scp-search-studies-root-element'),
     )
   }
   if (document.getElementById('scp-search-results-root-element')) {

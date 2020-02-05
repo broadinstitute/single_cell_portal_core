@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import Button from 'react-bootstrap/Button';
 import InputGroup from 'react-bootstrap/InputGroup';
 import Form from 'react-bootstrap/Form';
+import { faSearch } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 
 class KeyWordSearch extends React.Component{
@@ -45,7 +47,8 @@ class KeyWordSearch extends React.Component{
           type="text" 
           placeholder="Enter Keyword" 
           name="searchText"/>
-            <Button class="input-group-append" onClick={this.handleSubmit}><span>Search</span>
+            <Button class="input-group-append" onClick={this.handleSubmit}>
+              <FontAwesomeIcon icon={faSearch} />
             </Button>
         </InputGroup>
       </Form>
