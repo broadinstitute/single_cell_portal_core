@@ -238,6 +238,10 @@ class IngestJob
       self.study.set_cell_count
       self.set_study_default_options
       self.launch_subsample_jobs
+      # update search facets if convention data
+      if self.study_file.use_metadata_convention
+        SearchFacet.delay.update_all_facet_filters
+      end
     when /Matrix/
       self.study.set_gene_count
     when 'Cluster'

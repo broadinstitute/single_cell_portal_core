@@ -51,7 +51,7 @@ source_file_string += "export SERVICE_ACCOUNT_KEY=#{CONFIG_DIR}/.scp_service_acc
 
 puts 'Processing readonly service account info'
 readonly_string = `vault read -format=json #{read_only_service_account_path}`
-readonly_hash = JSON.parse(service_account_string)['data']
+readonly_hash = JSON.parse(readonly_string)['data']
 File.open("#{CONFIG_DIR}/.read_only_service_account.json", 'w') { |file| file.write(readonly_hash.to_json) }
 source_file_string += "export READ_ONLY_SERVICE_ACCOUNT_KEY=#{CONFIG_DIR}/.read_only_service_account.json\n"
 

@@ -33,7 +33,7 @@ class StudyCreationTest < ActionDispatch::IntegrationTest
     study = Study.find_by(name: "Test Study #{@random_seed}")
     assert study.present?, "Study did not successfully save"
 
-    bqc = ApplicationController.bigquery_client
+    bqc = ApplicationController.big_query_client
     bq_dataset = bqc.datasets.detect {|dataset| dataset.dataset_id == CellMetadatum::BIGQUERY_DATASET}
     assert_not_nil bq_dataset, "Did not find #{CellMetadatum::BIGQUERY_DATASET} dataset in BigQuery"
     bq_table = bq_dataset.tables.detect {|table| table.table_id == CellMetadatum::BIGQUERY_TABLE}

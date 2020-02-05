@@ -82,6 +82,8 @@ else
                     test/models/cluster_group_test.rb # deprecated, but needed to set up for user_annotation_test
                     test/models/user_annotation_test.rb
                     test/models/analysis_configuration_test.rb
+                    test/models/search_facet_test.rb
+                    test/models/big_query_client_test.rb
   )
   for test_name in ${tests[*]}; do
       bundle exec ruby -I test $test_name

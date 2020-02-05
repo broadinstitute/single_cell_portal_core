@@ -62,9 +62,10 @@ class DeleteQueueJob < Struct.new(:object)
         end
         remove_file_from_bundle
       when 'Metadata'
-        bq_dataset = ApplicationController.bigquery_client.dataset CellMetadatum::BIGQUERY_DATASET
+        bq_dataset = ApplicationController.big_query_client.dataset CellMetadatum::BIGQUERY_DATASET
         if object.use_metadata_convention
           bq_dataset.query "DELETE FROM #{CellMetadatum::BIGQUERY_TABLE} WHERE study_accession = '#{study.accession}' AND file_id = '#{object.id}'"
+          SearchFacet.delay.update_all_facet_filters
         end
 
         # clean up all subsampled data, as it is now invalid and will be regenerated

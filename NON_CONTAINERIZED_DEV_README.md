@@ -9,8 +9,8 @@ Developing on SCP without a Docker container, while less robust, opens up some f
 3.  `cd` to where you have the `single_cell_portal_core` Git repo checked out.
 4.  Run `bundle install`
 5.  Run `yarn install`
-6.  Run `ruby rails_local_setup.rb $BROAD_USERNAME`, where $BROAD_USERNAME is a something like eweitz
-7.  Run the source command the script outputs
+6.  Run `ruby rails_local_setup.rb $BROAD_USERNAME`, where $BROAD_USERNAME is a something like eweitz -- this creates a file in config/secrets with commands to export needed environment variables
+7.  Run the source command the script outputs -- this will export those needed variables into the current shell
 8.  Run `rails s`
 9.  (optional, for live reload) In a separate terminal, run bin/webpack-dev-server
 10. (needed if you are working on functionality that involves delayed jobs).
@@ -18,6 +18,8 @@ Developing on SCP without a Docker container, while less robust, opens up some f
     * run `rails jobs:work`
 11.  You're all set!  You can now go to localhost:3000 and see the website.
 
+## REGULAR DEVELOPMENT
+Adding `source <<path-to-single-cell-portal-core>>/config/secrets/.source_env.bash` to your .bash_profile will source the secrets read from vault to each new shell, saving you the trouble of rerunning the setup process every time you open a new shell.
 
 ## KNOWN ISSUES
 1. Developing outside the docker container inherently runs more risk that your code will not work in the docker environment in staging/production.  BE CAREFUL.  If your changes are non-trivial, confirm your changes work in the containerized deploy before committing (ESPECIALLY changes involving package.json and/or the Gemfile)

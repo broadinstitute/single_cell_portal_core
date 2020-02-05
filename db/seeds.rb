@@ -110,3 +110,9 @@ User.create!(email:'testing.user.2@gmail.com', password:'someotherpassword',
 AnalysisConfiguration.create(namespace: 'single-cell-portal', name: 'split-cluster', snapshot: 1, user_id: user.id,
                              configuration_namespace: 'single-cell-portal', configuration_name: 'split-cluster',
                              configuration_snapshot: 2, description: 'This is a test description.')
+
+# SearchFacet seeds
+SearchFacet.create(name: 'Species', identifier: 'species', filters: [{id: 'NCBITaxon_9606', name: 'Homo sapiens'}],
+                   ontology_urls: [{name: 'NCBI organismal classification', url: 'https://www.ebi.ac.uk/ols/api/ontologies/ncbitaxon'}],
+                   is_ontology_based: true, is_array_based: false, big_query_id_column: 'species', big_query_name_column: 'species__ontology_label',
+                   convention_name: 'alexandria_convention', convention_version: '1.1.3')

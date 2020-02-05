@@ -23,28 +23,12 @@ class ApplicationController < ActionController::Base
 
   rescue_from ActionController::InvalidAuthenticityToken, with: :invalid_csrf
 
-  @papi_client = PapiClient.new
-
   def self.papi_client
-    self.instance_variable_get(:@papi_client)
+    @@papi_client ||= PapiClient.new
   end
 
-  # TODO: DRY with papi_client.rb:
-  # GCP Compute project to run pipelines in
-  COMPUTE_PROJECT = ENV['GOOGLE_CLOUD_PROJECT'].blank? ? '' : ENV['GOOGLE_CLOUD_PROJECT']
-  # Service account JSON credentials
-  SERVICE_ACCOUNT_KEY = !ENV['SERVICE_ACCOUNT_KEY'].blank? ? File.absolute_path(ENV['SERVICE_ACCOUNT_KEY']) : ''
-
-  def self.bigquery_client
-    @bigquery_client ||= new_bigquery_client
-  end
-
-  def self.new_bigquery_client
-    Google::Cloud::Bigquery.configure do |config|
-      config.project_id  = COMPUTE_PROJECT
-      config.credentials = SERVICE_ACCOUNT_KEY
-    end
-    Google::Cloud::Bigquery.new
+  def self.big_query_client
+    @@big_query_client ||= BigQueryClient.new.client
   end
 
   # set current_user for use outside of controllers
