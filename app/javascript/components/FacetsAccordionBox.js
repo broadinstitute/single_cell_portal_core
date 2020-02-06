@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Button from 'react-bootstrap/Button';
+import Button from 'react-bootstrap/lib/Button';
 
 import FacetsAccordion from './FacetsAccordion';
 

@@ -16,7 +16,7 @@
     "node-sass": "^4.13.1",
     "prop-types": "^15.7.2",
     "react": "^16.12.0",
-    "react-bootstrap": "^1.0.0-beta.16",
+    "react-bootstrap": "^0.33.1",
     "react-compound-slider": "^3.0.0-beta.1",
     "react-dom": "^16.12.0",
     "spin.js": "^4.0.0"

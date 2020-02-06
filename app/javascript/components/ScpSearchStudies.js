@@ -1,9 +1,11 @@
 import React from 'react';
 import KeyWordSearch from './KeyWordSearch';
-import FacetControl from './FacetControl';
-import MoreFiltersButton from './MoreFiltersButton';
+import Button from 'react-bootstrap/lib/Button';
+// import FacetControl from './FacetControl';
+// import MoreFiltersButton from './MoreFiltersButton';
 import Grid from 'react-bootstrap/lib/Grid';
 import Row from 'react-bootstrap/lib/Row';
+import Col from 'react-bootstrap/lib/Col';
 import { faNewspaper, faChevronLeft } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -19,6 +21,11 @@ const moreFacets = facets.filter(facet => moreFacetIDs.includes(facet.id));
 
 window.searchFiltersResponse = searchFiltersResponseMock;
 
+// const searchStyle= {
+//   'font-size':'22px',
+//   color: '#333F52'
+
+// }
 /**
  * Component for SCP advanced search UI
  *
@@ -26,20 +33,26 @@ window.searchFiltersResponse = searchFiltersResponseMock;
  * See related integration at /app/javascript/packs/application.js
  */
 function SearchPanel() {
+  // Note:  Enventually this fuction will have State and will turn into a class component. There's room for this to become 
+  // a higher order Component (HOC). This Search component is specific to the "Studies"
+  // tab when it should be able to support the 'home' Seach Panel, Studies, Genes and Cells search panels.
   return (
-    <div id='search-panel'>
-      <div>
-      <button><FontAwesomeIcon icon={faChevronLeft} /></button>
+    <div className='container-fluid' id='search-panel'>
+      <Row style= {searchStyle} inline>
+      <Button><FontAwesomeIcon icon={faChevronLeft} /></Button>
         <FontAwesomeIcon icon={faNewspaper} />
-        <h3>Studies</h3>
-        </div>
+        <span>Studies</span>
+        </Row>
+        <Row>
     <KeyWordSearch/>
-      {
-        defaultFacets.map((facet) => {
-          return <FacetControl facet={facet} />
+      {/*
+        defaultFacets.map((facet, i) => {
+          return <FacetControl facet={facet} key={i}/>
         })
-      }
-      <MoreFiltersButton facets={moreFacets} />
+      */}
+      {/* <MoreFacetsButton facets={moreFacets} />
+      <DownloadButton /> */}
+      </Row>
     </div>
   );
 }

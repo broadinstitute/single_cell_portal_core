@@ -1,6 +1,6 @@
 import React from 'react';
-import Accordion from 'react-bootstrap/Accordion';
-import Card from 'react-bootstrap/Card';
+import Accordion from 'react-bootstrap/lib/Accordion';
+import Card from 'react-bootstrap/lib/Card';
 
 import Filters from './Filters';
 
@@ -12,7 +12,7 @@ export default function FacetsAccordion(props) {
       {
         props.facets.map((facet, i) => {
           return (
-            <Card>
+            <Card key={i}>
               <Card.Header>
                 <Accordion.Toggle as={Card.Header} variant="link" eventKey={i}>
                   {facet.name}

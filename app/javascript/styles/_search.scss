@@ -6,10 +6,13 @@
 #main-body {
   min-height: 300px;
 }
+.search-container{
+  display:flex;
+}
 
 #search-panel {
   .facet > span,
-  #more-filters-button > span {
+  #more-facets-button > span {
     padding: 8px 16px;
     margin-right: 8px;
     border-radius: 15px;
@@ -21,7 +24,7 @@
   }
 
   .facet.active > span,
-  #more-filters-button.active > span {
+  #more-facets-button.active > span {
     color: #fff;
     background-color: #4d72aa;
   }

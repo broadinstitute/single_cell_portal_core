@@ -1,9 +1,6 @@
 import React from 'react';
-import TabContainer from 'react-bootstrap/TabContainer';
-import Tab from 'react-bootstrap/Tab';
-import Tabs from 'react-bootstrap/Tabs';
-import TabContent from 'react-bootstrap/TabContent';
-import TabPane from 'react-bootstrap/TabPane';
+import Tab from 'react-bootstrap/lib/Tab';
+import Tabs from 'react-bootstrap/lib/Tabs';
 
 const results = [
   {
@@ -60,7 +57,7 @@ class ResultsPanel extends React.Component{
     }
     
     showResults(){
-      // Show subset of results based off of curent page
+      // Function to hande future pagination
     }
     render(){
       
@@ -98,7 +95,7 @@ const StudyResults = (props) => {
 
 }
 StudyResults.defaultProps = {
-  // This will move up to the homepage as a property that's passed into the 
+  // This may move up to the homepage as a property that's passed into the 
   // ResultsPanel component as the property results
   results: results
 

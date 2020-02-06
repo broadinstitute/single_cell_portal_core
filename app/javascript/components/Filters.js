@@ -1,6 +1,6 @@
 import React from 'react';
 import { Slider, Rail, Handles, Tracks, Ticks } from "react-compound-slider";
-import InputGroup from 'react-bootstrap/InputGroup';
+import InputGroup from 'react-bootstrap/lib/InputGroup';
 
 /**
  * Component for a list of string-based filters, e.g. disease, species

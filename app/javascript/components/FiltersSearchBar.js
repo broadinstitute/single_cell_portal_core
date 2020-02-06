@@ -1,8 +1,9 @@
 import React from 'react';
-import Form from 'react-bootstrap/Form';
+import FormGroup from 'react-bootstrap/lib/FormGroup';
+import FormControl from 'react-bootstrap/lib/FormControl';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
-import Button from 'react-bootstrap/Button';
+import Button from 'react-bootstrap/lib/Button';
 
 /**
  * Component to search filters within a given facet
@@ -23,8 +24,8 @@ export default function FiltersSearchBar(props) {
 
   return (
     <div style={{margin: '2px'}}>
-      <Form.Group controlId={filtersSearchBarID}>
-        <Form.Control
+      <FormGroup controlId={filtersSearchBarID}>
+        <FormControl
           className={componentName}
           type="text"
           placeholder="Search"
@@ -32,7 +33,7 @@ export default function FiltersSearchBar(props) {
         <Button style={buttonStyle}>
           <FontAwesomeIcon icon={faSearch}/>
         </Button>
-      </Form.Group>
+      </FormGroup>
     </div>
   );
 }
