@@ -5,20 +5,22 @@ import ResultsPanel from '.ResultsPanel'
 class HomePageContent extends React.Component{
     constructor(){
         super()
+        this.fetchResults= this.fetchResults.bind(this);
         this.state = {
-            results :[],
+            results :undefined,
             keyword : "",
-            type:"",
+            type:study,
             facets: {},
         };
     }
 
-    fetchResults=()=>{
-        fetch('http://localhost:3000/single_cell/api/v1/search?type=study', {
+    fetchResults=(keyword)=>{
+        fetch(`http://localhost:3000/single_cell/api/v1/search?type=${this.state.type}&${this.state.keyword}`, {
             headers: {
-                "Content-type": "application/json; charset=UTF-8"
+                'Accept': 'application/json'
               }})
         .then((studyResults)=>{
+            console.log(studyResults)
             return studyResults.json()
         }).then(studiesdata => {
             this.setState({results:studiesdata})
@@ -26,12 +28,12 @@ class HomePageContent extends React.Component{
         })
     }
 
-    handleKeywordUpdate(keyword){
-        console.log(keyword)
-        // this.setState({keyword:keyword}, this.fetchResults)
+    handleKeywordUpdate = (keyword)=>{
+        this.setState({keyword}, () =>{this.fetchResults(keyword)})
     }
 
     componentWillMount(){
+        // Get intial studies
         fetch('http://localhost:3000/single_cell/api/v1/search?type=study', {
             method:"GET",
             headers: {  
@@ -41,7 +43,6 @@ class HomePageContent extends React.Component{
             return studyResults.json()
         }).then(studiesdata => {
             this.setState({results:studiesdata})
-            console.log(studiesdata)
         })
 
     }
@@ -50,7 +51,7 @@ class HomePageContent extends React.Component{
         return(
             <div>
             <SearchPanel updateKeyword={this.handleKeywordUpdate}/>
-            <ResultsPanel/>
+            <ResultsPanel results={this.state.results}/>
             </div>
 
         )

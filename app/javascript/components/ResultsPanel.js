@@ -65,7 +65,7 @@ class ResultsPanel extends React.Component{
         <div>
           <Tabs defaultActiveKey='study' transition={false}>
             <Tab eventKey='study' title="Studies" >
-              <StudyResults handleStudyLabel = {this.handleStudyLabel} results={this.state.results}/>
+              <StudyResults results={this.props.results}/>
             </Tab>   
             <Tab eventKey='files' title='Files'/>       
         </Tabs>
@@ -80,8 +80,9 @@ const StudyResults = (props) => {
   // to get the initial results on the home page.
   return(
     <Tab.Content>
-       { props.results.length &&
-          props.results.map((result)=>(
+       { props.results &&
+          props.results.studies.map((result)=>(
+            
             <Study 
               key={result.acession} 
               study={result}
@@ -94,20 +95,14 @@ const StudyResults = (props) => {
         </Tab.Content>);
 
 }
-StudyResults.defaultProps = {
-  // This may move up to the homepage as a property that's passed into the 
-  // ResultsPanel component as the property results
-  results: results
-
-}
 
 const Study =(props)=>{
    //There needs to be a handler for when a study is clicked it takes
   // a user to the corresponding study page
     return(
-          <div key={props.study.acession}>
+          <div key={props.study.accession}>
             <label for={props.study.name}>
-              <a href="url">{props.study.name} </a></label>
+              <a href={props.study.study_url}>{props.study.name} </a></label>
             <div>
               <span class="badge badge-secondary">{props.study.cell_count} </span>
             </div>

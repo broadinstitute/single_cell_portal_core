@@ -18,7 +18,7 @@ class KeyWordSearch extends React.Component{
   handleSubmit(e){
     // Prevent full page reload
     e.preventDefault();
-
+    console.log(e.target.elements)
     const searchTerm = e.target.elements.searchText.value.trim();
     if(searchTerm){
       // Need to check if search terms are empty and if prevstate is different
@@ -28,11 +28,6 @@ class KeyWordSearch extends React.Component{
           searchTerms:searchTerm
         };
 
-      });
-      this.setState((prevState)=>{
-        return {
-          searchTerms:prevState.searchTerms
-        };
       });
       this.props.updateKeyword(searchTerm);
     }
