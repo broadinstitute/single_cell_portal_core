@@ -5,7 +5,6 @@ import ResultsPanel from '.ResultsPanel'
 class HomePageContent extends React.Component{
     constructor(){
         super()
-        this.handleKeywordUpdate = this.handleKeywordUpdate.bind(this)
         this.state = {
             results :[],
             keyword : "",
@@ -15,7 +14,10 @@ class HomePageContent extends React.Component{
     }
 
     fetchResults=()=>{
-        fetch('https://singlecell.broadinstitute.org/single_cell/api/v1/search?type=study')
+        fetch('http://localhost:3000/single_cell/api/v1/search?type=study', {
+            headers: {
+                "Content-type": "application/json; charset=UTF-8"
+              }})
         .then((studyResults)=>{
             return studyResults.json()
         }).then(studiesdata => {
@@ -30,7 +32,11 @@ class HomePageContent extends React.Component{
     }
 
     componentWillMount(){
-        fetch('https://singlecell.broadinstitute.org/single_cell/api/v1/search?type=study')
+        fetch('http://localhost:3000/single_cell/api/v1/search?type=study', {
+            method:"GET",
+            headers: {  
+            'Accept': 'application/json'
+          }})
         .then((studyResults)=>{
             return studyResults.json()
         }).then(studiesdata => {
