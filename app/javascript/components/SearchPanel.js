@@ -32,13 +32,13 @@ window.searchFiltersResponse = searchFiltersResponseMock;
  * This is the entry point into React code from the traditional JS code
  * See related integration at /app/javascript/packs/application.js
  */
-function SearchPanel() {
+function SearchPanel(props) {
   // Note:  Enventually this fuction will have State and will turn into a class component. There's room for this to become 
   // a higher order Component (HOC). This Search component is specific to the "Studies"
   // tab when it should be able to support the 'home' Seach Panel, Studies, Genes and Cells search panels.
   return (
     <div className='container-fluid' id='search-panel'>
-      <KeywordSearch/>
+      <KeywordSearch updateKeyword={props.updateKeyword}/>
       {
         defaultFacets.map((facet, i) => {
           return <FacetControl facet={facet} key={i}/>

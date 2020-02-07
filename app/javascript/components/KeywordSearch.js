@@ -34,6 +34,7 @@ class KeyWordSearch extends React.Component{
           searchTerms:prevState.searchTerms
         };
       });
+      this.props.updateKeyword(searchTerm);
     }
   }
 
