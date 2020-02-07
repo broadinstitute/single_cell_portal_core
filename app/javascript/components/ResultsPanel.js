@@ -102,6 +102,8 @@ StudyResults.defaultProps = {
 }
 
 const Study =(props)=>{
+   //There needs to be a handler for when a study is clicked it takes
+  // a user to the corresponding study page
     return(
           <div key={props.study.acession}>
             <label for={props.study.name}>
