@@ -29,7 +29,7 @@ import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import HomePageContent from 'components/HomePageContent';
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('scp-search-studies-root-element')) {
+  if (document.getElementById('home-page-content')) {
     ReactDOM.render(
       <HomePageContent />, document.getElementById('home-page-content'),
     )

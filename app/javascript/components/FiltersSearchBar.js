@@ -23,7 +23,7 @@ export default function FiltersSearchBar(props) {
   }
 
   return (
-    <div style={{margin: '2px'}}>
+    <div className='search' style={{margin: '2px'}}>
       <FormGroup controlId={filtersSearchBarID}>
         <FormControl
           className={componentName}

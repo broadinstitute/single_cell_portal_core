@@ -37,15 +37,19 @@ function SearchPanel(props) {
   // a higher order Component (HOC). This Search component is specific to the "Studies"
   // tab when it should be able to support the 'home' Seach Panel, Studies, Genes and Cells search panels.
   return (
-    <div className='container-fluid' id='search-panel'>
-      <KeywordSearch updateKeyword={props.updateKeyword}/>
-      {
-        defaultFacets.map((facet, i) => {
-          return <FacetControl facet={facet} key={i}/>
-        })
-      }
-      <MoreFacetsButton facets={moreFacets} />
-      <DownloadButton />
+    <div id='search-panel'>
+      <div className='search'>
+        <KeywordSearch updateKeyword={props.updateKeyword}/>
+      </div>
+      <div className='search' id='facet-area'>
+        {
+          defaultFacets.map((facet, i) => {
+            return <FacetControl facet={facet} key={i}/>
+          })
+        }
+        <MoreFacetsButton facets={moreFacets} />
+        <DownloadButton />
+      </div>
     </div>
   );
 }

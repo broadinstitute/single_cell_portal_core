@@ -8,17 +8,27 @@
 }
 
 #search-panel {
-  .facet > span,
-  #more-facets-button > span,
-  #download-button > span {
+  .facet{
+    background-color: white;
+    display: inline-block;
     padding: 8px 16px;
     margin-right: 8px;
     border-radius: 15px;
     border: 0.64px solid #4d72aa;
     box-sizing: border-box;
+    cursor: pointer;
+  }
+  .facet > span,
+  #more-facets-button > span,
+  #download-button > span {
+    // padding: 8px 16px;
+    // margin-right: 8px;
+    // border-radius: 15px;
+    // border: 0.64px solid #4d72aa;
+    // box-sizing: border-box;
     color: #4d72aa;
     font-weight: 500;
-    cursor: pointer;
+    // cursor: pointer;
   }
 
   .facet.active > span,
