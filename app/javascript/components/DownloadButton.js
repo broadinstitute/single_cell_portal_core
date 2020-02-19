@@ -109,7 +109,7 @@ export default function DownloadButton(props) {
         id='bulk-download-modal'
         show={show}
         onHide={handleClose}
-        animation='false'
+        animation={false}
         bsSize='large'
       >
         <Modal.Header closeButton>
