@@ -7,6 +7,9 @@
   <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
+
+      window.SCP = {};
+
       // load the max number of gene searches and corresponding error message.
       window.MAX_GENE_SEARCH = <%= Gene::MAX_GENE_SEARCH %>;
       window.MAX_GENE_SEARCH_MSG = '<%= Gene::MAX_GENE_SEARCH_MSG %>';
@@ -18,6 +21,9 @@
           localStorage.removeItem('previous-search-url');
           window.location = searchUrl;
       }
+
+      window.SCP.userAccessToken = '<%= get_user_access_token(current_user) %>';
+
   </script>
 
   <script type="text/javascript"  nonce="<%= content_security_policy_script_nonce %>">
@@ -41,8 +47,8 @@
 </head>
 <body <%= @selected_branding_group.present? ? "data-branding-id=#{@selected_branding_group.name_as_id}" : nil %>>
 
-  <%# 
-    TODO: In SCP-2121, move these includes back into HEAD element now that 
+  <%#
+    TODO: In SCP-2121, move these includes back into HEAD element now that
     https://github.com/react-bootstrap/react-bootstrap/issues/3645
     seems resolved
   %>

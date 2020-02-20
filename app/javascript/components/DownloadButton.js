@@ -1,75 +1,89 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDownload } from '@fortawesome/free-solid-svg-icons';
 import Modal from 'react-bootstrap/lib/Modal';
+import Clipboard from 'react-clipboard.js';
 
-// TODO: Remove this once API endpoint is integrated
-import {authCodeResponseMock} from './FacetsMockData';
+import { fetchAuthCode } from 'lib/scp-api';
 
-function fetchDownloadConfig() {
+/**
+ * Fetch auth code, build download command, return configuration object
+ *
+ * @returns {Object} Object for auth code, time interval, and download command
+ */
+async function generateDownloadConfig() {
   const searchQuery = '&file_types=metadata,expression&accessions=SCP1,SCP2';
-  const authCode = authCodeResponseMock.auth_code; // Auth code is a one-time authorization token (OTAC)
 
-  const timeInterval = authCodeResponseMock.time_interval;
+  const {authCode, timeInterval} = await fetchAuthCode();
+
+  const queryString = `?auth_code=${authCode}${searchQuery}`;
 
   // Gets a curl configuration ("cfg.txt") containing signed
   // URLs and output names for all files in the download object.
-  const url = (
-    window.origin +
-    '/api/v1/bulk_download?auth_code=' +
-    authCode +
-    searchQuery
-  );
+  const url = `${window.origin}/api/v1/bulk_download${queryString}`;
   const curlSecureFlag = (window.location.host === 'localhost') ? 'k' : ''; // "-k" === "--insecure"
-  
+
   // This is what the user will run in their terminal to download the data.
-  // TODO: Consider checking the node environment (either at compile or runtime) instead of the hostname
+  // To consider: check the node environment (either at compile or runtime) instead of the hostname
   const downloadCommand = (
     'curl "' + url + '" -' + curlSecureFlag + 'o cfg.txt; ' +
     'curl -K cfg.txt; rm cfg.txt'
   );
 
-  return [authCode, timeInterval, downloadCommand];
+  return {
+    authCode: authCode,
+    timeInterval: timeInterval,
+    downloadCommand: downloadCommand
+  };
 }
 
 function DownloadCommandContainer() {
-  
-  const [authCode, timeInterval, downloadCommand] = fetchDownloadConfig();
 
-  const expiresMinutes = Math.floor(timeInterval / 60); // seconds -> minutes
+  const [downloadConfig, setDownloadConfig] = useState({});
 
-  const commandID = 'command-' + authCode;
+  useEffect(() => {
+    const fetchData = async () => {
+      const dlConfig = await generateDownloadConfig();
+      setDownloadConfig(dlConfig);
+    };
+    fetchData();
+  }, []);
+
+  function onSuccess() {
+    console.log('TODO (SCP-2121): Show "Copied!" tooltip');
+  }
 
   return (
     <div>
-      <div class="input-group">
+      <div className='input-group'>
         <input
-          id={commandID}
-          class="form-control curl-download-command"
-          value={downloadCommand}
+          id={'command-' + downloadConfig.authCode}
+          className='form-control curl-download-command'
+          value={downloadConfig.downloadCommand}
           readOnly
         />
-        <span class="input-group-btn"> +
-          <button 
-            id={'copy-button-' + authCode}
-            class="btn btn-default btn-copy" 
-            data-clipboard-target={'#' + commandID}
-            data-toggle="tooltip"
-            title="Copy to clipboard">
-            <i class="far fa-copy"></i>
-          </button>
-          <button 
-            id={'refresh-button-' + authCode}
-            class="btn btn-default btn-refresh glyphicon glyphicon-refresh"
-            data-toggle="tooltip"
-            title="Refresh download command">
+        <span className='input-group-btn'>
+            <Clipboard
+              data-clipboard-target={'#command-' + downloadConfig.authCode}
+              onSuccess={onSuccess}
+              className='btn btn-default btn-copy'
+              data-toggle='tooltip'
+              button-title='Copy to clipboard'
+            >
+              <i className='far fa-copy'></i>
+            </Clipboard>
+          <button
+            id={'refresh-button-' + downloadConfig.authCode}
+            className='download-refresh-button btn btn-default btn-refresh glyphicon glyphicon-refresh'
+            data-toggle='tooltip'
+            title='Refresh download command'>
           </button>
         </span>
         </div>
-      <div style={{fontSize: '12px'}}>
+      <div id="download-command-caption">
         Valid for one use within {' '}
-        <span class="countdown" id={'countdown-' + authCode}>
-          {expiresMinutes}
+        <span className='countdown' id={'countdown-' + downloadConfig.authCode}>
+          {Math.floor(downloadConfig.timeInterval / 60)} {/* seconds -> minutes */}
         </span>{' '}
         minutes.  If your command has expired, click refresh button at right in this box.
       </div>
@@ -86,20 +100,16 @@ function DownloadCommandContainer() {
 export default function DownloadButton(props) {
 
   const [show, setShow] = useState(false);
-  const [showDownloadCommand, setShowDownloadCommand] = useState(false);
 
   function showModalAndFetchDownloadCommand() {
     setShow(!show);
   }
 
   const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
-
-  window.SCP.initBulkDownloadClipboard();
 
   return (
       <>
-      <span id='download-button' className={`${show ? 'active' : ''}`}>
+      <span id='download-button' className= {`${show ? 'active' : ''}`} className='facet'>
         <span onClick={showModalAndFetchDownloadCommand}>
           <FontAwesomeIcon className="icon-left" icon={faDownload}/>
           Download
@@ -113,16 +123,16 @@ export default function DownloadButton(props) {
         bsSize='large'
       >
         <Modal.Header closeButton>
-          <Modal.Title><h2 class='text-center'>Bulk Download</h2></Modal.Title>
+          <h2 className='text-center'>Bulk Download</h2>
         </Modal.Header>
-  
+
         <Modal.Body>
           <p className='lead'>
           To download files matching your search, copy this command and paste it into your terminal:
           </p>
-          <p className='lead command-container' id='command-container-all'>
+          <div className='lead command-container' id='command-container-all'>
             <DownloadCommandContainer />
-          </p>
+          </div>
         </Modal.Body>
 
       </Modal>

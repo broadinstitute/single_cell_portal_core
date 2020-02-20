@@ -31,7 +31,6 @@
 //= require scp-igv
 //= require scp-ideogram
 //= require scp-dot-plot
-//= require react_rails/bulkDownloadClipboard
 
 var fileUploading = false;
 var PAGE_RENDERED = false;

@@ -10,11 +10,11 @@ function slug(value) {
 }
 
 export default function FacetControl(props) {
-  
+
   const [showFilters, setShowFilters] = useState(false);
-  
+
   const facetName = props.facet.name;
-  const facetID = `facet-${slug(facetName)}`;
+  const facetId = `facet-${slug(facetName)}`;
 
   function handleClick() {
     setShowFilters(!showFilters);
@@ -22,7 +22,7 @@ export default function FacetControl(props) {
 
   return (
       <span
-        id={facetID}
+        id={facetId}
         className={`facet ${showFilters ? 'active' : ''}`}>
         <span
           onClick={handleClick}>
@@ -31,5 +31,5 @@ export default function FacetControl(props) {
         <FiltersBox show={showFilters} facet={props.facet} />
       </span>
     );
-  
+
 }

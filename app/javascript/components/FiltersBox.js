@@ -38,15 +38,15 @@ export default function FiltersBox(props) {
   //   * filter-species-NCBItaxon9606
   const facetName = props.facet.name;
   const componentName = 'filters-box';
-  const filtersBoxID = `${componentName}-${props.facet.id}`;
-  const saveID = `save-${filtersBoxID}`;
+  const filtersboxId = `${componentName}-${props.facet.id}`;
+  const saveID = `save-${filtersboxId}`;
 
   /**
    * Returns IDs of selected filters.
    * Enables comparing current vs. saved filters to enable/disable SAVE button
    */
   function getCheckedFilterIDs() {
-    const checkedSelector = `#${filtersBoxID} input:checked`;
+    const checkedSelector = `#${filtersboxId} input:checked`;
     const checkedFilterIDs =
       [...document.querySelectorAll(checkedSelector)].map((filter) => {
         return filter.id;
@@ -60,15 +60,15 @@ export default function FiltersBox(props) {
 
   function handleSaveClick(event) {
     const saveButtonClasses = Array.from(event.target.classList);
-  
+
     if (saveButtonClasses.includes('disabled')) return;
-    
+
     setSavedSelection(getCheckedFilterIDs());
   };
 
   return (
-    <div className={componentName} id={filtersBoxID} style={{display: props.show ? '' : 'none'}}>
-      <FiltersSearchBar filtersBoxID={filtersBoxID} />
+    <div className={componentName} id={filtersboxId} style={{display: props.show ? '' : 'none'}}>
+      <FiltersSearchBar filtersboxId={filtersboxId} facetID={props.facet.id} />
       <p className='filters-box-header'>
         <span className='default-filters-list-name'>FREQUENTLY SEARCHED</span>
         <span className='facet-ontology-links'>
@@ -85,7 +85,7 @@ export default function FiltersBox(props) {
       </p>
       <ul>
         {
-          // TODO: Abstract to use Filters component 
+          // TODO: Abstract to use Filters component
           // after passing through function for onClick interaction
           // (SCP-2109)
           props.facet.filters.map((d) => {
@@ -105,13 +105,13 @@ export default function FiltersBox(props) {
           })
         }
       </ul>
-      {/* 
+      {/*
       TODO: abstracting this and similar code block in
       FacetsAccordionBox into new component (SCP-2109)
        */}
       <div className='filters-box-footer'>
         <span>Clear</span>
-        <Button 
+        <Button
           id={saveID}
           bsStyle='primary'
           className={'facet-save-button ' + (canSave ? 'active' : 'disabled')}

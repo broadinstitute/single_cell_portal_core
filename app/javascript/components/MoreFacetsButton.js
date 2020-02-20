@@ -22,7 +22,7 @@ export default function MoreFacetsButton(props) {
   return (
       <span
         id='more-facets-button'
-        className={`${show ? 'active' : ''}`} >
+        className={`${show ? 'active' : ''}`} className='facet'>
         <span
           onClick={handleClick}>
           <FontAwesomeIcon className="icon-left" icon={faSlidersH}/>

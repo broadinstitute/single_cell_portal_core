@@ -6,7 +6,7 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 
-function KeywordSearch (props){
+export default function KeywordSearch (props){
   const [searchTerms, setsearchTerms] = useState('');
 
   const handleSubmit = (event) => {
@@ -21,10 +21,9 @@ function KeywordSearch (props){
       props.updateKeyword(searchTerm);
     }
   
-
   return (
     <div id='keyword-search'>
-      <Form onSubmit = {handleSubmit} >
+      <Form horizontal onSubmit = {handleSubmit} >
         <InputGroup id='keyword-input-group'>
           <input
             id="keyword-input"
@@ -42,5 +41,3 @@ function KeywordSearch (props){
    
   );
 }
-
-export default KeywordSearch;
