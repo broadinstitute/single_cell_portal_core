@@ -32,12 +32,13 @@ class SyntheticStudyPopulator
     # suffix the study name to avoid inter-developer conflicts.  Remove this once we have separate firecloud namespaces
     suffixed_name = study_config['study']['name'] + user_suffix
     existing_study = Study.find_by(name: suffixed_name)
+    prior_accession = existing_study.try(:accession)
     if existing_study
       puts("Destroying Study #{existing_study.name}, id #{existing_study.id}")
       existing_study.destroy_and_remove_workspace
     end
-
     study = Study.new(study_config['study'])
+    study.accession = prior_accession
     study.name = suffixed_name
     study.user ||= user
     study.firecloud_project ||= ENV['PORTAL_NAMESPACE']

@@ -2922,12 +2922,7 @@ class Study
 
   # set the study_accession for this study
   def assign_accession
-    next_accession = StudyAccession.next_available
-    while Study.where(accession: next_accession).exists? || StudyAccession.where(accession: next_accession).exists?
-      next_accession = StudyAccession.next_available
-    end
-    self.accession = next_accession
-    StudyAccession.create(accession: next_accession, study_id: self.id)
+    self.accession = StudyAccession.create_for_study(self).accession
   end
 
   # set access for the readonly service account if a study is public

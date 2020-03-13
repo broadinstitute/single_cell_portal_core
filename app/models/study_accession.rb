@@ -17,10 +17,28 @@ class StudyAccession
     self.study.present?
   end
 
-  def self.next_available
+  def self.next_available_id
     current_count = self.count
     "SCP#{current_count + 1}"
   end
+
+  def self.create_for_study(study)
+    # if there is an accession attached use that
+    # this is only allowed in non-production environments to allow persistent accessions for synth studies
+    if !Rails.env.production? && study.accession
+      existing_accession = StudyAccession.find_by!(accession: study.accession)
+      existing_accession.update!(study_id: study.id)
+      return existing_accession
+    else # otherwise just grab the next accession
+      next_accession_id = StudyAccession.next_available_id
+      # sanity check in case multiple studies are being created at the same time
+      while Study.where(accession: next_accession_id).exists? || StudyAccession.where(accession: next_accession_id).exists?
+        next_accession_id = StudyAccession.next_available_id
+      end
+      return StudyAccession.create(accession: next_accession_id, study_id: study.id)
+    end
+  end
+
 
   def self.assign_accessions
     Study.all.each do |study|
