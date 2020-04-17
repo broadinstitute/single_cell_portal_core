@@ -17,10 +17,6 @@ class Gene
   validates_uniqueness_of :name, scope: [:study_id, :study_file_id, :gene_id]
   validates_presence_of :name
 
-  # limit search for performance reasons
-  MAX_GENE_SEARCH = 50
-  MAX_GENE_SEARCH_MSG = "For performance reasons, gene search is limited to #{MAX_GENE_SEARCH} genes. Please use multiple searches to view more genes."
-
   ##
   # INSTANCE METHODS
   ##

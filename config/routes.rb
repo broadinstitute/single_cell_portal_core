@@ -16,6 +16,12 @@ Rails.application.routes.draw do
           get 'study_shares'
           get 'directory_listings'
         end
+        # convention metadata schemas endpoints
+        scope :metadata_schemas do
+          get '/', to: 'metadata_schemas#index', as: :metadata_schemas
+          get ':project_name/:version/:schema_format', to: 'metadata_schemas#load_schema', as: :metadata_schemas_load_convention_schema,
+              constraints: {version: /.*/}
+        end
         resources :taxons, only: [:index, :show]
         resources :studies, only: [:index, :show, :create, :update, :destroy] do
           post 'study_files/bundle', to: 'study_files#bundle', as: :study_files_bundle_files
@@ -31,7 +37,9 @@ Rails.application.routes.draw do
           member do
             post 'sync', to: 'studies#sync_study'
           end
+          resources :expression_data, only: [:show], param: :data_type
         end
+
         get 'status', to: 'status#index'
         scope :site do
           get 'studies', to: 'site#studies', as: :site_studies
@@ -250,6 +258,11 @@ Rails.application.routes.draw do
     get 'covid19', to: 'site#covid19'
 
     get '/', to: 'site#index', as: :site
+
+    # let react routing handle app and all subpaths under 'app'
+    get 'app', to: 'site#index'
+    get 'app/*path', to: 'site#index'
+
     root to: 'site#index'
   end
 end

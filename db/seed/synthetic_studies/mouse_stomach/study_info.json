@@ -5,6 +5,14 @@
     "data_dir": "test"
   },
   "files": [
-     {"type": "Metadata", "filename": "metadata.tsv", "use_metadata_convention": true}
+     {"type": "Metadata", "filename": "metadata.tsv", "use_metadata_convention": true},
+    {
+      "type": "Expression Matrix",
+      "filename": "expression_matrix.tsv"
+    },
+    {
+      "type": "Cluster",
+      "filename": "cluster.tsv"
+    }
   ]
 }

@@ -54,6 +54,10 @@ module Api
           key :description, 'Study publication/data link operations'
         end
         tag do
+          key :name, 'MetadataSchemas'
+          key :description, 'Metadata Convention schema definitions'
+        end
+        tag do
           key :name, 'Schemas'
           key :description, 'Descriptions of SCP model schemas'
         end
@@ -97,6 +101,7 @@ module Api
           Api::V1::DirectoryListingsController,
           Api::V1::ExternalResourcesController,
           Api::V1::SchemasController,
+          Api::V1::MetadataSchemasController,
           Api::V1::TaxonsController,
           Api::V1::StatusController,
           Api::V1::SiteController,

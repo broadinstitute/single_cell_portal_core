@@ -1,30 +1,12 @@
 import React from 'react'
-import Tab from 'react-bootstrap/lib/Tab'
-import Tabs from 'react-bootstrap/lib/Tabs'
 import { useTable, usePagination } from 'react-table'
-import Study from './Study'
-import PagingControl from './PagingControl'
-/**
- * Wrapper component for studies on homepage
- */
-export default function StudyResultsContainer(props) {
-  return (
-    <Tab.Container id="result-tabs" defaultActiveKey="study">
-      <Tabs defaultActiveKey='study' animation={false} >
-        <Tab eventKey='study' title="Studies" >
-          <StudyResults changePage ={props.changePage} results={props.results} />
-        </Tab>
-      </Tabs>
-    </Tab.Container>
-  )
-}
 
+import PagingControl from './PagingControl'
 
 /**
  * Component for the content of the 'Studies' tab
  */
-export function StudyResults(props) {
-  const { results, changePage } = props
+export default function StudyResults({ results, changePage, StudyComponent }) {
   const columns = React.useMemo(
     () => [{
       accessor: 'study'
@@ -87,7 +69,7 @@ export function StudyResults(props) {
                 {row.cells.map(cell => {
                   return (
                     <td key {...cell.getCellProps()}>
-                      <Study study={cell.value}/>
+                      <StudyComponent study={ cell.value }/>
                     </td>
                   )
                 })}

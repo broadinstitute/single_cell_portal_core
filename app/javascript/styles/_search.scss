@@ -25,7 +25,7 @@
   }
 }
 
-#search-panel {
+nav.search-links, #search-panel {
   a {
     cursor: pointer;
     text-decoration: none;
@@ -36,6 +36,25 @@
       background: lighten($action-color, 50%);
     }
   }
+}
+
+
+ nav.search-links {
+  a {
+    padding: 0.5em 1em 0.25em 1em;
+    font-size: larger;
+    display: inline-block;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    &.active {
+      background-color: #fff;
+      color: #333;
+      border-bottom: 2px solid #333;
+    }
+  }
+}
+
+#search-panel {
   .facet{
     white-space: nowrap;
     display: inline-block;
@@ -231,5 +250,33 @@
       border: none;
       color: $action-color;
     }
+  }
+}
+
+.row.gene-study-filter {
+  margin-top: 0.5em;
+}
+
+.study-gene-result {
+  .gene-load-spinner {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    color: #999;
+    font-size: 2.5em;
+  }
+  .expression-graph {
+    min-height: 450px
+  }
+  .graph-controls {
+    padding-top: 100px;
+  }
+  .gene-title {
+    position: absolute;
+    font-size: 1.3em;
+    font-weight: bold;
+    top: 25px;
+    left: 30px;
+    z-index: 100;
   }
 }

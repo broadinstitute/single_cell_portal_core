@@ -23,3 +23,11 @@
 button.text-button {
 
 }
+
+.action {
+  color: $action-color;
+  cursor: pointer;
+  &:hover {
+    color: darken($action-color, 10%);
+  }
+}

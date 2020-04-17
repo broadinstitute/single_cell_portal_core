@@ -15,6 +15,16 @@
   }
 }
 
+@media screen and (max-width: 768px) {
+  ul.nav.navbar-nav.pull-right {
+    margin-top: -7.5px;
+    background-color: #344563 !important;
+  }
+  #breadcrumbs {
+    display: none;
+  }
+}
+
 #main-banner-logo {
   float: left;
   margin-top: 66px;

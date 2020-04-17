@@ -56,6 +56,9 @@ export function mapFiltersForLogging(facetsOrFilters, isFacets=false) {
  */
 function getFriendlyFilterListByFacet(facets) {
   const filterListByFacet = {}
+  if (!facets) {
+    return filterListByFacet
+  }
   Object.entries(facets).forEach(([facet, filters]) => {
     const friendlyFacet = `filters${facet[0].toUpperCase() + facet.slice(1)}`
     const friendlyFilters = filters.map(filterId => {
@@ -89,7 +92,7 @@ export function logSearch(type, searchParams) {
 
   const numTerms = getNumberOfTerms(terms)
   const [numFacets, numFilters] = getNumFacetsAndFilters(facets)
-  const facetList = Object.keys(facets)
+  const facetList = facets ? Object.keys(facets) : []
 
   const filterListByFacet = getFriendlyFilterListByFacet(facets)
 
@@ -103,7 +106,12 @@ export function logSearch(type, searchParams) {
 
   let gaEventCategory = 'advanced-search'
   // e.g. advanced-search-covid19
-  if (preset !== '') gaEventCategory += `-${preset}`
+  if (
+    preset !== '' &&
+    typeof preset !== 'undefined'
+  ) {
+    gaEventCategory += `-${preset}`
+  }
 
   // Google Analytics fallback: remove once Bard and Mixpanel are ready for SCP
   ga( // eslint-disable-line no-undef

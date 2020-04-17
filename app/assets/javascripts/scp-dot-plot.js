@@ -68,9 +68,18 @@ function getLegendSvg(rects) {
 
 /**
  * Shows a legend for size and color below the dot plot.
+ * the two target arguments are optional CSS selectors for where to render
+ * If specified, 'legendTarget' must be an id selector, e.g. "#foobar"
  */
-function renderDotPlotLegend() {
-  $('#dot-plot-legend').remove();
+function renderDotPlotLegend(dotPlotTarget, legendTarget) {
+  if (!legendTarget) {
+    legendTarget = '#dot-plot-legend'
+  }
+  if (!dotPlotTarget) {
+    dotPlotTarget = '#dot-plot'
+  }
+
+  $(legendTarget).remove();
   var scheme = dotPlotColorScheme;
   var rects = scheme.colors.map((color, i) => {
 
@@ -97,11 +106,11 @@ function renderDotPlotLegend() {
 
   var legend = getLegendSvg(rects);
 
-  $('#dot-plot').append('<div id="dot-plot-legend" style="position: relative; top: 30px; left: 70px;"></div>');
-  document.querySelector('#dot-plot-legend').innerHTML = legend;
+  $(dotPlotTarget).append('<div id="' + legendTarget.substring(1) + '" style="position: relative; top: 30px; left: 70px;"></div>');
+  document.querySelector(legendTarget).innerHTML = legend;
 }
 
-function renderMorpheusDotPlot(dataPath, annotPath, selectedAnnot, selectedAnnotType, target, annotations, fitType, dotHeight) {
+function renderMorpheusDotPlot(dataPath, annotPath, selectedAnnot, selectedAnnotType, target, annotations, fitType, dotHeight, legendTarget) {
   console.log('render status of ' + target + ' at start: ' + $(target).data('rendered'));
   $(target).empty();
 
@@ -199,7 +208,7 @@ function renderMorpheusDotPlot(dataPath, annotPath, selectedAnnot, selectedAnnot
     window.dotPlot.tabManager.setActiveTab(tabItems[1].id);
     window.dotPlot.tabManager.remove(tabItems[0].id);
 
-    renderDotPlotLegend();
+    renderDotPlotLegend(target, legendTarget);
 
     // Remove "Options" toolbar button until legend can be updated upon
     // changing default options for size and color (SCP-1738).

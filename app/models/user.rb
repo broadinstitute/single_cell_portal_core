@@ -98,18 +98,9 @@ class User
   field :api_access_token, type: Hash
 
   # feature_flags should be a hash of true/false values.  If unspecified for a given flag, the
-  # value from DEFAULT_FEATURE_FLAGS should be used.  Accordingly, the helper method feature_flags_with_defaults
+  # default_value from the FeatureFlag should be used.  Accordingly, the helper method feature_flags_with_defaults
   # is provided
   field :feature_flags, default: {}
-
-  DEFAULT_FEATURE_FLAGS = {
-    # whether the home page uses React and the new search API
-    "advanced_search" => false,
-    # whether the facet search controls are shown
-    "faceted_search" => false,
-    # show covid-19 tab on homepage
-    "covid19_page" => true
-  }
 
   ###
   #
@@ -120,7 +111,8 @@ class User
   def self.from_omniauth(access_token)
     data = access_token.info
     provider = access_token.provider
-    uid = access_token.uid
+    uid =
+     access_token.uid
     # create bogus password, Devise will never use it to authenticate
     password = Devise.friendly_token[0,20]
     user = User.find_by(email: data['email'])
@@ -304,7 +296,7 @@ class User
   # merges the user flags with the defaults -- this should  always be used in place of feature_flags
   # for determining whether to enable a feature for a given user.
   def feature_flags_with_defaults
-    DEFAULT_FEATURE_FLAGS.merge(feature_flags ? feature_flags : {})
+    FeatureFlag.default_flag_hash.merge(feature_flags ? feature_flags : {})
   end
 
   # gets the feature flag value for a given user, and the default value if no user is given
@@ -312,14 +304,14 @@ class User
     if user.present?
       user.feature_flags_with_defaults[flag_key]
     else
-      DEFAULT_FEATURE_FLAGS[flag_key]
+      FeatureFlag.find_by(name: flag_key)&.default_value
     end
   end
 
   # returns feature_flags_with_defaults for the user, or the default flags if no user is given
   def self.feature_flags_for_user(user)
     if user.nil?
-      return DEFAULT_FEATURE_FLAGS
+      return FeatureFlag.default_flag_hash
     end
     user.feature_flags_with_defaults
   end

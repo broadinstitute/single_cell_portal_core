@@ -45,9 +45,11 @@ export default class ErrorBoundary extends Component {
 }
 // HOC for wrapping arbitrary components in error boundaries
 export function withErrorBoundary(Component) {
-  return props => (
-    <ErrorBoundary>
-      <Component {...props} />
-    </ErrorBoundary>
-  )
+  return function SafeWrappedComponent(props) {
+    return (
+      <ErrorBoundary>
+        <Component {...props} />
+      </ErrorBoundary>
+    )
+  }
 }

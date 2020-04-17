@@ -49,10 +49,10 @@
             var genes = $('#search_genes').val().split(' ');
             var numGenes = genes.length;
             // limit number of genes to MAX_GENE_SEARCH
-            if (numGenes > <%= Gene::MAX_GENE_SEARCH %>) {
+            if (numGenes > <%= StudySearchService::MAX_GENE_SEARCH %>) {
                 console.log('Too many genes, limiting global gene search');
-                alert('<%= Gene::MAX_GENE_SEARCH_MSG %>');
-                genes = genes.slice(0, <%= Gene::MAX_GENE_SEARCH %>);
+                alert('<%= StudySearchService::MAX_GENE_SEARCH_MSG %>');
+                genes = genes.slice(0, <%= StudySearchService::MAX_GENE_SEARCH %>);
                 numGenes = genes.length;
                 $('#search_genes').val(genes.join(' '));
             }

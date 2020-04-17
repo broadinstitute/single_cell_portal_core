@@ -5,14 +5,14 @@
 
 @import './_colors.scss';
 
-.study-keyword-search {
+.study-keyword-search, .gene-keyword-search {
   box-sizing: border-box;
   display: inline-block;
   height: 37px;
   width: 340px;
   white-space: nowrap;
 
-  input {
+  input.form-control {
     background-color: white;
     border: 1px solid $action-color;
     border-radius: 15px 0px 0px 15px;
@@ -22,7 +22,7 @@
     font-weight: 500;
     height: 37px;
     line-height: 100%;
-    padding: 0 16px;
+    padding: 0 30px 0 16px;
     width: 90%;
   }
 
@@ -38,5 +38,24 @@
     svg {
       color: white;
     }
+  }
+
+  button.keyword-clear {
+    position: absolute;
+    top: 1px;
+    z-index: 200;
+    background: none;
+    width: 1.5em;
+    right: 40px;
+    svg {
+      color: #aaa;
+    }
+  }
+}
+
+.gene-keyword-search {
+  width: 600px;
+  button.keyword-clear {
+    right: 55px;
   }
 }

@@ -9,18 +9,18 @@ describe('<KeywordSearch/> rendering>', () => {
   it('should render </KeywordSearch> elements', () => {
     const example = mount(<KeywordSearch/>)
     expect(example.exists('.study-keyword-search')).toEqual(true)
-    expect(example.find('svg.svg-inline--fa').hasClass('fa-search')).toEqual(true)
+    expect(example.exists('.fa-search')).toEqual(true)
   })
 
-  it('should show the clear button after a search with keyword', () => {
+  it('should show the clear button after text is entered', () => {
     const routerNav = jest.spyOn(Reach, 'navigate')
     const example = mount(
-      <PropsStudySearchProvider searchParams={{terms: 'foobar'}}>
+      <PropsStudySearchProvider searchParams={{terms: ''}}>
         <KeywordSearch/>
       </PropsStudySearchProvider>
     )
-    expect(example.find('svg.svg-inline--fa').hasClass('fa-times')).toEqual(true)
-    example.find('form').simulate('submit')
-    expect(routerNav).toHaveBeenLastCalledWith('?type=study&page=1')
+    expect(example.exists('button .fa-times')).toEqual(false)
+    example.find('input[name="keywordText"]').first().simulate('change', {target: {value: 'test123'}});
+     expect(example.exists('button .fa-times')).toEqual(true)
   })
 })

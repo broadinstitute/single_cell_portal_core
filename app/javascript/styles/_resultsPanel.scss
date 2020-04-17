@@ -53,6 +53,10 @@
   .loading-panel {
     color: #777;
   }
+
+  .morpheus-nav {
+    display: none;
+  }
 }
 
 .result-row {
@@ -82,7 +86,7 @@
     background-color: #74ae43;
     font-weight: normal;
   }
-  .facet-match {
+  .facet-match, .gene-match {
     background-color: #fff;
     margin-left: 0.5em;
     color: #74ae43;

@@ -3,6 +3,7 @@ module Api
     class SearchController < ApiBaseController
       include Concerns::Authenticator
       include Swagger::Blocks
+      include StudySearchResultsObjects
 
       before_action :set_current_api_user!
       before_action :authenticate_api_user!, only: [:create_auth_code, :bulk_download]
@@ -38,6 +39,13 @@ module Api
             key :name, :terms
             key :in, :query
             key :description, 'User-supplied query string'
+            key :required, false
+            key :type, :string
+          end
+          parameter do
+            key :name, :genes
+            key :in, :query
+            key :description, 'space-delimited list of genes.  e.g. "agpat2 farsa"'
             key :required, false
             key :type, :string
           end
@@ -221,6 +229,12 @@ module Api
           @studies = @studies.where(:accession.in => @convention_accessions)
         end
 
+        # filter the studies by genes if asked
+        if params[:genes].present?
+          @gene_results = StudySearchService.find_studies_by_gene_param(params[:genes], @studies.pluck(:id))
+          @studies = @studies.where(:id.in => @gene_results[:study_ids])
+        end
+
         # reset order if user requested a custom ordering
         if params[:order].present?
           sort_type = params[:order].to_sym
@@ -272,6 +286,7 @@ module Api
         @matching_accessions = @studies.map(&:accession)
         Rails.logger.info "Final list of matching studies: #{@matching_accessions}"
         @results = @studies.paginate(page: params[:page], per_page: Study.per_page)
+        render json: search_results_obj, status: 200
       end
 
       swagger_path '/search/facets' do

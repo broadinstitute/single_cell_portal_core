@@ -1,4 +1,4 @@
-import React, { useContext } from 'react'
+import React, { useContext, useEffect } from 'react'
 
 import KeywordSearch from './KeywordSearch'
 import FacetsPanel from './FacetsPanel'
@@ -28,11 +28,17 @@ function CommonSearchButtons() {
  * Component for SCP faceted search UI
  * showCommonButtons and showDownloadButton both default to true
  */
-export default function SearchPanel({ showCommonButtons, keywordPrompt, showDownloadButton }) {
+export default function SearchPanel({
+  showCommonButtons,
+  keywordPrompt,
+  showDownloadButton,
+  searchOnLoad
+}) {
   // Note: This might become  a Higher-Order Component (HOC).
   // This search component is currently specific to the "Studies" tab, but
   // could possibly also enable search for "Genes" and "Cells" tabs.
   const featureFlagState = useContext(FeatureFlagContext)
+  const searchState = useContext(StudySearchContext)
   let searchButtons = <></>
   if (showCommonButtons !== false) {
     searchButtons = <CommonSearchButtons/>
@@ -44,6 +50,14 @@ export default function SearchPanel({ showCommonButtons, keywordPrompt, showDown
   if (showDownloadButton !== false) {
     downloadButtons = <DownloadProvider><DownloadButton /></DownloadProvider>
   }
+
+  useEffect(() => {
+    // if a search isn't already happening, and searchOnLoad is specified, perform one
+    if (!searchState.isLoading && !searchState.isLoaded && searchOnLoad) {
+      searchState.performSearch()
+    }
+  })
+
   return (
     <div id='search-panel'>
       <KeywordSearch keywordPrompt={keywordPrompt}/>

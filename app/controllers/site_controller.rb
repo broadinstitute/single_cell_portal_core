@@ -136,9 +136,9 @@ class SiteController < ApplicationController
   def search_genes
     @terms = parse_search_terms(:genes)
     # limit gene search for performance reasons
-    if @terms.size > Gene::MAX_GENE_SEARCH
-      @terms = @terms.take(Gene::MAX_GENE_SEARCH)
-      search_message = Gene::MAX_GENE_SEARCH_MSG
+    if @terms.size > StudySearchService::MAX_GENE_SEARCH
+      @terms = @terms.take(StudySearchService::MAX_GENE_SEARCH)
+      search_message = StudySearchService::MAX_GENE_SEARCH_MSG
     end
     # grab saved params for loaded cluster, boxpoints mode, annotations, consensus and other view settings
     cluster = params[:search][:cluster]
@@ -211,8 +211,8 @@ class SiteController < ApplicationController
       raw_genes = params[:search][:genes].split(delim)
       @genes = sanitize_search_values(raw_genes).split(',').map(&:strip)
       # limit gene search for performance reasons
-      if @genes.size > Gene::MAX_GENE_SEARCH
-        @genes = @genes.take(Gene::MAX_GENE_SEARCH)
+      if @genes.size > StudySearchService::MAX_GENE_SEARCH
+        @genes = @genes.take(StudySearchService::MAX_GENE_SEARCH)
       end
       @results = []
       if !@study.initialized?

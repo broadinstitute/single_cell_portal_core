@@ -45,7 +45,8 @@ class StudyCreationTest < ActionDispatch::IntegrationTest
         name: 'expression_matrix_example.txt'
       },
       metadata: {
-        name: 'metadata_example_using_convention.txt'
+        name: 'metadata.v2-0-0.txt',
+        path: 'alexandria_convention/metadata.v2-0-0.txt'
       },
       cluster: {
         name: 'cluster_example_2.txt'
@@ -63,7 +64,7 @@ class StudyCreationTest < ActionDispatch::IntegrationTest
 
     # metadata file
     file_params = {study_file: {file_type: 'Metadata', study_id: study.id.to_s, use_metadata_convention: true}}
-    perform_study_file_upload(example_files[:metadata][:name], file_params, study.id)
+    perform_study_file_upload(example_files[:metadata][:path], file_params, study.id)
     assert_response 200, "Metadata upload failed: #{@response.code}"
     example_files[:metadata][:object] = study.metadata_file
     assert example_files[:metadata][:object].present?, "Metadata failed to associate, found no file: #{example_files[:metadata][:object].present?}"
@@ -124,7 +125,7 @@ class StudyCreationTest < ActionDispatch::IntegrationTest
     share_count = study.study_shares.size
 
     assert_equal 1, cluster_count, "did not find correct number of clusters"
-    assert_equal 22, metadata_count, "did not find correct number of metadata objects"
+    assert_equal 26, metadata_count, "did not find correct number of metadata objects"
     assert_equal 2, cluster_annot_count, "did not find correct number of cluster annotations"
     assert_equal 3, study_file_count, "did not find correct number of study files"
     assert_equal 1, share_count, "did not find correct number of study shares"

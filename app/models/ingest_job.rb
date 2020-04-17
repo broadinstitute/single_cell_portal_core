@@ -6,6 +6,11 @@
 class IngestJob
   include ActiveModel::Model
 
+  # for generating instance-specific URLs for success emails of convention metadata files
+  include Api::V1::Concerns::ConventionSchemas
+  include Rails.application.routes.url_helpers
+  URL_OPTIONS = Rails.application.config.action_controller[:default_url_options].dup.freeze
+
   # Name of pipeline submission running in GCP (from [PapiClient#run_pipeline])
   attr_accessor :pipeline_name
   # Study object where file is being ingested
@@ -379,7 +384,14 @@ class IngestJob
       message << "Gene-level entries created: #{genes}"
     when 'Metadata'
       if self.study_file.use_metadata_convention
-        message << "This metadata file was validated against the current <a href='https://github.com/broadinstitute/single_cell_portal/wiki/Metadata-Convention'>Metadata Convention</a>"
+        project_name = 'alexandria_convention'
+        current_schema_version = get_latest_schema_version(project_name)
+        schema_url = api_v1_metadata_schemas_load_convention_schema_url(project_name: project_name,
+                                                                        version: current_schema_version,
+                                                                        schema_format: 'json',
+                                                                        host: URL_OPTIONS[:host],
+                                                                        protocol: URL_OPTIONS[:protocol])
+        message << "This metadata file was validated against the latest <a href='#{schema_url}'>Metadata Convention</a>"
       end
       cell_metadata = CellMetadatum.where(study_id: self.study.id, study_file_id: self.study_file.id)
       message << "Entries created:"

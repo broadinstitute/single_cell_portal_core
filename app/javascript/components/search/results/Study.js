@@ -27,6 +27,17 @@ export function highlightText(text, termMatches) {
   return { styledText: text, matchedIndices }
 }
 
+// returns the first 140 characters of the description in plain text
+export function getByline(rawDescription) {
+  const bylineCharLimit = 140
+  const plainText = stripTags(rawDescription).trim()
+  let bylineText = plainText.substring(0, bylineCharLimit)
+  if (plainText.length > bylineCharLimit) {
+    bylineText = `${bylineText}...`
+  }
+  return bylineText
+}
+
 
 export function shortenDescription(textDescription, term) {
   const { styledText, matchedIndices } = highlightText(textDescription, term)
@@ -105,7 +116,7 @@ function facetMatchBadges(study) {
 
 /* displays a brief summary of a study, with a link to the study page */
 export default function Study({ study }) {
-  const { term_matches, facets } = study
+  const term_matches = study.term_matches
   const studyTitle= highlightText(study.name, term_matches).styledText
   const studyDescription = formatDescription(study.description, term_matches)
   const displayStudyTitle = { __html: studyTitle }

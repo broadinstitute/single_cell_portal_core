@@ -91,6 +91,7 @@ else
                     test/api/study_shares_controller_test.rb
                     test/api/directory_listings_controller_test.rb
                     test/api/external_resources_controller_test.rb
+                    test/api/metadata_schemas_controller_test.rb
                     test/models/cluster_group_test.rb # deprecated, but needed to set up for user_annotation_test
                     test/models/user_annotation_test.rb
                     test/models/study_test.rb

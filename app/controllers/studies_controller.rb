@@ -303,13 +303,15 @@ class StudiesController < ApplicationController
                 process_workflow_output(output_name, output_file, remote_file, workflow, params[:submission_id], configuration)
               end
             end
-          else
+          elsif outputs.is_a?(String)
             file_location = outputs.gsub(/gs\:\/\/#{@study.bucket_id}\//, '')
             # get google instance of file
             remote_file = Study.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, @study.bucket_id, file_location)
             if remote_file.present?
               process_workflow_output(output_name, outputs, remote_file, workflow, params[:submission_id], configuration)
             end
+          else
+            next # optional outputs can be nil so ignore
           end
         end
         metadata = AnalysisMetadatum.find_by(study_id: @study.id, submission_id: params[:submission_id])

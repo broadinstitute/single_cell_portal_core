@@ -28,20 +28,26 @@
     </div>
   </div>
   <div class="form-group row">
-    <div class="col-md-12">
-      <label>Feature flags</label>
+    <div class="row">
+      <div class="col-md-12">
+        <label>Feature flags</label>
+      </div>
     </div>
     <% @user.feature_flags_with_defaults.each do |key, value| %>
+      <% @default_flag =  FeatureFlag.find_by(name: key) %>
       <div class="row <%= @user.feature_flags.key?(key) ? 'highlight' : '' %>">
         <div class="col-md-3 text-right">
           <label><%= key %>:</label>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-2">
           <select name="feature_flag_<%= key %>">
             <option value="0" <%= @user.feature_flags[key] == false ? 'selected' : '' %>>False</option>
             <option value="1" <%= @user.feature_flags[key] == true ? 'selected' : '' %>>True</option>
-            <option value="-" <%= @user.feature_flags.key?(key) ? '' : 'selected' %>>Default (<%= User::DEFAULT_FEATURE_FLAGS[key] %>)</option>
+            <option value="-" <%= @user.feature_flags.key?(key) ? '' : 'selected' %>>Default (<%= @default_flag.default_value %>)</option>
           </select>
+        </div>
+        <div class="col-md-6">
+          <%= @default_flag.description %>
         </div>
       </div>
      <% end %>

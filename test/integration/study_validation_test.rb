@@ -253,7 +253,7 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
     initial_bq_row_count = get_bq_row_count(bq_dataset, study)
 
     # request delete
-    puts "Requesting delete for metadata_example_using_convention.txt"
+    puts "Requesting delete for alexandria_convention/metadata.v2-0-0.txt"
     delete api_v1_study_study_file_path(study_id: study.id, id: metadata_file.id), as: :json, headers: {authorization: "Bearer #{@test_user.api_access_token[:access_token]}" }
 
     seconds_slept = 0

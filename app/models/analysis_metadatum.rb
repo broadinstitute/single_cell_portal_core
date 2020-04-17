@@ -138,7 +138,8 @@ class AnalysisMetadatum
   # set a value based on the schema definition for a particular field
   def set_value_by_type(definitions, value)
     value_type = definitions['type']
-    case value_type
+    if value.present?
+      case value_type
       when 'string'
         value.gsub(/\"/, '')
       when 'integer'
@@ -152,6 +153,7 @@ class AnalysisMetadatum
         end
       else
         value
+      end
     end
   end
 
@@ -179,7 +181,7 @@ class AnalysisMetadatum
               # some fields are nested, so check first. do a conditional assignment in case we already have a value
               if location.include?('/')
                 parent, child = location.split('/')
-                call[property] ||= set_value_by_type(definitions, attributes[parent][child])
+                call[property] ||= set_value_by_type(definitions, attributes.dig(parent, child))
               else
                 call[property] ||= set_value_by_type(definitions, attributes[location])
               end
@@ -268,7 +270,7 @@ class AnalysisMetadatum
           outputs = []
           workflows.each do |workflow|
             outs = workflow['outputs'].values
-            outs.each do |o|
+            outs&.each do |o|
               outputs << {
                   'name' => o.split('/').last,
                   'file_path' => o,

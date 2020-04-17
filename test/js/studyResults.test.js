@@ -1,5 +1,5 @@
 import React from 'react'
-import { StudyResults } from 'components/search/results/StudyResultsContainer'
+import StudyResults from 'components/search/results/StudyResults'
 import PagingControl from 'components/search/results/PagingControl'
 import Study from 'components/search/results/Study'
 import { mount } from 'enzyme'
@@ -20,8 +20,15 @@ describe('<StudyResults/> rendering>', () => {
     }
   }
   it('should render <StudyResults/> elements', () => {
-    const wrapper = mount(<StudyResults changePage ={props.changePage} results={props.results}/>)
+    const wrapper = mount(<StudyResults changePage ={props.changePage} results={props.results} StudyComponent={ Study }/>)
     expect(wrapper.find(PagingControl)).toHaveLength(2)
     expect(wrapper.find(Study)).toHaveLength(props.results.studies.length)
+  })
+
+  it('should render the custom study component element', () => {
+    let customComponent = () => { return <div className="test123">yo</div> }
+    const wrapper = mount(<StudyResults changePage ={props.changePage} results={props.results} StudyComponent={ customComponent }/>)
+    expect(wrapper.find(PagingControl)).toHaveLength(2)
+    expect(wrapper.find('.test123')).toHaveLength(props.results.studies.length)
   })
 })

@@ -55,4 +55,14 @@ class SyntheticStudyPopulator
       FileParseService.run_parse_job(study_file, study, user)
     end
   end
+
+  # utility method to generate a study_info.json file string from an existing study
+  # useful for, e.g., downloading all the files from a production study to your local machine,
+  # and then using SyntheticStudyPopulator to ingest it
+  def self.generate_study_info_json(study)
+    info = {}
+    info['study'] = {name: study.name, description: study.description, data_dir: 'test'}
+    info['files'] = study.study_files.map{|f| { filename: f.name, type: f.file_type}}
+    puts JSON.pretty_generate(info)
+  end
 end

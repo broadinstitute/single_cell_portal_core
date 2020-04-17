@@ -102,7 +102,7 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
 
     study = Study.find_by(name: "Test Study #{@random_seed}")
     facet = SearchFacet.find_by(identifier: 'organism_age')
-
+    facet.update_filter_values! # in case there is a race condition with parsing & facet updates
     # loop through 3 different units (days, months, years) to run a numeric-based facet query with conversion
     # days should return nothing, but months and years should match the testing study
     %w(days months years).each do |unit|

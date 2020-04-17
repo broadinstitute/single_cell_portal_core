@@ -319,12 +319,12 @@ class AdminConfigurationsController < ApplicationController
   # because of the true/false/default structure, we have to have custom logic to handle the values
   def self.process_feature_flag_form_data(user, params)
     updated_flag_data = {}
-    User::DEFAULT_FEATURE_FLAGS.each do |key, _value|
+    FeatureFlag.all.each do |default_flag|
       # for each possible feature flag, check if the vaule was set on the form via a field name feature_flag_<<flag name>>
-      flag_form_val = params[('feature_flag_' + key).to_sym]
+      flag_form_val = params[('feature_flag_' + default_flag.name).to_sym]
       # if it was set, and not set to '-' (default), include it in the updated values
       if flag_form_val && flag_form_val != '-'
-        updated_flag_data[key] = flag_form_val == '1' ? true : false
+        updated_flag_data[default_flag.name] = flag_form_val == '1' ? true : false
       end
     end
     user.update!(feature_flags: updated_flag_data)

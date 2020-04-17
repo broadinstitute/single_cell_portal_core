@@ -70,9 +70,11 @@ export default function SearchQueryDisplay({ terms, facets }) {
   if (hasFacets) {
     let FacetContainer = props => <>{props.children}</>
     if (hasTerms) {
-      FacetContainer = props => (<>
-        <span className="join-text"> AND </span>({props.children})
-      </>)
+      FacetContainer = function FacetText(props) {
+        return (<>
+          <span className="join-text"> AND </span>({props.children})
+        </>)
+      }
     }
     const facetElements = facets.map((facet, index) => formatFacet(facet, index, facets.length))
     facetsDisplay = <FacetContainer>Metadata contains {facetElements}</FacetContainer>

@@ -590,6 +590,18 @@ class Study
       key :type, :boolean
       key :description, 'Indication this study was whitelisted by a preset search'
     end
+    property :gene_matches do
+      key :type, :array
+      key :description, 'Array of ids of the genes that were matched for this study'
+      items do
+        key :title, 'gene match'
+        key :type, :string
+      end
+    end
+    property :can_visualize_clusters do
+      key :type, :boolean
+      key :description, 'Whether this study has cluster visualization data available'
+    end
     property :study_files do
       key :type, :object
       key :title, 'StudyFiles'

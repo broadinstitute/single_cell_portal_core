@@ -31,7 +31,10 @@ async function generateDownloadConfig(matchingAccessions) {
   const url = `${baseUrl}search/bulk_download${queryString}`
 
   // "-k" === "--insecure"
-  const curlSecureFlag = (window.location.host === 'localhost') ? 'k' : ''
+  let curlSecureFlag = ''
+  if (('SCP' in window) && window.location.host === 'localhost') {
+    curlSecureFlag = 'k'
+  }
 
   // This is what the user will run in their terminal to download the data.
   // To consider: check the node environment (either at compile or runtime)
@@ -86,6 +89,7 @@ function DownloadCommandContainer(props) {
   }
 
   return (
+    'authCode' in downloadConfig &&
     <div>
       <div className='input-group'>
         <input
@@ -219,8 +223,14 @@ export default function DownloadButton(props) {
     downloadContext.isLoaded
   )
 
-  let hint = 'To download, first do a search'
-  if (active) hint = 'Download files for your search results'
+  let hint = 'Download files for your search results'
+  if (!active) {
+    if (userContext.accessToken === '') {
+      hint = 'To download, please sign in'
+    } else {
+      hint = 'To download, first do a search'
+    }
+  }
 
   const handleClose = () => setShow(false)
 

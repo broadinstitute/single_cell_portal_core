@@ -17,18 +17,13 @@ export default function KeywordSearch({ keywordPrompt }) {
   const searchContext = useContext(StudySearchContext)
   // show clear button after a search has been done,
   //  as long as the text hasn't been updated
-  const showClear = searchContext.params.terms === selectionContext.terms &&
-                    selectionContext.terms != ''
+  const showClear = selectionContext.terms && selectionContext.terms.length
   /**
    * Updates terms in search context upon submitting keyword search
    */
   function handleSubmit(event) {
     event.preventDefault()
-    if (showClear) {
-      selectionContext.updateSelection({ terms: '' }, true)
-    } else {
-      selectionContext.performSearch()
-    }
+    selectionContext.performSearch()
   }
 
   function handleKeywordChange(newValue) {
@@ -52,9 +47,15 @@ export default function KeywordSearch({ keywordPrompt }) {
           name="keywordText"/>
         <div className="input-group-append">
           <Button type='submit'>
-            <FontAwesomeIcon icon={ showClear ? faTimes : faSearch } />
+            <FontAwesomeIcon icon={ faSearch } />
           </Button>
         </div>
+        { showClear &&
+          <Button className="keyword-clear"
+                  type='button'
+                  onClick={() =>  selectionContext.updateSelection({ terms: '' })} >
+            <FontAwesomeIcon icon={ faTimes } />
+          </Button> }
       </InputGroup>
     </Form>
   )
