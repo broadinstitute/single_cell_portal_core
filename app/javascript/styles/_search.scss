@@ -9,10 +9,9 @@
 }
 
 .search-button {
-  float: right;
-  position: relative;
-  top: -2.4em;
-  border-radius: 0 4px 4px 0;
+  position: absolute;
+  right: 10px;
+  top: 15px;
 }
 
 #bulk-download-modal {
@@ -128,16 +127,30 @@ nav.search-links, #search-panel {
 
   ul {
     list-style-type: none;
-    padding-left: 15px;
+    padding-left: 5px;
   }
 
   ul.facet-filter-list {
     max-height: 400px;
-    overflow-y: scroll;
+    overflow-y: auto;
+    label {
+      display: inline-block;
+      white-space: nowrap;
+    }
+    input {
+      font-size: 2em;
+      vertical-align: baseline;
+      margin-top: 0px;
+      margin-right: 12px;
+    }
+    label span {
+      vertical-align: middle;
+    }
   }
 
   li {
     width: 100%;
+    margin-bottom: 0.2em;
   }
 
   .default-filters-list-name {
@@ -153,7 +166,8 @@ nav.search-links, #search-panel {
   }
 
   .filters-box-searchable, #facets-accordion {
-    width: 300px;
+    width: 560px;
+    margin-left: -220px;
     border: 1px solid #aaa;
     background: #fff;
     position: absolute;
@@ -190,8 +204,9 @@ nav.search-links, #search-panel {
   }
 
   .filters-box-header {
-    margin-top: 5px;
-    margin-bottom: 0px;
+    margin: 5px 0px;
+    display: flex;
+    justify-content: space-between;
   }
 
   label {
@@ -210,7 +225,9 @@ nav.search-links, #search-panel {
 
   #facets-accordion {
     height: 300px;
-
+    .filters-box-searchable {
+      margin-left: 0px;
+    }
     .panel-heading {
       background: #fff;
       padding: 0px;
@@ -242,25 +259,32 @@ nav.search-links, #search-panel {
   .filters-search-bar {
     margin: 2px;
     input {
-      background: #eee;
+      background: #E9ECEF;
       border: none;
+      height: 45px;
     }
     button {
       background: #eee;
       border: none;
       color: $action-color;
+      margin-top: -5px;
     }
   }
 
   .combined-facet {
-    width: 605px;
+    width: 806px;
+    margin-left: -300px;
     .filters-box-searchable {
+      width: 390px;
+      margin-left: 0;
       position: relative;
       border: none;
     }
     .multi-facet-container {
       display: flex;
-      flex-direction: row;
+    }
+    h4 {
+      margin-left: 5px;
     }
   }
 }

@@ -65,7 +65,7 @@ consensus=&heatmap_row_centering=z-score&heatmap_size=NaN&plot_type=violin&subsa
    * Summarize filters, either default or
    */
   function getFiltersSummary() {
-    let filtersSummary = 'TOP FILTERS'
+    let filtersSummary = 'Top Filters'
 
     if (hasFilterSearchResults) {
       const numMatches = matchingFilters.length
@@ -106,33 +106,33 @@ consensus=&heatmap_row_centering=z-score&heatmap_size=NaN&plot_type=violin&subsa
         show && <div className={componentName} id={componentId}>
           { showSearchBar && (
             <>
-              <div className='facet-ontology-links'>
-                {
-                  facet.links.map((link, i) => {
-                    return (
-                      <a
-                        key={`link-${i}`}
-                        href={link.url}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                      >
-                        {link.name}&nbsp;&nbsp;
-                        <FontAwesomeIcon icon={faExternalLinkAlt}/>
-                      </a>
-                    )
-                  })
-                }
-              </div>
               <FiltersSearchBar
                 filtersBoxId={componentId}
                 searchFilters={searchFilters}
               />
               { selectedFilterBadges }
-              <p className='filters-box-header'>
+              <div className='filters-box-header'>
                 <span className='default-filters-list-name'>
                   {getFiltersSummary()}
                 </span>
-              </p>
+                <span className='facet-ontology-links'>
+                  {
+                    facet.links.map((link, i) => {
+                      return (
+                        <a
+                          key={`link-${i}`}
+                          href={link.url}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                        >
+                          {link.name}&nbsp;&nbsp;
+                          <FontAwesomeIcon icon={faExternalLinkAlt}/>
+                        </a>
+                      )
+                    })
+                  }
+                </span>
+              </div>
             </>
           )}
           { !showSearchBar && selectedFilterBadges }
