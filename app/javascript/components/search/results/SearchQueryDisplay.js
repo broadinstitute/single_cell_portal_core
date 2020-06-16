@@ -58,7 +58,7 @@ export const ClearAllButton = () => {
 }
 
 export default function SearchQueryDisplay({ terms, facets }) {
-  const hasFacets = facets.length > 0
+  const hasFacets = facets && facets.length > 0
   const hasTerms = terms && terms.length > 0
   if (!hasFacets && !hasTerms) {
     return <></>

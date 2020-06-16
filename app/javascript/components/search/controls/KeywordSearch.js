@@ -1,4 +1,4 @@
-import React, { useContext } from 'react'
+import React, { useContext, useRef } from 'react'
 import Button from 'react-bootstrap/lib/Button'
 import InputGroup from 'react-bootstrap/lib/InputGroup'
 import Form from 'react-bootstrap/lib/Form'
@@ -18,6 +18,7 @@ export default function KeywordSearch({ keywordPrompt }) {
   // show clear button after a search has been done,
   //  as long as the text hasn't been updated
   const showClear = selectionContext.terms && selectionContext.terms.length
+  const inputField = useRef()
   /**
    * Updates terms in search context upon submitting keyword search
    */
@@ -30,6 +31,11 @@ export default function KeywordSearch({ keywordPrompt }) {
     selectionContext.updateSelection({ terms: newValue })
   }
 
+  function handleClear() {
+    inputField.current.focus()
+    selectionContext.updateSelection({ terms: '' }, true)
+  }
+
   return (
     <Form
       horizontal
@@ -38,6 +44,7 @@ export default function KeywordSearch({ keywordPrompt }) {
     >
       <InputGroup>
         <input
+          ref = {inputField}
           className="form-control"
           size="30"
           type="text"
@@ -52,8 +59,8 @@ export default function KeywordSearch({ keywordPrompt }) {
         </div>
         { showClear &&
           <Button className="keyword-clear"
-                  type='button'
-                  onClick={() =>  selectionContext.updateSelection({ terms: '' })} >
+            type='button'
+            onClick={ handleClear } >
             <FontAwesomeIcon icon={ faTimes } />
           </Button> }
       </InputGroup>

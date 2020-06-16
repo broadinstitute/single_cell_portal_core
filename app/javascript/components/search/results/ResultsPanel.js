@@ -2,21 +2,22 @@ import React, { useContext } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDna, faExclamationCircle } from '@fortawesome/free-solid-svg-icons'
 
-import { StudySearchContext } from 'providers/StudySearchProvider'
 import StudyResults from './StudyResults'
 import Study from './Study'
 import SearchQueryDisplay from './SearchQueryDisplay'
 import { FeatureFlagContext } from 'providers/FeatureFlagProvider'
 
 /**
- * Component for Results displayed on the homepage
+ * handles display of loading, error and results for a list of studies
+ * @studySearchState - an object with isLoaded, isLoading, isError, and results properties
+ * @studyComponent - the component to use to render individual studies.  If not specified, results/Study.js
+ * will be used
  */
-const ResultsPanel = props => {
-  const searchContext = useContext(StudySearchContext)
+const ResultsPanel = ({ studySearchState, studyComponent }) => {
   const featureFlagState = useContext(FeatureFlagContext)
-  const results = searchContext.results
+  const results = studySearchState.results
   let panelContent
-  if (searchContext.isError) {
+  if (studySearchState.isError) {
     panelContent = (
       <div className="error-panel  col-md-6 col-md-offset-3">
         <FontAwesomeIcon
@@ -31,7 +32,7 @@ const ResultsPanel = props => {
         </a>
       </div>
     )
-  } else if (!searchContext.isLoaded) {
+  } else if (!studySearchState.isLoaded) {
     panelContent = (
       <div className="loading-panel">
         Loading &nbsp;
@@ -45,9 +46,9 @@ const ResultsPanel = props => {
           <SearchQueryDisplay terms={results.termList} facets={results.facets} /> }
         <StudyResults
           results={results}
-          StudyComponent={ Study }
+          StudyComponent={ studyComponent ? studyComponent : Study }
           changePage={pageNum => {
-            searchContext.updateSearch({ page: pageNum })
+            studySearchState.updateSearch({ page: pageNum })
           }}
         />
       </>

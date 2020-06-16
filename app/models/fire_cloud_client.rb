@@ -43,6 +43,10 @@ class FireCloudClient < Struct.new(:user, :project, :access_token, :api_root, :s
   # List of projects where computes are not permitted (sets canCompute to false for all users by default, can only be overridden
   # by PROJECT_OWNER)
   COMPUTE_BLACKLIST = %w(single-cell-portal)
+  # Name of user group to set as workspace owner for user-controlled billing projects.  Reduces the amount of
+  # groups the portal service account needs to be a member of
+  # defaults to the Terra billing project this instance is configured against, plus "-sa-owner-group"
+  WS_OWNER_GROUP_NAME = "#{PORTAL_NAMESPACE}-sa-owner-group"
 
   ##
   # SERVICE NAMES AND DESCRIPTIONS
@@ -1354,8 +1358,15 @@ class FireCloudClient < Struct.new(:user, :project, :access_token, :api_root, :s
       retry_time = retry_count * RETRY_INTERVAL
       sleep(retry_time) unless RETRY_BACKOFF_BLACKLIST.include?(method_name)
       # only retry if status code indicates a possible temporary error, and we are under the retry limit and
-      # not calling a method that is blocked from retries
-      status_code = e.respond_to?(:code) ? e.code : nil
+      # not calling a method that is blocked from retries.  In case of a NoMethodError or RuntimeError, use 500 as the
+      # status code since these are unrecoverable errors
+      if e.respond_to?(:code)
+        status_code = e.code
+      elsif e.is_a?(NoMethodError) || e.is_a?(RuntimeError)
+        status_code = 500
+      else
+        status_code = nil
+      end
       if should_retry?(status_code) && retry_count < MAX_RETRY_COUNT && !ERROR_IGNORE_LIST.include?(method_name)
         execute_gcloud_method(method_name, current_retry, *params)
       else

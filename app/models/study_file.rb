@@ -896,6 +896,24 @@ class StudyFile
     Rails.logger.info "Removal of local copy of #{self.upload_file_name} complete"
   end
 
+  # check if this file can be deleted "safely"; e.g. not being used in any running parse jobs
+  # most files just need to check if they are still parsing; cluster/metadata files need to check for subsampling
+  def can_delete_safely?
+    if self.parsing?
+      false
+    else
+      case self.file_type
+      when 'Metadata'
+        !self.study.cluster_groups.where(is_subsampling: true).any?
+      when 'Cluster'
+        cluster = ClusterGroup.find_by(study_file_id: self.id)
+        cluster.present? && !cluster.is_subsampling?
+      else
+        true
+      end
+    end
+  end
+
   ##
   #
   # MISC METHODS
@@ -1024,9 +1042,9 @@ class StudyFile
             msg = "#{Time.zone.now}: Create known cells array ##{index + 1} for #{self.name}:#{self.id} in #{study.name}"
             puts msg
             Rails.logger.info msg
-            known_cells = study.data_arrays.build(name: "#{self.name} Cells", cluster_name: self.name,
-                                                  array_type: 'cells', array_index: index + 1, values: slice,
-                                                  study_file_id: self.id, study_id: self.study_id)
+            known_cells = DataArray.new(name: "#{self.name} Cells", cluster_name: self.name, array_type: 'cells',
+                                        array_index: index + 1, values: slice, study_file_id: self.id, study_id: self.study_id,
+                                        linear_data_type: 'Study', linear_data_id: self.study_id)
             known_cells.save
           end
           msg = "#{Time.zone.now}: removing local copy of #{download_location}"

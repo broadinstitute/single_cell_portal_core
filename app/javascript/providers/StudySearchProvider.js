@@ -10,6 +10,7 @@ import {
   buildFacetsFromQueryString
 } from 'lib/scp-api'
 import SearchSelectionProvider from './SearchSelectionProvider'
+import { buildParamsFromQuery as buildGeneParamsFromQuery } from './GeneSearchProvider'
 
 const emptySearch = {
   params: {
@@ -42,13 +43,9 @@ export const StudySearchContext = React.createContext(emptySearch)
 /**
  * Count terms, i.e. space-delimited strings, and consider [""] to have 0 terms
  */
-export function getNumberOfTerms(terms) {
+export function getNumberOfTerms(splitTerms) {
   let numTerms = 0
-  if (!terms) {
-    return numTerms
-  }
-  const splitTerms = terms.split(' ')
-  if (splitTerms.length > 0 && splitTerms[0] !== '') {
+  if (splitTerms && splitTerms.length > 0 && splitTerms[0] !== '') {
     numTerms = splitTerms.length
   }
   return numTerms
@@ -107,7 +104,8 @@ export function PropsStudySearchProvider(props) {
     // reset the page to 1 for new searches, unless otherwise specified
     search.page = newParams.page ? newParams.page : 1
     search.preset = undefined // for now, exclude preset from the page URL--it's in the component props instead
-    const queryString = buildSearchQueryString('study', search)
+    const mergedParams = Object.assign(buildGeneParamsFromQuery(window.location.search), search)
+    const queryString = buildSearchQueryString('study', mergedParams)
     navigate(`?${queryString}`)
   }
 
@@ -146,6 +144,16 @@ export function PropsStudySearchProvider(props) {
   )
 }
 
+export function buildParamsFromQuery(query, preset) {
+  const queryParams = queryString.parse(query)
+  return {
+    page: queryParams.page ? parseInt(queryParams.page) : 1,
+    terms: queryParams.terms ? queryParams.terms : '',
+    facets: buildFacetsFromQueryString(queryParams.facets),
+    preset: preset ? preset : queryString.preset_search,
+    order: queryParams.order
+  }
+}
 
 /**
  * Self-contained component for providing a url-routable
@@ -154,14 +162,7 @@ export function PropsStudySearchProvider(props) {
  */
 export default function StudySearchProvider(props) {
   const location = useLocation()
-  const queryParams = queryString.parse(location.search)
-  const searchParams = {
-    page: queryParams.page ? parseInt(queryParams.page) : 1,
-    terms: queryParams.terms ? queryParams.terms : '',
-    facets: buildFacetsFromQueryString(queryParams.facets),
-    preset: props.preset ? props.preset : queryString.preset_search,
-    order: queryParams.order
-  }
+  const searchParams = buildParamsFromQuery(location.search, props.preset)
 
   return (
     <PropsStudySearchProvider searchParams={searchParams}>

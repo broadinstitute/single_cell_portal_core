@@ -14,7 +14,19 @@ module.exports = {
     ],
     'globals': {
         'Atomics': 'readonly',
-        'SharedArrayBuffer': 'readonly'
+        'SharedArrayBuffer': 'readonly',
+        '$': 'readonly',
+        'jQuery': 'readonly',
+        'd3': 'readonly',
+        'ClassicEditor': 'readonly',
+        'Spinner': 'readonly',
+        'morpheus': 'readonly',
+        'igv': 'readonly',
+        'Ideogram': 'readonly',
+        'createTracesAndLayout': 'readonly',
+        'ga': 'readonly',
+        'log': 'readonly',
+        'bamAndBaiFiles': 'readonly'
     },
     'parser': 'babel-eslint',
     'parserOptions': {

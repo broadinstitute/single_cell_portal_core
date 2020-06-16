@@ -103,9 +103,10 @@ class ParseUtils
       Rails.logger.info "#{Time.zone.now}: Processed #{@child_count} child data arrays from 10X CellRanger source data for #{study.name}"
       # create array of known cells for this expression matrix
       @barcodes.each_slice(DataArray::MAX_ENTRIES).with_index do |slice, index|
-        known_cells = study.data_arrays.build(name: "#{matrix_study_file.name} Cells", cluster_name: matrix_study_file.name,
-                                              array_type: 'cells', array_index: index + 1, values: slice,
-                                              study_file_id: matrix_study_file.id, study_id: study.id)
+        Rails.logger.info "#{Time.zone.now}: Create known cells array ##{index + 1} for #{matrix_study_file.name}:#{matrix_study_file.id} in #{study.name}"
+        known_cells = DataArray.new(study_id: study.id, name: "#{matrix_study_file.name} Cells", cluster_name: matrix_study_file.name,
+                                    array_type: 'cells', array_index: index + 1, values: slice, study_file_id: matrix_study_file.id,
+                                    linear_data_type: 'Study', linear_data_id: study.id)
         known_cells.save
       end
 
@@ -141,7 +142,7 @@ class ParseUtils
       barcodes_study_file.update(parse_status: 'parsed')
 
       # set gene count
-      study.set_gene_count
+      study.delay.set_gene_count
 
       # set the default expression label if the user supplied one
       if !study.has_expression_label? && !matrix_study_file.y_axis_label.blank?

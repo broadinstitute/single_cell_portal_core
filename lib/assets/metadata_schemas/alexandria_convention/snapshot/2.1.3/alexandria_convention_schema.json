@@ -1,5 +1,5 @@
 {
-    "$id": "https://singlecell.broadinstitute.org/single_cell/api/v1/metadata_schemas/alexandria_convention/latest/json",
+    "$id": "https://singlecell.broadinstitute.org/single_cell/api/v1/metadata_schemas/alexandria_convention/2.1.3/json",
     "$schema": "https://json-schema.org/draft-07/schema#",
     "dependencies": {
         "cell_type__custom": [

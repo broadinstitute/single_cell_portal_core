@@ -333,12 +333,11 @@ class UserAnnotation
         if !data_array.subsample_annotation.nil?
           Rails.logger.info "#{Time.zone.now}: Creating new data array for #{annot_name} in study: #{data_array.study.name}, cluster: #{cluster.name} at subsample_threshold #{data_array.subsample_threshold}"
           subsample_annotation = annot_name + '--group--cluster'
-          new_data_array = cluster.data_arrays.build(
-              name: data_array.name, cluster_name: cluster.name, array_type: data_array.array_type,
-              array_index: data_array.array_index, values: data_array.values,
-              subsample_annotation: subsample_annotation, subsample_threshold: data_array.subsample_threshold,
-              study_id: cluster.study_id, study_file_id: cluster.study_file_id
-          )
+          new_data_array = DataArray.new(name: data_array.name, cluster_name: cluster.name, array_type: data_array.array_type,
+                                         array_index: data_array.array_index, values: data_array.values,
+                                         subsample_annotation: subsample_annotation, subsample_threshold: data_array.subsample_threshold,
+                                         study_id: cluster.study_id, study_file_id: cluster.study_file_id,
+                                         linear_data_type: 'ClusterGroup', linear_data_id: cluster.id)
           if new_data_array.save
             Rails.logger.info "#{Time.zone.now}: Data Array for #{annot_name} created in study: #{data_array.study.name}, cluster: #{cluster.name}"
           else
@@ -347,11 +346,10 @@ class UserAnnotation
         else
           if data_array.array_type == 'annotations'
             Rails.logger.info "#{Time.zone.now}: Creating data array for #{annot_name} in study: #{data_array.study.name}, cluster: #{cluster.name}"
-            new_data_array = cluster.data_arrays.build(
-                name: data_array.name, cluster_name: cluster.name, array_type: data_array.array_type,
-                array_index: data_array.array_index, values: data_array.values,
-                study_id: cluster.study_id, study_file_id: cluster.study_file_id
-            )
+            new_data_array = DataArray.new(name: data_array.name, cluster_name: cluster.name, array_type: data_array.array_type,
+                                           array_index: data_array.array_index, values: data_array.values,
+                                           study_id: cluster.study_id, study_file_id: cluster.study_file_id,
+                                           linear_data_type: 'ClusterGroup', linear_data_id: cluster.id)
             if new_data_array.save
               Rails.logger.info "#{Time.zone.now}: Data Array for #{annot_name} created in study: #{data_array.study.name}, cluster: #{cluster.name}"
             else

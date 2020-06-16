@@ -72,7 +72,7 @@ class UserAssetService
   # * *returns*
   #   - +Array<String>+ => Array of filenames
   def self.get_directory_entries(pathname = Dir.pwd)
-    Dir.entries(pathname).keep_if {|entry| !entry.start_with?('.')}
+    Dir.exists?(pathname) ? Dir.entries(pathname).keep_if {|entry| !entry.start_with?('.')} : []
   end
   
   # get a list of all local assets; can scope by asset type

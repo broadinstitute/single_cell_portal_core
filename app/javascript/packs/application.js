@@ -30,42 +30,32 @@ import ClassicEditor from '@ckeditor/ckeditor5-build-classic'
 // Below import resolves to '/app/javascript/components/HomePageContent.js'
 import HomePageContent from 'components/HomePageContent'
 import Covid19PageContent from 'components/covid19/Covid19PageContent'
-import { logPageView, logClick } from 'lib/metrics-api'
+import { logPageView, logClick, log } from 'lib/metrics-api'
 import createTracesAndLayout from 'lib/kernel-functions'
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('home-page-content')) {
-    // Logs only page views for faceted search UI
-    //
-    // If/when Mixpanel is extended beyond home page, remove study name from
-    // appPath in metrics-api.js at least for non-public studies to align with
-    // Terra on identifiable data that we want to omit from this logging.
-    logPageView()
+  // Logs only page views for faceted search UI
+  logPageView()
 
+  $(document).on('click', 'body', event => {
+    logClick(event)
+  })
+
+  if (document.getElementById('home-page-content')) {
     ReactDOM.render(
       <HomePageContent />, document.getElementById('home-page-content')
     )
-
-    // Only logs clicks for home page with faceted search UI
-    $(document).on('click', 'body', event => {
-      logClick(event)
-    })
   }
   if (document.getElementById('covid19-page-content')) {
-    logPageView()
-
     ReactDOM.render(
       <Covid19PageContent />, document.getElementById('covid19-page-content')
     )
-
-    // Only logs clicks for home page with faceted search UI
-    $(document).on('click', 'body', event => {
-      logClick(event)
-    })
   }
 })
 
 // SCP expects these variables to be global.
+//
+// If adding a new variable here, also add it to .eslintrc.js
 window.$ = $
 window.jQuery = $
 window.ClassicEditor = ClassicEditor
@@ -74,6 +64,7 @@ window.morpheus = morpheus
 window.igv = igv
 window.Ideogram = Ideogram
 window.createTracesAndLayout = createTracesAndLayout
+window.log = log
 
 /*
  * For down the road, when we use ES6 imports in SCP JS app code

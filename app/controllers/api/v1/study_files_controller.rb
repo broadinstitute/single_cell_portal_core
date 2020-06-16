@@ -360,11 +360,17 @@ module Api
           response 410 do
             key :description, ApiBaseController.resource_gone
           end
+          response 423 do
+            key :description, ApiBaseController.resource_locked(StudyFile)
+          end
         end
       end
 
       # DELETE /single_cell/api/v1/studies/:study_id/study_files/:id
       def destroy
+        if !@study_file.can_delete_safely?
+          render json: {error: 'Requested file is being used in active parse job'}, status: 423 and return
+        end
         human_data = @study_file.human_data # store this reference for later
         # delete matching caches
         @study_file.invalidate_cache_by_file_type

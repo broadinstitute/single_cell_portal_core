@@ -91,9 +91,9 @@ class BulkDownloadService
     # replace 'Expression' with both dense & sparse matrix file types
     requested_files = get_requested_files(file_types: file_types, study_accessions: study_accessions)
     files_by_type = {}
-    requested_types = requested_files.map(&:bulk_download_type).uniq
+    requested_types = requested_files.map(&:simplified_file_type).uniq
     requested_types.each do |req_type|
-      files = requested_files.select {|file| file.bulk_download_type == req_type}
+      files = requested_files.select {|file| file.simplified_file_type == req_type}
       files_by_type[req_type] = {total_files: files.size, total_bytes: files.map(&:upload_file_size).reduce(:+)}
     end
     files_by_type

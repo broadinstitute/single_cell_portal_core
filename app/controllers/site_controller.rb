@@ -310,7 +310,7 @@ class SiteController < ApplicationController
     @directories = @study.directory_listings.are_synced
     @primary_data = @study.directory_listings.primary_data
     @other_data = @study.directory_listings.non_primary_data
-    @unique_genes = @study.genes.unique_genes
+    @unique_genes = @study.unique_genes
 
     # double check on download availability: first, check if administrator has disabled downloads
     # then check individual statuses to see what to enable/disable
@@ -2151,12 +2151,7 @@ class SiteController < ApplicationController
 
   # sanitize search values
   def sanitize_search_values(terms)
-    if terms.is_a?(Array)
-      sanitized = terms.map {|t| view_context.sanitize(t)}
-      sanitized.join(',')
-    else
-      view_context.sanitize(terms)
-    end
+    RequestUtils.sanitize_search_terms(terms)
   end
 
   ###

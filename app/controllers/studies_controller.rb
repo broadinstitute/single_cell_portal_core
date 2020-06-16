@@ -687,9 +687,8 @@ class StudiesController < ApplicationController
           @study.default_options[:cluster] = @study_file.name
           @study.save
         end
+        old_name = @cluster.name.dup
         @cluster.update(name: @study_file.name)
-        # also update data_arrays
-        @cluster.data_arrays.update_all(cluster_name: @study_file.name)
       elsif ['Expression Matrix', 'MM Coordinate Matrix'].include?(study_file_params[:file_type]) && !study_file_params[:y_axis_label].blank?
         # if user is supplying an expression axis label, update default options hash
         @study.update(default_options: @study.default_options.merge(expression_label: study_file_params[:y_axis_label]))
@@ -828,7 +827,7 @@ class StudiesController < ApplicationController
     @study_file = StudyFile.find(params[:study_file_id])
     @message = ""
     unless @study_file.nil?
-      if @study_file.parsing?
+      if !@study_file.can_delete_safely?
         render action: 'abort_delete_study_file'
       else
         human_data = @study_file.human_data # store this reference for later
@@ -1122,7 +1121,7 @@ class StudiesController < ApplicationController
     @form = "#study-file-#{@study_file.id}"
     @message = ""
     unless @study_file.nil?
-      if @study_file.parsing?
+      if !@study_file.can_delete_safely?
         render action: 'abort_delete_study_file'
       else
         begin

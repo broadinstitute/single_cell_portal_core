@@ -65,8 +65,8 @@ class ClusterGroup
   def concatenate_data_arrays(array_name, array_type, subsample_threshold=nil, subsample_annotation=nil)
     if subsample_threshold.nil?
       data_arrays = DataArray.where(name: array_name, array_type: array_type, linear_data_type: 'ClusterGroup',
-                                    cluster_name: self.name, linear_data_id: self.id, subsample_threshold: nil,
-                                    subsample_annotation: nil).order(:array_index => 'asc')
+                                    linear_data_id: self.id, subsample_threshold: nil, subsample_annotation: nil)
+                        .order(:array_index => 'asc')
       all_values = []
       data_arrays.each do |array|
         all_values += array.values
@@ -74,7 +74,7 @@ class ClusterGroup
       all_values
     else
       data_array = DataArray.find_by(name: array_name, array_type: array_type, linear_data_type: 'ClusterGroup',
-                                     cluster_name: self.name, linear_data_id: self.id, subsample_threshold: subsample_threshold,
+                                     linear_data_id: self.id, subsample_threshold: subsample_threshold,
                                      subsample_annotation: subsample_annotation)
       if data_array.nil?
         # rather than returning [], default to the full resolution array
@@ -332,11 +332,14 @@ class ClusterGroup
     SUBSAMPLE_THRESHOLDS.select {|sample| sample < self.points}
   end
 
+  # getter method to return Mongoid::Criteria for all data arrays belonging to this cluster
+  def find_all_data_arrays
+    DataArray.where(study_id: self.study_id, study_file_id: self.study_file_id, linear_data_type: 'ClusterGroup', linear_data_id: self.id)
+  end
+
   # find all 'subsampled' data arrays
   def find_subsampled_data_arrays
-    DataArray.where(study_id: self.study_id, study_file_id: self.study_file_id, linear_data_type: 'ClusterGroup',
-                    linear_data_id: self.id, :subsample_threshold.nin => [nil],
-                    :subsample_annotation.nin => [nil])
+    self.find_all_data_arrays.where(:subsample_threshold.nin => [nil], :subsample_annotation.nin => [nil])
   end
 
   # control gate for invoking subsampling

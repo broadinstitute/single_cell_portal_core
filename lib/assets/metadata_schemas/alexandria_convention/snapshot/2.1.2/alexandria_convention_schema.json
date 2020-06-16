@@ -1,5 +1,5 @@
 {
-    "$id": "https://singlecell.broadinstitute.org/single_cell/api/v1/metadata_schemas/alexandria_convention/latest/json",
+    "$id": "https://singlecell.broadinstitute.org/single_cell/api/v1/metadata_schemas/alexandria_convention/2.1.2/json",
     "$schema": "https://json-schema.org/draft-07/schema#",
     "dependencies": {
         "cell_type__custom": [
@@ -203,7 +203,7 @@
         },
         "cell_type__custom": {
             "description": "cell_type__custom",
-            "enum": ["Astrocyte", "Bergmann", "Choroid", "Endothelial mural", "Endothelial stalk", "Ependymal", "Fibroblast", "Golgi", "Granule", "Molecular layer interneuron 1 (MLI1)", "Molecular layer interneuron 2 (MLI2)", "Macrophage", "Microglia", "Oligodendrocyte (ODC)", "Oligodendrocyte precursor cell (OPC)", "Purkinje layer interneuron (PLI)", "Purkinje", "Unipolar brush cell (UBC)"],
+            "enum": ["Astrocyte", "Bergmann", "Choroid", "Endothelial mural", "Endothelial stalk", "Ependymal", "Fibroblast", "Golgi", "Granule", "Molecular layer interneuron 1 (MLI1)", "Molecular layer interneuron 2 (MLI2)", "Macrophage", "Microglia", "Oligodendrocyte (ODC)", "Oligodendrocyte progenitor cell (OPC)", "Purkinje layer interneuron (PLI)", "Purkinje", "Unipolar brush cell (UBC)"],
             "type": "string"
         },
         "cell_type__ontology_label": {

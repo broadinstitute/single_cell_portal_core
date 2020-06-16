@@ -246,7 +246,7 @@ class IngestJob
         SearchFacet.delay.update_all_facet_filters
       end
     when /Matrix/
-      self.study.set_gene_count
+      self.study.delay.set_gene_count
     when 'Cluster'
       self.set_study_default_options
       self.launch_subsample_jobs
@@ -345,6 +345,7 @@ class IngestJob
     when :ingest_subsample
       cluster_group = ClusterGroup.find_by(study_id: self.study.id, study_file_id: self.study_file.id)
       if cluster_group.is_subsampling? && cluster_group.find_subsampled_data_arrays.any?
+        Rails.logger.info "Setting subsampled flags for #{self.study_file.upload_file_name}:#{self.study_file.id} (#{cluster_group.name}) for visualization"
         cluster_group.update(subsampled: true, is_subsampling: false)
       end
     end
@@ -418,6 +419,12 @@ class IngestJob
           end
         end
         message << "Total points in cluster: #{cluster.points}"
+        # notify user that subsampling is about to run and inform them they can't delete cluster/metadata files
+        if cluster.can_subsample? && self.study.metadata_file.present?
+          message << "This cluster file will now be processed to compute representative subsamples for visualization."
+          message << "You will receive an additional email once this has completed."
+          message << "While subsamples are being computed, you will not be able to remove this cluster file or your metadata file."
+        end
       else
         message << "Subsampling has completed for #{cluster.name}"
         message << "Subsamples generated: #{cluster.subsample_thresholds_required.join(', ')}"

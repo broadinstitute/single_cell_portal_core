@@ -22,6 +22,7 @@
         } else {
             $('#generic-modal-title').html("Saving... Please Wait");
             ga('send', 'event', 'engaged_user_action', 'create_custom_cell_annotation');
+            log('create-custom-cell-annotation');
             launchModalSpinner('#generic-modal-spinner', '#generic-modal', function() {
                 var form = $('#selection-well > form');
                 form.submit();

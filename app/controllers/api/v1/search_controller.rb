@@ -186,7 +186,7 @@ module Api
         # if search params are present, filter accordingly
         if params[:terms].present?
           sort_type = :keyword
-          @search_terms = sanitize_search_values(params[:terms])
+          @search_terms = RequestUtils.sanitize_search_terms params[:terms]
           # determine if search values contain possible study accessions
           possible_accessions = StudyAccession.sanitize_accessions(@search_terms.split)
           # determine query case based off of search terms (either :keyword or :phrase)

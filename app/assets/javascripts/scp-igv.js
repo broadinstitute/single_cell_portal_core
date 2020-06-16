@@ -1,3 +1,6 @@
+/* eslint-disable no-invalid-this */
+/* eslint-disable guard-for-in */
+
 /**
  * @fileoverview Functions and event handlers for igv.js genome browser.
  * Provides a way to view nucleotide sequencing reads in genomic context.
@@ -6,90 +9,86 @@
 // Persists 'Genome' tab and IGV embed across view states.
 // Ensures that IGV doesn't disappear when user clicks 'Browse in genome' in
 // default view, then searches a gene.
-window.hasDisplayedIgv = false;
+window.hasDisplayedIgv = false
 
-window.bamsToViewInIgv = [];
-window.selectedBams = {};
-
-window.genomeAssemblyInView = '';
+const bamsToViewInIgv = []
+const selectedBams = {}
 
 /**
  * Upon clicking 'Browse in genome', show selected BAM in igv.js in Genome tab.
  */
 $(document).on('click', '.bam-browse-genome', function(e) {
-  var selectedBam, thisBam, url, i;
+  let thisBam; let url; let i
 
-  selectedBam = $(this).attr('data-filename');
+  const selectedBam = $(this).attr('data-filename')
 
   // bamAndBaiFiles assigned in _genome.html.erb
   for (i = 0; i < bamAndBaiFiles.length; i++) {
-    url = bamAndBaiFiles[i].url;
+    url = bamAndBaiFiles[i].url
     if (typeof url === 'undefined' || url === '?alt=media') {
       // Accounts for "Awaiting remote file"
-      continue;
+      continue
     }
-    thisBam = url.split('\/o/')[1].split('?')[0];
+    thisBam = url.split('/o/')[1].split('?')[0]
     if (thisBam === selectedBam && selectedBam in selectedBams === false) {
-      bamsToViewInIgv.push(bamAndBaiFiles[i]);
+      bamsToViewInIgv.push(bamAndBaiFiles[i])
     }
-    selectedBams[thisBam] = 1;
+    selectedBams[thisBam] = 1
   }
 
-  $('#study-visualize-nav > a').click();
-  $('#genome-tab-nav > a').click();
-});
+  $('#study-visualize-nav > a').click()
+  $('#genome-tab-nav > a').click()
+})
 
-$(document).on('click', '#genome-tab-nav', function (e) {
-  var currentScroll = $(window).scrollTop();
-  window.location.hash = '#genome-tab';
-  window.scrollTo(0, currentScroll);
-});
+$(document).on('click', '#genome-tab-nav', e => {
+  const currentScroll = $(window).scrollTop()
+  window.location.hash = '#genome-tab'
+  window.scrollTo(0, currentScroll)
+})
 
-$(document).on('click', '#plots-tab-nav', function (e) {
-    var currentScroll = $(window).scrollTop();
-    window.location.hash = '#study-visualize';
-    window.scrollTo(0, currentScroll);
-});
+$(document).on('click', '#plots-tab-nav', e => {
+  const currentScroll = $(window).scrollTop()
+  window.location.hash = '#study-visualize'
+  window.scrollTo(0, currentScroll)
+})
 
 /**
  * Get tracks for selected BAM files, to show sequencing reads
  */
 function getBamTracks() {
-  var bam, bamTrack, bamTracks, i, bamFileName;
+  let bam; let bamTrack; let i; let bamFileName
 
-  bamTracks = [];
+  const bamTracks = []
 
   for (i = 0; i < bamsToViewInIgv.length; i++) {
-    bam = bamsToViewInIgv[i];
+    bam = bamsToViewInIgv[i]
 
     // Extracts BAM file name from its GCS API URL
-    bamFileName = bam.url.split('/o/')[1].split('?')[0];
+    bamFileName = bam.url.split('/o/')[1].split('?')[0]
 
     bamTrack = {
       url: bam.url,
       indexURL: bam.indexUrl,
-      oauthToken: accessToken,
+      oauthToken: window.accessToken,
       label: bamFileName
-    };
-    bamTracks.push(bamTrack);
+    }
+    bamTracks.push(bamTrack)
   }
 
-  return bamTracks;
+  return bamTracks
 }
 
 /**
  * Gets the track of genes and transcripts from the genome's BED file
  */
 function getGenesTrack(genome, genesTrackName) {
-  var gtfFile, genesTrack;
-
   // gtfFiles assigned in _genome.html.erb
-  gtfFile = gtfFiles[genome].genome_annotations;
+  const gtfFile = window.gtfFiles[genome].genome_annotations
 
-  genesTrack = {
+  const genesTrack = {
     name: genesTrackName,
-    url: gtfFile.url + '?alt=media',
-    indexURL: gtfFile.indexUrl + '?alt=media',
+    url: `${gtfFile.url}?alt=media`,
+    indexURL: `${gtfFile.indexUrl}?alt=media`,
     type: 'annotation',
     format: 'gtf',
     sourceType: 'file',
@@ -97,85 +96,104 @@ function getGenesTrack(genome, genesTrackName) {
     order: 0,
     visibilityWindow: 300000000,
     displayMode: 'EXPANDED',
-    oauthToken: accessToken // Assigned in _genome.html.erb
-  };
+    oauthToken: window.accessToken // Assigned in _genome.html.erb
+  }
 
-  return genesTrack;
+  return genesTrack
 }
 
 // Monkey patch getKnownGenome to remove baked-in genes track.
 // We use a different gene annotation source, in a different track order,
 // so removing this default gives our genome browser instance a more
 // polished feel.
-var originalGetKnownGenomes = igv.GenomeUtils.getKnownGenomes;
-igv.GenomeUtils.getKnownGenomes = function () {
-  return originalGetKnownGenomes.apply(this).then(function(reference) {
-    var key,
-        newRef = {};
-    newRef['GRCm38'] = reference['mm10']; // Fix name
+const originalGetKnownGenomes = igv.GenomeUtils.getKnownGenomes
+igv.GenomeUtils.getKnownGenomes = function() {
+  return originalGetKnownGenomes.apply(this).then(reference => {
+    let key
+    const newRef = {}
+    newRef['GRCm38'] = reference['mm10'] // Fix name
     for (key in reference) {
-      delete reference[key].tracks;
-      newRef[key] = reference[key];
+      delete reference[key].tracks
+      newRef[key] = reference[key]
     }
-    return newRef;
+    return newRef
   })
-};
+}
 
 function igvIsDisplayed() {
-  return $('.igv-root-div').length > 0;
+  return $('.igv-root-div').length > 0
 }
 
 /**
  * Instantiates and renders igv.js widget on the page
  */
 function initializeIgv() {
-  var igvContainer, igvOptions, tracks, genome, genesTrack, bamTracks,
-    genesTrackName, genes, locus;
-
   // Bail if already displayed
-  if (igvIsDisplayed()) return;
+  if (igvIsDisplayed()) return
 
-  delete igv.browser;
+  delete igv.browser
 
   if (bamsToViewInIgv.includes(bamAndBaiFiles[0]) === false) {
-    bamsToViewInIgv.push(bamAndBaiFiles[0]);
+    bamsToViewInIgv.push(bamAndBaiFiles[0])
   }
 
-  igvContainer = document.getElementById('igv-container');
+  const igvContainer = document.getElementById('igv-container')
 
-  genes = $('.queried-gene');
-  locus = (genes.length === 0) ? ['myc'] : [genes.first().text()];
+  const genes = $('.queried-gene')
 
-  genome = bamsToViewInIgv[0].genomeAssembly;
-  genesTrackName = 'Genes | ' + bamsToViewInIgv[0].genomeAnnotation.name;
-  genesTrack = getGenesTrack(genome, genesTrackName);
-  bamTracks = getBamTracks();
-  tracks = [genesTrack].concat(bamTracks);
+  const genomeId = bamsToViewInIgv[0].genomeAssembly
 
-  igvOptions = {genome: genome, locus: locus, tracks: tracks};
+  let reference
+  let locus
+  if (genomeId === 'Macaca_fascicularis_5.0') {
+    locus = ['chr1:1-2']
 
-  igv.createBrowser(igvContainer, igvOptions);
+    // To consider:
+    //  - Update genomes pipeline to make such files automatically reproducible
+    const genomeAnnotationObj = bamsToViewInIgv[0].genomeAnnotation
+    const genomePath = `${genomeAnnotationObj.link.split('/').slice(0, -2).join('%2F')}%2F`
+    const bucket = genomeAnnotationObj.bucket_id
+    const gcsBase = 'https://www.googleapis.com/storage/v1/b/'
+    const macacaFascicularisBase = `${gcsBase + bucket}/o/${genomePath}`
+
+    reference = {
+      id: genomeId,
+      cytobandURL: `${macacaFascicularisBase}macaca-fascicularis-cytobands.txt?alt=media`,
+      fastaURL: `${macacaFascicularisBase}Macaca_fascicularis.Macaca_fascicularis_5.0.dna.toplevel.fa?alt=media`,
+      indexURL: `${macacaFascicularisBase}Macaca_fascicularis.Macaca_fascicularis_5.0.dna.toplevel.fa.fai?alt=media`
+    }
+  } else {
+    locus = (genes.length === 0) ? ['myc'] : [genes.first().text()]
+    reference = genomeId
+  }
+  const genesTrackName = `Genes | ${bamsToViewInIgv[0].genomeAnnotation.name}`
+  const genesTrack = getGenesTrack(genomeId, genesTrackName)
+  const bamTracks = getBamTracks()
+  const tracks = [genesTrack].concat(bamTracks)
+
+  const igvOptions = { reference, locus, tracks }
+
+  igv.createBrowser(igvContainer, igvOptions)
 
   // Log igv.js initialization in Google Analytics
-  ga('send', 'event', 'igv', 'initialize');
+  ga('send', 'event', 'igv', 'initialize')
+  log('igv:initialize')
 }
 
-$(document).on('click', '#genome-tab-nav > a', function(event) {
+$(document).on('click', '#genome-tab-nav > a', event => {
   if (typeof bamAndBaiFiles !== 'undefined') {
-    initializeIgv();
+    initializeIgv()
   }
-});
+})
 
-$(document).ready(function() {
-
+$(document).ready(() => {
   // Bail if on a page without genome visualization support
-  if (typeof accessToken === 'undefined') return;
+  if (typeof accessToken === 'undefined') return
 
   if (window.location.hash === '#genome-tab') {
-    $('#study-visualize-nav > a').click();
+    $('#study-visualize-nav > a').click()
 
     // Reload igv if refreshing
-    $('#genome-tab-nav > a').click();
+    $('#genome-tab-nav > a').click()
   }
-
-});
+})

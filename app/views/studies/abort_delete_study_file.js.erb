@@ -1,3 +1,13 @@
-alert('You cannot delete a file that is parsing.  Please wait until the parse has completed.')
+function closeOpenModal() {
+    if (OPEN_MODAL !== '') {
+        $('#' + OPEN_MODAL).modal('hide');
+    }
+}
+// delete modal may open before or after alert message, so check both times
+closeOpenModal();
 
+alert('This file is still being processed and cannot be deleted yet.  You will receive an email when all parsing and ' +
+    'optional subsampling has completed.'
+)
 
+closeOpenModal();

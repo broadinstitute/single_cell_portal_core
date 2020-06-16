@@ -11,12 +11,17 @@ See partials referenced below and scp-igv.js for larger bodies of code.
   <%= render partial: '/site/genome/ideogram' %>
   <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
     // Intercept requests to add bearer token, enabling direct load of files from GCS
+    // This was needed to load genome visualization data from GCS.
+    //
+    // TODO (SCP-2451): Remove monkey patching of fetch
     var originalFetch = window.fetch;
     window.fetch = function () {
-      var myHeaders = new Headers({
-        'Authorization': 'Bearer ' + accessToken
-      });
-      arguments[1] = {headers: myHeaders};
+      if (arguments[0].includes('https://www.googleapis.com')) {
+        var myHeaders = new Headers({
+          'Authorization': 'Bearer ' + accessToken
+        });
+        arguments[1] = {headers: myHeaders};
+      }
       return originalFetch.apply(this, arguments)
     };
   </script>

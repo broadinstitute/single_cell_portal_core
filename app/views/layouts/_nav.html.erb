@@ -22,7 +22,7 @@
           <li><%= scp_link_to "<span class='fas fa-fw fa-lock'></span> Privacy Policy".html_safe, privacy_policy_path, class: 'check-upload' %></li>
           <li><%= scp_link_to "<span class='fas fa-fw fa-balance-scale'></span> Terms of Service".html_safe, terms_of_service_path, class: 'check-upload' %></li>
           <li><%= link_to "<span class='fas fa-fw fa-info-circle'></span> Documentation/Wiki".html_safe, 'https://github.com/broadinstitute/single_cell_portal/wiki', target: '_blank' %></li>
-          <li><%= link_to "<span class='fas fa-fw fa-exclamation-circle'></span> Issues".html_safe, 'https://github.com/broadinstitute/single_cell_portal/issues', target: '_blank' %></li>
+          <li><%= link_to "<span class='fas fa-fw fa-envelope'></span> Contact Us".html_safe, '#', id: 'open-contact-modal' %></li>
           <li><%= link_to "<span class='fab fa-fw fa-github'></span> Portal Source Code".html_safe, 'https://github.com/broadinstitute/single_cell_portal_core', target: '_blank' %></li>
           <li><%= link_to "<span class='fas fa-fw fa-code'></span> REST API Documentation".html_safe, api_swagger_ui_engine_path, target: '_blank' %></li>
 				</ul>
@@ -75,3 +75,12 @@
     <% end %>
   <% end %>
 </nav>
+
+<script type='text/javascript' nonce="<%= content_security_policy_script_nonce %>">
+    $('#open-contact-modal').on('click', function() {
+        $('#generic-update-target').html("<%= escape_javascript(render partial: '/layouts/generic_update_modal') %>");
+        $('#generic-update-modal-title').html("<span class='h2'>Need Help?</span>");
+        $('#generic-update-modal-body').html("<%= escape_javascript(render partial: '/layouts/contact_us') %>");
+        $("#generic-update-modal").modal("show");
+    });
+</script>

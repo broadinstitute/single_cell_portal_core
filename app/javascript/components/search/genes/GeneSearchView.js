@@ -1,76 +1,15 @@
 import React, { useContext, useState, useEffect } from 'react'
-import _clone from 'lodash/clone'
-import { faPlusSquare, faMinusSquare, faTimes, faSearch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import Button from 'react-bootstrap/lib/Button'
-import Modal from 'react-bootstrap/lib/Modal'
+import { faPlusSquare, faMinusSquare } from '@fortawesome/free-solid-svg-icons'
 
 import { GeneSearchContext } from 'providers/GeneSearchProvider'
+import GeneKeyword from './GeneKeyword'
 import { hasSearchParams, StudySearchContext } from 'providers/StudySearchProvider'
 import SearchPanel from 'components/search/controls/SearchPanel'
-import StudyResultsPanel from 'components/search/results/ResultsPanel'
-import SearchQueryDisplay from 'components/search/results/SearchQueryDisplay'
-import GeneResultsPanel from './GeneResultsPanel'
+import ResultsPanel from 'components/search/results/ResultsPanel'
+import StudyGeneExpressions from './StudyGeneExpressions'
 import { FeatureFlagContext } from 'providers/FeatureFlagProvider'
 
-/** renders the gene text input
-  * This is split into its own component both for modularity, and also because
-  * having it inlined in GeneSearchView led to a mysterious infinite-repaint bug in StudyResults
-  */
-function GeneKeyword({placeholder}) {
-  const featureFlagState = useContext(FeatureFlagContext)
-  const geneSearchState = useContext(GeneSearchContext)
-  const studySearchState = useContext(StudySearchContext)
-  const [genes, setGenes] = useState(_clone(geneSearchState.params.genes))
-  const [showEmptySearchModal, setShowEmptySearchModal] = useState(false)
-
-  const showClear = genes && genes.length
-
-
-  /** handles a user submitting a gene search */
-  function handleSubmit(event) {
-    event.preventDefault()
-    if (genes && genes.length) {
-      geneSearchState.updateSearch({ genes }, studySearchState, featureFlagState.gene_study_filter)
-    } else {
-      setShowEmptySearchModal(true)
-    }
-  }
-
-  return  (
-    <form className="gene-keyword-search form-horizontal" onSubmit={ handleSubmit }>
-      <div className="input-group">
-        <input type="text"
-          className="form-control"
-          value={genes}
-          size="50"
-          onChange={ e => setGenes(e.target.value) }
-          placeholder={ placeholder }
-          name="genesText"/>
-        <div className="input-group-append">
-          <Button type="submit">
-            <FontAwesomeIcon icon={ faSearch } />
-          </Button>
-        </div>
-        { showClear &&
-          <Button className="keyword-clear"
-                  type='button'
-                  onClick={ e => setGenes('') } >
-            <FontAwesomeIcon icon={ faTimes } />
-          </Button> }
-      </div>
-      <Modal
-        show={showEmptySearchModal}
-        onHide={() => {setShowEmptySearchModal(false)}}
-        animation={false}
-        bsSize='small'>
-        <Modal.Body className="text-center">
-          You must enter at least one gene to search
-        </Modal.Body>
-      </Modal>
-    </form>
-  )
-}
 
 /**
   * Renders a gene search control panel and the associated results
@@ -84,28 +23,21 @@ export default function GeneSearchView() {
   const [showStudyControls, setShowStudyControls] = useState(hasSearchParams(studySearchState.params))
 
 
-  let resultsContent
   const showStudySearchResults = !geneSearchState.isLoaded &&
                                  !geneSearchState.isLoading &&
                                  !geneSearchState.isError
-  if (showStudySearchResults) {
-    // we haven't tried a gene search yet, just show studies
-    resultsContent = <StudyResultsPanel/>
-  } else {
-    resultsContent = <GeneResultsPanel/>
-  }
 
   let geneSearchPlaceholder = 'Search for genes across all studies'
   if (hasSearchParams(studySearchState.params) && featureFlagState.gene_study_filter) {
-    geneSearchPlaceholder = 'Search for genes in the filtered studies';
+    geneSearchPlaceholder = 'Search for genes in the filtered studies'
   }
 
   useEffect(() => {
-    // if a study  search isn't already happening, perform one
+    // if a search isn't already happening, perform one
     if (showStudySearchResults &&
-        !studySearchState.isLoading &&
-        !studySearchState.isLoaded) {
-      studySearchState.performSearch()
+        !geneSearchState.isLoading &&
+        !geneSearchState.isLoaded) {
+      geneSearchState.performSearch()
     }
   })
 
@@ -113,7 +45,7 @@ export default function GeneSearchView() {
     <div>
       <div className="row">
         <div className="col-md-12 col-sm-12 col-xs-12">
-           <GeneKeyword placeholder={geneSearchPlaceholder}/>
+          <GeneKeyword placeholder={geneSearchPlaceholder}/>
         </div>
       </div>
       { featureFlagState.gene_study_filter &&
@@ -127,14 +59,17 @@ export default function GeneSearchView() {
           </div>
           <div className="col-md-10">
             { showStudyControls &&
-              <SearchPanel keywordPrompt="Filter studies by keyword"
+              <SearchPanel
+                keywordPrompt="Filter studies by keyword"
                 showCommonButtons={false}
                 showDownloadButton={false}/> }
           </div>
         </div> }
       <div className="row">
         <div className="col-md-12">
-          { resultsContent }
+          <ResultsPanel
+            studySearchState={geneSearchState}
+            studyComponent={StudyGeneExpressions}/>
         </div>
         <div className="col-md-12">
           <div id="load-more-genes-target"></div>

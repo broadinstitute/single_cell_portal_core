@@ -37,22 +37,11 @@ class StudySearchService
   def self.sanitize_gene_params(genes)
     delimiter = genes.include?(',') ? ',' : ' '
     raw_genes = genes.split(delimiter)
-    gene_array = sanitize_search_values(raw_genes).split(',').map(&:strip)
+    gene_array = RequestUtils.sanitize_search_terms(raw_genes).split(',').map(&:strip)
     # limit gene search for performance reasons
     if gene_array.size > MAX_GENE_SEARCH
       gene_array = gene_array.take(MAX_GENE_SEARCH)
     end
     gene_array.map(&:strip)
-  end
-
-  # sanitize search values into a comma-delimited string
-  def self.sanitize_search_values(terms)
-    sanitizer = Rails::Html::SafeListSanitizer.new
-    if terms.is_a?(Array)
-      sanitized = terms.map {|t| sanitizer.sanitize(t)}
-      sanitized.join(',')
-    else
-      sanitizer.sanitize(terms)
-    end
   end
 end

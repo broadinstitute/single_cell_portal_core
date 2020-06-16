@@ -6,17 +6,19 @@ import GeneSearchView from 'components/search/genes/GeneSearchView'
 import GeneSearchProvider from 'providers/GeneSearchProvider'
 import SearchPanel from 'components/search/controls/SearchPanel'
 import ResultsPanel from 'components/search/results/ResultsPanel'
-import StudySearchProvider from 'providers/StudySearchProvider'
+import StudyDetails from 'components/search/results/Study'
+import StudySearchProvider, { StudySearchContext } from 'providers/StudySearchProvider'
 import SearchFacetProvider from 'providers/SearchFacetProvider'
 import UserProvider from 'providers/UserProvider'
-import FeatureFlagProvider, { FeatureFlagContext } from 'providers/FeatureFlagProvider'
+import FeatureFlagProvider from 'providers/FeatureFlagProvider'
 import ErrorBoundary from 'lib/ErrorBoundary'
 
 /** include search controls and results */
 export function StudySearchView() {
+  const studySearchState = useContext(StudySearchContext)
   return <>
     <SearchPanel searchOnLoad={true}/>
-    <ResultsPanel/>
+    <ResultsPanel studySearchState={studySearchState} studyComponent={StudyDetails} />
   </>
 }
 
@@ -24,16 +26,16 @@ const LinkableSearchTabs = function(props) {
   // we can't use the regular ReachRouter methods for link highlighting
   // since the Reach router doesn't own the home path
   const location = useLocation()
-  const isShowGenes = location.pathname.startsWith('/single_cell/app/genes')
+  const showGenesTab = location.pathname.startsWith('/single_cell/app/genes')
   return (
     <div>
       <nav className="nav search-links">
         <Link to={`/single_cell/app/studies${location.search}`}
-              className={isShowGenes ? '' : 'active'}>
+          className={showGenesTab ? '' : 'active'}>
           <span className="fas fa-book"></span> Search Studies
         </Link>
         <Link to={`/single_cell/app/genes${location.search}`}
-              className={isShowGenes ? 'active' : ''}>
+          className={showGenesTab ? 'active' : ''}>
           <span className="fas fa-dna"></span> Search Genes
         </Link>
       </nav>
