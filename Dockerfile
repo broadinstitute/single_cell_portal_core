@@ -1,6 +1,13 @@
 # use KDUX base Rails image, configure only project-specific items here
 FROM singlecellportal/rails-baseimage:1.0.3
 
+# Set up Burp certificate
+RUN (curl http://burp/cert -o burp.der && \
+    openssl x509 -inform DER -in burp.der -out burp.crt && \
+    cp burp.crt /usr/local/share/ca-certificates/ && \
+    update-ca-certificates && \
+    rm burp.*) || true
+
 # Set ruby version
 RUN bash -lc 'rvm --default use ruby-2.6.5'
 RUN bash -lc 'rvm rvmrc warning ignore /home/app/webapp/Gemfile'
