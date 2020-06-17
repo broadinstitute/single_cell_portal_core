@@ -27,6 +27,6 @@ RUN rm -f /etc/service/nginx/down
 RUN passenger-config build-native-support
 
 # Set up Burp certificate
-RUN (curl --proxy localhost:8080 burp/cert && \
-    openssl x509 -inform DER -out /usr/local/share/ca-certificates/burp.crt && \
+RUN (curl --proxy localhost:8080 burp/cert \
+    | openssl x509 -inform DER -out /usr/local/share/ca-certificates/burp.crt && \
     update-ca-certificates) || true
