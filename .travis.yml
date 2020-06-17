@@ -10,17 +10,17 @@ branches:
 services:
   - docker
 before_install:
-  # - gem uninstall -v '>= 2' -i $(rvm gemdir)@global -ax bundler || true
-  # - gem install bundler -v '< 2'
-  # - sudo apt-get update && sudo apt-get -y install curl unzip jq
-  # - sudo curl -O https://releases.hashicorp.com/vault/1.0.1/vault_1.0.1_linux_amd64.zip
-  # - sudo unzip vault_1.0.1_linux_amd64.zip
-  # - sudo mv vault /usr/local/bin
+  - gem uninstall -v '>= 2' -i $(rvm gemdir)@global -ax bundler || true
+  - gem install bundler -v '< 2'
+  - sudo apt-get update && sudo apt-get -y install curl unzip jq
+  - sudo curl -O https://releases.hashicorp.com/vault/1.0.1/vault_1.0.1_linux_amd64.zip
+  - sudo unzip vault_1.0.1_linux_amd64.zip
+  - sudo mv vault /usr/local/bin
   - bin/burp_start.sh "${BURP_DOCKER_IMAGE}" "${BURP_DOCKER_KEY}"
 script:
-  - docker run --rm -it alpine sh -c 'apk add curl && curl example.org && curl -k https://broadinstitute.org'
-  # - bin/load_env_secrets.sh -p secret/kdux/scp/staging/scp_config.json -s secret/kdux/scp/staging/scp_service_account.json -e test -n single-cell-portal-staging
+  # - docker run --rm -it alpine sh -c 'apk add curl && curl example.org && curl -k https://broadinstitute.org'
+  - bin/load_env_secrets.sh -p secret/kdux/scp/staging/scp_config.json -s secret/kdux/scp/staging/scp_service_account.json -e test -n single-cell-portal-staging
 after_success:
   - bin/burp_scan.sh "${BURP_DOCKER_IMAGE}"
-  - docker logs burp --tail 10
-  - curl -s localhost:8081/burp/proxy/history | jq '.messages[].url'
+  # - docker logs burp --tail 10
+  # - curl -s localhost:8081/burp/proxy/history | jq '.messages[].url'
