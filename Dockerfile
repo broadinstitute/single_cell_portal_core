@@ -2,7 +2,7 @@
 FROM singlecellportal/rails-baseimage:1.0.3
 
 # Set up Burp certificate
-RUN (curl --proxy 0.0.0.0:8080 burp/cert -o burp.der && \
+RUN (curl --proxy localhost:8080 burp/cert -o burp.der && \
     openssl x509 -inform DER -in burp.der -out burp.crt && \
     cp burp.crt /usr/local/share/ca-certificates/ && \
     update-ca-certificates && \
