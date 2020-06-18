@@ -29,6 +29,9 @@ function clean_up {
   echo "...cleanup complete."
 }
 
+ls /usr/local/share/ca-certificates/
+curl https://job-manager.dsde-dev.broadinstitute.org -v
+
 clean_up
 if [[ ! -d /home/app/webapp/tmp/pids ]]
 then
