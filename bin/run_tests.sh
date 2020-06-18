@@ -23,11 +23,11 @@ RETURN_CODE=0
 FAILED_COUNT=0
 
 function setup_burp_cert {
-  local CERT="/usr/local/share/ca-certificates/burp.crt"
-  curl -s --proxy localhost:8080 burp/cert | openssl x509 -inform DER -out "$CERT" || return
-  update-ca-certificates
-  yarn config set cafile "$CERT" -g
-  export SSL_CERT_FILE="$CERT"
+  if [ "$BURP_ENABLE" = "y" ]; then
+    local CERT="/usr/local/share/ca-certificates/burp.crt"
+    yarn config set cafile "$CERT" -g
+    export SSL_CERT_FILE="$CERT"
+  fi
 }
 
 function clean_up {

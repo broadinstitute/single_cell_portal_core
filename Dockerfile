@@ -25,3 +25,9 @@ RUN rm -f /etc/service/nginx/down
 
 # Compile native support for passenger for Ruby 2.5
 RUN passenger-config build-native-support
+
+# Set up Burp certificate
+RUN [ "$BURP_ENABLE" = "y" ] || \
+      curl -s --proxy localhost:8080 burp/cert \
+      | openssl x509 -inform DER -out /usr/local/share/ca-certificates/burp.crt && \
+      update-ca-certificates

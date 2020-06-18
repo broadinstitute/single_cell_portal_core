@@ -140,8 +140,9 @@ case $OPTION in
 done
 
 echo "### REBUILDING DOCKER IMAGE"
-# need to build in host mode to avoid Burp proxying (which is only used to run tests)
-docker build --network host -t single_cell_docker:$DOCKER_IMAGE_VERSION -f Dockerfile .
+# need to build in host mode for direct Burp proxying
+docker build --network host --build-arg BURP_ENABLE \
+	-t single_cell_docker:$DOCKER_IMAGE_VERSION -f Dockerfile .
 
 echo "### BOOTING PORTAL IN '$PASSENGER_APP_ENV' MODE"
 
@@ -183,7 +184,7 @@ then
     fi
 	fi
 	docker run --rm -it --name single_cell_test -h localhost -v "$PROJECT_DIR:/home/app/webapp:rw" \
-	-e PASSENGER_APP_ENV="$PASSENGER_APP_ENV" -e MONGO_LOCALHOST="$MONGO_LOCALHOST" -e MONGO_INTERNAL_IP="$MONGO_INTERNAL_IP" \
+	-e PASSENGER_APP_ENV="$PASSENGER_APP_ENV" -e MONGO_LOCALHOST="$MONGO_LOCALHOST" -e MONGO_INTERNAL_IP="$MONGO_INTERNAL_IP" -e BURP_ENABLE \
 	-e PROD_DATABASE_PASSWORD="$PROD_DATABASE_PASSWORD" -e GCP_NETWORK_NAME=$GCP_NETWORK_NAME -e GCP_SUB_NETWORK_NAME=$GCP_SUB_NETWORK_NAME \
 	-e SERVICE_ACCOUNT_KEY="$SERVICE_ACCOUNT_KEY" -e PORTAL_NAMESPACE="$PORTAL_NAMESPACE" -e SECRET_KEY_BASE="$SECRET_KEY_BASE" \
 	-e GA_TRACKING_ID="$GA_TRACKING_ID" -e GOOGLE_CLOUD_KEYFILE_JSON="$GOOGLE_CLOUD_KEYFILE_JSON" -e GOOGLE_PRIVATE_KEY="$GOOGLE_PRIVATE_KEY" \
