@@ -31,9 +31,9 @@ function clean_up {
 
 function setup_burp_cert {
   local CERT="/usr/local/share/ca-certificates/burp.crt"
-  if [ -f "$CERT" ]; then
-    yarn config set cafile "$CERT" -g
-  fi
+  curl -s --proxy localhost:8080 burp/cert | openssl x509 -inform DER -out "$CERT" || return
+  update-ca-certificates
+  yarn config set cafile "$CERT" -g
 }
 
 clean_up
