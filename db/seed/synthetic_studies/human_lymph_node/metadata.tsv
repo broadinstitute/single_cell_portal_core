@@ -1,25 +1,25 @@
 NAME	biosample_id	biosample_type	disease	disease__ontology_label	organ	organ__ontology_label	library_preparation_protocol	library_preparation_protocol__ontology_label	donor_id	species	species__ontology_label	sex	is_living
 TYPE	group	group	group	group	group	group	group	group	group	group	group	group	group
-AD_1	AD_D06_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_2	AD_D06_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_3	AD_D06_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_4	AD_D06_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_5	AD_D06_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_6	AD_D06_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_7	AD_D06_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_8	AD_D06_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_9	AD_D06_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_10	AD_D06_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_11	AD_D06_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_12	AD_D06_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_13	AD_D06_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_14	AD_D06_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_15	AD_D06_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_16	AD_D06_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_17	AD_D06_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_18	AD_D06_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_19	AD_D06_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
-AD_20	AD_D06_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_1	AD_D06_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_2	AD_D06_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_3	AD_D06_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_4	AD_D06_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_5	AD_D06_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_6	AD_D06_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_7	AD_D06_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_8	AD_D06_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_9	AD_D06_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_10	AD_D06_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_11	AD_D06_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_12	AD_D06_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_13	AD_D06_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_14	AD_D06_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_15	AD_D06_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_16	AD_D06_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_17	AD_D06_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_18	AD_D06_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_19	AD_D06_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
+AD_20	AD_D06_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D06	NCBITaxon_9606	Homo sapiens	female	yes
 AD_21	AD_D05_03	DerivedType_Organoid	MONDO_0018076	tuberculosis	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
 AD_22	AD_D05_03	DerivedType_Organoid	MONDO_0018076	tuberculosis	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
 AD_23	AD_D05_03	DerivedType_Organoid	MONDO_0018076	tuberculosis	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
@@ -30,103 +30,103 @@ AD_27	AD_D05_03	DerivedType_Organoid	MONDO_0018076	tuberculosis	UBERON_0000029	l
 AD_28	AD_D05_03	DerivedType_Organoid	MONDO_0018076	tuberculosis	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
 AD_29	AD_D05_03	DerivedType_Organoid	MONDO_0018076	tuberculosis	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
 AD_30	AD_D05_03	DerivedType_Organoid	MONDO_0018076	tuberculosis	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_31	AD_D05_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_32	AD_D05_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_33	AD_D05_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_34	AD_D05_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_35	AD_D05_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_36	AD_D05_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_37	AD_D05_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_38	AD_D05_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_39	AD_D05_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_40	AD_D05_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_41	AD_D05_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_42	AD_D05_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_43	AD_D05_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_44	AD_D05_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_45	AD_D05_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_46	AD_D05_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_47	AD_D05_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_48	AD_D05_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_49	AD_D05_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_50	AD_D05_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
-AD_51	AD_D04_03	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_52	AD_D04_03	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_53	AD_D04_03	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_54	AD_D04_03	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_55	AD_D04_03	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_56	AD_D04_03	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_57	AD_D04_03	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_58	AD_D04_03	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_59	AD_D04_03	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_60	AD_D04_03	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_61	AD_D04_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_62	AD_D04_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_63	AD_D04_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_64	AD_D04_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_65	AD_D04_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_66	AD_D04_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_67	AD_D04_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_68	AD_D04_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_69	AD_D04_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_70	AD_D04_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_71	AD_D04_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_72	AD_D04_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_73	AD_D04_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_74	AD_D04_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_75	AD_D04_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_76	AD_D04_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_77	AD_D04_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_78	AD_D04_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_79	AD_D04_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_80	AD_D04_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
-AD_81	AD_D03_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
-AD_82	AD_D03_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
-AD_83	AD_D03_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
-AD_84	AD_D03_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
-AD_85	AD_D03_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
-AD_86	AD_D03_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
-AD_87	AD_D03_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
-AD_88	AD_D03_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
-AD_89	AD_D03_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
-AD_90	AD_D03_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
-AD_91	AD_D02_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_92	AD_D02_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_93	AD_D02_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_94	AD_D02_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_95	AD_D02_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_96	AD_D02_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_97	AD_D02_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_98	AD_D02_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_99	AD_D02_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_100	AD_D02_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_101	AD_D02_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_102	AD_D02_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_103	AD_D02_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_104	AD_D02_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_105	AD_D02_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_106	AD_D02_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_107	AD_D02_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_108	AD_D02_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_109	AD_D02_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_110	AD_D02_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
-AD_111	AD_D01_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_112	AD_D01_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_113	AD_D01_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_114	AD_D01_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_115	AD_D01_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_116	AD_D01_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_117	AD_D01_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_118	AD_D01_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_119	AD_D01_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_120	AD_D01_02	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_121	AD_D01_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_122	AD_D01_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_123	AD_D01_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_124	AD_D01_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_125	AD_D01_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_126	AD_D01_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_127	AD_D01_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_128	AD_D01_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_129	AD_D01_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
-AD_130	AD_D01_01	DerivedType_Organoid	MONDO_0000001	disease or disorder	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_31	AD_D05_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_32	AD_D05_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_33	AD_D05_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_34	AD_D05_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_35	AD_D05_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_36	AD_D05_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_37	AD_D05_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_38	AD_D05_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_39	AD_D05_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_40	AD_D05_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_41	AD_D05_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_42	AD_D05_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_43	AD_D05_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_44	AD_D05_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_45	AD_D05_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_46	AD_D05_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_47	AD_D05_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_48	AD_D05_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_49	AD_D05_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_50	AD_D05_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D05	NCBITaxon_9606	Homo sapiens	female	yes
+AD_51	AD_D04_03	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_52	AD_D04_03	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_53	AD_D04_03	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_54	AD_D04_03	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_55	AD_D04_03	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_56	AD_D04_03	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_57	AD_D04_03	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_58	AD_D04_03	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_59	AD_D04_03	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_60	AD_D04_03	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_61	AD_D04_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_62	AD_D04_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_63	AD_D04_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_64	AD_D04_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_65	AD_D04_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_66	AD_D04_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_67	AD_D04_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_68	AD_D04_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_69	AD_D04_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_70	AD_D04_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_71	AD_D04_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_72	AD_D04_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_73	AD_D04_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_74	AD_D04_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_75	AD_D04_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_76	AD_D04_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_77	AD_D04_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_78	AD_D04_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_79	AD_D04_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_80	AD_D04_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D04	NCBITaxon_9606	Homo sapiens	female	yes
+AD_81	AD_D03_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
+AD_82	AD_D03_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
+AD_83	AD_D03_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
+AD_84	AD_D03_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
+AD_85	AD_D03_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
+AD_86	AD_D03_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
+AD_87	AD_D03_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
+AD_88	AD_D03_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
+AD_89	AD_D03_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
+AD_90	AD_D03_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D03	NCBITaxon_9606	Homo sapiens	female	yes
+AD_91	AD_D02_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_92	AD_D02_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_93	AD_D02_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_94	AD_D02_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_95	AD_D02_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_96	AD_D02_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_97	AD_D02_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_98	AD_D02_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_99	AD_D02_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_100	AD_D02_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_101	AD_D02_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_102	AD_D02_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_103	AD_D02_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_104	AD_D02_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_105	AD_D02_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_106	AD_D02_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_107	AD_D02_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_108	AD_D02_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_109	AD_D02_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_110	AD_D02_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D02	NCBITaxon_9606	Homo sapiens	female	yes
+AD_111	AD_D01_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_112	AD_D01_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_113	AD_D01_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_114	AD_D01_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_115	AD_D01_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_116	AD_D01_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_117	AD_D01_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_118	AD_D01_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_119	AD_D01_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_120	AD_D01_02	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_121	AD_D01_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_122	AD_D01_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_123	AD_D01_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_124	AD_D01_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_125	AD_D01_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_126	AD_D01_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_127	AD_D01_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_128	AD_D01_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_129	AD_D01_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes
+AD_130	AD_D01_01	DerivedType_Organoid	PATO_0000461	normal	UBERON_0000029	lymph node	EFO_0009899	10X 3' v2 sequencing	AD_D01	NCBITaxon_9606	Homo sapiens	female	yes

@@ -74,7 +74,7 @@ staging:
   <<: *default
 
   # Production depends on precompilation of packs prior to booting for performance.
-  compile: true
+  compile: false
   extract_css: true
 
   public_output_path: single_cell/assets/packs
@@ -99,7 +99,7 @@ production:
   <<: *default
 
   # Production depends on precompilation of packs prior to booting for performance.
-  compile: true
+  compile: false
   extract_css: true
 
   public_output_path: single_cell/assets/packs

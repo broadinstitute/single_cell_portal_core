@@ -145,7 +145,7 @@ docker build --network host -t single_cell_docker:$DOCKER_IMAGE_VERSION -f Docke
 
 echo "### BOOTING PORTAL IN '$PASSENGER_APP_ENV' MODE"
 
-if [[ "$PASSENGER_APP_ENV" = "production" ]]
+if [[ "$PASSENGER_APP_ENV" = "production" || "$PASSENGER_APP_ENV" = "staging" ]]
 then
 	# generate random secret key for secure cookies
 	docker run -d --name "$CONTAINER_NAME" -p 80:80 -p 443:443 -h "$PROD_HOSTNAME" -v "$PROJECT_DIR:/home/app/webapp:rw" \
@@ -157,7 +157,7 @@ then
 	    -e SENDGRID_PASSWORD="$SENDGRID_PASSWORD" -e OAUTH_CLIENT_ID="$OAUTH_CLIENT_ID" -e OAUTH_CLIENT_SECRET="$OAUTH_CLIENT_SECRET" \
 	    -e TCELL_AGENT_APP_ID="$TCELL_AGENT_APP_ID" -e TCELL_AGENT_API_KEY="$TCELL_AGENT_API_KEY" -e SENTRY_DSN="$SENTRY_DSN" \
 	    -e GA_TRACKING_ID="$GA_TRACKING_ID" -e GOOGLE_CLOUD_PROJECT="$GOOGLE_CLOUD_PROJECT" -e NEWRELIC_AGENT_ID="$NEWRELIC_AGENT_ID" single_cell_docker:$DOCKER_IMAGE_VERSION
-elif [[ "$PASSENGER_APP_ENV" = "staging" || "$PASSENGER_APP_ENV" = "pentest" ]]
+elif [[ "$PASSENGER_APP_ENV" = "pentest" ]]
 then
 	docker run -d --name "$CONTAINER_NAME" -p 80:80 -p 443:443 -h "$PROD_HOSTNAME" -v "$PROJECT_DIR:/home/app/webapp:rw" \
 	    -v "$PROJECT_DIR/log/nginx:/var/log/nginx:rw" -v "$PROJECT_DIR/data:/home/app/webapp/data:rw" \
