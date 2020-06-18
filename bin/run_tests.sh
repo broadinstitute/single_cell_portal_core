@@ -22,13 +22,6 @@ start=$(date +%s)
 RETURN_CODE=0
 FAILED_COUNT=0
 
-function clean_up {
-  echo "Cleaning up..."
-  bundle exec bin/rails runner -e test "Study.delete_all_and_remove_workspaces" || { echo "FAILED to delete studies and workspaces" >&2; exit 1; } # destroy all studies/workspaces to clean up any files
-  bundle exec rake RAILS_ENV=test db:purge
-  echo "...cleanup complete."
-}
-
 function setup_burp_cert {
   local CERT="/usr/local/share/ca-certificates/burp.crt"
   curl -s --proxy localhost:8080 burp/cert | openssl x509 -inform DER -out "$CERT" || return
@@ -37,8 +30,15 @@ function setup_burp_cert {
   export SSL_CERT_FILE="$CERT"
 }
 
-clean_up
+function clean_up {
+  echo "Cleaning up..."
+  bundle exec bin/rails runner -e test "Study.delete_all_and_remove_workspaces" || { echo "FAILED to delete studies and workspaces" >&2; exit 1; } # destroy all studies/workspaces to clean up any files
+  bundle exec rake RAILS_ENV=test db:purge
+  echo "...cleanup complete."
+}
+
 setup_burp_cert
+clean_up
 
 if [[ ! -d /home/app/webapp/tmp/pids ]]
 then

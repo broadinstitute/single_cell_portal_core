@@ -140,7 +140,7 @@ case $OPTION in
 done
 
 echo "### REBUILDING DOCKER IMAGE"
-# need to run it in host mode to fetch Burp certificate
+# need to run it in host mode to avoid Burp proxying (which is only used in tests)
 docker build --network host -t single_cell_docker:$DOCKER_IMAGE_VERSION -f Dockerfile .
 
 echo "### BOOTING PORTAL IN '$PASSENGER_APP_ENV' MODE"
