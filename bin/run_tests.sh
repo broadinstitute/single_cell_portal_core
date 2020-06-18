@@ -29,10 +29,16 @@ function clean_up {
   echo "...cleanup complete."
 }
 
-ls /usr/local/share/ca-certificates/
-curl https://job-manager.dsde-dev.broadinstitute.org -v
+function setup_burp_cert {
+  local CERT="/usr/local/share/ca-certificates/burp.crt"
+  if [ -f "$CERT" ]; then
+    yarn config set cafile "$CERT" -g
+  fi
+}
 
 clean_up
+setup_burp_cert
+
 if [[ ! -d /home/app/webapp/tmp/pids ]]
 then
     echo "*** MAKING tmp/pids DIR ***"
