@@ -34,6 +34,7 @@ function setup_burp_cert {
   curl -s --proxy localhost:8080 burp/cert | openssl x509 -inform DER -out "$CERT" || return
   update-ca-certificates
   yarn config set cafile "$CERT" -g
+  export SSL_CERT_FILE="$CERT"
 }
 
 clean_up
