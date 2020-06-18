@@ -27,6 +27,7 @@ function setup_burp_cert {
     local CERT="/usr/local/share/ca-certificates/burp.crt"
     yarn config set cafile "$CERT" -g
     export SSL_CERT_FILE="$CERT"
+    export SSL_CERT_DIR="$(dirname $CERT)"
   fi
 }
 
@@ -39,6 +40,9 @@ function clean_up {
 
 setup_burp_cert
 clean_up
+
+echo SSL_CERT_FILE=$SSL_CERT_FILE
+echo SSL_CERT_DIR=$SSL_CERT_DIR
 
 if [[ ! -d /home/app/webapp/tmp/pids ]]
 then
