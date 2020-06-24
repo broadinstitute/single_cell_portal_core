@@ -15,7 +15,7 @@ import { FeatureFlagContext } from 'providers/FeatureFlagProvider'
   * Renders a gene search control panel and the associated results
   * can also show study filter controls if the feature flag gene_study_filter is true
   */
-export default function GeneSearchView() {
+export default function GeneSearchView({keywordPrompt}) {
   const featureFlagState = useContext(FeatureFlagContext)
   const geneSearchState = useContext(GeneSearchContext)
   const studySearchState = useContext(StudySearchContext)
@@ -27,7 +27,7 @@ export default function GeneSearchView() {
                                  !geneSearchState.isLoading &&
                                  !geneSearchState.isError
 
-  let geneSearchPlaceholder = 'Search for genes across all studies'
+  let geneSearchPlaceholder = keywordPrompt ? keywordPrompt : 'Search for genes across all studies'
   if (hasSearchParams(studySearchState.params) && featureFlagState.gene_study_filter) {
     geneSearchPlaceholder = 'Search for genes in the filtered studies'
   }

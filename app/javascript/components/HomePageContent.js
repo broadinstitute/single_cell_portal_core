@@ -14,35 +14,42 @@ import FeatureFlagProvider from 'providers/FeatureFlagProvider'
 import ErrorBoundary from 'lib/ErrorBoundary'
 
 /** include search controls and results */
-export function StudySearchView() {
+export function StudySearchView({presetEnv}) {
   const studySearchState = useContext(StudySearchContext)
   return <>
-    <SearchPanel searchOnLoad={true}/>
+    <SearchPanel searchOnLoad={true}
+                 showCommonButtons={presetEnv.showCommonButtons}
+                 keywordPrompt={presetEnv.keywordPrompt}/>
     <ResultsPanel studySearchState={studySearchState} studyComponent={StudyDetails} />
   </>
 }
 
-const LinkableSearchTabs = function(props) {
+/** Displays a gene and study search tabs that are URL linkable */
+const LinkableSearchTabs = function({presetEnv}) {
   // we can't use the regular ReachRouter methods for link highlighting
   // since the Reach router doesn't own the home path
   const location = useLocation()
-  const showGenesTab = location.pathname.startsWith('/single_cell/app/genes')
+  const showGenesTab = location.pathname.indexOf('app/genes') >= 0
+  let basePath = 'single_cell'
+  if (location.pathname.indexOf('single_cell/covid19') >= 0) {
+    basePath = 'single_cell/covid19'
+  }
   return (
     <div>
       <nav className="nav search-links">
-        <Link to={`/single_cell/app/studies${location.search}`}
+        <Link to={`/${basePath}/app/studies${location.search}`}
           className={showGenesTab ? '' : 'active'}>
           <span className="fas fa-book"></span> Search Studies
         </Link>
-        <Link to={`/single_cell/app/genes${location.search}`}
+        <Link to={`/${basePath}/app/genes${location.search}`}
           className={showGenesTab ? 'active' : ''}>
           <span className="fas fa-dna"></span> Search Genes
         </Link>
       </nav>
       <div className="tab-content top-pad">
-        <Router basepath="/single_cell">
-          <GeneSearchView path="app/genes"/>
-          <StudySearchView default/>
+        <Router basepath={`/${basePath}`}>
+          <GeneSearchView path="app/genes" keywordPrompt={presetEnv.geneKeywordPrompt}/>
+          <StudySearchView default presetEnv={presetEnv}/>
         </Router>
       </div>
     </div>
@@ -50,14 +57,14 @@ const LinkableSearchTabs = function(props) {
 }
 
 /** renders all the page-level providers */
-function ProviderStack(props) {
+function ProviderStack({presetEnv, children}) {
   return (
     <UserProvider>
       <FeatureFlagProvider>
         <SearchFacetProvider>
-          <StudySearchProvider>
-            <GeneSearchProvider>
-              { props.children }
+          <StudySearchProvider preset={presetEnv.preset}>
+            <GeneSearchProvider preset={presetEnv.preset}>
+              { children }
             </GeneSearchProvider>
           </StudySearchProvider>
         </SearchFacetProvider>
@@ -69,19 +76,31 @@ function ProviderStack(props) {
 /**
  * Wrapper component for search and result panels
  */
-function RawHomePageContent() {
+function RawHomePageContent({presetEnv}) {
   return (
     <ErrorBoundary>
-      <ProviderStack>
-        <LinkableSearchTabs/>
+      <ProviderStack presetEnv={presetEnv}>
+        <LinkableSearchTabs presetEnv={presetEnv}/>
       </ProviderStack>
     </ErrorBoundary>
   )
 }
 
-/** Include Reach router */
-export default function HomePageContent() {
+/**
+ * Wrapper component to include Reach router
+ * presetEnv contains display-style arguments suitable for a custom space (e.g. covid19)
+ * or perhaps eventually more customized branding group text
+ */
+export default function HomePageContent({presetEnv}) {
+  if (!presetEnv) {
+    presetEnv = {
+      showCommonButtons: undefined,
+      keywordPrompt: undefined,
+      geneKeywordPrompt: undefined,
+      preset: undefined
+    }
+  }
   return (<Router>
-    <RawHomePageContent default/>
+    <RawHomePageContent presetEnv={presetEnv} default/>
   </Router>)
 }

@@ -256,6 +256,7 @@ Rails.application.routes.draw do
     get 'terms_of_service', to: 'site#terms_of_service', as: :terms_of_service
 
     get 'covid19', to: 'site#covid19'
+    get 'covid19/*path', to: 'site#covid19'
 
     get '/', to: 'site#index', as: :site
 

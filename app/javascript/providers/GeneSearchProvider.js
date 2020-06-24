@@ -69,7 +69,8 @@ export function PropsGeneSearchProvider(props) {
 
     const results = await fetchSearch('study', {
       page: searchParams.page,
-      genes: searchParams.genes
+      genes: searchParams.genes,
+      preset: searchParams.preset
     })
 
     setSearchState({
