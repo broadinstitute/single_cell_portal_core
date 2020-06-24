@@ -45,6 +45,7 @@ group :development, :test do
   gem 'listen'
   gem 'byebug'
   gem 'puma'
+  gem 'certified'
 end
 
 gem 'devise'

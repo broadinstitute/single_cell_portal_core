@@ -31,4 +31,5 @@ ARG BURP_ENABLE=n
 RUN [ "$BURP_ENABLE" != "y" ] || \
       curl -s --proxy localhost:8080 burp/cert \
       | openssl x509 -inform DER -out /usr/local/share/ca-certificates/burp.crt && \
-      update-ca-certificates
+      update-ca-certificates && \
+      ln -sf /usr/local/share/ca-certificates/burp.crt /usr/local/rvm/gems/default/gems/certified-1.0.0/certs/ca-bundle.crt

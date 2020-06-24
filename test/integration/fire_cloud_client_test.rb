@@ -529,8 +529,8 @@ class FireCloudClientTest < ActiveSupport::TestCase
     assert workspace.present?, 'Did not create workspace'
 
     puts 'uploading files...'
-    puts "SSL_CERT_FILE = #{ENV['SSL_CERT_FILE']}"
-    puts "SSL_CERT_DIR = #{ENV['SSL_CERT_DIR']}"
+    # puts "SSL_CERT_FILE = #{ENV['SSL_CERT_FILE']}"
+    # puts "SSL_CERT_DIR = #{ENV['SSL_CERT_DIR']}"
 
     # upload files
     participant_upload = File.open(Rails.root.join('test', 'test_data', 'default_participant.tsv'))
