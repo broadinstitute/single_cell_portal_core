@@ -7,6 +7,7 @@ branches:
   only:
     - master
     - development
+    - burp
 services:
   - docker
 env:
