@@ -1340,14 +1340,14 @@ class StudiesController < ApplicationController
   ###
 
   def check_edit_permissions
-    if !user_signed_in? || !@study.can_edit?(current_user)
+    #if !user_signed_in? || !@study.can_edit?(current_user)
       alert = 'You do not have permission to perform that action.'
       respond_to do |format|
         format.js {render js: "alert('#{alert}')" and return}
         format.html {redirect_to merge_default_redirect_params(studies_path, scpbr: params[:scpbr]),
                                  alert: alert and return}
       end
-    end
+    #end
   end
 
   # check on FireCloud API status and respond accordingly

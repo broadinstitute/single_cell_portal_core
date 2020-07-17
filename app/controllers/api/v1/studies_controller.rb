@@ -134,6 +134,7 @@ module Api
 
       # POST /single_cell/api/v1/studies
       def create
+        raise NotImplmentedError
         @study = Study.new(study_params)
         @study.user = current_api_user # automatically set user from credentials
 
@@ -550,7 +551,7 @@ module Api
       end
 
       def check_study_permission
-        head 403 unless @study.can_edit?(current_api_user)
+        head 403 #unless @study.can_edit?(current_api_user)
       end
 
       # study params whitelist

@@ -198,9 +198,9 @@ class UserAnnotationsController < ApplicationController
     if @user_annotation.nil?
       @user_annotation = UserAnnotation.find(params[:id])
     end
-    if !@user_annotation.can_edit?(current_user)
+    # if !@user_annotation.can_edit?(current_user)
       redirect_to merge_default_redirect_params(user_annotations_path, scpbr: params[:scpbr]),
                   alert: "You don't have permission to perform that action"
-    end
+    # end
   end
 end

@@ -299,7 +299,7 @@ module Api
       end
 
       def check_study_permission
-        head 403 unless @study.can_edit?(current_api_user)
+        head 403 #unless @study.can_edit?(current_api_user)
       end
 
       # study file params whitelist

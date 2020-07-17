@@ -161,7 +161,7 @@ module Api
           extend SwaggerResponses::ValidationFailureResponse
         end
       end
-      
+
 
       # POST /single_cell/api/v1/studies/:study_id/study_file_bundles
       def create
@@ -248,7 +248,7 @@ module Api
       end
 
       def check_study_permission
-        head 403 unless @study.can_edit?(current_api_user)
+        head 403 # unless @study.can_edit?(current_api_user)
       end
 
       # study file params whitelist

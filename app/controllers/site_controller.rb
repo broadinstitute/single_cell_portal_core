@@ -35,6 +35,7 @@ class SiteController < ApplicationController
                                                    :delete_workspace_samples, :get_workspace_submissions, :create_workspace_submission,
                                                    :get_submission_workflow, :abort_submission_workflow, :get_submission_errors,
                                                    :get_submission_outputs, :delete_submission_files, :get_submission_metadata]
+  before_action :check_edit_permissions, only: [:update_study_settings, :edit_study_description, :create_user_annotations, :update_workspace_samples]
   before_action :check_study_detached, only: [:download_file, :update_study_settings, :download_bulk_files,
                                               :get_fastq_files, :get_workspace_samples, :update_workspace_samples,
                                               :delete_workspace_samples, :get_workspace_submissions, :create_workspace_submission,
@@ -46,6 +47,7 @@ class SiteController < ApplicationController
                 :expression_query, :annotation_query, :precomputed_results,
                 cache_path: :set_cache_path
   COLORSCALE_THEMES = %w(Greys YlGnBu Greens YlOrRd Bluered RdBu Reds Blues Picnic Rainbow Portland Jet Hot Blackbody Earth Electric Viridis Cividis)
+
 
   ###
   #
@@ -1438,7 +1440,7 @@ class SiteController < ApplicationController
     @user_embargoed = false
     return if study_detached || !@allow_firecloud_access
     begin
-      @user_can_edit = @study.can_edit?(current_user)
+      # @user_can_edit = @study.can_edit?(current_user)
       if @allow_computes
         @user_can_compute = @study.can_compute?(current_user)
       end
@@ -1478,25 +1480,36 @@ class SiteController < ApplicationController
     end
   end
 
+  def check_edit_permissions
+    #if !user_signed_in? || !@study.can_edit?(current_user)
+      alert = 'You do not have permission to perform that action.'
+      respond_to do |format|
+        format.js {render js: "alert('#{alert}')" and return}
+        format.html {redirect_to merge_default_redirect_params(studies_path, scpbr: params[:scpbr]),
+                                 alert: alert and return}
+      end
+    #end
+  end
+
   # check compute permissions for study
   def check_compute_permissions
-    if Study.firecloud_client.services_available?(FireCloudClient::SAM_SERVICE, FireCloudClient::RAWLS_SERVICE)
-      if !user_signed_in? || !@study.can_compute?(current_user)
+    # if Study.firecloud_client.services_available?(FireCloudClient::SAM_SERVICE, FireCloudClient::RAWLS_SERVICE)
+    #   if !user_signed_in? || !@study.can_compute?(current_user)
         @alert ='You do not have permission to perform that action.'
         respond_to do |format|
           format.js {render action: :notice}
           format.html {redirect_to merge_default_redirect_params(site_path, scpbr: params[:scpbr]), alert: @alert and return}
           format.json {head 403}
         end
-      end
-    else
-      @alert ='Compute services are currently unavailable - please check back later.'
-      respond_to do |format|
-        format.js {render action: :notice}
-        format.html {redirect_to merge_default_redirect_params(site_path, scpbr: params[:scpbr]), alert: @alert and return}
-        format.json {head 503}
-      end
-    end
+    #   end
+    # else
+    #   @alert ='Compute services are currently unavailable - please check back later.'
+    #   respond_to do |format|
+    #     format.js {render action: :notice}
+    #     format.html {redirect_to merge_default_redirect_params(site_path, scpbr: params[:scpbr]), alert: @alert and return}
+    #     format.json {head 503}
+    #   end
+    # end
   end
 
   # check permissions manually on AJAX call via authentication token
@@ -2062,7 +2075,7 @@ class SiteController < ApplicationController
     end
     aspect
   end
-  
+
   ###
   #
   # SEARCH SUB METHODS
