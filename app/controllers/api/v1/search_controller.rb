@@ -598,7 +598,7 @@ module Api
         start_time = Time.zone.now
         @configuration = ::BulkDownloadService.generate_curl_configuration(study_files: files_requested, user: requested_user)
         end_time = Time.zone.now
-        runtime = TimeDifference.between(start_time, end_time).humanize
+        runtime = LogUtils.time_diff(start_time, end_time)
         logger.info "Curl configs generated for studies #{valid_accessions}, #{files_requested.size} total files"
         logger.info "Total time in generating curl configuration: #{runtime}"
         send_data @configuration, type: 'text/plain', filename: 'cfg.txt'

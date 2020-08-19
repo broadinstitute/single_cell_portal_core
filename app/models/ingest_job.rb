@@ -192,7 +192,7 @@ class IngestJob
     events = self.events
     start_time = DateTime.parse(events.first['timestamp'])
     completion_time = DateTime.parse(events.last['timestamp'])
-    TimeDifference.between(start_time, completion_time).humanize
+    LogUtils.time_diff(start_time, completion_time)
   end
 
    # Get the total runtime of parsing from event timestamps, in milliseconds
@@ -203,7 +203,7 @@ class IngestJob
     events = self.events
     start_time = DateTime.parse(events.first['timestamp'])
     completion_time = DateTime.parse(events.last['timestamp'])
-    (TimeDifference.between(start_time, completion_time).in_seconds * 1000).to_i
+    ((completion_time - start_time) * 24 * 60 * 60 * 1000).to_i
   end
 
   # Launch a background polling process.  Will check for completion, and if the pipeline has not completed
