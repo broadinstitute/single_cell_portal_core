@@ -66,7 +66,7 @@ class Study
   # associations and scopes
   belongs_to :user
   belongs_to :branding_group, optional: true
-  has_many :study_files, dependent: :delete do
+  has_many :study_files, dependent: :delete_all do
     def by_type(file_type)
       if file_type.is_a?(Array)
         where(queued_for_deletion: false, :file_type.in => file_type).to_a
@@ -98,7 +98,7 @@ class Study
     end
   end
 
-  has_many :genes, dependent: :delete do
+  has_many :genes, dependent: :delete_all do
     def by_name_or_id(term, study_file_ids)
       all_matches = any_of({name: term, :study_file_id.in => study_file_ids},
                             {searchable_name: term.downcase, :study_file_id.in => study_file_ids},
@@ -126,7 +126,7 @@ class Study
     end
   end
 
-  has_many :precomputed_scores, dependent: :delete do
+  has_many :precomputed_scores, dependent: :delete_all do
     def by_name(name)
       where(name: name).first
     end
@@ -158,25 +158,25 @@ class Study
     end
   end
 
-  has_many :cluster_groups, dependent: :delete do
+  has_many :cluster_groups, dependent: :delete_all do
     def by_name(name)
       find_by(name: name)
     end
   end
 
-  has_many :data_arrays, as: :linear_data, dependent: :delete do
+  has_many :data_arrays, as: :linear_data, dependent: :delete_all do
     def by_name_and_type(name, type)
       where(name: name, array_type: type).order_by(&:array_index)
     end
   end
 
-  has_many :cell_metadata, dependent: :delete do
+  has_many :cell_metadata, dependent: :delete_all do
     def by_name_and_type(name, type)
       where(name: name, annotation_type: type).first
     end
   end
 
-  has_many :directory_listings, dependent: :delete do
+  has_many :directory_listings, dependent: :delete_all do
     def unsynced
       where(sync_status: false).to_a
     end
@@ -203,11 +203,11 @@ class Study
   end
 
   # User annotations are per study
-  has_many :user_annotations, dependent: :delete
-  has_many :user_data_arrays, dependent: :delete
+  has_many :user_annotations, dependent: :delete_all
+  has_many :user_data_arrays, dependent: :delete_all
 
   # HCA metadata object
-  has_many :analysis_metadata, dependent: :delete
+  has_many :analysis_metadata, dependent: :delete_all
 
   # Study Accession
   has_one :study_accession
@@ -216,7 +216,7 @@ class Study
   has_many :external_resources, as: :resource_links
 
   # Study Detail (full html description)
-  has_one :study_detail, dependent: :delete
+  has_one :study_detail, dependent: :delete_all
 
   # field definitions
   field :name, type: String

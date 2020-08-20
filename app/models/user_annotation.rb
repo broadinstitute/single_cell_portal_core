@@ -28,7 +28,7 @@ class UserAnnotation
   belongs_to :study
 
   # user data arrays belong to user annotations
-  has_many :user_data_arrays, dependent: :delete do
+  has_many :user_data_arrays, dependent: :delete_all do
     def by_name_and_type(name, type, subsample_threshold=nil, subsample_annotation=nil)
       where(name: name, array_type: type, subsample_threshold: subsample_threshold, subsample_annotation: subsample_annotation).order_by(&:array_index).to_a
     end
@@ -39,7 +39,7 @@ class UserAnnotation
     end
   end
 
-  has_many :user_annotation_shares, dependent: :delete do
+  has_many :user_annotation_shares, dependent: :delete_all do
     def can_edit
       where(permission: 'Edit').map(&:email)
     end

@@ -113,7 +113,7 @@ class AnalysisConfiguration
 
   ENTITY_TYPES = %w(participant sample)
 
-  has_many :analysis_parameters, dependent: :delete do
+  has_many :analysis_parameters, dependent: :delete_all do
     def inputs
       where(data_type: 'inputs')
     end

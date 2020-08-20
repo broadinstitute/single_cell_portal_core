@@ -4,9 +4,9 @@ class AnalysisParameter
   extend ErrorTracker
 
   belongs_to :analysis_configuration
-  has_many :analysis_parameter_filters, dependent: :delete
+  has_many :analysis_parameter_filters, dependent: :delete_all
   accepts_nested_attributes_for :analysis_parameter_filters, allow_destroy: :true
-  has_many :analysis_output_associations, dependent: :delete
+  has_many :analysis_output_associations, dependent: :delete_all
   accepts_nested_attributes_for :analysis_output_associations, allow_destroy: :true
 
   field :data_type, type: String # input, output
