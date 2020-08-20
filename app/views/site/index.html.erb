@@ -6,7 +6,7 @@
         <% if User.feature_flag_for_instance(current_user, 'covid19_page') && @selected_branding_group.nil? %>
           <div class="home-nav" id="covid19-tab"
               style="float:right;
-                     background: url(<%= image_url 'covid19-button.png' %>);
+                     background: url(<%= image_pack_tag 'covid19-button.png' %>);
                      background-position: right;
                      background-repeat: no-repeat;
                      background-color: #1d1e20;

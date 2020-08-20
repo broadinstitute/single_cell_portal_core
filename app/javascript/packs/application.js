@@ -9,6 +9,9 @@
  * the appropriate layout file, like app/views/layouts/application.html.erb
  */
 
+// make images available to rails templates
+require.context('../images', true)
+
 import 'styles/application.scss'
 
 import React from 'react'

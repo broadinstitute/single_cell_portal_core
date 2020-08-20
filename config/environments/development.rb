@@ -54,4 +54,47 @@ Rails.application.configure do
   # Use an evented file watcher to asynchronously detect changes in source code,
   # routes, locales, etc. This feature depends on the listen gem.
   config.file_watcher = ActiveSupport::EventedFileUpdateChecker
+
+  config.bard_host_url = 'https://terra-bard-dev.appspot.com'
+
+
+  config.action_mailer.default_url_options = { :host => 'localhost', protocol: 'https' }
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.perform_deliveries = false
+  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.smtp_settings = {
+      address:              'smtp.sendgrid.net',
+      port:                 587,
+      user_name:            ENV['SENDGRID_USERNAME'],
+      password:             ENV['SENDGRID_PASSWORD'],
+      domain:               'localhost',
+      authentication:       'plain',
+      enable_starttls_auto: true
+  }
+
+  # CUSTOM CONFIGURATION
+
+  # disable admin notification (like startup email)
+  config.disable_admin_notifications = false
+
+  # set MongoDB & Google API logging level
+  Mongoid.logger.level = Logger::INFO
+  Google::Apis.logger.level = Logger::INFO
+
+  # patching Devise sign_out method & SwaggerDocs to bypass CSP headers & layout fixes
+  config.to_prepare do
+    Devise::RegistrationsController.send(:include, DeviseSignOutPatch)
+    SwaggerUiEngine::SwaggerDocsController.send(:include, Api::V1::Concerns::CspHeaderBypass)
+    SwaggerUiEngine::SwaggerDocsController.send(:layout, 'swagger_ui_engine/layouts/swagger')
+  end
+
+
+  if ENV['NOT_DOCKERIZED']
+    config.force_ssl = true
+    config.ssl_options = {
+      hsts: false # tell the browser NOT to cache this site a a mandatory https, for easier switching
+    }
+  end
+
+  config.bard_host_url = 'https://terra-bard-dev.appspot.com'
 end

@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>Single Cell Portal</title>
-  <%= favicon_link_tag 'scp_favicon.ico' %>
+  <%= favicon_pack_tag 'scp_favicon.ico' %>
   <%= csrf_meta_tags %>
   <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -173,9 +173,9 @@
 <div id="generic-update-target"></div>
 <div id="scp-footer">
   <% if @selected_branding_group.present? && @selected_branding_group.footer_image.present? %>
-    <%= image_tag @selected_branding_group.footer_image.url, class: 'pull-left' %>
+    <%= image_pack_tag @selected_branding_group.footer_image.url, class: 'pull-left' %>
   <% else %>
-    <%= link_to image_tag('broad-logo-white.png'), "https://www.broadinstitute.org", class: 'pull-left' %>
+    <%= link_to image_pack_tag('broad-logo-white.png'), "https://www.broadinstitute.org", class: 'pull-left' %>
   <% end %>
     <div class="footer-text-block pull-left">
       &copy; <%= Date.today.year %> The Broad Institute of MIT and Harvard

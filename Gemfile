@@ -68,7 +68,6 @@ gem 'jquery-datatables-rails', git: 'https://github.com/rweng/jquery-datatables-
 gem 'truncate_html'
 gem 'jquery-fileupload-rails'
 gem 'mongoid-paperclip', :require => 'mongoid_paperclip', git: 'https://github.com/mrrooijen/mongoid-paperclip'
-gem 'non-stupid-digest-assets'
 gem 'will_paginate_mongoid'
 gem 'will_paginate'
 gem 'naturally'
