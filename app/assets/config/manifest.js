@@ -33,8 +33,6 @@
 //= require scp-ideogram
 //= require scp-dot-plot
 //= require ckeditor
-//= link swagger_ui_engine/application.css
-//= link swagger_ui_engine/application.js
 
 //= link application.css
 //= link application.js
