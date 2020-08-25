@@ -1,0 +1,65 @@
+<!-- HTML for static distribution bundle build -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Swagger UI</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.32.4/swagger-ui.min.css" integrity="sha512-vfRBGJj7Ri7HnUm0aab3l99wxgWqnACxt6pRHTzLuSJP5UZxyZZ/jzwcYg1MaQ2dCL8jCzrMfqtiMllZVVVA0A==" crossorigin="anonymous" />
+  <%= favicon_pack_tag 'favicon-32x32.png', sizes: '32x32' %>
+  <%= favicon_pack_tag 'favicon-16x16.png', sizes: '16x16' %>
+  <style>
+      html
+      {
+          box-sizing: border-box;
+          overflow: -moz-scrollbars-vertical;
+          overflow-y: scroll;
+      }
+
+      *,
+      *:before,
+      *:after
+      {
+          box-sizing: inherit;
+      }
+
+      body
+      {
+          margin:0;
+          background: #fafafa;
+      }
+  </style>
+</head>
+
+<body>
+<div id="swagger-ui"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.32.4/swagger-ui-bundle.min.js" integrity="sha512-xcWmPEh9gOh8Nk8haZGDtF4gXD7S6BsITIhaR3iFjITfzmRb5F0E+VQFZnAqb7AHUY6LrqXwr2GB9llsDUjUKQ==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.32.4/swagger-ui-standalone-preset.min.js" integrity="sha512-c84BFDzSn4VZraSnUhMLR8cyAxpJZdbL8yK8V0Zuwqx8M6JlYBiuHkR4oEK/jpYG5BJ1MZi4R2OsQEgM3gxtYQ==" crossorigin="anonymous"></script>
+<script nonce="<%= content_security_policy_script_nonce %>">
+    window.onload = function() {
+        // Begin Swagger UI call region
+        const ui = SwaggerUIBundle({
+            url: "<%= api_v1_api_docs_path %>",
+            dom_id: '#swagger-ui',
+            deepLinking: true,
+            presets: [
+                SwaggerUIBundle.presets.apis,
+                SwaggerUIStandalonePreset
+            ],
+            plugins: [
+                SwaggerUIBundle.plugins.DownloadUrl
+            ],
+            layout: "StandaloneLayout",
+            oauth2RedirectUrl: "<%= api_v1_oauth2_redirect_url %>"
+        })
+
+        ui.initOAuth({
+            clientId: "<%= ENV['OAUTH_CLIENT_ID'] %>"
+        })
+        // End Swagger UI call region
+
+        window.ui = ui
+    }
+</script>
+</body>
+</html>

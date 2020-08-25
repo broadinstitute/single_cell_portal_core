@@ -7,7 +7,10 @@ Rails.application.routes.draw do
     # API Routes
     namespace :api do
       # mount SwaggerUiEngine::Engine, at: '/'
+      get '/', to:redirect('/single_cell/api/v1', status: 302)
       namespace :v1 do
+        get '/', to: 'api_docs#swagger_ui', as: 'swagger_ui'
+        get 'oauth2_redirect', to: 'api_docs#oauth2_redirect', as: 'oauth2_redirect'
         resources :api_docs, only: :index
         namespace :schemas do
           get 'studies'

@@ -39,8 +39,7 @@
     "react-scripts": "^3.4.0",
     "react-table": "^7.1.0",
     "spin.js": "^4.0.0",
-    "stylelint-config-sass-guidelines": "^7.0.0",
-    "swagger-ui": "2.2.10"
+    "stylelint-config-sass-guidelines": "^7.0.0"
   },
   "devDependencies": {
     "@sheerun/mutationobserver-shim": "^0.3.3",
