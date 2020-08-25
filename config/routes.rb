@@ -6,7 +6,6 @@ Rails.application.routes.draw do
   scope 'single_cell' do
     # API Routes
     namespace :api do
-      # mount SwaggerUiEngine::Engine, at: '/'
       get '/', to:redirect('/single_cell/api/v1', status: 302)
       namespace :v1 do
         get '/', to: 'api_docs#swagger_ui', as: 'swagger_ui'
