@@ -240,7 +240,7 @@ Devise.setup do |config|
   # up on your models and hooks.
   # config.omniauth :github, 'APP_ID', 'APP_SECRET', scope: 'user,public_repo'
 
-
+  byebug
   config.omniauth :google_oauth2, ENV['OAUTH_CLIENT_ID'], ENV['OAUTH_CLIENT_SECRET'],
                   prompt: 'consent', access_type: 'offline',
                   scope: FireCloudClient::GOOGLE_SCOPES.join(' '),

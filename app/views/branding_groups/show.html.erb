@@ -10,11 +10,11 @@
     </div>
     <div class="col-md-9">
       <p>Splash Image: <span id="branding_group_splash_image"><%= @branding_group.splash_image_file_name %></span></p>
-      <%= image_tag @branding_group.splash_image.url, class: 'img-thumbnail' %>
+      <%= image_pack_tag "media/images/#{@branding_group.splash_image.url}", class: 'img-thumbnail' %>
       <p>Banner Image: <span id="branding_group_banner_image"><%= @branding_group.banner_image_file_name %></span></p>
-      <%= image_tag @branding_group.banner_image.url, class: 'img-thumbnail' %>
+      <%= image_pack_tag "media/images/#{@branding_group.banner_image.url}", class: 'img-thumbnail' %>
       <p>Footer Image: <span id="branding_group_footer_image"><%= @branding_group.footer_image_file_name %></span></p>
-      <%= image_tag @branding_group.footer_image.url, class: 'img-thumbnail' %>
+      <%= image_pack_tag "media/images/#{@branding_group.footer_image.url}", class: 'img-thumbnail' %>
     </div>
   </div>
 </div>

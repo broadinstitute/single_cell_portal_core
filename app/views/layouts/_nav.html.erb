@@ -63,7 +63,7 @@
 				</li>
 			<% else %>
 
-				<li><%= scp_link_to "<span class='fas fa-sign-in-alt fa-fw'></span> Sign In".html_safe, user_google_oauth2_omniauth_authorize_path, method: :post, class: 'left-border-0-5', id: 'login-nav' %></li>
+				<li><%= link_to "<span class='fas fa-sign-in-alt fa-fw'></span> Signer In".html_safe, user_google_oauth2_omniauth_authorize_path, class: 'left-border-0-5', id: 'login-nav' %></li>
 			<% end %>
 		</ul>
 	</div>

@@ -10,7 +10,7 @@
     <% end %>
     <div id="main-banner-logo">
       <% if @selected_branding_group.splash_image.present? %>
-        <%= image_tag @selected_branding_group.splash_image.url, style: 'padding: 5px 0; display: inline-block;' %>
+        <%= image_pack_tag @selected_branding_group.splash_image.url, style: 'padding: 5px 0; display: inline-block;' %>
       <% end %>
       <p id='main-banner-name'><%= @selected_branding_group.name %></p>
       <p id='main-banner-tag-line'><%= @selected_branding_group.tag_line %></p>
