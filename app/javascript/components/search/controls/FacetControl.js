@@ -1,62 +1,42 @@
+import React, { useState, useContext } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 
-import React, { useState, useEffect, useRef, useContext } from 'react'
 import FiltersBoxSearchable from './FiltersBoxSearchable'
 import { StudySearchContext } from 'providers/StudySearchProvider'
 import { getDisplayNameForFacet } from 'providers/SearchFacetProvider'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faTimesCircle } from '@fortawesome/free-solid-svg-icons'
-import { SearchSelectionContext } from 'providers/SearchSelectionProvider'
+import { SearchSelectionContext, getSelectionForFacet } from 'providers/SearchSelectionProvider'
 import { withErrorBoundary } from 'lib/ErrorBoundary'
-
-/**
- * Converts string value to lowercase, hyphen-delimited version
- * e.g. "Cell type" -> "cell-type"
- */
-function slug(value) {
-  return value.toLowerCase().replace(/ /g, '-')
-}
+import useCloseableModal from 'hooks/closeableModal'
+import _kebabCase from 'lodash/kebabCase'
 
 /**
  * Button for facets, and associated functions
  */
-function RawFacetControl(props) {
+function RawFacetControl({ facet }) {
   const [showFilters, setShowFilters] = useState(false)
 
-  const facetName = props.facet.name
-  const facetId = `facet-${slug(facetName)}`
+  const facetName = facet.name
+  const facetId = `facet-${_kebabCase(facetName)}`
   const searchContext = useContext(StudySearchContext)
-  const appliedSelection = searchContext.params.facets[props.facet.id]
+  const appliedSelection = searchContext.params.facets[facet.id]
   const selectionContext = useContext(SearchSelectionContext)
-  let selection = []
-  if (selectionContext.facets[props.facet.id]) {
-    selection = selectionContext.facets[props.facet.id]
-  }
+  const selection = getSelectionForFacet(facet, selectionContext)
+
 
   let selectedFilterString
   if (appliedSelection && appliedSelection.length) {
     const selectedFilters =
-      props.facet.filters.filter(filter => appliedSelection.includes(filter.id))
+      facet.filters.filter(filter => appliedSelection.includes(filter.id))
     if (selectedFilters.length > 1) {
       selectedFilterString = `${facetName} (${selectedFilters.length})`
     } else if (selectedFilters.length === 1) {
       selectedFilterString = selectedFilters[0].name
     } else {
       // it's a numeric range filter
-      selectedFilterString = `${getDisplayNameForFacet(props.facet.id)}:
+      selectedFilterString = `${getDisplayNameForFacet(facet.id)}:
                               ${appliedSelection[0]}-${appliedSelection[1]}
                               ${appliedSelection[2]}`
-    }
-  }
-
-  const clearNode = useRef()
-  /**
-    * Click on the facet control itself
-    */
-  function handleButtonClick(e) {
-    if (clearNode.current && clearNode.current.contains(e.target)) {
-      setShowFilters(false)
-    } else {
-      setShowFilters(!showFilters)
     }
   }
 
@@ -64,32 +44,12 @@ function RawFacetControl(props) {
     * Clear the selection and update search results
     */
   function clearFacet() {
-    selectionContext.updateFacet(props.facet.id, [], true)
+    selectionContext.updateFacet(facet.id, [], true)
   }
 
+  const { node, clearNode, handleButtonClick } = useCloseableModal(showFilters, setShowFilters)
 
-  const node = useRef()
-  const handleOtherClick = e => {
-    if (node.current.contains(e.target)) {
-      // click was inside the modal, do nothing
-      return
-    }
-    setShowFilters(false)
-  }
-
-  // add event listener to detect clicks outside the modal,
-  // so we know to close it
-  // see https://medium.com/@pitipatdop/little-neat-trick-to-capture-click-outside-with-react-hook-ba77c37c7e82
-  useEffect(() => {
-    // add when mounted
-    document.addEventListener('mousedown', handleOtherClick)
-    // return function to be called when unmounted
-    return () => {
-      document.removeEventListener('mousedown', handleOtherClick)
-    }
-  }, [])
-
-  let controlContent = getDisplayNameForFacet(props.facet.id)
+  let controlContent = getDisplayNameForFacet(facet.id)
   if (selectedFilterString) {
     controlContent =
       <>
@@ -97,7 +57,7 @@ function RawFacetControl(props) {
         <button
           ref={clearNode}
           className='facet-clear'
-          onClick={ clearFacet }
+          onClick={clearFacet}
         >
           <FontAwesomeIcon icon={faTimesCircle}/>
         </button>
@@ -114,11 +74,11 @@ function RawFacetControl(props) {
       </a>
       <FiltersBoxSearchable
         show={showFilters}
-        facet={props.facet}
+        facet={facet}
         setShow={setShowFilters}
         selection={selection}
         setSelection={selection =>
-          selectionContext.updateFacet(props.facet.id, selection)
+          selectionContext.updateFacet(facet.id, selection)
         }/>
     </span>
   )

@@ -1,0 +1,12 @@
+<p>You recently tried to upload the file <strong><%= @study_file.upload_file_name %> (<%= @study_file.file_type %>)</strong>
+  to your study titled "<%= @study.name %> (<%= @study.accession %>)".   This file has been stuck in the 'uploading' state
+  for more than 24 hours and has not successfully pushed to your study's storage bucket.  Therefore, it has been automatically
+  removed from your study.
+</p>
+
+<p>
+  If you would like to upload this file again, please visit <%= initialize_study_url(@study) %> to restart the upload.
+  If you continue to have issues uploading this file, please contact us at
+  <%= mail_to('scp-support@broadinstitute.zendesk.com', 'scp-support@broadinstitute.zendesk.com', subject: 'File Upload Error') %>.
+  Please be sure to include both the name of your study and the file in question.
+</p>

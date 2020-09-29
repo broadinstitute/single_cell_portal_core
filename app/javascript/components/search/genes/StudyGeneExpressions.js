@@ -41,7 +41,7 @@ export default function StudyGeneExpressions({ study }) {
         </span>
         {
           study.gene_matches.map(geneName => {
-            return (<span key={ geneName } className='badge gene-match'>
+            return (<span key={geneName} className='badge gene-match'>
               { geneName }
             </span>)
           })

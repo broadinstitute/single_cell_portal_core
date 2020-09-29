@@ -30,15 +30,15 @@
       </div>
       <div class="form-group row">
         <div class="col-sm-4">
-          <%= f.label :cluster_point_size, "Size of cluster points (in px) <i class='fas fa-fw fa-question-circle' data-toggle='tooltip' title='Global value for the size of all cluster points, in pixels.'></i>".html_safe %><br />
+          <%= f.label :cluster_point_size, "Size of Cluster Points (in px) <i class='fas fa-fw fa-question-circle' data-toggle='tooltip' title='Global value for the size of all cluster points, in pixels.'></i>".html_safe %><br />
           <%= f.number_field :cluster_point_size, value: @study.default_cluster_point_size, class: 'form-control' %>
         </div>
         <div class="col-sm-4">
-          <%= f.label :cluster_point_border, 'Show cluster point borders?' %><br />
+          <%= f.label :cluster_point_border, 'Show Cluster Point Borders?' %><br />
           <%= f.select :cluster_point_border, options_for_select([['Yes', true],['No', false]], @study.show_cluster_point_borders?) , {}, class: 'form-control' %>
         </div>
         <div class="col-sm-4">
-          <%= f.label :cluster_point_alpha, "Cluster point opacity <i class='fas fa-fw fa-question-circle' data-toggle='tooltip' title='Global value for the transparency (alpha) of all cluster points.  Only values between 0 and 1 are accepted.'></i>".html_safe %><br />
+          <%= f.label :cluster_point_alpha, "Cluster Point Opacity <i class='fas fa-fw fa-question-circle' data-toggle='tooltip' title='Global value for the transparency (alpha) of all cluster points.  Only values between 0 and 1 are accepted.'></i>".html_safe %><br />
           <%= f.number_field :cluster_point_alpha, value: @study.default_cluster_point_alpha, in: 0.0..1.0, step: 0.05, class: 'form-control' %>
         </div>
       </div>

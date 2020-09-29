@@ -1,7 +1,7 @@
 <h1>Single Cell Portal Privacy Policy</h1>
 
 <p class="lead">The following discloses our information gathering and dissemination practices for the Broad Institute
-  Single Cell Portal website (http://<%= ENV['PROD_HOSTNAME'] %>/single_cell)</p>
+  Single Cell Portal website (<%= link_to root_url, root_url %>)</p>
 
 <h3>Information gathering</h3>
 
@@ -44,5 +44,5 @@
 <h3>Contacting the Single Cell Portal</h3>
 
 <p>If you have any questions about this privacy statement, the practices of this site, or your dealings with this site,
-  you can contact us through <%= link_to 'our help wiki', 'https://github.com/broadinstitute/single_cell_portal/wiki' %>.
+  you can contact us through <%= mail_to 'scp-support@broadinstitute.zendesk.com', 'our help desk' %>.
 </p>

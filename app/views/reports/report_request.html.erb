@@ -18,13 +18,8 @@
 
     ClassicEditor
         .create( document.querySelector( '#report_request_message' ),
-            {
-                toolbar: ["heading", '|',  "bold", "italic", 'link', "bulletedList", "numberedList", "blockQuote", '|', "undo", "redo"]
-            }
+            fullCKEditorConfig
         )
-        .then( function(editor) {
-            console.log('Report request initialized');
-        } )
         .catch( function(error) {
                 console.error( error );
             }

@@ -21,13 +21,27 @@ class SyntheticStudyPopulator
     study_config = JSON.parse(study_info_file)
 
     puts("Populating synthetic study from #{synthetic_study_folder}")
-    study = create_study(synthetic_study_folder, study_config, user)
+    study = create_study(study_config, user)
     add_files(study, study_config, synthetic_study_folder, user)
+  end
+
+  # find all matching instances of synthetic studies
+  def self.collect_synthetic_studies
+    study_names = []
+    synthetic_base_path = DEFAULT_SYNTHETIC_STUDY_PATH
+    study_dirs = Dir.glob(synthetic_base_path.join('*')).select {|f| File.directory? f}
+    study_dirs.each do |study_dir|
+      synthetic_study_folder = synthetic_base_path.join(study_dir).to_s
+      study_info_file = File.read(synthetic_study_folder + '/study_info.json')
+      study_config = JSON.parse(study_info_file)
+      study_names << study_config.dig('study', 'name')
+    end
+    Study.where(:name.in => study_names)
   end
 
   private
 
-  def self.create_study(synthetic_study_folder, study_config, user)
+  def self.create_study(study_config, user)
     existing_study = Study.find_by(name: study_config['study']['name'])
     if existing_study
       puts("Destroying Study #{existing_study.name}, id #{existing_study.id}")

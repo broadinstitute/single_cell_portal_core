@@ -15,8 +15,9 @@ user_2 = User.create!(email: 'sharing.user@gmail.com', password: 'password', uid
                     api_access_token: user_access_token, access_token: user_access_token)
 # manually accept Terms of Service for sharing user to avoid breaking tests
 TosAcceptance.create(email: user_2.email)
-study = Study.create!(name: "Testing Study #{@random_seed}", description: '<p>This is the test study.</p>',
-                      firecloud_project: ENV['PORTAL_NAMESPACE'], data_dir: 'test', user_id: user.id)
+study = Study.create!(name: "Testing Study #{@random_seed}", firecloud_project: ENV['PORTAL_NAMESPACE'], data_dir: 'test', user_id: user.id)
+detail = study.build_study_detail
+detail.update(full_description: "<p>This is the test study.</p>")
 StudyShare.create!(email: 'my-user-group@firecloud.org', permission: 'Reviewer', study_id: study.id,
                    firecloud_project: study.firecloud_project, firecloud_workspace: study.firecloud_workspace)
 expression_file = StudyFile.create!(name: 'expression_matrix.txt', upload_file_name: 'expression_matrix.txt', study_id: study.id,
@@ -24,11 +25,15 @@ expression_file = StudyFile.create!(name: 'expression_matrix.txt', upload_file_n
 cluster_file = StudyFile.create!(name: 'Test Cluster', upload_file_name: 'coordinates.txt', study_id: study.id,
                                  file_type: 'Cluster', x_axis_label: 'X', y_axis_label: 'Y', z_axis_label: 'Z')
 mm_coord_file = StudyFile.create!(name: 'GRCh38/test_matrix.mtx', upload: File.open(Rails.root.join('test', 'test_data', 'GRCh38', 'test_matrix.mtx')),
-                                  file_type: 'MM Coordinate Matrix', study_id: study.id)
+                                  file_type: 'MM Coordinate Matrix', status: 'uploaded', study_id: study.id)
 genes_file = StudyFile.create!(name: 'GRCh38/test_genes.tsv', upload: File.open(Rails.root.join('test', 'test_data', 'GRCh38', 'test_genes.tsv')),
-                               file_type: '10X Genes File', study_id: study.id, options: {matrix_id: mm_coord_file.id.to_s})
+                               file_type: '10X Genes File', study_id: study.id, status: 'uploaded', options: {matrix_id: mm_coord_file.id.to_s})
 barcodes = StudyFile.create!(name: 'GRCh38/barcodes.tsv', upload: File.open(Rails.root.join('test', 'test_data', 'GRCh38', 'barcodes.tsv')),
-                               file_type: '10X Barcodes File', study_id: study.id, options: {matrix_id: mm_coord_file.id.to_s})
+                               file_type: '10X Barcodes File', study_id: study.id, status: 'uploaded', options: {matrix_id: mm_coord_file.id.to_s})
+matrix_bundle = study.study_file_bundles.build(bundle_type: mm_coord_file.file_type)
+bundle_payload = StudyFileBundle.generate_file_list(mm_coord_file, genes_file, barcodes)
+matrix_bundle.original_file_list = bundle_payload
+matrix_bundle.save!
 metadata_file = StudyFile.create!(name: 'metadata.txt', upload_file_name: 'metadata.txt', study_id: study.id,
                                   file_type: 'Metadata')
 cluster = ClusterGroup.create!(name: 'Test Cluster', study_id: study.id, study_file_id: cluster_file.id, cluster_type: '3d', cell_annotations: [
@@ -101,8 +106,12 @@ gene2_cells.save!
 api_study = Study.create!(name: "API Test Study #{@random_seed}", data_dir: 'api_test_study', user_id: user.id,
                           firecloud_project: ENV['PORTAL_NAMESPACE'])
 StudyShare.create!(email: 'fake.email@gmail.com', permission: 'Reviewer', study_id: api_study.id)
-StudyFile.create!(name: 'cluster_example.txt', upload: File.open(Rails.root.join('test', 'test_data', 'cluster_example.txt')),
+api_cluster_file = StudyFile.create!(name: 'cluster_example.txt', upload: File.open(Rails.root.join('test', 'test_data', 'cluster_example.txt')),
                   study_id: api_study.id, file_type: 'Cluster')
+# push file to bucket for use in API download tests
+api_study.send_to_firecloud(api_cluster_file)
+StudyFile.create(study_id: api_study.id, name: 'SRA Study for housing fastq data', description: 'SRA Study for housing fastq data',
+                 file_type: 'Fastq', status: 'uploaded', human_fastq_url: 'https://www.ncbi.nlm.nih.gov/sra/ERX4159348[accn]')
 DirectoryListing.create!(name: 'csvs', file_type: 'csv', files: [{name: 'foo.csv', size: 100, generation: '12345'}],
                          sync_status: true, study_id: api_study.id)
 StudyFileBundle.create!(bundle_type: 'BAM', original_file_list: [{'name' => 'sample_1.bam', 'file_type' => 'BAM'},
@@ -122,13 +131,19 @@ AnalysisConfiguration.create(namespace: 'single-cell-portal', name: 'split-clust
 # SearchFacet seeds
 # These facets represent 3 of the main types: String-based (both for array- and non-array columns), and numeric
 SearchFacet.create(name: 'Species', identifier: 'species', filters: [{id: 'NCBITaxon_9606', name: 'Homo sapiens'}],
-                   ontology_urls: [{name: 'NCBI organismal classification', url: 'https://www.ebi.ac.uk/ols/api/ontologies/ncbitaxon'}],
+                   ontology_urls: [{name: 'NCBI organismal classification',
+                                    url: 'https://www.ebi.ac.uk/ols/api/ontologies/ncbitaxon',
+                                    browser_url: nil}],
                    data_type: 'string', is_ontology_based: true, is_array_based: false, big_query_id_column: 'species',
                    big_query_name_column: 'species__ontology_label', convention_name: 'Alexandria Metadata Convention',
                    convention_version: '1.1.3')
 SearchFacet.create(name: 'Disease', identifier: 'disease', filters: [{id: 'MONDO_0000001', name: 'disease or disorder'}],
-                   ontology_urls: [{name: 'Monarch Disease Ontology', url: 'https://www.ebi.ac.uk/ols/api/ontologies/mondo'},
-                                   {name: 'Phenotype And Trait Ontology', url: 'https://www.ebi.ac.uk/ols/ontologies/pato'}],
+                   ontology_urls: [{name: 'Monarch Disease Ontology',
+                                    url: 'https://www.ebi.ac.uk/ols/api/ontologies/mondo',
+                                    browser_url: nil},
+                                   {name: 'Phenotype And Trait Ontology',
+                                    url: 'https://www.ebi.ac.uk/ols/ontologies/pato',
+                                    browser_url: nil}],
                    data_type: 'string', is_ontology_based: true, is_array_based: true, big_query_id_column: 'disease',
                    big_query_name_column: 'disease__ontology_label', convention_name: 'Alexandria Metadata Convention',
                    convention_version: '1.1.3')

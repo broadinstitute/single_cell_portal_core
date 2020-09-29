@@ -7,15 +7,22 @@ class SingleCellMailer < ApplicationMailer
   ###
 
   default from: 'no-reply@broadinstitute.org'
+  BATCH_DELIVERY_SIZE = 500
+
+  # deliver an email to a batch users (from SingleCellMailer.batch_users_email)
+  def users_email(users, from, subject, message)
+    @message = message
+    mail(to: from, bcc: users, subject: "[Single Cell Portal Message] #{subject}", from: from) do |format|
+      format.html {@message.html_safe}
+    end
+  end
 
   # deliver an email to all users
-  def users_email(email_params, user)
-    @users = email_params[:preview] == "1" ? [user.email] : User.where(admin_email_delivery: true).map(&:email)
-    @subject = email_params[:subject]
-    @from = email_params[:from]
-    @message = email_params[:contents]
-    mail(to: @from, bcc: @users, subject: "[Single Cell Portal Message] #{@subject}", from: @from) do |format|
-      format.html {@message.html_safe}
+  def batch_users_email(email_params, user)
+    users = email_params[:preview] == "1" ? [user.email] : User.where(admin_email_delivery: true).map(&:email)
+    # send email in batches to sidestep Sendgrid API quotas
+    users.each_slice(BATCH_DELIVERY_SIZE) do |email_batch|
+      users_email(email_batch, email_params[:from], email_params[:subject], email_params[:contents]).deliver
     end
   end
 
@@ -29,6 +36,17 @@ class SingleCellMailer < ApplicationMailer
     end
   end
 
+  # notify user of a failed upload that never parsed/pushed to bucket
+  # will bcc dev team if configured
+  def notify_user_upload_fail(study_file, study, user)
+    @study_file = study_file
+    @study = study
+    dev_email_config = AdminConfiguration.find_by(config_type: 'QA Dev Email')
+    dev_email = dev_email_config.present? ? dev_email_config.value : nil
+    title = "#{study_file.upload_file_name} did not finish uploading"
+    mail(to: user.email, bcc: dev_email, subject: '[Single Cell Portal Notifier] ' + title)
+  end
+
   def notify_user_parse_complete(email, title, message, study)
     @message = message
     @study = study
@@ -38,12 +56,16 @@ class SingleCellMailer < ApplicationMailer
   def notify_user_parse_fail(email, title, error, study)
     @error = error
     @study = study
+    mail(to: email, subject: '[Single Cell Portal Notifier] ' + title)
+  end
+
+  def notify_admin_parse_fail(user_email, title, contents)
     dev_email_config = AdminConfiguration.find_by(config_type: 'QA Dev Email')
     if dev_email_config.present?
       dev_email = dev_email_config.value
-      mail(to: email, bcc: dev_email, subject: '[Single Cell Portal Notifier] ' + title)
-    else
-      mail(to: email, subject: '[Single Cell Portal Notifier] ' + title)
+      @contents = contents
+      @user_email = user_email
+      mail(to: dev_email, subject: '[Single Cell Portal Admin Notification] ' + title)
     end
   end
 

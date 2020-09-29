@@ -28,13 +28,13 @@ class RequestUtils
   def self.populate_annotation_by_class(source:, scope:, type:)
     if source.is_a?(CellMetadatum)
       annotation = {name: source.name, type: source.annotation_type,
-                    scope: 'study', values: source.values.present? ? source.values : [],
+                    scope: 'study', values: source.values.to_a,
                     identifier: "#{source.name}--#{type}--#{scope}"}
     elsif source.is_a?(UserAnnotation)
-      annotation = {name: source.name, type: type, scope: scope, values: source.values.present? ? source.values : [],
-                    identifier: "#{source.name}--#{type}--#{scope}"}
+      annotation = {name: source.name, type: type, scope: scope, values: source.values.to_a,
+                    identifier: "#{source.id}--#{type}--#{scope}", id: source.id}
     elsif source.is_a?(Hash)
-      annotation = {name: source[:name], type: type, scope: scope, values: source[:values].present? ? source[:values] : [],
+      annotation = {name: source[:name], type: type, scope: scope, values: source[:values].to_a,
                     identifier: "#{source[:name]}--#{type}--#{scope}"}
     end
     annotation
@@ -73,7 +73,7 @@ class RequestUtils
   # safely strip unsafe characters and encode search parameters for query/rendering
   # strips out unsafe characters that break rendering notices/modals
   def self.sanitize_search_terms(terms)
-    inputs = terms.is_a?(Array) ? terms.join(',') : terms
+    inputs = terms.is_a?(Array) ? terms.join(',') : terms.to_s
     SANITIZER.sanitize(inputs).encode('ASCII-8BIT', invalid: :replace, undef: :replace)
   end
 end

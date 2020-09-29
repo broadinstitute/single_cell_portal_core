@@ -148,7 +148,7 @@ class AdminConfigurationsController < ApplicationController
           redirect_to admin_configuration_path, alert: 'Invalid configuration option; ignored.'
       end
     rescue => e
-      ErrorTracker.report_exception(e, current_user, params)
+      ErrorTracker.report_exception(e, current_user, params.to_unsafe_hash)
       logger.error "#{Time.zone.now}: error in setting download status to #{status}; #{e.message}"
       redirect_to admin_configurations_path, alert: "An error occured while turing #{status} downloads: #{e.message}" and return
     end
@@ -199,7 +199,7 @@ class AdminConfigurationsController < ApplicationController
         end
       end
     rescue => e
-      ErrorTracker.report_exception(e, current_user, params)
+      ErrorTracker.report_exception(e, current_user, params.to_unsafe_hash)
       logger.error "#{Time.zone.now}: unable to retrieve service account FireCloud registration: #{e.message}"
     end
   end
@@ -212,7 +212,7 @@ class AdminConfigurationsController < ApplicationController
       @client.set_profile(profile_params)
       @notice = "The portal service account FireCloud profile has been successfully updated."
     rescue => e
-      ErrorTracker.report_exception(e, current_user, params)
+      ErrorTracker.report_exception(e, current_user, params.to_unsafe_hash)
       logger.error "#{Time.zone.now}: unable to update service account FireCloud registration: #{e.message}"
       @alert = "Unable to update portal service account FireCloud profile: #{e.message}"
     end
@@ -223,7 +223,7 @@ class AdminConfigurationsController < ApplicationController
     begin
       @status = Study.firecloud_client.api_status
     rescue => e
-      ErrorTracker.report_exception(e, current_user, params)
+      ErrorTracker.report_exception(e, current_user, params.to_unsafe_hash)
       logger.error "#{Time.zone.now}: unable to retrieve FireCloud API status due to: #{e.message}"
       @status = {error: "An error occurred while fetching the FireCloud API status: #{e.message}"}
     end
@@ -262,7 +262,7 @@ class AdminConfigurationsController < ApplicationController
         end
         logger.info "#{Time.zone.now}: User group #{@group_name} successfully synchronized"
       rescue => e
-        ErrorTracker.report_exception(e, current_user, params)
+        ErrorTracker.report_exception(e, current_user, params.to_unsafe_hash)
         logger.error "#{Time.zone.now}: Error in synchronizing portal user group #{@group_name}: #{e.message}"
         @alert = "Unable to synchronize user group #{@group_name} due to an error: #{e.message}"
       end
@@ -282,7 +282,7 @@ class AdminConfigurationsController < ApplicationController
       begin
         @success, @alert = AdminConfiguration.set_readonly_service_account_permissions(revoke_access)
       rescue => e
-        ErrorTracker.report_exception(e, current_user, params)
+        ErrorTracker.report_exception(e, current_user, params.to_unsafe_hash)
         @alert = "An error occurred while trying to set the access for the readonly service account: #{e.message}"
       end
     else
@@ -344,10 +344,11 @@ class AdminConfigurationsController < ApplicationController
   # deliver an email to all portal users
   def deliver_users_email
     begin
-      SingleCellMailer.users_email(users_email_params, current_user).deliver_now
-      @notice = 'Your email has successfully been delivered.'
+      # send in background so operation doesn't time out with lots of users
+      SingleCellMailer.delay.batch_users_email(users_email_params, current_user)
+      @notice = 'Your email has successfully been queued for delivery and should arrive shortly.'
     rescue => e
-      ErrorTracker.report_exception(e, current_user, params)
+      ErrorTracker.report_exception(e, current_user, users_email_params.to_unsafe_hash)
       logger.error "#{Time.zone.now}: Error delivering users email: #{e.message}"
       @alert = "Unabled to deliver users email due to the following error: #{e.message}"
     end

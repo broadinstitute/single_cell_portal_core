@@ -22,6 +22,7 @@
       window.uniqueGenes = <%= @unique_genes.present? ? raw(@unique_genes) : [] %>;
 
       window.SCP.gaTrackingId = '<%= ENV['GA_TRACKING_ID'] %>';
+      window.SCP.analyticsPageName = '<%= get_page_name %>';
 
       // if we had search forms to preserve, recall and resubmit
       if ( localStorage.getItem('previous-search-url') ) {
@@ -42,9 +43,13 @@
       // Set the unique cookie for tracking user IDs in GA.  Also used in Mixpanel.
       // This is not personally identifiable, lasts for 1 year or until cleared.
       if ( typeof Cookies.get('user_id') === 'undefined' ) {
-        Cookies.set('user_id', '<%= SecureRandom.uuid %>', {expires: 365})
+        Cookies.set('user_id', '<%= user_signed_in? ? current_user.get_metrics_uuid : SecureRandom.uuid %>', {expires: 365})
       }
       window.SCP.userId = Cookies.get('user_id');
+
+      // track whether this user (if present) is registered for Terra
+      // this is needed for reporting upstream to Bard
+      window.SCP.registeredForTerra = <%= user_signed_in? ? current_user.registered_for_firecloud : false %>
 
       // set userId in Google Analytics
       // Where else is `userId` used?  Consider removing this raw global.

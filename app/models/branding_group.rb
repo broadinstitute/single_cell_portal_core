@@ -2,6 +2,7 @@ class BrandingGroup
   include Mongoid::Document
   include Mongoid::Timestamps
   include Mongoid::Paperclip
+  include FeatureFlaggable
 
   field :name, type: String
   field :name_as_id, type: String
@@ -9,6 +10,10 @@ class BrandingGroup
   field :background_color, type: String
   field :font_family, type: String, default: 'Helvetica Neue, sans-serif'
   field :font_color, type: String, default: '#333333'
+  field :feature_flags, type: Hash, default: {}
+
+  # list of facets to show for this branding group (will restrict to only provided identifiers, if present)
+  field :facet_list, type: Array, default: []
 
   has_many :studies
   belongs_to :user
@@ -52,6 +57,11 @@ class BrandingGroup
 
   before_validation :set_name_as_id
   before_destroy :remove_branding_association
+
+  # helper to return list of associated search facets
+  def facets
+    self.facet_list.any? ? SearchFacet.where(:identifier.in => self.facet_list) : SearchFacet.visible
+  end
 
   private
 

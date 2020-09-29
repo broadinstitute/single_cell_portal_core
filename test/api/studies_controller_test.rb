@@ -54,16 +54,19 @@ class StudiesControllerTest < ActionDispatch::IntegrationTest
     execute_http_request(:post, api_v1_studies_path, study_attributes)
     assert_response :success
     assert json['name'] == study_attributes[:study][:name], "Did not set name correctly, expected #{study_attributes[:study][:name]} but found #{json['name']}"
-    # update study
+    # update study, utilizing nested study_detail_attributes_full_description to ensure plain-text conversion works
     study_id = json['_id']['$oid']
     update_attributes = {
         study: {
-            description: "Test description #{SecureRandom.uuid}"
+            study_detail_attributes: {
+                full_description: "<p>Test description #{SecureRandom.uuid}</p>"
+            }
         }
     }
     execute_http_request(:patch, api_v1_study_path(id: study_id), update_attributes)
     assert_response :success
-    assert json['description'] == update_attributes[:study][:description], "Did not set name correctly, expected #{update_attributes[:study][:description]} but found #{json['description']}"
+    plain_text_description = ActionController::Base.helpers.strip_tags update_attributes[:study][:study_detail_attributes][:full_description]
+    assert json['description'] == plain_text_description, "Did not set description correctly, expected #{plain_text_description} but found #{json['description']}"
     # delete study, passing ?workspace=persist to skip FireCloud workspace deletion
     execute_http_request(:delete, api_v1_study_path(id: study_id))
     assert_response 204, "Did not successfully delete study, expected response of 204 but found #{@response.response_code}"
@@ -129,5 +132,14 @@ class StudiesControllerTest < ActionDispatch::IntegrationTest
     execute_http_request(:delete, api_v1_study_path(sync_study.id))
     assert_response 204, "Did not successfully delete sync study, expected response of 204 but found #{@response.response_code}"
     puts "#{File.basename(__FILE__)}: #{self.method_name} successful!"
+  end
+
+  test 'hidden files are identified by regex' do
+    assert StudiesController::HIDDEN_FILE_REGEX.match('.foo').present?
+    assert StudiesController::HIDDEN_FILE_REGEX.match('/whatever/.foo').present?
+    assert StudiesController::HIDDEN_FILE_REGEX.match('/.config/config').present?
+
+    assert StudiesController::HIDDEN_FILE_REGEX.match('/whatever/metadata.txt').nil?
+    assert StudiesController::HIDDEN_FILE_REGEX.match('metadata.txt').nil?
   end
 end

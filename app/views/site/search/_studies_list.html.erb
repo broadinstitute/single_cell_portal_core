@@ -1,5 +1,5 @@
 <% @studies.each do |study| %>
-  <% study_description = strip_tags(study.description).truncate_words(100, omission: '... (continued)') %>
+  <% study_description = study.description.truncate_words(100, omission: '... (continued)') %>
   <div class="panel panel-default study-panel" data-page="<%= params[:page].nil? ? 1 : params[:page] %>">
     <div class="panel-heading">
       <div class="panel-title">

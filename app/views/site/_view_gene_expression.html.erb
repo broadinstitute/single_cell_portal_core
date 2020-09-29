@@ -54,14 +54,15 @@
           <% else %>
           var url = '<%= render_gene_set_expression_plots_path(accession: params[:accession], study_name: params[:study_name], search: {genes: @gene_list}) %>';
           <% end %>
+
           var target1 = document.getElementById('box-plot');
           var target2 = document.getElementById('scatter-plot');
           var target3 = document.getElementById('reference-plot');
 
           // no need to store spinners in data attribute as entire plot div will be re-rendered
-          new Spinner(opts).spin(target1);
-          new Spinner(opts).spin(target2);
-          new Spinner(opts).spin(target3);
+          var spin1 = new Spinner(opts).spin(target1);
+          var spin2 = new Spinner(opts).spin(target2);
+          var spin3 = new Spinner(opts).spin(target3);
 
           var urlParams = getRenderUrlParams();
 
@@ -71,6 +72,11 @@
               url: url,
               method: 'GET',
               dataType: 'script'
+          }).fail(function() {
+              spin1.stop()
+              spin2.stop()
+              spin3.stop()
+              showMessageModal(null, "An error has occurred loading the data.<br><br>If the error persists after reloading the page, please contact us at <br><a href='mailto:scp-support@broadinstitute.zendesk.com'>scp-support@broadinstitute.zendesk.com</a>");
           });
       }
 

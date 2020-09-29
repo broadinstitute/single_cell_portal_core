@@ -62,7 +62,7 @@ export default function StudyResults({ results, changePage, StudyComponent }) {
           { pageControlDisplay }
         </div>
       </div>
-      <table {...getTableProps({ className: 'result-table' }) }>
+      <table {...getTableProps({ className: 'result-table' })}>
         <tbody {...getTableBodyProps()}>
           {rows.map((row, i) => {
             prepareRow(row)
@@ -71,7 +71,7 @@ export default function StudyResults({ results, changePage, StudyComponent }) {
                 {row.cells.map(cell => {
                   return (
                     <td key {...cell.getCellProps()}>
-                      <StudyComponent study={ cell.value }/>
+                      <StudyComponent study={cell.value}/>
                     </td>
                   )
                 })}

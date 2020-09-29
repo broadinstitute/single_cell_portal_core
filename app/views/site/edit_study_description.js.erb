@@ -1,14 +1,9 @@
-$('#study-description-content').html("<%= escape_javascript(render partial: 'study_description_edit') %>");
+$('#study-description-content').html('<%= escape_javascript(render partial: 'study_description_edit') %>');
 
 ClassicEditor
-    .create( document.querySelector( '#study_description' ),
-        {
-            toolbar: ["heading", '|',  "bold", "italic", "link", "bulletedList", "numberedList", "blockQuote", '|', "undo", "redo"]
-        }
+    .create( document.querySelector( '#study_study_detail_attributes_full_description' ),
+        fullCKEditorConfig
     )
-    .then( function(editor) {
-        console.log('Editor inserted');
-    } )
     .catch( function(error) {
             console.error( error );
         }

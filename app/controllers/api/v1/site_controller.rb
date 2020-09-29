@@ -5,6 +5,9 @@ module Api
       include Swagger::Blocks
 
       before_action :set_current_api_user!
+      before_action :authenticate_api_user!, only: [:download_data, :stream_data, :get_study_analysis_config,
+                                                    :submit_study_analysis, :get_study_submissions,
+                                                    :get_study_submission, :sync_submission_outputs]
       before_action :set_study, except: [:studies, :analyses, :get_analysis]
       before_action :set_analysis_configuration, only: [:get_analysis, :get_study_analysis_config]
       before_action :check_study_detached, only: [:download_data, :stream_data, :get_study_analysis_config,
@@ -94,7 +97,9 @@ module Api
               'Site'
           ]
           key :summary, 'Download a StudyFile'
-          key :description, 'Download a single StudyFile (via signed URL)'
+          key :description, "Download a single StudyFile (via signed URL)<br/><br/><strong>NOTE</strong>: Due to CORS issues, files cannot be " + \
+                            "downloaded via Swagger.  To download a file, either use a client such as Postman, or copy/paste " + \
+                            "the CURL command into a terminal and add the '-L' flag immediately before the URL.".html_safe
           key :operationId, 'site_study_download_data_path'
           parameter do
             key :name, :accession
@@ -140,7 +145,7 @@ module Api
             # check against download quota that is loaded in ApplicationController.get_download_quota
             if user_quota <= @download_quota
               @signed_url = Study.firecloud_client.execute_gcloud_method(:generate_signed_url, 0, @study.bucket_id,
-                                                                         @study_file.bucket_location, expires: 15)
+                                                                         @study_file.bucket_location, expires: 60)
               current_api_user.update(daily_download_quota: user_quota)
               redirect_to @signed_url
             else

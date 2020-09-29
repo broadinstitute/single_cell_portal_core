@@ -15,10 +15,10 @@ function CommonSearchButtons() {
   return (
     <>
       <span className="facet">
-        <a onClick={ () => handleClick('popular') }>Most Popular</a>
+        <a onClick={() => handleClick('popular')}>Most Popular</a>
       </span>
       <span className="facet">
-        <a onClick={ () => handleClick('recent') }>Most Recent</a>
+        <a onClick={() => handleClick('recent')}>Most Recent</a>
       </span>
     </>
   )

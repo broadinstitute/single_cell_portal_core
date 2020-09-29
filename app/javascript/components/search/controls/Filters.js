@@ -22,15 +22,17 @@ function FilterCheckboxes(props) {
         props.filters.map(filter => {
           return (
             <li key={`li-${filter.id}`}>
-              <input
-                type='checkbox'
-                aria-label='checkbox'
-                onChange={e => {updateSelection(filter.id, e.target.checked)}}
-                id={filter.id}
-                name={filter.id}
-                checked={props.selection.includes(filter.id)}
-              />
-              <label htmlFor={filter.id}>{filter.name}</label>
+              <label htmlFor={filter.id}>
+                <input
+                  type='checkbox'
+                  aria-label='checkbox'
+                  onChange={e => {updateSelection(filter.id, e.target.checked)}}
+                  id={filter.id}
+                  name={filter.id}
+                  checked={props.selection.includes(filter.id)}
+                />
+                <span>{filter.name}</span>
+              </label>
             </li>
           )
         })

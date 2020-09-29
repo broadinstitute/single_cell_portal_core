@@ -13,13 +13,11 @@ class PapiClient < Struct.new(:project, :service_account_credentials, :service)
   extend ErrorTracker
 
   # Service account JSON credentials
-  SERVICE_ACCOUNT_KEY = !ENV['SERVICE_ACCOUNT_KEY'].blank? ? (ENV['NON_DOCKERIZED'] ? ENV['SERVICE_ACCOUNT_KEY'] : File.absolute_path(ENV['SERVICE_ACCOUNT_KEY'])) : ''
+  SERVICE_ACCOUNT_KEY = !ENV['SERVICE_ACCOUNT_KEY'].blank? ? (ENV['NOT_DOCKERIZED'] ? ENV['SERVICE_ACCOUNT_KEY'] : File.absolute_path(ENV['SERVICE_ACCOUNT_KEY'])) : ''
   # Google authentication scopes necessary for running pipelines
   GOOGLE_SCOPES = %w(https://www.googleapis.com/auth/cloud-platform)
   # GCP Compute project to run pipelines in
   COMPUTE_PROJECT = ENV['GOOGLE_CLOUD_PROJECT'].blank? ? '' : ENV['GOOGLE_CLOUD_PROJECT']
-  # Docker image in GCP project to pull for running ingest jobs
-  INGEST_DOCKER_IMAGE = 'gcr.io/broad-singlecellportal-staging/scp-ingest-pipeline:1.3.9'
   # Network and sub-network names, if needed
   GCP_NETWORK_NAME = ENV['GCP_NETWORK_NAME']
   GCP_SUB_NETWORK_NAME = ENV['GCP_SUB_NETWORK_NAME']
@@ -108,7 +106,7 @@ class PapiClient < Struct.new(:project, :service_account_credentials, :service)
         user_id: user.id.to_s,
         file_id: study_file.id.to_s,
         action: action,
-        docker_image: INGEST_DOCKER_IMAGE
+        docker_image: AdminConfiguration.get_ingest_docker_image
     }
     environment = self.set_environment_variables
     action = self.create_actions_object(commands: command_line, environment: environment)
@@ -171,13 +169,15 @@ class PapiClient < Struct.new(:project, :service_account_credentials, :service)
 
   # Instantiate actions for pipeline, which holds command line actions, docker information,
   # and information that is passed to run_pipeline.  The Docker image that is pulled for this
-  # is hard-coded to PapiClient::INGEST_DOCKER_IMAGE
+  # is referenced from AdminConfiguration.get_ingest_docker_image, which will pull either from
+  # and existing configuration object (for non-production environments) or fall back to
+  # Rails.application.config.ingest_docker_image
   #
   # * *params*
   #   - +commands+: (Array<String>) => An array of commands to run inside the container
   #   - +environment+: (Hash) => Hash of key/value pairs to set as the container env
   #   - +flags+: (Array<String>) => An array of flags to apply to the action
-  #   - +image_uri+: (String) => GCR Docker image to pull, defaults to PapiClient::INGEST_DOCKER_IMAGE
+  #   - +image_uri+: (String) => GCR Docker image to pull, defaults to AdminConfiguration.get_ingest_docker_image
   #   - +labels+: (Hash) => Hash of labels to associate with the action
   #   - +timeout+: (String) => Maximum runtime of action
   #
@@ -188,7 +188,7 @@ class PapiClient < Struct.new(:project, :service_account_credentials, :service)
         commands: commands,
         environment: environment,
         flags: flags,
-        image_uri: INGEST_DOCKER_IMAGE,
+        image_uri: AdminConfiguration.get_ingest_docker_image,
         labels: labels,
         timeout: timeout
     )
@@ -200,6 +200,7 @@ class PapiClient < Struct.new(:project, :service_account_credentials, :service)
   #   - +MONGODB_PASSWORD+: Password for above MongoDB user
   #   - +DATABASE_NAME+: Name of current MongoDB schema as defined by Rails environment
   #   - +GOOGLE_PROJECT_ID+: Name of the GCP project this pipeline is running in
+  #   - +SENTRY_DSN+: Sentry Data Source Name (DSN); URL to send Sentry logs to
   #
   # * *returns*
   #   - (Hash) => Hash of required environment variables
@@ -209,7 +210,8 @@ class PapiClient < Struct.new(:project, :service_account_credentials, :service)
         'MONGODB_USERNAME' => 'single_cell',
         'MONGODB_PASSWORD' => ENV['PROD_DATABASE_PASSWORD'],
         'DATABASE_NAME' => Mongoid::Config.clients["default"]["database"],
-        'GOOGLE_PROJECT_ID' => COMPUTE_PROJECT
+        'GOOGLE_PROJECT_ID' => COMPUTE_PROJECT,
+        'SENTRY_DSN' => ENV['SENTRY_DSN']
     }
   end
 
@@ -314,13 +316,6 @@ class PapiClient < Struct.new(:project, :service_account_credentials, :service)
         taxon = study_file.taxon
         opts += ["--taxon-name", "#{taxon.scientific_name}", "--taxon-common-name", "#{taxon.common_name}",
                  "--ncbi-taxid", "#{taxon.ncbi_taxid}"]
-        if taxon.current_assembly.present?
-          assembly = taxon.current_assembly
-          opts += ["--genome-assembly-accession", "#{assembly.accession}"]
-          if assembly.current_annotation.present?
-            opts += ["--genome-annotation", "#{assembly.current_annotation.name}"]
-          end
-        end
       end
     when 'Cluster'
       # the name of Cluster files is the same as the name of the cluster object itself

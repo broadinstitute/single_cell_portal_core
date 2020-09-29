@@ -28,6 +28,16 @@ const stringAndNumericFacets = [
   { id: 'organism_age', filters: { min: 14, max: 180, unit: 'years' } }
 ]
 
+const orFacets = [
+  {
+    id: 'cell_type', filters: [
+      { id: 'ct1', name: 'amarcrine' },
+      { id: 'ct2', name: 'retinal' }
+    ]
+  },
+  { id: 'cell_type__custom', filters:  [{ id: 'ctc1', name: 'Bergmann' }] }
+]
+
 describe('Search query display text', () => {
   it('renders a single facet', async () => {
     const wrapper = mount((
@@ -62,6 +72,13 @@ describe('Search query display text', () => {
       <SearchQueryDisplay facets={oneStringFacet} terms={['foo', 'bar']}/>
     ))
     expect(wrapper.find('.query-text').text().trim()).toEqual('(Text contains (foo OR bar)) AND (Metadata contains (species: Homo sapiens))')
+  })
+
+  it('renders or-ed facets properly', async () => {
+    const wrapper = mount((
+      <SearchQueryDisplay facets={orFacets} />
+    ))
+    expect(wrapper.find('.query-text').text().trim()).toEqual('Metadata contains ((cell type: amarcrine OR retinal) OR (cell type custom: Bergmann))')
   })
 })
 

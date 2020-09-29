@@ -5,7 +5,6 @@ import Form from 'react-bootstrap/lib/Form'
 import { faSearch, faTimes } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { SearchSelectionContext } from 'providers/SearchSelectionProvider'
-import { StudySearchContext } from 'providers/StudySearchProvider'
 
 /**
  * Component to search using a keyword value
@@ -14,7 +13,6 @@ import { StudySearchContext } from 'providers/StudySearchProvider'
 export default function KeywordSearch({ keywordPrompt }) {
   const placeholder = keywordPrompt ? keywordPrompt : 'Enter keyword'
   const selectionContext = useContext(SearchSelectionContext)
-  const searchContext = useContext(StudySearchContext)
   // show clear button after a search has been done,
   //  as long as the text hasn't been updated
   const showClear = selectionContext.terms && selectionContext.terms.length
@@ -39,7 +37,7 @@ export default function KeywordSearch({ keywordPrompt }) {
   return (
     <Form
       horizontal
-      onSubmit = { handleSubmit }
+      onSubmit = {handleSubmit}
       className='study-keyword-search'
     >
       <InputGroup>
@@ -49,19 +47,19 @@ export default function KeywordSearch({ keywordPrompt }) {
           size="30"
           type="text"
           value={selectionContext.terms}
-          onChange={e => handleKeywordChange(e.target.value) }
+          onChange={e => handleKeywordChange(e.target.value)}
           placeholder={placeholder}
           name="keywordText"/>
         <div className="input-group-append">
           <Button type='submit'>
-            <FontAwesomeIcon icon={ faSearch } />
+            <FontAwesomeIcon icon={faSearch} />
           </Button>
         </div>
         { showClear &&
           <Button className="keyword-clear"
             type='button'
-            onClick={ handleClear } >
-            <FontAwesomeIcon icon={ faTimes } />
+            onClick={handleClear} >
+            <FontAwesomeIcon icon={faTimes} />
           </Button> }
       </InputGroup>
     </Form>

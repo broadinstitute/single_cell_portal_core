@@ -25,6 +25,7 @@ class SearchFacet
   field :unit, type: String # unit represented by values in number-based facets
   field :min, type: Float # minimum allowed value for number-based facets
   field :max, type: Float # maximum allowed value for number-based facets
+  field :visible, type: Boolean, default: true # default visibility (false will not show in UI but can be queried via API)
 
   DATA_TYPES = %w(string number boolean)
   BQ_DATA_TYPES = %w(STRING FLOAT64 BOOL)
@@ -278,6 +279,11 @@ class SearchFacet
     end
   end
 
+  # return all "visible" facets
+  def self.visible
+    self.where(visible: true)
+  end
+
   # helper to know if column is numeric
   def is_numeric?
     self.data_type == 'number'
@@ -358,12 +364,14 @@ class SearchFacet
   def generate_array_query
     "SELECT DISTINCT id, name FROM(SELECT id_col AS id, name_col as name " + \
     "FROM #{CellMetadatum::BIGQUERY_TABLE}, UNNEST(#{self.big_query_id_column}) AS id_col WITH OFFSET id_pos, " + \
-    "UNNEST(#{self.big_query_name_column}) as name_col WITH OFFSET name_pos WHERE id_pos = name_pos)"
+    "UNNEST(#{self.big_query_name_column}) as name_col WITH OFFSET name_pos WHERE id_pos = name_pos) WHERE id IS NOT NULL " + \
+    "ORDER BY LOWER(name)"
   end
 
   # generate query string to retrieve distinct values for non-array based facets
   def generate_non_array_query
-    "SELECT DISTINCT #{self.big_query_id_column} AS id, #{self.big_query_name_column} AS name FROM #{CellMetadatum::BIGQUERY_TABLE}"
+    "SELECT DISTINCT #{self.big_query_id_column} AS id, #{self.big_query_name_column} AS name FROM #{CellMetadatum::BIGQUERY_TABLE} " + \
+    "WHERE #{self.big_query_id_column} IS NOT NULL ORDER BY LOWER(#{self.big_query_name_column})"
   end
 
   # generate a minmax query string to set bounds for numeric facets
@@ -389,8 +397,8 @@ class SearchFacet
     else
       self.ontology_urls.each do |ontology_url|
         # check that entry is a Hash with :name and :url field
-        unless ontology_url.is_a?(Hash) && ontology_url.with_indifferent_access.keys.sort == %w(name url)
-          errors.add(:ontology_urls, "contains a misformed entry: #{ontology_url}. Must be a Hash with a :name and :url field")
+        unless ontology_url.is_a?(Hash) && ontology_url.with_indifferent_access.keys.sort == %w(browser_url name url)
+          errors.add(:ontology_urls, "contains a misformed entry: #{ontology_url}. Must be a Hash with a :name, :url, and :browser_url field")
         end
         santized_url = ontology_url.with_indifferent_access
         unless url_valid?(santized_url[:url])

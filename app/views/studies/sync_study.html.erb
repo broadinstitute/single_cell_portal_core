@@ -50,8 +50,11 @@
         <div class="panel-body">
           <p class="help-block">These are files that are possibly new and are ready to sync with your study.</p>
           <div id="unsynced-study-files-forms" class="unsynced-content">
-            <% @unsynced_files.each do |study_file| %>
+            <% visible_unsynced_files.each do |study_file| %>
               <%= render partial: 'study_file_form', locals: {study_file: study_file} %>
+            <% end %>
+            <% if hidden_unsynced_files.any?  %>
+               <i><%= hidden_unsynced_files.count %> hidden files not shown (files with a leading '.' are ignored)</i>
             <% end %>
           </div>
         </div>

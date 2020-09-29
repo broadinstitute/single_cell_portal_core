@@ -1,16 +1,23 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Single Cell Portal</title>
   <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-  <script src="https://use.fontawesome.com/b3ed42fe0f.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js" ></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+    integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+    integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+  <link crossorigin="anonymous" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css"
+    integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+    integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+    crossorigin="anonymous"></script>
   <style>
-    html, body {
+    html,
+    body {
       height: 100%;
     }
 
@@ -34,7 +41,7 @@
       position: relative;
       margin-top: -155px; /* negative value of footer height */
       height: 155px;
-      clear:both;
+      clear: both;
       width: 100%;
     }
 
@@ -50,6 +57,7 @@
       min-height: 50px !important;
 
     }
+
     .sc-navbar .nav {
       margin-top: 0px;
       font-size: 16px;
@@ -67,43 +75,48 @@
     .navbar-brand {
       padding: 6px 15px;
     }
-
   </style>
 </head>
 
 <body>
-<nav class="navbar fluid navbar-inverse navbar-fixed-top sc-navbar" role="navigation" id="single-cell-navbar">
-  <div class="navbar-header">
-    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-      <span class="sr-only">Toggle navigation</span>
-      <span class="icon-bar"></span>
-      <span class="icon-bar"></span>
-      <span class="icon-bar"></span>
-    </button>
-    <a href="/single_cell" class="navbar-brand hidden-xs check-upload"><span class='fas fa-home'></span> Single Cell Portal<sup class='text-danger'><small> BETA</small></sup></a>
-  </div>
-  <div class="collapse navbar-collapse">
-    <ul class="nav navbar-nav pull-right">
-      <li class='dropdown'><a href="#" class=dropdown-toggle" data-toggle="dropdown"><span class='fas fa-question-circle'></span> Help <span class='caret'></span></a>
-        <ul class="dropdown-menu dropdown-menu-right">
-          <li><a href="https://github.com/broadinstitute/single_cell_portal/wiki" class='check-upload', target='_blank'><span class='fas fa-info-circle fa-fw'></span> Documentation/Wiki</a></li>
-          <li><a href="https://github.com/broadinstitute/single_cell_portal/issues" class='check-upload', target='_blank'><span class='fas fa-github fa-fw'></span> Issues</a></li>
-        </ul>
-      </li>
-      <li><a href="/users/sign_in" id='login-nav'><span class='fas fa-sign-in fa-fw'></span> Login</a></li>
-    </ul>
-  </div>
-</nav>
+  <nav class="navbar fluid navbar-inverse navbar-fixed-top sc-navbar" role="navigation" id="single-cell-navbar">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a href="/single_cell" class="navbar-brand hidden-xs check-upload"><span class='fas fa-home'></span> Single Cell
+        Portal<sup class='text-danger'><small> BETA</small></sup></a>
+    </div>
+    <div class="collapse navbar-collapse">
+      <ul class="nav navbar-nav pull-right">
+        <li class='dropdown'><a href="#" class=dropdown-toggle" data-toggle="dropdown"><span
+              class='fas fa-question-circle'></span> Help <span class='caret'></span></a>
+          <ul class="dropdown-menu dropdown-menu-right">
+            <li><a href="https://github.com/broadinstitute/single_cell_portal/wiki" class='check-upload' ,
+                target='_blank'><span class='fas fa-info-circle fa-fw'></span> Documentation/Wiki</a></li>
+            <li><a href="mailto:scp-support@broadinstitute.zendesk.com" target="_blank"><span
+                  class="fas fa-fw fa-envelope"></span> Contact Us</a></li>
+          </ul>
+        </li>
+        <li><a href="/users/sign_in" id='login-nav'><span class='fas fa-sign-in fa-fw'></span> Login</a></li>
+      </ul>
+    </div>
+  </nav>
 
-<div class="container-fluid" id="wrap">
-  <div class="row section-pad" id="main-body">
-    <div class="col-md-12">
-      <div class="bg-danger well well-lg" id="notice">
-        <h3 class="text-danger text-center">We're sorry, but the change you wanted was rejected by the server.</h3>
-        <p class="lead text-center">Please <a href="https://github.com/broadinstitute/single_cell_portal/issues">report an issue</a> if this problem persists.</p>
+  <div class="container-fluid" id="wrap">
+    <div class="row section-pad" id="main-body">
+      <div class="col-md-12">
+        <div class="bg-danger well well-lg" id="notice">
+          <h3 class="text-danger text-center">We're sorry, but the change you wanted was rejected by the server.</h3>
+          <p class="lead text-center">Please send an email to <a href='mailto:scp-support@broadinstitute.zendesk.com'>
+              scp-support@broadinstitute.zendesk.com</a> if this problem persists.</p>
+        </div>
       </div>
     </div>
   </div>
-</div>
 </body>
+
 </html>

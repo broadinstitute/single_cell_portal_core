@@ -448,57 +448,11 @@ module Api
 
       # POST /single_cell/api/v1/studies/:study_id/study_files/:id/parse
       def parse
-        logger.info "#{Time.zone.now}: Parsing #{@study_file.name} as #{@study_file.file_type} in study #{@study.name}"
-        unless @study_file.parsing?
-          case @study_file.file_type
-          when 'Cluster'
-            @study_file.update(parse_status: 'parsing')
-            job = IngestJob.new(study: @study, study_file: @study_file, user: current_api_user, action: :ingest_cluster)
-            job.delay.push_remote_and_launch_ingest
-            head 204
-          when 'Coordinate Labels'
-            if @study_file.bundle_parent.present?
-              @study_file.update(parse_status: 'parsing')
-              @study.delay.initialize_coordinate_label_data_arrays(@study_file, current_api_user)
-              head 204
-            else
-              logger.info "#{Time.zone.now}: Parse for #{@study_file.name} as #{@study_file.file_type} in study #{@study.name} aborted; missing required files"
-              respond_to do |format|
-                format.json {render 'missing_file_bundle', status: 412}
-              end
-            end
-          when 'Expression Matrix'
-            @study_file.update(parse_status: 'parsing')
-            @study.delay.initialize_gene_expression_data(@study_file, current_api_user)
-            head 204
-          when 'MM Coordinate Matrix'
-            barcodes = @study_file.bundled_files.detect {|f| f.file_type == '10X Barcodes File'}
-            genes = @study_file.bundled_files.detect {|f| f.file_type == '10X Genes File'}
-            if barcodes.present? && genes.present?
-              @study_file.update(parse_status: 'parsing')
-              genes.update(parse_status: 'parsing')
-              barcodes.update(parse_status: 'parsing')
-              ParseUtils.delay.cell_ranger_expression_parse(@study, current_api_user, @study_file, genes, barcodes)
-              head 204
-            else
-              logger.info "#{Time.zone.now}: Parse for #{@study_file.name} as #{@study_file.file_type} in study #{@study.name} aborted; missing required files"
-              respond_to do |format|
-                format.json {render 'missing_file_bundle', status: 412}
-              end
-            end
-          when 'Gene List'
-            @study_file.update(parse_status: 'parsing')
-            @study.delay.initialize_precomputed_scores(@study_file, current_api_user)
-          when 'Metadata'
-            @study_file.update(parse_status: 'parsing')
-            job = IngestJob.new(study: @study, study_file: @study_file, user: current_api_user, action: :ingest_cell_metadata)
-            job.delay.push_remote_and_launch_ingest
-          else
-            # study file is not parseable
-            render json: {error: "Files of type #{@study_file.file_type} are not parseable"}, status: :unprocessable_entity
-          end
+        parse_response = FileParseService.run_parse_job(@study_file, @study, current_api_user)
+        if parse_response[:status_code] == 204
+          head 204
         else
-          render json: {error: "File is already parsing"}, status: 405
+          render json: parse_response, status: parse_response[:status_code]
         end
       end
 

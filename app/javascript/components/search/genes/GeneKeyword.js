@@ -39,26 +39,26 @@ export default function GeneKeyword({ placeholder }) {
   }
 
   return (
-    <form className="gene-keyword-search form-horizontal" onSubmit={ handleSubmit }>
+    <form className="gene-keyword-search form-horizontal" onSubmit={handleSubmit}>
       <div className="input-group">
         <input type="text"
-          ref={ inputField }
+          ref={inputField}
           className="form-control"
-          value={ genes }
+          value={genes}
           size="50"
-          onChange={ e => setGenes(e.target.value) }
-          placeholder={ placeholder }
+          onChange={e => setGenes(e.target.value)}
+          placeholder={placeholder}
           name="genes-text-input"/>
         <div className="input-group-append">
           <Button type="submit">
-            <FontAwesomeIcon icon={ faSearch } />
+            <FontAwesomeIcon icon={faSearch} />
           </Button>
         </div>
         { showClear &&
           <Button className="keyword-clear"
             type='button'
-            onClick={ handleClear } >
-            <FontAwesomeIcon icon={ faTimes } />
+            onClick={handleClear} >
+            <FontAwesomeIcon icon={faTimes} />
           </Button> }
       </div>
       <Modal

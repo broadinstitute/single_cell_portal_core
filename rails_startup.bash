@@ -7,6 +7,17 @@ echo "*** COMPLETED ***"
 echo "*** ROLLING OVER LOGS ***"
 ruby /home/app/webapp/bin/cycle_logs.rb
 echo "*** COMPLETED ***"
+
+# ensure data upload directory exists and has correct permissions
+echo "*** ENSURING DATA UPLOAD DIRECTORY PERMISSIONS ***"
+if [[ ! -d /home/app/webapp/data ]]; then
+    echo "DATA DIRECTORY NOT PRESENT; CREATING"
+    mkdir data
+    echo "DATA DIRECTORY SUCCESSFULLY CREATED"
+fi
+sudo chown -R app:app /home/app/webapp/data
+echo "*** COMPLETED ***"
+
 if [[ $PASSENGER_APP_ENV = "production" ]] || [[ $PASSENGER_APP_ENV = "staging" ]] || [[ $PASSENGER_APP_ENV = "pentest" ]]
 then
     echo "*** PRECOMPILING ASSETS ***"
@@ -42,6 +53,7 @@ echo "export PROD_DATABASE_PASSWORD='$PROD_DATABASE_PASSWORD'" >| /home/app/.cro
 echo "export SENDGRID_USERNAME='$SENDGRID_USERNAME'" >> /home/app/.cron_env
 echo "export SENDGRID_PASSWORD='$SENDGRID_PASSWORD'" >> /home/app/.cron_env
 echo "export MONGO_LOCALHOST='$MONGO_LOCALHOST'" >> /home/app/.cron_env
+echo "export MONGO_INTERNAL_IP='$MONGO_INTERNAL_IP'" >> /home/app/.cron_env
 echo "export SECRET_KEY_BASE='$SECRET_KEY_BASE'" >> /home/app/.cron_env
 echo "export GOOGLE_CLOUD_PROJECT='$GOOGLE_CLOUD_PROJECT'" >> /home/app/.cron_env
 
@@ -97,7 +109,9 @@ then
 	sudo -E -u app -H bin/rails runner -e $PASSENGER_APP_ENV "UserAnnotation.delay.delete_queued_annotations"
 	sudo -E -u app -H bin/rails runner -e $PASSENGER_APP_ENV "Study.delay.delete_queued_studies"
 else
-  echo "*** ADDING CRONTAB TO DELETE QUEUED STUDIES & FILES ***"
+  echo "*** ADDING CRONTAB TO DELETE FAILED UPLOADS, QUEUED STUDIES & FILES ***"
+  # check for failed uploads every 6 hours, run delete queues nightly
+	(crontab -u app -l ; echo "0 */6 * * * . /home/app/.cron_env ; cd /home/app/webapp/; /home/app/webapp/bin/rails runner -e $PASSENGER_APP_ENV \"UploadCleanupJob.find_and_remove_failed_uploads\" >> /home/app/webapp/log/cron_out.log 2>&1") | crontab -u app -
 	(crontab -u app -l ; echo "0 1 * * * . /home/app/.cron_env ; cd /home/app/webapp/; /home/app/webapp/bin/rails runner -e $PASSENGER_APP_ENV \"Study.delete_queued_studies\" >> /home/app/webapp/log/cron_out.log 2>&1") | crontab -u app -
 	(crontab -u app -l ; echo "0 1 * * * . /home/app/.cron_env ; cd /home/app/webapp/; /home/app/webapp/bin/rails runner -e $PASSENGER_APP_ENV \"StudyFile.delete_queued_files\" >> /home/app/webapp/log/cron_out.log 2>&1") | crontab -u app -
 	(crontab -u app -l ; echo "0 1 * * * . /home/app/.cron_env ; cd /home/app/webapp/; /home/app/webapp/bin/rails runner -e $PASSENGER_APP_ENV \"UserAnnotation.delete_queued_annotations\" >> /home/app/webapp/log/cron_out.log 2>&1") | crontab -u app -
@@ -110,6 +124,14 @@ then
   (crontab -u app -l ; echo "55 23 * * * . /home/app/.cron_env ; cd /home/app/webapp/; /home/app/webapp/bin/rails runner -e $PASSENGER_APP_ENV \"SingleCellMailer.nightly_admin_report.deliver_now\" >> /home/app/webapp/log/cron_out.log 2>&1") | crontab -u app -
   echo "*** COMPLETED ***"
 fi
+
+if [[ $PASSENGER_APP_ENV != "production" ]]
+then
+  echo "*** RESETTING DEFAULT INGEST DOCKER IMAGE ***"
+  sudo -E -u app -H bin/rails runner -e $PASSENGER_APP_ENV "AdminConfiguration.revert_ingest_docker_image"
+  echo "*** COMPLETED ***"
+fi
+
 
 echo "*** ADDING DAILY RESET OF USER DOWNLOAD QUOTAS ***"
 (crontab -u app -l ; echo "@daily . /home/app/.cron_env ; cd /home/app/webapp/; /home/app/webapp/bin/rails runner -e $PASSENGER_APP_ENV \"User.update_all(daily_download_quota: 0)\" >> /home/app/webapp/log/cron_out.log 2>&1") | crontab -u app -

@@ -1,6 +1,7 @@
 import React, { useContext, useState } from 'react'
-import { StudySearchContext } from './StudySearchProvider'
+import { StudySearchContext, getAppliedParamsForFacet } from './StudySearchProvider'
 import _clone from 'lodash/clone'
+import _isEqual from 'lodash/isEqual'
 
 /** The currently selected state of the search panel */
 export const SearchSelectionContext = React.createContext({
@@ -9,6 +10,31 @@ export const SearchSelectionContext = React.createContext({
   updateSelection: undefined,
   performSearch: undefined
 })
+
+/** returns the currently selected filter ids for the given facet object */
+export function getSelectionForFacet(facet, selectionContext) {
+  let selection = []
+  if (selectionContext.facets[facet.id]) {
+    selection = selectionContext.facets[facet.id]
+  }
+  return selection
+}
+
+/** returns whether or not the current selection for the given facet object is different
+  * than what the most recently performed search was */
+export function isFacetApplicable(facet, selectionContext, searchContext) {
+  const selection = getSelectionForFacet(facet, selectionContext)
+  const appliedSelection = getAppliedParamsForFacet(facet, searchContext)
+  const isSelectionValid = facet.type !== 'number' ||
+                            (selection.length === 0 ||
+                              !isNaN(parseInt(selection[0])) && !isNaN(parseInt(selection[1])))
+
+  const isApplicable = isSelectionValid &&
+                       (!_isEqual(selection, appliedSelection) ||
+                       facet.type === 'number' && appliedSelection.length === 0)
+                       // allow application of number filters to default range
+  return isApplicable
+}
 
 /** Renders its children within a SearchSelectionContext provider */
 export default function SearchSelectionProvider(props) {

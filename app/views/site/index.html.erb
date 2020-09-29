@@ -2,74 +2,39 @@
 <div class="container-fluid home-page-fix" id="wrap">
   <div class="row section-pad" id="main-body">
     <div class="col-md-12">
-      <% if User.feature_flag_for_user(current_user, "advanced_search") %>
-        <% if User.feature_flag_for_user(current_user, 'covid19_page') && @selected_branding_group.nil? %>
-          <div class="home-nav" id="covid19-tab"
-              style="float:right;
-                     background: url(<%= image_url 'covid19-button.png' %>);
-                     background-position: right;
-                     background-repeat: no-repeat;
-                     background-color: #1d1e20;
-                     border-radius: 5px;
-                     background-size: contain;">
-            <a href="/single_cell/covid19"
-               style="color: #fff;
-                      font-size: normal;
-                      width:250px;
-                      padding: 10px 15px;
-                      font-size: 16.8px;
-                      display: inline-block">
-              COVID-19 Studies
-            </a>
-          </div>
-        <% end %>
-        <%#
-          This is where React integrates into Rails.
 
-          Ensure any updates to this ID are reflected in the ReactDOM.render call
-          in app/javascript/packs/application.js
-        #%>
-        <div id="home-page-content"></div>
-      <% else %>
-        <ul class="nav nav-tabs sc-tabs" role="tablist" id="home-page-tabs">
-          <li role="presentation" class="home-nav active" id="search-studies-nav">
-            <a href="#search-studies" class="home-nav-tab" data-toggle="tab"><span class="fas fa-book"></span> Search Studies</a>
-          </li>
-          <li role="presentation" class="home-nav" id="search-genes-nav">
-            <a href="#search-genes" class="home-nav-tab" data-toggle="tab"><span class="fas fa-dna"></span> Search Genes</a>
-          </li>
-          <% if User.feature_flag_for_user(current_user, 'covid19_page') && @selected_branding_group.nil? %>
-            <li role="presentation" class="home-nav" id="covid19-tab"
-                style="float:right;
-                       background: url(<%= image_url 'covid19-button.png' %>);
-                       background-position: right;
-                       background-repeat: no-repeat;
-                       background-color: #1d1e20;
-                       border-radius: 5px;
-                       background-size: contain;">
-              <a href="/single_cell/covid19"
-                 style="color: #fff;
-                        font-size: normal;
-                        width:250px;">
-                COVID-19 Studies
-              </a>
-            </li>
-          <% end %>
-        </ul>
-        <div class="tab-content top-pad">
-          <div class="tab-pane active in" id="search-studies" role="tabpanel">
-            <%= render partial: '/site/search/search_studies' %>
-          </div>
-          <div class="tab-pane" id="search-genes" role="tabpanel">
-            <%= render partial: '/site/search/search_genes' %>
-          </div>
+      <% if User.feature_flag_for_instance(current_user, 'covid19_page') && @selected_branding_group.nil? %>
+        <div class="home-nav" id="covid19-tab"
+            style="float:right;
+                   background: url(<%= image_url 'covid19-button.png' %>);
+                   background-position: right;
+                   background-repeat: no-repeat;
+                   background-color: #1d1e20;
+                   border-radius: 5px;
+                   background-size: contain;">
+          <a href="/single_cell/covid19"
+             style="color: #fff;
+                    font-size: normal;
+                    width:250px;
+                    padding: 10px 15px;
+                    font-size: 16.8px;
+                    display: inline-block">
+            COVID-19 Studies
+          </a>
         </div>
       <% end %>
+      <%#
+        This is where React integrates into Rails.
+
+        Ensure any updates to this ID are reflected in the ReactDOM.render call
+        in app/javascript/packs/application.js
+      #%>
+      <div id="home-page-content"></div>
     </div>
   </div>
 </div>
 <%# render feature flags to html so they can be found by react components #%>
-<input type="hidden" id="feature-flags" value='<%= User.feature_flags_for_user(current_user).to_json %>'/>
+<input type="hidden" id="feature-flags" value='<%= FeatureFlaggable.feature_flags_for_instances(@selected_branding_group, current_user).to_json %>'/>
 
 <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
     $(window).scroll(bindScroll);
@@ -81,7 +46,7 @@
     var project = '<%= params[:scpbr] %>';
     var activeTab = 'search-studies';
     window.SCP = window.SCP ? window.SCP : {}
-    window.SCP.featureFlags = <%= User.feature_flags_for_user(current_user).to_json.gsub('"','') %>
+    window.SCP.featureFlags = <%= FeatureFlaggable.feature_flags_for_instances(@selected_branding_group, current_user).to_json.gsub('"','') %>
     window.SCP.selectedBrandingGroup = '<%= @selected_branding_group %>'
 
     $('.home-nav-tab').on('shown.bs.tab', function(el) {

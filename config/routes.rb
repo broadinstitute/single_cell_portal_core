@@ -258,6 +258,7 @@ Rails.application.routes.draw do
     get 'covid19', to: 'site#covid19'
 
     get '/', to: 'site#index', as: :site
+    post '/', to: 'site#index'
 
     # let react routing handle app and all subpaths under 'app'
     get 'app', to: 'site#index'

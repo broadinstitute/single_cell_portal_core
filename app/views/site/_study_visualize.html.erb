@@ -56,6 +56,16 @@
 </div>
 <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
   <% if @study.can_visualize_clusters? %>
+    if (typeof window.SCP.pushedPendingPageViewEvent === 'undefined') {
+      window.SCP.startPendingEvent('user-action:page:view:site-study',
+                                 {},
+                                 'plot:',
+                                 true);
+
+      // Flag to ensure we only log this pending event once per page view
+      window.SCP.pushedPendingPageViewEvent = true;
+    }
+
     $('#cluster-plot').data('rendered', false);
 
     var baseCamera = {

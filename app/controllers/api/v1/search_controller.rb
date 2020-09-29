@@ -10,7 +10,7 @@ module Api
       before_action :set_search_facet, only: :facet_filters
       before_action :set_search_facets_and_filters, only: :index
       before_action :set_preset_search, only: :index
-      before_action :set_branding_group, only: :index
+      before_action :set_branding_group, only: [:index, :facets]
 
       swagger_path '/search' do
         operation :get do
@@ -305,6 +305,13 @@ module Api
           key :summary, 'Get all available facets'
           key :description, 'Returns a list of all available search facets, including filter values'
           key :operationId, 'search_facets_path'
+          parameter do
+            key :name, :scpbr
+            key :in, :query
+            key :description, 'Requested branding group (to filter facets on)'
+            key :reqired, false
+            key :type, :string
+          end
           response 200 do
             key :description, 'Array of SearchFacets'
             schema do
@@ -323,7 +330,11 @@ module Api
       end
 
       def facets
-        @search_facets = SearchFacet.all
+        if @selected_branding_group.present?
+          @search_facets = @selected_branding_group.facets
+        else
+          @search_facets = SearchFacet.visible
+        end
       end
 
       swagger_path '/search/facet_filters' do
@@ -551,7 +562,7 @@ module Api
 
         # validate request parameters
         if totat.blank? || valid_totat == false
-          render json: {error: 'Invalid authorization token'}, status: 403 and return
+          render json: {error: 'Invalid authorization token'}, status: 401 and return
         elsif valid_accessions.blank?
           render json: {error: 'Invalid request parameters; study accessions not found'}, status: 400 and return
         end
@@ -559,10 +570,20 @@ module Api
         # load the user from the auth token
         requested_user = valid_totat
 
+        # final auth check - ensure user has permission to download from requested studies
+        # rather than fail entire request, allow subset if user can view some but not others
+        viewable_accessions = Study.viewable(requested_user).pluck(:accession)
+        permitted_accessions = valid_accessions & viewable_accessions
+
+        if permitted_accessions.empty?
+          render json: {error: "Forbidden: cannot access requested accessions"},
+                 status: 403 and return
+        end
+
         # get requested files
         # reference BulkDownloadService as ::BulkDownloadService to avoid NameError when resolving reference
         files_requested = ::BulkDownloadService.get_requested_files(file_types: sanitized_file_types,
-                                                                    study_accessions: valid_accessions)
+                                                                    study_accessions: permitted_accessions)
 
         # determine quota impact & update user's download quota
         # will throw a RuntimeError if the download exceeds the user's daily quota
@@ -572,10 +593,17 @@ module Api
           render json: {error: e.message}, status: 403 and return
         end
 
+        # create maps to avoid Mongo timeouts when generating curl commands in parallel processes
+        bucket_map = ::BulkDownloadService.generate_study_bucket_map(permitted_accessions)
+        pathname_map = ::BulkDownloadService.generate_output_path_map(files_requested)
+
         # generate curl config file
         logger.info "Beginning creation of curl configuration for user_id, auth token: #{requested_user.id}, #{totat}"
         start_time = Time.zone.now
-        @configuration = ::BulkDownloadService.generate_curl_configuration(study_files: files_requested, user: requested_user)
+        @configuration = ::BulkDownloadService.generate_curl_configuration(study_files: files_requested,
+                                                                           user: requested_user,
+                                                                           study_bucket_map: bucket_map,
+                                                                           output_pathname_map: pathname_map)
         end_time = Time.zone.now
         runtime = TimeDifference.between(start_time, end_time).humanize
         logger.info "Curl configs generated for studies #{valid_accessions}, #{files_requested.size} total files"
@@ -611,7 +639,7 @@ module Api
                 @facets << {
                     id: facet.identifier,
                     filters: matching_filters,
-                    object_id: facet.id # used for lookup later in :generate_bq_query_string
+                    db_facet: facet # used for lookup later in :generate_bq_query_string
                 }
               end
             end
@@ -683,45 +711,37 @@ module Api
         from_clause = " FROM #{CellMetadatum::BIGQUERY_TABLE}"
         where_clauses = []
         with_clauses = []
-        facets.each do |facet_obj|
-          # get the facet instance in order to run query
-          search_facet = SearchFacet.find(facet_obj[:object_id])
-          column_name = search_facet.big_query_id_column
-          if search_facet.is_array_based?
-            # if facet is array-based, we need to format an array of filter values selected by user
-            # and add this as a WITH clause, then add two UNNEST() calls for both the BQ array column
-            # and the user filters to optimize the query
-            # example query:
-            # WITH disease_filters AS (SELECT['MONDO_0000001', 'MONDO_0006052'] as disease_value)
-            # FROM cell_metadata.alexandria_convention, disease_filters, UNNEST(disease_filters.disease_value) AS disease_val
-            # WHERE (disease_val IN UNNEST(disease))
-            facet_id = search_facet.identifier
-            filter_arr_name = "#{facet_id}_filters"
-            filter_val_name = "#{facet_id}_value"
-            filter_where_val = "#{facet_id}_val"
-            filter_values = facet_obj[:filters].map {|filter| filter[:id]}
-            with_clauses << "#{filter_arr_name} AS (SELECT#{filter_values} as #{filter_val_name})"
-            from_clause += ", #{filter_arr_name}, UNNEST(#{filter_arr_name}.#{filter_val_name}) AS #{filter_where_val}"
-            where_clauses << "(#{filter_where_val} IN UNNEST(#{column_name}))"
-            base_query += ", #{filter_where_val}"
-          elsif search_facet.is_numeric?
-            # run a range query (e.g. WHERE organism_age BETWEEN 20 and 60)
-            base_query += ", #{column_name}"
-            query_on = column_name
-            min_value = facet_obj[:filters][:min]
-            max_value = facet_obj[:filters][:max]
-            unit = facet_obj[:filters][:unit]
-            if search_facet.must_convert?
-              query_on = search_facet.big_query_conversion_column
-              min_value = search_facet.calculate_time_in_seconds(base_value: min_value, unit_label: unit)
-              max_value = search_facet.calculate_time_in_seconds(base_value: max_value, unit_label: unit)
-            end
-            where_clauses << "#{query_on} BETWEEN #{min_value} AND #{max_value}"
+        or_facets = [['cell_type', 'cell_type__custom'], ['organ', 'organ_region']]
+        leading_or_facets = or_facets.map(&:first)
+        trailing_or_facets = or_facets.map(&:last)
+        or_grouped_where_clause = nil
+        # sort the facets so that OR'ed facets will be next to each other, the 99 is just
+        # an arbitrary large-ish number to make sure the non-or-grouped facets are sorted together
+        sorted_facets = facets.sort_by {|facet| or_facets.flatten.find_index(facet[:id]) || 99}
+
+        sorted_facets.each_with_index do |facet_obj, index|
+          query_elements = get_query_elements_for_facet(facet_obj)
+          from_clause += ", #{query_elements[:from]}" if query_elements[:from]
+          base_query += ", #{query_elements[:select]}" if query_elements[:select]
+          with_clauses << query_elements[:with] if query_elements[:with]
+
+
+          or_group_index = leading_or_facets.find_index(facet_obj[:id])
+          next_facet_id = sorted_facets[index + 1].try(:[], :id)
+
+          # this block handles 3 cases: (1) regular AND (2) leading OR (3) trailing OR
+          if or_group_index && trailing_or_facets[or_group_index] == next_facet_id
+             # we're at the start of a pair of facets that should be grouped by OR
+             or_grouped_where_clause = "(#{query_elements[:where]} OR "
           else
-            base_query += ", #{column_name}"
-            # for non-array columns we can pass an array of quoted values and call IN directly
-            filter_values = facet_obj[:filters].map {|filter| filter[:id]}
-            where_clauses << "#{column_name} IN ('#{filter_values.join('\',\'')}')"
+            if or_grouped_where_clause
+              # we're on the second of a pair of facets that should be grouped by OR
+              where_clauses << or_grouped_where_clause + "#{query_elements[:where]})"
+              or_grouped_where_clause = nil
+            else
+              # we're on a regular AND facet
+              where_clauses << query_elements[:where]
+            end
           end
         end
         # prepend WITH clauses before base_query (if needed), then add FROM and dependent WHERE clauses
@@ -730,12 +750,62 @@ module Api
         with_statement + base_query + from_clause + " WHERE " + where_clauses.join(" AND ")
       end
 
+      def self.get_query_elements_for_facet(facet_obj)
+        query_elements = {
+          where: nil,
+          with: nil,
+          from: nil,
+          select: nil,
+          display_where: nil
+        }
+        # get the facet instance in order to run query
+        search_facet = facet_obj[:db_facet]
+        column_name = search_facet.big_query_id_column
+        if search_facet.is_array_based?
+          # if facet is array-based, we need to format an array of filter values selected by user
+          # and add this as a WITH clause, then add two UNNEST() calls for both the BQ array column
+          # and the user filters to optimize the query
+          # example query:
+          # WITH disease_filters AS (SELECT['MONDO_0000001', 'MONDO_0006052'] as disease_value)
+          # FROM cell_metadata.alexandria_convention, disease_filters, UNNEST(disease_filters.disease_value) AS disease_val
+          # WHERE (disease_val IN UNNEST(disease))
+          facet_id = search_facet.identifier
+          filter_arr_name = "#{facet_id}_filters"
+          filter_val_name = "#{facet_id}_value"
+          filter_where_val = "#{facet_id}_val"
+          filter_values = facet_obj[:filters].map {|filter| filter[:id]}
+          query_elements[:with] = "#{filter_arr_name} AS (SELECT#{filter_values} as #{filter_val_name})"
+          query_elements[:from] = "#{filter_arr_name}, UNNEST(#{filter_arr_name}.#{filter_val_name}) AS #{filter_where_val}"
+          query_elements[:where] = "(#{filter_where_val} IN UNNEST(#{column_name}))"
+          query_elements[:select] = "#{filter_where_val}"
+        elsif search_facet.is_numeric?
+          # run a range query (e.g. WHERE organism_age BETWEEN 20 and 60)
+          query_elements[:select] = "#{column_name}"
+          query_on = column_name
+          min_value = facet_obj[:filters][:min]
+          max_value = facet_obj[:filters][:max]
+          unit = facet_obj[:filters][:unit]
+          if search_facet.must_convert?
+            query_on = search_facet.big_query_conversion_column
+            min_value = search_facet.calculate_time_in_seconds(base_value: min_value, unit_label: unit)
+            max_value = search_facet.calculate_time_in_seconds(base_value: max_value, unit_label: unit)
+          end
+          query_elements[:where] = "#{query_on} BETWEEN #{min_value} AND #{max_value}"
+        else
+          query_elements[:select] = "#{column_name}"
+          # for non-array columns we can pass an array of quoted values and call IN directly
+          filter_values = facet_obj[:filters].map {|filter| filter[:id]}
+          query_elements[:where] = "#{column_name} IN ('#{filter_values.join('\',\'')}')"
+        end
+        query_elements
+      end
+
       # convert a list of facet filters into a keyword search for inferred matching
       # treats each facet separately so we can find intersection across all
       def self.convert_filters_for_inferred_search(facets:)
         terms_by_facet = {}
         facets.each do |facet|
-          search_facet = SearchFacet.find(facet[:object_id])
+          search_facet = facet[:db_facet]
           # only use non-numeric facets
           if search_facet.is_numeric?
             # we can't do inferred matching on numerics, and because the facets are ANDed,
@@ -756,10 +826,13 @@ module Api
           result.keys.keep_if { |key| key != :study_accession }.each do |key|
             facet_name = key.to_s.chomp('_val')
             matching_filter = match_results_by_filter(search_result: result, result_key: key, facets: search_facets)
-            matches[accession][facet_name] ||= []
-            if !matches[accession][facet_name].include?(matching_filter)
-              matches[accession][facet_name] << matching_filter
-              matches[accession][:facet_search_weight] += 1
+            # there may not be a matching filter if the facet was OR'ed
+            if matching_filter
+              matches[accession][facet_name] ||= []
+              if !matches[accession][facet_name].include?(matching_filter)
+                matches[accession][facet_name] << matching_filter
+                matches[accession][:facet_search_weight] += 1
+              end
             end
           end
         end
@@ -818,8 +891,8 @@ module Api
       def self.match_results_by_filter(search_result:, result_key:, facets:)
         facet_name = result_key.to_s.chomp('_val')
         matching_facet = facets.detect { |facet| facet[:id] == facet_name }
-        facet_obj = SearchFacet.find(matching_facet[:object_id])
-        if facet_obj.is_numeric?
+        db_facet = matching_facet[:db_facet]
+        if db_facet.is_numeric?
           match = matching_facet[:filters].dup
           match.delete(:name)
           return match

@@ -1,6 +1,6 @@
 <div class="row form-group">
   <div class="col-md-5 col-sm-12 col-xs-12">
-    <%= form_tag(site_path, method: :get, class: 'form') do %>
+    <%= form_tag(site_path, class: 'form') do %>
       <div class="input-group">
         <%= text_field_tag :search_terms, nil, class: 'form-control', placeholder: 'Search Studies...' %>
         <%= hidden_field_tag :order, params[:order].nil? ? "" : params[:order] %>

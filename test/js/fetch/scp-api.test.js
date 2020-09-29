@@ -2,7 +2,9 @@
 /* eslint-disable*/
 
 const fetch = require('node-fetch')
-import { fetchAuthCode, fetchFacetFilters } from 'lib/scp-api'
+import scpApi, {
+  fetchAuthCode, fetchFacetFilters, defaultInit
+} from 'lib/scp-api'
 
 describe('JavaScript client for SCP REST API', () => {
   beforeAll(() => {
@@ -24,4 +26,13 @@ describe('JavaScript client for SCP REST API', () => {
     const apiData = await fetchFacetFilters('disease', 'tuberculosis')
     expect(apiData.filters).toHaveLength(10)
   })
+
+  it('includes perfTime in return from scpApi', async () => {
+
+    const [authCode, perfTime] =
+      await scpApi('/search/auth_code', defaultInit(), true)
+
+    expect(Number.isInteger(perfTime)).toEqual(true);
+    expect(perfTime).toBeGreaterThan(0);
+  });
 })

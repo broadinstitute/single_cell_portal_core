@@ -18,15 +18,15 @@ class AdminConfiguration
 
   FIRECLOUD_ACCESS_NAME = 'FireCloud Access'
   API_NOTIFIER_NAME = 'API Health Check Notifier'
+  INGEST_DOCKER_NAME = 'Ingest Pipeline Docker Image'
   NUMERIC_VALS = %w(byte kilobyte megabyte terabyte petabyte exabyte)
-  CONFIG_TYPES = ['Daily User Download Quota', 'Workflow Name', 'Portal FireCloud User Group',
+  CONFIG_TYPES = [INGEST_DOCKER_NAME, 'Daily User Download Quota', 'Portal FireCloud User Group',
                   'Reference Data Workspace', 'Read-Only Access Control', 'QA Dev Email', API_NOTIFIER_NAME]
   ALL_CONFIG_TYPES = CONFIG_TYPES.dup << FIRECLOUD_ACCESS_NAME
   VALUE_TYPES = %w(Numeric Boolean String)
 
   validates_uniqueness_of :config_type,
-                          message: ": '%{value}' has already been set.  Please edit the corresponding entry to update.",
-                          unless: proc {|attributes| attributes['config_type'] == 'Workflow Name'}
+                          message: ": '%{value}' has already been set.  Please edit the corresponding entry to update."
 
   validates_presence_of :config_type, :value_type, :value
   validates_inclusion_of :config_type, in: ALL_CONFIG_TYPES
@@ -37,10 +37,46 @@ class AdminConfiguration
                       unless: proc {|attributes| attributes.config_type == 'QA Dev Email'} # allow '@' for this config
 
   validate :manage_readonly_access
+  validate :ensure_docker_image_present, if: proc {|attributes| attributes.config_type == INGEST_DOCKER_NAME}
+  before_validation :strip_whitespace, if: proc {|attributes| attributes.value_type == 'String'}
 
   # really only used for IDs in the table...
   def url_safe_name
     self.config_type.downcase.gsub(/[^a-zA-Z0-9]+/, '-').chomp('-')
+  end
+
+  # Ingest docker image configuration getter
+  def self.get_ingest_docker_image_config
+    AdminConfiguration.find_by(config_type: AdminConfiguration::INGEST_DOCKER_NAME)
+  end
+
+  # Ingest docker image getter
+  def self.get_ingest_docker_image
+    ingest_config = self.get_ingest_docker_image_config
+    if Rails.env != 'production' && ingest_config.present?
+      ingest_config.value
+    else
+      Rails.application.config.ingest_docker_image
+    end
+  end
+
+  # retrieve attributes from ingest docker image string
+  # example return: {registry: 'gcr.io', project: 'broad-singlecellportal-staging', image_name: 'scp-ingest-pipeline', tag: '1.5.7'}
+  def self.get_ingest_docker_image_attributes(image_name: self.get_ingest_docker_image)
+    image_attributes = image_name.split('/')
+    image_name, image_tag = image_attributes.last.split(':')
+    {
+        registry: "#{image_attributes[0]}",
+        project: "#{image_attributes[1]}",
+        image_name: "#{image_name}",
+        tag: "#{image_tag}",
+    }
+  end
+
+  # reset ingest docker image configuration to defaults on startup
+  def self.revert_ingest_docker_image
+    ingest_config = self.get_ingest_docker_image_config
+    ingest_config.destroy if ingest_config.present?
   end
 
   def self.current_firecloud_access
@@ -269,6 +305,32 @@ class AdminConfiguration
         errors.add(:config_type, '- You have not enabled the read-only service account yet.  You must enable this account first before continuing.  Please see https://github.com/broadinstitute/single_cell_portal_core#running-the-container#read-only-service-account for more information.')
       end
     end
+  end
+
+  # ensure docker image is present before allowing config to be created
+  # this will prevent using bad Docker image names and breaking parses
+  def ensure_docker_image_present
+    begin
+      image = AdminConfiguration.get_ingest_docker_image_attributes(image_name: self.value)
+      image_manifest_url = "https://#{image[:registry]}/v2/#{image[:project]}/#{image[:image_name]}/manifests/#{image[:tag]}"
+      response = RestClient.get image_manifest_url
+      # ensure this is a Docker image manifest
+      manifest_matcher = /docker.*manifest/
+      manifest_content_type = response.headers[:content_type]
+      if manifest_content_type !~ manifest_matcher
+        errors.add(:value, "does not appear to be a valid Docker image manifest: #{manifest_content_type} does not match #{manifest_matcher}")
+      else
+        true # pass validation
+      end
+    rescue RestClient::Exception => e
+      errors.add(:value, "is invalid (#{e.message}) - please specify a valid image URI")
+    rescue => e
+      errors.add(:value, "was unable to validate due to an error: #{e.message}")
+    end
+  end
+
+  def strip_whitespace
+    self.value.strip! if self.value.present?
   end
 end
 

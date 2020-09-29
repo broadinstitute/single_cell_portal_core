@@ -3,9 +3,7 @@
     <span aria-hidden="true">&times;</span>
   </button>
   <div class="col-sm-3">
-    <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
-    <span>Service Alert: Starting on</span></br>
-    <span><%= @deployment_notification.deployment_time.strftime("%a %b %d, %Y %I:%M %p") %> ET</span>
+    <p><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Service Alert</p>
   </div>
   <div >
     <span class="align-middle"><%= @deployment_notification.message %></span>

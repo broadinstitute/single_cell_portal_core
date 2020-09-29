@@ -72,7 +72,7 @@ describe('Filter slider works within more facets', () => {
     const routerNav = jest.spyOn(Reach, 'navigate')
 
     let ageFacet = () => {
-      return wrapper.find('#facet-organism_age').first()
+      return wrapper.find('#facet-organism-age').first()
     }
     const wrapper = mount((
       <PropsStudySearchProvider searchParams={{terms: '', facets:{}, page: 1}}>
@@ -81,7 +81,7 @@ describe('Filter slider works within more facets', () => {
     ))
     wrapper.find('#more-facets-button > a').simulate('click')
 
-    wrapper.find('#facet-organism_age > a').simulate('click')
+    wrapper.find('#facet-organism-age > a').simulate('click')
 
     expect(ageFacet().find('input[type="number"]').length).toEqual(2)
     expect(ageFacet().find('input[type="number"]').first().props().value).toEqual(1)

@@ -518,6 +518,7 @@ class StudyFile
 
   validate :check_taxon, on: :create
   validate :check_assembly, on: :create
+  validate :ensure_metadata_singleton, if: proc {|f| f.file_type == 'Metadata'}
 
   ###
   #
@@ -664,7 +665,8 @@ class StudyFile
   # Map of StudyFile#file_type to ::BULK_DOWNLOAD_TYPES, maintaining relationship for bundled files to parent
   def bulk_download_type
     # put bundled files in a sub-directory named after the bundle parent's ID so relationship is maintained
-    if self.is_bundled?
+    # make sure bundle_parent is a StudyFile (can be ClusterGroup for coordinate label files)
+    if self.is_bundled? && self.bundle_parent.is_a?(StudyFile)
       bp = self.bundle_parent
       "#{bp.simplified_file_type}/#{bp.id}"
     else
@@ -1181,6 +1183,13 @@ class StudyFile
   def check_assembly
     if GenomeAssembly.present? && ASSEMBLY_REQUIRED_TYPES.include?(self.file_type) && self.genome_assembly_id.nil?
       errors.add(:genome_assembly_id, 'You must supply a genome assembly for this file type: ' + self.file_type)
+    end
+  end
+
+  # ensure that a user can only add one metadata file per study
+  def ensure_metadata_singleton
+    if StudyFile.where(file_type: 'Metadata', study_id: self.study_id, queued_for_deletion: false, :id.ne => self.id).exists?
+      errors.add(:file_type, 'You may only add one metadata file per study')
     end
   end
 end

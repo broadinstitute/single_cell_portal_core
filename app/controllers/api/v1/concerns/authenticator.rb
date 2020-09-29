@@ -71,8 +71,9 @@ module Api
             end
           elsif controller_name == 'search' && action_name == 'bulk_download'
             Rails.logger.info "Authenticating user via auth_token: #{params[:auth_code]}"
+            return nil if params[:auth_code].blank?
             user = User.find_by(totat: params[:auth_code].to_i)
-            user.update_last_access_at!
+            user.try(:update_last_access_at!)
             user
           end
         end

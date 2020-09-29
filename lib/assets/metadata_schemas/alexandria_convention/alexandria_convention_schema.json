@@ -1,5 +1,5 @@
 {
-    "$id": "https://singlecell.broadinstitute.org/single_cell/api/v1/metadata_schemas/alexandria_convention/latest/json",
+    "$id": "https://singlecell.broadinstitute.org/single_cell/api/v1/metadata_schemas/alexandria_convention/2.1.5/json",
     "$schema": "https://json-schema.org/draft-07/schema#",
     "dependencies": {
         "cell_type__custom": [
@@ -198,12 +198,12 @@
         "cell_type": {
             "description": "Cell type name determined via unsupervised clustering and marker genes",
             "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/cl",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/cl",
             "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
             "type": "string"
         },
         "cell_type__custom": {
             "description": "cell_type__custom",
-            "enum": ["Astrocyte", "Bergmann", "Choroid", "Endothelial mural", "Endothelial stalk", "Ependymal", "Fibroblast", "Golgi", "Granule", "Molecular layer interneuron 1 (MLI1)", "Molecular layer interneuron 2 (MLI2)", "Macrophage", "Microglia", "Oligodendrocyte (ODC)", "Oligodendrocyte precursor cell (OPC)", "Purkinje layer interneuron (PLI)", "Purkinje", "Unipolar brush cell (UBC)"],
             "type": "string"
         },
         "cell_type__ontology_label": {
@@ -218,6 +218,7 @@
         "culture_duration__unit": {
             "description": "culture_duration__unit",
             "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/uo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/uo",
             "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
             "type": "string"
         },
@@ -228,6 +229,7 @@
         "development_stage": {
             "description": "A classification of the developmental stage of the organism",
             "ontology": "http://www.ebi.ac.uk/ols/api/ontologies/hsapdv",
+            "ontology_browser_url": "http://www.ebi.ac.uk/ols/ontologies/hsapdv",
             "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
             "type": "string"
         },
@@ -238,6 +240,7 @@
         "disease": {
             "description": "The disease state(s) of the individual donating the sample at the time of donation",
             "items": {
+                "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/mondo,https://www.ebi.ac.uk/ols/ontologies/pato",
                 "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
                 "type": "string"
             },
@@ -247,6 +250,7 @@
         "disease__intracellular_pathogen": {
             "description": "If evidence of a pathogen is detected in this cell",
             "items": {
+                "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/mondo",
                 "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
                 "type": "string"
             },
@@ -277,6 +281,7 @@
         "disease__time_since_onset__unit": {
             "description": "disease__time_since_onset__unit",
             "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/uo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/uo",
             "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
             "type": "string"
         },
@@ -294,6 +299,7 @@
         "disease__time_since_treatment_start__unit": {
             "description": "disease__time_since_treatment_start__unit",
             "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/uo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/uo",
             "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
             "type": "string"
         },
@@ -327,6 +333,7 @@
         "enrichment__cell_type": {
             "description": "The cell type that was sorted via an enrichment technique such as flow cytometry.",
             "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/cl",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/cl",
             "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
             "type": "string"
         },
@@ -353,6 +360,7 @@
             "dependency_condition": "species == NCBITaxon_9606",
             "description": "The ethnicity or ethnicities of the human donor if known",
             "items": {
+                "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/hancestro",
                 "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
                 "type": "string"
             },
@@ -369,6 +377,7 @@
         "gene_perturbation": {
             "description": "A perturbation to a gene done to a cell culture",
             "items": {
+                "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/ogg",
                 "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
                 "type": "string"
             },
@@ -401,6 +410,7 @@
         "geographical_region": {
             "description": "Location where the sample was collected/donated",
             "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/gaz",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/gaz",
             "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
             "type": "string"
         },
@@ -412,6 +422,7 @@
             "dependency_condition": "sample_type in cell line, organoid, cultured primary cells",
             "description": "a growth factor added to a cell culture media",
             "items": {
+                "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/pr",
                 "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
                 "type": "string"
             },
@@ -428,6 +439,7 @@
         "growth_factor_perturbation__concentration__unit": {
             "description": "growth_factor_perturbation__concentration__unit",
             "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/uo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/uo",
             "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
             "type": "string"
         },
@@ -464,6 +476,7 @@
         "library_preparation_protocol": {
             "description": "The single cell RNA-sequencing protocol used for Library preparation",
             "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/efo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/efo",
             "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
             "type": "string"
         },
@@ -479,6 +492,7 @@
             "dependency_condition": "species == NCBITaxon_10090",
             "description": "Mouse strain of the donor organism (ex. C57BL/6, BALB/c, 129, undetermined)",
             "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/ncit",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/ncit",
             "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
             "type": "string"
         },
@@ -493,6 +507,7 @@
         "organ": {
             "description": "The organ that the biomaterial came from",
             "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/uberon",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/uberon",
             "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
             "type": "string"
         },
@@ -503,6 +518,7 @@
         "organ_region": {
             "description": "organ_region",
             "items": {
+                "ontology_browser_url": "http://atlas.brain-map.org/atlas?atlas=602630314",
                 "type": "string"
             },
             "ontology": "https://api.brain-map.org/api/v2/structure_graph_download/1.json",
@@ -522,6 +538,7 @@
         "organism_age__unit": {
             "description": "organism_age__unit",
             "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/uo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/uo",
             "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
             "type": "string"
         },
@@ -547,6 +564,7 @@
             "dependency_condition": "species == NCBITaxon_9606",
             "description": "An arbitrary classification of a taxonomic group that is a division of a species",
             "items": {
+                "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/ncit",
                 "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
                 "type": "string"
             },
@@ -567,6 +585,7 @@
         "sequencing_instrument_manufacturer_model": {
             "description": "name of sequencing instrument manufacturer",
             "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/efo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/efo",
             "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
             "type": "string"
         },
@@ -582,6 +601,7 @@
         "small_molecule_perturbation": {
             "description": "a small molecule added to a cell culture (ex. A drug) growth factor (and if it is recombinant, concentration), gene)",
             "items": {
+                "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/chebi",
                 "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
                 "type": "string"
             },
@@ -598,6 +618,7 @@
         "small_molecule_perturbation__concentration__unit": {
             "description": "small_molecule_perturbation__concentration__unit",
             "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/uo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/uo",
             "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
             "type": "string"
         },
@@ -629,6 +650,7 @@
         "species": {
             "description": "The scientific binomial name for the species of the organism.",
             "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/ncbitaxon",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/ncbitaxon",
             "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
             "type": "string"
         },
@@ -652,6 +674,7 @@
         "vaccination": {
             "description": "Any known vaccines administered to the donor organism. NOT a full vaccine history",
             "items": {
+                "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/vo",
                 "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
                 "type": "string"
             },
@@ -697,6 +720,7 @@
         "vaccination__time_since__unit": {
             "description": "Time since each vaccine in the vaccination field was administered",
             "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/uo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/uo",
             "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
             "type": "string"
         },

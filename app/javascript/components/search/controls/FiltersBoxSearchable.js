@@ -12,9 +12,9 @@ import FiltersSearchBar from './FiltersSearchBar'
 /**
  * Component for filter search and filter lists
  */
-export default function FiltersBoxSearchable({ facet, selection, setSelection, show, setShow }) {
+export default function FiltersBoxSearchable({ facet, selection, setSelection, show, setShow, hideControls }) {
   // State that is specific to FiltersBox
-  const [matchingFilters, setMatchingFilters] = useState(facet.filters.slice(0, 15))
+  const [matchingFilters, setMatchingFilters] = useState(facet.filters)
   const [hasFilterSearchResults, setHasFilterSearchResults] = useState(false)
 
   /*
@@ -25,7 +25,6 @@ export default function FiltersBoxSearchable({ facet, selection, setSelection, s
    * Form of IDs: <general name> <specific name(s)>
    * General: All lowercase, specified in app code (e.g. 'apply-facet')
    * Specific: Cased as specified in API (e.g. 'species', 'NCBItaxon9606')
-   *
    * UI code concatenates names in the ID.  Names in ID are hyphen-delimited.
    *
    * Examples:
@@ -57,7 +56,7 @@ export default function FiltersBoxSearchable({ facet, selection, setSelection, s
    * Summarize filters, either default or
    */
   function getFiltersSummary() {
-    let filtersSummary = 'TOP FILTERS'
+    let filtersSummary = 'Available Filters'
 
     if (hasFilterSearchResults) {
       const numMatches = matchingFilters.length
@@ -67,13 +66,14 @@ export default function FiltersBoxSearchable({ facet, selection, setSelection, s
     return filtersSummary
   }
 
+  /** remove a single filter from the selection */
   function removeFilter(filterId) {
     const newSelections = selection.slice()
     _remove(newSelections, id => {return id === filterId})
     setSelection(newSelections)
   }
 
-  const showSearchBar = facet.links.length > 0
+  const showSearchBar = facet.links.length > 0 || facet.filters.length > 4
   let selectedFilterBadges = <></>
   if (selection.length && facet.type != 'number') {
     selectedFilterBadges = (
@@ -98,33 +98,33 @@ export default function FiltersBoxSearchable({ facet, selection, setSelection, s
         show && <div className={componentName} id={componentId}>
           { showSearchBar && (
             <>
-              <div className='facet-ontology-links'>
-                {
-                  facet.links.map((link, i) => {
-                    return (
-                      <a
-                        key={`link-${i}`}
-                        href={link.url}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                      >
-                        {link.name}&nbsp;&nbsp;
-                        <FontAwesomeIcon icon={faExternalLinkAlt}/>
-                      </a>
-                    )
-                  })
-                }
-              </div>
               <FiltersSearchBar
                 filtersBoxId={componentId}
                 searchFilters={searchFilters}
               />
               { selectedFilterBadges }
-              <p className='filters-box-header'>
+              <div className='filters-box-header'>
                 <span className='default-filters-list-name'>
                   {getFiltersSummary()}
                 </span>
-              </p>
+                <span className='facet-ontology-links'>
+                  {
+                    facet.links.map((link, i) => {
+                      return (
+                        <a
+                          key={`link-${i}`}
+                          href={link.browser_url ? link.browser_url : link.url}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                        >
+                          {link.name}&nbsp;&nbsp;
+                          <FontAwesomeIcon icon={faExternalLinkAlt}/>
+                        </a>
+                      )
+                    })
+                  }
+                </span>
+              </div>
             </>
           )}
           { !showSearchBar && selectedFilterBadges }
@@ -134,6 +134,7 @@ export default function FiltersBoxSearchable({ facet, selection, setSelection, s
             setShow={setShow}
             selection={selection}
             setSelection={setSelection}
+            hideControls={hideControls}
           />
         </div>
       }

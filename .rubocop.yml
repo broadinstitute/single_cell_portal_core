@@ -1,0 +1,48 @@
+# .rubocop.yml
+require: rubocop-rails
+
+AllCops:
+  TargetRubyVersion: 2.6.5
+  TargetRailsVersion: 5.2.4.3
+  DefaultFormatter: progress
+  DisplayCopNames: true
+  DisplayStyleGuide: true
+
+  Exclude:
+    - 'bin/*'
+    - 'db/**/*'
+    - 'node_modules/**/*'
+    - 'vendor/bundle/**/*'
+    - '*.lock'
+    - '.rubocop.yml'
+    - 'test/ui_test_suite.rb'
+
+Metrics/LineLength:
+  Max: 120
+
+Metrics/MethodLength:
+  Max: 15
+
+Metrics/ClassLength:
+  Enabled: false
+
+Style/GuardClause:
+  Enabled: false
+
+Style/IfUnlessModifier:
+  Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - 'test/**/*'
+
+Metrics/ModuleLength:
+  Exclude:
+    - 'test/**/*'
+
+Metrics/AbcSize:
+  Max: 19
+
+Style/Documentation:
+  Exclude:
+    - 'test/**/*'

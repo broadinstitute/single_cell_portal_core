@@ -1,0 +1,12 @@
+{
+  "branding_group": {
+    "name" : "Mouse Research Group",
+    "tag_line": "Synthetic branding group containing only mouse synthetic studies",
+    "background_color": "lightblue",
+    "facet_list": ["species", "sex"]
+  },
+  "images": {
+    "splash_image": "SCP-logo-invert.png"
+  },
+  "study_title_regex": "(mouse|murine)"
+}

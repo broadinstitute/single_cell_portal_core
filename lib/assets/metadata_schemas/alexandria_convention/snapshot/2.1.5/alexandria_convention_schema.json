@@ -1,0 +1,748 @@
+{
+    "$id": "https://singlecell.broadinstitute.org/single_cell/api/v1/metadata_schemas/alexandria_convention/2.1.5/json",
+    "$schema": "https://json-schema.org/draft-07/schema#",
+    "dependencies": {
+        "cell_type__custom": [
+            "cell_type"
+        ],
+        "cell_type__ontology_label": [
+            "cell_type"
+        ],
+        "culture_duration": [
+            "culture_duration__unit"
+        ],
+        "culture_duration__unit": [
+            "culture_duration"
+        ],
+        "culture_duration__unit_label": [
+            "culture_duration__unit"
+        ],
+        "development_stage__ontology_label": [
+            "development_stage"
+        ],
+        "disease__intracellular_pathogen": [
+            "disease"
+        ],
+        "disease__intracellular_pathogen__ontology_label": [
+            "disease__intracellular_pathogen"
+        ],
+        "disease__ontology_label": [
+            "disease"
+        ],
+        "disease__time_since_onset": [
+            "disease",
+            "disease__time_since_onset__unit"
+        ],
+        "disease__time_since_onset__unit": [
+            "disease__time_since_onset"
+        ],
+        "disease__time_since_onset__unit_label": [
+            "disease__time_since_onset__unit"
+        ],
+        "disease__time_since_treatment_start": [
+            "disease__treatment",
+            "disease__time_since_treatment_start__unit"
+        ],
+        "disease__time_since_treatment_start__unit": [
+            "disease__time_since_treatment_start"
+        ],
+        "disease__time_since_treatment_start__unit_label": [
+            "disease__time_since_treatment_start__unit"
+        ],
+        "disease__treated": [
+            "disease"
+        ],
+        "disease__treatment": [
+            "disease__treated"
+        ],
+        "enrichment__cell_type": [
+            "enrichment_method"
+        ],
+        "enrichment__cell_type__ontology_label": [
+            "enrichment__cell_type"
+        ],
+        "enrichment__facs_markers": [
+            "enrichment_method"
+        ],
+        "ethnicity__ontology_label": [
+            "ethnicity"
+        ],
+        "gene_perturbation__direction": [
+            "gene_perturbation"
+        ],
+        "gene_perturbation__dynamics": [
+            "gene_perturbation"
+        ],
+        "gene_perturbation__method": [
+            "gene_perturbation"
+        ],
+        "gene_perturbation__ontology_label": [
+            "gene_perturbation"
+        ],
+        "geographical_region__ontology_label": [
+            "geographical_region"
+        ],
+        "growth_factor_perturbation__concentration": [
+            "growth_factor_perturbation",
+            "growth_factor_perturbation__concentration__unit"
+        ],
+        "growth_factor_perturbation__concentration__unit": [
+            "growth_factor_perturbation__concentration"
+        ],
+        "growth_factor_perturbation__concentration__unit_label": [
+            "growth_factor_perturbation__concentration__unit"
+        ],
+        "growth_factor_perturbation__ontology_label": [
+            "growth_factor_perturbation"
+        ],
+        "growth_factor_perturbation__solvent": [
+            "growth_factor_perturbation"
+        ],
+        "growth_factor_perturbation__source": [
+            "growth_factor_perturbation"
+        ],
+        "library_preparation_protocol__ontology_label": [
+            "library_preparation_protocol"
+        ],
+        "mouse_strain__ontology_label": [
+            "mouse_strain"
+        ],
+        "organ__ontology_label": [
+            "organ"
+        ],
+        "organ_region__ontology_label": [
+            "organ_region"
+        ],
+        "organism_age": [
+            "organism_age__unit"
+        ],
+        "organism_age__unit": [
+            "organism_age"
+        ],
+        "organism_age__unit_label": [
+            "organism_age__unit"
+        ],
+        "race__ontology_label": [
+            "race"
+        ],
+        "sequencing_instrument_manufacturer_model__ontology_label": [
+            "sequencing_instrument_manufacturer_model"
+        ],
+        "small_molecule_perturbation__concentration": [
+            "small_molecule_perturbation",
+            "small_molecule_perturbation__concentration__unit"
+        ],
+        "small_molecule_perturbation__concentration__unit": [
+            "small_molecule_perturbation__concentration"
+        ],
+        "small_molecule_perturbation__concentration__unit_label": [
+            "small_molecule_perturbation__concentration__unit"
+        ],
+        "small_molecule_perturbation__ontology_label": [
+            "small_molecule_perturbation"
+        ],
+        "small_molecule_perturbation__solvent": [
+            "small_molecule_perturbation"
+        ],
+        "small_molecule_perturbation__source": [
+            "small_molecule_perturbation"
+        ],
+        "species__ontology_label": [
+            "species"
+        ],
+        "spike_in_concentration": [
+            "spike_in_kit"
+        ],
+        "vaccination__adjuvants": [
+            "vaccination"
+        ],
+        "vaccination__dosage": [
+            "vaccination"
+        ],
+        "vaccination__ontology_label": [
+            "vaccination"
+        ],
+        "vaccination__route": [
+            "vaccination"
+        ],
+        "vaccination__time_since": [
+            "vaccination",
+            "vaccination__time_since__unit"
+        ],
+        "vaccination__time_since__unit": [
+            "vaccination__time_since"
+        ],
+        "vaccination__time_since__unit_label": [
+            "vaccination__time_since__unit"
+        ]
+    },
+    "description": "metadata convention for the alexandria project",
+    "properties": {
+        "CellID": {
+            "description": "Cell ID",
+            "type": "string"
+        },
+        "biosample_id": {
+            "description": "Biosample ID",
+            "type": "string"
+        },
+        "biosample_type": {
+            "description": "Type of Biosample",
+            "enum": ["CellLine","DerivedType_Organoid","DerivedType_InVitroDifferentiated","DerivedType_InducedPluripotentStemCell","PrimaryBioSample","PrimaryBioSample_BodyFluid","PrimaryBioSample_CellFreeDNA","PrimaryBioSample_PrimaryCell","PrimaryBioSample_PrimaryCulture","PrimaryBioSample_Stool","PrimaryBioSample_Tissue"],
+            "type": "string"
+        },
+        "bmi": {
+            "description": "BMI of organism",
+            "type": "number"
+        },
+        "cell_type": {
+            "description": "Cell type name determined via unsupervised clustering and marker genes",
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/cl",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/cl",
+            "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+            "type": "string"
+        },
+        "cell_type__custom": {
+            "description": "cell_type__custom",
+            "type": "string"
+        },
+        "cell_type__ontology_label": {
+            "description": "cell_type__ontology_label",
+            "type": "string"
+        },
+        "culture_duration": {
+            "dependency_condition": "sample_type in cell line, organoid, cultured primary cells",
+            "description": "length of time cells have been in culture",
+            "type": "number"
+        },
+        "culture_duration__unit": {
+            "description": "culture_duration__unit",
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/uo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/uo",
+            "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+            "type": "string"
+        },
+        "culture_duration__unit_label": {
+            "description": "culture_duration__unit_label",
+            "type": "string"
+        },
+        "development_stage": {
+            "description": "A classification of the developmental stage of the organism",
+            "ontology": "http://www.ebi.ac.uk/ols/api/ontologies/hsapdv",
+            "ontology_browser_url": "http://www.ebi.ac.uk/ols/ontologies/hsapdv",
+            "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+            "type": "string"
+        },
+        "development_stage__ontology_label": {
+            "description": "development_stage__ontology_label",
+            "type": "string"
+        },
+        "disease": {
+            "description": "The disease state(s) of the individual donating the sample at the time of donation",
+            "items": {
+                "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/mondo,https://www.ebi.ac.uk/ols/ontologies/pato",
+                "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+                "type": "string"
+            },
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/mondo,https://www.ebi.ac.uk/ols/api/ontologies/pato",
+            "type": "array"
+        },
+        "disease__intracellular_pathogen": {
+            "description": "If evidence of a pathogen is detected in this cell",
+            "items": {
+                "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/mondo",
+                "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+                "type": "string"
+            },
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/mondo",
+            "type": "array"
+        },
+        "disease__intracellular_pathogen__ontology_label": {
+            "description": "disease__intracellular_pathogen__ontology_label",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "disease__ontology_label": {
+            "description": "disease__ontology_label",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "disease__time_since_onset": {
+            "description": "Amount of time since disease onset",
+            "items": {
+                "type": "number"
+            },
+            "type": "array"
+        },
+        "disease__time_since_onset__unit": {
+            "description": "disease__time_since_onset__unit",
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/uo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/uo",
+            "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+            "type": "string"
+        },
+        "disease__time_since_onset__unit_label": {
+            "description": "disease__time_since_onset__unit_label",
+            "type": "string"
+        },
+        "disease__time_since_treatment_start": {
+            "description": "Amount of time since treatment was started (for drugs/continuous treatment) or performed (for surgery/immediate intervention)",
+            "items": {
+                "type": "number"
+            },
+            "type": "array"
+        },
+        "disease__time_since_treatment_start__unit": {
+            "description": "disease__time_since_treatment_start__unit",
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/uo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/uo",
+            "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+            "type": "string"
+        },
+        "disease__time_since_treatment_start__unit_label": {
+            "description": "disease__time_since_treatment_start__unit_label",
+            "type": "string"
+        },
+        "disease__treated": {
+            "description": "If the donor was treated at the time the sample was collected",
+            "items": {
+                "type": "boolean"
+            },
+            "type": "array"
+        },
+        "disease__treatment": {
+            "description": "A description of the treatment given to this donor",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "donor_id": {
+            "description": "Donor ID",
+            "type": "string"
+        },
+        "end_bias": {
+            "description": "The end bias of the library preparation protocol used",
+            "enum": ["3 prime tag", "3 prime end bias", "5 prime tag", "5 prime end bias", "full length"],
+            "type": "string"
+        },
+        "enrichment__cell_type": {
+            "description": "The cell type that was sorted via an enrichment technique such as flow cytometry.",
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/cl",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/cl",
+            "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+            "type": "string"
+        },
+        "enrichment__cell_type__ontology_label": {
+            "description": "enrichment__cell_type__ontology_label",
+            "type": "string"
+        },
+        "enrichment__facs_markers": {
+            "description": "The surface markers that were sorted on to enrich for the enriched cell type if flow cytometry was used",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "enrichment_method": {
+            "description": "Method used to enrich cells before running library preparation. This could be flow cytometry, column enrichments, etc.",
+            "items": {
+                "enum": ["cell size selection", "fluorescence-activated cell sorting", "magnetic affinity cell sorting", "laser capture microdissection", "density gradient centrifugation", "Ficoll-Hypaque method", "enrichment of methylated DNA"],
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "ethnicity": {
+            "dependency_condition": "species == NCBITaxon_9606",
+            "description": "The ethnicity or ethnicities of the human donor if known",
+            "items": {
+                "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/hancestro",
+                "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+                "type": "string"
+            },
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/hancestro",
+            "type": "array"
+        },
+        "ethnicity__ontology_label": {
+            "description": "ethnicity__ontology_label",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "gene_perturbation": {
+            "description": "A perturbation to a gene done to a cell culture",
+            "items": {
+                "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/ogg",
+                "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+                "type": "string"
+            },
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/ogg",
+            "type": "array"
+        },
+        "gene_perturbation__direction": {
+            "description": "The type of perturbation of the gene defined in gene_perturbation. Knock in and knock out are complete additions/depletions of the gene, activation and repression refer to changes in magnitude of expression.",
+            "enum": ["knock in", "knock out","activation","repression"],
+            "type": "string"
+        },
+        "gene_perturbation__dynamics": {
+            "description": "Description of the timing with respect to sequencing and other logistical considerations of the gene perturbation",
+            "type": "string"
+        },
+        "gene_perturbation__method": {
+            "description": "Process by which the gene was perturbed. Ex. CRISPR knock-out",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "gene_perturbation__ontology_label": {
+            "description": "gene_perturbation__ontology_label",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "geographical_region": {
+            "description": "Location where the sample was collected/donated",
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/gaz",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/gaz",
+            "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+            "type": "string"
+        },
+        "geographical_region__ontology_label": {
+            "description": "geographical_region__ontology_label",
+            "type": "string"
+        },
+        "growth_factor_perturbation": {
+            "dependency_condition": "sample_type in cell line, organoid, cultured primary cells",
+            "description": "a growth factor added to a cell culture media",
+            "items": {
+                "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/pr",
+                "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+                "type": "string"
+            },
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/pr",
+            "type": "array"
+        },
+        "growth_factor_perturbation__concentration": {
+            "description": "Concentration of of each growth factor in the final tissue culture media. Order should be consistent with growth_factor_perturbation",
+            "items": {
+                "type": "number"
+            },
+            "type": "array"
+        },
+        "growth_factor_perturbation__concentration__unit": {
+            "description": "growth_factor_perturbation__concentration__unit",
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/uo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/uo",
+            "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+            "type": "string"
+        },
+        "growth_factor_perturbation__concentration__unit_label": {
+            "description": "growth_factor_perturbation__concentration__unit_label",
+            "type": "string"
+        },
+        "growth_factor_perturbation__ontology_label": {
+            "description": "growth_factor_perturbation__ontology_label",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "growth_factor_perturbation__solvent": {
+            "description": "Solvent in which the growth factor was added to the cells. Ex. the base media.",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "growth_factor_perturbation__source": {
+            "description": "Source from which the growth factor was purchased",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "is_living": {
+            "description": "Whether organism was alive at time of biomaterial collection",
+            "enum": ["yes", "no", "unknown"],
+            "type": "string"
+        },
+        "library_preparation_protocol": {
+            "description": "The single cell RNA-sequencing protocol used for Library preparation",
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/efo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/efo",
+            "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+            "type": "string"
+        },
+        "library_preparation_protocol__ontology_label": {
+            "description": "library_preparation_protocol__ontology_label",
+            "type": "string"
+        },
+        "mhc_genotype": {
+            "description": "MHC genotype for humans and other species",
+            "type": "string"
+        },
+        "mouse_strain": {
+            "dependency_condition": "species == NCBITaxon_10090",
+            "description": "Mouse strain of the donor organism (ex. C57BL/6, BALB/c, 129, undetermined)",
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/ncit",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/ncit",
+            "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+            "type": "string"
+        },
+        "mouse_strain__ontology_label": {
+            "description": "mouse_strain__ontology_label",
+            "type": "string"
+        },
+        "number_of_reads": {
+            "description": "Number of reads mapped to that cell",
+            "type": "number"
+        },
+        "organ": {
+            "description": "The organ that the biomaterial came from",
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/uberon",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/uberon",
+            "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+            "type": "string"
+        },
+        "organ__ontology_label": {
+            "description": "organ__ontology_label",
+            "type": "string"
+        },
+        "organ_region": {
+            "description": "organ_region",
+            "items": {
+                "ontology_browser_url": "http://atlas.brain-map.org/atlas?atlas=602630314",
+                "type": "string"
+            },
+            "ontology": "https://api.brain-map.org/api/v2/structure_graph_download/1.json",
+            "type": "array"
+        },
+        "organ_region__ontology_label": {
+            "description": "organ_region__ontology_label",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "organism_age": {
+            "description": "Age of the organism at time of sample collection.",
+            "type": "number"
+        },
+        "organism_age__unit": {
+            "description": "organism_age__unit",
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/uo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/uo",
+            "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+            "type": "string"
+        },
+        "organism_age__unit_label": {
+            "description": "organism_age__unit_label",
+            "type": "string"
+        },
+        "paired_ends": {
+            "description": "true if the sequence library has paired end data (false for 10x)",
+            "type": "boolean"
+        },
+        "preservation_method": {
+            "description": "Method used for sample preservation",
+            "enum": ["Cryopreservation","FFPE","Fresh","Frozen","OCT-embedded","Snap Frozen"],
+            "type": "string"
+        },
+        "primer": {
+            "description": "Primer used for cDNA synthesis from RNA",
+            "enum": ["poly-dT","random"],
+            "type": "string"
+        },
+        "race": {
+            "dependency_condition": "species == NCBITaxon_9606",
+            "description": "An arbitrary classification of a taxonomic group that is a division of a species",
+            "items": {
+                "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/ncit",
+                "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+                "type": "string"
+            },
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/ncit",
+            "type": "array"
+        },
+        "race__ontology_label": {
+            "description": "race__ontology_label",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "read_length": {
+            "description": "the read structure of the sequencing run",
+            "type": "string"
+        },
+        "sequencing_instrument_manufacturer_model": {
+            "description": "name of sequencing instrument manufacturer",
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/efo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/efo",
+            "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+            "type": "string"
+        },
+        "sequencing_instrument_manufacturer_model__ontology_label": {
+            "description": "sequencing_instrument_manufacturer_model__ontology_label",
+            "type": "string"
+        },
+        "sex": {
+            "description": "Biological sex",
+            "enum": ["male", "female", "mixed", "unknown"],
+            "type": "string"
+        },
+        "small_molecule_perturbation": {
+            "description": "a small molecule added to a cell culture (ex. A drug) growth factor (and if it is recombinant, concentration), gene)",
+            "items": {
+                "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/chebi",
+                "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+                "type": "string"
+            },
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/chebi",
+            "type": "array"
+        },
+        "small_molecule_perturbation__concentration": {
+            "description": "Concentration of each small molecule in the final tissue culture media. Order should be consistent with small_molecule_perturbation",
+            "items": {
+                "type": "number"
+            },
+            "type": "array"
+        },
+        "small_molecule_perturbation__concentration__unit": {
+            "description": "small_molecule_perturbation__concentration__unit",
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/uo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/uo",
+            "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+            "type": "string"
+        },
+        "small_molecule_perturbation__concentration__unit_label": {
+            "description": "small_molecule_perturbation__concentration__unit_label",
+            "type": "string"
+        },
+        "small_molecule_perturbation__ontology_label": {
+            "description": "small_molecule_perturbation__ontology_label",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "small_molecule_perturbation__solvent": {
+            "description": "Solvent in which the small molecule was added to the cells. Ex. the base media.",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "small_molecule_perturbation__source": {
+            "description": "Source from which the small molecule was purchased",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "species": {
+            "description": "The scientific binomial name for the species of the organism.",
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/ncbitaxon",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/ncbitaxon",
+            "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+            "type": "string"
+        },
+        "species__ontology_label": {
+            "description": "species__ontology_label",
+            "type": "string"
+        },
+        "spike_in_concentration": {
+            "description": "spike in concentration",
+            "type": "string"
+        },
+        "spike_in_kit": {
+            "description": "name of spike in kit",
+            "type": "string"
+        },
+        "strand": {
+            "description": "library strandedness",
+            "enum": ["first","second","unstranded"],
+            "type": "string"
+        },
+        "vaccination": {
+            "description": "Any known vaccines administered to the donor organism. NOT a full vaccine history",
+            "items": {
+                "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/vo",
+                "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+                "type": "string"
+            },
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/vo",
+            "type": "array"
+        },
+        "vaccination__adjuvants": {
+            "description": "Any adjuvants administered in the vaccine",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "vaccination__dosage": {
+            "description": "The dosage and units for the vaccine",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "vaccination__ontology_label": {
+            "description": "vaccination__ontology_label",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "vaccination__route": {
+            "description": "Intradermal, Intranasal, Intravenous, Aerosol",
+            "items": {
+                "enum": ["intradermal", "intranasal", "intravenous", "aerosol", "intramuscular", "mucosal", "oral"],
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "vaccination__time_since": {
+            "description": "Amount of time since vaccine was administered",
+            "items": {
+                "type": "number"
+            },
+            "type": "array"
+        },
+        "vaccination__time_since__unit": {
+            "description": "Time since each vaccine in the vaccination field was administered",
+            "ontology": "https://www.ebi.ac.uk/ols/api/ontologies/uo",
+            "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/uo",
+            "pattern": "^[-A-Za-z0-9]+[_:][-A-Za-z0-9]+",
+            "type": "string"
+        },
+        "vaccination__time_since__unit_label": {
+            "description": "vaccination__time_since__unit_label",
+            "type": "string"
+        }
+    },
+    "required": [
+        "biosample_id",
+        "biosample_type",
+        "CellID",
+        "disease",
+        "disease__ontology_label",
+        "donor_id",
+        "library_preparation_protocol",
+        "library_preparation_protocol__ontology_label",
+        "organ",
+        "organ__ontology_label",
+        "sex",
+        "species",
+        "species__ontology_label"
+    ],
+    "title": "alexandria metadata convention"
+}

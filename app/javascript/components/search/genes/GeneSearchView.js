@@ -52,9 +52,9 @@ export default function GeneSearchView() {
         <div className="row gene-study-filter">
           <div className="col-md-2 text-right">
             Study Filter &nbsp;
-            <FontAwesomeIcon icon={ showStudyControls ? faMinusSquare : faPlusSquare}
+            <FontAwesomeIcon icon={showStudyControls ? faMinusSquare : faPlusSquare}
               className="action"
-              onClick={() => {setShowStudyControls(!showStudyControls)} }/>
+              onClick={() => {setShowStudyControls(!showStudyControls)}}/>
 
           </div>
           <div className="col-md-10">

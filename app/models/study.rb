@@ -215,6 +215,9 @@ class Study
   # External Resource links
   has_many :external_resources, as: :resource_links
 
+  # Study Detail (full html description)
+  has_one :study_detail, dependent: :delete
+
   # field definitions
   field :name, type: String
   field :embargo, type: Date
@@ -239,6 +242,7 @@ class Study
   accepts_nested_attributes_for :study_files, allow_destroy: true
   accepts_nested_attributes_for :study_shares, allow_destroy: true, reject_if: proc { |attributes| attributes['email'].blank? }
   accepts_nested_attributes_for :external_resources, allow_destroy: true
+  accepts_nested_attributes_for :study_detail, allow_destroy: true
 
   ##
   #
@@ -263,7 +267,11 @@ class Study
     end
     property :description do
       key :type, :string
-      key :description, 'HTML description blob for Study'
+      key :description, 'Plain text description blob for Study'
+    end
+    property :full_description do
+      key :type, :string
+      key :description, 'HTML description blob for Study (optional)'
     end
     property :url_safe_name do
       key :type, :string
@@ -376,7 +384,14 @@ class Study
           end
           property :description do
             key :type, :string
-            key :description, 'HTML description blob for Study'
+            key :description, 'Plain text description blob for Study'
+          end
+          property :study_detail_attributes do
+            key :type, :object
+            property :full_description do
+              key :type, :string
+              key :description, 'HTML description blob for Study (optional)'
+            end
           end
           property :firecloud_project do
             key :type, :string
@@ -431,6 +446,13 @@ class Study
             key :format, :float
             key :default, 100.0
             key :description, 'Number used to control sort order in which Studies are returned when searching/browsing'
+          end
+          property :study_detail_attributes do
+            key :type, :object
+            property :full_description do
+              key :type, :string
+              key :description, 'HTML description blob for Study (optional)'
+            end
           end
           property :default_options do
             key :type, :object
@@ -490,6 +512,10 @@ class Study
       key :description, 'Name of Study'
     end
     property :description do
+      key :type, :string
+      key :description, 'Plain text description blob for Study'
+    end
+    property :full_description do
       key :type, :string
       key :description, 'HTML description blob for Study'
     end
@@ -693,7 +719,7 @@ class Study
       owned = self.where(user_id: user._id, public: false, queued_for_deletion: false).map(&:id)
       shares = StudyShare.where(email: user.email).map(&:study).select {|s| !s.queued_for_deletion }.map(&:id)
       group_shares = []
-      if user.registered_for_firecloud
+      if user.registered_for_firecloud && (user.refresh_token.present? || user.api_access_token.present?)
         user_client = FireCloudClient.new(user, FireCloudClient::PORTAL_NAMESPACE)
         user_groups = user_client.get_user_groups.map {|g| g['groupEmail']}
         group_shares = StudyShare.where(:email.in => user_groups).map(&:study).select {|s| !s.queued_for_deletion }.map(&:id)
@@ -794,10 +820,7 @@ class Study
           workspace_acl = Study.firecloud_client.get_workspace_acl(self.firecloud_project, self.firecloud_workspace)
           if workspace_acl['acl'][user.email].nil?
             # check if user has project-level permissions
-            user_client = FireCloudClient.new(user, self.firecloud_project)
-            projects = user_client.get_billing_projects
-            # billing project users can only create workspaces, so unless user is an owner, user cannot compute
-            projects.detect {|project| project['projectName'] == self.firecloud_project && project['role'] == 'Owner'}.present?
+            user.is_billing_project_owner?(self.firecloud_project)
           else
             workspace_acl['acl'][user.email]['canCompute']
           end
@@ -885,7 +908,7 @@ class Study
     }
     terms.each do |term|
       text_blob = "#{self.name} #{self.description}"
-      score = text_blob.scan(/#{term}/i).size
+      score = text_blob.scan(/#{::Regexp.escape(term)}/i).size
       if score > 0
         weights[:total] += score
         weights[:terms][term] = score
@@ -1098,7 +1121,7 @@ class Study
 
   # helper method to set the number of unique genes in this study
   def set_gene_count
-    gene_count = self.unique_genes
+    gene_count = self.unique_genes.size
     Rails.logger.info "Setting gene count in #{self.name} to #{gene_count}"
     self.update(gene_count: gene_count)
     Rails.logger.info "Gene count set for #{self.name}"
@@ -1129,6 +1152,11 @@ class Study
   # count the number of cluster-based annotations in a study
   def cluster_annotation_count
     self.cluster_groups.map {|c| c.cell_annotations.size}.reduce(0, :+)
+  end
+
+  # retrieve the full HTML description for this study
+  def full_description
+    self.study_detail.try(:full_description)
   end
 
   ###
@@ -1685,7 +1713,7 @@ class Study
 
           # batch insert records in groups of 1000
           if @child_records.size >= 1000
-            Gene.create(@records) # genes must be saved first, otherwise the linear data polymorphic association is invalid and will cause a parse fail
+            Gene.create!(@records) # genes must be saved first, otherwise the linear data polymorphic association is invalid and will cause a parse fail
             @count += @records.size
             Rails.logger.info "#{Time.zone.now}: Processed #{@count} genes from #{expression_file.name}:#{expression_file.id} for #{self.name}"
             @records = []
@@ -1697,12 +1725,12 @@ class Study
         end
       end
       # process last few records
-      Gene.create(@records)
+      Gene.create!(@records)
       @count += @records.size
       Rails.logger.info "#{Time.zone.now}: Processed #{@count} genes from #{expression_file.name}:#{expression_file.id} for #{self.name}"
       @records = nil
 
-      DataArray.create(@child_records)
+      DataArray.create!(@child_records)
       @child_count += @child_records.size
       Rails.logger.info "#{Time.zone.now}: Processed #{@child_count} child data arrays from #{expression_file.name}:#{expression_file.id} for #{self.name}"
       @child_records = nil
@@ -2159,14 +2187,14 @@ class Study
 
   # parse a coordinate labels file and create necessary data_array objects
   # coordinate labels are specific to a cluster_group
-  def initialize_coordinate_label_data_arrays(coordinate_file, user, opts={local: true})
+  def initialize_coordinate_label_data_arrays(coordinate_file, user, opts={})
     begin
       error_context = ErrorTracker.format_extra_context(self, coordinate_file, {opts: opts})
       # remove study description as it's not useful
       error_context['study'].delete('description')
       @file_location = coordinate_file.upload.path
       # before anything starts, check if file has been uploaded locally or needs to be pulled down from FireCloud first
-      if !opts[:local] || !coordinate_file.is_local?
+      if !coordinate_file.is_local?
         # make sure data dir exists first
         self.make_data_dir
         Study.firecloud_client.execute_gcloud_method(:download_workspace_file, 0, self.bucket_id, coordinate_file.bucket_location,
@@ -2677,14 +2705,14 @@ class Study
   end
 
   # parse precomputed marker gene files and create documents to render in Morpheus
-  def initialize_precomputed_scores(marker_file, user, opts={local: true})
+  def initialize_precomputed_scores(marker_file, user, opts={})
     begin
       error_context = ErrorTracker.format_extra_context(self, marker_file, {opts: opts})
       # remove study description as it's not useful
       error_context['study'].delete('description')
       @file_location = marker_file.upload.path
       # before anything starts, check if file has been uploaded locally or needs to be pulled down from FireCloud first
-      if !opts[:local] || !marker_file.is_local?
+      if !marker_file.is_local?
         # make sure data dir exists first
         self.make_data_dir
         Study.firecloud_client.execute_gcloud_method(:download_workspace_file, 0, self.bucket_id, marker_file.bucket_location,
@@ -3227,13 +3255,19 @@ class Study
             errors.add(:firecloud_workspace, ': The workspace you provided is restricted.  We currently do not allow use of restricted workspaces.  Please use another workspace.')
             return false
           end
-          # check permissions
+          # check permissions, falling back to project-level permissions if needed
+          is_project_owner = false
           if acl['acl'][study_owner].nil? || acl['acl'][study_owner]['accessLevel'] == 'READER'
-            errors.add(:firecloud_workspace, ': You do not have write permission for the workspace you provided.  Please use another workspace.')
-            return false
+            Rails.logger.info "checking project-level permissions for user_id:#{self.user.id} in #{self.firecloud_project}"
+            is_project_owner = self.user.is_billing_project_owner?(self.firecloud_project)
+            unless is_project_owner
+              errors.add(:firecloud_workspace, ': You do not have write permission for the workspace you provided.  Please use another workspace.')
+              return false
+            end
+            Rails.logger.info "project-level permissions check successful"
           end
-          # check compute permissions
-          if acl['acl'][study_owner]['canCompute'] != can_compute
+          # check compute permissions (only if not project owner, as compute is inherited and not present at the workspace level)
+          if !is_project_owner && acl['acl'][study_owner]['canCompute'] != can_compute
             errors.add(:firecloud_workspace, ': There was an error setting the permissions on your workspace (compute permissions were not set correctly).  Please try again.')
             return false
           end
@@ -3270,7 +3304,7 @@ class Study
         error_context = ErrorTracker.format_extra_context(self)
         # remove study description as it's not useful
         error_context['study'].delete('description')
-        ErrorTracker.report_exception(e, user, error_context)
+        ErrorTracker.report_exception(e, self.user, error_context)
         # delete workspace on any fail as this amounts to a validation fail
         Rails.logger.info "#{Time.zone.now}: Error assigning workspace: #{e.message}"
         errors.add(:firecloud_workspace, " assignment failed: #{e.message}; Please check the workspace in question and try again.")

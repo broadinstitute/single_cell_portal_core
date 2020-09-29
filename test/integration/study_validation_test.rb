@@ -27,25 +27,18 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
     assert study.present?, "Study did not successfully save"
 
     example_files = {
-      metadata: {
-        name: 'metadata_bad.txt'
-      },
       metadata_breaking_convention: {
         name: 'metadata_example2.txt'
       },
       cluster: {
         name: 'cluster_bad.txt'
+      },
+      expression: {
+        name: 'expression_matrix_example_bad.txt'
       }
     }
 
     ## upload files
-
-    # bad metadata file
-    file_params = {study_file: {file_type: 'Metadata', study_id: study.id.to_s}}
-    perform_study_file_upload('metadata_bad.txt', file_params, study.id)
-    assert_response 200, "Metadata upload failed: #{@response.code}"
-    example_files[:metadata][:object] = study.metadata_file
-    assert example_files[:metadata][:object].present?, "Metadata failed to associate, found no file: #{example_files[:metadata][:object].present?}"
 
     # good metadata file, but falsely claiming to use the metadata_convention
     file_params = {study_file: {file_type: 'Metadata', study_id: study.id.to_s, use_metadata_convention: true}}
@@ -54,12 +47,24 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
     example_files[:metadata_breaking_convention][:object] = study.metadata_file
     assert example_files[:metadata_breaking_convention][:object].present?, "Metadata failed to associate, found no file: #{example_files[:metadata_breaking_convention][:object].present?}"
 
+    # metadata file that should fail validation because we already have one
+    file_params = {study_file: {file_type: 'Metadata', study_id: study.id.to_s}}
+    perform_study_file_upload('metadata_bad.txt', file_params, study.id)
+    assert_response 422, "Metadata did not fail validation: #{@response.code}"
+
     # bad cluster
     file_params = {study_file: {name: 'Bad Test Cluster 1', file_type: 'Cluster', study_id: study.id.to_s}}
     perform_study_file_upload('cluster_bad.txt', file_params, study.id)
     assert_response 200, "Cluster 1 upload failed: #{@response.code}"
     assert_equal 1, study.cluster_ordinations_files.size, "Cluster 1 failed to associate, found #{study.cluster_ordinations_files.size} files"
     example_files[:cluster][:object] = study.cluster_ordinations_files.first
+
+    # bad expression matrix (duplicate gene)
+    file_params = {study_file: {file_type: 'Expression Matrix', study_id: study.id.to_s}}
+    perform_study_file_upload('expression_matrix_example_bad.txt', file_params, study.id)
+    assert_response 200, "Expression matrix upload failed: #{@response.code}"
+    assert_equal 1, study.expression_matrix_files.size, "Expression matrix failed to associate, found #{study.expression_matrix_files.size} files"
+    example_files[:expression][:object] = study.expression_matrix_files.first
 
     ## request parse
     example_files.each do |file_type,file|
@@ -94,6 +99,7 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
     end
 
     assert_equal 0, study.cell_metadata.size
+    assert_equal 0, study.genes.size
     assert_equal 0, study.cluster_groups.size
     assert_equal 0, study.cluster_ordinations_files.size
 
@@ -113,23 +119,6 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
     assert_response 200, "Did not redirect to upload successfully"
     study = Study.find_by(name: "Local Parse Failure Study #{@random_seed}")
     assert study.present?, "Study did not successfully save"
-
-    # bad expression matrix
-    file_params = {study_file: {file_type: 'Expression Matrix', study_id: study.id.to_s}}
-    perform_study_file_upload('expression_matrix_example_bad.txt', file_params, study.id)
-    assert_response 200, "Expression matrix upload failed: #{@response.code}"
-    assert study.expression_matrix_files.size == 1, "Expression matrix failed to associate, found #{study.expression_matrix_files.size} files"
-    expression_matrix_1 = study.expression_matrix_files.first
-    # this parse has a duplicate gene, which will throw an error
-    begin
-      study.initialize_gene_expression_data(expression_matrix_1, @test_user)
-    rescue => e
-      assert e.is_a?(StandardError), "Caught unknown error during parse: #{e.class}:#{e.message}"
-    end
-
-    assert study.genes.size == 0, "Found #{study.genes.size} genes when should have found 0"
-    assert study.expression_matrix_files.size == 0,
-           "Found #{study.expression_matrix_files.size} expression matrices when should have found 0"
 
     # bad marker gene list
     file_params = {study_file: {name: 'Bad Test Gene List', file_type: 'Gene List', study_id: study.id.to_s}}
@@ -189,6 +178,9 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
             name: "Reviewer Share #{@random_seed}",
             user_id: @test_user.id,
             public: false,
+            study_detail_attributes: {
+                full_description: ""
+            },
             study_shares_attributes: {
                 "0" => {
                     email: @sharing_user.email,
@@ -251,7 +243,7 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
     bqc = ApplicationController.big_query_client
     bq_dataset = bqc.datasets.detect {|dataset| dataset.dataset_id == CellMetadatum::BIGQUERY_DATASET}
     initial_bq_row_count = get_bq_row_count(bq_dataset, study)
-
+    assert initial_bq_row_count == 30, "wrong number of BQ rows found to test deletion capability"
     # request delete
     puts "Requesting delete for alexandria_convention/metadata.v2-0-0.txt"
     delete api_v1_study_study_file_path(study_id: study.id, id: metadata_file.id), as: :json, headers: {authorization: "Bearer #{@test_user.api_access_token[:access_token]}" }
@@ -259,7 +251,7 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
     seconds_slept = 0
     sleep_increment = 10
     max_seconds_to_sleep = 60
-    until ( (bq_row_count = get_bq_row_count(bq_dataset, study)) <= initial_bq_row_count) do
+    until ( (bq_row_count = get_bq_row_count(bq_dataset, study)) == 0 ) do
       puts "#{seconds_slept} seconds after requesting file deletion, bq_row_count is #{bq_row_count}."
       if seconds_slept >= max_seconds_to_sleep
         raise "Even #{seconds_slept} seconds after requesting file deletion, not all records have been deleted from bigquery."
@@ -268,8 +260,133 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
       seconds_slept += sleep_increment
     end
     puts "#{seconds_slept} seconds after requesting file deletion, bq_row_count is #{bq_row_count}."
-    assert get_bq_row_count(bq_dataset, study) <= initial_bq_row_count # using "<=" instead of "==" in case there were rows from a previous aborted test to clean up
+    assert get_bq_row_count(bq_dataset, study) == 0
     puts "#{File.basename(__FILE__)}: #{self.method_name} successful!"
   end
-end
 
+  test 'should allow files with spaces in names' do
+    puts "#{File.basename(__FILE__)}: #{self.method_name}"
+
+    study = Study.find_by(name: "Testing Study #{@random_seed}")
+    filename = "12_MB_file_with_space_in_filename 2.txt"
+    sanitized_filename = filename.gsub(/\s/, '_')
+    file_params = {study_file: {file_type: 'Expression Matrix', study_id: study.id.to_s, name: sanitized_filename}}
+    exp_matrix = File.open(Rails.root.join('test', 'test_data', filename))
+    perform_chunked_study_file_upload(filename, file_params, study.id)
+    assert_response 200, "Expression upload failed: #{@response.code}"
+    study_file = study.study_files.detect {|file| file.upload_file_name == sanitized_filename}
+    refute study_file.nil?, 'Did not find newly uploaded expression matrix'
+    assert_equal exp_matrix.size, study_file.upload_file_size, "File sizes do not match; #{exp_matrix.size} != #{study_file.upload_file_size}"
+
+    # clean up
+    study_file.destroy
+
+    puts "#{File.basename(__FILE__)}: #{self.method_name} successful!"
+  end
+
+  # validates that additional expression matrices with unique cells can be ingested to a study that already has a
+  # metadata file and at least one other expression matrix
+  test 'should validate unique cells for expression matrices' do
+    puts "#{File.basename(__FILE__)}: #{self.method_name}"
+
+    study = Study.find_by(name: "Test Study #{@random_seed}")
+    new_matrix = 'expression_matrix_example_2.txt'
+    file_params = {study_file: {file_type: 'Expression Matrix', study_id: study.id.to_s}}
+    perform_study_file_upload(new_matrix, file_params, study.id)
+    assert_response 200, "Expression matrix upload failed: #{@response.code}"
+    uploaded_matrix = study.expression_matrix_files.detect {|file| file.upload_file_name == new_matrix}
+    assert uploaded_matrix.present?, "Did not find newly uploaded matrix #{new_matrix}"
+    puts "Requesting parse for file \"#{uploaded_matrix.upload_file_name}\"."
+    assert_equal 'unparsed', uploaded_matrix.parse_status, "Incorrect parse_status for #{new_matrix}"
+    initiate_study_file_parse(uploaded_matrix.upload_file_name, study.id)
+    assert_response 200, "#{new_matrix} parse job failed to start: #{@response.code}"
+
+    seconds_slept = 60
+    puts "Parse initiated for #{new_matrix}, polling for completion"
+    sleep seconds_slept
+    sleep_increment = 15
+    max_seconds_to_sleep = 300
+    until  ['parsed', 'failed'].include? uploaded_matrix.parse_status  do
+      puts "After #{seconds_slept} seconds, #{new_matrix} is #{uploaded_matrix.parse_status}."
+      if seconds_slept >= max_seconds_to_sleep
+        raise "Sleep timeout after #{seconds_slept} seconds when waiting for parse of #{new_matrix}."
+      end
+      sleep(sleep_increment)
+      seconds_slept += sleep_increment
+      assert_not uploaded_matrix.queued_for_deletion, "parsing #{new_matrix} failed, and is queued for deletion"
+      uploaded_matrix.reload
+    end
+    puts "After #{seconds_slept} seconds, #{new_matrix} is #{uploaded_matrix.parse_status}."
+
+    puts "#{File.basename(__FILE__)}: #{self.method_name} successful!"
+  end
+
+  # TODO: once scp-ingest-pipline 1.6.0 is released, re-implement integration test for MTX parsing
+  # test 'should parse valid mtx bundle' do
+  #   puts "#{File.basename(__FILE__)}: #{self.method_name}"
+  #
+  #   study = Study.first
+  #
+  #   # load study files
+  #   matrix = study.study_files.by_type('MM Coordinate Matrix').first
+  #   genes_file = study.study_files.by_type('10X Genes File').first
+  #   barcodes_file = study.study_files.by_type('10X Barcodes File').first
+  #   matrix_bundle = matrix.study_file_bundle
+  #
+  #   # control values
+  #   expected_genes = File.open(genes_file.upload.path).readlines.map {|line| line.split.map(&:strip)}
+  #   expected_cells = File.open(barcodes_file.upload.path).readlines.map(&:strip)
+  #   matrix_file = File.open(matrix.upload.path).readlines
+  #   matrix_file.shift(3) # discard header lines
+  #   expressed_gene_idx = matrix_file.map {|line| line.split.first.strip.to_i}
+  #   expressed_genes = expressed_gene_idx.map {|idx| expected_genes[idx - 1].last}
+  #
+  #   # upload files and initiate parse
+  #   file_params = {study_file: {file_type: 'MM Coordinate Matrix', study_id: study.id.to_s}}
+  #   perform_study_file_upload(matrix.name, file_params, study.id)
+  #   genes_params = {study_file: {file_type: '10X Genes File', study_id: study.id.to_s, study_file_bundle_id: matrix_bundle.id.to_s}}
+  #   perform_study_file_upload(genes_file.name, genes_params, study.id)
+  #   study.send_to_firecloud(genes_file)
+  #   barcodes_params = {study_file: {file_type: '10X Barcodes File', study_id: study.id.to_s, study_file_bundle_id: matrix_bundle.id.to_s}}
+  #   perform_study_file_upload(barcodes_file.name, barcodes_params, study.id)
+  #   study.send_to_firecloud(barcodes_file)
+  #   initiate_study_file_parse(matrix.upload_file_name, study.id)
+  #   seconds_slept = 60
+  #   sleep seconds_slept
+  #   sleep_increment = 15
+  #   max_seconds_to_sleep = 300
+  #   until ['parsed', 'failed'].include?(matrix.parse_status) do
+  #     puts "After #{seconds_slept} seconds, #{matrix.upload_file_name} is #{matrix.parse_status}"
+  #     if seconds_slept >= max_seconds_to_sleep
+  #       raise "Even after #{seconds_slept} seconds, not all files have been parsed."
+  #     end
+  #     sleep(sleep_increment)
+  #     seconds_slept += sleep_increment
+  #     assert_not matrix.queued_for_deletion, "parsing #{matrix.upload_file_name} failed, and is queued for deletion"
+  #     matrix.reload
+  #   end
+  #   puts "After #{seconds_slept} seconds, #{matrix.upload_file_name} is #{matrix.parse_status}"
+  #   study.reload
+  #
+  #   # validate that the expected significant values have been created
+  #   expected_genes.each do |entry|
+  #     gene_id, gene_name = entry
+  #     gene = study.genes.find_by(name: gene_name)
+  #     assert gene_name == gene.name, "Gene names do not match: #{gene_name}, #{gene.name}"
+  #     assert gene_id == gene.gene_id, "Gene IDs do not match: #{gene_id}, #{gene.gene_id}"
+  #     # if this gene is expected to have expression, then validate the score is correct
+  #     if expressed_genes.include?(gene_name)
+  #       expected_value = expressed_genes.index(gene_name) + 1
+  #       cell_name = gene.scores.keys.first
+  #       assert expected_cells.include?(cell_name), "Cell name '#{cell_name}' was not from control list: #{expected_cells}"
+  #       value = gene.scores.values.first
+  #       assert value == expected_value, "Did not find correct score value for #{gene.name}:#{cell_name}, expected #{expected_value} but found #{value}"
+  #     end
+  #   end
+  #
+  #   # clean up
+  #   new_config_image.destroy
+  #
+  #   puts "#{File.basename(__FILE__)}: #{self.method_name} successful!"
+  # end
+end

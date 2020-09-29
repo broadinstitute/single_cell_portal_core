@@ -45,6 +45,8 @@ group :development, :test do
   gem 'listen'
   gem 'byebug'
   gem 'puma'
+  gem 'rubocop', require: false
+  gem 'rubocop-rails', require: false
   gem 'certified'
 end
 

@@ -70,7 +70,7 @@ class SearchFacetTest < ActiveSupport::TestCase
     assert_not @search_facet.valid?, 'Did not correctly find validation errors on invalid facet'
     assert_equal @search_facet.errors.to_hash[:ontology_urls].first,
                  'cannot be empty if SearchFacet is ontology-based'
-    @search_facet.ontology_urls = [{name: 'My Ontology', url: 'not a url'}]
+    @search_facet.ontology_urls = [{name: 'My Ontology', url: 'not a url', browser_url: nil}]
     assert_not @search_facet.valid?, 'Did not correctly find validation errors on invalid facet'
     assert_equal @search_facet.errors.to_hash[:ontology_urls].first,
                  'contains an invalid URL: not a url'

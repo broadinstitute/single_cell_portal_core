@@ -67,4 +67,34 @@ class UploadCleanupJob < Struct.new(:study, :study_file, :retry_count)
       end
     end
   end
+
+  # poller to check for failed uploads and remove them automatically since users cannot delete these files
+  # any file that has been stuck in 'uploading' for more that 24 hours that is not being parsed and has no
+  # generation tag is considered a 'failed' upload and will be removed
+  def self.find_and_remove_failed_uploads
+    date_threshold = 1.day.ago.in_time_zone
+    # make sure to exclude links to external sequence data with human_fastq_url: nil
+    failed_uploads = StudyFile.where(status: 'uploading', generation: nil, :created_at.lte => date_threshold,
+                                     human_fastq_url: nil, parse_status: 'unparsed')
+    failed_uploads.each do |study_file|
+      # final sanity check - see if there is a file in the bucket of the same size
+      # this might happen if the post-upload action to update 'status' fails for some reason
+      remote_file = Study.firecloud_client.get_workspace_file(study_file.study.bucket_id, study_file.bucket_location)
+      if remote_file.present? && remote_file.upload_file_size == study_file.upload_file_size
+        study_file.update(status: 'uploaded', generation: remote_file.generation.to_s)
+        next
+      else
+        Rails.logger.info "Deleting failed upload for #{study_file.upload_file_name}:#{study_file.id} from #{study_file.study.accession}"
+        study_file.remove_local_copy if study_file.is_local?
+        begin
+          study = study_file.study
+          SingleCellMailer.notify_user_upload_fail(study_file, study, study.user).deliver_now
+        rescue => e
+          ErrorTracker.report_exception(e, nil)
+          Rails.logger.error "Unable to notify user of upload failure: #{e.class}:#{e.message}"
+        end
+        DeleteQueueJob.new(study_file).perform
+      end
+    end
+  end
 end

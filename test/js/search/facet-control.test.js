@@ -114,7 +114,7 @@ describe('Facet control handles facets with many filters', () => {
 
     wrapper.find('#facet-species > a').simulate('click')
     // by default, only show the first 15 filters
-    expect(speciesControl().find('.facet-filter-list li').length).toEqual(15)
+    expect(speciesControl().find('.facet-filter-list li').length).toEqual(22)
 
     speciesControl().find('input#speciesId2').simulate('change', {target: {checked: true}})
     expect(speciesControl().find('button.facet-apply-button').hasClass('active')).toEqual(true)

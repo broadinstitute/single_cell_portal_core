@@ -43,10 +43,10 @@ const ResultsPanel = ({ studySearchState, studyComponent }) => {
     panelContent = (
       <>
         { featureFlagState.faceted_search &&
-          <SearchQueryDisplay terms={results.termList} facets={results.facets} /> }
+          <SearchQueryDisplay terms={results.termList} facets={results.facets}/> }
         <StudyResults
           results={results}
-          StudyComponent={ studyComponent ? studyComponent : Study }
+          StudyComponent={studyComponent ? studyComponent : Study}
           changePage={pageNum => {
             studySearchState.updateSearch({ page: pageNum })
           }}

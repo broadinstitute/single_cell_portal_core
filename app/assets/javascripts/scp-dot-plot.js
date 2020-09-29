@@ -2,7 +2,7 @@
  * @fileoverview Functions for rendering dot plots using Morpheus.js
  *
  * Dot plots are similar to heatmaps, and better for summarizing expression
- * across many cells. The color of the dot is the median expression of a
+ * across many cells. The color of the dot is the mean expression of a
  * cluster in a gene. The size of the dot is what percent of cells in the
  * cluster have expression (expr > 0) in the gene.
  *
@@ -38,13 +38,13 @@ function getLegendSvg(rects) {
   // var nonzeroNote = '<text x="9" y="66">(non-zero)</text>';
   const nonzeroNote = ''
 
-  // TODO:
+  // TODO (SCP-1738):
   // Develop more robust coordinate offsets for colors and related text.
   // The very particular values for cx, x, etc. are manually polished and work
   // for these particular contents, but won't work once we enable users to
-  // change the default size max. and min. values.  Defer work until SCP-1738.
+  // change the default size max. and min. values.
   return (
-    `<svg>
+    `<svg id="dot-plot-legend-container">
       <g id="dp-legend-size">
         <circle cx="20" cy="8" r="1"/>
         <circle cx="57.5" cy="8" r="3"/>
@@ -58,7 +58,7 @@ function getLegendSvg(rects) {
       </g>
       <g id="dp-legend-color" transform="translate(200, 0)">
         ${rects}
-        <text x="5" y="50">Expression</text>
+        <text x="-40" y="50">Scaled mean expression</text>
         ${nonzeroNote}
       </g>
     <svg>`
@@ -118,15 +118,18 @@ function renderMorpheusDotPlot(
   dataPath, annotPath, selectedAnnot, selectedAnnotType,
   target, annotations, fitType, dotHeight, legendTarget
 ) {
+  const plotEvent = window.SCP.startPendingEvent('plot:dot', window.SCP.getLogPlotProps())
+
   console.log(`
     render status of ${target} at start: ${$(target).data('rendered')}
   `)
   $(target).empty()
 
-  // Collapse by median
+  // Collapse by mean
   const tools = [{
     name: 'Collapse',
     params: {
+      collapse_method: 'Mean',
       shape: 'circle',
       collapse: ['Columns'],
       collapse_to_fields: [selectedAnnot],
@@ -205,7 +208,7 @@ function renderMorpheusDotPlot(
   if (typeof window.dotPlot === 'undefined') {
     // Consistent with e.g. IGV, Ideogram
     ga('send', 'event', 'dot-plot', 'initialize')
-    log('dot-plot:initialize')
+    window.SCP.log('dot-plot:initialize')
   }
 
   // Instantiate dot plot and embed in DOM element
@@ -236,6 +239,8 @@ function renderMorpheusDotPlot(
   console.log(`
     render status of ${target} at end: ${$(target).data('rendered')}
   `)
+
+  plotEvent.complete()
 }
 
 /** High-level function called from _expression_plots_view.html.erb */

@@ -3,12 +3,12 @@
  */
 
 import {
-  getNumberOfTerms, getNumFacetsAndFilters
+  formatTerms, getNumFacetsAndFilters
 } from 'providers/StudySearchProvider'
 import { log } from './metrics-api'
 
 // See note in logSearch
-let isPageLoadSearch = true
+let searchNumber = 0
 
 const filterNamesById = {}
 
@@ -74,32 +74,40 @@ function getFriendlyFilterListByFacet(facets) {
 /**
  * Log study search metrics.  Might support gene, cell search in future.
  */
-export function logSearch(type, searchParams) {
-  if (isPageLoadSearch === true) {
+export function logSearch(type, searchParams, perfTime) {
+  searchNumber += 1
+  if (searchNumber < 3) {
     // This prevents over-reporting searches.
-    // Loading home page triggers search, which is a side-effect / artifact
-    // with regard to tracking user interactions.  This variable is set to
-    // false once per page load as a way to omit such artifacts from logging.
-    isPageLoadSearch = false
+    //
+    // Loading home page triggers 2 searches, which is a side-effect / artifact
+    // with regard to tracking user interactions.  So do not log the first
+    // two searches.
+    //
+    // To consider: integrate a way to determine which *interaction* triggered
+    // search.  This was considered very early for separate reasons, but
+    // abandoned as it was invasive.  The clearly-brittle nature of preventing
+    // these artifactual searches shifts that cost-benefit, somewhat.
     return
   }
 
-  const terms = searchParams.terms ? searchParams.terms.split(' ') : ''
+  const terms = formatTerms(searchParams.terms)
+  const numTerms = terms.length
+  const genes = formatTerms(searchParams.genes)
+  const numGenes = genes.length
   const facets = searchParams.facets
   const page = searchParams.page
-  const genes = searchParams.genes
   const preset = searchParams.preset
 
-  const numTerms = getNumberOfTerms(terms)
   const [numFacets, numFilters] = getNumFacetsAndFilters(facets)
   const facetList = facets ? Object.keys(facets) : []
 
   const filterListByFacet = getFriendlyFilterListByFacet(facets)
 
   const simpleProps = {
-    type, terms, page, preset,
-    numTerms, numFacets, numFilters, facetList, genes,
-    context: 'global'
+    terms, numTerms, genes, numGenes, page, preset,
+    facetList, numFacets, numFilters,
+    perfTime,
+    type, context: 'global'
   }
   const props = Object.assign(simpleProps, filterListByFacet)
 
@@ -125,7 +133,7 @@ export function logSearch(type, searchParams) {
  * Log filter search metrics
  */
 export function logFilterSearch(facet, terms) {
-  const numTerms = getNumberOfTerms(terms)
+  const numTerms = formatTerms(terms).length
 
   const defaultProps = { facet, terms }
   const props = Object.assign(defaultProps, { numTerms })
@@ -139,10 +147,32 @@ export function logFilterSearch(facet, terms) {
 }
 
 /**
+ * Get common plot log event properties
+ *
+ * TODO as part of SCP-2736:
+ * - Remove jQuery, generalize to also handle plot from React
+ */
+export function getLogPlotProps() {
+  const genes = formatTerms($('#search_genes').val())
+
+  const logProps = {
+    currentTab: $('#view-tabs .study-nav.active').text().trim().toLowerCase(),
+    genes,
+    numGenes: genes.length,
+    cluster: $('#search_cluster').val(),
+    annotation: $('#search_annotation').val(),
+    subsample: $('#search_subsample').val()
+  }
+
+  return logProps
+}
+
+/**
  * Log when a download is authorized.
  * This is our best web-client-side methodology for measuring downloads.
  */
-export function logDownloadAuthorization() {
-  log('download-authorization')
+export function logDownloadAuthorization(perfTime) {
+  const props = { perfTime }
+  log('download-authorization', props)
   ga('send', 'event', 'advanced-search', 'download-authorization') // eslint-disable-line no-undef, max-len
 }

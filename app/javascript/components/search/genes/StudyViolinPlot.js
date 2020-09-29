@@ -100,15 +100,15 @@ export default function StudyViolinPlot({ study, gene }) {
       <div className="col-md-10">
         <div
           className="expression-graph"
-          id={ getGraphElementId(study, gene) }
-          data-testid={ getGraphElementId(study, gene) }
+          id={getGraphElementId(study, gene)}
+          data-testid={getGraphElementId(study, gene)}
         >
         </div>
         {
           isLoading &&
           <FontAwesomeIcon
             icon={faDna}
-            data-testid={ `${getGraphElementId(study, gene)}-loading-icon` }
+            data-testid={`${getGraphElementId(study, gene)}-loading-icon`}
             className="gene-load-spinner"
           />
         }

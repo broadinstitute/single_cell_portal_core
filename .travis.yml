@@ -1,6 +1,6 @@
 language: ruby
 rvm:
-  - 2.5.8
+  - 2.6.5
 install:
   - gem install travis
 branches:
@@ -21,6 +21,11 @@ before_install:
   - sudo mv vault /usr/local/bin
   - bin/burp_start.sh "${BURP_DOCKER_IMAGE}" "${BURP_DOCKER_KEY}"
 script:
+<<<<<<< HEAD
   - bin/load_env_secrets.sh -p secret/kdux/scp/staging-new/scp_config.json -s secret/kdux/scp/staging-new/scp_service_account.json -e test -n single-cell-portal-staging
+
+=======
+  - bin/load_env_secrets.sh -p secret/kdux/scp/staging/scp_config.json -s secret/kdux/scp/staging/scp_service_account.json -r secret/kdux/scp/staging/read_only_service_account.json -e test -n single-cell-portal-staging
+>>>>>>> master
 after_success:
   - bin/burp_scan.sh "${BURP_DOCKER_IMAGE}"

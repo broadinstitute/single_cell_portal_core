@@ -40,7 +40,7 @@ export default function StudyGeneDotPlot({ study, genes }) {
   return (
     <div className="row">
       <div className="col-md-12">
-        <div className="expression-graph" id={ `expGraph${study.accession}` }></div>
+        <div className="expression-graph" id={`expGraph${study.accession}`}></div>
         { isLoading && <FontAwesomeIcon icon={faDna} className="gene-load-spinner"/> }
       </div>
     </div>

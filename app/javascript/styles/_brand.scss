@@ -61,6 +61,7 @@
   line-height: 22px;
   color: #4A4A4A;
   font-weight: 200;
+  max-width: 40vw; // Fixes layout on narrow screens (SCP-2637)
 }
 
 .scp-banner-position {

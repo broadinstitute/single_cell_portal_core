@@ -29,4 +29,68 @@ class AdminConfigurationTest < ActiveSupport::TestCase
 
     puts "#{File.basename(__FILE__)}: #{self.method_name} successful!"
   end
+
+  # test getting the default configured ingest docker image, and overriding via admin_configuration
+  test 'should retrieve ingest docker image tag from config' do
+    puts "#{File.basename(__FILE__)}: #{self.method_name}"
+
+    # default configured image
+    default_image = Rails.application.config.ingest_docker_image
+    config_image = AdminConfiguration.get_ingest_docker_image
+    assert_equal default_image, config_image,
+                 "Ingest image names do not match; #{default_image} != #{config_image}"
+
+    # override image
+    image_name = 'gcr.io/broad-singlecellportal-staging/scp-ingest-pipeline:1.0.0-rc1'
+    new_config_image = AdminConfiguration.create!(config_type: AdminConfiguration::INGEST_DOCKER_NAME,
+                                                  value_type: 'String',
+                                                  value: image_name)
+    current_image = AdminConfiguration.get_ingest_docker_image
+    assert_equal image_name, current_image,
+                 "Updated ingest image names do not match; #{image_name} != #{current_image}"
+
+    # revert to default
+    new_config_image.destroy
+    reverted_image = AdminConfiguration.get_ingest_docker_image
+    assert_equal default_image, reverted_image,
+                 "Reverted ingest image names do not match; #{default_image} != #{reverted_image}"
+
+    puts "#{File.basename(__FILE__)}: #{self.method_name} successful!"
+  end
+
+  test 'should revert ingest image to default' do
+    puts "#{File.basename(__FILE__)}: #{self.method_name}"
+
+    default_image = Rails.application.config.ingest_docker_image
+
+    # add new image config
+    image_name = 'gcr.io/broad-singlecellportal-staging/scp-ingest-pipeline:1.0.0-rc1'
+    new_config_image = AdminConfiguration.create!(config_type: AdminConfiguration::INGEST_DOCKER_NAME,
+                                                  value_type: 'String',
+                                                  value: image_name)
+    assert new_config_image.present?, "Ingest image config did not save"
+
+    # run cleanup job
+    AdminConfiguration.revert_ingest_docker_image
+    config = AdminConfiguration.get_ingest_docker_image_config
+    assert config.nil?, "Ingest docker image configuration still present"
+    current_image = AdminConfiguration.get_ingest_docker_image
+    assert_equal default_image, current_image,
+                 "Reverted ingest image names do not match; #{default_image} != #{current_image}"
+
+    puts "#{File.basename(__FILE__)}: #{self.method_name} successful!"
+  end
+
+  test 'should extract docker image attributes from image name string' do
+    puts "#{File.basename(__FILE__)}: #{self.method_name}"
+
+    image_attributes = AdminConfiguration.get_ingest_docker_image_attributes
+    expected_keys = [:registry, :project, :image_name, :tag]
+    image_attributes.each do |attribute, value|
+      assert expected_keys.include?(attribute), "Unexpected attribute name found: #{attribute}; not in #{expected_keys}"
+      assert value.present?, "Did not retrieve a value for #{attribute}: #{value}"
+    end
+
+    puts "#{File.basename(__FILE__)}: #{self.method_name} successful!"
+  end
 end

@@ -21,7 +21,7 @@ let globalMock = false
 const defaultBasePath = '/single_cell/api/v1'
 
 /** Get default `init` object for SCP API fetches */
-function defaultInit() {
+export function defaultInit() {
   const headers = {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
@@ -64,8 +64,12 @@ export async function fetchAuthCode(mock=false) {
       method: 'POST'
     })
   }
-  logDownloadAuthorization()
-  return await scpApi('/search/auth_code', init, mock)
+
+  const [authCode, perfTime] = await scpApi('/search/auth_code', init, mock)
+
+  logDownloadAuthorization(perfTime)
+
+  return authCode
 }
 
 /**
@@ -77,7 +81,13 @@ export async function fetchAuthCode(mock=false) {
  * @returns {Promise} Promise object containing camel-cased data from API
  */
 export async function fetchFacets(mock=false) {
-  const facets = await scpApi('/search/facets', defaultInit(), mock)
+  let path = '/search/facets'
+  const brandingGroup = getBrandingGroup()
+  if (brandingGroup) {
+    path = `${path}?scpbr=${brandingGroup}`
+  }
+
+  const [facets, perfTime] = await scpApi(path, defaultInit(), mock)
 
   mapFiltersForLogging(facets, true)
 
@@ -136,7 +146,9 @@ export async function fetchExpressionViolin(
   const apiUrl = `/studies/${studyAccession}/expression_data/violin${params}`
   // don't camelcase the keys since those can be cluster names,
   // so send false for the 4th argument
-  return await scpApi(apiUrl, defaultInit(), mock, false)
+  const [violin, perfTime] = await scpApi(apiUrl, defaultInit(), mock, false)
+
+  return violin
 }
 
 /**
@@ -162,7 +174,8 @@ export async function fetchExpressionViolin(
  */
 export async function fetchAnnotationValues(studyAccession, mock=false) {
   const apiUrl = `/studies/${studyAccession}/expression_data/annotations`
-  return await scpApi(apiUrl, defaultInit(), mock, false)
+  const [values, perfTime] = await scpApi(apiUrl, defaultInit(), mock, false)
+  return values
 }
 
 /**
@@ -192,7 +205,9 @@ export async function fetchExpressionHeatmap(
   const apiUrl = `/studies/${studyAccession}/expression_heatmaps${params}`
   // don't camelcase the keys since those can be cluster names,
   // so send false for the 4th argument
-  return await scpApi(apiUrl, defaultInit(), mock, false)
+  const [heatmap, perfTime] = await scpApi(apiUrl, defaultInit(), mock, false)
+
+  return heatmap
 }
 
 /**
@@ -221,12 +236,9 @@ export async function fetchFacetFilters(facet, query, mock=false) {
     queryString = `_${facet}_${query}`
   }
 
-  logFilterSearch(facet, query)
-
   const pathAndQueryString = `/search/facet_filters${queryString}`
 
-  const filters = await scpApi(pathAndQueryString, defaultInit(), mock)
-
+  const [filters, perfTime] = await scpApi(pathAndQueryString, defaultInit(), mock)
   mapFiltersForLogging(filters)
 
   return filters
@@ -252,7 +264,8 @@ export async function fetchDownloadSize(accessions, fileTypes, mock=false) {
   const fileTypesString = fileTypes.join(',')
   const queryString = `?accessions=${accessions}&file_types=${fileTypesString}`
   const pathAndQueryString = `/search/bulk_download_size/${queryString}`
-  return await scpApi(pathAndQueryString, defaultInit(), mock)
+  const [size, perfTime] = await scpApi(pathAndQueryString, defaultInit(), mock)
+  return size
 }
 
 /**
@@ -277,9 +290,9 @@ export async function fetchDownloadSize(accessions, fileTypes, mock=false) {
 export async function fetchSearch(type, searchParams, mock=false) {
   const path = `/search?${buildSearchQueryString(type, searchParams)}`
 
-  const searchResults = await scpApi(path, defaultInit(), mock)
+  const [searchResults, perfTime] = await scpApi(path, defaultInit(), mock)
 
-  logSearch(type, searchParams)
+  logSearch(type, searchParams, perfTime)
 
   return searchResults
 }
@@ -333,7 +346,7 @@ export function buildFacetsFromQueryString(facetsParamString) {
 }
 
 /** returns the current branding group as specified by the url  */
-function getBrandingGroup(path) {
+export function getBrandingGroup() {
   const queryParams = queryString.parse(window.location.search)
   return queryParams.scpbr
 }
@@ -348,6 +361,8 @@ function getBrandingGroup(path) {
 export default async function scpApi(
   path, init, mock=false, camelCase=true, toJson=true
 ) {
+  const perfTimeStart = performance.now()
+
   if (globalMock) mock = true
   const basePath =
     (mock || globalMock) ? `${mockOrigin}/mock_data` : defaultBasePath
@@ -356,19 +371,22 @@ export default async function scpApi(
 
   const response = await fetch(fullPath, init).catch(error => error)
 
+  // Milliseconds taken to fetch data from API
+  const perfTime = Math.round(performance.now() - perfTimeStart)
+
   if (response.ok) {
     if (toJson) {
       const json = await response.json()
       // Converts API's snake_case to JS-preferrable camelCase,
       // for easy destructuring assignment.
       if (camelCase) {
-        return camelcaseKeys(json)
+        return [camelcaseKeys(json), perfTime]
       } else {
-        return json
+        return [json, perfTime]
       }
     } else {
-      return response
+      return [response, perfTime]
     }
   }
-  return response
+  return [response, perfTime]
 }

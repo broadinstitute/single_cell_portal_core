@@ -1,3 +1,9 @@
+<%#
+This code renders the "Cluster" tab plot shown by default on Study Overview
+%>
+
+var plotEvent = window.SCP.startPendingEvent('plot:scatter', window.SCP.getLogPlotProps());
+
 // check render status
 console.log('render status at start: ' + $('#cluster-plot').data('rendered'));
 // render colorscale picker if needed
@@ -61,6 +67,7 @@ var requestUrl = '<%= javascript_safe_url(request.fullpath) %>';
 gaTrack(requestUrl, 'Single Cell Portal');
 
 $(document).trigger('scpPlotsDidRender');
+plotEvent.complete();
 
 <% if @analysis_outputs.key?('ideogram.js') %>
 window.ideogramInferCnvSettings = <%= raw @study.get_ideogram_infercnv_settings(params[:cluster], params[:annotation]).to_json %>;

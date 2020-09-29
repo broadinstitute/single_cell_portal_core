@@ -615,12 +615,6 @@ h6,
   margin-bottom: 3px;
 }
 
-.ck-editor__editable {
-  min-height: 300px;
-  max-height: 700px;
-  min-width: 100%;
-}
-
 .bottom-pad {
   margin-bottom: 10px;
 }
@@ -665,7 +659,6 @@ h6,
   display: inline-block;
 }
 .notification-banner {
-  height: 50px;
   padding: 5px;
   background: $warning-background-color;
   .fa-exclamation-triangle {
@@ -701,4 +694,16 @@ h6,
   to {
     transform: rotateY(-360deg);
   }
+}
+
+// Overridding some default CKEditor styles to allow for larger editor windows by default
+
+.ck-editor__editable {
+  min-height: 300px;
+  max-height: 700px;
+  min-width: 100%;
+}
+
+figcaption.ck-editor__editable {
+  min-height: 0;
 }

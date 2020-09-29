@@ -4,6 +4,7 @@ module Api
       include Concerns::ContentType
       include Concerns::CspHeaderBypass
       include ActionController::MimeResponds
+      include Concerns::IngestAware
       extend ErrorTracker
 
       rescue_from ActionController::ParameterMissing do |exception|

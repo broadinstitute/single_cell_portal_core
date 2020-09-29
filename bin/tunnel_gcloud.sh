@@ -6,7 +6,7 @@
 usage=$(
 cat <<EOF
 $0 [OPTION]
--v VALUE	set the VM name, defaults to 'singlecell-production-101'.
+-v VALUE	set the VM name, defaults to 'singlecell-01'.
 -u VALUE	set the login user, defaults to 'ubuntu'
 -p VALUE	set the GCP project, defaults to 'broad-singlecellportal'
 -H COMMAND	print this text
@@ -14,7 +14,7 @@ EOF
 )
 
 # set variables & defaults
-VM_NAME="singlecell-production-101"
+VM_NAME="singlecell-01"
 PROJECT="broad-singlecellportal"
 USER='ubuntu'
 

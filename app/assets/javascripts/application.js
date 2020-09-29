@@ -32,6 +32,7 @@
 //= require scp-igv
 //= require scp-ideogram
 //= require scp-dot-plot
+//= require ckeditor
 
 var fileUploading = false;
 var PAGE_RENDERED = false;
@@ -53,7 +54,7 @@ var exploreMenusToggleState = {
 // allowed file extension for upload forms
 var ALLOWED_FILE_TYPES = {
     expression: /(\.|\/)(txt|text|mm|mtx|tsv|csv)(\.gz)?$/i,
-    plainText: /(\.|\/)(txt|text|tsv|csv)$/i,
+    plainText: /(\.|\/)(txt|text|tsv|csv)(\.gz)?$/i,
     primaryData: /((\.(fq|fastq)(\.tar)?\.gz$)|\.bam)/i,
     bundled: /(\.|\/)(txt|text|tsv|csv|bam\.bai)(\.gz)?$/i,
     miscellaneous: /(\.|\/)(txt|text|tsv|csv|jpg|jpeg|png|pdf|doc|docx|xls|xlsx|ppt|pptx|zip|loom|h5|h5ad|h5an)(\.gz)?$/i
@@ -128,6 +129,24 @@ var paginationOpts = {
     hwaccel: false, // Whether to use hardware acceleration
     position: 'relative' // Element positioning
 };
+
+// global config for CKEditor instances
+var fullCKEditorConfig = {
+  alignment: {
+    options: [ 'left', 'center', 'right' ]
+  },
+  image: {
+    styles: [
+      'full', 'alignLeft', 'alignCenter', 'alignRight'
+    ],
+    toolbar: [
+      'imageStyle:full', 'imageStyle:alignLeft', 'imageStyle:alignCenter', 'imageStyle:alignRight'
+    ]
+  },
+  toolbar: ['heading', '|', 'removeFormat', '|',  'bold', 'italic', 'underline', 'link', 'bulletedList', 'numberedList',
+      'blockQuote', '|', 'alignment', 'outdent', 'indent', '|', 'ImageUpload', '|', 'insertTable', 'tableColumn',
+      'tableRow', 'mergeTableCells', '|', 'undo', 'redo']
+}
 
 $(document).on('shown.bs.modal', function(e) {
     console.log("modal " + $(e.target).attr('id') + ' opened');
@@ -581,8 +600,8 @@ function showMessageModal(notice=null, alert=null) {
         $("#message_modal").modal("show");
     }
 
-    // don't timeout alert messages
-    if (!alert) {
+    // don't timeout alert messages, but don't clear if nothing was shown
+    if (!alert && notice) {
         setTimeout(function() {
             $("#message_modal").modal("hide");
         }, 3000);

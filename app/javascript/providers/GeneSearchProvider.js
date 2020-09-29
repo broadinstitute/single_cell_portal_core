@@ -67,10 +67,14 @@ export function PropsGeneSearchProvider(props) {
     // reset the scroll in case they scrolled down to read prior results
     window.scrollTo(0, 0)
 
-    const results = await fetchSearch('study', {
-      page: searchParams.page,
-      genes: searchParams.genes
-    })
+    const results = await fetchSearch(
+      // Ensures event properties include "type": "gene" in search logging.
+      'gene',
+      {
+        page: searchParams.page,
+        genes: searchParams.genes
+      }
+    )
 
     setSearchState({
       params: searchParams,
@@ -103,6 +107,7 @@ export function PropsGeneSearchProvider(props) {
   )
 }
 
+/** returns an object built from the query params and defaults */
 export function buildParamsFromQuery(query, preset) {
   const queryParams = queryString.parse(query)
   return {

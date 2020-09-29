@@ -93,7 +93,7 @@ class ApplicationController < ActionController::Base
 
   # rescue from an invalid csrf token (if user logged out in another window, or some kind of spoofing attack)
   def invalid_csrf(exception)
-    ErrorTracker.report_exception(exception, current_user, {request_url: request.url, params: params})
+    ErrorTracker.report_exception(exception, current_user, {request_url: request.url, params: params.to_unsafe_hash})
     @alert = "We're sorry, but the change you wanted was rejected by the server."
     respond_to do |format|
       format.html {render template: '/layouts/422', status: 422}

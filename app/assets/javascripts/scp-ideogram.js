@@ -244,5 +244,5 @@ function initializeIdeogram(url) {
   // Log Ideogram.js initialization in Google Analytics
   ga('send', 'event', 'ideogram', 'initialize')
 
-  log('ideogram:initialize')
+  window.SCP.log('ideogram:initialize')
 }

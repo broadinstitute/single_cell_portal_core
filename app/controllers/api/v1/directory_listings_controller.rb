@@ -276,7 +276,7 @@ module Api
           @directory_listing.destroy
           head 204
         rescue => e
-          ErrorTracker.report_exception(e, current_api_user, params)
+          ErrorTracker.report_exception(e, current_api_user, params.to_unsafe_hash)
           render json: {error: e.message}, status: 500
         end
       end

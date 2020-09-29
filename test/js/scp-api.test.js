@@ -56,7 +56,7 @@ describe('JavaScript client for SCP REST API', () => {
     jest
       .spyOn(global, 'fetch')
       .mockReturnValue(Promise.resolve(mockErrorResponse))
-    const actualResponse = await scpApi('/test/path', {}, false)
+    const [actualResponse, perfTime] = await scpApi('/test/path', {}, false)
     expect(actualResponse.status).toEqual(500)
     expect(actualResponse.ok).toEqual(false)
   })

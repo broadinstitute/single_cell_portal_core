@@ -1,3 +1,5 @@
+var plotEvent = window.SCP.startPendingEvent('plot:scatter', window.SCP.getLogPlotProps());
+
 $('#distribution-link').html('Annotated Scatter');
 
 // If 'Distribution' panel is open, close it
@@ -105,3 +107,4 @@ $("#colorscale").change(function() {
 <%= render partial: 'expression_scatter_camera' %>
 
 $(document).trigger('scpPlotsDidRender');
+plotEvent.complete();

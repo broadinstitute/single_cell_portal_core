@@ -364,4 +364,12 @@ module ApplicationHelper
   def pluralize_without_count(count, noun, text=nil)
     count.to_i == 1 ? "#{noun}#{text}" : "#{noun.pluralize}#{text}"
   end
+
+  def get_page_name
+    page_name = "#{controller_name}-#{action_name}".gsub('_', '-')
+    if page_name == 'site-index'
+      page_name = 'root'
+    end
+    page_name
+  end
 end

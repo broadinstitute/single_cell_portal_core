@@ -63,9 +63,7 @@
 
     ClassicEditor
         .create( document.querySelector( '#analysis_configuration_description' ),
-            {
-                toolbar: ["heading", '|',  "bold", "italic", "link", "bulletedList", "numberedList", "blockQuote", '|', "undo", "redo"]
-            }
+            fullCKEditorConfig
         )
         .then( function(editor) {
             editor.ui.view.editable.editableElement.style.maxHeight = '300px';

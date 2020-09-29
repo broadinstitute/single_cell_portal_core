@@ -64,9 +64,7 @@
 
     var ckEditor = ClassicEditor
         .create( document.querySelector( '#email_contents' ),
-            {
-                toolbar: ["heading", '|',  "bold", "italic", "link", "bulletedList", "numberedList", "blockQuote", '|', "undo", "redo"]
-            }
+            fullCKEditorConfig
         )
     .catch( function(error) {
         console.error( error );

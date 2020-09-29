@@ -60,8 +60,8 @@ function getBamTracks() {
 
   const bamTracks = []
 
-  for (i = 0; i < bamsToViewInIgv.length; i++) {
-    bam = bamsToViewInIgv[i]
+  for (i = 0; i < bamAndBaiFiles.length; i++) {
+    bam = bamAndBaiFiles[i]
 
     // Extracts BAM file name from its GCS API URL
     bamFileName = bam.url.split('/o/')[1].split('?')[0]
@@ -139,33 +139,60 @@ function initializeIgv() {
 
   const igvContainer = document.getElementById('igv-container')
 
-  const genes = $('.queried-gene')
-
   const genomeId = bamsToViewInIgv[0].genomeAssembly
 
   let reference
-  let locus
+  let searchOptions
+  let fallbackLocus
   if (genomeId === 'Macaca_fascicularis_5.0') {
-    locus = ['chr1:1-2']
+    fallbackLocus = 'chr1:1-2'
 
     // To consider:
     //  - Update genomes pipeline to make such files automatically reproducible
     const genomeAnnotationObj = bamsToViewInIgv[0].genomeAnnotation
-    const genomePath = `${genomeAnnotationObj.link.split('/').slice(0, -2).join('%2F')}%2F`
+    const genomePath =
+      `${genomeAnnotationObj.link.split('/').slice(0, -2).join('%2F')}%2F`
     const bucket = genomeAnnotationObj.bucket_id
     const gcsBase = 'https://www.googleapis.com/storage/v1/b/'
     const macacaFascicularisBase = `${gcsBase + bucket}/o/${genomePath}`
 
+    const fasta = 'Macaca_fascicularis.Macaca_fascicularis_5.0.dna.toplevel.fa'
+    const cytoband = 'macaca-fascicularis-cytobands.txt'
+
+    searchOptions = {
+      url: 'https://rest.ensembl.org/lookup/symbol/macaca_fascicularis/$FEATURE$?content-type=application/json',
+      chromosomeField: 'seq_region_name',
+      displayName: 'display_name'
+    }
+
     reference = {
       id: genomeId,
-      cytobandURL: `${macacaFascicularisBase}macaca-fascicularis-cytobands.txt?alt=media`,
-      fastaURL: `${macacaFascicularisBase}Macaca_fascicularis.Macaca_fascicularis_5.0.dna.toplevel.fa?alt=media`,
-      indexURL: `${macacaFascicularisBase}Macaca_fascicularis.Macaca_fascicularis_5.0.dna.toplevel.fa.fai?alt=media`
+      cytobandURL: `${macacaFascicularisBase}${cytoband}?alt=media`,
+      fastaURL: `${macacaFascicularisBase}${fasta}?alt=media`,
+      indexURL: `${macacaFascicularisBase}${fasta}.fai?alt=media`,
+      headers: {
+        'Authorization': `Bearer ${window.accessToken}`
+      }
     }
   } else {
-    locus = (genes.length === 0) ? ['myc'] : [genes.first().text()]
+    fallbackLocus = 'myc'
     reference = genomeId
   }
+  const queriedGenes = $('.queried-gene')
+  let locus
+  if (queriedGenes.length > 0) {
+    // The user searched within a study for one or multiple genes
+    locus = [queriedGenes.first().text()]
+  } else if (window.uniqueGenes.length > 0) {
+    // The user is viewing the default cluster plot, so select
+    // their first in their matrix
+    locus = [window.uniqueGenes[0]]
+  } else {
+    // Rarely, users will upload BAMs and *not* matrices.  This accounts for
+    // that case.
+    locus = [fallbackLocus]
+  }
+
   const genesTrackName = `Genes | ${bamsToViewInIgv[0].genomeAnnotation.name}`
   const genesTrack = getGenesTrack(genomeId, genesTrackName)
   const bamTracks = getBamTracks()
@@ -173,11 +200,16 @@ function initializeIgv() {
 
   const igvOptions = { reference, locus, tracks }
 
+  if (typeof searchOptions !== 'undefined') {
+    igvOptions['search'] = searchOptions
+  }
+
   igv.createBrowser(igvContainer, igvOptions)
+
 
   // Log igv.js initialization in Google Analytics
   ga('send', 'event', 'igv', 'initialize')
-  log('igv:initialize')
+  window.SCP.log('igv:initialize')
 }
 
 $(document).on('click', '#genome-tab-nav > a', event => {

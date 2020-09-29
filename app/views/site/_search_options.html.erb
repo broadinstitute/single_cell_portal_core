@@ -51,7 +51,6 @@
             <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
 
                 initializeAutocomplete('#search_genes');
-
                 $('#clear-gene-search').click(function(){
                     clearForm('search_genes');
                     $(this).tooltip('hide');
@@ -109,12 +108,26 @@
                         $(window).off('resizeEnd');
                         if (event.type == 'click') {
                             launchModalSpinner('#spinner_target', '#loading-modal', function() {
+                                var genes = window.SCP.formatTerms($('#search_genes').val())
+                                var searchLogProps = {
+                                  type: 'gene',
+                                  context: 'study',
+                                  genes,
+                                  numGenes: genes.length,
+                                }
+                                var searchEvent = window.SCP.startPendingEvent('search', searchLogProps);
+                                // also start measuring the end-to-end user experience event
+                                // this will complete when the plot is rendered
+                                window.SCP.startPendingEvent(
+                                  'user-action:search:site-study', searchLogProps, 'plot:'
+                                );
                                 var form = $('#search-genes-form');
                                 $.ajax({
                                     type: 'POST',
                                     url: form.attr('action'),
                                     data: form.serialize(),
-                                    dataType: 'script'
+                                    dataType: 'script',
+                                    complete: searchEvent.complete
                                 });
                             });
                         } else if (event.type == 'submit') {
@@ -127,6 +140,7 @@
                 // handler to catch ENTER keypress and open modal
                 $('#search-genes-form').on('submit', function(submitEvent) {
                     submitGeneSearch(submitEvent);
+                    return false; // Prevents double search-and-render
                 });
             </script>
           </div>

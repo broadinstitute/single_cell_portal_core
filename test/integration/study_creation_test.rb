@@ -120,12 +120,14 @@ class StudyCreationTest < ActionDispatch::IntegrationTest
     # verify that counts are correct, this will ensure that everything uploaded & parsed correctly
     cluster_count = study.cluster_groups.size
     metadata_count = study.cell_metadata.size
+    gene_count = study.genes.size
     cluster_annot_count = study.cluster_annotation_count
     study_file_count = study.study_files.non_primary_data.size
     share_count = study.study_shares.size
 
     assert_equal 1, cluster_count, "did not find correct number of clusters"
     assert_equal 26, metadata_count, "did not find correct number of metadata objects"
+    assert_equal 19, gene_count, "did not find correct number of gene objects"
     assert_equal 2, cluster_annot_count, "did not find correct number of cluster annotations"
     assert_equal 3, study_file_count, "did not find correct number of study files"
     assert_equal 1, share_count, "did not find correct number of study shares"

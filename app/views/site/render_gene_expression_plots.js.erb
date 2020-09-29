@@ -1,3 +1,13 @@
+<%#
+This code renders:
+* "Distribution" tab plot shown by default for single-gene search in Study Overview.
+
+See also: _expression_plots_plotly.js.erb, which renders the "Scatter" tab that is
+hidden by default.
+%>
+var distributionPlotType = '<%= @values_box_type %>';
+var plotEvent = window.SCP.startPendingEvent(`plot:${distributionPlotType}`, window.SCP.getLogPlotProps());
+
 // check render status
 console.log('render status of box plot at start: ' + $('#expression-plots').data('box-rendered'));
 console.log('render status of scatter plot at start: ' + $('#expression-plots').data('scatter-rendered'));
@@ -70,6 +80,9 @@ closeUserAnnotationsForm();
 console.log('render status of box plot at end: ' + $('#expression-plots').data('box-rendered'));
 console.log('render status of scatter plot at end: ' + $('#expression-plots').data('scatter-rendered'));
 console.log('render status of reference plot at end: ' + $('#expression-plots').data('reference-rendered'));
+
+var distributionPlotType = '<%= @values_box_type %>';
+plotEvent.complete();
 
 var requestUrl = '<%= javascript_safe_url(request.fullpath) %>';
 gaTrack(requestUrl, 'Single Cell Portal');
