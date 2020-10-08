@@ -210,10 +210,10 @@ class AnalysisMetadatum
     study = self.study
     # retrieve available objects pertaining to submission (submission, configuration, all workflows contained in submission)
     Rails.logger.info "#{Time.zone.now}: creating AnalysisMetadatum payload for submission "
-    submission = Study.firecloud_client.get_workspace_submission(study.firecloud_project,
+    submission = ApplicationController.firecloud_client.get_workspace_submission(study.firecloud_project,
                                                                  study.firecloud_workspace,
                                                                  self.submission_id)
-    configuration = Study.firecloud_client.get_workspace_configuration(study.firecloud_project,
+    configuration = ApplicationController.firecloud_client.get_workspace_configuration(study.firecloud_project,
                                                                        study.firecloud_workspace,
                                                                        submission['methodConfigurationNamespace'],
                                                                        submission['methodConfigurationName'])
@@ -224,7 +224,7 @@ class AnalysisMetadatum
     submission['workflows'].each do |submission_workflow|
       Rails.logger.info "getting workflow: #{submission_workflow['workflowId']}"
 
-      workflows << Study.firecloud_client.get_workspace_submission_workflow(study.firecloud_project,
+      workflows << ApplicationController.firecloud_client.get_workspace_submission_workflow(study.firecloud_project,
                                                                           study.firecloud_workspace,
                                                                           self.submission_id,
                                                                           submission_workflow['workflowId'])
@@ -284,7 +284,7 @@ class AnalysisMetadatum
         when 'computational_method'
           method_name = configuration['methodRepoMethod']
           name = "#{method_name['methodNamespace']}/#{method_name['methodName']}/#{method_name['methodVersion']}"
-          method_url = Study.firecloud_client.api_root + "/api/methods/#{name}"
+          method_url = ApplicationController.firecloud_client.api_root + "/api/methods/#{name}"
           value = set_value_by_type(definitions, method_url)
         when 'timestamp_start_utc'
           value = set_value_by_type(definitions, submission['submissionDate'])

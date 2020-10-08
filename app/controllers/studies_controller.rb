@@ -46,7 +46,7 @@ class StudiesController < ApplicationController
     @directories = @study.directory_listings.are_synced
     @primary_data = @study.directory_listings.primary_data
     @other_data = @study.directory_listings.non_primary_data
-    @allow_downloads = Study.firecloud_client.services_available?(FireCloudClient::BUCKETS_SERVICE) && !@study.detached
+    @allow_downloads = ApplicationController.firecloud_client.services_available?(FireCloudClient::BUCKETS_SERVICE) && !@study.detached
     @analysis_metadata = @study.analysis_metadata.to_a
     # load study default options
     set_study_default_options
@@ -109,16 +109,16 @@ class StudiesController < ApplicationController
     @permissions_changed = []
 
     # get a list of workspace submissions so we know what directories to ignore
-    @submission_ids = Study.firecloud_client.get_workspace_submissions(@study.firecloud_project, @study.firecloud_workspace).map {|s| s['submissionId']}
+    @submission_ids = ApplicationController.firecloud_client.get_workspace_submissions(@study.firecloud_project, @study.firecloud_workspace).map {|s| s['submissionId']}
 
     # first sync permissions if necessary
     begin
       portal_permissions = @study.local_acl
-      firecloud_permissions = Study.firecloud_client.get_workspace_acl(@study.firecloud_project, @study.firecloud_workspace)
+      firecloud_permissions = ApplicationController.firecloud_client.get_workspace_acl(@study.firecloud_project, @study.firecloud_workspace)
       firecloud_permissions['acl'].each do |user, permissions|
         # skip project owner permissions, they aren't relevant in this context
         # also skip the readonly service account
-        if permissions['accessLevel'] =~ /OWNER/i || (Study.read_only_firecloud_client.present? && user == Study.read_only_firecloud_client.issuer)
+        if permissions['accessLevel'] =~ /OWNER/i || (ApplicationController.read_only_firecloud_client.present? && user == ApplicationController.read_only_firecloud_client.issuer)
           next
         else
           # determine whether permissions are incorrect or missing completely
@@ -163,7 +163,7 @@ class StudiesController < ApplicationController
     begin
       # create a map of file extension to use for creating directory_listings of groups of 10+ files of the same type
       @file_extension_map = {}
-      workspace_files = Study.firecloud_client.execute_gcloud_method(:get_workspace_files, 0, @study.bucket_id)
+      workspace_files = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_files, 0, @study.bucket_id)
       # see process_workspace_bucket_files in private methods for more details on syncing
       process_workspace_bucket_files(workspace_files)
       while workspace_files.next?
@@ -278,9 +278,9 @@ class StudiesController < ApplicationController
     begin
       # indication of whether or not we have custom sync code to run, defaults to false
       @special_sync = false
-      configuration = Study.firecloud_client.get_workspace_configuration(@study.firecloud_project, @study.firecloud_workspace,
+      configuration = ApplicationController.firecloud_client.get_workspace_configuration(@study.firecloud_project, @study.firecloud_workspace,
                                                                          configuration_namespace, configuration_name)
-      submission = Study.firecloud_client.get_workspace_submission(@study.firecloud_project, @study.firecloud_workspace,
+      submission = ApplicationController.firecloud_client.get_workspace_submission(@study.firecloud_project, @study.firecloud_workspace,
                                                                    params[:submission_id])
       # get method identifiers to load analysis_configuration object
       method_name = configuration['methodRepoMethod']['methodName']
@@ -291,7 +291,7 @@ class StudiesController < ApplicationController
         @special_sync = true
       end
       submission['workflows'].each do |workflow|
-        workflow = Study.firecloud_client.get_workspace_submission_workflow(@study.firecloud_project, @study.firecloud_workspace,
+        workflow = ApplicationController.firecloud_client.get_workspace_submission_workflow(@study.firecloud_project, @study.firecloud_workspace,
                                                                             params[:submission_id], workflow['workflowId'])
         workflow['outputs'].each do |output_name, outputs|
           # try to copy each 'output' to the special output path if the object is a file
@@ -300,7 +300,7 @@ class StudiesController < ApplicationController
             outputs.each do |output_file|
               file_location = output_file.gsub(/gs\:\/\/#{@study.bucket_id}\//, '')
               # get google instance of file
-              remote_file = Study.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, @study.bucket_id, file_location)
+              remote_file = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, @study.bucket_id, file_location)
               if remote_file.present?
                 process_workflow_output(output_name, output_file, remote_file, workflow, params[:submission_id], configuration)
               end
@@ -308,7 +308,7 @@ class StudiesController < ApplicationController
           elsif outputs.is_a?(String)
             file_location = outputs.gsub(/gs\:\/\/#{@study.bucket_id}\//, '')
             # get google instance of file
-            remote_file = Study.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, @study.bucket_id, file_location)
+            remote_file = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, @study.bucket_id, file_location)
             if remote_file.present?
               process_workflow_output(output_name, outputs, remote_file, workflow, params[:submission_id], configuration)
             end
@@ -403,7 +403,7 @@ class StudiesController < ApplicationController
         @study.update(firecloud_workspace: SecureRandom.uuid)
       else
         begin
-          Study.firecloud_client.delete_workspace(@study.firecloud_project, @study.firecloud_workspace)
+          ApplicationController.firecloud_client.delete_workspace(@study.firecloud_project, @study.firecloud_workspace)
         rescue => e
           error_context = ErrorTracker.format_extra_context(@study, {params: params})
           ErrorTracker.report_exception(e, current_user, error_context)
@@ -593,7 +593,7 @@ class StudiesController < ApplicationController
     verify_file_download_permissions(@study); return if performed?
     # initiate file download action
     execute_file_download(@study); return if performed?
-
+    
   end
 
   # for files that don't need parsing, send directly to firecloud on upload completion
@@ -744,10 +744,10 @@ class StudiesController < ApplicationController
         begin
           # make sure file is in FireCloud first as user may be aborting the upload
           unless human_data
-            present = Study.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, @study.bucket_id,
+            present = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, @study.bucket_id,
                                                                    @study_file.upload_file_name)
             if present
-              Study.firecloud_client.execute_gcloud_method(:delete_workspace_file, 0, @study.bucket_id,
+              ApplicationController.firecloud_client.execute_gcloud_method(:delete_workspace_file, 0, @study.bucket_id,
                                                            @study_file.upload_file_name)
             end
           end
@@ -1135,7 +1135,7 @@ class StudiesController < ApplicationController
 
   # check on FireCloud API status and respond accordingly
   def check_firecloud_status
-    unless Study.firecloud_client.services_available?(FireCloudClient::SAM_SERVICE, FireCloudClient::RAWLS_SERVICE)
+    unless ApplicationController.firecloud_client.services_available?(FireCloudClient::SAM_SERVICE, FireCloudClient::RAWLS_SERVICE)
       alert = 'Study workspaces are temporarily unavailable, so we cannot complete your request.  Please try again later.'
       respond_to do |format|
         format.js {render js: "$('.modal').modal('hide'); alert('#{alert}')" and return}
@@ -1243,7 +1243,7 @@ class StudiesController < ApplicationController
     new_location = "outputs_#{@study.id}_#{submission_id}/#{basename}"
     # check if file has already been synced first
     # we can only do this by md5 hash as the filename and generation will be different
-    existing_file = Study.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, @study.bucket_id, new_location)
+    existing_file = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, @study.bucket_id, new_location)
     unless existing_file.present? && existing_file.md5 == remote_gs_file.md5 && StudyFile.where(study_id: @study.id, upload_file_name: new_location).exists?
       # now copy the file to a new location for syncing, marking as default type of 'Analysis Output'
       new_file = remote_gs_file.copy new_location

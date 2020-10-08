@@ -174,7 +174,7 @@ class Taxon
     reference_ws_config = AdminConfiguration.find_by(config_type: 'Reference Data Workspace')
     if reference_ws_config.present?
       project, workspace = reference_ws_config.value.split('/')
-      ref_workspace = Study.firecloud_client.get_workspace(project, workspace)
+      ref_workspace = ApplicationController.firecloud_client.get_workspace(project, workspace)
       bucket_id = ref_workspace['workspace']['bucketName']
     end
     while !file.eof?

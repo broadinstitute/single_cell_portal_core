@@ -5,7 +5,7 @@ class AddSubmitterToAnalysisMetadatum < Mongoid::Migration
         if analysis.study.present?
           puts "#{Time.zone.now} setting submitter on #{analysis.name}:#{analysis.submission_id}"
           study = analysis.study
-          submission = Study.firecloud_client.get_workspace_submission(study.firecloud_project, study.firecloud_workspace,
+          submission = ApplicationController.firecloud_client.get_workspace_submission(study.firecloud_project, study.firecloud_workspace,
                                                                        analysis.submission_id)
           submitter = submission['submitter']
           analysis.update(submitter: submitter)

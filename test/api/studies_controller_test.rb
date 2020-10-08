@@ -90,17 +90,17 @@ class StudiesControllerTest < ActionDispatch::IntegrationTest
         }
     }
     puts 'creating workspace...'
-    workspace = Study.firecloud_client.create_workspace(FireCloudClient::PORTAL_NAMESPACE, workspace_name)
+    workspace = ApplicationController.firecloud_client.create_workspace(FireCloudClient::PORTAL_NAMESPACE, workspace_name)
     assert workspace_name = workspace['name'], "Did not set workspace name correctly, expected #{workspace_name} but found #{workspace['name']}"
     # create ACL
     puts 'creating ACL...'
-    user_acl = Study.firecloud_client.create_workspace_acl(@user.email, 'WRITER', true, true)
-    Study.firecloud_client.update_workspace_acl(FireCloudClient::PORTAL_NAMESPACE, workspace_name, user_acl)
+    user_acl = ApplicationController.firecloud_client.create_workspace_acl(@user.email, 'WRITER', true, true)
+    ApplicationController.firecloud_client.update_workspace_acl(FireCloudClient::PORTAL_NAMESPACE, workspace_name, user_acl)
     share_user = User.find_by(email: 'testing.user.2@gmail.com')
-    share_acl = Study.firecloud_client.create_workspace_acl(share_user.email, 'READER', true, false)
-    Study.firecloud_client.update_workspace_acl(FireCloudClient::PORTAL_NAMESPACE, workspace_name, share_acl)
+    share_acl = ApplicationController.firecloud_client.create_workspace_acl(share_user.email, 'READER', true, false)
+    ApplicationController.firecloud_client.update_workspace_acl(FireCloudClient::PORTAL_NAMESPACE, workspace_name, share_acl)
     # validate acl set
-    workspace_acl = Study.firecloud_client.get_workspace_acl(FireCloudClient::PORTAL_NAMESPACE, workspace_name)
+    workspace_acl = ApplicationController.firecloud_client.get_workspace_acl(FireCloudClient::PORTAL_NAMESPACE, workspace_name)
     assert workspace_acl['acl'][@user.email].present?, "Did not set study owner acl"
     assert workspace_acl['acl'][share_user.email].present?, "Did not set share acl"
     # manually add files to the bucket
@@ -109,11 +109,11 @@ class StudiesControllerTest < ActionDispatch::IntegrationTest
     metadata_filename = 'metadata_example.txt'
     fastq_path = Rails.root.join('test', 'test_data', fastq_filename).to_s
     metadata_path = Rails.root.join('test', 'test_data', metadata_filename).to_s
-    Study.firecloud_client.execute_gcloud_method(:create_workspace_file, 0, workspace['bucketName'], fastq_path, fastq_filename)
-    Study.firecloud_client.execute_gcloud_method(:create_workspace_file, 0, workspace['bucketName'], metadata_path, metadata_filename)
-    assert Study.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, workspace['bucketName'], fastq_filename).present?,
+    ApplicationController.firecloud_client.execute_gcloud_method(:create_workspace_file, 0, workspace['bucketName'], fastq_path, fastq_filename)
+    ApplicationController.firecloud_client.execute_gcloud_method(:create_workspace_file, 0, workspace['bucketName'], metadata_path, metadata_filename)
+    assert ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, workspace['bucketName'], fastq_filename).present?,
            "Did not add fastq file to bucket"
-    assert Study.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, workspace['bucketName'], metadata_filename).present?,
+    assert ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, workspace['bucketName'], metadata_filename).present?,
            "Did not add metadata file to bucket"
     # now create study entry
     puts 'adding study...'

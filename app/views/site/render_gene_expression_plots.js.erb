@@ -5,6 +5,7 @@ This code renders:
 See also: _expression_plots_plotly.js.erb, which renders the "Scatter" tab that is
 hidden by default.
 %>
+
 var distributionPlotType = '<%= @values_box_type %>';
 var plotEvent = window.SCP.startPendingEvent(`plot:${distributionPlotType}`, window.SCP.getLogPlotProps());
 
@@ -68,6 +69,7 @@ $('#toggle-traces').click(function() {
     togglePlotlyTraces('box-plot');
 });
 
+
 // monitor rendering for tests
 $('#expression-plots').data('box-rendered', true);
 $('#expression-plots').data('scatter-rendered', true);
@@ -80,6 +82,8 @@ closeUserAnnotationsForm();
 console.log('render status of box plot at end: ' + $('#expression-plots').data('box-rendered'));
 console.log('render status of scatter plot at end: ' + $('#expression-plots').data('scatter-rendered'));
 console.log('render status of reference plot at end: ' + $('#expression-plots').data('reference-rendered'));
+
+showRelatedGenesIdeogram();
 
 var distributionPlotType = '<%= @values_box_type %>';
 plotEvent.complete();

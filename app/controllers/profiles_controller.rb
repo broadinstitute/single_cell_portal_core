@@ -18,7 +18,7 @@ class ProfilesController < ApplicationController
     @studies = Study.where(user_id: @user.id)
     @fire_cloud_profile = FireCloudProfile.new
     # check if profile services are available
-    @profiles_available = Study.firecloud_client.services_available?(FireCloudClient::THURLOE_SERVICE)
+    @profiles_available = ApplicationController.firecloud_client.services_available?(FireCloudClient::THURLOE_SERVICE)
     if @profiles_available
       begin
         user_client = FireCloudClient.new(current_user, FireCloudClient::PORTAL_NAMESPACE)

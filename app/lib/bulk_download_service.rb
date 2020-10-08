@@ -134,7 +134,7 @@ class BulkDownloadService
   # * *return*
   #   - (String) => String representation of single signed URL and output filepath to pass to curl
   def self.get_single_curl_command(file:, fc_client:, user:, study_bucket_map:, output_pathname_map:)
-    fc_client ||= Study.firecloud_client
+    fc_client ||= ApplicationController.firecloud_client
     # if a file is a StudyFile, use bucket_location, otherwise the :name key will contain its location (if DirectoryListing)
     file_location = file.bucket_location
     bucket_name = study_bucket_map[file.study_id.to_s]

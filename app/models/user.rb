@@ -326,7 +326,7 @@ class User
     if user_group_config.present?
       group_name = user_group_config.value
       Rails.logger.info "#{Time.zone.now}: adding #{self.email} to #{group_name} user group"
-      Study.firecloud_client.add_user_to_group(group_name, 'member', self.email)
+      ApplicationController.firecloud_client.add_user_to_group(group_name, 'member', self.email)
       Rails.logger.info "#{Time.zone.now}: user group registration complete"
     end
   end

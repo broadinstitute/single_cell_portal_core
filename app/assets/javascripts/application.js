@@ -30,7 +30,8 @@
 //= require jquery.stickyPanel
 //= require clipboard.min
 //= require scp-igv
-//= require scp-ideogram
+//= require scp-infercnv-ideogram
+//= require scp-related-genes-ideogram
 //= require scp-dot-plot
 //= require ckeditor
 
@@ -269,7 +270,7 @@ function initializeAutocomplete(selector) {
             source: function(request, response) {
                 // delegate back to autocomplete, but extract the last term
                 response(
-                    $.ui.autocomplete.filter(window.uniqueGenes, extractLast(request.term))
+                    $.ui.autocomplete.filter(window.SCP.uniqueGenes, extractLast(request.term))
                 );
             },
             minLength: 2,

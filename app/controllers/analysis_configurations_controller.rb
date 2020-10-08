@@ -182,7 +182,7 @@ class AnalysisConfigurationsController < ApplicationController
     end
 
     def check_firecloud_status
-      unless Study.firecloud_client.services_available?(FireCloudClient::RAWLS_SERVICE)
+      unless ApplicationController.firecloud_client.services_available?(FireCloudClient::RAWLS_SERVICE)
         alert = 'The Methods Repository is temporarily unavailable, so we cannot complete your request.  Please try again later.'
         respond_to do |format|
           format.js {render js: "$('.modal').modal('hide'); alert('#{alert}')" and return}

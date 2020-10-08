@@ -31,6 +31,29 @@ class ApplicationController < ActionController::Base
     @@big_query_client ||= BigQueryClient.new.client
   end
 
+  # getter for FireCloudClient instance
+  def self.firecloud_client
+    @@firecloud_client ||= FireCloudClient.new
+  end
+
+  def self.read_only_firecloud_client
+    if ENV['READ_ONLY_SERVICE_ACCOUNT_KEY'].present?
+      @@read_only_client ||= FireCloudClient.new(nil, FireCloudClient::PORTAL_NAMESPACE, File.absolute_path(ENV['READ_ONLY_SERVICE_ACCOUNT_KEY']))
+    end
+  end
+
+  # method to renew firecloud client (forces new access token for API and reinitializes storage driver)
+  def self.refresh_firecloud_client
+    begin
+      @@firecloud_client = FireCloudClient.new
+      true
+    rescue => e
+      ErrorTracker.report_exception(e, nil, self.firecloud_client.attributes)
+      Rails.logger.error "#{Time.zone.now}: unable to refresh FireCloud client: #{e.message}"
+      e.message
+    end
+  end
+
   # set current_user for use outside of controllers
   # from https://stackoverflow.com/questions/2513383/access-current-user-in-model
   around_action :set_current_user

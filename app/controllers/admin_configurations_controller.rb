@@ -171,13 +171,13 @@ class AdminConfigurationsController < ApplicationController
 
   # force the FireCloudClient to reinitialize and get new access tokens & connects to GSC
   def refresh_api_connections
-    expiration = Study.firecloud_client.expires_at
-    storage_issue_date = Study.firecloud_client.storage_issued_at
+    expiration = ApplicationController.firecloud_client.expires_at
+    storage_issue_date = ApplicationController.firecloud_client.storage_issued_at
     # reinitialize the firecloud client object (forces new access tokens)
     refresh_status = Study.refresh_firecloud_client
-    if refresh_status == true && (expiration < Study.firecloud_client.expires_at && storage_issue_date <  Study.firecloud_client.storage_issued_at)
-      logger.info "#{Time.zone.now}: Refreshing API client tokens and drivers.  New expiry: #{Study.firecloud_client.expires_at}"
-      @notice = "API Client successfully refreshed.  Tokens are now valid until #{Study.firecloud_client.expires_at.strftime('%D %r')} and will renew automatically."
+    if refresh_status == true && (expiration < ApplicationController.firecloud_client.expires_at && storage_issue_date <  ApplicationController.firecloud_client.storage_issued_at)
+      logger.info "#{Time.zone.now}: Refreshing API client tokens and drivers.  New expiry: #{ApplicationController.firecloud_client.expires_at}"
+      @notice = "API Client successfully refreshed.  Tokens are now valid until #{ApplicationController.firecloud_client.expires_at.strftime('%D %r')} and will renew automatically."
       @alert = ''
     else
       @notice = ''
@@ -188,7 +188,7 @@ class AdminConfigurationsController < ApplicationController
   # retrieve the firecloud registration for the portal service account
   def get_service_account_profile
     @profile_info = {}
-    @client = params[:account] == 'readonly' ? Study.read_only_firecloud_client : Study.firecloud_client
+    @client = params[:account] == 'readonly' ? ApplicationController.read_only_firecloud_client : ApplicationController.firecloud_client
     @portal_service_account = @client.issuer
 
     begin
@@ -206,7 +206,7 @@ class AdminConfigurationsController < ApplicationController
 
   # register or update the FireCloud profile of the portal service account
   def update_service_account_profile
-    @client = params[:account] == 'readonly' ? Study.read_only_firecloud_client : Study.firecloud_client
+    @client = params[:account] == 'readonly' ? ApplicationController.read_only_firecloud_client : ApplicationController.firecloud_client
 
     begin
       @client.set_profile(profile_params)
@@ -221,7 +221,7 @@ class AdminConfigurationsController < ApplicationController
   # get the current status of FireCloud API services
   def firecloud_api_status
     begin
-      @status = Study.firecloud_client.api_status
+      @status = ApplicationController.firecloud_client.api_status
     rescue => e
       ErrorTracker.report_exception(e, current_user, params.to_unsafe_hash)
       logger.error "#{Time.zone.now}: unable to retrieve FireCloud API status due to: #{e.message}"
@@ -237,13 +237,13 @@ class AdminConfigurationsController < ApplicationController
         @group_name = user_group_config.value
         @new_users = []
         # first check to see if group has already been created in FireCloud
-        groups = Study.firecloud_client.get_user_groups
+        groups = ApplicationController.firecloud_client.get_user_groups
         matching_group = groups.find {|g| g['groupName'] == @group_name}
         if matching_group.nil?
           # we need to create the group before continuing
-          user_group = Study.firecloud_client.create_user_group(@group_name)
+          user_group = ApplicationController.firecloud_client.create_user_group(@group_name)
         else
-          user_group = Study.firecloud_client.get_user_group(@group_name)
+          user_group = ApplicationController.firecloud_client.get_user_group(@group_name)
         end
         # now collect all registered portal users and add to the list
         portal_users = User.where(provider: 'google_oauth2').to_a
@@ -253,7 +253,7 @@ class AdminConfigurationsController < ApplicationController
             user_client = FireCloudClient.new(user, FireCloudClient::PORTAL_NAMESPACE)
             if user_client.registered?
               logger.info "#{Time.zone.now}: adding #{user.email} to #{@group_name}"
-              Study.firecloud_client.add_user_to_group(@group_name, 'member', user_email)
+              ApplicationController.firecloud_client.add_user_to_group(@group_name, 'member', user_email)
               @new_users << user.email
             else
               logger.info "#{Time.zone.now}: skipping #{user.email}; not registered in FireCloud yet."

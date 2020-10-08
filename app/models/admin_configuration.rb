@@ -153,14 +153,14 @@ class AdminConfiguration
         shares = study.study_shares.non_reviewers
         shares.each do |user|
           Rails.logger.info "#{Time.zone.now}: revoking share access for #{user}"
-          revoke_share_acl = Study.firecloud_client.create_workspace_acl(user, @config_setting)
-          Study.firecloud_client.update_workspace_acl(study.firecloud_project, study.firecloud_workspace, revoke_share_acl)
+          revoke_share_acl = ApplicationController.firecloud_client.create_workspace_acl(user, @config_setting)
+          ApplicationController.firecloud_client.update_workspace_acl(study.firecloud_project, study.firecloud_workspace, revoke_share_acl)
         end
         # last, remove study owner access (unless project owner)
         owner = study.user.email
         Rails.logger.info "#{Time.zone.now}: revoking owner access for #{owner}"
-        revoke_owner_acl = Study.firecloud_client.create_workspace_acl(owner, @config_setting)
-        Study.firecloud_client.update_workspace_acl(study.firecloud_project, study.firecloud_workspace, revoke_owner_acl)
+        revoke_owner_acl = ApplicationController.firecloud_client.create_workspace_acl(owner, @config_setting)
+        ApplicationController.firecloud_client.update_workspace_acl(study.firecloud_project, study.firecloud_workspace, revoke_owner_acl)
         Rails.logger.info "#{Time.zone.now}: access revocation for #{study.name} complete"
       end
       Rails.logger.info "#{Time.zone.now}: all '#{FireCloudClient::COMPUTE_BLACKLIST.join(', ')}' study access set to #{@config_setting}"
@@ -184,15 +184,15 @@ class AdminConfiguration
         can_share = share_permission === 'WRITER' ? true : false
         can_compute = Rails.env == 'production' ? false : share_permission === 'WRITER' ? true : false
         Rails.logger.info "#{Time.zone.now}: restoring #{share_permission} permission for #{user}"
-        restore_share_acl = Study.firecloud_client.create_workspace_acl(user, share_permission, can_share, can_compute)
-        Study.firecloud_client.update_workspace_acl(study.firecloud_project, study.firecloud_workspace, restore_share_acl)
+        restore_share_acl = ApplicationController.firecloud_client.create_workspace_acl(user, share_permission, can_share, can_compute)
+        ApplicationController.firecloud_client.update_workspace_acl(study.firecloud_project, study.firecloud_workspace, restore_share_acl)
       end
       # last, restore study owner access (unless project is owned by user)
       owner = study.user.email
       Rails.logger.info "#{Time.zone.now}: restoring WRITER access for #{owner}"
       # restore permissions, setting compute acls correctly (disabled in production for COMPUTE_BLACKLIST projects)
-      restore_owner_acl = Study.firecloud_client.create_workspace_acl(owner, 'WRITER', true, Rails.env == 'production' ? false : true)
-      Study.firecloud_client.update_workspace_acl(study.firecloud_project, study.firecloud_workspace, restore_owner_acl)
+      restore_owner_acl = ApplicationController.firecloud_client.create_workspace_acl(owner, 'WRITER', true, Rails.env == 'production' ? false : true)
+      ApplicationController.firecloud_client.update_workspace_acl(study.firecloud_project, study.firecloud_workspace, restore_owner_acl)
       Rails.logger.info "#{Time.zone.now}: access restoration for #{study.name} complete"
     end
     Rails.logger.info "#{Time.zone.now}: all '#{FireCloudClient::COMPUTE_BLACKLIST.join(', ')}' study access restored"
@@ -234,10 +234,10 @@ class AdminConfiguration
   # This method no longer disables access as we now do realtime checks on routes that depend on certain services being up
   # 'local-off' mode can now be used to manually put the portal in read-only mode
   def self.check_api_health
-    api_ok = Study.firecloud_client.api_available?
+    api_ok = ApplicationController.firecloud_client.api_available?
 
     if !api_ok
-      current_status = Study.firecloud_client.api_status
+      current_status = ApplicationController.firecloud_client.api_status
       Rails.logger.error "#{Time.zone.now}: ALERT: FIRECLOUD API SERVICE INTERRUPTION -- current status: #{current_status}"
       SingleCellMailer.firecloud_api_notification(current_status).deliver_now
     end
@@ -245,7 +245,7 @@ class AdminConfiguration
 
   # set/revoke readonly access on public workspaces for READ_ONLY_SERVICE_ACCOUNT
   def self.set_readonly_service_account_permissions(grant_access)
-    if Study.read_only_firecloud_client.present? && Study.read_only_firecloud_client.registered?
+    if ApplicationController.read_only_firecloud_client.present? && ApplicationController.read_only_firecloud_client.registered?
       study_count = 0
       Study.where(queued_for_deletion: false).each do |study|
         study.set_readonly_access(grant_access, true) # pass true for 'manual_set' option to force change
@@ -258,7 +258,7 @@ class AdminConfiguration
   end
 
   def self.find_or_create_ws_user_group!
-    groups = Study.firecloud_client.get_user_groups
+    groups = ApplicationController.firecloud_client.get_user_groups
     ws_owner_group = groups.detect {|group| group['groupName'] == FireCloudClient::WS_OWNER_GROUP_NAME &&
         group['role'] == 'Admin'}
     # create group if not found
@@ -266,8 +266,8 @@ class AdminConfiguration
       ws_owner_group
     else
       # create and return group
-      Study.firecloud_client.create_user_group(FireCloudClient::WS_OWNER_GROUP_NAME)
-      Study.firecloud_client.get_user_group(FireCloudClient::WS_OWNER_GROUP_NAME)
+      ApplicationController.firecloud_client.create_user_group(FireCloudClient::WS_OWNER_GROUP_NAME)
+      ApplicationController.firecloud_client.get_user_group(FireCloudClient::WS_OWNER_GROUP_NAME)
     end
   end
 
@@ -297,7 +297,7 @@ class AdminConfiguration
   # grant/revoke access on setting change, will raise error if readonly account is not instantiated
   def manage_readonly_access
     if self.config_type == 'Read-Only Access Control'
-      if Study.read_only_firecloud_client.present?
+      if ApplicationController.read_only_firecloud_client.present?
         if self.value_changed?
           AdminConfiguration.set_readonly_service_account_permissions(self.convert_value_by_type)
         end

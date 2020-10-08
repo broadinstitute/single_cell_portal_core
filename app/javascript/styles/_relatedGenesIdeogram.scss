@@ -1,0 +1,29 @@
+#related-genes-ideogram-container {
+  z-index: 1000;
+  background: #FFF;
+
+  &.hidden-related-genes-ideogram {
+    visibility: hidden;
+
+    #_ideogramMiddleWrap {
+      height: 0 !important;
+    }
+  }
+
+  &.show-related-genes-ideogram {
+
+    visibility: visible;
+    position: static !important;
+    padding-bottom: 45px;
+
+    ~ .expression-plot {
+      position: relative;
+    }
+
+    #_ideogramMiddleWrap {
+      border-bottom: 1px solid #EEE;
+      border-left: 1px solid #DDD;
+      border-right: 1px solid #DDD;
+    }
+  }
+}

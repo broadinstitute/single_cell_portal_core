@@ -208,7 +208,7 @@ class BillingProjectsController < ApplicationController
 
   # load portal service account email for use in view (we don't want to display this in the portal)
   def load_service_account
-    @portal_service_account = Study.firecloud_client.storage_issuer
+    @portal_service_account = ApplicationController.firecloud_client.storage_issuer
   end
 
 
@@ -236,7 +236,7 @@ class BillingProjectsController < ApplicationController
 
   # check on FireCloud API status and respond accordingly
   def check_firecloud_status
-    unless Study.firecloud_client.services_available?(FireCloudClient::THURLOE_SERVICE)
+    unless ApplicationController.firecloud_client.services_available?(FireCloudClient::THURLOE_SERVICE)
       alert = 'Billing projects are temporarily unavailable, so we cannot complete your request.  Please try again later.'
       respond_to do |format|
         format.js {render js: "$('.modal').modal('hide'); alert('#{alert}')" and return}

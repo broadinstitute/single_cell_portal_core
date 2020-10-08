@@ -6,3 +6,16 @@
     <% end %>
   </div>
 </div>
+
+<script>
+  // Initializes Ideogram for related genes
+
+  document.querySelector('.study-lead').parentElement.innerHTML +=
+    '<div id="related-genes-ideogram-container" class="hidden-related-genes-ideogram"></div>';
+
+  // TODO (SCP-2769): Handle when a searched gene maps to multiple species
+  window.SCP.taxon = '<%= @taxons.first %>';
+
+  createRelatedGenesIdeogram();
+
+</script>

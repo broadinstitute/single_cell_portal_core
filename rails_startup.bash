@@ -116,7 +116,7 @@ else
 	(crontab -u app -l ; echo "0 1 * * * . /home/app/.cron_env ; cd /home/app/webapp/; /home/app/webapp/bin/rails runner -e $PASSENGER_APP_ENV \"StudyFile.delete_queued_files\" >> /home/app/webapp/log/cron_out.log 2>&1") | crontab -u app -
 	(crontab -u app -l ; echo "0 1 * * * . /home/app/.cron_env ; cd /home/app/webapp/; /home/app/webapp/bin/rails runner -e $PASSENGER_APP_ENV \"UserAnnotation.delete_queued_annotations\" >> /home/app/webapp/log/cron_out.log 2>&1") | crontab -u app -
 	# clean up cached failed ingest runs weekly
-  (crontab -u app -l ; echo "@weekly . /home/app/.cron_env ; cd /home/app/webapp/; /home/app/webapp/bin/rails runner -e $PASSENGER_APP_ENV \"Study.clean_up_ingest_artifacts\" >> /home/app/webapp/log/cron_out.log 2>&1") | crontab -u app -
+  (crontab -u app -l ; echo "@weekly . /home/app/.cron_env ; cd /home/app/webapp/; /home/app/webapp/bin/rails runner -e $PASSENGER_APP_ENV \"FileParseService.clean_up_ingest_artifacts\" >> /home/app/webapp/log/cron_out.log 2>&1") | crontab -u app -
 fi
 echo "*** COMPLETED ***"
 

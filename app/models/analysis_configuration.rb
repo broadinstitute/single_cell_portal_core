@@ -170,17 +170,17 @@ class AnalysisConfiguration
 
   # load input/output parameters directly from Methods Repository
   def methods_repo_settings
-    Study.firecloud_client.get_method_parameters(self.namespace, self.name, self.snapshot)
+    ApplicationController.firecloud_client.get_method_parameters(self.namespace, self.name, self.snapshot)
   end
 
   # get corresponding configuration object from Methods Repository
   def methods_repo_configuration
-    Study.firecloud_client.get_configuration(self.configuration_namespace, self.configuration_name, self.configuration_snapshot, true)
+    ApplicationController.firecloud_client.get_configuration(self.configuration_namespace, self.configuration_name, self.configuration_snapshot, true)
   end
 
   def wdl_payload
     begin
-      Study.firecloud_client.get_method(self.namespace, self.name, self.snapshot, true)
+      ApplicationController.firecloud_client.get_method(self.namespace, self.name, self.snapshot, true)
     rescue => e
       error_context = ErrorTracker.format_extra_context(self)
       ErrorTracker.report_exception(e, nil, error_context)
@@ -341,7 +341,7 @@ class AnalysisConfiguration
   def set_synopsis
     begin
       Rails.logger.info "Setting synopsis for #{self.identifier}"
-      method = Study.firecloud_client.get_method(self.namespace, self.name, self.snapshot)
+      method = ApplicationController.firecloud_client.get_method(self.namespace, self.name, self.snapshot)
       self.synopsis = method['synopsis']
     rescue => e
       error_context = ErrorTracker.format_extra_context(self)
@@ -365,7 +365,7 @@ class AnalysisConfiguration
   # validate that a requested WDL is both accessible and readable
   def validate_wdl_accessibility
     begin
-      wdl = Study.firecloud_client.get_method(self.namespace, self.name, self.snapshot)
+      wdl = ApplicationController.firecloud_client.get_method(self.namespace, self.name, self.snapshot)
       if wdl.nil? || wdl['public'] == false
         errors.add(:base, "#{self.identifier} is not viewable by Single Cell Portal.  Please ensure that the analysis WDL is public.")
       end
@@ -379,7 +379,7 @@ class AnalysisConfiguration
   # validate that a requested WDL has a valid configuration in the methods repo
   def validate_wdl_configuration
     begin
-      configuration = Study.firecloud_client.get_configuration(self.configuration_namespace, self.configuration_name, self.configuration_snapshot)
+      configuration = ApplicationController.firecloud_client.get_configuration(self.configuration_namespace, self.configuration_name, self.configuration_snapshot)
       if configuration.nil? || configuration['public'] == false
         errors.add(:base, "#{self.identifier} does not have a publicly available configuration saved in the Methods Repository")
       end

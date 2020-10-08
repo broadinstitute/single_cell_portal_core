@@ -60,7 +60,7 @@ class GenomeAnnotation
       config = AdminConfiguration.find_by(config_type: 'Reference Data Workspace')
       if config.present?
         begin
-          Study.firecloud_client.execute_gcloud_method(:generate_api_url, 0, self.bucket_id, self.link)
+          ApplicationController.firecloud_client.execute_gcloud_method(:generate_api_url, 0, self.bucket_id, self.link)
         rescue => e
           error_context = ErrorTracker.format_extra_context(self, {method_call: :generate_api_url})
           ErrorTracker.report_exception(e, nil, error_context)
@@ -83,7 +83,7 @@ class GenomeAnnotation
       config = AdminConfiguration.find_by(config_type: 'Reference Data Workspace')
       if config.present?
         begin
-          Study.firecloud_client.execute_gcloud_method(:generate_api_url, 0, self.bucket_id, self.index_link)
+          ApplicationController.firecloud_client.execute_gcloud_method(:generate_api_url, 0, self.bucket_id, self.index_link)
         rescue => e
           error_context = ErrorTracker.format_extra_context(self, {method_call: :generate_api_url})
           ErrorTracker.report_exception(e, nil, error_context)
@@ -106,7 +106,7 @@ class GenomeAnnotation
       config = AdminConfiguration.find_by(config_type: 'Reference Data Workspace')
       if config.present?
         begin
-          Study.firecloud_client.execute_gcloud_method(:generate_signed_url, 0, self.bucket_id, self.link, expires: 15)
+          ApplicationController.firecloud_client.execute_gcloud_method(:generate_signed_url, 0, self.bucket_id, self.link, expires: 15)
         rescue => e
           error_context = ErrorTracker.format_extra_context(self, {method_call: :generate_signed_url})
           ErrorTracker.report_exception(e, nil, error_context)
@@ -136,7 +136,7 @@ class GenomeAnnotation
     if config.present?
       begin
         reference_project, reference_workspace = config.value.split('/')
-        workspace = Study.firecloud_client.get_workspace(reference_project, reference_workspace)
+        workspace = ApplicationController.firecloud_client.get_workspace(reference_project, reference_workspace)
         bucket_id = workspace['workspace']['bucketName']
         if bucket_id.present?
           self.bucket_id = bucket_id
@@ -173,7 +173,7 @@ class GenomeAnnotation
       if config.present?
         begin
           reference_project, reference_workspace = config.value.split('/')
-          genome_file = Study.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, self.bucket_id, self.link)
+          genome_file = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, self.bucket_id, self.link)
           if !genome_file.present?
             errors.add(:link, "was not found in the reference workspace of #{config.value}.  Please check the link and try again.")
           end
@@ -213,7 +213,7 @@ def check_genome_annotation_index_link
     if config.present?
       begin
         reference_project, reference_workspace = config.value.split('/')
-        genome_file = Study.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, self.bucket_id, self.index_link)
+        genome_file = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, self.bucket_id, self.index_link)
         if !genome_file.present?
           errors.add(:index_link, "was not found in the reference workspace of #{config.value}.  Please check the index link and try again.")
         end

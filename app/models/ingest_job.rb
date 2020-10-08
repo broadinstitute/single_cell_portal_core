@@ -59,7 +59,7 @@ class IngestJob
         Rails.logger.info "Data cleanup for #{file_identifier} complete, now beginning Ingest"
       end
       # first check if file is already in bucket (in case user is syncing)
-      remote = Study.firecloud_client.get_workspace_file(self.study.bucket_id, self.study_file.bucket_location)
+      remote = ApplicationController.firecloud_client.get_workspace_file(self.study.bucket_id, self.study_file.bucket_location)
       if remote.nil?
         is_pushed = self.poll_for_remote(skip_push: skip_push)
       else
@@ -102,7 +102,7 @@ class IngestJob
         self.study.send_to_firecloud(study_file)
       end
       Rails.logger.info "Polling for upload of #{file_identifier}, attempt #{attempts}"
-      remote = Study.firecloud_client.get_workspace_file(self.study.bucket_id, self.study_file.bucket_location)
+      remote = ApplicationController.firecloud_client.get_workspace_file(self.study.bucket_id, self.study_file.bucket_location)
       if remote.present?
         is_pushed = true
       else
@@ -250,7 +250,7 @@ class IngestJob
       self.create_study_file_copy
       self.study_file.update(parse_status: 'failed')
       DeleteQueueJob.new(self.study_file).delay.perform
-      Study.firecloud_client.delete_workspace_file(self.study.bucket_id, self.study_file.bucket_location) unless self.persist_on_fail
+      ApplicationController.firecloud_client.delete_workspace_file(self.study.bucket_id, self.study_file.bucket_location) unless self.persist_on_fail
       subject = "Error: #{self.study_file.file_type} file: '#{self.study_file.upload_file_name}' parse has failed"
       user_email_content = self.generate_error_email_body
       SingleCellMailer.notify_user_parse_fail(self.user.email, subject, user_email_content, self.study).deliver_now
@@ -391,7 +391,7 @@ class IngestJob
   #   - (Boolean) => True/False on success of file copy action
   def create_study_file_copy
     begin
-      Study.firecloud_client.execute_gcloud_method(:copy_workspace_file, 0, self.study.bucket_id,
+      ApplicationController.firecloud_client.execute_gcloud_method(:copy_workspace_file, 0, self.study.bucket_id,
                                                    self.study_file.bucket_location,
                                                    self.study_file.parse_fail_bucket_location)
       true
@@ -428,9 +428,9 @@ class IngestJob
   # * *returns*
   #   - (String) => Contents of file
   def read_parse_logfile(filepath, delete_on_read: true)
-    if Study.firecloud_client.workspace_file_exists?(self.study.bucket_id, filepath)
-      file_contents = Study.firecloud_client.execute_gcloud_method(:read_workspace_file, 0, self.study.bucket_id, filepath)
-      Study.firecloud_client.execute_gcloud_method(:delete_workspace_file, 0, self.study.bucket_id, filepath) if delete_on_read
+    if ApplicationController.firecloud_client.workspace_file_exists?(self.study.bucket_id, filepath)
+      file_contents = ApplicationController.firecloud_client.execute_gcloud_method(:read_workspace_file, 0, self.study.bucket_id, filepath)
+      ApplicationController.firecloud_client.execute_gcloud_method(:delete_workspace_file, 0, self.study.bucket_id, filepath) if delete_on_read
       file_contents.read
     end
   end

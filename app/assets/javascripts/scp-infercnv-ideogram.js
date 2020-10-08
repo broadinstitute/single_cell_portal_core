@@ -225,7 +225,6 @@ function initializeIdeogram(url) {
     container: '#ideogram-container',
     organism: window.ideogramInferCnvSettings.organism.toLowerCase(),
     assembly: window.ideogramInferCnvSettings.assembly,
-    dataDir: 'https://unpkg.com/ideogram@1.20.0/dist/data/bands/native/',
     annotationsPath: url,
     annotationsLayout: 'heatmap',
     legend,

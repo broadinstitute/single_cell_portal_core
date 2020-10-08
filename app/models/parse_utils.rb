@@ -7,9 +7,9 @@ class ParseUtils
     begin
       start_time = Time.zone.now
       # localize files
-      Rails.logger.info "#{Time.zone.now}: Parsing gene-barcode matrix source data files for #{study.name} with the following options: #{opts}"
+      Rails.logger.info "Parsing gene-barcode matrix source data files for #{study.name} with the following options: #{opts}"
       study.make_data_dir
-      Rails.logger.info "#{Time.zone.now}: Localizing output files & creating study file entries from 10X CellRanger source data for #{study.name}"
+      Rails.logger.info "Localizing output files & creating study file entries from 10X CellRanger source data for #{study.name}"
 
       # localize files if necessary, otherwise open newly uploaded files. check to make sure a local copy doesn't already exists
       # as we may be uploading files piecemeal from upload wizard
@@ -56,7 +56,7 @@ class ParseUtils
       end
 
       # open matrix file and read contents
-      Rails.logger.info "#{Time.zone.now}: Reading gene/barcode/matrix file contents for #{study.name}"
+      Rails.logger.info "Reading gene/barcode/matrix file contents for #{study.name}"
       m_header_1 = matrix_file.readline.split.map(&:strip)
       valid_headers = %w(%%MatrixMarket matrix coordinate)
       unless m_header_1.first == valid_headers.first && m_header_1[1] == valid_headers[1] && m_header_1[2] == valid_headers[2]
@@ -76,13 +76,13 @@ class ParseUtils
       @child_count = 0
 
       # read first line manually and initialize containers for storing temporary data yet to be added to documents
-      Rails.logger.info "#{Time.zone.now}: Initializing data structures from 10X CellRanger source data for #{study.name}"
+      Rails.logger.info "Initializing data structures from 10X CellRanger source data for #{study.name}"
       line = matrix_file.readline.strip
       gene_index, barcode_index, expression_score = parse_line(line)
       @last_gene_index, @current_gene = initialize_new_gene(study, gene_index, matrix_study_file)
       @current_barcodes = [@barcodes[barcode_index]]
       @current_expression = [expression_score]
-      Rails.logger.info "#{Time.zone.now}: Creating new gene & data_array records from 10X CellRanger source data for #{study.name}"
+      Rails.logger.info "Creating new gene & data_array records from 10X CellRanger source data for #{study.name}"
 
       # now process all lines
       process_matrix_data(study, matrix_file, matrix_study_file)
@@ -97,13 +97,13 @@ class ParseUtils
       # write last records to database
       Gene.create(@gene_documents)
       @count += @gene_documents.size
-      Rails.logger.info "#{Time.zone.now}: Processed #{@count} expressed genes from 10X CellRanger source data for #{study.name}"
+      Rails.logger.info "Processed #{@count} expressed genes from 10X CellRanger source data for #{study.name}"
       DataArray.create(@data_arrays)
       @child_count += @data_arrays.size
-      Rails.logger.info "#{Time.zone.now}: Processed #{@child_count} child data arrays from 10X CellRanger source data for #{study.name}"
+      Rails.logger.info "Processed #{@child_count} child data arrays from 10X CellRanger source data for #{study.name}"
       # create array of known cells for this expression matrix
       @barcodes.each_slice(DataArray::MAX_ENTRIES).with_index do |slice, index|
-        Rails.logger.info "#{Time.zone.now}: Create known cells array ##{index + 1} for #{matrix_study_file.name}:#{matrix_study_file.id} in #{study.name}"
+        Rails.logger.info "Create known cells array ##{index + 1} for #{matrix_study_file.name}:#{matrix_study_file.id} in #{study.name}"
         known_cells = DataArray.new(study_id: study.id, name: "#{matrix_study_file.name} Cells", cluster_name: matrix_study_file.name,
                                     array_type: 'cells', array_index: index + 1, values: slice, study_file_id: matrix_study_file.id,
                                     linear_data_type: 'Study', linear_data_id: study.id)
@@ -125,14 +125,14 @@ class ParseUtils
         other_genes << Gene.new(study_id: study.id, name: gene_name, searchable_name: gene_name.downcase, gene_id: gene_id, study_file_id: matrix_study_file.id).attributes
         other_genes_count += 1
         if other_genes.size % 1000 == 0
-          Rails.logger.info "#{Time.zone.now}: creating #{other_genes_count} non-expressed gene records in #{study.name}"
+          Rails.logger.info "Creating #{other_genes_count} non-expressed gene records in #{study.name}"
           Gene.create(other_genes)
           @count += other_genes.size
           other_genes = []
         end
       end
       # process last batch
-      Rails.logger.info "#{Time.zone.now}: creating #{other_genes_count} non-expressed gene records in #{study.name}"
+      Rails.logger.info "Creating #{other_genes_count} non-expressed gene records in #{study.name}"
       Gene.create(other_genes)
       @count += other_genes.size
 
@@ -146,16 +146,16 @@ class ParseUtils
 
       # set the default expression label if the user supplied one
       if !study.has_expression_label? && !matrix_study_file.y_axis_label.blank?
-        Rails.logger.info "#{Time.zone.now}: Setting default expression label in #{study.name} to '#{matrix_study_file.y_axis_label}'"
+        Rails.logger.info "Setting default expression label in #{study.name} to '#{matrix_study_file.y_axis_label}'"
         study_opts = study.default_options
         study.update!(default_options: study_opts.merge(expression_label: matrix_study_file.y_axis_label))
       end
 
       # set initialized to true if possible
       if study.cluster_groups.any? && study.cell_metadata.any? && !study.initialized?
-        Rails.logger.info "#{Time.zone.now}: initializing #{study.name}"
+        Rails.logger.info "initializing #{study.name}"
         study.update!(initialized: true)
-        Rails.logger.info "#{Time.zone.now}: #{study.name} successfully initialized"
+        Rails.logger.info "#{study.name} successfully initialized"
       end
 
       end_time = Time.zone.now
@@ -169,7 +169,7 @@ class ParseUtils
         SingleCellMailer.notify_user_parse_complete(user.email, "Gene-barcode matrix expression data has completed parsing", @message, study).deliver_now
       rescue => e
         ErrorTracker.report_exception(e, user, {message: @message})
-        Rails.logger.error "#{Time.zone.now}: Unable to deliver email: #{e.message}"
+        Rails.logger.error "Unable to deliver email: #{e.message}"
       end
 
       # determine what to do with local files
@@ -195,7 +195,7 @@ class ParseUtils
                                               barcodes_study_file: barcodes_study_file.attributes.to_h,
                                               study: study.attributes.to_h})
       error_message = e.message
-      Rails.logger.error "#{Time.zone.now}: #{e.class.name}:#{error_message}, #{@last_line}"
+      Rails.logger.error "#{e.class.name}:#{error_message}, #{@last_line}"
       # error has occurred, so clean up records and remove file
       Gene.where(study_id: study.id, study_file_id: matrix_study_file.id).delete_all
       DataArray.where(study_id: study.id, study_file_id: matrix_study_file.id).delete_all
@@ -222,7 +222,7 @@ class ParseUtils
   def self.extract_analysis_output_files(study, user, archive_file, analysis_method)
     begin
       study.make_data_dir
-      Study.firecloud_client.execute_gcloud_method(:download_workspace_file, 0, study.bucket_id, archive_file.bucket_location,
+      ApplicationController.firecloud_client.execute_gcloud_method(:download_workspace_file, 0, study.bucket_id, archive_file.bucket_location,
                                                    study.data_store_path, verify: :none)
       Rails.logger.info "Successful localization of #{archive_file.upload_file_name}"
       archive_path = File.join(study.data_store_path, archive_file.download_location)
@@ -282,13 +282,13 @@ class ParseUtils
             File.delete(file_payload.path) # remove temp copy
             run_at = 2.minutes.from_now
             begin
-              Rails.logger.info "#{Time.zone.now}: preparing to upload Ideogram outputs: #{study_file.upload_file_name}:#{study_file.id} to FireCloud"
+              Rails.logger.info "Preparing to upload Ideogram outputs: #{study_file.upload_file_name}:#{study_file.id} to FireCloud"
               study.send_to_firecloud(study_file)
               # clean up the extracted copy as we have a new copy in a subdir of the new study_file's ID
               Delayed::Job.enqueue(UploadCleanupJob.new(study, study_file, 0), run_at: run_at)
-              Rails.logger.info "#{Time.zone.now}: cleanup job for #{study_file.upload_file_name}:#{study_file.id} scheduled for #{run_at}"
+              Rails.logger.info "Cleanup job for #{study_file.upload_file_name}:#{study_file.id} scheduled for #{run_at}"
             rescue => e
-              Rails.logger.info "#{Time.zone.now}: Ideogram output file: #{study_file.upload_file_name}:#{study_file.id} failed to upload to FireCloud due to #{e.message}"
+              Rails.logger.info "Ideogram output file: #{study_file.upload_file_name}:#{study_file.id} failed to upload to FireCloud due to #{e.message}"
               Delayed::Job.enqueue(UploadCleanupJob.new(study, study_file, 0), run_at: run_at)
             end
           else
@@ -306,7 +306,447 @@ class ParseUtils
     end
   end
 
+  # parse a coordinate labels file and create necessary data_array objects
+  # coordinate labels are specific to a cluster_group
+  def self.initialize_coordinate_label_data_arrays(study, coordinate_file, user, opts={})
+    begin
+      error_context = ErrorTracker.format_extra_context(study, coordinate_file, {opts: opts})
+      # remove study description as it's not useful
+      error_context['study'].delete('description')
+      @file_location = coordinate_file.local_location
+      # before anything starts, check if file has been uploaded locally or needs to be pulled down from FireCloud first
+      if !coordinate_file.is_local?
+        # make sure data dir exists first
+        study.make_data_dir
+        ApplicationController.firecloud_client.execute_gcloud_method(:download_workspace_file, 0, study.bucket_id, coordinate_file.bucket_location,
+                                                                     study.data_store_path, verify: :none)
+        @file_location = File.join(study.data_store_path, coordinate_file.bucket_location)
+      end
+
+      # next, check if this is a re-parse job, in which case we need to remove all existing entries first
+      if opts[:reparse]
+        DataArray.where(study_id: study.id, study_file_id: coordinate_file.id).delete_all
+        coordinate_file.invalidate_cache_by_file_type
+      end
+
+      # determine content type from file contents, not from upload_content_type
+      content_type = coordinate_file.determine_content_type
+      # validate headers
+      if content_type == 'application/gzip'
+        Rails.logger.info "Parsing #{coordinate_file.name}:#{coordinate_file.id} as application/gzip"
+        c_file = Zlib::GzipReader.open(@file_location)
+      else
+        Rails.logger.info "Parsing #{coordinate_file.name}:#{coordinate_file.id} as text/plain"
+        c_file = File.open(@file_location, 'rb')
+      end
+
+      # validate headers of coordinate file
+      @validation_error = false
+      start_time = Time.zone.now
+      headers = c_file.readline.split(/[\t,]/).map(&:strip)
+      @last_line = "#{coordinate_file.name}, line 1"
+      # must have at least NAME, X and Y fields
+      unless (headers & %w(X Y LABELS)).size == 3
+        coordinate_file.update(parse_status: 'failed')
+        @validation_error = true
+      end
+      c_file.close
+    rescue => e
+      ErrorTracker.report_exception(e, user, error_context)
+      coordinate_file.update(parse_status: 'failed')
+      error_message = "#{e.message}"
+      Rails.logger.info error_message
+      filename = coordinate_file.upload_file_name
+      coordinate_file.remove_local_copy
+      coordinate_file.destroy
+      SingleCellMailer.notify_user_parse_fail(user.email, "Error: Coordinate Labels file: '#{filename}' parse has failed", error_message, study).deliver_now
+      raise StandardError, error_message
+    end
+
+    # raise validation error if needed
+    if @validation_error
+      error_message = "file header validation failed: should be at least NAME, X, Y, LABELS"
+      Rails.logger.info error_message
+      filename = coordinate_file.upload_file_name
+      if File.exist?(@file_location)
+        File.delete(@file_location)
+        if Dir.exist?(File.join(study.data_store_path, coordinate_file.id))
+          Dir.chdir(study.data_store_path)
+          Dir.rmdir(coordinate_file.id)
+        end
+      end
+      coordinate_file.destroy
+      SingleCellMailer.notify_user_parse_fail(user.email, "Error: Coordinate Labels file: '#{filename}' parse has failed", error_message, study).deliver_now
+      raise StandardError, error_message
+    end
+
+    # set up containers
+    @labels_created = []
+    @message = []
+    begin
+      # load target cluster
+      cluster_file = coordinate_file.bundle_parent
+      cluster = ClusterGroup.find_by(study_file_id: cluster_file.id, study_id: study.id)
+
+      # check if ClusterGroup object is present before continuing, or if cluster file is still parsing
+      # raise error if cluster file does not exist, or hasn't started parsing yet
+      if cluster_file.nil? || cluster_file.parse_status == 'unparsed'
+        raise StandardError.new('You must have uploaded a cluster file and associated it with this coordinate label file first before continuing.')
+      elsif cluster_file.parsing? && cluster.nil?
+        # if cluster file is parsing, re-run this job in 2 minutes
+        Rails.logger.info "Aborting parse of #{coordinate_file.upload_file_name}:#{coordinate_file.id}; cluster file #{cluster_file.upload_file_name}:#{cluster_file.id} is still parsing"
+        run_at = 2.minutes.from_now
+        ParseUtils.delay(run_at: run_at).initialize_coordinate_label_data_arrays(study, coordinate_file, user, opts)
+        exit
+      end
+
+      Rails.logger.info "Beginning coordinate label initialization using #{coordinate_file.upload_file_name}:#{coordinate_file.id} for cluster: #{cluster.name} in #{study.name}"
+      coordinate_file.update(parse_status: 'parsing')
+
+      if content_type == 'application/gzip'
+        coordinate_data = Zlib::GzipReader.open(@file_location)
+      else
+        coordinate_data = File.open(@file_location, 'rb')
+      end
+
+      raw_header_data = coordinate_data.readline.encode('UTF-8', invalid: :replace, undef: :replace, replace: '').split(/[\t,]/).map(&:strip)
+      header_data = study.sanitize_input_array(raw_header_data)
+
+      # determine if 3d coordinates have been provided
+      is_3d = header_data.include?('Z')
+
+      # grad header indices, z index will be nil if no 3d data
+      x_index = header_data.index('X')
+      y_index = header_data.index('Y')
+      z_index = header_data.index('Z')
+      label_index = header_data.index('LABELS')
+
+      # container to store temporary data arrays until ready to save
+      @data_arrays = []
+      # create required data_arrays (name, x, y)
+      @data_arrays[x_index] = cluster.data_arrays.build(name: 'x', cluster_name: cluster.name, array_type: 'labels',
+                                                        array_index: 1, study_file_id: coordinate_file._id,
+                                                        study_id: study.id, values: [])
+      @data_arrays[y_index] = cluster.data_arrays.build(name: 'y', cluster_name: cluster.name, array_type: 'labels',
+                                                        array_index: 1, study_file_id: coordinate_file._id,
+                                                        study_id: study.id, values: [])
+      @data_arrays[label_index] = cluster.data_arrays.build(name: 'text', cluster_name: cluster.name, array_type: 'labels',
+                                                            array_index: 1, study_file_id: coordinate_file._id,
+                                                            study_id: study.id, values: [])
+
+      # add optional data arrays (z, metadata)
+      if is_3d
+        @data_arrays[z_index] = cluster.data_arrays.build(name: 'z', cluster_name: cluster.name, array_type: 'labels',
+                                                          array_index: 1, study_file_id: coordinate_file._id, study_id: study.id,
+                                                          values: [])
+      end
+
+      Rails.logger.info "Headers/Metadata loaded for coordinate file initialization using #{coordinate_file.upload_file_name}:#{coordinate_file.id} for cluster: #{cluster.name} in #{study.name}"
+      # begin reading data
+      while !coordinate_data.eof?
+        line = coordinate_data.readline.strip.encode('UTF-8', invalid: :replace, undef: :replace, replace: '')
+        if line.strip.blank?
+          next
+        else
+          @last_line = "#{coordinate_file.name}, line #{coordinate_data.lineno}"
+          raw_vals = line.split(/[\t,]/).map(&:strip)
+          vals = self.sanitize_input_array(raw_vals)
+          # assign value to corresponding data_array by column index
+          vals.each_with_index do |val, index|
+            if @data_arrays[index].values.size >= DataArray::MAX_ENTRIES
+              # array already has max number of values, so save it and replace it with a new data array
+              # of same name & type with array_index incremented by 1
+              current_data_array_index = @data_arrays[index].array_index
+              data_array = @data_arrays[index]
+              Rails.logger.info "Saving full-length data array: #{data_array.name}-#{data_array.array_type}-#{data_array.array_index} using #{coordinate_file.upload_file_name}:#{coordinate_file.id} for cluster: #{cluster.name} in #{study.name}; initializing new array index #{current_data_array_index + 1}"
+              data_array.save
+              if data_array.array_type == 'labels'
+                @labels_created << data_array
+              end
+              new_data_array = cluster.data_arrays.build(name: data_array.name, cluster_name: data_array.cluster_name,
+                                                         array_type: data_array.array_type, array_index: current_data_array_index + 1,
+                                                         study_file_id: coordinate_file._id, study_id: study.id, values: [])
+              @data_arrays[index] = new_data_array
+            end
+            # determine whether or not value needs to be cast as a float or not (only values at label index stay as a string)
+            if index == label_index
+              @data_arrays[index].values << val
+            else
+              @data_arrays[index].values << val.to_f
+            end
+          end
+        end
+
+      end
+
+      # clean up
+      @data_arrays.each do |data_array|
+        Rails.logger.info "Saving data array: #{data_array.name}-#{data_array.array_type}-#{data_array.array_index} using #{coordinate_file.upload_file_name}:#{coordinate_file.id} for cluster: #{cluster.name} in #{study.name}"
+        data_array.save
+      end
+      coordinate_data.close
+      coordinate_file.update(parse_status: 'parsed')
+      end_time = Time.zone.now
+      time = (end_time - start_time).divmod 60.0
+      # assemble email message parts
+      @message << "#{coordinate_file.upload_file_name} parse completed!"
+      @message << "Labels created (#{@labels_created.size}: #{@labels_created.join(', ')}"
+      @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
+
+      # expire cluster caches to load label data on render
+      cluster_study_file = cluster.study_file
+      cluster_study_file.invalidate_cache_by_file_type
+
+      begin
+        SingleCellMailer.notify_user_parse_complete(user.email, "Coordinate Label file: '#{coordinate_file.upload_file_name}' has completed parsing", @message, study).deliver_now
+      rescue => e
+        ErrorTracker.report_exception(e, user, error_context)
+        Rails.logger.error "Unable to deliver email: #{e.message}"
+      end
+
+      Rails.logger.info "Determining upload status of coordinate labels file: #{coordinate_file.upload_file_name}:#{coordinate_file.id}"
+
+      # now that parsing is complete, we can move file into storage bucket and delete local (unless we downloaded from FireCloud to begin with)
+      destination = coordinate_file.bucket_location
+      begin
+        remote = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, destination)
+      rescue => e
+        ErrorTracker.report_exception(e, user, error_context)
+        Rails.logger.error "Error retrieving remote: #{e.message}"
+      end
+      if remote.nil?
+        begin
+          Rails.logger.info "Preparing to upload ordinations file: #{coordinate_file.upload_file_name}:#{coordinate_file.id} to FireCloud"
+          study.send_to_firecloud(coordinate_file)
+        rescue => e
+          ErrorTracker.report_exception(e, user, error_context)
+          Rails.logger.info "Cluster file: #{coordinate_file.upload_file_name}:#{coordinate_file.id} failed to upload to FireCloud due to #{e.message}"
+          SingleCellMailer.notify_admin_upload_fail(coordinate_file, e.message).deliver_now
+        end
+      else
+        # we have the file in FireCloud already, so just delete it
+        begin
+          Rails.logger.info "Found remote version of #{coordinate_file.upload_file_name}: #{remote.name} (#{remote.generation})"
+          run_at = 15.seconds.from_now
+          Delayed::Job.enqueue(UploadCleanupJob.new(study, coordinate_file, 0), run_at: run_at)
+          Rails.logger.info "Cleanup job for #{coordinate_file.upload_file_name}:#{coordinate_file.id} scheduled for #{run_at}"
+        rescue => e
+          ErrorTracker.report_exception(e, user, error_context)
+          # we don't really care if the delete fails, we can always manually remove it later as the file is in FireCloud already
+          Rails.logger.error "Could not delete #{coordinate_file.name}:#{coordinate_file.id} in study #{study.name}; aborting"
+          SingleCellMailer.admin_notification('Local file deletion failed', nil, "The file at #{@file_location} failed to clean up after parsing, please remove.").deliver_now
+        end
+      end
+    rescue => e
+      ErrorTracker.report_exception(e, user, error_context)
+      # error has occurred, so clean up records and remove file
+      DataArray.where(study_file_id: coordinate_file.id).delete_all
+      filename = coordinate_file.upload_file_name
+      coordinate_file.remove_local_copy
+      coordinate_file.destroy
+      error_message = "#{@last_line} ERROR: #{e.message}"
+      Rails.logger.info error_message
+      SingleCellMailer.notify_user_parse_fail(user.email, "Error: Coordinate Labels file: '#{filename}' parse has failed", error_message, study).deliver_now
+
+    end
+  end
+
+  # parse precomputed marker gene files and create documents to render in Morpheus
+  def self.initialize_precomputed_scores(study, marker_file, user, opts={})
+    begin
+      error_context = ErrorTracker.format_extra_context(study, marker_file, {opts: opts})
+      # remove study description as it's not useful
+      error_context['study'].delete('description')
+      @file_location = marker_file.upload.path
+      # before anything starts, check if file has been uploaded locally or needs to be pulled down from FireCloud first
+      if !marker_file.is_local?
+        # make sure data dir exists first
+        study.make_data_dir
+        ApplicationController.firecloud_client.execute_gcloud_method(:download_workspace_file, 0, study.bucket_id, marker_file.bucket_location,
+                                                                     study.data_store_path, verify: :none)
+        @file_location = File.join(study.data_store_path, marker_file.bucket_location)
+      end
+
+      # next, check if this is a re-parse job, in which case we need to remove all existing entries first
+      if opts[:reparse]
+        study.precomputed_scores.where(study_file_id: marker_file.id).delete_all
+        marker_file.invalidate_cache_by_file_type
+      end
+
+      @count = 0
+      @message = []
+      start_time = Time.zone.now
+      @last_line = ""
+      @validation_error = false
+
+      # determine content type from file contents, not from upload_content_type
+      content_type = marker_file.determine_content_type
+      # validate headers
+      if content_type == 'application/gzip'
+        Rails.logger.info "Parsing #{marker_file.name}:#{marker_file.id} as application/gzip"
+        file = Zlib::GzipReader.open(@file_location)
+      else
+        Rails.logger.info "#Parsing #{marker_file.name}:#{marker_file.id} as text/plain"
+        file = File.open(@file_location, 'rb')
+      end
+
+      # validate headers
+      headers = file.readline.split(/[\t,]/).map(&:strip)
+      @last_line = "#{marker_file.name}, line 1"
+      if headers.first != 'GENE NAMES' || headers.size <= 1
+        marker_file.update(parse_status: 'failed')
+        @validation_error = true
+      end
+      file.close
+    rescue => e
+      ErrorTracker.report_exception(e, user, error_context)
+      filename = marker_file.upload_file_name
+      marker_file.remove_local_copy
+      marker_file.destroy
+      error_message = "#{@last_line} ERROR: #{e.message}"
+      Rails.logger.info error_message
+      SingleCellMailer.notify_user_parse_fail(user.email, "Error: Gene List file: '#{filename}' parse has failed", error_message, study).deliver_now
+      # raise standard error to halt execution
+      raise StandardError, error_message
+    end
+
+    # raise validation error if needed
+    if @validation_error
+      error_message = "file header validation failed: #{@last_line}: first header must be 'GENE NAMES' followed by clusters"
+      filename = marker_file.upload_file_name
+      marker_file.destroy
+      Rails.logger.info error_message
+      SingleCellMailer.notify_user_parse_fail(user.email, "Error: Gene List file: '#{filename}' parse has failed", error_message, study).deliver_now
+      raise StandardError, error_message
+    end
+
+    # begin parse
+    begin
+      Rails.logger.info "Beginning precomputed score parse using #{marker_file.name}:#{marker_file.id} for #{study.name}"
+      marker_file.update(parse_status: 'parsing')
+      list_name = marker_file.name
+      if list_name.nil? || list_name.blank?
+        list_name = marker_file.upload_file_name.gsub(/(-|_)+/, ' ')
+      end
+      precomputed_score = study.precomputed_scores.build(name: list_name, study_file_id: marker_file._id)
+
+      if content_type == 'application/gzip'
+        marker_scores = Zlib::GzipReader.open(@file_location).readlines.map(&:strip).delete_if {|line| line.blank? }
+      else
+        marker_scores = File.open(@file_location, 'rb').readlines.map(&:strip).delete_if {|line| line.blank? }
+      end
+
+      raw_clusters = marker_scores.shift.split(/[\t,]/).map(&:strip)
+      clusters = self.sanitize_input_array(raw_clusters, true)
+      @last_line = "#{marker_file.name}, line 1"
+
+      clusters.shift # remove 'Gene Name' at start
+      precomputed_score.clusters = clusters
+      rows = []
+      # keep a running record of genes already parsed; same as expression_scores except precomputed_scores
+      # have no built-in validations due to structure of gene_scores array
+      @genes_parsed = []
+      marker_scores.each_with_index do |line, i|
+        @last_line = "#{marker_file.name}, line #{i + 2}"
+        raw_vals = line.split(/[\t,]/).map(&:strip)
+        vals = self.sanitize_input_array(raw_vals)
+        gene = vals.shift.gsub(/\./, '_')
+        if @genes_parsed.include?(gene)
+          marker_file.update(parse_status: 'failed')
+          user_error_message = "You have a duplicate gene entry (#{gene}) in your gene list.  Please check your file and try again."
+          error_message = "Duplicate gene #{gene} in #{marker_file.name} (#{marker_file._id}) for study: #{study.name}"
+          Rails.logger.info error_message
+          raise StandardError, user_error_message
+        else
+          # gene is unique so far so add to list
+          @genes_parsed << gene
+        end
+
+        row = {"#{gene}" => {}}
+        clusters.each_with_index do |cluster, index|
+          row[gene][cluster] = vals[index].to_f
+        end
+        rows << row
+        @count += 1
+      end
+      precomputed_score.gene_scores = rows
+      precomputed_score.save
+      marker_file.update(parse_status: 'parsed')
+
+      # assemble message
+      end_time = Time.zone.now
+      time = (end_time - start_time).divmod 60.0
+      @message << "#{Time.zone.now}: #{marker_file.name} parse completed!"
+      @message << "Total gene list entries created: #{@count}"
+      @message << "Total Time: #{time.first} minutes, #{time.last} seconds"
+      Rails.logger.info @message.join("\n")
+
+      # send email
+      begin
+        SingleCellMailer.notify_user_parse_complete(user.email, "Gene list file: '#{marker_file.name}' has completed parsing", @message, study).deliver_now
+      rescue => e
+        ErrorTracker.report_exception(e, user, error_context)
+        Rails.logger.error "Unable to deliver email: #{e.message}"
+      end
+
+      Rails.logger.info "Determining upload status of gene list file: #{marker_file.upload_file_name}"
+
+      # now that parsing is complete, we can move file into storage bucket and delete local (unless we downloaded from FireCloud to begin with)
+      destination = marker_file.bucket_location
+      begin
+        remote = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, destination)
+      rescue => e
+        ErrorTracker.report_exception(e, user, error_context)
+        Rails.logger.error "Error retrieving remote: #{e.message}"
+      end
+      if remote.nil?
+        begin
+          Rails.logger.info "Preparing to upload gene list file: #{marker_file.upload_file_name}:#{marker_file.id} to FireCloud"
+          study.send_to_firecloud(marker_file)
+        rescue => e
+          ErrorTracker.report_exception(e, user, error_context)
+          Rails.logger.info "Gene List file: #{marker_file.upload_file_name}:#{marker_file.id} failed to upload to FireCloud due to #{e.message}"
+          SingleCellMailer.notify_admin_upload_fail(marker_file, e.message).deliver_now
+        end
+      else
+        # we have the file in FireCloud already, so just delete it
+        begin
+          Rails.logger.info "Found remote version of #{marker_file.upload_file_name}: #{remote.name} (#{remote.generation})"
+          run_at = 15.seconds.from_now
+          Delayed::Job.enqueue(UploadCleanupJob.new(study, metadata_file, 0), run_at: run_at)
+          Rails.logger.info "Cleanup job for #{marker_file.upload_file_name}:#{marker_file.id} scheduled for #{run_at}"
+        rescue => e
+          ErrorTracker.report_exception(e, user, error_context)
+          # we don't really care if the delete fails, we can always manually remove it later as the file is in FireCloud already
+          Rails.logger.error "Could not delete #{marker_file.name} in study #{study.name}; aborting"
+          SingleCellMailer.admin_notification('Local file deletion failed', nil, "The file at #{@file_location} failed to clean up after parsing, please remove.").deliver_now
+        end
+      end
+    rescue => e
+      ErrorTracker.report_exception(e, user, error_context)
+      # parse has failed, so clean up records and remove file
+      PrecomputedScore.where(study_file_id: marker_file.id).delete_all
+      filename = marker_file.upload_file_name
+      marker_file.remove_local_copy
+      marker_file.destroy
+      error_message = "#{@last_line} ERROR: #{e.message}"
+      Rails.logger.info error_message
+      SingleCellMailer.notify_user_parse_fail(user.email, "Error: Gene List file: '#{filename}' parse has failed", error_message, study).deliver_now
+    end
+    true
+  end
+
   private
+
+  # helper method to sanitize arrays of data for use as keys or names (removes quotes, can transform . into _)
+  def self.sanitize_input_array(array, replace_periods=false)
+    output = []
+    array.each do |entry|
+      value = entry.gsub(/(\"|\')/, '')
+      output << (replace_periods ? value.gsub(/\./, '_') : value)
+    end
+    output
+  end
 
   # read a single line of a coordinate matrix and return parsed indices and expression value
   def self.parse_line(line)
@@ -364,11 +804,11 @@ class ParseUtils
           if @data_arrays.size >= 1000
             Gene.create(@gene_documents) # genes must be saved first, otherwise the linear data polymorphic association is invalid and will cause a parse fail
             @count += @gene_documents.size
-            Rails.logger.info "#{Time.zone.now}: Processed #{@count} expressed genes from 10X CellRanger source data for #{study.name}"
+            Rails.logger.info "Processed #{@count} expressed genes from 10X CellRanger source data for #{study.name}"
             @gene_documents = []
             DataArray.create(@data_arrays)
             @child_count += @data_arrays.size
-            Rails.logger.info "#{Time.zone.now}: Processed #{@child_count} child data arrays from 10X CellRanger source data for #{study.name}"
+            Rails.logger.info "Processed #{@child_count} child data arrays from 10X CellRanger source data for #{study.name}"
             @data_arrays = []
           end
         end
@@ -389,24 +829,24 @@ class ParseUtils
 
   # localize a file for parsing and return opened file handler
   def self.localize_study_file(study_file, study)
-    Rails.logger.info "#{Time.zone.now}: Attempting to localize #{study_file.upload_file_name}"
+    Rails.logger.info "Attempting to localize #{study_file.upload_file_name}"
     if File.exists?(study_file.upload.path)
       local_path = study_file.upload.path
     elsif File.exists?(Rails.root.join(study.data_dir, study_file.download_location))
       local_path = File.join(study.data_store_path, study_file.download_location)
     else
       Rails.logger.info "Downloading #{study_file.upload_file_name} from remote"
-      Study.firecloud_client.execute_gcloud_method(:download_workspace_file, 0, study.bucket_id, study_file.bucket_location,
+      ApplicationController.firecloud_client.execute_gcloud_method(:download_workspace_file, 0, study.bucket_id, study_file.bucket_location,
                                                    study.data_store_path, verify: :none)
       Rails.logger.info "Successful localization of #{study_file.upload_file_name}"
       local_path = File.join(study.data_store_path, study_file.bucket_location)
     end
     content_type = study_file.determine_content_type
     if content_type == 'application/gzip'
-      Rails.logger.info "#{Time.zone.now}: Parsing #{study_file.name}:#{study_file.id} as application/gzip"
+      Rails.logger.info "Parsing #{study_file.name}:#{study_file.id} as application/gzip"
       local_file = Zlib::GzipReader.open(local_path)
     else
-      Rails.logger.info "#{Time.zone.now}: Parsing #{study_file.name}:#{study_file.id} as text/plain"
+      Rails.logger.info "Parsing #{study_file.name}:#{study_file.id} as text/plain"
       local_file = File.open(local_path, 'rb')
     end
     local_file
@@ -414,19 +854,19 @@ class ParseUtils
 
   # determine if local files need to be pushed to GCS bucket, or if they can be removed safely
   def self.upload_or_remove_study_file(study_file, study)
-    Rails.logger.info "#{Time.zone.now}: determining upload status of #{study_file.file_type}: #{study_file.bucket_location}:#{study_file.id}"
+    Rails.logger.info "Determining upload status of #{study_file.file_type}: #{study_file.bucket_location}:#{study_file.id}"
     # now that parsing is complete, we can move file into storage bucket and delete local (unless we downloaded from FireCloud to begin with)
     # rather than relying on opts[:local], actually check if the file is already in the GCS bucket
     begin
-      remote = Study.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, study_file.bucket_location)
+      remote = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, study_file.bucket_location)
       if remote.nil?
-        Rails.logger.info "#{Time.zone.now}: preparing to upload expression file: #{study_file.bucket_location}:#{study_file.id} to FireCloud"
+        Rails.logger.info "Preparing to upload expression file: #{study_file.bucket_location}:#{study_file.id} to FireCloud"
         study.send_to_firecloud(study_file)
       else
-        Rails.logger.info "#{Time.zone.now}: found remote version of #{study_file.bucket_location}: #{remote.name} (#{remote.generation})"
+        Rails.logger.info "Found remote version of #{study_file.bucket_location}: #{remote.name} (#{remote.generation})"
         run_at = 2.minutes.from_now
         Delayed::Job.enqueue(UploadCleanupJob.new(study, study_file, 0), run_at: run_at)
-        Rails.logger.info "#{Time.zone.now}: cleanup job for #{study_file.bucket_location}:#{study_file.id} scheduled for #{run_at}"
+        Rails.logger.info "Cleanup job for #{study_file.bucket_location}:#{study_file.id} scheduled for #{run_at}"
       end
     rescue => e
       error_context = ErrorTracker.format_extra_context(study, study_file)
@@ -440,9 +880,9 @@ class ParseUtils
 
   # delete a file from the bucket on fail
   def self.delete_remote_file_on_fail(study_file, study)
-    remote = Study.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, study_file.bucket_location)
+    remote = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, study_file.bucket_location)
     if remote.present?
-      Study.firecloud_client.execute_gcloud_method(:delete_workspace_file, 0, study.bucket_id, study_file.bucket_location)
+      ApplicationController.firecloud_client.execute_gcloud_method(:delete_workspace_file, 0, study.bucket_id, study_file.bucket_location)
     end
   end
 

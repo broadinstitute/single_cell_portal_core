@@ -418,6 +418,11 @@ label {
   z-index: 500;
 }
 
+/* Ensures autocomplete is never hidden behind other elements */
+.ui-autocomplete.ui-front {
+  z-index: 1100;
+}
+
 .gene-panel {
   margin-bottom: 25px !important;
 }

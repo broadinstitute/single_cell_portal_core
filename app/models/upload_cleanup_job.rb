@@ -27,7 +27,7 @@ class UploadCleanupJob < Struct.new(:study, :study_file, :retry_count)
         begin
           # check workspace bucket for existence of remote file
           Rails.logger.info "#{Time.zone.now}: performing UploadCleanupJob for #{study_file.bucket_location}:#{study_file.id} in '#{study.name}'"
-          remote_file = Study.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, study_file.bucket_location)
+          remote_file = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, study_file.bucket_location)
           if remote_file.present?
             # check generation tags to make sure we're in sync
             Rails.logger.info "#{Time.zone.now}: remote file located for #{study_file.bucket_location}:#{study_file.id}, checking generation tag"
@@ -79,7 +79,7 @@ class UploadCleanupJob < Struct.new(:study, :study_file, :retry_count)
     failed_uploads.each do |study_file|
       # final sanity check - see if there is a file in the bucket of the same size
       # this might happen if the post-upload action to update 'status' fails for some reason
-      remote_file = Study.firecloud_client.get_workspace_file(study_file.study.bucket_id, study_file.bucket_location)
+      remote_file = ApplicationController.firecloud_client.get_workspace_file(study_file.study.bucket_id, study_file.bucket_location)
       if remote_file.present? && remote_file.upload_file_size == study_file.upload_file_size
         study_file.update(status: 'uploaded', generation: remote_file.generation.to_s)
         next

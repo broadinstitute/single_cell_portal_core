@@ -42,7 +42,7 @@ class FileParseService
         end
       when 'Coordinate Labels'
         if study_file.has_completed_bundle?
-          study.delay.initialize_coordinate_label_data_arrays(study_file, user, {reparse: reparse})
+          ParseUtils.delay.initialize_coordinate_label_data_arrays(study, study_file, user, {reparse: reparse})
         else
           return self.missing_bundled_file(study_file)
         end
@@ -76,7 +76,7 @@ class FileParseService
           return self.missing_bundled_file(study_file)
         end
       when 'Gene List'
-        study.delay.initialize_precomputed_scores(study_file, user)
+        ParseUtils.delay.initialize_precomputed_scores(study, study_file, user)
       when 'Metadata'
         job = IngestJob.new(study: study, study_file: study_file, user: user, action: :ingest_cell_metadata, reparse: reparse,
                             persist_on_fail: persist_on_fail)
@@ -137,5 +137,33 @@ class FileParseService
         status_code: 412,
         error: "File is not parseable; missing required files for parsing #{study_file.file_type} file type: #{StudyFileBundle::PARSEABLE_BUNDLE_REQUIREMENTS.to_json}"
     }
+  end
+
+  # clean up any cached ingest pipeline run files older than 30 days
+  def self.clean_up_ingest_artifacts
+    cutoff_date = 30.days.ago
+    Rails.logger.info "Cleaning up all ingest pipeline artifacts older than #{cutoff_date}"
+    Study.where(queued_for_deletion: false, detached: false).each do |study|
+      Rails.logger.info "Checking #{study.accession}:#{study.bucket_id}"
+      study.delete_ingest_artifacts(cutoff_date)
+    end
+  end
+
+  # clean up any cached study file copies that failed to ingest, including log files older than provided age limit
+  def self.delete_ingest_artifacts(study, file_age_cutoff)
+    begin
+      # get all remote files under the 'parse_logs' folder
+      remotes = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_files, 0, study.bucket_id, prefix: 'parse_logs')
+      remotes.each do |remote|
+        creation_date = remote.created_at.in_time_zone
+        if remote.size > 0 && creation_date < file_age_cutoff
+          Rails.logger.info "Deleting #{remote.name} from #{study.bucket_id}"
+          remote.delete
+        end
+      end
+    rescue => e
+      error_context = ErrorTracker.format_extra_context(study)
+      ErrorTracker.report_exception(e, nil, error_context)
+    end
   end
 end

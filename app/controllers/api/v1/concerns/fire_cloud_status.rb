@@ -10,7 +10,7 @@ module Api
 
         # check on FireCloud API status and respond accordingly
         def check_firecloud_status!
-          unless Study.firecloud_client.services_available?(FireCloudClient::SAM_SERVICE, FireCloudClient::RAWLS_SERVICE)
+          unless ApplicationController.firecloud_client.services_available?(FireCloudClient::SAM_SERVICE, FireCloudClient::RAWLS_SERVICE)
             alert = 'Study workspaces are temporarily unavailable, so we cannot complete your request.  Please try again later.'
             render json: {error: alert}, status: 503
           end

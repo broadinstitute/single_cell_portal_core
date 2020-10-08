@@ -16,6 +16,16 @@
       "species_scientific_name": "Mus musculus"
     },
     {
+      "type": "Expression Matrix",
+      "filename": "raw_counts.tsv",
+      "species_scientific_name": "Mus musculus",
+      "expression_file_info": {
+        "is_raw_counts": true,
+        "units": "raw counts",
+        "library_construction_protocol": "Mars-seq"
+      }
+    },
+    {
       "type": "Cluster",
       "filename": "cluster.tsv"
     }

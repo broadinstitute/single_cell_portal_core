@@ -38,7 +38,7 @@ class AnalysisSubmission
         end
       rescue => e
         error_context = ErrorTracker.format_extra_context(submission)
-        ErrorTracker.report_exception(e, Study.firecloud_client.issuer, error_context)
+        ErrorTracker.report_exception(e, ApplicationController.firecloud_client.issuer, error_context)
         Rails.logger.error "Setting #{submission.firecloud_project}/#{submission.firecloud_workspace}:#{submission.submission_id} to 'Deleted' due to error: #{e.message}"
         submission.update(status: 'Deleted', completed_on: Time.zone.now)
       end
@@ -73,7 +73,7 @@ class AnalysisSubmission
   # helper to get submission JSON from workspace
   def get_submission_json
     begin
-      Study.firecloud_client.get_workspace_submission(self.firecloud_project, self.firecloud_workspace, self.submission_id)
+      ApplicationController.firecloud_client.get_workspace_submission(self.firecloud_project, self.firecloud_workspace, self.submission_id)
     rescue => e
       error_context = ErrorTracker.format_extra_context(self)
       ErrorTracker.report_exception(e, self.user, error_context)
@@ -86,7 +86,7 @@ class AnalysisSubmission
     begin
       configuration_namespace = submission['methodConfigurationNamespace']
       configuration_name = submission['methodConfigurationName']
-      configuration = Study.firecloud_client.get_workspace_configuration(self.firecloud_project, self.firecloud_workspace,
+      configuration = ApplicationController.firecloud_client.get_workspace_configuration(self.firecloud_project, self.firecloud_workspace,
                                                                   configuration_namespace, configuration_name)
       method = configuration['methodRepoMethod']
       "#{method['methodNamespace']}/#{method['methodName']}/#{method['methodVersion']}"

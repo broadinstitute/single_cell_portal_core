@@ -263,7 +263,7 @@ module Api
             @study.update(firecloud_workspace: nil)
           else
             begin
-              Study.firecloud_client.delete_workspace(@study.firecloud_project, @study.firecloud_workspace)
+              ApplicationController.firecloud_client.delete_workspace(@study.firecloud_project, @study.firecloud_workspace)
             rescue => e
               error_context = ErrorTracker.format_extra_context(@study, {params: params})
               ErrorTracker.report_exception(e, current_api_user, error_context)
@@ -395,16 +395,16 @@ module Api
         @permissions_changed = []
 
         # get a list of workspace submissions so we know what directories to ignore
-        @submission_ids = Study.firecloud_client.get_workspace_submissions(@study.firecloud_project, @study.firecloud_workspace).map {|s| s['submissionId']}
+        @submission_ids = ApplicationController.firecloud_client.get_workspace_submissions(@study.firecloud_project, @study.firecloud_workspace).map {|s| s['submissionId']}
 
         # first sync permissions if necessary
         begin
           portal_permissions = @study.local_acl
-          firecloud_permissions = Study.firecloud_client.get_workspace_acl(@study.firecloud_project, @study.firecloud_workspace)
+          firecloud_permissions = ApplicationController.firecloud_client.get_workspace_acl(@study.firecloud_project, @study.firecloud_workspace)
           firecloud_permissions['acl'].each do |user, permissions|
             # skip project owner permissions, they aren't relevant in this context
             # also skip the readonly service account
-            if permissions['accessLevel'] =~ /OWNER/i || (Study.read_only_firecloud_client.present? && user == Study.read_only_firecloud_client.issuer)
+            if permissions['accessLevel'] =~ /OWNER/i || (ApplicationController.read_only_firecloud_client.present? && user == ApplicationController.read_only_firecloud_client.issuer)
               next
             else
               # determine whether permissions are incorrect or missing completely
@@ -447,7 +447,7 @@ module Api
         begin
           # create a map of file extension to use for creating directory_listings of groups of 10+ files of the same type
           @file_extension_map = {}
-          workspace_files = Study.firecloud_client.execute_gcloud_method(:get_workspace_files, 0, @study.bucket_id)
+          workspace_files = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_files, 0, @study.bucket_id)
           # see process_workspace_bucket_files in private methods for more details on syncing
           process_workspace_bucket_files(workspace_files)
           while workspace_files.next?

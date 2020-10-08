@@ -183,10 +183,10 @@ function initializeIgv() {
   if (queriedGenes.length > 0) {
     // The user searched within a study for one or multiple genes
     locus = [queriedGenes.first().text()]
-  } else if (window.uniqueGenes.length > 0) {
+  } else if (window.SCP.uniqueGenes.length > 0) {
     // The user is viewing the default cluster plot, so select
     // their first in their matrix
-    locus = [window.uniqueGenes[0]]
+    locus = [window.SCP.uniqueGenes[0]]
   } else {
     // Rarely, users will upload BAMs and *not* matrices.  This accounts for
     // that case.

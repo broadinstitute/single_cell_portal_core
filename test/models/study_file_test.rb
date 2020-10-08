@@ -47,4 +47,37 @@ class StudyFileTest < ActiveSupport::TestCase
 
     puts "#{File.basename(__FILE__)}: '#{self.method_name}' successful!"
   end
+
+  test 'expression file data validates' do
+    # note that we don't (and shouldn't) actually *save* anything in this test,
+    # so we use throwaway objects and ids.
+    puts "#{File.basename(__FILE__)}: '#{self.method_name}'"
+
+    invalid_study_file = StudyFile.new(
+      study: Study.new,
+      file_type: 'Expression Matrix',
+      name: 'test_exp_validate',
+      taxon_id: Taxon.new.id,
+      expression_file_info: ExpressionFileInfo.new(
+        units: 'bad_value',
+        library_construction_protocol: 'Mars-seq',
+        is_raw_counts: true
+      )
+    )
+    assert_equal false, invalid_study_file.valid?
+    assert_equal({expression_file_info: ["is invalid"]}, invalid_study_file.errors.messages)
+
+    valid_study_file = StudyFile.new(
+      study: Study.new,
+      file_type: 'Expression Matrix',
+      name: 'test_exp_validate',
+      taxon_id: Taxon.new.id,
+      expression_file_info: ExpressionFileInfo.new(
+        units: 'raw counts',
+        library_construction_protocol: 'MARS-seq',
+        is_raw_counts: true
+      )
+    )
+    assert_equal true, valid_study_file.valid?
+  end
 end

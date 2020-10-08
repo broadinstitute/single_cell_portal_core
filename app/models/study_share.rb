@@ -154,10 +154,10 @@ class StudyShare
 
   # control for rendering share fields (will not render if the readonly service account)
   def show_share?
-		if Study.read_only_firecloud_client.nil?
+		if ApplicationController.read_only_firecloud_client.nil?
 			true
 		else
-			self.email != Study.read_only_firecloud_client.issuer
+			self.email != ApplicationController.read_only_firecloud_client.issuer
 		end
 	end
 
@@ -210,8 +210,8 @@ class StudyShare
 				if (self.new_record? && !self.study.new_record?) || (!self.new_record? && self.permission_changed?)
 					Rails.logger.info "#{Time.zone.now}: Creating FireCloud ACLs for study #{self.study.name} - share #{self.email}, permission: #{self.permission}"
 					begin
-						acl = Study.firecloud_client.create_workspace_acl(self.email, FIRECLOUD_ACL_MAP[self.permission])
-						Study.firecloud_client.update_workspace_acl(self.firecloud_project, self.study.firecloud_workspace, acl)
+						acl = ApplicationController.firecloud_client.create_workspace_acl(self.email, FIRECLOUD_ACL_MAP[self.permission])
+						ApplicationController.firecloud_client.update_workspace_acl(self.firecloud_project, self.study.firecloud_workspace, acl)
 					rescue RuntimeError => e
 						error_context = ErrorTracker.format_extra_context(self.study, self)
 						ErrorTracker.report_exception(e, nil, error_context)
@@ -226,8 +226,8 @@ class StudyShare
 	def revoke_firecloud_acl
 		begin
 			unless self.permission == 'Reviewer'
-				acl = Study.firecloud_client.create_workspace_acl(self.email, 'NO ACCESS')
-				Study.firecloud_client.update_workspace_acl(self.firecloud_project, self.firecloud_workspace, acl)
+				acl = ApplicationController.firecloud_client.create_workspace_acl(self.email, 'NO ACCESS')
+				ApplicationController.firecloud_client.update_workspace_acl(self.firecloud_project, self.firecloud_workspace, acl)
 			end
 		rescue RuntimeError => e
 			error_context = ErrorTracker.format_extra_context(self.study, self)

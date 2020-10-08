@@ -19,7 +19,7 @@
       // load the max number of gene searches and corresponding error message.
       window.MAX_GENE_SEARCH = <%= StudySearchService::MAX_GENE_SEARCH %>;
       window.MAX_GENE_SEARCH_MSG = '<%= StudySearchService::MAX_GENE_SEARCH_MSG %>';
-      window.uniqueGenes = <%= @unique_genes.present? ? raw(@unique_genes) : [] %>;
+      window.SCP.uniqueGenes = <%= @unique_genes.present? ? raw(@unique_genes) : [] %>;
 
       window.SCP.gaTrackingId = '<%= ENV['GA_TRACKING_ID'] %>';
       window.SCP.analyticsPageName = '<%= get_page_name %>';

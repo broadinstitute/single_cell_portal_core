@@ -16,13 +16,13 @@ SecureHeaders::Configuration.default do |config|
   config.x_permitted_cross_domain_policies = "none"
   config.x_download_options = "noopen"
   config.referrer_policy = %w(origin-when-cross-origin strict-origin-when-cross-origin)
-  allowed_connect_sources = ['\'self\'', "https://#{ENV['HOSTNAME']}", 'https://www.google-analytics.com', 'https://unpkg.com', 'https://igv.org',
+  allowed_connect_sources = ['\'self\'', "https://#{ENV['HOSTNAME']}", 'https://www.google-analytics.com', 'https://cdn.jsdelivr.net', 'https://igv.org',
                     'https://www.googleapis.com', 'https://s3.amazonaws.com', 'https://data.broadinstitute.org', 'https://portals.broadinstitute.org',
                     'https://us.input.tcell.insight.rapid7.com', 'https://api.tcell.io', 'https://us.browser.tcell.insight.rapid7.com',
                     'https://us.agent.tcell.insight.rapid7.com', 'https://us.jsagent.tcell.insight.rapid7.com', 'https://accounts.google.com',
-                    'https://bam.nr-data.net',
-                    'https://terra-bard-dev.appspot.com', 'https://terra-bard-alpha.appspot.com', 'https://terra-bard-prod.appspot.com',
-                    'https://rest.ensembl.org']
+                    'https://bam.nr-data.net', 'https://terra-bard-dev.appspot.com', 'https://terra-bard-alpha.appspot.com',
+                    'https://terra-bard-prod.appspot.com', 'https://rest.ensembl.org', 'https://eutils.ncbi.nlm.nih.gov', 'https://mygene.info',
+                    'https://webservice.wikipathways.org']
   if ENV['NOT_DOCKERIZED']
     # enable connections to live reload server
     allowed_connect_sources.push('https://localhost:3035')
@@ -41,7 +41,7 @@ SecureHeaders::Configuration.default do |config|
       font_src: %w('self' data:),
       form_action: %w('self' https://accounts.google.com),
       connect_src: allowed_connect_sources,
-      img_src: %w('self' data: https://www.google-analytics.com https://online.swagger.io),
+      img_src: %w('self' data: blob: https://www.google-analytics.com https://online.swagger.io),
       manifest_src: %w('self'),
       object_src: %w('none'),
       script_src: %w('self' blob: 'unsafe-eval' 'unsafe-inline' 'strict-dynamic' https://cdn.plot.ly https://cdn.datatables.net

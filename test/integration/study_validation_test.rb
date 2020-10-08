@@ -105,7 +105,7 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
       assert_equal 'failed', e[:object].parse_status, "Incorrect parse_status for #{e[:name]}"
       assert e[:object].queued_for_deletion
       # check that file is cached in parse_logs/:id folder in the study bucket
-      cached_file = Study.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, e[:cache_location])
+      cached_file = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, e[:cache_location])
       assert cached_file.present?, "Did not find cached file at #{e[:cache_location]} in #{study.bucket_id}"
     end
 
@@ -140,7 +140,7 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
            "Gene list failed to associate, found #{study.study_files.where(file_type: 'Gene List').size} files"
     gene_list_file = study.study_files.where(file_type: 'Gene List').first
     # this parse has a duplicate gene, which will not throw an error - it is caught internally
-    study.initialize_precomputed_scores(gene_list_file, @test_user)
+    ParseUtils.initialize_precomputed_scores(study, gene_list_file, @test_user)
     # we have to reload the study because it will have a cached reference to the precomputed_score due to the nature of the parse
     study = Study.find_by(name: "Local Parse Failure Study #{@random_seed}")
     assert study.study_files.where(file_type: 'Gene List').size == 0,

@@ -12,7 +12,7 @@ require "test_helper"
 class FireCloudClientTest < ActiveSupport::TestCase
 
   def setup
-    @fire_cloud_client = Study.firecloud_client
+    @fire_cloud_client = ApplicationController.firecloud_client
     @test_email = 'singlecelltest@gmail.com'
     @random_test_seed = SecureRandom.uuid # use same random seed to differentiate between entire runs
   end
