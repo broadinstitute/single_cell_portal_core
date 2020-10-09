@@ -29,7 +29,7 @@ const LinkableSearchTabs = function(props) {
   const showGenesTab = location.pathname.startsWith('/single_cell/app/genes')
   return (
     <div>
-      <nav className="nav search-links" data-tablist-name="search" role="tablist">
+      <nav className="nav search-links" data-analytics-name="search" role="tablist">
         <Link to={`/single_cell/app/studies${location.search}`}
           className={showGenesTab ? '' : 'active'}>
           <span className="fas fa-book"></span> Search Studies

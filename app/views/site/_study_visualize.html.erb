@@ -5,7 +5,7 @@
   <div class="col-md-13" id="render-target">
     <div class="row-offcanvas row-offcanvas-right">
       <div id="view-options-nav"><a href="#view-options" id="view-option-link" data-toggle="offcanvas"><i class="fas fa-cog" aria-hidden="true"></i> View Options </a></div>
-      <ul class="nav nav-tabs" role="tablist" id="view-tabs" data-tablist-name="explore-default">
+      <ul class="nav nav-tabs" role="tablist" id="view-tabs" data-analytics-name="explore-default">
         <% if @study.can_visualize_clusters? %>
           <li role="presentation" class="study-nav active" id="plots-tab-nav"><a href="#plots-tab" data-toggle="tab">Clusters </a></li>
         <% end %>
