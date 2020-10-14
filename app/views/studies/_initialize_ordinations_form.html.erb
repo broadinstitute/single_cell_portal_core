@@ -7,11 +7,15 @@
   <%= hidden_field_tag :filename_to_upload, '', class: 'filename-to-upload' %>
   <%= f.hidden_field :study_file_bundle_id %>
   <div class="form-group row">
+  <div class="col-sm-4">
+			<%= f.label :file_type %><br />
+			<%= f.select :file_type, options_for_select(['Cluster', 'Spatial'], selected: study_file.file_type), {}, class: 'form-control file-type' %>
+		</div>
 		<div class="col-sm-4">
 			<%= f.label :name %><br />
 			<%= f.text_field :name, class: 'form-control filename cluster-name', placeholder: 'Please provide a name for this group of ordinations...', autocomplete: 'off' %>
 		</div>
-		<div class="col-sm-8">
+		<div class="col-sm-4">
 			<%= f.label :description, 'Description/Figure Legend (this will be displayed below cluster)' %><br />
 			<%= f.text_field :description, class: 'form-control' %>
 		</div>
@@ -57,10 +61,6 @@
     </div>
   </div>
 	<div class="form-group row">
-		<div class="col-sm-4">
-			<%= f.label :file_type %><br />
-			<%= f.text_field :file_type, readonly: true, class: 'form-control file-type' %>
-		</div>
 		<div class="col-sm-5 upload-field">
       <% if !study_file.upload_file_name.nil? %>
         <p><label>Link to file </label><br /><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: study_file} %></p>

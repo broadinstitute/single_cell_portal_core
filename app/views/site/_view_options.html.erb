@@ -36,6 +36,16 @@
                   <%= render partial: 'subsample_warning', locals: {cluster: @cluster} %>
                 </div>
                 <!-- end -->
+
+                <div class="form-group col-sm-4">
+                  <%= label_tag :cluster, 'Load spatial' %><br />
+                  <select class="form-control" name="study[default_options][cluster]" id="study_default_options_cluster">
+                    <option selected="selected" value="Coordinates_Major_cell_types.txt">Spatial A</option>
+                    <option value="Coordinates_CA1.txt">Spatial B</option>
+                    <option value="Coordinates_CA3.txt">Spatial C</option>
+                    <option value="Coordinates_DG.txt">Spatial D</option>
+                  </select>
+                </div>
             </div>
           </div>
         </div>

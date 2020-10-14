@@ -13,7 +13,7 @@
         </div>
       <% end %>
       <h4>Study Default View Options</h4>
-      <p class="help-block">Use this form to choose what the default expression axis label, cluster, annotation, color profile, and cluster point display properties are when someone views your study.</p>
+      <p class="help-block">Choose what the default expression axis label, cluster, annotation, color profile, and cluster point display properties are when someone views your study.</p>
       <div class="form-group row">
         <div class="col-sm-4">
           <%= f.label :cluster, 'Default Cluster' %><br />
@@ -52,6 +52,25 @@
         <div class="col-sm-12 text-center">
           <%= f.submit 'Update Defaults', class: 'btn btn-success' %>
         </div>
+      </div>
+
+      <h4>Cluster-Spatial Mappings</h4>
+      <p class="help-block">Associate each cluster file with one or more spatial files.</p>
+      <div class="form-group row">
+        <select>
+          <option>Cluster 1</option>
+          <option>Cluster 2</option>
+          <option>Cluster 3</option>
+          <option>Cluster 4</option>
+          <option>Cluster 5</option>
+        </select>
+        <ul>
+          <li><label for="spatial_a"><input type="checkbox">Spatial A</label></li>
+          <li><label for="spatial_b"><input type="checkbox">Spatial B</label></li>
+          <li><label for="spatial_c"><input type="checkbox">Spatial C</label></li>
+          <li><label for="spatial_d"><input type="checkbox">Spatial D</label></li>
+          <li><label for="spatial_e"><input type="checkbox">Spatial E</label></li>
+        </ul>
       </div>
     </div>
 

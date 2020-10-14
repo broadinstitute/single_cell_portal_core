@@ -71,6 +71,46 @@
           </div>
         </div>
       <% end %>
+      </div>
+      <div>
+        <h4>Cluster-Spatial Map</h4>
+        <p class="help-block">Associate each cluster file with one or more spatial files.</p>
+        <div class="well well-sm" id="cluster-spatial-map-form">
+          <div class="form-group row">
+            <div class="col-sm-4">
+              <label>Cluster</label><br />
+              <select class="form-control" name="study[default_options][cluster]" id="study_default_options_cluster">
+                <option selected="selected" value="Coordinates_Major_cell_types.txt">Coordinates_Major_cell_types.txt</option>
+                <option value="Coordinates_CA1.txt">Coordinates_CA1.txt</option>
+                <option value="Coordinates_CA3.txt">Coordinates_CA3.txt</option>
+                <option value="Coordinates_DG.txt">Coordinates_DG.txt</option>
+              </select>
+            </div>
+            <div class="col-sm-4">
+              <label>Spatial</label><br />
+              <div class="custom-control custom-checkbox">
+                  <input type="checkbox" class="custom-control-input" id="spatial_a">
+                  <label class="custom-control-label" for="spatial_a">Spatial A</label>
+              </div>
+              <div class="custom-control custom-checkbox">
+                  <input type="checkbox" class="custom-control-input" id="spatial_b">
+                  <label class="custom-control-label" for="spatial_b">Spatial B</label>
+              </div>
+              <div class="custom-control custom-checkbox">
+                  <input type="checkbox" class="custom-control-input" id="spatial_c">
+                  <label class="custom-control-label" for="spatial_c">Spatial C</label>
+              </div>
+              <div class="custom-control custom-checkbox">
+                  <input type="checkbox" class="custom-control-input" id="spatial_d">
+                  <label class="custom-control-label" for="spatial_d">Spatial D</label>
+              </div>
+              <div class="custom-control custom-checkbox">
+                  <input type="checkbox" class="custom-control-input" id="spatial_e">
+                  <label class="custom-control-label" for="spatial_e">Spatial E</label>
+              </div>
+            </div>
+          </div>
+        </div>
     </div>
     <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
         $('#study_default_options_annotation').change(function() {
