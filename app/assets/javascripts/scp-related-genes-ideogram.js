@@ -67,7 +67,7 @@ function showRelatedGenesIdeogram() { // eslint-disable-line
     document.querySelector('#related-genes-ideogram-container')
 
   if (!genomeHasChromosomes()) {
-    ideoContainer.classList = 'hidden-related-genes-ideogram'
+    ideoContainer.classList = 'hidden'
     ideoContainer.innerHTML = ''
     return
   }
@@ -152,7 +152,7 @@ function createRelatedGenesIdeogram(taxon) { // eslint-disable-line
 
   // Create scaffolding for Ideogram for related genes
   const ideoContainer =
-    '<div id="related-genes-ideogram-container" class="hidden-related-genes-ideogram"></div>' // eslint-disable-line
+    '<div id="related-genes-ideogram-container" class="hidden"></div>' // eslint-disable-line
   document.querySelector('body').insertAdjacentHTML('beforeEnd', ideoContainer)
 
   const ideoConfig = {
