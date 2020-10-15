@@ -6878,10 +6878,10 @@ identity-obj-proxy@3.0.0:
   dependencies:
     harmony-reflect "^1.4.6"
 
-ideogram@1.26.0:
-  version "1.26.0"
-  resolved "https://registry.yarnpkg.com/ideogram/-/ideogram-1.26.0.tgz#8680566e7a872eb6b7dbe01fbf191258c7aac9ea"
-  integrity sha512-7tE2wzMk/dszuYhudMg6YIWRbEswmbQG74wCqigbyWV/MXDwBcXsh+SVddm/v8JyVYe9nh90Kvs5osx4jKJxBg==
+ideogram@1.27.0:
+  version "1.27.0"
+  resolved "https://registry.yarnpkg.com/ideogram/-/ideogram-1.27.0.tgz#e5e9d6ac8e7ef0b894f767c35b8cbc20bd38164b"
+  integrity sha512-meIg6C9lrrg5wT173got4jRIvdVY7352AEstvCdgflXy0N2dcRArmm8qguQ4GYRz8+iOdDFTGZWoMT1TmwAiFg==
   dependencies:
     crossfilter2 "1.5.2"
     d3-array "^2.8.0"

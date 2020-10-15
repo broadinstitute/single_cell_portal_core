@@ -2,6 +2,14 @@
   z-index: 1000;
   background: #FFF;
 
+  #_ideogramInnerWrap {
+    visibility: hidden;
+
+    &.found-related-genes {
+      visibility: visible;
+    }
+  }
+
   &.hidden-related-genes-ideogram {
     visibility: hidden;
 

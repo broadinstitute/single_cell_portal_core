@@ -17,6 +17,8 @@ function onClickAnnot(annot) {
   const ideogram = this // eslint-disable-line
   document.querySelector('#search_genes').value = annot.name
 
+  setFoundRelatedGenes(false)
+
   // Enable merge of related-genes log props into search log props
   // This helps profile the numerator of click-through-rate
   const event = {}
@@ -71,9 +73,6 @@ function showRelatedGenesIdeogram() { // eslint-disable-line
   }
 
   putIdeogramInPlotTabs(ideoContainer)
-
-  // Make Ideogram visible
-  ideoContainer.classList = 'show-related-genes-ideogram'
 }
 
 /**
@@ -101,6 +100,35 @@ function onPlotRelatedGenes() {
   const props = getRelatedGenesAnalytics(ideogram)
 
   window.SCP.log('ideogram:related-genes', props)
+}
+
+/**
+ * Set inner visibility of ideogram
+ *
+ * @param found Boolean Whether related genes have been found
+ */
+function setFoundRelatedGenes(found) {
+  const innerFoundClass = (found) ? 'found-related-genes' : ''
+  const innerSelect = '#related-genes-ideogram-container #_ideogramInnerWrap'
+  document.querySelector(innerSelect).classList = innerFoundClass
+
+  if (found) {
+    const ideoContainer =
+      document.querySelector('#related-genes-ideogram-container')
+
+    // Make Ideogram visible
+    ideoContainer.classList = 'show-related-genes-ideogram'
+  }
+}
+
+/**
+ * Show ideogram upon finding any interacting gene or paralog
+ *
+ * This enables ideogram to only be shown when related genes are found (while
+ * also allowing incremental rendering).
+ */
+function onFindRelatedGenes() {
+  setFoundRelatedGenes(true)
 }
 
 /**
@@ -136,6 +164,7 @@ function createRelatedGenesIdeogram(taxon) { // eslint-disable-line
     annotationHeight: 7,
     onClickAnnot,
     onPlotRelatedGenes,
+    onFindRelatedGenes,
     onLoad() {
       // Handles edge case: when organism lacks chromosome-level assembly
       if (!genomeHasChromosomes()) return
