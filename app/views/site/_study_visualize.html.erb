@@ -55,118 +55,22 @@
   </div>
 </div>
 <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
-  <% if @study.can_visualize_clusters? %>
-    if (typeof window.SCP.pushedPendingPageViewEvent === 'undefined') {
-      window.SCP.startPendingEvent('user-action:page:view:site-study',
-                                 {},
-                                 'plot:',
-                                 true);
+  window.SCP.canVisualizeClusters = <%= @study.can_visualize_clusters? %>;
+  window.SCP.ideogramFiles = <%= raw @ideogram_files.to_json %>;
 
-      // Flag to ensure we only log this pending event once per page view
-      window.SCP.pushedPendingPageViewEvent = true;
-    }
+  // Used for Ideogram for related genes
+  window.SCP.taxons = <%= raw @taxons.to_json %>;
 
-    $('#cluster-plot').data('rendered', false);
+  window.SCP.clusterNumPoints = <%= @cluster.points %>
+  window.SCP.clusterIsSubsampled = <%= @cluster.subsampled %>
+  window.SCP.hasIdeogramInferCnvFiles = <%= @ideogram_files.present? %>
 
-    var baseCamera = {
-        "up":{"x":0,"y":0,"z":1},
-        "center":{"x":0,"y":0,"z":0},
-        "eye":{"x":1.25,"y":1.25,"z":1.25}
-    };
+  window.SCP.renderClusterPath =
+    '<%= render_cluster_path(accession: @study.accession, study_name: @study.url_safe_name) %>'
 
-    function renderScatter() {
-        // detach listener as it will be re-attached in response; this helps reduce spurious errors
-        $(window).off('resizeEnd');
-        var url = '<%= render_cluster_path(accession: @study.accession, study_name: @study.url_safe_name) %>';
-        var target = $('#cluster-plot')[0];
-        var spinner = new Spinner(opts).spin(target);
-        $('#cluster-plot').data('spinner', spinner);
+  window.SCP.getNewAnnotationsPath =
+    '<%= get_new_annotations_path(accession: @study.accession, study_name: @study.url_safe_name)%>'
 
-        var urlParams = getRenderUrlParams();
-        url += '?' + urlParams;
-
-        $.ajax({
-            url: url,
-            method: 'GET',
-            dataType: 'script'
-        });
-    }
-
-    $(document).ready(function() {
-      //if tab position was specified in url, show the current tab
-      if (window.location.href.split('#')[1] !== '') {
-          var tab = window.location.href.split('#')[1];
-          $('#study-tabs a[href="#' + tab + '"]').tab('show');
-      }
-      $('#cluster-plot').data('camera', baseCamera);
-      // set default subsample option of 10K (if subsampled) or all cells
-      if (<%= @cluster.points > 10000 && @cluster.subsampled? %>) {
-          $('#subsample').val(10000);
-          $('#search_subsample').val(10000);
-      }
-
-      renderScatter();
-    });
-
-    // listener for cluster nav, specific to study page
-    $("#annotation").change(function() {
-        $('#cluster-plot').data('rendered', false);
-        var an = $(this).val();
-        // keep track for search purposes
-        $('#search_annotation').val(an);
-        $('#gene_set_annotation').val(an);
-        renderScatter();
-    });
-
-    $('#subsample').change(function() {
-        $('#cluster-plot').data('rendered', false);
-        var sample = $(this).val();
-        $('#search_subsample').val(sample);
-        $('#gene_set_subsample').val(sample);
-        renderScatter();
-    });
-
-    $("#cluster").change(function() {
-        $('#cluster-plot').data('rendered', false);
-        var newCluster = $(this).val();
-        // keep track for search purposes
-        $('#search_cluster').val(newCluster);
-        $('#gene_set_cluster').val(newCluster);
-        // grab currently selected annotation
-        var currSubsample = $('#subsample').val();
-        // get new annotation options and re-render
-        $.ajax({
-            url: "<%= get_new_annotations_path(accession: @study.accession, study_name: @study.url_safe_name)%>?cluster=" + encodeURIComponent(newCluster) + '&subsample=' + encodeURIComponent(currSubsample),
-            method: 'GET',
-            dataType: 'script',
-            complete: function (jqXHR, textStatus) {
-                renderWithNewCluster(textStatus, renderScatter);
-            }
-        });
-    });
-
-    // Used for Ideogram for related genes
-    window.SCP.taxons = <%= raw @taxons.to_json %>;
-  <% end %>
-    $('#ideogram_annotation').on('change', function() {
-        var ideogramFiles = <%= raw @ideogram_files.to_json %>;
-        var fileId = $(this).val();
-        if (fileId !== '') {
-            var ideogramAnnot = ideogramFiles[fileId];
-            window.ideogramInferCnvSettings = ideogramAnnot.ideogram_settings;
-            initializeIdeogram(ideogramAnnot.ideogram_settings.annotationsPath);
-        } else {
-            $('#tracks-to-display, #_ideogramOuterWrap').html('');
-            $('#ideogramTitle').remove();
-        }
-
-    });
-  <% if !@study.can_visualize_clusters? && @ideogram_files.present? %>
-    // user has no clusters, but does have ideogram annotations
-    $(document).ready(function () {
-      var ideogramSelect = $('#ideogram_annotation');
-      var firstIdeogram = $('#ideogram_annotation option')[1].value;
-      ideogramSelect.val(firstIdeogram).trigger('change'); // manually trigger change to cause ideogram to render
-    });
-  <% end %>
 </script>
+
+<%= nonced_javascript_include_tag 'study-overview' %>

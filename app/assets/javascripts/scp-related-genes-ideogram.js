@@ -104,6 +104,31 @@ function onPlotRelatedGenes() {
 }
 
 /**
+ * Set inner visibility of ideogram
+ *
+ * @param found Boolean Whether related genes have been found
+ */
+function setFoundRelatedGenes(found) {
+  if (found) {
+    const ideoContainer =
+      document.querySelector('#related-genes-ideogram-container')
+
+    // Make Ideogram visible
+    ideoContainer.classList = 'show-related-genes-ideogram'
+  }
+}
+
+/**
+ * Show ideogram upon finding any interacting gene or paralog
+ *
+ * This enables ideogram to only be shown when related genes are found (while
+ * also allowing incremental rendering).
+ */
+function onFindRelatedGenes() {
+  setFoundRelatedGenes(true)
+}
+
+/**
  * Initiates Ideogram for related genes
  *
  * This is only done in the context of single-gene search in Study Overview
@@ -136,6 +161,7 @@ function createRelatedGenesIdeogram(taxon) { // eslint-disable-line
     annotationHeight: 7,
     onClickAnnot,
     onPlotRelatedGenes,
+    onFindRelatedGenes,
     onLoad() {
       // Handles edge case: when organism lacks chromosome-level assembly
       if (!genomeHasChromosomes()) return
