@@ -55,22 +55,18 @@
   </div>
 </div>
 <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
-  window.SCP.canVisualizeClusters = <%= @study.can_visualize_clusters? %>;
-  window.SCP.ideogramFiles = <%= raw @ideogram_files.to_json %>;
+  window.SCP.study = {
+    canVisualizeClusters: <%= @study.can_visualize_clusters? %>,
+    taxons: <%= raw @taxons.to_json %>,
+    numPointsCluster: <%= @cluster.points %>,
+    isClusterSubsampled: <%= @cluster.subsampled %>,
+    ideogramInferCnvFiles: <%= raw @ideogram_files.to_json %>,
+    hasIdeogramInferCnvFiles: <%= @ideogram_files.present? %>,
+    renderClusterPath: '<%= render_cluster_path(accession: @study.accession, study_name: @study.url_safe_name) %>',
+    getNewAnnotationsPath:'<%= get_new_annotations_path(accession: @study.accession, study_name: @study.url_safe_name)%>'
+  }
 
-  // Used for Ideogram for related genes
-  window.SCP.taxons = <%= raw @taxons.to_json %>;
-
-  window.SCP.clusterNumPoints = <%= @cluster.points %>
-  window.SCP.clusterIsSubsampled = <%= @cluster.subsampled %>
-  window.SCP.hasIdeogramInferCnvFiles = <%= @ideogram_files.present? %>
-
-  window.SCP.renderClusterPath =
-    '<%= render_cluster_path(accession: @study.accession, study_name: @study.url_safe_name) %>'
-
-  window.SCP.getNewAnnotationsPath =
-    '<%= get_new_annotations_path(accession: @study.accession, study_name: @study.url_safe_name)%>'
-
+  window.SCP.taxons = window.SCP.study.taxons;
 </script>
 
 <%= nonced_javascript_include_tag 'study-overview' %>

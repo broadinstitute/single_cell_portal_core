@@ -4,6 +4,8 @@
 * Shows "Clusters" and sometimes "Genomes", etc.
 */
 
+const study = window.SCP.study
+
 if (typeof window.SCP.pushedPendingPageViewEvent === 'undefined') {
   window.SCP.startPendingEvent('user-action:page:view:site-study',
     { speciesList: window.SCP.taxons },
@@ -25,7 +27,7 @@ function renderScatter() {
   $('#cluster-plot').data('spinner', spinner)
 
   const urlParams = window.getRenderUrlParams()
-  const url = `${window.SCP.renderClusterPath}?${urlParams}`
+  const url = `${study.renderClusterPath}?${urlParams}`
 
   $.ajax({
     url,
@@ -36,7 +38,7 @@ function renderScatter() {
 
 // For inferCNV ideogram
 $('#ideogram_annotation').on('change', function() {
-  const ideogramFiles = window.SCP.ideogramFiles
+  const ideogramFiles = study.ideogramFiles
   const fileId = $(this).val() // eslint-disable-line
   if (fileId !== '') {
     const ideogramAnnot = ideogramFiles[fileId]
@@ -48,7 +50,7 @@ $('#ideogram_annotation').on('change', function() {
   }
 })
 
-if (window.SCP.canVisualizeClusters) {
+if (study.canVisualizeClusters) {
   $('#cluster-plot').data('rendered', false)
 
   const baseCamera = {
@@ -65,7 +67,7 @@ if (window.SCP.canVisualizeClusters) {
     }
     $('#cluster-plot').data('camera', baseCamera)
     // set default subsample option of 10K (if subsampled) or all cells
-    if (window.SCP.clusterNumPoints > 10000 && window.SCP.clusterIsSampled) {
+    if (window.SCP.numPointsCluster > 10000 && window.SCP.clusterIsSampled) {
       $('#subsample').val(10000)
       $('#search_subsample').val(10000)
     }
