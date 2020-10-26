@@ -6,12 +6,10 @@
 
 const study = window.SCP.study
 
-
 window.SCP.startPendingEvent('user-action:page:view:site-study',
   { speciesList: window.SCP.taxons },
   'plot:',
   true)
-
 
 /** Draws the scatter plot for the default Explore tab view */
 function renderScatter() {

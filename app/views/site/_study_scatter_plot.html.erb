@@ -1,8 +1,8 @@
 var data = [];
 <% @coordinates.sort_by {|k,v| k}.each_with_index do |(cluster, data), index| %>
-	var cluster_<%= index %> = {
-		x: <%= raw data[:x] %>,
-		y: <%= raw data[:y] %>,
+  var cluster_<%= index %> = {
+    x: <%= raw data[:x] %>,
+    y: <%= raw data[:y] %>,
     cells: <%= raw data[:cells] %>,
     <% if !data[:annotations].nil? %>
       annotations: <%= raw data[:annotations] %>,
@@ -11,13 +11,13 @@ var data = [];
       z: <%= raw data[:z] %>,
       textposition: 'bottom right',
     <% end %>
-		text: <%= raw data[:text] %>,
-		name: "<%= data[:name] %>",
-		mode: 'markers',
-		type: '<%= @plot_type %>',
+    text: <%= raw data[:text] %>,
+    name: "<%= data[:name] %>",
+    mode: 'markers',
+    type: '<%= @plot_type %>',
     opacity: <%= @study.default_cluster_point_alpha %>,
     marker: <%= raw data[:marker].to_json %>
-	};
+  };
 
   <% if @selected_annotation[:type] == 'group' %>
     // set color
