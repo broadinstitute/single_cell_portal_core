@@ -6,15 +6,12 @@
 
 const study = window.SCP.study
 
-if (typeof window.SCP.pushedPendingPageViewEvent === 'undefined') {
-  window.SCP.startPendingEvent('user-action:page:view:site-study',
-    { speciesList: window.SCP.taxons },
-    'plot:',
-    true)
 
-  // Flag to ensure we only log this pending event once per page view
-  window.SCP.pushedPendingPageViewEvent = true
-}
+window.SCP.startPendingEvent('user-action:page:view:site-study',
+  { speciesList: window.SCP.taxons },
+  'plot:',
+  true)
+
 
 /** Draws the scatter plot for the default Explore tab view */
 function renderScatter() {

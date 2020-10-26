@@ -298,7 +298,7 @@ export function log(name, props={}) {
  Initializes an event to log later (usually on completion of an async process)
  Handles measuring duration of the event.
  @param {String} name: the name of the event
- @param {} props: the props to pass along with the event.  This function
+ @param {Object} props: the props to pass along with the event.  This function
   automatically handles computing and adding 'perfTime' properties to the
   event props
  @param {String} completionTriggerPrefix: The prefix of an event on whose
