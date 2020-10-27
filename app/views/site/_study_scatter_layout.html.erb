@@ -1,16 +1,7 @@
 var plotHeight = calculatePlotViewport('#render-target');
 
-var layout = {
-    hovermode: 'closest',
-    font: plotlyLabelFont,
-    margin: {
-        t: 25,
-        r: 0,
-        b: 20,
-        l: 0
-    },
-    height: plotHeight
-}
+
+var layout = getBaseLayout(plotHeight, plotlyLabelFont);
 
 <% if @cluster.is_3d? %>
   var currentCamera = $('#cluster-plot').data('camera');

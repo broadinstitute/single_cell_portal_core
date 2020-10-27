@@ -376,10 +376,50 @@ class SiteController < ApplicationController
     end
   end
 
+  # Convert cluster group data array points into JSON plot data for Plotly
+  def transform_coordinates(coordinates, plot_type, study, cluster_group, selected_annotation)
+    plot_data = []
+
+    coordinates.sort_by {|k,v| k}.each_with_index do |(cluster, data), index|
+      cluster_props = {
+        x: data[:x],
+        y: data[:y],
+        cells: data[:cells],
+        text: data[:text],
+        name: data[:name],
+        type: plot_type,
+        mode: 'markers',
+        marker: data[:marker],
+        opacity: study.default_cluster_point_alpha,
+      }
+
+      if !data[:annotations].nil?
+        cluster_props[:annotations] = data[:annotations]
+      end
+
+      if cluster_group.is_3d?
+        cluster_props[:z] = data[:z]
+        cluster_props[:textposition] = 'bottom right'
+      end
+
+      if selected_annotation[:type] == 'group'
+        # Set color index that will be interpreted by SCP front end
+        cluster_props[:marker][:scpColorIndex] = index
+      end
+
+      plot_data.push(cluster_props)
+    end
+
+    plot_data.to_json
+  end
+
   # render a single cluster and its constituent sub-clusters
   def render_cluster
     subsample = params[:subsample].blank? ? nil : params[:subsample].to_i
     @coordinates = load_cluster_group_data_array_points(@selected_annotation, subsample)
+
+    @plot_data = transform_coordinates(@coordinates, @plot_type, @study, @cluster, @selected_annotation)
+
     @plot_type = @cluster.is_3d? ? 'scatter3d' : 'scattergl'
     @options = load_cluster_group_options
     @cluster_annotations = load_cluster_group_annotations
