@@ -435,6 +435,12 @@ class SiteController < ApplicationController
     end
     @axes = load_axis_labels
 
+    @axes_full = {
+      :titles => @axes,
+      :ranges => @range,
+      :aspects => @aspects
+    }
+
     cluster_name = @cluster.name
     annot_name = params[:annotation]
 

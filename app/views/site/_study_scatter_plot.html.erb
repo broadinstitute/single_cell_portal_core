@@ -1,34 +1,9 @@
-var data = [];
-<% @coordinates.sort_by {|k,v| k}.each_with_index do |(cluster, data), index| %>
-  var cluster_<%= index %> = {
-    x: <%= raw data[:x] %>,
-    y: <%= raw data[:y] %>,
-    cells: <%= raw data[:cells] %>,
-    <% if !data[:annotations].nil? %>
-      annotations: <%= raw data[:annotations] %>,
-    <% end %>
-    <% if @cluster.is_3d? %>
-      z: <%= raw data[:z] %>,
-      textposition: 'bottom right',
-    <% end %>
-    text: <%= raw data[:text] %>,
-    name: "<%= data[:name] %>",
-    mode: 'markers',
-    type: '<%= @plot_type %>',
-    opacity: <%= @study.default_cluster_point_alpha %>,
-    marker: <%= raw data[:marker].to_json %>
-  };
+var data = window.SCP.cluster.plotData;
 
-  <% if @selected_annotation[:type] == 'group' %>
-    // set color
-    cluster_<%= index %>['marker']['color'] = colorBrewerSet[<%= index %> % 27];
-  <% end %>
+const plotHeight = window.calculatePlotViewport('#render-target')
 
-  data.push(cluster_<%= index %>);
-<% end %>
-
-// use partial for layouts to avoid code duplication
-<%= render 'study_scatter_layout' %>
+const layout =
+  getScatterPlotLayout(window.SCP.cluster.is3D, plotHeight, plotlyLabelFont)
 
 Plotly.newPlot('cluster-plot', data, layout);
 

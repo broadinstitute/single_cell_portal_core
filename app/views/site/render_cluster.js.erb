@@ -4,12 +4,15 @@ This code renders the "Cluster" tab plot shown by default on Study Overview
 
 var plotEvent = window.SCP.startPendingEvent('plot:scatter', window.SCP.getLogPlotProps());
 
-console.log('*** 0')
 window.SCP.cluster = {
+  plotData: <%= raw @plot_data %>,
   is3D: <%= @cluster.is_3d? %>,
-  plotData: <%= raw @plot_data %>
+  domainRanges: <%= raw @cluster.domain_ranges.to_json %>,
+  axes: <%= raw @axes_full.to_json %>,
+  hasCoordinateLabels: <%= @cluster.has_coordinate_labels? %>,
+  coordinateLabels: <%= raw @coordinate_labels.to_json %>
 }
-console.log('*** 1')
+
 // check render status
 console.log('render status at start: ' + $('#cluster-plot').data('rendered'));
 // render colorscale picker if needed

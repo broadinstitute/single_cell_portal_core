@@ -11,6 +11,91 @@ window.SCP.startPendingEvent('user-action:page:view:site-study',
   'plot:',
   true)
 
+/**
+ * Render cluster code
+ *
+ * TODO: Move this to render-cluster.js, or some such
+ */
+
+/** Get Plotly layout object for scatter plot */
+function getBaseLayout(height, font) {
+  const layout = {
+    hovermode: 'closest',
+    margin: {
+      t: 25,
+      r: 0,
+      b: 20,
+      l: 0
+    },
+    height,
+    font
+  }
+  return layout
+}
+
+/** Gets Plotly layout scene props for 3D scatter plot */
+function get3DScatterProps(camera, cluster) {
+  const { clusterHasRange, axes } = cluster
+  const { titles, ranges, aspects } = axes
+
+  const scene = {
+    camera,
+    aspectmode: 'cube',
+    xaxis: { title: titles.x, autorange: true, showticklabels: false },
+    yaxis: { title: titles.y, autorange: true, showticklabels: false },
+    zaxis: { title: titles.z, autorange: true, showticklabels: false }
+  }
+
+  if (clusterHasRange) {
+    scene.xaxis.autorange = false
+    scene.xaxis.range = ranges.x
+    scene.yaxis.autorange = false
+    scene.yaxis.range = ranges.y
+    scene.zaxis.autorange = false
+    scene.zaxis.range = ranges.x
+    scene.aspectmode = aspects.mode,
+    scene.aspectratio = {
+      x: aspects.x,
+      y: aspects.y,
+      z: aspects.z
+    }
+  }
+
+  return scene
+}
+
+/** Gets Plotly layout props for 2D scatter plot */
+function get2DScatterProps(cluster) {
+  const {
+    axes, clusterHasRange, domainRanges, hasCoordinateLabels, coordinateLabels
+  } = cluster
+  const { titles } = axes
+
+  const layout = {
+    xaxis: { title: titles.x, showticklabels: false },
+    yaxis: { title: titles.y, showticklabels: false, scaleanchor: 'x' }
+  }
+
+  // if user has supplied a range, set that, otherwise let Plotly autorange
+  if (clusterHasRange) {
+    layout.xaxis.range = domainRanges.x
+    layout.yaxis.range = domainRanges.y
+  } else {
+    layout.xaxis.autorange = true
+    layout.yaxis.autorange = true
+  }
+
+  if (hasCoordinateLabels) {
+    layout.annotations = coordinateLabels
+  }
+
+  return layout
+}
+
+/**
+ * End render cluster code
+ */
+
 /** Draws the scatter plot for the default Explore tab view */
 function renderScatter() {
   // detach listener as it will be re-attached in response;
@@ -29,6 +114,23 @@ function renderScatter() {
     method: 'GET',
     dataType: 'script'
   })
+}
+
+/** Get layout object with various Plotly scatter plot display parameters */
+function getScatterPlotLayout(is3D, height, labelFont) {
+  let layout = getBaseLayout(height, labelFont)
+
+  let dimensionProps
+  if (is3D) {
+    const camera = $('#cluster-plot').data('camera')
+    dimensionProps = get3DScatterProps(camera, window.SCP.cluster)
+  } else {
+    dimensionProps = get2DScatterProps(window.SCP.cluster)
+  }
+
+  layout = Object.assign(layout, dimensionProps)
+
+  return layout
 }
 
 // For inferCNV ideogram
