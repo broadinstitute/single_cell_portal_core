@@ -92,6 +92,42 @@ function get2DScatterProps(cluster) {
   return layout
 }
 
+/** Renders Plotly scatter plot for "Clusters" tab */
+function drawScatterPlot(data, is3D, height, labelFont) {
+  const layout =
+    getScatterPlotLayout(is3D, height, labelFont)
+
+  Plotly.newPlot('cluster-plot', data, layout)
+
+  // listener to redraw expression scatter with new color profile
+  $('#colorscale').off('change')
+  $('#colorscale').change(function() {
+    const theme = $(this).val()
+    data[0].marker.colorscale = theme
+    console.log(`setting colorscale to ${theme}`)
+
+    $('#search_colorscale').val(theme)
+    Plotly.update('cluster-plot', data, layout)
+  })
+
+  const description =
+    `<p class="text-center help-block">${window.SCP.cluster.description}</p>`
+  $('#cluster-figure-legend').html(description)
+
+  // access actual target div, not jQuery object wrapper for relayout event
+  const clusterPlotDiv = document.getElementById('cluster-plot')
+  clusterPlotDiv.on('plotly_relayout', cameraData => {
+    if (typeof cameraData['scene.camera'] !== 'undefined') {
+      const oldScene = $('#expression-plots').data('scatter-camera')
+      const newCamera = cameraData['scene.camera']
+      console.log(`Updating camera information; was ${JSON.stringify(oldScene)}`)
+      $('#cluster-plot').data('camera', newCamera)
+      console.log(`Update complete, camera data now ${JSON.stringify($('#cluster-plot').data('camera'))}`)
+    }
+  })
+}
+
+
 /**
  * End render cluster code
  */

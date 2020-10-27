@@ -6,6 +6,7 @@ var plotEvent = window.SCP.startPendingEvent('plot:scatter', window.SCP.getLogPl
 
 window.SCP.cluster = {
   plotData: <%= raw @plot_data %>,
+  description: "<%= escape_javascript(render plain: @cluster.study_file.description) %>",
   is3D: <%= @cluster.is_3d? %>,
   domainRanges: <%= raw @cluster.domain_ranges.to_json %>,
   axes: <%= raw @axes_full.to_json %>,
@@ -23,7 +24,10 @@ if (<%= @selected_annotation[:type] == 'numeric' %>) {
     $('#toggle-traces').tooltip({container: 'body', placement: 'left', trigger: 'hover'});
 }
 
-<%= render partial: 'study_scatter_plot' %>
+const data = window.SCP.cluster.plotData
+const is3D = window.SCP.cluster.is3D
+const plotHeight = window.calculatePlotViewport('#render-target')
+drawScatterPlot(data, is3D, plotHeight, plotlyLabelFont)
 
 // set CLUSTER_TYPE to control annotations behavior
 CLUSTER_TYPE = '<%= @cluster.cluster_type %>'
