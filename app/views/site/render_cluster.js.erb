@@ -1,11 +1,14 @@
 <%#
-This code renders the "Cluster" tab plot shown by default on Study Overview
+This file will be mostly removed by SCP-2857, likely leaving only `rawPlot` and
+code to add response to current plot data.
 %>
 
+// TODO (SCP-2857): Probably put this in the Ajax succeed / complete (or better,
+// `await fetch` equivalent).
 var plotEvent = window.SCP.startPendingEvent('plot:scatter', window.SCP.getLogPlotProps());
 
-window.SCP.cluster = {
-  plotData: <%= raw @plot_data %>,
+const rawPlot = {
+  data: <%= raw @plot_data %>,
   description: "<%= escape_javascript(render plain: @cluster.study_file.description) %>",
   is3D: <%= @cluster.is_3d? %>,
   domainRanges: <%= raw @cluster.domain_ranges.to_json %>,
@@ -14,9 +17,14 @@ window.SCP.cluster = {
   coordinateLabels: <%= raw @coordinate_labels.to_json %>
 }
 
-// TODO: Remove hard-coding
+// Consider putting into a dictionary instead of a list
+window.SCP.plots.push(rawPlot);
+
+// TODO (SCP-2857): Remove hard-coding when UI for selecting n-many cluster + spatial
+// plots is something we can develop against.
 numPlots = 2
 
+// Incremented upon drawing scatter plot; enables unique plot IDs
 window.SCP.scatterCount = 0;
 
 // render colorscale picker if needed
@@ -27,10 +35,12 @@ if (<%= @selected_annotation[:type] == 'numeric' %>) {
     $('#toggle-traces').tooltip({container: 'body', placement: 'left', trigger: 'hover'});
 }
 
-const data = window.SCP.cluster.plotData
-const is3D = window.SCP.cluster.is3D
+const data = rawPlot.data
+const is3D = rawPlot.is3D
 const {plotHeight, plotWidth} = calculatePlotViewport(numPlots)
 
+// Duplicate calls are merely for proof-of-concept, showing we can
+// render plots side-by-side
 drawScatterPlot(data, is3D, plotHeight, plotWidth, plotlyLabelFont)
 drawScatterPlot(data, is3D, plotHeight, plotWidth, plotlyLabelFont)
 

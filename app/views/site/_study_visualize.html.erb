@@ -62,6 +62,8 @@
     getNewAnnotationsPath:'<%= get_new_annotations_path(accession: @study.accession, study_name: @study.url_safe_name)%>'
   }
 
+  window.SCP.plots = [];
+
   window.SCP.taxons = window.SCP.study.taxons;
 </script>
 
