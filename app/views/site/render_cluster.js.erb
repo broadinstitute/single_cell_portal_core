@@ -14,8 +14,11 @@ window.SCP.cluster = {
   coordinateLabels: <%= raw @coordinate_labels.to_json %>
 }
 
-// check render status
-console.log('render status at start: ' + $('#cluster-plot').data('rendered'));
+// TODO: Remove hard-coding
+numPlots = 2
+
+window.SCP.scatterCount = 0;
+
 // render colorscale picker if needed
 if (<%= @selected_annotation[:type] == 'numeric' %>) {
     $('#toggle-plots').html("");
@@ -26,8 +29,10 @@ if (<%= @selected_annotation[:type] == 'numeric' %>) {
 
 const data = window.SCP.cluster.plotData
 const is3D = window.SCP.cluster.is3D
-const plotHeight = window.calculatePlotViewport('#render-target')
-drawScatterPlot(data, is3D, plotHeight, plotlyLabelFont)
+const {plotHeight, plotWidth} = calculatePlotViewport(numPlots)
+
+drawScatterPlot(data, is3D, plotHeight, plotWidth, plotlyLabelFont)
+drawScatterPlot(data, is3D, plotHeight, plotWidth, plotlyLabelFont)
 
 // set CLUSTER_TYPE to control annotations behavior
 CLUSTER_TYPE = '<%= @cluster.cluster_type %>'
@@ -37,12 +42,13 @@ $('#search_cluster').val("<%= params[:cluster] %>");
 
 // resize listener
 $(window).on('resizeEnd', function() {
-    var newHeight = calculatePlotViewport('#render-target');
-    if (layout.height === newHeight) {
-        Plotly.newPlot('cluster-plot', data, layout);
+    const layout = window.SCP.scatterPlotLayout;
+    var {height} = calculatePlotViewport(numPlots);
+    if (layout.height === height) {
+        Plotly.newPlot('cluster-plot-' + window.SCP.scatterCount, data, layout);
     } else {
-        layout.height = newHeight;
-        Plotly.relayout('cluster-plot', layout);
+        layout.height = height;
+        Plotly.relayout('cluster-plot-' + window.SCP.scatterCount, layout);
     }
 });
 
@@ -57,7 +63,7 @@ $('body').on('click', '#study-visualize-nav > a', function() {
 
 // attach click event for toggle switch
 $('#toggle-traces').click(function() {
-    togglePlotlyTraces('cluster-plot');
+    togglePlotlyTraces('cluster-plot-' + window.SCP.scatterCount);
 });
 
 // attach click event for toggle violin
@@ -66,16 +72,14 @@ $('#toggle-violin').click(function() {
 });
 
 // stop spinner
-$('#cluster-plot').data('spinner').stop();
+$('#cluster-plot-' + window.SCP.scatterCount).data('spinner').stop();
 
 // monitor rendering status for tests
-$('#cluster-plot').data('rendered', true);
+$('#cluster-plot-' + window.SCP.scatterCount).data('rendered', true);
 
 enableDefaultActions();
 closeUserAnnotationsForm();
 
-// check render status
-console.log('render status at end: ' + $('#cluster-plot').data('rendered'));
 var requestUrl = '<%= javascript_safe_url(request.fullpath) %>';
 gaTrack(requestUrl, 'Single Cell Portal');
 

@@ -18,7 +18,7 @@ window.SCP.startPendingEvent('user-action:page:view:site-study',
  */
 
 /** Get Plotly layout object for scatter plot */
-function getBaseLayout(height, font) {
+function getBaseLayout(height, width, font) {
   const layout = {
     hovermode: 'closest',
     margin: {
@@ -28,6 +28,7 @@ function getBaseLayout(height, font) {
       l: 0
     },
     height,
+    width,
     font
   }
   return layout
@@ -92,12 +93,31 @@ function get2DScatterProps(cluster) {
   return layout
 }
 
-/** Renders Plotly scatter plot for "Clusters" tab */
-function drawScatterPlot(data, is3D, height, labelFont) {
-  const layout =
-    getScatterPlotLayout(is3D, height, labelFont)
+/** Calculate the current viewport to use for rendering cluster plots */
+function calculatePlotViewport(numPlots) {
+  const windowDom = $(window)
+  const plotHeight = windowDom.height() - 250
+  const plotWidth = (windowDom.width() - 80) / numPlots
+  return { plotHeight, plotWidth }
+}
 
-  Plotly.newPlot('cluster-plot', data, layout)
+/** Renders Plotly scatter plot for "Clusters" tab */
+function drawScatterPlot(data, is3D, height, width, labelFont) {
+  window.SCP.scatterCount += 1
+  const scatterCount = window.SCP.scatterCount
+
+  const plotId = `cluster-plot-${scatterCount}`
+
+  $('#plots .panel-body').append(`
+    <div class="row" style="float: left">
+      <div id="${plotId}"></div>
+      <div id="cluster-figure-legend"></div>
+    </div>`)
+
+  const layout =
+    getScatterPlotLayout(is3D, height, width, labelFont)
+
+  Plotly.newPlot(plotId, data, layout)
 
   // listener to redraw expression scatter with new color profile
   $('#colorscale').off('change')
@@ -107,7 +127,7 @@ function drawScatterPlot(data, is3D, height, labelFont) {
     console.log(`setting colorscale to ${theme}`)
 
     $('#search_colorscale').val(theme)
-    Plotly.update('cluster-plot', data, layout)
+    Plotly.update(plotId, data, layout)
   })
 
   const description =
@@ -115,16 +135,18 @@ function drawScatterPlot(data, is3D, height, labelFont) {
   $('#cluster-figure-legend').html(description)
 
   // access actual target div, not jQuery object wrapper for relayout event
-  const clusterPlotDiv = document.getElementById('cluster-plot')
+  const clusterPlotDiv = document.getElementById(plotId)
   clusterPlotDiv.on('plotly_relayout', cameraData => {
     if (typeof cameraData['scene.camera'] !== 'undefined') {
       const oldScene = $('#expression-plots').data('scatter-camera')
       const newCamera = cameraData['scene.camera']
       console.log(`Updating camera information; was ${JSON.stringify(oldScene)}`)
-      $('#cluster-plot').data('camera', newCamera)
-      console.log(`Update complete, camera data now ${JSON.stringify($('#cluster-plot').data('camera'))}`)
+      $(`#${plotId}`).data('camera', newCamera)
+      console.log(`Update complete, camera data now ${JSON.stringify($(`#${plotId}`).data('camera'))}`)
     }
   })
+
+  window.SCP.scatterPlotLayout = layout
 }
 
 
@@ -153,8 +175,8 @@ function renderScatter() {
 }
 
 /** Get layout object with various Plotly scatter plot display parameters */
-function getScatterPlotLayout(is3D, height, labelFont) {
-  let layout = getBaseLayout(height, labelFont)
+function getScatterPlotLayout(is3D, height, width, labelFont) {
+  let layout = getBaseLayout(height, width, labelFont)
 
   let dimensionProps
   if (is3D) {

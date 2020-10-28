@@ -266,7 +266,7 @@
       <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
         <% if user_signed_in? %>
 
-          var targetPlotString = '<%= params[:gene_set].nil? && params[:gene].nil? ? 'cluster-plot' : 'scatter-plot' %>';
+          var targetPlotString = '<%= params[:gene_set].nil? && params[:gene].nil? ? 'cluster-plot-0' : 'scatter-plot' %>';
 
           // Stick the search for selection facilitation in expression pages if selecting annotation
           $('#panel-selection').on('show.bs.collapse', function () {
