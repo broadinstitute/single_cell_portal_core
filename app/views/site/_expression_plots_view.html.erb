@@ -43,22 +43,25 @@
       </div>
     </div>
   </div>
-  <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
-    var dotPlotDataPathBase = '<%= javascript_safe_url(expression_query_path(study_name: params[:study_name], search: {genes: @dotplot_gene_list })) %>';
-    var dotPlotRequestToken = '<%= user_signed_in? ? current_user.id.to_s + ":" + current_user.authentication_token : nil %>';
-    var dotPlotAnnotPathBase = '<%= annotation_query_path(study_name: params[:study_name]) %>';
-    var dotPlotAnnotValuesPath = '<%= annotation_values_path(study_name: @study.url_safe_name) %>';
-    var dotPlotNewAnnotsPath = '<%= get_new_annotations_path(study: params[:study])%>';
+  <% if @dotplot_gene_list %>
+    <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
+      // monitor status of rendering plots for tests
+      $('#dot-plot').data('rendered', false);
+      $(document).ready(function() {
+          $('#dot-plot').data('fit', '');
+          $('#dot-plot').data('height', 500);
+          const dotPlotDataPathBase = '<%= javascript_safe_url(expression_query_path(study_name: params[:study_name], search: {genes: @dotplot_gene_list })) %>';
+          const dotPlotRequestToken = '<%= user_signed_in? ? current_user.id.to_s + ":" + current_user.authentication_token : nil %>';
+          const dotPlotAnnotPathBase = '<%= annotation_query_path(study_name: params[:study_name]) %>';
+          const dotPlotAnnotValuesPath = '<%= annotation_values_path(study_name: @study.url_safe_name) %>';
 
-    // monitor status of rendering plots for tests
-    $('#dot-plot').data('rendered', false);
-
-    $(document).ready(function() {
-        $('#dot-plot').data('fit', '');
-        $('#dot-plot').data('height', 500);
-        drawDotplot();
-    });
-  </script>
+          drawDotplot(dotPlotDataPathBase,
+                      dotPlotRequestToken,
+                      dotPlotAnnotPathBase,
+                      dotPlotAnnotValuesPath);
+      });
+    </script>
+  <% end %>
 <% end %>
 <% if @study.has_analysis_outputs?('infercnv', 'ideogram.js') or @study.has_bam_files? %>
   <div class="tab-pane" id="genome-tab" role="tabpanel" >

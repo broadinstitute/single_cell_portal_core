@@ -76,18 +76,39 @@ function showRelatedGenesIdeogram() { // eslint-disable-line
   ideoContainer.classList = 'show-related-genes-ideogram'
 }
 
-/**
- * Get summary of related-genes ideogram that was just loaded or clicked
- */
-function getRelatedGenesAnalytics(ideogram) {
-  const props = Object.assign({}, ideogram.relatedGenesAnalytics)
-
+/** Refine analytics to use DSP-conventional names */
+function conformAnalytics(props, ideogram) {
   // Use DSP-conventional name
-  props['perfTime'] = props.time
-  delete props['time']
+  props['perfTime'] = props.timeTotal
+  delete props.timeTotal
 
-  props['species'] = ideogram.getScientificName(ideogram.config.taxid)
+  props['species'] = ideogram.organismScientificName
 
+  return props
+}
+
+/** Log hover over related genes ideogram tooltip */
+function onWillShowAnnotTooltip(annot) {
+  // Ideogram object; used to inspect ideogram state
+  const ideogram = this // eslint-disable-line
+  let props = ideogram.getTooltipAnalytics(annot)
+
+  // `props` is null if it is merely analytics noise.
+  // Accounts for quick moves from label to annot, or away then immediately
+  // back to same annot.  Such action flickers tooltip and represents a
+  // technical artifact that is not worth analyzing.
+  if (props) {
+    props = conformAnalytics(props, ideogram)
+    window.SCP.log('ideogram:related-genes:tooltip', props)
+  }
+
+  return annot
+}
+
+/** Get summary of related-genes ideogram that was just loaded or clicked */
+function getRelatedGenesAnalytics(ideogram) {
+  let props = Object.assign({}, ideogram.relatedGenesAnalytics)
+  props = conformAnalytics(props, ideogram)
   return props
 }
 
@@ -134,8 +155,10 @@ function createRelatedGenesIdeogram(taxon) { // eslint-disable-line
     chrHeight: 100,
     chrLabelSize: 12,
     annotationHeight: 7,
+    showAnnotLabels: false,
     onClickAnnot,
     onPlotRelatedGenes,
+    onWillShowAnnotTooltip,
     onLoad() {
       // Handles edge case: when organism lacks chromosome-level assembly
       if (!genomeHasChromosomes()) return

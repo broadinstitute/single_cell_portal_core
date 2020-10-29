@@ -6,15 +6,3 @@
     <% end %>
   </div>
 </div>
-
-<script>
-
-  // Initializes Ideogram for related genes, if it hasn't already been
-  // started for the current searched gene.
-  if (window.SCP.taxons.length > 1) {
-    // TODO (SCP-2769): Handle when a searched gene maps to multiple species
-    const currentTaxon = '<%= @gene_taxons.first %>';
-    createRelatedGenesIdeogram(currentTaxon);
-  }
-
-</script>
