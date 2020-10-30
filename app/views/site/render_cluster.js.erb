@@ -17,6 +17,8 @@ const rawPlot = {
   coordinateLabels: <%= raw @coordinate_labels.to_json %>
 }
 
+window.SCP.cluster = rawPlot;
+
 // Consider putting into a dictionary instead of a list
 window.SCP.plots.push(rawPlot);
 
@@ -35,14 +37,13 @@ if (<%= @selected_annotation[:type] == 'numeric' %>) {
     $('#toggle-traces').tooltip({container: 'body', placement: 'left', trigger: 'hover'});
 }
 
-const data = rawPlot.data
-const is3D = rawPlot.is3D
-const {plotHeight, plotWidth} = calculatePlotViewport(numPlots)
+const target = '#plots .panel-body'
+const rect = calculatePlotRect(numPlots)
 
 // Duplicate calls are merely for proof-of-concept, showing we can
 // render plots side-by-side
-drawScatterPlot(data, is3D, plotHeight, plotWidth, plotlyLabelFont)
-drawScatterPlot(data, is3D, plotHeight, plotWidth, plotlyLabelFont)
+renderScatterPlot(target, rawPlot, rect, plotlyLabelFont)
+renderScatterPlot(target, rawPlot, rect, plotlyLabelFont)
 
 // set CLUSTER_TYPE to control annotations behavior
 CLUSTER_TYPE = '<%= @cluster.cluster_type %>'

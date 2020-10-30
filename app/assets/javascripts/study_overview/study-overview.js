@@ -93,8 +93,8 @@ function get2DScatterProps(cluster) {
   return layout
 }
 
-/** Calculate the current viewport to use for rendering cluster plots */
-function calculatePlotViewport(numPlots) {
+/** Get height and width for a to-be-rendered cluster plot */
+function calculatePlotRect(numPlots) {
   const windowDom = $(window)
   const plotHeight = windowDom.height() - 250
   const plotWidth = (windowDom.width() - 80) / numPlots
@@ -102,13 +102,16 @@ function calculatePlotViewport(numPlots) {
 }
 
 /** Renders Plotly scatter plot for "Clusters" tab */
-function drawScatterPlot(data, is3D, height, width, labelFont) {
+function renderScatterPlot(target, rawPlot, box, labelFont) {
+  const {data, is3D} = rawPlot;
+  const {height, width} = box;
+
   window.SCP.scatterCount += 1
   const scatterCount = window.SCP.scatterCount
 
   const plotId = `cluster-plot-${scatterCount}`
 
-  $('#plots .panel-body').append(`
+  $(target).append(`
     <div class="row" style="float: left">
       <div id="${plotId}"></div>
       <div id="cluster-figure-legend"></div>
