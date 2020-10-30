@@ -4,6 +4,47 @@ class RequestUtils
   # using FullSanitizer as it is the most strict
   SANITIZER ||= Rails::Html::FullSanitizer.new
 
+  # Convert cluster group data array points into JSON plot data for Plotly
+  #
+  # Consider extracting this method and other SCP-specific methods to a separate class
+  # ClusterService.rb, perhaps?
+  def self.transform_coordinates(coordinates, plot_type, study, cluster_group, selected_annotation)
+    plot_data = []
+
+    coordinates.sort_by {|k,v| k}.each_with_index do |(cluster, data), index|
+      cluster_props = {
+        x: data[:x],
+        y: data[:y],
+        cells: data[:cells],
+        text: data[:text],
+        name: data[:name],
+        type: plot_type,
+        mode: 'markers',
+        marker: data[:marker],
+        opacity: study.default_cluster_point_alpha,
+      }
+
+      if !data[:annotations].nil?
+        cluster_props[:annotations] = data[:annotations]
+      end
+
+      if cluster_group.is_3d?
+        cluster_props[:z] = data[:z]
+        cluster_props[:textposition] = 'bottom right'
+      end
+
+      if selected_annotation[:type] == 'group'
+        # Set color index that will be interpreted by SCP front end
+        cluster_props[:marker][:scpColorIndex] = index
+      end
+
+      plot_data.push(cluster_props)
+    end
+
+    plot_data.to_json
+  end
+
+
   def self.get_selected_annotation(params, study, cluster)
     selector = params[:annotation].nil? ? params[:gene_set_annotation] : params[:annotation]
     annot_name, annot_type, annot_scope = selector.nil? ? study.default_annotation.split('--') : selector.split('--')
@@ -43,6 +84,8 @@ class RequestUtils
   def self.get_cluster_group(params, study)
     # determine which URL param to use for selection
     selector = params[:cluster].nil? ? params[:gene_set_cluster] : params[:cluster]
+    puts 'selector'
+    puts selector
     if selector.nil? || selector.empty?
       study.default_cluster
     else

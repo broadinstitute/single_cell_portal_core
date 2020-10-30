@@ -535,6 +535,29 @@ class Study
     end
   end
 
+  swagger_schema :Cluster do
+    property :coordinates do
+      key :type, :object
+      key :description, 'Scatter plot data.  Cluster group data array points for the queried annotation and subsampling threshold'
+    end
+    property :axisLabels do
+      key :type, :object
+      key :description, 'Title of x, y, and (if available) z axes of scatter plot'
+    end
+    property :is3D do
+      key :type, :boolean
+      key :description, 'Whether cluster is three-dimensional.  Cluster is 2D if not 3D.'
+    end
+    property :hasCoordinateLabels do
+      key :type, :boolean
+      key :description, 'Whether cluster has a coordinate label file'
+    end
+    property :description do
+      key :type, :string
+      key :description, 'Description of cluster, as entered by uploader'
+    end
+  end
+
   swagger_schema :SearchStudyWithFiles do
     property :name do
       key :type, :string

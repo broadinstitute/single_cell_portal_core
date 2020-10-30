@@ -44,6 +44,7 @@ Rails.application.routes.draw do
         scope :site do
           get 'studies', to: 'site#studies', as: :site_studies
           get 'studies/:accession', to: 'site#view_study', as: :site_study_view
+          get 'studies/:accession/cluster', to: 'site#study_cluster', as: :site_study_cluster
           get 'studies/:accession/download', to: 'site#download_data', as: :site_study_download_data
           get 'studies/:accession/stream', to: 'site#stream_data', as: :site_study_stream_data
           get 'analyses', to: 'site#analyses', as: :site_analyses

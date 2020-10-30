@@ -377,6 +377,8 @@ class SiteController < ApplicationController
   end
 
   # Convert cluster group data array points into JSON plot data for Plotly
+  #
+  # TODO: Consolidate to RequestUtils (then maybe move to new service class)
   def transform_coordinates(coordinates, plot_type, study, cluster_group, selected_annotation)
     plot_data = []
 
