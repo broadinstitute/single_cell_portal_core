@@ -183,11 +183,38 @@ module Api
         annotation = RequestUtils.get_selected_annotation(params, @study, cluster)
 
         subsample = params[:subsample].blank? ? nil : params[:subsample]
-        coordinates = load_cluster_group_data_array_points(annotation, subsample)
+        coordinates = ExpressionRenderingService.load_cluster_group_data_array_points(@study, cluster, annotation, subsample)
 
         plot_data = RequestUtils.transform_coordinates(coordinates, plot_type, @study, cluster, annotation)
 
-        render plain: @cluster.to_json
+        if cluster.is_3d?
+          range = ExpressionRenderingService.set_range(coordinates.values)
+          if cluster.has_range?
+            aspect = ExpressionRenderingService.compute_aspect_ratios(range)
+          end
+        end
+
+        titles = ExpressionRenderingService.load_axis_labels(cluster)
+
+        axes_full = {
+          :titles => titles,
+          :ranges => range,
+          :aspects => aspect
+        }
+
+        coordinate_labels = ExpressionRenderingService.load_cluster_group_coordinate_labels(cluster)
+
+        response = {
+          "data": plot_data,
+          "description": cluster.study_file.description,
+          "is3D": cluster.is_3d?,
+          "domainRanges": cluster.domain_ranges,
+          "axes": axes_full,
+          "hasCoordinateLabels": cluster.has_coordinate_labels?,
+          "coordinateLabels": coordinate_labels
+        }
+
+        render plain: response.to_json
       end
 
       swagger_path '/site/studies/{accession}/download' do

@@ -9,7 +9,7 @@ var plotEvent = window.SCP.startPendingEvent('plot:scatter', window.SCP.getLogPl
 
 const rawPlot = {
   data: <%= raw @plot_data %>,
-  description: "<%= escape_javascript(render plain: @cluster.study_file.description) %>",
+  description: "<%= escape_javascript(render plain: description) %>",
   is3D: <%= @cluster.is_3d? %>,
   domainRanges: <%= raw @cluster.domain_ranges.to_json %>,
   axes: <%= raw @axes_full.to_json %>,

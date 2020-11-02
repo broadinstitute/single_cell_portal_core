@@ -41,7 +41,7 @@ class RequestUtils
       plot_data.push(cluster_props)
     end
 
-    plot_data.to_json
+    plot_data
   end
 
 
