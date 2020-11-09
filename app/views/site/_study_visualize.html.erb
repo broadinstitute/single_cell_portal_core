@@ -29,10 +29,6 @@
                         <div id="toggle-plots"></div>
                       </div>
                     </div>
-                    <div class="row">
-                      <div id="cluster-plot"></div>
-                      <div id="cluster-figure-legend"></div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -66,7 +62,10 @@
     getNewAnnotationsPath:'<%= get_new_annotations_path(accession: @study.accession, study_name: @study.url_safe_name)%>'
   }
 
+  window.SCP.plots = [];
+
   window.SCP.taxons = window.SCP.study.taxons;
 </script>
 
-<%= nonced_javascript_include_tag 'study-overview' %>
+
+<%= nonced_javascript_include_tag 'study_overview/study-overview' %>

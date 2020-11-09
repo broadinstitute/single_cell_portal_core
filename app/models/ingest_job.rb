@@ -251,6 +251,9 @@ class IngestJob
       self.study_file.update(parse_status: 'failed')
       DeleteQueueJob.new(self.study_file).delay.perform
       ApplicationController.firecloud_client.delete_workspace_file(self.study.bucket_id, self.study_file.bucket_location) unless self.persist_on_fail
+      self.study_file.bundled_files.each do |bundled_file|
+        ApplicationController.firecloud_client.delete_workspace_file(self.study.bucket_id, bundled_file.bucket_location) unless self.persist_on_fail
+      end
       subject = "Error: #{self.study_file.file_type} file: '#{self.study_file.upload_file_name}' parse has failed"
       user_email_content = self.generate_error_email_body
       SingleCellMailer.notify_user_parse_fail(self.user.email, subject, user_email_content, self.study).deliver_now
@@ -391,9 +394,20 @@ class IngestJob
   #   - (Boolean) => True/False on success of file copy action
   def create_study_file_copy
     begin
-      ApplicationController.firecloud_client.execute_gcloud_method(:copy_workspace_file, 0, self.study.bucket_id,
-                                                   self.study_file.bucket_location,
-                                                   self.study_file.parse_fail_bucket_location)
+      ApplicationController.firecloud_client.execute_gcloud_method(:copy_workspace_file, 0,
+                                                                   self.study.bucket_id,
+                                                                   self.study_file.bucket_location,
+                                                                   self.study_file.parse_fail_bucket_location)
+      if self.study_file.is_bundled? && self.study_file.is_bundle_parent?
+        self.study_file.bundled_files.each do |file|
+          # put in same directory as parent file for ease of debugging
+          bundled_file_location = "parse_logs/#{self.study_file.id}/#{file.upload_file_name}"
+          ApplicationController.firecloud_client.execute_gcloud_method(:copy_workspace_file, 0,
+                                                                       self.study.bucket_id,
+                                                                       file.bucket_location,
+                                                                       bundled_file_location)
+        end
+      end
       true
     rescue => e
       error_context = ErrorTracker.format_extra_context(self.study_file, {action: :create_study_file_copy})

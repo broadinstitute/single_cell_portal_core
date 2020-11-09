@@ -1,0 +1,35 @@
+{
+  "study": {
+    "name": "Chicken raw counts",
+    "description": "<p>Synthetic chicken raw counts v1. Jean Chang, Eric Weitz, Jon Bistline, Eno-Abasi Augustine-Akpan, Devon Bush, Vicky Horst.  Journal of SCP Synthetic Studies.  Volume 1, p10, October 2020.  Assesing the benefits of raw count data for single cell transcriptomics analysis.</p><p>Expected study gene expression patterns:</p><p>Foo - gradient for 'spatial', top (hi) to bottom (low); gradient for 'cluster', distal (hi) to center (lo)</p><p>Bar - A: 2, B: 3, C: 4, D: 5</p><p>Baz - gradient for 'spatial', roughly bottom (hi) to top (low); gradient for 'cluster', center (hi) to distal (lo)</p><p>Qux: same value (5) for all cells</p><p>Reference screenshots of expected visualizations can be found at: https://github.com/broadinstitute/single_cell_portal_core/pull/772</p>",
+    "data_dir": "test"
+  },
+  "files": [
+    {
+      "type": "Metadata",
+      "filename": "raw2_chicken_40_cells_4_genes.metadata.txt",
+      "use_metadata_convention": false
+    },
+    {
+      "type": "Expression Matrix",
+      "filename": "raw2_chicken_40_cells_4_genes.dense.txt",
+      "species_scientific_name": "Gallus gallus",
+      "expression_file_info": {
+        "is_raw_counts": true,
+        "library_construction_protocol": "Smart-seq2/Fluidigm C1",
+        "units": "raw counts",
+        "biosample_input_type": "single nuclei"
+      }
+    },
+    {
+      "type": "Cluster",
+      "filename": "raw2_chicken_40_cells_4_genes.cluster.txt",
+      "name": "cluster"
+    },
+    {
+      "type": "Cluster",
+      "filename": "raw2_chicken_40_cells_4_genes.spatial.txt",
+      "name": "spatial"
+    }
+  ]
+}

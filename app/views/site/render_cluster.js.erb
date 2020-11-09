@@ -1,11 +1,34 @@
 <%#
-This code renders the "Cluster" tab plot shown by default on Study Overview
+This file will be mostly removed by SCP-2857, likely leaving only `rawPlot` and
+code to add response to current plot data.
 %>
 
+// TODO (SCP-2857): Probably put this in the Ajax succeed / complete (or better,
+// `await fetch` equivalent).
 var plotEvent = window.SCP.startPendingEvent('plot:scatter', window.SCP.getLogPlotProps());
 
-// check render status
-console.log('render status at start: ' + $('#cluster-plot').data('rendered'));
+const rawPlot = {
+  data: <%= raw @plot_data %>,
+  description: "<%= escape_javascript(render plain: @cluster.study_file.description) %>",
+  is3D: <%= @cluster.is_3d? %>,
+  domainRanges: <%= raw @cluster.domain_ranges.to_json %>,
+  axes: <%= raw @axes_full.to_json %>,
+  hasCoordinateLabels: <%= @cluster.has_coordinate_labels? %>,
+  coordinateLabels: <%= raw @coordinate_labels.to_json %>
+}
+
+window.SCP.cluster = rawPlot;
+
+// Consider putting into a dictionary instead of a list
+window.SCP.plots.push(rawPlot);
+
+// TODO (SCP-2857): Remove hard-coding when UI for selecting n-many cluster + spatial
+// plots is something we can develop against.
+numPlots = 2
+
+// Incremented upon drawing scatter plot; enables unique plot IDs
+window.SCP.scatterCount = 0;
+
 // render colorscale picker if needed
 if (<%= @selected_annotation[:type] == 'numeric' %>) {
     $('#toggle-plots').html("");
@@ -14,7 +37,13 @@ if (<%= @selected_annotation[:type] == 'numeric' %>) {
     $('#toggle-traces').tooltip({container: 'body', placement: 'left', trigger: 'hover'});
 }
 
-<%= render partial: 'study_scatter_plot' %>
+const target = '#plots .panel-body'
+const rect = calculatePlotRect(numPlots)
+
+// Duplicate calls are merely for proof-of-concept, showing we can
+// render plots side-by-side
+renderScatterPlot(target, rawPlot, rect, plotlyLabelFont)
+renderScatterPlot(target, rawPlot, rect, plotlyLabelFont)
 
 // set CLUSTER_TYPE to control annotations behavior
 CLUSTER_TYPE = '<%= @cluster.cluster_type %>'
@@ -24,12 +53,13 @@ $('#search_cluster').val("<%= params[:cluster] %>");
 
 // resize listener
 $(window).on('resizeEnd', function() {
-    var newHeight = calculatePlotViewport('#render-target');
-    if (layout.height === newHeight) {
-        Plotly.newPlot('cluster-plot', data, layout);
+    const layout = window.SCP.scatterPlotLayout;
+    var {height} = calculatePlotViewport(numPlots);
+    if (layout.height === height) {
+        Plotly.newPlot('cluster-plot-' + window.SCP.scatterCount, data, layout);
     } else {
-        layout.height = newHeight;
-        Plotly.relayout('cluster-plot', layout);
+        layout.height = height;
+        Plotly.relayout('cluster-plot-' + window.SCP.scatterCount, layout);
     }
 });
 
@@ -44,7 +74,7 @@ $('body').on('click', '#study-visualize-nav > a', function() {
 
 // attach click event for toggle switch
 $('#toggle-traces').click(function() {
-    togglePlotlyTraces('cluster-plot');
+    togglePlotlyTraces('cluster-plot-' + window.SCP.scatterCount);
 });
 
 // attach click event for toggle violin
@@ -53,16 +83,14 @@ $('#toggle-violin').click(function() {
 });
 
 // stop spinner
-$('#cluster-plot').data('spinner').stop();
+$('#cluster-plot-' + window.SCP.scatterCount).data('spinner').stop();
 
 // monitor rendering status for tests
-$('#cluster-plot').data('rendered', true);
+$('#cluster-plot-' + window.SCP.scatterCount).data('rendered', true);
 
 enableDefaultActions();
 closeUserAnnotationsForm();
 
-// check render status
-console.log('render status at end: ' + $('#cluster-plot').data('rendered'));
 var requestUrl = '<%= javascript_safe_url(request.fullpath) %>';
 gaTrack(requestUrl, 'Single Cell Portal');
 

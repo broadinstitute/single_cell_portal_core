@@ -244,16 +244,17 @@ function renderMorpheusDotPlot(
 }
 
 /** High-level function called from _expression_plots_view.html.erb */
-function drawDotplot(height) { // eslint-disable-line no-unused-vars
+function drawDotplot(dataPath,
+                     requestToken,
+                     annotPathBase,
+                     annotValuesPath) {
   $(window).off('resizeEnd')
 
   // Clear out previous stored dotplot object
   $('#dot-plot').data('dotplot', null)
 
-  // If height isn't specified, pull from stored value, defaults to 500
-  if (height === undefined) {
-    height = $('#dot-plot').data('height')
-  }
+  // pull from stored value, defaults to 500
+  const height = $('#dot-plot').data('height')
 
   // Pull fit type as well, defaults to ''
   const fit = $('#dot-plot').data('fit')
@@ -267,17 +268,13 @@ function drawDotplot(height) { // eslint-disable-line no-unused-vars
   $('#search_annotation').val('') // clear value first
   $('#search_annotation').val(selectedAnnot)
 
-  const newAnnotPath = `
-    ${dotPlotAnnotPathBase}
-    ?cluster=${cluster}&
-    annotation=${selectedAnnot}&
-    request_user_token=${requestToken}`
+  const newAnnotPath = `${annotPathBase}?cluster=${cluster}&annotation=${selectedAnnot}&request_user_token=${requestToken}`
 
   const renderUrlParams = getRenderUrlParams()
   // Get annotation values to set color values in Morpheus and
   // draw dotplot in callback
   $.ajax({
-    url: `${dotPlotAnnotValuesPath}?${renderUrlParams}`,
+    url: `${annotValuesPath}?${renderUrlParams}`,
     dataType: 'JSON',
     success(annotations) {
       renderMorpheusDotPlot(
