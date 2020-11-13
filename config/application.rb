@@ -32,7 +32,7 @@ module SingleCellPortal
     config.middleware.use Rack::Deflater
 
     # Docker image for file parsing via scp-ingest-pipeline
-    config.ingest_docker_image = 'gcr.io/broad-singlecellportal-staging/scp-ingest-pipeline:1.7.0'
+    config.ingest_docker_image = 'gcr.io/broad-singlecellportal-staging/scp-ingest-pipeline:1.8.2'
 
     # Settings in config/environments/* take precedence over those specified here.
     # Application configuration can go into files in config/initializers
