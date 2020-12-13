@@ -27,7 +27,7 @@ class ExpressionFileInfo
     'Epigenomic: DNA methylation',
     'Proteomic'
   ]
-  validates :modality, inclusion: {in: MODALITY_VALUES}
+  validates :modality, inclusion: {in: MODALITY_VALUES}, allow_blank: true
 
   LIBRARY_PREPARATION_VALUES = ['10x 3\' v1',
                                 '10x 3\' v2',
