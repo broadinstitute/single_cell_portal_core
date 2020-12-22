@@ -1,15 +1,22 @@
 require "integration_test_helper"
+require "test_helper"
 
 class SearchFacetPopulatorTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
+  include Minitest::Hooks
+  include TestInstrumentor
 
-  teardown do
-    # repopulate organism_age facet
-    facet = SearchFacet.create!(name: 'Organism Age', identifier: 'organism_age', big_query_id_column: 'organism_age', big_query_name_column: 'organism_age',
-                        big_query_conversion_column: 'organism_age__seconds', is_ontology_based: false, data_type: 'number',
-                        is_array_based: false, convention_name: 'Alexandria Metadata Convention', convention_version: '2.2.0',
-                        unit: 'years')
-    facet.update_filter_values!
+  # as this test suite tests facet population -- save any existing facets so they can
+  # be restored afterwards
+  before(:all) do
+    @@existing_facets = SearchFacet.all.to_a.map{|f| f.attributes.except('_ddid')}
+  end
+
+  after(:all) do
+    SearchFacet.destroy_all
+    @@existing_facets.each do |facet_params|
+      facet = SearchFacet.create!(facet_params)
+    end
   end
 
   test 'populate facets from alexandria convention data' do
