@@ -155,7 +155,7 @@ function createRelatedGenesIdeogram(taxon) { // eslint-disable-line
     chrHeight: 100,
     chrLabelSize: 12,
     annotationHeight: 7,
-    showAnnotLabels: false,
+    showAnnotLabels: true,
     onClickAnnot,
     onPlotRelatedGenes,
     onWillShowAnnotTooltip,
