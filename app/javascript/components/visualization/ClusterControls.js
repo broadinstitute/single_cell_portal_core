@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import _uniq from 'lodash/uniq'
+import _find from 'lodash/find'
 import Select from 'react-select'
 
 import { fetchClusterOptions } from 'lib/scp-api'
+
+const collapseOptions = [
+  {label: 'None', value: null},
+  {label: 'Mean', value: 'mean'},
+  {label: 'Median', value: 'median'}
+]
 
 /** takes the server response and returns subsample options suitable for react-select */
 function getSubsampleOptions(annotationList, clusterName) {
@@ -59,7 +66,13 @@ function getDefaultSubsampleForCluster(annotationList, clusterName) {
 }
 
 /** renders cluster, annotation, and (optionally) subsample controls for a study */
-export default function ClusterControls({studyAccession, onChange, showSubsample, preloadedAnnotationList, fetchAnnotationList=true}) {
+export default function ClusterControls({studyAccession,
+                                         onChange,
+                                         showSubsample,
+                                         preloadedAnnotationList,
+                                         fetchAnnotationList=true,
+                                         setCollapseBy,
+                                         collapseBy}) {
   const [annotationList, setAnnotationList] =
     useState({ default_cluster: null, default_annotation: null, annotations: [] })
   const [renderParams, setRenderParams] = useState({
@@ -141,7 +154,7 @@ export default function ClusterControls({studyAccession, onChange, showSubsample
           styles={ customSelectStyle }/>
       </div>
       <div className="form-group">
-        <label>Subsampling threshold</label>
+        <label>Subsampling</label>
         <Select options={subsampleOptions}
           value={{ label: renderParams.subsample == '' ? 'All Cells' : renderParams.subsample,
                    value: renderParams.subsample }}
@@ -153,6 +166,15 @@ export default function ClusterControls({studyAccession, onChange, showSubsample
           })}
           styles={customSelectStyle}/>
       </div>
+      { setCollapseBy &&
+        <div className="form-group">
+          <label>Collapse by</label>
+          <Select options={collapseOptions}
+            value={_find(collapseOptions, {value: collapseBy})}
+            onChange={ option => setCollapseBy(option.value) }
+            styles={customSelectStyle}/>
+        </div>
+      }
     </div>
   )
 }

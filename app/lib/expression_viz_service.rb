@@ -1,19 +1,25 @@
 class ExpressionVizService
-  def self.get_global_expression_render_data(study,
-                                             subsample,
-                                             gene,
-                                             cluster,
-                                             selected_annotation,
-                                             boxpoints,
-                                             current_user)
+  def self.get_global_expression_render_data(study:,
+                                             subsample:,
+                                             genes:,
+                                             cluster:,
+                                             selected_annotation:,
+                                             boxpoints:,
+                                             consensus:,
+                                             current_user:)
     render_data = {}
-
+    byebug
     render_data[:y_axis_title] = load_expression_axis_title(study)
     if selected_annotation[:type] == 'group'
-      render_data[:values] = load_expression_boxplot_data_array_scores(study, gene, cluster, selected_annotation, subsample)
+      if genes.count == 1
+        render_data[:values] = load_expression_boxplot_data_array_scores(study, genes[0], cluster, selected_annotation, subsample)
+      else
+        render_data[:values] = load_gene_set_expression_boxplot_scores(study, genes, cluster, selected_annotation, consensus, subsample)
+      end
+
       render_data[:values_jitter] = boxpoints
     else
-      render_data[:values] = load_annotation_based_data_array_scatter(study, gene, cluster, selected_annotation, subsample, render_data[:y_axis_title])
+      render_data[:values] = load_annotation_based_data_array_scatter(study, genes, cluster, selected_annotation, subsample, render_data[:y_axis_title])
     end
     render_data[:annotation_list] = AnnotationVizService.get_study_annotation_options(study, current_user)
     render_data[:rendered_cluster] = cluster.name

@@ -85,8 +85,15 @@ class ExpressionVizServiceTest < ActiveSupport::TestCase
     annot_name, annot_type, annot_scope = default_annot.split('--')
     annotation = AnnotationVizService.get_selected_annotation(@basic_study, cluster, annot_name, annot_type, annot_scope)
     gene = @basic_study.genes.by_name_or_id('PTEN', @basic_study.expression_matrix_files.pluck(:id))
-    rendered_data = ExpressionVizService.get_global_expression_render_data(@basic_study, nil, gene, cluster,
-                                                                           annotation, 'All', @user)
+    rendered_data = ExpressionVizService.get_global_expression_render_data(
+      study: @basic_study,
+      subsample: nil,
+      genes: [gene],
+      cluster: cluster,
+      selected_annotation: annotation,
+      boxpoints: 'All',
+      current_user: @user
+    )
     expected_values = %w(dog cat)
     assert_equal expected_values, rendered_data[:values].keys
     expected_annotations = %w(Category disease Intensity species).sort

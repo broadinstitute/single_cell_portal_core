@@ -8,7 +8,7 @@ import { getAnnotationCellValuesURL, getExpressionHeatmapURL } from 'lib/scp-api
 import { withErrorBoundary } from 'lib/ErrorBoundary'
 
 /** Renders a dotplot and associated cluster/annotation selection controls */
-function StudyGeneDotPlot({ study, genes }) {
+function StudyGeneDotPlot({ study, genes, setCollapseBy, collapseBy }) {
   const [clusterParams, setClusterParams] = useState()
 
   /** fetch the expression data from the server */
@@ -33,7 +33,7 @@ function StudyGeneDotPlot({ study, genes }) {
         { !clusterParams && <FontAwesomeIcon icon={faDna} className="gene-load-spinner"/> }
       </div>
       <div className="col-md-2 graph-controls">
-        <ClusterControls studyAccession={study.accession} onChange={updateAnnotation}/>
+        <ClusterControls studyAccession={study.accession} onChange={updateAnnotation} collapseBy={collapseBy} setCollapseBy={setCollapseBy}/>
       </div>
     </div>
   )

@@ -208,32 +208,39 @@ export async function fetchCluster(
  * See definition: app/controllers/api/v1/visualization/expression_controller.rb
  *
  * @param {String} studyAccession Study accession
- * @param {String} gene Gene name
+ * @param {String} genes Gene name or array of gene names
  * @param {String} clusterName Name of cluster
  * @param {String} annotationName Name of annotation
  * @param {String} annotationType Type of annotation ("group" or "numeric")
  * @param {String} annotationName Scope of annotation ("study" or "cluster")
  * @param {String} subsample Subsampling threshold
+ * @param {String} consensus method for multi-gene renders ('mean' or 'median')
  * @param {Boolean} mock If using mock data.  Helps development, tests.
  *
  */
 export async function fetchExpressionViolin(
   studyAccession,
-  gene,
+  genes,
   clusterName,
   annotationName,
   annotationType,
   annotationScope,
   subsample,
+  consensus,
   mock=false
 ) {
+  let geneString = genes
+  if (Array.isArray(genes)) {
+    geneString = genes.join(',')
+  }
   const paramObj = {
     cluster: clusterName,
     annotation_name: annotationName,
     annotation_type: annotationType,
     annotation_scope: annotationScope,
     subsample,
-    gene
+    consensus,
+    genes: geneString
   }
   const apiUrl = `/studies/${studyAccession}/expression/violin${stringifyQuery(paramObj)}`
   // don't camelcase the keys since those can be cluster names,

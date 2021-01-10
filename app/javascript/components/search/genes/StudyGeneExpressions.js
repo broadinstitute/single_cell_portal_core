@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 import Study, { getByline } from 'components/search/results/Study'
 import StudyGeneDotPlot from 'components/visualization/StudyGeneDotPlot'
@@ -9,6 +9,7 @@ import StudyViolinPlot from 'components/visualization/StudyViolinPlot'
     to inform which genes to show data for
   */
 export default function StudyGeneExpressions({ study }) {
+  const [collapseBy, setCollapseBy] = useState(null)
   let studyRenderComponent
   if (!study.gene_matches) {
     return <Study study={study}/>
@@ -20,14 +21,12 @@ export default function StudyGeneExpressions({ study }) {
           This study does not have cluster data to support visualization in the portal
       </div>
     )
-  } else if (study.gene_matches.length > 1) {
-    studyRenderComponent = <StudyGeneDotPlot study={study} genes={study.gene_matches}/>
-    // for now, this renders a bunch of violins, we should soon ugrade to dot plots
-    // studyRenderComponent = study.gene_matches.map(gene => {
-    //   return <StudyViolinPlot key={gene} study={study} gene={gene}/>
-    // })
+  } else if (study.gene_matches.length > 1 && !collapseBy) {
+    // render dotPlot for multigene searches that are not collapsed
+    studyRenderComponent = <StudyGeneDotPlot study={study} genes={study.gene_matches} collapseBy={collapseBy} setCollapseBy={setCollapseBy}/>
   } else {
-    studyRenderComponent = <StudyViolinPlot study={study} gene={study.gene_matches[0]}/>
+    // render violin for single genes or collapsed
+    studyRenderComponent = <StudyViolinPlot study={study} genes={study.gene_matches} collapseBy={collapseBy} setCollapseBy={setCollapseBy}/>
   }
   return (
     <div className="study-gene-result">
