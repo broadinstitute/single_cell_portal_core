@@ -16,8 +16,8 @@ module Api
         before_action :set_current_api_user!
         before_action :set_study
         before_action :check_study_view_permission
-        # before_action :check_api_cache!
-        # after_action :write_api_cache!
+        before_action :check_api_cache!
+        after_action :write_api_cache!
 
         swagger_path '/studies/{accession}/clusters' do
           operation :get do
@@ -81,6 +81,12 @@ module Api
               key :description, 'Whether plot is an "Annotated Scatter", i.e. an annotation-based data array scatter plot.'
               key :type, :string
             end
+            parameter do
+              key :name, :subsample
+              key :in, :query
+              key :description, 'Subsampling threshold'
+              key :type, :integer
+            end
             response 200 do
               key :description, 'Scatter plot visualization of cluster, suitable for rendering in Plotly'
             end
@@ -104,7 +110,7 @@ module Api
           end
           viz_data = nil
           if User.feature_flag_for_instance(current_api_user, 'mock_viz_retrieval')
-            render plain: self.class.get_fixed_size_response(params[:subsample].to_i, current_api_user) and return
+            render json: {media_url: self.class.get_fixed_size_response(cluster, params, current_api_user)} and return
           else
             viz_data = self.class.get_cluster_viz_data(@study, cluster, params)
           end
@@ -204,14 +210,16 @@ module Api
 
         # returns a string that can be immmediately passed to the front end for cluster visualization
         # the only parameter is the number of cells in the response
-        # this method either randomly generates the data, or pulls the data from a postgres instance
+        # this method either randomly generates the data, or redirects to a pre-rendered, compressed JSON response
         # depending on the feature flag
-        def self.get_fixed_size_response(num_cells, user)
-          use_postgres = true
-          if User.feature_flag_for_instance(user, 'postgres_viz_backend')
-            conn = PostgresConnection.get
-            result = conn.exec("select json_data from cluster_data where cluster_name = 'cluster#{num_cells}';")
-            return result.first['json_data']
+        def self.get_fixed_size_response(cluster, params, user)
+          num_cells = params[:subsample].to_i
+          if User.feature_flag_for_instance(user, 'prerendered_json')
+            study = cluster.study
+            bucket_id = study.bucket_id
+            filename = num_cells > 0 ? cluster.name + ".#{num_cells}.response.json" : cluster.name + ".response.json"
+            cluster_remote_file = ApplicationController.firecloud_client.get_workspace_file(bucket_id, filename)
+            return cluster_remote_file.media_url
           else
             num_annots = 10
             fake_annotations = num_annots.times.map { |n| "ant#{n}" }

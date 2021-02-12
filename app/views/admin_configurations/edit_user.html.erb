@@ -40,7 +40,7 @@
           <label><%= key %>:</label>
         </div>
         <div class="col-md-2">
-          <select name="feature_flag_<%= key %>">
+          <select name="feature_flag_<%= key %>" class="form-control">
             <option value="0" <%= @user.feature_flags[key] == false ? 'selected' : '' %>>False</option>
             <option value="1" <%= @user.feature_flags[key] == true ? 'selected' : '' %>>True</option>
             <option value="-" <%= @user.feature_flags.key?(key) ? '' : 'selected' %>>Default (<%= @default_flag.default_value %>)</option>

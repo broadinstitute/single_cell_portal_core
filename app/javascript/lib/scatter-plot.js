@@ -271,9 +271,18 @@ export async function scatterPlot(apiParams, props) {
   $('#search_annotation').val(annotation)
   $('#gene_set_annotation').val(annotation)
 
-  const fetchedData = await fetchCluster(
+  let fetchedData = await fetchCluster(
     accession, cluster, annotation, subsample, null, gene, isAnnotatedScatter
   )
+
+  if ( fetchedData.media_url ) {
+    const mediaUrl = fetchedData.media_url
+    const mediaHeaders = {
+      'Authorization': 'Bearer ' + window.SCP.userAccessToken
+    }
+    fetchedData = await fetch(mediaUrl, { headers: mediaHeaders }).then(response => response.json())
+  }
+
   const rawPlot = Object.assign(fetchedData, props)
 
   // Consider putting into a dictionary instead of a list
