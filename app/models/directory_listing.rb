@@ -12,7 +12,7 @@ class DirectoryListing
   include Swagger::Blocks
   include Rails.application.routes.url_helpers # for accessing download_file_path and download_private_file_path
 
-  PRIMARY_DATA_TYPES = %w(fq fastq bam).freeze
+  PRIMARY_DATA_TYPES = %w(fq fastq).freeze
   READ_PAIR_IDENTIFIERS = %w(_R1 _R2 _I1 _I2).freeze
   FILE_ARRAY_ATTRIBUTES = {
       name: 'String',
@@ -20,15 +20,9 @@ class DirectoryListing
       generation: 'String'
   }
   REQUIRED_ATTRIBUTES = %w(study_id name file_type files)
-  TAXON_REQUIRED_REGEX = /(fastq|fq|bam)/
+  TAXON_REQUIRED_REGEX = /(fastq|fq)/
   IGNORED_EXTENTIONS = %w(txt) # other file extentions to ignore
   MIN_SIZE = 10 # threshold of like file types required for creating DirectoryListing
-
-  # map of file extensions to their index extension names e.g. .bam => .bai
-  #
-  SEQ_IDX_EXT_BY_TYPE = {
-    bam: 'bai'
-  }
 
   belongs_to :study
   belongs_to :taxon, optional: true
