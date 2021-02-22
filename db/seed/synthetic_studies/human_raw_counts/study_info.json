@@ -12,13 +12,14 @@
     },
     {
       "type": "Expression Matrix",
-      "filename": "raw1_human_5k_cells_80_genes.dense.txt",
+      "filename": "raw1_human_5k_cells_80_genes.raw_dense.txt",
       "species_scientific_name": "Homo sapiens",
       "expression_file_info": {
         "is_raw_counts": true,
         "library_preparation_protocol": "10x 3' v2",
         "units": "UMI-corrected raw counts",
-        "biosample_input_type": "Whole cell"
+        "biosample_input_type": "Whole cell",
+        "modality": "Transcriptomic: unbiased"
       }
     },
     {
