@@ -16,7 +16,7 @@ const helpModalContent = (<div>
   Single Cell Portal supports searching studies by ontology classifications. For example, you can search on studies that
   have <b>species</b> of <b>&quot;Homo sapiens&quot;</b> or have an <b>organ</b> of <b>&quot;brain&quot;</b>.
   <br/><br/>
-    Currently, about <b>70 out of ~300</b> public studies in SCP provide this metadata information.
+    Currently, about 30% of public studies in SCP provide this metadata information.
   <br/><br/>
   For more detailed information, visit
   our <a href="https://github.com/broadinstitute/single_cell_portal/wiki/Search-Studies" target="_blank" rel="noreferrer">wiki</a>.
@@ -74,7 +74,7 @@ export default function SearchPanel({
           { helpModalContent }
         </Modal.Body>
         <Modal.Footer>
-          <button className="btn btn-md btn-primary" onClick={closeSearchModal}>Ok</button>
+          <button className="btn btn-md btn-primary" onClick={closeSearchModal}>OK</button>
         </Modal.Footer>
       </Modal>
     </div>
