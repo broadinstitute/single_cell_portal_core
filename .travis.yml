@@ -9,6 +9,7 @@ branches:
   only:
     - master
     - development
+    - db-optimized-cluster-endpoint
 services:
   - docker
 before_install:
