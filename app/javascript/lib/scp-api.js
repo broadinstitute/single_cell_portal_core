@@ -264,10 +264,10 @@ export async function fetchClusterOptions(studyAccession, mock=false) {
  * https://localhost:3000/single_cell/api/v1/studies/SCP56/clusters/
      Coordinates_Major_cell_types.txt?annotation_name=CLUSTER&annotation_type=group&annotation_scope=study
  */
-export async function fetchCluster(
+export async function fetchCluster({
   studyAccession, cluster, annotation, subsample, consensus, gene=null,
-  isAnnotatedScatter=null, mock=false
-) {
+  isAnnotatedScatter=null, includes, mock=false
+}) {
   // Digest full annotation name to enable easy validation in API
   let [annotName, annotType, annotScope] = [annotation.name, annotation.type, annotation.scope]
   if (annotName == undefined) {
@@ -285,9 +285,9 @@ export async function fetchCluster(
     subsample,
     consensus,
     gene,
+    includes,
     is_annotated_scatter
   }
-
   const params = stringifyQuery(paramObj)
   if (!cluster || cluster === '') {
     cluster = '_default'

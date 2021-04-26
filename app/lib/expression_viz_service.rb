@@ -172,24 +172,25 @@ class ExpressionVizService
       x_array = cluster.concatenate_data_arrays('x', 'coordinates', subsample_threshold, subsample_annotation)
       y_array = cluster.concatenate_data_arrays('y', 'coordinates', subsample_threshold, subsample_annotation)
       z_array = cluster.concatenate_data_arrays('z', 'coordinates', subsample_threshold, subsample_annotation)
-      cells = cluster.concatenate_data_arrays('text', 'cells', subsample_threshold, subsample_annotation)
     end
+    cells = cluster.concatenate_data_arrays('text', 'cells', subsample_threshold, subsample_annotation)
     annotation_array = []
     if !expression_only
-      annotation_array = ClusterVizService.get_annotation_values_array(cluster, annotation, cells, subsample_threshold, subsample_annotation)
+      annotation_array = ClusterVizService.get_annotation_values_array(study, cluster, annotation, cells, subsample_threshold, subsample_annotation)
     end
 
     viz_data = {
-      annotations: annotation_array,
-      cells: cells,
+      annotations: annotation_array
     }
     if !expression_only
+      viz_data[:cells] = cells
       viz_data[:x] = x_array
       viz_data[:y] = y_array
       if cluster.is_3d?
         viz_data[:z] = z_array
       end
     end
+
     viz_data[:expression] = cells.map { |cell| gene['scores'][cell].to_f.round(4) }
     emin, emax = RequestUtils.get_minmax(viz_data[:expression])
     viz_data[:expressionRange] = {min: emin, max: emax}

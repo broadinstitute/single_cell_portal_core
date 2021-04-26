@@ -148,8 +148,13 @@ module Api
 
           subsample = get_selected_subsample_threshold(url_params[:subsample], cluster)
           consensus = url_params[:consensus].blank? ? nil : url_params[:consensus]
-          include_vals = url_params[:include].blank? ? ['coordinates', 'annotations'] : url_params[:include]
-          include_coordinates = include_vals.include?('coordinates')
+
+          default_data_includes = ['coordinates', 'expression', 'annotation', 'cells']
+          data_includes = url_params[:includes].blank? ? default_data_includes : url_params[:includes].split(',')
+          include_coordinates = data_includes.include?('coordinates')
+          include_expression = data_includes.include?('expression')
+          include_annotation = data_includes.include?('annotation')
+          include_cells = data_includes.include?('cells')
 
           colorscale = url_params[:colorscale]
           if colorscale.blank?
@@ -167,7 +172,7 @@ module Api
 
           if url_params[:gene].blank?
             # For "Clusters" tab in default view of Explore tab
-            plot_data = ClusterVizService.load_cluster_group_data_array_points(study, cluster, annotation, subsample, include_coordinates)
+            plot_data = ClusterVizService.load_cluster_group_data_array_points(study, cluster, annotation, subsample, include_coordinates, include_cells)
             if cluster.is_3d? && include_coordinates
               range = ClusterVizService.get_range(cluster, plot_data)
             end
@@ -198,7 +203,7 @@ module Api
               if is_collapsed_view
                 plot_data = ExpressionVizService.load_gene_set_expression_data_arrays(study, genes, cluster, annotation, consensus, subsample, y_axis_title, colorscale)
               else
-                plot_data = ExpressionVizService.load_expression_data_array_points(study, genes[0], cluster, annotation, subsample)
+                plot_data = ExpressionVizService.load_expression_data_array_points(study, genes[0], cluster, annotation, subsample, !include_coordinates)
               end
             end
           end

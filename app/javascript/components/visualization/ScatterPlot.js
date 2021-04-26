@@ -35,14 +35,14 @@ export const defaultScatterColor = 'Reds'
   */
 function RawScatterPlot({
   studyAccession, cluster, annotation, subsample, consensus, genes, scatterColor, dimensions,
-  isAnnotatedScatter=false, isCellSelecting=false, plotPointsSelected
+  isAnnotatedScatter=false, isCellSelecting=false, plotPointsSelected, dataCache
 }) {
   const [isLoading, setIsLoading] = useState(false)
   const [clusterData, setClusterData] = useState(null)
   const [graphElementId] = useState(_uniqueId('study-scatter-'))
   const { ErrorComponent, setShowError, setErrorContent } = useErrorMessage()
   /** Process scatter plot data fetched from server */
-  function handleResponse(clusterResponse) {
+  function handleResponse(clusterResponse, includes, cachedData) {
     const [scatter, perfTime] = clusterResponse
 
     const apiOk = checkScpApiResponse(scatter,
@@ -52,6 +52,20 @@ function RawScatterPlot({
 
     if (apiOk) {
       // Get Plotly layout
+      if (cachedData) {
+        const mergeKeys = ['x', 'y', 'z', 'cells']
+        if (includes != 'annotation') {
+          mergeKeys.push('annotations')
+        }
+        // merge the coordinate and cell data into the scatter
+        mergeKeys.forEach(key => {
+          scatter.data[key] = cachedData[key]
+        })
+      } else {
+        if (!dataCache.hasScatterData(studyAccession, cluster) && !includes) {
+          dataCache.addScatterData(studyAccession, cluster, scatter.data)
+        }
+      }
       const layout = getPlotlyLayout(dimensions, scatter)
       const plotlyTraces = getPlotlyTraces({
         axes: scatter.axes,
@@ -92,7 +106,8 @@ function RawScatterPlot({
         'numAnnotSelections': scatter.annotParams.values.length,
         'annotName': scatter.annotParams.name,
         'annotType': scatter.annotParams.type,
-        'annotScope': scatter.annotParams.scope
+        'annotScope': scatter.annotParams.scope,
+        includes
       }
 
       log('plot:scatter', perfLogProps)
@@ -106,13 +121,29 @@ function RawScatterPlot({
   // Fetches plot data then draws it, upon load or change of any data parameter
   useEffect(() => {
     setIsLoading(true)
-    fetchCluster(studyAccession,
+    let cachedData = null
+    const coordinatesInCache = dataCache.hasScatterData(studyAccession, cluster)
+    let includes = null
+    if (coordinatesInCache) {
+      if (genes.length) {
+        includes = 'expression'
+      } else {
+        includes = 'annotation'
+      }
+      cachedData = dataCache.getScatterData(studyAccession, cluster)
+    }
+    fetchCluster({
+      studyAccession,
       cluster,
-      annotation ? annotation : '',
+      annotation: annotation ? annotation : '',
       subsample,
       consensus,
-      genes,
-      isAnnotatedScatter).then(handleResponse)
+      gene: genes,
+      includes,
+      isAnnotatedScatter
+    }).then(response => {
+      handleResponse(response, includes, cachedData)
+    })
   }, [cluster, annotation.name, subsample, consensus, genes.join(','), isAnnotatedScatter])
 
   // Handles Plotly `data` updates, e.g. changes in color profile

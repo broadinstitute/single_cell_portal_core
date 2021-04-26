@@ -209,7 +209,7 @@ class ClusterVizService
   # generic method to populate data structure to render a cluster scatter plot
   # uses cluster_group model and loads annotation for both group & numeric plots
   # data values are pulled from associated data_array entries for each axis and annotation/text value
-  def self.load_cluster_group_data_array_points(study, cluster, annotation, subsample_threshold=nil, include_coords=true)
+  def self.load_cluster_group_data_array_points(study, cluster, annotation, subsample_threshold=nil, include_coords=true, include_cells=true)
     # construct annotation key to load subsample data_arrays if needed, will be identical to params[:annotation]
     subsample_annotation = "#{annotation[:name]}--#{annotation[:type]}--#{annotation[:scope]}"
 
@@ -234,16 +234,18 @@ class ClusterVizService
         y_array = cluster.concatenate_data_arrays('y', 'coordinates', subsample_threshold, subsample_annotation)
         z_array = cluster.concatenate_data_arrays('z', 'coordinates', subsample_threshold, subsample_annotation)
       end
-      cells = cluster.concatenate_data_arrays('text', 'cells', subsample_threshold, subsample_annotation)
+      if include_cells || annotation[:scope] == 'study'
+        # for study annotations, we have to grab the cluster cells to match with the study-wide annotation
+        cells = cluster.concatenate_data_arrays('text', 'cells', subsample_threshold, subsample_annotation)
+      end
     end
 
-    annotation_array = get_annotation_values_array(cluster, annotation, cells, subsample_annotation, subsample_threshold)
+    annotation_array = get_annotation_values_array(study, cluster, annotation, cells, subsample_annotation, subsample_threshold)
 
-    viz_data = {
-      annotations: annotation_array,
-      cells: cells,
-    }
-
+    viz_data = { annotations: annotation_array }
+    if include_cells
+      viz_data[:cells] = cells
+    end
     if include_coords
       viz_data[:x] = x_array
       viz_data[:y] = y_array
@@ -264,7 +266,7 @@ class ClusterVizService
   end
 
   # returns an array of the values for the given annotation, sorted by the cells of the given cells array
-  def self.get_annotation_values_array(cluster, annotation, cells, subsample_annotation, subsample_threshold)
+  def self.get_annotation_values_array(study, cluster, annotation, cells, subsample_annotation, subsample_threshold)
     annotation_array = []
     # Construct the arrays based on scope
     if annotation[:scope] == 'cluster'
