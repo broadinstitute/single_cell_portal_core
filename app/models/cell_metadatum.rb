@@ -43,7 +43,7 @@ class CellMetadatum
 
   # concatenate all the necessary data_array objects and construct a hash of cell names => expression values
   def cell_annotations
-    cells = self.all_study_cells
+    cells = self.study.all_cells_array
     # replace blank/nil values with default missing label
     annot_values = AnnotationVizService.sanitize_values_array(
       self.concatenate_data_arrays(self.name, 'annotations'), self.annotation_type
@@ -51,18 +51,11 @@ class CellMetadatum
     Hash[cells.zip(annot_values)]
   end
 
-  def all_study_cells
-    query = {name: 'All Cells', array_type: 'cells', linear_data_type: 'Study', linear_data_id: self.study_id,
-             cluster_name: self.study_file.upload_file_name, study_id: self.study_id, study_file_id: self.study_file_id,
-             cluster_group_id: nil, subsample_annotation: nil, subsample_threshold: nil}
-    DataArray.where(query).order(:array_index => 'asc').pluck(:values).reduce([], :+)
-  end
-
   def concatenate_data_arrays(array_name, array_type)
     query = {name: array_name, array_type: array_type, linear_data_type: 'CellMetadatum', linear_data_id: self.id,
              study_id: self.study_id, study_file_id: self.study_file_id, cluster_group_id: nil,
              cluster_name: self.study_file.upload_file_name, subsample_threshold: nil, subsample_annotation: nil}
-    DataArray.where(query).order(:array_index => 'asc').pluck(:values).reduce([], :+)
+    DataArray.where(query).order(:array_index => 'asc').pluck(:values).reduce(&:+)
   end
 
   # create dropdown menu value for annotation select
