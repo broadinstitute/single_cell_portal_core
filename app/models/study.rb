@@ -1250,11 +1250,11 @@ class Study
   # return an array of all single cell names in study, will check for master list of cells or concatenate all
   # cell lists from individual expression matrices
   def all_cells_array
-    if self.metadata_file.present? && self.metadata_file.parsed?
+    if study.metadata_file&.parsed? # nil-safed via &
       query = {name: 'All Cells', array_type: 'cells', linear_data_type: 'Study', linear_data_id: self.id,
                cluster_name: self.metadata_file.upload_file_name, study_id: self.id, study_file_id: self.metadata_file.id,
                cluster_group_id: nil, subsample_annotation: nil, subsample_threshold: nil}
-      DataArray.where(query).order(:array_index => 'asc').pluck(:values).reduce(&:+)
+      DataArray.where(query).order(:array_index => 'asc').pluck(:values).reduce([], :+)
     else
       self.all_expression_matrix_cells
     end
@@ -1276,7 +1276,7 @@ class Study
                              linear_data_id: self.id, study_file_id: study_file.id, cluster_group_id: nil,
                              cluster_name: study_file.upload_file_name, subsample_annotation: nil,
                              subsample_threshold: nil).order(:array_index => 'asc')
-    arrays.pluck(:values).reduce(&:+)
+    arrays.pluck(:values).reduce([], :+)
   end
 
   # return a hash keyed by cell name of the requested study_metadata values
