@@ -1250,7 +1250,7 @@ class Study
   # return an array of all single cell names in study, will check for master list of cells or concatenate all
   # cell lists from individual expression matrices
   def all_cells_array
-    if study.metadata_file&.parsed? # nil-safed via &
+    if self.metadata_file&.parsed? # nil-safed via &
       query = {name: 'All Cells', array_type: 'cells', linear_data_type: 'Study', linear_data_id: self.id,
                cluster_name: self.metadata_file.upload_file_name, study_id: self.id, study_file_id: self.metadata_file.id,
                cluster_group_id: nil, subsample_annotation: nil, subsample_threshold: nil}
