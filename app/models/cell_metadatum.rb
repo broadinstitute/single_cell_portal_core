@@ -55,7 +55,7 @@ class CellMetadatum
     query = {name: array_name, array_type: array_type, linear_data_type: 'CellMetadatum', linear_data_id: self.id,
              study_id: self.study_id, study_file_id: self.study_file_id, cluster_group_id: nil,
              cluster_name: self.study_file.upload_file_name, subsample_threshold: nil, subsample_annotation: nil}
-    DataArray.where(query).order(:array_index => 'asc').pluck(:values).reduce(&:+)
+    DataArray.where(query).order(:array_index => 'asc').pluck(:values).reduce([], :+)
   end
 
   # create dropdown menu value for annotation select
