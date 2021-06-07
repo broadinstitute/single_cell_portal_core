@@ -13,6 +13,9 @@ export default function useHomePageRouter() {
   const routerLocation = useLocation()
   const homeParams = buildHomeParamsFromQuery(routerLocation.search)
 
+  console.log(routerLocation.search)
+  console.log('homeParams -1', homeParams)
+
   /** reset to the default view for a study */
   function clearHomeParams() {
     navigate('')

@@ -1,10 +1,10 @@
 
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { Router, Link, useLocation } from '@reach/router'
 
 import GeneSearchView from 'components/search/genes/GeneSearchView'
 import GeneSearchProvider from 'providers/GeneSearchProvider'
-import SearchPanel from 'components/search/controls/SearchPanel'
+import SearchPanel from 'components/search_xds/controls/SearchPanel'
 import ResultsPanel from 'components/search/results/ResultsPanel'
 import StudyDetails from 'components/search/results/Study'
 import StudySearchProvider, { StudySearchContext } from 'providers/StudySearchProvider'
@@ -12,6 +12,7 @@ import SearchFacetProvider from 'providers/SearchFacetProvider'
 import UserProvider from 'providers/UserProvider'
 import ErrorBoundary from 'lib/ErrorBoundary'
 import * as queryString from 'query-string'
+import { fetchFacets } from 'lib/scp-api'
 
 import useHomePageRouter from './search_xds/HomePageRouter'
 
@@ -20,6 +21,7 @@ export function StudySearchView({
   advancedSearchDefault, homeParams, updateHomeParams, clearHomeParams,
   routerLocation, homeInfo, setHomeInfo
 }) {
+  console.log('homeParams 0', homeParams)
   const studySearchState = useContext(StudySearchContext)
   return <>
     <SearchPanel
@@ -40,13 +42,23 @@ const RoutableSearchTabs = function() {
   // stores the basic study overview data from the server, used to determine what views are available
   const [homeInfo, setHomeInfo] = useState(null)
   const { homeParams, updateHomeParams, clearHomeParams, routerLocation } = useHomePageRouter()
-
+  console.log('in RoutableSearchTabs')
   const location = useLocation()
   const basePath = location.pathname.includes('covid19') ? '/single_cell/covid19' : '/single_cell'
   const showGenesTab = location.pathname.includes('/app/genes')
   const queryParams = queryString.parse(location.search)
   // the queryParams object does not support the more typical hasOwnProperty test
   const advancedSearchDefault = ('advancedSearch' in queryParams)
+
+  console.log('homeInfo', homeInfo)
+
+  useEffect(() => {
+    console.log('in useEffect 0')
+    fetchFacets().then(facets => {
+      console.log('in useEffect, facets', facets)
+      setHomeInfo({ facets, foo: 'bar' })
+    })
+  }, [])
 
   return (
     <div>

@@ -212,6 +212,8 @@ export default function ExploreDisplayTabs({
     setRenderForcer({})
   }, 300)
 
+  console.log('in ExploreDisplayTabs.js, exploreParams', exploreParams)
+
   return (
     <>
       <div className="row">

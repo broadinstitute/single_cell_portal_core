@@ -92,6 +92,9 @@ export default function SearchPanel({
     }
   }
 
+  console.log('homeParams')
+  console.log(homeParams)
+
   console.log('homeParams.facets')
   console.log(homeParams.facets)
 
