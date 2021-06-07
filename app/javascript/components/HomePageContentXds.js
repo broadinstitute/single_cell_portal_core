@@ -21,7 +21,7 @@ export function StudySearchView({
   advancedSearchDefault, homeParams, updateHomeParams, clearHomeParams,
   routerLocation, homeInfo, setHomeInfo
 }) {
-  console.log('homeParams 0', homeParams)
+  console.log('homeInfo 0', homeInfo)
   const studySearchState = useContext(StudySearchContext)
   return <>
     <SearchPanel
@@ -50,14 +50,8 @@ const RoutableSearchTabs = function() {
   // the queryParams object does not support the more typical hasOwnProperty test
   const advancedSearchDefault = ('advancedSearch' in queryParams)
 
-  console.log('homeInfo', homeInfo)
-
   useEffect(() => {
-    console.log('in useEffect 0')
-    fetchFacets().then(facets => {
-      console.log('in useEffect, facets', facets)
-      setHomeInfo({ facets, foo: 'bar' })
-    })
+    fetchFacets().then(facets => setHomeInfo({ facets }))
   }, [])
 
   return (

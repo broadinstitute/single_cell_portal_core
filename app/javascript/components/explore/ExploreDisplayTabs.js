@@ -212,7 +212,7 @@ export default function ExploreDisplayTabs({
     setRenderForcer({})
   }, 300)
 
-  console.log('in ExploreDisplayTabs.js, exploreParams', exploreParams)
+  console.log('in ExploreDisplayTabs.js, exploreInfo, exploreParams', JSON.stringify(exploreInfo), exploreParams)
 
   return (
     <>
