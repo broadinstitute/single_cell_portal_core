@@ -1,30 +1,31 @@
-import React from 'react'
+import React, { useState, useContext } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faSlidersH } from '@fortawesome/free-solid-svg-icons'
 
-import FacetControl from './FacetControl'
-import CombinedFacetControl from './CombinedFacetControl'
-import MoreFacetsButton from './MoreFacetsButton'
-
-const defaultFacetIds = ['disease', 'species']
-const moreFacetIds = [
-  'sex', 'race', 'library_preparation_protocol', 'organism_age'
-]
+import FacetsAccordion from './FacetsAccordion'
+import { StudySearchContext } from 'providers/StudySearchProvider'
+import useCloseableModal from 'hooks/closeableModal'
 
 /**
- * Container for horizontal list of facet buttons, and "More Facets" button
+ * Component for "More Facets" button.  Clicking shows facets accordion box.
+ *
+ * UI spec: https://projects.invisionapp.com/d/main#/console/19272801/402387756/preview
  */
-export default function FacetsPanel({ facets }) {
-  const defaultFacets = facets.filter(facet => defaultFacetIds.includes(facet.id))
-  const moreFacets = facets.filter(facet => moreFacetIds.includes(facet.id))
+export default function FacetsPanel(props) {
+  const searchContext = useContext(StudySearchContext)
+  const [show, setShow] = useState(false)
+
+  const { node, handleButtonClick } = useCloseableModal(show, setShow)
+
+  const numFacetsApplied = props.facets.filter(facet => {
+    const facets = searchContext.params.facets
+    return facets[facet.id] && facets[facet.id].length
+  }).length
+  const facetCountString = numFacetsApplied > 0 ? `(${numFacetsApplied})` : ''
+
+  console.log('props.facets', props.facets)
+
   return (
-    <>
-      <CombinedFacetControl controlDisplayName="cell type" facetIds={['cell_type', 'cell_type__custom']}/>
-      <CombinedFacetControl controlDisplayName="organ" facetIds={['organ', 'organ_region']}/>
-      {
-        defaultFacets.map((facet, i) => {
-          return <FacetControl facet={facet} key={i}/>
-        })
-      }
-      <MoreFacetsButton facets={moreFacets} />
-    </>
+    <FacetsAccordion facets={props.facets} setShow={setShow} />
   )
 }
