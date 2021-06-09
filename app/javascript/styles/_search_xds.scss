@@ -62,10 +62,7 @@ nav.search-links, #search-panel {
     box-sizing: border-box;
     vertical-align: top;
     > a {
-      background-color: white;
       padding: 8px 16px;
-      border-radius: 15px;
-      border: 0.64px solid #4d72aa;
       width: 100%;
       box-sizing: border-box;
       display: inline-block;
@@ -185,11 +182,10 @@ nav.search-links, #search-panel {
   .filters-box-searchable, #facets-accordion {
     width: 400px;
     // margin-left: -220px;
-    border: 1px solid #aaa;
-    background: #fff;
+    border-right: 1px solid #aaa;
+    background: #eff2f5;
     position: absolute;
     z-index: 9000;
-    border-radius: 5px;
     padding: 2px;
     margin-top: 2px;
     .badge {
@@ -241,7 +237,6 @@ nav.search-links, #search-panel {
   }
 
   #facets-accordion {
-    height: 300px;
     .filters-box-searchable {
       margin-left: 0px;
     }

@@ -1,0 +1,129 @@
+#xds-ui .results-panel {
+  padding-top: 14px;
+  margin-left: 410px;
+
+  button {
+    color: $action-color;
+    background: none;
+    border: none;
+  }
+  button:hover {
+    background-color: white;
+  }
+  .search-query {
+    margin-left: 1em;
+    .filter-name,
+    .search-term {
+      font-weight: bold;
+    }
+    .join-text {
+      font-style: italic;
+    }
+  }
+}
+.left-margin-icon {
+  margin-right: 5px;
+}
+.highlight {
+  color: green;
+  background: rgba($color: #74ae43, $alpha: 0.2);
+}
+.results-panel > div > ul {
+  background-color: #dce3e9;
+}
+.results-header {
+  .results-totals {
+    height: 100%;
+    padding-top: 15px;
+    padding-left: 2em;
+  }
+}
+
+.results-content {
+  min-height: 50vh;
+  .result-table {
+    width: 100%;
+  }
+  .loading-panel,
+  .error-panel {
+    box-shadow: none;
+    padding-top: 1em;
+    text-align: center;
+  }
+
+  .loading-panel {
+    color: #777;
+  }
+
+  .morpheus-nav {
+    display: none;
+  }
+}
+
+.result-row {
+  border-bottom: 7px solid #eee;
+  td {
+    padding: 10px;
+    background: #fff;
+    border-radius: 5px;
+  }
+  #result-title {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 20px;
+  }
+  #descrition-text-area {
+    color: #333f52;
+    color: #333f52;
+    font-size: 14px;
+    height: 120px;
+    line-height: 22px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 1133px;
+    word-wrap: break-word;
+  }
+  .cell-count {
+    background-color: #74ae43;
+    font-weight: normal;
+  }
+  .facet-match, .gene-match {
+    background-color: #fff;
+    margin-left: 0.5em;
+    color: #74ae43;
+    border: 1px solid #74ae43;
+    font-weight: normal;
+  }
+  &.inferred-match {
+    border-left: 4px dotted #bbb;
+    td {
+      background: #f6f6f6;
+    }
+    .soft-badge {
+      background-color: #f6f6f6;
+      font-weight: normal;
+      font-style: italic;
+      margin-bottom: 5px;
+      border: 1px solid #ddd;
+      color: #888;
+    }
+  }
+}
+.pagination {
+  text-align: center;
+  display: block;
+  margin: 10px;
+  button {
+    border: none;
+    color: $action-color;
+    background-color: #fff;
+    border-radius: 3px;
+    cursor: pointer;
+    margin: 0 0.2em;
+    padding-top: 3px;
+    min-width: 30px;
+  }
+  .currentPage {
+    margin: 0 0.2em 0 0.2em;
+  }
+}

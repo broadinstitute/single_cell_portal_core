@@ -56,7 +56,7 @@ const RoutableSearchTabs = function() {
 
   return (
     <div id="xds-ui">
-      <nav className="nav search-links" data-analytics-name="search" role="tablist">
+      {/* <nav className="nav search-links" data-analytics-name="search" role="tablist">
         <Link to={`${basePath}/app/studies${location.search}`}
           className={showGenesTab ? '' : 'active'}>
           <span className="fas fa-book"></span> Search Studies (XDS)
@@ -65,7 +65,7 @@ const RoutableSearchTabs = function() {
           className={showGenesTab ? 'active' : ''}>
           <span className="fas fa-dna"></span> Search Genes
         </Link>
-      </nav>
+      </nav> */}
       <div className="tab-content top-pad">
         <Router basepath={basePath}>
           <GeneSearchView path="app/genes"/>
