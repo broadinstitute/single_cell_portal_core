@@ -32,7 +32,7 @@ const LinkableSearchTabs = function() {
   // the queryParams object does not support the more typical hasOwnProperty test
   const advancedSearchDefault = ('advancedSearch' in queryParams)
   return (
-    <div>
+    <div id="legacy-ui">
       <nav className="nav search-links" data-analytics-name="search" role="tablist">
         <Link to={`${basePath}/app/studies${location.search}`}
           className={showGenesTab ? '' : 'active'}>

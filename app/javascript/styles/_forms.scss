@@ -31,3 +31,8 @@ button.text-button {
     color: darken($action-color, 10%);
   }
 }
+
+/** TODO (SCP-????): Remove this when migrating to Bootstrap > 3 */
+.input-group-prepend {
+  margin-left: -1px;
+}

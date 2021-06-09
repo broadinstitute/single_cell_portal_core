@@ -21,15 +21,7 @@ export default function FiltersSearchBar({ searchFilters, filtersBoxId }) {
   return (
     <div className='filters-search-bar'>
       <Form onSubmit={handleFilterSearchSubmit}>
-        <FormControl
-          id={`filters-search-bar-${filtersBoxId}`}
-          type='text'
-          autoComplete='false'
-          placeholder='Search for a filter'
-          value={searchText}
-          onChange={e => setSearchText(e.target.value)}
-        />
-        <div className="input-group-append">
+        <div className="input-group-prepend">
           <Button
             className='search-button'
             onClick={handleFilterSearchSubmit}
@@ -37,6 +29,13 @@ export default function FiltersSearchBar({ searchFilters, filtersBoxId }) {
             <FontAwesomeIcon icon={faSearch}/>
           </Button>
         </div>
+        <FormControl
+          id={`filters-search-bar-${filtersBoxId}`}
+          type='text'
+          autoComplete='false'
+          value={searchText}
+          onChange={e => setSearchText(e.target.value)}
+        />
       </Form>
     </div>
   )

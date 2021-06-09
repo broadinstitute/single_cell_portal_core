@@ -36,24 +36,6 @@ export function ClearFilters({ facetId, onClick }) {
 }
 
 /**
- * Component for the "APPLY" button that can be clicked it to save selected
- * filters for the current facet or facet accordion.
- */
-export function ApplyButton({ facetId, isActive, onClick }) {
-  return (
-    <Button
-      id={`apply-filters-box-${facetId}`}
-      bsStyle='primary'
-      className={`facet-apply-button ${isActive ? 'active' : 'disabled'}`}
-      onClick={onClick}
-    >
-    APPLY
-    </Button>
-  )
-}
-
-
-/**
  * Component for filter lists that have Apply and Clear
  * We should revisit this structure if we ever have to add a
  * type of control besides filter list and slider
@@ -114,11 +96,6 @@ export default function FiltersBox({ facet, selection, setSelection, filters, se
             onClick={clearFilters}
           />
           }
-          <ApplyButton
-            facetId={facetId}
-            isActive={canApply}
-            onClick={handleApplyClick}
-          />
         </div>
       }
     </div>

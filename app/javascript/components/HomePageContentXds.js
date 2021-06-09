@@ -55,7 +55,7 @@ const RoutableSearchTabs = function() {
   }, [])
 
   return (
-    <div>
+    <div id="xds-ui">
       <nav className="nav search-links" data-analytics-name="search" role="tablist">
         <Link to={`${basePath}/app/studies${location.search}`}
           className={showGenesTab ? '' : 'active'}>

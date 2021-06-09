@@ -8,10 +8,9 @@
   min-height: 300px;
 }
 
-
-.search-button {
+#xds-ui .search-button {
   position: absolute;
-  right: 10px;
+  left: 10px;
   top: 19px;
 }
 
@@ -54,8 +53,9 @@ nav.search-links, #search-panel {
   }
 }
 
-#legacy-ui #search-panel {
-  .facet{
+#xds-ui #search-panel {
+
+  .facet {
     white-space: nowrap;
     display: inline-block;
     margin-right: 8px;
@@ -183,8 +183,8 @@ nav.search-links, #search-panel {
   }
 
   .filters-box-searchable, #facets-accordion {
-    width: 560px;
-    margin-left: -220px;
+    width: 400px;
+    // margin-left: -220px;
     border: 1px solid #aaa;
     background: #fff;
     position: absolute;

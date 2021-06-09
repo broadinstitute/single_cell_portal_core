@@ -56,7 +56,7 @@ export default function FiltersBoxSearchable({ facet, selection, setSelection, s
    * Summarize filters, either default or
    */
   function getFiltersSummary() {
-    let filtersSummary = 'Available Filters'
+    let filtersSummary = ''
 
     if (hasFilterSearchResults) {
       const numMatches = matchingFilters.length
@@ -106,23 +106,6 @@ export default function FiltersBoxSearchable({ facet, selection, setSelection, s
               <div className='filters-box-header'>
                 <span className='default-filters-list-name'>
                   {getFiltersSummary()}
-                </span>
-                <span className='facet-ontology-links'>
-                  {
-                    facet.links.map((link, i) => {
-                      return (
-                        <a
-                          key={`link-${i}`}
-                          href={link.browser_url ? link.browser_url : link.url}
-                          target='_blank'
-                          rel='noopener noreferrer'
-                        >
-                          {link.name}&nbsp;&nbsp;
-                          <FontAwesomeIcon icon={faExternalLinkAlt}/>
-                        </a>
-                      )
-                    })
-                  }
                 </span>
               </div>
             </>
