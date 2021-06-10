@@ -61,15 +61,21 @@ nav.search-links, #search-panel {
     margin-right: 8px;
     box-sizing: border-box;
     vertical-align: top;
+
     > a {
       padding: 8px 16px;
       width: 100%;
       box-sizing: border-box;
       display: inline-block;
     }
+
     &.active > a, &.selected > a {
       background-color: $action-color;
       color: #fff;
+    }
+
+    .angle-icon {
+      float: right;
     }
 
     .facet-clear {
@@ -81,6 +87,7 @@ nav.search-links, #search-panel {
       border: none;
     }
   }
+
   #download-button {
     background-color: white;
     vertical-align: top;
@@ -180,7 +187,7 @@ nav.search-links, #search-panel {
   }
 
   .filters-box-searchable, #facets-accordion {
-    width: 400px;
+    width: 350px;
     // margin-left: -220px;
     border-right: 1px solid #aaa;
     background: #eff2f5;

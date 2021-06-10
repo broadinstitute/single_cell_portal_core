@@ -7,7 +7,10 @@ import { fetchFacets } from 'lib/scp-api'
  * see https://broadworkbench.atlassian.net/browse/SCP-2108
  */
 export function getDisplayNameForFacet(facetId) {
-  return facetId.replace(/__|_/gi, ' ')
+  const spaced = facetId.replace(/__|_/gi, ' ')
+
+  // E.g. "cell type" -> "Cell type"
+  return spaced[0].toUpperCase() + spaced.substring(1)
 }
 
 /** context for the list of facets loaded from the server */

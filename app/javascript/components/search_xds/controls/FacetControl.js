@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faTimesCircle } from '@fortawesome/free-solid-svg-icons'
+import { faTimesCircle, faAngleDown, faAngleUp } from '@fortawesome/free-solid-svg-icons'
 import _kebabCase from 'lodash/kebabCase'
 
 import FiltersBoxSearchable from './FiltersBoxSearchable'
@@ -50,7 +50,12 @@ function RawFacetControl({ facet }) {
 
   const { node, clearNode, handleButtonClick } = useCloseableModal(showFilters, setShowFilters)
 
-  let controlContent = getDisplayNameForFacet(facet.id)
+  let controlContent =
+    <>
+      {getDisplayNameForFacet(facet.id)}
+      <FontAwesomeIcon className="angle-icon" icon={showFilters ? faAngleUp : faAngleDown}/>
+    </>
+
   if (selectedFilterString) {
     controlContent =
       <>
