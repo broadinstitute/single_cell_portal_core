@@ -88,16 +88,6 @@ export default function FiltersBox({ facet, selection, setSelection, filters, se
         selection={selection}
         setSelection={setSelection}
       />
-      { !hideControls &&
-        <div className='filters-box-footer'>
-          {showClear &&
-          <ClearFilters
-            facetId={facet.id}
-            onClick={clearFilters}
-          />
-          }
-        </div>
-      }
     </div>
   )
 }

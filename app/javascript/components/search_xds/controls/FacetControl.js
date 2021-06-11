@@ -52,7 +52,7 @@ function RawFacetControl({ facet }) {
 
   let controlContent =
     <>
-      {getDisplayNameForFacet(facet.id)}
+      <span className="facet-name">{getDisplayNameForFacet(facet.id)}</span>
       <FontAwesomeIcon className="angle-icon" icon={showFilters ? faAngleUp : faAngleDown}/>
     </>
 

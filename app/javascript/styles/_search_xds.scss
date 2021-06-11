@@ -69,13 +69,22 @@ nav.search-links, #search-panel {
       display: inline-block;
     }
 
+    &.active {
+      border-top: 1px solid #c3cfde;
+      border-bottom: 1px solid #c3cfde;
+    }
+
     &.active > a, &.selected > a {
-      background-color: $action-color;
-      color: #fff;
+      background-color: #eff2f5;
     }
 
     .angle-icon {
       float: right;
+    }
+
+    .facet-name {
+      color: #2f3d50;
+      font-weight: 500;
     }
 
     .facet-clear {
@@ -121,15 +130,19 @@ nav.search-links, #search-panel {
   .filters-search-bar {
     margin: 6px 2px 12px 2px;
     input {
-      background: #E9ECEF;
+      background: #eff2f5;
       border: none;
+      border-bottom: 2px solid #9fb4d0;
+      border-radius: 0;
       height: 45px;
+      box-shadow: none;
+      padding-left: 50px;
     }
     input::placeholder,input::-ms-input-placeholder {
       color: #777;
     }
     button {
-      background: #eee;
+      background: #eff2f5;
       border: none;
       color: $action-color;
       margin-top: -5px;
@@ -189,11 +202,11 @@ nav.search-links, #search-panel {
   .filters-box-searchable, #facets-accordion {
     width: 350px;
     // margin-left: -220px;
-    border-right: 1px solid #aaa;
+    border-right: 3px solid #9fb4d0;
     background: #eff2f5;
     position: absolute;
     z-index: 9000;
-    padding: 2px;
+    padding: 2px 0;
     margin-top: 2px;
     .badge {
       font-weight: normal;
@@ -207,18 +220,17 @@ nav.search-links, #search-panel {
   }
 
   #facets-accordion {
-    background: #eff2f5;
+    background: #e4e9ed;
     overflow-y: scroll;
     overflow-x: hidden;
     .facet {
-      width: 98%;
       display: block;
-      margin: 5px 2px;
+      margin: 5px 0;
       .filters-box-searchable {
         position: relative;
-        width: 98%;
+        width: 100%;
         border: none;
-        margin-top: -2px;
+        margin-top: -1px;
       }
     }
   }
@@ -237,10 +249,6 @@ nav.search-links, #search-panel {
   .facet-apply-button {
     float: right;
     margin: 0 10px 10px 0;
-  }
-
-  .filters-box-footer {
-    height: 40px;
   }
 
   #facets-accordion {

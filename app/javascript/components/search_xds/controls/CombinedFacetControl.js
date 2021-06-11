@@ -116,19 +116,6 @@ export default function CombinedFacetControl({ controlDisplayName, facetIds }) {
             })
             }
           </div>
-          <div className='filters-box-footer'>
-            {canClear &&
-                <ClearFilters
-                  facetId={_kebabCase(controlDisplayName)}
-                  onClick={clearFilters}
-                />
-            }
-            <ApplyButton
-              facetId={_kebabCase(controlDisplayName)}
-              isActive={canApply}
-              onClick={handleApplyClick}
-            />
-          </div>
         </div>
       }
     </span>
