@@ -53,6 +53,13 @@ nav.search-links, #search-panel {
   }
 }
 
+.panel-title {
+  font-size: 16px;
+  font-weight: 500;
+  padding: 20px 15px;
+  color: $action-color;
+}
+
 #xds-ui #search-panel {
 
   .facet {
@@ -72,9 +79,6 @@ nav.search-links, #search-panel {
     &.active {
       border-top: 1px solid #c3cfde;
       border-bottom: 1px solid #c3cfde;
-    }
-
-    &.active > a, &.selected > a {
       background-color: #eff2f5;
     }
 
@@ -127,6 +131,15 @@ nav.search-links, #search-panel {
     background-color: $action-color;
   }
 
+  #facets-panel {
+    background-color: #e4e9ed;
+    width: 350px;
+    border-right: 3px solid #9fb4d0;
+    // background: #eff2f5;
+    position: absolute;
+    z-index: 1000;
+  }
+
   .filters-search-bar {
     margin: 6px 2px 12px 2px;
     input {
@@ -145,7 +158,7 @@ nav.search-links, #search-panel {
       background: #eff2f5;
       border: none;
       color: $action-color;
-      margin-top: -5px;
+      margin-top: -8px;
     }
   }
 
@@ -163,18 +176,22 @@ nav.search-links, #search-panel {
   }
 
   ul.facet-filter-list {
-    max-height: 300px;
+    max-height: 150px;
     overflow-y: auto;
+    margin-bottom: 0;
+
     label {
       display: inline-block;
       white-space: nowrap;
     }
+
     input {
       font-size: 2em;
       vertical-align: middle;
       margin-top: 0px;
       margin-right: 12px;
     }
+
     label span {
       vertical-align: middle;
     }
@@ -200,13 +217,6 @@ nav.search-links, #search-panel {
   }
 
   .filters-box-searchable, #facets-accordion {
-    width: 350px;
-    // margin-left: -220px;
-    border-right: 3px solid #9fb4d0;
-    background: #eff2f5;
-    position: absolute;
-    z-index: 9000;
-    padding: 2px 0;
     margin-top: 2px;
     .badge {
       font-weight: normal;
@@ -230,8 +240,12 @@ nav.search-links, #search-panel {
         position: relative;
         width: 100%;
         border: none;
-        margin-top: -1px;
+        margin-top: -6px;
       }
+    }
+
+    .facet:first-of-type, .facet:last-of-type {
+      margin: 0;
     }
   }
 

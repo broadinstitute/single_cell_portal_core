@@ -23,6 +23,9 @@ export default function FacetsPanel(props) {
   console.log('props.facets', props.facets)
 
   return (
-    <FacetsAccordion facets={props.facets} setShow={setShow} />
+    <div id="facets-panel">
+      <div className="panel-title">FILTERS</div>
+      <FacetsAccordion facets={props.facets} setShow={setShow} />
+    </div>
   )
 }
