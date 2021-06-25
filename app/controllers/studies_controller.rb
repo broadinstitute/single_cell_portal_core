@@ -472,7 +472,8 @@ class StudiesController < ApplicationController
     # but original_filename is unchanged in headers
     # if this method is being called manually (like in a test) this may not have happened, so look for both filenames
     filename = upload.original_filename.gsub(CarrierWave::SanitizedFile.sanitize_regexp, '_')
-    study_file = @study.study_files.detect {|sf| [filename, upload.original_filename].include? sf.upload_file_name}
+    study_file = @study.study_files.detect {|sf| [filename, upload.original_filename].include?(sf.upload_file_name) &&
+      !sf.queued_for_deletion }
     # If no file has been uploaded or the uploaded file has a different filename,
     # do a new upload from scratch
     if study_file.nil?
@@ -539,11 +540,11 @@ class StudiesController < ApplicationController
 
   # GET /courses/:id/resume_upload.json
   def resume_upload
-    study_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
+    study_file = StudyFile.find_by(study_id: params[:id], upload_file_name: params[:file], queued_for_deletion: false)
     if study_file.nil?
       render json: { file: { name: "/uploads/default/missing.png",size: nil } } and return
     elsif study_file.status == 'uploaded'
-      render json: {file: nil } and return
+      render json: { file: nil } and return
     else
       render json: { file: { name: study_file.upload.url, size: study_file.upload_file_size } } and return
     end
@@ -551,7 +552,7 @@ class StudiesController < ApplicationController
 
   # update a study_file's upload status to 'uploaded'
   def update_status
-    study_file = StudyFile.find_by(study_id: params[:id], upload_file_name: params[:file])
+    study_file = StudyFile.find_by(study_id: params[:id], upload_file_name: params[:file], queued_for_deletion: false)
     if study_file.present?
       study_file.update!(status: params[:status])
       head :ok
@@ -562,7 +563,7 @@ class StudiesController < ApplicationController
 
   # retrieve study file by filename during initializer wizard
   def retrieve_wizard_upload
-    @study_file = StudyFile.find_by(study_id: params[:id], upload_file_name: params[:file])
+    @study_file = StudyFile.find_by(study_id: params[:id], upload_file_name: params[:file], queued_for_deletion: false)
     if @study_file.nil?
       head 404 and return
     end
@@ -604,7 +605,7 @@ class StudiesController < ApplicationController
 
   # parses happen in background to prevent UI blocking
   def parse
-    @study_file = StudyFile.where(study_id: params[:id], upload_file_name: params[:file]).first
+    @study_file = StudyFile.find_by(study_id: params[:id], upload_file_name: params[:file], queued_for_deletion: false)
     @status = FileParseService.run_parse_job(@study_file, @study, current_user)
     # special handling for coordinate labels
     if @study_file.file_type == 'Coordinate Labels' && @status[:status_code] == 412
@@ -628,7 +629,7 @@ class StudiesController < ApplicationController
 
   # for files that don't need parsing, send directly to firecloud on upload completion
   def send_to_firecloud
-    @study_file = StudyFile.find_by(study_id: params[:id], upload_file_name: params[:file])
+    @study_file = StudyFile.find_by(study_id: params[:id], upload_file_name: params[:file], queued_for_deletion: false)
     @study.delay.send_to_firecloud(@study_file)
     changes = ["Study file added: #{@study_file.upload_file_name}"]
     if @study.study_shares.any?
@@ -763,7 +764,7 @@ class StudiesController < ApplicationController
   def delete_study_file
     @study_file = StudyFile.find(params[:study_file_id])
     @message = ""
-    unless @study_file.nil?
+    if @study_file.present?
       if !@study_file.can_delete_safely?
         render action: 'abort_delete_study_file'
       else
@@ -780,11 +781,11 @@ class StudiesController < ApplicationController
         begin
           # make sure file is in FireCloud first as user may be aborting the upload
           unless human_data
-            present = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, @study.bucket_id,
-                                                                   @study_file.upload_file_name)
-            if present
-              ApplicationController.firecloud_client.execute_gcloud_method(:delete_workspace_file, 0, @study.bucket_id,
-                                                           @study_file.upload_file_name)
+            if ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0,
+                                                                            @study.bucket_id, @study_file.upload_file_name)
+                                    .present?
+              ApplicationController.firecloud_client.execute_gcloud_method(:delete_workspace_file, 0,
+                                                                           @study.bucket_id, @study_file.upload_file_name)
             end
           end
         rescue => e
