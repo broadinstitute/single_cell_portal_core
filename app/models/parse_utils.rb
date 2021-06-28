@@ -559,7 +559,7 @@ class ParseUtils
     extracted_files.each do |file|
       converted_filename = URI.unescape(file)
       file_basename = converted_filename.split('/').last
-      match = StudyFile.find_by(study_id: study.id, upload_file_name: file_basename)
+      match = StudyFile.find_by(study_id: study.id, upload_file_name: file_basename, queued_for_deletion: false)
       if match.present?
         begin
           delete_remote_file_on_fail(match, study)

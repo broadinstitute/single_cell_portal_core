@@ -1066,8 +1066,10 @@ module Api
         new_location = "outputs_#{@study.id}_#{submission_id}/#{basename}"
         # check if file has already been synced first
         # we can only do this by md5 hash as the filename and generation will be different
-        existing_file = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, @study.bucket_id, new_location)
-        unless existing_file.present? && existing_file.md5 == remote_gs_file.md5 && StudyFile.where(study_id: @study.id, upload_file_name: new_location).exists?
+        existing_file = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file,
+                                                                                     0, @study.bucket_id, new_location)
+        unless existing_file.present? && existing_file.md5 == remote_gs_file.md5 &&
+          StudyFile.where(study_id: @study.id, upload_file_name: new_location, queued_for_deletion: false).exists?
           # now copy the file to a new location for syncing, marking as default type of 'Analysis Output'
           new_file = remote_gs_file.copy new_location
           unsynced_output = StudyFile.new(study_id: @study.id, name: new_file.name, upload_file_name: new_file.name,

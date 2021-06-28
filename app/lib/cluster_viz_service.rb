@@ -13,7 +13,8 @@ class ClusterVizService
 
   # helper method to load all possible cluster groups for a study
   def self.load_cluster_group_options(study)
-    non_spatial_file_ids = StudyFile.where(study: study, :is_spatial.ne => true, file_type: 'Cluster').pluck(:id)
+    non_spatial_file_ids = StudyFile.where(study: study, :is_spatial.ne => true, file_type: 'Cluster',
+                                           queued_for_deletion: false).pluck(:id)
     ClusterGroup.where(study: study, :study_file_id.in => non_spatial_file_ids).pluck(:name)
   end
 
@@ -48,7 +49,7 @@ class ClusterVizService
   # the clusters
   def self.load_spatial_options(study)
     # grab all the spatial files for this study, and create a name=>associations hash
-    spatial_file_info = StudyFile.where(study: study, is_spatial: true, file_type: 'Cluster')
+    spatial_file_info = StudyFile.where(study: study, is_spatial: true, file_type: 'Cluster', queued_for_deletion: false)
                                  .pluck(:name, :spatial_cluster_associations).to_h
     # now grab any non spatial cluster files for the study that had ids specified in the spatial_cluster_associations above
     # and put them in an id=>name hash

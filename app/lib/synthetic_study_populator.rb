@@ -140,7 +140,7 @@ class SyntheticStudyPopulator
       if !file_info['cluster_file_name']
         throw 'Coordinate label files must specify a cluster_file_name'
       end
-      matching_cluster_file = StudyFile.find_by(name: file_info['cluster_file_name'], study: study)
+      matching_cluster_file = StudyFile.find_by(name: file_info['cluster_file_name'], study: study, queued_for_deletion: false)
       if matching_cluster_file.nil?
         throw "No cluster file with name #{file_info['cluster_file_name']} to match coordinate labels"
       end
@@ -155,7 +155,7 @@ class SyntheticStudyPopulator
       if !file_info['bam_file_name']
         throw 'BAM index files must specify a bam_file_name'
       end
-      matching_bam_file = StudyFile.find_by(name: file_info['bam_file_name'], study: study)
+      matching_bam_file = StudyFile.find_by(name: file_info['bam_file_name'], study: study, queued_for_deletion: false)
       if matching_bam_file.nil?
         throw "No BAM file with name #{file_info['bam_file_name']} to match bai file"
       end
@@ -175,7 +175,7 @@ class SyntheticStudyPopulator
       # look up the ids for the associations
       # note that this requires the associated file to have already been added
       params[:spatial_cluster_associations] = file_info['spatial_cluster_associations'].map do |cluster_file_name|
-        StudyFile.find_by!(study: study, name: cluster_file_name).id.to_s
+        StudyFile.find_by!(study: study, name: cluster_file_name, queued_for_deletion: false).id.to_s
       end
     end
     params

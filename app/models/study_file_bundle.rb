@@ -247,7 +247,7 @@ class StudyFileBundle
       file_type = file_entry['file_type']
       species_name = file_entry['species']
       assembly_name = file_entry['assembly']
-      study_file = StudyFile.find_by(file_type: file_type, upload_file_name: filename, study_id: self.study_id)
+      study_file = StudyFile.find_by(file_type: file_type, upload_file_name: filename, study_id: self.study_id, queued_for_deletion: false)
       if study_file.present?
         study_file.update(study_file_bundle_id: self.id)
       else
