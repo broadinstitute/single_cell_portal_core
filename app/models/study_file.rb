@@ -579,7 +579,8 @@ class StudyFile
   # callbacks
   before_validation   :set_file_name_and_data_dir, on: :create
   before_save         :sanitize_name
-  after_save          :set_cluster_group_ranges, :set_options_by_file_type
+  after_save          :set_cluster_group_ranges, :set_options_by_file_type,
+                      unless: Proc.new { |f| f.queued_for_deletion }
   validates_uniqueness_of :upload_file_name, scope: :study_id,
                           unless: Proc.new { |f| f.human_data || f.queued_for_deletion }
   validates_presence_of :name

@@ -22,9 +22,6 @@ class DeleteQueueJob < Struct.new(:object)
       file_type = object.file_type
       study = object.study
 
-      # delete embedded expression_file_info to prevent validation errors later, if present
-      object.expression_file_info.delete if object.expression_file_info.present?
-
       # now remove all child objects first to free them up to be re-used.
       case file_type
       when 'Cluster'
