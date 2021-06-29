@@ -10,6 +10,6 @@ end
 def get_ingest_pipeline_run(study_file)
   dj_instance = get_ingest_delayed_job(study_file)
   handler = DelayedJobAccessor.dump_job_handler(dj_instance)
-  pipeline_name = handler['pipeline_name']
+  pipeline_name = handler.pipeline_name
   ApplicationController.papi_client.get_pipeline(name: pipeline_name)
 end
