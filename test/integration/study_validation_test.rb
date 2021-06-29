@@ -1,6 +1,7 @@
 require "integration_test_helper"
 require 'user_tokens_helper'
 require 'big_query_helper'
+require 'ingest_job_helper'
 
 class StudyValidationTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
@@ -57,9 +58,8 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
     perform_study_file_upload('metadata_example2.txt', file_params, study.id)
     assert_response 200, "Metadata upload failed: #{@response.code}"
     metadata_file = study.metadata_file
-    example_files[:metadata_breaking_convention][:object] = metadata_file
+    assert metadata_file.present?
     example_files[:metadata_breaking_convention][:cache_location] = metadata_file.parse_fail_bucket_location
-    assert example_files[:metadata_breaking_convention][:object].present?, "Metadata failed to associate, found no file: #{example_files[:metadata_breaking_convention][:object].present?}"
 
     # metadata file that should fail validation because we already have one
     file_params = {study_file: {file_type: 'Metadata', study_id: study.id.to_s}}
@@ -72,7 +72,7 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
     assert_response 200, "Cluster 1 upload failed: #{@response.code}"
     assert_equal 1, study.cluster_ordinations_files.size, "Cluster 1 failed to associate, found #{study.cluster_ordinations_files.size} files"
     cluster_file = study.cluster_ordinations_files.first
-    example_files[:cluster][:object] = cluster_file
+    assert cluster_file.present?
     example_files[:cluster][:cache_location] = cluster_file.parse_fail_bucket_location
 
     # bad expression matrix (duplicate gene)
@@ -81,40 +81,39 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
     assert_response 200, "Expression matrix upload failed: #{@response.code}"
     assert_equal 1, study.expression_matrix_files.size, "Expression matrix failed to associate, found #{study.expression_matrix_files.size} files"
     expression_matrix = study.expression_matrix_files.first
-    example_files[:expression][:object] = expression_matrix
+    assert expression_matrix.present?
     example_files[:expression][:cache_location] = expression_matrix.parse_fail_bucket_location
 
-
     ## request parse
-    example_files.each do |file_type,file|
+    example_files.each do |file_type, file|
       puts "Requesting parse for file \"#{file[:name]}\"."
-      assert_equal 'unparsed', file[:object].parse_status, "Incorrect parse_status for #{file[:name]}"
       initiate_study_file_parse(file[:name], study.id)
       assert_response 200, "#{file_type} parse job failed to start: #{@response.code}"
     end
 
-    seconds_slept = 60
+    # give delayed_job time to launch ingest jobs, then retrieve from the PAPI queue to poll for status
+    sleep 30
+    example_files.each do |file_type, file|
+      puts "retrieving PAPI run for file \"#{file[:name]}\"."
+      study_file = study.study_files.detect { |f| f.upload_file_name == file[:name] }
+      pipeline = get_ingest_pipeline_run(study_file)
+      example_files[file_type][:ingest_run] = pipeline
+    end
+
+    seconds_slept = 30
     sleep seconds_slept
     sleep_increment = 15
     max_seconds_to_sleep = 300
-    until ( example_files.values.all? { |e| ['parsed', 'failed'].include? e[:object].parse_status } ) do
-      puts "After #{seconds_slept} seconds, " + (example_files.values.map { |e| "#{e[:name]} is #{e[:object].parse_status}"}).join(", ") + '.'
-      if seconds_slept >= max_seconds_to_sleep
-        raise "Even after #{seconds_slept} seconds, not all files have been parsed."
-      end
+    until example_files.values.all? { |file| file[:ingest_run].done? } do
+      puts "After #{seconds_slept} seconds, " + (example_files.values.map { |e| "#{e[:name]} is still parsing"}).join(", ") + '.'
+      raise "Even after #{seconds_slept} seconds, not all files have been parsed." if seconds_slept >= max_seconds_to_sleep
       sleep(sleep_increment)
       seconds_slept += sleep_increment
-      example_files.values.each do |e|
-        e[:object].reload
-      end
     end
-    puts "After #{seconds_slept} seconds, " + (example_files.values.map { |e| "#{e[:name]} is #{e[:object].parse_status}"}).join(", ") + '.'
-
     study.reload
 
-    example_files.values.each do |e|
-      e[:object].reload # address potential race condition between parse_status setting to 'failed' and DeleteQueueJob executing
-      assert_equal 'failed', e[:object].parse_status, "Incorrect parse_status for #{e[:name]}"
+    example_files.values.each do |file|
+      assert file[:ingest_run].error.present? # proxy for failed parse
       # check that file is cached in parse_logs/:id folder in the study bucket
       cached_file = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, e[:cache_location])
       assert cached_file.present?, "Did not find cached file at #{e[:cache_location]} in #{study.bucket_id}"

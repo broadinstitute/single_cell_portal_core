@@ -94,22 +94,19 @@ class FileParseServiceTest < ActiveSupport::TestCase
   end
 
   test 'should prevent parsing coordinate label file after cluster deletes' do
-    @cluster_file = FactoryBot.create(:cluster_file,
-                                                  name: 'clusterA.txt',
-                                                  study: @basic_study,
-                                                  cell_input: {
-                                                    x: [1, 4 ,6],
-                                                    y: [7, 5, 3],
-                                                    cells: ['A', 'B', 'C']
-                                                  },
-                                                  annotation_input: [{name: 'foo', type: 'group', values: ['bar', 'bar', 'baz']}])
+    @cluster_file = FactoryBot.create(:cluster_file, name: 'clusterA.txt', study: @basic_study,
+                                      cell_input: { x: [1, 4 ,6], y: [7, 5, 3], cells: ['A', 'B', 'C'] },
+                                      annotation_input: [{ name: 'foo', type: 'group', values: ['bar', 'bar', 'baz'] }])
 
     # don't use factory bot as we want to test parsing logic
-    @coordinate_file = StudyFile.create(file_type: 'Coordinate Labels', name: 'coordinate_labels_2.txt', study_id: @basic_study.id,
-                                    upload: File.open(Rails.root.join('test', 'test_data', 'coordinate_labels_2.txt')),
-                                    options: {cluster_file_id: @cluster_file.id.to_s})
+    File.open(Rails.root.join('test', 'test_data', 'coordinate_labels_2.txt')) do |upload|
+      @coordinate_file = StudyFile.create!(file_type: 'Coordinate Labels', name: 'coordinate_labels_2.txt',
+                                           study_id: @basic_study.id, upload: upload,
+                                           options: { cluster_file_id: @cluster_file.id.to_s })
+    end
 
     # simulate "failed" upload by queuing cluster file for deletion
+    @cluster_file.update(queued_for_deletion: true)
     DeleteQueueJob.new(@cluster_file).perform
 
     # attempt to parse coordinate file and assert 412 response and that no study_file_bundle is created
@@ -118,11 +115,4 @@ class FileParseServiceTest < ActiveSupport::TestCase
     assert_equal 412, response[:status_code]
     assert_nil @coordinate_file.study_file_bundle
   end
-
-  # TODO: once SCP-2765 is completed, test that all genes/values are parsed from mtx bundle
-  # this will replace the deprecated 'should parse valid mtx bundle' from study_validation_test.rb
-  test 'should store all genes and expression values from mtx parse' do
-    assert true
-  end
-
 end

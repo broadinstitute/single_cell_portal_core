@@ -1,5 +1,6 @@
-require "integration_test_helper"
+require 'integration_test_helper'
 require 'big_query_helper'
+require 'ingest_job_helper'
 
 class StudyCreationTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
@@ -58,53 +59,47 @@ class StudyCreationTest < ActionDispatch::IntegrationTest
     file_params = {study_file: {file_type: 'Expression Matrix', study_id: study.id.to_s}}
     perform_study_file_upload(example_files[:expression][:name], file_params, study.id)
     assert_response 200, "Expression matrix upload failed: #{@response.code}"
-    assert_equal 1, study.expression_matrix_files.size, "Expression matrix failed to associate, found #{study.expression_matrix_files.size} files"
-    example_files[:expression][:object] = study.expression_matrix_files.first
 
     # metadata file
     file_params = {study_file: {file_type: 'Metadata', study_id: study.id.to_s, use_metadata_convention: true}}
     perform_study_file_upload(example_files[:metadata][:path], file_params, study.id)
     assert_response 200, "Metadata upload failed: #{@response.code}"
-    example_files[:metadata][:object] = study.metadata_file
-    assert example_files[:metadata][:object].present?, "Metadata failed to associate, found no file: #{example_files[:metadata][:object].present?}"
 
     # first cluster
     file_params = {study_file: { name: 'Test Cluster 1', file_type: 'Cluster', study_id: study.id.to_s } }
     perform_study_file_upload(example_files[:cluster][:name], file_params, study.id)
     assert_response 200, "Cluster 1 upload failed: #{@response.code}"
     assert_equal 1, study.cluster_ordinations_files.size, "Cluster 1 failed to associate, found #{study.cluster_ordinations_files.size} files"
-    example_files[:cluster][:object] = study.cluster_ordinations_files.first
 
     ## request parse
     example_files.each do |file_type,file|
       puts "Requesting parse for file \"#{file[:name]}\"."
-      assert_equal 'unparsed', file[:object].parse_status, "Incorrect parse_status for #{file[:name]}"
       initiate_study_file_parse(file[:name], study.id)
       assert_response 200, "#{file_type} parse job failed to start: #{@response.code}"
     end
 
-    seconds_slept = 60
+    sleep 30
+    example_files.each do |file_type, file|
+      puts "retrieving PAPI run for file \"#{file[:name]}\"."
+      study_file = study.study_files.detect { |f| f.upload_file_name == file[:name] }
+      pipeline = get_ingest_pipeline_run(study_file)
+      example_files[file_type][:ingest_run] = pipeline
+    end
+
+    seconds_slept = 30
     sleep seconds_slept
     sleep_increment = 15
     max_seconds_to_sleep = 300
-    until ( example_files.values.all? { |e| ['parsed', 'failed'].include? e[:object].parse_status } ) do
-      puts "After #{seconds_slept} seconds, " + (example_files.values.map { |e| "#{e[:name]} is #{e[:object].parse_status}"}).join(", ") + '.'
-      if seconds_slept >= max_seconds_to_sleep
-        raise "Even after #{seconds_slept} seconds, not all files have been parsed."
-      end
+    until example_files.values.all? { |file| file[:ingest_run].done? } do
+      puts "After #{seconds_slept} seconds, " + (example_files.values.map { |e| "#{e[:name]} is still parsing"}).join(", ") + '.'
+      raise "Even after #{seconds_slept} seconds, not all files have been parsed." if seconds_slept >= max_seconds_to_sleep
       sleep(sleep_increment)
       seconds_slept += sleep_increment
-      example_files.values.each do |e|
-        assert_not e[:object].queued_for_deletion, "parsing #{e[:name]} failed, and is queued for deletion"
-        e[:object].reload
-      end
     end
-    puts "After #{seconds_slept} seconds, " + (example_files.values.map { |e| "#{e[:name]} is #{e[:object].parse_status}"}).join(", ") + '.'
 
     # confirm that parsing is complete
-    example_files.values.each do |e|
-      assert_equal 'parsed', e[:object].parse_status, "Incorrect parse_status for #{e[:name]}"
-      assert_not e[:object].queued_for_deletion, "#{e[:name]} should be queued for deletion"
+    example_files.values.each do |file|
+      refute file[:ingest_run].error.present? # successful ingest runs will not have any errors
     end
 
     assert_equal 19, study.genes.size, 'Did not parse all genes from expression matrix'

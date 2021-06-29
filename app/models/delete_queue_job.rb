@@ -124,10 +124,10 @@ class DeleteQueueJob < Struct.new(:object)
       # called when a user wants to delete an entire directory of files from a FireCloud submission
       # this is run in the foreground as Delayed::Job cannot deserialize the list anymore
       files = object
-      files.each {|f| f.delete}
+      files.each(&:delete)
       while files.next?
         files = object.next
-        files.each {|f| f.delete}
+        files.each(&:delete)
       end
     end
   end
