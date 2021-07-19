@@ -67,6 +67,9 @@ function RawScatterPlot({
       is3D: scatter.is3D
     })
 
+    // sort the annotations array alphanumerically - this will determine order of legend in graph
+    plotlyTraces[0].transforms[0].groups.sort(sortAlphaNumerically)
+
     const startTime = performance.now()
     Plotly.react(graphElementId, plotlyTraces, layout)
 
@@ -237,7 +240,6 @@ function getPlotlyTraces({
           target: val,
           value: {
             name: `${val} (${traceCounts[val]} points)`,
-            legendrank: index,
             marker: {
               color: getColorBrewerColor(index),
               size: pointSize
@@ -296,6 +298,11 @@ function traceNameSort(a, b) {
   if (a === UNSPECIFIED_ANNOTATION_NAME) {return 1}
   if (b === UNSPECIFIED_ANNOTATION_NAME) {return -1}
   return a.localeCompare(b)
+}
+
+/** sort alphanumerically */
+function sortAlphaNumerically(a, b) {
+  return a.localeCompare(b, 'en', { numeric: true })
 }
 
 /** makes the data trace attributes (cells, trace name) available via hover text */
