@@ -1,0 +1,40 @@
+<h2>Collections</h2>
+
+<div class="row">
+  <div class="col-md-12">
+    <table class="table table-terra branding-group-list">
+      <tbody>
+        <% if @branding_groups.present? %>
+          <% @branding_groups.each do |branding_group| %>
+            <tr id="<%= branding_group.name_as_id %>">
+              <td class="branding-group-logo">
+                <% if branding_group.splash_image.url.present? %>
+                  <%= link_to image_tag(branding_group.splash_image.url) %>
+                <% end %>
+              </td>
+              <td class="branding-group-name">
+                <%= link_to branding_group.name, site_path(scpbr: branding_group.name_as_id) %><br/>
+                <%= branding_group.tag_line %><br/>
+                <%= branding_group.studies.count %> studies
+                <% if branding_group.external_link_url.present? %>
+                  <br/>
+                  <%= link_to branding_group.external_link_description.html_safe + "<span class='fas fa-fw fa-external-link-alt'></span> ".html_safe , branding_group.external_link_url, target: '_blank'%>
+                <% end %>
+              </td>
+              <td>
+                <% if @editable_branding_groups.include?(branding_group) %>
+                  <%= scp_link_to "<i class='fas fa-search'></i> Info".html_safe, branding_group_path(branding_group), class: "btn btn-xs btn-info #{branding_group.name_as_id}-show" %>
+                  <%= scp_link_to "<i class='fas fa-edit'></i> Edit".html_safe, edit_branding_group_path(branding_group), class: "btn btn-xs btn-primary #{branding_group.name_as_id}-edit" %>
+                  <%= scp_link_to "<i class='fas fa-trash'></i> Destroy".html_safe, branding_group_path(branding_group), method: :delete, class: "btn btn-xs btn-danger delete-btn #{branding_group.name_as_id}-delete" %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        <% else %>
+          <span class="detail">There are no collections available to display</span>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<span>Collections are curated groups of studies which share a common research theme. If your organization is interested in creating a collection within SCP, contact us at <%= mail_to 'scp-support@broadinstitute.zendesk.com', 'scp-support@broadinstitute.zendesk.com' %></span>

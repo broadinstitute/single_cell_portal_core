@@ -8,7 +8,8 @@
     </button>
     <div id="navbar-brand-wrapper">
       <% if @selected_branding_group.present? %>
-        <%= scp_link_to "<span class='fas fa-home'></span> #{@selected_branding_group.name}</sup>".html_safe, site_path, class: "navbar-brand check-upload", style: 'margin-top: 6px;' %>
+        <%= link_to "<span class='fas fa-arrow-left'></span>".html_safe, site_path, class: "navbar-brand",style: 'margin-top: 6px;', title: 'Back to Single Cell Portal' %>
+        <%= scp_link_to @selected_branding_group.name.truncate(35), site_path, class: "navbar-brand", style: 'margin-top: 6px;', title: @selected_branding_group.name %>
       <% else %>
         <%= link_to image_tag('SCP-white.png'), site_path, class: "navbar-brand check-upload" %>
         <small id="beta-nav"><sup>BETA</sup></small>
@@ -18,6 +19,20 @@
   <div class="collapse navbar-collapse" id="scp-navbar-dropdown-collapse">
     <%= render partial: '/layouts/breadcrumbs' %>
     <ul class="nav navbar-nav pull-right">
+      <li>
+        <%= scp_link_to "<span class='fas fa-plus fa-fw'></span> Create a Study".html_safe, new_study_path, class: 'check-upload', 'data-analytics-name' => 'prominent-create-study-button' %>
+      </li>
+      <% if BrandingGroup.visible_groups_to_user(current_user).any? %>
+        <li class='dropdown'><%= scp_link_to "Collections <span class='caret'></span>".html_safe, "#", class: "dropdown-toggle", "data-toggle" => "dropdown" %>
+          <ul class="dropdown-menu dropdown-menu-left">
+            <li class="left-border-0-5"><%= link_to '<span class="fas fa-globe"></span> Directory'.html_safe, collections_path %></li>
+            <li role="separator" class="divider"></li>
+            <% BrandingGroup.visible_groups_to_user(current_user).each do |branding_group| %>
+              <li data-analytics-name="<%= branding_group.name_as_id %>-nav"><%= link_to branding_group.name, site_path(scpbr: branding_group.name_as_id) %></li>
+            <% end %>
+          </ul>
+        </li>
+      <% end %>
       <li class='dropdown'><%= scp_link_to "<span class='fas fa-question-circle'></span> Help & Resources <span class='caret'></span>".html_safe, "#", class: "dropdown-toggle", "data-toggle" => "dropdown" %>
         <ul class="dropdown-menu dropdown-menu-right">
           <% if @selected_branding_group.present? && @selected_branding_group.external_link_url %>
@@ -28,9 +43,6 @@
           <li><%= link_to "<span class='fab fa-fw fa-github'></span> Portal Source Code".html_safe, 'https://github.com/broadinstitute/single_cell_portal_core', target: '_blank' %></li>
           <li><%= link_to "<span class='fas fa-fw fa-code'></span> REST API Documentation".html_safe, api_v1_swagger_ui_path, target: '_blank' %></li>
         </ul>
-      </li>
-      <li class="left-border-0-5">
-        <%= scp_link_to "<span class='fas fa-plus fa-fw'></span> Create a Study".html_safe, new_study_path, class: 'check-upload', 'data-analytics-name' => 'prominent-create-study-button' %>
       </li>
       <% if user_signed_in? %>
         <li class="dropdown"><%= scp_link_to "<span class='fas fa-user'></span> #{current_user.email.split('@').first} <span class='caret'></span>".html_safe, "#", class: "dropdown-toggle left-border-0-5", "data-toggle" => "dropdown", id: 'profile-nav' %>
@@ -51,23 +63,11 @@
             <li><%= scp_link_to "<span class='fas fa-book fa-fw'></span> My Studies".html_safe, studies_path, class: 'check-upload', id: 'my-studies' %>
             <li><%= scp_link_to "<span class='fas fa-dollar-sign fa-fw'></span> My Billing Projects".html_safe, billing_projects_path, class: 'check-upload', id: 'my-firecloud-projects' %>
             <li><%= scp_link_to "<span class='fas fa-plus fa-fw'></span> Create a Study".html_safe, new_study_path, class: 'check-upload' %></li>
-            <% if current_user.available_branding_groups.any? %>
-              <li role="separator" class="divider"></li>
-              <li class="dropdown-header">My Brands</li>
-              <% current_user.available_branding_groups.each do |branding_group| %>
-                <li id="<%= branding_group.name_as_id %>-nav"><%= link_to "<i class='fas fa-copyright fa-fw'></i> #{branding_group.name}".html_safe, site_path(scpbr: branding_group.name_as_id) %></li>
-              <% end %>
-            <% end %>
-            <% if @selected_branding_group.present? %>
-              <li role="separator" class="divider"></li>
-              <li><%= link_to "<i class='fas fa-chevron-circle-left fa-fw'></i> Return to Single Cell Portal".html_safe, site_path %></li>
-            <% end %>
             <li role="separator" class="divider"></li>
             <li><%= scp_link_to "<span class='fas fa-sign-out-alt fa-fw'></span> Sign Out".html_safe, destroy_user_session_path, method: :delete, class: 'check-upload', id: 'logout-nav' %></li>
           </ul>
         </li>
       <% else %>
-
         <li><%= scp_link_to "<span class='fas fa-sign-in-alt fa-fw'></span> Sign In".html_safe, user_google_omniauth_authorize_path, method: :post, class: 'left-border-0-5', id: 'login-nav' %></li>
       <% end %>
     </ul>

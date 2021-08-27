@@ -318,9 +318,21 @@ class User
     self.email.gsub(/[@\.]/, '-')
   end
 
-  # return branding groups visible to user (or all for admins)
+  # return branding groups available to user to add studies to (or all for admins)
   def available_branding_groups
-    self.admin? ? BrandingGroup.all.order_by(:name.asc) : BrandingGroup.where(user_id: self.id).order_by(:name.asc)
+    if self.admin?
+      BrandingGroup.all.order_by(:name.asc)
+    else
+      BrandingGroup.where(user_id: self.id).order_by(:name.asc)
+    end
+  end
+
+  def visible_branding_groups
+    if self.admin?
+      BrandingGroup.all.order_by(:name.asc)
+    else
+      BrandingGroup.where(user_id: self.id).or(public: true).order_by(:name.asc)
+    end
   end
 
   # check if a user is registered for FireCloud and update status as necessary

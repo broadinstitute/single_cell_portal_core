@@ -1,6 +1,6 @@
 class BrandingGroupsController < ApplicationController
   before_action :set_branding_group, only: [:show, :edit, :update, :destroy]
-  before_action do
+  before_action except: [:list_navigate] do
     authenticate_user!
     authenticate_admin
   end
@@ -9,6 +9,15 @@ class BrandingGroupsController < ApplicationController
   # GET /branding_groups.json
   def index
     @branding_groups = BrandingGroup.all
+  end
+
+  # show a non-editable list for display and linking
+  def list_navigate
+    @editable_branding_groups = []
+    @branding_groups = BrandingGroup.visible_groups_to_user(current_user)
+    if current_user.present?
+      @editable_branding_groups = current_user.available_branding_groups.to_a
+    end
   end
 
   # GET /branding_groups/1
@@ -80,7 +89,7 @@ class BrandingGroupsController < ApplicationController
 
   # Never trust parameters from the scary internet, only allow the permit list through.
   def branding_group_params
-    params.require(:branding_group).permit(:name, :tag_line, :background_color, :font_family, :font_color, :user_id,
+    params.require(:branding_group).permit(:name, :tag_line, :public, :background_color, :font_family, :font_color, :user_id,
                                            :splash_image, :banner_image, :footer_image, :external_link_url, :external_link_description)
   end
 end

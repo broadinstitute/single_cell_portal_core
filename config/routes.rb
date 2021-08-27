@@ -128,6 +128,8 @@ Rails.application.routes.draw do
 
     # branding groups
     resources :branding_groups
+    # show a non-editable list for display and linking
+    get :collections, to: 'branding_groups#list_navigate'
 
     # analysis configurations
     get 'analysis_configurations/load_associated_model', to: 'analysis_configurations#load_associated_model',

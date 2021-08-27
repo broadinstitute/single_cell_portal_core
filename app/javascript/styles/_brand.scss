@@ -29,6 +29,9 @@
   float: left;
   margin-top: 66px;
   margin-left: 35px;
+  img {
+  	max-height: 100px;
+  }
 }
 
 #scp-logo {
@@ -164,4 +167,16 @@
 #billing-access-request {
   width: 800px;
   margin: 0px auto;
+}
+
+.branding-group-list {
+	.branding-group-logo {
+		width: 180px;
+		img {
+			max-width: 180px;
+		}
+	}
+	.branding-group-name {
+		text-align: left;
+	}
 }

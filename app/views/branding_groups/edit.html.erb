@@ -1,8 +1,12 @@
-<h1>Editing '<%= @branding_group.name %>'</h1>
+<div class="row">
+  <div class="col-md-6 col-md-offset-3 col-sm-12">
+    <h1 class="text-center"><%= @branding_group.name %> <span class="fas fa-edit"></span></h1>
 
-<%= render 'form' %>
+    <%= render 'form' %>
 
-<p>
-  <%= scp_link_to "<span class='fas fa-search'></span> Show".html_safe, branding_group_path(@branding_group), class: 'btn btn-info' %>
-  <%= scp_link_to "<span class='fas fa-chevron-left'></span> Back".html_safe, branding_groups_path, class: 'btn btn-warning' %>
-</p>
+    <p>
+      <%= scp_link_to "<span class='fas fa-search'></span> Show".html_safe, branding_group_path(@branding_group), class: 'btn btn-info' %>
+      <%= scp_link_to "<span class='fas fa-chevron-left'></span> Back".html_safe, branding_groups_path, class: 'btn btn-warning' %>
+    </p>
+  </div>
+</div>

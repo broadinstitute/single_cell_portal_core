@@ -12,6 +12,7 @@ class BrandingGroup
   field :feature_flags, type: Hash, default: {}
   field :external_link_url, type: String
   field :external_link_description, type: String
+  field :public, type: Boolean, default: false
 
   # list of facets to show for this branding group (will restrict to only provided identifiers, if present)
   field :facet_list, type: Array, default: []
@@ -76,4 +77,13 @@ class BrandingGroup
   def remove_cached_images
     UserAssetService.remove_assets_from_remote("branding_groups/#{self.id}")
   end
+
+  def self.visible_groups_to_user(user)
+    if user.present?
+      user.visible_branding_groups
+    else
+      BrandingGroup.where(public: true).order_by(:name.asc)
+    end
+  end
+
 end

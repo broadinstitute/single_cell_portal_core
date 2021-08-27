@@ -11,74 +11,79 @@
     </div>
   <% end %>
 
-  <div class="form-group row">
-    <div class="col-md-6">
-      <%= f.label :name %><br>
-      <%= f.text_field :name, class: 'form-control' %>
-    </div>
-    <div class="col-md-6">
-      <%= f.label :tag_line, 'Tag Line' %><br>
-      <%= f.text_field :tag_line, class: 'form-control' %>
-    </div>
+  <div class="form-group">
+    <%= f.label :name %><br>
+    <%= f.text_field :name, class: 'form-control', required: true%>
   </div>
-  <div class="form-group row">
-    <div class="col-md-3">
-      <%= f.label :background_color, 'Background Color' %><br>
-      <%= f.color_field :background_color, class: 'form-control' %>
-    </div>
-    <div class="col-md-3">
-      <%= f.label :font_family, "Font Family #{link_to "<i class='fas fa-fw fa-eye'></i>".html_safe, 'https://www.cssfontstack.com', title: 'View Options', data: {toggle: 'tooltip'}, target: :_blank}".html_safe %><br>
-      <%= f.select :font_family, grouped_options_for_select(web_safe_fonts, @branding_group.font_family), {}, class: 'form-control' %>
-    </div>
-    <div class="col-md-3">
-      <%= f.label :font_color, 'Font Color' %><br>
-      <%= f.color_field :font_color, class: 'form-control' %>
-    </div>
-    <div class="col-md-3">
-      <%= f.label :user_id, 'Associated User' %><br />
-      <%= f.select :user_id, options_from_collection_for_select(User.all, :id, :email, @branding_group.new_record? ? nil : @branding_group.user_id),
-                   {include_blank: 'Please select a user account'}, class: 'form-control' %>
-    </div>
+  <div class="form-group">
+    <%= f.label :tag_line, 'Tag Line' %><br>
+    <%= f.text_field :tag_line, class: 'form-control', required: true%>
   </div>
-  <div class="form-group row">
-    <div class="col-md-3">
-      <%= f.label :banner_image, 'Banner Image (suggested size: 1273x245)' %><br/>
-      <%= f.file_field :banner_image, class: 'btn btn-default fileinput-button' %>
-      <% if @branding_group.banner_image.present? %>
-        <p class="help-block">Current file: <%= link_to "<i class='fas fa-download'></i> #{@branding_group.banner_image_file_name} (#{ number_to_human_size @branding_group.banner_image_file_size})".html_safe,
-                                                        @branding_group.banner_image.url, download: @branding_group.banner_image_file_name,
-                                                        class: 'btn btn-xs btn-primary' %></p>
-      <% end %>
-    </div>
-    <div class="col-md-3">
-      <%= f.label :splash_image, 'Splash Image (suggested size: 383x89)' %><br/>
-      <%= f.file_field :splash_image, class: 'btn btn-default fileinput-button' %>
-      <% if @branding_group.splash_image.present? %>
-        <p class="help-block">Current file: <%= link_to "<i class='fas fa-download'></i> #{@branding_group.splash_image_file_name} (#{ number_to_human_size @branding_group.splash_image_file_size})".html_safe,
-                                                        @branding_group.splash_image.url, download: @branding_group.splash_image_file_name,
-                                                        class: 'btn btn-xs btn-primary' %></p>
-      <% end %>
-    </div>
-    <div class="col-md-3">
-      <%= f.label :footer_image, 'Footer Image (suggested size: 185x54)' %><br/>
-      <%= f.file_field :footer_image, class: 'btn btn-default fileinput-button' %>
-      <% if @branding_group.footer_image.present? %>
-        <p class="help-block">Current file: <%= link_to "<i class='fas fa-download'></i> #{@branding_group.footer_image_file_name} (#{ number_to_human_size @branding_group.footer_image_file_size})".html_safe,
-                                                        @branding_group.footer_image.url, download: @branding_group.footer_image_file_name,
-                                                        class: 'btn btn-xs btn-primary' %></p>
-      <% end %>
-    </div>
+  <div class="form-group form-check form-check-inline">
+    <%= f.label :public, 'Publish collection <span class="fas fa-question-circle" data-toggle="tooltip" data-placement="top" title="Select to have your collection listed in the Collections Directory. Visibility of individual studies within the collection is still controlled by study permissions set by the study owner."></span>'.html_safe, class: "form-check-label" %> &nbsp;
+    <%= f.check_box :public, class: "form-check-input" %>
   </div>
-  <div class="row">
-    <div class="col-md-12">
-      <%= f.label :external_link_url, 'External Link URL' %>
-      <%= f.text_field :external_link_url, class: 'form-control' %>
-      <br/>
-      <%= f.label :external_link_description, 'External Link Description' %>
-      <%= f.text_field :external_link_description, class: 'form-control' %>
-    </div>
+  <div class="form-group">
+    <%= f.label :user_id, 'Associated User' %><br />
+    <%= f.select :user_id, options_from_collection_for_select(User.all, :id, :email, @branding_group.new_record? ? nil : @branding_group.user_id),
+                 {include_blank: 'Please select a user account'}, class: 'form-control' %>
   </div>
-  <br/>
+
+  <div class="form-group">
+    <%= f.label :external_link_url, 'External Link URL <span class="fas fa-question-circle" data-toggle="tooltip" data-placement="top" title="This link will be available in the \'Help & Resources\' dropdown inside the collection, as well as in the Collections Directory."></span>'.html_safe %>
+    <%= f.text_field :external_link_url, class: 'form-control' %>
+  </div>
+  <div class="form-group">
+    <%= f.label :external_link_description, 'External Link Description' %>
+    <%= f.text_field :external_link_description, class: 'form-control' %>
+  </div>
+
+  <hr/>
+  <div class="form-group">
+    <%= f.label :banner_image, 'Banner Image (suggested size: 1273x245)' %><br/>
+    <%= f.file_field :banner_image, class: 'btn btn-default fileinput-button' %>
+    <% if @branding_group.banner_image.present? %>
+      <p class="help-block">Current file: <%= link_to "<i class='fas fa-download'></i> #{@branding_group.banner_image_file_name} (#{ number_to_human_size @branding_group.banner_image_file_size})".html_safe,
+                                                      @branding_group.banner_image.url, download: @branding_group.banner_image_file_name,
+                                                      class: 'btn btn-xs btn-primary' %></p>
+    <% end %>
+  </div>
+  <div class="form-group">
+    <%= f.label :splash_image, 'Splash Image (suggested size: 383x89)' %><br/>
+    <%= f.file_field :splash_image, class: 'btn btn-default fileinput-button' %>
+    <% if @branding_group.splash_image.present? %>
+      <span class="help-block">Current file: <%= link_to "<i class='fas fa-download'></i> #{@branding_group.splash_image_file_name} (#{ number_to_human_size @branding_group.splash_image_file_size})".html_safe,
+                                                      @branding_group.splash_image.url, download: @branding_group.splash_image_file_name,
+                                                      class: 'btn btn-xs btn-primary' %></span>
+    <% end %>
+  </div>
+  <div class="form-group">
+    <%= f.label :footer_image, 'Footer Image (suggested size: 185x54)' %><br/>
+    <%= f.file_field :footer_image, class: 'btn btn-default fileinput-button' %>
+    <% if @branding_group.footer_image.present? %>
+      <p class="help-block">Current file: <%= link_to "<i class='fas fa-download'></i> #{@branding_group.footer_image_file_name} (#{ number_to_human_size @branding_group.footer_image_file_size})".html_safe,
+                                                      @branding_group.footer_image.url, download: @branding_group.footer_image_file_name,
+                                                      class: 'btn btn-xs btn-primary' %></p>
+    <% end %>
+  </div>
+
+  <div class="form-group">
+    <div class="row">
+      <div class="col-md-6">
+        <%= f.label :background_color, 'Background Color' %><br>
+        <%= f.color_field :background_color, class: 'form-control' %>
+      </div>
+      <div class="col-md-6">
+        <%= f.label :font_color, 'Font Color' %><br>
+        <%= f.color_field :font_color, class: 'form-control' %>
+      </div>
+    </div>
+
+  </div>
+  <div class="form-group">
+    <%= f.label :font_family, "Font Family #{link_to "<i class='fas fa-fw fa-eye'></i>".html_safe, 'https://www.cssfontstack.com', title: 'View Options', data: {toggle: 'tooltip'}, target: :_blank}".html_safe %><br>
+    <%= f.select :font_family, grouped_options_for_select(web_safe_fonts, @branding_group.font_family), {}, class: 'form-control' %>
+  </div>
 
   <div class="form-group">
     <%= f.submit nil, class: 'btn btn-lg btn-success', id: 'save-branding-group' %>
