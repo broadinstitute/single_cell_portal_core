@@ -18,7 +18,7 @@
                 <%= branding_group.studies.count %> studies
                 <% if branding_group.external_link_url.present? %>
                   <br/>
-                  <%= link_to branding_group.external_link_description.html_safe + "<span class='fas fa-fw fa-external-link-alt'></span> ".html_safe , branding_group.external_link_url, target: '_blank'%>
+                  <%= link_to branding_group.external_link_description.html_safe + " <span class='fas fa-fw fa-external-link-alt'></span> ".html_safe , branding_group.external_link_url, target: '_blank'%>
                 <% end %>
               </td>
               <td>
