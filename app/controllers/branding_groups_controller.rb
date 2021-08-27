@@ -11,7 +11,7 @@ class BrandingGroupsController < ApplicationController
     @branding_groups = BrandingGroup.all
   end
 
-  # show a non-editable list for display and linking
+  # show a list for display and linking, editable only if the user has appropriate permissions
   def list_navigate
     @editable_branding_groups = []
     @branding_groups = BrandingGroup.visible_groups_to_user(current_user)

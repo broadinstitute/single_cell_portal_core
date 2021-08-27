@@ -126,9 +126,9 @@ Rails.application.routes.draw do
     get 'species/:id/download_genome_annotation', to: 'taxons#download_genome_annotation', as: :download_genome_annotation
     post 'species/upload/from_file', to: 'taxons#upload_species_list', as: :upload_species_list
 
-    # branding groups
+    # branding groups admin
     resources :branding_groups
-    # show a non-editable list for display and linking
+    # show a list for display and linking
     get :collections, to: 'branding_groups#list_navigate'
 
     # analysis configurations
