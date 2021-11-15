@@ -257,7 +257,7 @@ export function getPlotlyTraces({
   }
 
   const appliedScatterColor = getScatterColorToApply(dataScatterColor, scatterColor)
-  const isGeneExpressionForColor = genes.length && !isCorrelatedScatter
+  const isGeneExpressionForColor = genes.length && !isCorrelatedScatter && !isAnnotatedScatter
 
   if (annotType === 'group' && !isGeneExpressionForColor) {
     // default cluster scatter plot
