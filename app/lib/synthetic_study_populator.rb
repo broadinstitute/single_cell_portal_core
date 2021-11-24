@@ -147,7 +147,6 @@ class SyntheticStudyPopulator
       end
       params[:options] = {'cluster_file_id' => matching_cluster_file.id.to_s}
     end
-    puts "params for coordinate label: #{params}"
     params
   end
 

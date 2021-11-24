@@ -51,13 +51,10 @@ class SyntheticStudyPopulatorTest < ActionDispatch::IntegrationTest
     sleep 10
     populated_study = Study.find_by(name: SYNTH_STUDY_INFO[:name])
     populated_study.reload
-    coordinate_label = StudyFile.find_by(name: 'coordinate_labels.tsv', study_id: @study.id)
-    assert coordinate_label.present?
+    puts "coordinate label files"
+    puts StudyFile.where(file_type: 'Coordinate Label').pluck(:name, :upload_file_name, :study_id, :options)
 
     assert_not_nil populated_study
-    puts "populated_study: #{populated_study.attributes}"
-    populated_study.study_files.map {|f| puts f.attributes ; puts f.valid? }
-
     assert_equal 9, populated_study.study_files.count,
                  "Did not find all 9 files: #{populated_study.study_files.map(&:upload_file_name)}"
     assert_equal 'Metadata', populated_study.study_files.first.file_type
