@@ -51,7 +51,7 @@ class SyntheticStudyPopulatorTest < ActionDispatch::IntegrationTest
     sleep 10
     populated_study = Study.find_by(name: SYNTH_STUDY_INFO[:name])
     populated_study.reload
-    coordinate_label = StudyFile.find_by(file_type: 'Coordinate Labels', study_id: populated_study.id)
+    coordinate_label = StudyFile.find_by(name: 'coordinate_labels.tsv', study_id: @study.id)
     assert coordinate_label.present?
 
     assert_not_nil populated_study
