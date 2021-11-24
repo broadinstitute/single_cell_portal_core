@@ -139,7 +139,7 @@ if [[ "$MATCHING_TESTS" != "" ]] && [[ "$TEST_FILEPATH" != "" ]]; then
 elif [[ "$TEST_FILEPATH" != "" ]]; then
   RAILS_ENV=test bin/rails test $TEST_FILEPATH
 else
-  RAILS_ENV=test bin/rails test
+  RAILS_ENV=test bin/rails test test/integration/synthetic_study_populator_test.rb
 fi
 code=$?
 if [[ $code -ne 0 ]]; then

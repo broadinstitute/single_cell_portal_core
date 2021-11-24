@@ -135,7 +135,7 @@ class ParseUtils
       ErrorTracker.report_exception(e, user, study, coordinate_file, { opts: opts})
       coordinate_file.update(parse_status: 'failed')
       error_message = "#{e.message}"
-      Rails.logger.info error_message
+      Rails.logger.error error_message
       filename = coordinate_file.upload_file_name
       coordinate_file.remove_local_copy
       coordinate_file.destroy
@@ -146,7 +146,7 @@ class ParseUtils
     # raise validation error if needed
     if @validation_error
       error_message = "file header validation failed: should be at least NAME, X, Y, LABELS"
-      Rails.logger.info error_message
+      Rails.logger.error error_message
       filename = coordinate_file.upload_file_name
       if File.exist?(@file_location)
         File.delete(@file_location)
@@ -174,7 +174,7 @@ class ParseUtils
         raise StandardError.new('You must have uploaded a cluster file and associated it with this coordinate label file first before continuing.')
       elsif cluster_file.parsing? && cluster.nil?
         # if cluster file is parsing, re-run this job in 2 minutes
-        Rails.logger.info "Aborting parse of #{coordinate_file.upload_file_name}:#{coordinate_file.id}; cluster file #{cluster_file.upload_file_name}:#{cluster_file.id} is still parsing"
+        Rails.logger.error "Aborting parse of #{coordinate_file.upload_file_name}:#{coordinate_file.id}; cluster file #{cluster_file.upload_file_name}:#{cluster_file.id} is still parsing"
         run_at = 2.minutes.from_now
         ParseUtils.delay(run_at: run_at).initialize_coordinate_label_data_arrays(study, coordinate_file, user, opts)
         exit
@@ -297,11 +297,11 @@ class ParseUtils
       end
       if remote.nil?
         begin
-          Rails.logger.info "Preparing to upload ordinations file: #{coordinate_file.upload_file_name}:#{coordinate_file.id} to FireCloud"
+          Rails.logger.info "Preparing to upload coordinate label file: #{coordinate_file.upload_file_name}:#{coordinate_file.id} to FireCloud"
           study.send_to_firecloud(coordinate_file)
         rescue => e
           ErrorTracker.report_exception(e, user, study, coordinate_file, { opts: opts})
-          Rails.logger.info "Cluster file: #{coordinate_file.upload_file_name}:#{coordinate_file.id} failed to upload to FireCloud due to #{e.message}"
+          Rails.logger.error "Coordinate label file: #{coordinate_file.upload_file_name}:#{coordinate_file.id} failed to upload to FireCloud due to #{e.message}"
           SingleCellMailer.notify_admin_upload_fail(coordinate_file, e.message).deliver_now
         end
       else
@@ -328,7 +328,7 @@ class ParseUtils
       coordinate_file.remove_local_copy
       coordinate_file.destroy
       error_message = "#{@last_line} ERROR: #{e.message}"
-      Rails.logger.info error_message
+      Rails.logger.error error_message
       SingleCellMailer.notify_user_parse_fail(user.email, "Error: Coordinate Labels file: '#{filename}' parse has failed", error_message, study).deliver_now
     end
   end
