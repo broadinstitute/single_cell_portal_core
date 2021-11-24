@@ -48,6 +48,7 @@ class SyntheticStudyPopulatorTest < ActionDispatch::IntegrationTest
 
     assert_nil Study.find_by(name: SYNTH_STUDY_INFO[:name])
     @study = SyntheticStudyPopulator.populate(SYNTH_STUDY_INFO[:folder])
+    sleep 10
     populated_study = Study.find_by(name: SYNTH_STUDY_INFO[:name])
 
     assert_not_nil populated_study
@@ -94,6 +95,7 @@ class SyntheticStudyPopulatorTest < ActionDispatch::IntegrationTest
       refute study_file.queued_for_deletion, "#{study_file.upload_file_name} has failed parsing, object is queued for deletion"
     end
 
+    @study.reload
     exp_cells = @study.all_expression_matrix_cells
     all_cells = @study.all_cells_array
     assert_equal expected_cells, exp_cells, "Expression matrix cells not as expected; #{expected_cells} != #{exp_cells}"
