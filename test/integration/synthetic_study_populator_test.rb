@@ -50,10 +50,11 @@ class SyntheticStudyPopulatorTest < ActionDispatch::IntegrationTest
     @study = SyntheticStudyPopulator.populate(SYNTH_STUDY_INFO[:folder])
     sleep 10
     populated_study = Study.find_by(name: SYNTH_STUDY_INFO[:name])
+    populated_study.reload
+    coordinate_label = StudyFile.find_by(file_type: 'Coordinate Labels', study_id: populated_study.id)
+    assert coordinate_label.present?
 
     assert_not_nil populated_study
-    puts "study: #{@study.attributes}"
-    @study.study_files.map {|f| puts f.attributes ; puts f.valid? }
     puts "populated_study: #{populated_study.attributes}"
     populated_study.study_files.map {|f| puts f.attributes ; puts f.valid? }
 

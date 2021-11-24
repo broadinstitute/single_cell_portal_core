@@ -123,15 +123,15 @@ echo "Launching tests using seed: $RANDOM_SEED"
 
 echo "Running specified unit & integration tests..."
 # only run yarn ui-test if we haven't specified a single ruby test suite to run
-if [[ "$TEST_FILEPATH" == "" ]]; then
-  yarn ui-test
-  code=$? # immediately capture exit code to prevent this from getting clobbered
-  if [[ $code -ne 0 ]]; then
-    RETURN_CODE=$code
-    first_test_to_fail=${first_test_to_fail-"yarn ui-test"}
-    ((FAILED_COUNT++))
-  fi
-fi
+#if [[ "$TEST_FILEPATH" == "" ]]; then
+#  yarn ui-test
+#  code=$? # immediately capture exit code to prevent this from getting clobbered
+#  if [[ $code -ne 0 ]]; then
+#    RETURN_CODE=$code
+#    first_test_to_fail=${first_test_to_fail-"yarn ui-test"}
+#    ((FAILED_COUNT++))
+#  fi
+#fi
 
 # configure and invoke command for rails tests
 if [[ "$MATCHING_TESTS" != "" ]] && [[ "$TEST_FILEPATH" != "" ]]; then
