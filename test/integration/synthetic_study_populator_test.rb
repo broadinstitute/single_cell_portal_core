@@ -52,7 +52,8 @@ class SyntheticStudyPopulatorTest < ActionDispatch::IntegrationTest
     populated_study = Study.find_by(name: SYNTH_STUDY_INFO[:name])
 
     assert_not_nil populated_study
-    assert_equal 9, populated_study.study_files.count
+    assert_equal 9, populated_study.study_files.count,
+                 "Did not find all 9 files: #{populated_study.study_files.map(&:upload_file_name)}"
     assert_equal 'Metadata', populated_study.study_files.first.file_type
     assert_not_nil populated_study.study_detail.full_description
 
