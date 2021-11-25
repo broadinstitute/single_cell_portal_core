@@ -48,11 +48,10 @@ class SyntheticStudyPopulatorTest < ActionDispatch::IntegrationTest
 
     assert_nil Study.find_by(name: SYNTH_STUDY_INFO[:name])
     @study = SyntheticStudyPopulator.populate(SYNTH_STUDY_INFO[:folder])
-    sleep 10
     populated_study = Study.find_by(name: SYNTH_STUDY_INFO[:name])
     populated_study.reload
-    puts "coordinate label files"
-    puts StudyFile.where(file_type: 'Coordinate Label').pluck(:name, :upload_file_name, :study_id, :options)
+    puts "coordinate labels files"
+    puts StudyFile.where(file_type: 'Coordinate Labels').pluck(:name, :upload_file_name, :study_id, :options)
 
     assert_not_nil populated_study
     assert_equal 9, populated_study.study_files.count,
