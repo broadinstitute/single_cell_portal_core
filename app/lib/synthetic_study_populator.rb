@@ -141,7 +141,7 @@ class SyntheticStudyPopulator
       if !file_info['cluster_file_name']
         throw 'Coordinate label files must specify a cluster_file_name'
       end
-      matching_cluster_file = StudyFile.find_by(upload_file_name: file_info['cluster_file_name'], study: study)
+      matching_cluster_file = StudyFile.find_by(name: file_info['cluster_file_name'], study: study)
       if matching_cluster_file.nil?
         throw "No cluster file with name #{file_info['cluster_file_name']} to match coordinate labels"
       end

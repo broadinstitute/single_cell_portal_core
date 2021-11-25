@@ -7,7 +7,12 @@ Delayed::Worker.default_queue_name = :default
 
 if Rails.env.test? || Rails.env.development? # save a little time in testing/dev
   Delayed::Worker.sleep_delay = 5 # seconds
+end
+
+# log errors from Delayed::Job to STDOUT
+if Rails.env.test?
   Delayed::Worker.logger = ActiveSupport::Logger.new(STDOUT)
+  Delayed::Worker.logger.level = Logger::ERROR
 end
 
 # Fixing class loader issues with delayed_job, for Rails 5

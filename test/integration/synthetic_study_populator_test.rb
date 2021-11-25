@@ -48,19 +48,17 @@ class SyntheticStudyPopulatorTest < ActionDispatch::IntegrationTest
 
     assert_nil Study.find_by(name: SYNTH_STUDY_INFO[:name])
     @study = SyntheticStudyPopulator.populate(SYNTH_STUDY_INFO[:folder])
-    populated_study = Study.find_by(name: SYNTH_STUDY_INFO[:name])
-    populated_study.reload
     puts "coordinate labels files"
-    puts StudyFile.where(file_type: 'Coordinate Labels').pluck(:name, :upload_file_name, :study_id, :options)
-
-    assert_not_nil populated_study
-    assert_equal 9, populated_study.study_files.count,
-                 "Did not find all 9 files: #{populated_study.study_files.map(&:upload_file_name)}"
-    assert_equal 'Metadata', populated_study.study_files.first.file_type
-    assert_not_nil populated_study.study_detail.full_description
+    labels = StudyFile.where(file_type: 'Coordinate Labels').pluck(:name, :upload_file_name, :study_id, :options)
+    puts "#{labels}"
+    assert_not_nil @study
+    assert_equal 9, @study.study_files.count,
+                 "Did not find all 9 files: #{@study.study_files.map(&:upload_file_name)}"
+    assert_equal 'Metadata', @study.study_files.first.file_type
+    assert_not_nil @study.study_detail.full_description
 
     # check supplementary study file information
-    raw_counts_files = StudyFile.where(study: populated_study, 'expression_file_info.is_raw_counts': true)
+    raw_counts_files = StudyFile.where(study: @study, 'expression_file_info.is_raw_counts': true)
     assert_equal 1, raw_counts_files.count
     raw_counts_file = raw_counts_files.first
     assert_equal 'GRCm38', raw_counts_file.genome_assembly.name
