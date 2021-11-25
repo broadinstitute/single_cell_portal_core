@@ -135,7 +135,7 @@ class ParseUtils
       ErrorTracker.report_exception(e, user, study, coordinate_file, { opts: opts})
       coordinate_file.update(parse_status: 'failed')
       error_message = "#{e.message}"
-      Rails.logger.error error_message
+      puts error_message
       filename = coordinate_file.upload_file_name
       coordinate_file.remove_local_copy
       coordinate_file.destroy
@@ -146,7 +146,7 @@ class ParseUtils
     # raise validation error if needed
     if @validation_error
       error_message = "file header validation failed: should be at least NAME, X, Y, LABELS"
-      Rails.logger.error error_message
+      puts error_message
       filename = coordinate_file.upload_file_name
       if File.exist?(@file_location)
         File.delete(@file_location)
@@ -174,7 +174,7 @@ class ParseUtils
         raise StandardError.new('You must have uploaded a cluster file and associated it with this coordinate label file first before continuing.')
       elsif cluster_file.parsing? && cluster.nil?
         # if cluster file is parsing, re-run this job in 2 minutes
-        Rails.logger.error "Aborting parse of #{coordinate_file.upload_file_name}:#{coordinate_file.id}; cluster file #{cluster_file.upload_file_name}:#{cluster_file.id} is still parsing"
+        puts "Aborting parse of #{coordinate_file.upload_file_name}:#{coordinate_file.id}; cluster file #{cluster_file.upload_file_name}:#{cluster_file.id} is still parsing"
         run_at = 2.minutes.from_now
         ParseUtils.delay(run_at: run_at).initialize_coordinate_label_data_arrays(study, coordinate_file, user, opts)
         exit
@@ -282,7 +282,7 @@ class ParseUtils
         SingleCellMailer.notify_user_parse_complete(user.email, "Coordinate Label file: '#{coordinate_file.upload_file_name}' has completed parsing", @message, study).deliver_now
       rescue => e
         ErrorTracker.report_exception(e, user, study, coordinate_file, { opts: opts})
-        Rails.logger.error "Unable to deliver email: #{e.message}"
+        puts "Unable to deliver email: #{e.message}"
       end
 
       Rails.logger.info "Determining upload status of coordinate labels file: #{coordinate_file.upload_file_name}:#{coordinate_file.id}"
@@ -293,7 +293,7 @@ class ParseUtils
         remote = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, destination)
       rescue => e
         ErrorTracker.report_exception(e, user, study, coordinate_file, { opts: opts})
-        Rails.logger.error "Error retrieving remote: #{e.message}"
+        puts "Error retrieving remote: #{e.message}"
       end
       if remote.nil?
         begin
@@ -301,7 +301,7 @@ class ParseUtils
           study.send_to_firecloud(coordinate_file)
         rescue => e
           ErrorTracker.report_exception(e, user, study, coordinate_file, { opts: opts})
-          Rails.logger.error "Coordinate label file: #{coordinate_file.upload_file_name}:#{coordinate_file.id} failed to upload to FireCloud due to #{e.message}"
+          puts "Coordinate label file: #{coordinate_file.upload_file_name}:#{coordinate_file.id} failed to upload to FireCloud due to #{e.message}"
           SingleCellMailer.notify_admin_upload_fail(coordinate_file, e.message).deliver_now
         end
       else
@@ -314,7 +314,7 @@ class ParseUtils
         rescue => e
           ErrorTracker.report_exception(e, user, study, coordinate_file, { opts: opts})
           # we don't really care if the delete fails, we can always manually remove it later as the file is in FireCloud already
-          Rails.logger.error "Could not delete #{coordinate_file.name}:#{coordinate_file.id} in study #{study.name}; aborting"
+          puts "Could not delete #{coordinate_file.name}:#{coordinate_file.id} in study #{study.name}; aborting"
           SingleCellMailer.admin_notification('Local file deletion failed', nil, "The file at #{@file_location} failed to clean up after parsing, please remove.").deliver_now
         end
       end
@@ -328,7 +328,7 @@ class ParseUtils
       coordinate_file.remove_local_copy
       coordinate_file.destroy
       error_message = "#{@last_line} ERROR: #{e.message}"
-      Rails.logger.error error_message
+      puts error_message
       SingleCellMailer.notify_user_parse_fail(user.email, "Error: Coordinate Labels file: '#{filename}' parse has failed", error_message, study).deliver_now
     end
   end
@@ -466,7 +466,7 @@ class ParseUtils
         SingleCellMailer.notify_user_parse_complete(user.email, "Gene list file: '#{marker_file.name}' has completed parsing", @message, study).deliver_now
       rescue => e
         ErrorTracker.report_exception(e, user, study, marker_file, { opts: opts})
-        Rails.logger.error "Unable to deliver email: #{e.message}"
+        puts "Unable to deliver email: #{e.message}"
       end
 
       Rails.logger.info "Determining upload status of gene list file: #{marker_file.upload_file_name}"
@@ -477,7 +477,7 @@ class ParseUtils
         remote = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, destination)
       rescue => e
         ErrorTracker.report_exception(e, user, study, marker_file, { opts: opts})
-        Rails.logger.error "Error retrieving remote: #{e.message}"
+        puts "Error retrieving remote: #{e.message}"
       end
       if remote.nil?
         begin
@@ -498,7 +498,7 @@ class ParseUtils
         rescue => e
           ErrorTracker.report_exception(e, user, study, marker_file, { opts: opts})
           # we don't really care if the delete fails, we can always manually remove it later as the file is in FireCloud already
-          Rails.logger.error "Could not delete #{marker_file.name} in study #{study.name}; aborting"
+          puts "Could not delete #{marker_file.name} in study #{study.name}; aborting"
           SingleCellMailer.admin_notification('Local file deletion failed', nil, "The file at #{@file_location} failed to clean up after parsing, please remove.").deliver_now
         end
       end
@@ -555,7 +555,7 @@ class ParseUtils
 
   # clean up any extracted files from a failed archive extraction job
   def self.remove_extracted_archive_files(study, archive, extracted_files)
-    Rails.logger.error "Removing archive #{archive.upload_file_name} and #{extracted_files.size} extracted files from #{study.name}"
+    puts "Removing archive #{archive.upload_file_name} and #{extracted_files.size} extracted files from #{study.name}"
     extracted_files.each do |file|
       converted_filename = URI.unescape(file)
       file_basename = converted_filename.split('/').last
@@ -564,7 +564,7 @@ class ParseUtils
         begin
           delete_remote_file_on_fail(match, study)
         rescue => e
-          Rails.logger.error "Unable to remove remote copy of #{match.upload_file_name} from #{study.name}: #{e.message}"
+          puts "Unable to remove remote copy of #{match.upload_file_name} from #{study.name}: #{e.message}"
         end
         match.destroy
       end
