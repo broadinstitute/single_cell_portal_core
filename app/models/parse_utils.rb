@@ -177,7 +177,7 @@ class ParseUtils
         Rails.logger.error "Aborting parse of #{coordinate_file.upload_file_name}:#{coordinate_file.id}; cluster file #{cluster_file.upload_file_name}:#{cluster_file.id} is still parsing"
         run_at = Rails.env.test? ? 30.seconds.from_now : 2.minutes.from_now
         ParseUtils.delay(run_at: run_at).initialize_coordinate_label_data_arrays(study, coordinate_file, user, opts)
-        exit
+        abort
       end
 
       Rails.logger.info "Beginning coordinate label initialization using #{coordinate_file.upload_file_name}:#{coordinate_file.id} for cluster: #{cluster.name} in #{study.name}"

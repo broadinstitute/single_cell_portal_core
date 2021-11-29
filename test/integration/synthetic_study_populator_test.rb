@@ -48,9 +48,8 @@ class SyntheticStudyPopulatorTest < ActionDispatch::IntegrationTest
 
     assert_nil Study.find_by(name: SYNTH_STUDY_INFO[:name])
     @study = SyntheticStudyPopulator.populate(SYNTH_STUDY_INFO[:folder])
-    puts "coordinate labels files"
-    labels = StudyFile.where(file_type: 'Coordinate Labels').pluck(:name, :upload_file_name, :study_id, :options)
-    puts "#{labels}"
+    filenames = @study.study_files.pluck(:name)
+    puts filenames
     assert_not_nil @study
     assert_equal 9, @study.study_files.count,
                  "Did not find all 9 files: #{@study.study_files.map(&:upload_file_name)}"

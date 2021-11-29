@@ -105,13 +105,13 @@ bin/delayed_job restart $PASSENGER_APP_ENV -n 6 || { echo "FAILED to start DELAY
 # autocompile assets if they are not already present. This change won't result
 # in an error; this is just an FYI that static assets are needed for more
 # than just `yarn ui-test`.
-if [[ "$TEST_FILEPATH" == "" ]]; then
-  echo "Precompiling assets, yarn and webpacker..."
-  export NODE_OPTIONS="--max-old-space-size=4096"
-  RAILS_ENV=test NODE_ENV=test bin/bundle exec rake assets:clean
-  RAILS_ENV=test NODE_ENV=test yarn install --force --trace
-  RAILS_ENV=test NODE_ENV=test bin/bundle exec rake assets:precompile
-fi
+#if [[ "$TEST_FILEPATH" == "" ]]; then
+#  echo "Precompiling assets, yarn and webpacker..."
+#  export NODE_OPTIONS="--max-old-space-size=4096"
+#  RAILS_ENV=test NODE_ENV=test bin/bundle exec rake assets:clean
+#  RAILS_ENV=test NODE_ENV=test yarn install --force --trace
+#  RAILS_ENV=test NODE_ENV=test bin/bundle exec rake assets:precompile
+#fi
 
 echo "Generating random seed, seeding test database..."
 RANDOM_SEED=$(openssl rand -hex 16)
