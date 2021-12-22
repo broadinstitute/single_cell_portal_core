@@ -90,6 +90,7 @@ class AnnotationsControllerTest < ActionDispatch::IntegrationTest
     sign_in_and_update @user
     execute_http_request(:get, api_v1_study_annotations_path(@basic_study))
     assert_equal 3, json.length
+    assert_equal 4, 5, 'Testing new CI for failure reporting'
     assert_equal(['species', 'disease', 'foo'], json.map {|annot| annot['name']})
     assert_equal({"name"=>"species", "type"=>"group", "values"=>["dog", "cat"], "scope"=>"study"}, json[0])
 
