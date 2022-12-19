@@ -9,9 +9,11 @@ class ImagePipelineParameters
   # cores: number of cores to use in processing images (defaults to available cores - 1)
   # docker_image: image pipeline docker image to use
   # machine_type: GCE machine type, see Parameterizable::GOOGLE_VM_MACHINE_TYPES
-  attr_accessor :accession, :bucket, :cluster, :environment, :cores, :docker_image, :machine_type
+  # data_cache_perftime: total runtime (in ms) of upstream :render_expression_arrays job
+  attr_accessor :accession, :bucket, :cluster, :environment, :cores, :docker_image, :machine_type,
+                :data_cache_perftime
 
-  validates :accession, :bucket, :cluster, :environment, :cores, presence: true
+  validates :accession, :bucket, :cluster, :environment, :cores, :data_cache_perftime, presence: true
   validates :machine_type, inclusion: Parameterizable::GCE_MACHINE_TYPES
   validates :environment, inclusion: %w[development test staging production]
   validates :docker_image, format: { with: Parameterizable::GCR_URI_REGEXP }

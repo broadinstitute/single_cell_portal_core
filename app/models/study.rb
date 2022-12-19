@@ -1442,33 +1442,47 @@ class Study
     self.study_files.build(attributes)
   end
 
+  def clustering_files
+    study_files.any_of(
+      { file_type: 'Cluster' },
+      { 'ann_data_file_info.has_clusters' => true }
+    )
+  end
+
   # helper method to access all cluster definitions files
   def cluster_ordinations_files
-    self.study_files.by_type('Cluster')
+    clustering_files.to_a
   end
 
   # helper method to access cluster definitions file by name
   def cluster_ordinations_file(name)
-    self.study_files.find_by(file_type: 'Cluster', name: name)
+    clustering_files.detect { |file| file.name == name }
   end
 
   # helper method to directly access expression matrix files
   def expression_matrix_files
-    self.study_files.by_type(['Expression Matrix', 'MM Coordinate Matrix'])
+    expression_matrices.to_a
   end
 
   # Mongoid criteria for expression files (rather than array of StudyFiles)
   def expression_matrices
-    self.study_files.where(:file_type.in => ['Expression Matrix', 'MM Coordinate Matrix'])
+    study_files.any_of(
+      { :file_type.in => ['Expression Matrix', 'MM Coordinate Matrix'] },
+      { 'ann_data_file_info.has_expression' => true }
+    )
   end
 
   # helper method to directly access expression matrix file by name
   def expression_matrix_file(name)
-    self.expression_matrices.find_by(name: name)
+    expression_matrices.find_by(name:)
   end
+
   # helper method to directly access metadata file
   def metadata_file
-    self.study_files.by_type('Metadata').first
+    study_files.any_of(
+      { file_type: 'Metadata' },
+      { 'ann_data_file_info.has_metadata' => true }
+    ).first
   end
 
   # check if a study has analysis output files for a given analysis

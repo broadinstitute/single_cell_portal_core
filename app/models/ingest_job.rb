@@ -14,7 +14,8 @@ class IngestJob
 
   # valid ingest actions to perform
   VALID_ACTIONS = %i[
-    ingest_expression ingest_cluster ingest_cell_metadata ingest_anndata ingest_anndata_reference subsample differential_expression render_expression_arrays
+    ingest_expression ingest_cluster ingest_cell_metadata ingest_anndata subsample differential_expression
+    render_expression_arrays
   ].freeze
 
   # Mappings between actions & models (for cleaning up data on re-parses)
@@ -29,6 +30,11 @@ class IngestJob
   # these jobs usually process files and write objects back to the bucket, and as such have special pre/post-processing
   # steps that need to be accounted for
   SPECIAL_ACTIONS = %i[differential_expression render_expression_arrays image_pipeline].freeze
+
+  # jobs that need parameters objects in order to launch correctly
+  PARAMS_OBJ_REQUIRED = %i[
+    differential_expression render_expression_arrays image_pipeline ingest_anndata
+  ].freeze
 
   # Name of pipeline submission running in GCP (from [PapiClient#run_pipeline])
   attr_accessor :pipeline_name
@@ -51,7 +57,7 @@ class IngestJob
   validates :pipeline_name, :study, :study_file, :user, :action,
             presence: true
   validates :action, inclusion: VALID_ACTIONS
-  validates :params_object, presence: true, if: -> { action == :differential_expression }
+  validates :params_object, presence: true, if: -> { PARAMS_OBJ_REQUIRED.include? action.to_sym }
 
   # Push a file to a workspace bucket in the background and then launch an ingest run and queue polling
   # Can also clear out existing data if necessary (in case of a re-parse)
@@ -383,21 +389,20 @@ class IngestJob
     when :ingest_cluster
       set_cluster_point_count
       set_study_default_options
-      launch_subsample_jobs
-      launch_differential_expression_jobs
+      launch_subsample_jobs unless study_file.is_anndata?
+      launch_differential_expression_jobs unless study_file.is_anndata?
+      set_anndata_file_info if study_file.is_anndata?
     when :ingest_subsample
       set_subsampling_flags
     when :differential_expression
       create_differential_expression_results
+    when :render_expression_arrays
+      launch_image_pipeline_job
     when :image_pipeline
       set_has_image_cache
     when :ingest_anndata
-      # currently extracting and ingesting only clustering data
-      # this will likely error until the DB inserts ingest job is done
-      set_cluster_point_count
-      set_study_default_options
-      launch_subsample_jobs
-      # TODO (SCP-4708, SCP-4709, SCP-4710) will duplicate a lot more from above 
+      launch_anndata_subparse_jobs
+      # TODO (SCP-4708, SCP-4709, SCP-4710) will duplicate a lot more from above
     end
     set_study_initialized
   end
@@ -409,26 +414,12 @@ class IngestJob
   def set_study_default_options
     case study_file.file_type
     when 'Metadata'
-      if study.default_options[:annotation].blank?
-        cell_metadatum = study.cell_metadata.keep_if(&:can_visualize?).first || study.cell_metadata.first
-        study.default_options[:annotation] = cell_metadatum.annotation_select_value
-        if cell_metadatum.annotation_type == 'numeric'
-          study.default_options[:color_profile] = 'Reds'
-        end
-      end
+      set_default_annotation
     when 'Cluster'
-      if study.default_options[:cluster].nil?
-        cluster = study.cluster_groups.by_name(study_file.name)
-        study.default_options[:cluster] = cluster.name
-        if study.default_options[:annotation].blank? && cluster.cell_annotations.any?
-          annotation = cluster.cell_annotations.select { |annot| cluster.can_visualize_cell_annotation?(annot) }.first ||
-            cluster.cell_annotations.first
-          study.default_options[:annotation] = cluster.annotation_select_value(annotation)
-          if annotation[:type] == 'numeric'
-            study.default_options[:color_profile] = 'Reds'
-          end
-        end
-      end
+      set_default_cluster
+      set_default_annotation
+    when 'AnnData'
+      set_default_cluster
     end
     Rails.logger.info "Setting default options in #{study.name}: #{study.default_options}"
     study.save
@@ -436,14 +427,61 @@ class IngestJob
     ClusterCacheService.delay(queue: :cache).cache_study_defaults(study)
   end
 
+  # get the name of an associate ClusterGroup, if one was generated from this job
+  def cluster_name_by_file_type
+    case study_file.file_type
+    when 'Cluster'
+      study_file.name
+    when 'AnnData'
+      params_object.name
+    else
+      nil
+    end
+  end
+
+  # set the default annotation for the study, if not already set
+  def set_default_annotation
+    return if study.default_options[:annotation].present?
+
+    cell_metadatum = study.cell_metadata.keep_if(&:can_visualize?).first || study.cell_metadata.first
+    cluster = study.cluster_groups.first
+    if cluster.present?
+      cell_annotation = cluster.cell_annotations.select { |annot| cluster.can_visualize_cell_annotation?(annot) }
+                               .first || cluster.cell_annotations.first
+    else
+      cell_annotation = nil
+    end
+    annotation_object = cell_metadatum || cell_annotation
+    return if annotation_object.nil?
+
+    if annotation_object.is_a?(CellMetadatum)
+      study.default_options[:annotation] = annotation_object.annotation_select_value
+      is_numeric = annotation_object.annotation_type == 'numeric'
+    elsif annotation_object.is_a?(Hash) && cluster.present?
+      study.default_options[:annotation] = cluster.annotation_select_value(annotation_object)
+      is_numeric = annotation_object[:type] == 'numeric'
+    end
+    study.default_options[:color_profile] = 'Reds' if is_numeric
+  end
+
+  # set the default cluster for the study, if not already set
+  def set_default_cluster
+    if study.default_options[:cluster].nil?
+      cluster = study.cluster_groups.by_name(cluster_name_by_file_type)
+      study.default_options[:cluster] = cluster.name if cluster.present?
+    end
+  end
+
   # set the point count on a cluster group after successful ingest
   #
   # * *yields*
   #   - sets the :points attribute on a ClusterGroup
   def set_cluster_point_count
-    cluster_group = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id)
-    cluster_group.set_point_count!
-    Rails.logger.info "Point count on #{cluster_group.name}:#{cluster_group.id} set to #{cluster_group.points}"
+    cluster_group = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: cluster_name_by_file_type)
+    if cluster_group.present?
+      cluster_group.set_point_count!
+      Rails.logger.info "Point count on #{cluster_group.name}:#{cluster_group.id} set to #{cluster_group.points}"
+    end
   end
 
   # Set the study "initialized" attribute if all main models are populated
@@ -503,7 +541,7 @@ class IngestJob
 
   # Set correct subsampling flags on a cluster after job completion
   def set_subsampling_flags
-    cluster_group = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id)
+    cluster_group = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: cluster_name_by_file_type)
     if cluster_group.is_subsampling? && cluster_group.find_subsampled_data_arrays.any?
       Rails.logger.info "Setting subsampled flags for #{study_file.upload_file_name}:#{study_file.id} (#{cluster_group.name}) for visualization"
       cluster_group.update(subsampled: true, is_subsampling: false)
@@ -536,11 +574,42 @@ class IngestJob
     de_result.save
   end
 
+  # launch an image pipeline job once :render_expression_arrays completes
+  def launch_image_pipeline_job
+    Rails.logger.info "Launching image_pipeline job in #{study.accession} for cluster file: #{study_file.name}"
+    ImagePipelineService.run_image_pipeline_job(study, study_file, user:, data_cache_perftime: get_total_runtime_ms)
+  end
+
   # set flags to denote when a cluster has image data
   def set_has_image_cache
     Rails.logger.info "Setting image_pipeline flags in #{study.accession} for cluster: #{study_file.name}"
     cluster_group = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id)
     cluster_group.update(has_image_cache: true) if cluster_group.present?
+  end
+
+  # set appropriate flags for AnnDataFileInfo entries
+  def set_anndata_file_info
+    study_file.build_ann_data_file_info if study_file.ann_data_file_info.nil?
+
+    study_file.ann_data_file_info.has_clusters = ClusterGroup.where(study:, study_file:).exists?
+    study_file.ann_data_file_info.has_metadata = CellMetadatum.where(study:, study_file:).exists?
+    study_file.ann_data_file_info.has_expression = Gene.where(study:, study_file:).exists?
+    study_file.save
+  end
+
+  # launch appropriate downstream jobs once an AnnData file successfully extracts "fragment" files
+  def launch_anndata_subparse_jobs
+    if params_object.extract_cluster.present?
+      params_object.attribute_as_array(:obsm_keys).each do |fragment|
+        cluster_gs_url = params_object.fragment_file_gs_url(study.bucket_id, 'cluster', fragment)
+        cluster_params = AnnDataIngestParameters.new(
+          ingest_cluster: true, name: fragment, cluster_file: cluster_gs_url, domain_ranges: '{}',
+          ingest_anndata: false, extract_cluster: false, obsm_keys: nil
+        )
+        job = IngestJob.new(study:, study_file:, user:, action: :ingest_cluster, params_object: cluster_params)
+        job.delay.push_remote_and_launch_ingest
+      end
+    end
   end
 
   # set corresponding is_differential_expression_enabled flags on annotations
@@ -618,10 +687,12 @@ class IngestJob
 
     # retrieve pipeline metadata for VM information
     vm_info = metadata.dig('pipeline', 'resources', 'virtualMachine')
+
+    job_perftime = get_total_runtime_ms
     # Event properties to log to Mixpanel.
     # Mixpanel uses camelCase for props; snake_case would degrade Mixpanel UX.
     job_props = {
-      perfTime: get_total_runtime_ms, # Latency in milliseconds
+      perfTime: job_perftime, # Latency in milliseconds
       fileName: study_file.name,
       fileType: file_type,
       fileSize: study_file.upload_file_size,
@@ -657,7 +728,7 @@ class IngestJob
         )
       end
     when :ingest_cluster, :ingest_subsample
-      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id)
+      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: cluster_name_by_file_type)
       job_props.merge!({metadataFilePresent: study.metadata_file.present?})
       # must make sure cluster is present, as parse failures may result in no data having been stored
       if cluster.present?
@@ -685,6 +756,14 @@ class IngestJob
         {
           numCells: cluster&.points,
           numAnnotationValues: annotation[:values]&.size
+        }
+      )
+    when :image_pipeline
+      data_cache_perftime =  params_object.data_cache_perftime
+      job_props.merge!(
+        {
+          'perfTime:dataCache' => data_cache_perftime,
+          'perfTime:full' => data_cache_perftime + job_perftime
         }
       )
     when :ingest_anndata
@@ -780,7 +859,9 @@ class IngestJob
       message << "Image Pipeline data pre-rendering completed for \"#{params_object.cluster_name}\""
       message << "Gene-level files created: #{genes}"
     when :image_pipeline
+      complete_pipeline_runtime = TimeDifference.between(*get_image_pipeline_timestamps).humanize
       message << "Image Pipeline image rendering completed for \"#{params_object.cluster}\""
+      message << "Complete runtime (data cache & image rendering): #{complete_pipeline_runtime}"
     when :ingest_anndata
       message << "AnnData file ingest has completed"
     end

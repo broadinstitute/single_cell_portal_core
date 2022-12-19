@@ -59,7 +59,7 @@ class ImagePipelineServiceTest < ActiveSupport::TestCase
     mock.expect(:delay, job_mock)
     IngestJob.stub :new, mock do
       ApplicationController.firecloud_client.stub :workspace_file_exists?, true do
-        ImagePipelineService.run_image_pipeline_job(@study, @cluster_file)
+        ImagePipelineService.run_image_pipeline_job(@study, @cluster_file, data_cache_perftime: 120_000)
       end
     end
   end
@@ -117,7 +117,7 @@ class ImagePipelineServiceTest < ActiveSupport::TestCase
 
   test 'should create image pipeline parameters object' do
     ApplicationController.firecloud_client.stub :workspace_file_exists?, true do
-      params = ImagePipelineService.create_image_pipeline_parameters_object(@study, @cluster_file)
+      params = ImagePipelineService.create_image_pipeline_parameters_object(@study, @cluster_file, 120_000)
       assert params.valid?
       assert_equal @cluster_file.name, params.cluster
       assert_equal @study.bucket_id, params.bucket

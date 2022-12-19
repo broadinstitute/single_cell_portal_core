@@ -94,19 +94,26 @@ class FileParseService
           Rails.logger.info "Aborting parse of #{@study_file.name} as #{@study_file.file_type} in study #{@study.name}; not applicable"
         end
       when 'AnnData'
+        # create AnnDataFileInfo document so that it is present to be updated later on ingest completion
+        study_file.build_ann_data_file_info
+        study_file.save
+
         # enable / disable full ingest of AnnData files using the feature flag 'ingest_anndata_file'
         if do_anndata_file_ingest
-          # Currently assuming "Happy Path" and so the AnnData file will have clustering data
-          # extract and parse clustering data
-          job = IngestJob.new(study:, study_file:, user:, action: :ingest_anndata, reparse:, persist_on_fail:)
-          # Future consideration about whether to do all in one job likely in (SCP-4754)
+          params_object = AnnDataIngestParameters.new(anndata_file: study_file.gs_url)
           # TODO extract and parse Metadata (SCP-4708)
           # TODO extract and parse Processed Exp Data (SCP-4709)
           # TODO extract and parse Raw Exp Data (SCP-4710)
         else
-          # launch an ingest job for parsing a reference AnnData file
-          job = IngestJob.new(study:, study_file:, user:, action: :ingest_anndata_reference, reparse:, persist_on_fail:)
+          # setting attributes to false/nil will omit them from the command line later
+          # values are interchangeable but are more readable depending on parameter type
+          params_object = AnnDataIngestParameters.new(
+            anndata_file: study_file.gs_url, extract_cluster: false, obsm_keys: nil
+          )
         end
+        job = IngestJob.new(
+          study:, study_file:, user:, action: :ingest_anndata, reparse:, persist_on_fail:, params_object:
+        )
         job.delay.push_remote_and_launch_ingest
       end
 

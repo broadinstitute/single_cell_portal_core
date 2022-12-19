@@ -136,5 +136,9 @@ FactoryBot.define do
                           study_file: file)
       end
     end
+    factory :ann_data_file do
+      file_type { 'AnnData' }
+      parse_status { 'parsed' }
+    end
   end
 end

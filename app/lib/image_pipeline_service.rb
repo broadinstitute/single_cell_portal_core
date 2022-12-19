@@ -10,9 +10,10 @@ class ImagePipelineService
   # :run_render_expression_arrays_job
   #
   # * *params*
-  #   - +study+        (Study) => study to generate images in
-  #   - +cluster_file+ (StudyFile) => clustering file to use as source for cell names
-  #   - +user+         (User) => associated user (for email notifications)
+  #   - +study+                (Study) => study to generate images in
+  #   - +cluster_file+         (StudyFile) => clustering file to use as source for cell names
+  #   - +user+                 (User) => associated user (for email notifications)
+  #   - +data_cache_perftime+ (Integer) => runtime of :render_expression_arrays job, for reporting
   #
   # * *yields*
   #   - (IngestJob) => image_pipeline job in PAPI
@@ -22,10 +23,10 @@ class ImagePipelineService
   #
   # * *raises*
   #   - (ArgumentError) => if requested parameters do not validate
-  def self.run_image_pipeline_job(study, cluster_file, user: nil)
+  def self.run_image_pipeline_job(study, cluster_file, user: nil, data_cache_perftime:)
     validate_study(study)
     requested_user = user || study.user
-    params_object = create_image_pipeline_parameters_object(study, cluster_file)
+    params_object = create_image_pipeline_parameters_object(study, cluster_file, data_cache_perftime)
     submit_job(study:, cluster_file:, requested_user:, params_object:)
   end
 
@@ -118,18 +119,21 @@ class ImagePipelineService
   # create a ImagePipelineParameters object to pass to IngestJob
   #
   # * *params*
-  #   - +study+        (Study) => study to generate images in
-  #   - +cluster_file+ (StudyFile) => clustering file to use as source for cell names
+  #   - +study+                (Study) => study to generate images in
+  #   - +cluster_file+         (StudyFile) => clustering file to use as source for cell names
+  #   - +data_cache_perftime+ (Integer) => runtime of :render_expression_arrays job, for reporting
   #
   # * *returns*
   #   - (ImagePipelineParameters) => parameters object
   #
   # * *raises*
   #   - (ArgumentError) => if requested parameters do not validate
-  def self.create_image_pipeline_parameters_object(study, cluster_file)
+  def self.create_image_pipeline_parameters_object(study, cluster_file, data_cache_perftime)
     validate_study_file(cluster_file, :cluster_file)
     cluster_name = ClusterGroup.find_by(study: study, study_file: cluster_file)&.name
-    ImagePipelineParameters.new(accession: study.accession, bucket: study.bucket_id, cluster: cluster_name)
+    ImagePipelineParameters.new(
+      accession: study.accession, bucket: study.bucket_id, cluster: cluster_name, data_cache_perftime:
+    )
   end
 
   # validate a study is a candidate for image pipeline jobs

@@ -72,10 +72,12 @@ class StudyFile
   embeds_one :expression_file_info
   embeds_one :cluster_file_info, cascade_callbacks: true
   embeds_one :heatmap_file_info
+  embeds_one :ann_data_file_info
 
   accepts_nested_attributes_for :expression_file_info
   accepts_nested_attributes_for :cluster_file_info
   accepts_nested_attributes_for :heatmap_file_info
+  accepts_nested_attributes_for :ann_data_file_info
   validate :show_exp_file_info_errors
 
   # field definitions
@@ -996,14 +998,19 @@ class StudyFile
 
   # quick check if file is expression-based
   def is_expression?
-    ['Expression Matrix', 'MM Coordinate Matrix'].include? self.file_type
+    ['Expression Matrix', 'MM Coordinate Matrix'].include?(file_type) ||
+      !!ann_data_file_info&.has_expression ||
+      !!ann_data_file_info&.has_raw_counts
   end
 
   # helper to identify if matrix is a raw count file
   def is_raw_counts_file?
-    self.expression_file_info.present? ? self.expression_file_info.is_raw_counts : false
+    !!expression_file_info&.is_raw_counts || !!ann_data_file_info&.has_raw_counts
   end
 
+  def is_anndata?
+    file_type == 'AnnData'
+  end
 
   ###
   #
@@ -1354,7 +1361,13 @@ class StudyFile
 
   # ensure that a user can only add one metadata file per study
   def ensure_metadata_singleton
-    if StudyFile.where(file_type: 'Metadata', study_id: self.study_id, queued_for_deletion: false, :id.ne => self.id).exists?
+    if StudyFile.any_of(
+      { :file_type => 'Metadata', :study_id => study_id, :queued_for_deletion => false, :id.ne => id },
+      {
+        :file_type => 'AnnData', 'ann_data_file_info.has_metadata' => true, :study_id => study_id,
+        :queued_for_deletion => false, :id.ne => id
+      }
+    ).exists?
       errors.add(:file_type, 'You may only add one metadata file per study')
     end
   end

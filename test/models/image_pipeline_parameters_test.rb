@@ -6,7 +6,8 @@ class ImagePipelineParametersTest < ActiveSupport::TestCase
       accession: 'SCP1234',
       cluster: 'UMAP',
       bucket: 'test_bucket',
-      environment: 'test'
+      environment: 'test',
+      data_cache_perftime: 120_000
     }
     @pipeline_params = ImagePipelineParameters.new(@params)
   end
@@ -15,7 +16,7 @@ class ImagePipelineParametersTest < ActiveSupport::TestCase
     assert @pipeline_params.valid?
     invalid = ImagePipelineParameters.new(environment: 'foo', machine_type: 'bar', docker_image: 'blah')
     assert_not invalid.valid?
-    assert_equal %i[accession bucket cluster cores docker_image environment machine_type],
+    assert_equal %i[accession bucket cluster cores data_cache_perftime docker_image environment machine_type],
                  invalid.errors.attribute_names.sort
 
     # test overriding defaults
