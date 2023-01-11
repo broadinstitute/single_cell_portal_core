@@ -139,6 +139,49 @@ FactoryBot.define do
     factory :ann_data_file do
       file_type { 'AnnData' }
       parse_status { 'parsed' }
+      transient do
+        # cell_input is an array of all cell names
+        # e.g.  ['cellA', 'cellB', 'cellC']
+        cell_input { [] }
+        # coordinate_input is an array of hashes of axes and values where the key is the name of the cluster
+        # e.g. [ { tsne: { x: [1,2,3], y: [4,5,6] } }, { umap: ... }]
+        # cell names are used from above
+        coordinate_input { [] }
+        # annotation_input is an array of objects specifying name, type, and values for annotations
+        # values should be an array in the same length and order as the 'cells' array above
+        # e.g. [{ name: 'category', type: 'group', values: ['foo', 'foo', 'bar'] }]
+        annotation_input { [] }
+      end
+      after(:create) do |file, evaluator|
+        file.build_ann_data_file_info
+        evaluator.annotation_input.each do |annotation|
+          file.ann_data_file_info.has_metadata = true
+          FactoryBot.create(:cell_metadatum,
+                            annotation_input: annotation,
+                            study_file: file)
+        end
+        if evaluator.cell_input.any?
+          FactoryBot.create(:data_array,
+                            array_type: 'cells',
+                            name: 'All Cells',
+                            array_index: 0,
+                            values: evaluator.cell_input,
+                            study_file: file)
+        end
+        evaluator.coordinate_input.each do |entry|
+          entry.each do |cluster_name, axes|
+            file.ann_data_file_info.has_clusters = true
+            axes_and_cells = axes.merge(cells: evaluator.cell_input)
+            FactoryBot.create(:cluster_group_with_cells,
+                              name: cluster_name,
+                              cell_input: axes_and_cells,
+                              cluster_type: "#{axes.keys.size}d",
+                              study_file: file)
+          end
+        end
+        # gotcha to save file to update ann_data_file_info
+        file.save
+      end
     end
   end
 end

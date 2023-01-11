@@ -55,6 +55,10 @@ const tabList = [
 function annotHasDe(exploreInfo, exploreParams) {
   const flags = getFeatureFlagsWithDefaults()
   if (!flags?.differential_expression_frontend || !exploreInfo) {
+    // set isDifferentialExpressionEnabled to false as user cannot see DE results, even if present for annotation
+    if (window.SCP) {
+      window.SCP.isDifferentialExpressionEnabled = false
+    }
     return false
   }
 

@@ -174,4 +174,35 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
       mock.verify
     end
   end
+
+  test 'should delete parsed data from AnnData files' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'AnnData Delete Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    study_file = FactoryBot.create(:ann_data_file,
+                                   name: 'data.h5ad',
+                                   study:,
+                                   cell_input: %w[A B C D],
+                                   annotation_input: [
+                                     { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                                   ],
+                                   coordinate_input: [
+                                     { x_tsne: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                   ])
+    study.update(default_options: { cluster: 'x_tsne', annotation: 'disease--group--study' })
+    study.reload
+    assert_equal 1, study.cluster_groups.size
+    assert_equal 1, study.cell_metadata.size
+    assert_equal %w[A B C D], study.all_cells_array
+    assert_equal study_file, study.metadata_file
+    assert_equal 'x_tsne', study.default_cluster.name
+    DeleteQueueJob.new(study_file).perform
+    study.reload
+    assert_equal 0, study.cluster_groups.size
+    assert_equal 0, study.cell_metadata.size
+    assert_empty study.all_cells_array
+    assert_nil study.metadata_file
+    assert_nil study.default_cluster
+  end
 end

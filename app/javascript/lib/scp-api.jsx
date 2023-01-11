@@ -453,7 +453,8 @@ export async function fetchAnnotationOptions(studyAccession, mock=false) {
  */
 export async function fetchCluster({
   studyAccession, cluster, annotation, subsample, consensus, genes=null,
-  isAnnotatedScatter=null, isCorrelatedScatter=null, fields=[], mock=false
+  isAnnotatedScatter=null, isCorrelatedScatter=null, expressionArray=null,
+  fields=[], mock=false
 }) {
   const apiUrl = fetchClusterUrl({
     studyAccession, cluster, annotation, subsample,

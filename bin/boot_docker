@@ -32,6 +32,7 @@ $0 [OPTION]
 -w VALUE 	set the TCELL_AGENT_APP_ID variable (for integrating with TCell web application firewall, if enabled)
 -W VALUE 	set the TCELL_AGENT_API_KEY variable (for integrating with TCell web application firewall client-side, if enabled)
 -A VALUE 	set the T_CELL_SERVER_AGENT_API_KEY variable (for integrating with TCell web application firewall server-side, if enabled)
+-a VALUE 	set the APP_INTERNAL_IP variable (so staging Image Pipeline can access staging SCP web server, if enabled)
 -v VALUE	set the version of the single_cell_portal Docker image to use (defaults to latest)
 -t VALUE	set the path to a specific test suite file to run (if booting in test mode only)
 -R VALUE	set the regular expression or exact name to run only matching tests specified in -t (if booting in test mode only)
@@ -59,7 +60,7 @@ GOOGLE_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT
 DOCKER_IMAGE_NAME='gcr.io/broad-singlecellportal-staging/single-cell-portal'
 DOCKER_IMAGE_VERSION='development'
 
-while getopts "n:N:e:d:D:m:M:r:s:k:K:f:F:p:h:u:P:H:o:S:y:g:t:R:w:W:A:" OPTION; do
+while getopts "n:N:e:d:D:m:M:r:s:k:K:f:F:p:h:u:P:H:o:S:y:g:t:R:w:W:A:a:" OPTION; do
 case $OPTION in
 	n)
 		CONTAINER_NAME="$OPTARG"
@@ -127,6 +128,9 @@ case $OPTION in
   A)
 		T_CELL_SERVER_AGENT_API_KEY="$OPTARG"
 		;;
+  a)
+		APP_INTERNAL_IP="$OPTARG"
+		;;
 	H)
 		echo "$usage"
 		exit 0
@@ -159,6 +163,7 @@ then
 	    -e SENDGRID_PASSWORD="$SENDGRID_PASSWORD" -e OAUTH_CLIENT_ID="$OAUTH_CLIENT_ID" -e OAUTH_CLIENT_SECRET="$OAUTH_CLIENT_SECRET" \
 	    -e TCELL_AGENT_APP_ID="$TCELL_AGENT_APP_ID" -e TCELL_AGENT_API_KEY="$TCELL_AGENT_API_KEY" -e T_CELL_SERVER_AGENT_API_KEY="$T_CELL_SERVER_AGENT_API_KEY" \
 	    -e SENTRY_DSN="$SENTRY_DSN" -e GA_TRACKING_ID="$GA_TRACKING_ID" -e GOOGLE_CLOUD_PROJECT="$GOOGLE_CLOUD_PROJECT" -e MIXPANEL_SECRET="$MIXPANEL_SECRET" \
+	    -e APP_INTERNAL_IP="$APP_INTERNAL_IP" \
 	    $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_VERSION
 elif [[ "$PASSENGER_APP_ENV" = "pentest" ]]
 then

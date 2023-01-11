@@ -21,8 +21,8 @@ class ImagePipelineParameters
 
   # default values for all jobs
   PARAM_DEFAULTS = {
-    docker_image: 'gcr.io/broad-singlecellportal-staging/image-pipeline:0.1.0_e2992be5b',
-    machine_type: 'n1-highcpu-96'
+    docker_image: 'gcr.io/broad-singlecellportal-staging/image-pipeline:0.1.0_c2b090043',
+    machine_type: 'n1-standard-8'
   }.freeze
 
   def initialize(attributes = {})

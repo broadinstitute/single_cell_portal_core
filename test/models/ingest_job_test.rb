@@ -214,7 +214,7 @@ class IngestJobTest < ActiveSupport::TestCase
                                       annotation_input: [
                                         { name: 'species', type: 'group', values: %w[dog dog dog] }
                                       ])
-    job = IngestJob.new(study: @basic_study, study_file: metadata_file, user: @user, action: :ingest_metadata)
+    job = IngestJob.new(study: @basic_study, study_file: metadata_file, user: @user, action: :ingest_cell_metadata)
     job.set_study_default_options
     @basic_study.reload
     assert_equal 'species--group--invalid', @basic_study.default_annotation

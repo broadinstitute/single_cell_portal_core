@@ -21,10 +21,10 @@ class ImagePipelineParametersTest < ActiveSupport::TestCase
 
     # test overriding defaults
     fake_image = 'gcr.io/repository/image:0.1.2'
-    new_params = ImagePipelineParameters.new(@params.merge(cores: 12, docker_image: fake_image))
+    new_params = ImagePipelineParameters.new(@params.merge(cores: 4, docker_image: fake_image))
     assert new_params.valid?
     assert_equal fake_image, new_params.docker_image
-    assert_equal 12, new_params.cores
+    assert_equal 4, new_params.cores
   end
 
   test 'should ensure core count does not exceed requested machine type' do
@@ -35,8 +35,8 @@ class ImagePipelineParametersTest < ActiveSupport::TestCase
   end
 
   test 'should get cores from machine type' do
-    assert_equal 95, @pipeline_params.cores
-    assert_equal 96, @pipeline_params.machine_type_cores
+    assert_equal 7, @pipeline_params.cores
+    assert_equal 8, @pipeline_params.machine_type_cores
     custom_machine_type = ImagePipelineParameters.new(@params.merge(machine_type: 'n1-standard-12'))
     assert_equal 11, custom_machine_type.cores
     assert_equal 12, custom_machine_type.machine_type_cores

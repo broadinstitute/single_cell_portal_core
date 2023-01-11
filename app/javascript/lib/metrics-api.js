@@ -392,6 +392,13 @@ function getTabProperty() {
  * @param {Object} props
  */
 export function log(name, props = {}) {
+  let isDifferentialExpressionEnabled // track differential expression visibility globally
+  if ('isDifferentialExpressionEnabled' in props) {
+    isDifferentialExpressionEnabled = props.isDifferentialExpressionEnabled
+  } else {
+    isDifferentialExpressionEnabled = !!window.SCP?.isDifferentialExpressionEnabled
+  }
+
   props = Object.assign(props, {
     appId: 'single-cell-portal',
     appPath: getAnalyticsPageName(),
@@ -399,6 +406,7 @@ export function log(name, props = {}) {
     env,
     logger: 'app-frontend',
     scpVersion: version,
+    isDifferentialExpressionEnabled,
     isServiceWorkerCacheEnabled
   }, getDefaultProperties())
 

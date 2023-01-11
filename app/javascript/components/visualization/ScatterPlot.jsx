@@ -44,7 +44,7 @@ window.Plotly = Plotly
 function RawScatterPlot({
   studyAccession, cluster, annotation, subsample, consensus, genes, scatterColor, dimensionProps,
   isAnnotatedScatter=false, isCorrelatedScatter=false, isCellSelecting=false, plotPointsSelected, dataCache,
-  canEdit, expressionFilter=[0, 1],
+  canEdit, bucketId, expressionFilter=[0, 1],
   countsByLabel, setCountsByLabel, hiddenTraces=[], isSplitLabelArrays, updateExploreParams
 }) {
   const [isLoading, setIsLoading] = useState(false)
@@ -188,7 +188,7 @@ function RawScatterPlot({
     return traces
   }
 
-  /** Update UI to reflect successfully scatter plot rendering */
+  /** Update UI to reflect successful scatter plot rendering */
   function concludeRender(scatter) {
     if (scatter) {
       setScatterData(scatter)
@@ -198,8 +198,22 @@ function RawScatterPlot({
     setIsLoading(false)
   }
 
-  /** Display static image of gene expression scatter plot */
-  async function renderImage(response) {
+
+  /** Fetch cached data from bucket, use it to draw *interactive* gene expression scatter plot */
+  function renderBucketData(fetchMethod, expressionParams, dataPath) {
+    fetchBucketFile(bucketId, dataPath).then(async response => {
+      const expressionArray = await response.json()
+      expressionParams.expressionArray = expressionArray
+      fetchMethod(expressionParams).then(processScatterPlot).catch(error => {
+        setIsLoading(false)
+        setShowError(true)
+        setError(error)
+      })
+    })
+  }
+
+  /** Draw static image of gene expression scatter plot */
+  async function drawPlotImage(response) {
     const imageBuffer = await response.arrayBuffer()
     const exifTags = ExifReader.load(imageBuffer)
     const imageBlob = new Blob([imageBuffer])
@@ -318,6 +332,9 @@ function RawScatterPlot({
 
     if (flags?.progressive_loading && genes.length === 1 && document.querySelector(imageSelector)) {
       Plotly.newPlot(graphElementId, plotlyTraces, layout)
+
+      // TODO (SCP-4839): Instrument more bucket cache analytics, then remove console log below
+      // console.log(`Interactive plot with bucket data took: ${ Date.now() - window.t0}`)
     } else {
       Plotly.react(graphElementId, plotlyTraces, layout)
     }
@@ -355,34 +372,69 @@ function RawScatterPlot({
   useEffect(() => {
     setIsLoading(true)
 
+    let expressionArray
+
+    const fetchMethod = dataCache ? dataCache.fetchCluster : fetchCluster
+
     // use an image and/or data cache if one has been provided, otherwise query scp-api directly
     if (
       flags?.progressive_loading && isGeneExpression(genes, isCorrelatedScatter) && !isAnnotatedScatter &&
-      !scatterData &&
-      genes[0] === 'A1BG-AS1' // Placeholder; likely replace with setting like DE
+      !scatterData
     ) {
-      const bucketName = 'broad-singlecellportal-public'
-      const filePath = `test/scatter_image/${genes[0]}-v2.webp`
-      fetchBucketFile(bucketName, filePath).then(async response => {
-        renderImage(response)
+      const urlSafeCluster = cluster.replaceAll('+', 'pos').replace(/\W/g, '_')
+      const gene = genes[0]
+      const stem = '_scp_internal/cache/expression_scatter/'
+      const leaf = `${urlSafeCluster}/${gene}`
+
+      // TODO (SCP-4839): Instrument more bucket cache analytics, then remove line below
+      // window.t0 = Date.now()
+
+      const imagePath = `${stem}images/${leaf}.webp`
+      const dataPath = `${stem}data/${leaf}.json`
+
+      const expressionParams = {
+        studyAccession,
+        cluster,
+        annotation: annotation ? annotation : '',
+        subsample,
+        consensus,
+        genes,
+        isAnnotatedScatter,
+        isCorrelatedScatter
+      }
+
+      fetchBucketFile(bucketId, imagePath).then(async response => {
+        const imageCacheHit = response.ok
+
+        // Draw plot as static image first, if it's cached
+        if (imageCacheHit) {
+          await drawPlotImage(response)
+        }
+
+        // Then make it interactive, using gene expression scatter plot data array from GCS bucket
+        renderBucketData(fetchMethod, expressionParams, dataPath)
+
+        // TODO (SCP-4839): Instrument more bucket cache analytics, then remove console log below
+        // console.log(`Image render took ${ Date.now() - window.t0}`)
+        // Add imageCacheHit boolean to perfTime object here
+      })
+    } else {
+      fetchMethod({
+        studyAccession,
+        cluster,
+        annotation: annotation ? annotation : '',
+        subsample,
+        consensus,
+        genes,
+        isAnnotatedScatter,
+        isCorrelatedScatter,
+        expressionArray
+      }).then(processScatterPlot).catch(error => {
+        setIsLoading(false)
+        setShowError(true)
+        setError(error)
       })
     }
-
-    const fetchMethod = dataCache ? dataCache.fetchCluster : fetchCluster
-    fetchMethod({
-      studyAccession,
-      cluster,
-      annotation: annotation ? annotation : '',
-      subsample,
-      consensus,
-      genes,
-      isAnnotatedScatter,
-      isCorrelatedScatter
-    }).then(processScatterPlot).catch(error => {
-      setIsLoading(false)
-      setShowError(true)
-      setError(error)
-    })
   }, [cluster, annotation.name, subsample, consensus, genes.join(','), isAnnotatedScatter])
 
   useUpdateEffect(() => {
@@ -653,6 +705,7 @@ function getPlotlyTraces({
         color: colors,
         colorbar: { title, titleside: 'right' }
       })
+
       // if expression values are all zero, set max/min manually so the zeros still look like zero
       // see SCP-2957
       if (genes.length && !colors.some(val => val !== 0)) {
@@ -681,6 +734,7 @@ function addHoverLabel(trace, annotName, annotType, genes, isAnnotatedScatter, i
   // use the 'meta' property so annotations are exposed to the hover template
   // see https://community.plotly.com/t/hovertemplate-does-not-show-name-property/36139
   trace.meta = trace.annotations
+
   let groupHoverTemplate = '(%{x}, %{y})<br><b>%{text}</b><br>%{meta}<extra></extra>'
   if (isAnnotatedScatter) {
     // for annotated scatter, just show coordinates and cell name

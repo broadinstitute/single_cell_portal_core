@@ -123,7 +123,7 @@ class ImagePipelineServiceTest < ActiveSupport::TestCase
       assert_equal @study.bucket_id, params.bucket
       assert_equal @study.accession, params.accession
       assert_equal Rails.env.to_s, params.environment
-      assert_equal 95, params.cores
+      assert_equal 7, params.cores
       assert_equal ImagePipelineParameters::PARAM_DEFAULTS[:docker_image], params.docker_image
     end
   end

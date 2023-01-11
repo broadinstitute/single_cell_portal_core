@@ -36,7 +36,7 @@ module Parameterizable
     attributes.each do |attr_name, value|
       next if value.blank?
 
-      # explicit check for == true to flag-only options that have no value, like --extract-cluster
+      # explicit check for == true to flag-only options that have no value, like --extract "['cluster', 'metadata']"
       if value == true
         options_array << Parameterizable.to_cli_opt(attr_name)
       else

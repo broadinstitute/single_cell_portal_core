@@ -134,7 +134,8 @@ async function makeExpressionScatterPlotImage(gene, page, context) {
   // without needing to call GCS client library's bucket.upload on each file.
   // Ideally there would be a GCS client library equivalent of those commands,
   // but brief research found none.
-  const toFilePath = `cache/expression_scatter/images/${debugNonce}${webpFileName}`
+  const stem = 'cache/expression_scatter/images/'
+  const toFilePath = `${stem}${context.cluster}/${debugNonce}${webpFileName}`
   uploadToBucket(imagePath, toFilePath, context)
 
   return
@@ -269,7 +270,7 @@ async function processScatterPlotImages(genes, context) {
     '--no-sandbox'
   ]
   // Map staging domain name to staging internal IP address on PAPI
-  if (process.env?.IS_PAPI) {
+  if (!process.env?.IS_LOCAL) {
     const dnsEntry = `${stagingHost.domainName} ${stagingHost.ip}`
     pptrArgs.push(`--host-rules=MAP ${dnsEntry}`)
   }
@@ -411,7 +412,7 @@ async function parseCliArgs() {
   const origin = originsByEnvironment[environment]
 
   // Set origin for use in standalone fetch, which lacks Puppeteer host map
-  const isStagingPAPI = environment === 'staging' && process.env?.IS_PAPI
+  const isStagingPAPI = environment === 'staging' && !process.env?.IS_LOCAL
   const fetchOrigin = isStagingPAPI ? `https://${ stagingIP}` : origin
 
   return { values, numCPUs, origin, stagingHost, fetchOrigin }
@@ -422,7 +423,9 @@ async function run() {
   // Make directories for output images
   imagesDir = await makeLocalOutputDir('images')
 
-  const cluster = values.cluster
+  const rawCluster = values.cluster
+
+  const cluster = rawCluster.replaceAll('+', 'pos').replace(/\W/g, '_')
 
   const bucket = values.bucket
 
@@ -576,7 +579,7 @@ const nonce = `_${nonceName}${timestamp}`
 
 const storage = new Storage()
 
-const timeoutMinutes = 0.75
+const timeoutMinutes = 2
 
 const logFileWriteStream = createWriteStream('log.txt')
 

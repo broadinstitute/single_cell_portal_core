@@ -26,30 +26,22 @@ class DeleteQueueJob < Struct.new(:object)
       file_type = object.file_type
       study = object.study
 
-      # remove expression_file_info, if present to avoid validation issues later
-      object.expression_file_info.destroy if object.expression_file_info.present?
+      # remove all nested documents if present to avoid validation issues later
+      # not all of them have validations but this guards against future errors in case they are added later
+      # :nested_attributes returns all :accepts_nested_attributes_for documents in StudyFile as a Hash
+      # e.g. { "expression_file_info_attributes"=>"expression_file_info_attributes=", ... }
+      StudyFile.nested_attributes.keys.map { |key| key.chomp('_attributes') }.each do |nested_association|
+        object.send(nested_association)&.destroy
+      end
 
       # now remove all child objects first to free them up to be re-used.
       case file_type
       when 'Cluster'
-        if study.default_cluster.present? &&
-            study.default_cluster.name == object.name
-          study.default_options[:cluster] = nil
-          study.default_options[:annotation] = nil
-          study.save
-        end
-        cluster = ClusterGroup.find_by(study_file_id: object.id, study_id: study.id)
         delete_differential_expression_results(study: study, study_file: object)
-        delete_parsed_data(object.id, study.id, ClusterGroup)
-        delete_parsed_data(object.id, study.id, DataArray)
-        if cluster.present?
-          user_annotations = UserAnnotation.where(study_id: study.id, cluster_group_id: cluster.id )
-          user_annotations.each do |annot|
-            annot.user_data_arrays.delete_all
-            annot.user_annotation_shares.delete_all
-          end
-          user_annotations.delete_all
-        end
+        delete_parsed_data(object.id, study.id, ClusterGroup, DataArray)
+        delete_user_annotations(study:, study_file: object)
+        reset_default_cluster(study:)
+        reset_default_annotation(study:)
       when 'Coordinate Labels'
         delete_parsed_data(object.id, study.id, DataArray)
         remove_file_from_bundle
@@ -86,12 +78,19 @@ class DeleteQueueJob < Struct.new(:object)
         delete_differential_expression_results(study: study, study_file: object)
         delete_parsed_data(object.id, study.id, CellMetadatum, DataArray)
         study.update(cell_count: 0)
-        # unset default annotation if it was study-based
-        if study.default_options[:annotation].present? &&
-            study.default_options[:annotation].end_with?('--study')
-          study.default_options[:annotation] = nil
-          study.save
-        end
+        reset_default_annotation(study:)
+      when 'AnnData'
+        delete_convention_data(study: study, metadata_file: object)
+        # delete user annotations first as we lose associations later
+        delete_user_annotations(study:, study_file: object)
+        delete_parsed_data(object.id, study.id, ClusterGroup, CellMetadatum, Gene, DataArray)
+        # reset default options/counts
+        study.reload
+        study.cell_count = study.all_cells_array.size
+        study.gene_count = study.unique_genes.size
+        reset_default_cluster(study:)
+        reset_default_annotation(study:)
+        study.save
       when 'Gene List'
         delete_parsed_data(object.id, study.id, PrecomputedScore)
       when 'BAM Index'
@@ -194,5 +193,46 @@ class DeleteQueueJob < Struct.new(:object)
     end
     # extract results to Array to prevent open DB cursor from hanging and timing out as files are deleted in bucket
     results.to_a.each(&:destroy)
+  end
+
+  # remove UserAnnotation data from ClusterGroup
+  def delete_user_annotations(study:, study_file:)
+    # use ClusterGroup.where as AnnData files can have multiple ClusterGroup entries
+    ClusterGroup.where(study:, study_file:).each do |cluster|
+      user_annotations = UserAnnotation.where(study:, cluster_group_id: cluster.id)
+      user_annotations.each do |annot|
+        annot.user_data_arrays.delete_all
+        annot.user_annotation_shares.delete_all
+      end
+      user_annotations.delete_all
+    end
+  end
+
+  # handle unsetting default cluster for a study, if needed
+  def reset_default_cluster(study:)
+    if study.cluster_groups.by_name(study.default_options[:cluster]).nil?
+      study.default_options[:cluster] = nil
+      study.save
+    end
+  end
+
+  # handle unsetting default_annotation for a study, if needed
+  def reset_default_annotation(study:)
+    current_default = study.default_annotation
+    annot_name, annot_type, annot_scope = current_default&.split('--')
+    case annot_scope
+    when 'study'
+      current_default = nil if study.cell_metadata.by_name_and_type(annot_name, annot_type).nil?
+    when 'cluster'
+      cluster = study.default_cluster
+      annotation = cluster&.cell_annotations&.detect { |ca| ca[:name] == annot_name && ca[:type] == annot_type }
+      current_default = nil if cluster.nil? || annotation.nil?
+    else
+      current_default = nil
+    end
+    if study.default_annotation != current_default
+      study.default_options[:annotation] = current_default
+      study.save
+    end
   end
 end

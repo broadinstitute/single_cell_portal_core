@@ -2,7 +2,7 @@
 # also includes option return status object when being called from Api::V1::StudyFilesController
 class FileParseService
   # * *params*
-  #   - +study_file+       (StudyFile) => File being parsed
+  #   - +study_file+      (StudyFile) => File being parsed
   #   - +study+           (Study) => Study to which StudyFile belongs
   #   - +user+            (User) => User initiating parse action (for email delivery)
   #   - +reparse+         (Boolean) => Control for deleting existing data when initiating parse (default: false)
@@ -108,7 +108,7 @@ class FileParseService
           # setting attributes to false/nil will omit them from the command line later
           # values are interchangeable but are more readable depending on parameter type
           params_object = AnnDataIngestParameters.new(
-            anndata_file: study_file.gs_url, extract_cluster: false, obsm_keys: nil
+            anndata_file: study_file.gs_url, extract: nil, obsm_keys: nil
           )
         end
         job = IngestJob.new(

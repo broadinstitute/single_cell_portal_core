@@ -175,7 +175,6 @@ module Api
 
           plot_data = nil
           genes = RequestUtils.get_genes_from_param(study, url_params[:gene])
-
           if url_params[:gene].blank? || !include_expression
             # For "Clusters" tab in default view of Explore tab
             plot_data = ClusterVizService.load_cluster_group_data_array_points(study, cluster, annotation, subsample, include_coords: include_coordinates, include_cells: include_cells)
@@ -211,7 +210,7 @@ module Api
                 y: "#{gene_names.last} #{titles[:magnitude]}"
               }
             else
-              # For "Scatter" tab
+              # For "Scatter" tab, i.e. expression scatter plot for 1 gene
               plot_data = ExpressionVizService.load_expression_data_array_points(study, genes, cluster, annotation, subsample,
                 consensus: consensus, include_coords: include_coordinates, include_annotation: include_annotation, include_cells: include_cells)
             end

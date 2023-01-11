@@ -120,7 +120,7 @@ class PapiClientTest < ActiveSupport::TestCase
     assert env_vars.keys.include? 'GOOGLE_PROJECT_ID'
     assert_equal @client.project, env_vars['GOOGLE_PROJECT_ID']
     image_pipeline_vars = @client.set_environment_variables(action: :image_pipeline)
-    assert_equal '1', image_pipeline_vars['IS_PAPI']
+    assert_equal '0', image_pipeline_vars['NODE_TLS_REJECT_UNAUTHORIZED']
     assert_includes image_pipeline_vars.keys, 'STAGING_INTERNAL_IP'
   end
 
