@@ -4,29 +4,65 @@
 
 <div id="profile-tab-root">
   <ul class="nav nav-tabs" role="tablist" id="profile-tabs">
-    <li role="presentation" class="profile-nav active" id="profile-emails-nav"><a href="#profile-emails" data-toggle="tab">Email Delivery</a></li>
+    <li role="presentation" class="profile-nav active" id="profile-emails-nav">
+      <a href="#profile-emails" data-toggle="tab">Preferences</a>
+    </li>
     <% if @profiles_available %>
-      <li role="presentation" class="profile-nav" id="profile-firecloud-nav"><a href="#profile-firecloud" data-toggle="tab">Terra Profile</a></li>
+      <li role="presentation" class="profile-nav" id="profile-terra-nav">
+        <a href="#profile-terra" data-toggle="tab">Terra Profile</a>
+      </li>
     <% else %>
-      <li role="presentation" class="profile-nav disabled" id="profile-firecloud-nav"><a href="#profile-firecloud" data-toggle="tooltip" title="FireCloud profiles are currently unavailable, please check back later.">Terra Profile</a></li>
+      <li role="presentation" class="profile-nav disabled" id="profile-terra-nav">
+        <a href="#profile-terra" data-toggle="tooltip"
+           title="Terra profiles are currently unavailable, please check back later.">Terra Profile</a>
+      </li>
     <% end %>
   </ul>
 
   <div class="tab-content top-pad">
     <div class="tab-pane active in" id="profile-emails" role="tabpanel">
-      <%= form_for(@user, url: update_profile_path, html: {class: 'form', id: 'update-user-profile', data: {remote: true}}) do |f| %>
+      <%= form_for(@user, url: update_profile_path, html: {class: 'form', id: 'update-user-session',
+                                                           data: { remote: true }}) do |f| %>
+        <%= hidden_field_tag :toggle_id, "toggle_user_use_short_session" %>
+        <div class="form-group">
+          <%= f.hidden_field :use_short_session %>
+          <h3>Session length
+            <%= render_toggle(
+                  'update-user-session', 'user_use_short_session', @user.use_short_session, text_array: %w[15m 24h]
+                ) %>
+          </h3>
+          <p class="help-block">
+            Toggles how long before you are signed out of your session.  The two options are 24 hours (default) or 15
+            minutes (recommended for shared workstations).</p>
+        </div>
+      <% end %>
+
+      <%= form_for(@user, url: update_profile_path, html: {class: 'form', id: 'update-user-profile',
+                                                           data: { remote: true }}) do |f| %>
+        <%= hidden_field_tag :toggle_id, "toggle_user_admin_email_delivery" %>
         <div class="form-group">
           <%= f.hidden_field :admin_email_delivery %>
-          <% button_text = @user.admin_email_delivery ? "On <i class='fas fa-fw fa-toggle-on'></i>".html_safe : "Off <i class='fas fa-fw fa-toggle-off'></i>".html_safe %>
-          <h3>Admin email delivery <%= link_to button_text, '#/', class: 'btn btn-default', id: 'toggle-admin-emails' %></h3>
-          <p class="help-block">Use this toggle to determine whether or not you would like to receive information emails from Single Cell Portal adminsitrators (new feature announcements, unplanned site maintenance, general notices, etc.).</p>
+          <h3>
+            Admin email delivery
+            <%= render_toggle('update-user-profile', 'user_admin_email_delivery', @user.admin_email_delivery) %>
+          </h3>
+          <p class="help-block">
+            Toggles whether or not you would like to receive information emails from Single Cell Portal adminsitrators
+            (new feature announcements, unplanned site maintenance, general notices, etc.).
+          </p>
         </div>
       <% end %>
 
       <h3>My study subscriptions</h3>
       <div class="bs-callout bs-callout-default">
-        <p>Use the table below to manage email delivery for all studies that are accessible to you.  You do not receive notification emails for studies when you make changes, only when others do.</p>
-        <p class="text-primary"><i class="fas fa-fw fa-info-circle"></i> Note: You will still receive emails with the results of parsing from files you upload, and automated emails from Terra on study sharing changes.</p>
+        <p>
+          Use the table below to manage email delivery for all studies that are accessible to you.  You do not receive
+          notification emails for studies when you make changes, only when others do.
+        </p>
+        <p class="text-primary">
+          <i class="fas fa-fw fa-info-circle"></i> Note: You will still receive emails with the results of parsing from
+          files you upload, and automated emails from Terra on study sharing changes.
+        </p>
       </div>
       <table class="table table-striped">
         <thead>
@@ -44,12 +80,20 @@
             <td><%= study.firecloud_project %></td>
             <td>Owner</td>
             <td>
-              <%= form_for(study, url: update_study_subscription_path(id: @user.id, study_id: study.id), html: {class: 'form-inline', id: "study_subscription_#{study.id}", data: {remote: true}}) do |f| %>
+              <%= form_for(study, url: update_study_subscription_path(id: @user.id, study_id: study.id),
+                           html: {class: 'form-inline', id: "study_subscription_#{study.id}",
+                                  data: {remote: true}}) do |f| %>
+                <%= hidden_field_tag :toggle_id, "toggle_study_default_options_deliver_emails_#{study.id}" %>
                 <div class="form-group">
                   <%= f.fields_for(:default_options) do |opts| %>
-                    <%= opts.hidden_field :deliver_emails, value: study.deliver_emails? %>
+                    <%= opts.hidden_field :deliver_emails?, value: study.deliver_emails?,
+                                          id: "study_default_options_deliver_emails_#{study.id}" %>
                   <% end %>
-                  <span class="btn btn-default toggle-study-subscription" data-study-id="<%= study.id %>"><%= study.deliver_emails? ? "On" : "Off" %> <i class="toggle-switch fa fa-fw fa-toggle-<%= study.deliver_emails? ? 'on' : 'off' %>"></i></span>
+                  <%= render_toggle(
+                        "study_subscription_#{study.id}",
+                        "study_default_options_deliver_emails_#{study.id}",
+                        study.deliver_emails?
+                      ) %>
                 </div>
               <% end %>
             </td>
@@ -62,10 +106,18 @@
             <td><%= share.firecloud_project %></td>
             <td><%= share.permission %></td>
             <td>
-              <%= form_for(share, url: update_share_subscription_path(id: @user.id, study_share_id: share.id), html: {class: 'form-inline', id: "share_subscription_#{share.id}", data: {remote: true}}) do |f| %>
+              <%= form_for(share, url: update_share_subscription_path(id: @user.id, study_share_id: share.id),
+                           html: {class: 'form-inline', id: "share_subscription_#{share.id}",
+                                  data: {remote: true}}) do |f| %>
+                <%= hidden_field_tag :toggle_id, "toggle_study_default_options_deliver_emails_#{study.id}" %>
                 <div class="form-group">
-                  <%= f.hidden_field :deliver_emails, value: share.deliver_emails %>
-                  <span class="btn btn-default toggle-share-subscription" data-study-share-id="<%= share.id %>"><%= share.deliver_emails ? "On" : "Off" %> <i class="toggle-switch fa fa-fw fa-toggle-<%= share.deliver_emails? ? 'on' : 'off' %>"></i></span>
+                  <%= f.hidden_field :deliver_emails, value: share.deliver_emails,
+                                     id: "study_default_options_deliver_emails_#{share.id}" %>
+                  <%= render_toggle(
+                        "share_subscription_#{share.id}",
+                        "study_default_options_deliver_emails_#{share.id}",
+                        share.deliver_emails
+                      ) %>
                 </div>
               <% end %>
             </td>
@@ -75,7 +127,7 @@
       </table>
     </div>
     <% if @profiles_available %>
-      <div class="tab-pane" id="profile-firecloud" role="tabpanel">
+      <div class="tab-pane" id="profile-terra" role="tabpanel">
         <% if current_user.registered_for_firecloud %>
           <%= render partial: 'user_firecloud_profile' %>
         <% else %>
@@ -101,36 +153,8 @@
 
 <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
 
-    $('.toggle-share-subscription').click(function() {
-        var button = $(this);
-        var shareId = button.data('study-share-id');
-        var form = $('#share_subscription_' + shareId);
-        var deliverEmails = form.find("input[name='study_share[deliver_emails]']");
-        // toggle hidden form field
-        var newSub = deliverEmails.val() === 'true' ? 'false' : 'true';
-        console.log('changing subscription of share ' + shareId + ' to ' + newSub);
-        deliverEmails.val(newSub);
-        form.submit();
-    });
-
-    $('.toggle-study-subscription').click(function() {
-        var button = $(this);
-        var studyId = button.data('study-id');
-        var form = $('#study_subscription_' + studyId);
-        var deliverEmails = form.find("input[name='study[default_options][deliver_emails]']");
-        // toggle hidden form field
-        var newSub = deliverEmails.val() === 'true' ? 'false' : 'true';
-        console.log('changing subscription of share ' + studyId + ' to ' + newSub);
-        deliverEmails.val(newSub);
-        form.submit();
-    });
-
-    $('#toggle-admin-emails').click(function() {
-        var deliverEmails = $('#user_admin_email_delivery');
-        var newSub =  deliverEmails.val() === 'true' ? 'false' : 'true';
-        console.log('changing admin email delivery to ' + newSub);
-        deliverEmails.val(newSub);
-        $('#update-user-profile').submit();
+    $('.user-toggle').click(function() {
+      submitToggleForm(this)
     });
 
     $(document).ready(function() {

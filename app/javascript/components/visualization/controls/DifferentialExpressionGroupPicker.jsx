@@ -84,8 +84,8 @@ function getMatchingDeOption(deObjects, group, clusterName, annotation) {
 
 /** Pick groups of cells for differential expression (DE) */
 export default function DifferentialExpressionGroupPicker({
-  bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup, setDeGenes, setDeFileUrl,
-  countsByLabel, deObjects
+  bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup, setDeGenes,
+  countsByLabel, deObjects, setDeFilePath
 }) {
   let groups = getLegendSortedLabels(countsByLabel)
   groups = groups.filter(group => {
@@ -103,14 +103,12 @@ export default function DifferentialExpressionGroupPicker({
     const basePath = '_scp_internal/differential_expression/'
     const deFilePath = basePath + deFileName
 
+    setDeFilePath(deFilePath)
+
     const deGenes = await fetchDeGenes(bucketId, deFilePath)
 
     setDeGroup(newGroup)
     setDeGenes(deGenes)
-
-    const baseUrl = 'https://storage.googleapis.com/download/storage/v1/'
-    const deFileUrl = `${baseUrl}/${bucketId}/o/${deFilePath}?alt=media`
-    setDeFileUrl(deFileUrl)
   }
 
   return (

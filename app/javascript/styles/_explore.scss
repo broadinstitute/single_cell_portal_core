@@ -171,7 +171,7 @@
 }
 
 .render-controls {
-	margin-bottom: 1em;
+  margin-bottom: 1em;
 }
 
 .react-switch {
@@ -180,7 +180,7 @@
 }
 
 #gene-list-upload {
-	display: none;
+  display: none;
 }
 
 #color-picker-modal {
@@ -199,13 +199,22 @@
 }
 
 .de-modal-row-wrapper {
-	position: relative;
-	top: -15px;
-	.de-modal-row {
-		a.de-info-help-icon {
-			margin-left: 10px;
-			vertical-align: middle;
-		}
-	}
+  position: relative;
+  top: -15px;
+    .de-modal-row {
+	  a.de-info-help-icon {
+		  margin-left: 10px;
+		  vertical-align: middle;
+	  }
+  }
 }
 
+.de-download-button{
+  margin-right: 0.5em;
+  margin-left: 1em;
+  display: inline-block;
+  vertical-align: middle;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+  

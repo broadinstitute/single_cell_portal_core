@@ -66,8 +66,10 @@ class ReportsService
         study_hash[study_id][:admin_owned] = 'N/A' # account for nil by casting to boolean
       end
 
-      metadata_files = StudyFile.where(file_type: 'Metadata', queued_for_deletion: false, study_id: study_id)
-                                .pluck(:use_metadata_convention, :created_at)
+      metadata_files = StudyFile.any_of(
+        { file_type: 'Metadata' },
+        { file_type: 'AnnData', 'ann_data_file_info.has_metadata' => true }
+      ).where(queued_for_deletion: false, study_id: study_id).pluck(:use_metadata_convention, :created_at)
       metadata_files.each do |convention, created_at|
         study_hash[study_id][:metadata_convention] = !!convention # account for nil by casting to boolean
         study_hash[study_id][:metadata_file_created] = created_at

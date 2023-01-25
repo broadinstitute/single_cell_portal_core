@@ -914,8 +914,9 @@ class StudyFile
       StudyFile.where(:id.in => study_file_ids, queued_for_deletion: false)
     when :processed
       # lazy-load all other expression matrices in study
-      processed_matrices = StudyFile.where(study_id: study.id, file_type: /Matrix/, queued_for_deletion: false,
-                                         :id.ne => id, 'expression_file_info.is_raw_counts' => false)
+      processed_matrices = study.expression_matrices.where(queued_for_deletion: false, :id.ne => id).any_of(
+        { 'expression_file_info.is_raw_counts' => false }, { 'ann_data_file_info.has_raw_counts' => false }
+      )
       processed_matrices.select { |matrix| matrix&.expression_file_info&.raw_counts_associations&.include?(id.to_s) }
     else
       [] # nil-safe return w/ no association type specified

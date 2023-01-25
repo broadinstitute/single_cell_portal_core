@@ -33,7 +33,10 @@ class SummaryStatsUtils
     {
       all: studies.count,
       public: public.count,
-      compliant: StudyFile.where(file_type: 'Metadata', use_metadata_convention: true, :study_id.in => public).count
+      compliant: StudyFile.any_of(
+        { file_type: 'Metadata' },
+        { file_type: 'AnnData', 'ann_data_file_info.has_metadata' => true }
+      ).where(use_metadata_convention: true, :study_id.in => public).count
     }
   end
 
@@ -43,7 +46,7 @@ class SummaryStatsUtils
     one_week_ago = today - 1.weeks
     user_count = User.where(:last_sign_in_at.gte => one_week_ago, :last_sign_in_at.lt => today)
                      .or(:current_sign_in_at.gte => one_week_ago, :current_sign_in_at.lt => today).count
-    {count: user_count, description: "Count of bleturning users from #{one_week_ago} to #{today}"}
+    {count: user_count, description: "Count of returning users from #{one_week_ago} to #{today}"}
   end
 
   # perform a sanity check to look for any missing files in remote storage

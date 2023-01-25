@@ -361,6 +361,37 @@ export async function fetchBucketFile(bucketName, filePath, maxBytes=null, mock=
 }
 
 
+
+
+/**
+ * Download a file retreived from a Google Bucket
+ *
+ * @param {String} bucketId bucket id
+ * @param {String} filePath path to file in bucket
+*/
+export async function downloadBucketFile(bucketId, filePath) {
+  // Fetch the data from the bucket
+  const data = await fetchBucketFile(bucketId, filePath)
+
+  // Convert data to a blob (standard for non-same-origin downloads)
+  const dataBlob = await data.blob()
+
+  // Create an element with an anchor link and connect this to the blob
+  const element = document.createElement('a')
+  element.href = URL.createObjectURL(dataBlob)
+
+  // name the file and indicate it should download
+  const filePathAsArr = filePath.split('/')
+  element.download = filePathAsArr.pop()
+
+  // Simulate clicking the link resulting in downloading the file
+  document.body.appendChild(element)
+  element.click()
+
+  // Cleanup
+  document.body.removeChild(element)
+}
+
 /**
  * Returns initial content for the "Explore" tab in Study Overview
  *

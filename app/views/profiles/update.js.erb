@@ -1,3 +1,16 @@
-var button = $("#toggle-admin-emails");
-var newText = "<%= @user.admin_email_delivery ? "On <i class='fas fa-fw fa-toggle-on'></i>".html_safe : "Off <i class='fas fa-fw fa-toggle-off'></i>".html_safe %>";
-button.html(newText);
+const isNoticePresent = <%= @notice.present? %>
+if (isNoticePresent) {
+  // modal unnecessary as toggle has already changed
+  console.log('<%= @notice %>')
+} else {
+  // show error message
+  const errorMsg = '<%= @alert %>'
+  $('#generic-modal .modal-body').html(`<p class="text-danger text-center">${errorMsg}</p>`)
+  $('#generic-modal-spinner').remove('spinner-target')
+  $('#generic-modal-title').html('Unable to save profile settings')
+  $('#generic-modal-footer').remove()
+  $('#generic-modal').modal('show')
+  // reset toggle & form state
+  const toggleId = "<%= @toggle_id %>"
+  flipToggleSwitch($(`#${toggleId}`))
+}

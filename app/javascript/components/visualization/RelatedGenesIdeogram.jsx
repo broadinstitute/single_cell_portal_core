@@ -148,6 +148,9 @@ export default function RelatedGenesIdeogram({
 
   const verticalPad = 40 // Total top and bottom padding
 
+  // For Ideogram functionality only available for human
+  const showAdvanced = taxon === 'Homo sapiens'
+
   useEffect(() => {
     const ideoConfig = {
       container: '#related-genes-ideogram-container',
@@ -159,7 +162,9 @@ export default function RelatedGenesIdeogram({
       onClickAnnot,
       onPlotRelatedGenes,
       onWillShowAnnotTooltip,
-      showParalogNeighborhoods: taxon === 'Homo sapiens', // Works around bug in Ideogram 1.37.0, remove upon upgrade
+      showGeneStructureInTooltip: showAdvanced,
+      showProteinInTooltip: showAdvanced,
+      showParalogNeighborhoods: showAdvanced,
       onLoad() {
         // Handles edge case: when organism lacks chromosome-level assembly
         if (!genomeHasChromosomes()) {return}

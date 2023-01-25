@@ -271,5 +271,10 @@ class PapiClientTest < ActiveSupport::TestCase
   test 'should sanitize label' do
     assert_equal 'foo_bar', @client.sanitize_label('FOO&bar')
     assert_equal 'n1-highcpu-96', @client.sanitize_label('n1-highcpu-96')
+    # test length truncation
+    long_label = SecureRandom.alphanumeric(128)
+    sanitized_label = @client.sanitize_label(long_label)
+    assert_equal 63, sanitized_label.chars.size
+    assert_equal long_label.downcase.truncate(63, omission: ''), sanitized_label
   end
 end

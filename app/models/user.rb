@@ -10,6 +10,8 @@ class User
   include Mongoid::Timestamps
   include FeatureFlaggable
 
+  SHORT_SESSION_LENGTH = 15.minutes.freeze
+
   ###
   #
   # SCOPES & FIELD DEFINITIONS
@@ -96,6 +98,7 @@ class User
   # default_value from the FeatureFlag should be used.  Accordingly, the helper method feature_flags_with_defaults
   # is provided
   field :feature_flags, type: Hash, default: {}
+  field :use_short_session, type: Boolean, default: false
 
   ###
   #
@@ -126,6 +129,11 @@ class User
       user.update(refresh_token: access_token.credentials.refresh_token)
     end
     user
+  end
+
+  # override Timeoutable module to check for "opt-in" short session of 15 minutes
+  def timeout_in
+    use_short_session ? SHORT_SESSION_LENGTH : self.class.timeout_in
   end
 
   # generate an access token based on user's refresh token

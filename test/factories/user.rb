@@ -9,7 +9,8 @@ FactoryBot.define do
       # this enables easy managing of a central list of objects to be cleaned up by a test suite
       test_array { nil }
     end
-    email { "test.user.#{random_seed}@test.edu" }
+    # https://github.com/thoughtbot/factory_bot/blob/main/GETTING_STARTED.md#sequences
+    sequence(:email) { |n| "test.user.#{n}@test.edu" }
     uid { rand(10000..99999) }
     password { "test_password" }
     metrics_uuid { SecureRandom.uuid }

@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft, faInfoCircle } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faDownload } from '@fortawesome/free-solid-svg-icons'
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
 
 import DifferentialExpressionGroupPicker from '~/components/visualization/controls/DifferentialExpressionGroupPicker'
 import { logSearchFromDifferentialExpression } from '~/lib/search-metrics'
+import { downloadBucketFile } from '~/lib/scp-api'
+
 
 /** Return selected annotation object, including its `values` a.k.a. groups */
 function getAnnotationObject(exploreParamsWithDefaults, exploreInfo) {
@@ -41,7 +43,7 @@ export default function DifferentialExpressionPanel({
   const deObjects = exploreInfo?.differentialExpression
 
   const [checked, setChecked] = useState(initChecked(deGenes))
-  const [deFileUrl, setDeFileUrl] = useState(null)
+  const [deFilePath, setDeFilePath] = useState(null)
 
   /** Check radio button such that changing group unchecks all buttons */
   function changeRadio(event) {
@@ -60,24 +62,25 @@ export default function DifferentialExpressionPanel({
         setDeGenes={setDeGenes}
         deGroup={deGroup}
         setDeGroup={setDeGroup}
-        setDeFileUrl={setDeFileUrl}
         countsByLabel={countsByLabel}
         deObjects={deObjects}
+        setDeFilePath={setDeFilePath}
       />
 
       {deGenes &&
       <>
         15 most DE genes
-        <span className="pull-right">
-          {/* <a href={deFileUrl}
-            target="_blank"
-            data-analytics-name="differential-expression-download"
-            data-toggle="tooltip"
-            data-original-title="Download all DE genes data for this group"
-          >
-            <FontAwesomeIcon icon={faDownload}/></a> */}
-          <DifferentialExpressionModal />
-        </span>
+        <a className="de-download-button"
+          onClick={async () => {await downloadBucketFile(bucketId, deFilePath)}}
+          data-analytics-name="differential-expression-download"
+          data-toggle="tooltip"
+          data-original-title="Download all DE genes data for this group"
+        >
+          <FontAwesomeIcon icon={faDownload}/>
+        </a>
+
+        <DifferentialExpressionModal />
+
         <table data-testid="differential-expression-table" className="table table-terra table-scp-compact">
           <thead>
             <tr>
