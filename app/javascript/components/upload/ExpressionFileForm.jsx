@@ -32,7 +32,8 @@ export default function ExpressionFileForm({
   rawCountsOptions,
   bucketName,
   isInitiallyExpanded,
-  featureFlagState
+  featureFlagState,
+  isAnnDataExperience
 }) {
   const associatedChildren = findBundleChildren(file, allFiles)
   const speciesOptions = fileMenuOptions.species.map(spec => ({ label: spec.common_name, value: spec.id }))
@@ -55,8 +56,9 @@ export default function ExpressionFileForm({
 
   return <ExpandableFileForm {...{
     file, allFiles, updateFile, saveFile,
-    allowedFileExts, deleteFile, validationMessages, bucketName, isInitiallyExpanded
+    allowedFileExts, deleteFile, validationMessages, bucketName, isInitiallyExpanded, isAnnDataExperience
   }}>
+    {!isAnnDataExperience &&
     <div className="form-group">
       <label>Matrix file type:</label><br/>
       <label className="sublabel">
@@ -75,8 +77,8 @@ export default function ExpressionFileForm({
           &nbsp;Sparse matrix (.mtx)
       </label>
     </div>
-
-    { !isRawCountsFile &&
+    }
+    { (!isAnnDataExperience && !isRawCountsFile) &&
       <div className="form-group">
         <label className="labeled-select">Associated raw counts files
           <Select options={rawCountsOptions}

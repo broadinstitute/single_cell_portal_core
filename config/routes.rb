@@ -293,6 +293,9 @@ Rails.application.routes.draw do
     get '*a/igv.css.map', to: -> (env) { [204, {}, ['']] }
     get 'igv.css.map', to: -> (env) { [204, {}, ['']] }
 
+
+    get 'terra_tos', to: 'exceptions#terra_tos', as: 'exceptions_terra_tos'
+
     root to: 'site#index'
     end
   get 'igv.css.map', to: -> (env) { [204, {}, ['']] }

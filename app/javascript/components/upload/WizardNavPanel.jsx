@@ -14,25 +14,19 @@ import LoadingSpinner from '~/lib/LoadingSpinner'
 /** renders a list of the steps and summary study information */
 function RawWizardNavPanel({
   formState, serverState, currentStep, setCurrentStep, studyAccession, steps, studyName,
-  mainSteps, supplementalSteps, nonVizSteps
+  mainSteps, supplementalSteps, nonVizSteps, isAnnDataExperience
 }) {
   const [othersExpanded, setOthersExpanded] = useState(true)
   const [supplementalExpanded, setSupplementalExpanded] = useState(true)
+  const [annDataMainExpanded, setAnnDataMainExpanded] = useState(true)
+
   const expansionIcon = othersExpanded ? faChevronUp : faChevronDown
   const expansionIcon2 = supplementalExpanded ? faChevronUp : faChevronDown
+  const expansionIcon3 = annDataMainExpanded ? faChevronUp : faChevronDown
+
 
   return <div className="wizard-side-panel">
-    <ul className="upload-wizard-steps" role="tablist" data-analytics-name="upload-wizard-primary-steps">
-      { mainSteps.map((step, index) =>
-        <StepTabHeader key={index}
-          step={step}
-          index={index}
-          formState={formState}
-          serverState={serverState}
-          currentStep={currentStep}
-          setCurrentStep={setCurrentStep}/>) }
-    </ul>
-    <VisualizationStatuses serverState={serverState}/>
+    {MainStepsDisplay(formState, serverState, currentStep, setCurrentStep, mainSteps, isAnnDataExperience, annDataMainExpanded, setAnnDataMainExpanded, expansionIcon3)}
     <ul className="upload-wizard-steps" role="tablist" data-analytics-name="upload-wizard-secondary-steps">
       <li className="other-header" role="tab" >
         <button className="list-link" onClick={() => setOthersExpanded(!othersExpanded)} >
@@ -174,6 +168,52 @@ function clusteringHelpContent(isClusteringParsing) {
     <div>A metadata file and clustering file are required for cluster visualization.</div>
     { isClusteringParsing && parsingMessage }
   </Popover>
+}
+
+/**
+ * Return the appropriate display of the main steps based on traditional or AnnData upload experience
+ */
+function MainStepsDisplay(formState, serverState, currentStep, setCurrentStep, mainSteps,
+  isAnnDataExperience, annDataMainExpanded, setAnnDataMainExpanded, expansionIcon) {
+  if (isAnnDataExperience) {
+    return <ul className="upload-wizard-steps" role="tablist" data-analytics-name="upload-wizard-anndata-main-steps">
+      <li className="other-header" role="tab" >
+        <button className="list-link" onClick={() => setAnnDataMainExpanded(!annDataMainExpanded)} >
+          <span className="step-number">
+            <span className="badge highlight">+</span>
+          </span>
+          <span>
+            <a className="action link" role="link">
+            AnnData <FontAwesomeIcon icon={expansionIcon}/>
+            </a>
+          </span>
+        </button>
+      </li>
+      {annDataMainExpanded && mainSteps.map((step, index) =>
+        <StepTabHeader key={index}
+          step={step}
+          index={index}
+          showIndex={false}
+          formState={formState}
+          serverState={serverState}
+          currentStep={currentStep}
+          setCurrentStep={setCurrentStep}/>) }
+    </ul>
+  } else {
+    return <span>
+      <ul className="upload-wizard-steps" role="tablist" data-analytics-name="upload-wizard-main-steps">
+        { mainSteps.map((step, index) =>
+          <StepTabHeader key={index}
+            step={step}
+            index={index}
+            formState={formState}
+            serverState={serverState}
+            currentStep={currentStep}
+            setCurrentStep={setCurrentStep}/>) }
+      </ul>
+      <VisualizationStatuses serverState={serverState}/>
+    </span>
+  }
 }
 
 const parsingMessage = <div>Some files that will impact visualization are being processed.</div>

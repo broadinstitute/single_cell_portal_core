@@ -1,7 +1,7 @@
 import React, { useEffect, useContext } from 'react'
 
 import ExpressionFileForm from './ExpressionFileForm'
-import { rawCountsFileFilter, expressionFileStructureHelp } from './RawCountsStep'
+import { rawCountsFileFilter, getExpressionFileInfoMessage } from './RawCountsStep'
 import { AddFileButton } from './form-components'
 
 const DEFAULT_NEW_PROCESSED_FILE = {
@@ -35,7 +35,8 @@ function ProcessedUploadForm({
   updateFile,
   saveFile,
   deleteFile,
-  setCurrentStep
+  setCurrentStep,
+  isAnnDataExperience
 }) {
   const processedParentFiles = formState.files.filter(processedFileFilter)
   const fileMenuOptions = serverState.menu_options
@@ -57,7 +58,7 @@ function ProcessedUploadForm({
   }, [processedParentFiles.length])
 
   return <div>
-    { !isEnabled &&
+    { !isAnnDataExperience && !isEnabled &&
       <div className="row">
         <div className="col-md-12 padded">
           <p className="left-margin">
@@ -87,19 +88,9 @@ function ProcessedUploadForm({
     }
     <div className="row">
       <div className="col-md-12">
-        <div className="row">
-          <div className="col-md-12">
-            <div className="form-terra">
-              <div className="row">
-                <div className="col-md-12">
-                  <p>Processed matrix data is used to support gene expression visualizations. Gene expression scores can be uploaded in either of two file types:</p>
-                </div>
-              </div>
-              { expressionFileStructureHelp }
-            </div>
-          </div>
-        </div>
-        { processedParentFiles.length > 1 && <AddFileButton addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_PROCESSED_FILE}/> }
+        {getExpressionFileInfoMessage(isAnnDataExperience, 'Processed')}
+        {(!isAnnDataExperience && processedParentFiles.length > 1) &&
+          <AddFileButton addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_PROCESSED_FILE}/> }
         { processedParentFiles.map(file => {
           return <ExpressionFileForm
             key={file.oldId ? file.oldId : file._id}
@@ -114,9 +105,10 @@ function ProcessedUploadForm({
             bucketName={formState.study.bucket_id}
             isInitiallyExpanded={processedParentFiles.length === 1}
             featureFlagState={featureFlagState}
+            isAnnDataExperience={isAnnDataExperience}
           />
         })}
-        <AddFileButton addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_PROCESSED_FILE}/>
+        {!isAnnDataExperience && <AddFileButton addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_PROCESSED_FILE}/>}
         { !isEnabled && <div className="file-upload-overlay" data-testid="processed-matrix-overlay"></div> }
       </div>
     </div>

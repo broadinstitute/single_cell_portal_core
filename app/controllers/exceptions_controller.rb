@@ -12,4 +12,6 @@ class ExceptionsController < ApplicationController
       end
     end
   end
+
+  def terra_tos; end
 end

@@ -34,7 +34,8 @@ function RawCountsUploadForm({
   addNewFile,
   updateFile,
   saveFile,
-  deleteFile
+  deleteFile,
+  isAnnDataExperience
 }) {
   const rawParentFiles = formState.files.filter(rawCountsFileFilter)
   const fileMenuOptions = serverState.menu_options
@@ -46,19 +47,9 @@ function RawCountsUploadForm({
   }, [rawParentFiles.length])
 
   return <div>
-    <div className="row">
-      <div className="col-md-12">
-        <div className="form-terra">
-          <div className="row">
-            <div className="col-md-12">
-              <p>Raw count data enables data reuse in new analyses. Ideal raw count data is unfiltered, without normalization or other processing performed. Gene expression scores can be uploaded in either of two file types:</p>
-            </div>
-          </div>
-          { expressionFileStructureHelp }
-        </div>
-      </div>
-    </div>
-    { rawParentFiles.length > 1 && <AddFileButton addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_RAW_COUNTS_FILE}/> }
+    {getExpressionFileInfoMessage(isAnnDataExperience, 'Raw')}
+    { (!isAnnDataExperience && rawParentFiles.length > 1) &&
+      <AddFileButton addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_RAW_COUNTS_FILE}/> }
     { rawParentFiles.map(file => {
       return <ExpressionFileForm
         key={file.oldId ? file.oldId : file._id}
@@ -70,13 +61,41 @@ function RawCountsUploadForm({
         addNewFile={addNewFile}
         fileMenuOptions={fileMenuOptions}
         bucketName={formState.study.bucket_id}
-        isInitiallyExpanded={rawParentFiles.length === 1}/>
+        isInitiallyExpanded={rawParentFiles.length === 1}
+        isAnnDataExperience={isAnnDataExperience}/>
     })}
-    <AddFileButton addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_RAW_COUNTS_FILE}/>
+    {!isAnnDataExperience && <AddFileButton addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_RAW_COUNTS_FILE}/>}
   </div>
 }
 
-export const expressionFileStructureHelp = <>
+/**
+ * Retrieve the expression file info message for when in traditional upload mode
+*/
+export function getExpressionFileInfoMessage(isAnnDataExperience, expressionType) {
+  if (!isAnnDataExperience) {
+    let message = ''
+    if (expressionType === 'Raw') {
+      message = 'Raw count data enables data reuse in new analyses. Ideal raw count data is unfiltered, without normalization or other processing performed. Gene expression scores can be uploaded in either of two file types:'
+    } else {
+      message = 'Processed matrix data is used to support gene expression visualizations. Gene expression scores can be uploaded in either of two file types:'
+    }
+
+    return <div className="row">
+      <div className="col-md-12">
+        <div className="form-terra">
+          <div className="row">
+            <div className="col-md-12">
+              <p>{message}</p>
+            </div>
+          </div>
+          {expressionFileStructureHelp}
+        </div>
+      </div>
+    </div>
+  }
+}
+
+const expressionFileStructureHelp = <>
   <div className="row">
     <div className="col-sm-6 padded">
       <a href="https://raw.githubusercontent.com/broadinstitute/single_cell_portal/master/demo_data/expression_example.txt" target="_blank" rel="noreferrer noopener">Dense matrix</a>

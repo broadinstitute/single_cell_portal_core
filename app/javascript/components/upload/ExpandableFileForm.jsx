@@ -3,16 +3,21 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp, faTimes } from '@fortawesome/free-solid-svg-icons'
 import Modal from 'react-bootstrap/lib/Modal'
 import { Popover, OverlayTrigger } from 'react-bootstrap'
-
+import { clusterFileFilter } from './ClusteringStep'
+import { metadataFileFilter } from './MetadataStep'
+import { rawCountsFileFilter } from './RawCountsStep'
+import { processedFileFilter } from './ProcessedExpressionStep'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import FileUploadControl from './FileUploadControl'
 
 /** renders its children inside an expandable form with a header for file selection */
 export default function ExpandableFileForm({
   file, allFiles, updateFile, allowedFileExts, validationMessages, bucketName,
-  saveFile, deleteFile, isInitiallyExpanded, children
+  saveFile, deleteFile, isInitiallyExpanded, isAnnDataExperience, children
 }) {
   const [expanded, setExpanded] = useState(isInitiallyExpanded || file.status === 'new')
+
+  const isUploadEnabled = getIsUploadEnabled(isAnnDataExperience, allFiles)
 
   /** handle a click on the header bar (not the expand button itself) */
   function handleDivClick(e) {
@@ -42,7 +47,7 @@ export default function ExpandableFileForm({
               <FontAwesomeIcon icon={expanded ? faChevronUp : faChevronDown} />
             </button>
           </div>
-          <div className="flexbox">
+          {isUploadEnabled && <div className="flexbox">
             <FileUploadControl
               file={file}
               allFiles={allFiles}
@@ -50,8 +55,8 @@ export default function ExpandableFileForm({
               allowedFileExts={allowedFileExts}
               validationMessages={validationMessages}
               bucketName={bucketName} />
-          </div>
-          <SaveDeleteButtons {...{ file, updateFile, saveFile, deleteFile, validationMessages }} />
+          </div>}
+          {isUploadEnabled && <SaveDeleteButtons {...{ file, updateFile, saveFile, deleteFile, validationMessages }} /> }
         </div>
         {expanded && children}
         <SavingOverlay file={file} updateFile={updateFile} />
@@ -193,6 +198,23 @@ function DeleteButton({ file, deleteFile, setShowConfirmDeleteModal }) {
   return deleteButton
 }
 
+/**
+ * Determine whether to show the file upload control buttons.
+ * If the file form is for Clustering, Expression, or
+ * Metadata while in AnnData experience mode do not display the buttons
+ *
+ * @param {boolean} isAnnDataExperience
+ * @param {array} allFiles
+ * @returns {boolean} Whether to show upload control buttons or not
+ */
+function getIsUploadEnabled(isAnnDataExperience, allFiles) {
+  const isClustering = allFiles.filter(clusterFileFilter)
+  const isMeta = allFiles.filter(metadataFileFilter)
+  const isProcessedMatrix = allFiles.filter(processedFileFilter)
+  const isRawCount = allFiles.filter(rawCountsFileFilter)
+
+  return !((isClustering || isMeta || isProcessedMatrix || isRawCount) && isAnnDataExperience)
+}
 
 const parsingPopup = <Popover id="parsing-tooltip" className="tooltip-wide">
   <div>This file is currently being parsed on the server.  <br/>

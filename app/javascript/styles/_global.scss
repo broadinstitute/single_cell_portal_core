@@ -704,6 +704,8 @@ ul.pager li.dimmed {
 
 #overflow-x-scroll {
   overflow-x: scroll;
+  width: 100%;
+  min-width: 300px;
 }
 
 #metadata-convention-example-link {

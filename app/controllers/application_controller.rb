@@ -19,6 +19,7 @@ class ApplicationController < ActionController::Base
   # For APIs, you may want to use :null_session instead.
   protect_from_forgery with: :exception
 
+  before_action :check_terra_tos_acceptance, except: [:accept_tos, :record_tos_action]
   before_action :get_download_quota
   before_action :get_deployment_notification
   before_action :set_selected_branding_group
@@ -166,10 +167,23 @@ class ApplicationController < ActionController::Base
     end
   end
 
+  # Temporary sub-optimal fix for signed-in users not having accepted Terra Terms of Service
+  # Context: https://broadworkbench.atlassian.net/browse/SCP-4929
+  # TODO (SCP-4971): intercept API calls that need end-user credentials, and handle this at that level
+  def check_terra_tos_acceptance
+    if user_signed_in? &&
+       current_user.must_accept_terra_tos? &&
+       ![exceptions_terra_tos_path, destroy_user_session_path].include?(request.path)
+      redirect_to exceptions_terra_tos_path and return
+    end
+  end
+
   # make sure that users are accepting the Terms of Service
   def check_tos_acceptance
     # only redirect if user is signed in, has not accepted the ToS, and is not currently on the accept_tos page
-    if user_signed_in? && !TosAcceptance.accepted?(current_user) && request.path != accept_tos_path(current_user.id)
+    if user_signed_in? &&
+       !TosAcceptance.accepted?(current_user) &&
+       ![accept_tos_path(current_user.id), destroy_user_session_path].include?(request.path)
       redirect_to accept_tos_path(current_user.id) and return
     end
   end

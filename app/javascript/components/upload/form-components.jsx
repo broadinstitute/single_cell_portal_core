@@ -16,7 +16,7 @@ export function AddFileButton({ newFileTemplate, addNewFile }) {
 }
 
 /** renders a basic label->value text field in a bootstrap form control */
-export function TextFormField({ label, fieldName, file, updateFile }) {
+export function TextFormField({ label, fieldName, file, updateFile, placeholderText='' }) {
   const fieldId = `${fieldName}-input-${file._id}`
   let value = file[fieldName] ?? ''
   const [objName, nestedPropName] = fieldName.split('.')
@@ -30,6 +30,7 @@ export function TextFormField({ label, fieldName, file, updateFile }) {
       type="text"
       id={fieldId}
       value={value}
+      placeholder={placeholderText}
       onChange={event => {
         const update = {}
         if (nestedPropName) {

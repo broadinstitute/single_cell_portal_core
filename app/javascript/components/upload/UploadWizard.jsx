@@ -41,7 +41,8 @@ import SeuratStep from './SeuratStep'
 
 const POLLING_INTERVAL = 10 * 1000 // 10 seconds between state updates
 const CHUNK_SIZE = 10000000 // 10 MB
-const STEPS = [
+
+const ALL_POSSIBLE_STEPS = [
   RawCountsStep,
   ProcessedExpressionStep,
   MetadataStep,
@@ -50,17 +51,27 @@ const STEPS = [
   CoordinateLabelStep,
   SequenceFileStep,
   GeneListStep,
-  MiscellaneousStep
+  MiscellaneousStep,
+  SeuratStep,
+  AnnDataStep,
+  ImageStep
 ]
 
-const MAIN_STEPS = STEPS.slice(0, 4)
-const SUPPLEMENTAL_STEPS = STEPS.slice(4, 8)
-const NON_VISUALIZABLE_STEPS = STEPS.slice(8)
+// These steps remain the same for both traditional and AnnData upload experiences
+const MAIN_STEPS = [
+  RawCountsStep,
+  ProcessedExpressionStep,
+  MetadataStep,
+  ClusteringStep
+]
 
 /** shows the upload wizard */
 export function RawUploadWizard({ studyAccession, name }) {
   const [serverState, setServerState] = useState(null)
   const [formState, setFormState] = useState(null)
+
+  // used for toggling between traditional and AnnData experience of upload wizard
+  const [isAnnDataExperience, setIsAnnDataExperience] = useState(false)
 
   // study attributes to pass to the StudyContext later for use throughout the RawUploadWizard component, if needed
   // use complete study object, rather than defaultStudyState so that any updates to study.rb will be reflected in
@@ -69,31 +80,32 @@ export function RawUploadWizard({ studyAccession, name }) {
 
   const allowReferenceImageUpload = serverState?.feature_flags?.reference_image_upload
 
+  let STEPS = MAIN_STEPS
+  let SUPPLEMENTAL_STEPS
+  let NON_VISUALIZABLE_STEPS
 
-  if (!STEPS.includes(AnnDataStep)) {
-    STEPS.splice(8, 0, AnnDataStep)
-    NON_VISUALIZABLE_STEPS.splice(0, 0, AnnDataStep)
+  // set the additional steps to display, based on traditional or AnnData experience
+  if (isAnnDataExperience) {
+    SUPPLEMENTAL_STEPS = ALL_POSSIBLE_STEPS.slice(6, 7)
+    NON_VISUALIZABLE_STEPS = ALL_POSSIBLE_STEPS.slice(8, 10)
+  } else {
+    SUPPLEMENTAL_STEPS = ALL_POSSIBLE_STEPS.slice(4, 8)
+    NON_VISUALIZABLE_STEPS = ALL_POSSIBLE_STEPS.slice(8, 11)
+    if (allowReferenceImageUpload) {
+      SUPPLEMENTAL_STEPS.splice(1, 0, ImageStep)
+    }
   }
 
-  if (!STEPS.includes(SeuratStep)) {
-    STEPS.splice(9, 0, SeuratStep)
-    NON_VISUALIZABLE_STEPS.splice(1, 0, SeuratStep)
-  }
-
-
-  if (allowReferenceImageUpload && !STEPS.includes(ImageStep)) {
-    STEPS.splice(5, 0, ImageStep)
-    SUPPLEMENTAL_STEPS.splice(1, 0, ImageStep)
-  }
+  STEPS = STEPS.concat(SUPPLEMENTAL_STEPS, NON_VISUALIZABLE_STEPS)
 
   const routerLocation = useLocation()
   const queryParams = queryString.parse(routerLocation.search)
+
   let currentStepIndex = STEPS.findIndex(step => step.name === queryParams.tab)
   if (currentStepIndex < 0) {
     currentStepIndex = 0
   }
   const currentStep = STEPS[currentStepIndex]
-
 
   // go through the files and compute any relevant derived properties, notably 'isDirty'
   if (formState?.files) {
@@ -350,7 +362,6 @@ export function RawUploadWizard({ studyAccession, name }) {
       setTimeout(pollServerState, POLLING_INTERVAL)
     })
     window.document.title = `Upload - Single Cell Portal`
-
   }, [studyAccession])
 
   const nextStep = STEPS[currentStepIndex + 1]
@@ -368,7 +379,7 @@ export function RawUploadWizard({ studyAccession, name }) {
           <div>
             <WizardNavPanel {...{
               formState, serverState, currentStep, setCurrentStep, studyAccession, mainSteps: MAIN_STEPS,
-              supplementalSteps: SUPPLEMENTAL_STEPS, nonVizSteps: NON_VISUALIZABLE_STEPS, studyName: name
+              supplementalSteps: SUPPLEMENTAL_STEPS, nonVizSteps: NON_VISUALIZABLE_STEPS, studyName: name, isAnnDataExperience
             }} />
           </div>
           <div id="overflow-x-scroll">
@@ -377,6 +388,7 @@ export function RawUploadWizard({ studyAccession, name }) {
               <div className="prev-next-buttons">
                 { prevStep && <button
                   className="btn terra-tertiary-btn margin-right"
+
                   onClick={() => setCurrentStep(prevStep)}>
                   <FontAwesomeIcon icon={faChevronLeft}/> Previous
                 </button> }
@@ -399,6 +411,7 @@ export function RawUploadWizard({ studyAccession, name }) {
                 updateFile={updateFile}
                 saveFile={saveFile}
                 addNewFile={addNewFile}
+                isAnnDataExperience={isAnnDataExperience}
               />
             </div> }
           </div>
