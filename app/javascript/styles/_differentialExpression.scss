@@ -1,0 +1,61 @@
+.de-modal-row-wrapper {
+  position: relative;
+  top: -15px;
+    .de-modal-row {
+    a.de-info-help-icon {
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+  }
+}
+
+.de-table-buttons {
+  float: right;
+  margin-right: -8px;
+}
+
+.de-download-button {
+  margin-right: 0.5em;
+  display: inline-block;
+  vertical-align: middle;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+.de-search-box {
+  width: 170px;
+  border: 1px solid #CCC;
+  border-radius: 3px;
+  height: 24px;
+  margin-left: -16px;
+  display: inline-block;
+}
+
+.de-search-box:focus-within {
+  border: 1px solid #AAA;
+}
+
+.de-search-icon {
+  color: $action-color;
+  margin: 0 5px 0 5px;
+}
+
+.de-search-input {
+  width: 130px;
+}
+
+.clear-de-search-icon {
+  border: none;
+  padding: 0;
+  float: right;
+  margin: 1px 3px 0 0;
+  color: #CCC;
+}
+
+.clear-de-search-icon:hover,
+.clear-de-search-icon:active:hover {
+  background: none;
+  color: #AAA;
+  box-shadow: none;
+  outline: none;
+}

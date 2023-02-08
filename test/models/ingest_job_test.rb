@@ -267,15 +267,30 @@ class IngestJobTest < ActiveSupport::TestCase
       :metadata_file, name: 'metadata.txt', study: study, cell_input: %w[A B C],
       annotation_input: [
         { name: 'species', type: 'group', values: %w[dog cat dog] },
-        { name: 'disease', type: 'group', values: %w[none none measles] }
+        { name: 'disease', type: 'group', values: %w[none none measles] },
+        {
+          name: 'cell_type__ontology_label',
+          type: 'group',
+          values: ['B cell', 'T cell', 'B cell', ]
+        },
+        {
+          name: 'cell_type',
+          type: 'group',
+          values: %w[CL_0000236 CL_0000084 CL_0000236]
+        },
+        {
+          name: 'cell_type__custom',
+          type: 'group',
+          values: %w[ImmN Hb-VC ImmN]
+        }
       ])
     job = IngestJob.new(study:)
     job_mock = Minitest::Mock.new
-    3.times do
+    2.times do
       job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
     end
     mock = Minitest::Mock.new
-    3.times do
+    2.times do
       mock.expect(:delay, job_mock)
     end
     IngestJob.stub :new, mock do

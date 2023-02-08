@@ -25,6 +25,8 @@ function parseDeFile(tsvText) {
   const deGenes = []
   const tsvLines = tsvText.split(newlineRegex)
   for (let i = 1; i < tsvLines.length; i++) {
+    const tsvLine = tsvLines[i];
+    if (tsvLine === '') continue
     // Each element in this array is DE data for the gene in this row
     const [
       index, // eslint-disable-line
@@ -49,7 +51,6 @@ function parseDeFile(tsvText) {
  *
  * @param {String} bucketId Identifier for study's Google bucket
  * @param {String} deFilePath File path of differential expression file in Google bucket
- * @param {Integer} numGenes Number of genes to include in returned deGenes array
  *
  * @return {Array} deGenes Array of DE gene objects, each with properties:
  *   name: Gene name
@@ -60,11 +61,11 @@ function parseDeFile(tsvText) {
  *   pctNzGroup: Percent non-zero, group.  % of cells with non-zero expression in selected group.
  *   pctNzReference: Percent non-zero, reference.  % of cells with non-zero expression in non-selected groups.
  **/
-async function fetchDeGenes(bucketId, deFilePath, numGenes=15) {
+async function fetchDeGenes(bucketId, deFilePath) {
   const data = await fetchBucketFile(bucketId, deFilePath)
   const tsvText = await data.text()
   const deGenes = parseDeFile(tsvText)
-  return deGenes.slice(0, numGenes)
+  return deGenes
 }
 
 /** Gets matching deObject for the given group and cluster + annot combo */

@@ -184,7 +184,6 @@ function RawScatterPlot({
     if (isRG) {
       setCountsByLabel(labelCounts)
     }
-
     return traces
   }
 
@@ -322,7 +321,6 @@ function RawScatterPlot({
   function processScatterPlot(clusterResponse=null) {
     let [scatter, perfTimes] =
       (clusterResponse ? clusterResponse : [scatterData, null])
-
     scatter = updateScatterLayout(scatter)
     const layout = scatter.layout
 
@@ -370,72 +368,97 @@ function RawScatterPlot({
 
   // Fetches plot data then draws it, upon load or change of any data parameter
   useEffect(() => {
-    setIsLoading(true)
+    /** retrieve and process data */
+    async function fetchData() {
+      setIsLoading(true)
 
-    let expressionArray
+      let expressionArray
 
-    const fetchMethod = dataCache ? dataCache.fetchCluster : fetchCluster
+      const fetchMethod = dataCache ? dataCache.fetchCluster : fetchCluster
 
-    // use an image and/or data cache if one has been provided, otherwise query scp-api directly
-    if (
-      flags?.progressive_loading && isGeneExpression(genes, isCorrelatedScatter) && !isAnnotatedScatter &&
-      !scatterData
-    ) {
-      const urlSafeCluster = cluster.replaceAll('+', 'pos').replace(/\W/g, '_')
-      const gene = genes[0]
-      const stem = '_scp_internal/cache/expression_scatter/'
-      const leaf = `${urlSafeCluster}/${gene}`
+      // use an image and/or data cache if one has been provided, otherwise query scp-api directly
+      if (
+        flags?.progressive_loading && isGeneExpression(genes, isCorrelatedScatter) && !isAnnotatedScatter &&
+        !scatterData
+      ) {
+        const urlSafeCluster = cluster.replaceAll('+', 'pos').replace(/\W/g, '_')
+        const gene = genes[0]
+        const stem = '_scp_internal/cache/expression_scatter/'
+        const leaf = `${urlSafeCluster}/${gene}`
 
-      // TODO (SCP-4839): Instrument more bucket cache analytics, then remove line below
-      // window.t0 = Date.now()
+        // TODO (SCP-4839): Instrument more bucket cache analytics, then remove line below
+        // window.t0 = Date.now()
 
-      const imagePath = `${stem}images/${leaf}.webp`
-      const dataPath = `${stem}data/${leaf}.json`
+        const imagePath = `${stem}images/${leaf}.webp`
+        const dataPath = `${stem}data/${leaf}.json`
 
-      const expressionParams = {
-        studyAccession,
-        cluster,
-        annotation: annotation ? annotation : '',
-        subsample,
-        consensus,
-        genes,
-        isAnnotatedScatter,
-        isCorrelatedScatter
-      }
-
-      fetchBucketFile(bucketId, imagePath).then(async response => {
-        const imageCacheHit = response.ok
-
-        // Draw plot as static image first, if it's cached
-        if (imageCacheHit) {
-          await drawPlotImage(response)
+        const expressionParams = {
+          studyAccession,
+          cluster,
+          annotation: annotation ? annotation : '',
+          subsample,
+          consensus,
+          genes,
+          isAnnotatedScatter,
+          isCorrelatedScatter
         }
 
-        // Then make it interactive, using gene expression scatter plot data array from GCS bucket
-        renderBucketData(fetchMethod, expressionParams, dataPath)
+        fetchBucketFile(bucketId, imagePath).then(async response => {
+          const imageCacheHit = response.ok
 
-        // TODO (SCP-4839): Instrument more bucket cache analytics, then remove console log below
-        // console.log(`Image render took ${ Date.now() - window.t0}`)
-        // Add imageCacheHit boolean to perfTime object here
-      })
-    } else {
-      fetchMethod({
-        studyAccession,
-        cluster,
-        annotation: annotation ? annotation : '',
-        subsample,
-        consensus,
-        genes,
-        isAnnotatedScatter,
-        isCorrelatedScatter,
-        expressionArray
-      }).then(processScatterPlot).catch(error => {
-        setIsLoading(false)
-        setShowError(true)
-        setError(error)
-      })
+          // Draw plot as static image first, if it's cached
+          if (imageCacheHit) {
+            await drawPlotImage(response)
+          }
+
+          // Then make it interactive, using gene expression scatter plot data array from GCS bucket
+          await renderBucketData(fetchMethod, expressionParams, dataPath)
+
+          // TODO (SCP-4839): Instrument more bucket cache analytics, then remove console log below
+          // console.log(`Image render took ${ Date.now() - window.t0}`)
+          // Add imageCacheHit boolean to perfTime object here
+        })
+      } else {
+        try {
+          // attempt to fetch the data, this will use the cache if available
+          const respData1 = await fetchMethod({
+            studyAccession,
+            cluster,
+            annotation: annotation ? annotation : '',
+            subsample,
+            consensus,
+            genes,
+            isAnnotatedScatter,
+            isCorrelatedScatter,
+            expressionArray
+          })
+          // check that the data contains annotations needed for processing scatterplot
+          if (respData1[0]?.data?.annotations?.length) {
+            processScatterPlot(respData1)
+          } else {
+            // if the data was missing the necessary info, make an api call
+            const respData = await fetchCluster({
+              studyAccession,
+              cluster,
+              annotation: annotation ? annotation : '',
+              subsample,
+              consensus,
+              genes,
+              isAnnotatedScatter,
+              isCorrelatedScatter,
+              expressionArray
+            })
+            processScatterPlot(respData)
+          }
+        } catch (error) {
+          setIsLoading(false)
+          setShowError(true)
+          setError(error)
+        }
+      }
     }
-  }, [cluster, annotation.name, subsample, consensus, genes.join(','), isAnnotatedScatter])
+    fetchData()
+  }, [cluster, annotation.name, subsample, genes.join(','), isAnnotatedScatter, consensus])
 
   useUpdateEffect(() => {
     // Don't update if graph hasn't loaded

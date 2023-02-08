@@ -1,5 +1,9 @@
 # handle launching differential expression ingest jobs
 class DifferentialExpressionService
+
+  # regex for matching annotation names for possible cell type analogs
+  CELL_TYPE_MATCHER = /cell.*type/i
+
   # run a differential expression job for a given study on the default cluster/annotation
   #
   # * *params*
@@ -155,6 +159,7 @@ class DifferentialExpressionService
   end
 
   # find all eligible annotations for DE for a given study
+  # will restrict to cell type analog annotations
   #
   # * *params*
   #   - +study+        (Study) => Associated study object
@@ -164,14 +169,22 @@ class DifferentialExpressionService
   #   - (Array<Hash>) => Array of annotation objects available for DE
   def self.find_eligible_annotations(study, skip_existing: false)
     annotations = []
-    metadata = study.cell_metadata.where(annotation_type: 'group').select(&:can_visualize?)
+    metadata = study.cell_metadata.where(annotation_type: 'group').select do |meta|
+      meta.name =~ CELL_TYPE_MATCHER && meta.can_visualize?
+    end
     annotations += metadata.map { |meta| { annotation_name: meta.name, annotation_scope: 'study' } }
+    # special gotcha to remove 'cell_type' metadata annotation if 'cell_type__ontology_label' is present
+    if annotations.detect { |annot| annot[:annotation_name] == 'cell_type__ontology_label' }.present?
+      annotations.reject! { |annot| annot[:annotation_name] == 'cell_type'}
+    end
     cell_annotations = []
     groups_to_process = study.cluster_groups.select { |cg| cg.cell_annotations.any? }
     groups_to_process.map do |cluster|
       cell_annots = cluster.cell_annotations.select do |annot|
         safe_annot = annot.with_indifferent_access
-        safe_annot[:type] == 'group' && cluster.can_visualize_cell_annotation?(safe_annot)
+        safe_annot[:type] == 'group' &&
+          safe_annot[:name] =~ CELL_TYPE_MATCHER &&
+          cluster.can_visualize_cell_annotation?(safe_annot)
       end
       cell_annots.each do |annot|
         annot[:cluster_file_id] = cluster.study_file.id # for checking associations later

@@ -1,76 +1,83 @@
 .study-explore {
-	position: relative;
-	min-height: 70vh;
-	display: flex;
-	flex-direction: column;
-	.gene-load-spinner {
+  position: relative;
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+
+  .gene-load-spinner {
     position: absolute;
     top: 40%;
     left: 50%;
     color: #999;
     font-size: 2.5em;
   }
+
   a {
-  	cursor: pointer;
-	}
+    cursor: pointer;
+  }
 
-	button.action {
-		border: none;
-	}
+  button.action {
+    border: none;
+  }
 
-	button.action-plus {
-		border: none;
-		float:right;
-		background: #fff;
-		color: #4d72aa;
-		margin-top: -0.5rem;
-	}
+  button.action-plus {
+    border: none;
+    float: right;
+    background: #fff;
+    color: #4d72aa;
+    margin-top: -0.5rem;
+  }
 
-	button.action-minus {
-		border: none;
-		float:right;
-		background: #fff;
-		color: #4d72aa;
-		margin-top: -2.5rem;
-	}
+  button.action-minus {
+    border: none;
+    float: right;
+    background: #fff;
+    color: #4d72aa;
+    margin-top: -2.5rem;
+  }
 
-	.plot {
-		position: relative;
-		background: #fff;
-		min-height: 300px;
-		.help-block {
-			margin-left: 1em;
-		}
-	}
-	.plot-title {
-		margin-left: 1em;
-		margin-top: 0.5em;
-		.badge {
-			font-weight: normal;
-			margin-right: 0.2em;
-		}
-		.correlation {
-			font-weight: normal
-		}
-	}
+  .plot {
+    position: relative;
+    background: #fff;
+    min-height: 300px;
 
-	.icon-button {
-		margin-left: 1em;
-		margin-right: 1em;
-	}
+    .help-block {
+      margin-left: 1em;
+    }
+  }
+
+  .plot-title {
+    margin-left: 1em;
+    margin-top: 0.5em;
+
+    .badge {
+      font-weight: normal;
+      margin-right: 0.2em;
+    }
+
+    .correlation {
+      font-weight: normal
+    }
+  }
+
+  .icon-button {
+    margin-left: 1em;
+    margin-right: 1em;
+  }
 }
 
 
 .explore-tab-content {
-	background: #fff;
-	flex-grow: 1;
+  background: #fff;
+  flex-grow: 1;
 
-	button.action {
-		background: #fff;
-	}
-	.panel {
-		border: none;
-	}
+  button.action {
+    background: #fff;
+  }
+
+  .panel {
+    border: none;
+  }
 }
 
 .create-annotation-control {
@@ -79,38 +86,44 @@
   top: -80px;
   margin-bottom: -20px;
 
-	.panel-collapse.in {
-		border: 1px solid #bbb;
-		border-radius: 5px;
-		margin-top: 4rem;
-		margin-bottom: -9rem;
+  .panel-collapse.in {
+    border: 1px solid #bbb;
+    border-radius: 5px;
+    margin-top: 4rem;
+    margin-bottom: -9rem;
 
-	}
-	label {
-		font-weight: normal;
-	}
-	input[type="text"] {
-		margin-bottom: 0.5em;
-		width: 100%;
-	}
-	.delete-icon {
-		border: none;
-		color: #777;
-		background: none;
-		max-height: 1.8em;
-		border-radius: 1em;
-		&:hover {
-			background: #eef;
-		}
-	}
-	ul {
-		padding-inline-start: 10px;
-	}
-	.gene-load-spinner {
-		position: relative;
-		left: 43%;
-		right: 50%;
-	}
+  }
+
+  label {
+    font-weight: normal;
+  }
+
+  input[type="text"] {
+    margin-bottom: 0.5em;
+    width: 100%;
+  }
+
+  .delete-icon {
+    border: none;
+    color: #777;
+    background: none;
+    max-height: 1.8em;
+    border-radius: 1em;
+
+    &:hover {
+      background: #eef;
+    }
+  }
+
+  ul {
+    padding-inline-start: 10px;
+  }
+
+  .gene-load-spinner {
+    position: relative;
+    left: 43%;
+    right: 50%;
+  }
 }
 
 .heatmap-legend-color {
@@ -118,56 +131,57 @@
 }
 
 .explore-plot-tab-content {
-	border-right: 1px solid #ccc;
-	min-height: 70vh;
+  border-right: 1px solid #ccc;
+  min-height: 70vh;
 }
 
 
 .view-options-toggle {
-	padding: 1em 0em;
-	font-weight: bold;
+  padding: 1em 0em;
+  font-weight: bold;
 
-	button {
-		float: right;
-		background: none;
-		font-weight: normal;
-	}
+  button {
+    float: right;
+    background: none;
+    font-weight: normal;
+  }
 }
 
 .view-options-toggle-on {
-	position: absolute;
-	top: 0px;
-	right: 1px;
-	padding: 0.5em;
-	background: #fff;
-	z-index: 30;
+  position: absolute;
+  top: 0px;
+  right: 1px;
+  padding: 0.5em;
+  background: #fff;
+  z-index: 30;
 }
 
 .desktop-view-options {
-	position: absolute;
-	top: 10px;
-	right: 2em;
+  position: absolute;
+  top: 10px;
+  right: 2em;
 }
 
 .mobile-view-options {
-	display: none;
+  display: none;
 }
 
 @media (max-width: 991.98px) {
-	.mobile-view-options {
-		display: block;
-		text-align: center;
-		padding-top: 1em;
-	}
-	.desktop-view-options {
-		display: none;
-	}
+  .mobile-view-options {
+    display: block;
+    text-align: center;
+    padding-top: 1em;
+  }
+
+  .desktop-view-options {
+    display: none;
+  }
 }
 
 
 .study-explore .view-options {
   // leave room for the 'view options' toggle
-	margin-top: 3em;
+  margin-top: 3em;
 }
 
 .render-controls {
@@ -191,30 +205,10 @@
     border-radius: 5px;
     margin: 0.5em 0em;
   }
+
   .preview-block {
     width: 2em;
     height: 1.5em;
     display: inline-block;
   }
 }
-
-.de-modal-row-wrapper {
-  position: relative;
-  top: -15px;
-    .de-modal-row {
-	  a.de-info-help-icon {
-		  margin-left: 10px;
-		  vertical-align: middle;
-	  }
-  }
-}
-
-.de-download-button{
-  margin-right: 0.5em;
-  margin-left: 1em;
-  display: inline-block;
-  vertical-align: middle;
-  padding: 2px 5px;
-  border-radius: 4px;
-}
-  

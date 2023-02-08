@@ -39,6 +39,16 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
                       study: @basic_study,
                       cell_input: @cells,
                       annotation_input: [
+                        {
+                          name: 'cell_type__ontology_label',
+                          type: 'group',
+                          values: ['B cell', 'B cell', 'T cell', 'B cell', 'T cell', ]
+                        },
+                        {
+                          name: 'cell_type',
+                          type: 'group',
+                          values: %w[CL_0000236 CL_0000236 CL_0000084 CL_0000236 CL_0000084]
+                        },
                         { name: 'species', type: 'group', values: %w[dog cat dog dog cat] },
                         { name: 'disease', type: 'group', values: %w[none none measles measles measles] }
                       ])
@@ -205,19 +215,16 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     assert_equal [], DelayedJobAccessor.find_jobs_by_handler_type(IngestJob, @cluster_file)
   end
 
-  test 'should run differential expression job on all annotations' do
+  test 'should run differential expression job on all eligible annotations' do
     DataArray.create!(@all_cells_array_params)
     job_mock = Minitest::Mock.new
     job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
-    job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
-    job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
     mock = Minitest::Mock.new
     mock.expect(:delay, job_mock)
-    mock.expect(:delay, job_mock)
-    mock.expect(:delay, job_mock)
+    # only cell_type__ontology_label should be marked as eligible
     IngestJob.stub :new, mock do
       jobs_launched = DifferentialExpressionService.run_differential_expression_on_all(@basic_study.accession)
-      assert_equal 3, jobs_launched
+      assert_equal 1 , jobs_launched
       mock.verify
       job_mock.verify
     end
@@ -225,11 +232,11 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
 
   test 'should find existing DE results' do
     cluster = @basic_study.cluster_groups.by_name(@cluster_file.name)
-    annotation = { annotation_name: 'species', annotation_scope: 'study' }
+    annotation = { annotation_name: 'cell_type__ontology_label', annotation_scope: 'study' }
     result = DifferentialExpressionResult.create(
       study: @basic_study, cluster_group: cluster, matrix_file_id: @raw_matrix.id, cluster_name: cluster.name,
-      annotation_name: 'species', annotation_scope: 'study', computational_method: 'wilcoxon',
-      observed_values: %w[dog cat]
+      annotation_name: 'cell_type__ontology_label', annotation_scope: 'study', computational_method: 'wilcoxon',
+      observed_values: ['B cell', 'T cell']
     )
     assert result.present?
     @basic_study.reload
@@ -239,16 +246,10 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
   end
 
   test 'should find eligible annotations' do
-    expected_annotations = [
-      { annotation_name: 'species', annotation_scope: 'study' },
-      { annotation_name: 'disease', annotation_scope: 'study' },
-      { annotation_name: 'foo', annotation_scope: 'cluster', cluster_file_id: @cluster_file.id }
-    ]
+    expected_annotation = { annotation_name: 'cell_type__ontology_label', annotation_scope: 'study' }
     eligible_annotations = DifferentialExpressionService.find_eligible_annotations(@basic_study)
-    assert_equal expected_annotations.count, eligible_annotations.count
-    expected_annotations.each do |annotation|
-      assert_includes eligible_annotations, annotation
-    end
+    assert_equal 1, eligible_annotations.count
+    assert_includes eligible_annotations, expected_annotation
   end
 
   test 'should determine study eligibility' do
