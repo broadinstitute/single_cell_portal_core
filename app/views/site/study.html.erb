@@ -4,10 +4,10 @@
 <div id="tab-root">
   <%= render :partial => 'study_tabs_nav' %>
   <div class="tab-content top-pad">
-    <div class="tab-pane active in" id="study-summary" role="tabpanel">
+    <div class="tab-pane <%= @explore_tab_default ? nil : ' active in' %>" id="study-summary" role="tabpanel">
       <%= render partial: 'study_description_view' %>
     </div>
-    <div class="tab-pane" id="study-visualize" role="tabpanel">
+    <div class="tab-pane <%= @explore_tab_default ? 'active in' : nil %>" id="study-visualize" role="tabpanel">
       <% if @study.can_visualize? %>
         <%= render partial: 'study_visualize' %>
       <% end %>

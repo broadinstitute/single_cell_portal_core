@@ -1,0 +1,86 @@
+<div id="ab-test-tab-root">
+  <ul class="nav nav-tabs" data-analytics-name="ab-test" id="ab-test-nav">
+    <li class="nav-item active"><a href="#ab-test-options" data-toggle="tab">Options</a></li>
+    <li class="nav-item"><a href="#ab-test-groups" data-toggle="tab">Group testing</a></li>
+  </ul>
+
+  <div class="tab-content">
+    <div class="tab-pane active in top-pad" id="ab-test-options">
+      <%= form_with(model: ab_test, url: update_feature_flag_ab_test_path, id: 'ab-test', class: 'form') do |form| %>
+        <% if ab_test.errors.any? %>
+          <div class="bs-callout bs-callout-danger" id="ab-test-errors-block">
+            <h2><%= pluralize(ab_test.errors.count, "error") %> prohibited this A/B test from being saved:</h2>
+
+            <ul>
+              <% ab_test.errors.each do |error| %>
+                <li><%= error.full_message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+        <div class="form-group row">
+          <div class="col-md-3">
+            <%= form.label :enabled %><br />
+            <%= form.check_box :enabled, class: 'large-checkbox' %>
+            <p class="help-block">
+              Enabling this A/B test will automatically assign users to different groups when visting the portal.
+            </p>
+          </div>
+          <div class="col-md-4">
+            <%= form.label :group_names %><br />
+            <div id='ab-test-group-names-container'>
+              <% @ab_test.group_names.each do |name| %>
+                <%= render partial: 'ab_test_group_name_field',
+                           locals: { name: name, f: form, feature_flag: @feature_flag.name } %>
+              <% end %>
+            </div>
+            <%= link_to "<i class='fas fa-plus'></i> Add a group".html_safe, '#',
+                        class: 'btn btn-sm btn-default', id: 'add-ab-test-group' %>
+          </div>
+        </div>
+        <div class="form-group">
+          <%= form.submit 'Save', class: 'btn btn-success', id: 'save-ab-test' %>
+          <%= link_to "<i class='fas fa-trash'></i> Destroy".html_safe, destroy_feature_flag_ab_test_path,
+                      class: 'btn btn-danger', method: :delete, data: { confirm: 'Destroy this A/B test?' } %>
+        </div>
+
+        <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
+          $('#add-ab-test-group').on('click', () => {
+            $('#ab-test-group-names-container').append(
+              "<%= j(render partial: 'ab_test_group_name_field', locals: { name: '', f: form }) %>"
+            )
+          })
+
+          $('#ab-test').on('click', '.remove-group-name', (event) => {
+            if (confirm('Remove this group?')) {
+              $(event.target).closest('div.group-name-row').remove()
+            }
+          })
+        </script>
+      <% end %>
+    </div>
+    <div class="tab-pane top-pad" id="ab-test-groups">
+      <p class="help-block">
+        Configure your test group assignment to preview what each group will see.<br />
+        <strong>Note: this will remove any overrides you have in place for your account for this feature flag.</strong>
+      </p>
+      <%= form_tag(add_to_ab_test_group_path(name: @feature_flag.name)) do %>
+        <div class="form-group row">
+          <div class="col-md-3">
+            <%= label_tag 'Group name' %>
+            <%= select_tag :group_name,
+                           options_for_select(
+                             @ab_test.group_names, @ab_test.assignment(current_user.metrics_uuid).group_name
+                           ),
+                           class: 'form-control' %>
+          </div>
+        </div>
+        <div class="form-group row">
+          <div class="col-md-3">
+            <%= submit_tag 'Add to group', class: 'btn btn-sm btn-success' %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

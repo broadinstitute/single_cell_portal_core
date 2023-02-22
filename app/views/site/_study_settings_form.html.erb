@@ -43,6 +43,9 @@
         <li>
           <%= scp_link_to "Study details", study_path(@study), class: " #{@study.url_safe_name}-sync details-button" %>
         </li>
+        <li>
+        <%= scp_link_to "Usage stats", usage_stats_study_path(@study), class: " #{@study.url_safe_name}-usage_stats usage-button" %>
+      </li>
       </ul>
     </div>
     <div class="col-md-10">

@@ -1,0 +1,13 @@
+<div class="form-group row group-name-row">
+  <div class="col-xs-8">
+    <%= f.text_field :group_names, name: 'ab_test[group_names][]', value: name, class: 'form-control group-name' %>
+  </div>
+  <div class="col-xs-2">
+    <%= link_to "<i class='fas fa-times'></i>".html_safe, '#', class: 'btn btn-sm btn-danger remove-group-name' %>
+
+  </div>
+  <div class="col-xs-2">
+    <% user_count = @ab_test.user_count(name)  %>
+    <h4><span class="label label-default"><%= user_count %> <%= 'user'.pluralize(user_count) %></span></h4>
+  </div>
+</div>

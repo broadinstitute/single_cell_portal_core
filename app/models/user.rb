@@ -20,6 +20,7 @@ class User
 
   has_many :studies
   has_and_belongs_to_many :branding_groups
+  has_many :ab_test_assignments
 
   # User annotations are owned by a user
   has_many :user_annotations do

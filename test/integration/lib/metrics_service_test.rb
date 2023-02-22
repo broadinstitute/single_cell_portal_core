@@ -32,7 +32,8 @@ class MetricsServiceTest < ActiveSupport::TestCase
       appId: "single-cell-portal",
       env: "test",
       authenticated: true,
-      registeredForTerra: true
+      registeredForTerra: true,
+      abTests: []
     })
 
     # As input into RestClient::Request.execute.
@@ -200,7 +201,8 @@ class MetricsServiceTest < ActiveSupport::TestCase
         env: "test",
         authenticated: false,
         registeredForTerra: false,
-        distinct_id: unregistered_user.metrics_uuid
+        distinct_id: unregistered_user.metrics_uuid,
+        abTests: []
       }
     )
 

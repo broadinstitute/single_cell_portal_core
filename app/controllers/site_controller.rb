@@ -160,6 +160,12 @@ class SiteController < ApplicationController
     set_study_permissions(@study.detached?)
     set_study_default_options
     set_study_download_options
+
+    # decide what tab to show by default for this user
+    # normally we would do this in React but the tab display is in the Rails HTML view
+    # we need to check server-side since we have to account for @study.can_visualize? as well
+    @explore_tab_default = @study.can_visualize? &&
+                           AbTest.override_for_feature?('explore_tab_default', request.cookies['user_id'])
   end
 
   def record_download_acceptance

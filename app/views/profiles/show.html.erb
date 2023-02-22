@@ -109,7 +109,7 @@
               <%= form_for(share, url: update_share_subscription_path(id: @user.id, study_share_id: share.id),
                            html: {class: 'form-inline', id: "share_subscription_#{share.id}",
                                   data: {remote: true}}) do |f| %>
-                <%= hidden_field_tag :toggle_id, "toggle_study_default_options_deliver_emails_#{study.id}" %>
+                <%= hidden_field_tag :toggle_id, "toggle_study_default_options_deliver_emails_#{share.id}" %>
                 <div class="form-group">
                   <%= f.hidden_field :deliver_emails, value: share.deliver_emails,
                                      id: "study_default_options_deliver_emails_#{share.id}" %>

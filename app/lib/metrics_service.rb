@@ -103,15 +103,18 @@ class MetricsService
     })
 
     headers = get_default_headers(user)
+    distinct_id = user&.get_metrics_uuid || request&.cookies&.[]('user_id')
 
     # configure properties/headers depending on user presence
     # only pass user token if user is registered for Terra to avoid 4xx/5xx errors
     if user.present? && user.registered_for_firecloud
       props.merge!({ authenticated: true, registeredForTerra: user.registered_for_firecloud })
     else
-      distinct_id = user&.get_metrics_uuid || request&.cookies['user_id']
-      props.merge!({ authenticated: false, registeredForTerra: false,  distinct_id: distinct_id })
+      props.merge!({ authenticated: false, registeredForTerra: false, distinct_id: })
     end
+
+    # global tracking of A/B feature test groups
+    props.merge!({ abTests: AbTest.load_assignments(distinct_id) })
 
     post_body = {'event' => name, 'properties' => props}.to_json
 

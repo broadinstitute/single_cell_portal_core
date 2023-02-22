@@ -13,13 +13,14 @@ class MixpanelClient
 
   # see https://developer.mixpanel.com/reference/segmentation-query
   def self.fetch_segmentation_query(
-    event: nil,
-    from_date: '2020-10-01'.to_date,
-    to_date: Date.today,
-    unit: 'month',
-    type: 'unique',
-    where_string: '',
-    on_string: '')
+    event = nil,
+    type = 'unique',
+    where_string = '',
+    from_date = '2020-10-01'.to_date,
+    to_date = Date.today,
+    unit = 'month',
+    on_string = ''
+  )
 
     request = {
       method: 'GET',

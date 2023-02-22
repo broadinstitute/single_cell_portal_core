@@ -119,6 +119,13 @@ Rails.application.routes.draw do
     resources :admin_configurations, path: 'admin'
     resources :preset_searches
 
+    # a/b test CMS
+    get 'feature_flags/:name/ab_test', to: 'ab_tests#edit', as: :edit_feature_flag_ab_test
+    post 'feature_flags/:name/ab_test', to: 'ab_tests#create', as: :create_feature_flag_ab_test
+    patch 'feature_flags/:name/ab_test/update', to: 'ab_tests#update', as: :update_feature_flag_ab_test
+    post 'feature_flags/:name/ab_test/add_to_group', to: 'ab_tests#add_to_group', as: :add_to_ab_test_group
+    delete 'feature_flags/:name/ab_test', to: 'ab_tests#destroy', as: :destroy_feature_flag_ab_test
+
     # feature flag option CMS
     get 'feature_flags', to: 'feature_flag_options#index', as: :feature_flag_options
     post 'feature_flags/find', to: 'feature_flag_options#find', as: :find_feature_flag_entity

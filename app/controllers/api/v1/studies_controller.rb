@@ -112,9 +112,8 @@ module Api
             where_string: "\"#{@study.accession}\" in properties[\"studyAccessions\"]"
           }
         }
-
         responses = Parallel.map(usage_stats_params.keys) do |key|
-          response = MixpanelClient.fetch_segmentation_query(usage_stats_params[key])
+          response = MixpanelClient.fetch_segmentation_query(usage_stats_params[key][:event],usage_stats_params[key][:type], usage_stats_params[key][:where_string] )
         end
         usage_stats = {}
         usage_stats_params.keys.each_with_index do |key, index|

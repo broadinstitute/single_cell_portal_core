@@ -147,6 +147,14 @@ describe('Library for client-side usage analytics', () => {
     logToSentry({})
     const numDroppedWhenSuppressed = console.log.mock.calls.length - numDroppedInLowSampleWithResponse
     expect(numDroppedWhenSuppressed).toEqual(1)
+
+    // Nothing should be logged when level is info
+    jest
+      .spyOn(SCPContextProvider, 'getSCPContext')
+      .mockReturnValue({level: 'info'})
+    logToSentry({})
+    const numDroppedWhenInfo = console.log.mock.calls.length - numDroppedInLowSampleWithResponse
+    expect(numDroppedWhenInfo).toEqual(1)
   })
 
 })
