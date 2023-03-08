@@ -36,7 +36,7 @@ function initChecked(deGenes, checkedGene) {
   return checked
 }
 
-function DownloadButton({bucketId, deFilePath}) {
+function DownloadButton({ bucketId, deFilePath }) {
   return (
     <a className="de-download-button"
       onClick={async () => {await downloadBucketFile(bucketId, deFilePath)}}
@@ -54,57 +54,57 @@ function DifferentialExpressionTable({
 }) {
   return (
     <>
-    <table className="de-table table table-terra table-scp-compact">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>
-            <span className="glossary" data-toggle="tooltip" data-original-title="Log (base 2) of fold change">
+      <table className="de-table table table-terra table-scp-compact">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>
+              <span className="glossary" data-toggle="tooltip" data-original-title="Log (base 2) of fold change">
               log<sub>2</sub>(FC)
-            </span>
-          </th>
-          <th>
-            <span className="glossary" data-toggle="tooltip" data-original-title="p-value adjusted with Benjamini-Hochberg FDR correction">
+              </span>
+            </th>
+            <th>
+              <span className="glossary" data-toggle="tooltip" data-original-title="p-value adjusted with Benjamini-Hochberg FDR correction">
               Adj. p-value
-            </span>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {genesToShow.map((deGene, i) => {
-          return (
-            <tr className="de-gene-row" key={i}>
-              <td>
-                <label
-                  title="Click to view gene expression.  Arrow down (↓) and up (↑) to quickly scan."
-                ><input
-                    type="radio"
-                    checked={checked[deGene.name]}
-                    data-analytics-name="selected-gene-differential-expression"
-                    value={deGene.name}
-                    onClick={event => {
-                      searchGenes([deGene.name])
+              </span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {genesToShow.map((deGene, i) => {
+            return (
+              <tr className="de-gene-row" key={i}>
+                <td>
+                  <label
+                    title="Click to view gene expression.  Arrow down (↓) and up (↑) to quickly scan."
+                  ><input
+                      type="radio"
+                      checked={checked[deGene.name]}
+                      data-analytics-name="selected-gene-differential-expression"
+                      value={deGene.name}
+                      onClick={event => {
+                        searchGenes([deGene.name])
 
-                      // Log this search to Mixpanel
-                      const rank = i
-                      logSearchFromDifferentialExpression(
-                        event, deGene, species, rank,
-                        clusterName, annotation.name
-                      )
+                        // Log this search to Mixpanel
+                        const rank = i
+                        logSearchFromDifferentialExpression(
+                          event, deGene, species, rank,
+                          clusterName, annotation.name
+                        )
 
-                      changeRadio(event)
-                    }}/>
-                  {deGene.name}</label></td>
-              <td>{deGene.log2FoldChange}</td>
-              <td>{deGene.pvalAdj}</td>
-            </tr>)
-        })}
-      </tbody>
-    </table>
-    <a href="https://forms.gle/qPGH5J9oFkurpbD76" target="_blank" title="Take a 1 minute survey">
+                        changeRadio(event)
+                      }}/>
+                    {deGene.name}</label></td>
+                <td>{deGene.log2FoldChange}</td>
+                <td>{deGene.pvalAdj}</td>
+              </tr>)
+          })}
+        </tbody>
+      </table>
+      <a href="https://forms.gle/qPGH5J9oFkurpbD76" target="_blank" title="Take a 1 minute survey">
       Help improve this new feature
-    </a>
-  </>
+      </a>
+    </>
   )
 }
 
@@ -155,7 +155,7 @@ export default function DifferentialExpressionPanel({
     // results in the DE table.
     clearTimeout(delayedDETableLogTimeout.current)
     delayedDETableLogTimeout.current = setTimeout(() => {
-      const otherProps = {trigger}
+      const otherProps = { trigger }
       const genes = [newSearchedGene]
       logDifferentialExpressionTableSearch(genes, species, otherProps)
     }, 1000)
@@ -171,9 +171,8 @@ export default function DifferentialExpressionPanel({
       filteredGenes = deGenes.filter(d => d.name.toLowerCase().includes(lowerCaseSearchedGene))
     }
 
-    if (deGenes) filteredGenes = filteredGenes.slice(0, numRows)
+    if (deGenes) {filteredGenes = filteredGenes.slice(0, numRows)}
     setGenesToShow(filteredGenes)
-
   }, [deGenes, searchedGene])
 
   return (
@@ -205,7 +204,7 @@ export default function DifferentialExpressionPanel({
             autoComplete="off"
             placeholder="Find a gene" // Consensus per demo, to distinguish from main "Search genes" in same UI
             value={searchedGene}
-            onChange={(event) => updateSearchedGene(event.target.value, 'keydown')}
+            onChange={event => updateSearchedGene(event.target.value, 'keydown')}
             data-analytics-name="differential-expression-search"
           />
           { showClear && <Button
@@ -239,21 +238,44 @@ export default function DifferentialExpressionPanel({
 
 /** Top matter for differential expression panel shown at right in Explore tab */
 export function DifferentialExpressionPanelHeader({
-  setDeGenes, setDeGroup, setShowDifferentialExpressionPanel
+  setDeGenes, setDeGroup, setShowDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel, isUpstream,
+  cluster, annotation
 }) {
   return (
     <>
-      <span>Differentially expressed genes</span>
+      <span>Differential expression</span>
       <button className="action fa-lg"
         onClick={() => {
           setDeGenes(null)
           setDeGroup(null)
           setShowDifferentialExpressionPanel(false)
+          setShowUpstreamDifferentialExpressionPanel(false)
         }}
         title="Exit differential expression panel"
         data-analytics-name="differential-expression-panel-exit">
         <FontAwesomeIcon icon={faArrowLeft}/>
       </button>
+      {isUpstream &&
+        <>
+          <div className="de-nondefault-explainer">
+          No DE results for:
+            <br/><br/>
+            <ul className="no-de-summary">
+              <li>
+                <span className="bold">Clustering</span><br/>
+                {cluster}
+              </li>
+              <br/>
+              <li>
+                <span className="bold">Annotation</span><br/>
+                {annotation.name}
+              </li>
+            </ul>
+            <br/>
+          Explore DE results in:
+          </div>
+        </>
+      }
     </>
   )
 }

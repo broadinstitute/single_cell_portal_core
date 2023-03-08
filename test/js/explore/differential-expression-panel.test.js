@@ -92,4 +92,5 @@ describe('Differential expression panel', () => {
     fireEvent.change(input, { target: { value: 'SO' } })
     expect(deTable.querySelectorAll('.de-gene-row')).toHaveLength(1)
   })
+
 })

@@ -16,8 +16,6 @@ function getSimpleOptions(stringArray) {
   return stringArray.map(assignLabelsAndValues)
 }
 
-const nonAlphaNumericRegex = /\W/g
-
 /**
  * Transform raw TSV text into array of differential expression gene objects
  */
@@ -25,8 +23,8 @@ function parseDeFile(tsvText) {
   const deGenes = []
   const tsvLines = tsvText.split(newlineRegex)
   for (let i = 1; i < tsvLines.length; i++) {
-    const tsvLine = tsvLines[i];
-    if (tsvLine === '') continue
+    const tsvLine = tsvLines[i]
+    if (tsvLine === '') {continue}
     // Each element in this array is DE data for the gene in this row
     const [
       index, // eslint-disable-line

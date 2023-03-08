@@ -1531,10 +1531,12 @@ class Study
     bams = []
 
     bam_files.each do |bam_file|
+      next unless bam_file.has_completed_bundle?
+
       bams << {
           'name' => bam_file.name,
           'url' => bam_file.api_url,
-          'indexUrl' => bam_file.bundled_files.first.api_url,
+          'indexUrl' => bam_file.study_file_bundle.bundled_file_by_type('BAM Index')&.api_url,
           'genomeAssembly' => bam_file.genome_assembly_name,
           'genomeAnnotation' => bam_file.genome_annotation
       }
@@ -1634,45 +1636,24 @@ class Study
   # will compress plain text files before uploading to reduce storage/egress charges
   def send_to_firecloud(file)
     begin
-      Rails.logger.info "#{Time.zone.now}: Uploading #{file.bucket_location}:#{file.id} to FireCloud workspace: #{self.firecloud_workspace}"
-      file_location = file.local_location.to_s
-      # determine if file needs to be compressed
-      first_two_bytes = File.open(file_location).read(2)
-      gzip_signature = StudyFile::GZIP_MAGIC_NUMBER # per IETF
-      file_is_gzipped = (first_two_bytes == gzip_signature)
-
-      opts = {}
-      if file_is_gzipped or file.upload_file_name.last(4) == '.bam' or file.upload_file_name.last(5) == '.cram'
-        # log that file is already compressed
-        Rails.logger.info "#{Time.zone.now}: #{file.upload_file_name}:#{file.id} is already compressed, direct uploading"
-      else
-        Rails.logger.info "#{Time.zone.now}: Performing gzip on #{file.upload_file_name}:#{file.id}"
-        # Compress all uncompressed files before upload.
-        # This saves time on upload and download, and money on egress and storage.
-        gzip_filepath = file_location + '.tmp.gz'
-        Zlib::GzipWriter.open(gzip_filepath) do |gz|
-          File.open(file_location, 'rb').each do |line|
-            gz.write line
-          end
-          gz.close
-        end
-        File.rename gzip_filepath, file_location
-        opts.merge!(content_encoding: 'gzip')
-      end
-      remote_file = ApplicationController.firecloud_client.execute_gcloud_method(:create_workspace_file, 0, self.bucket_id, file.upload.path,
-                                                                 file.bucket_location, opts)
+      Rails.logger.info "Uploading #{file.bucket_location}:#{file.id} to Terra workspace: #{firecloud_workspace}"
+      was_gzipped = FileParseService.compress_file_for_upload(file)
+      opts = was_gzipped ? { content_encoding: 'gzip' } : {}
+      remote_file = ApplicationController.firecloud_client.execute_gcloud_method(
+        :create_workspace_file, 0, bucket_id, file.upload.path, file.bucket_location, opts
+      )
       # store generation tag to know whether a file has been updated in GCP
-      Rails.logger.info "#{Time.zone.now}: Updating #{file.bucket_location}:#{file.id} with generation tag: #{remote_file.generation} after successful upload"
+      Rails.logger.info "Updating #{file.bucket_location}:#{file.id} with generation tag: #{remote_file.generation} after successful upload"
       file.update(generation: remote_file.generation)
-      Rails.logger.info "#{Time.zone.now}: Upload of #{file.bucket_location}:#{file.id} complete, scheduling cleanup job"
+      Rails.logger.info "Upload of #{file.bucket_location}:#{file.id} complete, scheduling cleanup job"
       # schedule the upload cleanup job to run in two minutes
       run_at = 2.minutes.from_now
-      Delayed::Job.enqueue(UploadCleanupJob.new(file.study, file, 0), run_at: run_at)
-      Rails.logger.info "#{Time.zone.now}: cleanup job for #{file.bucket_location}:#{file.id} scheduled for #{run_at}"
+      Delayed::Job.enqueue(UploadCleanupJob.new(file.study, file, 0), run_at:)
+      Rails.logger.info "cleanup job for #{file.bucket_location}:#{file.id} scheduled for #{run_at}"
     rescue => e
       ErrorTracker.report_exception(e, user, self, file)
-      Rails.logger.error "Unable to upload '#{file.bucket_location}:#{file.id} to study bucket #{self.bucket_id}; #{e.message}"
-      # notify admin of failure so they can push the file and relauch parse
+      Rails.logger.error "Unable to upload '#{file.bucket_location}:#{file.id} to study bucket #{bucket_id}; #{e.message}"
+      # notify admin of failure so they can push the file and relaunch parse
       SingleCellMailer.notify_admin_upload_fail(file, e).deliver_now
     end
   end

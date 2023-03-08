@@ -191,4 +191,42 @@ class FileParseService
       ErrorTracker.report_exception(e, nil, study)
     end
   end
+
+  # gzip a local file on server (if necessary) in preparation for pushing to GCS bucket
+  #
+  # * *params*
+  #   - +study_file+ (StudyFile) => recently uploaded file
+  #
+  # * *returns*
+  #   - (Boolean) => T/F on whether file was gzipped in-place
+  def self.compress_file_for_upload(study_file)
+    file_location = study_file.local_location.to_s
+    study = study_file.study
+
+    begin
+      if study_file.can_gzip?
+        Rails.logger.info "Performing gzip on #{study_file.upload_file_name}:#{study_file.id}"
+        # Compress all uncompressed files before upload.
+        # This saves time on upload and download, and money on egress and storage.
+        gzip_filepath = "#{file_location}.tmp.gz"
+        Zlib::GzipWriter.open(gzip_filepath) do |gz|
+          File.open(file_location, 'rb').each do |line|
+            gz.write line
+          end
+          gz.close
+        end
+        File.rename gzip_filepath, file_location
+        true
+      else
+        # log that file is already compressed
+        log_message = "skipping gzip (file_type: #{study_file.file_type}, is_gzipped: #{study_file.gzipped?})"
+        Rails.logger.info "#{study_file.upload_file_name}:#{study_file.id} #{log_message}, direct uploading"
+        false
+      end
+    rescue ArgumentError => e
+      # handle 'negative string size (or size too big)' error
+      ErrorTracker.report_exception(e, nil, study, study_file)
+      false
+    end
+  end
 end

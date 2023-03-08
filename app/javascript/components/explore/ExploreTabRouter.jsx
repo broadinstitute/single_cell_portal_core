@@ -155,7 +155,6 @@ function buildQueryFromParams(exploreParams) {
       delete querySafeOptions[key]
     }
   })
-
   return stringifyQuery(querySafeOptions, paramSorter)
 }
 

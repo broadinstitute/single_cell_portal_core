@@ -95,7 +95,7 @@ class IngestJobTest < ActiveSupport::TestCase
     mock_metadata = {
       events: [
         { timestamp: now.to_s },
-        { timestamp: (now + 1.minute).to_s }
+        { timestamp: (now + 1.minute).to_s, details: { exitStatus: 0 } }
       ],
       pipeline: {
         resources: {
@@ -108,7 +108,9 @@ class IngestJobTest < ActiveSupport::TestCase
     }.with_indifferent_access
     mock.expect :metadata, mock_metadata
     mock.expect :metadata, mock_metadata
+    mock.expect :metadata, mock_metadata
     mock.expect :error, nil
+    mock.expect :done?, true
 
     cells = @basic_study.expression_matrix_cells(@basic_study_exp_file)
     num_cells = cells.present? ? cells.count : 0
@@ -127,7 +129,8 @@ class IngestJobTest < ActiveSupport::TestCase
         is_raw_counts: false,
         numCells: num_cells,
         machineType: 'n1-highmem-4',
-        bootDiskSizeGb: 300
+        bootDiskSizeGb: 300,
+        exitStatus: 0
       }.with_indifferent_access
 
       job_analytics = job.get_job_analytics
@@ -142,7 +145,7 @@ class IngestJobTest < ActiveSupport::TestCase
     mock_metadata = {
       events: [
         { timestamp: now.to_s },
-        { timestamp: (now + 2.minutes).to_s }
+        { timestamp: (now + 2.minutes).to_s, details: { exitStatus: 1 } }
       ],
       pipeline: {
         resources: {
@@ -155,7 +158,10 @@ class IngestJobTest < ActiveSupport::TestCase
     }.with_indifferent_access
     mock.expect :metadata, mock_metadata
     mock.expect :metadata, mock_metadata
+    mock.expect :metadata, mock_metadata
     mock.expect :error, { code: 1, message: 'mock message' } # simulate error
+    mock.expect :done?, true
+
 
     ApplicationController.papi_client.stub :get_pipeline, mock do
       expected_outputs = {
@@ -171,7 +177,8 @@ class IngestJobTest < ActiveSupport::TestCase
         is_raw_counts: false,
         numGenes: 0,
         machineType: 'n1-highmem-4',
-        bootDiskSizeGb: 300
+        bootDiskSizeGb: 300,
+        exitStatus: 1
       }.with_indifferent_access
 
       job_analytics = job.get_job_analytics

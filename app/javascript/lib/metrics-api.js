@@ -39,6 +39,7 @@ let pendingEvents = [] // eslint-disable-line
 let bardDomain = ''
 const scpContext = getSCPContext()
 const env = scpContext.environment
+const devMode = scpContext.devMode
 const version = scpContext.version
 const isServiceWorkerCacheEnabled = scpContext.isServiceWorkerCacheEnabled
 let userId = ''
@@ -210,15 +211,20 @@ function getEventPropsWithTabsApplied(target, props, eventName) {
   return { eventName, updatedProps }
 }
 
-/**
- * Log click on link, i.e. anchor (<a ...) tag
- */
-export function logClickLink(target) {
-  const props = {
+/** Get text / name, classes, and ID for target element */
+function getStandardClickProps(target) {
+  return {
     text: getNameForClickTarget(target),
     classList: getClassListAsArray(target),
     id: target.id
   }
+}
+
+/**
+ * Log click on link, i.e. anchor (<a ...) tag
+ */
+export function logClickLink(target) {
+  const props = getStandardClickProps(target)
   // Check if target is a tab that's not a part of a menu
   const { eventName, updatedProps } = getEventPropsWithTabsApplied(target, props, 'click:link')
   log(eventName, updatedProps)
@@ -228,7 +234,7 @@ export function logClickLink(target) {
  * Log click on button, e.g. for pagination, "Apply", etc.
  */
 function logClickButton(target) {
-  const props = { text: getNameForClickTarget(target) }
+  const props = getStandardClickProps(target)
   const { eventName, updatedProps } = getEventPropsWithTabsApplied(target, props, 'click:button')
   log(eventName, updatedProps)
 
@@ -455,6 +461,12 @@ export function log(name, props = {}) {
     delete init['headers']['Authorization']
   } else {
     props['authenticated'] = true
+  }
+
+  if (env === 'development') {
+    // Log if developer is in Docker ("docker-compose").
+    // Helps analyze factors of local SCP page speed.
+    props['devMode'] = devMode
   }
 
   const body = {

@@ -172,7 +172,7 @@
                   '</button>' +
                   '</span>' +
                   '</div>' +
-                  '<div style="font-size: 16px">Valid for one use within ' + countdownValue + ' minutes.  Paste into Mac/Linux/Unix terminal and execute to download.<br/><br/>' + 
+                  '<div style="font-size: 16px">Valid for one use within ' + countdownValue + ' minutes.  Paste into Mac/Linux/Unix terminal and execute to download.<br/><br/>' +
                   'If a certificate validation error occurs, adding the "-k" option will skip certificate validation.<br/>  e.g. `curl -k "https://singlecell...."`</div>'
               );
             }
@@ -212,7 +212,7 @@
           <% end %>
         </td>
         <td>
-          <% if study_file.file_type == 'BAM' %>
+          <% if study_file.file_type == 'BAM' && study_file.has_completed_bundle? %>
             <%= render partial: '/site/genome/browse_igv_link', locals: {study_file: study_file} %>
           <% end %>
         </td>
@@ -259,7 +259,7 @@
                 <% end %>
               </td>
               <td>
-                <% if file.file_type == 'BAM' %>
+                <% if file.file_type == 'BAM' && file.has_completed_bundle? %>
                   <%= render partial: '/site/genome/browse_igv_link', locals: {study_file: file} %>
                 <% end %>
               </td>

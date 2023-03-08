@@ -5,6 +5,11 @@ import 'jest-location-mock'
 
 configure({ adapter: new Adapter() })
 
+// Jest breaks on `import.meta.hot`, so mock it
+jest.mock('vite/import-meta-hot', () => {
+  return jest.fn(() => false)
+})
+
 import { setGlobalMockFlag, setMockOrigin } from 'lib/scp-api'
 
 setGlobalMockFlag(true)

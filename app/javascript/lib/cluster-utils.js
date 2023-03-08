@@ -1,8 +1,7 @@
 /** Utility functions for parsing cluster and annotation parameters from the server
  *  These live in a separate utility because multiple endpoints (explore, cluster, etc..)
  *  return annotationLists of the same basic structure */
-
-import { ParseException } from './validation/shared-validation'
+import _clone from 'lodash/clone'
 
 /** custom styling for cluster control-style select */
 export const clusterSelectStyle = {
@@ -20,7 +19,6 @@ export const emptyDataParams = {
 }
 
 export const UNSPECIFIED_ANNOTATION_NAME = '--Unspecified--'
-const GROUP_VIZ_THRESHOLD_MAX = 200
 
 /** takes the server response and returns subsample default subsample for the cluster */
 export function getDefaultSubsampleForCluster(annotationList, clusterName) {
@@ -148,8 +146,8 @@ export function getAnnotationValues(annotation, annotationList) {
   return []
 }
 
-/** finds the matching entry in the all annotation list for the specified annotation */
-export function getMatchedAnnotation(annotation, annotationList) {
+/** Find matching entry in annotation list for specified annotation */
+function getMatchedAnnotation(annotation, annotationList) {
   if (annotationList && annotationList.annotations) {
     const matchedAnnotation = annotationList.annotations.find(a => {
       return (a.name === annotation.name || a.id === annotation.name) &&
@@ -159,4 +157,18 @@ export function getMatchedAnnotation(annotation, annotationList) {
     return matchedAnnotation
   }
   return null
+}
+
+/** Get display value for annotation drop-down menu, including user annotations */
+export function getShownAnnotation(annotation, annotationList) {
+  const shownAnnotation = _clone(annotation)
+  // for user annotations, we have to match the given id to a name to show the name in the dropdown
+  if (annotation && annotation.scope === 'user') {
+    const matchedAnnotation = getMatchedAnnotation(annotation, annotationList)
+    if (matchedAnnotation) {
+      shownAnnotation.name = matchedAnnotation.name
+      shownAnnotation.id = matchedAnnotation.id
+    }
+  }
+  return shownAnnotation
 }

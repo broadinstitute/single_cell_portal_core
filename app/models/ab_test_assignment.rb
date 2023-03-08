@@ -7,7 +7,7 @@ class AbTestAssignment
   belongs_to :ab_test
   belongs_to :user, optional: true, foreign_key: :metrics_uuid, primary_key: :metrics_uuid
 
-  field :metrics_uuid, type: String
+  field :metrics_uuid, type: String, overwrite: true
   field :group_name, type: String
 
   validates :metrics_uuid, uniqueness: { scope: :feature_flag_id }, presence: true

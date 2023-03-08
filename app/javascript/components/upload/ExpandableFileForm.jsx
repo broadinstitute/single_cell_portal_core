@@ -111,7 +111,7 @@ export function SaveDeleteButtons({ file, saveFile, deleteFile, validationMessag
     return <div className="text-center">
       <div className="validation-error"><FontAwesomeIcon icon={faTimes}/> Parse failed</div>
       <div className="detail">Check your email for details - this file will be removed from the server.</div>
-      <button className="terra-secondary-btn" onClick={() => deleteFile(file)}>Ok</button>
+      <button className="terra-secondary-btn" onClick={() => deleteFile(file)}>OK</button>
     </div>
   }
   return <div className="flexbox-align-center button-panel">

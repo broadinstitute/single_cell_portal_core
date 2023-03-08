@@ -195,4 +195,25 @@ class StudyFileTest < ActiveSupport::TestCase
     assert ann_data_file.is_expression?
     assert ann_data_file.is_raw_counts_file?
   end
+
+  test 'should determine if file is/can be gzipped' do
+    bam_path = Rails.root.join("test/test_data/fixed_neurons_6days_2000_possorted_genome_bam_test_data.bam")
+    bam_file = StudyFile.create!(
+      study: @study,
+      upload: File.open(bam_path),
+      file_type: 'BAM',
+      name: 'fixed_neurons_6days_2000_possorted_genome_bam_test_data.bam'
+    )
+    assert bam_file.gzipped?
+    assert_not bam_file.can_gzip?
+    cluster_path = Rails.root.join('test/test_data/cluster_example.txt')
+    cluster_file = StudyFile.create!(
+      study: @study,
+      upload: File.open(cluster_path),
+      file_type: 'Cluster',
+      name: 'cluster_example.txt'
+    )
+    assert_not cluster_file.gzipped?
+    assert cluster_file.can_gzip?
+  end
 end

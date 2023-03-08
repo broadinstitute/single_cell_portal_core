@@ -1013,6 +1013,20 @@ class StudyFile
     file_type == 'AnnData'
   end
 
+  # determine if a file is gzipped by reading the first two bytes and comparing to GZIP_MAGIC_NUMBER
+  def gzipped?
+    File.open(local_location.to_s).read(2) == GZIP_MAGIC_NUMBER # per IETF
+  end
+
+  # quick check if file is of a type that is safe to gzip
+  # essentially any file that is not a BAM/CRAM or AnnData archive
+  def can_gzip?
+    return false if gzipped?
+
+    # Sequence data & AnnData files either already are or could be gzipped
+    !PRIMARY_DATA_TYPES.include?(file_type) && file_type != 'AnnData' && !upload_file_name.ends_with?('.cram')
+  end
+
   ###
   #
   # CACHING METHODS
