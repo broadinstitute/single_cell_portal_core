@@ -7,4 +7,6 @@ class AnnDataFileInfo
   field :has_metadata, type: Boolean, default: false
   field :has_raw_counts, type: Boolean, default: false
   field :has_expression, type: Boolean, default: false
+  field :obsm_key_names, type: Array, default: []
+  field :other_form_fields_info, type: Hash, default: {}
 end

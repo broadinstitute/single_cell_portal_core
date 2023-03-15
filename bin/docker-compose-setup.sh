@@ -7,17 +7,21 @@
 usage=$(
 cat <<EOF
 $0 [OPTION]
--d   run docker-compose in detached mode (default is attatched to terminal STDOUT)
--c   enable VITE_FRONTEND_SERVICE_WORKER_CACHE (default is disabled)
--i IMAGE_TAG   override default GCR image tag of development
--h   print this text
+-d  run docker-compose in detached mode (default is attatched to terminal STDOUT)
+-c  enable VITE_FRONTEND_SERVICE_WORKER_CACHE (default is disabled)
+-i  {IMAGE_TAG}  override default GCR image tag of development
+-p  {PORTAL_RAM_GB}  specify as integer the amount of RAM in GB for the single_cell container
+-v  {VITE_RAM_GB}  specify as integer the amount of RAM in GB for the single_cell_vite container
+-h  print this text
 EOF
 )
 
 DETACHED=""
 VITE_FRONTEND_SERVICE_WORKER_CACHE="false"
 IMAGE_TAG="development"
-while getopts "dchi:" OPTION; do
+export PORTAL_RAM_GB="6"
+export VITE_RAM_GB="2"
+while getopts "dchi:p:v:" OPTION; do
 case $OPTION in
   d)
     echo "### SETTING DETACHED ###"
@@ -35,6 +39,14 @@ case $OPTION in
   i)
     echo "### SETTING GCR IMAGE TAG TO $OPTARG ###"
     IMAGE_TAG="$OPTARG"
+    ;;
+  p)
+    echo "### SETTING PORTAL_RAM_GB TO $OPTARG ###"
+    PORTAL_RAM_GB="$OPTARG"
+    ;;
+  v)
+    echo "### SETTING VITE_RAM_GB TO $OPTARG ###"
+    VITE_RAM_GB="$OPTARG"
     ;;
   *)
     echo "unrecognized option"

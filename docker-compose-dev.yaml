@@ -19,6 +19,10 @@ services:
       - .:/home/app/webapp
       - type: volume
         target: /home/app/webapp/node_modules
+    deploy:
+      resources:
+        limits:
+          memory: "${PORTAL_RAM_GB}gb"
   vite:
     container_name: single_cell_vite
     image: "${GCR_IMAGE}"
@@ -34,3 +38,7 @@ services:
       - .:/home/app/webapp
       - type: volume
         target: /home/app/webapp/node_modules
+    deploy:
+      resources:
+        limits:
+          memory: "${VITE_RAM_GB}gb"

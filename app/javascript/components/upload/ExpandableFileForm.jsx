@@ -3,10 +3,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp, faTimes } from '@fortawesome/free-solid-svg-icons'
 import Modal from 'react-bootstrap/lib/Modal'
 import { Popover, OverlayTrigger } from 'react-bootstrap'
-import { clusterFileFilter } from './ClusteringStep'
-import { metadataFileFilter } from './MetadataStep'
-import { rawCountsFileFilter } from './RawCountsStep'
-import { processedFileFilter } from './ProcessedExpressionStep'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import FileUploadControl from './FileUploadControl'
 
@@ -17,7 +13,7 @@ export default function ExpandableFileForm({
 }) {
   const [expanded, setExpanded] = useState(isInitiallyExpanded || file.status === 'new')
 
-  const isUploadEnabled = getIsUploadEnabled(isAnnDataExperience, allFiles)
+  const isUploadEnabled = getIsUploadEnabled(isAnnDataExperience, allFiles, file)
 
   /** handle a click on the header bar (not the expand button itself) */
   function handleDivClick(e) {
@@ -54,7 +50,8 @@ export default function ExpandableFileForm({
               updateFile={updateFile}
               allowedFileExts={allowedFileExts}
               validationMessages={validationMessages}
-              bucketName={bucketName} />
+              bucketName={bucketName}
+              isAnnDataExperience={isAnnDataExperience} />
           </div>}
           {isUploadEnabled && <SaveDeleteButtons {...{ file, updateFile, saveFile, deleteFile, validationMessages }} /> }
         </div>
@@ -200,20 +197,18 @@ function DeleteButton({ file, deleteFile, setShowConfirmDeleteModal }) {
 
 /**
  * Determine whether to show the file upload control buttons.
- * If the file form is for Clustering, Expression, or
- * Metadata while in AnnData experience mode do not display the buttons
+ * If the file form is for Clustering or Expression Matrix
+ * while in AnnData experience mode do not display the buttons
  *
  * @param {boolean} isAnnDataExperience
  * @param {array} allFiles
  * @returns {boolean} Whether to show upload control buttons or not
  */
-function getIsUploadEnabled(isAnnDataExperience, allFiles) {
-  const isClustering = allFiles.filter(clusterFileFilter)
-  const isMeta = allFiles.filter(metadataFileFilter)
-  const isProcessedMatrix = allFiles.filter(processedFileFilter)
-  const isRawCount = allFiles.filter(rawCountsFileFilter)
+function getIsUploadEnabled(isAnnDataExperience, allFiles, file) {
+  const isClustering = file.file_type === 'Cluster'
+  const isExpressionMatrix = file.file_type === 'Expression Matrix'
 
-  return !((isClustering || isMeta || isProcessedMatrix || isRawCount) && isAnnDataExperience)
+  return !((isClustering || isExpressionMatrix) && isAnnDataExperience)
 }
 
 const parsingPopup = <Popover id="parsing-tooltip" className="tooltip-wide">

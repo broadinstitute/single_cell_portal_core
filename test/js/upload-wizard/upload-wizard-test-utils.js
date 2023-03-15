@@ -22,7 +22,7 @@ export function getSelectByLabelText(screen, text) {
  * spinner to clear
 */
 export async function renderWizardWithStudy({
-  studyInfo=EMPTY_STUDY, featureFlags={}, studyAccession='SCP1', studyName='Chickens'
+  studyInfo=EMPTY_STUDY, featureFlags={}, studyAccession='SCP1', studyName='Chickens', initialSearch={}
 }) {
   // merge featureFlags data into studyInfo.feature_flags since this is where the upload wizard looks now
   studyInfo.feature_flags = featureFlags
@@ -37,7 +37,7 @@ export async function renderWizardWithStudy({
   const renderResult = render(
     <UserContext.Provider value={{ featureFlagsWithDefaults: featureFlags }}>
       <ReactNotifications/>
-      <MockRouter>
+      <MockRouter initialSearch={initialSearch}>
         <RawUploadWizard studyAccession={studyAccession} name={studyName}/>
       </MockRouter>
     </UserContext.Provider>)

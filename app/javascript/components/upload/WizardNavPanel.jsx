@@ -171,7 +171,7 @@ function clusteringHelpContent(isClusteringParsing) {
 }
 
 /**
- * Return the appropriate display of the main steps based on traditional or AnnData upload experience
+ * Return the appropriate display of the main steps based on classic or AnnData upload experience
  */
 function MainStepsDisplay(formState, serverState, currentStep, setCurrentStep, mainSteps,
   isAnnDataExperience, annDataMainExpanded, setAnnDataMainExpanded, expansionIcon) {
@@ -184,7 +184,7 @@ function MainStepsDisplay(formState, serverState, currentStep, setCurrentStep, m
           </span>
           <span>
             <a className="action link" role="link">
-            AnnData <FontAwesomeIcon icon={expansionIcon}/>
+            AnnData <sup>BETA</sup><FontAwesomeIcon icon={expansionIcon}/>
             </a>
           </span>
         </button>

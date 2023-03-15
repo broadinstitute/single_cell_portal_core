@@ -9,7 +9,7 @@ describe('Upload wizard supports reference images', () => {
   it('validates bad file names, starts upload of JPEG file', async () => {
     const createFileSpy = mockCreateStudyFile(IMAGE_FILE)
 
-    await renderWizardWithStudy({ featureFlags: { reference_image_upload: true } })
+    await renderWizardWithStudy({ featureFlags: { reference_image_upload: true, ingest_anndata_file: false } })
 
     const formData = new FormData()
     fireEvent.click(screen.getByText('Reference images'))

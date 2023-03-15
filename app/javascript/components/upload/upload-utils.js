@@ -136,7 +136,7 @@ export function formatFileForApi(file, chunkStart, chunkEnd) {
  * requiredFields is array objects with label and propertyName:  e.g. [{label: 'species', propertyName: 'taxon_id'}]
  * it validates the propertyName is specified (propertyName can include '.' for nested properties), and
  * uses the label in the validation message returned if the property is not specified. */
-export function validateFile({ file, allFiles, allowedFileExts=[], requiredFields=[] }) {
+export function validateFile({ file, allFiles, allowedFileExts=[], requiredFields=[], isAnnDataExperience=false }) {
   if (!file) {
     // edge case where the form is rendered but hook to add an empty file has not yet finished
     return { file: 'File not yet initialized' }
@@ -205,6 +205,7 @@ function validateNameUniqueness(file, allFiles, validationMessages) {
     */
 export function addObjectPropertyToForm(obj, propertyName, formData, nested) {
   let propString = `study_file[${propertyName}]`
+  
   if (nested) {
     propString = `study_file[${nested}_attributes][${propertyName}]`
   }

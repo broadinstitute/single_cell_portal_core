@@ -105,6 +105,7 @@ export function ClusteringUploadForm({
         isAnnDataExperience={isAnnDataExperience}
       />
     })}
+    
     {!isAnnDataExperience && <AddFileButton addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_CLUSTER_FILE}/>}
   </div>
 }

@@ -156,10 +156,59 @@
   margin-left: 15px;
 }
 
-
 .list-link {
   background: unset;
   border: unset;
   text-align: left;
   display: flex;
+}
+
+.splitter-info {
+  background: #fff;
+  padding: 1em;
+  border-radius: 5px;
+  text-align: center;
+  label {
+    font-weight: normal
+  }
+}
+
+.splitter-info-outside {
+  background: #fff;
+  padding: 2.5em;
+  border-radius: 5px;
+  label {
+    font-weight: normal
+  }
+  display: flex;
+  flex-direction: column;
+  margin-right: 15px;
+}
+
+.splitter-info-buttons {
+  color: #fff;
+  background-color: #337ab7;
+  border-color: #2e6da4;
+}
+
+.flex-grid {
+  display: flex;
+}
+
+.flex-cols {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 50%;
+  padding: 15px;
+}
+
+.col {
+  padding: 10px;
+}
+
+.split-title {
+  font-size: 20px;
+  padding-bottom: 25px;
+  text-align: center;
 }
