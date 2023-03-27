@@ -189,4 +189,72 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
     # confirm the annotation1 colors were completely replaced, and annotation2 colors were preserved
     assert_equal updated_annot2_color_hash.merge(annot2_color_hash), @study_file.cluster_file_info.custom_colors_as_hash.with_indifferent_access
   end
+
+  test 'should create and update AnnData file' do
+    cluster_frag_id = BSON::ObjectId.new.to_s
+    exp_frag_id = BSON::ObjectId.new.to_s
+    ann_data_params = {
+      study_file: {
+        upload_file_name: 'data.h5ad',
+        upload_content_type: 'application/octet-stream',
+        upload_file_size: 1.megabyte,
+        file_type: 'AnnData',
+        reference_anndata_file: 'false',
+        expression_file_info_attributes: {
+          biosample_input_type: 'Whole cell',
+          is_raw_counts: false,
+          library_preparation_protocol: "10x 5' v3",
+          modality: 'Transcriptomic: unbiased',
+          raw_counts_associations: ['']
+        },
+        extra_expression_form_info_attributes: {
+          _id: exp_frag_id,
+          description: 'expression description',
+          y_axis_title: 'log(TPM) expression'
+        },
+        metadata_form_info_attributes: {
+          use_metadata_convention: true
+        },
+        cluster_form_info_attributes: {
+          _id: cluster_frag_id,
+          name: 'UMAP',
+          obsm_key_name: 'X_umap',
+          description: 'UMAP cluster'
+        }
+      }
+    }
+
+    execute_http_request(:post,
+                         api_v1_study_study_files_path(study_id: @study.id),
+                         request_payload: ann_data_params)
+    assert_response :success
+    ann_data = StudyFile.find_by(study_id: @study.id, upload_file_name: 'data.h5ad')
+    assert ann_data.present?
+    assert ann_data.ann_data_file_info.present?
+    assert_not ann_data.ann_data_file_info.reference_file?
+    data_fragments = ann_data.ann_data_file_info.data_fragments
+    assert_equal 2, data_fragments.size
+    # update file to test ann_data_file_info_attributes form structure
+    update_attributes = {
+      study_file: {
+        description: 'updated',
+        ann_data_file_info_attributes: {
+          data_fragments:
+            [
+              { _id: cluster_frag_id, name: 'UMAP', obsm_key_name: 'X_umap', description: 'updated' },
+              { _id: exp_frag_id, y_axis_title: 'log(TPM) expression', description: 'updated' }
+            ]
+        }
+      }
+    }
+    execute_http_request(:patch,
+                         api_v1_study_study_file_path(study_id: @study.id, id: ann_data.id.to_s),
+                         request_payload: update_attributes)
+    assert_response :success
+    ann_data.reload
+    assert_equal 'updated', ann_data.description
+    ann_data.ann_data_file_info.data_fragments.each do |fragment|
+      assert_equal 'updated', fragment[:description]
+    end
+  end
 end

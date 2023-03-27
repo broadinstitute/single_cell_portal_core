@@ -95,13 +95,17 @@ class FileParseService
         end
       when 'AnnData'
         # create AnnDataFileInfo document so that it is present to be updated later on ingest completion
-        study_file.build_ann_data_file_info
-        study_file.save
+        if study_file.ann_data_file_info.nil?
+          study_file.build_ann_data_file_info
+          study_file.save
+        end
 
         # enable / disable full ingest of AnnData files using the feature flag 'ingest_anndata_file'
-        if do_anndata_file_ingest
-          params_object = AnnDataIngestParameters.new(anndata_file: study_file.gs_url)
-          # TODO extract and parse Metadata (SCP-4708)
+        # will ignore reference AnnData files (includes previously uploaded files)
+        if do_anndata_file_ingest && !study_file.is_reference_anndata?
+          params_object = AnnDataIngestParameters.new(
+            anndata_file: study_file.gs_url, obsm_keys: study_file.ann_data_file_info.obsm_key_names
+          )
           # TODO extract and parse Processed Exp Data (SCP-4709)
           # TODO extract and parse Raw Exp Data (SCP-4710)
         else

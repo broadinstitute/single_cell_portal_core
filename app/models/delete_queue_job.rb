@@ -84,6 +84,7 @@ class DeleteQueueJob < Struct.new(:object)
         # delete user annotations first as we lose associations later
         delete_user_annotations(study:, study_file: object)
         delete_parsed_data(object.id, study.id, ClusterGroup, CellMetadatum, Gene, DataArray)
+        delete_fragment_files(study:, study_file: object)
         # reset default options/counts
         study.reload
         study.cell_count = study.all_cells_array.size
@@ -234,5 +235,12 @@ class DeleteQueueJob < Struct.new(:object)
       study.default_options[:annotation] = current_default
       study.save
     end
+  end
+
+  # delete all AnnData "fragment" files upon study file deletion
+  def delete_fragment_files(study:, study_file:)
+    prefix = "_scp_internal/anndata_ingest/#{study_file.id}"
+    remotes = ApplicationController.firecloud_client.get_workspace_files(study.bucket_id, prefix:)
+    remotes.each(&:delete)
   end
 end

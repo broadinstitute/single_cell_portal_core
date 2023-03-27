@@ -399,7 +399,7 @@ class IngestJob
       # update search facets if convention data
       if study_file.use_metadata_convention
         SearchFacet.delay.update_all_facet_filters
-      end      
+      end
       launch_differential_expression_jobs unless study_file.is_anndata?
       set_anndata_file_info if study_file.is_anndata?
     when :ingest_expression
@@ -618,24 +618,29 @@ class IngestJob
 
   # launch appropriate downstream jobs once an AnnData file successfully extracts "fragment" files
   def launch_anndata_subparse_jobs
-    
-    params_object.attribute_as_array(:extract).each do |extract|
+    params_object.extract.each do |extract|
       case extract
       when 'cluster'
-        params_object.attribute_as_array(:obsm_keys).each do |fragment|
+        params_object.obsm_keys.each do |fragment|
+          Rails.logger.info "launching AnnData #{fragment} cluster extraction for #{study_file.upload_file_name}"
+          matcher = { data_type: :cluster, obsm_key_name: fragment }
+          cluster_data_fragment = study_file.ann_data_file_info.find_fragment(**matcher)
+          name = cluster_data_fragment&.[](:name) || fragment # fallback if we can't find data_fragment
           cluster_gs_url = params_object.fragment_file_gs_url(study.bucket_id, 'cluster', study_file.id, fragment)
+          domain_ranges = study_file.ann_data_file_info.get_cluster_domain_ranges(name).to_json
           cluster_params = AnnDataIngestParameters.new(
-            ingest_cluster: true, name: fragment, cluster_file: cluster_gs_url, domain_ranges: '{}',
-            ingest_anndata: false, extract: nil, obsm_keys: nil, study_accession: nil,
+            ingest_cluster: true, name:, cluster_file: cluster_gs_url, domain_ranges:, ingest_anndata: false,
+            extract: nil, obsm_keys: nil
           )
           job = IngestJob.new(study:, study_file:, user:, action: :ingest_cluster, params_object: cluster_params)
           job.delay.push_remote_and_launch_ingest
         end
       when 'metadata'
+        Rails.logger.info "launching AnnData metadata extraction for #{study_file.upload_file_name}"
         metadata_gs_url = params_object.fragment_file_gs_url(study.bucket_id, 'metadata', study_file.id)
         metadata_params = AnnDataIngestParameters.new(
           ingest_cell_metadata: true, cell_metadata_file: metadata_gs_url,
-          ingest_anndata: false, extract: nil, obsm_keys: nil, study_accession: study.accession,
+          ingest_anndata: false, extract: nil, obsm_keys: nil, study_accession: study.accession
         )
         job = IngestJob.new(study:, study_file:, user:, action: :ingest_cell_metadata, params_object: metadata_params)
         job.delay.push_remote_and_launch_ingest

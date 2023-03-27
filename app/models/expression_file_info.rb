@@ -66,6 +66,7 @@ class ExpressionFileInfo
                                 'SHARE-seq', # multiomic ATAC-seq
                                 'Slide-seq', # spatial transcriptomic
                                 'Slide-seqV2', # spatial transcriptomic
+                                'Slide-tags',
                                 'Smart-like', # scRNAseq
                                 'Smart-seq2/Fluidigm C1', # scRNAseq
                                 'Smart-seq2/plate-based', # scRNAseq
@@ -105,7 +106,7 @@ class ExpressionFileInfo
   # will check for exemption from any users associated with given study
   def enforce_raw_counts_associations
     raw_counts_required = FeatureFlag.find_by(name: 'raw_counts_required_backend')
-    return true if raw_counts_required.nil? || raw_counts_required.default_value == false
+    return true if raw_counts_required.nil? || raw_counts_required.default_value == false || study_file.is_anndata?
 
     # first ensure raw matrix is present
     if raw_counts_associations.any?

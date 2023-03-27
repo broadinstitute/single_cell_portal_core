@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 
 import ExpressionFileForm from './ExpressionFileForm'
 import { getExpressionFileInfoMessage } from './RawCountsStep'
+import { matchingFormFiles } from '~/components/upload/upload-utils'
 
 const DEFAULT_NEW_PROCESSED_FILE = {
   is_spatial: false,
@@ -35,7 +36,8 @@ function ExpressionUploadForm({
   deleteFile,
   isAnnDataExperience
 }) {
-  const processedParentFiles = formState.files.filter(processedFileFilter)
+  const fragmentType = isAnnDataExperience ? 'expression' : null
+  const processedParentFiles = matchingFormFiles(formState.files, processedFileFilter, isAnnDataExperience, fragmentType)
   const fileMenuOptions = serverState.menu_options
 
   const featureFlagState = serverState.feature_flags

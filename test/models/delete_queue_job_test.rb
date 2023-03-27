@@ -197,12 +197,16 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
     assert_equal %w[A B C D], study.all_cells_array
     assert_equal study_file, study.metadata_file
     assert_equal 'x_tsne', study.default_cluster.name
-    DeleteQueueJob.new(study_file).perform
-    study.reload
-    assert_equal 0, study.cluster_groups.size
-    assert_equal 0, study.cell_metadata.size
-    assert_empty study.all_cells_array
-    assert_nil study.metadata_file
-    assert_nil study.default_cluster
+    mock = Minitest::Mock.new
+    mock.expect(:get_workspace_files, [], [String, Hash])
+    ApplicationController.stub :firecloud_client, mock do
+      DeleteQueueJob.new(study_file).perform
+      study.reload
+      assert_equal 0, study.cluster_groups.size
+      assert_equal 0, study.cell_metadata.size
+      assert_empty study.all_cells_array
+      assert_nil study.metadata_file
+      assert_nil study.default_cluster
+    end
   end
 end

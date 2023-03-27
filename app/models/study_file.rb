@@ -1013,6 +1013,11 @@ class StudyFile
     file_type == 'AnnData'
   end
 
+  # AnnData files not marked for ingest (legacy + uploads not using AnnData ingest flow)
+  def is_reference_anndata?
+    is_anndata? && ann_data_file_info&.reference_file
+  end
+
   # determine if a file is gzipped by reading the first two bytes and comparing to GZIP_MAGIC_NUMBER
   def gzipped?
     File.open(local_location.to_s).read(2) == GZIP_MAGIC_NUMBER # per IETF

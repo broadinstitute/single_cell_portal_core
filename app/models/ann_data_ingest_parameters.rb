@@ -3,12 +3,12 @@
 # extract SCP files: AnnDataIngestParameters.new(anndata_file: study_file.gs_url)
 # parse extracted cluster file: AnnDataIngestParameters.new(
 #   ingest_anndata: false, extract: nil, name: 'X_tsne', ingest_cluster: true, domain_ranges: "{}",
-#   cluster_file: 'gs://bucket-id/_scp_internal/anndata_ingest/<study_file_ID_of_h5ad_file>/h5ad_frag.cluster.X_tsne.tsv', 
-#   obsm_keys: nil, cell_metadata_file: nil, ingest_cell_metadata: false, study_accession: nil
+#   cluster_file: 'gs://bucket-id/_scp_internal/anndata_ingest/<study_file_ID_of_h5ad_file>/h5ad_frag.cluster.X_tsne.tsv',
+#   obsm_keys: %w[X_tsne]
 # )
 # parse extracted metadata file: AnnDataIngestParameters.new(
 #   ingest_anndata: false, extract: nil, name: 'X_tsne', ingest_cluster: false, domain_ranges: nil
-#   cluster_file: nil, obsm_keys: nil, cell_metadata_file: 'gs://bucket-id/_scp_internal/anndata_ingest/<study_file_ID_of_h5ad_file>/h5ad_frag.metadata.tsv', 
+#   cluster_file: nil, obsm_keys: nil, cell_metadata_file: 'gs://bucket-id/_scp_internal/anndata_ingest/<study_file_ID_of_h5ad_file>/h5ad_frag.metadata.tsv',
 #   ingest_cell_metadata: true, study_accession: SCP111
 # )
 
@@ -38,19 +38,16 @@ class AnnDataIngestParameters
   # any parameters that are set to nil/false will not be passed to the command line
   PARAM_DEFAULTS = {
     ingest_anndata: true,
-    obsm_keys: "['X_umap','X_tsne']",
+    obsm_keys: %w[X_umap X_tsne],
     ingest_cluster: false,
     cluster_file: nil,
     name: nil,
     domain_ranges: nil,
-    extract: "['cluster', 'metadata']",
+    extract: %w[cluster metadata],
     cell_metadata_file: nil,
     ingest_cell_metadata: false,
     study_accession: nil
   }.freeze
-
-  ARRAY_MATCHER = /[\[\]]/
-  QUOTE_MATCHER = /["']/
 
   def initialize(attributes = {})
     PARAM_DEFAULTS.each do |attribute_name, default|
@@ -71,21 +68,12 @@ class AnnDataIngestParameters
   #   file_type = cluster|metadata|matrix
   #   file_type_detail [optional] = cluster name (for cluster files), raw|processed (for matrix files)
   def fragment_file_gs_url(bucket_id, fragment_type, h5ad_file_id, file_type_detail = "")
-    url =  "gs://#{bucket_id}/_scp_internal/anndata_ingest/#{h5ad_file_id}/h5ad_frag.#{fragment_type}"
-
+    url = "gs://#{bucket_id}/_scp_internal/anndata_ingest/#{h5ad_file_id}/h5ad_frag.#{fragment_type}"
     if file_type_detail.present?
       url += ".#{file_type_detail}.tsv"
     else
       url += ".tsv"
     end
-    
-    return url
-
-  end
-
-  # convert a string value into an array of strings, like obsm_keys
-  def attribute_as_array(attr)
-    stripped_value = attributes[attr].gsub(ARRAY_MATCHER, '')
-    stripped_value.split(',').map { |substr| substr.gsub(QUOTE_MATCHER, '').strip }
+    url
   end
 end

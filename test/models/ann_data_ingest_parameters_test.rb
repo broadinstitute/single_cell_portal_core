@@ -36,9 +36,10 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
       assert extraction.send(attr).blank?
     end
 
-    cmd = "--ingest-anndata --anndata-file gs://test_bucket/test.h5ad --extract ['cluster', 'metadata'] --obsm-keys ['X_umap','X_tsne']"
+    cmd = '--ingest-anndata --anndata-file gs://test_bucket/test.h5ad --extract ["cluster", "metadata"] ' \
+          '--obsm-keys ["X_umap", "X_tsne"]'
     assert_equal cmd, extraction.to_options_array.join(' ')
-    
+
     cluster_ingest = AnnDataIngestParameters.new(@ingest_cluster_params)
     assert cluster_ingest.valid?
     assert_equal true, cluster_ingest.ingest_cluster
@@ -59,11 +60,6 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     metadata_cmd = '--cell-metadata-file gs://test_bucket/_scp_internal/anndata_ingest/h5ad_file_id/h5ad_frag.metadata.tsv --ingest-cell-metadata'
     assert_equal metadata_cmd, metadata_ingest.to_options_array.join(' ')
 
-  end
-
-  test 'should extract attribute as array' do
-    extraction = AnnDataIngestParameters.new(@extract_params)
-    assert_equal %w[X_umap X_tsne], extraction.attribute_as_array(:obsm_keys)
   end
 
   test 'should set fragment filename for extracted files' do
