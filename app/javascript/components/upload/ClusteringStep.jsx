@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 
 import ClusteringFileForm from './ClusteringFileForm'
-import { AddFileButton } from './form-components'
+import { AddFileButton, AnnDataPreUploadDirections } from './form-components'
 import { matchingFormFiles } from './upload-utils'
 
 const DEFAULT_NEW_CLUSTER_FILE = {
@@ -38,7 +38,33 @@ export function ClusteringUploadForm({
   }, [clusterFiles.length])
 
   return <div>
-    {!isAnnDataExperience && <span>
+    {getDetailsContent(isAnnDataExperience, clusterFiles, addNewFile)}
+    { clusterFiles.map(file => {
+      return <ClusteringFileForm
+        key={file.oldId ? file.oldId : file._id}
+        file={file}
+        allFiles={formState.files}
+        updateFile={updateFile}
+        saveFile={saveFile}
+        deleteFile={deleteFile}
+        bucketName={formState.study.bucket_id}
+        isInitiallyExpanded={clusterFiles.length === 1}
+        isAnnDataExperience={isAnnDataExperience}
+      />
+    })}
+    <AddFileButton
+      addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_CLUSTER_FILE}
+      text={isAnnDataExperience ? 'Add clustering' : 'Add file'}
+    />
+  </div>
+}
+
+/**
+ * Retreive the appropriate details to display at the top of the page based on AnnData or Classic mode
+ */
+function getDetailsContent(isAnnDataExperience, clusterFiles, addNewFile) {
+  if (!isAnnDataExperience) {
+    return <>
       <div className="row">
         <div className="col-md-12">
           <div className="form-terra">
@@ -91,22 +117,9 @@ export function ClusteringUploadForm({
           </div>
         </div>
       </div>
-      { clusterFiles.length > 1 && <AddFileButton addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_CLUSTER_FILE}/> }
-    </span>}
-    { clusterFiles.map(file => {
-      return <ClusteringFileForm
-        key={file.oldId ? file.oldId : file._id}
-        file={file}
-        allFiles={formState.files}
-        updateFile={updateFile}
-        saveFile={saveFile}
-        deleteFile={deleteFile}
-        bucketName={formState.study.bucket_id}
-        isInitiallyExpanded={clusterFiles.length === 1}
-        isAnnDataExperience={isAnnDataExperience}
-      />
-    })}
-
-    {!isAnnDataExperience && <AddFileButton addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_CLUSTER_FILE}/>}
-  </div>
+      { clusterFiles.length > 1 &&
+      <AddFileButton addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_CLUSTER_FILE}/> }</>
+  } else {
+    return <AnnDataPreUploadDirections/>
+  }
 }

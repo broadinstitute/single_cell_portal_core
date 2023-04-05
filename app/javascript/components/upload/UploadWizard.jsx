@@ -155,7 +155,7 @@ export function RawUploadWizard({ studyAccession, name }) {
   /** adds an empty file, merging in the given fileProps. Does not communicate anything to the server
    * By default, will scroll the window to show the new file
    * */
-  function addNewFile(fileProps, scrollToBottom=false) {
+  function addNewFile(fileProps, scrollToBottom = false) {
     const newFile = newStudyFileObj(serverState.study._id.$oid)
     Object.assign(newFile, fileProps)
 
@@ -168,7 +168,6 @@ export function RawUploadWizard({ studyAccession, name }) {
       window.setTimeout(() => scroll({ top: document.body.scrollHeight, behavior: 'smooth' }), 100)
     }
   }
-
 
   /** handle response from server after an upload by updating the serverState with the updated file response */
   function handleSaveResponse(response, uploadingMoreChunks, requestCanceller) {
@@ -277,7 +276,15 @@ export function RawUploadWizard({ studyAccession, name }) {
       file['reference_anndata_file'] = false
       formState.files.forEach(fileFormData => {
         if (fileFormData.file_type === 'Cluster') {
-          file['cluster_form_info'] = fileFormData
+          fileFormData.data_type = 'cluster'
+
+          // mulitple clustering forms are allowed so add each as a fragment to the AnnData file
+          const annDataFile = formState.files.find(f => f.file_type === 'AnnData')
+          annDataFile?.ann_data_file_info ? '': annDataFile['ann_data_file_info'] = {}
+          const fragments = annDataFile.ann_data_file_info?.data_fragments || []
+          fragments.push(fileFormData)
+
+          annDataFile.ann_data_file_info.data_fragments = fragments
         }
         if (fileFormData.file_type === 'Expression Matrix') {
           file['extra_expression_form_info'] = fileFormData
@@ -332,7 +339,7 @@ export function RawUploadWizard({ studyAccession, name }) {
         handleSaveResponse(response, false, requestCanceller)
       }
     } catch (error) {
-      Store.addNotification(failureNotification(<span>{file.name} failed to save<br/>{error}</span>))
+      Store.addNotification(failureNotification(<span>{file.name} failed to save<br />{error}</span>))
       updateFile(studyFileId, {
         isSaving: false
       })
@@ -351,7 +358,7 @@ export function RawUploadWizard({ studyAccession, name }) {
         deleteFileFromForm(fileId)
         Store.addNotification(successNotification(`${file.name} deleted successfully`))
       } catch (error) {
-        Store.addNotification(failureNotification(<span>{file.name} failed to delete<br/>{error.message}</span>))
+        Store.addNotification(failureNotification(<span>{file.name} failed to delete<br />{error.message}</span>))
         updateFile(fileId, {
           isDeleting: false
         })
@@ -394,7 +401,7 @@ export function RawUploadWizard({ studyAccession, name }) {
       // (user's session timed out, server downtime, internet connection issues)
       // so to avoid repeated error messages, show one error, and stop polling
       Store.addNotification(failureNotification(<span>
-        Server connectivity failed--some functions may not be available.<br/>
+        Server connectivity failed--some functions may not be available.<br />
         You may want to reload the page or sign in again.
       </span>))
     })
@@ -424,7 +431,7 @@ export function RawUploadWizard({ studyAccession, name }) {
    */
   function getWizardContent(formState, serverState) {
     if (!formState?.files.length && !choiceMade && serverState?.feature_flags?.ingest_anndata_file) {
-      return <UploadExperienceSplitter {...{ setIsAnnDataExperience, setChoiceMade }}/>
+      return <UploadExperienceSplitter {...{ setIsAnnDataExperience, setChoiceMade }} />
     } else if (choiceMade || formState?.files.length || !serverState?.feature_flags?.ingest_anndata_file) {
       return <> <div className="row wizard-content">
         <div>
@@ -434,20 +441,19 @@ export function RawUploadWizard({ studyAccession, name }) {
           }} />
         </div>
         <div id="overflow-x-scroll">
-          <div className="flexbox-align-center top-margin left-margin">
+          <div className="flexbox-align-center top-margin margin-left">
             <h4>{currentStep.header}</h4>
             <div className="prev-next-buttons">
-              { prevStep && <button
+              {prevStep && <button
                 className="btn terra-tertiary-btn margin-right"
-
                 onClick={() => setCurrentStep(prevStep)}>
-                <FontAwesomeIcon icon={faChevronLeft}/> Previous
-              </button> }
-              { nextStep && <button
+                <FontAwesomeIcon icon={faChevronLeft} /> Previous
+              </button>}
+              {nextStep && <button
                 className="btn terra-tertiary-btn"
                 onClick={() => setCurrentStep(nextStep)}>
-            Next <FontAwesomeIcon icon={faChevronRight}/>
-              </button> }
+                Next <FontAwesomeIcon icon={faChevronRight} />
+              </button>}
             </div>
           </div>
           <div>
@@ -468,22 +474,35 @@ export function RawUploadWizard({ studyAccession, name }) {
     }
   }
 
+  /** return a button for switching to the other experience (AnnData or Classic) */
+  function getOtherChoiceButton() {
+    const otherOption = isAnnDataExperience ? 'classic upload' : 'AnnData upload'
+    return <button
+      data-testid="switch-upload-mode-button"
+      className="btn terra-secondary-btn margin-left-extra"
+      onClick={() => setIsAnnDataExperience(!isAnnDataExperience)}> Switch to {otherOption}
+    </button>
+  }
+
   return (
     <StudyContext.Provider value={studyObj}>
       {/* If the formState hasn't loaded show a spinner */}
-      {(!formState && !serverState) && <LoadingSpinner testId="upload-wizard-spinner"/>
+      {(!formState && !serverState) && <div>
+        <LoadingSpinner className="spinner-full-page" testId="upload-wizard-spinner" /> </div>
       }
       {!!formState &&
-      <div className="upload-wizard-react">
-        <div className="row">
-          <div className="col-md-12 wizard-top-bar no-wrap-ellipsis">
-            <a href={`/single_cell/study/${studyAccession}`}>View study</a> / &nbsp;
-            <span title="{serverState?.study?.name}">{serverState?.study?.name}</span>
+        <div className="upload-wizard-react">
+          <div className="row">
+            <div className="col-md-12 wizard-top-bar no-wrap-ellipsis">
+              <a href={`/single_cell/study/${studyAccession}`}>View study</a> / &nbsp;
+              <span title="{serverState?.study?.name}">{serverState?.study?.name}</span>
+              {/* only allow switching modes if the user hasn't uploaded a file yet */}
+              {!serverState?.files.length && choiceMade && serverState?.feature_flags?.ingest_anndata_file && getOtherChoiceButton()}
+            </div>
+            {getWizardContent(formState, serverState)}
           </div>
-          {getWizardContent(formState, serverState)}
-        </div>
-        <MessageModal/>
-      </div>}
+          <MessageModal />
+        </div>}
     </StudyContext.Provider>
   )
 }
@@ -494,7 +513,7 @@ export default function UploadWizard({ studyAccession, name }) {
     <UserProvider>
       <ReactNotifications />
       <Router>
-        <RawUploadWizard studyAccession={studyAccession} name={name} default/>
+        <RawUploadWizard studyAccession={studyAccession} name={name} default />
       </Router>
     </UserProvider>
   </ErrorBoundary>

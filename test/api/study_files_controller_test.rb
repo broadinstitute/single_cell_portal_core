@@ -213,7 +213,7 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
           y_axis_title: 'log(TPM) expression'
         },
         metadata_form_info_attributes: {
-          use_metadata_convention: true
+          use_metadata_convention: false # check that override is in place to enforce convention
         },
         cluster_form_info_attributes: {
           _id: cluster_frag_id,
@@ -230,6 +230,7 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     ann_data = StudyFile.find_by(study_id: @study.id, upload_file_name: 'data.h5ad')
     assert ann_data.present?
+    assert ann_data.use_metadata_convention
     assert ann_data.ann_data_file_info.present?
     assert_not ann_data.ann_data_file_info.reference_file?
     data_fragments = ann_data.ann_data_file_info.data_fragments

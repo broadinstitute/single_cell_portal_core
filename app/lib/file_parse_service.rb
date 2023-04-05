@@ -101,7 +101,8 @@ class FileParseService
         end
 
         # enable / disable full ingest of AnnData files using the feature flag 'ingest_anndata_file'
-        # will ignore reference AnnData files (includes previously uploaded files)
+        # will ignore reference AnnData files (includes previously uploaded files) as the default for
+        # ann_data_file_info.reference_file is true legacy files were covered in data migration
         if do_anndata_file_ingest && !study_file.is_reference_anndata?
           params_object = AnnDataIngestParameters.new(
             anndata_file: study_file.gs_url, obsm_keys: study_file.ann_data_file_info.obsm_key_names

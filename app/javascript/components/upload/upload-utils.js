@@ -331,3 +331,4 @@ export const FileTypeExtensions = {
   annData: annDataExtensions,
   seurat: seuratExtensions
 }
+

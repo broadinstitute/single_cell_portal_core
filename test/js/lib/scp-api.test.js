@@ -3,7 +3,7 @@
 import CacheMock from 'browser-cache-mock';
 import 'isomorphic-fetch';
 
-import scpApi, { fetchSearch, fetchFacetFilters } from 'lib/scp-api'
+import scpApi, { fetchSearch, fetchFacetFilters, setupRenewalForReadOnlyToken } from 'lib/scp-api'
 import * as ServiceWorkerCache from 'lib/service-worker-cache'
 import * as SCPContextProvider from '~/providers/SCPContextProvider'
 
@@ -33,6 +33,8 @@ describe('JavaScript client for SCP REST API', () => {
       }
     })
 
+    jest.useFakeTimers();
+    jest.spyOn(global, 'setTimeout');
   })
 
   // Note: tests that mock global.fetch must be cleared after every test
@@ -147,6 +149,26 @@ describe('JavaScript client for SCP REST API', () => {
     )
 
     done()
-})
+  })
+
+  it('sets timer for access token renewal', done => {
+    window.SCP = {
+      readOnlyTokenObject: {
+          'access_token': 'ya11.b.foo_bar-baz',
+          'expires_in': 3600, // 1 hour in seconds
+          'expires_at': '2023-03-28T11:12:02.044-04:00'
+      }
+    }
+
+    const expectedRenewalTime = 3300 * 1000 // 55 minutes in milliseconds
+
+    setupRenewalForReadOnlyToken('SCP123')
+    expect(setTimeout).toHaveBeenCalledTimes(1);
+    expect(setTimeout).toHaveBeenLastCalledWith(expect.any(Function), expectedRenewalTime);
+
+    process.nextTick(() => {
+      done()
+    })
+  })
 
 })

@@ -3,7 +3,8 @@
   window.SCP.renderComponent('study-visualize', 'ExploreView', {studyAccession: window.SCP.studyAccession})
   <% if @study.has_streamable_files(current_user) %>
     if (typeof window.SCP.readOnlyToken === 'undefined') {
-      window.SCP.readOnlyToken = '<%= get_read_access_token(@study, current_user) %>'
+      window.SCP.readOnlyTokenObject = <%= raw get_read_access_token(@study, current_user).to_json %>
+      window.SCP.readOnlyToken = window.SCP.readOnlyTokenObject.access_token
     }
   <% end %>
 </script>

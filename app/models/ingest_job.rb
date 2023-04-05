@@ -618,6 +618,9 @@ class IngestJob
 
   # launch appropriate downstream jobs once an AnnData file successfully extracts "fragment" files
   def launch_anndata_subparse_jobs
+    # reference AnnData uploads don't have extract parameter so exit immediately
+    return nil if params_object.extract.blank?
+
     params_object.extract.each do |extract|
       case extract
       when 'cluster'

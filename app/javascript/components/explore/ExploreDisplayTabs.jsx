@@ -73,17 +73,11 @@ function getClusterHasDe(exploreInfo, exploreParams) {
   return clusterHasDe
 }
 
-function getAnnotationsWithDE(exploreInfo, exploreParams) {
+/** Return list of annotations that have differential expression enabled */
+function getAnnotationsWithDE(exploreInfo) {
   if (!exploreInfo) {return false}
 
   let annotsWithDe = []
-  const annotList = exploreInfo.annotationList
-  let selectedCluster
-  if (exploreParams?.cluster) {
-    selectedCluster = exploreParams.cluster
-  } else {
-    selectedCluster = annotList.default_cluster
-  }
 
   annotsWithDe = exploreInfo.differentialExpression.filter(deItem => {
     return deItem
@@ -674,7 +668,7 @@ export default function ExploreDisplayTabs({
             {!clusterHasDe &&
             <>
               <ClusterSelector
-                annotationList={getAnnotationsWithDE(exploreInfo, exploreParams)}
+                annotationList={getAnnotationsWithDE(exploreInfo)}
                 cluster={''}
                 annotation={''}
                 updateClusterParams={updateClusterParams}
@@ -684,7 +678,7 @@ export default function ExploreDisplayTabs({
             }
             {clusterHasDe &&
               <AnnotationSelector
-                annotationList={getAnnotationsWithDE(exploreInfo, exploreParams)}
+                annotationList={getAnnotationsWithDE(exploreInfo)}
                 cluster={exploreParamsWithDefaults.cluster}
                 shownAnnotation={shownAnnotation}
                 updateClusterParams={updateClusterParams}

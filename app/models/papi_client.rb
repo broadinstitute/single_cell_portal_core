@@ -323,7 +323,7 @@ class PapiClient
       # skip if parent file is AnnData as params_object will format command line
       command_line += " --cell-metadata-file #{study_file.gs_url} --study-accession #{study.accession} " \
                       "--ingest-cell-metadata" unless study_file.is_anndata?
-      if study_file.use_metadata_convention && !study_file.is_anndata?
+      if study_file.use_metadata_convention
         command_line += " --validate-convention --bq-dataset #{CellMetadatum::BIGQUERY_DATASET} " \
                         "--bq-table #{CellMetadatum::BIGQUERY_TABLE}"
       end

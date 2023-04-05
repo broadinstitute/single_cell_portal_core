@@ -51,7 +51,9 @@ class AnnDataFileInfo
     # merge in existing information about AnnData file, using form data first if present
     anndata_info_attributes = form_data[:ann_data_file_info_attributes] || attributes.with_indifferent_access
     # check value of :reference_anndata_file which is passed as a string
-    anndata_info_attributes[:reference_file] = merged_data[:reference_anndata_file] == 'true'
+    # it is not present in 'classic mode' so the absence of it means this is a reference upload
+    reference_file = merged_data[:reference_anndata_file].nil? ? true : merged_data[:reference_anndata_file] == 'true'
+    anndata_info_attributes[:reference_file] = reference_file
     merged_data.delete(:reference_anndata_file)
     fragments = []
     DATA_TYPE_FORM_KEYS.each do |key, form_segment_name|

@@ -308,4 +308,5 @@ class DifferentialExpressionService
     puts message
     Rails.logger.info message
   end
+
 end

@@ -31,6 +31,8 @@ export const FACET_DELIMITER = ';'
 // value used to separate filter values for a facet in query string params
 export const FILTER_DELIMITER = '|'
 
+const FIVE_MINUTES = 60 * 1000 * 5 // 5 minutes in milliseconds
+
 /** Get default `init` object for SCP API fetches */
 export function defaultInit() {
   const headers = {
@@ -204,7 +206,7 @@ export function stringifyQuery(paramObj, sort) {
 /**
  * Returns initial content for the upload file wizard
  *
- * @param {String} studyAccession Study accession
+ * @param {String} studyAccession Study accession, e.g. SCP123
 */
 export async function fetchStudyFileInfo(studyAccession, includeOptions=true, mock=false) {
   let apiUrl = `/studies/${studyAccession}/file_info`
@@ -213,6 +215,32 @@ export async function fetchStudyFileInfo(studyAccession, includeOptions=true, mo
   }
   const [response] = await scpApi(apiUrl, defaultInit(), mock, false)
   return response
+}
+
+/**
+ * Set up the renewal for read-only access tokens.  Read-only tokens expire in
+ * 1 hour, much sooner than the default SCP authentication session duration of
+ * 24 hours.
+ *
+ * @param {String} studyAccession Study accession, e.g. SCP123
+ */
+export function setupRenewalForReadOnlyToken(studyAccession) {
+  // JSON processed by scpApi function gets camelcased, but JSON defined via
+  // Rails has snake-cased keys, so camelcase it here as is conventional for
+  // JSON that passes through scpApi.  E.g. expires_in -> expiresIn.
+  const readOnlyTokenObject = camelcaseKeys(window.SCP.readOnlyTokenObject)
+
+  // ~55 minutes, in milliseconds
+  const renewalTime = readOnlyTokenObject.expiresIn * 1000 - FIVE_MINUTES
+
+  setTimeout(async () => {
+    const apiUrl = `/site/studies/${studyAccession}/renew_token`
+    const [response] = await scpApi(apiUrl, defaultInit())
+    const readOnlyTokenObject = response
+    window.SCP.readOnlyToken = readOnlyTokenObject.accessToken
+    window.SCP.readOnlyTokenObject = readOnlyTokenObject
+    setupRenewalForReadOnlyToken(studyAccession)
+  }, renewalTime)
 }
 
 /**
@@ -359,8 +387,6 @@ export async function fetchBucketFile(bucketName, filePath, maxBytes=null, mock=
 
   return response
 }
-
-
 
 
 /**

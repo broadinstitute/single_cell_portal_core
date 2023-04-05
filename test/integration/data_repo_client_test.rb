@@ -34,7 +34,7 @@ class DataRepoClientTest < ActiveSupport::TestCase
     current_expiry = @data_repo_client.expires_at
     sleep 1
     new_token = @data_repo_client.refresh_access_token!
-    assert_not_equal token, new_token
+    assert_not_equal token['access_token'], new_token['access_token']
     assert current_expiry < @data_repo_client.expires_at
   end
 
@@ -46,14 +46,14 @@ class DataRepoClientTest < ActiveSupport::TestCase
 
   test 'should get valid access token' do
     @data_repo_client.refresh_access_token!
-    access_token = @data_repo_client.access_token
+    token = @data_repo_client.access_token
     current_expiry = @data_repo_client.expires_at
     valid_token = @data_repo_client.valid_access_token
-    assert_equal access_token, valid_token
+    assert_equal token['access_token'], valid_token['access_token']
     @data_repo_client.expires_at = 1.day.ago
     sleep 1
     new_token = @data_repo_client.valid_access_token
-    assert_not_equal access_token, new_token
+    assert_not_equal token['access_token'], new_token['access_token']
     assert current_expiry < @data_repo_client.expires_at
   end
 

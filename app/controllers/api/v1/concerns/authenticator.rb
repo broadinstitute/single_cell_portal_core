@@ -97,10 +97,11 @@ module Api
             response = RestClient.get OAUTH_V3_TOKEN_INFO + "?access_token=#{api_access_token}"
             credentials = JSON.parse response.body
             now = Time.zone.now
+            expires_in = credentials['expires_in'].to_i
             token_values = {
                 'access_token' => api_access_token,
-                'expires_in' => credentials['expires_in'],
-                'expires_at' => now + credentials['expires_in'].to_i,
+                'expires_in' => expires_in,
+                'expires_at' => now + expires_in,
                 'last_access_at' => now
             }
             email = credentials['email']

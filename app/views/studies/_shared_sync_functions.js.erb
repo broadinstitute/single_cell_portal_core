@@ -1,7 +1,8 @@
 // shared JS functions for sync forms
 
 // Used for sync CSFV
-window.SCP.readOnlyToken = '<%= get_read_access_token(@study, current_user) %>'
+window.SCP.readOnlyTokenObject = <%= raw get_read_access_token(@study, current_user).to_json %>
+window.SCP.readOnlyToken = window.SCP.readOnlyTokenObject.access_token
 
 $('#study-file-<%= study_file.id %>').on('change', '.file-type', async function() {
     var form = $(this).closest('form');

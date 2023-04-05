@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 
 import ExpressionFileForm from './ExpressionFileForm'
-import { AddFileButton } from './form-components'
+import { AddFileButton, AnnDataPreUploadDirections } from './form-components'
 
 const DEFAULT_NEW_RAW_COUNTS_FILE = {
   is_spatial: false,
@@ -92,7 +92,7 @@ export function getExpressionFileInfoMessage(isAnnDataExperience, expressionType
         </div>
       </div>
     </div>
-  }
+  } else if (isAnnDataExperience) {return <AnnDataPreUploadDirections/>}
 }
 
 const expressionFileStructureHelp = <>

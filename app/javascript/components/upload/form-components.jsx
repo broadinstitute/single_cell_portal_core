@@ -5,11 +5,11 @@ import { Popover, OverlayTrigger } from 'react-bootstrap'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 
 /** renders a 'Add File' button that occupies a full row */
-export function AddFileButton({ newFileTemplate, addNewFile }) {
+export function AddFileButton({ newFileTemplate, addNewFile, text='Add file' }) {
   return <div className="row top-margin">
     <div className="col-md-12">
       <button className="btn btn-secondary terra-secondary-btn" onClick={() => addNewFile(newFileTemplate, true)}>
-        <span className="fas fa-plus"></span> Add file
+        <span className="fas fa-plus"></span> {text}
       </button>
     </div>
   </div>
@@ -112,4 +112,14 @@ export function SaveDeleteButtons({ file, updateFile, saveFile, deleteFile, vali
   </div>
 }
 
-
+/** renders the note that AnnData upload will occur later for preceeding upload steps */
+export function AnnDataPreUploadDirections() {
+  return <>
+    <div className="row">
+      <div className="col-md-12">
+        <p className="form-terra">
+        Fill in data here, the file upload will occur in the AnnData tab.
+        </p>
+      </div>
+    </div></>
+}

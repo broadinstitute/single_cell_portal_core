@@ -301,6 +301,8 @@ module Api
           study_file.build_ann_data_file_info if study_file.ann_data_file_info.blank?
 
           safe_file_params = study_file.ann_data_file_info.merge_form_data(study_file_params.to_unsafe_hash)
+          # override to enforce metadata convention for all AnnData parsing
+          safe_file_params[:use_metadata_convention] = true
         else
           safe_file_params = study_file_params
         end

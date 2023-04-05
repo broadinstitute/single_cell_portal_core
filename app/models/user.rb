@@ -151,7 +151,11 @@ class User
         )
         token_vals = client.fetch_access_token
         expires_at = Time.zone.now + token_vals['expires_in'].to_i.seconds
-        user_access_token = {'access_token' => token_vals['access_token'], 'expires_in' => token_vals['expires_in'], 'expires_at' => expires_at}
+        user_access_token = {
+          'access_token' => token_vals['access_token'],
+          'expires_in' => token_vals['expires_in'],
+          'expires_at' => expires_at
+        }
         self.update!(access_token: user_access_token)
         user_access_token
       rescue => e

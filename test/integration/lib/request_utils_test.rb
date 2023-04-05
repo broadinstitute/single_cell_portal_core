@@ -1,6 +1,30 @@
 require 'test_helper'
+require 'api_test_helper'
+require 'integration_test_helper'
+require 'includes_helper'
 
-class RequestUtilsTest < ActiveSupport::TestCase
+class RequestUtilsTest < ActionDispatch::IntegrationTest
+
+  before(:all) do
+    @user = FactoryBot.create(:user,
+      registered_for_firecloud: true,
+      test_array: @@users_to_clean
+    )
+
+    @public_study = FactoryBot.create(:study,
+      name_prefix: 'Public study',
+      public: true,
+      user: @user,
+      test_array: @@studies_to_clean
+    )
+
+    @private_study = FactoryBot.create(:study,
+      name_prefix: 'Private study',
+      public: false,
+      user: @user,
+      test_array: @@studies_to_clean
+    )
+  end
 
   test 'should sanitize page inputs' do
     assert_equal(2, RequestUtils.sanitize_page_param(2))
@@ -120,4 +144,48 @@ class RequestUtilsTest < ActiveSupport::TestCase
     }
     assert_equal expected_path, RequestUtils.get_cache_path(path, new_params)
   end
+
+  test 'should call to get read-only SA token for signed out user on public study' do
+    # Validates the most common scenario for client-side bucket access, e.g. a typical
+    # user exploring an SCP study they learned about in a scientific journal
+
+    mock = MiniTest::Mock.new
+    mock.expect :call, nil, []
+
+    sign_out @user
+
+    ApplicationController.read_only_firecloud_client.stub :valid_access_token, mock do
+      RequestUtils.get_read_access_token(@public_study, @user)
+      mock.verify
+    end
+  end
+
+  test 'should call to get read-only SA token for signed in user on public study' do
+    # Validates a scenario for client-side bucket access, e.g. a particularly engaged
+    # user exploring others' studies
+
+    mock = MiniTest::Mock.new
+    mock.expect :call, nil, []
+
+    sign_in @user
+
+    ApplicationController.read_only_firecloud_client.stub :valid_access_token, mock do
+      RequestUtils.get_read_access_token(@public_study, @user)
+      mock.verify
+    end
+  end
+
+  test 'should call to get user storage token for signed in user on private study' do
+    # Validates a scenario for client-side bucket access, e.g. an owner checking things
+    # before publishing their SCP study
+
+    mock = MiniTest::Mock.new
+    mock.expect :call, nil, [@private_study]
+
+    @user.stub :token_for_storage_object, mock do
+      RequestUtils.get_read_access_token(@private_study, @user)
+      mock.verify
+    end
+  end
+
 end
