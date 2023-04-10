@@ -9,6 +9,7 @@ module Api
         before_action :set_current_api_user!
         before_action :set_study
         before_action :check_study_view_permission
+        before_action :check_gene_limit
         before_action :check_api_cache!
         after_action :write_api_cache!
 
@@ -158,6 +159,19 @@ module Api
           end
 
           render plain: expression_data, status: 200
+        end
+
+        # enforce a limit on number of genes allowed for visualization requests
+        # see StudySearchService::MAX_GENE_SEARCH
+        def check_gene_limit
+          return true if params[:genes].blank?
+
+          # render 422 if more than MAX_GENE_SEARCH as request fails internal validation
+          num_genes = params[:genes].split(',').size
+          if num_genes > StudySearchService::MAX_GENE_SEARCH
+            MetricsService.log('search-too-many-genes', { numGenes: num_genes }, current_api_user, request:)
+            render json: { error: StudySearchService::MAX_GENE_SEARCH_MSG }, status: :unprocessable_entity
+          end
         end
       end
     end

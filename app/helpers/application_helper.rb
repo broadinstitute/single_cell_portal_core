@@ -344,16 +344,9 @@ module ApplicationHelper
     email.gsub(/[@\.]/, '-')
   end
 
-	# Return an access token for viewing GCS objects client side, depending on study privacy
-	# Context: https://github.com/broadinstitute/single_cell_portal_core/pull/239
+  # Return an access token for viewing GCS objects client side, depending on study privacy
   def get_read_access_token(study, user)
-    if study.present? && study.public? && ApplicationController.read_only_firecloud_client.present?
-      ApplicationController.read_only_firecloud_client.valid_access_token["access_token"]
-    elsif user.present? && user.registered_for_firecloud && study.present?
-      user.token_for_storage_object(study)
-    else
-      nil # there is no 'safe' token that will work as user has no Terra profile
-    end
+    RequestUtils.get_read_access_token(study, user)
   end
 
   # Return the user's access token for bulk download of faceted search results

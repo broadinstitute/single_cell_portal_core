@@ -1,0 +1,27 @@
+name: Selectively delete feature branch after merge to development
+
+# Only run the workflow when a PR that targets development is closed
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - 'development'
+    
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  
+jobs:
+  merge_job:
+    # this job will only run if the PR has been merged
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+    - name: Delete merged branch
+    # from the github actions marketplace repo here: https://github.com/pabio/delete-merged-action
+      uses: koj-co/delete-merged-action@master
+      with:
+      # do not delete master, development branches
+        branches: "!master, !development, *"
+      env:
+        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

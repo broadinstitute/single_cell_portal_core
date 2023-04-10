@@ -34,11 +34,14 @@ class MetricsService
   end
 
   def self.get_default_headers(user)
-    access_token = user.token_for_api_call
-    {
-      'Authorization' => "Bearer #{access_token.present? ? access_token.dig('access_token') : nil }",
-      'Content-Type' => 'application/json'
-    }
+    headers = { 'Content-Type' => 'application/json'}
+    if user.present? && user.registered_for_firecloud && user.token_for_api_call.present?
+      access_token = user.token_for_api_call
+      headers.merge!({
+        'Authorization' => "Bearer #{access_token.dig(:access_token)}",
+      })
+    end
+    headers
   end
 
   # Merges unauth’d and auth’d user identities in Mixpanel via Bard
@@ -90,29 +93,28 @@ class MetricsService
   # @param {String} name Name of the event
   # @param {Hash} props Properties associated with the event
   # @param {User} user User model object
-  def self.log(name, props={}, user)
+  def self.log(name, props={}, user=nil, request: nil)
     Rails.logger.info "#{Time.zone.now}: Logging analytics to Mixpanel for event name: #{name}"
 
     props.merge!({
       appId: 'single-cell-portal',
       env: Rails.env,
-      registeredForTerra: user.registered_for_firecloud,
       logger: 'app-backend'
     })
 
     headers = get_default_headers(user)
+    distinct_id = user&.get_metrics_uuid || request&.cookies&.[]('user_id')
 
-    access_token = user.token_for_api_call
-    user_id = user.get_metrics_uuid
-
-    if access_token.nil? || !user.registered_for_firecloud
-      # User is unauthenticated / unregistered / anonymous
-      props['distinct_id'] = user_id
-      headers.delete('Authorization')
-      props['authenticated'] = false
+    # configure properties/headers depending on user presence
+    # only pass user token if user is registered for Terra to avoid 4xx/5xx errors
+    if user.present? && user.registered_for_firecloud
+      props.merge!({ authenticated: true, registeredForTerra: user.registered_for_firecloud })
     else
-      props['authenticated'] = true
+      props.merge!({ authenticated: false, registeredForTerra: false, distinct_id: })
     end
+
+    # global tracking of A/B feature test groups
+    props.merge!({ abTests: AbTest.load_assignments(distinct_id) })
 
     post_body = {'event' => name, 'properties' => props}.to_json
 
@@ -177,15 +179,12 @@ class MetricsService
       props.merge!({studyAccession: study.accession})
     end
 
-    headers = {
-      'Content-Type' => 'application/json'
-    }
+    headers = get_default_headers(user)
 
     # configure properties/headers depending on user presence
     # only pass user token if user is registered for Terra to avoid 4xx/5xx errors
     if user.present? && user.registered_for_firecloud
       props.merge!({ authenticated: true, registeredForTerra: user.registered_for_firecloud })
-      headers.merge!({'Authorization' => "Bearer #{user.token_for_api_call.dig('access_token')}"})
     else
       props.merge!({ authenticated: user.present?, distinct_id: request.cookies['user_id'] })
     end

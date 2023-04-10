@@ -81,6 +81,7 @@ Rails.application.routes.draw do
             get 'studies/:accession', to: 'site#view_study', as: :site_study_view
             get 'studies/:accession/download', to: 'site#download_data', as: :site_study_download_data
             get 'studies/:accession/stream', to: 'site#stream_data', as: :site_study_stream_data
+            get 'studies/:accession/renew_token', to: 'site#renew_token', as: :site_study_renew_token
 
           end
           scope :search do
@@ -118,6 +119,13 @@ Rails.application.routes.draw do
     delete 'admin/deployment', to: 'admin_configurations#delete_deployment_notification', as: :delete_deployment_notification
     resources :admin_configurations, path: 'admin'
     resources :preset_searches
+
+    # a/b test CMS
+    get 'feature_flags/:name/ab_test', to: 'ab_tests#edit', as: :edit_feature_flag_ab_test
+    post 'feature_flags/:name/ab_test', to: 'ab_tests#create', as: :create_feature_flag_ab_test
+    patch 'feature_flags/:name/ab_test/update', to: 'ab_tests#update', as: :update_feature_flag_ab_test
+    post 'feature_flags/:name/ab_test/add_to_group', to: 'ab_tests#add_to_group', as: :add_to_ab_test_group
+    delete 'feature_flags/:name/ab_test', to: 'ab_tests#destroy', as: :destroy_feature_flag_ab_test
 
     # feature flag option CMS
     get 'feature_flags', to: 'feature_flag_options#index', as: :feature_flag_options
@@ -292,6 +300,9 @@ Rails.application.routes.draw do
     # this file is only requested in development
     get '*a/igv.css.map', to: -> (env) { [204, {}, ['']] }
     get 'igv.css.map', to: -> (env) { [204, {}, ['']] }
+
+
+    get 'terra_tos', to: 'exceptions#terra_tos', as: 'exceptions_terra_tos'
 
     root to: 'site#index'
     end

@@ -21,6 +21,15 @@
           </td>
         </tr>
       <% end %>
+      <tr>
+        <td>Differential Expression Results</td>
+        <td>Breakdown of differential expression results</td>
+        <td>
+          <%= link_to 'View', '#', class: 'btn btn-primary view-report', id: 'view-de-data',
+                      data: {'loading-text' => 'Loading... ', toggle: 'button' } %>
+          <%= link_to 'Export', api_v1_report_url('differential_expression'), class: 'btn btn-default' %>
+        </td>
+      </tr>
     </table>
   </div>
 </div>
@@ -34,7 +43,8 @@
 <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
   const reportTarget = $('#report-table')
   const REPORTS = {
-    'view-study-data': '<%= api_v1_report_url('studies') %>'
+    'view-study-data': '<%= api_v1_report_url('studies') %>',
+    'view-de-data': '<%= api_v1_report_url('differential_expression', view_context: true) %>'
   }
   let table
   $('.view-report').on('click', function(event) {
@@ -60,7 +70,8 @@
         })
         table = reportTarget.dataTable({
           columns: columns,
-          data: lines
+          data: lines,
+          order: [[1, 'asc']]
         })
       }
     })

@@ -2,7 +2,7 @@ import _get from 'lodash/get'
 import React from 'react'
 
 export const PARSEABLE_TYPES = ['Cluster', 'Coordinate Labels', 'Expression Matrix', 'MM Coordinate Matrix',
-  '10X Genes File', '10X Barcodes File', 'Gene List', 'Metadata', 'Analysis Output']
+  '10X Genes File', '10X Barcodes File', 'Gene List', 'Metadata', 'Analysis Output', 'AnnData']
 
 const EXPRESSION_INFO_TYPES = ['Expression Matrix', 'MM Coordinate Matrix']
 
@@ -37,6 +37,7 @@ const PROPERTIES_NOT_TO_SEND = [
 ]
 
 const PROPERTIES_AS_JSON = ['custom_color_updates']
+const DEEPLY_NESTED_PROPS = ['data_fragments']
 
 /** gets an object representing a new, empty study file.  Does not communicate to server */
 export function newStudyFileObj(studyId) {
@@ -130,13 +131,41 @@ export function formatFileForApi(file, chunkStart, chunkEnd) {
   return data
 }
 
+/**
+ * Find files of the matching type in the current form state that was originally populated from the server
+ * can handle AnnData experience where nested forms are populated from study_file.ann_data_file_info.data_fragments
+ *
+ * @param formFiles {Array} Array of study files from API
+ * @param fileFilter {Function} Filter for matching study files
+ * @param isAnnDataExperience {Boolean} controls finding nested AnnData data fragments
+ * @param fragmentType {String} type of data fragments to extract if isAnnDataExperience is true
+ */
+export function matchingFormFiles(formFiles, fileFilter, isAnnDataExperience, fragmentType) {
+  let files = []
+  if (isAnnDataExperience) {
+    const annDataFile = formFiles.find(file => file.file_type == 'AnnData')
+    let fragments = annDataFile?.ann_data_file_info?.data_fragments
+    if (typeof fragments === 'undefined') {
+      fragments = []
+    }
+    files = fragments.filter(fragment => fragment.data_type === fragmentType)
+    if (files.length > 0) {
+      const fileIds = files.map(f => f._id)
+      // check if we need to remove any existing files that just got persisted in the database for AnnData sub-forms
+      formFiles.splice(0, formFiles.length, ...formFiles.filter(f => !fileIds.includes(f._id)))
+    }
+  }
+  // match any files that may have just been added to the forms via the "Add new file" button
+  return [...files, ...formFiles.filter(fileFilter)]
+}
+
 /** Does basic validation of the file, including file existence, name, file type, and required fields
  * returns a hash of message keys to validation messages
  * allowedFileExts is an array of string extensions, e.g. ['.txt', '.csv']
  * requiredFields is array objects with label and propertyName:  e.g. [{label: 'species', propertyName: 'taxon_id'}]
  * it validates the propertyName is specified (propertyName can include '.' for nested properties), and
  * uses the label in the validation message returned if the property is not specified. */
-export function validateFile({ file, allFiles, allowedFileExts=[], requiredFields=[] }) {
+export function validateFile({ file, allFiles, allowedFileExts=[], requiredFields=[], isAnnDataExperience=false }) {
   if (!file) {
     // edge case where the form is rendered but hook to add an empty file has not yet finished
     return { file: 'File not yet initialized' }
@@ -208,33 +237,70 @@ export function addObjectPropertyToForm(obj, propertyName, formData, nested) {
   if (nested) {
     propString = `study_file[${nested}_attributes][${propertyName}]`
   }
-  if (Array.isArray(obj[propertyName])) {
-    if (obj[propertyName].length == 0) {
+  if (propertyName === '_id') {
+    appendFormData(formData, propertyName, getIdValue(obj[propertyName]))
+  }
+  if (DEEPLY_NESTED_PROPS.includes(propertyName)) {
+    obj[propertyName].forEach(fragment => {
+      Object.keys(fragment).forEach(fragmentKey => {
+        const nestedPropString = `${propString}[][${fragmentKey}]`
+        appendFormData(formData, nestedPropString, fragment[fragmentKey])
+      })
+    })
+  } else if (obj[propertyName] && typeof obj[propertyName] === 'object' && !Array.isArray(obj[propertyName])) {
+    // handle nesting for _attributes fields, except for nested id hashes on embedded documents
+    Object.keys(obj[propertyName]).forEach(subKey => {
+      if (subKey === '_id') {
+        const updatedPropString = `study_file[${propertyName}_attributes][${subKey}]`
+        appendFormData(formData, updatedPropString, getIdValue(obj[propertyName][subKey]))
+      } else {
+        addObjectPropertyToForm(obj[propertyName], subKey, formData, propertyName)
+      }
+    })
+  } else {
+    appendFormData(formData, propString, obj[propertyName])
+  }
+}
+
+/**
+ * Helper to append element to form data for API submission
+ * handles recursion so addObjectPropertyToForm() is simpler
+ *
+ * @param formData (FormData) form data for submission
+ * @param formKey (String) location to insert data, formatted like 'study_file[property][nestedProperty]'
+ * @param formElement (Object, String) value(s) to insert into formData
+ */
+function appendFormData(formData, formKey, formElement) {
+  if (Array.isArray(formElement)) {
+    if (formElement.length === 0) {
       // if the array is empty, send an empty string as an indication that it is cleared
-      formData.append(`${propString}[]`, '')
+      formData.append(`${formKey}[]`, '')
     } else {
       // add each array entry as a separate form data entry
-      obj[propertyName].forEach(val => {
-        formData.append(`${propString}[]`, val)
+      formElement.forEach(val => {
+        formData.append(`${formKey}[]`, val)
       })
     }
-  } else if (obj[propertyName] && typeof obj[propertyName] === 'object') {
-    if (PROPERTIES_AS_JSON.includes(propertyName)) {
+  } else if (formElement && typeof formElement === 'object') {
+    if (PROPERTIES_AS_JSON.includes(formKey)) {
       // serialize the object as json
-      formData.append(propString, JSON.stringify(obj[propertyName]))
+      formData.append(formKey, JSON.stringify(formElement))
     } else {
-      // iterate over the keys and add each as a nested form property
-      Object.keys(obj[propertyName]).forEach(subKey => {
-        addObjectPropertyToForm(obj[propertyName], subKey, formData, propertyName)
+      Object.keys(formElement).forEach(key => {
+        const newKey = `${formKey}[${key}]`
+        appendFormData(formData, newKey, formElement[key])
       })
     }
   } else {
-    // don't set null properties -- those are ones that haven't changed
-    // and having them be sent as 'null' or '' can throw off validations
-    if (obj[propertyName] != null && typeof obj[propertyName] != 'undefined') {
-      formData.append(propString, obj[propertyName])
+    if (formElement !== null && typeof formElement !== 'undefined') {
+      formData.append(formKey, formElement)
     }
   }
+}
+
+// extract a BSON id value from form object, checking to see if it is a nested _id.$oid object or raw string
+function getIdValue(formElement) {
+  return typeof formElement === 'object' ? formElement['$oid'] : formElement
 }
 
 /** generates an id string suitable as a mongo id (24-character hex), see
@@ -253,7 +319,7 @@ const miscExtensions = ['.txt', '.text', '.tsv', '.csv', '.jpg', '.jpeg', '.png'
 const sequenceExtensions = ['.fq', '.fastq', '.fq.tar.gz', '.fastq.tar.gz', '.fq.gz', '.fastq.gz', '.bam']
 const baiExtensions = ['.bai']
 const annDataExtensions = ['.h5', '.h5ad', '.hdf5']
-const seuratExtensions = ['.Rds', '.rds', '.seuratdata', '.h5seurat', '.seuratdisk', '.Rda', '.rda']
+const seuratExtensions = ['.Rds', '.rds', '.RDS', '.seuratdata', '.h5seurat', '.seuratdisk', '.Rda', '.rda']
 
 export const FileTypeExtensions = {
   plainText: plainTextExtensions.concat(plainTextExtensions.map(ext => `${ext}.gz`)),
@@ -265,3 +331,4 @@ export const FileTypeExtensions = {
   annData: annDataExtensions,
   seurat: seuratExtensions
 }
+

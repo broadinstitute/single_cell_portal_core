@@ -11,9 +11,11 @@ class FeatureFlag
   field :name, type: String
   field :default_value, type: Boolean, default: false
   field :description, type: String
+  has_one :ab_test, dependent: :delete_all
 
   # pointer to all per-model feature_flag_options, will delete all if this flag is removed
   has_many :feature_flag_options, dependent: :delete_all, primary_key: :name, foreign_key: :name
+  has_many :ab_test_assignments, dependent: :delete_all
 
   validates_uniqueness_of :name
 
@@ -23,6 +25,10 @@ class FeatureFlag
       hash[flag.name] = flag.default_value
       hash.with_indifferent_access
     end
+  end
+
+  def ab_test_enabled?
+    !!ab_test&.enabled
   end
 
   # 'retire' a feature flag and remove all per-model flag values to prevent FeatureFlaggable#validate_feature_flags

@@ -172,6 +172,9 @@ will need to create a Terra project that will own all the workspaces created in 
 
 ## RUNNING THE CONTAINER
 
+Note: If you are developing locally and would like to leverage the hybrid Docker/local setup, see the section below on
+[HYBRID DOCKER LOCAL DEVELOPMENT](#hybrid-docker-local-development).
+
 Once the image has successfully built, all registration/configuration steps have been completed, use the following command
 to start the container:
 
@@ -334,6 +337,46 @@ To create an admin user account:
 
 ## DEVELOPING OUTSIDE THE CONTAINER
 Developing on SCP without a Docker container, while less robust, opens up some faster development paradigms, including live css/js reloading, faster build times, and byebug debugging in rails.  See [Non-containerized development README](./NON_CONTAINERIZED_DEV_README.md) for instructions
+
+## HYBRID DOCKER LOCAL DEVELOPMENT
+SCP team members can develop locally using Docker with a 'hybrid' setup that merges the speed of developing outside the 
+container with the ease of using Docker for package/gem management.  This allows using `vite` for hot module replacement 
+(HMR) along with all the other features of native Rails development, but uses `docker-compose` to build and deploy 
+containers locally.  Both containers are built off of the `single-cell-portal:development` Docker image referenced above.
+
+This setup will behave almost exactly like developing 
+outside of the container - you can edit files in your IDE and have them updated in the container in real time, and any 
+JS/CSS changes will automatically reload thanks to HMR without any page refresh.  The startup process (minus any 
+`docker pull` latency) should only take ~30s, though if you update any JS dependencies it can take 2-3 minutes to run 
+`yarn install` on boot depending on how constrained your local Docker installation is in terms of CPU/RAM.  You can 
+reduce this latency by rebuilding the `single-cell-portal:development` Docker image locally.  See the section on 
+[building the Docker image](#pullingbuilding-the-docker-image) above for more information.
+
+### USING DOCKER COMPOSE LOCALLY
+To leverage this setup, there are two shell scripts for setup and cleanup, respectively.  To start the local instance, 
+run:
+
+    bin/docker-compose-setup.sh
+
+This will pull all necessary secrets from `vault` and write env files to pass to Docker, then create two containers 
+locally: `single_cell` (application server), and `single_cell_vite` (vite dev server). Both containers will install 
+their dependencies automatically if you have updated any gems or JS packages and then start their required services.  In 
+addition to the Rails server, the `single_cell` container will run any required migrations and start `Delayed::Job` on 
+startup.  Both containers can be stopped by pressing `Ctrl-C`.  This will not remove either container, and they can both 
+be restarted with the same command.
+
+You can also start these containers headlessly by passing `-d`.  This runs the same startup commands, but will not 
+attach `STDOUT` from the containers to the terminal.  When using this option, note that it will take between 30-60 
+seconds before the portal instance is available at `https://localhost:3000/single_cell`.
+
+    bin/docker-compose-setup.sh -d
+
+To stop both services and clean up the Docker environment, run:
+
+    bin/docker-compose-cleanup.sh
+
+This will remove both containers, their dependent volumes, and reset any local configuration files to their non-Dockerized 
+format.
 
 ## UPDATING JAVASCRIPT PEER/INDIRECT DEPENDENCIES
 Since `yarn` does not automatically upgrade peer/indirect dependencies automatically (it will only update packages declared 

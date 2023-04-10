@@ -166,7 +166,7 @@ export default function RelatedGenesIdeogram({
       organism: taxon,
       chrWidth: 9,
       legendName: 'Gene leads',
-      chrMargin: 15,
+      chrMargin: -4,
       chrHeight: ideogramHeight - verticalPad,
       chrLabelSize: 12,
       annotationHeight: 7,

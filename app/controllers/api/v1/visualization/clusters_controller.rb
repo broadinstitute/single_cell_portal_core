@@ -175,7 +175,6 @@ module Api
 
           plot_data = nil
           genes = RequestUtils.get_genes_from_param(study, url_params[:gene])
-
           if url_params[:gene].blank? || !include_expression
             # For "Clusters" tab in default view of Explore tab
             plot_data = ClusterVizService.load_cluster_group_data_array_points(study, cluster, annotation, subsample, include_coords: include_coordinates, include_cells: include_cells)
@@ -211,7 +210,7 @@ module Api
                 y: "#{gene_names.last} #{titles[:magnitude]}"
               }
             else
-              # For "Scatter" tab
+              # For "Scatter" tab, i.e. expression scatter plot for 1 gene
               plot_data = ExpressionVizService.load_expression_data_array_points(study, genes, cluster, annotation, subsample,
                 consensus: consensus, include_coords: include_coordinates, include_annotation: include_annotation, include_cells: include_cells)
             end
@@ -230,7 +229,7 @@ module Api
           custom_colors = cluster.study_file.cluster_file_info&.custom_colors_as_hash || {}
           custom_annotation_colors = custom_colors[annotation[:name]] || {}
           annotation_split_defaults = cluster.study_file.cluster_file_info&.annotation_split_defaults_as_hash || {}
-          split_label_arrays = annotation_split_defaults[annotation[:name]] || false
+          is_split_label_arrays = annotation_split_defaults[annotation[:name]] || false
 
           {
             data: plot_data,
@@ -255,7 +254,7 @@ module Api
             consensus: consensus,
             customColors: custom_annotation_colors,
             clusterFileId: cluster.study_file_id.to_s,
-            splitLabelArrays: split_label_arrays,
+            isSplitLabelArrays: is_split_label_arrays,
             externalLink: {
               url: cluster.study_file[:external_link_url],
               title: cluster.study_file[:external_link_title],

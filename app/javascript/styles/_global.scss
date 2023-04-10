@@ -44,6 +44,10 @@ label {
   color: #c9302c;
 }
 
+.bold {
+  font-weight: bold;
+}
+
 .sc-navbar {
   a {
     color: white !important;
@@ -703,7 +707,10 @@ ul.pager li.dimmed {
 }
 
 #overflow-x-scroll {
-  overflow-x: scroll;
+  overflow-x: auto;
+  width: 100%;
+  padding: 0 20px 0 10px;
+  min-width: 300px;
 }
 
 #metadata-convention-example-link {

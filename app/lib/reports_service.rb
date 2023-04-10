@@ -4,19 +4,38 @@ class ReportsService
     studies: {
       name: 'Study Report',
       service_method: :study_data,
-      data_columns: %i[accession created_at cell_count user_id public view_count
+      data_columns: %i[accession created_at cell_count user_id public view_count de_results
                        owner_domain owner_email admin_owned metadata_convention
-                       metadata_file_created has_raw_counts last_public last_initialized]
+                       metadata_file_created has_raw_counts last_public last_initialized],
+      transform_columns: %i[]
+    },
+    differential_expression: {
+      name: 'Differential Expression Results',
+      service_method: :differential_expression_report,
+      data_columns: %i[accession created_at cluster_name annotation_identifier
+                       observed_values matrix_file_name],
+      transform_columns: %i[observed_values] # array fields that need to be sanitized before rendering
     }
   }.freeze
 
   # fetches the report data for the given report, and returns it as a tsv string
-  def self.get_report_data(report_name)
+  def self.get_report_data(report_name, view_context:)
     report_obj = REPORTS[report_name.to_sym]
     raise ArgumentError, "Unrecognized report: '#{report_name}'" if report_obj.nil?
 
     headers = report_obj[:data_columns].join("\t")
     data = ReportsService.send(report_obj[:service_method])
+    report_obj[:transform_columns].each do |column|
+      data.each_with_index do |data_hash, index|
+        values = data_hash[column]
+        if view_context
+          # format as labels for easier viewing
+          data[index][column] = values.map { |v| "<span class='label label-default'>#{v}</span>" }.join(' ')
+        else
+          data[index][column] = values.join(', ')
+        end
+      end
+    end
     report = data.map { |data_hash| data_hash.values_at(*report_obj[:data_columns]).join("\t") }
     [headers, report].join("\n")
   end
@@ -47,8 +66,10 @@ class ReportsService
         study_hash[study_id][:admin_owned] = 'N/A' # account for nil by casting to boolean
       end
 
-      metadata_files = StudyFile.where(file_type: 'Metadata', queued_for_deletion: false, study_id: study_id)
-                                .pluck(:use_metadata_convention, :created_at)
+      metadata_files = StudyFile.any_of(
+        { file_type: 'Metadata' },
+        { file_type: 'AnnData', 'ann_data_file_info.has_metadata' => true }
+      ).where(queued_for_deletion: false, study_id: study_id).pluck(:use_metadata_convention, :created_at)
       metadata_files.each do |convention, created_at|
         study_hash[study_id][:metadata_convention] = !!convention # account for nil by casting to boolean
         study_hash[study_id][:metadata_file_created] = created_at
@@ -59,6 +80,9 @@ class ReportsService
         # mongoid plucks nested fields as {"is_raw_counts"=>true} objects rather than plain values
         study_hash[study_id][:has_raw_counts] ||= is_raw_counts.present? ? is_raw_counts['is_raw_counts'] : false
       end
+
+      # count DE results
+      study_hash[study_id][:de_results] = study.differential_expression_results.count
     end
 
     history_hash = ReportsService.study_histories
@@ -85,5 +109,19 @@ class ReportsService
       study_hash[study_id][:last_initialized] = history.created_at
     end
     study_hash
+  end
+
+  # breakdown of DE results by study
+  def self.differential_expression_report
+    results = []
+    keys = %i[
+      created_at cluster_name annotation_identifier observed_values matrix_file_name
+    ]
+    DifferentialExpressionResult.all.each do |result|
+      data_hash = Hash[keys.zip(keys.map { |k| result.send(k) })]
+      data_hash[:accession] = result.study.accession
+      results << data_hash
+    end
+    results
   end
 end

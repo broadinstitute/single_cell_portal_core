@@ -69,7 +69,8 @@ class FileParseServiceTest < ActiveSupport::TestCase
     cluster_bundle = cluster.study_file_bundle
     assert cluster_bundle.present?, "Did not create study file bundle for cluster file w/ coordinate labels present"
     assert cluster_bundle.completed?, "Did not mark cluster bundle completed"
-    assert cluster_bundle.bundled_files.first == coordinate_labels, "Did not correctly return labels file from bundle"
+    assert cluster_bundle.bundled_file_by_type('Coordinate Labels') == coordinate_labels,
+           'Did not correctly return labels file from bundle'
   end
 
   test 'should clean up ingest artifacts after one month' do
@@ -113,6 +114,18 @@ class FileParseServiceTest < ActiveSupport::TestCase
     @coordinate_file.reload
     assert_equal 412, response[:status_code]
     assert_nil @coordinate_file.study_file_bundle
+  end
+
+  test 'should gzip file before uploading' do
+    cluster_path = Rails.root.join('test/test_data/cluster_example.txt')
+    cluster_file = StudyFile.create!(
+      study: @basic_study,
+      upload: File.open(cluster_path),
+      file_type: 'Cluster',
+      name: 'cluster_example.txt'
+    )
+    assert FileParseService.compress_file_for_upload(cluster_file)
+    assert cluster_file.gzipped?
   end
 
   # TODO: once SCP-2765 is completed, test that all genes/values are parsed from mtx bundle

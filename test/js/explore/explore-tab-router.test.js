@@ -86,7 +86,7 @@ describe('dataParams are appropriately managed on the url', () => {
       annotation: { name: 'bar', type: 'group', scope: 'study' },
       subsample: '1000',
       spatialGroups: ['square', 'circle'],
-      splitLabelArrays: null,
+      isSplitLabelArrays: null,
       consensus: 'mean',
       heatmapRowCentering: 'z-score',
       ideogramFileId: '604fc5c4e241391a8ff93271',

@@ -48,6 +48,10 @@ document.addEventListener('DOMContentLoaded', () => {
   setupPageTransitionLog()
 
   checkMissingAuthToken()
+
+  if (window.SCP.readOnlyToken && window.SCP.studyAccession) {
+    ScpApi.setupRenewalForReadOnlyToken(window.SCP.studyAccession)
+  }
 })
 
 const componentsToExport = {

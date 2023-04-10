@@ -170,4 +170,50 @@ class StudyFileTest < ActiveSupport::TestCase
     associated_processed_files = @expression_matrix.associated_matrix_files(:processed)
     assert_equal matrix, associated_processed_files.first
   end
+
+  test 'can find AnnData files using getters' do
+    ann_data_study = FactoryBot.create(:detached_study,
+                                       name_prefix: 'AnnData File Test',
+                                       user: @user,
+                                       test_array: @@studies_to_clean)
+    ann_data_file = FactoryBot.create(:ann_data_file, name: 'test.h5ad', study: ann_data_study)
+    ann_data_file.build_ann_data_file_info
+    ann_data_file.save
+    assert_not ann_data_study.clustering_files.include? ann_data_file
+    assert_not ann_data_study.expression_matrices.include? ann_data_file
+    assert_nil ann_data_study.metadata_file
+    assert_not ann_data_file.is_expression?
+    assert_not ann_data_file.is_raw_counts_file?
+
+    # test flags
+    ann_data_file.ann_data_file_info.update(
+      has_clusters: true, has_expression: true, has_raw_counts: true, has_metadata: true
+    )
+    assert_includes ann_data_study.expression_matrices, ann_data_file
+    assert_includes ann_data_study.clustering_files, ann_data_file
+    assert_equal ann_data_study.metadata_file, ann_data_file
+    assert ann_data_file.is_expression?
+    assert ann_data_file.is_raw_counts_file?
+  end
+
+  test 'should determine if file is/can be gzipped' do
+    bam_path = Rails.root.join("test/test_data/fixed_neurons_6days_2000_possorted_genome_bam_test_data.bam")
+    bam_file = StudyFile.create!(
+      study: @study,
+      upload: File.open(bam_path),
+      file_type: 'BAM',
+      name: 'fixed_neurons_6days_2000_possorted_genome_bam_test_data.bam'
+    )
+    assert bam_file.gzipped?
+    assert_not bam_file.can_gzip?
+    cluster_path = Rails.root.join('test/test_data/cluster_example.txt')
+    cluster_file = StudyFile.create!(
+      study: @study,
+      upload: File.open(cluster_path),
+      file_type: 'Cluster',
+      name: 'cluster_example.txt'
+    )
+    assert_not cluster_file.gzipped?
+    assert cluster_file.can_gzip?
+  end
 end

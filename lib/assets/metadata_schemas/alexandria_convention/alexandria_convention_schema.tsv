@@ -15,7 +15,7 @@ biosample_type		string		enum				"[""CellLine"",""DerivedType_Organoid"",""Derive
 bmi		number										BMI of organism
 cell_type		string		ontology	https://www.ebi.ac.uk/ols/api/ontologies/cl	https://www.ebi.ac.uk/ols/ontologies/cl	CL_0000548					Cell type name determined via unsupervised clustering and marker genes
 cell_type__ontology_label		string		ontology_label					cell_type			cell_type__ontology_label
-cell_type__custom		string							cell_type			cell_type__custom
+cell_type__custom		string										cell_type__custom
 culture_duration		number								sample_type in cell line, organoid, cultured primary cells	culture_duration__unit	length of time cells have been in culture
 culture_duration__unit		string		ontology	https://www.ebi.ac.uk/ols/api/ontologies/uo	https://www.ebi.ac.uk/ols/ontologies/uo	UO_0000003		culture_duration			culture_duration__unit
 culture_duration__unit_label		string		unit_label					culture_duration__unit			culture_duration__unit_label

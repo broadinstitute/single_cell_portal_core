@@ -199,7 +199,7 @@ function StudyActionLinks({ study }) {
 
   const actionList = <ul className="list-style-none-menu">
     <li><a href={`/single_cell/studies/${studyId}`}>Details</a></li>
-    <li><a href={`/single_cell/studies/${studyId}/usage_stats`}>Usage stats <sup className="alert-warning">NEW</sup></a></li>
+    <li><a href={`/single_cell/studies/${studyId}/usage_stats`}>Usage stats</a></li>
     <li><a href={`/single_cell/studies/${studyId}/edit`}>Study settings</a></li>
     <li><a href={`/single_cell/studies/${studyId}/edit`}>Edit name &amp; description</a></li>
     <li><a href={`/single_cell/studies/${studyId}/upload`}>Upload &amp; edit files</a></li>

@@ -1,27 +1,61 @@
 <ul class="nav nav-tabs"  data-analytics-name="study-overview" role="tablist" id="study-tabs">
-  <li role="presentation" class="study-nav active" id="study-summary-nav"><a href="#study-summary" data-toggle="tab">Summary <i class="far fa-fw fa-file-alt"></i></a></li>
+  <li role="presentation" class="study-nav <%= @explore_tab_default ? nil : ' active' %>" id="study-summary-nav">
+    <a href="#study-summary" data-toggle="tab">Summary <i class="far fa-fw fa-file-alt"></i></a>
+  </li>
   <% if @study.can_visualize? %>
-    <li role="presentation" class="study-nav" id="study-visualize-nav"><a href="#study-visualize" data-toggle="tab">Explore <i class="fas fa-fw fa-eye"></i></a></li>
+    <li role="presentation" class="study-nav <%= @explore_tab_default ? ' active' : nil %>" id="study-visualize-nav">
+      <a href="#study-visualize" data-toggle="tab">Explore <i class="fas fa-fw fa-eye"></i></a>
+    </li>
   <% else %>
-    <li role="presentation" class="study-nav disabled" id="study-visualize-nav"><a href="#study-visualize" data-toggle="tooltip" title="This study has no data to view">Explore <i class="fas fa-fw fa-eye"></i></a></li>
+    <li role="presentation" class="study-nav disabled" id="study-visualize-nav">
+      <a href="#study-visualize" data-toggle="tooltip" title="This study has no data to view">
+        Explore <i class="fas fa-fw fa-eye"></i>
+      </a>
+    </li>
   <% end %>
   <% if @study.detached %>
-    <li role="presentation" class="study-nav disabled" id="study-download-nav"><a href="#study-download" data-toggle="tooltip" title="Downloads are disabled for this study - cannot load workspace">Download <i class="fas fa-fw fa-download"></i></a></li>
+    <li role="presentation" class="study-nav disabled" id="study-download-nav">
+      <a href="#study-download" data-toggle="tooltip"
+         title="Downloads are disabled for this study - cannot load workspace">
+        Download <i class="fas fa-fw fa-download"></i>
+      </a>
+    </li>
     <% if @user_can_edit %>
-     <li role="presentation" class="study-nav disabled" id="study-settings-nav"><a href="#study-settings" data-toggle="tooltip" title="Edits are been disabled for this study - cannot load workspace">Settings <i class="fas fa-fw fa-cogs"></i></a></li>
+     <li role="presentation" class="study-nav disabled" id="study-settings-nav">
+       <a href="#study-settings" data-toggle="tooltip"
+          title="Edits are been disabled for this study - cannot load workspace">
+         Settings <i class="fas fa-fw fa-cogs"></i>
+       </a>
+     </li>
     <% end %>
   <% else %>
     <% if @user_can_download %>
-      <li role="presentation" class="study-nav" id="study-download-nav"><a href="#study-download" data-toggle="tab">Download <i class="fas fa-fw fa-download"></i></a></li>
+      <li role="presentation" class="study-nav" id="study-download-nav">
+        <a href="#study-download" data-toggle="tab">Download <i class="fas fa-fw fa-download"></i>
+        </a>
+      </li>
     <% else %>
-      <li role="presentation" class="study-nav disabled" id="study-download-nav"><a href="#study-download" data-toggle="tooltip" title="Please sign in to download data">Download <i class="fas fa-fw fa-download"></i></a></li>
+      <li role="presentation" class="study-nav disabled" id="study-download-nav">
+        <a href="#study-download" data-toggle="tooltip" title="Please sign in to download data">
+          Download <i class="fas fa-fw fa-download"></i>
+        </a>
+      </li>
     <% end %>
-    <li role="presentation" class="study-nav hidden" id="study-analysis-nav"><a href="#study-analysis" data-toggle="tab">Analysis <i class="fas fa-fw fa-tasks"></i></a></li>
+    <li role="presentation" class="study-nav hidden" id="study-analysis-nav">
+      <a href="#study-analysis" data-toggle="tab">Analysis <i class="fas fa-fw fa-tasks"></i></a>
+    </li>
     <% if @allow_firecloud_access && @user_can_edit %>
       <% if @allow_edits %>
-        <li role="presentation" class="study-nav" id="study-settings-nav"><a href="#study-settings" data-toggle="tab">Settings <i class="fas fa-fw fa-cogs"></i></a></li>
+        <li role="presentation" class="study-nav" id="study-settings-nav">
+          <a href="#study-settings" data-toggle="tab">Settings <i class="fas fa-fw fa-cogs"></i></a>
+        </li>
       <% else %>
-        <li role="presentation" class="study-nav disabled" id="study-settings-nav"><a href="#study-settings" data-toggle="tooltip" title="Study workspaces are currently unavailable - please try again later.">Settings <i class="fas fa-fw fa-cogs"></i></a></li>
+        <li role="presentation" class="study-nav disabled" id="study-settings-nav">
+          <a href="#study-settings" data-toggle="tooltip"
+             title="Study workspaces are currently unavailable - please try again later.">
+            Settings <i class="fas fa-fw fa-cogs"></i>
+          </a>
+        </li>
       <% end %>
     <% end %>
   <% end %>

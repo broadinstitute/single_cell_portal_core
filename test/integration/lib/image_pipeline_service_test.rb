@@ -18,10 +18,13 @@ class ImagePipelineServiceTest < ActiveSupport::TestCase
                                         modality: 'Proteomic'
                                       },
                                       upload_file_size: 10.megabytes)
+    @pten_gene = FactoryBot.create(:gene_with_expression,
+                                   name: 'PTEN',
+                                   study_file: @dense_matrix,
+                                   expression_input: [['A', 0],['B', 3],['C', 1.5]])
     @cluster_file = FactoryBot.create(:cluster_file,
                                       name: 'cluster.txt',
                                       study: @study)
-
     @sparse_matrix = FactoryBot.create(:expression_file,
                                        name: 'matrix.mtx',
                                        file_type: 'MM Coordinate Matrix',
@@ -49,6 +52,18 @@ class ImagePipelineServiceTest < ActiveSupport::TestCase
     bundle.add_files(@sparse_matrix, @genes_file, @barcodes_file)
   end
 
+  test 'should launch image pipeline job' do
+    job_mock = Minitest::Mock.new
+    job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
+    mock = Minitest::Mock.new
+    mock.expect(:delay, job_mock)
+    IngestJob.stub :new, mock do
+      ApplicationController.firecloud_client.stub :workspace_file_exists?, true do
+        ImagePipelineService.run_image_pipeline_job(@study, @cluster_file, data_cache_perftime: 120_000)
+      end
+    end
+  end
+
   test 'should launch render expression arrays job for all matrix types' do
     [@dense_matrix, @sparse_matrix].each do |matrix_file|
       job_mock = Minitest::Mock.new
@@ -66,7 +81,24 @@ class ImagePipelineServiceTest < ActiveSupport::TestCase
     end
   end
 
-  test 'should validate parameters' do
+  test 'should validate parameters for images pipeline jobs' do
+    # wrong data types
+    assert_raise ArgumentError do
+      ImagePipelineService.run_image_pipeline_job({}, {})
+    end
+
+    # passing matrix as cluster file
+    assert_raise ArgumentError do
+      ImagePipelineService.run_image_pipeline_job(@study, @dense_matrix)
+    end
+
+    # should fail because file is not in bucket
+    assert_raise ArgumentError do
+      ImagePipelineService.run_image_pipeline_job(@study, @cluster_file)
+    end
+  end
+
+  test 'should validate parameters for expression array jobs' do
     # wrong data types
     assert_raise ArgumentError do
       ImagePipelineService.run_render_expression_arrays_job({}, {}, {})
@@ -83,7 +115,20 @@ class ImagePipelineServiceTest < ActiveSupport::TestCase
     end
   end
 
-  test 'should create parameters object' do
+  test 'should create image pipeline parameters object' do
+    ApplicationController.firecloud_client.stub :workspace_file_exists?, true do
+      params = ImagePipelineService.create_image_pipeline_parameters_object(@study, @cluster_file, 120_000)
+      assert params.valid?
+      assert_equal @cluster_file.name, params.cluster
+      assert_equal @study.bucket_id, params.bucket
+      assert_equal @study.accession, params.accession
+      assert_equal Rails.env.to_s, params.environment
+      assert_equal 7, params.cores
+      assert_equal ImagePipelineParameters::PARAM_DEFAULTS[:docker_image], params.docker_image
+    end
+  end
+
+  test 'should create expression array parameters object' do
     [@dense_matrix, @sparse_matrix].each do |matrix_file|
       ApplicationController.firecloud_client.stub :workspace_file_exists?, true do
         params = ImagePipelineService.create_expression_parameters_object(@cluster_file, matrix_file)

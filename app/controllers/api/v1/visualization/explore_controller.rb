@@ -154,6 +154,7 @@ module Api
             clusterGroupNames: ClusterVizService.load_cluster_group_options(study),
             spatialGroups: spatial_group_options,
             differentialExpression: AnnotationVizService.differential_expression_menu_opts(study),
+            hasImageCache: study.cluster_groups.where(has_image_cache: true).pluck(:name),
             imageFiles: image_options,
             clusterPointAlpha: study.default_cluster_point_alpha,
             colorProfile: study.default_color_profile,

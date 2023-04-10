@@ -11,7 +11,7 @@ module Api
         report_name = params[:report_name].to_sym
         response.headers['Content-Disposition'] = "attachment; filename=#{report_name}_data.tsv"
         begin
-          render plain: ReportsService.get_report_data(report_name)
+          render plain: ReportsService.get_report_data(report_name, view_context: params[:view_context])
         rescue ArgumentError => e
           render json: { error: e.message }, status: :bad_request
         end

@@ -169,10 +169,10 @@ class RequestUtils
   def self.log_exception(request, params, user: nil, study: nil)
     @exception = request.env['action_dispatch.exception']
     Rails.logger.error ([@exception.message] + @exception.backtrace).join($/)
-    return nil if static_asset_error?(@exception) # skip reporting if this is a static asset load error
-
-    ErrorTracker.report_exception(@exception, user, params)
-    MetricsService.report_error(@exception, request, user, study)
+    unless static_asset_error?(@exception) # skip reporting if this is a static asset load error
+      ErrorTracker.report_exception(@exception, user, params)
+      MetricsService.report_error(@exception, request, user, study)
+    end
   end
 
   # format exception JSON responses
@@ -187,8 +187,29 @@ class RequestUtils
 
   # determine if this is a 404 when trying to load a non-existent static asset
   def self.static_asset_error?(exception)
-    return false unless exception.is_a?(ActionController::RoutingError)
+    exception.is_a?(ActionController::RoutingError) || /(assets|static|packs|apple-touch)/.match?(exception.message)
+  end
 
-     /(assets|packs|apple-touch)/.match?(exception.message)
+  # Get token for client-side access to GCS bucket, depending on study privacy
+  # Context: https://github.com/broadinstitute/single_cell_portal_core/pull/1747
+  def self.get_read_access_token(study, user, renew: false)
+    if study.present? && study.public? && ApplicationController.read_only_firecloud_client.present?
+      read_only_client = ApplicationController.read_only_firecloud_client
+      if !renew
+        Rails.logger.info "Returning read-only service account GCS access token for public study"
+        read_only_client.valid_access_token
+      else
+        # These read-only GCS tokens only last for 1 hour, so force refresh
+        # if `renew` is true, enabling e.g. frontend to not timeout GCS bucket
+        # fetches before 24-hour session expires.
+        Rails.logger.info "Force-refreshing read-only service account GCS access token for public study"
+        read_only_client.refresh_access_token!
+      end
+    elsif user.present? && user.registered_for_firecloud && study.present?
+      Rails.logger.info "Returning read-only user GCS access token for private study"
+      user.token_for_storage_object(study)
+    else
+      nil # there is no 'safe' token that will work as user has no Terra profile
+    end
   end
 end

@@ -9,7 +9,8 @@ module Api
       before_action :set_analysis_configuration, only: [:get_analysis, :get_study_analysis_config]
       before_action :check_study_detached, only: [:download_data, :stream_data, :get_study_analysis_config,
                                                   :submit_study_analysis, :get_study_submissions,
-                                                  :get_study_submission, :sync_submission_outputs]
+                                                  :get_study_submission, :sync_submission_outputs,
+                                                  :renew_token]
       before_action :check_study_view_permission, except: [:studies, :analyses, :get_analysis]
       before_action :check_study_compute_permission,
                     only: [:get_study_analysis_config, :submit_study_analysis, :get_study_submissions,
@@ -125,8 +126,46 @@ module Api
         end
       end
 
-      def view_study
+      swagger_path '/site/studies/{accession}/renew_token' do
+        operation :get do
+          key :tags, [
+              'Site'
+          ]
+          key :summary, 'Renew a soon-expiring GCS access token for a study'
+          key :description, 'Get a new 1-hour access token, within the authentication session duration'
+          key :operationId, 'site_study_renew_token_path'
+          parameter do
+            key :name, :accession
+            key :in, :path
+            key :description, 'Accession of Study to renew access for'
+            key :required, true
+            key :type, :string
+          end
+          response 200 do
+            key :description, 'Access token for Google Cloud Storage'
+          end
+          response 401 do
+            key :description, ApiBaseController.unauthorized
+          end
+          response 403 do
+            key :description, ApiBaseController.forbidden('view study')
+          end
+          response 404 do
+            key :description, ApiBaseController.not_found(Study)
+          end
+          response 406 do
+            key :description, ApiBaseController.not_acceptable
+          end
+        end
+      end
 
+      def renew_token
+        renewing_user = "an unauthenticated user (via read-only service account)"
+        if current_api_user
+          renewing_user = "user #{current_api_user.id}"
+        end
+        Rails.logger.info "Renewing token via SCP API for #{renewing_user} in study #{@study.accession}"
+        render json: RequestUtils.get_read_access_token(@study, current_api_user, renew: true)
       end
 
       swagger_path '/site/studies/{accession}/download' do
@@ -196,8 +235,8 @@ module Api
         rescue RuntimeError => e
           ErrorTracker.report_exception(e, current_api_user, @study, params.to_unsafe_hash)
           MetricsService.report_error(e, request, current_api_user, @study)
-          logger.error "Error generating signed url for #{params[:filename]}; #{e.message}"
-          render json: {error: "Error generating signed url for #{params[:filename]}; #{e.message}"}, status: 500
+          logger.error "Error generating signed URL for #{params[:filename]}; #{e.message}"
+          render json: {error: "Error generating signed URL for #{params[:filename]}; #{e.message}"}, status: 500
         end
       end
 

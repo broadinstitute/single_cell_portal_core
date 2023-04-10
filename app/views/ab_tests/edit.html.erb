@@ -1,0 +1,16 @@
+<h1>A/B test for '<%= @feature_flag.name %>'</h1>
+
+<% if @feature_flag.ab_test.nil? %>
+  <p class="help-block">No A/B test exists for this feature flag yet.</p>
+  <p>
+    <%= link_to "<i class='fas fa-plus'></i> Create A/B Test".html_safe,
+                 create_feature_flag_ab_test_path, method: :post, class: 'btn btn-primary' %>
+  </p>
+<% else %>
+  <%= render 'ab_test_form', ab_test: @ab_test %>
+<% end %>
+
+<p>
+  <%= link_to "<i class='fas fa-chevron-left'></i> Back".html_safe,
+              feature_flag_options_path, class: 'btn btn-warning' %>
+</p>

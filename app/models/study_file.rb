@@ -24,7 +24,8 @@ class StudyFile
   # constants, used for statuses and file types
   STUDY_FILE_TYPES = ['Cluster', 'Coordinate Labels' ,'Expression Matrix', 'MM Coordinate Matrix', '10X Genes File',
                       '10X Barcodes File', 'Gene List', 'Metadata', 'Fastq', 'BAM', 'BAM Index', 'Documentation',
-                      'Other', 'Analysis Output', 'Ideogram Annotations', 'Image', 'AnnData', 'Seurat'].freeze
+                      'Other', 'Analysis Output', 'Ideogram Annotations', 'Image', 'AnnData', 'Seurat',
+                      'Differential Expression'].freeze
   CUSTOM_FILE_TYPE_NAMES = {
     'MM Coordinate Matrix' => 'Sparse matrix (.mtx)',
     'Expression Matrix' => 'Dense matrix',
@@ -34,30 +35,33 @@ class StudyFile
 
 
   PARSEABLE_TYPES = ['Cluster', 'Coordinate Labels', 'Expression Matrix', 'MM Coordinate Matrix', '10X Genes File',
-                     '10X Barcodes File', 'Gene List', 'Metadata', 'Analysis Output']
-  DISALLOWED_SYNC_TYPES = ['Fastq']
-  UPLOAD_STATUSES = %w(new uploading uploaded)
-  PARSE_STATUSES = %w(unparsed parsing parsed failed)
-  PRIMARY_DATA_EXTENTIONS = %w(fastq fastq.zip fastq.gz fastq.tar.gz fq fq.zip fq.gz fq.tar.gz bam bam.gz bam.bai bam.gz.bai)
-  PRIMARY_DATA_TYPES = ['Fastq', 'BAM', 'BAM Index']
-  TAXON_REQUIRED_TYPES = ['Fastq', 'BAM', 'Expression Matrix', 'MM Coordinate Matrix', 'Ideogram Annotations']
-  ASSEMBLY_REQUIRED_TYPES = ['BAM', 'Ideogram Annotations']
-  GZIP_MAGIC_NUMBER = "\x1f\x8b".force_encoding(Encoding::ASCII_8BIT)
-  REQUIRED_ATTRIBUTES = %w(file_type name)
+                     '10X Barcodes File', 'Gene List', 'Metadata', 'Analysis Output', 'AnnData',
+                     'Differential Expression'].freeze
+  DISALLOWED_SYNC_TYPES = ['Fastq'].freeze
+  UPLOAD_STATUSES = %w(new uploading uploaded).freeze
+  PARSE_STATUSES = %w(unparsed parsing parsed failed).freeze
+  PRIMARY_DATA_EXTENTIONS = %w(
+    fastq fastq.zip fastq.gz fastq.tar.gz fq fq.zip fq.gz fq.tar.gz bam bam.gz bam.bai bam.gz.bai
+  ).freeze
+  PRIMARY_DATA_TYPES = ['Fastq', 'BAM', 'BAM Index'].freeze
+  TAXON_REQUIRED_TYPES = ['Fastq', 'BAM', 'Expression Matrix', 'MM Coordinate Matrix', 'Ideogram Annotations'].freeze
+  ASSEMBLY_REQUIRED_TYPES = ['BAM', 'Ideogram Annotations'].freeze
+  GZIP_MAGIC_NUMBER = "\x1f\x8b".force_encoding(Encoding::ASCII_8BIT).freeze
+  REQUIRED_ATTRIBUTES = %w(file_type name).freeze
   # allowed bulk download file types
   # 'Expression' covers dense & sparse matrix files
   # 'None' is used when only bulk downloading a single directory_listing folder
   BULK_DOWNLOAD_TYPES = ['Expression', 'Metadata', 'Cluster', 'Coordinate Labels', 'Fastq', 'BAM', 'Documentation',
-                         'Other', 'Analysis Output', 'Ideogram Annotations', 'None']
+                         'Other', 'Analysis Output', 'Ideogram Annotations', 'None'].freeze
 
   # Constants for scoping values for AnalysisParameter inputs/outputs
-  ASSOCIATED_MODEL_METHOD = %w(gs_url name upload_file_name bucket_location)
-  ASSOCIATED_MODEL_DISPLAY_METHOD = %w(name upload_file_name bucket_location)
-  OUTPUT_ASSOCIATION_ATTRIBUTE = %w(taxon_id genome_assembly_id study_file_bundle_id)
+  ASSOCIATED_MODEL_METHOD = %w(gs_url name upload_file_name bucket_location).freeze
+  ASSOCIATED_MODEL_DISPLAY_METHOD = %w(name upload_file_name bucket_location).freeze
+  OUTPUT_ASSOCIATION_ATTRIBUTE = %w(taxon_id genome_assembly_id study_file_bundle_id).freeze
   ANALYSIS_PARAMETER_FILTERS = {
       'file_type' => STUDY_FILE_TYPES.dup,
       'taxon_id' => Taxon.all.map {|t| [t.common_name, t.id.to_s]}
-  }
+  }.freeze
 
   # associations
   belongs_to :study, index: true
@@ -65,6 +69,7 @@ class StudyFile
   has_many :genes, dependent: :destroy
   has_many :precomputed_scores, dependent: :destroy
   has_many :cell_metadata, dependent: :destroy
+  has_many :differential_expression_results, dependent: :destroy
   belongs_to :taxon, optional: true
   belongs_to :genome_assembly, optional: true
   belongs_to :genome_annotation, optional: true
@@ -72,10 +77,13 @@ class StudyFile
   embeds_one :expression_file_info
   embeds_one :cluster_file_info, cascade_callbacks: true
   embeds_one :heatmap_file_info
+  embeds_one :ann_data_file_info
+  embeds_one :differential_expression_file_info
 
   accepts_nested_attributes_for :expression_file_info
   accepts_nested_attributes_for :cluster_file_info
   accepts_nested_attributes_for :heatmap_file_info
+  accepts_nested_attributes_for :ann_data_file_info
   validate :show_exp_file_info_errors
 
   # field definitions
@@ -912,8 +920,9 @@ class StudyFile
       StudyFile.where(:id.in => study_file_ids, queued_for_deletion: false)
     when :processed
       # lazy-load all other expression matrices in study
-      processed_matrices = StudyFile.where(study_id: study.id, file_type: /Matrix/, queued_for_deletion: false,
-                                         :id.ne => id, 'expression_file_info.is_raw_counts' => false)
+      processed_matrices = study.expression_matrices.where(queued_for_deletion: false, :id.ne => id).any_of(
+        { 'expression_file_info.is_raw_counts' => false }, { 'ann_data_file_info.has_raw_counts' => false }
+      )
       processed_matrices.select { |matrix| matrix&.expression_file_info&.raw_counts_associations&.include?(id.to_s) }
     else
       [] # nil-safe return w/ no association type specified
@@ -996,14 +1005,38 @@ class StudyFile
 
   # quick check if file is expression-based
   def is_expression?
-    ['Expression Matrix', 'MM Coordinate Matrix'].include? self.file_type
+    ['Expression Matrix', 'MM Coordinate Matrix'].include?(file_type) ||
+      !!ann_data_file_info&.has_expression ||
+      !!ann_data_file_info&.has_raw_counts
   end
 
   # helper to identify if matrix is a raw count file
   def is_raw_counts_file?
-    self.expression_file_info.present? ? self.expression_file_info.is_raw_counts : false
+    !!expression_file_info&.is_raw_counts || !!ann_data_file_info&.has_raw_counts
   end
 
+  def is_anndata?
+    file_type == 'AnnData'
+  end
+
+  # AnnData files not marked for ingest (legacy + uploads not using AnnData ingest flow)
+  def is_reference_anndata?
+    is_anndata? && ann_data_file_info&.reference_file
+  end
+
+  # determine if a file is gzipped by reading the first two bytes and comparing to GZIP_MAGIC_NUMBER
+  def gzipped?
+    File.open(local_location.to_s).read(2) == GZIP_MAGIC_NUMBER # per IETF
+  end
+
+  # quick check if file is of a type that is safe to gzip
+  # essentially any file that is not a BAM/CRAM or AnnData archive
+  def can_gzip?
+    return false if gzipped?
+
+    # Sequence data & AnnData files either already are or could be gzipped
+    !PRIMARY_DATA_TYPES.include?(file_type) && file_type != 'AnnData' && !upload_file_name.ends_with?('.cram')
+  end
 
   ###
   #
@@ -1354,7 +1387,13 @@ class StudyFile
 
   # ensure that a user can only add one metadata file per study
   def ensure_metadata_singleton
-    if StudyFile.where(file_type: 'Metadata', study_id: self.study_id, queued_for_deletion: false, :id.ne => self.id).exists?
+    if StudyFile.any_of(
+      { :file_type => 'Metadata', :study_id => study_id, :queued_for_deletion => false, :id.ne => id },
+      {
+        :file_type => 'AnnData', 'ann_data_file_info.has_metadata' => true, :study_id => study_id,
+        :queued_for_deletion => false, :id.ne => id
+      }
+    ).exists?
       errors.add(:file_type, 'You may only add one metadata file per study')
     end
   end

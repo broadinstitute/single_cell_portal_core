@@ -12,10 +12,14 @@ module ServiceAccountManager
   #   - (Hash) => OAuth2 access token hash, with the following attributes
   #     - +access_token+ (String) => OAuth2 access token
   #     - +expires_in+ (Integer) => duration of token, in seconds
+  #     - +expires_at+ (String) => timestamp of when token expires
   #     - +token_type+ (String) => type of access token (e.g. 'Bearer')
   def generate_access_token(service_account)
     creds = load_service_account_creds(service_account)
-    creds.fetch_access_token!
+    access_token = creds.fetch_access_token!
+    expires_at = Time.zone.now + access_token['expires_in']
+    access_token['expires_at'] = expires_at
+    access_token
   end
 
   # create a Google ServiceAccountCredentials instance for issuing access tokens, parsing service account attributes

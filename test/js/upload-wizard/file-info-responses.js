@@ -462,7 +462,7 @@ export const ANNDATA_FILE = {
   created_at: '2021-11-15T18:31:41.598Z',
   data_dir: '71e1a89e5c5d9300aabd0e757d1b569eb66644872b40bcbb720e2b39bc7e3822',
   description: '',
-  file_type: 'H5ad',
+  file_type: 'AnnData',
   human_data: false,
   is_spatial: false,
   name: 'anndata.h5ad',
@@ -573,6 +573,22 @@ export const METADATA_AND_EXPRESSION_FILE_STUDY = {
   files: [
     METADATA_FILE,
     PROCESSED_MATRIX_FILE
+  ],
+  menu_options: BASIC_MENU_OPTIONS
+}
+
+export const ANNDATA_FILE_STUDY = {
+  study: {
+    '_id': {
+      '$oid': '60a2b9f4cc7ba082358b5490'
+    },
+    'name': 'Chicken wings',
+    'description': 'Chicken wing study has AnnData file',
+    'bucket_id': 'fc-458fcddb-bbef-4eb3-b0c6-3d2253df623f',
+    'accession': 'SCP38'
+  },
+  files: [
+    ANNDATA_FILE
   ],
   menu_options: BASIC_MENU_OPTIONS
 }

@@ -1,5 +1,5 @@
 import { UNSPECIFIED_ANNOTATION_NAME } from '~/lib/cluster-utils'
-import { log } from '~/lib/metrics-api'
+import { log, logError } from '~/lib/metrics-api'
 
 // Default plot colors, combining ColorBrewer sets 1-3 with tweaks to yellows.
 const colorBrewerList = [
@@ -67,14 +67,14 @@ function emptyTrace(expectedLength, hasZvalues, hasExpression) {
  */
 PlotUtils.filterTrace = function({
   trace, hiddenTraces=[], groupByAnnotation=false,
-  activeTraceLabel, expressionFilter, expressionData, splitLabelArrays
+  activeTraceLabel, expressionFilter, expressionData, isSplitLabelArrays
 }) {
   const isHidingByLabel = hiddenTraces && hiddenTraces.length
   const isFilteringByExpression = expressionFilter && expressionData &&
     (expressionFilter[0] !== 0 || expressionFilter[1] !== 1)
   const hasZvalues = !!trace.z
   const hasExpression = !!trace.expression
-  if (splitLabelArrays) {
+  if (isSplitLabelArrays) {
     trace = PlotUtils.splitTraceByAnnotationArray(trace, hasZvalues)
   }
   const oldLength = trace.x.length
@@ -295,11 +295,16 @@ PlotUtils.getLegendSortedLabels = function(countsByLabel) {
  * didn't have to do this.  See https://github.com/plotly/plotly.js/issues/5612
 */
 function countValues(array) {
-  return array.reduce((acc, curr) => {
-    acc[curr] ||= 0
-    acc[curr] += 1
-    return acc
-  }, {})
+  try {
+    return array.reduce((acc, curr) => {
+      acc[curr] ||= 0
+      acc[curr] += 1
+      return acc
+    }, {})
+  } catch (error) {
+    // This will log to both Mixpanel and Sentry
+    logError('Error counting values for trace array', error)
+  }
 }
 
 /**

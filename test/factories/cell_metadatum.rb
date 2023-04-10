@@ -9,7 +9,7 @@ FactoryBot.define do
       cell_input { [] }
       # annotation_input is an array of annotation values
       # e.g.  ['foo', 'foo', 'bar']
-      annotation_input { [] }
+      annotation_input { {} }
     end
     values {
       annotation_input[:values].uniq

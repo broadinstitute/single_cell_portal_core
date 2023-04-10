@@ -49,8 +49,9 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
 
   setup do
     sign_in_and_update @user
-    @convention_accessions = StudyFile.where(file_type: 'Metadata', use_metadata_convention: true)
-                                      .map { |f| f.study.accession }.flatten
+    @convention_accessions = StudyFile.any_of(
+      { file_type: 'Metadata' }, { file_type: 'AnnData', 'ann_data_file_info.has_metadata' => true }
+    ).where(use_metadata_convention: true).map { |f| f.study.accession }.flatten
   end
 
   # reset known commonly used objects to initial states to prevent failures breaking other tests

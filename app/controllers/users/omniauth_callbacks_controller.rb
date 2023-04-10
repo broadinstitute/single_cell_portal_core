@@ -28,13 +28,12 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
       @alert = nil
       # check if user needs to accept updated Terra ToS
       if @user.must_accept_terra_tos?
-        @alert = 'Terra has updated their Terms of Service.  Please visit ' \
-                 "<a href='https://app.terra.bio' target='_blank'>Terra</a> to accept the updated terms.  Some " \
-                 'features may not function correctly until you do so.'
+        redirect_to exceptions_terra_tos_path and return
       end
       if TosAcceptance.accepted?(@user)
         MetricsService.merge_identities_in_mixpanel(@user, cookies)
-        requested_path = request.env['omniauth.origin'] || site_path
+        # validate that the Referer header has not been manipulated
+        requested_path = set_omniauth_redirect(request, @user) || site_path
         redirect_to requested_path, alert: @alert
       else
         redirect_to accept_tos_path(@user.id), alert: @alert
@@ -57,6 +56,33 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
         error_message = "Invalid scope requested in OAuth callback: #{scope_name}, not in: #{configured_scopes}"
         raise SecurityError.new(error_message)
       end
+    end
+  end
+
+  # validate omniauth.origin is redirecting to same host
+  # will allow redirect if hostnames match, otherwise will return nil to force redirect to home page
+  # malicious redirects are logged as SecurityError in Sentry/Mixpanel
+  def set_omniauth_redirect(request, user)
+    begin
+      return nil if request.env['omniauth.origin'].nil? # no referrer set, so default logic applies
+
+      hostname = URI.parse(request.env['omniauth.origin']).hostname
+      if hostname == ENV['HOSTNAME']
+        request.env['omniauth.origin']
+      else
+        raise SecurityError, "Invalid origin: #{hostname} requested, does not match #{ENV['HOSTNAME']}"
+      end
+    rescue SecurityError => e
+      Rails.logger.error e.message
+      # we can't use RequestUtils.log_exception as this isn't a handled request exception
+      ErrorTracker.report_exception(e, user, request.params)
+      MetricsService.report_error(e, request, user, nil)
+      nil
+    rescue URI::InvalidURIError, NoMethodError => e
+      Rails.logger.error "Error processing omniauth.origin: (#{e.class.name}) #{e.message}"
+      ErrorTracker.report_exception(e, user, request.params)
+      MetricsService.report_error(e, request, user, nil)
+      nil
     end
   end
 end

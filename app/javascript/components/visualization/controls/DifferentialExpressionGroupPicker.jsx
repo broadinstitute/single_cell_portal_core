@@ -16,8 +16,6 @@ function getSimpleOptions(stringArray) {
   return stringArray.map(assignLabelsAndValues)
 }
 
-const nonAlphaNumericRegex = /\W/g
-
 /**
  * Transform raw TSV text into array of differential expression gene objects
  */
@@ -25,6 +23,8 @@ function parseDeFile(tsvText) {
   const deGenes = []
   const tsvLines = tsvText.split(newlineRegex)
   for (let i = 1; i < tsvLines.length; i++) {
+    const tsvLine = tsvLines[i]
+    if (tsvLine === '') {continue}
     // Each element in this array is DE data for the gene in this row
     const [
       index, // eslint-disable-line
@@ -49,7 +49,6 @@ function parseDeFile(tsvText) {
  *
  * @param {String} bucketId Identifier for study's Google bucket
  * @param {String} deFilePath File path of differential expression file in Google bucket
- * @param {Integer} numGenes Number of genes to include in returned deGenes array
  *
  * @return {Array} deGenes Array of DE gene objects, each with properties:
  *   name: Gene name
@@ -60,11 +59,11 @@ function parseDeFile(tsvText) {
  *   pctNzGroup: Percent non-zero, group.  % of cells with non-zero expression in selected group.
  *   pctNzReference: Percent non-zero, reference.  % of cells with non-zero expression in non-selected groups.
  **/
-async function fetchDeGenes(bucketId, deFilePath, numGenes=15) {
+async function fetchDeGenes(bucketId, deFilePath) {
   const data = await fetchBucketFile(bucketId, deFilePath)
   const tsvText = await data.text()
   const deGenes = parseDeFile(tsvText)
-  return deGenes.slice(0, numGenes)
+  return deGenes
 }
 
 /** Gets matching deObject for the given group and cluster + annot combo */
@@ -84,8 +83,8 @@ function getMatchingDeOption(deObjects, group, clusterName, annotation) {
 
 /** Pick groups of cells for differential expression (DE) */
 export default function DifferentialExpressionGroupPicker({
-  bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup, setDeGenes, setDeFileUrl,
-  countsByLabel, deObjects
+  bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup, setDeGenes,
+  countsByLabel, deObjects, setDeFilePath
 }) {
   let groups = getLegendSortedLabels(countsByLabel)
   groups = groups.filter(group => {
@@ -103,14 +102,12 @@ export default function DifferentialExpressionGroupPicker({
     const basePath = '_scp_internal/differential_expression/'
     const deFilePath = basePath + deFileName
 
+    setDeFilePath(deFilePath)
+
     const deGenes = await fetchDeGenes(bucketId, deFilePath)
 
     setDeGroup(newGroup)
     setDeGenes(deGenes)
-
-    const baseUrl = 'https://storage.googleapis.com/download/storage/v1/'
-    const deFileUrl = `${baseUrl}/${bucketId}/o/${deFilePath}?alt=media`
-    setDeFileUrl(deFileUrl)
   }
 
   return (

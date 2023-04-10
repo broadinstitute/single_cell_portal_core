@@ -8,8 +8,11 @@ import { faDna } from '@fortawesome/free-solid-svg-icons'
  * Alternatively, children can be passed in, in which case either the spinner or the children
  * are rendered, contingent on the isLoading property
  */
-export default function LoadingSpinner({ children, testId, isLoading }) {
-  const spinner = <FontAwesomeIcon icon={faDna} className="gene-load-spinner" data-testid={testId}/>
+export default function LoadingSpinner({ children, testId, isLoading, className='gene-load-spinner' }) {
+  // allow additional custom css for the spinner
+  const fullClassName = className === 'gene-load-spinner' ? className : `gene-load-spinner ${className}`
+
+  const spinner = <FontAwesomeIcon icon={faDna} className={fullClassName} data-testid={testId}/>
   if (!children && typeof(isLoading) === 'undefined') {
     return spinner
   }

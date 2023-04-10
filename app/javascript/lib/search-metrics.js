@@ -11,6 +11,8 @@ let numSearchRequests = 0
 // Number of searches insofar as usage analytics is concerned
 export let numSearches = 0
 
+let numDifferentialExpressionTableSearches = 0
+
 const filterNamesById = {}
 
 /**
@@ -175,7 +177,6 @@ export function logSearch(type, searchParams, perfTimes, searchResults) {
   )
 }
 
-
 /** log a search from the study explore tab */
 export function logStudyGeneSearch(genes, trigger, speciesList, otherProps) {
   // Properties logged for all gene searches from Study Overview
@@ -291,6 +292,29 @@ export function logSelectSearchResult(study, logProps={}) {
   delete refinedLogProps[`results:facets`] // Refactor as part of SCP-4256
 
   log('select-search-result', refinedLogProps)
+}
+
+/**
+ * Log search of the differential expression table, to find genes in it.
+ */
+export function logDifferentialExpressionTableSearch(genes, speciesList, otherProps) {
+
+  // Log blank gene searches (e.g. upon clearing) as searching 0 genes, not 1
+  if (genes.length === 1 && genes[0] === '') genes = []
+
+  numDifferentialExpressionTableSearches += 1
+
+  const props = Object.assign({
+    type: 'gene',
+    context: 'differential-expression-table',
+    trigger: 'change',
+    genes,
+    numGenes: genes.length,
+    speciesList,
+    numEventsSincePageView: numDifferentialExpressionTableSearches
+  }, otherProps)
+
+  log('search', props)
 }
 
 /** Log study gene search triggered by selection in differential expression panel */

@@ -8,7 +8,7 @@ import _find from 'lodash/find'
 import _remove from 'lodash/remove'
 import $ from 'jquery'
 import { getDefaultProperties } from '@databiosphere/bard-client'
-import { logJSFetchExceptionToSentry, logJSFetchErrorToSentry } from '~/lib/sentry-logging'
+import { logJSFetchExceptionToSentry, logJSFetchErrorToSentry, logToSentry } from '~/lib/sentry-logging'
 
 import { getAccessToken } from '~/providers/UserProvider'
 import { getBrandingGroup } from '~/lib/scp-api'
@@ -39,6 +39,7 @@ let pendingEvents = [] // eslint-disable-line
 let bardDomain = ''
 const scpContext = getSCPContext()
 const env = scpContext.environment
+const devMode = scpContext.devMode
 const version = scpContext.version
 const isServiceWorkerCacheEnabled = scpContext.isServiceWorkerCacheEnabled
 let userId = ''
@@ -210,15 +211,20 @@ function getEventPropsWithTabsApplied(target, props, eventName) {
   return { eventName, updatedProps }
 }
 
-/**
- * Log click on link, i.e. anchor (<a ...) tag
- */
-export function logClickLink(target) {
-  const props = {
+/** Get text / name, classes, and ID for target element */
+function getStandardClickProps(target) {
+  return {
     text: getNameForClickTarget(target),
     classList: getClassListAsArray(target),
     id: target.id
   }
+}
+
+/**
+ * Log click on link, i.e. anchor (<a ...) tag
+ */
+export function logClickLink(target) {
+  const props = getStandardClickProps(target)
   // Check if target is a tab that's not a part of a menu
   const { eventName, updatedProps } = getEventPropsWithTabsApplied(target, props, 'click:link')
   log(eventName, updatedProps)
@@ -228,7 +234,7 @@ export function logClickLink(target) {
  * Log click on button, e.g. for pagination, "Apply", etc.
  */
 function logClickButton(target) {
-  const props = { text: getNameForClickTarget(target) }
+  const props = getStandardClickProps(target)
   const { eventName, updatedProps } = getEventPropsWithTabsApplied(target, props, 'click:button')
   log(eventName, updatedProps)
 
@@ -322,11 +328,15 @@ export function logMenuChange(event) {
 }
 
 /**
- * Log front-end error (e.g. uncaught ReferenceError)
+ * Log JS error (e.g. uncaught ReferenceError) to console, Sentry, and Mixpanel
  */
-export function logError(text) {
-  const props = { text }
-  log('error', props)
+export function logError(text, error = {}) {
+  console.error(error.message)
+
+  const props = { text, error }
+  log('error', props) // Log to Mixpanel
+
+  logToSentry(error)
 }
 
 /**
@@ -388,6 +398,16 @@ function getTabProperty() {
  * @param {Object} props
  */
 export function log(name, props = {}) {
+  let isDifferentialExpressionEnabled // track differential expression visibility globally
+  if ('isDifferentialExpressionEnabled' in props) {
+    isDifferentialExpressionEnabled = props.isDifferentialExpressionEnabled
+  } else {
+    isDifferentialExpressionEnabled = !!window.SCP?.isDifferentialExpressionEnabled
+  }
+
+  // track A/B feature test assignments on all events
+  const abTests = window.SCP?.abTests || []
+
   props = Object.assign(props, {
     appId: 'single-cell-portal',
     appPath: getAnalyticsPageName(),
@@ -395,7 +415,9 @@ export function log(name, props = {}) {
     env,
     logger: 'app-frontend',
     scpVersion: version,
-    isServiceWorkerCacheEnabled
+    isDifferentialExpressionEnabled,
+    isServiceWorkerCacheEnabled,
+    abTests
   }, getDefaultProperties())
 
   const tab = getTabProperty()
@@ -439,6 +461,12 @@ export function log(name, props = {}) {
     delete init['headers']['Authorization']
   } else {
     props['authenticated'] = true
+  }
+
+  if (env === 'development') {
+    // Log if developer is in Docker ("docker-compose").
+    // Helps analyze factors of local SCP page speed.
+    props['devMode'] = devMode
   }
 
   const body = {

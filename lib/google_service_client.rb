@@ -16,10 +16,15 @@ module GoogleServiceClient
     # determine if token source is a regular Google account (User) or a service account
     token_source = self.respond_to?(:user) && self.user.present? ? self.user : self.class
     new_token = token_source.generate_access_token(self.service_account_credentials)
-    new_expiry = Time.zone.now + new_token['expires_in']
-    self.access_token = new_token
-    self.expires_at = new_expiry
-    new_token
+    # Add `expires_at` to `new_token`
+    self.expires_at = Time.zone.now + new_token['expires_in']
+
+    self.access_token = {
+      'access_token' => new_token['access_token'],
+      'expires_in' => new_token['expires_in'],
+      'expires_at' => self.expires_at
+    }
+
   end
 
   # check if an access_token is expired

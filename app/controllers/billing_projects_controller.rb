@@ -149,7 +149,7 @@ class BillingProjectsController < ApplicationController
     Parallel.map(workspaces, in_threads: 100) do |workspace|
       begin
         client = FireCloudClient.new(current_user, params[:project_name])
-        workspace_name = URI.escape(workspace['workspace']['name'])
+        workspace_name = workspace.dig('workspace', 'name')
         cost_estimate = client.get_workspace_storage_cost(params[:project_name], workspace_name)
         actual_cost = cost_estimate['estimate'].gsub(/\$/, '').to_f
         @workspaces[workspace_name] = actual_cost

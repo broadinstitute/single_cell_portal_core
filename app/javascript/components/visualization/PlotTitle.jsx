@@ -1,4 +1,6 @@
 import React from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 
 /** Renders a plot title for scatter plots */
 export default function PlotTitle({
@@ -6,6 +8,11 @@ export default function PlotTitle({
 }) {
   let content = cluster
   let detailContent = ''
+
+  const tooltipText =
+    `If this value looks different than what you expect given the plot,
+    the data may not be suited for correlation analysis and you should trust the plot`
+
   if (genes.length) {
     const geneList = genes.map(gene => {
       return <span className="badge" key={gene}>{gene}</span>
@@ -28,9 +35,18 @@ export default function PlotTitle({
     <span className="cluster-title">{content} </span>
     <span className="detail"> {detailContent} </span>
     { isCorrelatedScatter && !!correlation &&
-      <span className="correlation">
+    <>
+      <span className="correlation icon-left">
         Spearman rho = { Math.round(correlation * 1000) / 1000}
       </span>
+      <span
+        data-analytics-name="bulk-correlation-tooltip"
+        data-toggle="tooltip"
+        data-original-title={tooltipText}
+      >
+        <FontAwesomeIcon className="action help-icon" icon={faInfoCircle} />
+      </span>
+    </>
     }
   </h5>
 }

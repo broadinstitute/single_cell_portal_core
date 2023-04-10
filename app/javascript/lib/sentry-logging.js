@@ -105,6 +105,9 @@ export function setupSentry() {
     // Sampling rate for transactions, which enrich Sentry events with traces
     tracesSampleRate: getIsSuppressedEnv() ? 0 : 1.0,
     beforeSend: event => {
+      if (event.level === 'info') {
+        return null
+      }
       if (getIsSuppressedEnv()) {
         return null
       }

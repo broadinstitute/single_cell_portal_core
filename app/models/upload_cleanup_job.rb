@@ -96,7 +96,9 @@ class UploadCleanupJob < Struct.new(:study, :study_file, :retry_count)
         study_file.remove_local_copy if study_file.is_local?
         begin
           study = study_file.study
-          SingleCellMailer.notify_user_upload_fail(study_file, study, study.user).deliver_now
+          unless study_file.queued_for_deletion
+            SingleCellMailer.notify_user_upload_fail(study_file, study, study.user).deliver_now
+          end
         rescue => e
           ErrorTracker.report_exception(e, nil)
           Rails.logger.error "Unable to notify user of upload failure: #{e.class}:#{e.message}"

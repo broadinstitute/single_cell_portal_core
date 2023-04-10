@@ -1,7 +1,7 @@
 {
   "study": {
     "name": "Tuberculosis in female human lymph",
-    "description": "<p>Investigating healthy and diseased lymph tissue from human female subjects (AD). Jean Chang, Eric Weitz, Jon Bistline, Eno-Abasi Augustine-Akpan, Devon Bush, Vicky Horst.  Journal of SCP Synthetic Studies.  Volume 1, p1, February 2020.  Adding synthetic study data to development and staging environments has been shown to improve testability of new code.  We extend those findings to the Single Cell Portal by adding this synthetic data.</p>",
+    "description": "<p>Investigating healthy and diseased lymph tissue from human female subjects (AD). Jon Bistline, Jean Chang, Emily Hanna, Leyla Tarhan, Eric Weitz.  Journal of SCP Synthetic Studies.  Volume 1, p1, December 2022.  Adding synthetic study data to development and staging environments has been shown to improve testability of new code.  We extend those findings to the Single Cell Portal by adding this synthetic data.</p>",
     "data_dir": "test"
   },
   "files": [

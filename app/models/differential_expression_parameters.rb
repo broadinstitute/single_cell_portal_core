@@ -3,10 +3,6 @@ class DifferentialExpressionParameters
   include ActiveModel::Model
   include Parameterizable
 
-  # acceptable Google N1 machine types
-  # https://cloud.google.com/compute/docs/general-purpose-machines#n1-high-memory
-  GOOGLE_VM_MACHINE_TYPES = [2, 4, 8, 16, 32, 64, 96].map { |i| "n1-highmem-#{i}" }.freeze
-
   # name of Ingest Pipeline CLI parameter that invokes correct parser
   PARAMETER_NAME = '--differential-expression'.freeze
 
@@ -29,7 +25,7 @@ class DifferentialExpressionParameters
             format: { with: Parameterizable::GS_URL_REGEXP, message: 'is not a valid GS url' }
   validates :annotation_scope, inclusion: %w[cluster study]
   validates :matrix_file_type, inclusion: %w[dense mtx]
-  validates :machine_type, inclusion: GOOGLE_VM_MACHINE_TYPES
+  validates :machine_type, inclusion: Parameterizable::GCE_MACHINE_TYPES
   validates :gene_file, :barcode_file,
             presence: true,
             format: {

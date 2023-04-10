@@ -8,7 +8,7 @@ const DEFAULT_NEW_ANNDATA_FILE = {
   options: {}
 }
 
-const AnnDataFileFilter = file => ['AnnData'].includes(file.file_type)
+export const AnnDataFileFilter = file => ['AnnData'].includes(file.file_type)
 
 export default {
   title: 'AnnData (.h5ad)',
@@ -37,7 +37,7 @@ function AnnDataForm({
     <div className="row">
       <div className="col-md-12">
         <p className="form-terra">
-          AnnData files, typically formatted with the file extension .h5ad.&nbsp;
+          AnnData files are typically formatted with the file extension .h5ad.&nbsp;
           <a href="https://anndata.readthedocs.io" target="_blank" rel="noreferrer">
             See reference documentation
           </a>.

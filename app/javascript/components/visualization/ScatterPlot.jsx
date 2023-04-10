@@ -44,8 +44,8 @@ window.Plotly = Plotly
 function RawScatterPlot({
   studyAccession, cluster, annotation, subsample, consensus, genes, scatterColor, dimensionProps,
   isAnnotatedScatter=false, isCorrelatedScatter=false, isCellSelecting=false, plotPointsSelected, dataCache,
-  canEdit, expressionFilter=[0, 1],
-  countsByLabel, setCountsByLabel, hiddenTraces=[], splitLabelArrays, updateExploreParams
+  canEdit, bucketId, expressionFilter=[0, 1],
+  countsByLabel, setCountsByLabel, hiddenTraces=[], isSplitLabelArrays, updateExploreParams
 }) {
   const [isLoading, setIsLoading] = useState(false)
   const [bulkCorrelation, setBulkCorrelation] = useState(null)
@@ -53,7 +53,7 @@ function RawScatterPlot({
   const [scatterData, setScatterData] = useState(null)
   // array of trace names (strings) to show in the graph
   const [graphElementId] = useState(_uniqueId('study-scatter-'))
-  const { ErrorComponent, setShowError, setErrorContent } = useErrorMessage()
+  const { ErrorComponent, setShowError, setError } = useErrorMessage()
   const [activeTraceLabel, setActiveTraceLabel] = useState(null)
   // map of label name to color hex codes, for any labels the user has picked a color for
   const [editedCustomColors, setEditedCustomColors] = useState({})
@@ -100,8 +100,8 @@ function RawScatterPlot({
   }
 
   /** updates whether pipe-delimited label values should be split */
-  function setSplitLabelArrays(value) {
-    updateExploreParams({ splitLabelArrays: value })
+  function updateIsSplitLabelArrays(value) {
+    updateExploreParams({ isSplitLabelArrays: value })
   }
 
   /** Get new, updated scatter object instance, and new layout */
@@ -178,7 +178,7 @@ function RawScatterPlot({
       scatter,
       activeTraceLabel,
       expressionFilter,
-      splitLabelArrays: splitLabelArrays ?? scatter.splitLabelArrays,
+      isSplitLabelArrays: isSplitLabelArrays ?? scatter.isSplitLabelArrays,
       isRefGroup: isRG
     })
     if (isRG) {
@@ -187,7 +187,7 @@ function RawScatterPlot({
     return traces
   }
 
-  /** Update UI to reflect successfully scatter plot rendering */
+  /** Update UI to reflect successful scatter plot rendering */
   function concludeRender(scatter) {
     if (scatter) {
       setScatterData(scatter)
@@ -197,8 +197,22 @@ function RawScatterPlot({
     setIsLoading(false)
   }
 
-  /** Display static image of gene expression scatter plot */
-  async function renderImage(response) {
+
+  /** Fetch cached data from bucket, use it to draw *interactive* gene expression scatter plot */
+  function renderBucketData(fetchMethod, expressionParams, dataPath) {
+    fetchBucketFile(bucketId, dataPath).then(async response => {
+      const expressionArray = await response.json()
+      expressionParams.expressionArray = expressionArray
+      fetchMethod(expressionParams).then(processScatterPlot).catch(error => {
+        setIsLoading(false)
+        setShowError(true)
+        setError(error)
+      })
+    })
+  }
+
+  /** Draw static image of gene expression scatter plot */
+  async function drawPlotImage(response) {
     const imageBuffer = await response.arrayBuffer()
     const exifTags = ExifReader.load(imageBuffer)
     const imageBlob = new Blob([imageBuffer])
@@ -307,7 +321,6 @@ function RawScatterPlot({
   function processScatterPlot(clusterResponse=null) {
     let [scatter, perfTimes] =
       (clusterResponse ? clusterResponse : [scatterData, null])
-
     scatter = updateScatterLayout(scatter)
     const layout = scatter.layout
 
@@ -317,6 +330,9 @@ function RawScatterPlot({
 
     if (flags?.progressive_loading && genes.length === 1 && document.querySelector(imageSelector)) {
       Plotly.newPlot(graphElementId, plotlyTraces, layout)
+
+      // TODO (SCP-4839): Instrument more bucket cache analytics, then remove console log below
+      // console.log(`Interactive plot with bucket data took: ${ Date.now() - window.t0}`)
     } else {
       Plotly.react(graphElementId, plotlyTraces, layout)
     }
@@ -352,37 +368,97 @@ function RawScatterPlot({
 
   // Fetches plot data then draws it, upon load or change of any data parameter
   useEffect(() => {
-    setIsLoading(true)
+    /** retrieve and process data */
+    async function fetchData() {
+      setIsLoading(true)
 
-    // use an image and/or data cache if one has been provided, otherwise query scp-api directly
-    if (
-      flags?.progressive_loading && isGeneExpression(genes, isCorrelatedScatter) && !isAnnotatedScatter &&
-      !scatterData &&
-      genes[0] === 'A1BG-AS1' // Placeholder; likely replace with setting like DE
-    ) {
-      const bucketName = 'broad-singlecellportal-public'
-      const filePath = `test/scatter_image/${genes[0]}-v2.webp`
-      fetchBucketFile(bucketName, filePath).then(async response => {
-        renderImage(response)
-      })
+      let expressionArray
+
+      const fetchMethod = dataCache ? dataCache.fetchCluster : fetchCluster
+
+      // use an image and/or data cache if one has been provided, otherwise query scp-api directly
+      if (
+        flags?.progressive_loading && isGeneExpression(genes, isCorrelatedScatter) && !isAnnotatedScatter &&
+        !scatterData
+      ) {
+        const urlSafeCluster = cluster.replaceAll('+', 'pos').replace(/\W/g, '_')
+        const gene = genes[0]
+        const stem = '_scp_internal/cache/expression_scatter/'
+        const leaf = `${urlSafeCluster}/${gene}`
+
+        // TODO (SCP-4839): Instrument more bucket cache analytics, then remove line below
+        // window.t0 = Date.now()
+
+        const imagePath = `${stem}images/${leaf}.webp`
+        const dataPath = `${stem}data/${leaf}.json`
+
+        const expressionParams = {
+          studyAccession,
+          cluster,
+          annotation: annotation ? annotation : '',
+          subsample,
+          consensus,
+          genes,
+          isAnnotatedScatter,
+          isCorrelatedScatter
+        }
+
+        fetchBucketFile(bucketId, imagePath).then(async response => {
+          const imageCacheHit = response.ok
+
+          // Draw plot as static image first, if it's cached
+          if (imageCacheHit) {
+            await drawPlotImage(response)
+          }
+
+          // Then make it interactive, using gene expression scatter plot data array from GCS bucket
+          await renderBucketData(fetchMethod, expressionParams, dataPath)
+
+          // TODO (SCP-4839): Instrument more bucket cache analytics, then remove console log below
+          // console.log(`Image render took ${ Date.now() - window.t0}`)
+          // Add imageCacheHit boolean to perfTime object here
+        })
+      } else {
+        try {
+          // attempt to fetch the data, this will use the cache if available
+          const respData1 = await fetchMethod({
+            studyAccession,
+            cluster,
+            annotation: annotation ? annotation : '',
+            subsample,
+            consensus,
+            genes,
+            isAnnotatedScatter,
+            isCorrelatedScatter,
+            expressionArray
+          })
+          // check that the data contains annotations needed for processing scatterplot
+          if (respData1[0]?.data?.annotations?.length) {
+            processScatterPlot(respData1)
+          } else {
+            // if the data was missing the necessary info, make an api call
+            const respData = await fetchCluster({
+              studyAccession,
+              cluster,
+              annotation: annotation ? annotation : '',
+              subsample,
+              consensus,
+              genes,
+              isAnnotatedScatter,
+              isCorrelatedScatter,
+              expressionArray
+            })
+            processScatterPlot(respData)
+          }
+        } catch (error) {
+          setIsLoading(false)
+          setShowError(true)
+          setError(error)
+        }
+      }
     }
-
-    const fetchMethod = dataCache ? dataCache.fetchCluster : fetchCluster
-    fetchMethod({
-      studyAccession,
-      cluster,
-      annotation: annotation ? annotation : '',
-      subsample,
-      consensus,
-      genes,
-      isAnnotatedScatter,
-      isCorrelatedScatter
-    }).then(processScatterPlot).catch(err => {
-      setIsLoading(false)
-      setErrorContent([`${err}`])
-      setShowError(true)
-    })
-  }, [cluster, annotation.name, subsample, consensus, genes.join(','), isAnnotatedScatter])
+    fetchData()
+  }, [cluster, annotation.name, subsample, genes.join(','), isAnnotatedScatter, consensus])
 
   useUpdateEffect(() => {
     // Don't update if graph hasn't loaded
@@ -394,7 +470,7 @@ function RawScatterPlot({
     // look for updates of individual properties, so that we don't rerender if the containing array
     // happens to be a different instance
   }, [Object.values(editedCustomColors).join(','),
-    Object.values(customColors).join(','), expressionFilter.join(','), splitLabelArrays])
+    Object.values(customColors).join(','), expressionFilter.join(','), isSplitLabelArrays])
 
   useUpdateEffect(() => {
     // Don't update if graph hasn't loaded
@@ -423,9 +499,11 @@ function RawScatterPlot({
   useUpdateEffect(() => {
     // Don't update if graph hasn't loaded
     if (scatterData && !isLoading) {
+      setIsLoading(true)
       const plotlyTraces = document.getElementById(graphElementId).data
       PlotUtils.sortTraces(plotlyTraces, activeTraceLabel)
       Plotly.react(graphElementId, plotlyTraces, scatterData.layout)
+      setIsLoading(false)
     }
   }, [activeTraceLabel])
 
@@ -503,8 +581,8 @@ function RawScatterPlot({
             activeTraceLabel={activeTraceLabel}
             setActiveTraceLabel={setActiveTraceLabel}
             hasArrayLabels={scatterData.hasArrayLabels}
-            splitLabelArrays={splitLabelArrays}
-            setSplitLabelArrays={setSplitLabelArrays}
+            isSplitLabelArrays={isSplitLabelArrays}
+            updateIsSplitLabelArrays={updateIsSplitLabelArrays}
             externalLink={scatterData.externalLink}
           />
         }
@@ -587,7 +665,7 @@ function getPlotlyTraces({
   },
   activeTraceLabel,
   expressionFilter,
-  splitLabelArrays,
+  isSplitLabelArrays,
   isRefGroup
 }) {
   const unfilteredTrace = {
@@ -609,7 +687,7 @@ function getPlotlyTraces({
   const [traces, countsByLabel, expRange] = filterTrace({
     trace: unfilteredTrace,
     hiddenTraces, groupByAnnotation: isRefGroup, activeTraceLabel,
-    expressionFilter, expressionData: data.expression, splitLabelArrays
+    expressionFilter, expressionData: data.expression, isSplitLabelArrays
   })
 
   if (isRefGroup) {
@@ -650,6 +728,7 @@ function getPlotlyTraces({
         color: colors,
         colorbar: { title, titleside: 'right' }
       })
+
       // if expression values are all zero, set max/min manually so the zeros still look like zero
       // see SCP-2957
       if (genes.length && !colors.some(val => val !== 0)) {
@@ -678,6 +757,7 @@ function addHoverLabel(trace, annotName, annotType, genes, isAnnotatedScatter, i
   // use the 'meta' property so annotations are exposed to the hover template
   // see https://community.plotly.com/t/hovertemplate-does-not-show-name-property/36139
   trace.meta = trace.annotations
+
   let groupHoverTemplate = '(%{x}, %{y})<br><b>%{text}</b><br>%{meta}<extra></extra>'
   if (isAnnotatedScatter) {
     // for annotated scatter, just show coordinates and cell name

@@ -36,6 +36,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     * and the current text the user is typing (inputText) */
   const [geneArray, setGeneArray] = useState(enteredGeneArray)
   const [showEmptySearchModal, setShowEmptySearchModal] = useState(false)
+  const [showTooManyGenesModal, setShowTooManyGenesModal] = useState(false)
 
   const [notPresentGenes, setNotPresentGenes] = useState(new Set([]))
   const [showNotPresentGeneChoice, setShowNotPresentGeneChoice] = useState(false)
@@ -59,11 +60,16 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
       setShowNotPresentGeneChoice(true)
     } else if (newGeneArray && newGeneArray.length) {
       const genesToSearch = newGeneArray.map(g => g.value)
-      if (event) { // this was not a 'clear'
-        const trigger = event.type // 'click' or 'submit'
-        logStudyGeneSearch(genesToSearch, trigger, speciesList)
+      if (genesToSearch.length > window.MAX_GENE_SEARCH) {
+        log('search-too-many-genes', {numGenes: genesToSearch.length})
+        setShowTooManyGenesModal(true)
+      } else {
+        if (event) { // this was not a 'clear'
+          const trigger = event.type // 'click' or 'submit'
+          logStudyGeneSearch(genesToSearch, trigger, speciesList)
+        }
+        searchGenes(genesToSearch)
       }
-      searchGenes(genesToSearch)
     } else {
       setShowEmptySearchModal(true)
     }
@@ -218,7 +224,15 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
         Invalid Search - Please remove &quot;{Array.from(notPresentGenes).join('", "')}&quot; from gene search.
         </Modal.Body>
       </Modal>
-
+      <Modal
+        show={showTooManyGenesModal}
+        onHide={() => {setShowTooManyGenesModal(false)}}
+        animation={false}
+        bsSize='small'>
+        <Modal.Body className="text-center">
+          {window.MAX_GENE_SEARCH_MSG}
+        </Modal.Body>
+      </Modal>
     </form>
   )
 }

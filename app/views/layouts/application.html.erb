@@ -3,7 +3,7 @@
 <head>
 <title>
   <%= content_for?(:html_title) ? yield(:html_title) : "Single Cell Portal" %>
-</title>  
+</title>
 <%= favicon_link_tag 'scp_favicon.ico' %>
   <%= csrf_meta_tags %>
   <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
@@ -36,6 +36,7 @@
       window.SCP.userAccessToken = '<%= get_user_access_token(current_user) %>';
       window.SCP.userSignedIn = <%= user_signed_in? %>;
       window.SCP.environment = '<%= Rails.env %>';
+      window.SCP.abTests = <%= raw @ab_test_assignments %>
 
       window.SCP.hasLoggedPageView = false;
 

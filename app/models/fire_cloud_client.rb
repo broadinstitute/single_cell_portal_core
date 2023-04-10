@@ -31,7 +31,7 @@ class FireCloudClient
   # List of URLs/Method names to never retry on or report error, regardless of error state
   ERROR_IGNORE_LIST = ["#{BASE_URL}/register"]
   # List of URLs/Method names to ignore incremental backoffs on (in cases of UI blocking)
-  RETRY_BACKOFF_BLACKLIST = ["#{BASE_URL}/register", :generate_signed_url, :generate_api_url]
+  RETRY_BACKOFF_DENYLIST = ["#{BASE_URL}/register", :generate_signed_url, :generate_api_url]
   # default namespace used for all FireCloud workspaces owned by the 'portal'
   PORTAL_NAMESPACE = ENV['PORTAL_NAMESPACE'].present? ? ENV['PORTAL_NAMESPACE'] : 'single-cell-portal'
   # Permission values allowed for FireCloud workspace ACLs
@@ -214,7 +214,8 @@ class FireCloudClient
     Rails.logger.info "FireCloud API request (#{http_method.to_s.upcase}) #{path} with tracking identifier: #{self.tracking_identifier}"
 
     # set default headers, appending application identifier including hostname for disambiguation
-    headers = get_default_headers
+    # allow for override of default application/json content_type and accept headers
+    headers = get_default_headers(content_type: opts[:content_type])
 
     # if uploading a file, remove Content-Type/Accept headers to use default x-www-form-urlencoded type on POSTs
     if request_opts[:file_upload]
@@ -231,11 +232,11 @@ class FireCloudClient
       context = " encountered when requesting '#{path}', attempt ##{current_retry}"
       log_message = "#{e.message}: #{e.http_body}; #{context}"
       Rails.logger.error log_message
-      retry_time = retry_count * ApiHelpers::RETRY_INTERVAL
-      sleep(retry_time) unless RETRY_BACKOFF_BLACKLIST.include?(path) # only sleep if non-blocking
       # only retry if status code indicates a possible temporary error, and we are under the retry limit and
       # not calling a method that is blocked from retries
       if should_retry?(e.http_code) && retry_count < ApiHelpers::MAX_RETRY_COUNT && !ERROR_IGNORE_LIST.include?(path)
+        retry_time = retry_interval_for(current_retry)
+        sleep(retry_time) unless RETRY_BACKOFF_DENYLIST.include?(path) # only sleep if non-blocking
         process_firecloud_request(http_method, path, payload, opts, current_retry)
       else
         # we have reached our retry limit or the response code indicates we should not retry
@@ -379,7 +380,8 @@ class FireCloudClient
   #   - +Hash+ message of status of workspace deletion
   def delete_workspace(workspace_namespace, workspace_name)
     path = self.api_root + "/api/workspaces/#{uri_encode(workspace_namespace)}/#{uri_encode(workspace_name)}"
-    process_firecloud_request(:delete, path)
+    # delete workspace endpoint throws 406 with JSON content_type, set to text/plain
+    process_firecloud_request(:delete, path, nil, { content_type: 'text/plain' })
   end
 
   # get the specified workspace ACL
@@ -1256,12 +1258,25 @@ class FireCloudClient
   #   - +project_name+ (String) => Name of a FireCloud billing project in which pet service account resides
   #
   # * *returns*
-  #   - +String+ pet service account OAuth2 access_token
+  #   - (Hash) => OAuth2 access token hash, with the following attributes
+  #     - +access_token+ (String) => OAuth2 access token
+  #     - +expires_in+ (Integer) => duration of token, in seconds
+  #     - +expires_at+ (String) => timestamp of when token expires
   def get_pet_service_account_token(project_name)
     path = BASE_SAM_SERVICE_URL + "/api/google/v1/user/petServiceAccount/#{project_name}/token"
-    # normal scopes, plus RO access for storage objects (removes unnecessary billing scope from GOOGLE_SCOPES)
+    # normal scopes, plus read-only access for storage objects,
+    # which omits unnecessary billing scope from GOOGLE_SCOPES
     token = process_firecloud_request(:post, path, GOOGLE_SCOPES.to_json)
     token.gsub(/\"/, '') # gotcha for removing escaped quotes in response body
+
+    expires_in = 3600 # 1 hour, in seconds
+    expires_at = Time.zone.now + expires_in
+
+    return {
+      'access_token' => token,
+      'expires_in' => expires_in,
+      'expires_at' => expires_at
+    }
   end
 
   # get JSON keyfile contents for a user's pet service account in the requested project
@@ -1297,26 +1312,16 @@ class FireCloudClient
   # * *return*
   #   - Object depends on method, can be one of the following: +Google::Cloud::Storage::Bucket+, +Google::Cloud::Storage::File+,
   #     +Google::Cloud::Storage::FileList+, +Boolean+, +File+, or +String+
-
-  def execute_gcloud_method(method_name, retry_count=0, *params)
+  def execute_gcloud_method(method_name, retry_count = 0, *params)
     begin
       self.send(method_name, *params)
     rescue => e
+      status_code = extract_status_code(e)
       current_retry = retry_count + 1
-      Rails.logger.info "error calling #{method_name} with #{params.join(', ')}; #{e.message} -- attempt ##{current_retry}"
-      retry_time = retry_count * ApiHelpers::RETRY_INTERVAL
-      sleep(retry_time) unless RETRY_BACKOFF_BLACKLIST.include?(method_name)
-      # only retry if status code indicates a possible temporary error, and we are under the retry limit and
-      # not calling a method that is blocked from retries.  In case of a NoMethodError or RuntimeError, use 500 as the
-      # status code since these are unrecoverable errors
-      if e.respond_to?(:code)
-        status_code = e.code
-      elsif e.is_a?(NoMethodError) || e.is_a?(RuntimeError)
-        status_code = 500
-      else
-        status_code = nil
-      end
       if should_retry?(status_code) && retry_count < ApiHelpers::MAX_RETRY_COUNT && !ERROR_IGNORE_LIST.include?(method_name)
+        Rails.logger.info "error calling #{method_name} with #{params.join(', ')}; #{e.message} -- attempt ##{current_retry}"
+        retry_time = retry_interval_for(current_retry)
+        sleep(retry_time) unless RETRY_BACKOFF_DENYLIST.include?(method_name)
         execute_gcloud_method(method_name, current_retry, *params)
       else
         # we have reached our retry limit or the response code indicates we should not retry
@@ -1325,7 +1330,7 @@ class FireCloudClient
                                                                  retry_count: current_retry, params: params})
         end
         Rails.logger.info "Retry count exceeded calling #{method_name} with #{params.join(', ')}: #{e.message}"
-        raise RuntimeError.new "#{e.message}"
+        raise e.message # raise implicitly creates RuntimeError
       end
     end
   end
@@ -1618,5 +1623,18 @@ class FireCloudClient
         error.message + ': ' + error.http_body
       end
     end
+  end
+
+  # extract a status code from an error GCS call, accounting for upstream api.firecloud.org calls
+  #
+  # * *params*
+  #   - +error+ (Multiple) => Error from either Google Cloud Storage or Firecloud API
+  #
+  # * *returns*
+  #   - (Integer) => HTTP status code, substituting 500 for unknown errors
+  def extract_status_code(error)
+    return 500 if error.is_a?(RuntimeError)
+
+    error.try(:status_code) || error.try(:code) || 500
   end
 end

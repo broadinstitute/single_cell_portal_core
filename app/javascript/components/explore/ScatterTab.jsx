@@ -70,6 +70,7 @@ export default function ScatterTab({
               dataCache={dataCache}
               scatterColor={scatterColor}
               canEdit={exploreInfo.canEdit}
+              bucketId={exploreInfo.bucketId}
               dimensionProps={{
                 isMultiRow,
                 isTwoColumn: isTwoColRow,

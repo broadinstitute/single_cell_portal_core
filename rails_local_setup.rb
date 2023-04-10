@@ -5,12 +5,14 @@ require 'optparse'
 
 # Set up the environment for doing local development/testing outside of Docker
 # will export all secrets from vault for the current user and create configuration files
+# can also be run to print 'dockerized' paths to use inside of Docker for hybrid setup
 #
-# usage: ruby rails_local_setup.rb [-e, --environment ENVIRONMENT] [-u, --username USERNAME]
+# usage: ./rails_local_setup.rb [-e, --environment ENVIRONMENT] [-u, --username USERNAME] [-d, --docker-paths]
 
 # defaults
 username = `whoami`.chomp
 environment = 'development'
+output_dir = "#{File.expand_path('.')}/config"
 
 # options parsing
 OptionParser.new do |opts|
@@ -25,6 +27,10 @@ OptionParser.new do |opts|
   opts.on("-e", "--environment ENVIRONMENT", String, "Set the rails environment (defaults to #{environment})") do |e|
     environment = e.strip
     puts "ENVIRONMENT: #{environment}"
+  end
+
+  opts.on('-d', '--docker-paths', 'Use Dockerized paths for configurations (for running inside Docker)') do |d|
+    output_dir = '/home/app/webapp/config'
   end
 
   opts.on("-h", "--help", "Prints this help") do
@@ -47,6 +53,7 @@ mongo_user_path = "#{base_vault_path}/mongo/user"
 # defaults
 PASSENGER_APP_ENV = environment
 CONFIG_DIR = File.expand_path('.') + "/config"
+
 
   # load raw secrets from vault
 puts 'Processing secret parameters from Vault'
@@ -72,13 +79,13 @@ service_account_hash = JSON.parse(service_account_string)['data']
 File.open("#{CONFIG_DIR}/.scp_service_account.json", 'w') { |file| file.write(service_account_hash.to_json) }
 puts "Setting google cloud project: #{service_account_hash['project_id']}"
 source_file_string += "export GOOGLE_CLOUD_PROJECT=#{service_account_hash['project_id']}\n"
-source_file_string += "export SERVICE_ACCOUNT_KEY=#{CONFIG_DIR}/.scp_service_account.json\n"
+source_file_string += "export SERVICE_ACCOUNT_KEY=#{output_dir}/.scp_service_account.json\n"
 
 puts 'Processing readonly service account info'
 readonly_string = `vault read -format=json #{read_only_service_account_path}`
 readonly_hash = JSON.parse(readonly_string)['data']
 File.open("#{CONFIG_DIR}/.read_only_service_account.json", 'w') { |file| file.write(readonly_hash.to_json) }
-source_file_string += "export READ_ONLY_SERVICE_ACCOUNT_KEY=#{CONFIG_DIR}/.read_only_service_account.json\n"
+source_file_string += "export READ_ONLY_SERVICE_ACCOUNT_KEY=#{output_dir}/.read_only_service_account.json\n"
 
 File.open("#{CONFIG_DIR}/secrets/.source_env.bash", 'w') { |file| file.write(source_file_string) }
 

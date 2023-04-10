@@ -25,7 +25,7 @@ function RawGeneListHeatmap({
     heatmapRowCentering,
     geneList: geneListName
   })
-  const { ErrorComponent, setShowError, setErrorContent } = useErrorMessage()
+  const { ErrorComponent, setShowError, setError } = useErrorMessage()
   // we can't render until we know what the cluster is, since morpheus requires the annotation name
   // so don't try until we've received this, unless we're showing a Gene List
   const canRender = !!geneListName && geneLists.length
@@ -55,7 +55,7 @@ function RawGeneListHeatmap({
       rowCentering: heatmapRowCentering,
       sortColumns: false,
       setShowError,
-      setErrorContent,
+      setError,
       colorMin,
       colorMax
     })

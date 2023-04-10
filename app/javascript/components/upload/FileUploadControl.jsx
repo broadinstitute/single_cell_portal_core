@@ -61,13 +61,23 @@ export default function FileUploadControl({
   let inputAcceptExts = allowedFileExts
   if (navigator.platform.includes('Mac')) {
     // A longstanding OS X file picker limitation is that compound extensions (e.g. .txt.gz)
-    // will not resolve at all, so we need to add the general .gz to permit gzipped files
-    // see, e.g. https://bugs.chromium.org/p/chromium/issues/detail?id=521781
-    inputAcceptExts = [...allowedFileExts, '.gz']
+    // will not resolve at all, so we need to add the general .gz to permit gzipped files,
+    // see e.g. https://bugs.chromium.org/p/chromium/issues/detail?id=521781
+    //
+    // As of Chrome 111 on Mac, compound extensions with gz not only don't resolve, they
+    // instantly crash the user's web browser.
+    const allowedExtsWithoutCompounds =
+      allowedFileExts.filter(ext => {
+        return (ext.match(/\./g) || []).length === 1 // Files with 1 extension
+      })
+
+    // Allow any file that ends in .gz.  Still allows compounds extensions for upload, but
+    // merely checks against a less precise list of allowed extensions.
+    inputAcceptExts = [...allowedExtsWithoutCompounds, '.gz']
   }
 
   if (file.serverFile?.parse_status === 'failed') {
-    // if the parse has failed, this filemight be deleted at any minute.  Just show the name, and omit any controls
+    // if the parse has failed, this file might be deleted at any minute.  Just show the name, and omit any controls
     return <div>
       <label>
         { !file.uploadSelection && <h5 data-testid="file-uploaded-name">{file.upload_file_name}</h5> }
@@ -96,7 +106,8 @@ export default function FileUploadControl({
           type="file"
           id={inputId}
           onChange={handleFileSelection}
-          accept={inputAcceptExts.join(',')}/>
+          accept={inputAcceptExts}
+        />
       </button>
     }
 

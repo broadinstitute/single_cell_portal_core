@@ -101,8 +101,10 @@ Rails.application.configure do
   # prevent emails from going to anyone except the developer
   class DeveloperMailInterceptor
     # send all emails to the developer's git email address
+    # will use the "QA email" config as a fallback, since the git email isn't available if running Dockerized
     def self.delivering_email(message)
       email_target = nil
+      qa_email = AdminConfiguration.find_by(config_type: 'QA Dev Email')&.value
       begin
         email_target = `git config user.email`.strip
       rescue
@@ -112,6 +114,8 @@ Rails.application.configure do
       # if we have a valid developer email, use it
       if email_target.present? && email_target.include?('@')
         message.to = email_target
+      elsif email_target.blank? && qa_email.present?
+        message.to = qa_email
       else
         # otherwise, don't send at all
         message.perform_deliveries = false

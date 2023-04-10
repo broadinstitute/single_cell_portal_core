@@ -5,7 +5,7 @@ import { morpheusErrorHandler } from '~/lib/error-message'
 /** Render Morpheus heatmap */
 export function renderHeatmap({
   target, expressionValuesURL, annotationCellValuesURL, annotationName,
-  fit, rowCentering, sortColumns=true, setShowError, setErrorContent, genes, colorMin, colorMax
+  fit, rowCentering, sortColumns=true, setShowError, setError, genes, colorMin, colorMax
 }) {
   const $target = $(target)
   $target.empty()
@@ -14,7 +14,7 @@ export function renderHeatmap({
     dataset: expressionValuesURL,
     el: $target,
     menu: null,
-    error: morpheusErrorHandler($target, setShowError, setErrorContent),
+    error: morpheusErrorHandler($target, setShowError, setError),
     colorScheme: {
       scalingMode: rowCentering !== '' ? 'fixed' : 'relative',
       stepped: false

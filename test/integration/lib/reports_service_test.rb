@@ -25,6 +25,19 @@ class ReportsServiceTest < ActiveSupport::TestCase
                                                },
                                                name: 'expression.txt',
                                                study: @basic_study)
+    @study_cluster_file = FactoryBot.create(
+      :cluster_file,
+      name: 'clusterA.txt',
+      study: @basic_study,
+      cell_input: { x: [1, 4, 6], y: [7, 5, 3], cells: %w[A B C D] },
+      annotation_input: [{ name: 'foo', type: 'group', values: %w[bar bar baz baz] }]
+    )
+
+    @de_result = DifferentialExpressionResult.create(
+      study: @basic_study, cluster_group: @basic_study.cluster_groups.by_name('clusterA.txt'),
+      matrix_file_id: @study_expression_file.id, annotation_name: 'foo', annotation_scope: 'cluster',
+      observed_values: %w[bar baz]
+    )
   end
 
   test 'study_data return array of hashes with correct study information' do
@@ -55,9 +68,28 @@ class ReportsServiceTest < ActiveSupport::TestCase
     assert basic_study_row[:last_public] > last_public_time
   end
 
+  test 'differential_expression report contains correct info' do
+    report_data = ReportsService.differential_expression_report
+    de_entry = report_data.first
+    ReportsService::REPORTS[:differential_expression][:data_columns].each do |attribute_name|
+      # timestamp comparison is not useful as milliseconds get floored and won't match
+      next if attribute_name == :created_at
+
+      reported_value = de_entry[attribute_name]
+      reference = attribute_name == :accession ? @basic_study : @de_result
+      assert_equal reference.send(attribute_name), reported_value
+    end
+  end
+
   test 'get_report returns tsv' do
-    report_string = ReportsService.get_report_data('studies')
+    report_string = ReportsService.get_report_data('studies', view_context: false)
     assert report_string.starts_with?(ReportsService::REPORTS[:studies][:data_columns].join("\t"))
     assert report_string.include?(@user.email)
+
+    report_string = ReportsService.get_report_data('differential_expression', view_context: false)
+    assert report_string.starts_with?(ReportsService::REPORTS[:differential_expression][:data_columns].join("\t"))
+    assert report_string.include?('foo')
+    assert report_string.include?('bar, baz')
+    assert report_string.include?('clusterA.txt')
   end
 end

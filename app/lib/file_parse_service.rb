@@ -2,7 +2,7 @@
 # also includes option return status object when being called from Api::V1::StudyFilesController
 class FileParseService
   # * *params*
-  #   - +study_file+       (StudyFile) => File being parsed
+  #   - +study_file+      (StudyFile) => File being parsed
   #   - +study+           (Study) => Study to which StudyFile belongs
   #   - +user+            (User) => User initiating parse action (for email delivery)
   #   - +reparse+         (Boolean) => Control for deleting existing data when initiating parse (default: false)
@@ -13,6 +13,7 @@ class FileParseService
   def self.run_parse_job(study_file, study, user, reparse: false, persist_on_fail: false)
     logger = Rails.logger
     logger.info "#{Time.zone.now}: Parsing #{study_file.name} as #{study_file.file_type} in study #{study.name}"
+    do_anndata_file_ingest = FeatureFlaggable.feature_flags_for_instances(user, study)['ingest_anndata_file']
     if !study_file.parseable?
       return {
           status_code: 422,
@@ -27,8 +28,7 @@ class FileParseService
       self.create_bundle_from_file_options(study_file, study)
       case study_file.file_type
       when 'Cluster'
-        job = IngestJob.new(study: study, study_file: study_file, user: user, action: :ingest_cluster, reparse: reparse,
-                            persist_on_fail: persist_on_fail)
+        job = IngestJob.new(study:, study_file:, user:, action: :ingest_cluster, reparse:, persist_on_fail:)
         job.delay.push_remote_and_launch_ingest
         # check if there is a coordinate label file waiting to be parsed
         # must reload study_file object as associations have possibly been updated
@@ -37,25 +37,23 @@ class FileParseService
           study_file.bundled_files.each do |coordinate_file|
             # pre-emptively set parse_status to prevent initialize_coordinate_label_data_arrays from failing due to race condition
             study_file.update(parse_status: 'parsing')
-            study.delay.initialize_coordinate_label_data_arrays(coordinate_file, user, {reparse: reparse})
+            study.delay.initialize_coordinate_label_data_arrays(coordinate_file, user, { reparse: })
           end
         end
       when 'Coordinate Labels'
         if study_file.has_completed_bundle?
-          ParseUtils.delay.initialize_coordinate_label_data_arrays(study, study_file, user, {reparse: reparse})
+          ParseUtils.delay.initialize_coordinate_label_data_arrays(study, study_file, user, { reparse: })
         else
           return self.missing_bundled_file(study_file)
         end
       when 'Expression Matrix'
-        job = IngestJob.new(study: study, study_file: study_file, user: user, action: :ingest_expression, reparse: reparse,
-                            persist_on_fail: persist_on_fail)
+        job = IngestJob.new(study:, study_file:, user:, action: :ingest_expression, reparse:, persist_on_fail:)
         job.delay.push_remote_and_launch_ingest
       when 'MM Coordinate Matrix'
         study_file.reload
         if study_file.has_completed_bundle?
           study_file.bundled_files.update_all(parse_status: 'parsing')
-          job = IngestJob.new(study: study, study_file: study_file, user: user, action: :ingest_expression, reparse: reparse,
-                              persist_on_fail: persist_on_fail)
+          job = IngestJob.new(study:, study_file:, user:, action: :ingest_expression, reparse:, persist_on_fail:)
           job.delay.push_remote_and_launch_ingest
         else
           study.delay.send_to_firecloud(study_file) if study_file.is_local?
@@ -69,8 +67,7 @@ class FileParseService
           bundle = study_file.study_file_bundle
           matrix = bundle.parent
           bundle.study_files.update_all(parse_status: 'parsing')
-          job = IngestJob.new(study: study, study_file: matrix, user: user, action: :ingest_expression, reparse: reparse,
-                              persist_on_fail: persist_on_fail)
+          job = IngestJob.new(study:, study_file: matrix, user:, action: :ingest_expression, reparse:, persist_on_fail:)
           job.delay.push_remote_and_launch_ingest
         else
           return self.missing_bundled_file(study_file)
@@ -85,8 +82,7 @@ class FileParseService
             studyFileName: study_file.name
           }, user)
         end
-        job = IngestJob.new(study: study, study_file: study_file, user: user, action: :ingest_cell_metadata, reparse: reparse,
-                            persist_on_fail: persist_on_fail)
+        job = IngestJob.new(study:, study_file:, user:, action: :ingest_cell_metadata, reparse:, persist_on_fail:)
         job.delay.push_remote_and_launch_ingest
       when 'Analysis Output'
         case @study_file.options[:analysis_name]
@@ -97,7 +93,35 @@ class FileParseService
         else
           Rails.logger.info "Aborting parse of #{@study_file.name} as #{@study_file.file_type} in study #{@study.name}; not applicable"
         end
+      when 'AnnData'
+        # create AnnDataFileInfo document so that it is present to be updated later on ingest completion
+        if study_file.ann_data_file_info.nil?
+          study_file.build_ann_data_file_info
+          study_file.save
+        end
+
+        # enable / disable full ingest of AnnData files using the feature flag 'ingest_anndata_file'
+        # will ignore reference AnnData files (includes previously uploaded files) as the default for
+        # ann_data_file_info.reference_file is true legacy files were covered in data migration
+        if do_anndata_file_ingest && !study_file.is_reference_anndata?
+          params_object = AnnDataIngestParameters.new(
+            anndata_file: study_file.gs_url, obsm_keys: study_file.ann_data_file_info.obsm_key_names
+          )
+          # TODO extract and parse Processed Exp Data (SCP-4709)
+          # TODO extract and parse Raw Exp Data (SCP-4710)
+        else
+          # setting attributes to false/nil will omit them from the command line later
+          # values are interchangeable but are more readable depending on parameter type
+          params_object = AnnDataIngestParameters.new(
+            anndata_file: study_file.gs_url, extract: nil, obsm_keys: nil
+          )
+        end
+        job = IngestJob.new(
+          study:, study_file:, user:, action: :ingest_anndata, reparse:, persist_on_fail:, params_object:
+        )
+        job.delay.push_remote_and_launch_ingest
       end
+
       study_file.update(parse_status: 'parsing')
       changes = ["Study file added: #{study_file.upload_file_name}"]
       if study.study_shares.any?
@@ -170,6 +194,44 @@ class FileParseService
       end
     rescue => e
       ErrorTracker.report_exception(e, nil, study)
+    end
+  end
+
+  # gzip a local file on server (if necessary) in preparation for pushing to GCS bucket
+  #
+  # * *params*
+  #   - +study_file+ (StudyFile) => recently uploaded file
+  #
+  # * *returns*
+  #   - (Boolean) => T/F on whether file was gzipped in-place
+  def self.compress_file_for_upload(study_file)
+    file_location = study_file.local_location.to_s
+    study = study_file.study
+
+    begin
+      if study_file.can_gzip?
+        Rails.logger.info "Performing gzip on #{study_file.upload_file_name}:#{study_file.id}"
+        # Compress all uncompressed files before upload.
+        # This saves time on upload and download, and money on egress and storage.
+        gzip_filepath = "#{file_location}.tmp.gz"
+        Zlib::GzipWriter.open(gzip_filepath) do |gz|
+          File.open(file_location, 'rb').each do |line|
+            gz.write line
+          end
+          gz.close
+        end
+        File.rename gzip_filepath, file_location
+        true
+      else
+        # log that file is already compressed
+        log_message = "skipping gzip (file_type: #{study_file.file_type}, is_gzipped: #{study_file.gzipped?})"
+        Rails.logger.info "#{study_file.upload_file_name}:#{study_file.id} #{log_message}, direct uploading"
+        false
+      end
+    rescue ArgumentError => e
+      # handle 'negative string size (or size too big)' error
+      ErrorTracker.report_exception(e, nil, study, study_file)
+      false
     end
   end
 end

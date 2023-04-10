@@ -17,7 +17,14 @@ jest.mock('components/visualization/InferCNVIdeogram', () => {
   }
 })
 
-import { getEnabledTabs } from 'components/explore/ExploreDisplayTabs'
+import React from 'react'
+import { render } from '@testing-library/react'
+import * as UserProvider from '~/providers/UserProvider'
+import ExploreDisplayTabs, { getEnabledTabs } from 'components/explore/ExploreDisplayTabs'
+import {
+  exploreInfo as exploreInfoDe,
+  exploreParams as exploreParamsDe
+} from './explore-tab-de-integration.test-data'
 import '@testing-library/jest-dom/extend-expect'
 
 // mock explore info from a study
@@ -281,5 +288,25 @@ describe('explore tabs are activated based on study info and parameters', () => 
     }
 
     expect(expectedResults).toEqual(getEnabledTabs(exploreInfo, exploreParams))
+  })
+
+  it('shows "Differential expression" button when clustering (but not current annotation) has DE results', async () => {
+    jest
+      .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
+      .mockReturnValue({
+        differential_expression_frontend: true
+      })
+
+    const {container} = render((
+      <ExploreDisplayTabs
+        studyAccession={"SCP123"}
+        exploreParams={exploreParamsDe}
+        exploreParamsWithDefaults={exploreParamsDe}
+        exploreInfo={exploreInfoDe}
+      />
+    ))
+
+    const deButton = container.querySelector('.differential-expression-nondefault')
+    expect(deButton).toHaveTextContent('Differential expression')
   })
 })

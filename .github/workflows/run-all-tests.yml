@@ -5,6 +5,8 @@ on:
       - development
       - master
   pull_request:
+env:
+  DOCKER_IMAGE_NAME: "gcr.io/broad-singlecellportal-staging/single-cell-portal"
 
 jobs:
   Run-All-Tests:
@@ -19,6 +21,19 @@ jobs:
           sudo curl -O https://releases.hashicorp.com/vault/1.9.0/vault_1.9.0_linux_amd64.zip
           sudo unzip vault_1.9.0_linux_amd64.zip
           sudo mv vault /usr/local/bin
+      - name: Detect changes to Dockerfile
+        id: changed-dockerfile
+        uses: tj-actions/changed-files@v35.4.4
+        with:
+          files: Dockerfile
+      - name: Rebuild local image if Dockerfile changed
+        if: steps.changed-dockerfile.outputs.any_changed == 'true'
+        run: |
+          # the previous step uses the changed-files action to detect if the Dockerfile has any updates
+          # this will require rebuilding the image locally as the downstream "test" image will fail otherwise
+          # see https://github.com/marketplace/actions/changed-files for more info on this action
+          echo "#### CHANGES DETECTED TO DOCKERFILE, REBUILDING IMAGE LOCALLY ####"
+          docker build -t $DOCKER_IMAGE_NAME:development -f Dockerfile .
       - name: Load secrets and run tests
         env:
           VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
@@ -34,7 +49,6 @@ jobs:
           # upcoming release, e.g. 1.20.0.
           # More context: https://github.com/broadinstitute/single_cell_portal_core/pull/1552#discussion_r910424433
           # TODO: (SCP-4496): Move production-related GCR images out of staging project
-          DOCKER_IMAGE_NAME="gcr.io/broad-singlecellportal-staging/single-cell-portal"
           # add ci- prefix to avoid post-merge build failing due to missing GITHUB_HEAD_REF
           # and strip any slashes from GITHUB_HEAD_REF to avoid 'invalid reference format' error with tag
           # this will happen on dependabot PRs

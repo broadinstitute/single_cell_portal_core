@@ -139,7 +139,7 @@ class StudyFileBundle
 
   # child/dependent files in this bundle
   def bundled_files
-    self.study_files.where(:id.ne => self.parent.id)
+    self.study_files.where(:id.ne => self.parent&.id)
   end
 
   def file_types

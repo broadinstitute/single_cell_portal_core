@@ -32,7 +32,7 @@
     "core-js": "^3.6.4",
     "exifreader": "4.6.0",
     "fflate": "^0.7.3",
-    "ideogram": "git+https://github.com/eweitz/ideogram.git#9ff45c120e904ac76b8e65673eeee4d610e6b9a4",
+    "ideogram": "1.41.0",
     "jquery": "3.5.1",
     "jquery-ui": "1.13.2",
     "morpheus-app": "1.0.18",

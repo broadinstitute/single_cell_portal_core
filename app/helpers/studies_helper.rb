@@ -1,7 +1,11 @@
 module StudiesHelper
   # formatted label for boolean values
   def get_boolean_label(field)
-    field ? "<span class='fas fa-check text-success'></span>".html_safe : "<span class='fas fa-times text-danger'></span>".html_safe
+    if field.nil?
+      "<span class='label label-default'>N/A</span>".html_safe
+    else
+      field ? "<span class='fas fa-check text-success'></span>".html_safe : "<span class='fas fa-times text-danger'></span>".html_safe
+    end
   end
 
   # formatted label for parse status of uploaded files

@@ -77,7 +77,7 @@ class ClusterVizServiceTest < ActiveSupport::TestCase
 
   test 'should load all clusters' do
     # expect to return all non-spatial cluster names
-    clusters = @study.study_files.where(:is_spatial.ne => true, file_type: 'Cluster').pluck(:name)
+    clusters = @study.clustering_files.where(:is_spatial.ne => true).pluck(:name)
     all_clusters = ClusterVizService.load_cluster_group_options(@study)
     assert_equal clusters, all_clusters, "Did not load correct clusters; #{clusters} != #{all_clusters}"
   end
@@ -241,5 +241,24 @@ class ClusterVizServiceTest < ActiveSupport::TestCase
       baz: %w[C]
     }.with_indifferent_access
     assert_equal cluster_map, ClusterVizService.cells_by_annotation_label(cluster, 'Category', 'cluster')
+  end
+
+  test 'should retrieve clustering information for AnnData files' do
+    cluster_name = 'x_tsne'
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'AnnData Cluster Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    FactoryBot.create(:ann_data_file,
+                      name: 'data.h5ad',
+                      study:,
+                      cell_input: %w[A B C D],
+                      annotation_input: [
+                        { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                      ],
+                      coordinate_input: [
+                        { cluster_name => { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                      ])
+    assert_equal [cluster_name], ClusterVizService.load_cluster_group_options(study)
   end
 end

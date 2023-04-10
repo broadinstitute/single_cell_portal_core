@@ -1,0 +1,90 @@
+attribute	required	type	array	class	ontology	ontology_browser_url	ontology_root	controlled_list_entries	dependency	dependency_condition	dependent	attribute_description
+biosample_id	Yes	string										Biosample ID
+CellID	Yes	string										Cell ID
+disease	Yes	string	TRUE	ontology	https://www.ebi.ac.uk/ols/api/ontologies/mondo,https://www.ebi.ac.uk/ols/api/ontologies/pato	https://www.ebi.ac.uk/ols/ontologies/mondo,https://www.ebi.ac.uk/ols/ontologies/pato	MONDO_0000001					The disease state(s) of the individual donating the sample at the time of donation
+disease__ontology_label	Yes	string	TRUE	ontology_label					disease			disease__ontology_label
+donor_id	Yes	string										Donor ID
+library_preparation_protocol	Yes	string		ontology	https://www.ebi.ac.uk/ols/api/ontologies/efo	https://www.ebi.ac.uk/ols/ontologies/efo	OBI_0000711					The single cell RNA-sequencing protocol used for Library preparation
+library_preparation_protocol__ontology_label	Yes	string		ontology_label					library_preparation_protocol			library_preparation_protocol__ontology_label
+organ	Yes	string		ontology	https://www.ebi.ac.uk/ols/api/ontologies/uberon	https://www.ebi.ac.uk/ols/ontologies/uberon	UBERON_0000465					The organ that the biomaterial came from
+organ__ontology_label	Yes	string		ontology_label					organ			organ__ontology_label
+sex	Yes	string		enum				"[""male"", ""female"", ""mixed"", ""unknown""]"				Biological sex
+species	Yes	string		ontology	https://www.ebi.ac.uk/ols/api/ontologies/ncbitaxon	https://www.ebi.ac.uk/ols/ontologies/ncbitaxon	NCBITaxon_2759					The scientific binomial name for the species of the organism.
+species__ontology_label	Yes	string		ontology_label					species			species__ontology_label
+biosample_type		string		enum				"[""CellLine"",""DerivedType_Organoid"",""DerivedType_InVitroDifferentiated"",""DerivedType_InducedPluripotentStemCell"",""PrimaryBioSample"",""PrimaryBioSample_BodyFluid"",""PrimaryBioSample_CellFreeDNA"",""PrimaryBioSample_PrimaryCell"",""PrimaryBioSample_PrimaryCulture"",""PrimaryBioSample_Stool"",""PrimaryBioSample_Tissue""]"				Type of Biosample
+bmi		number										BMI of organism
+cell_type		string		ontology	https://www.ebi.ac.uk/ols/api/ontologies/cl	https://www.ebi.ac.uk/ols/ontologies/cl	CL_0000548					Cell type name determined via unsupervised clustering and marker genes
+cell_type__ontology_label		string		ontology_label					cell_type			cell_type__ontology_label
+cell_type__custom		string										cell_type__custom
+culture_duration		number								sample_type in cell line, organoid, cultured primary cells	culture_duration__unit	length of time cells have been in culture
+culture_duration__unit		string		ontology	https://www.ebi.ac.uk/ols/api/ontologies/uo	https://www.ebi.ac.uk/ols/ontologies/uo	UO_0000003		culture_duration			culture_duration__unit
+culture_duration__unit_label		string		unit_label					culture_duration__unit			culture_duration__unit_label
+development_stage		string		ontology	http://www.ebi.ac.uk/ols/api/ontologies/hsapdv	http://www.ebi.ac.uk/ols/ontologies/hsapdv						A classification of the developmental stage of the organism
+development_stage__ontology_label		string		ontology_label					development_stage			development_stage__ontology_label
+disease__intracellular_pathogen		string	TRUE	ontology	https://www.ebi.ac.uk/ols/api/ontologies/mondo	https://www.ebi.ac.uk/ols/ontologies/mondo	MONDO_0005550		disease			If evidence of a pathogen is detected in this cell
+disease__intracellular_pathogen__ontology_label		string	TRUE	ontology_label					disease__intracellular_pathogen			disease__intracellular_pathogen__ontology_label
+disease__time_since_onset		number	TRUE						disease		disease__time_since_onset__unit	Amount of time since disease onset
+disease__time_since_onset__unit		string		ontology	https://www.ebi.ac.uk/ols/api/ontologies/uo	https://www.ebi.ac.uk/ols/ontologies/uo	UO_0000003		disease__time_since_onset			disease__time_since_onset__unit
+disease__time_since_onset__unit_label		string		unit_label					disease__time_since_onset__unit			disease__time_since_onset__unit_label
+disease__time_since_treatment_start		number	TRUE						disease__treatment		disease__time_since_treatment_start__unit	Amount of time since treatment was started (for drugs/continuous treatment) or performed (for surgery/immediate intervention)
+disease__time_since_treatment_start__unit		string		ontology	https://www.ebi.ac.uk/ols/api/ontologies/uo	https://www.ebi.ac.uk/ols/ontologies/uo	UO_0000003		disease__time_since_treatment_start			disease__time_since_treatment_start__unit
+disease__time_since_treatment_start__unit_label		string		unit_label					disease__time_since_treatment_start__unit			disease__time_since_treatment_start__unit_label
+disease__treated		boolean	TRUE						disease			If the donor was treated at the time the sample was collected
+disease__treatment		string	TRUE						disease__treated			A description of the treatment given to this donor
+end_bias		string		enum				"[""3 prime tag"", ""3 prime end bias"", ""5 prime tag"", ""5 prime end bias"", ""full length""]"				The end bias of the library preparation protocol used
+enrichment__cell_type		string		ontology	https://www.ebi.ac.uk/ols/api/ontologies/cl	https://www.ebi.ac.uk/ols/ontologies/cl	CL_0000548		enrichment_method			The cell type that was sorted via an enrichment technique such as flow cytometry.
+enrichment__cell_type__ontology_label		string		ontology_label					enrichment__cell_type			enrichment__cell_type__ontology_label
+enrichment__facs_markers		string	TRUE						enrichment_method			The surface markers that were sorted on to enrich for the enriched cell type if flow cytometry was used
+enrichment_method		string	TRUE	enum				"[""cell size selection"", ""fluorescence-activated cell sorting"", ""magnetic affinity cell sorting"", ""laser capture microdissection"", ""density gradient centrifugation"", ""Ficoll-Hypaque method"", ""enrichment of methylated DNA""]"				Method used to enrich cells before running library preparation. This could be flow cytometry, column enrichments, etc.
+ethnicity		string	TRUE	ontology	https://www.ebi.ac.uk/ols/api/ontologies/hancestro	https://www.ebi.ac.uk/ols/ontologies/hancestro	HANCESTRO:0004			species == NCBITaxon_9606		The ethnicity or ethnicities of the human donor if known
+ethnicity__ontology_label		string	TRUE	ontology_label					ethnicity			ethnicity__ontology_label
+gene_perturbation		string	TRUE	ontology	https://www.ebi.ac.uk/ols/api/ontologies/ogg	https://www.ebi.ac.uk/ols/ontologies/ogg	OGG_0000000002					A perturbation to a gene done to a cell culture
+gene_perturbation__direction		string		enum				"[""knock in"", ""knock out"",""activation"",""repression""]"	gene_perturbation			The type of perturbation of the gene defined in gene_perturbation. Knock in and knock out are complete additions/depletions of the gene, activation and repression refer to changes in magnitude of expression.
+gene_perturbation__dynamics		string							gene_perturbation			Description of the timing with respect to sequencing and other logistical considerations of the gene perturbation
+gene_perturbation__method		string	TRUE						gene_perturbation			Process by which the gene was perturbed. Ex. CRISPR knock-out
+gene_perturbation__ontology_label		string	TRUE	ontology_label					gene_perturbation			gene_perturbation__ontology_label
+geographical_region		string		ontology	https://www.ebi.ac.uk/ols/api/ontologies/gaz	https://www.ebi.ac.uk/ols/ontologies/gaz	GAZ_00000013					Location where the sample was collected/donated
+geographical_region__ontology_label		string		ontology_label					geographical_region			geographical_region__ontology_label
+growth_factor_perturbation		string	TRUE	ontology	https://www.ebi.ac.uk/ols/api/ontologies/pr	https://www.ebi.ac.uk/ols/ontologies/pr	PR_000000001			sample_type in cell line, organoid, cultured primary cells		a growth factor added to a cell culture media
+growth_factor_perturbation__concentration		number	TRUE						growth_factor_perturbation		growth_factor_perturbation__concentration__unit	Concentration of of each growth factor in the final tissue culture media. Order should be consistent with growth_factor_perturbation
+growth_factor_perturbation__concentration__unit		string		ontology	https://www.ebi.ac.uk/ols/api/ontologies/uo	https://www.ebi.ac.uk/ols/ontologies/uo	UO_0000003		growth_factor_perturbation__concentration			growth_factor_perturbation__concentration__unit
+growth_factor_perturbation__concentration__unit_label		string		unit_label					growth_factor_perturbation__concentration__unit			growth_factor_perturbation__concentration__unit_label
+growth_factor_perturbation__ontology_label		string	TRUE	ontology_label					growth_factor_perturbation			growth_factor_perturbation__ontology_label
+growth_factor_perturbation__solvent		string	TRUE						growth_factor_perturbation			Solvent in which the growth factor was added to the cells. Ex. the base media.
+growth_factor_perturbation__source		string	TRUE						growth_factor_perturbation			Source from which the growth factor was purchased
+is_living		string		enum				"[""yes"", ""no"", ""unknown""]"				Whether organism was alive at time of biomaterial collection
+mhc_genotype		string										MHC genotype for humans and other species
+mouse_strain		string		ontology	https://www.ebi.ac.uk/ols/api/ontologies/ncit	https://www.ebi.ac.uk/ols/ontologies/ncit	"NCIT_C14420 "			species == NCBITaxon_10090		Mouse strain of the donor organism (ex. C57BL/6, BALB/c, 129, undetermined)
+mouse_strain__ontology_label		string		ontology_label					mouse_strain			mouse_strain__ontology_label
+number_of_reads		number										Number of reads mapped to that cell
+organ_region		string	TRUE	ontology	https://api.brain-map.org/api/v2/structure_graph_download/1.json	http://atlas.brain-map.org/atlas?atlas=602630314						organ_region
+organ_region__ontology_label		string	TRUE	ontology_label					organ_region			organ_region__ontology_label
+organism_age		number									organism_age__unit	Age of the organism at time of sample collection.
+organism_age__unit		string		ontology	https://www.ebi.ac.uk/ols/api/ontologies/uo	https://www.ebi.ac.uk/ols/ontologies/uo	UO_0000003		organism_age			organism_age__unit
+organism_age__unit_label		string		unit_label					organism_age__unit			organism_age__unit_label
+paired_ends		boolean										true if the sequence library has paired end data (false for 10x)
+preservation_method		string		enum				"[""Cryopreservation"",""FFPE"",""Fresh"",""Frozen"",""OCT-embedded"",""Snap Frozen""]"				Method used for sample preservation
+primer		string		enum				"[""poly-dT"",""random""]"				Primer used for cDNA synthesis from RNA
+race		string	TRUE	ontology	https://www.ebi.ac.uk/ols/api/ontologies/ncit	https://www.ebi.ac.uk/ols/ontologies/ncit	NCIT:C17049			species == NCBITaxon_9606		An arbitrary classification of a taxonomic group that is a division of a species
+race__ontology_label		string	TRUE	ontology_label					race			race__ontology_label
+read_length		string										the read structure of the sequencing run
+sequencing_instrument_manufacturer_model		string		ontology	https://www.ebi.ac.uk/ols/api/ontologies/efo	https://www.ebi.ac.uk/ols/ontologies/efo	EFO_0003739					name of sequencing instrument manufacturer
+sequencing_instrument_manufacturer_model__ontology_label		string		ontology_label					sequencing_instrument_manufacturer_model			sequencing_instrument_manufacturer_model__ontology_label
+small_molecule_perturbation		string	TRUE	ontology	https://www.ebi.ac.uk/ols/api/ontologies/chebi	https://www.ebi.ac.uk/ols/ontologies/chebi	CHEBI_24431					a small molecule added to a cell culture (ex. A drug) growth factor (and if it is recombinant, concentration), gene)
+small_molecule_perturbation__concentration		number	TRUE						small_molecule_perturbation		small_molecule_perturbation__concentration__unit	Concentration of each small molecule in the final tissue culture media. Order should be consistent with small_molecule_perturbation
+small_molecule_perturbation__concentration__unit		string		ontology	https://www.ebi.ac.uk/ols/api/ontologies/uo	https://www.ebi.ac.uk/ols/ontologies/uo	UO_0000003		small_molecule_perturbation__concentration			small_molecule_perturbation__concentration__unit
+small_molecule_perturbation__concentration__unit_label		string		unit_label					small_molecule_perturbation__concentration__unit			small_molecule_perturbation__concentration__unit_label
+small_molecule_perturbation__ontology_label		string	TRUE	ontology_label					small_molecule_perturbation			small_molecule_perturbation__ontology_label
+small_molecule_perturbation__solvent		string	TRUE						small_molecule_perturbation			Solvent in which the small molecule was added to the cells. Ex. the base media.
+small_molecule_perturbation__source		string	TRUE						small_molecule_perturbation			Source from which the small molecule was purchased
+spike_in_concentration		string							spike_in_kit			spike in concentration
+spike_in_kit		string										name of spike in kit
+strand		string		enum				"[""first"",""second"",""unstranded""]"				library strandedness
+vaccination		string	TRUE	ontology	https://www.ebi.ac.uk/ols/api/ontologies/vo	https://www.ebi.ac.uk/ols/ontologies/vo	VO_0000001					Any known vaccines administered to the donor organism. NOT a full vaccine history
+vaccination__adjuvants		string	TRUE						vaccination			Any adjuvants administered in the vaccine
+vaccination__dosage		string	TRUE						vaccination			The dosage and units for the vaccine
+vaccination__ontology_label		string	TRUE	ontology_label					vaccination			vaccination__ontology_label
+vaccination__route		string	TRUE	enum				"[""intradermal"", ""intranasal"", ""intravenous"", ""aerosol"", ""intramuscular"", ""mucosal"", ""oral""]"	vaccination			Intradermal, Intranasal, Intravenous, Aerosol
+vaccination__time_since		number	TRUE						vaccination		vaccination__time_since__unit	Amount of time since vaccine was administered
+vaccination__time_since__unit		string		ontology	https://www.ebi.ac.uk/ols/api/ontologies/uo	https://www.ebi.ac.uk/ols/ontologies/uo	UO_0000003		vaccination__time_since			Time since each vaccine in the vaccination field was administered
+vaccination__time_since__unit_label		string		unit_label					vaccination__time_since__unit			vaccination__time_since__unit_label

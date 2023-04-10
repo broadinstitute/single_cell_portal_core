@@ -246,7 +246,7 @@ function CreateAnnotation({
         <Modal.Footer>
           <button className="btn btn-md btn-primary" onClick={() => {
             setShowResponseModal(false)
-          }}>Ok</button>
+          }}>OK</button>
         </Modal.Footer>
       </Modal>
     </div>

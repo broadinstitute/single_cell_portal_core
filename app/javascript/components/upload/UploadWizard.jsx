@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react'
+
 import _cloneDeep from 'lodash/cloneDeep'
 import _isMatch from 'lodash/isMatch'
 import { ReactNotifications, Store } from 'react-notifications-component'
@@ -35,27 +36,46 @@ import MiscellaneousStep from './MiscellaneousStep'
 import SequenceFileStep from './SequenceFileStep'
 import GeneListStep from './GeneListStep'
 import LoadingSpinner from '~/lib/LoadingSpinner'
-import AnnDataStep from './AnnDataStep'
+import AnnDataStep, { AnnDataFileFilter } from './AnnDataStep'
+import AnnDataUploadStep from './AnnDataUploadStep'
 import SeuratStep from './SeuratStep'
+import UploadExperienceSplitter from './UploadExperienceSplitter'
+import AnnDataExpressionStep from './AnnDataExpressionStep'
 
 
 const POLLING_INTERVAL = 10 * 1000 // 10 seconds between state updates
 const CHUNK_SIZE = 10000000 // 10 MB
-const STEPS = [
+
+const ALL_POSSIBLE_STEPS = [
   RawCountsStep,
   ProcessedExpressionStep,
   MetadataStep,
   ClusteringStep,
+  AnnDataUploadStep,
   SpatialStep,
   CoordinateLabelStep,
   SequenceFileStep,
   GeneListStep,
-  MiscellaneousStep
+  MiscellaneousStep,
+  SeuratStep,
+  AnnDataStep,
+  ImageStep
 ]
 
-const MAIN_STEPS = STEPS.slice(0, 4)
-const SUPPLEMENTAL_STEPS = STEPS.slice(4, 8)
-const NON_VISUALIZABLE_STEPS = STEPS.slice(8)
+// These steps remain the same for both classic and AnnData upload experiences
+const MAIN_STEPS_CLASSIC = [
+  RawCountsStep,
+  ProcessedExpressionStep,
+  MetadataStep,
+  ClusteringStep
+]
+
+const MAIN_STEPS_ANNDATA = [
+  AnnDataExpressionStep,
+  MetadataStep,
+  ClusteringStep,
+  AnnDataUploadStep
+]
 
 /** shows the upload wizard */
 export function RawUploadWizard({ studyAccession, name }) {
@@ -67,33 +87,43 @@ export function RawUploadWizard({ studyAccession, name }) {
   // this context
   const studyObj = serverState?.study
 
+
+  // used for toggling between the split view for the upload experiences
+  const [choiceMade, setChoiceMade] = useState(false)
   const allowReferenceImageUpload = serverState?.feature_flags?.reference_image_upload
+  // used for toggling between classic and AnnData experience of upload wizard
+  const [isAnnDataExperience, setIsAnnDataExperience] = useState(
+    formState?.files?.filter(AnnDataFileFilter)?.length > 0 &&
+    serverState?.feature_flags?.ingest_anndata_file
+  )
 
+  let MAIN_STEPS
+  let SUPPLEMENTAL_STEPS
+  let NON_VISUALIZABLE_STEPS
 
-  if (!STEPS.includes(AnnDataStep)) {
-    STEPS.splice(8, 0, AnnDataStep)
-    NON_VISUALIZABLE_STEPS.splice(0, 0, AnnDataStep)
+  // set the additional steps to display, based on classic or AnnData experience
+  if (isAnnDataExperience) {
+    MAIN_STEPS = MAIN_STEPS_ANNDATA
+    SUPPLEMENTAL_STEPS = ALL_POSSIBLE_STEPS.slice(6, 7)
+    NON_VISUALIZABLE_STEPS = ALL_POSSIBLE_STEPS.slice(8, 10)
+  } else {
+    MAIN_STEPS = MAIN_STEPS_CLASSIC
+    SUPPLEMENTAL_STEPS = ALL_POSSIBLE_STEPS.slice(5, 9)
+    NON_VISUALIZABLE_STEPS = ALL_POSSIBLE_STEPS.slice(9, 12)
+    if (allowReferenceImageUpload) {
+      SUPPLEMENTAL_STEPS.splice(1, 0, ImageStep)
+    }
   }
-
-  if (!STEPS.includes(SeuratStep)) {
-    STEPS.splice(9, 0, SeuratStep)
-    NON_VISUALIZABLE_STEPS.splice(1, 0, SeuratStep)
-  }
-
-
-  if (allowReferenceImageUpload && !STEPS.includes(ImageStep)) {
-    STEPS.splice(5, 0, ImageStep)
-    SUPPLEMENTAL_STEPS.splice(1, 0, ImageStep)
-  }
+  const STEPS = MAIN_STEPS.concat(SUPPLEMENTAL_STEPS, NON_VISUALIZABLE_STEPS)
 
   const routerLocation = useLocation()
   const queryParams = queryString.parse(routerLocation.search)
+
   let currentStepIndex = STEPS.findIndex(step => step.name === queryParams.tab)
   if (currentStepIndex < 0) {
     currentStepIndex = 0
   }
   const currentStep = STEPS[currentStepIndex]
-
 
   // go through the files and compute any relevant derived properties, notably 'isDirty'
   if (formState?.files) {
@@ -111,14 +141,21 @@ export function RawUploadWizard({ studyAccession, name }) {
 
   /** move the wizard to the given step tab */
   function setCurrentStep(newStep) {
-    navigate(`?tab=${newStep.name}`)
-    window.scrollTo(0, 0)
+    // for steps in the upload process
+    if (newStep.name) {
+      navigate(`?tab=${newStep.name}`)
+      window.scrollTo(0, 0)
+    }
+    // for the upload data split view
+    else {
+      navigate(newStep)
+    }
   }
 
   /** adds an empty file, merging in the given fileProps. Does not communicate anything to the server
    * By default, will scroll the window to show the new file
    * */
-  function addNewFile(fileProps, scrollToBottom=false) {
+  function addNewFile(fileProps, scrollToBottom = false) {
     const newFile = newStudyFileObj(serverState.study._id.$oid)
     Object.assign(newFile, fileProps)
 
@@ -179,8 +216,12 @@ export function RawUploadWizard({ studyAccession, name }) {
   function updateFile(fileId, updates) {
     setFormState(prevFormState => {
       const newFormState = _cloneDeep(prevFormState)
-      const fileChanged = newFormState.files.find(f => f._id === fileId)
-      if (!fileChanged) { // we're updating a stale/no-longer existent file -- discard it
+      let fileChanged = newFormState.files.find(f => f._id === fileId)
+      if (!fileChanged && isAnnDataExperience) {
+        const annDataFile = newFormState.files.find(f => f.file_type === 'AnnData')
+        const fragments = annDataFile?.ann_data_file_info?.data_fragments || []
+        fileChanged = fragments.find(f => f._id === fileId)
+      } if (!fileChanged) { // we're updating a stale/no-longer existent file -- discard it
         return prevFormState
       }
       ['heatmap_file_info', 'expression_file_info'].forEach(nestedProp => {
@@ -230,6 +271,30 @@ export function RawUploadWizard({ studyAccession, name }) {
   async function saveFile(file) {
     let studyFileId = file._id
 
+    if (isAnnDataExperience) {
+      // enable ingest of data by setting reference_anndata_file = false
+      file['reference_anndata_file'] = false
+      formState.files.forEach(fileFormData => {
+        if (fileFormData.file_type === 'Cluster') {
+          fileFormData.data_type = 'cluster'
+
+          // mulitple clustering forms are allowed so add each as a fragment to the AnnData file
+          const annDataFile = formState.files.find(f => f.file_type === 'AnnData')
+          annDataFile?.ann_data_file_info ? '': annDataFile['ann_data_file_info'] = {}
+          const fragments = annDataFile.ann_data_file_info?.data_fragments || []
+          fragments.push(fileFormData)
+
+          annDataFile.ann_data_file_info.data_fragments = fragments
+        }
+        if (fileFormData.file_type === 'Expression Matrix') {
+          file['extra_expression_form_info'] = fileFormData
+        }
+        if (fileFormData.file_type === 'Metadata') {
+          file['metadata_form_info'] = fileFormData
+        }
+      })
+    }
+
     const fileSize = file.uploadSelection?.size
     const isChunked = fileSize > CHUNK_SIZE
     let chunkStart = 0
@@ -274,7 +339,7 @@ export function RawUploadWizard({ studyAccession, name }) {
         handleSaveResponse(response, false, requestCanceller)
       }
     } catch (error) {
-      Store.addNotification(failureNotification(<span>{file.name} failed to save<br/>{error}</span>))
+      Store.addNotification(failureNotification(<span>{file.name} failed to save<br />{error}</span>))
       updateFile(studyFileId, {
         isSaving: false
       })
@@ -293,7 +358,7 @@ export function RawUploadWizard({ studyAccession, name }) {
         deleteFileFromForm(fileId)
         Store.addNotification(successNotification(`${file.name} deleted successfully`))
       } catch (error) {
-        Store.addNotification(failureNotification(<span>{file.name} failed to delete<br/>{error.message}</span>))
+        Store.addNotification(failureNotification(<span>{file.name} failed to delete<br />{error.message}</span>))
         updateFile(fileId, {
           isDeleting: false
         })
@@ -329,13 +394,14 @@ export function RawUploadWizard({ studyAccession, name }) {
         response.menu_options = oldState.menu_options
         return response
       })
+
       setTimeout(pollServerState, POLLING_INTERVAL)
     }).catch(response => {
       // if the get fails, it's very likely that the error recur on a retry
       // (user's session timed out, server downtime, internet connection issues)
       // so to avoid repeated error messages, show one error, and stop polling
       Store.addNotification(failureNotification(<span>
-        Server connectivity failed--some functions may not be available.<br/>
+        Server connectivity failed--some functions may not be available.<br />
         You may want to reload the page or sign in again.
       </span>))
     })
@@ -345,77 +411,109 @@ export function RawUploadWizard({ studyAccession, name }) {
   useEffect(() => {
     fetchStudyFileInfo(studyAccession).then(response => {
       response.files.forEach(file => formatFileFromServer(file))
+      setIsAnnDataExperience(
+        response.files?.filter(AnnDataFileFilter)?.length > 0 &&
+        response.feature_flags?.ingest_anndata_file)
       setServerState(response)
       setFormState(_cloneDeep(response))
       setTimeout(pollServerState, POLLING_INTERVAL)
     })
-    window.document.title = `Upload - Single Cell Portal`
 
+    window.document.title = `Upload - Single Cell Portal`
   }, [studyAccession])
 
   const nextStep = STEPS[currentStepIndex + 1]
   const prevStep = STEPS[currentStepIndex - 1]
+
+  /**
+   * Returns the appropriate content to display for the UploadWizard
+   * @returns The content for the upload wizard, either the steps for upload or the split view for choosing the data upload experience
+   */
+  function getWizardContent(formState, serverState) {
+    if (!formState?.files.length && !choiceMade && serverState?.feature_flags?.ingest_anndata_file) {
+      return <UploadExperienceSplitter {...{ setIsAnnDataExperience, setChoiceMade }} />
+    } else if (choiceMade || formState?.files.length || !serverState?.feature_flags?.ingest_anndata_file) {
+      return <> <div className="row wizard-content">
+        <div>
+          <WizardNavPanel {...{
+            formState, serverState, currentStep, setCurrentStep, studyAccession, mainSteps: MAIN_STEPS,
+            supplementalSteps: SUPPLEMENTAL_STEPS, nonVizSteps: NON_VISUALIZABLE_STEPS, studyName: name, isAnnDataExperience
+          }} />
+        </div>
+        <div id="overflow-x-scroll">
+          <div className="flexbox-align-center top-margin margin-left">
+            <h4>{currentStep.header}</h4>
+            <div className="prev-next-buttons">
+              {prevStep && <button
+                className="btn terra-tertiary-btn margin-right"
+                onClick={() => setCurrentStep(prevStep)}>
+                <FontAwesomeIcon icon={faChevronLeft} /> Previous
+              </button>}
+              {nextStep && <button
+                className="btn terra-tertiary-btn"
+                onClick={() => setCurrentStep(nextStep)}>
+                Next <FontAwesomeIcon icon={faChevronRight} />
+              </button>}
+            </div>
+          </div>
+          <div>
+            <currentStep.component
+              setCurrentStep={setCurrentStep}
+              formState={formState}
+              serverState={serverState}
+              deleteFile={deleteFile}
+              updateFile={updateFile}
+              saveFile={saveFile}
+              addNewFile={addNewFile}
+              isAnnDataExperience={isAnnDataExperience}
+              deleteFileFromForm={deleteFileFromForm}
+            />
+          </div>
+        </div>
+      </div></>
+    }
+  }
+
+  /** return a button for switching to the other experience (AnnData or Classic) */
+  function getOtherChoiceButton() {
+    const otherOption = isAnnDataExperience ? 'classic upload' : 'AnnData upload'
+    return <button
+      data-testid="switch-upload-mode-button"
+      className="btn terra-secondary-btn margin-left-extra"
+      onClick={() => setIsAnnDataExperience(!isAnnDataExperience)}> Switch to {otherOption}
+    </button>
+  }
+
   return (
     <StudyContext.Provider value={studyObj}>
-      <div className="upload-wizard-react">
-        <div className="row">
-          <div className="col-md-12 wizard-top-bar no-wrap-ellipsis">
-            <a href={`/single_cell/study/${studyAccession}`}>View study</a> / &nbsp;
-            <span title="{serverState?.study?.name}">{serverState?.study?.name}</span>
-          </div>
-        </div>
-        <div className="row wizard-content">
-          <div>
-            <WizardNavPanel {...{
-              formState, serverState, currentStep, setCurrentStep, studyAccession, mainSteps: MAIN_STEPS,
-              supplementalSteps: SUPPLEMENTAL_STEPS, nonVizSteps: NON_VISUALIZABLE_STEPS, studyName: name
-            }} />
-          </div>
-          <div id="overflow-x-scroll">
-            <div className="flexbox-align-center top-margin left-margin">
-              <h4>{currentStep.header}</h4>
-              <div className="prev-next-buttons">
-                { prevStep && <button
-                  className="btn terra-tertiary-btn margin-right"
-                  onClick={() => setCurrentStep(prevStep)}>
-                  <FontAwesomeIcon icon={faChevronLeft}/> Previous
-                </button> }
-                { nextStep && <button
-                  className="btn terra-tertiary-btn"
-                  onClick={() => setCurrentStep(nextStep)}>
-                  Next <FontAwesomeIcon icon={faChevronRight}/>
-                </button> }
-              </div>
+      {/* If the formState hasn't loaded show a spinner */}
+      {(!formState && !serverState) && <div>
+        <LoadingSpinner className="spinner-full-page" testId="upload-wizard-spinner" /> </div>
+      }
+      {!!formState &&
+        <div className="upload-wizard-react">
+          <div className="row">
+            <div className="col-md-12 wizard-top-bar no-wrap-ellipsis">
+              <a href={`/single_cell/study/${studyAccession}`}>View study</a> / &nbsp;
+              <span title="{serverState?.study?.name}">{serverState?.study?.name}</span>
+              {/* only allow switching modes if the user hasn't uploaded a file yet */}
+              {!serverState?.files.length && choiceMade && serverState?.feature_flags?.ingest_anndata_file && getOtherChoiceButton()}
             </div>
-            { !formState && <div className="padded text-center">
-              <LoadingSpinner testId="upload-wizard-spinner"/>
-            </div> }
-            { !!formState && <div>
-              <currentStep.component
-                setCurrentStep={setCurrentStep}
-                formState={formState}
-                serverState={serverState}
-                deleteFile={deleteFile}
-                updateFile={updateFile}
-                saveFile={saveFile}
-                addNewFile={addNewFile}
-              />
-            </div> }
+            {getWizardContent(formState, serverState)}
           </div>
-        </div>
-        <MessageModal/>
-      </div>
+          <MessageModal />
+        </div>}
     </StudyContext.Provider>
   )
 }
 
-/** Wraps the upload wirzard logic in a router and error handler */
+/** Wraps the upload wizard logic in a router and error handler */
 export default function UploadWizard({ studyAccession, name }) {
   return <ErrorBoundary>
     <UserProvider>
       <ReactNotifications />
       <Router>
-        <RawUploadWizard studyAccession={studyAccession} name={name} default/>
+        <RawUploadWizard studyAccession={studyAccession} name={name} default />
       </Router>
     </UserProvider>
   </ErrorBoundary>

@@ -10,6 +10,8 @@ class User
   include Mongoid::Timestamps
   include FeatureFlaggable
 
+  SHORT_SESSION_LENGTH = 15.minutes.freeze
+
   ###
   #
   # SCOPES & FIELD DEFINITIONS
@@ -18,6 +20,7 @@ class User
 
   has_many :studies
   has_and_belongs_to_many :branding_groups
+  has_many :ab_test_assignments
 
   # User annotations are owned by a user
   has_many :user_annotations do
@@ -96,6 +99,7 @@ class User
   # default_value from the FeatureFlag should be used.  Accordingly, the helper method feature_flags_with_defaults
   # is provided
   field :feature_flags, type: Hash, default: {}
+  field :use_short_session, type: Boolean, default: false
 
   ###
   #
@@ -128,6 +132,11 @@ class User
     user
   end
 
+  # override Timeoutable module to check for "opt-in" short session of 15 minutes
+  def timeout_in
+    use_short_session ? SHORT_SESSION_LENGTH : self.class.timeout_in
+  end
+
   # generate an access token based on user's refresh token
   def generate_access_token
     unless self.refresh_token.nil?
@@ -142,7 +151,11 @@ class User
         )
         token_vals = client.fetch_access_token
         expires_at = Time.zone.now + token_vals['expires_in'].to_i.seconds
-        user_access_token = {'access_token' => token_vals['access_token'], 'expires_in' => token_vals['expires_in'], 'expires_at' => expires_at}
+        user_access_token = {
+          'access_token' => token_vals['access_token'],
+          'expires_in' => token_vals['expires_in'],
+          'expires_at' => expires_at
+        }
         self.update!(access_token: user_access_token)
         user_access_token
       rescue => e

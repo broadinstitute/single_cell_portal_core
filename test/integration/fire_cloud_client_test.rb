@@ -86,6 +86,17 @@ class FireCloudClientTest < ActiveSupport::TestCase
     end
   end
 
+  # test header overrides
+  def test_override_default_headers
+    headers = %w[Accept Content-Type]
+    default_headers = @fire_cloud_client.get_default_headers
+    override_headers = @fire_cloud_client.get_default_headers(content_type: 'text/plain')
+    headers.each do |header|
+      assert_equal 'application/json', default_headers[header]
+      assert_equal 'text/plain', override_headers[header]
+    end
+  end
+
   ##
   #
   # WORKSPACE TESTS
@@ -586,5 +597,40 @@ class FireCloudClientTest < ActiveSupport::TestCase
     assert delete_confirmation, 'File did not delete, confirmation did not return true'
     current_num_files = @fire_cloud_client.execute_gcloud_method(:get_workspace_files, 0, workspace['bucketName']).size
     assert current_num_files == num_files - 1, "Number of files is incorrect, expected #{num_files - 1} but found #{current_num_files}"
+  end
+
+  # this test simulates errors and ensures that retries are only executed when the status code mandates
+  def test_should_handle_retry_by_status_code
+    error = proc { raise Google::Cloud::Error, 'something bad happened' }
+    @fire_cloud_client.stub :get_workspace_bucket, error do
+      # should only retry once
+      forbidden_mock = Minitest::Mock.new
+      status = 403
+      forbidden_mock.expect :status_code, status
+      forbidden_mock.expect :nil?, false
+      3.times do
+        forbidden_mock.expect :==, false, [Integer] # will check against 502..504
+      end
+      @fire_cloud_client.stub :extract_status_code, forbidden_mock do
+        assert_raise RuntimeError do
+          @fire_cloud_client.execute_gcloud_method(:get_workspace_file, 0, 'foo', 'bar.txt')
+          forbidden_mock.verify
+        end
+      end
+      # test with 502 should cause retry cascade
+      status = 502
+      bad_gateway_mock = Minitest::Mock.new
+      6.times do # 6 is for 5 total requests and then 6th iteration that terminates retry loop
+        bad_gateway_mock.expect :status_code, status
+        bad_gateway_mock.expect :nil?, false
+        bad_gateway_mock.expect :==, true, [status]
+      end
+      @fire_cloud_client.stub :extract_status_code, bad_gateway_mock do
+        assert_raise RuntimeError do
+          @fire_cloud_client.execute_gcloud_method(:get_workspace_file, 0, 'foo', 'bar.txt')
+          bad_gateway_mock.verify
+        end
+      end
+    end
   end
 end

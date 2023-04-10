@@ -26,6 +26,9 @@ class ClusterGroup
   field :subsampled, type: Boolean, default: false
   field :is_subsampling, type: Boolean, default: false
 
+  # denotes when image_pipeline has been run for this cluster_group
+  field :has_image_cache, type: Boolean, default: false
+
   validates_uniqueness_of :name, scope: :study_id
   validates_presence_of :name, :cluster_type
   validates_format_of :name, with: ValidationTools::URL_PARAM_SAFE,

@@ -32,31 +32,34 @@ export default function ExpressionFileForm({
   rawCountsOptions,
   bucketName,
   isInitiallyExpanded,
-  featureFlagState
+  featureFlagState,
+  isAnnDataExperience
 }) {
   const associatedChildren = findBundleChildren(file, allFiles)
   const speciesOptions = fileMenuOptions.species.map(spec => ({ label: spec.common_name, value: spec.id }))
   const selectedSpecies = speciesOptions.find(opt => opt.value === file.taxon_id)
   const isMtxFile = file.file_type === 'MM Coordinate Matrix'
   const isRawCountsFile = file.expression_file_info.is_raw_counts
+  const showRawCountsUnits = isRawCountsFile || isAnnDataExperience
 
   const allowedFileExts = isMtxFile ? FileTypeExtensions.mtx : FileTypeExtensions.plainText
-  let requiredFields = isRawCountsFile ? RAW_COUNTS_REQUIRED_FIELDS : REQUIRED_FIELDS
+  let requiredFields = showRawCountsUnits ? RAW_COUNTS_REQUIRED_FIELDS : REQUIRED_FIELDS
   const rawCountsRequired = featureFlagState && featureFlagState.raw_counts_required_frontend
-  if (rawCountsRequired && !isRawCountsFile) {
+  if (rawCountsRequired && !isRawCountsFile ) {
     requiredFields = requiredFields.concat(PROCESSED_ASSOCIATION_FIELD)
   }
-  const validationMessages = validateFile({ file, allFiles, allowedFileExts, requiredFields })
+  const validationMessages = validateFile({ file, allFiles, allowedFileExts, requiredFields, isAnnDataExperience })
 
-  const associatedRawCounts = file.expression_file_info.raw_counts_associations.map(id => ({
+  const associatedRawCounts = !isAnnDataExperience && file.expression_file_info.raw_counts_associations.map(id => ({
     label: rawCountsOptions.find(rf => rf.value == id)?.label,
     value: id
   }))
 
   return <ExpandableFileForm {...{
     file, allFiles, updateFile, saveFile,
-    allowedFileExts, deleteFile, validationMessages, bucketName, isInitiallyExpanded
+    allowedFileExts, deleteFile, validationMessages, bucketName, isInitiallyExpanded, isAnnDataExperience
   }}>
+    {!isAnnDataExperience &&
     <div className="form-group">
       <label>Matrix file type:</label><br/>
       <label className="sublabel">
@@ -75,8 +78,8 @@ export default function ExpressionFileForm({
           &nbsp;Sparse matrix (.mtx)
       </label>
     </div>
-
-    { !isRawCountsFile &&
+    }
+    { (!isAnnDataExperience && !isRawCountsFile) &&
       <div className="form-group">
         <label className="labeled-select">Associated raw counts files
           <Select options={rawCountsOptions}
@@ -103,7 +106,7 @@ export default function ExpressionFileForm({
       </label>
     </div>
 
-    { isRawCountsFile &&
+    { showRawCountsUnits &&
       <ExpressionFileInfoSelect label="Units *"
         propertyName="units"
         rawOptions={fileMenuOptions.units}

@@ -37,7 +37,7 @@ function RawStudyViolinPlot({
   // array of gene names as they are listed in the study itself
   const [studyGeneNames, setStudyGeneNames] = useState([])
   const [graphElementId] = useState(_uniqueId('study-violin-'))
-  const { ErrorComponent, setShowError, setErrorContent } = useErrorMessage()
+  const { ErrorComponent, setShowError, setError } = useErrorMessage()
 
   /** renders received expression data from the server */
   function renderData([results, perfTimes]) {
@@ -80,7 +80,7 @@ function RawStudyViolinPlot({
       consensus
     ).then(renderData).catch(error => {
       Plotly.purge(graphElementId)
-      setErrorContent(error.message)
+      setError(error)
       setShowError(true)
       setIsLoading(false)
     })

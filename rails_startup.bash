@@ -24,8 +24,12 @@ if [[ $PASSENGER_APP_ENV = "production" ]] || [[ $PASSENGER_APP_ENV = "staging" 
 then
     echo "*** PRECOMPILING ASSETS ***"
     export NODE_OPTIONS="--max-old-space-size=4096"
-    sudo -E -u app -H bundle exec rake NODE_ENV=production RAILS_ENV=$PASSENGER_APP_ENV SECRET_KEY_BASE=$SECRET_KEY_BASE assets:clean
-    sudo -E -u app -H bundle exec rake NODE_ENV=production RAILS_ENV=$PASSENGER_APP_ENV SECRET_KEY_BASE=$SECRET_KEY_BASE assets:precompile
+    # ensure file permissions don't interfere with compiling assets
+    sudo chown app:app ./node_modules/.yarn-integrity
+    sudo chown -R app:app /home/app/webapp/tmp/cache
+    sudo -E -u app -H bin/rails NODE_ENV=production RAILS_ENV=$PASSENGER_APP_ENV assets:clobber
+    sudo -E -u app -H bin/rails NODE_ENV=production RAILS_ENV=$PASSENGER_APP_ENV vite:clobber
+    sudo -E -u app -H bin/rails NODE_ENV=production RAILS_ENV=$PASSENGER_APP_ENV assets:precompile
     echo "*** COMPLETED ***"
 fi
 
@@ -36,7 +40,7 @@ for ENV_VAR in GA_TRACKING_ID GCP_NETWORK_NAME GCP_SUB_NETWORK_NAME LOGSTASH_HOS
   GOOGLE_CLOUD_KEYFILE_JSON GOOGLE_PRIVATE_KEY GOOGLE_CLIENT_EMAIL GOOGLE_CLIENT_ID GOOGLE_CLOUD_PROJECT \
   MONGODB_ADMIN_USER MONGO_INTERNAL_IP MONGO_LOCALHOST NEWRELIC_AGENT_ID OAUTH_CLIENT_ID OAUTH_CLIENT_SECRET PORTAL_NAMESPACE \
   PROD_DATABASE_PASSWORD PROD_HOSTNAME SECRET_KEY_BASE SENDGRID_PASSWORD SENDGRID_USERNAME TCELL_AGENT_API_KEY \
-  TCELL_AGENT_APP_ID T_CELL_SERVER_AGENT_API_KEY
+  TCELL_AGENT_APP_ID T_CELL_SERVER_AGENT_API_KEY APP_INTERNAL_IP
 do
   echo "export $ENV_VAR='${!ENV_VAR}'" >> /home/app/.cron_env
 done
@@ -61,7 +65,7 @@ chown app:app /home/app/.cron_env
 echo "*** COMPLETED ***"
 
 echo "*** RUNNING PENDING MIGRATIONS ***"
-sudo -E -u app -H bin/rake RAILS_ENV=$PASSENGER_APP_ENV db:migrate
+sudo -E -u app -H bin/rails RAILS_ENV=$PASSENGER_APP_ENV db:migrate
 echo "*** COMPLETED ***"
 
 if [[ ! -d /home/app/webapp/tmp/pids ]]
@@ -81,11 +85,11 @@ echo "*/15 * * * * . /home/app/.cron_env ; /home/app/webapp/bin/job_monitor.rb -
 echo "*** COMPLETED ***"
 
 echo "*** REINDEXING DATABASE ***"
-sudo -E -u app -H bin/bundle exec rake RAILS_ENV=$PASSENGER_APP_ENV db:mongoid:create_indexes
+sudo -E -u app -H bin/rails RAILS_ENV=$PASSENGER_APP_ENV db:mongoid:create_indexes
 echo "*** COMPLETED ***"
 
 echo "*** ADDING CRONTAB TO REINDEX DATABASE ***"
-(crontab -u app -l ; echo "@daily . /home/app/.cron_env ; cd /home/app/webapp/; bin/bundle exec rake RAILS_ENV=$PASSENGER_APP_ENV db:mongoid:create_indexes >> /home/app/webapp/log/cron_out.log 2>&1") | crontab -u app -
+(crontab -u app -l ; echo "@daily . /home/app/.cron_env ; cd /home/app/webapp/; bin/rails RAILS_ENV=$PASSENGER_APP_ENV db:mongoid:create_indexes >> /home/app/webapp/log/cron_out.log 2>&1") | crontab -u app -
 echo "*** COMPLETED ***"
 
 if [[ $PASSENGER_APP_ENV = "development" ]]

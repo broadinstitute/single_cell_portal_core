@@ -94,4 +94,13 @@ class ExpressionControllerTest < ActionDispatch::IntegrationTest
     }), user: @user)
     assert_equal 400, response.status # 400 since study is not visualizable
   end
+
+  test "should prevent searches over #{StudySearchService::MAX_GENE_SEARCH} genes" do
+    genes = 1.upto(100).map { |i| "Gene_#{i}" }.join(',')
+    sign_in_and_update @user
+    execute_http_request(:get, api_v1_study_expression_path(
+      @basic_study, 'heatmap', { cluster: 'clusterA.txt', genes: genes }
+    ), user: @user)
+    assert_response :unprocessable_entity
+  end
 end

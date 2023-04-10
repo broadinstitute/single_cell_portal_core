@@ -200,10 +200,10 @@ class AnnotationVizService
   def self.differential_expression_menu_opts(study)
     study.differential_expression_results.map do |diff_exp_result|
       {
-        cluster_name: diff_exp_result.cluster_group.name, # use current name, not cached name
+        cluster_name: diff_exp_result.cluster_group&.name,
         annotation_name: diff_exp_result.annotation_name,
         annotation_scope: diff_exp_result.annotation_scope,
-        select_options: diff_exp_result.select_options # to_a turns Hash into nested array of arrays for select opts
+        select_options: diff_exp_result.select_options
       }
     end
   end

@@ -25,15 +25,23 @@ class UserTest < ActiveSupport::TestCase
     @user.update_last_access_at!
     last_access = @user.api_access_token[:last_access_at]
     now = Time.now.in_time_zone(@user.get_token_timezone(:api_access_token))
-    refute @user.api_access_token_timed_out?,
-           "API access token should not have timed out, #{last_access} is within #{User.timeout_in} seconds of #{now}"
-    # back-date access token last_access_at
-    invalid_access = now - 1.hour
+    assert_not @user.api_access_token_timed_out?,
+               "API access token should not have timed out, #{last_access} is within #{@user.timeout_in} seconds of #{now}"
+    # back-date access token last_access_at for 24h session
+    invalid_access = now - 25.hours
     @user.api_access_token[:last_access_at] = invalid_access
     @user.save
-    @user.reload
     assert @user.api_access_token_timed_out?,
-           "API access token should have timed out, #{invalid_access} is outside #{User.timeout_in} seconds of #{now}"
+           "API access token should have timed out, #{invalid_access} is outside #{@user.timeout_in} seconds of #{now}"
+    # test short session timeout at 15m
+    @user.update_last_access_at!
+    assert_not @user.api_access_token_timed_out?
+    @user.update(use_short_session: true)
+    invalid_access = now - 20.minutes
+    @user.api_access_token[:last_access_at] = invalid_access
+    @user.save
+    assert @user.api_access_token_timed_out?,
+           "API access token should have timed out, #{invalid_access} is outside #{@user.timeout_in} seconds of #{now}"
   end
 
   test 'should check billing project ownership' do

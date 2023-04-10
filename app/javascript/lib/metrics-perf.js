@@ -5,6 +5,7 @@
 import { getTTFB, getFCP, getLCP, getFID, getCLS } from 'web-vitals'
 
 import { log } from './metrics-api'
+import importMetaHot from '~/vite/import-meta-hot'
 
 // Ensure we get perfTime metrics.  The number of `performance` browser API
 // entries can be low enough by default to cause some entries to be
@@ -13,6 +14,38 @@ import { log } from './metrics-api'
 if (performance.setResourceTimingBufferSize) {
   performance.setResourceTimingBufferSize(500)
 }
+
+/**
+ * Log fast (beforeUpdate) and some slow (beforeFullReload) reloads to Mixpanel
+ *
+ * This helps assess if / why frontend development iteration is slow.
+ */
+function logFrontendIteration(name, event) {
+  const logEvent = {'vite:type': event.type}
+  if ('updates' in event) {
+    logEvent['vite:path'] = event.updates[0].path
+  }
+  log(name, logEvent)
+}
+
+// Log hot module replacement (HMR) to Mixpanel
+// This helps measure "cache hit rate" for fast reload.
+if (importMetaHot()) {
+  const eventNames = [
+    'vite:beforeUpdate',
+    // 'vite:afterUpdate', // This and other disabled events might help later
+    'vite:beforeFullReload',
+    // 'vite:beforePrune',
+    // 'vite:invalidate',
+    // 'vite:error'
+  ]
+  eventNames.forEach(eventName => {
+    importMetaHot().on(eventName, (event) => {
+      logFrontendIteration(eventName, event)
+    })
+  })
+}
+
 
 /** Client device memory, # CPUs, and Internet connection speed. */
 export const hardwareStats = getHardwareStats()

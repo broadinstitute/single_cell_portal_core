@@ -34,7 +34,8 @@ function MetadataForm({
   updateFile,
   saveFile,
   deleteFile,
-  bucketName
+  bucketName,
+  isAnnDataExperience
 }) {
   const userState = useContext(UserContext)
   const featureFlagState = serverState.feature_flags
@@ -76,11 +77,11 @@ function MetadataForm({
         </div>
       </div>
     </div>
-    { file &&
+    { (file && !isAnnDataExperience) &&
       <ExpandableFileForm {...{
         file, allFiles: formState.files, updateFile, saveFile,
         allowedFileExts, deleteFile, validationMessages, bucketName, isInitiallyExpanded: true,
-        isExpandable: false
+        isExpandable: false, isAnnDataExperience
       }}>
         <div className="form-group">
           <label>Do you use SCP conventional names for required metadata column headers? </label>

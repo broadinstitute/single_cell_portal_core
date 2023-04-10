@@ -19,6 +19,7 @@ class FeatureFlagTest < ActiveSupport::TestCase
     FeatureFlagOption.destroy_all
     @user.reload
     @branding_group.reload
+    @feature_flag.ab_test&.destroy
   end
 
   after(:all) do
@@ -187,5 +188,11 @@ class FeatureFlagTest < ActiveSupport::TestCase
     params[FeatureFlaggable::NESTED_FORM_KEY]['0'][:value] = ''
     updated_params = FeatureFlaggable.merge_default_destroy_param(params)
     assert_equal '1', updated_params[FeatureFlaggable::NESTED_FORM_KEY]['0'][:_destroy]
+  end
+
+  test 'should find enabled A/B test' do
+    assert_not @feature_flag.ab_test_enabled?
+    AbTest.create(feature_flag: @feature_flag, enabled: true)
+    assert @feature_flag.ab_test_enabled?
   end
 end
