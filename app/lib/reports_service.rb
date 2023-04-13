@@ -13,8 +13,8 @@ class ReportsService
       name: 'Differential Expression Results',
       service_method: :differential_expression_report,
       data_columns: %i[accession created_at cluster_name annotation_identifier
-                       observed_values matrix_file_name],
-      transform_columns: %i[observed_values] # array fields that need to be sanitized before rendering
+                       one_vs_rest_comparisons matrix_file_name],
+      transform_columns: %i[one_vs_rest_comparisons] # array fields that need to be sanitized before rendering
     }
   }.freeze
 
@@ -115,7 +115,7 @@ class ReportsService
   def self.differential_expression_report
     results = []
     keys = %i[
-      created_at cluster_name annotation_identifier observed_values matrix_file_name
+      created_at cluster_name annotation_identifier one_vs_rest_comparisons matrix_file_name
     ]
     DifferentialExpressionResult.all.each do |result|
       data_hash = Hash[keys.zip(keys.map { |k| result.send(k) })]

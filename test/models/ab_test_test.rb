@@ -21,6 +21,12 @@ class AbTestTest < ActiveSupport::TestCase
     @feature_flag.destroy
   end
 
+  test 'should prevent creating duplicate tests' do
+    assert_raise Mongoid::Errors::Validations do
+      AbTest.create!(feature_flag: @feature_flag, group_names: %w[foo bar])
+    end
+  end
+
   # we can't prove true random assignment, only that over a reasonable amount of iterations we would see a roughly
   # equal distribution (±2%); for reference, SCP had ~2.5K unique Study overview users/week in 2022
   test 'should distribute group assignments equally' do

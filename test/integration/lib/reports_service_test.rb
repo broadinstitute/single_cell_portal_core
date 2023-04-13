@@ -36,7 +36,7 @@ class ReportsServiceTest < ActiveSupport::TestCase
     @de_result = DifferentialExpressionResult.create(
       study: @basic_study, cluster_group: @basic_study.cluster_groups.by_name('clusterA.txt'),
       matrix_file_id: @study_expression_file.id, annotation_name: 'foo', annotation_scope: 'cluster',
-      observed_values: %w[bar baz]
+      one_vs_rest_comparisons: %w[bar baz]
     )
   end
 

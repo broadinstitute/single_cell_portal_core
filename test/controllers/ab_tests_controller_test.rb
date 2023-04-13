@@ -16,9 +16,13 @@ class AbTestsControllerTest < ActionDispatch::IntegrationTest
   end
 
   teardown do
-    @feature_flag.ab_test&.destroy
-    @feature_flag.reload
+    AbTest.destroy_all
     AbTestAssignment.destroy_all
+    @feature_flag.reload
+  end
+
+  after(:all) do
+    @feature_flag.destroy
   end
 
   test 'should create A/B test' do

@@ -244,6 +244,17 @@ export function setupRenewalForReadOnlyToken(studyAccession) {
 }
 
 /**
+ * Check Terra Terms of Service acceptance
+ *
+ * @returns {Boolean} Whether user is signed in and has accepted latest Terra ToS
+ */
+export async function checkTerraTosAcceptance() {
+  const apiUrl = '/site/check_terra_tos_acceptance'
+  const [response] = await scpApi(apiUrl, defaultInit())
+  return response.mustAccept
+}
+
+/**
  * Creates a new study file
  *
  * @param {String} studyAccession study accession

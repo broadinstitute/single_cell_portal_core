@@ -24,6 +24,7 @@ class PapiClient
     ingest_cell_metadata: %w[Metadata AnnData],
     ingest_subsample: ['Cluster'],
     differential_expression: ['Cluster'],
+    ingest_differential_expression: ['Differential Expression'],
     render_expression_arrays: ['Cluster'],
     image_pipeline: ['Cluster'],
     ingest_anndata: ['AnnData']
@@ -305,41 +306,58 @@ class PapiClient
   def get_command_line(study_file:, action:, user_metrics_uuid:, params_object: nil)
     validate_action_by_file(action, study_file)
     study = study_file.study
-    command_line = "python ingest_pipeline.py --study-id #{study.id} --study-file-id #{study_file.id} " \
-                   "--user-metrics-uuid #{user_metrics_uuid} #{action}"
-
+    # Docker accepts command line in array form for better tokenization of parameters
+    command_line = [
+      'python', 'ingest_pipeline.py', '--study-id', study.id.to_s, '--study-file-id', study_file.id.to_s,
+      '--user-metrics-uuid', user_metrics_uuid, action.to_s
+    ]
+    action_cli_opt = Parameterizable.to_cli_opt(action)
     case action.to_s
     when 'ingest_expression'
-      if study_file.file_type == 'Expression Matrix'
-        command_line += " --matrix-file #{study_file.gs_url} --matrix-file-type dense"
-      elsif study_file.file_type === 'MM Coordinate Matrix'
+      case study_file.file_type
+      when 'Expression Matrix'
+        command_line += ['--matrix-file', study_file.gs_url, '--matrix-file-type', 'dense']
+      when 'MM Coordinate Matrix'
         bundled_files = study_file.bundled_files
-        genes_file = bundled_files.detect {|f| f.file_type == '10X Genes File'}
-        barcodes_file = bundled_files.detect {|f| f.file_type == '10X Barcodes File'}
-        command_line += " --matrix-file #{study_file.gs_url} --matrix-file-type mtx" \
-                      " --gene-file #{genes_file.gs_url} --barcode-file #{barcodes_file.gs_url}"
+        genes_file = bundled_files.detect { |f| f.file_type == '10X Genes File' }
+        barcodes_file = bundled_files.detect { |f| f.file_type == '10X Barcodes File' }
+        command_line += [
+          '--matrix-file', study_file.gs_url, '--matrix-file-type', 'mtx', '--gene-file', genes_file.gs_url,
+          '--barcode-file', barcodes_file.gs_url
+        ]
       end
     when 'ingest_cell_metadata'
       # skip if parent file is AnnData as params_object will format command line
-      command_line += " --cell-metadata-file #{study_file.gs_url} --study-accession #{study.accession} " \
-                      "--ingest-cell-metadata" unless study_file.is_anndata?
+      unless study_file.is_anndata?
+        command_line += [
+          '--cell-metadata-file', study_file.gs_url, '--study-accession', study.accession, action_cli_opt
+        ]
+      end
       if study_file.use_metadata_convention
-        command_line += " --validate-convention --bq-dataset #{CellMetadatum::BIGQUERY_DATASET} " \
-                        "--bq-table #{CellMetadatum::BIGQUERY_TABLE}"
+        command_line += [
+          '--validate-convention', '--bq-dataset', CellMetadatum::BIGQUERY_DATASET,
+          '--bq-table', CellMetadatum::BIGQUERY_TABLE
+        ]
       end
     when 'ingest_cluster'
       # skip if parent file is AnnData as params_object will format command line
-      command_line += " --cluster-file #{study_file.gs_url} --ingest-cluster" unless study_file.is_anndata?
+      command_line += ['--cluster-file', study_file.gs_url, action_cli_opt] unless study_file.is_anndata?
     when 'ingest_subsample'
       metadata_file = study.metadata_file
-      command_line += " --cluster-file #{study_file.gs_url} --cell-metadata-file #{metadata_file.gs_url} --subsample"
+      command_line += ['--cluster-file', study_file.gs_url, '--cell-metadata-file', metadata_file.gs_url, '--subsample']
     when 'differential_expression'
-      command_line += " --study-accession #{study.accession}"
+      command_line += ['--study-accession', study.accession]
+    when 'ingest_differential_expression'
+      de_info = study_file.differential_expression_file_info
+      command_line += [
+        '--annotation-name', de_info.annotation_name, '--annotation-scope', de_info.annotation_scope,
+        '--cluster-name', de_info.cluster_group.name, '--differential-expression-file', study_file.gs_url,
+        '--computational-method', de_info.computational_method, action_cli_opt
+      ]
     when 'image_pipeline'
       # image_pipeline is node-based, so python command line to this point no longer applies
-      command_line = 'node expression-scatter-plots.js'
+      command_line = %w[node expression-scatter-plots.js]
     end
-
     # add optional command line arguments based on file type and action
     if params_object.present?
       unless params_object_valid?(params_object)
@@ -350,9 +368,7 @@ class PapiClient
     else
       optional_args = get_command_line_options(study_file, action)
     end
-
-    # return an array of tokens (Docker expects exec form, which runs without a shell, so cannot be a single command)
-    command_line.split + optional_args
+    command_line + optional_args
   end
 
   # Assemble any optional command line options for ingest by file type
@@ -369,18 +385,20 @@ class PapiClient
     when /Matrix/
       if study_file.taxon.present?
         taxon = study_file.taxon
-        opts += ["--taxon-name", "#{taxon.scientific_name}", "--taxon-common-name", "#{taxon.common_name}",
-                 "--ncbi-taxid", "#{taxon.ncbi_taxid}"]
+        opts += [
+          '--taxon-name', taxon.scientific_name, '--taxon-common-name', taxon.common_name,
+          '--ncbi-taxid', taxon.ncbi_taxid.to_s
+        ]
       end
     when 'Cluster'
       # the name of Cluster files is the same as the name of the cluster object itself
-      opts += ["--name", "#{study_file.name}"]
+      opts += ['--name', study_file.name]
       # add domain ranges if this cluster is being ingested (not needed for subsampling)
       if action.to_sym == :ingest_cluster
         if study_file.get_cluster_domain_ranges.any?
-          opts += ["--domain-ranges", "#{sanitize_json(study_file.get_cluster_domain_ranges.to_json)}"]
+          opts += ['--domain-ranges', sanitize_json(study_file.get_cluster_domain_ranges.to_json).to_s]
         else
-          opts += ["--domain-ranges", "{}"]
+          opts += %w[--domain-ranges {}]
         end
       end
     end

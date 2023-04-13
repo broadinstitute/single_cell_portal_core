@@ -37,7 +37,7 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
                       study: @study)
     DifferentialExpressionResult.create(
       study: @study, cluster_group: @study.cluster_groups.by_name('clusterA.txt'), matrix_file_id: matrix.id,
-      annotation_name: 'disease', annotation_scope: 'study', observed_values: %w[none measles]
+      annotation_name: 'disease', annotation_scope: 'study', one_vs_rest_comparisons: %w[none measles]
     )
   end
 

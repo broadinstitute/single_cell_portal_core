@@ -5,13 +5,13 @@ module Api
       before_action :authenticate_api_user!, only: [:download_data, :stream_data, :get_study_analysis_config,
                                                     :submit_study_analysis, :get_study_submissions,
                                                     :get_study_submission, :sync_submission_outputs]
-      before_action :set_study, except: [:studies, :analyses, :get_analysis]
+      before_action :set_study, except: [:studies, :check_terra_tos_acceptance, :analyses, :get_analysis]
       before_action :set_analysis_configuration, only: [:get_analysis, :get_study_analysis_config]
       before_action :check_study_detached, only: [:download_data, :stream_data, :get_study_analysis_config,
                                                   :submit_study_analysis, :get_study_submissions,
                                                   :get_study_submission, :sync_submission_outputs,
                                                   :renew_token]
-      before_action :check_study_view_permission, except: [:studies, :analyses, :get_analysis]
+      before_action :check_study_view_permission, except: [:studies, :check_terra_tos_acceptance, :analyses, :get_analysis]
       before_action :check_study_compute_permission,
                     only: [:get_study_analysis_config, :submit_study_analysis, :get_study_submissions,
                            :get_study_submission, :sync_submission_outputs]
@@ -48,6 +48,32 @@ module Api
       def studies
         @studies = Study.viewable(current_api_user)
       end
+
+      swagger_path '/site/check_terra_tos_acceptance' do
+        operation :get do
+          key :tags, [
+              'Site'
+          ]
+          key :summary, 'Check if user has accepted current Terra Terms of Service'
+          key :description, 'Returns boolean for whether user has accepted current Terra ToS'
+          key :operationId, 'site_check_terra_tos_acceptance_path'
+          response 200 do
+            key :description, 'Boolean for whether user has accepted current Terra ToS'
+          end
+          response 406 do
+            key :description, ApiBaseController.not_acceptable
+          end
+        end
+      end
+
+      def check_terra_tos_acceptance
+        must_accept = false
+        if api_user_signed_in?
+          must_accept = current_api_user.must_accept_terra_tos?
+        end
+        render json: {must_accept: must_accept}
+      end
+
 
       swagger_schema :DirectoryListingDownload do
         property :name do

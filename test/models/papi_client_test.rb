@@ -149,26 +149,46 @@ class PapiClientTest < ActiveSupport::TestCase
   end
 
   test 'should construct command line for pipeline jobs by file_type' do
-    exp_cmd = @client.get_command_line(study_file: @expression_matrix, action: :ingest_expression,
-                                       user_metrics_uuid: @user.metrics_uuid)
+    user_metrics_uuid = @user.metrics_uuid
+    exp_cmd = @client.get_command_line(study_file: @expression_matrix, action: :ingest_expression, user_metrics_uuid:)
     assert exp_cmd.any?
     assert exp_cmd.include? @study.id.to_s
     assert exp_cmd.include? @expression_matrix.id.to_s
-    assert exp_cmd.include? @user.metrics_uuid
+    assert exp_cmd.include? user_metrics_uuid
     assert exp_cmd.include? '--matrix-file'
     assert exp_cmd.include? @expression_matrix.gs_url
     assert exp_cmd.include? '--matrix-file-type'
     assert exp_cmd.include? 'dense'
 
-    cluster_cmd = @client.get_command_line(study_file: @cluster_file, action: :ingest_cluster,
-                                           user_metrics_uuid: @user.metrics_uuid)
+    cluster_cmd = @client.get_command_line(study_file: @cluster_file, action: :ingest_cluster, user_metrics_uuid:)
     assert cluster_cmd.any?
     assert cluster_cmd.include? @study.id.to_s
     assert cluster_cmd.include? @cluster_file.id.to_s
     assert cluster_cmd.include? '--cluster-file'
     assert cluster_cmd.include? @cluster_file.gs_url
-    assert cluster_cmd.include? @user.metrics_uuid
+    assert cluster_cmd.include? user_metrics_uuid
     assert cluster_cmd.include? '--ingest-cluster'
+
+    # user-uploaded DE file
+    cluster_group = @study.cluster_groups.first
+    annotation_name = 'Category'
+    annotation_scope = 'cluster'
+    de_file = @study.study_files.build(file_type: 'Differential Expression', upload_file_name: 'de.tsv')
+    de_file.build_differential_expression_file_info(annotation_name:, annotation_scope:, cluster_group:)
+    de_cmd = @client.get_command_line(study_file: de_file, action: :ingest_differential_expression, user_metrics_uuid:)
+    assert de_cmd.any?
+    assert de_cmd.include? de_file.id.to_s
+    assert de_cmd.include? '--differential-expression-file'
+    assert de_cmd.include? de_file.gs_url
+    assert de_cmd.include? '--annotation-name'
+    assert de_cmd.include? annotation_name
+    assert de_cmd.include? '--annotation-scope'
+    assert de_cmd.include? annotation_scope
+    assert de_cmd.include? '--cluster-name'
+    assert de_cmd.include? cluster_group.name
+    assert de_cmd.include? '--computational-method'
+    assert de_cmd.include? DifferentialExpressionResult::DEFAULT_COMP_METHOD
+    assert de_cmd.include? '--ingest-differential-expression'
   end
 
   test 'should get extra command line options' do

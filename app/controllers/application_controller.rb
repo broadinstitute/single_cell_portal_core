@@ -19,7 +19,6 @@ class ApplicationController < ActionController::Base
   # For APIs, you may want to use :null_session instead.
   protect_from_forgery with: :exception
 
-  before_action :check_terra_tos_acceptance, except: [:accept_tos, :record_tos_action]
   before_action :get_download_quota
   before_action :get_deployment_notification
   before_action :set_selected_branding_group
@@ -75,7 +74,18 @@ class ApplicationController < ActionController::Base
     if current_user.present?
       current_user.update_last_access_at!
     end
-    yield
+    begin
+      yield
+    rescue RestClient::Exception => e
+      if e.http_code === 401
+        # Efficiently and robustly check for error that corresponds to
+        # "User must accept the latest terms of service." for Terra,
+        # but without relying on that particular error message.
+        if user_signed_in? && current_user.must_accept_terra_tos?
+          redirect_to exceptions_terra_tos_path and return
+        end
+      end
+    end
   ensure
     # to address the thread variable leak issues in Puma/Thin webserver
     Current.user = nil
@@ -165,17 +175,6 @@ class ApplicationController < ActionController::Base
   def set_selected_branding_group
     if params[:scpbr].present?
       @selected_branding_group = BrandingGroup.find_by(name_as_id: params[:scpbr])
-    end
-  end
-
-  # Temporary sub-optimal fix for signed-in users not having accepted Terra Terms of Service
-  # Context: https://broadworkbench.atlassian.net/browse/SCP-4929
-  # TODO (SCP-4971): intercept API calls that need end-user credentials, and handle this at that level
-  def check_terra_tos_acceptance
-    if user_signed_in? &&
-       current_user.must_accept_terra_tos? &&
-       ![exceptions_terra_tos_path, destroy_user_session_path].include?(request.path)
-      redirect_to exceptions_terra_tos_path and return
     end
   end
 

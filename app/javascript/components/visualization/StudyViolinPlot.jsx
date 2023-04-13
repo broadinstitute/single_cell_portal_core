@@ -50,7 +50,8 @@ function RawStudyViolinPlot({
 
     renderViolinPlot(graphElementId, results, {
       plotType: distributionPlotToUse,
-      showPoints: distributionPoints
+      showPoints: distributionPoints,
+      dimensions
     })
 
     perfTimes.plot = performance.now() - startTime
@@ -145,9 +146,9 @@ export default StudyViolinPlot
 
 
 /** Formats expression data for Plotly, draws violin (or box) plot */
-function renderViolinPlot(target, results, { plotType, showPoints }) {
+function renderViolinPlot(target, results, { plotType, showPoints, dimensions }) {
   const traceData = getViolinTraces(results.values, showPoints, plotType)
-  const layout = getViolinLayout(results.rendered_cluster, results.y_axis_title)
+  const layout = getViolinLayout(results.rendered_cluster, results.y_axis_title, dimensions)
   Plotly.newPlot(target, traceData, layout)
 }
 
@@ -234,8 +235,11 @@ function getViolinTraces(
 }
 
 /** Get Plotly layout for violin plot */
-function getViolinLayout(title, expressionLabel) {
+function getViolinLayout(title, expressionLabel, dimensions) {
+  const { width, height } = dimensions
   return {
+    width,
+    height: height + 10,
     title,
     // Force axis labels, including number strings, to be treated as
     // categories.  See Python docs (same generic API as JavaScript):

@@ -16,6 +16,7 @@ class AbTest
   field :enabled, type: Boolean, default: false
 
   before_validation :sanitize_group_names
+  validates :feature_flag, uniqueness: true
   validate :two_groups?
   after_validation :migrate_assignments, on: :update
 

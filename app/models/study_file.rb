@@ -24,7 +24,8 @@ class StudyFile
   # constants, used for statuses and file types
   STUDY_FILE_TYPES = ['Cluster', 'Coordinate Labels' ,'Expression Matrix', 'MM Coordinate Matrix', '10X Genes File',
                       '10X Barcodes File', 'Gene List', 'Metadata', 'Fastq', 'BAM', 'BAM Index', 'Documentation',
-                      'Other', 'Analysis Output', 'Ideogram Annotations', 'Image', 'AnnData', 'Seurat'].freeze
+                      'Other', 'Analysis Output', 'Ideogram Annotations', 'Image', 'AnnData', 'Seurat',
+                      'Differential Expression'].freeze
   CUSTOM_FILE_TYPE_NAMES = {
     'MM Coordinate Matrix' => 'Sparse matrix (.mtx)',
     'Expression Matrix' => 'Dense matrix',
@@ -34,30 +35,33 @@ class StudyFile
 
 
   PARSEABLE_TYPES = ['Cluster', 'Coordinate Labels', 'Expression Matrix', 'MM Coordinate Matrix', '10X Genes File',
-                     '10X Barcodes File', 'Gene List', 'Metadata', 'Analysis Output', 'AnnData']
-  DISALLOWED_SYNC_TYPES = ['Fastq']
-  UPLOAD_STATUSES = %w(new uploading uploaded)
-  PARSE_STATUSES = %w(unparsed parsing parsed failed)
-  PRIMARY_DATA_EXTENTIONS = %w(fastq fastq.zip fastq.gz fastq.tar.gz fq fq.zip fq.gz fq.tar.gz bam bam.gz bam.bai bam.gz.bai)
-  PRIMARY_DATA_TYPES = ['Fastq', 'BAM', 'BAM Index']
-  TAXON_REQUIRED_TYPES = ['Fastq', 'BAM', 'Expression Matrix', 'MM Coordinate Matrix', 'Ideogram Annotations']
-  ASSEMBLY_REQUIRED_TYPES = ['BAM', 'Ideogram Annotations']
-  GZIP_MAGIC_NUMBER = "\x1f\x8b".force_encoding(Encoding::ASCII_8BIT)
-  REQUIRED_ATTRIBUTES = %w(file_type name)
+                     '10X Barcodes File', 'Gene List', 'Metadata', 'Analysis Output', 'AnnData',
+                     'Differential Expression'].freeze
+  DISALLOWED_SYNC_TYPES = ['Fastq'].freeze
+  UPLOAD_STATUSES = %w(new uploading uploaded).freeze
+  PARSE_STATUSES = %w(unparsed parsing parsed failed).freeze
+  PRIMARY_DATA_EXTENTIONS = %w(
+    fastq fastq.zip fastq.gz fastq.tar.gz fq fq.zip fq.gz fq.tar.gz bam bam.gz bam.bai bam.gz.bai
+  ).freeze
+  PRIMARY_DATA_TYPES = ['Fastq', 'BAM', 'BAM Index'].freeze
+  TAXON_REQUIRED_TYPES = ['Fastq', 'BAM', 'Expression Matrix', 'MM Coordinate Matrix', 'Ideogram Annotations'].freeze
+  ASSEMBLY_REQUIRED_TYPES = ['BAM', 'Ideogram Annotations'].freeze
+  GZIP_MAGIC_NUMBER = "\x1f\x8b".force_encoding(Encoding::ASCII_8BIT).freeze
+  REQUIRED_ATTRIBUTES = %w(file_type name).freeze
   # allowed bulk download file types
   # 'Expression' covers dense & sparse matrix files
   # 'None' is used when only bulk downloading a single directory_listing folder
   BULK_DOWNLOAD_TYPES = ['Expression', 'Metadata', 'Cluster', 'Coordinate Labels', 'Fastq', 'BAM', 'Documentation',
-                         'Other', 'Analysis Output', 'Ideogram Annotations', 'None']
+                         'Other', 'Analysis Output', 'Ideogram Annotations', 'None'].freeze
 
   # Constants for scoping values for AnalysisParameter inputs/outputs
-  ASSOCIATED_MODEL_METHOD = %w(gs_url name upload_file_name bucket_location)
-  ASSOCIATED_MODEL_DISPLAY_METHOD = %w(name upload_file_name bucket_location)
-  OUTPUT_ASSOCIATION_ATTRIBUTE = %w(taxon_id genome_assembly_id study_file_bundle_id)
+  ASSOCIATED_MODEL_METHOD = %w(gs_url name upload_file_name bucket_location).freeze
+  ASSOCIATED_MODEL_DISPLAY_METHOD = %w(name upload_file_name bucket_location).freeze
+  OUTPUT_ASSOCIATION_ATTRIBUTE = %w(taxon_id genome_assembly_id study_file_bundle_id).freeze
   ANALYSIS_PARAMETER_FILTERS = {
       'file_type' => STUDY_FILE_TYPES.dup,
       'taxon_id' => Taxon.all.map {|t| [t.common_name, t.id.to_s]}
-  }
+  }.freeze
 
   # associations
   belongs_to :study, index: true
@@ -65,6 +69,7 @@ class StudyFile
   has_many :genes, dependent: :destroy
   has_many :precomputed_scores, dependent: :destroy
   has_many :cell_metadata, dependent: :destroy
+  has_many :differential_expression_results, dependent: :destroy
   belongs_to :taxon, optional: true
   belongs_to :genome_assembly, optional: true
   belongs_to :genome_annotation, optional: true
@@ -73,6 +78,7 @@ class StudyFile
   embeds_one :cluster_file_info, cascade_callbacks: true
   embeds_one :heatmap_file_info
   embeds_one :ann_data_file_info
+  embeds_one :differential_expression_file_info
 
   accepts_nested_attributes_for :expression_file_info
   accepts_nested_attributes_for :cluster_file_info

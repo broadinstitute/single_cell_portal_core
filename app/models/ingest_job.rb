@@ -14,8 +14,8 @@ class IngestJob
 
   # valid ingest actions to perform
   VALID_ACTIONS = %i[
-    ingest_expression ingest_cluster ingest_cell_metadata ingest_anndata subsample differential_expression
-    render_expression_arrays
+    ingest_expression ingest_cluster ingest_cell_metadata ingest_anndata ingest_differential_expression subsample
+    differential_expression render_expression_arrays
   ].freeze
 
   # Mappings between actions & models (for cleaning up data on re-parses)
@@ -23,6 +23,7 @@ class IngestJob
     ingest_expression: Gene,
     ingest_cluster: ClusterGroup,
     ingest_cell_metadata: CellMetadatum,
+    ingest_differential_expression: DifferentialExpressionResult,
     ingest_subsample: ClusterGroup
   }.freeze
 
@@ -415,6 +416,8 @@ class IngestJob
       set_subsampling_flags
     when :differential_expression
       create_differential_expression_results
+    when :ingest_differential_expression
+      load_differential_expression_manifest
     when :render_expression_arrays
       launch_image_pipeline_job
     when :image_pipeline
@@ -578,7 +581,7 @@ class IngestJob
   # set corresponding differential expression flags on associated annotation
   def create_differential_expression_results
     annotation_identifier = "#{params_object.annotation_name}--group--#{params_object.annotation_scope}"
-    Rails.logger.info "Creating differential expression results objects for annotation: #{annotation_identifier}"
+    Rails.logger.info "Creating differential expression result object for annotation: #{annotation_identifier}"
     cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id)
     matrix_url = params_object.matrix_file_path
     matrix_filename = matrix_url.split("gs://#{study.bucket_id}/").last
@@ -591,6 +594,16 @@ class IngestJob
       matrix_file_id: matrix_file.id
     )
     de_result.save
+  end
+
+  # read the DE manifest file generated during ingest_differential_expression to create DifferentialExpressionResult
+  # entry for given annotation/cluster, and populate any one-vs-rest or pairwise_comparisons
+  def load_differential_expression_manifest
+    de_info = study_file.differential_expression_file_info
+    annotation_identifier = "#{de_info.annotation_name}--group--#{de_info.annotation_scope}"
+    Rails.logger.info "Creating differential expression result object for annotation: #{annotation_identifier} from " \
+                      "user-uploaded file #{study_file.upload_file_name}"
+    # TODO: SCP-5096, once SCP-4999 & SCP-5087 are completed
   end
 
   # launch an image pipeline job once :render_expression_arrays completes
@@ -889,6 +902,11 @@ class IngestJob
       cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id)
       message << "Subsampling has completed for #{cluster.name}"
       message << "Subsamples generated: #{cluster.subsample_thresholds_required.join(', ')}"
+    when :ingest_differential_expression
+      result = DifferentialExpressionResult.find_by(study:, study_file:)
+      message << "Differential expression ingest completed for #{result.annotation_name}"
+      message << "One-vs-rest comparisons: #{result.one_vs_rest_comparisons.join(', ')}" if result.one_vs_rest_comparisons.any?
+      message << "Total pairwise comparisons: #{result.num_pairwise_comparisons}" if result.pairwise_comparisons.any?
     when :differential_expression
       message << "Differential expression calculations for #{params_object.cluster_name} have completed"
       message << "Selected annotation: #{params_object.annotation_name} (#{params_object.annotation_scope})"

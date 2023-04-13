@@ -8,10 +8,10 @@ class CreateDifferentialExpressionResults < Mongoid::Migration
     if results_obj.valid?
       Rails.logger.info "Results for #{de_identifier} valid, saving"
       results_obj.save!
-      Rails.logger.info "Save complete, keeping valid outputs for #{results_obj.observed_values.join(', ')}"
+      Rails.logger.info "Save complete, keeping valid outputs for #{results_obj.one_vs_rest_comparisons.join(', ')}"
       # determine if there are some output files that are still invalid and should be removed
       # can be determined with the difference between the list of original values and observed values
-      invalid_labels = source_labels - results_obj.observed_values
+      invalid_labels = source_labels - results_obj.one_vs_rest_comparisons
       Rails.logger.info "Found #{invalid_labels.count} invalid outputs: #{invalid_labels.join(', ')}"
       invalid_labels.each do |label|
         remove_output_file(results_obj, label)

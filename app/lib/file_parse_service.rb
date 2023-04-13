@@ -120,6 +120,10 @@ class FileParseService
           study:, study_file:, user:, action: :ingest_anndata, reparse:, persist_on_fail:, params_object:
         )
         job.delay.push_remote_and_launch_ingest
+      when 'Differential Expression'
+        action = :ingest_differential_expression
+        job = IngestJob.new(study:, study_file:, user:, action: , reparse:, persist_on_fail:)
+        job.delay.push_remote_and_launch_ingest
       end
 
       study_file.update(parse_status: 'parsing')

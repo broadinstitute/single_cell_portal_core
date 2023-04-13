@@ -383,7 +383,7 @@ class User
       true
     rescue => e
       # report error upstream to Sentry
-      # cannot report to MixPanel via MetricsService#report_error as there is no associated HTTP request
+      # cannot report to Mixpanel via MetricsService#report_error as there is no associated HTTP request
       Rails.logger.error "Error checking user:#{id} Terra ToS status: #{e.class.name} - #{e.message}"
       ErrorTracker.report_exception(e, self)
       false # we don't know the status of the user here, so default to false

@@ -236,7 +236,7 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     result = DifferentialExpressionResult.create(
       study: @basic_study, cluster_group: cluster, matrix_file_id: @raw_matrix.id, cluster_name: cluster.name,
       annotation_name: 'cell_type__ontology_label', annotation_scope: 'study', computational_method: 'wilcoxon',
-      observed_values: ['B cell', 'T cell']
+      one_vs_rest_comparisons: ['B cell', 'T cell']
     )
     assert result.present?
     @basic_study.reload

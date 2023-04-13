@@ -52,6 +52,16 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.SCP.readOnlyToken && window.SCP.studyAccession) {
     ScpApi.setupRenewalForReadOnlyToken(window.SCP.studyAccession)
   }
+
+  const path = window.location.pathname
+  const onTosPage = path.includes('terra_tos') || path.includes('accept_tos')
+  if (!onTosPage && window.SCP.userSignedIn) {
+    ScpApi.checkTerraTosAcceptance().then(mustAcceptTerraTos => {
+      if (mustAcceptTerraTos) {
+        window.location = '/single_cell/terra_tos'
+      }
+    })
+  }
 })
 
 const componentsToExport = {
