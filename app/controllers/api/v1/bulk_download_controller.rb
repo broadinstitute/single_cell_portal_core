@@ -372,7 +372,7 @@ module Api
         end
 
         # generate curl config file
-        logger.info "Beginning creation of curl configuration for user_id, auth token: #{current_api_user.id}"
+        logger.info "Beginning creation of curl configuration for user_id: #{current_api_user.id}"
         start_time = Time.zone.now
         @configuration = ::BulkDownloadService.generate_curl_configuration(study_files: files_requested,
                                                                            directory_files: directory_files,

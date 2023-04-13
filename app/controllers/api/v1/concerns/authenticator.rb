@@ -85,7 +85,7 @@ module Api
           if !params[:auth_code].present?
             return nil
           end
-          Rails.logger.info "Authenticating user via auth_token: #{params[:auth_code]}"
+          Rails.logger.info "Authenticating user via auth_token"
           user = User.verify_totat(params[:auth_code], request.path)
           user.try(:update_last_access_at!)
           return user
