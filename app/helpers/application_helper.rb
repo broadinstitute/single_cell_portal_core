@@ -53,7 +53,7 @@ module ApplicationHelper
     breadcrumbs = []
     if controller_name == 'site'
       if @study
-        breadcrumbs << {title: "Study overview", link: view_study_path(accession: @study.accession, study_name: @study.url_safe_name)}
+        breadcrumbs << {title: "<h1 style='font-weight: bold !important; font-size: 16px; margin: 0; display: inline;'>#{@study.name} <span class='badge' id='cell-count'> #{ @study.cell_count } cells</span></h1>", link: view_study_path(accession: @study.accession, study_name: @study.url_safe_name)}
       end
       case action_name
         when 'view_gene_expression'
