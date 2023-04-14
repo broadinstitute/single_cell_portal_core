@@ -589,7 +589,7 @@ function RawScatterPlot({
       </div>
       <p className="help-block">
         { scatterData && scatterData.description &&
-          <span>{scatterData.description}</span>
+          <span>all cells UMAP visualization</span>
         }
       </p>
       {

@@ -15,6 +15,11 @@
   }
 }
 
+.study-rectangle {
+  height: fit-content;
+  box-shadow: none;
+}
+
 .dropdown-scroll {
   overflow: auto;
   max-height: 80vh;
