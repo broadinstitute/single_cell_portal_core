@@ -51,25 +51,11 @@ module ApplicationHelper
   # construct nav menu breadcrumbs
   def set_breadcrumbs
     breadcrumbs = []
-    if controller_name == 'site'
-      if @study
-        # breadcrumbs << {title: "<h1 style='font-weight: bold !important; font-size: 16px; margin: 0; display: inline;'>#{@study.name} <span class='badge' id='cell-count'> #{ @study.cell_count } cells</span></h1>", link: view_study_path(accession: @study.accession, study_name: @study.url_safe_name)}
-        breadcrumbs << {title: "<h1 style='font-weight: bold !important; font-size: 16px; margin: 0; display: inline;'>Cellular and transcriptional diversity over the course of human lactation <span class='badge' id='cell-count'> #{ @study.cell_count } cells</span></h1>", link: view_study_path(accession: @study.accession, study_name: @study.url_safe_name)}
-        # breadcrumbs << {title: "<h1 style='font-weight: bold !important; font-size: 16px; margin: 0; display: inline;'>Aortic Cellular Diversity and Quantitative Genome-Wide Association Study Trait Prioritization Through Single-Nuclear RNA Sequencing of the Aneurysmal Human Aorta <span class='badge' id='cell-count'> #{ @study.cell_count } cells</span></h1>", link: view_study_path(accession: @study.accession, study_name: @study.url_safe_name)}
-        # breadcrumbs << {title: "Aortic Cellular Diversity and Quantitative Genome-Wide Association Study Trait Prioritization Through Single-Nuclear RNA Sequencing of the Aneurysmal Human Aorta <span class='badge' id='cell-count'> #{ @study.cell_count } cells</span>", link: view_study_path(accession: @study.accession, study_name: @study.url_safe_name)}
-      end
-      case action_name
-        when 'view_gene_expression'
-          breadcrumbs << {title: "Gene expression <span class='badge'>#{params[:gene]}</span>", link: 'javascript:;'}
-        when 'view_gene_set_expression'
-          breadcrumbs << {title: "Gene set expression <span class='badge'>Multiple</span>", link: 'javascript:;'}
-        when 'view_gene_expression_heatmap'
-          breadcrumbs << {title: "Gene expression <span class='badge'>Multiple</span>", link: 'javascript:;'}
-        when 'view_precomputed_gene_expression_heatmap'
-          breadcrumbs << {title: "Gene expression <span class='badge'>#{params[:precomputed]}</span>", link: 'javascript:;'}
-        when 'view_all_gene_expression_heatmap'
-          breadcrumbs << {title: "Gene expression <span class='badge'>All</span>", link: 'javascript:;'}
-      end
+    if controller_name == 'site' && @study
+      # breadcrumbs << {title: "<h1 style='font-weight: bold !important; font-size: 16px; margin: 0; display: inline;'>#{@study.name} <span class='badge' id='cell-count'> #{ @study.cell_count } cells</span></h1>", link: view_study_path(accession: @study.accession, study_name: @study.url_safe_name)}
+      # breadcrumbs << {title: "<h1 style='font-weight: bold !important; font-size: 16px; margin: 0; display: inline;'>Cellular and transcriptional diversity over the course of human lactation <span class='badge' id='cell-count'> #{ @study.cell_count } cells</span></h1>", link: view_study_path(accession: @study.accession, study_name: @study.url_safe_name)}
+      breadcrumbs << {title: "<h1 style='font-weight: bold !important; font-size: 16px; margin: 0; display: inline;'>Aortic Cellular Diversity and Quantitative Genome-Wide Association Study Trait Prioritization Through Single-Nuclear RNA Sequencing of the Aneurysmal Human Aorta <span class='badge' id='cell-count'> #{ @study.cell_count } cells</span></h1>", link: view_study_path(accession: @study.accession, study_name: @study.url_safe_name)}
+      # breadcrumbs << {title: "Aortic Cellular Diversity and Quantitative Genome-Wide Association Study Trait Prioritization Through Single-Nuclear RNA Sequencing of the Aneurysmal Human Aorta <span class='badge' id='cell-count'> #{ @study.cell_count } cells</span>", link: view_study_path(accession: @study.accession, study_name: @study.url_safe_name)}
     elsif controller_name == 'studies'
       breadcrumbs << {title: "My studies", link: studies_path}
       case action_name

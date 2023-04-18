@@ -97,8 +97,6 @@
 
 </head>
 <body <%= @selected_branding_group.present? ? "data-branding-id=#{@selected_branding_group.name_as_id}" : nil %>>
-# <h1><%= yield(:title) %></h1>
-
   <%#
     TODO: In SCP-2121, move these includes back into HEAD element now that
     https://github.com/react-bootstrap/react-bootstrap/issues/3645
@@ -135,6 +133,7 @@
   <%= yield %>
 <% else %>
   <div class="container-fluid" id="wrap">
+
     <div class="row section-pad" id="main-body">
       <div class="col-md-12">
         <%= yield %>
