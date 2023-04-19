@@ -231,6 +231,22 @@ module Api
           annotation_split_defaults = cluster.study_file.cluster_file_info&.annotation_split_defaults_as_hash || {}
           is_split_label_arrays = annotation_split_defaults[annotation[:name]] || false
 
+          if cluster.name == 'All Cells UMAP' && annotation[:name] == 'General_Celltype'
+            colorMap = {
+              'LC2': '#bb99ff',
+              'LC1': '#9986a5',
+              'neutrophils': '#d8a499',
+              'T cells': '#81a88d',
+              'eosinophils': '#d9d0d3',
+              'dendritic cells': '#c6cdf7',
+              'GPMNB macrophages': '#ee46a6',
+              'CSN1S1 macrophages': '#e6a0c4',
+              'fibroblasts': '#5eb668',
+              'B cells': '#7294d4'
+            }
+            custom_annotation_colors = colorMap
+          end
+
           {
             data: plot_data,
             pointSize: study.default_cluster_point_size,
