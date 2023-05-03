@@ -103,7 +103,7 @@ function ImageDisplay({ file, bucketName }) {
     <h5 className="plot-title">
       <FontAwesomeIcon icon={faImage} className="fa-lg fas"/> {file.name}
       &nbsp;
-      <button className="action" onClick={() => setShow(!show)}>[{show ? 'hide' : 'show'}]</button>
+      <button aria-label="Toggle show image" className="action" onClick={() => setShow(!show)}>[{show ? 'hide' : 'show'}]</button>
     </h5>
     { show &&
       <div>

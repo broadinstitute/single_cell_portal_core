@@ -145,6 +145,7 @@ function SaveButton({ file, saveFile, validationMessages = {} }) {
     className={file.isDirty ? 'btn btn-primary margin-right' : 'btn terra-secondary-btn margin-right'}
     onClick={() => saveFile(file)}
     disabled={saveDisabled}
+    aria-disabled={saveDisabled}
     data-testid="file-save">
     Save {file.uploadSelection && <span>&amp; Upload</span>}
   </button>

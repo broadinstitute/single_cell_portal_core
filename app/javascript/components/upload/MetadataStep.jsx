@@ -62,7 +62,7 @@ function MetadataForm({
           <div className="row">
             <div className="col-md-12" id="overflow-x-scroll">
               A <b>metadata file</b> lists all cells in the study
-              <img src={metadataExplainerImage}/>
+              <img src={metadataExplainerImage} alt={'Diagram of data required for metadata file'}/>
             </div>
           </div>
           <div className="row">
@@ -94,6 +94,7 @@ function MetadataForm({
               name={`metadataFormYes-${file._id}`}
               value="true"
               disabled={conventionRequired}
+              aria-disabled={conventionRequired}
               checked={file.use_metadata_convention}
               onChange={e => updateFile(file._id, { use_metadata_convention: true })} /> Yes
           </label>
@@ -102,6 +103,7 @@ function MetadataForm({
               name={`metadataFormNo-${file._id}`}
               value="false"
               disabled={conventionRequired}
+              aria-disabled={conventionRequired}
               checked={!file.use_metadata_convention}
               onChange={e => updateFile(file._id, { use_metadata_convention: false })} /> No
           </label> &nbsp; &nbsp;

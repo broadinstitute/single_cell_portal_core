@@ -59,6 +59,7 @@ function RawFacetControl({ facet }) {
           ref={clearNode}
           className='facet-clear'
           onClick={clearFacet}
+          aria-label='Clear facets'
         >
           <FontAwesomeIcon icon={faTimesCircle}/>
         </button>

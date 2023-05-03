@@ -334,6 +334,7 @@ export default function ExploreDisplayTabs({
                   <Tooltip id='back-to-cluster-view'>{'Return to cluster view'}</Tooltip>
                 }>
                   <button className="action fa-lg"
+                    aria-label="Back arrow"
                     onClick={() => searchGenes([])}>
                     <FontAwesomeIcon icon={faArrowLeft}/>
                   </button>

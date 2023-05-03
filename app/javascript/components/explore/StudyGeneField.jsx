@@ -61,7 +61,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     } else if (newGeneArray && newGeneArray.length) {
       const genesToSearch = newGeneArray.map(g => g.value)
       if (genesToSearch.length > window.MAX_GENE_SEARCH) {
-        log('search-too-many-genes', {numGenes: genesToSearch.length})
+        log('search-too-many-genes', { numGenes: genesToSearch.length })
         setShowTooManyGenesModal(true)
       } else {
         if (event) { // this was not a 'clear'
@@ -160,7 +160,13 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
       <div className="flexbox align-center">
         <div className="input-group">
           <div className="input-group-append">
-            <Button type="button" data-analytics-name="gene-search-submit" onClick={handleSearch} disabled={searchDisabled}>
+            <Button
+              type="button"
+              aria-label="Search genes"
+              aria-disabled={searchDisabled}
+              data-analytics-name="gene-search-submit"
+              onClick={handleSearch}
+              disabled={searchDisabled}>
               <FontAwesomeIcon icon={faSearch} />
             </Button>
           </div>

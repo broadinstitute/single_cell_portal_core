@@ -47,7 +47,7 @@ export default function ImageTab({
         <div className="col-md-6">
           <h5 className="text-center">
             Associated Clusters
-            <button className="action" onClick={() => setShowClusters(!showClusters)}>
+            <button className="action" aria-label="Toggle show clusters" onClick={() => setShowClusters(!showClusters)}>
               [{showClusters ? 'hide' : 'show'}]
             </button>
           </h5>

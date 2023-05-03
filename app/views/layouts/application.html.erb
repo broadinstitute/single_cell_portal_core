@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <title>
   <%= content_for?(:html_title) ? yield(:html_title) : "Single Cell Portal" %>
@@ -124,7 +124,7 @@
           <p class="text-danger text-center" id="alert-content"><strong></strong></p>
         </div>
         <div class="modal-footer">
-          <button class="close" data-dismiss="modal">×</button>
+          <button class="close" aria-label='Close' data-dismiss="modal">×</button>
         </div>
       </div>
     </div>
@@ -153,7 +153,7 @@
         <div id="spinner_target"></div>
       </div>
       <div class="modal-footer">
-        <button class="close" data-dismiss="modal">×</button>
+        <button class="close" aria-label='Close' data-dismiss="modal">×</button>
       </div>
     </div>
   </div>
@@ -168,7 +168,7 @@
 				<div class="spinner-target" id="delete-modal-spinner"></div>
 			</div>
 			<div class="modal-footer">
-				<button class="close" data-dismiss="modal">×</button>
+				<button class="close" aria-label='Close' data-dismiss="modal">×</button>
 			</div>
 		</div>
 	</div>
@@ -183,7 +183,7 @@
         <div class="spinner-target" id="generic-modal-spinner"></div>
       </div>
       <div class="modal-footer" id="generic-modal-footer">
-        <button class="close" data-dismiss="modal">×</button>
+        <button class="close" aria-label='Close' data-dismiss="modal">×</button>
       </div>
     </div>
   </div>
@@ -208,9 +208,9 @@
       <% end %>
     </div>
     <div class="footer-social-media-icons-block pull-right ">
-    <%= link_to "<i class='fab fa-youtube'></i>".html_safe, "https://www.youtube.com/channel/UCp_UGD74MW8up1YkWZrWkKw", target: :_blank, 'data-analytics-name' => 'youtube-link' %>
+    <%= link_to "<i class='fab fa-youtube'></i>".html_safe, "https://www.youtube.com/channel/UCp_UGD74MW8up1YkWZrWkKw", target: :_blank, 'data-analytics-name' => 'youtube-link',  'aria-label' => 'YouTube' %>
     &nbsp;
-    <%= link_to "<i class='fab fa-twitter-square', data-analytics-name='twitter-link' ></i>".html_safe, "https://twitter.com/SingleCellBroad", target: :_blank, 'data-analytics-name' => 'twitter-link'  %>
+    <%= link_to "<i class='fab fa-twitter-square', data-analytics-name='twitter-link' ></i>".html_safe, "https://twitter.com/SingleCellBroad", target: :_blank, 'data-analytics-name' => 'twitter-link', 'aria-label' => 'Twitter' %>
     &nbsp;
   </div>
     <div class="clearfix"></div>

@@ -211,6 +211,7 @@ export default function DifferentialExpressionPanel({
             type="button"
             data-analytics-name="clear-de-search"
             className="clear-de-search-icon"
+            aria-label="Clear"
             onClick={handleClear} >
             <FontAwesomeIcon icon={faTimes} />
           </Button> }
