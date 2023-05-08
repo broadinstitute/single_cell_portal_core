@@ -639,7 +639,8 @@ class IngestJob
       case extract
       when 'cluster'
         params_object.obsm_keys.each do |fragment|
-          Rails.logger.info "launching AnnData #{fragment} cluster extraction for #{study_file.upload_file_name}"
+          Rails.logger.info "launching AnnData #{fragment} cluster ingest for #{study_file.upload_file_name}"
+          action = :ingest_cluster
           matcher = { data_type: :cluster, obsm_key_name: fragment }
           cluster_data_fragment = study_file.ann_data_file_info.find_fragment(**matcher)
           name = cluster_data_fragment&.[](:name) || fragment # fallback if we can't find data_fragment
@@ -649,22 +650,30 @@ class IngestJob
             ingest_cluster: true, name:, cluster_file: cluster_gs_url, domain_ranges:, ingest_anndata: false,
             extract: nil, obsm_keys: nil
           )
-          job = IngestJob.new(study:, study_file:, user:, action: :ingest_cluster, params_object: cluster_params)
+          job = IngestJob.new(study:, study_file:, user:, action:, params_object: cluster_params)
           job.delay.push_remote_and_launch_ingest
         end
       when 'metadata'
-        Rails.logger.info "launching AnnData metadata extraction for #{study_file.upload_file_name}"
+        Rails.logger.info "launching AnnData metadata ingest for #{study_file.upload_file_name}"
+        action = :ingest_cell_metadata
         metadata_gs_url = params_object.fragment_file_gs_url(study.bucket_id, 'metadata', study_file.id)
         metadata_params = AnnDataIngestParameters.new(
           ingest_cell_metadata: true, cell_metadata_file: metadata_gs_url,
           ingest_anndata: false, extract: nil, obsm_keys: nil, study_accession: study.accession
         )
-        job = IngestJob.new(study:, study_file:, user:, action: :ingest_cell_metadata, params_object: metadata_params)
+        job = IngestJob.new(study:, study_file:, user:, action:, params_object: metadata_params)
         job.delay.push_remote_and_launch_ingest
-      else
-        # processed_expression data is parsed during the initial extract phase, so nothing is required here
-        # logging is for debugging purposes only
-        Rails.logger.info "skipping extraction of #{extract} for #{study_file.upload_file_name}"
+      when 'processed_expression'
+        Rails.logger.info "launching AnnData processed expression ingest for #{study_file.upload_file_name}"
+        matrix_gs_url = params_object.fragment_file_gs_url(study.bucket_id, 'matrix', study_file.id, 'processed')
+        features_gs_url = params_object.fragment_file_gs_url(study.bucket_id, 'features', study_file.id, 'processed')
+        barcodes_gs_url = params_object.fragment_file_gs_url(study.bucket_id, 'barcodes', study_file.id, 'processed')
+        exp_params = AnnDataIngestParameters.new(
+          ingest_expression: true, matrix_file: matrix_gs_url, matrix_file_type: 'mtx', gene_file: features_gs_url,
+          barcode_file: barcodes_gs_url, ingest_anndata: false, extract: nil, obsm_keys: nil
+        )
+        job = IngestJob.new(study:, study_file:, user:, action: :ingest_expression, params_object: exp_params)
+        job.delay.push_remote_and_launch_ingest
       end
     end
   end

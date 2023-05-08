@@ -27,7 +27,8 @@ class AnnDataIngestParameters
   # cell_metadata_file: GS URL for extracted metadata file
   # ingest_cell_metadata: gate ingesting an extracted metadata file
   attr_accessor :ingest_anndata, :anndata_file, :extract, :obsm_keys, :ingest_cluster, :cluster_file, :name,
-                :domain_ranges, :cell_metadata_file, :ingest_cell_metadata, :study_accession
+                :domain_ranges, :cell_metadata_file, :ingest_cell_metadata, :study_accession, :ingest_expression,
+                :matrix_file, :matrix_file_type, :gene_file, :barcode_file
 
   validates :anndata_file, :cluster_file, :cell_metadata_file,
             format: { with: Parameterizable::GS_URL_REGEXP, message: 'is not a valid GS url' },
@@ -47,7 +48,12 @@ class AnnDataIngestParameters
     extract: %w[cluster metadata processed_expression],
     cell_metadata_file: nil,
     ingest_cell_metadata: false,
-    study_accession: nil
+    study_accession: nil,
+    ingest_expression: false,
+    matrix_file: nil,
+    matrix_file_type: nil,
+    gene_file: nil,
+    barcode_file: nil
   }.freeze
 
   def initialize(attributes = {})
