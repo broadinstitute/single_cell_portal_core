@@ -1,17 +1,39 @@
 require 'test_helper'
 require 'csv'
 require 'bulk_download_helper'
+require 'detached_helper'
 
 class BulkDownloadServiceTest < ActiveSupport::TestCase
 
   before(:all) do
     @user = FactoryBot.create(:user, test_array: @@users_to_clean)
-    @study = FactoryBot.create(:study,
+    @study = FactoryBot.create(:detached_study,
                                name_prefix: 'BulkDownload Study',
                                public: true,
                                user: @user,
-                               test_array: @@studies_to_clean,
-                               predefined_file_types: %w[cluster metadata expression])
+                               test_array: @@studies_to_clean)
+    FactoryBot.create(:metadata_file,
+                      name: 'metadata.v2-0-0.txt',
+                      use_metadata_convention: true,
+                      study: @study,
+                      status: 'uploaded',
+                      upload_file_size: 300)
+    FactoryBot.create(:expression_file,
+                      name: 'expression_matrix_example.txt',
+                      expression_file_info: {
+                        is_raw_counts: false,
+                        library_preparation_protocol: 'Drop-seq',
+                        biosample_input_type: 'Whole cell',
+                        modality: 'Proteomic'
+                      },
+                      status: 'uploaded',
+                      study: @study,
+                      upload_file_size: 300)
+    FactoryBot.create(:cluster_file,
+                      name: 'cluster_example.txt',
+                      study: @study,
+                      upload_file_size: 300,
+                      status: 'uploaded')
     DirectoryListing.create!(name: 'fastq', file_type: 'fastq',
                              files: [
                                { name: '1_L1_001.fastq', size: 100, generation: '12345' },
@@ -35,14 +57,16 @@ class BulkDownloadServiceTest < ActiveSupport::TestCase
   end
 
   test 'should load requested files' do
-    requested_file_types = %w(Metadata Expression)
-    files = BulkDownloadService.get_requested_files(file_types: requested_file_types, study_accessions: [@study.accession])
-    expected_files = @study.study_files.where(:file_type.in => ['Metadata', /Matrix/, /10X/])
-    expected_count = expected_files.size
-    assert_equal expected_count, files.size, "Did not find correct number of files, expected #{expected_count} but found #{files.size}"
-    expected_filenames = expected_files.map(&:name).sort
-    found_files = files.map(&:name).sort
-    assert_equal expected_filenames, found_files, "Did not find the correct files, expected: #{expected_files} but found #{found_files}"
+    mock_query_not_detached [@study] do
+      requested_file_types = %w(Metadata Expression)
+      files = BulkDownloadService.get_requested_files(file_types: requested_file_types, study_accessions: [@study.accession])
+      expected_files = @study.study_files.where(:file_type.in => ['Metadata', /Matrix/, /10X/])
+      expected_count = expected_files.size
+      assert_equal expected_count, files.size, "Did not find correct number of files, expected #{expected_count} but found #{files.size}"
+      expected_filenames = expected_files.map(&:name).sort
+      found_files = files.map(&:name).sort
+      assert_equal expected_filenames, found_files, "Did not find the correct files, expected: #{expected_files} but found #{found_files}"
+    end
   end
 
   test 'should get requested directories' do
@@ -56,19 +80,21 @@ class BulkDownloadServiceTest < ActiveSupport::TestCase
   end
 
   test 'should get requested file sizes by query' do
-    file_listing = BulkDownloadService.get_download_info([@study.accession])
-    expected_info = [
-      {
-        name: @study.name,
-        accession: @study.accession,
-        description: @study.description,
-        study_source: 'SCP',
-        study_files: @study.study_files.map do |f|
-          { name: f.name, id: f.id.to_s, file_type: f.file_type, upload_file_size: f.upload_file_size }
-        end
-      }
-    ]
-    assert_equal expected_info, file_listing
+    mock_query_not_detached [@study] do
+      file_listing = BulkDownloadService.get_download_info([@study.accession])
+      expected_info = [
+        {
+          name: @study.name,
+          accession: @study.accession,
+          description: @study.description,
+          study_source: 'SCP',
+          study_files: @study.study_files.map do |f|
+            { name: f.name, id: f.id.to_s, file_type: f.file_type, upload_file_size: f.upload_file_size }
+          end
+        }
+      ]
+      assert_equal expected_info, file_listing
+    end
   end
 
   test 'should get requested directory sizes' do

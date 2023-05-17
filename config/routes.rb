@@ -34,6 +34,7 @@ Rails.application.routes.draw do
               member do
                 post 'parse', to: 'study_files#parse'
                 patch 'chunk', to: 'study_files#chunk'
+                delete ':fragment_id', to: 'study_files#delete_anndata_fragment'
               end
             end
             resources :study_file_bundles, only: [:index, :show, :create, :destroy]
@@ -109,6 +110,7 @@ Rails.application.routes.draw do
     get 'admin/service_account', to: 'admin_configurations#get_service_account_profile', as: :get_service_account_profile
     post 'admin/service_account', to: 'admin_configurations#update_service_account_profile', as: :update_service_account_profile
     get 'admin/users/:id/edit', to: 'admin_configurations#edit_user', as: :edit_user
+    post 'admin/users/:id/download_exemption', to: 'admin_configurations#grant_download_exemption', as: :grant_download_exemption
     match 'admin/users/:id', to: 'admin_configurations#update_user', via: [:post, :patch], as: :update_user
     get 'admin/email_users/compose', to: 'admin_configurations#compose_users_email', as: :compose_users_email
     post 'admin/email_users/compose', to: 'admin_configurations#deliver_users_email', as: :deliver_users_email

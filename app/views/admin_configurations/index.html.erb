@@ -4,7 +4,7 @@
 <div class="container-fluid" id="tab-root">
   <ul class="nav nav-tabs" role="tablist" id="study-tabs">
     <li role="presentation" class="admin-nav active" id="admin-config-nav"><a href="#admin-config" data-toggle="tab">Configuration Options<i class="fas fa-fw fa-cog"></i></a></li>
-    <li role="presentation" class="admin-nav" id="users-nav"><a href="#users" data-toggle="tab">User Roles<i class="fas fa-fw fa-user"></i></a></li>
+    <li role="presentation" class="admin-nav" id="users-nav"><a href="#users" data-toggle="tab">User Actions<i class="fas fa-fw fa-user"></i></a></li>
     <li role="presentation" class="admin-nav" id="deployment-nav"><a href="#deployment" data-toggle="tab">Deployment<i class="fas fa-fw fa-ship"></i></a></li>
   </ul>
   <div class="tab-content top-pad">
@@ -203,7 +203,7 @@
               <tr>
                 <th>Email</th>
                 <th>Special Roles</th>
-                <th>Edit</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -215,7 +215,9 @@
                     <%= user.reporter ? "<span id='#{user.email_as_id}-reporter' class='label label-success'>reporter</span>".html_safe : nil %>
                   </td>
                   <td class="actions">
-                    <%= link_to "<span class='fas fa-edit'></span> Edit".html_safe, edit_user_path(user), class: "btn btn-xs btn-primary", id: "#{user.email_as_id}-edit" %>
+                    <%= link_to "<span class='fas fa-edit'></span> Edit User".html_safe, edit_user_path(user),
+                                class: "btn btn-xs btn-primary", id: "#{user.email_as_id}-edit" %>
+                    <%= link_to quota_exemption_button(user) %>
                   </td>
                 </tr>
               <% end %>

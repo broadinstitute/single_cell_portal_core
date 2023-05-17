@@ -5,18 +5,20 @@
       <%= link_to "<span class='fas fa-cloud-download'></span> External".html_safe, study_file.download_path, class: 'btn btn-primary',
                   target: :_blank, rel: 'noopener noreferrer', data: {"analytics-name": 'file-download:study-single:external'} %>
   <% else %>
-      <% if study_file.generation and current_user.daily_download_quota + study_file.upload_file_size <= @download_quota %>
-          <%= link_to "<span class='fas fa-download'></span> #{number_to_human_size(study_file.upload_file_size, prefix: :si)}".html_safe,
-                      study_file.download_path, class: "btn btn-primary dl-link #{study_file.file_type_class}",
-                      data: {filename: study_file.upload_file_name, "analytics-name": 'file-download:study-single'} %>
+      <% if study_file.generation && DownloadQuotaService.download_exceeds_quota?(current_user, study_file.upload_file_size) %>
+        <span class="btn btn-sm btn-danger disabled-download"
+              data-content="This file exceeds your daily download quota of <%= number_to_human_size(@download_quota) %>.
+                            <%= DownloadQuotaService::QUOTA_HELP_EMAIL %>"
+              data-toggle="popover" data-placement="left"><i class="fas fa-times"></i> Exceeds Quota</span>
       <% elsif !study_file.generation %>
             <span class="label label-warning no-download-available"
                   title="You will be able to download this file once it has been uploaded to our remote data store.  Check back soon."
                   data-toggle="tooltip"><i class="fas fa-ban"></i> Awaiting remote file</span>
       <% else %>
-          <span class="btn btn-sm btn-danger disabled-download"
-                title="This file exceeds your daily download quota of <%= number_to_human_size(@download_quota) %>.  Please wait until tomorrow."
-                data-toggle="tooltip"><i class="fas fa-times"></i> Exceeds Quota</span>
+        <%= link_to "<span class='fas fa-download'></span> #{number_to_human_size(study_file.upload_file_size, prefix: :si)}".html_safe,
+                  study_file.download_path, class: "btn btn-primary dl-link #{study_file.file_type_class}",
+                  data: {filename: study_file.upload_file_name, "analytics-name": 'file-download:study-single'} %>
+
       <% end %>
   <% end %>
 <% end %>

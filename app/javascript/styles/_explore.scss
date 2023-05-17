@@ -212,3 +212,37 @@
     display: inline-block;
   }
 }
+
+.study-plot-tabs {
+  li  {
+    a {
+      font-size: larger;
+      color: #fff;
+      background: $action-color;
+      align-self: baseline;
+    }
+  } :hover {
+    color: #2a3f5f;
+  }
+  li.active > a {
+    border-left: 1px solid $action-color;
+    border-right: 1px solid $action-color;
+    border-top: 1px solid $action-color;
+    background: #fff;
+    color: #333;
+    margin-right: 8px;
+    margin-left: 8px;
+  }
+
+  li.disabled > a {
+    background: #fff;
+    color: #999999;
+    border-bottom: 1px solid #ddd;
+    aria-disabled: true;
+  }
+
+  padding-left: 0;
+  margin-bottom: 0;
+  list-style: none;
+  margin-right: 3px;
+}

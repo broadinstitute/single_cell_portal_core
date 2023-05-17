@@ -361,6 +361,23 @@ export async function deleteStudyFile(studyAccession, fileId, mock=false) {
   return response
 }
 
+/**
+ * Deletes a clustering fragment
+ *
+ * @param {String} studyAccession Study accession
+ * @param {fileId} the guid of the file to delete
+ * @param {fragId} the guid of the file to delete
+
+*/
+export async function deleteAnnDataFragment(studyAccession, fileId, fragId, mock=false) {
+  const apiUrl = `/studies/${studyAccession}/study_files/${fileId}/${fragId}`
+  const init = Object.assign({}, defaultInit(), {
+    method: 'DELETE'
+  })
+  const [response] = await scpApi(apiUrl, init, mock, false)
+  return response
+}
+
 
 /**
  * Fetches a given resource from a GCP bucket -- this handles adding the

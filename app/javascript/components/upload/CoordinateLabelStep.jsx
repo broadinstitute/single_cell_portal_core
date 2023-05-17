@@ -24,7 +24,8 @@ function CoordinateLabelForm({
   addNewFile,
   updateFile,
   saveFile,
-  deleteFile
+  deleteFile,
+  isAnnDataExperience
 }) {
   const coordinateFiles = formState.files.filter(coordinateLabelFileFilter)
   const associatedClusterFileOptions = formState.files.filter(f => f.file_type === 'Cluster')
@@ -84,6 +85,7 @@ function CoordinateLabelForm({
         updateCorrespondingClusters={updateCorrespondingClusters}
         bucketName={formState.study.bucket_id}
         isInitiallyExpanded={coordinateFiles.length === 1}
+        isAnnDataExperience={isAnnDataExperience}
       />
     })}
     <AddFileButton addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_LABEL_FILE}/>

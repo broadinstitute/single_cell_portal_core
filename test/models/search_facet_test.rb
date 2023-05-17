@@ -4,7 +4,7 @@ class SearchFacetTest < ActiveSupport::TestCase
 
   before(:all) do
     @user = FactoryBot.create(:admin_user, test_array: @@users_to_clean)
-    @study = FactoryBot.create(:study,
+    @study = FactoryBot.create(:detached_study,
                                name_prefix: 'SearchFacet Study',
                                public: true,
                                user: @user,

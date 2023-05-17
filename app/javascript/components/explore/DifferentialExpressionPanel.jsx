@@ -1,8 +1,18 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft, faDownload, faSearch, faTimes } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faDownload, faSearch, faTimes, faAngleUp, faAngleDown, faUndo } from '@fortawesome/free-solid-svg-icons'
 import Button from 'react-bootstrap/lib/Button'
+
+import PagingControl from '~/components/search/results/PagingControl'
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+  getPaginationRowModel
+} from '@tanstack/react-table'
 
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
 import DifferentialExpressionGroupPicker from '~/components/visualization/controls/DifferentialExpressionGroupPicker'
@@ -26,83 +36,274 @@ function getAnnotationObject(exploreParamsWithDefaults, exploreInfo) {
   })
 }
 
-/** Set up radio buttons to be all unchecked upon changing dropdown value */
-function initChecked(deGenes, checkedGene) {
-  const checked = {}
-  if (!deGenes) {return checked}
-  deGenes.forEach(deGene => {
-    checked[deGene.name] = checkedGene && checkedGene === deGene.name
-  })
-  return checked
-}
-
+/** A small icon-like button that downloads DE data as a file */
 function DownloadButton({ bucketId, deFilePath }) {
   return (
-    <a className="de-download-button"
+    <a
+      className="de-download-button"
       onClick={async () => {await downloadBucketFile(bucketId, deFilePath)}}
       data-analytics-name="differential-expression-download"
       data-toggle="tooltip"
-      data-original-title="Download all DE genes data for this group"
+      data-original-title="Download all differential expression data for this group"
     >
       <FontAwesomeIcon icon={faDownload}/>
     </a>
   )
 }
 
+/** A small icon-like button that makes a dot plot */
+function DotPlotButton({ dotPlotGenes, searchGenes }) {
+  const actionColor = '#3D5A87'
+  // Whipped up via https://boxy-svg.com/app,
+  // based on Alexandria-approved mockup at:
+  // https://docs.google.com/presentation/d/1j8zt1Hj4otD593FtkXlBsPw4GsxkU4XOVYXQx3Ec--E/edit#slide=id.g19cbfc5899b_0_9
+  return (
+    <a
+      className="de-dot-plot-button"
+      onClick={() => {searchGenes(dotPlotGenes)}}
+      data-analytics-name="differential-expression-dot-plot"
+      data-toggle="tooltip"
+      data-original-title="View dot plot for genes on this differential expression table page"
+    >
+      <svg viewBox="119.295 104.022 40.338 40.976" width="14" height="14">
+        <ellipse style={{ 'fill': actionColor }} cx="130.295" cy="115.041" rx="11" ry="11"></ellipse>
+        <ellipse style={{ 'fill': actionColor }} cx="153.18" cy="115.779" rx="2.5" ry="2.5"></ellipse>
+        <ellipse style={{ 'fill': actionColor }} cx="128.719" cy="137.129" rx="5" ry="5"></ellipse>
+        <ellipse style={{ 'fill': actionColor }} cx="151.633" cy="136.998" rx="8" ry="8"></ellipse>
+      </svg>
+    </a>
+  )
+}
+
+/** Button to refresh DE table to original view */
+function DifferentialExpressionResetButton({ onClick }) {
+  return <a
+    onClick={() => onClick()}
+    className="de-reset-button"
+    data-analytics-name="differential-expression-reset"
+    data-toggle="tooltip"
+    data-original-title="Reset view in differential expression table"
+  >
+    <FontAwesomeIcon icon={faUndo}/>
+  </a>
+}
+
+/**
+ * Icon for current sort order direction in table column header
+ *
+ * @param {String} order Direction of current sort order: 'asc' or 'desc'
+ */
+function SortIcon({ order }) {
+  const isAscending = order === 'asc'
+  const dirIcon = isAscending ? faAngleDown : faAngleUp
+  return (
+    <button className="sort-icon" aria-label="Sort this column">
+      <FontAwesomeIcon icon={dirIcon}/>
+    </button>
+  )
+}
+
+const columnHelper = createColumnHelper()
+
+/** Search genes from DE table */
+function searchGenesFromTable(selectedGenes, searchGenes, logProps) {
+  searchGenes(selectedGenes)
+
+  // Log this search to Mixpanel
+  logSearchFromDifferentialExpression(
+    logProps.event, selectedGenes, logProps.species, logProps.rank,
+    logProps.clusterName, logProps.annotation.name
+  )
+}
+
+
+const defaultSorting = [
+  { id: 'pvalAdj', desc: false },
+  { id: 'log2FoldChange', desc: true }
+]
+
+/** Table of DE data for genes */
 function DifferentialExpressionTable({
-  genesToShow, searchGenes, checked, clusterName, annotation, species, changeRadio
+  genesToShow, searchGenes, clusterName, annotation, species, numRows,
+  bucketId, deFilePath, handleClear
 }) {
+  const defaultPagination = {
+    pageIndex: 0,
+    pageSize: numRows
+  }
+
+  const [rowSelection, setRowSelection] = useState({})
+  const [sorting, setSorting] = React.useState(defaultSorting)
+  const [pagination, setPagination] = React.useState(defaultPagination)
+
+  const logProps = {
+    species, clusterName, annotation
+  }
+
+  const columns = React.useMemo(() => [
+    columnHelper.accessor('name', {
+      header: 'Name',
+      cell: deGene => {
+        return (
+          <label
+            title="Click to view gene expression.  Arrow down (↓) and up (↑) to quickly scan."
+          >
+            <input
+              type="radio"
+              name="selected-gene-de-table"
+              data-analytics-name="selected-gene-differential-expression"
+              value={deGene.getValue()}
+              onChange={event => {
+                deGene.table.resetRowSelection(deGene.row)
+                deGene.table.setRowSelection(deGene.row)
+
+                logProps.event = event
+                logProps.rank = deGene.i
+
+                searchGenesFromTable([deGene.getValue()], searchGenes, logProps)
+
+                deGene.row.getToggleSelectedHandler()
+              }}/>
+            {deGene.getValue()}
+          </label>
+        )
+      }
+    }),
+    columnHelper.accessor('log2FoldChange', {
+      header: () => (
+        <span
+          id="log2-fold-change-header"
+          className="glossary"
+          data-toggle="tooltip"
+          data-original-title="Log (base 2) of fold change">
+          log<sub>2</sub>(FC)
+        </span>
+      ),
+      cell: deGene => {
+        return deGene.getValue()
+      }
+    }),
+    columnHelper.accessor('pvalAdj', {
+      header: () => (
+        <span
+          id="pval-adj-header"
+          className="glossary"
+          data-toggle="tooltip"
+          data-original-title="p-value adjusted with Benjamini-Hochberg FDR correction">
+          Adj. p-value
+        </span>
+      ),
+      cell: deGene => {
+        return deGene.getValue()
+      }
+    })
+  ]
+  , [genesToShow]
+  )
+
+  const data = React.useMemo(
+    () => genesToShow,
+    [genesToShow]
+  )
+
+  const table = useReactTable({
+    columns,
+    data,
+    getCoreRowModel: getCoreRowModel(),
+    state: {
+      rowSelection,
+      sorting,
+      pagination
+    },
+    onRowSelectionChange: setRowSelection,
+    getSortedRowModel: getSortedRowModel(),
+    enableMultisort: true,
+    onPaginationChange: setPagination,
+    onSortingChange: setSorting,
+    getPaginationRowModel: getPaginationRowModel()
+  })
+
+  const dotPlotGenes = table.getPaginationRowModel().rows.slice(0, numRows).map(row => (
+    row.getAllCells().map(cell => {
+      return cell.getValue()
+    })[0]
+  ))
+
+  const verticalPad = 400 // Accounts for all UI real estate above table header
+  const tableHeight = window.innerHeight - verticalPad
+
+  /** Put DE table back to its original state */
+  function resetDifferentialExpression() {
+    setRowSelection({})
+    setSorting(defaultSorting)
+    setPagination(defaultPagination)
+    handleClear()
+  }
+
   return (
     <>
-      <table className="de-table table table-terra table-scp-compact">
+      <div className="de-table-buttons">
+        <DotPlotButton dotPlotGenes={dotPlotGenes} searchGenes={searchGenes} />
+        <DownloadButton bucketId={bucketId} deFilePath={deFilePath} />
+        <DifferentialExpressionResetButton onClick={resetDifferentialExpression} />
+        <DifferentialExpressionModal />
+      </div>
+      <table
+        className="de-table table table-terra table-scp-compact"
+        style={{ height: `${tableHeight}px` }}
+      >
         <thead>
-          <tr>
-            <th>Name</th>
-            <th>
-              <span className="glossary" data-toggle="tooltip" data-original-title="Log (base 2) of fold change">
-              log<sub>2</sub>(FC)
-              </span>
-            </th>
-            <th>
-              <span className="glossary" data-toggle="tooltip" data-original-title="p-value adjusted with Benjamini-Hochberg FDR correction">
-              Adj. p-value
-              </span>
-            </th>
-          </tr>
+          {table.getHeaderGroups().map(headerGroup => (
+            <tr key={headerGroup.id}>
+              {headerGroup.headers.map(header => (
+                <th key={header.id}>
+                  {header.isPlaceholder ? null : (
+                    <div
+                      {...{
+                        style: header.column.getCanSort() ?
+                          { cursor: 'pointer', userSelect: 'none' } :
+                          '',
+                        onClick: header.column.getToggleSortingHandler()
+                      }}
+                    >
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                      {{
+                        asc: <SortIcon order='asc' />,
+                        desc: <SortIcon order='desc' />
+                      }[header.column.getIsSorted()] ?? null}
+                    </div>
+                  )}
+                </th>
+              ))}
+            </tr>
+          ))}
         </thead>
         <tbody>
-          {genesToShow.map((deGene, i) => {
-            return (
-              <tr className="de-gene-row" key={i}>
-                <td>
-                  <label
-                    title="Click to view gene expression.  Arrow down (↓) and up (↑) to quickly scan."
-                  ><input
-                      type="radio"
-                      checked={checked[deGene.name]}
-                      data-analytics-name="selected-gene-differential-expression"
-                      value={deGene.name}
-                      onClick={event => {
-                        searchGenes([deGene.name])
-
-                        // Log this search to Mixpanel
-                        const rank = i
-                        logSearchFromDifferentialExpression(
-                          event, deGene, species, rank,
-                          clusterName, annotation.name
-                        )
-
-                        changeRadio(event)
-                      }}/>
-                    {deGene.name}</label></td>
-                <td>{deGene.log2FoldChange}</td>
-                <td>{deGene.pvalAdj}</td>
-              </tr>)
-          })}
+          {table.getRowModel().rows.slice(0, numRows).map(row => (
+            <tr className="de-gene-row" key={row.id}>
+              {row.getVisibleCells().map(cell => (
+                <td key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          )
+          )}
         </tbody>
       </table>
+      <PagingControl
+        currentPage={table.getState().pagination.pageIndex}
+        totalPages={table.getPageCount()}
+        changePage={table.setPageIndex}
+        canPreviousPage={table.getCanPreviousPage()}
+        canNextPage={table.getCanNextPage()}
+        zeroIndexed={true}
+      />
       <a href="https://forms.gle/qPGH5J9oFkurpbD76" target="_blank" title="Take a 1 minute survey">
-      Help improve this new feature
+          Help improve this new feature
       </a>
     </>
   )
@@ -112,7 +313,7 @@ function DifferentialExpressionTable({
 export default function DifferentialExpressionPanel({
   deGroup, deGenes, searchGenes,
   exploreInfo, exploreParamsWithDefaults, setShowDeGroupPicker, setDeGenes, setDeGroup,
-  countsByLabel, numRows=15
+  countsByLabel, numRows=50
 }) {
   const clusterName = exploreParamsWithDefaults?.cluster
   const bucketId = exploreInfo?.bucketId
@@ -125,26 +326,20 @@ export default function DifferentialExpressionPanel({
   const [genesToShow, setGenesToShow] = useState(deGenes)
   const [searchedGene, setSearchedGene] = useState('')
 
-  const [checked, setChecked] = useState(initChecked(deGenes))
   const [deFilePath, setDeFilePath] = useState(null)
 
   const species = exploreInfo?.taxonNames
 
-  /** Check radio button such that changing group unchecks all buttons */
-  function changeRadio(event) {
-    const newChecked = initChecked(deGenes, event.target.value)
-    setChecked(newChecked)
-  }
-
   /** Handle a user pressing the 'x' to clear the field */
   function handleClear() {
     updateSearchedGene('', 'clear')
-    setGenesToShow(deGenes.slice(0, numRows))
+    setGenesToShow(deGenes)
   }
 
   /** Only show clear button if text is entered in search box */
   const showClear = searchedGene !== ''
 
+  /** Set searched gene, and log search after 1 second delay */
   function updateSearchedGene(newSearchedGene, trigger) {
     setSearchedGene(newSearchedGene)
 
@@ -171,7 +366,6 @@ export default function DifferentialExpressionPanel({
       filteredGenes = deGenes.filter(d => d.name.toLowerCase().includes(lowerCaseSearchedGene))
     }
 
-    if (deGenes) {filteredGenes = filteredGenes.slice(0, numRows)}
     setGenesToShow(filteredGenes)
   }, [deGenes, searchedGene])
 
@@ -217,19 +411,17 @@ export default function DifferentialExpressionPanel({
           </Button> }
         </div>
 
-        <div className="de-table-buttons">
-          <DownloadButton bucketId={bucketId} deFilePath={deFilePath} />
-          <DifferentialExpressionModal />
-        </div>
 
         <DifferentialExpressionTable
           genesToShow={genesToShow}
           searchGenes={searchGenes}
-          checked={checked}
           clusterName={clusterName}
           annotation={annotation}
           species={species}
-          changeRadio={changeRadio}
+          numRows={numRows}
+          bucketId={bucketId}
+          deFilePath={deFilePath}
+          handleClear={handleClear}
         />
       </>
       }

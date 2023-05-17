@@ -10,7 +10,7 @@ class FileParseService
   #
   # * *returns*
   #   - (Hash) => Status object with http status_code and optional error message
-  def self.run_parse_job(study_file, study, user, reparse: false, persist_on_fail: false)
+  def self.run_parse_job(study_file, study, user, reparse: false, persist_on_fail: false, obsm_key: nil)
     logger = Rails.logger
     logger.info "#{Time.zone.now}: Parsing #{study_file.name} as #{study_file.file_type} in study #{study.name}"
     do_anndata_file_ingest = FeatureFlaggable.feature_flags_for_instances(user, study)['ingest_anndata_file']
@@ -104,11 +104,18 @@ class FileParseService
         # will ignore reference AnnData files (includes previously uploaded files) as the default for
         # ann_data_file_info.reference_file is true legacy files were covered in data migration
         if do_anndata_file_ingest && !study_file.is_reference_anndata?
-          params_object = AnnDataIngestParameters.new(
-            anndata_file: study_file.gs_url, obsm_keys: study_file.ann_data_file_info.obsm_key_names
-          )
+          # obsm_key is only set for parsing a new singular clustering
+          if obsm_key.present?
+            params_object = AnnDataIngestParameters.new(
+              anndata_file: study_file.gs_url, extract: %w[cluster], obsm_keys: [obsm_key]
+            )
+          else
+            params_object = AnnDataIngestParameters.new(
+              anndata_file: study_file.gs_url, obsm_keys: study_file.ann_data_file_info.obsm_key_names
+            )
+          end
           # TODO extract and parse Raw Exp Data (SCP-4710)
-        else
+        elsif study_file.is_reference_anndata?
           # setting attributes to false/nil will omit them from the command line later
           # values are interchangeable but are more readable depending on parameter type
           params_object = AnnDataIngestParameters.new(

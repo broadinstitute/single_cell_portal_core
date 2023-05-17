@@ -244,12 +244,10 @@ module Api
         begin
           if @study_file.present?
             filesize = @study_file.upload_file_size
-            user_quota = current_api_user.daily_download_quota + filesize
-            # check against download quota that is loaded in ApplicationController.get_download_quota
-            if user_quota <= @download_quota
+            if !DownloadQuotaService.download_exceeds_quota?(current_api_user, filesize)
               @signed_url = ApplicationController.firecloud_client.execute_gcloud_method(:generate_signed_url, 0, @study.bucket_id,
                                                                          @study_file.bucket_location, expires: 60)
-              current_api_user.update(daily_download_quota: user_quota)
+              DownloadQuotaService.increment_user_quota(current_api_user, filesize)
               redirect_to @signed_url
             else
               alert = 'You have exceeded your current daily download quota.  You must wait until tomorrow to download this file.'
@@ -329,11 +327,9 @@ module Api
         begin
           if @study_file.present?
             filesize = @study_file.upload_file_size
-            user_quota = current_api_user.daily_download_quota + filesize
-            # check against download quota that is loaded in ApplicationController.get_download_quota
-            if user_quota <= @download_quota
+            if !DownloadQuotaService.download_exceeds_quota?(current_api_user, filesize)
               @media_url = @study_file.api_url
-              current_api_user.update(daily_download_quota: user_quota)
+              DownloadQuotaService.increment_user_quota(current_api_user, filesize)
               # determine which token to return to use with the media url
               if @study.public?
                 token = ApplicationController.read_only_firecloud_client.valid_access_token['access_token']

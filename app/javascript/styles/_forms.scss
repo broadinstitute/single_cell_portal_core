@@ -136,8 +136,12 @@
 
 // Used in e.g. differential expression (DE) view
 .table.table-scp-compact {
+  overflow-y: scroll;
+  display: flex;
+  flex-flow: column;
+  min-height: 200px;
   margin-bottom: 10px;
-  width: 115%;
+  width: 108%;
   max-width: inherit;
   position: relative;
   left: -15px;
@@ -147,7 +151,25 @@
     margin-right: 8px;
   }
 
+  thead {
+    flex: 0 0 auto;
+  }
+
+  tbody {
+    flex: 1 1 auto;
+    display: block;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
   tr {
+    font-size: 13px;
+    width: 100%;
+    display: table;
+    table-layout: fixed;
+  }
+
+  tr td {
     font-size: 13px;
   }
 
@@ -155,8 +177,12 @@
     padding-right: 2;
   }
 
+  th {
+    padding: 4px;
+  }
+
   td {
-    padding: 2px;
+    padding: 0 2px;
     vertical-align: baseline;
   }
 }

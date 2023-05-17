@@ -74,7 +74,7 @@ class AnnDataIngestParameters
   # File name structure is: <input_filetype>_frag.<file_type>.<file_type_detail>.tsv
   #   file_type = cluster|metadata|matrix
   #   file_type_detail [optional] = cluster name (for cluster files), raw|processed (for matrix files)
-  def fragment_file_gs_url(bucket_id, fragment_type, h5ad_file_id, file_type_detail = "")
+  def fragment_file_url(bucket_id, fragment_type, h5ad_file_id, file_type_detail = "")
     url = "gs://#{bucket_id}/_scp_internal/anndata_ingest/#{h5ad_file_id}/h5ad_frag.#{fragment_type}"
     if file_type_detail.present?
       url += ".#{file_type_detail}.tsv"

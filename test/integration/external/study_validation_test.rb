@@ -4,6 +4,7 @@ require 'user_tokens_helper'
 require 'big_query_helper'
 require 'test_helper'
 require 'includes_helper'
+require 'detached_helper'
 
 class StudyValidationTest < ActionDispatch::IntegrationTest
 
@@ -32,8 +33,7 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
   teardown do
     OmniAuth.config.mock_auth[:google_oauth2] = nil
     reset_user_tokens
-    # remove all validation studies
-    @study.update(public: true, detached: false)
+    @study.update(public: true)
   end
 
   after(:all) do
@@ -147,144 +147,129 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
   end
 
   test 'should prevent changing firecloud attributes' do
-    study_name = "Validation FireCloud Attribute Test #{@random_seed}"
-    study_params = {
-      study: {
-        name: study_name,
-        user_id: @user.id
+    study = FactoryBot.create(:detached_study,
+                              user: @user,
+                              name_prefix: 'Validation FireCloud Attribute Test',
+                              test_array: @@studies_to_clean)
+    workspace_name = study.firecloud_workspace
+    # stub find/detached so that we can simulate a full study w/o overhead of creating workspace
+    mock_not_detached study, :find do
+      # test update and expected error messages
+      update_params = {
+        study: {
+          firecloud_workspace: 'this-is-different',
+          firecloud_project: 'not-the-same'
+        }
       }
-    }
-    post studies_path, params: study_params
-    follow_redirect!
-    assert_response 200, 'Did not redirect to upload successfully'
-    study = Study.find_by(name: study_name)
-    assert study.present?, 'Study did not successfully save'
-
-    # test update and expected error messages
-    update_params = {
-      study: {
-        firecloud_workspace: 'this-is-different',
-        firecloud_project: 'not-the-same'
-      }
-    }
-    patch study_path(study.id), params: update_params
-    assert_select 'li#study_error_firecloud_project', 'Firecloud project cannot be changed once initialized.'
-    assert_select 'li#study_error_firecloud_workspace', 'Firecloud workspace cannot be changed once initialized.'
-    # reload study and assert values are unchange
-    study.reload
-    assert_equal FireCloudClient::PORTAL_NAMESPACE, study.firecloud_project,
-                 "FireCloud project was not correct, expected #{FireCloudClient::PORTAL_NAMESPACE} but found #{study.firecloud_project}"
-    assert_equal "validation-firecloud-attribute-test-#{@random_seed}", study.firecloud_workspace,
-                 "FireCloud workspace was not correct, expected validation-test-firecloud-attribute-test-#{@random_seed} but found #{study.firecloud_workspace}"
+      patch study_path(study.id), params: update_params
+      assert_select 'li#study_error_firecloud_project', 'Firecloud project cannot be changed once initialized.'
+      assert_select 'li#study_error_firecloud_workspace', 'Firecloud workspace cannot be changed once initialized.'
+      # reload study and assert values are unchange
+      study.reload
+      assert_equal FireCloudClient::PORTAL_NAMESPACE, study.firecloud_project,
+                   "FireCloud project was not correct, expected #{FireCloudClient::PORTAL_NAMESPACE} but found #{study.firecloud_project}"
+      assert_equal workspace_name, study.firecloud_workspace,
+                   "FireCloud workspace was not correct, expected '#{workspace_name}' but found '#{study.firecloud_workspace}'"
+    end
   end
 
   test 'should disable downloads for reviewers' do
-    study_name = "Validation Reviewer Share #{@random_seed}"
-    study_params = {
-      study: {
-        name: study_name,
-        user_id: @user.id,
-        public: false,
-        study_detail_attributes: {
-          full_description: ""
-        },
-        study_shares_attributes: {
-          "0" => {
-            email: @sharing_user.email,
-            permission: 'Reviewer'
-          }
-        }
-      }
-    }
-    post studies_path, params: study_params
-    follow_redirect!
-    assert_response 200,
-                    "Did not complete request successfully, expected redirect and response 200 but found #{@response.code}"
-    study = Study.find_by(name: study_name)
-    assert study.study_shares.size == 1,
-           "Did not successfully create study_share, found #{study.study_shares.size} shares"
-    reviewer_email = study.study_shares.reviewers.first
-    assert reviewer_email == @sharing_user.email,
-           "Did not grant reviewer permission to #{@sharing_user.email}, reviewers: #{reviewer_email}"
+    study = FactoryBot.create(:detached_study,
+                              user: @user,
+                              name_prefix: 'Validation Reviewer Share',
+                              public: false,
+                              test_array: @@studies_to_clean)
+
+    StudyShare.create!(email: @sharing_user.email, permission: 'Reviewer', study: study,
+                       firecloud_project: study.firecloud_project, firecloud_workspace: study.firecloud_workspace)
+    # enable downloads by unsetting 'detached'
+    study.build_study_detail(full_description: '')
+    study.save
+    mock_not_detached study, :find_by do
+      assert study.study_shares.size == 1,
+             "Did not successfully create study_share, found #{study.study_shares.size} shares"
+      reviewer_email = study.study_shares.reviewers.first
+      assert reviewer_email == @sharing_user.email,
+             "Did not grant reviewer permission to #{@sharing_user.email}, reviewers: #{reviewer_email}"
 
 
-    # load private study and validate reviewer can see study but not download data
-    sign_out @user
-    auth_as_user(@sharing_user)
-    sign_in @sharing_user
-    get view_study_path(accession: study.accession, study_name: study.url_safe_name)
-    assert controller.current_user == @sharing_user,
-           "Did not successfully authenticate as sharing user, current_user is #{controller.current_user.email}"
-    assert_select "h1.study-lead", true, "Did not successfully load study page for #{study.name}"
-    assert_select 'li#study-download-nav' do |element|
-      assert element.attr('class').to_str.include?('disabled'),
-             "Did not disable downloads tab for reviewer: '#{element.attr('class')}'"
+      # load private study and validate reviewer can see study but not download data
+      sign_out @user
+      auth_as_user(@sharing_user)
+      sign_in @sharing_user
+      get view_study_path(accession: study.accession, study_name: study.url_safe_name)
+      assert controller.current_user == @sharing_user,
+             "Did not successfully authenticate as sharing user, current_user is #{controller.current_user.email}"
+      assert_select "h1.study-lead", true, "Did not successfully load study page for #{study.name}"
+      assert_select 'li#study-download-nav' do |element|
+        assert element.attr('class').to_str.include?('disabled'),
+               "Did not disable downloads tab for reviewer: '#{element.attr('class')}'"
+      end
+
+      # ensure direct call to download is still disabled
+      get download_private_file_path(accession: study.accession, study_name: study.url_safe_name, filename: 'mock_study_doc_upload.txt')
+      follow_redirect!
+      assert_equal view_study_path(accession: study.accession, study_name: study.url_safe_name), path,
+                   "Did not block download and redirect to study page, current path is #{path}"
     end
-
-    # ensure direct call to download is still disabled
-    get download_private_file_path(accession: study.accession, study_name: study.url_safe_name, filename: 'mock_study_doc_upload.txt')
-    follow_redirect!
-    assert_equal view_study_path(accession: study.accession, study_name: study.url_safe_name), path,
-                 "Did not block download and redirect to study page, current path is #{path}"
   end
 
   test 'should redirect for detached studies' do
-    # manually set 'detached' to true to validate file download requests fail
-    @study.update(detached: true)
-
-    # try to download a file
-    file = @study.study_files.first
-    get download_file_path(accession: @study.accession, study_name: @study.url_safe_name, filename: file.upload_file_name)
+    study = FactoryBot.create(:detached_study,
+                              user: @user,
+                              name_prefix: 'Detached Redirect Test',
+                              test_array: @@studies_to_clean)
+    get download_file_path(accession: study.accession, study_name: study.url_safe_name, filename: 'file.txt')
     assert_response 302,
                     "Did not attempt to redirect on a download from a detached study, expected 302 but found #{response.code}"
   end
 
   # ensure data removal from BQ on metadata delete
   test 'should delete data from bigquery' do
-    study_name = "Validation BQ Delete Study #{@random_seed}"
-    study = Study.create!(name: study_name, firecloud_project: ENV['PORTAL_NAMESPACE'], description: 'Test BQ Delete',
-                          user_id: @user.id)
-    assert study.present?, 'Study did not successfully save'
-
-    # add metadata file and parse to load data into BQ
-    # this test uses ingest rather than direct BQ seed as this has been shown to cause large-scale random downstream
-    # failures if direct BQ seeding is called multiple times
-    metadata_upload = File.open(Rails.root.join('test', 'test_data', 'alexandria_convention', 'metadata.v2-0-0.txt'))
-    metadata_file = study.study_files.build(file_type: 'Metadata', use_metadata_convention: true, upload: metadata_upload,
-                                            name: 'metadata.v2-0-0.txt', parse_status: 'unparsed', status: 'uploaded')
-    metadata_file.save!
-    metadata_upload.close
-    metadata_file.reload
-    study.send_to_firecloud(metadata_file)
-
+    study = FactoryBot.create(:detached_study,
+                              user: @user,
+                              name_prefix: 'Validation BQ Delete Study',
+                              public: false,
+                              test_array: @@studies_to_clean)
+    metadata_file = FactoryBot.create(:metadata_file,
+                                      study:,
+                                      name: 'convention.metadata.txt',
+                                      use_metadata_convention: true,
+                                      generation: '123456789',
+                                      status: 'uploaded')
     seed_example_bq_data(study)
+    mock_not_detached study, :find_by do
+      initial_bq_row_count = get_bq_row_count(study)
+      assert initial_bq_row_count > 0, "wrong number of BQ rows found to test deletion capability"
 
-    # ensure data is in BQ
-    initial_bq_row_count = get_bq_row_count(study)
-    assert initial_bq_row_count > 0, "wrong number of BQ rows found to test deletion capability"
-
-    # request delete
-    puts 'Requesting delete for metadata file'
-    delete api_v1_study_study_file_path(study_id: study.id, id: metadata_file.id),
-           as: :json, headers: { Authorization: "Bearer #{@user.api_access_token['access_token']}" }
-    assert_response 204, 'Did not correctly respond 204 to delete request'
-
-    seconds_slept = 0
-    sleep_increment = 10
-    max_seconds_to_sleep = 60
-    until ( (bq_row_count = get_bq_row_count(study)) == 0 ) do
-      puts "#{seconds_slept} seconds after requesting file deletion, bq_row_count is #{bq_row_count}."
-      if seconds_slept >= max_seconds_to_sleep
-        raise "Even #{seconds_slept} seconds after requesting file deletion, not all records have been deleted from bigquery."
+      mock = Minitest::Mock.new
+      mock.expect :services_available?, true, [String, String]
+      mock.expect :execute_gcloud_method,
+                  Google::Cloud::Storage::File.new,
+                  [:get_workspace_file, Integer, String, String]
+      mock.expect :execute_gcloud_method, true, [:delete_workspace_file, Integer, String, String]
+      ApplicationController.stub :firecloud_client, mock do
+        # request delete
+        puts 'Requesting delete for metadata file'
+        delete api_v1_study_study_file_path(study_id: study.id, id: metadata_file.id),
+               as: :json, headers: { Authorization: "Bearer #{@user.api_access_token['access_token']}" }
+        assert_response 204, 'Did not correctly respond 204 to delete request'
+        seconds_slept = 0
+        sleep_increment = 10
+        max_seconds_to_sleep = 60
+        while (bq_row_count = get_bq_row_count(study)) != 0
+          puts "#{seconds_slept} seconds after requesting file deletion, bq_row_count is #{bq_row_count}."
+          if seconds_slept >= max_seconds_to_sleep
+            raise "Even #{seconds_slept} seconds after requesting file deletion, not all records have been deleted from bigquery."
+          end
+          sleep(sleep_increment)
+          seconds_slept += sleep_increment
+        end
+        puts "#{seconds_slept} seconds after requesting file deletion, bq_row_count is #{bq_row_count}."
+        assert get_bq_row_count(study) == 0
+        mock.verify
       end
-      sleep(sleep_increment)
-      seconds_slept += sleep_increment
     end
-    puts "#{seconds_slept} seconds after requesting file deletion, bq_row_count is #{bq_row_count}."
-    assert get_bq_row_count(study) == 0
-
-    # clean up
-    study.destroy_and_remove_workspace
   end
 
   test 'should allow files with spaces in names' do

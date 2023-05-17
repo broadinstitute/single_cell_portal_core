@@ -173,7 +173,7 @@ export function validateFile({ file, allFiles, allowedFileExts=[], requiredField
 
   const validationMessages = {}
   if (file.status === 'new') {
-    if (!file.uploadSelection) {
+    if (!file.uploadSelection && !isAnnDataExperience) {
       validationMessages.uploadSelection = 'You must select a file to upload'
     }
   }
@@ -240,6 +240,7 @@ export function addObjectPropertyToForm(obj, propertyName, formData, nested) {
   if (propertyName === '_id') {
     appendFormData(formData, propertyName, getIdValue(obj[propertyName]))
   }
+
   if (DEEPLY_NESTED_PROPS.includes(propertyName)) {
     obj[propertyName].forEach(fragment => {
       Object.keys(fragment).forEach(fragmentKey => {

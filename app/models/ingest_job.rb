@@ -644,7 +644,7 @@ class IngestJob
           matcher = { data_type: :cluster, obsm_key_name: fragment }
           cluster_data_fragment = study_file.ann_data_file_info.find_fragment(**matcher)
           name = cluster_data_fragment&.[](:name) || fragment # fallback if we can't find data_fragment
-          cluster_gs_url = params_object.fragment_file_gs_url(study.bucket_id, 'cluster', study_file.id, fragment)
+          cluster_gs_url = params_object.fragment_file_url(study.bucket_id, 'cluster', study_file.id, fragment)
           domain_ranges = study_file.ann_data_file_info.get_cluster_domain_ranges(name).to_json
           cluster_params = AnnDataIngestParameters.new(
             ingest_cluster: true, name:, cluster_file: cluster_gs_url, domain_ranges:, ingest_anndata: false,
@@ -656,7 +656,7 @@ class IngestJob
       when 'metadata'
         Rails.logger.info "launching AnnData metadata ingest for #{study_file.upload_file_name}"
         action = :ingest_cell_metadata
-        metadata_gs_url = params_object.fragment_file_gs_url(study.bucket_id, 'metadata', study_file.id)
+        metadata_gs_url = params_object.fragment_file_url(study.bucket_id, 'metadata', study_file.id)
         metadata_params = AnnDataIngestParameters.new(
           ingest_cell_metadata: true, cell_metadata_file: metadata_gs_url,
           ingest_anndata: false, extract: nil, obsm_keys: nil, study_accession: study.accession

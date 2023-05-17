@@ -29,7 +29,7 @@ module SingleCellPortal
     config.middleware.use Rack::Brotli
 
     # Docker image for file parsing via scp-ingest-pipeline
-    config.ingest_docker_image = 'gcr.io/broad-singlecellportal-staging/scp-ingest-pipeline:1.26.0'
+    config.ingest_docker_image = 'gcr.io/broad-singlecellportal-staging/scp-ingest-pipeline:1.26.1'
 
     config.autoload_paths << Rails.root.join('lib')
 

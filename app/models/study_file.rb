@@ -633,6 +633,8 @@ class StudyFile
   before_validation   :set_file_name_and_data_dir, on: :create
   before_save         :sanitize_name
   after_save          :set_cluster_group_ranges, :set_options_by_file_type
+  after_update        :handle_clustering_fragment_updates 
+
   validates_uniqueness_of :upload_file_name, scope: :study_id, unless: Proc.new { |f| f.human_data? }
   validates_presence_of :name
   validates_presence_of :human_fastq_url, if: proc { |f| f.human_data }
@@ -1330,6 +1332,45 @@ class StudyFile
       end
     end
   end
+
+  # update clustering fragments to be called on updates to study_file
+  def handle_clustering_fragment_updates
+    if !is_reference_anndata? && ann_data_file_info&.data_fragments_changed?
+      if !queued_for_deletion && !parsing? && !name.start_with?("DELETE-")
+
+        # collect the previous data fragment ids to choose the appropriate action for new or existing clusterings
+        prev_ids = {}
+        ann_data_file_info.data_fragments_was.each do |data_frag|
+          prev_ids[data_frag&.[]("_id")] = data_frag
+        end
+
+        # going through the obsm key names ensures actions are only being called on clusterings
+        ann_data_file_info.obsm_key_names.each do |fragment|
+          matcher = { data_type: :cluster, obsm_key_name: fragment }
+          cluster_data_fragment = ann_data_file_info.find_fragment(**matcher)
+          curr_id = cluster_data_fragment&.[]("_id")
+
+          # if it's an existing clustering just update don't parse
+          if prev_ids.include? curr_id 
+            name = cluster_data_fragment&.[](:name) || fragment # fallback if we can't find data_fragment
+
+            if prev_ids[curr_id]["name"] != name
+              @cluster = ClusterGroup.find_by(study:, study_file:, name: prev_ids.dig(curr_id, 'name'))
+              # before updating, check if the defaults also need to change
+              if study.default_cluster == @cluster
+                study.default_options[:cluster] = name
+                study.save
+              end
+              @cluster.update(name:)
+            end
+          else
+            FileParseService.run_parse_job(self, study, study.user, obsm_key: fragment)
+          end
+        end     
+      end
+    end
+  end
+
 
   # handler to set certain options based on a study_file's file_type
   def set_options_by_file_type

@@ -114,7 +114,7 @@ export default function DifferentialExpressionGroupPicker({
     <>
       {!deGenes &&
         <div className="flexbox-align-center flexbox-column">
-          <span>Compare one group to all others</span>
+          <span>Compare one group to the rest</span>
           <Select
             defaultMenuIsOpen
             options={getSimpleOptions(groups)}
@@ -129,21 +129,23 @@ export default function DifferentialExpressionGroupPicker({
         </div>
       }
       {deGenes &&
-      <>
-        <Select
-          options={getSimpleOptions(groups)}
-          data-analytics-name="de-group-select"
-          value={{
-            label: deGroup === null ? noneSelected : deGroup,
-            value: deGroup
-          }}
-          onChange={newGroup => updateDeGroup(newGroup.value)}
-          styles={clusterSelectStyle}
-        />
-        <span>vs. all other groups</span>
+      <div className="differential-expression-picker">
+        <div className="narrow-select">
+          <Select
+            options={getSimpleOptions(groups)}
+            data-analytics-name="de-group-select"
+            value={{
+              label: deGroup === null ? noneSelected : deGroup,
+              value: deGroup
+            }}
+            onChange={newGroup => updateDeGroup(newGroup.value)}
+            styles={clusterSelectStyle}
+          />
+        </div>
+        <span className="vs-note">vs. rest</span>
         <br/>
         <br/>
-      </>
+      </div>
       }
     </>
   )
