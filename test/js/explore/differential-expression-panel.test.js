@@ -7,7 +7,7 @@ import { render, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 
 import DifferentialExpressionPanel from 'components/explore/DifferentialExpressionPanel'
-import {exploreInfo} from './differential-expression-panel.test-data'
+import { exploreInfo } from './differential-expression-panel.test-data'
 
 describe('Differential expression panel', () => {
   it('renders DE genes table', async () => {
@@ -15,7 +15,7 @@ describe('Differential expression panel', () => {
     const deGenes = [
       {
         'score': 77.55,
-        'log2FoldChange': 3.434,
+        'log2FoldChange': 5,
         'pval': 0,
         'pvalAdj': 0,
         'pctNzGroup': 0.9625,
@@ -24,16 +24,16 @@ describe('Differential expression panel', () => {
       },
       {
         'score': 75.4,
-        'log2FoldChange': 4.302,
+        'log2FoldChange': 1,
         'pval': 0,
-        'pvalAdj': 0,
+        'pvalAdj': 0.2,
         'pctNzGroup': 0.8543,
         'pctNzReference': 0.2124,
         'name': 'ANXA1'
       }
     ]
 
-    const searchGenes = function() {}
+    const searchGenes = jest.fn()
 
     const exploreParamsWithDefaults = {
       'cluster': 'Epithelial Cells UMAP',
@@ -67,7 +67,7 @@ describe('Differential expression panel', () => {
       'KRT high lactocytes 2': 1728
     }
 
-    const {container} = render((
+    const { container } = render((
       <DifferentialExpressionPanel
         deGroup={deGroup}
         deGenes={deGenes}
@@ -87,10 +87,27 @@ describe('Differential expression panel', () => {
     const deTable = container.querySelector('.de-table')
     expect(deTable).toHaveTextContent('ANXA1')
 
+    // Confirm sort
+    const pvalAdjHeader = container.querySelector('#pval-adj-header')
+    const firstGeneBeforeSort = container.querySelector('.de-gene-row td')
+    expect(firstGeneBeforeSort).toHaveTextContent('SOD2')
+    fireEvent.click(pvalAdjHeader)
+    fireEvent.click(pvalAdjHeader)
+    fireEvent.click(pvalAdjHeader)
+    // screen.debug(deTable) // Print DE table HTML
+
+    const firstGeneAfterSort = container.querySelector('.de-gene-row td')
+    expect(firstGeneAfterSort).toHaveTextContent('ANXA1')
+
+    // Confirm "Find a gene"
     const deSearchBox = container.querySelector('.de-search-box')
     const input = deSearchBox.querySelector('input')
     fireEvent.change(input, { target: { value: 'SO' } })
     expect(deTable.querySelectorAll('.de-gene-row')).toHaveLength(1)
-  })
 
+    // Confirm dot plot is invoked upon clicking related button
+    const deDotPlotButton = container.querySelector('.de-dot-plot-button')
+    fireEvent.click(deDotPlotButton)
+    expect(searchGenes).toHaveBeenCalled()
+  })
 })

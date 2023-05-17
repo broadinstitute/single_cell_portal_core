@@ -323,6 +323,11 @@ class User
   #
   ###
 
+  # check if user currently has a download exemption (daily_download_quota: nil)
+  def quota_exemption?
+    daily_download_quota.nil?
+  end
+
   # determine if user has access to reports functionality
   def acts_like_reporter?
     self.admin? || self.reporter?

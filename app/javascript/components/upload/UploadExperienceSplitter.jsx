@@ -5,7 +5,7 @@ import { navigate } from '@reach/router'
 
 /** renders a list of the steps and summary study information */
 function RawUploadExperienceSplitter({
-  setIsAnnDataExperience, setChoiceMade
+  setIsAnnDataExperience, setOverrideExperienceMode
 }) {
   navigate('?tab=fileuploadchoice')
 
@@ -28,7 +28,7 @@ function RawUploadExperienceSplitter({
                 className="btn splitter-info-buttons"
                 onClick={() => {
                   setIsAnnDataExperience(false)
-                  setChoiceMade(true)
+                  setOverrideExperienceMode(true)
                 }}> Classic
               </a>
               <div className='col'>
@@ -41,7 +41,7 @@ function RawUploadExperienceSplitter({
                 data-analytics-name="anndata-upload-experience"
                 onClick={() => {
                   setIsAnnDataExperience(true)
-                  setChoiceMade(true)
+                  setOverrideExperienceMode(true)
                 }}> AnnData <sup>BETA</sup>
               </a>
               <div className='col'>

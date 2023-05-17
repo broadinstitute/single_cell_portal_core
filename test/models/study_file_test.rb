@@ -177,8 +177,6 @@ class StudyFileTest < ActiveSupport::TestCase
                                        user: @user,
                                        test_array: @@studies_to_clean)
     ann_data_file = FactoryBot.create(:ann_data_file, name: 'test.h5ad', study: ann_data_study)
-    ann_data_file.build_ann_data_file_info
-    ann_data_file.save
     assert_not ann_data_study.clustering_files.include? ann_data_file
     assert_not ann_data_study.expression_matrices.include? ann_data_file
     assert_nil ann_data_study.metadata_file

@@ -6,24 +6,19 @@ require 'includes_helper'
 class RequestUtilsTest < ActionDispatch::IntegrationTest
 
   before(:all) do
-    @user = FactoryBot.create(:user,
-      registered_for_firecloud: true,
-      test_array: @@users_to_clean
-    )
+    @user = FactoryBot.create(:user, registered_for_firecloud: true, test_array: @@users_to_clean)
 
-    @public_study = FactoryBot.create(:study,
-      name_prefix: 'Public study',
-      public: true,
-      user: @user,
-      test_array: @@studies_to_clean
-    )
+    @public_study = FactoryBot.create(:detached_study,
+                                      name_prefix: 'Public study',
+                                      public: true,
+                                      user: @user,
+                                      test_array: @@studies_to_clean)
 
-    @private_study = FactoryBot.create(:study,
-      name_prefix: 'Private study',
-      public: false,
-      user: @user,
-      test_array: @@studies_to_clean
-    )
+    @private_study = FactoryBot.create(:detached_study,
+                                       name_prefix: 'Private study',
+                                       public: false,
+                                       user: @user,
+                                       test_array: @@studies_to_clean)
   end
 
   test 'should sanitize page inputs' do

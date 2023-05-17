@@ -424,6 +424,7 @@ class IngestJob
       set_has_image_cache
     when :ingest_anndata
       launch_anndata_subparse_jobs
+      set_anndata_file_info
     end
     set_study_initialized
   end
@@ -642,7 +643,7 @@ class IngestJob
           matcher = { data_type: :cluster, obsm_key_name: fragment }
           cluster_data_fragment = study_file.ann_data_file_info.find_fragment(**matcher)
           name = cluster_data_fragment&.[](:name) || fragment # fallback if we can't find data_fragment
-          cluster_gs_url = params_object.fragment_file_gs_url(study.bucket_id, 'cluster', study_file.id, fragment)
+          cluster_gs_url = params_object.fragment_file_url(study.bucket_id, 'cluster', study_file.id, fragment)
           domain_ranges = study_file.ann_data_file_info.get_cluster_domain_ranges(name).to_json
           cluster_params = AnnDataIngestParameters.new(
             ingest_cluster: true, name:, cluster_file: cluster_gs_url, domain_ranges:, ingest_anndata: false,
@@ -653,13 +654,17 @@ class IngestJob
         end
       when 'metadata'
         Rails.logger.info "launching AnnData metadata extraction for #{study_file.upload_file_name}"
-        metadata_gs_url = params_object.fragment_file_gs_url(study.bucket_id, 'metadata', study_file.id)
+        metadata_gs_url = params_object.fragment_file_url(study.bucket_id, 'metadata', study_file.id)
         metadata_params = AnnDataIngestParameters.new(
           ingest_cell_metadata: true, cell_metadata_file: metadata_gs_url,
           ingest_anndata: false, extract: nil, obsm_keys: nil, study_accession: study.accession
         )
         job = IngestJob.new(study:, study_file:, user:, action: :ingest_cell_metadata, params_object: metadata_params)
         job.delay.push_remote_and_launch_ingest
+      else
+        # processed_expression data is parsed during the initial extract phase, so nothing is required here
+        # logging is for debugging purposes only
+        Rails.logger.info "skipping extraction of #{extract} for #{study_file.upload_file_name}"
       end
     end
   end
@@ -922,6 +927,11 @@ class IngestJob
       message << "Complete runtime (data cache & image rendering): #{complete_pipeline_runtime}"
     when :ingest_anndata
       message << "AnnData file ingest has completed"
+      if study_file.ann_data_file_info.has_expression
+        genes = Gene.where(study_id: study.id, study_file_id: study_file.id).count
+        message << "Gene-level entries created: #{genes}"
+      end
+      message << 'Clustering and metadata entries are being extracted as specified in your AnnData file.'
     end
     message
   end

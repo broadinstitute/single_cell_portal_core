@@ -156,7 +156,7 @@ class AdminConfigurationsController < ApplicationController
 
   # reset user download quotas ahead of daily reset
   def reset_user_download_quotas
-    User.update_all(daily_download_quota: 0)
+    DownloadQuotaService.reset_all_quotas
   end
 
   # restart all orphaned jobs to allow them to continue
@@ -307,6 +307,18 @@ class AdminConfigurationsController < ApplicationController
     respond_to do |format|
       if @user.update(user_params)
         format.html { redirect_to admin_configurations_path, notice: "User: '#{@user.email}' was successfully updated." }
+      else
+        format.html { render :edit_user }
+        format.json { render json: @user.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  def grant_download_exemption
+    @user = User.find(params[:id])
+    respond_to do |format|
+      if DownloadQuotaService.grant_user_exemption(@user)
+        format.html { redirect_to admin_configurations_path, notice: "Daily download exemption granted for '#{@user.email}'" }
       else
         format.html { render :edit_user }
         format.json { render json: @user.errors, status: :unprocessable_entity }

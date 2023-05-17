@@ -26,6 +26,7 @@
     "@sentry/react": "^6.19.6",
     "@sentry/tracing": "^6.19.6",
     "@single-cell-portal/igv": "2.6.4-beta.1",
+    "@tanstack/react-table": "^8.8.5",
     "@vitejs/plugin-react": "^1.2.0",
     "babel-plugin-transform-react-remove-prop-types": "^0.4.24",
     "camelcase-keys": "^6.1.2",

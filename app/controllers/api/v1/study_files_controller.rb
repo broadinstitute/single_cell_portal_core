@@ -108,7 +108,6 @@ module Api
 
       # GET /single_cell/api/v1/studies/:study_id/study_files/:id
       def show
-
       end
 
       swagger_path '/studies/{study_id}/study_files' do
@@ -514,6 +513,40 @@ module Api
           MetricsService.report_error(e, request, current_api_user, @study)
           logger.error "Error in deleting #{@study_file.upload_file_name} from workspace: #{@study.firecloud_workspace}; #{e.message}"
           render json: {error: "Error deleting remote file in bucket: #{e.message}"}, status: 500
+        end
+      end
+
+      # /single_cell/api/v1/studies/SCP19/study_files/:id/:fragment_id
+      # delete an individual AnnData clustering
+      def delete_anndata_fragment
+        @fragment = @study_file.ann_data_file_info.find_fragment(_id: params[:fragment_id])
+        study_file_id = @study_file._id
+
+        url = @study_file.ann_data_file_info.fragment_file_url(@study.bucket_id, 'cluster', @study_file._id, @fragment["obsm_key_name"])
+
+        # get the remote clustering fragment to be deleted
+        clustering_to_delete = ApplicationController.firecloud_client.get_workspace_file(@study.bucket_id, url)
+
+        begin
+          if clustering_to_delete.present?
+          
+            Rails.logger.info "Deleting clustering at #{url}"
+
+            # delete matching caches
+            @study_file.invalidate_cache_by_file_type
+            CacheRemovalJob.new(@study.accession).delay(queue: :cache).perform
+
+            DeleteQueueJob.new(@fragment, study_file_id).delay.perform
+
+            ApplicationController.firecloud_client.delete_workspace_file(@study.bucket_id, url)
+            head 204
+          end
+        rescue => e
+          ErrorTracker.report_exception(e, current_api_user, @study_file, params)
+          MetricsService.report_error(e, request, current_api_user, @study)
+          logger.error "Error in deleting clustering #{@study_file.upload_file_name} - #{e.message}"
+          render json: {error: "Error deleting remote file in bucket: #{e.message}"}, status: 500
+        
         end
       end
 

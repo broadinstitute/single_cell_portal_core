@@ -34,7 +34,8 @@ class AnnDataIngestParameters
             allow_blank: true
 
   # default values for parameters
-  # attributes marked as true are passed to the command line as a standalone flag with no value, e.g. --extract "['cluster', 'metadata']"
+  # attributes marked as true are passed to the command line as a standalone flag with no value
+  # e.g. --extract "['cluster', 'metadata']"
   # any parameters that are set to nil/false will not be passed to the command line
   PARAM_DEFAULTS = {
     ingest_anndata: true,
@@ -43,7 +44,7 @@ class AnnDataIngestParameters
     cluster_file: nil,
     name: nil,
     domain_ranges: nil,
-    extract: %w[cluster metadata],
+    extract: %w[cluster metadata processed_expression],
     cell_metadata_file: nil,
     ingest_cell_metadata: false,
     study_accession: nil
@@ -67,7 +68,7 @@ class AnnDataIngestParameters
   # File name structure is: <input_filetype>_frag.<file_type>.<file_type_detail>.tsv
   #   file_type = cluster|metadata|matrix
   #   file_type_detail [optional] = cluster name (for cluster files), raw|processed (for matrix files)
-  def fragment_file_gs_url(bucket_id, fragment_type, h5ad_file_id, file_type_detail = "")
+  def fragment_file_url(bucket_id, fragment_type, h5ad_file_id, file_type_detail = "")
     url = "gs://#{bucket_id}/_scp_internal/anndata_ingest/#{h5ad_file_id}/h5ad_frag.#{fragment_type}"
     if file_type_detail.present?
       url += ".#{file_type_detail}.tsv"

@@ -50,16 +50,16 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
         use_metadata_convention: true
       },
       cluster_form_info_attributes: {
-        _id: generate_id,
-        name: 'UMAP',
-        description: 'cluster description',
-        obsm_key_name: 'X_umap',
-        x_axis_label: 'x axis',
-        y_axis_label: 'y axis',
-        x_axis_min: '-10',
-        x_axis_max: '10',
-        y_axis_min: '-10',
-        y_axis_max: '10'
+          _id: generate_id,
+          name: 'UMAP',
+          description: 'cluster description',
+          obsm_key_name: 'X_umap',
+          x_axis_label: 'x axis',
+          y_axis_label: 'y axis',
+          x_axis_min: '-10',
+          x_axis_max: '10',
+          y_axis_min: '-10',
+          y_axis_max: '10'
       }
     }
     merged_data = AnnDataFileInfo.new.merge_form_data(form_params)
@@ -114,7 +114,6 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
     ]
     assert_not ann_data_info.valid?
     error_messages = ann_data_info.errors.messages_for(:data_fragments)
-    puts error_messages
     assert_equal 2, error_messages.count
     error_messages.each do |message|
       assert message.include?('are not unique')

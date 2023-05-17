@@ -2,13 +2,14 @@ require 'api_test_helper'
 require 'user_tokens_helper'
 require 'test_helper'
 require 'includes_helper'
+require 'detached_helper'
 
 class StudyFilesControllerTest < ActionDispatch::IntegrationTest
 
   before(:all) do
     @user = FactoryBot.create(:api_user, test_array: @@users_to_clean)
     @other_user = FactoryBot.create(:api_user, test_array: @@users_to_clean)
-    @study = FactoryBot.create(:study,
+    @study = FactoryBot.create(:detached_study,
                                name_prefix: 'StudyFile Study',
                                public: true,
                                user: @user,
@@ -102,20 +103,22 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
 
   # create a study file bundle using the study_files_controller method
   test 'should create study file bundle' do
-    study_file_bundle_attributes = {
-      'files' => [
-        { 'name' => 'cluster.tsv', 'file_type' => 'Cluster' },
-        { 'name' => 'labels.tsv', 'file_type' => 'Coordinate Labels' }
-      ]
-    }
-    execute_http_request(:post, api_v1_study_study_files_bundle_files_path(study_id: @study.id), request_payload: study_file_bundle_attributes)
-    assert_response :success
-    assert json['original_file_list'] == study_file_bundle_attributes['files'],
-           "Did not set name correctly, expected #{study_file_bundle_attributes['files']} but found #{json['original_file_list']}"
-    # delete study file bundle
-    study_file_bundle_id = json['_id']['$oid']
-    execute_http_request(:delete, api_v1_study_study_file_bundle_path(study_id: @study.id, id: study_file_bundle_id))
-    assert_response 204, "Did not successfully delete study file bundle, expected response of 204 but found #{@response.response_code}"
+    mock_not_detached @study, :find_by do
+      study_file_bundle_attributes = {
+        'files' => [
+          { 'name' => 'cluster.tsv', 'file_type' => 'Cluster' },
+          { 'name' => 'labels.tsv', 'file_type' => 'Coordinate Labels' }
+        ]
+      }
+      execute_http_request(:post, api_v1_study_study_files_bundle_files_path(study_id: @study.id), request_payload: study_file_bundle_attributes)
+      assert_response :success
+      assert json['original_file_list'] == study_file_bundle_attributes['files'],
+             "Did not set name correctly, expected #{study_file_bundle_attributes['files']} but found #{json['original_file_list']}"
+      # delete study file bundle
+      study_file_bundle_id = json['_id']['$oid']
+      execute_http_request(:delete, api_v1_study_study_file_bundle_path(study_id: @study.id, id: study_file_bundle_id))
+      assert_response 204, "Did not successfully delete study file bundle, expected response of 204 but found #{@response.response_code}"
+    end
   end
 
   test 'should parse study file' do
@@ -216,10 +219,10 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
           use_metadata_convention: false # check that override is in place to enforce convention
         },
         cluster_form_info_attributes: {
-          _id: cluster_frag_id,
-          name: 'UMAP',
-          obsm_key_name: 'X_umap',
-          description: 'UMAP cluster'
+            _id: cluster_frag_id,
+            name: 'UMAP',
+            obsm_key_name: 'X_umap',
+            description: 'UMAP cluster'
         }
       }
     }

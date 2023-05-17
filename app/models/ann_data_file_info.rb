@@ -50,11 +50,15 @@ class AnnDataFileInfo
     merged_data = form_data.with_indifferent_access
     # merge in existing information about AnnData file, using form data first if present
     anndata_info_attributes = form_data[:ann_data_file_info_attributes] || attributes.with_indifferent_access
-    # check value of :reference_anndata_file which is passed as a string
-    # it is not present in 'classic mode' so the absence of it means this is a reference upload
-    reference_file = merged_data[:reference_anndata_file].nil? ? true : merged_data[:reference_anndata_file] == 'true'
-    anndata_info_attributes[:reference_file] = reference_file
-    merged_data.delete(:reference_anndata_file)
+
+    # only check/update refererence_anndata_file attribute if this is a new AnnData upload
+    if new_record?
+      # check value of :reference_anndata_file which is passed as a string
+      # it is not present in 'classic mode' so the absence of it means this is a reference upload
+      reference_file = merged_data[:reference_anndata_file].nil? ? true : merged_data[:reference_anndata_file] == 'true'
+      anndata_info_attributes[:reference_file] = reference_file
+      merged_data.delete(:reference_anndata_file)
+    end
     fragments = []
     DATA_TYPE_FORM_KEYS.each do |key, form_segment_name|
       fragment_form = merged_data[form_segment_name]
@@ -106,9 +110,10 @@ class AnnDataFileInfo
 
   # find a data_fragment of a given type based on arbitrary key/value pairs
   # any key/value pairs that don't match return false and fail the check for :detect
+  # also supports finding values as both strings and symbols (for data_type values)
   def find_fragment(**attrs)
     data_fragments.detect do |fragment|
-      !{ **attrs }.map { |k, v| fragment[k] == v }.include?(false)
+      !{ **attrs }.map { |k, v| fragment[k] == v || fragment[k] == v.send(transform_for(v)) }.include?(false)
     end
   end
 
@@ -126,6 +131,20 @@ class AnnDataFileInfo
 
   private
 
+  # generate a GS URL to a derived fragment that was extracted from the parent AnnData file
+  # File name structure is: <input_filetype>_frag.<file_type>.<file_type_detail>.tsv
+  #   file_type = cluster|metadata|matrix
+  #   file_type_detail [optional] = cluster name (for cluster files), raw|processed (for matrix files)
+  def fragment_file_url(bucket_id, fragment_type, h5ad_file_id, file_type_detail = "", obsm_key)
+    url = "_scp_internal/anndata_ingest/#{h5ad_file_id}/h5ad_frag.#{fragment_type}.#{obsm_key}"
+    if file_type_detail.present?
+      url += ".#{file_type_detail}.tsv"
+    else
+      url += ".tsv"
+    end
+    url
+  end
+  
   # select out keys from source hash and return new one, rejecting blank values
   # will apply transform method if specified, otherwise returns value in place (Object#presence)
   def hash_from_keys(source_hash, *keys, transform: :presence)
@@ -133,6 +152,18 @@ class AnnDataFileInfo
       source_hash[key].send(transform) if source_hash[key].present? # skip transform on nil entries
     end
     Hash[keys.zip(values)].reject { |_, v| v.blank? }
+  end
+
+  # handle matching values for both strings & symbols when retrieving data_fragments
+  def transform_for(value)
+    case value.class.name
+    when 'String'
+      :to_sym
+    when 'Symbol'
+      :to_s
+    else
+      :presence
+    end
   end
 
   # ensure all fragments have required keys and are unique

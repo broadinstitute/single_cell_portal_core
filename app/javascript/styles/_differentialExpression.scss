@@ -20,6 +20,16 @@
   vertical-align: middle;
   padding: 2px 5px;
   border-radius: 4px;
+  color: $action-color;
+}
+
+.de-reset-button {
+  margin-right: 0.6em;
+  color: $action-color;
+}
+
+.de-dot-plot-button {
+  margin-right: 0.7em;
 }
 
 .de-search-box {
@@ -67,4 +77,18 @@
 
 .no-de-summary {
   padding-left: 10px
+}
+
+.differential-expression-picker {
+  margin-bottom: 20px;
+
+  .narrow-select {
+    float: left;
+    width: calc(100% - 100px); // leave room for vs-note content
+  }
+  .vs-note {
+    position: relative;
+    top: 10px;
+    margin-left: 10px;
+  }
 }

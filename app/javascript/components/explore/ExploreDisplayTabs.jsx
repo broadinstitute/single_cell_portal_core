@@ -73,6 +73,12 @@ function getClusterHasDe(exploreInfo, exploreParams) {
   return clusterHasDe
 }
 
+/** Determine if the flag show_explore_tab_ux_updates is toggled to show explore tab UX updates */
+function getShowExploreTabUpdates() {
+  const flags = getFeatureFlagsWithDefaults()
+  return flags?.show_explore_tab_ux_updates
+}
+
 /** Return list of annotations that have differential expression enabled */
 function getAnnotationsWithDE(exploreInfo) {
   if (!exploreInfo) {return false}
@@ -174,6 +180,11 @@ export default function ExploreDisplayTabs({
 
   // Hash of trace label names to the number of points in that trace
   const [countsByLabel, setCountsByLabel] = useState(null)
+
+  const showDifferentialExpressionTable = (
+    showViewOptionsControls &&
+    deGenes !== null
+  )
 
   const plotContainerClass = 'explore-plot-tab-content'
 
@@ -318,6 +329,28 @@ export default function ExploreDisplayTabs({
     setRenderForcer({})
   }, 300)
 
+  /** Get widths for main (plots) and side (options or DE) panels, for current Explore state */
+  function getPanelWidths() {
+    let main
+    let side
+    if (showViewOptionsControls) {
+      if (showDifferentialExpressionTable) {
+        // DE table is shown.  Least horizontal space for plots.
+        main = 'col-md-9'
+        side = 'col-md-3'
+      } else {
+        // Default state, when side panel is "Options" and not collapsed
+        main = 'col-md-10'
+        side = 'col-md-2'
+      }
+    } else {
+      // When options panel is collapsed.  Maximize horizontal space for plots.
+      main = 'col-md-12'
+      side = 'hidden'
+    }
+    return { main, side }
+  }
+
   return (
     <>
       <div className="row">
@@ -343,12 +376,14 @@ export default function ExploreDisplayTabs({
           </div>
         </div>
         <div className="col-md-4 col-md-offset-1">
-          <ul className="nav nav-tabs" role="tablist" data-analytics-name="explore-default">
+          <ul className={getShowExploreTabUpdates() ? "nav nav-tabs study-plot-tabs" : "nav nav-tabs"} role="tablist" data-analytics-name="explore-default">
             { enabledTabs.map(tabKey => {
               const label = tabList.find(({ key }) => key === tabKey).label
               return (
                 <li key={tabKey}
                   role="presentation"
+                  // TODO: (SCP-5050): Update aria-disabled to be conditionally set if tab is disabled
+                  aria-disabled={false}
                   className={`study-nav ${tabKey === shownTab ? 'active' : ''} ${tabKey}-tab-anchor`}>
                   <a onClick={() => updateExploreParams({ tab: tabKey })}>{label}</a>
                 </li>
@@ -359,7 +394,7 @@ export default function ExploreDisplayTabs({
       </div>
 
       <div className="row explore-tab-content">
-        <div className={showViewOptionsControls ? 'col-md-10' : 'col-md-12'}>
+        <div className={getPanelWidths().main}>
           <div className="explore-plot-tab-content row">
             { showRelatedGenesIdeogram &&
               <RelatedGenesIdeogram
@@ -430,6 +465,7 @@ export default function ExploreDisplayTabs({
                     plotPointsSelected,
                     showRelatedGenesIdeogram,
                     showViewOptionsControls,
+                    showDifferentialExpressionTable,
                     scatterColor: exploreParamsWithDefaults.scatterColor,
                     countsByLabel,
                     setCountsByLabel,
@@ -443,7 +479,7 @@ export default function ExploreDisplayTabs({
                   studyAccession={studyAccession}
                   updateDistributionPlot={distributionPlot => updateExploreParams({ distributionPlot }, false)}
                   dimensions={getPlotDimensions({
-                    showRelatedGenesIdeogram, showViewOptionsControls
+                    showRelatedGenesIdeogram, showViewOptionsControls, showDifferentialExpressionTable
                   })}
                   {...exploreParams}/>
               </div>
@@ -457,7 +493,7 @@ export default function ExploreDisplayTabs({
                      exploreParamsWithDefaults?.annotation,
                      exploreParamsWithDefaults?.annotationList?.annotations
                   )}
-                  dimensions={getPlotDimensions({ showViewOptionsControls })}
+                  dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
                 />
               </div>
             }
@@ -466,7 +502,7 @@ export default function ExploreDisplayTabs({
                 <Heatmap
                   studyAccession={studyAccession}
                   {... exploreParamsWithDefaults}
-                  dimensions={getPlotDimensions({ showViewOptionsControls })}
+                  dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
                 />
               </div>
             }
@@ -476,7 +512,7 @@ export default function ExploreDisplayTabs({
                   studyAccession={studyAccession}
                   {... exploreParamsWithDefaults}
                   geneLists={exploreInfo.geneLists}
-                  dimensions={getPlotDimensions({ showViewOptionsControls })}
+                  dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
                 />
               </div>
             }
@@ -522,7 +558,7 @@ export default function ExploreDisplayTabs({
             }
           </div>
         </div>
-        <div className={showViewOptionsControls ? 'col-md-2 ' : 'hidden'}>
+        <div className={getPanelWidths().side}>
           <div className="view-options-toggle">
             {!showDifferentialExpressionPanel && !showUpstreamDifferentialExpressionPanel &&
               <>

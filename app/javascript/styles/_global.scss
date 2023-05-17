@@ -339,8 +339,13 @@ label {
   top: -5px;
 }
 
-.disabled > a {
+.disabled > a,
+button[disabled] {
   color: #999 !important;
+}
+
+button[disabled] {
+  cursor: initial !important;
 }
 
 .enabled > a {
@@ -876,6 +881,13 @@ figcaption.ck-editor__editable {
   border-bottom: 1px #555 dashed;
 }
 
+.sort-icon {
+  margin-left: 4px;
+  border: none;
+  background: transparent;
+  color: $action-color;
+}
+
 .btn-warning-scp {
   background-color: #C45500;
   color: #fff;
@@ -895,4 +907,8 @@ figcaption.ck-editor__editable {
 
 .link-darker-blue {
   color: #1b476d
+}
+
+.disabled-download {
+  background-color: $danger-color;
 }

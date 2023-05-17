@@ -18,7 +18,7 @@ import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons
 import { formatFileFromServer, formatFileForApi, newStudyFileObj, StudyContext } from './upload-utils'
 import {
   createStudyFile, updateStudyFile, deleteStudyFile,
-  fetchStudyFileInfo, sendStudyFileChunk, RequestCanceller
+  fetchStudyFileInfo, sendStudyFileChunk, RequestCanceller, deleteAnnDataFragment
 } from '~/lib/scp-api'
 import MessageModal, { successNotification, failureNotification } from '~/lib/MessageModal'
 import UserProvider from '~/providers/UserProvider'
@@ -89,13 +89,10 @@ export function RawUploadWizard({ studyAccession, name }) {
 
 
   // used for toggling between the split view for the upload experiences
-  const [choiceMade, setChoiceMade] = useState(false)
+  const [overrideExperienceMode, setOverrideExperienceMode] = useState(false)
   const allowReferenceImageUpload = serverState?.feature_flags?.reference_image_upload
   // used for toggling between classic and AnnData experience of upload wizard
-  const [isAnnDataExperience, setIsAnnDataExperience] = useState(
-    formState?.files?.filter(AnnDataFileFilter)?.length > 0 &&
-    serverState?.feature_flags?.ingest_anndata_file
-  )
+  const [isAnnDataExperience, setIsAnnDataExperience] = useState(false)
 
   let MAIN_STEPS
   let SUPPLEMENTAL_STEPS
@@ -170,12 +167,15 @@ export function RawUploadWizard({ studyAccession, name }) {
   }
 
   /** handle response from server after an upload by updating the serverState with the updated file response */
-  function handleSaveResponse(response, uploadingMoreChunks, requestCanceller) {
+  function handleSaveResponse(response, uploadingMoreChunks, requestCanceller, originalFile) {
     const updatedFile = formatFileFromServer(response)
     const fileId = updatedFile._id
     if (requestCanceller.wasCancelled) {
       Store.addNotification(failureNotification(`${updatedFile.name} save cancelled`))
       updateFile(fileId, { isSaving: false, requestCanceller: null })
+      if (originalFile !== null) {
+        updateFile(originalFile._id, { isSaving: false, requestCanceller: null })
+      }
       return
     }
 
@@ -236,8 +236,9 @@ export function RawUploadWizard({ studyAccession, name }) {
     })
   }
 
-  /** handler for progress events from an XMLHttpRequest call.
-   *    Updates the overall save progress of the file
+  /**
+   * Handler for progress events from an XMLHttpRequest call.
+   * Updates the overall save progress of the file
    */
   function handleSaveProgress(progressEvent, fileId, fileSize, chunkStart) {
     if (!fileSize) {
@@ -269,49 +270,37 @@ export function RawUploadWizard({ studyAccession, name }) {
 
   /** save the given file and perform an upload if a selected file is present */
   async function saveFile(file) {
+    let fileToSave = file
     let studyFileId = file._id
 
     if (isAnnDataExperience) {
-      // enable ingest of data by setting reference_anndata_file = false
-      file['reference_anndata_file'] = false
-      formState.files.forEach(fileFormData => {
-        if (fileFormData.file_type === 'Cluster') {
-          fileFormData.data_type = 'cluster'
-
-          // mulitple clustering forms are allowed so add each as a fragment to the AnnData file
-          const annDataFile = formState.files.find(f => f.file_type === 'AnnData')
-          annDataFile?.ann_data_file_info ? '': annDataFile['ann_data_file_info'] = {}
-          const fragments = annDataFile.ann_data_file_info?.data_fragments || []
-          fragments.push(fileFormData)
-
-          annDataFile.ann_data_file_info.data_fragments = fragments
-        }
-        if (fileFormData.file_type === 'Expression Matrix') {
-          file['extra_expression_form_info'] = fileFormData
-        }
-        if (fileFormData.file_type === 'Metadata') {
-          file['metadata_form_info'] = fileFormData
-        }
-      })
+      fileToSave = saveAnnDataFileHelper(file, fileToSave)
+      studyFileId = fileToSave._id
     }
 
-    const fileSize = file.uploadSelection?.size
+    const fileSize = fileToSave.uploadSelection?.size
     const isChunked = fileSize > CHUNK_SIZE
     let chunkStart = 0
     let chunkEnd = Math.min(CHUNK_SIZE, fileSize)
 
-    const studyFileData = formatFileForApi(file, chunkStart, chunkEnd)
+    const studyFileData = formatFileForApi(fileToSave, chunkStart, chunkEnd)
     try {
       let response
       const requestCanceller = new RequestCanceller(studyFileId)
       if (fileSize) {
         updateFile(studyFileId, { isSaving: true, cancelUpload: () => cancelUpload(requestCanceller) })
+        if (isAnnDataExperience && studyFileId !== file._id) {
+          updateFile(file._id, { isSaving: true, cancelUpload: () => cancelUpload(requestCanceller) })
+        }
       } else {
         // if there isn't an associated file upload, don't allow the user to cancel the request
         updateFile(studyFileId, { isSaving: true })
+        if (isAnnDataExperience && studyFileId !== file._id) {
+          updateFile(file._id, { isSaving: true })
+        }
       }
 
-      if (file.status === 'new') {
+      if (fileToSave.status === 'new') {
         response = await createStudyFile({
           studyAccession, studyFileData, isChunked, chunkStart, chunkEnd, fileSize, requestCanceller,
           onProgress: e => handleSaveProgress(e, studyFileId, fileSize, chunkStart)
@@ -322,7 +311,7 @@ export function RawUploadWizard({ studyAccession, name }) {
           onProgress: e => handleSaveProgress(e, studyFileId, fileSize, chunkStart)
         })
       }
-      handleSaveResponse(response, isChunked, requestCanceller)
+      handleSaveResponse(response, isChunked, requestCanceller, file !== fileToSave ? file : null)
       // copy over the new id from the server
       studyFileId = response._id
       requestCanceller.fileId = studyFileId
@@ -336,33 +325,170 @@ export function RawUploadWizard({ studyAccession, name }) {
             onProgress: e => handleSaveProgress(e, studyFileId, fileSize, chunkStart)
           })
         }
-        handleSaveResponse(response, false, requestCanceller)
+        handleSaveResponse(response, false, requestCanceller, file !== fileToSave ? file : null)
       }
     } catch (error) {
-      Store.addNotification(failureNotification(<span>{file.name} failed to save<br />{error}</span>))
+      Store.addNotification(failureNotification(<span>{fileToSave.name} failed to save<br />{error}</span>))
       updateFile(studyFileId, {
         isSaving: false
       })
     }
   }
 
+  /**
+  * In AnnDataExperience `saveFile()` is also called for updating existing fragments.
+  * If the call to `saveFile()` is an update on an existing AnnData fragment, that fragment
+  * will have a `data_type` rather than `file_type`. This is an important distinction needed
+  * for handling adding a new clustering fragment vs updating an existing clustering fragment
+  **/
+  function saveAnnDataFileHelper(file, fileToSave) {
+    if (file.data_type) {
+      const AnnDataFile = formState.files.find(AnnDataFileFilter)
+
+      if (file.data_type === 'cluster') {
+        AnnDataFile.ann_data_file_info.data_fragments['cluster_form_info'] = file
+      }
+      if (file.file_type === 'expression') {
+        AnnDataFile.ann_data_file_info.data_fragments['extra_expression_form_info'] = file
+      }
+      fileToSave = AnnDataFile
+    } else {
+      // enable ingest of data by setting reference_anndata_file = false
+      if (fileToSave.file_type === 'AnnData') {fileToSave['reference_anndata_file'] = false}
+      formState.files.forEach(fileFormData => {
+        if (fileFormData.file_type === 'Cluster') {
+          fileToSave = formState.files.find(f => f.file_type === 'AnnData')
+          fileFormData.data_type = 'cluster'
+
+            // multiple clustering forms are allowed so add each as a fragment to the AnnData file
+            fileToSave?.ann_data_file_info ? '' : fileToSave['ann_data_file_info'] = {}
+            const fragments = fileToSave.ann_data_file_info?.data_fragments || []
+            fragments.push(fileFormData)
+            fileToSave.ann_data_file_info.data_fragments = fragments
+        }
+        if (fileFormData.file_type === 'Expression Matrix') {
+          fileToSave['extra_expression_form_info'] = fileFormData
+        }
+        if (fileFormData.file_type === 'Metadata') {
+          fileToSave['metadata_form_info'] = fileFormData
+        }
+      })
+    }
+    return fileToSave
+  }
+
   /** delete the file from the form, and also the server if it exists there */
   async function deleteFile(file) {
     const fileId = file._id
-    if (file.status === 'new' || file?.serverFile?.parse_status === 'failed') {
-      deleteFileFromForm(fileId)
+
+    // if AnnDataExperience clusterings need to be handled differently
+    if (isAnnDataExperience && file.data_type === 'cluster') {
+      annDataClusteringFragmentsDeletionHelper(file)
     } else {
-      updateFile(fileId, { isDeleting: true })
-      try {
-        await deleteFileFromServer(fileId)
+      if (file.status === 'new' || file?.serverFile?.parse_status === 'failed') {
         deleteFileFromForm(fileId)
-        Store.addNotification(successNotification(`${file.name} deleted successfully`))
+      } else {
+        updateFile(fileId, { isDeleting: true })
+        try {
+          await deleteFileFromServer(fileId)
+          deleteFileFromForm(fileId)
+          Store.addNotification(successNotification(`${file.name} deleted successfully`))
+        } catch (error) {
+          Store.addNotification(failureNotification(<span>{file.name} failed to delete<br />{error.message}</span>))
+          updateFile(fileId, {
+            isDeleting: false
+          })
+        }
+      }
+    }
+  }
+
+  /**
+   * Separate logic for deleting a clustering from an AnnData file.
+   * Deleting a single clustering from the AnnData file requires:
+   * deleting the fragment from the google bucket, deleting the parsed data,
+   * updating the AnnData file and the ClusterGroup with this deletion
+  */
+  async function annDataClusteringFragmentsDeletionHelper(file) {
+    const annDataFile = formState.files.find(AnnDataFileFilter)
+    const fragmentsInAnnDataFile = annDataFile.ann_data_file_info.data_fragments
+
+    // If the AnnData file contains more than one clustering proceed with deletion
+    if (fragmentsInAnnDataFile.filter(f => f.data_type === 'cluster').length > 1) {
+
+      // delete the clustering from the bucket and update the ClusterGroup
+      let studyFileId = annDataFile._id
+      updateFile(studyFileId, { isSaving: true })
+
+      await deleteAnnDataFragment(studyAccession, studyFileId, file._id)
+
+      // Update the AnnData fragments to no longer include this fragment for setting the state in the UploadWizard
+      const newClusteringsArray = fragmentsInAnnDataFile.filter(item => item !== file)
+      annDataFile.ann_data_file_info.data_fragments = newClusteringsArray
+
+      // borrowed much from SaveFile for an update of a studyFile
+      // likely worth revisiting in future to clean up more
+      const fileSize = annDataFile.uploadSelection?.size
+      const isChunked = fileSize > CHUNK_SIZE
+      let chunkStart = 0
+      let chunkEnd = Math.min(CHUNK_SIZE, fileSize)
+      const studyFileData = formatFileForApi(annDataFile, chunkStart, chunkEnd)
+
+      // attempt to update the AnnData file to refelect the deleted clustering
+      try {
+        let response
+        const requestCanceller = new RequestCanceller(studyFileId)
+
+        response = await updateStudyFile({
+          studyAccession, studyFileId, studyFileData, isChunked, chunkStart, chunkEnd, fileSize, requestCanceller,
+          onProgress: e => handleSaveProgress(e, studyFileId, fileSize, chunkStart)
+        })
+
+        handleSaveResponse(response, isChunked, requestCanceller, file !== annDataFile ? file : null)
+        // copy over the new id from the server
+        studyFileId = response._id
+        requestCanceller.fileId = studyFileId
+        if (isChunked && !requestCanceller.wasCancelled) {
+          // updating the AnnData file requires sending some of the file, but not saving the entire file again.
+          while (chunkEnd < fileSize && !requestCanceller.wasCancelled) {
+            chunkStart += CHUNK_SIZE
+            chunkEnd = Math.min(chunkEnd + CHUNK_SIZE, fileSize)
+            const chunkApiData = formatFileForApi(file, chunkStart, chunkEnd)
+            response = await sendStudyFileChunk({
+              studyAccession, studyFileId, studyFileData: chunkApiData, chunkStart, chunkEnd, fileSize, requestCanceller,
+              onProgress: e => handleSaveProgress(e, studyFileId, fileSize, chunkStart)
+            })
+          }
+          handleSaveResponse(response, false, requestCanceller, file !== annDataFile ? file : null)
+        }
       } catch (error) {
-        Store.addNotification(failureNotification(<span>{file.name} failed to delete<br />{error.message}</span>))
-        updateFile(fileId, {
-          isDeleting: false
+        Store.addNotification(failureNotification(<span>{annDataFile.name} failed to save<br />{error}</span>))
+        updateFile(studyFileId, {
+          isSaving: false
         })
       }
+
+      // Update the server and form state to reflect this change
+      setServerState(prevServerState => {
+        const newServerState = _cloneDeep(prevServerState)
+        const fileIndex = newServerState.files.findIndex(f => f._id === annDataFile._id)
+        newServerState.files[fileIndex] = annDataFile
+        return newServerState
+      })
+
+      // then update the form state
+      setFormState(prevFormState => {
+        const newFormState = _cloneDeep(prevFormState)
+        const fileIndex = newFormState.files.findIndex(f => f._id === annDataFile._id)
+        const formFile = _cloneDeep(annDataFile)
+        newFormState.files[fileIndex] = formFile
+        return newFormState
+      })
+
+      updateFile(annDataFile._id, { iSaving: false })
+    } else {
+      // Just for safety, the deletion button should not be available for a single clustering
+      Store.addNotification(failureNotification(<span>{file.name} failed to delete</span>))
     }
   }
 
@@ -389,12 +515,12 @@ export function RawUploadWizard({ studyAccession, name }) {
   function pollServerState() {
     fetchStudyFileInfo(studyAccession, false).then(response => {
       response.files.forEach(file => formatFileFromServer(file))
+      response.files.length > 0 && setOverrideExperienceMode(true)
       setServerState(oldState => {
         // copy over the menu options since they aren't included in the polling response
         response.menu_options = oldState.menu_options
         return response
       })
-
       setTimeout(pollServerState, POLLING_INTERVAL)
     }).catch(response => {
       // if the get fails, it's very likely that the error recur on a retry
@@ -412,7 +538,8 @@ export function RawUploadWizard({ studyAccession, name }) {
     fetchStudyFileInfo(studyAccession).then(response => {
       response.files.forEach(file => formatFileFromServer(file))
       setIsAnnDataExperience(
-        response.files?.filter(AnnDataFileFilter)?.length > 0 &&
+        (response.files?.find(AnnDataFileFilter)?.ann_data_file_info?.data_fragments?.length > 0 ||
+        response.files?.find(AnnDataFileFilter)?.ann_data_file_info?.reference_file === false) &&
         response.feature_flags?.ingest_anndata_file)
       setServerState(response)
       setFormState(_cloneDeep(response))
@@ -425,14 +552,25 @@ export function RawUploadWizard({ studyAccession, name }) {
   const nextStep = STEPS[currentStepIndex + 1]
   const prevStep = STEPS[currentStepIndex - 1]
 
+
+  /** return a button for switching to the other experience (AnnData or Classic) */
+  function getOtherChoiceButton() {
+    const otherOption = isAnnDataExperience ? 'classic' : 'AnnData'
+    return <button
+      data-testid="switch-upload-mode-button"
+      className="btn terra-secondary-btn margin-left-extra"
+      onClick={() => setIsAnnDataExperience(!isAnnDataExperience)}> Switch to {otherOption} upload
+    </button>
+  }
+
   /**
    * Returns the appropriate content to display for the UploadWizard
    * @returns The content for the upload wizard, either the steps for upload or the split view for choosing the data upload experience
    */
   function getWizardContent(formState, serverState) {
-    if (!formState?.files.length && !choiceMade && serverState?.feature_flags?.ingest_anndata_file) {
-      return <UploadExperienceSplitter {...{ setIsAnnDataExperience, setChoiceMade }} />
-    } else if (choiceMade || formState?.files.length || !serverState?.feature_flags?.ingest_anndata_file) {
+    if (!formState?.files.length && !overrideExperienceMode && serverState?.feature_flags?.ingest_anndata_file) {
+      return <UploadExperienceSplitter {...{ setIsAnnDataExperience, setOverrideExperienceMode }} />
+    } else if (overrideExperienceMode || formState?.files.length || !serverState?.feature_flags?.ingest_anndata_file) {
       return <> <div className="row wizard-content">
         <div>
           <WizardNavPanel {...{
@@ -474,16 +612,6 @@ export function RawUploadWizard({ studyAccession, name }) {
     }
   }
 
-  /** return a button for switching to the other experience (AnnData or Classic) */
-  function getOtherChoiceButton() {
-    const otherOption = isAnnDataExperience ? 'classic upload' : 'AnnData upload'
-    return <button
-      data-testid="switch-upload-mode-button"
-      className="btn terra-secondary-btn margin-left-extra"
-      onClick={() => setIsAnnDataExperience(!isAnnDataExperience)}> Switch to {otherOption}
-    </button>
-  }
-
   return (
     <StudyContext.Provider value={studyObj}>
       {/* If the formState hasn't loaded show a spinner */}
@@ -497,7 +625,7 @@ export function RawUploadWizard({ studyAccession, name }) {
               <a href={`/single_cell/study/${studyAccession}`}>View study</a> / &nbsp;
               <span title="{serverState?.study?.name}">{serverState?.study?.name}</span>
               {/* only allow switching modes if the user hasn't uploaded a file yet */}
-              {!serverState?.files.length && choiceMade && serverState?.feature_flags?.ingest_anndata_file && getOtherChoiceButton()}
+              {!serverState?.files.length && overrideExperienceMode && serverState?.feature_flags?.ingest_anndata_file && getOtherChoiceButton()}
             </div>
             {getWizardContent(formState, serverState)}
           </div>

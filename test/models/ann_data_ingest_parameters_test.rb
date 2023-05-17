@@ -7,12 +7,13 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
       anndata_file: 'gs://test_bucket/test.h5ad',
     }
 
+    @file_id = BSON::ObjectId.new
     @ingest_cluster_params = {
       ingest_anndata: false,
       extract: nil,
       obsm_keys: nil,
       ingest_cluster: true,
-      cluster_file: 'gs://test_bucket/_scp_internal/anndata_ingest/h5ad_file_id/h5ad_frag.cluster.X_umap.tsv',
+      cluster_file: "gs://test_bucket/_scp_internal/anndata_ingest/#{@file_id}/h5ad_frag.cluster.X_umap.tsv",
       name: 'X_umap',
       domain_ranges: '{}'
     }
@@ -21,7 +22,7 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
       ingest_anndata: false,
       extract: nil,
       obsm_keys: nil,
-      cell_metadata_file: 'gs://test_bucket/_scp_internal/anndata_ingest/h5ad_file_id/h5ad_frag.metadata.tsv',
+      cell_metadata_file: "gs://test_bucket/_scp_internal/anndata_ingest/#{@file_id}/h5ad_frag.metadata.tsv",
       ingest_cell_metadata: true
     }
   end
@@ -36,8 +37,8 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
       assert extraction.send(attr).blank?
     end
 
-    cmd = '--ingest-anndata --anndata-file gs://test_bucket/test.h5ad --extract ["cluster", "metadata"] ' \
-          '--obsm-keys ["X_umap", "X_tsne"]'
+    cmd = '--ingest-anndata --anndata-file gs://test_bucket/test.h5ad --extract ["cluster", "metadata", ' \
+          '"processed_expression"] --obsm-keys ["X_umap", "X_tsne"]'
     assert_equal cmd, extraction.to_options_array.join(' ')
 
     cluster_ingest = AnnDataIngestParameters.new(@ingest_cluster_params)
@@ -47,9 +48,8 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
       assert cluster_ingest.send(attr).blank?
     end
     cluster_cmd = '--ingest-cluster --cluster-file gs://test_bucket/_scp_internal/anndata_ingest/' \
-                  'h5ad_file_id/h5ad_frag.cluster.X_umap.tsv --name X_umap --domain-ranges {}'
+                  "#{@file_id}/h5ad_frag.cluster.X_umap.tsv --name X_umap --domain-ranges {}"
     assert_equal cluster_cmd, cluster_ingest.to_options_array.join(' ')
-
 
     metadata_ingest = AnnDataIngestParameters.new(@ingest_metadata_params)
     assert metadata_ingest.valid?
@@ -57,16 +57,17 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     %i[ingest_anndata extract anndata_file].each do |attr|
       assert metadata_ingest.send(attr).blank?
     end
-    metadata_cmd = '--cell-metadata-file gs://test_bucket/_scp_internal/anndata_ingest/h5ad_file_id/h5ad_frag.metadata.tsv --ingest-cell-metadata'
-    assert_equal metadata_cmd, metadata_ingest.to_options_array.join(' ')
+    md_cmd = "--cell-metadata-file gs://test_bucket/_scp_internal/anndata_ingest/#{@file_id}/h5ad_frag.metadata.tsv " \
+             "--ingest-cell-metadata"
+    assert_equal md_cmd, metadata_ingest.to_options_array.join(' ')
 
   end
 
   test 'should set fragment filename for extracted files' do
     extraction = AnnDataIngestParameters.new(@extract_params)
     %w[X_umap X_tsne].each do |fragment|
-      assert_equal "gs://test_bucket/_scp_internal/anndata_ingest/h5ad_file_id/h5ad_frag.cluster.#{fragment}.tsv",
-                   extraction.fragment_file_gs_url('test_bucket', 'cluster', 'h5ad_file_id', fragment)
+      assert_equal "gs://test_bucket/_scp_internal/anndata_ingest/#{@file_id}/h5ad_frag.cluster.#{fragment}.tsv",
+                   extraction.fragment_file_url('test_bucket', 'cluster', @file_id, fragment)
     end
   end
 end

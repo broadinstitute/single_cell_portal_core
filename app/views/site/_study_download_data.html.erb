@@ -176,7 +176,14 @@
                   'If a certificate validation error occurs, adding the "-k" option will skip certificate validation.<br/>  e.g. `curl -k "https://singlecell...."`</div>'
               );
             }
-          );
+          ).catch(error => {
+            $('#download-help-modal .modal-body').html(
+              "<div class='text-center text-danger'>" +
+              "<h4>There was a problem authorizing your request</h4>" +
+              `<p>${error.message}</p>` +
+              "</div>"
+            )
+          })
         }
 
         // Show the download command upon clicking the "Get download command" button

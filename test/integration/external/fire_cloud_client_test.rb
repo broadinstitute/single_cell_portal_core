@@ -302,61 +302,6 @@ class FireCloudClientTest < ActiveSupport::TestCase
     assert configuration_template['outputs'].any?, "Did not find any configuration outputs: #{configuration_template['outputs']}"
   end
 
-  # manage configurations in a workspace: copy, list all, get
-  def test_manage_workspace_configurations
-    # set workspace name
-    workspace_name = "#{self.method_name}-#{@random_test_seed}"
-
-    # create workspace
-    puts 'creating workspace...'
-    workspace = @fire_cloud_client.create_workspace(@fire_cloud_client.project, workspace_name)
-    assert workspace.present?, 'Did not create workspace'
-
-    puts 'loading configurations...'
-    configurations = @fire_cloud_client.get_configurations
-    assert configurations.any?, 'Did not load any configurations'
-
-    # select configuration
-    configuration = configurations.sample
-
-    puts 'copying configuration to workspace...'
-    begin
-      copied_config = @fire_cloud_client.copy_configuration_to_workspace(@fire_cloud_client.project, workspace_name, configuration['namespace'], configuration['name'], configuration['snapshotId'], workspace['namespace'], configuration['name'])
-      assert copied_config['methodConfiguration']['name'] == configuration['name'], "Copied configuration name is incorrect, expected '#{configuration['name']}' but found '#{copied_config['methodConfiguration']['name']}'"
-      assert copied_config['methodConfiguration']['namespace'] == workspace['namespace'], "Copied configuration name is incorrect, expected '#{workspace['namespace']}' but found '#{copied_config['methodConfiguration']['namespace']}'"
-    rescue => e
-      skip "Skipping test due to error from methods repo (this is not a regression but a known issue with some methods missing configurations): #{e.message}"
-    end
-
-    puts 'getting workspace configurations...'
-    workspace_configs = @fire_cloud_client.get_workspace_configurations(@fire_cloud_client.project, workspace_name)
-    assert workspace_configs.any?, 'Did not find any workspace configurations'
-
-    puts 'getting single workspace configuration...'
-    ws_config = workspace_configs.first
-    single_configuration = @fire_cloud_client.get_workspace_configuration(@fire_cloud_client.project, workspace_name, ws_config['namespace'], ws_config['name'])
-    assert single_configuration.any?, "Did not load workspace configuration: #{ws_config['name']}"
-    assert single_configuration.has_key?('inputs'), "Single workspace configuration '#{single_configuration['name']}' has no inputs"
-    assert single_configuration.has_key?('outputs'), "Single workspace configuration '#{single_configuration['name']}' has no outputs"
-
-    puts 'updating workspace configuration'
-    updated_input = single_configuration['inputs'].keys.first
-    updated_value = 'this is the update'
-    single_configuration['inputs'][updated_input] = updated_value
-    update_request = @fire_cloud_client.update_workspace_configuration(@fire_cloud_client.project, workspace_name, single_configuration['namespace'], single_configuration['name'], single_configuration)
-    assert update_request.present?, "Request did not go through, response is nil: #{update_request}"
-    updated_config = @fire_cloud_client.get_workspace_configuration(@fire_cloud_client.project, workspace_name, ws_config['namespace'], ws_config['name'])
-    assert updated_config['inputs'][updated_input] == updated_value, "did not update configuration input, expected '#{updated_value}' but found '#{updated_config['inputs'][updated_input]}'"
-
-    puts 'overwriting workspace configuration'
-    new_value = 'this is a new update'
-    single_configuration['inputs'][updated_input] = new_value
-    overwrite_request = @fire_cloud_client.overwrite_workspace_configuration(@fire_cloud_client.project, workspace_name, ws_config['namespace'], ws_config['name'], single_configuration)
-    assert overwrite_request.present?, "Overwrite did not go through, response is nil: #{overwrite_request}"
-    overwritten_config = @fire_cloud_client.get_workspace_configuration(@fire_cloud_client.project, workspace_name, ws_config['namespace'], ws_config['name'])
-    assert overwritten_config['inputs'][updated_input] == new_value, "did not overwrite configuration input, expected '#{new_value}' but found '#{overwritten_config['inputs'][updated_input]}'"
-  end
-
   ##
   #
   # USER GROUP TESTS

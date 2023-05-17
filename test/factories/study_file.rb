@@ -179,8 +179,8 @@ FactoryBot.define do
                               study_file: file)
           end
         end
-        # gotcha to save file to update ann_data_file_info
-        file.save
+        # gotcha to save updates to ann_data_file_info
+        file.ann_data_file_info.save
       end
     end
   end

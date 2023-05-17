@@ -9,11 +9,11 @@ import FileUploadControl from './FileUploadControl'
 /** renders its children inside an expandable form with a header for file selection */
 export default function ExpandableFileForm({
   file, allFiles, updateFile, allowedFileExts, validationMessages, bucketName,
-  saveFile, deleteFile, isInitiallyExpanded, isAnnDataExperience, children
+  saveFile, deleteFile, isInitiallyExpanded, isAnnDataExperience, isLastClustering = false, children
 }) {
   const [expanded, setExpanded] = useState(isInitiallyExpanded || file.status === 'new')
 
-  const isUploadEnabled = getIsUploadEnabled(isAnnDataExperience, allFiles, file)
+  const isUploadEnabled = getIsUploadEnabled(isAnnDataExperience, file)
 
   /** handle a click on the header bar (not the expand button itself) */
   function handleDivClick(e) {
@@ -53,7 +53,7 @@ export default function ExpandableFileForm({
               bucketName={bucketName}
               isAnnDataExperience={isAnnDataExperience} />
           </div>}
-          {isUploadEnabled && <SaveDeleteButtons {...{ file, updateFile, saveFile, deleteFile, validationMessages }} /> }
+          {getIsSaveEnabled(isAnnDataExperience, allFiles, file) && <SaveDeleteButtons {...{ file, updateFile, saveFile, deleteFile, validationMessages, isAnnDataExperience, allFiles, isLastClustering }} />}
         </div>
         {expanded && children}
         <SavingOverlay file={file} updateFile={updateFile} />
@@ -102,18 +102,24 @@ export function SavingOverlay({ file, updateFile }) {
 }
 
 /** renders save and delete buttons for a given file */
-export function SaveDeleteButtons({ file, saveFile, deleteFile, validationMessages = {} }) {
+export function SaveDeleteButtons({
+  file, saveFile, deleteFile, validationMessages = {}, isAnnDataExperience, allFiles = [], isLastClustering = false
+}) {
   const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false)
+  const isExpressionMatrix = isAnnDataExperience && file.data_type === 'expression'
+
   if (file.serverFile?.parse_status === 'failed') {
     return <div className="text-center">
-      <div className="validation-error"><FontAwesomeIcon icon={faTimes}/> Parse failed</div>
+      <div className="validation-error"><FontAwesomeIcon icon={faTimes} /> Parse failed</div>
       <div className="detail">Check your email for details - this file will be removed from the server.</div>
       <button className="terra-secondary-btn" onClick={() => deleteFile(file)}>OK</button>
     </div>
   }
   return <div className="flexbox-align-center button-panel">
-    <SaveButton file={file} saveFile={saveFile} validationMessages={validationMessages}/>
-    <DeleteButton file={file} deleteFile={deleteFile} setShowConfirmDeleteModal={setShowConfirmDeleteModal}/>
+    <SaveButton file={file} saveFile={saveFile} allFiles={allFiles} validationMessages={validationMessages} isAnnDataExperience={isAnnDataExperience} />
+    {!isExpressionMatrix && !isLastClustering &&
+      <DeleteButton file={file} deleteFile={deleteFile} setShowConfirmDeleteModal={setShowConfirmDeleteModal} />
+    }
     <Modal
       show={showConfirmDeleteModal}
       onHide={() => setShowConfirmDeleteModal(false)}
@@ -137,8 +143,18 @@ export function SaveDeleteButtons({ file, saveFile, deleteFile, validationMessag
 
 
 /** renders a save button for a given file */
-function SaveButton({ file, saveFile, validationMessages = {} }) {
-  const saveDisabled = Object.keys(validationMessages).length > 0
+function SaveButton({ file, saveFile, allFiles, validationMessages = {}, isAnnDataExperience }) {
+  const saveDisabled = isAnnDataExperience ? false : Object.keys(validationMessages).length > 0
+
+  // show parsing in the save button for cluster and expression fragments if AnnData file is parsing
+  let showParsingForFragment = false
+  if (isAnnDataExperience) {
+    const annDataFile = allFiles.find(f => f.file_type === 'AnnData')
+    showParsingForFragment = annDataFile?.serverFile?.parse_status === 'parsing' &&
+      (file?.data_type === 'cluster' || file?.data_type === 'expression')
+  }
+
+  //  primary save button, white background with blue text and border, shown by default as the save button
   let saveButton = <button
     style={{ pointerEvents: saveDisabled ? 'none' : 'auto' }}
     type="button"
@@ -150,15 +166,22 @@ function SaveButton({ file, saveFile, validationMessages = {} }) {
     Save {file.uploadSelection && <span>&amp; Upload</span>}
   </button>
 
+  // the parsing status will show over the save button when file is saving
+  if (file.serverFile?.parse_status === 'parsing' || showParsingForFragment) {
+    saveButton = <OverlayTrigger trigger={['hover', 'focus']} rootClose placement="top" overlay={parsingPopup}>
+      <span className="detail">Parsing <LoadingSpinner /></span>
+    </OverlayTrigger>
+  }
+
+  // if saving is disabled, wrap the disabled button in a popover that will show the errors
   if (saveDisabled) {
-    // if saving is disabled, wrap the disabled button in a popover that will show the errors
     const validationPopup = <Popover id={`save-invalid-${file._id}`} className="tooltip-wide">
       {Object.keys(validationMessages).map(key => <div key={key}>{validationMessages[key]}</div>)}
     </Popover>
     saveButton = <OverlayTrigger trigger={['hover', 'focus']} rootClose placement="left" overlay={validationPopup}>
       <div>{saveButton}</div>
     </OverlayTrigger>
-  } else if (file.isSaving) {
+  } else if (file.isSaving) { // if file is currently saving will show the text "saving" in the button
     const savingText = file.saveProgress ? <span>Uploading {file.saveProgress}% </span> : 'Saving'
     saveButton = <button type="button"
       className="btn btn-primary margin-right">
@@ -168,7 +191,8 @@ function SaveButton({ file, saveFile, validationMessages = {} }) {
   return saveButton
 }
 
-/** renders a delete button for a given file
+/**
+ * renders a delete button for a given file
  * will show a parsing indicator if the file is parsing (and therefore not deletable) */
 function DeleteButton({ file, deleteFile, setShowConfirmDeleteModal }) {
   /** delete file with/without confirmation dialog as appropriate */
@@ -190,7 +214,7 @@ function DeleteButton({ file, deleteFile, setShowConfirmDeleteModal }) {
   </button>
   if (file.serverFile?.parse_status === 'parsing') {
     deleteButton = <OverlayTrigger trigger={['hover', 'focus']} rootClose placement="top" overlay={parsingPopup}>
-      <span className="detail">Parsing <LoadingSpinner/></span>
+      <span className="detail">Parsing <LoadingSpinner /></span>
     </OverlayTrigger>
   }
   return deleteButton
@@ -205,17 +229,41 @@ function DeleteButton({ file, deleteFile, setShowConfirmDeleteModal }) {
  * @param {array} allFiles
  * @returns {boolean} Whether to show upload control buttons or not
  */
-function getIsUploadEnabled(isAnnDataExperience, allFiles, file) {
+function getIsUploadEnabled(isAnnDataExperience, file) {
   const isClustering = file.file_type === 'Cluster'
   const isExpressionMatrix = file.file_type === 'Expression Matrix'
-
   return !((isClustering || isExpressionMatrix) && isAnnDataExperience)
 }
 
+/**
+ * Determine whether to show the save/delete buttons.
+ *
+ * @param {boolean} isAnnDataExperience
+ * @param {array} allFiles
+ * @returns {boolean} Whether to show upload control buttons or not
+ */
+function getIsSaveEnabled(isAnnDataExperience, allFiles, file) {
+  // if it's not AnnDataExperience don't gate the save/delete buttons
+  if (!isAnnDataExperience) {return true}
+
+  // allow save/delete for updates after an AnnData file has been uploaded
+  const alreadyUploaded = allFiles.some(fileObj => fileObj?.ann_data_file_info?.data_fragments.length > 0)
+  // cluster files that haven't been saved have a file_type whereas once saved they are fragments which have a data_type
+  const isClustering = file.data_type === 'cluster' || file.file_type === 'Cluster'
+  const isAnnData = file.data_type === 'AnnData' || file.file_type === 'AnnData'
+  const isExpressionMatrix = file.data_type === 'expression'
+
+  if ((isClustering || isExpressionMatrix || isAnnData) && alreadyUploaded && isAnnDataExperience) {
+    return true
+  } else {
+    return isAnnData && isAnnDataExperience
+  }
+}
+
 const parsingPopup = <Popover id="parsing-tooltip" className="tooltip-wide">
-  <div>This file is currently being parsed on the server.  <br/>
-    You will receive an email when the parse is complete (typically within 5-30 minutes, depending on file size). <br/>
-    You can continue to upload other files during this time. <br/>
+  <div>This file is currently being parsed on the server.  <br />
+    You will receive an email when the parse is complete (typically within 5-30 minutes, depending on file size). <br />
+    You can continue to upload other files during this time. <br />
     You cannot delete files while they are being parsed.
   </div>
 </Popover>
