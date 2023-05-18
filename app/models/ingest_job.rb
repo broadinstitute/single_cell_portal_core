@@ -906,12 +906,8 @@ class IngestJob
       end
       cluster_points = cluster.points
       message << "Total points in cluster: #{cluster_points}"
-
-      can_subsample = cluster.can_subsample?
-      metadata_file_present = study.metadata_file.present?
-
       # notify user that subsampling is about to run and inform them they can't delete cluster/metadata files
-      if can_subsample && metadata_file_present
+      if cluster.can_subsample? && study.metadata_file.present? && !study_file.is_anndata?
         message << 'This cluster file will now be processed to compute representative subsamples for visualization.'
         message << 'You will receive an additional email once this has completed.'
         message << 'While subsamples are being computed, you will not be able to remove this cluster file or your metadata file.'
