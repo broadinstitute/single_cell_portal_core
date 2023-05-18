@@ -671,8 +671,8 @@ class IngestJob
           RequestUtils.data_fragment_url(study_file, file_type, file_type_detail: 'processed')
         end
         exp_params = AnnDataIngestParameters.new(
-          ingest_expression: true, matrix_file: matrix_gs_url, matrix_file_type: 'mtx', gene_file: features_gs_url,
-          barcode_file: barcodes_gs_url, ingest_anndata: false, extract: nil, obsm_keys: nil
+          matrix_file: matrix_gs_url, matrix_file_type: 'mtx', gene_file: features_gs_url, barcode_file: barcodes_gs_url,
+          ingest_anndata: false, extract: nil, obsm_keys: nil
         )
         job = IngestJob.new(study:, study_file:, user:, action:, params_object: exp_params)
         job.delay.push_remote_and_launch_ingest

@@ -20,7 +20,6 @@ class AnnDataIngestParameters
   # domain_ranges: domain ranges for ClusterGroup, if present
   # cell_metadata_file: GS URL for extracted metadata file
   # ingest_cell_metadata: gate ingesting an extracted metadata file
-  # ingest_expression: gate ingesting an extracted MTX file
   # matrix_file: GS URL of extracted MTX file
   # matrix_file_type: type of matrix file (should always be 'mtx' when used with :ingest_expression)
   # gene_file: GS URL of extracted 10X features file
@@ -37,7 +36,6 @@ class AnnDataIngestParameters
     cell_metadata_file: nil,
     ingest_cell_metadata: false,
     study_accession: nil,
-    ingest_expression: false,
     matrix_file: nil,
     matrix_file_type: nil,
     gene_file: nil,
