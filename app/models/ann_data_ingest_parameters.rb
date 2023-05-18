@@ -39,7 +39,8 @@ class AnnDataIngestParameters
     matrix_file: nil,
     matrix_file_type: nil,
     gene_file: nil,
-    barcode_file: nil
+    barcode_file: nil,
+    subsample: false
   }.freeze
 
   attr_accessor(*PARAM_DEFAULTS.keys)

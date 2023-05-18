@@ -22,7 +22,7 @@ class PapiClient
     ingest_expression: ['Expression Matrix', 'MM Coordinate Matrix', 'AnnData'],
     ingest_cluster: %w[Cluster AnnData],
     ingest_cell_metadata: %w[Metadata AnnData],
-    ingest_subsample: ['Cluster'],
+    ingest_subsample: ['Cluster', 'AnnData'],
     differential_expression: ['Cluster'],
     ingest_differential_expression: ['Differential Expression'],
     render_expression_arrays: ['Cluster'],
@@ -343,8 +343,10 @@ class PapiClient
       # skip if parent file is AnnData as params_object will format command line
       command_line += ['--cluster-file', study_file.gs_url, action_cli_opt] unless study_file.is_anndata?
     when 'ingest_subsample'
-      metadata_file = study.metadata_file
-      command_line += ['--cluster-file', study_file.gs_url, '--cell-metadata-file', metadata_file.gs_url, '--subsample']
+      unless study_file.is_anndata?
+        metadata_file = study.metadata_file
+        command_line += ['--cluster-file', study_file.gs_url, '--cell-metadata-file', metadata_file.gs_url, '--subsample']
+      end
     when 'differential_expression'
       command_line += ['--study-accession', study.accession]
     when 'ingest_differential_expression'

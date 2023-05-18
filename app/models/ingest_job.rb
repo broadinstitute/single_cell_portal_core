@@ -396,7 +396,7 @@ class IngestJob
     when :ingest_cell_metadata
       study.set_cell_count
       set_study_default_options
-      launch_subsample_jobs unless study_file.is_anndata?
+      launch_subsample_jobs
       # update search facets if convention data
       if study_file.use_metadata_convention
         SearchFacet.delay.update_all_facet_filters
@@ -409,7 +409,7 @@ class IngestJob
     when :ingest_cluster
       set_cluster_point_count
       set_study_default_options
-      launch_subsample_jobs unless study_file.is_anndata?
+      launch_subsample_jobs
       launch_differential_expression_jobs unless study_file.is_anndata?
       set_anndata_file_info if study_file.is_anndata?
     when :ingest_subsample
@@ -423,7 +423,7 @@ class IngestJob
     when :image_pipeline
       set_has_image_cache
     when :ingest_anndata
-      launch_anndata_subparse_jobs
+      launch_anndata_subparse_jobs unless study_file.is_reference_anndata?
       set_anndata_file_info
     end
     set_study_initialized
@@ -559,6 +559,36 @@ class IngestJob
                         persist_on_fail: persist_on_fail).poll_for_completion
         end
       end
+    when 'AnnData'
+      return if study_file.is_reference_anndata?
+
+      file_info = study_file.ann_data_file_info
+      if file_info.has_clusters? && file_info.has_metadata?
+        file_identifier = "#{study_file.bucket_location}:#{study_file.id}"
+        file_info.fragments_by_type(:cluster).each do |fragment|
+          safe_fragment = fragment.with_indifferent_access
+          cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: safe_fragment[:name])
+          next unless cluster&.can_subsample? && !cluster&.is_subsampling?
+
+          cluster.update(is_subsampling: true)
+          cluster_file = RequestUtils.data_fragment_url(
+            study_file, 'cluster', file_type_detail: safe_fragment[:obsm_key_name]
+          )
+          cell_metadata_file = RequestUtils.data_fragment_url(study_file, 'metadata')
+          subsample_params = AnnDataIngestParameters.new(
+            subsample: true, ingest_anndata: false, extract: nil, obsm_keys: nil, name: cluster.name,
+            cluster_file:, cell_metadata_file:
+          )
+          Rails.logger.info "Launching subsampling ingest run for #{file_identifier} after #{action}"
+          submission = ApplicationController.papi_client.run_pipeline(
+            study_file:, user:, action: :ingest_subsample, params_object: subsample_params
+          )
+          IngestJob.new(
+            pipeline_name: submission.name, study:, study_file:, user:, action: :ingest_subsample,
+            params_object: subsample_params, reparse:, persist_on_fail:
+          ).poll_for_completion
+        end
+      end
     end
   end
 
@@ -633,7 +663,7 @@ class IngestJob
   # launch appropriate downstream jobs once an AnnData file successfully extracts "fragment" files
   def launch_anndata_subparse_jobs
     # reference AnnData uploads don't have extract parameter so exit immediately
-    return nil if params_object.extract.blank?
+    return if params_object.extract.blank?
 
     params_object.extract.each do |extract|
       case extract
@@ -893,9 +923,7 @@ class IngestJob
         end
       end
     when :ingest_cluster
-      cluster_params = { study_id: study.id, study_file_id: study_file.id }
-      cluster_params.merge!({ name: params_object.name }) if study_file.is_anndata?
-      cluster = ClusterGroup.find_by(**cluster_params)
+      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: cluster_name_by_file_type)
       cluster_type = cluster.cluster_type
       message << "Cluster created: #{cluster.name}, type: #{cluster_type}"
       if cluster.cell_annotations.any?
@@ -907,13 +935,13 @@ class IngestJob
       cluster_points = cluster.points
       message << "Total points in cluster: #{cluster_points}"
       # notify user that subsampling is about to run and inform them they can't delete cluster/metadata files
-      if cluster.can_subsample? && study.metadata_file.present? && !study_file.is_anndata?
+      if cluster.can_subsample? && study.metadata_file.present?
         message << 'This cluster file will now be processed to compute representative subsamples for visualization.'
         message << 'You will receive an additional email once this has completed.'
         message << 'While subsamples are being computed, you will not be able to remove this cluster file or your metadata file.'
       end
     when :ingest_subsample
-      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id)
+      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: cluster_name_by_file_type)
       message << "Subsampling has completed for #{cluster.name}"
       message << "Subsamples generated: #{cluster.subsample_thresholds_required.join(', ')}"
     when :ingest_differential_expression
