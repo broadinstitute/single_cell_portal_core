@@ -122,9 +122,10 @@ class RequestUtils
   def self.data_fragment_url(ann_data_file, fragment_type, gs_url: true, file_type_detail: '')
     study = ann_data_file.study
     prefix = gs_url ? "gs://#{study.bucket_id}/" : ''
+    ext = fragment_type == 'matrix' ? 'mtx' : 'tsv'
     url = "#{prefix}_scp_internal/anndata_ingest/#{study.accession}_#{ann_data_file.id}/h5ad_frag.#{fragment_type}"
     url += ".#{file_type_detail}" if file_type_detail.present?
-    "#{url}.tsv.gz"
+    "#{url}.#{ext}.gz"
   end
 
   # extracts an array of genes from a comma-delimited string list of gene names
