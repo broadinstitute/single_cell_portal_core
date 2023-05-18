@@ -353,7 +353,7 @@ class IngestJob
         qa_config = AdminConfiguration.find_by(config_type: 'QA Dev Email')
         email = qa_config.present? ? qa_config.value : User.find_by(admin: true)&.email
         SingleCellMailer.notify_user_parse_complete(email, subject, message, study).deliver_now unless email.blank?
-      else
+      elsif action != :ingest_anndata # don't email users on "extract" AnnData jobs
         SingleCellMailer.notify_user_parse_complete(user.email, subject, message, study).deliver_now
       end
     elsif done? && failed?
@@ -644,7 +644,7 @@ class IngestJob
           matcher = { data_type: :cluster, obsm_key_name: fragment }
           cluster_data_fragment = study_file.ann_data_file_info.find_fragment(**matcher)
           name = cluster_data_fragment&.[](:name) || fragment # fallback if we can't find data_fragment
-          cluster_gs_url = params_object.fragment_file_url(study.bucket_id, 'cluster', study_file.id, fragment)
+          cluster_gs_url = RequestUtils.data_fragment_url(study_file, 'cluster', file_type_detail: fragment)
           domain_ranges = study_file.ann_data_file_info.get_cluster_domain_ranges(name).to_json
           cluster_params = AnnDataIngestParameters.new(
             ingest_cluster: true, name:, cluster_file: cluster_gs_url, domain_ranges:, ingest_anndata: false,
@@ -656,7 +656,7 @@ class IngestJob
       when 'metadata'
         Rails.logger.info "launching AnnData metadata ingest for #{study_file.upload_file_name}"
         action = :ingest_cell_metadata
-        metadata_gs_url = params_object.fragment_file_url(study.bucket_id, 'metadata', study_file.id)
+        metadata_gs_url = RequestUtils.data_fragment_url(study_file, 'metadata')
         metadata_params = AnnDataIngestParameters.new(
           ingest_cell_metadata: true, cell_metadata_file: metadata_gs_url,
           ingest_anndata: false, extract: nil, obsm_keys: nil, study_accession: study.accession
@@ -665,14 +665,16 @@ class IngestJob
         job.delay.push_remote_and_launch_ingest
       when 'processed_expression'
         Rails.logger.info "launching AnnData processed expression ingest for #{study_file.upload_file_name}"
-        matrix_gs_url = params_object.fragment_file_gs_url(study.bucket_id, 'matrix', study_file.id, 'processed')
-        features_gs_url = params_object.fragment_file_gs_url(study.bucket_id, 'features', study_file.id, 'processed')
-        barcodes_gs_url = params_object.fragment_file_gs_url(study.bucket_id, 'barcodes', study_file.id, 'processed')
+        action = :ingest_expression
+        file_types = %w[matrix features barcodes]
+        matrix_gs_url, features_gs_url, barcodes_gs_url = file_types.map do |file_type|
+          RequestUtils.data_fragment_url(study_file, file_type, file_type_detail: 'processed')
+        end
         exp_params = AnnDataIngestParameters.new(
           ingest_expression: true, matrix_file: matrix_gs_url, matrix_file_type: 'mtx', gene_file: features_gs_url,
           barcode_file: barcodes_gs_url, ingest_anndata: false, extract: nil, obsm_keys: nil
         )
-        job = IngestJob.new(study:, study_file:, user:, action: :ingest_expression, params_object: exp_params)
+        job = IngestJob.new(study:, study_file:, user:, action:, params_object: exp_params)
         job.delay.push_remote_and_launch_ingest
       end
     end
@@ -891,7 +893,9 @@ class IngestJob
         end
       end
     when :ingest_cluster
-      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id)
+      cluster_params = { study_id: study.id, study_file_id: study_file.id }
+      cluster_params.merge!({ name: params_object.name }) if study_file.is_anndata?
+      cluster = ClusterGroup.find_by(**cluster_params)
       cluster_type = cluster.cluster_type
       message << "Cluster created: #{cluster.name}, type: #{cluster_type}"
       if cluster.cell_annotations.any?
@@ -934,13 +938,6 @@ class IngestJob
       complete_pipeline_runtime = TimeDifference.between(*get_image_pipeline_timestamps).humanize
       message << "Image Pipeline image rendering completed for \"#{params_object.cluster}\""
       message << "Complete runtime (data cache & image rendering): #{complete_pipeline_runtime}"
-    when :ingest_anndata
-      message << "AnnData file ingest has completed"
-      if study_file.ann_data_file_info.has_expression
-        genes = Gene.where(study_id: study.id, study_file_id: study_file.id).count
-        message << "Gene-level entries created: #{genes}"
-      end
-      message << 'Clustering and metadata entries are being extracted as specified in your AnnData file.'
     end
     message
   end

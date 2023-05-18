@@ -17,9 +17,9 @@ class PapiClient
   GCP_NETWORK_NAME = ENV['GCP_NETWORK_NAME']
   GCP_SUB_NETWORK_NAME = ENV['GCP_SUB_NETWORK_NAME']
 
-   # List of scp-ingest-pipeline actions and their allowed file types
+  # List of scp-ingest-pipeline actions and their allowed file types
   FILE_TYPES_BY_ACTION = {
-    ingest_expression: ['Expression Matrix', 'MM Coordinate Matrix'],
+    ingest_expression: ['Expression Matrix', 'MM Coordinate Matrix', 'AnnData'],
     ingest_cluster: %w[Cluster AnnData],
     ingest_cell_metadata: %w[Metadata AnnData],
     ingest_subsample: ['Cluster'],
