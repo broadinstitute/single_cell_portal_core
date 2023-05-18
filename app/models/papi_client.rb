@@ -22,12 +22,12 @@ class PapiClient
     ingest_expression: ['Expression Matrix', 'MM Coordinate Matrix', 'AnnData'],
     ingest_cluster: %w[Cluster AnnData],
     ingest_cell_metadata: %w[Metadata AnnData],
-    ingest_subsample: ['Cluster', 'AnnData'],
-    differential_expression: ['Cluster'],
+    ingest_subsample: %w[Cluster AnnData],
+    differential_expression: %w[Cluster],
     ingest_differential_expression: ['Differential Expression'],
-    render_expression_arrays: ['Cluster'],
-    image_pipeline: ['Cluster'],
-    ingest_anndata: ['AnnData']
+    render_expression_arrays: %w[Cluster],
+    image_pipeline: %w[Cluster],
+    ingest_anndata: %w[AnnData]
   }.freeze
 
   # jobs that require custom virtual machine types (e.g. more RAM, CPU)
