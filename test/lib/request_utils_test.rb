@@ -183,4 +183,15 @@ class RequestUtilsTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test 'should construct data fragment urls' do
+    file = FactoryBot.create(:ann_data_file, name: 'data.h5ad', study: @public_study)
+    %w[X_umap X_tsne].each do |file_type_detail|
+      prefix = "gs://#{@public_study.bucket_id}/"
+      accession = @public_study.accession
+      path = "_scp_internal/anndata_ingest/#{accession}_#{file.id}/h5ad_frag.cluster.#{file_type_detail}.tsv.gz"
+      url = prefix + path
+      assert_equal url, RequestUtils.data_fragment_url(file, 'cluster',  file_type_detail:)
+      assert_equal path, RequestUtils.data_fragment_url(file, 'cluster',  gs_url: false, file_type_detail:)
+    end
+  end
 end
