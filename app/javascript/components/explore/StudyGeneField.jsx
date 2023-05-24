@@ -4,11 +4,11 @@ import { faSearch, faFileUpload } from '@fortawesome/free-solid-svg-icons'
 import Button from 'react-bootstrap/lib/Button'
 import Modal from 'react-bootstrap/lib/Modal'
 import CreatableSelect from 'react-select/creatable'
-import _differenceBy from 'lodash/differenceBy'
 
 import { getAutocompleteSuggestions } from '~/lib/search-utils'
 import { log } from '~/lib/metrics-api'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
+import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
 
 /**
@@ -42,11 +42,13 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
   const [notPresentGenes, setNotPresentGenes] = useState(new Set([]))
   const [showNotPresentGeneChoice, setShowNotPresentGeneChoice] = useState(false)
 
+  // Determine if the flag show_explore_tab_ux_updates is toggled to show explore tab UX updates
+  const isNewExploreUX = true // getFeatureFlagsWithDefaults()?.show_explore_tab_ux_updates
+
   /** Handles a user submitting a gene search */
   function handleSearch(event) {
     event.preventDefault()
     const newGeneArray = syncGeneArrayToInputText()
-    console.log('newGeneArray', newGeneArray)
     const newNotPresentGenes = new Set([])
     if (newGeneArray) {
       newGeneArray.forEach(gene => {
@@ -75,6 +77,8 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     } else {
       if (event.type !== 'change:multiselect') {
         // Don't show empty search modal if the user manually removed gene entry
+        setShowEmptySearchModal(true)
+      } else if (isNewExploreUX) {
         setShowEmptySearchModal(true)
       }
     }
@@ -133,12 +137,14 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     }
   }, [genes.join(',')])
 
-  useEffect(() => {
-    if (genes.join(',') !== geneArray.map(opt => opt.label).join(',')) {
-      const selectEvent = new Event('change:multiselect')
-      handleSearch(selectEvent)
-    }
-  }, [geneArray])
+  if (isNewExploreUX) {
+    useEffect(() => {
+      if (genes.join(',') !== geneArray.map(opt => opt.label).join(',')) {
+        const selectEvent = new Event('change:multiselect')
+        handleSearch(selectEvent)
+      }
+    }, [geneArray])
+  }
 
   const searchDisabled = !isLoading && !allGenes?.length
 
