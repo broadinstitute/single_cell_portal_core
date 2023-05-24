@@ -73,7 +73,10 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
         searchGenes(genesToSearch)
       }
     } else {
-      setShowEmptySearchModal(true)
+      if (event.type !== 'change:multiselect') {
+        // Don't show empty search modal if the user manually removed gene entry
+        setShowEmptySearchModal(true)
+      }
     }
   }
 
@@ -237,7 +240,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
         animation={false}
         bsSize='small'>
         <Modal.Body className="text-center">
-        Invalid search - Please remove &quot;{Array.from(notPresentGenes).join('", "')}&quot; from gene search.
+        Invalid search.  Please remove &quot;{Array.from(notPresentGenes).join('", "')}&quot; from gene search.
         </Modal.Body>
       </Modal>
       <Modal
