@@ -37,7 +37,7 @@ import Tooltip from 'react-bootstrap/lib/Tooltip'
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
 
 const tabList = [
-  { key: 'loading', label: 'loading...' },
+  { key: 'loading', label: 'Loading...' },
   { key: 'scatter', label: 'Scatter' },
   { key: 'annotatedScatter', label: 'Annotated scatter' },
   { key: 'correlatedScatter', label: 'Correlation' },
@@ -50,6 +50,14 @@ const tabList = [
   { key: 'infercnv-genome', label: 'Genome (inferCNV)' },
   { key: 'images', label: 'Images' }
 ]
+
+const disabledTooltips = {
+  'scatter': { numToSearch: '1', isMulti: false },
+  'distribution': { numToSearch: '1', isMulti: false },
+  'correlatedScatter': { numToSearch: '2', isMulti: true },
+  'dotplot': { numToSearch: '2 or more', isMulti: true },
+  'heatmap': { numToSearch: '2 or more', isMulti: true }
+}
 
 /** Determine if currently selected cluster has differential expression outputs available */
 function getClusterHasDe(exploreInfo, exploreParams) {
@@ -71,12 +79,6 @@ function getClusterHasDe(exploreInfo, exploreParams) {
   })
 
   return clusterHasDe
-}
-
-/** Determine if the flag show_explore_tab_ux_updates is toggled to show explore tab UX updates */
-function getShowExploreTabUpdates() {
-  const flags = getFeatureFlagsWithDefaults()
-  return flags?.show_explore_tab_ux_updates
 }
 
 /** Return list of annotations that have differential expression enabled */
@@ -189,7 +191,7 @@ export default function ExploreDisplayTabs({
   const plotContainerClass = 'explore-plot-tab-content'
 
   const {
-    enabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs
+    enabledTabs, disabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs
   } = getEnabledTabs(exploreInfo, exploreParamsWithDefaults)
 
   // exploreParams object without genes specified, to pass to cluster comparison plots
@@ -351,6 +353,9 @@ export default function ExploreDisplayTabs({
     return { main, side }
   }
 
+  // Determine if the flag show_explore_tab_ux_updates is toggled to show explore tab UX updates
+  const isNewExploreUX = getFeatureFlagsWithDefaults()?.show_explore_tab_ux_updates
+
   return (
     <>
       <div className="row">
@@ -363,8 +368,8 @@ export default function ExploreDisplayTabs({
               speciesList={exploreInfo ? exploreInfo.taxonNames : []}/>
             { // show if this is gene search || gene list
               (isGene || isGeneList || hasIdeogramOutputs) &&
-                <OverlayTrigger placement='top' overlay={
-                  <Tooltip id='back-to-cluster-view'>{'Return to cluster view'}</Tooltip>
+                <OverlayTrigger placement="top" overlay={
+                  <Tooltip id="back-to-cluster-view">{'Return to cluster view'}</Tooltip>
                 }>
                   <button className="action fa-lg"
                     aria-label="Back arrow"
@@ -375,20 +380,42 @@ export default function ExploreDisplayTabs({
             }
           </div>
         </div>
-        <div className="col-md-4 col-md-offset-1">
-          <ul className={getShowExploreTabUpdates() ? "nav nav-tabs study-plot-tabs" : "nav nav-tabs"} role="tablist" data-analytics-name="explore-default">
+        <div className={isNewExploreUX ? '' : 'col-md-4 col-md-offset-1'}>
+          <ul
+            className={isNewExploreUX ? 'nav nav-tabs study-plot-tabs' : 'nav nav-tabs'}
+            role="tablist"
+            data-analytics-name="explore-tab"
+          >
             { enabledTabs.map(tabKey => {
               const label = tabList.find(({ key }) => key === tabKey).label
               return (
                 <li key={tabKey}
                   role="presentation"
-                  // TODO: (SCP-5050): Update aria-disabled to be conditionally set if tab is disabled
-                  aria-disabled={false}
+                  aria-disabled="false"
                   className={`study-nav ${tabKey === shownTab ? 'active' : ''} ${tabKey}-tab-anchor`}>
                   <a onClick={() => updateExploreParams({ tab: tabKey })}>{label}</a>
                 </li>
               )
             })}
+            {isNewExploreUX &&
+            disabledTabs.map(tabKey => {
+              const label = tabList.find(({ key }) => key === tabKey).label
+              const tooltip = disabledTooltips[tabKey]
+              const numGenes = tooltip.numToSearch
+              const geneText = `gene${tooltip.isMulti ? 's' : ''}`
+              const text = `To show this plot, search ${numGenes} ${geneText} using the box at left`
+              return (
+                <li key={tabKey}
+                  role="presentation"
+                  aria-disabled="true"
+                  className={`study-nav ${tabKey}-tab-anchor disabled`}
+                  data-toggle="tooltip"
+                  data-original-title={text}
+                ><a>{label}</a>
+                </li>
+              )
+            })
+            }
           </ul>
         </div>
       </div>
@@ -747,17 +774,27 @@ export function getEnabledTabs(exploreInfo, exploreParams) {
   const hasGenomeFiles = exploreInfo && exploreInfo?.bamBundleList?.length > 0
   const hasIdeogramOutputs = !!exploreInfo?.inferCNVIdeogramFiles
   const hasImages = exploreInfo?.imageFiles?.length > 0
+  const isNumeric = exploreParams?.annotation?.type === 'numeric'
+
+  let coreTabs = [
+    !isNumeric ? 'scatter' : 'annotatedScatter',
+    'distribution', 'correlatedScatter',
+    'dotplot', 'heatmap'
+  ]
 
   let enabledTabs = []
+
   if (isGeneList) {
     enabledTabs = ['geneListHeatmap']
   } else if (isGene) {
     if (isMultiGene) {
       if (isConsensus) {
-        if (exploreParams.annotation.type === 'numeric') {
+        coreTabs = coreTabs.filter(tab => tab !== 'correlatedScatter') // omit for consensus
+        if (isNumeric) {
           enabledTabs = ['annotatedScatter', 'dotplot', 'heatmap']
         } else {
           enabledTabs = ['scatter', 'distribution', 'dotplot']
+          coreTabs = coreTabs.filter(tab => tab !== 'heatmap') // omit for consensus
         }
       } else if (hasSpatialGroups) {
         enabledTabs = ['scatter', 'dotplot', 'heatmap']
@@ -767,7 +804,7 @@ export function getEnabledTabs(exploreInfo, exploreParams) {
           enabledTabs = ['correlatedScatter', 'dotplot', 'heatmap']
         }
       }
-    } else if (exploreParams.annotation.type === 'numeric') {
+    } else if (isNumeric) {
       enabledTabs = ['annotatedScatter', 'scatter']
     } else {
       enabledTabs = ['scatter', 'distribution']
@@ -785,9 +822,12 @@ export function getEnabledTabs(exploreInfo, exploreParams) {
     enabledTabs.push('images')
   }
 
+  let disabledTabs = coreTabs.filter(coreTab => !enabledTabs.includes(coreTab))
+
   if (!exploreInfo) {
     enabledTabs = ['loading']
+    disabledTabs = []
   }
 
-  return { enabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs }
+  return { enabledTabs, disabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs }
 }
