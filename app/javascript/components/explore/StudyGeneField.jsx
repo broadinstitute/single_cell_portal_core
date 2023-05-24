@@ -11,15 +11,16 @@ import { log } from '~/lib/metrics-api'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
 
 
-/** renders the gene text input
-  * This shares a lot of logic with search/genes/GeneKeyword, but is kept as a separate component for
-  * now, as the need for autocomplete raises additional complexity
-  *
-  * @param genes Array of genes currently inputted
-  * @param searchGenes Function to call to execute the API search
-  * @param allGenes String array of valid genes in the study
-  * @param speciesList String array of species scientific names
-  */
+/**
+* Renders the gene text input
+* This shares a lot of logic with search/genes/GeneKeyword, but is kept as a separate component for
+* now, as the need for autocomplete raises additional complexity
+*
+* @param genes Array of genes currently inputted
+* @param searchGenes Function to call to execute the API search
+* @param allGenes String array of valid genes in the study
+* @param speciesList String array of species scientific names
+*/
 export default function StudyGeneField({ genes, searchGenes, allGenes, speciesList, isLoading=false }) {
   const [inputText, setInputText] = useState('')
 
@@ -41,10 +42,11 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
   const [notPresentGenes, setNotPresentGenes] = useState(new Set([]))
   const [showNotPresentGeneChoice, setShowNotPresentGeneChoice] = useState(false)
 
-  /** handles a user submitting a gene search */
+  /** Handles a user submitting a gene search */
   function handleSearch(event) {
     event.preventDefault()
     const newGeneArray = syncGeneArrayToInputText()
+    console.log('newGeneArray', newGeneArray)
     const newNotPresentGenes = new Set([])
     if (newGeneArray) {
       newGeneArray.forEach(gene => {
@@ -88,7 +90,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     return newGeneArray
   }
 
-  /** detects presses of the space bar to create a new gene chunk */
+  /** Detects presses of the space bar to create a new gene chunk */
   function handleKeyDown(event) {
     if (!inputText) {
       return
@@ -101,7 +103,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     }
   }
 
-  /** handles a user selecting a gene list file to use */
+  /** Handles a user selecting a gene list file to use */
   function readGeneListFile(file) {
     const fileReader = new FileReader()
     fileReader.onloadend = () => {
@@ -111,7 +113,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     fileReader.readAsText(file)
   }
 
-  /** send analytics on how the gene search input changed */
+  /** Send analytics on how the gene search input changed */
   function logGeneArrayChange(newArray) {
     try {
       let actionName = ''
@@ -134,8 +136,9 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     }
   }
 
-  /** handles the change event corresponding a a user adding or clearing one or more genes */
+  /** Handles the change event corresponding a user adding or clearing one or more genes */
   function handleSelectChange(value) {
+    console.log('in handleSelectChange, value:', value)
     // react-select doesn't expose the actual click events, so we deduce the kind
     // of operation based on whether it lengthened or shortened the list
     const newValue = value ? value : []
@@ -152,6 +155,13 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
       setNotPresentGenes(new Set([]))
     }
   }, [genes.join(',')])
+
+  useEffect(() => {
+    if (genes.join(',') !== geneArray.map(opt => opt.label).join(',')) {
+      const selectEvent = new Event('change:multiselect')
+      handleSearch(selectEvent)
+    }
+  }, [geneArray])
 
   const searchDisabled = !isLoading && !allGenes?.length
 
@@ -227,7 +237,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
         animation={false}
         bsSize='small'>
         <Modal.Body className="text-center">
-        Invalid Search - Please remove &quot;{Array.from(notPresentGenes).join('", "')}&quot; from gene search.
+        Invalid search - Please remove &quot;{Array.from(notPresentGenes).join('", "')}&quot; from gene search.
         </Modal.Body>
       </Modal>
       <Modal
