@@ -43,7 +43,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
   const [showNotPresentGeneChoice, setShowNotPresentGeneChoice] = useState(false)
 
   // Determine if the flag show_explore_tab_ux_updates is toggled to show explore tab UX updates
-  const isNewExploreUX = true // getFeatureFlagsWithDefaults()?.show_explore_tab_ux_updates
+  const isNewExploreUX = getFeatureFlagsWithDefaults()?.show_explore_tab_ux_updates
 
   /** Handles a user submitting a gene search */
   function handleSearch(event) {
