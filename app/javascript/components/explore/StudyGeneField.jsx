@@ -87,7 +87,6 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
       return geneArray
     }
     const newGeneArray = geneArray.concat(getOptionsFromGenes(inputTextValues))
-    logGeneArrayChange(newGeneArray)
     setInputText(' ')
     setGeneArray(newGeneArray)
     return newGeneArray
@@ -116,37 +115,12 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     fileReader.readAsText(file)
   }
 
-  /** Send analytics on how the gene search input changed */
-  function logGeneArrayChange(newArray) {
-    try {
-      let actionName = ''
-      let geneDiff = []
-      if (newArray.length > geneArray.length) {
-        actionName = 'add'
-        geneDiff = _differenceBy(newArray, geneArray, 'value')
-      } else {
-        actionName = 'remove'
-        geneDiff = _differenceBy(geneArray, newArray, 'value')
-      }
-      log('change:multiselect', {
-        text: geneDiff.map(item => item.value).join(','),
-        action: actionName,
-        type: 'gene',
-        numPreviousGenes: geneArray.length
-      })
-    } catch (err) {
-      // no-op, we just don't want logging fails to break the application
-    }
-  }
-
   /** Handles the change event corresponding a user adding or clearing one or more genes */
   function handleSelectChange(value) {
-    console.log('in handleSelectChange, value:', value)
     // react-select doesn't expose the actual click events, so we deduce the kind
     // of operation based on whether it lengthened or shortened the list
     const newValue = value ? value : []
     setNotPresentGenes(new Set([]))
-    logGeneArrayChange(newValue)
     setGeneArray(newValue)
   }
 
