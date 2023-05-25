@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { FileTypeExtensions, matchingFormFiles } from './upload-utils'
+import { FileTypeExtensions, matchingFormFiles, validateFile } from './upload-utils'
 import { TextFormField } from './form-components'
 import ExpandableFileForm from './ExpandableFileForm'
 import Select from '~/lib/InstrumentedSelect'
@@ -22,6 +22,8 @@ export default function DifferentialExpressionFileForm({
   annotationsAvailOnStudy,
   menuOptions
 }) {
+  const validationMessages = validateFile({ file, allFiles, allowedFileExts })
+
   const fragmentType = isAnnDataExperience ? 'cluster' : null
 
   const clusterFiles = matchingFormFiles(allFiles, clusterFileFilter, isAnnDataExperience, fragmentType)
@@ -33,7 +35,7 @@ export default function DifferentialExpressionFileForm({
   const annotsAlreadyInUse = []
   // retrieve the annotations that are already in use on a DE file
   allFiles.filter(differentialExpressionFileFilter).filter(
-    diffExpFile => {return diffExpFile.differential_expression_file_info.annotation_association.length > 0}
+    diffExpFile => {return diffExpFile.differential_expression_file_info.annotation_association?.length > 0}
   ).forEach(file => {
     annotsAlreadyInUse.push(file.differential_expression_file_info.annotation_association[0])
   })
@@ -88,7 +90,7 @@ export default function DifferentialExpressionFileForm({
 
   return <ExpandableFileForm {...{
     file, allFiles, updateFile, saveFile,
-    allowedFileExts, deleteFile, bucketName, isInitiallyExpanded, isAnnDataExperience
+    allowedFileExts, deleteFile, validationMessages, bucketName, isInitiallyExpanded, isAnnDataExperience
   }}>
     <TextFormField label="Description" fieldName="description" file={file} updateFile={updateFile}/>
     <div className="form-group">
