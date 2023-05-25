@@ -36,7 +36,6 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     * an array of already entered genes (geneArray),
     * and the current text the user is typing (inputText) */
   const [geneArray, setGeneArray] = useState(enteredGeneArray)
-  const [showEmptySearchModal, setShowEmptySearchModal] = useState(false)
   const [showTooManyGenesModal, setShowTooManyGenesModal] = useState(false)
 
   const [notPresentGenes, setNotPresentGenes] = useState(new Set([]))
@@ -73,13 +72,6 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
           logStudyGeneSearch(genesToSearch, trigger, speciesList)
         }
         searchGenes(genesToSearch)
-      }
-    } else {
-      if (event.type !== 'change:multiselect') {
-        // Don't show empty search modal if the user manually removed gene entry
-        setShowEmptySearchModal(true)
-      } else if (isNewExploreUX) {
-        setShowEmptySearchModal(true)
       }
     }
   }
@@ -205,15 +197,6 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
           <FontAwesomeIcon className="action fa-lg" icon={faFileUpload} />
         </label>}
       </div>
-      <Modal
-        show={showEmptySearchModal}
-        onHide={() => {setShowEmptySearchModal(false)}}
-        animation={false}
-        bsSize='small'>
-        <Modal.Body className="text-center">
-          Enter at least one gene to search
-        </Modal.Body>
-      </Modal>
       <Modal
         show={showNotPresentGeneChoice}
         onHide={() => {setShowNotPresentGeneChoice(false)}}
