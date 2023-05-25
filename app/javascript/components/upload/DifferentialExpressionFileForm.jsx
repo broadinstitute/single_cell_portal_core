@@ -6,6 +6,7 @@ import ExpandableFileForm from './ExpandableFileForm'
 import Select from '~/lib/InstrumentedSelect'
 import { clusterFileFilter } from './ClusteringStep'
 import { differentialExpressionFileFilter } from './DifferentialExpressionStep'
+import CreatableSelect from 'react-select/creatable'
 
 const allowedFileExts = FileTypeExtensions.plainText
 
@@ -52,11 +53,16 @@ export default function DifferentialExpressionFileForm({
     opt => opt.value === file.differential_expression_file_info.annotation_association?.name
   )
 
-  // while mapping the computational methods constant to label/value pairs for the select
-  // update the labels to be more nicely human readable (e.g. remove snake casing)
-  const compMethodOptions = menuOptions.de_computational_method.map(
+  /* while mapping the computational methods constant to label/value pairs for the select
+   update the labels to be more nicely human readable (e.g. remove snake casing) and remove
+   the ambiguous 'custom' option
+   */
+  const compMethodOptions = menuOptions.de_computational_method.filter(
+    compMethod => {return compMethod !== 'custom'}
+  ).map(
     opt => ({ label: opt.replace(/_/g, ' '), value: opt })
   )
+
   const associatedCompMethod = compMethodOptions?.find(
     opt => opt.value === file.differential_expression_file_info.comp_method_association?.name
   )
@@ -113,12 +119,16 @@ export default function DifferentialExpressionFileForm({
     </div>
     <div className="form-group">
       <label className="labeled-select">Statistical test (computational-method)
-        <Select options={compMethodOptions}
+        {/* using CreateableSelect here so that users can add an option if their method isn't listed */}
+        <CreatableSelect
           data-analytics-name="differential-expression-statistical-test-select"
+          options={compMethodOptions}
           value={associatedCompMethod}
-          placeholder="Select one..."
-          onChange={val => updateAssociatedCompMethod
-          }/>
+          className="labeled-select"
+          isClearable
+          onChange={val => updateAssociatedCompMethod(file, val)}
+          placeholder="Start typing to select or add your method"
+        />
       </label>
     </div>
   </ExpandableFileForm>
