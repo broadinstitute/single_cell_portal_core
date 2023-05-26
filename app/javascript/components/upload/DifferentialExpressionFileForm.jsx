@@ -128,7 +128,7 @@ export default function DifferentialExpressionFileForm({
           className="labeled-select"
           isClearable
           onChange={val => updateAssociatedCompMethod(file, val)}
-          placeholder="Start typing to select or add your method"
+          placeholder="Start typing to select or add your method or statistical test"
         />
       </label>
     </div>
