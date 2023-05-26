@@ -23,6 +23,7 @@ export default function DifferentialExpressionFileForm({
   annotationsAvailOnStudy,
   menuOptions
 }) {
+  // TODO (SCP-5154) Add DE specific clientside validation
   const validationMessages = validateFile({ file, allFiles, allowedFileExts })
 
   const fragmentType = isAnnDataExperience ? 'cluster' : null
@@ -36,7 +37,7 @@ export default function DifferentialExpressionFileForm({
   const annotsAlreadyInUse = []
   // retrieve the annotations that are already in use on a DE file
   allFiles.filter(differentialExpressionFileFilter).filter(
-    diffExpFile => {return diffExpFile.differential_expression_file_info.annotation_association?.length > 0}
+    diffExpFile => diffExpFile.differential_expression_file_info.annotation_association?.length > 0
   ).forEach(file => {
     annotsAlreadyInUse.push(file.differential_expression_file_info.annotation_association[0])
   })
@@ -46,7 +47,7 @@ export default function DifferentialExpressionFileForm({
   const annotationOptions = annotationsAvailOnStudy?.map(
     cf => ({ label: cf.name, value: cf.name })
   ).filter(
-    annotObj => {return !annotsAlreadyInUse.includes(annotObj.value)}
+    annotObj => !annotsAlreadyInUse.includes(annotObj.value)
   )
 
   const associatedAnnotation = annotationOptions?.find(
@@ -58,7 +59,7 @@ export default function DifferentialExpressionFileForm({
    the ambiguous 'custom' option
    */
   const compMethodOptions = menuOptions.de_computational_method.filter(
-    compMethod => {return compMethod !== 'custom'}
+    compMethod => compMethod !== 'custom'
   ).map(
     opt => ({ label: opt.replace(/_/g, ' '), value: opt })
   )
@@ -118,10 +119,10 @@ export default function DifferentialExpressionFileForm({
       </label>
     </div>
     <div className="form-group">
-      <label className="labeled-select">Statistical test (computational-method)
+      <label className="labeled-select">Computational method
         {/* using CreateableSelect here so that users can add an option if their method isn't listed */}
         <CreatableSelect
-          data-analytics-name="differential-expression-statistical-test-select"
+          data-analytics-name="differential-expression-computational-method-select"
           options={compMethodOptions}
           value={associatedCompMethod}
           className="labeled-select"

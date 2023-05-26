@@ -16,9 +16,9 @@ const DEFAULT_NEW_DE_FILE = {
 export const differentialExpressionFileFilter = file => file.file_type === 'Differential Expression'
 
 export default {
-  title: 'Differential Expression',
+  title: 'Differential expression',
   name: 'differential expression',
-  header: 'Differential Expression',
+  header: 'Differential expression',
   component: DifferentialFileUploadForm,
   fileFilter: differentialExpressionFileFilter
 }
@@ -48,7 +48,7 @@ export function DifferentialFileUploadForm({
     <div className="row">
       <div className="col-md-12">
         <p className="form-terra">
-          Upload a file with differential expression for a particular clustering and annotation
+          Upload a file with differential expression for a particular clustering and annotation.
         </p>
       </div>
     </div>
