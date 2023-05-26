@@ -90,12 +90,6 @@ export function RawUploadWizard({ studyAccession, name }) {
   // this context
   const studyObj = serverState?.study
 
-  /** load the basic study info to get the study annotations */
-  async function loadStudyData() {
-    const exploreResponse = await fetchExplore(studyAccession)
-    setAnnotationsAvailOnStudy(exploreResponse?.annotationList?.annotations)
-  }
-
   // used for toggling between the split view for the upload experiences
   const [overrideExperienceMode, setOverrideExperienceMode] = useState(false)
   const allowReferenceImageUpload = serverState?.feature_flags?.reference_image_upload
@@ -559,13 +553,15 @@ export function RawUploadWizard({ studyAccession, name }) {
       setServerState(response)
       setFormState(_cloneDeep(response))
       setTimeout(pollServerState, POLLING_INTERVAL)
-    },
+    })
     // get the annotations list
-    loadStudyData()
-    )
+    fetchExplore(studyAccession).then(response => {
+      setAnnotationsAvailOnStudy(response?.annotationList?.annotations)
+    })
 
     window.document.title = `Upload - Single Cell Portal`
   }, [studyAccession])
+
 
   const nextStep = STEPS[currentStepIndex + 1]
   const prevStep = STEPS[currentStepIndex - 1]
