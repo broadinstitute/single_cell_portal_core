@@ -73,7 +73,7 @@ class DifferentialExpressionResult
     "_scp_internal/differential_expression/#{filename_for(label, comparison:)}"
   end
 
-  # individual filename of label-specific result, or pairwise comparison
+  # individual filename of one-vs-rest comparison or pairwise comparison
   # will convert non-word characters to underscores "_", except plus signs "+" which are changed to "pos"
   # this is to handle cases where + or - are the only difference in labels, such as CD4+ and CD4-
   def filename_for(label, comparison: nil)
@@ -90,8 +90,33 @@ class DifferentialExpressionResult
   # map of all observed result files, of label value => label-specific filenames
   # this is important as it sidesteps the issue of study owners renaming clusters, as cluster_name is cached here
   def result_files
-    files = one_vs_rest_comparisons.map { |label| filename_for(label) }
-    Hash[one_vs_rest_comparisons.zip(files)]
+    one_vs_rest_files = one_vs_rest_comparisons.map { |label| filename_for(label) }
+    pairwise_files = []
+    if annotation_name == "General_Celltype"
+      pairwise_comparisons = {
+        "B cells" => ["LC2", "GPMNB macrophages", "LC1", "neutrophils", "T cells", "dendritic cells", "CSN1S1 macrophages", "eosinophils", "fibroblasts"],
+        "LC2 cells" => ["GPMNB macrophages", "LC1", "neutrophils", "T cells", "dendritic cells", "CSN1S1 macrophages", "eosinophils", "fibroblasts"],
+        "GPMNB macrophages" => ["LC1", "neutrophils", "T cells", "dendritic cells", "CSN1S1 macrophages", "eosinophils", "fibroblasts"],
+        "LC1" => ["neutrophils", "T cells", "dendritic cells", "CSN1S1 macrophages", "eosinophils", "fibroblasts"],
+        "neutrophils" => ["T cells", "dendritic cells", "CSN1S1 macrophages", "eosinophils", "fibroblasts"],
+        "T cells" => ["dendritic cells", "CSN1S1 macrophages", "eosinophils", "fibroblasts"],
+        "dendritic cells" => ["CSN1S1 macrophages", "eosinophils", "fibroblasts"],
+        "CSN1S1 macrophages" => ["eosinophils", "fibroblasts"],
+        "eosinophils" => ["fibroblasts"]
+      }
+
+      pairwise_comparisons.each_pair do |label, comparisons|
+        comparisons.each do |comparison|
+          filename = filename_for(label, comparison:)
+          pairwise_files.push([label, comparison, filename])
+        end
+      end
+
+    end
+    {
+      'one_vs_rest_comparisons' => one_vs_rest_comparisons.zip(one_vs_rest_files),
+      'pairwise_comparisons' => pairwise_files
+    }
   end
 
   # array of result file paths relative to associated bucket root
@@ -101,7 +126,7 @@ class DifferentialExpressionResult
 
   # nested array of arrays representation of :result_files (for select menu options)
   def select_options
-    result_files.to_a
+    result_files
   end
 
   # number of different pairwise comparisons
