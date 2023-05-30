@@ -670,7 +670,7 @@ class IngestJob
       case extract
       when 'cluster'
         params_object.obsm_keys.each do |fragment|
-          Rails.logger.info "launching AnnData #{fragment} cluster ingest for #{study_file.upload_file_name}"
+          Rails.logger.info "Launching AnnData #{fragment} cluster ingest for #{study_file.upload_file_name}"
           action = :ingest_cluster
           matcher = { data_type: :cluster, obsm_key_name: fragment }
           cluster_data_fragment = study_file.ann_data_file_info.find_fragment(**matcher)
@@ -685,7 +685,7 @@ class IngestJob
           job.delay.push_remote_and_launch_ingest
         end
       when 'metadata'
-        Rails.logger.info "launching AnnData metadata ingest for #{study_file.upload_file_name}"
+        Rails.logger.info "Launching AnnData metadata ingest for #{study_file.upload_file_name}"
         action = :ingest_cell_metadata
         metadata_gs_url = RequestUtils.data_fragment_url(study_file, 'metadata')
         metadata_params = AnnDataIngestParameters.new(
@@ -695,7 +695,7 @@ class IngestJob
         job = IngestJob.new(study:, study_file:, user:, action:, params_object: metadata_params)
         job.delay.push_remote_and_launch_ingest
       when 'processed_expression'
-        Rails.logger.info "launching AnnData processed expression ingest for #{study_file.upload_file_name}"
+        Rails.logger.info "Launching AnnData processed expression ingest for #{study_file.upload_file_name}"
         action = :ingest_expression
         file_types = %w[matrix features barcodes]
         matrix_gs_url, features_gs_url, barcodes_gs_url = file_types.map do |file_type|

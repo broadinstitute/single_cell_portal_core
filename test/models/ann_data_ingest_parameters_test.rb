@@ -4,7 +4,7 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
 
   before(:all) do
     @extract_params = {
-      anndata_file: 'gs://test_bucket/test.h5ad',
+      anndata_file: 'gs://bucket_id/test.h5ad',
     }
 
     @file_id = BSON::ObjectId.new
@@ -50,7 +50,7 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
       assert extraction.send(attr).blank?
     end
 
-    cmd = '--ingest-anndata --anndata-file gs://test_bucket/test.h5ad --obsm-keys ["X_umap", "X_tsne"] --extract ' \
+    cmd = '--ingest-anndata --anndata-file gs://bucket_id/test.h5ad --obsm-keys ["X_umap", "X_tsne"] --extract ' \
           '["cluster", "metadata", "processed_expression"]'
     assert_equal cmd, extraction.to_options_array.join(' ')
 
@@ -60,8 +60,9 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     %i[ingest_anndata extract anndata_file obsm_keys].each do |attr|
       assert cluster_ingest.send(attr).blank?
     end
-    cluster_cmd = '--ingest-cluster --cluster-file gs://test_bucket/_scp_internal/anndata_ingest/' \
-                  "#{@file_id}/h5ad_frag.cluster.X_umap.tsv --name X_umap --domain-ranges {}"
+    identifier = "#{@accession}_#{@file_id}"
+    cluster_cmd = '--ingest-cluster --cluster-file gs://bucket_id/_scp_internal/anndata_ingest/' \
+                  "#{identifier}/h5ad_frag.cluster.X_umap.tsv.gz --name X_umap --domain-ranges {}"
     assert_equal cluster_cmd, cluster_ingest.to_options_array.join(' ')
 
     metadata_ingest = AnnDataIngestParameters.new(@ingest_metadata_params)
@@ -70,8 +71,8 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     %i[ingest_anndata extract anndata_file].each do |attr|
       assert metadata_ingest.send(attr).blank?
     end
-    md_cmd = "--cell-metadata-file gs://test_bucket/_scp_internal/anndata_ingest/#{@file_id}/h5ad_frag.metadata.tsv " \
-             '--ingest-cell-metadata'
+    md_cmd = "--cell-metadata-file gs://bucket_id/_scp_internal/anndata_ingest/#{identifier}/" \
+             'h5ad_frag.metadata.tsv.gz --ingest-cell-metadata'
     assert_equal md_cmd, metadata_ingest.to_options_array.join(' ')
   end
 end
