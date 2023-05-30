@@ -109,7 +109,8 @@ export function RawUploadWizard({ studyAccession, name }) {
     NON_VISUALIZABLE_STEPS = ALL_POSSIBLE_STEPS.slice(10, 12)
   } else {
     MAIN_STEPS = MAIN_STEPS_CLASSIC
-    SUPPLEMENTAL_STEPS = ALL_POSSIBLE_STEPS.slice(5, 10)
+    SUPPLEMENTAL_STEPS = serverState?.feature_flags?.show_de_upload ?
+      ALL_POSSIBLE_STEPS.slice(5, 10) : ALL_POSSIBLE_STEPS.slice(5, 9)
     NON_VISUALIZABLE_STEPS = ALL_POSSIBLE_STEPS.slice(10, 13)
     if (allowReferenceImageUpload) {
       SUPPLEMENTAL_STEPS.splice(1, 0, ImageStep)
