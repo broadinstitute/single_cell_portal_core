@@ -31,27 +31,27 @@ export default function DifferentialExpressionFileForm({
   const clusterFiles = matchingFormFiles(allFiles, clusterFileFilter, isAnnDataExperience, fragmentType)
   const clusterFileOptions = clusterFiles.map(cf => ({ label: cf.name, value: cf._id }))
   const associatedCluster = clusterFileOptions?.find(
-    opt => opt.value === file.differential_expression_file_info.clustering_association?.id
+    opt => opt.value === file.differential_expression_file_info.clustering_association
   )
 
   const annotsAlreadyInUse = []
   // retrieve the annotations that are already in use on a DE file
   allFiles.filter(differentialExpressionFileFilter).filter(
-    diffExpFile => diffExpFile.differential_expression_file_info.annotation_association?.length > 0
+    diffExpFile => diffExpFile.differential_expression_file_info.annotation_association
   ).forEach(file => {
-    annotsAlreadyInUse.push(file.differential_expression_file_info.annotation_association[0])
+    annotsAlreadyInUse.push(file.differential_expression_file_info.annotation_association)
   })
 
   // filter down the annotations to only allow choosing an annotation that hasn't been chosen already
   // each annotation is allowed to be associated with only one DE file
   const annotationOptions = annotationsAvailOnStudy?.map(
-    cf => ({ label: cf.name, value: cf.name })
+    cf => ({ label: cf.name, value: `${cf.name}--${cf.type}--${cf.scope}` })
   ).filter(
     annotObj => !annotsAlreadyInUse.includes(annotObj.value)
   )
 
   const associatedAnnotation = annotationOptions?.find(
-    opt => opt.value === file.differential_expression_file_info.annotation_association?.name
+    opt => opt.value === file.differential_expression_file_info.annotation_association
   )
 
   /* while mapping the computational methods constant to label/value pairs for the select
@@ -65,7 +65,7 @@ export default function DifferentialExpressionFileForm({
   )
 
   const associatedCompMethod = compMethodOptions?.find(
-    opt => opt.value === file.differential_expression_file_info.comp_method_association?.name
+    opt => opt.value === file.differential_expression_file_info.comp_method_association
   )
 
   /** handle a change in the associated cluster select */

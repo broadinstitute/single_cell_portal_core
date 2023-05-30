@@ -7,9 +7,9 @@ import DifferentialExpressionFileForm from './DifferentialExpressionFileForm'
 const DEFAULT_NEW_DE_FILE = {
   file_type: 'Differential Expression',
   differential_expression_file_info: {
-    clustering_association: [],
-    annotation_association: [],
-    comp_method_association: []
+    clustering_association: undefined,
+    annotation_association: undefined,
+    comp_method_association: undefined
   }
 }
 

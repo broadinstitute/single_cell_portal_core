@@ -9,6 +9,9 @@ class DifferentialExpressionFileInfo
   field :annotation_name, type: String
   field :annotation_scope, type: String
   field :computational_method, type: String, default: DifferentialExpressionResult::DEFAULT_COMP_METHOD
+  field :clustering_association, type: String
+  field :annotation_association, type: String
+  field :comp_method_association, type: String
 
   validates :computational_method, inclusion: { in: DifferentialExpressionResult::SUPPORTED_COMP_METHODS }
   validates :annotation_name, presence: true, uniqueness: { scope: %i[annotation_scope cluster_group] }
