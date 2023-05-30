@@ -250,8 +250,11 @@ export function setupRenewalForReadOnlyToken(studyAccession) {
  */
 export async function checkTerraTosAcceptance() {
   const apiUrl = '/site/check_terra_tos_acceptance'
-  const [response] = await scpApi(apiUrl, defaultInit())
-  return response.mustAccept
+  await scpApi(apiUrl, defaultInit()).then(response => {
+    return { mustAccept: response.mustAccept, status: response.status }
+  }).catch(error => {
+    return { mustAccept: error.mustAccept, status: error.status }
+  })
 }
 
 /**

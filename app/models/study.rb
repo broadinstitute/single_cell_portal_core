@@ -1733,7 +1733,7 @@ class Study
       # check if workspace is still available, otherwise mark detached
       begin
         ApplicationController.firecloud_client.get_workspace(self.firecloud_project, self.firecloud_workspace)
-      rescue RuntimeError => e
+      rescue RestClient::Exception => e
         Rails.logger.error "Marking #{self.name} as 'detached' due to missing workspace: #{self.firecloud_project}/#{self.firecloud_workspace}"
         self.update(detached: true)
       end
@@ -1901,7 +1901,7 @@ class Study
               acl = ApplicationController.firecloud_client.create_workspace_acl(share.email, StudyShare::FIRECLOUD_ACL_MAP[share.permission], true, false)
               ApplicationController.firecloud_client.update_workspace_acl(self.firecloud_project, self.firecloud_workspace, acl)
               Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace acl assignment for shares #{share.email} successful"
-            rescue RuntimeError => e
+            rescue RestClient::Exception => e
               ErrorTracker.report_exception(e, user, self, acl)
               errors.add(:study_shares, "Could not create a share for #{share.email} to workspace #{self.firecloud_workspace} due to: #{e.message}")
               return false
@@ -2010,7 +2010,7 @@ class Study
               acl = ApplicationController.firecloud_client.create_workspace_acl(share.email, StudyShare::FIRECLOUD_ACL_MAP[share.permission], true, false)
               ApplicationController.firecloud_client.update_workspace_acl(self.firecloud_project, self.firecloud_workspace, acl)
               Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace acl assignment for shares #{share.email} successful"
-            rescue RuntimeError => e
+            rescue RestClient::Exception => e
               ErrorTracker.report_exception(e, user, self, acl)
               errors.add(:study_shares, "Could not create a share for #{share.email} to workspace #{self.firecloud_workspace} due to: #{e.message}")
               return false
@@ -2069,7 +2069,7 @@ class Study
       client.update_workspace_acl(self.firecloud_project, self.firecloud_workspace, acl)
       updated = client.get_workspace_acl(self.firecloud_project, self.firecloud_workspace)
       return updated['acl'][group_email]['accessLevel'] == 'OWNER'
-    rescue RuntimeError => e
+    rescue RestClient::Exception => e
       ErrorTracker.report_exception(e, self.user, { firecloud_project: self.firecloud_workspace})
       Rails.logger.error "Unable to add portal service account to #{self.firecloud_workspace}: #{e.message}"
       false

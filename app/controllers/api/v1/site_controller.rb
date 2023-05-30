@@ -67,11 +67,12 @@ module Api
       end
 
       def check_terra_tos_acceptance
-        must_accept = false
         if api_user_signed_in?
-          must_accept = current_api_user.must_accept_terra_tos?
+          user_status = current_api_user.check_terra_tos_status
+          render json: { must_accept: user_status[:must_accept] }, status: user_status[:status]
+        else
+          render json: { must_accept: false }, status: :ok
         end
-        render json: {must_accept: must_accept}
       end
 
 
