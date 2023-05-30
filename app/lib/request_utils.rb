@@ -115,6 +115,24 @@ class RequestUtils
     "#{ApplicationController.default_url_options[:protocol]}://#{self.get_hostname}"
   end
 
+  # construct a GS URL or bucket path to a file extracted from an AnnData file
+  #
+  # * *params*
+  #   - +fragment_type+: (String) => Type of file fragment: cluster|metadata|matrix
+  #   - +gs_url+: (Boolean) => T/F to append gs://{bucket_id} to beginning of URL
+  #   - +file_type_detail+ (String) => Either cluster obsm_key_name or processed|raw for matrix
+  #
+  # * *return*
+  #   - (String)
+  def self.data_fragment_url(ann_data_file, fragment_type, gs_url: true, file_type_detail: '')
+    study = ann_data_file.study
+    prefix = gs_url ? "gs://#{study.bucket_id}/" : ''
+    ext = fragment_type == 'matrix' ? 'mtx' : 'tsv'
+    url = "#{prefix}_scp_internal/anndata_ingest/#{study.accession}_#{ann_data_file.id}/h5ad_frag.#{fragment_type}"
+    url += ".#{file_type_detail}" if file_type_detail.present?
+    "#{url}.#{ext}.gz"
+  end
+
   # extracts an array of genes from a comma-delimited string list of gene names
   def self.get_genes_from_param(study, gene_param)
     terms = RequestUtils.sanitize_search_terms(gene_param).split(',')
