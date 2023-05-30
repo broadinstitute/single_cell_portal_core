@@ -27,7 +27,6 @@ import ErrorBoundary from '~/lib/ErrorBoundary'
 import WizardNavPanel from './WizardNavPanel'
 import ClusteringStep from './ClusteringStep'
 import SpatialStep from './SpatialStep'
-import ImageStep from './ImageStep'
 import CoordinateLabelStep from './CoordinateLabelStep'
 import RawCountsStep from './RawCountsStep'
 import ProcessedExpressionStep from './ProcessedExpressionStep'
@@ -58,8 +57,7 @@ const ALL_POSSIBLE_STEPS = [
   GeneListStep,
   MiscellaneousStep,
   SeuratStep,
-  AnnDataStep,
-  ImageStep
+  AnnDataStep
 ]
 
 // These steps remain the same for both classic and AnnData upload experiences
@@ -90,7 +88,6 @@ export function RawUploadWizard({ studyAccession, name }) {
 
   // used for toggling between the split view for the upload experiences
   const [overrideExperienceMode, setOverrideExperienceMode] = useState(false)
-  const allowReferenceImageUpload = serverState?.feature_flags?.reference_image_upload
   // used for toggling between classic and AnnData experience of upload wizard
   const [isAnnDataExperience, setIsAnnDataExperience] = useState(false)
 
@@ -107,9 +104,6 @@ export function RawUploadWizard({ studyAccession, name }) {
     MAIN_STEPS = MAIN_STEPS_CLASSIC
     SUPPLEMENTAL_STEPS = ALL_POSSIBLE_STEPS.slice(5, 9)
     NON_VISUALIZABLE_STEPS = ALL_POSSIBLE_STEPS.slice(9, 12)
-    if (allowReferenceImageUpload) {
-      SUPPLEMENTAL_STEPS.splice(1, 0, ImageStep)
-    }
   }
   const STEPS = MAIN_STEPS.concat(SUPPLEMENTAL_STEPS, NON_VISUALIZABLE_STEPS)
 
@@ -570,7 +564,8 @@ export function RawUploadWizard({ studyAccession, name }) {
 
   /**
    * Returns the appropriate content to display for the UploadWizard
-   * @returns The content for the upload wizard, either the steps for upload or the split view for choosing the data upload experience
+   * @returns The content for the upload wizard, either the steps for upload or the split view
+   * for choosing the data upload experience
    */
   function getWizardContent(formState, serverState) {
     if (!formState?.files.length && !overrideExperienceMode && serverState?.feature_flags?.ingest_anndata_file) {
@@ -630,7 +625,8 @@ export function RawUploadWizard({ studyAccession, name }) {
               <a href={`/single_cell/study/${studyAccession}`}>View study</a> / &nbsp;
               <span title="{serverState?.study?.name}">{serverState?.study?.name}</span>
               {/* only allow switching modes if the user hasn't uploaded a file yet */}
-              {!serverState?.files.length && overrideExperienceMode && serverState?.feature_flags?.ingest_anndata_file && getOtherChoiceButton()}
+              {!serverState?.files.length && overrideExperienceMode &&
+              serverState?.feature_flags?.ingest_anndata_file && getOtherChoiceButton()}
             </div>
             {getWizardContent(formState, serverState)}
           </div>
