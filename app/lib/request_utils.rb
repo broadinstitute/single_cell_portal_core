@@ -116,9 +116,14 @@ class RequestUtils
   end
 
   # construct a GS URL or bucket path to a file extracted from an AnnData file
-  # fragment_type: cluster|metadata|matrix
-  # gs_url: true|false to prepend gs://{bucket_id} for absolute reference
-  # file_type_detail: either cluster obsm_key_name or processed|raw for matrix
+  #
+  # * *params*
+  #   - +fragment_type+: (String) => Type of file fragment: cluster|metadata|matrix
+  #   - +gs_url+: (Boolean) => T/F to append gs://{bucket_id} to beginning of URL
+  #   - +file_type_detail+ (String) => Either cluster obsm_key_name or processed|raw for matrix
+  #
+  # * *return*
+  #   - (String)
   def self.data_fragment_url(ann_data_file, fragment_type, gs_url: true, file_type_detail: '')
     study = ann_data_file.study
     prefix = gs_url ? "gs://#{study.bucket_id}/" : ''

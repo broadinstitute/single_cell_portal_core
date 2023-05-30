@@ -16,7 +16,7 @@ class ImagePipelineParameters
     cluster: nil,
     environment: Rails.env.to_s,
     cores: nil,
-    docker_image: 'gcr.io/broad-singlecellportal-staging/image-pipeline:0.1.0_c2b090043',
+    docker_image: Rails.application.config.image_pipeline_docker_image,
     machine_type: 'n1-standard-8',
     data_cache_perftime: nil
   }.freeze
