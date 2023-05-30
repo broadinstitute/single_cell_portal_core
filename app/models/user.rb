@@ -369,15 +369,17 @@ class User
     end
   end
 
-  # determine if user needs to accept an updated Terra Terms of Service agreement
+  # determine if user needs to accept an updated Terra terms of service agreement
   def must_accept_terra_tos?
     return false unless registered_for_firecloud
 
     tos_status = check_terra_tos_status
-    tos_status[:must_accept] && tos_status[:status] == 401
+    tos_status[:must_accept] && [200, 401].include?(tos_status[:status])
   end
 
-  # returns a Hash with a boolean for "must_accept" as well as the HTTP status code
+  # returns a Hash with a boolean for "must_accept" as well as the HTTP status code from the request
+  # if a user is out of compliance with the Terra terms of service, then the value for tosAccepted will
+  # be false, or the request will fail with a 401 status
   #
   # * *returns*
   #   - (Hash) => { must_accept: T/F, status: HTTP status code }
@@ -386,12 +388,12 @@ class User
       client = FireCloudClient.new(self, FireCloudClient::PORTAL_NAMESPACE)
       user_registration = client.get_registration&.with_indifferent_access
       tos_accepted = user_registration.dig('enabled', 'tosAccepted')
-      tos_accepted = false if tos_accepted.nil? # failover protection if status isn't found
+      tos_accepted = true if tos_accepted.nil? # failover protection if status isn't found
 
       # return inverse as value of 'false' here means the user must accept the updated Terra ToS
       { must_accept: !tos_accepted, status: 200 }
     rescue RestClient::Exception => e
-      # this most likely is not an actual error, but rather a 401/403 from orchestration API because request was
+      # this most likely is not an actual error, but rather a 401 from orchestration API because request was
       # rejected due to the user needing to accept the updated Terms of Service
       # as such, no error reporting is necessary
       { must_accept: true, status: e.http_code }
