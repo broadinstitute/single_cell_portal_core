@@ -18,7 +18,7 @@ import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons
 import { formatFileFromServer, formatFileForApi, newStudyFileObj, StudyContext } from './upload-utils'
 import {
   createStudyFile, updateStudyFile, deleteStudyFile,
-  fetchStudyFileInfo, sendStudyFileChunk, RequestCanceller, deleteAnnDataFragment
+  fetchStudyFileInfo, sendStudyFileChunk, RequestCanceller, deleteAnnDataFragment, fetchExplore
 } from '~/lib/scp-api'
 import MessageModal, { successNotification, failureNotification } from '~/lib/MessageModal'
 import UserProvider from '~/providers/UserProvider'
@@ -32,6 +32,7 @@ import RawCountsStep from './RawCountsStep'
 import ProcessedExpressionStep from './ProcessedExpressionStep'
 import MetadataStep from './MetadataStep'
 import MiscellaneousStep from './MiscellaneousStep'
+import DifferentialExpressionStep from './DifferentialExpressionStep'
 import SequenceFileStep from './SequenceFileStep'
 import GeneListStep from './GeneListStep'
 import LoadingSpinner from '~/lib/LoadingSpinner'
@@ -55,6 +56,7 @@ const ALL_POSSIBLE_STEPS = [
   CoordinateLabelStep,
   SequenceFileStep,
   GeneListStep,
+  DifferentialExpressionStep,
   MiscellaneousStep,
   SeuratStep,
   AnnDataStep
@@ -79,12 +81,12 @@ const MAIN_STEPS_ANNDATA = [
 export function RawUploadWizard({ studyAccession, name }) {
   const [serverState, setServerState] = useState(null)
   const [formState, setFormState] = useState(null)
+  const [annotationsAvailOnStudy, setAnnotationsAvailOnStudy] = useState(null)
 
   // study attributes to pass to the StudyContext later for use throughout the RawUploadWizard component, if needed
   // use complete study object, rather than defaultStudyState so that any updates to study.rb will be reflected in
   // this context
   const studyObj = serverState?.study
-
 
   // used for toggling between the split view for the upload experiences
   const [overrideExperienceMode, setOverrideExperienceMode] = useState(false)
@@ -99,11 +101,15 @@ export function RawUploadWizard({ studyAccession, name }) {
   if (isAnnDataExperience) {
     MAIN_STEPS = MAIN_STEPS_ANNDATA
     SUPPLEMENTAL_STEPS = ALL_POSSIBLE_STEPS.slice(6, 7)
-    NON_VISUALIZABLE_STEPS = ALL_POSSIBLE_STEPS.slice(8, 10)
+    // SUPPLEMENTAL_STEPS.splice(1, 0, DifferentialExpressionStep)
+    // TODO enable after raw counts are sorted for AnnData (SCP-5110)
+    NON_VISUALIZABLE_STEPS = ALL_POSSIBLE_STEPS.slice(10, 12)
   } else {
     MAIN_STEPS = MAIN_STEPS_CLASSIC
-    SUPPLEMENTAL_STEPS = ALL_POSSIBLE_STEPS.slice(5, 9)
-    NON_VISUALIZABLE_STEPS = ALL_POSSIBLE_STEPS.slice(9, 12)
+    SUPPLEMENTAL_STEPS = serverState?.feature_flags?.show_de_upload ?
+      ALL_POSSIBLE_STEPS.slice(5, 10) : ALL_POSSIBLE_STEPS.slice(5, 9)
+    NON_VISUALIZABLE_STEPS = ALL_POSSIBLE_STEPS.slice(10, 13)
+
   }
   const STEPS = MAIN_STEPS.concat(SUPPLEMENTAL_STEPS, NON_VISUALIZABLE_STEPS)
 
@@ -544,9 +550,14 @@ export function RawUploadWizard({ studyAccession, name }) {
       setFormState(_cloneDeep(response))
       setTimeout(pollServerState, POLLING_INTERVAL)
     })
+    // get the annotations list
+    fetchExplore(studyAccession).then(response => {
+      setAnnotationsAvailOnStudy(response?.annotationList?.annotations)
+    })
 
     window.document.title = `Upload - Single Cell Portal`
   }, [studyAccession])
+
 
   const nextStep = STEPS[currentStepIndex + 1]
   const prevStep = STEPS[currentStepIndex - 1]
@@ -605,13 +616,13 @@ export function RawUploadWizard({ studyAccession, name }) {
               addNewFile={addNewFile}
               isAnnDataExperience={isAnnDataExperience}
               deleteFileFromForm={deleteFileFromForm}
+              annotationsAvailOnStudy={annotationsAvailOnStudy}
             />
           </div>
         </div>
       </div></>
     }
   }
-
   return (
     <StudyContext.Provider value={studyObj}>
       {/* If the formState hasn't loaded show a spinner */}

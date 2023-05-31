@@ -8,7 +8,7 @@ import { RawUploadWizard } from 'components/upload/UploadWizard'
 import MockRouter from '../lib/MockRouter'
 import { fireFileSelectionEvent } from '../lib/file-mock-utils'
 import * as ScpApi from 'lib/scp-api'
-import { EMPTY_STUDY } from './file-info-responses'
+import { EMPTY_STUDY, GENERIC_EXPLORE_INFO} from './file-info-responses'
 
 describe('cancels a study file upload', () => {
   afterEach(() => {
@@ -21,6 +21,11 @@ describe('cancels a study file upload', () => {
     // pass in a clone of the response since it may get modified by the cache operations
     studyInfoSpy.mockImplementation(params => {
       const response = _cloneDeep(EMPTY_STUDY)
+      return Promise.resolve(response)
+    })
+    const exploreSpy = jest.spyOn(ScpApi, 'fetchExplore')
+    exploreSpy.mockImplementation(params => {
+      const response = _cloneDeep(GENERIC_EXPLORE_INFO)
       return Promise.resolve(response)
     })
 
