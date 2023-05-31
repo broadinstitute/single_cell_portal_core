@@ -54,10 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const path = window.location.pathname
   const onTosPage = path.includes('terra_tos') || path.includes('accept_tos')
   if (!onTosPage && window.SCP.userSignedIn) {
-    let userStatus = ScpApi.checkTerraTosAcceptance()
-    if (userStatus.mustAccept && userStatus.status === 401) {
-      window.location = '/single_cell/terra_tos'
-    }
+    ScpApi.checkTerraTosAcceptance().then(mustAcceptTerraTos => {
+      if (mustAcceptTerraTos) {
+        window.location = '/single_cell/terra_tos'
+      }
+    })
   }
 
   setTimeout(checkMissingAuthToken, 1000);
