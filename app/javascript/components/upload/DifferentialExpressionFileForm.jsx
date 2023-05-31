@@ -65,7 +65,6 @@ export default function DifferentialExpressionFileForm({
   )
 
   const associatedCompMethod = compMethodOptions?.find(
-    opt => opt.value === file.differential_expression_file_info.comp_method_association
     opt => opt.value === file.differential_expression_file_info.computational_method
   )
 
