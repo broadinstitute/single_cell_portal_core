@@ -374,7 +374,8 @@ class User
     return false unless registered_for_firecloud
 
     tos_status = check_terra_tos_status
-    tos_status[:must_accept] && [200, 401].include?(tos_status[:status])
+    # only return true if must_accept & a non-500 error code was returned
+    tos_status[:must_accept] && tos_status[:http_code].to_i < 500
   end
 
   # returns a Hash with a boolean for "must_accept" as well as the HTTP status code from the request
@@ -391,18 +392,19 @@ class User
       tos_accepted = true if tos_accepted.nil? # failover protection if status isn't found
 
       # return inverse as value of 'false' here means the user must accept the updated Terra ToS
-      { must_accept: !tos_accepted, status: 200 }
+      { must_accept: !tos_accepted, http_code: 200 }
     rescue RestClient::Exception => e
       # this most likely is not an actual error, but rather a 401 from orchestration API because request was
       # rejected due to the user needing to accept the updated Terms of Service
-      # as such, no error reporting is necessary
-      { must_accept: true, status: e.http_code }
+      # sometimes a 503 is returned from orchestration, so we must preserve this http_code as it means the
+      # check failed and we should not treat this as a user in non-compliance
+      { must_accept: true, http_code: e.http_code }
     rescue => e
       # report error upstream to Sentry
       # cannot report to Mixpanel via MetricsService#report_error as there is no associated HTTP request
       Rails.logger.error "Error checking user:#{id} Terra ToS status: #{e.class.name} - #{e.message}"
       ErrorTracker.report_exception(e, self)
-      { must_accept: false, status: 500 } # we don't know the status of the user here, so default to false
+      { must_accept: false, http_code: 500 } # we don't know the status of the user here, so default to false
     end
   end
 

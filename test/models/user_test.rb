@@ -141,4 +141,21 @@ class UserTest < ActiveSupport::TestCase
       mock.verify
     end
   end
+
+  test 'should return HTTP status of Terra ToS check' do
+    [401, 403, 503].each do |http_code|
+      exception = proc { raise RestClient::Exception.new(nil, http_code) }
+      RestClient::Request.stub :execute, exception do
+        user_status = @user.check_terra_tos_status
+        assert user_status[:must_accept]
+        assert_equal http_code, user_status[:http_code]
+      end
+    end
+    # test non-RestClient error
+    RestClient::Request.stub :execute, proc { raise 'unknown error' } do
+      user_status = @user.check_terra_tos_status
+      assert_not user_status[:must_accept]
+      assert_equal 500, user_status[:http_code]
+    end
+  end
 end
