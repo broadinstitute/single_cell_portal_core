@@ -7,7 +7,7 @@ import MockRouter from '../lib/MockRouter'
 import { UserContext } from 'providers/UserProvider'
 import { RawUploadWizard } from 'components/upload/UploadWizard'
 import * as ScpApi from 'lib/scp-api'
-import { EMPTY_STUDY } from './file-info-responses'
+import { EMPTY_STUDY, GENERIC_EXPLORE_INFO } from './file-info-responses'
 import ClusteringStep from '~/components/upload/ClusteringStep'
 
 /** gets a pointer to the react-select node based on label text
@@ -23,7 +23,8 @@ export function getSelectByLabelText(screen, text) {
  * spinner to clear
 */
 export async function renderWizardWithStudy({
-  studyInfo=EMPTY_STUDY, featureFlags={}, studyAccession='SCP1', studyName='Chickens', initialSearch={}
+  studyInfo=EMPTY_STUDY, featureFlags={}, studyAccession='SCP1', studyName='Chickens',
+  initialSearch={}, exploreInfo=GENERIC_EXPLORE_INFO
 }) {
   // merge featureFlags data into studyInfo.feature_flags since this is where the upload wizard looks now
   studyInfo.feature_flags = featureFlags
@@ -34,6 +35,13 @@ export async function renderWizardWithStudy({
     const response = _cloneDeep(studyInfo)
     return Promise.resolve(response)
   })
+
+  const exploreSpy = jest.spyOn(ScpApi, 'fetchExplore')
+  exploreSpy.mockImplementation(params => {
+    const response = _cloneDeep(exploreInfo)
+    return Promise.resolve(response)
+  })
+
   const renderResult = render(
     <UserContext.Provider value={{ featureFlagsWithDefaults: featureFlags }}>
       <ReactNotifications/>
@@ -50,7 +58,8 @@ export async function renderWizardWithStudy({
  * spinner to clear
 */
 export async function renderWizardWithStudyOnClusteringStep({
-  studyInfo=EMPTY_STUDY, featureFlags={}, studyAccession='SCP1', studyName='Chickens', initialSearch={}
+  studyInfo=EMPTY_STUDY, featureFlags={}, studyAccession='SCP1', studyName='Chickens',
+  initialSearch={}, exploreInfo=GENERIC_EXPLORE_INFO
 }) {
   // merge featureFlags data into studyInfo.feature_flags since this is where the upload wizard looks now
   studyInfo.feature_flags = featureFlags
@@ -61,6 +70,13 @@ export async function renderWizardWithStudyOnClusteringStep({
     const response = _cloneDeep(studyInfo)
     return Promise.resolve(response)
   })
+
+  const exploreSpy = jest.spyOn(ScpApi, 'fetchExplore')
+  exploreSpy.mockImplementation(params => {
+    const response = _cloneDeep(exploreInfo)
+    return Promise.resolve(response)
+  })
+
   const renderResult = render(
     <UserContext.Provider value={{ featureFlagsWithDefaults: featureFlags }}>
       <ReactNotifications/>
