@@ -66,6 +66,7 @@ export default function DifferentialExpressionFileForm({
 
   const associatedCompMethod = compMethodOptions?.find(
     opt => opt.value === file.differential_expression_file_info.comp_method_association
+    opt => opt.value === file.differential_expression_file_info.computational_method
   )
 
   /** handle a change in the associated cluster select */
@@ -92,7 +93,7 @@ export default function DifferentialExpressionFileForm({
     if (option) {
       newVal = option.value
     }
-    updateFile(file._id, { differential_expression_file_info: { comp_method_association: newVal } })
+    updateFile(file._id, { differential_expression_file_info: { computational_method: newVal } })
   }
 
   return <ExpandableFileForm {...{

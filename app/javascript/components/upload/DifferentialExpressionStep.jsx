@@ -9,7 +9,7 @@ const DEFAULT_NEW_DE_FILE = {
   differential_expression_file_info: {
     clustering_association: undefined,
     annotation_association: undefined,
-    comp_method_association: undefined
+    computational_method: undefined
   }
 }
 
