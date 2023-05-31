@@ -373,14 +373,12 @@ class User
   def must_accept_terra_tos?
     return false unless registered_for_firecloud
 
-    tos_status = check_terra_tos_status
-    # only return true if must_accept & a non-500 error code was returned
-    tos_status[:must_accept] && [200, 401].include?(tos_status[:http_code])
+    check_terra_tos_status[:must_accept]
   end
 
   # returns a Hash with a boolean for "must_accept" as well as the HTTP status code from the request
   # if a user is out of compliance with the Terra terms of service, then the value for tosAccepted will
-  # be false, or the request will fail with a 401 status
+  # be false.
   #
   # * *returns*
   #   - (Hash) => { must_accept: T/F, status: HTTP status code }
@@ -394,7 +392,8 @@ class User
       # return inverse as value of 'false' here means the user must accept the updated Terra ToS
       { must_accept: !tos_accepted, http_code: 200 }
     rescue RestClient::Exception => e
-      # 401: user is not in compliance with Terra ToS
+      # HTTP STATUS CODE EXPLANATIONS
+      # 401: user is not in compliance with Terra ToS (/register endpoint shouldn't give this but check anyway)
       # 404: user is not registered, does not need to accept Terra ToS
       # 5xx: upstream error, do not rely on this response
       must_accept = e.http_code == 401
