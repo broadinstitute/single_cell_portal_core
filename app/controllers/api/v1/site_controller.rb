@@ -63,6 +63,9 @@ module Api
           response 401 do
             key :description, 'Terra API rejected request due to user non-compliance with ToS'
           end
+          response 404 do
+            key :description, 'User account not found in Terra, does not need to accept ToS'
+          end
           response 406 do
             key :description, ApiBaseController.not_acceptable
           end

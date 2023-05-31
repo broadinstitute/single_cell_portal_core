@@ -375,7 +375,7 @@ class User
 
     tos_status = check_terra_tos_status
     # only return true if must_accept & a non-500 error code was returned
-    tos_status[:must_accept] && tos_status[:http_code].to_i < 500
+    tos_status[:must_accept] && [200, 401].include?(tos_status[:http_code])
   end
 
   # returns a Hash with a boolean for "must_accept" as well as the HTTP status code from the request
@@ -394,11 +394,11 @@ class User
       # return inverse as value of 'false' here means the user must accept the updated Terra ToS
       { must_accept: !tos_accepted, http_code: 200 }
     rescue RestClient::Exception => e
-      # this most likely is not an actual error, but rather a 401 from orchestration API because request was
-      # rejected due to the user needing to accept the updated Terms of Service
-      # sometimes a 503 is returned from orchestration, so we must preserve this http_code as it means the
-      # check failed and we should not treat this as a user in non-compliance
-      { must_accept: true, http_code: e.http_code }
+      # 401: user is not in compliance with Terra ToS
+      # 404: user is not registered, does not need to accept Terra ToS
+      # 5xx: upstream error, do not rely on this response
+      must_accept = e.http_code == 401
+      { must_accept:, http_code: e.http_code }
     rescue => e
       # report error upstream to Sentry
       # cannot report to Mixpanel via MetricsService#report_error as there is no associated HTTP request
