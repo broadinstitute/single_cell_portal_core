@@ -147,7 +147,11 @@ class UserTest < ActiveSupport::TestCase
       exception = proc { raise RestClient::Exception.new(nil, http_code) }
       RestClient::Request.stub :execute, exception do
         user_status = @user.check_terra_tos_status
-        assert user_status[:must_accept]
+        if http_code == 401
+          assert user_status[:must_accept]
+        else
+          assert_not user_status[:must_accept]
+        end
         assert_equal http_code, user_status[:http_code]
       end
     end
