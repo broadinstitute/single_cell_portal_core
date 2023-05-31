@@ -461,7 +461,30 @@ export const IMAGE_FILE = {
 export const ANNDATA_FILE = {
   ann_data_file_info: {
     reference_file: false,
-    data_fragments: [ ]
+    data_fragments: [
+      {
+        '_id': '123445681',
+        'data_type': 'expression',
+        'taxon_id': '60b9175a6e5ec555cec81696',
+        'expression_file_info': {
+          'library_preparation_protocol': '10x 3\' v2',
+          'units': 'UMI-corrected raw counts',
+          'biosample_input_type': 'Whole cell',
+          'modality': 'Transcriptomic: unbiased',
+          'is_raw_counts': 'false'
+        }
+      },
+      {
+        '_id': '123445682',
+        'data_type': 'cluster',
+        'name': 'i am a clustering',
+        'description': '',
+        'obsm_key_name': 'X_umap',
+        'spatial_cluster_associations': [
+          ''
+        ]
+      }
+    ]
   },
   created_at: '2021-11-15T18:31:41.598Z',
   data_dir: '71e1a89e5c5d9300aabd0e757d1b569eb66644872b40bcbb720e2b39bc7e3822',
@@ -471,7 +494,7 @@ export const ANNDATA_FILE = {
   is_spatial: false,
   name: 'anndata.h5ad',
   options: {},
-  parse_status: 'unparsed',
+  parse_status: 'parsed',
   queued_for_deletion: false,
   remote_location: '',
   status: 'uploaded',

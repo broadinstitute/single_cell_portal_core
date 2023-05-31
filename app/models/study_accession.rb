@@ -8,7 +8,7 @@ class StudyAccession
   validates_uniqueness_of :accession
 
   # exclude everything that does not start with "SCP" and end with digits
-  ACCESSION_SANITIZER = /[^SCP\d+$]/
+  ACCESSION_SANITIZER = /[^SCP\d+$]/i
   # match on accepted accession format of "SCP" and ending with digits
   ACCESSION_FORMAT = /^SCP\d+$/
 
@@ -34,7 +34,7 @@ class StudyAccession
   def self.sanitize_accessions(terms)
     possible_accessions = []
     terms.each do |term|
-      accession_string = term.strip.gsub(ACCESSION_SANITIZER, '')
+      accession_string = term.upcase.strip.gsub(ACCESSION_SANITIZER, '')
       if accession_string.match(ACCESSION_FORMAT)
         possible_accessions << accession_string
       end

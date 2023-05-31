@@ -353,7 +353,7 @@ class IngestJob
         qa_config = AdminConfiguration.find_by(config_type: 'QA Dev Email')
         email = qa_config.present? ? qa_config.value : User.find_by(admin: true)&.email
         SingleCellMailer.notify_user_parse_complete(email, subject, message, study).deliver_now unless email.blank?
-      else
+      elsif action != :ingest_anndata # don't email users on "extract" AnnData jobs
         SingleCellMailer.notify_user_parse_complete(user.email, subject, message, study).deliver_now
       end
     elsif done? && failed?
@@ -396,7 +396,7 @@ class IngestJob
     when :ingest_cell_metadata
       study.set_cell_count
       set_study_default_options
-      launch_subsample_jobs unless study_file.is_anndata?
+      launch_subsample_jobs
       # update search facets if convention data
       if study_file.use_metadata_convention
         SearchFacet.delay.update_all_facet_filters
@@ -409,7 +409,7 @@ class IngestJob
     when :ingest_cluster
       set_cluster_point_count
       set_study_default_options
-      launch_subsample_jobs unless study_file.is_anndata?
+      launch_subsample_jobs
       launch_differential_expression_jobs unless study_file.is_anndata?
       set_anndata_file_info if study_file.is_anndata?
     when :ingest_subsample
@@ -423,7 +423,7 @@ class IngestJob
     when :image_pipeline
       set_has_image_cache
     when :ingest_anndata
-      launch_anndata_subparse_jobs
+      launch_anndata_subparse_jobs unless study_file.is_reference_anndata?
       set_anndata_file_info
     end
     set_study_initialized
@@ -559,6 +559,37 @@ class IngestJob
                         persist_on_fail: persist_on_fail).poll_for_completion
         end
       end
+    when 'AnnData'
+      # TODO (SCP-5140): subsampling logic works but MongoDB throws index uniqueness violations due to same study_file_id
+      return if study_file.is_anndata?
+
+      file_info = study_file.ann_data_file_info
+      if file_info.has_clusters? && file_info.has_metadata?
+        file_identifier = "#{study_file.bucket_location}:#{study_file.id}"
+        file_info.fragments_by_type(:cluster).each do |fragment|
+          safe_fragment = fragment.with_indifferent_access
+          cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: safe_fragment[:name])
+          next unless cluster&.can_subsample? && !cluster&.is_subsampling?
+
+          cluster.update(is_subsampling: true)
+          cluster_file = RequestUtils.data_fragment_url(
+            study_file, 'cluster', file_type_detail: safe_fragment[:obsm_key_name]
+          )
+          cell_metadata_file = RequestUtils.data_fragment_url(study_file, 'metadata')
+          subsample_params = AnnDataIngestParameters.new(
+            subsample: true, ingest_anndata: false, extract: nil, obsm_keys: nil, name: cluster.name,
+            cluster_file:, cell_metadata_file:
+          )
+          Rails.logger.info "Launching subsampling ingest run for #{file_identifier} after #{action}"
+          submission = ApplicationController.papi_client.run_pipeline(
+            study_file:, user:, action: :ingest_subsample, params_object: subsample_params
+          )
+          IngestJob.new(
+            pipeline_name: submission.name, study:, study_file:, user:, action: :ingest_subsample,
+            params_object: subsample_params, reparse:, persist_on_fail:
+          ).poll_for_completion
+        end
+      end
     end
   end
 
@@ -633,38 +664,49 @@ class IngestJob
   # launch appropriate downstream jobs once an AnnData file successfully extracts "fragment" files
   def launch_anndata_subparse_jobs
     # reference AnnData uploads don't have extract parameter so exit immediately
-    return nil if params_object.extract.blank?
+    return if params_object.extract.blank?
 
     params_object.extract.each do |extract|
       case extract
       when 'cluster'
         params_object.obsm_keys.each do |fragment|
-          Rails.logger.info "launching AnnData #{fragment} cluster extraction for #{study_file.upload_file_name}"
+          Rails.logger.info "Launching AnnData #{fragment} cluster ingest for #{study_file.upload_file_name}"
+          action = :ingest_cluster
           matcher = { data_type: :cluster, obsm_key_name: fragment }
           cluster_data_fragment = study_file.ann_data_file_info.find_fragment(**matcher)
           name = cluster_data_fragment&.[](:name) || fragment # fallback if we can't find data_fragment
-          cluster_gs_url = params_object.fragment_file_url(study.bucket_id, 'cluster', study_file.id, fragment)
+          cluster_gs_url = RequestUtils.data_fragment_url(study_file, 'cluster', file_type_detail: fragment)
           domain_ranges = study_file.ann_data_file_info.get_cluster_domain_ranges(name).to_json
           cluster_params = AnnDataIngestParameters.new(
             ingest_cluster: true, name:, cluster_file: cluster_gs_url, domain_ranges:, ingest_anndata: false,
             extract: nil, obsm_keys: nil
           )
-          job = IngestJob.new(study:, study_file:, user:, action: :ingest_cluster, params_object: cluster_params)
+          job = IngestJob.new(study:, study_file:, user:, action:, params_object: cluster_params)
           job.delay.push_remote_and_launch_ingest
         end
       when 'metadata'
-        Rails.logger.info "launching AnnData metadata extraction for #{study_file.upload_file_name}"
-        metadata_gs_url = params_object.fragment_file_url(study.bucket_id, 'metadata', study_file.id)
+        Rails.logger.info "Launching AnnData metadata ingest for #{study_file.upload_file_name}"
+        action = :ingest_cell_metadata
+        metadata_gs_url = RequestUtils.data_fragment_url(study_file, 'metadata')
         metadata_params = AnnDataIngestParameters.new(
           ingest_cell_metadata: true, cell_metadata_file: metadata_gs_url,
           ingest_anndata: false, extract: nil, obsm_keys: nil, study_accession: study.accession
         )
-        job = IngestJob.new(study:, study_file:, user:, action: :ingest_cell_metadata, params_object: metadata_params)
+        job = IngestJob.new(study:, study_file:, user:, action:, params_object: metadata_params)
         job.delay.push_remote_and_launch_ingest
-      else
-        # processed_expression data is parsed during the initial extract phase, so nothing is required here
-        # logging is for debugging purposes only
-        Rails.logger.info "skipping extraction of #{extract} for #{study_file.upload_file_name}"
+      when 'processed_expression'
+        Rails.logger.info "Launching AnnData processed expression ingest for #{study_file.upload_file_name}"
+        action = :ingest_expression
+        file_types = %w[matrix features barcodes]
+        matrix_gs_url, features_gs_url, barcodes_gs_url = file_types.map do |file_type|
+          RequestUtils.data_fragment_url(study_file, file_type, file_type_detail: 'processed')
+        end
+        exp_params = AnnDataIngestParameters.new(
+          matrix_file: matrix_gs_url, matrix_file_type: 'mtx', gene_file: features_gs_url, barcode_file: barcodes_gs_url,
+          ingest_anndata: false, extract: nil, obsm_keys: nil
+        )
+        job = IngestJob.new(study:, study_file:, user:, action:, params_object: exp_params)
+        job.delay.push_remote_and_launch_ingest
       end
     end
   end
@@ -882,7 +924,7 @@ class IngestJob
         end
       end
     when :ingest_cluster
-      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id)
+      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: cluster_name_by_file_type)
       cluster_type = cluster.cluster_type
       message << "Cluster created: #{cluster.name}, type: #{cluster_type}"
       if cluster.cell_annotations.any?
@@ -893,18 +935,14 @@ class IngestJob
       end
       cluster_points = cluster.points
       message << "Total points in cluster: #{cluster_points}"
-
-      can_subsample = cluster.can_subsample?
-      metadata_file_present = study.metadata_file.present?
-
       # notify user that subsampling is about to run and inform them they can't delete cluster/metadata files
-      if can_subsample && metadata_file_present
+      if cluster.can_subsample? && study.metadata_file.present?
         message << 'This cluster file will now be processed to compute representative subsamples for visualization.'
         message << 'You will receive an additional email once this has completed.'
         message << 'While subsamples are being computed, you will not be able to remove this cluster file or your metadata file.'
       end
     when :ingest_subsample
-      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id)
+      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: cluster_name_by_file_type)
       message << "Subsampling has completed for #{cluster.name}"
       message << "Subsamples generated: #{cluster.subsample_thresholds_required.join(', ')}"
     when :ingest_differential_expression
@@ -925,13 +963,6 @@ class IngestJob
       complete_pipeline_runtime = TimeDifference.between(*get_image_pipeline_timestamps).humanize
       message << "Image Pipeline image rendering completed for \"#{params_object.cluster}\""
       message << "Complete runtime (data cache & image rendering): #{complete_pipeline_runtime}"
-    when :ingest_anndata
-      message << "AnnData file ingest has completed"
-      if study_file.ann_data_file_info.has_expression
-        genes = Gene.where(study_id: study.id, study_file_id: study_file.id).count
-        message << "Gene-level entries created: #{genes}"
-      end
-      message << 'Clustering and metadata entries are being extracted as specified in your AnnData file.'
     end
     message
   end

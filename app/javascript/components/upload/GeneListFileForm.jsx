@@ -15,7 +15,8 @@ export default function GeneListFileForm({
   deleteFile,
   miscFileTypes,
   bucketName,
-  isInitiallyExpanded
+  isInitiallyExpanded,
+  isAnnDataExperience
 }) {
   const allowedFileExts = FileTypeExtensions.plainText
 
@@ -26,7 +27,7 @@ export default function GeneListFileForm({
 
   return <ExpandableFileForm {...{
     file, allFiles, updateFile, saveFile,
-    allowedFileExts, deleteFile, validationMessages, bucketName, isInitiallyExpanded
+    allowedFileExts, deleteFile, validationMessages, bucketName, isInitiallyExpanded, isAnnDataExperience
   }}>
     <TextFormField label="Name" fieldName="name" file={file} updateFile={updateFile}/>
     <TextFormField label="Description (shown above heatmap)" fieldName="description" file={file} updateFile={updateFile}/>

@@ -361,7 +361,7 @@ button[disabled] {
 }
 
 #cell-count {
-  background-color: #337ab7;
+  background-color: $action-color;
   color: #fff;
 }
 
@@ -886,6 +886,14 @@ figcaption.ck-editor__editable {
   border: none;
   background: transparent;
   color: $action-color;
+}
+
+.btn-primary {
+  background-color: $action-color;
+}
+
+.btn-primary:hover {
+  background-color: lighten($action-color, 10%);
 }
 
 .btn-warning-scp {

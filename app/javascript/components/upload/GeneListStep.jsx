@@ -29,7 +29,8 @@ function GeneListForm({
   addNewFile,
   updateFile,
   saveFile,
-  deleteFile
+  deleteFile,
+  isAnnDataExperience
 }) {
   const geneListFiles = formState.files.filter(geneListFileFilter)
 
@@ -73,7 +74,9 @@ function GeneListForm({
         saveFile={saveFile}
         deleteFile={deleteFile}
         bucketName={formState.study.bucket_id}
-        isInitiallyExpanded={geneListFiles.length === 1}/>
+        isInitiallyExpanded={geneListFiles.length === 1}
+        isAnnDataExperience={isAnnDataExperience}
+        />
     })}
     <AddFileButton addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_GENE_LIST_FILE}/>
   </div>

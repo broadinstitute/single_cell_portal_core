@@ -8,7 +8,9 @@ import LoadingSpinner from '~/lib/LoadingSpinner'
 export function AddFileButton({ newFileTemplate, addNewFile, text='Add file' }) {
   return <div className="row top-margin">
     <div className="col-md-12">
-      <button className="btn btn-secondary terra-secondary-btn" onClick={() => addNewFile(newFileTemplate, true)}>
+      <button className="btn btn-secondary terra-secondary-btn"
+        data-testid="add-file-button" onClick={() => addNewFile(newFileTemplate, true)}
+      >
         <span className="fas fa-plus"></span> {text}
       </button>
     </div>

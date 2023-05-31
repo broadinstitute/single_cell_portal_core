@@ -17,17 +17,17 @@ class PapiClient
   GCP_NETWORK_NAME = ENV['GCP_NETWORK_NAME']
   GCP_SUB_NETWORK_NAME = ENV['GCP_SUB_NETWORK_NAME']
 
-   # List of scp-ingest-pipeline actions and their allowed file types
+  # List of scp-ingest-pipeline actions and their allowed file types
   FILE_TYPES_BY_ACTION = {
-    ingest_expression: ['Expression Matrix', 'MM Coordinate Matrix'],
+    ingest_expression: ['Expression Matrix', 'MM Coordinate Matrix', 'AnnData'],
     ingest_cluster: %w[Cluster AnnData],
     ingest_cell_metadata: %w[Metadata AnnData],
-    ingest_subsample: ['Cluster'],
-    differential_expression: ['Cluster'],
+    ingest_subsample: %w[Cluster AnnData],
+    differential_expression: %w[Cluster],
     ingest_differential_expression: ['Differential Expression'],
-    render_expression_arrays: ['Cluster'],
-    image_pipeline: ['Cluster'],
-    ingest_anndata: ['AnnData']
+    render_expression_arrays: %w[Cluster],
+    image_pipeline: %w[Cluster],
+    ingest_anndata: %w[AnnData]
   }.freeze
 
   # jobs that require custom virtual machine types (e.g. more RAM, CPU)
@@ -343,8 +343,10 @@ class PapiClient
       # skip if parent file is AnnData as params_object will format command line
       command_line += ['--cluster-file', study_file.gs_url, action_cli_opt] unless study_file.is_anndata?
     when 'ingest_subsample'
-      metadata_file = study.metadata_file
-      command_line += ['--cluster-file', study_file.gs_url, '--cell-metadata-file', metadata_file.gs_url, '--subsample']
+      unless study_file.is_anndata?
+        metadata_file = study.metadata_file
+        command_line += ['--cluster-file', study_file.gs_url, '--cell-metadata-file', metadata_file.gs_url, '--subsample']
+      end
     when 'differential_expression'
       command_line += ['--study-accession', study.accession]
     when 'ingest_differential_expression'

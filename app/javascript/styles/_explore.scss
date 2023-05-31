@@ -18,6 +18,7 @@
 
   button.action {
     border: none;
+    background: none;
   }
 
   button.action-plus {
@@ -70,6 +71,7 @@
 .explore-tab-content {
   background: #fff;
   flex-grow: 1;
+  z-index: 0;
 
   button.action {
     background: #fff;
@@ -221,8 +223,9 @@
       background: $action-color;
       align-self: baseline;
     }
-  } :hover {
-    color: #2a3f5f;
+    a:hover {
+      background: lighten($action-color, 10%);
+    }
   }
   li.active > a {
     border-left: 1px solid $action-color;
@@ -238,11 +241,5 @@
     background: #fff;
     color: #999999;
     border-bottom: 1px solid #ddd;
-    aria-disabled: true;
   }
-
-  padding-left: 0;
-  margin-bottom: 0;
-  list-style: none;
-  margin-right: 3px;
 }

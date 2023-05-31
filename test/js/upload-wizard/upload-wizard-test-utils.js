@@ -8,6 +8,7 @@ import { UserContext } from 'providers/UserProvider'
 import { RawUploadWizard } from 'components/upload/UploadWizard'
 import * as ScpApi from 'lib/scp-api'
 import { EMPTY_STUDY } from './file-info-responses'
+import ClusteringStep from '~/components/upload/ClusteringStep'
 
 /** gets a pointer to the react-select node based on label text
  * This is non-trivial since our labels contain the select,
@@ -33,7 +34,6 @@ export async function renderWizardWithStudy({
     const response = _cloneDeep(studyInfo)
     return Promise.resolve(response)
   })
-
   const renderResult = render(
     <UserContext.Provider value={{ featureFlagsWithDefaults: featureFlags }}>
       <ReactNotifications/>
@@ -45,6 +45,38 @@ export async function renderWizardWithStudy({
 
   return renderResult
 }
+
+/** renders the upload wizard with the given studyInfo response, and waits for the loading
+ * spinner to clear
+*/
+export async function renderWizardWithStudyOnClusteringStep({
+  studyInfo=EMPTY_STUDY, featureFlags={}, studyAccession='SCP1', studyName='Chickens', initialSearch={}
+}) {
+  // merge featureFlags data into studyInfo.feature_flags since this is where the upload wizard looks now
+  studyInfo.feature_flags = featureFlags
+
+  const studyInfoSpy = jest.spyOn(ScpApi, 'fetchStudyFileInfo')
+  // pass in a clone of the response since it may get modified by the cache operations
+  studyInfoSpy.mockImplementation(params => {
+    const response = _cloneDeep(studyInfo)
+    return Promise.resolve(response)
+  })
+  const renderResult = render(
+    <UserContext.Provider value={{ featureFlagsWithDefaults: featureFlags }}>
+      <ReactNotifications/>
+      <MockRouter initialSearch={initialSearch}>
+        <RawUploadWizard studyAccession={studyAccession} name={studyName}>
+          <ClusteringStep></ClusteringStep>
+        </RawUploadWizard>
+      </MockRouter>
+    </UserContext.Provider>)
+  await waitForElementToBeRemoved(() => screen.getByTestId('upload-wizard-spinner'))
+
+  return renderResult
+}
+
+
+
 
 /** mocks the create file API call to return the given file, but with an id that matches what was actually saved
 */

@@ -81,18 +81,20 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
         study.update(cell_count: 0)
         reset_default_annotation(study:)
       when 'AnnData'
-        delete_convention_data(study: study, metadata_file: object)
-        # delete user annotations first as we lose associations later
-        delete_user_annotations(study:, study_file: object)
-        delete_parsed_data(object.id, study.id, ClusterGroup, CellMetadatum, Gene, DataArray)
-        delete_fragment_files(study:, study_file: object)
-        # reset default options/counts
-        study.reload
-        study.cell_count = study.all_cells_array.size
-        study.gene_count = study.unique_genes.size
-        reset_default_cluster(study:)
-        reset_default_annotation(study:)
-        study.save
+        unless object.is_reference_anndata?
+          delete_convention_data(study: study, metadata_file: object)
+          # delete user annotations first as we lose associations later
+          delete_user_annotations(study:, study_file: object)
+          delete_parsed_data(object.id, study.id, ClusterGroup, CellMetadatum, Gene, DataArray)
+          delete_fragment_files(study:, study_file: object)
+          # reset default options/counts
+          study.reload
+          study.cell_count = study.all_cells_array.size
+          study.gene_count = study.unique_genes.size
+          reset_default_cluster(study:)
+          reset_default_annotation(study:)
+          study.save
+        end
       when 'Gene List'
         delete_parsed_data(object.id, study.id, PrecomputedScore)
       when 'BAM Index'
@@ -244,7 +246,7 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
 
   # delete all AnnData "fragment" files upon study file deletion
   def delete_fragment_files(study:, study_file:)
-    prefix = "_scp_internal/anndata_ingest/#{study_file.id}"
+    prefix = "_scp_internal/anndata_ingest/#{study.accession}_#{study_file.id}"
     remotes = ApplicationController.firecloud_client.get_workspace_files(study.bucket_id, prefix:)
     remotes.each(&:delete)
   end
