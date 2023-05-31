@@ -114,8 +114,8 @@ class DifferentialExpressionResult
 
     end
     {
-      'one_vs_rest_comparisons' => one_vs_rest_comparisons.zip(one_vs_rest_files),
-      'pairwise_comparisons' => pairwise_files
+      'one_vs_rest' => one_vs_rest_comparisons.zip(one_vs_rest_files),
+      'pairwise' => pairwise_files
     }
   end
 

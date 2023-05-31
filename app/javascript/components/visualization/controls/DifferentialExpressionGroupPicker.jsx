@@ -67,7 +67,7 @@ async function fetchDeGenes(bucketId, deFilePath) {
 }
 
 /** Gets matching deObject for the given group and cluster + annot combo */
-function getMatchingDeOption(deObjects, group, clusterName, annotation) {
+function getMatchingDeOption(deObjects, group, clusterName, annotation, comparison) {
   const deObject = deObjects.find(deObj => {
     return (
       deObj.cluster_name === clusterName &&
@@ -76,12 +76,82 @@ function getMatchingDeOption(deObjects, group, clusterName, annotation) {
     )
   })
 
-  return deObject.select_options.find(option => {
+  return deObject.select_options[comparison].find(option => {
     return option[0] === group
   })
 }
 
-/** Pick groups of cells for differential expression (DE) */
+/** Pick groups of cells for pairwise differential expression (DE) */
+export function PairwiseDifferentialExpressionGroupPicker({
+  bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup, setDeGenes,
+  countsByLabel, deObjects, setDeFilePath
+}) {
+  let aGroups = getLegendSortedLabels(countsByLabel)
+  aGroups = aGroups.filter(group => {
+    const deOption = getMatchingDeOption(deObjects, group, clusterName, annotation)
+    return deOption !== undefined
+  })
+
+  /** Update group in differential expression picker */
+  async function updateDeGroup(newGroup) {
+    setDeGroup(newGroup)
+
+    const deOption = getMatchingDeOption(deObjects, newGroup, clusterName, annotation)
+    const deFileName = deOption[1]
+
+    const basePath = '_scp_internal/differential_expression/'
+    const deFilePath = basePath + deFileName
+
+    setDeFilePath(deFilePath)
+
+    const deGenes = await fetchDeGenes(bucketId, deFilePath)
+
+    setDeGroup(newGroup)
+    setDeGenes(deGenes)
+  }
+
+  return (
+    <>
+      {!deGenes &&
+        <div className="flexbox-align-center flexbox-column">
+          <span>Compare one group to the rest</span>
+          <Select
+            defaultMenuIsOpen
+            options={getSimpleOptions(groups)}
+            data-analytics-name="de-group-select"
+            value={{
+              label: deGroup === null ? noneSelected : deGroup,
+              value: deGroup
+            }}
+            onChange={newGroup => updateDeGroup(newGroup.value)}
+            styles={clusterSelectStyle}
+          />
+        </div>
+      }
+      {deGenes &&
+      <div className="differential-expression-picker">
+        <div className="narrow-select">
+          <Select
+            options={getSimpleOptions(groups)}
+            data-analytics-name="de-group-select"
+            value={{
+              label: deGroup === null ? noneSelected : deGroup,
+              value: deGroup
+            }}
+            onChange={newGroup => updateDeGroup(newGroup.value)}
+            styles={clusterSelectStyle}
+          />
+        </div>
+        <span className="vs-note">vs. rest</span>
+        <br/>
+        <br/>
+      </div>
+      }
+    </>
+  )
+}
+
+/** Pick groups of cells for one-vs-rest-only differential expression (DE) */
 export default function DifferentialExpressionGroupPicker({
   bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup, setDeGenes,
   countsByLabel, deObjects, setDeFilePath
