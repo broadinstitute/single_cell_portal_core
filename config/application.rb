@@ -31,6 +31,9 @@ module SingleCellPortal
     # Docker image for file parsing via scp-ingest-pipeline
     config.ingest_docker_image = 'gcr.io/broad-singlecellportal-staging/scp-ingest-pipeline:1.26.1'
 
+    # Docker image for image pipeline jobs
+    config.image_pipeline_docker_image = 'gcr.io/broad-singlecellportal-staging/image-pipeline:0.1.0_c2b090043'
+
     config.autoload_paths << Rails.root.join('lib')
 
     # for all non-prod environments, use the development mixpanel API
