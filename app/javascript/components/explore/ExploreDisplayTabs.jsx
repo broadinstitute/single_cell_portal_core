@@ -54,6 +54,7 @@ const tabList = [
 const disabledTooltips = {
   'scatter': { numToSearch: '1', isMulti: false },
   'distribution': { numToSearch: '1', isMulti: false },
+  'annotatedScatter': { numToSearch: '1', isMulti: false },
   'correlatedScatter': { numToSearch: '2', isMulti: true },
   'dotplot': { numToSearch: '2 or more', isMulti: true },
   'heatmap': { numToSearch: '2 or more', isMulti: true }
@@ -777,7 +778,7 @@ export function getEnabledTabs(exploreInfo, exploreParams) {
   const isNumeric = exploreParams?.annotation?.type === 'numeric'
 
   let coreTabs = [
-    !isNumeric ? 'scatter' : 'annotatedScatter',
+    'annotatedScatter', 'scatter',
     'distribution', 'correlatedScatter',
     'dotplot', 'heatmap'
   ]
@@ -822,7 +823,12 @@ export function getEnabledTabs(exploreInfo, exploreParams) {
     enabledTabs.push('images')
   }
 
-  let disabledTabs = coreTabs.filter(coreTab => !enabledTabs.includes(coreTab))
+  let disabledTabs = coreTabs.filter(tab => {
+    return (
+      !enabledTabs.includes(tab) && // Omit any enabled tabs
+      !(!isNumeric && tab === 'annotatedScatter') // Omit "Annotated scatter" for group annotations
+    )
+  })
 
   if (!exploreInfo) {
     enabledTabs = ['loading']
