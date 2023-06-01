@@ -87,6 +87,51 @@ describe('explore tabs are activated based on study info and parameters', () => 
     expect(expectedResults).toEqual(getEnabledTabs(exploreInfo, exploreParams))
   })
 
+  it('should handle numeric annotations in no-gene view', async () => {
+    const exploreInfo = defaultExploreInfo
+    const exploreParams = {
+      cluster: 'foo', // request params loading only a cluster
+      annotation: { name: 'bar', type: 'numeric', scope: 'study' },
+      userSpecified: {
+        annotation: true,
+        cluster: true
+      }
+    }
+    const expectedResults = {
+      enabledTabs: ['scatter'],
+      disabledTabs: ['annotatedScatter', 'distribution', 'correlatedScatter', 'dotplot', 'heatmap'],
+      isGeneList: false,
+      isGene: false,
+      isMultiGene: false,
+      hasIdeogramOutputs: false
+    }
+
+    expect(expectedResults).toEqual(getEnabledTabs(exploreInfo, exploreParams))
+  })
+
+  it('should handle numeric annotations in 1-gene view', async () => {
+    const exploreInfo = defaultExploreInfo
+    const exploreParams = {
+      cluster: 'foo', // request params loading only a cluster
+      annotation: { name: 'bar', type: 'numeric', scope: 'study' },
+      genes: ['Agpat2'],
+      userSpecified: {
+        annotation: true,
+        cluster: true
+      }
+    }
+    const expectedResults = {
+      enabledTabs: ['annotatedScatter', 'scatter'],
+      disabledTabs: ['distribution', 'correlatedScatter', 'dotplot', 'heatmap'],
+      isGeneList: false,
+      isGene: true,
+      isMultiGene: false,
+      hasIdeogramOutputs: false
+    }
+
+    expect(expectedResults).toEqual(getEnabledTabs(exploreInfo, exploreParams))
+  })
+
   it('should enable cluster and genome tab', async () => {
     // mock exploreInfo from study
     const exploreInfo = {
