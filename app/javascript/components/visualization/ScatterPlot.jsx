@@ -321,7 +321,7 @@ function RawScatterPlot({
   function processScatterPlot(clusterResponse=null) {
     let [scatter, perfTimes] =
       (clusterResponse ? clusterResponse : [scatterData, null])
-    scatter = updateScatterLayout(scatter)
+    scatter = null// updateScatterLayout(scatter)
     const layout = scatter.layout
 
     const plotlyTraces = updateCountsAndGetTraces(scatter)

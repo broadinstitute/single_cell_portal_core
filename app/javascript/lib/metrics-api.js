@@ -46,12 +46,12 @@ let userId = ''
 let registeredForTerra = false
 
 // TODO (SCP-2237): Use Node environment to get React execution context
-if (env != 'test') {
+// if (env != 'test') {
   bardDomain = bardDomainsByEnv[env]
   // To consider: Replace SCP-specific userId with DSP-wide userId
   userId = window.SCP.userId
   registeredForTerra = window.SCP.registeredForTerra
-}
+// }
 
 /** Initializes any logging that  */
 export function setupPageTransitionLog() {
