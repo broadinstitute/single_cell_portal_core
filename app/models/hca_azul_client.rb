@@ -14,9 +14,6 @@ class HcaAzulClient
   # List of accepted formats for manifest files
   MANIFEST_FORMATS = %w[compact full terra.bdbag terra.pfb curl].freeze
 
-  # maximum number of results to return
-  MAX_RESULTS = 200
-
   # maximum length of query string (in characters) for requests
   MAX_QUERY_LENGTH = 8192
 
@@ -171,10 +168,10 @@ class HcaAzulClient
   #
   # * *raises*
   #   - (ArgumentError) => if catalog is not in self.all_catalogs
-  def projects(catalog: nil, query: {}, size: MAX_RESULTS)
+  def projects(catalog: nil, query: {}, size: nil)
     base_path = "#{api_root}/index/projects"
     base_path += "?filters=#{format_hash_as_query_string(query)}"
-    base_path += "&size=#{size}"
+    base_path += "&size=#{size}" if size
     path = append_catalog(base_path, catalog)
     process_api_request(:get, path)
   end
@@ -191,7 +188,7 @@ class HcaAzulClient
   #
   # * *raises*
   #   - (ArgumentError) => if catalog is not in self.all_catalogs
-  def projects_by_facet(catalog: nil, query: {}, size: MAX_RESULTS)
+  def projects_by_facet(catalog: nil, query: {}, size: nil)
     all_results = { 'hits' => [], 'project_ids' => [] }
     isolated_queries = query.each_pair.map { |facet, filters| { facet => filters } }
     Rails.logger.info "Splitting above query into #{isolated_queries.size} requests and joining results"
@@ -270,10 +267,11 @@ class HcaAzulClient
   #
   # * *returns*
   #   - (Hash) => List of files matching query
-  def files(catalog: nil, query: {}, size: MAX_RESULTS)
+  def files(catalog: nil, query: {}, size: nil)
     base_path = "#{api_root}/index/files"
     query_string = format_hash_as_query_string(query)
-    base_path += "?filters=#{query_string}&size=#{size}"
+    base_path += "?filters=#{query_string}"
+    base_path += "&size=#{size}" if size
     path = append_catalog(base_path, catalog)
     # make API request, but fold in project information to each result so that this is preserved for later use
     raw_results = process_api_request(:get, path)['hits']

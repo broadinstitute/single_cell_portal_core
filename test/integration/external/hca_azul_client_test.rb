@@ -104,7 +104,7 @@ class HcaAzulClientTest < ActiveSupport::TestCase
     query = { genusSpecies: { is: ['Homo sapiens'] } }.with_indifferent_access
     raw_projects = @hca_azul_client.projects(query: query)
     projects = get_entries_from_response(raw_projects, :projects)
-    assert projects.size == HcaAzulClient::MAX_RESULTS
+    assert projects.size == 10
   end
 
   test 'should query projects using facets' do
