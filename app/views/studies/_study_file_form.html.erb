@@ -1,6 +1,5 @@
 <%
-  allow_images = FeatureFlaggable.feature_flags_for_instances(@selected_branding_group, current_user, @study)['reference_image_upload']
-  file_type_hash = allow_images ? StudyFile::STUDY_FILE_TYPE_NAME_HASH : StudyFile::STUDY_FILE_TYPE_NAME_HASH.except('Image')
+  file_type_hash = StudyFile::STUDY_FILE_TYPE_NAME_HASH.except('Image')
 %>
 <%= nested_form_for(study_file, url: sync_study_file_study_path(@study._id),
                     html: {multipart: true, id: "study-file-#{study_file._id}" ,

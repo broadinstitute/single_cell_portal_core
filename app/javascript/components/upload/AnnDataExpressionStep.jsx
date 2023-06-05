@@ -37,7 +37,9 @@ function ExpressionUploadForm({
   isAnnDataExperience
 }) {
   const fragmentType = isAnnDataExperience ? 'expression' : null
-  const processedParentFiles = matchingFormFiles(formState.files, processedFileFilter, isAnnDataExperience, fragmentType)
+  const processedParentFiles = matchingFormFiles(
+    formState.files, processedFileFilter, isAnnDataExperience, fragmentType
+  )
   const fileMenuOptions = serverState.menu_options
 
   const featureFlagState = serverState.feature_flags

@@ -23,7 +23,6 @@ import DotPlot from '~/components/visualization/DotPlot'
 import Heatmap from '~/components/visualization/Heatmap'
 import GeneListHeatmap from '~/components/visualization/GeneListHeatmap'
 import GenomeView from './GenomeView'
-import ImageTab from './ImageTab'
 import { getAnnotationValues, getShownAnnotation, getDefaultSpatialGroupsForCluster } from '~/lib/cluster-utils'
 import RelatedGenesIdeogram from '~/components/visualization/RelatedGenesIdeogram'
 import InferCNVIdeogram from '~/components/visualization/InferCNVIdeogram'
@@ -207,8 +206,8 @@ export default function ExploreDisplayTabs({
   const isCorrelatedScatter = enabledTabs.includes('correlatedScatter')
 
   const annotationList = exploreInfo ? exploreInfo.annotationList : null
-  // hide the cluster controls if we're on a genome/image tab, or if there aren't clusters to choose
-  const showClusterControls = !['genome', 'infercnv-genome', 'images', 'geneListHeatmap'].includes(shownTab) &&
+  // hide the cluster controls if we're on a genome tab, or if there aren't clusters to choose
+  const showClusterControls = !['genome', 'infercnv-genome', 'geneListHeatmap'].includes(shownTab) &&
                                 annotationList?.clusters?.length
 
   let hasSpatialGroups = false
@@ -513,20 +512,6 @@ export default function ExploreDisplayTabs({
               />
             </div>
             }
-            { enabledTabs.includes('images') &&
-              <div className={shownTab === 'images' ? '' : 'hidden'}>
-                <ImageTab
-                  studyAccession={studyAccession}
-                  imageFiles={exploreInfo.imageFiles}
-                  bucketName={exploreInfo.bucketId}
-                  isCellSelecting={isCellSelecting}
-                  isVisible={shownTab === 'images'}
-                  getPlotDimensions={getPlotDimensions}
-                  exploreParams={exploreParams}
-                  plotPointsSelected={plotPointsSelected}
-                />
-              </div>
-            }
             { enabledTabs.includes('loading') &&
               <div className={shownTab === 'loading' ? '' : 'hidden'}>
                 <LoadingSpinner testId="explore-spinner"/>
@@ -724,7 +709,6 @@ export function getEnabledTabs(exploreInfo, exploreParams) {
   const hasSpatialGroups = exploreParams.spatialGroups?.length > 0
   const hasGenomeFiles = exploreInfo && exploreInfo?.bamBundleList?.length > 0
   const hasIdeogramOutputs = !!exploreInfo?.inferCNVIdeogramFiles
-  const hasImages = exploreInfo?.imageFiles?.length > 0
   const isNumeric = exploreParams?.annotation?.type === 'numeric'
 
   let coreTabs = [
@@ -768,9 +752,6 @@ export function getEnabledTabs(exploreInfo, exploreParams) {
   }
   if (hasIdeogramOutputs) {
     enabledTabs.push('infercnv-genome')
-  }
-  if (hasImages) {
-    enabledTabs.push('images')
   }
 
   let disabledTabs = coreTabs.filter(tab => {

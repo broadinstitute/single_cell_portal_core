@@ -136,7 +136,6 @@ module Api
             cluster = nil
           end
           spatial_group_options = ClusterVizService.load_spatial_options(study)
-          image_options = ClusterVizService.load_image_options(study)
           bam_bundle_list = study.study_file_bundles.where(bundle_type: 'BAM').pluck(:original_file_list)
           precomputed_scores = ActiveRecordUtils.pluck_to_hash(
             study.study_files.where(file_type: 'Gene List'),
@@ -155,7 +154,6 @@ module Api
             spatialGroups: spatial_group_options,
             differentialExpression: AnnotationVizService.differential_expression_menu_opts(study),
             hasImageCache: study.cluster_groups.where(has_image_cache: true).pluck(:name),
-            imageFiles: image_options,
             clusterPointAlpha: study.default_cluster_point_alpha,
             colorProfile: study.default_color_profile,
             bucketId: study.bucket_id

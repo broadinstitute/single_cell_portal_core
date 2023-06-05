@@ -116,7 +116,8 @@ function nonVizHelpContent() {
 function annDataUploadInfoContent() {
   return <Popover id="anndata-upload-info-popover" className="tooltip-wide">
     <div>
-      AnnData upload requires you to fill out the necessary information in the tabs for `&quot;`Expression matrices`&quot;` and `&quot;`Clustering`&quot;`.
+      AnnData upload requires you to fill out the necessary information in the
+      tabs for `&quot;`Expression matrices`&quot;` and `&quot;`Clustering`&quot;`.
       You will then upload the single AnnData file in the AnnData tab.
     </div>
   </Popover>
