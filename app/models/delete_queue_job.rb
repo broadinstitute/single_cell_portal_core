@@ -78,7 +78,6 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
         end
         delete_differential_expression_results(study: study, study_file: object)
         delete_parsed_data(object.id, study.id, CellMetadatum, DataArray)
-        delete_all_cells_arrays(study.id)
         study.update(cell_count: 0)
         reset_default_annotation(study:)
       when 'AnnData'
@@ -87,7 +86,6 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
           # delete user annotations first as we lose associations later
           delete_user_annotations(study:, study_file: object)
           delete_parsed_data(object.id, study.id, ClusterGroup, CellMetadatum, Gene, DataArray)
-          delete_all_cells_arrays(study.id) if object&.ann_data_file_info&.has_metadata?
           delete_fragment_files(study:, study_file: object)
           # reset default options/counts
           study.reload
@@ -113,6 +111,9 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
         end
         object.study_file_bundle.destroy
       end
+
+      # delete any "orphaned" DataArray that might have persisted due to some kind of earlier error
+      delete_orphaned_arrays(study.id)
 
       # overwrite attributes to allow their immediate reuse
       # this must be done with a fresh StudyFile reference, otherwise upload_file_name may not overwrite
@@ -173,10 +174,11 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
     end
   end
 
-  # ensure all instances of 'All Cells' DataArray documents for a given study are deleted to prevent downstream
-  # failures of metadata ingest
-  def delete_all_cells_arrays(study_id)
-    DataArray.where(study_id:, name: 'All Cells', linear_data_id: study_id, linear_data_type: 'Study').delete_all
+  # ensure there are no orphaned DataArray entries that will cause downstream index violations
+  def delete_orphaned_arrays(study_id)
+    study_file_ids = StudyFile.where(study_id:).pluck(:id)
+    cursor = DataArray.where(study_id:, :study_file_id.nin => study_file_ids)
+    cursor.delete_all if cursor.exists?
   end
 
   # remove all subsampling data when a user deletes a metadata file, as adding a new metadata file will cause all

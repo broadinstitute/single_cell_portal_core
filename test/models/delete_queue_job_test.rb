@@ -210,10 +210,10 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
     end
   end
 
-  test 'ensure all metadata cell arrays are deleted on file deletion' do
+  test 'ensure all orphaned arrays are removed on file deletion' do
     # create orphaned data array, but needs actual study file to save
     study_file = FactoryBot.create(:study_file, study: @basic_study, file_type: 'Other', name: 'test.txt')
-    array = DataArray.create!(
+    DataArray.create!(
       study: @basic_study, study_file_id: study_file.id, name: 'All Cells', array_type: 'cells', array_index: 0,
       linear_data_id: @basic_study.id, linear_data_type: 'Study', values: %w[A B C D], cluster_name: 'metadata.txt'
     )
