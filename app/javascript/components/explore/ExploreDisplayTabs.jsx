@@ -35,6 +35,7 @@ import DifferentialExpressionPanel, { DifferentialExpressionPanelHeader } from '
 import OverlayTrigger from 'react-bootstrap/lib/OverlayTrigger'
 import Tooltip from 'react-bootstrap/lib/Tooltip'
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
+import PlotTabs from './PlotTabs'
 
 const tabList = [
   { key: 'loading', label: 'Loading...' },
@@ -50,15 +51,6 @@ const tabList = [
   { key: 'infercnv-genome', label: 'Genome (inferCNV)' },
   { key: 'images', label: 'Images' }
 ]
-
-const disabledTooltips = {
-  'scatter': { numToSearch: '1', isMulti: false },
-  'distribution': { numToSearch: '1', isMulti: false },
-  'annotatedScatter': { numToSearch: '1', isMulti: false },
-  'correlatedScatter': { numToSearch: '2', isMulti: true },
-  'dotplot': { numToSearch: '2 or more', isMulti: true },
-  'heatmap': { numToSearch: '2 or more', isMulti: true }
-}
 
 /** Determine if currently selected cluster has differential expression outputs available */
 function getClusterHasDe(exploreInfo, exploreParams) {
@@ -355,7 +347,7 @@ export default function ExploreDisplayTabs({
   }
 
   // Determine if the flag show_explore_tab_ux_updates is toggled to show explore tab UX updates
-  const isNewExploreUX = getFeatureFlagsWithDefaults()?.show_explore_tab_ux_updates
+  const isNewExploreUX = true // getFeatureFlagsWithDefaults()?.show_explore_tab_ux_updates
 
   return (
     <>
@@ -381,44 +373,14 @@ export default function ExploreDisplayTabs({
             }
           </div>
         </div>
-        <div className={isNewExploreUX ? '' : 'col-md-4 col-md-offset-1'}>
-          <ul
-            className={isNewExploreUX ? 'nav nav-tabs study-plot-tabs' : 'nav nav-tabs'}
-            role="tablist"
-            data-analytics-name="explore-tab"
-          >
-            { enabledTabs.map(tabKey => {
-              const label = tabList.find(({ key }) => key === tabKey).label
-              return (
-                <li key={tabKey}
-                  role="presentation"
-                  aria-disabled="false"
-                  className={`study-nav ${tabKey === shownTab ? 'active' : ''} ${tabKey}-tab-anchor`}>
-                  <a onClick={() => updateExploreParams({ tab: tabKey })}>{label}</a>
-                </li>
-              )
-            })}
-            {isNewExploreUX &&
-            disabledTabs.map(tabKey => {
-              const label = tabList.find(({ key }) => key === tabKey).label
-              const tooltip = disabledTooltips[tabKey]
-              const numGenes = tooltip.numToSearch
-              const geneText = `gene${tooltip.isMulti ? 's' : ''}`
-              const text = `To show this plot, search ${numGenes} ${geneText} using the box at left`
-              return (
-                <li key={tabKey}
-                  role="presentation"
-                  aria-disabled="true"
-                  className={`study-nav ${tabKey}-tab-anchor disabled`}
-                  data-toggle="tooltip"
-                  data-original-title={text}
-                ><a>{label}</a>
-                </li>
-              )
-            })
-            }
-          </ul>
-        </div>
+        <PlotTabs
+          shownTab={shownTab}
+          enabledTabs={enabledTabs}
+          disabledTabs={disabledTabs}
+          tabList={tabList}
+          updateExploreParams={updateExploreParams}
+          isNewExploreUX={isNewExploreUX}
+        />
       </div>
 
       <div className="row explore-tab-content">
