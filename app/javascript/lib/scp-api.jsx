@@ -924,26 +924,30 @@ export default async function scpApi(
     } else {
       return [response, perfTimes, true]
     }
-  } else if (response.status === 401 || response.status === 403) {
-    showMessage(
-      <div>
-        Authentication failed<br/>
-        Your session may have timed out. Please sign in again.<br/><br/>
-      </div>,
-      'api-auth-failure',
-      {
-        source: 'api',
-        url,
-        isError: true,
-        messageType: 'error-client',
-        statusCode: response.status
-      }
-    )
-    throw new Error(`Authentication error: ${response.status}`)
   }
   if (toJson) {
     const json = await response.json()
-    if (Array.isArray(json.errors)) {
+    // special handling for Terra terms of service checks
+    // don't throw error so we can pass back JSON response
+    if (typeof json.must_accept !== 'undefined') {
+      return [camelcaseKeys(json)]
+    } else if (response.status === 401 || response.status === 403) {
+      showMessage(
+        <div>
+          Authentication failed<br/>
+          Your session may have timed out. Please sign in again.<br/><br/>
+        </div>,
+        'api-auth-failure',
+        {
+          source: 'api',
+          url,
+          isError: true,
+          messageType: 'error-client',
+          statusCode: response.status
+        }
+      )
+      throw new Error(`Authentication error: ${response.status}`)
+    } else if (Array.isArray(json.errors)) {
       throw new ApiError(json, response.status, path)
     } else {
       throw new Error(json.error || json.errors)
