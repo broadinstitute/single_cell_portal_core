@@ -218,6 +218,7 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
       linear_data_id: @basic_study.id, linear_data_type: 'Study', values: %w[A B C D], cluster_name: 'metadata.txt'
     )
     assert DataArray.where(study_id: @basic_study.id, name: 'All Cells').exists?
+    study_file.delete
     metadata_file = FactoryBot.create(
       :metadata_file, study: @basic_study, use_metadata_convention: false, name: 'new_metadata.txt'
     )
