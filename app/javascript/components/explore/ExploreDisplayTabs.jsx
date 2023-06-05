@@ -37,21 +37,6 @@ import Tooltip from 'react-bootstrap/lib/Tooltip'
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
 import PlotTabs from './PlotTabs'
 
-const tabList = [
-  { key: 'loading', label: 'Loading...' },
-  { key: 'scatter', label: 'Scatter' },
-  { key: 'annotatedScatter', label: 'Annotated scatter' },
-  { key: 'correlatedScatter', label: 'Correlation' },
-  { key: 'distribution', label: 'Distribution' },
-  { key: 'dotplot', label: 'Dot plot' },
-  { key: 'heatmap', label: 'Heatmap' },
-  { key: 'geneListHeatmap', label: 'Precomputed heatmap' },
-  { key: 'spatial', label: 'Spatial' },
-  { key: 'genome', label: 'Genome' },
-  { key: 'infercnv-genome', label: 'Genome (inferCNV)' },
-  { key: 'images', label: 'Images' }
-]
-
 /** Determine if currently selected cluster has differential expression outputs available */
 function getClusterHasDe(exploreInfo, exploreParams) {
   const flags = getFeatureFlagsWithDefaults()
@@ -346,7 +331,7 @@ export default function ExploreDisplayTabs({
   }
 
   // Determine if the flag show_explore_tab_ux_updates is toggled to show explore tab UX updates
-  const isNewExploreUX = true // getFeatureFlagsWithDefaults()?.show_explore_tab_ux_updates
+  const isNewExploreUX = getFeatureFlagsWithDefaults()?.show_explore_tab_ux_updates
 
   return (
     <>
@@ -378,7 +363,6 @@ export default function ExploreDisplayTabs({
           shownTab={shownTab}
           enabledTabs={enabledTabs}
           disabledTabs={disabledTabs}
-          tabList={tabList}
           updateExploreParams={updateExploreParams}
           isNewExploreUX={isNewExploreUX}
         />

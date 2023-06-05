@@ -21,6 +21,7 @@ import React from 'react'
 import { render } from '@testing-library/react'
 import * as UserProvider from '~/providers/UserProvider'
 import ExploreDisplayTabs, { getEnabledTabs } from 'components/explore/ExploreDisplayTabs'
+import PlotTabs from 'components/explore/PlotTabs'
 import {
   exploreInfo as exploreInfoDe,
   exploreParams as exploreParamsDe
@@ -107,6 +108,21 @@ describe('explore tabs are activated based on study info and parameters', () => 
     }
 
     expect(expectedResults).toEqual(getEnabledTabs(exploreInfo, exploreParams))
+  })
+
+  it('should render disabled "Annotated scatter" tab', async () => {
+    const { container } = render((
+      <PlotTabs
+        shownTab={'scatter'}
+        enabledTabs={['scatter']}
+        disabledTabs={['annotatedScatter', 'distribution', 'correlatedScatter', 'dotplot', 'heatmap']}
+        updateExploreParams={function() {}}
+        isNewExploreUX={true}
+      />
+    ))
+
+    const deButton = container.querySelector('.annotatedScatter-tab-anchor')
+    expect(deButton).toHaveTextContent('Annotated scatter')
   })
 
   it('should handle numeric annotations in 1-gene view', async () => {
