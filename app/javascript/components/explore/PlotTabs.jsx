@@ -10,7 +10,8 @@ const disabledTooltips = {
 }
 
 /**
- *
+ * Renders tabs to navigate among plots in Explore view
+ * Responsible for shows tabs available for a given view of the study
 */
 export default function PlotTabs({
   shownTab, enabledTabs, disabledTabs, tabList, updateExploreParams,

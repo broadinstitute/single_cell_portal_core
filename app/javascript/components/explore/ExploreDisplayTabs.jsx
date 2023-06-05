@@ -135,8 +135,7 @@ function getAnnotHasDe(exploreInfo, exploreParams) {
 }
 
 /**
- * Renders the gene search box and the tab selection
- * Responsible for determining which tabs are available for a given view of the study
+ * Renders gene search box, plot tabs, plots, and options panel
  *
  * We want to mount all components that are enabled, so they can fetch their data and persist
  * even when they are not currently in view. We don't want to mount non-enabled components
@@ -351,6 +350,8 @@ export default function ExploreDisplayTabs({
 
   return (
     <>
+
+      {/* Render top content for Explore view, i.e. gene search box and plot tabs */}
       <div className="row">
         <div className="col-md-5">
           <div className="flexbox">
@@ -383,6 +384,7 @@ export default function ExploreDisplayTabs({
         />
       </div>
 
+      {/* Render plots for the given Explore view state */}
       <div className="row explore-tab-content">
         <div className={getPanelWidths().main}>
           <div className="explore-plot-tab-content row">
@@ -548,6 +550,8 @@ export default function ExploreDisplayTabs({
             }
           </div>
         </div>
+
+        {/* Render "Options" panel at right of page */}
         <div className={getPanelWidths().side}>
           <div className="view-options-toggle">
             {!showDifferentialExpressionPanel && !showUpstreamDifferentialExpressionPanel &&
