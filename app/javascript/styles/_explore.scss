@@ -26,6 +26,7 @@
     float: right;
     background: #fff;
     color: #3D5A87;
+    background-color: $options-color;
     margin-top: -0.5rem;
   }
 
@@ -34,6 +35,7 @@
     float: right;
     background: #fff;
     color: #3D5A87;
+    background-color: $options-color;
     margin-top: -2.5rem;
   }
 
@@ -70,7 +72,8 @@
 
 .explore-tab-content {
   background: #fff;
-  flex-grow: 1;
+  display: flex;
+  flex-wrap: wrap;
   z-index: 0;
 
   button.action {
@@ -244,14 +247,23 @@
   }
 }
 
-.options-bg {
-  background-color: #dedede;
-}
-
 .options-label {
   font-size: 1.2em;
 }
 
 .right-margin-10 {
   margin-right: 10px;
+}
+
+.options-bg {
+  background: $options-color;
+  border-bottom: 1px solid #ccc;
+}
+
+.action-with-bg {
+  background: $options-color !important;
+}
+
+.minified-options {
+  background: #fff;
 }
