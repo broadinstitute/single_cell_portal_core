@@ -896,6 +896,12 @@ figcaption.ck-editor__editable {
   background-color: lighten($action-color, 10%);
 }
 
+.btn-primary:disabled,
+.btn-primary[disabled]{
+  background-color: #fff;
+  border-color: #666666;
+}
+
 .btn-warning-scp {
   background-color: #C45500;
   color: #fff;

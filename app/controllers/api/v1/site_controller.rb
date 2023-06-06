@@ -60,18 +60,28 @@ module Api
           response 200 do
             key :description, 'Boolean for whether user has accepted current Terra ToS'
           end
+          response 401 do
+            key :description, 'Terra API rejected request due to user non-compliance with ToS'
+          end
+          response 404 do
+            key :description, 'User account not found in Terra, does not need to accept ToS'
+          end
           response 406 do
             key :description, ApiBaseController.not_acceptable
+          end
+          response 500 do
+            key :description, 'Server error'
           end
         end
       end
 
       def check_terra_tos_acceptance
-        must_accept = false
         if api_user_signed_in?
-          must_accept = current_api_user.must_accept_terra_tos?
+          user_status = current_api_user.check_terra_tos_status
+          render json: { must_accept: user_status[:must_accept] }, status: user_status[:http_code]
+        else
+          render json: { must_accept: false }, status: :ok
         end
-        render json: {must_accept: must_accept}
       end
 
 

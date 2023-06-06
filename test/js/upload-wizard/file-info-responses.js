@@ -634,3 +634,43 @@ export const EMPTY_STUDY = {
   feature_flags: {},
   menu_options: BASIC_MENU_OPTIONS
 }
+
+export const GENERIC_EXPLORE_INFO = {
+  'inferCNVIdeogramFiles': null,
+  'bamBundleList': [],
+  'uniqueGenes': [
+    'ADCY5',
+    'AGPAT2'
+  ],
+  'geneLists': [
+    {
+      'name': 'time_varying_genes',
+      'heatmap_file_info': {
+        '_id': {
+          '$oid': '626892f3cc7ba073111aae92'
+        },
+        'custom_scaling': true,
+        'color_min': -1,
+        'color_max': 0.6,
+        'legend_label': 'diffExp4'
+      },
+      'description': 'genes varying over time (SCP4 staging)'
+    }
+  ],
+  'precomputedHeatmapLabel': 'custom diff. expression',
+  'annotationList': {
+    'default_cluster': null,
+    'default_annotation': null,
+    'annotations': [],
+    'clusters': [],
+    'subsample_thresholds': {}
+  },
+  'clusterGroupNames': [],
+  'spatialGroups': [],
+  'imageFiles': [],
+  'taxonNames': [],
+  'genes': [],
+  'clusterPointAlpha': 1,
+  'colorProfile': null,
+  'bucketId': 'fc-6e8a0a4d-6493-401c-b47c-1025a583f237'
+}
