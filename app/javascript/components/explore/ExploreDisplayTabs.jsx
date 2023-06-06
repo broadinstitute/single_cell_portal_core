@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import _clone from 'lodash/clone'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faLink, faArrowLeft, faCog, faTimes, faUndo } from '@fortawesome/free-solid-svg-icons'
+import { faLink, faArrowLeft, faEye, faTimes, faUndo } from '@fortawesome/free-solid-svg-icons'
 
 import StudyGeneField from './StudyGeneField'
 import ClusterSelector from '~/components/visualization/controls/ClusterSelector'
@@ -354,6 +354,8 @@ export default function ExploreDisplayTabs({
   // Determine if the flag show_explore_tab_ux_updates is toggled to show explore tab UX updates
   const isNewExploreUX = getFeatureFlagsWithDefaults()?.show_explore_tab_ux_updates
 
+  const optionsLabel = <span className="options-label">OPTIONS</span>
+
   return (
     <>
       <div className="row">
@@ -435,7 +437,7 @@ export default function ExploreDisplayTabs({
               <button className="action view-options-toggle view-options-toggle-on"
                 onClick={toggleViewOptions}
                 data-analytics-name="view-options-show">
-                OPTIONS <FontAwesomeIcon className="fa-lg" icon={faCog}/>
+                {optionsLabel} <FontAwesomeIcon className="fa-lg" icon={faEye}/>
               </button>
             }
             { enabledTabs.includes('annotatedScatter') &&
@@ -573,7 +575,7 @@ export default function ExploreDisplayTabs({
           <div className="view-options-toggle">
             {!showDifferentialExpressionPanel && !showUpstreamDifferentialExpressionPanel &&
               <>
-                <FontAwesomeIcon className="fa-lg" icon={faCog}/> OPTIONS
+                <FontAwesomeIcon className="fa-lg" icon={faEye}/> {optionsLabel}
                 <button className="action"
                   onClick={toggleViewOptions}
                   title="Hide options"
@@ -680,7 +682,7 @@ export default function ExploreDisplayTabs({
               exploreParams={exploreParamsWithDefaults}
               updateExploreParams={updateExploreParams}
               allGenes={exploreInfo ? exploreInfo.uniqueGenes : []}/>
-            <button className="action"
+            <button className="action right-margin-10"
               onClick={clearExploreParams}
               title="Reset all view options"
               data-analytics-name="explore-view-options-reset">
