@@ -79,6 +79,6 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
 
   test 'should remove non-attribute values from attribute hash' do
     dense_params = DifferentialExpressionParameters.new(@dense_options)
-    assert_not_includes :machine_type, dense_params.attributes
+    assert_not_includes dense_params.attributes, :machine_type
   end
 end
