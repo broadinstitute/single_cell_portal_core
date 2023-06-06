@@ -67,7 +67,9 @@ async function fetchDeGenes(bucketId, deFilePath) {
 }
 
 /** Gets matching deObject for the given group and cluster + annot combo */
-function getMatchingDeOption(deObjects, group, clusterName, annotation, comparison) {
+function getMatchingDeOption(
+  deObjects, group, clusterName, annotation, comparison='one_vs_rest'
+) {
   const deObject = deObjects.find(deObj => {
     return (
       deObj.cluster_name === clusterName &&
@@ -83,14 +85,20 @@ function getMatchingDeOption(deObjects, group, clusterName, annotation, comparis
 
 /** Pick groups of cells for pairwise differential expression (DE) */
 export function PairwiseDifferentialExpressionGroupPicker({
-  bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup, setDeGenes,
-  countsByLabel, deObjects, setDeFilePath
+  bucketId, clusterName, annotation, deGenes, deGroup, deGroupB, setDeGroup, setDeGroupB,
+  setDeGenes, countsByLabel, deObjects, setDeFilePath
 }) {
-  let aGroups = getLegendSortedLabels(countsByLabel)
-  aGroups = aGroups.filter(group => {
+  const groups = getLegendSortedLabels(countsByLabel)
+
+  const aGroups = groups.filter(group => {
     const deOption = getMatchingDeOption(deObjects, group, clusterName, annotation)
     return deOption !== undefined
   })
+
+  const bGroups = aGroups.filter(group => !deGroup || group === deGroup)
+
+  console.log('aGroups', aGroups)
+  console.log('bGroups', bGroups)
 
   /** Update group in differential expression picker */
   async function updateDeGroup(newGroup) {
@@ -152,7 +160,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
 }
 
 /** Pick groups of cells for one-vs-rest-only differential expression (DE) */
-export default function DifferentialExpressionGroupPicker({
+export function DifferentialExpressionGroupPicker({
   bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup, setDeGenes,
   countsByLabel, deObjects, setDeFilePath
 }) {

@@ -15,7 +15,9 @@ import {
 } from '@tanstack/react-table'
 
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
-import DifferentialExpressionGroupPicker from '~/components/visualization/controls/DifferentialExpressionGroupPicker'
+import {
+  DifferentialExpressionGroupPicker, PairwiseDifferentialExpressionGroupPicker
+} from '~/components/visualization/controls/DifferentialExpressionGroupPicker'
 
 import {
   logDifferentialExpressionTableSearch,
@@ -369,21 +371,42 @@ export default function DifferentialExpressionPanel({
     setGenesToShow(filteredGenes)
   }, [deGenes, searchedGene])
 
+  const hasPairwise = null
+
   return (
     <>
-      <DifferentialExpressionGroupPicker
-        bucketId={bucketId}
-        clusterName={clusterName}
-        annotation={annotation}
-        setShowDeGroupPicker={setShowDeGroupPicker}
-        deGenes={deGenes}
-        setDeGenes={setDeGenes}
-        deGroup={deGroup}
-        setDeGroup={setDeGroup}
-        countsByLabel={countsByLabel}
-        deObjects={deObjects}
-        setDeFilePath={setDeFilePath}
-      />
+      {!hasPairwise &&
+        <DifferentialExpressionGroupPicker
+          bucketId={bucketId}
+          clusterName={clusterName}
+          annotation={annotation}
+          setShowDeGroupPicker={setShowDeGroupPicker}
+          deGenes={deGenes}
+          setDeGenes={setDeGenes}
+          deGroup={deGroup}
+          setDeGroup={setDeGroup}
+          countsByLabel={countsByLabel}
+          deObjects={deObjects}
+          setDeFilePath={setDeFilePath}
+        />
+      }
+      {hasPairwise &&
+        <PairwiseDifferentialExpressionGroupPicker
+          bucketId={bucketId}
+          clusterName={clusterName}
+          annotation={annotation}
+          setShowDeGroupPicker={setShowDeGroupPicker}
+          deGenes={deGenes}
+          setDeGenes={setDeGenes}
+          deGroup={deGroup}
+          deGroupB={deGroup}
+          setDeGroup={setDeGroup}
+          setDeGroupB={setDeGroup}
+          countsByLabel={countsByLabel}
+          deObjects={deObjects}
+          setDeFilePath={setDeFilePath}
+        />
+      }
 
       {genesToShow &&
       <>
