@@ -333,6 +333,7 @@ export default function ExploreDisplayTabs({
   function getPanelWidths() {
     let main
     let side
+    const isSelectingDE = showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel
     if (showViewOptionsControls) {
       if (showDifferentialExpressionTable) {
         // DE table is shown.  Least horizontal space for plots.
@@ -342,7 +343,7 @@ export default function ExploreDisplayTabs({
         // Default state, when side panel is "Options" and not collapsed
         main = 'col-md-10'
         // only set options-bg if we're outside the DE UX
-        side = showDifferentialExpressionPanel ? 'col-md-2' : 'col-md-2 options-bg'
+        side = isSelectingDE ? 'col-md-2' : 'col-md-2 options-bg'
       }
     } else {
       // When options panel is collapsed.  Maximize horizontal space for plots.
