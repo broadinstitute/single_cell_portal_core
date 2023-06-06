@@ -76,4 +76,9 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
     params = DifferentialExpressionParameters.new
     assert_equal 'n1-highmem-8', params.machine_type
   end
+
+  test 'should remove non-attribute values from attribute hash' do
+    dense_params = DifferentialExpressionParameters.new(@dense_options)
+    assert_not_includes :machine_type, dense_params.attributes
+  end
 end

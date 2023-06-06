@@ -30,6 +30,9 @@ class DifferentialExpressionParameters
     machine_type: 'n1-highmem-8'
   }.freeze
 
+  # values that are available as methods but not as attributes (and not passed to command line)
+  NON_ATTRIBUTE_PARAMS = %i[machine_type].freeze
+
   attr_accessor(*PARAM_DEFAULTS.keys)
 
   validates :annotation_name, :annotation_scope, :annotation_file, :cluster_file,
