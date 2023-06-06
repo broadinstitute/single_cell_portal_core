@@ -315,7 +315,7 @@ function DifferentialExpressionTable({
 export default function DifferentialExpressionPanel({
   deGroup, deGenes, searchGenes,
   exploreInfo, exploreParamsWithDefaults, setShowDeGroupPicker, setDeGenes, setDeGroup,
-  countsByLabel, numRows=50
+  countsByLabel, hasPairwiseDe, numRows=50
 }) {
   const clusterName = exploreParamsWithDefaults?.cluster
   const bucketId = exploreInfo?.bucketId
@@ -371,7 +371,7 @@ export default function DifferentialExpressionPanel({
     setGenesToShow(filteredGenes)
   }, [deGenes, searchedGene])
 
-  const hasPairwise = null
+  const hasPairwise = true
 
   return (
     <>

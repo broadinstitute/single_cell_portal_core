@@ -82,10 +82,19 @@
 .differential-expression-picker {
   margin-bottom: 20px;
 
-  .narrow-select {
+  .one-vs-rest-select {
     float: left;
     width: calc(100% - 100px); // leave room for vs-note content
   }
+
+  .pairwise-select {
+    float: left;
+    width: calc(45%); // leave room for vs-note, other select
+  }
+  .pairwise-select-b {
+    float: right;
+  }
+
   .vs-note {
     position: relative;
     top: 10px;

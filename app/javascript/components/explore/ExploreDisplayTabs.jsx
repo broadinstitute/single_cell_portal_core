@@ -180,6 +180,8 @@ export default function ExploreDisplayTabs({
   const [showDifferentialExpressionPanel, setShowDifferentialExpressionPanel] = useState(deGenes !== null)
   const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(deGenes !== null)
 
+  const hasPairwiseDe = true
+
   // Hash of trace label names to the number of points in that trace
   const [countsByLabel, setCountsByLabel] = useState(null)
 
@@ -331,13 +333,18 @@ export default function ExploreDisplayTabs({
     setRenderForcer({})
   }, 300)
 
+  console.log('hasPairwiseDe', hasPairwiseDe)
+  console.log('showUpstreamDifferentialExpressionPanel', showUpstreamDifferentialExpressionPanel)
   /** Get widths for main (plots) and side (options or DE) panels, for current Explore state */
   function getPanelWidths() {
     let main
     let side
     if (showViewOptionsControls) {
-      if (showDifferentialExpressionTable) {
-        // DE table is shown.  Least horizontal space for plots.
+      if (
+        showDifferentialExpressionTable ||
+        (hasPairwiseDe && (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel))
+      ) {
+        // DE table is shown, or pairwise DE is available.  Least horizontal space for plots.
         main = 'col-md-9'
         side = 'col-md-3'
       } else {
