@@ -132,41 +132,11 @@ export function PairwiseDifferentialExpressionGroupPicker({
 
   return (
     <>
-      {!deGenes &&
-        <div className="differential-expression-picker">
-          <p>Compare one group to another group.</p>
-          <div className="pairwise-select">
-            <Select
-              defaultMenuIsOpen
-              options={getSimpleOptions(groups)}
-              data-analytics-name="de-group-select-a"
-              value={{
-                label: deGroup === null ? noneSelected : deGroup,
-                value: deGroup
-              }}
-              onChange={newGroup => updateDeGroupA(newGroup.value)}
-              styles={clusterSelectStyle}
-            />
-          </div>
-          <span className="vs-note">vs. </span>
-          <div className="pairwise-select pairwise-select-b">
-            <Select
-              options={getSimpleOptions(deGroupsB)}
-              data-analytics-name="de-group-select-b"
-              value={{
-                label: deGroupB === null ? noneSelected : deGroupB,
-                value: deGroupB
-              }}
-              onChange={newGroup => updateDeGroupB(newGroup.value)}
-              styles={clusterSelectStyle}
-            />
-          </div>
-        </div>
-      }
-      {deGenes &&
       <div className="differential-expression-picker">
+        {!deGenes && <p>Compare one group to another group.</p>}
         <div className="pairwise-select">
           <Select
+            defaultMenuIsOpen={!deGenes}
             options={getSimpleOptions(groups)}
             data-analytics-name="de-group-select-a"
             value={{
@@ -190,10 +160,8 @@ export function PairwiseDifferentialExpressionGroupPicker({
             styles={clusterSelectStyle}
           />
         </div>
-        <br/>
-        <br/>
       </div>
-      }
+      {deGenes && <><br/><br/></>}
     </>
   )
 }
