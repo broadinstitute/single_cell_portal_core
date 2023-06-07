@@ -12,6 +12,7 @@ const noneSelected = 'Select group'
 
 /** Takes array of strings, converts it to list options suitable for react-select */
 function getSimpleOptions(stringArray) {
+  console.log('in getSimpleOptions, stringArray:', stringArray)
   const assignLabelsAndValues = name => ({ label: name, value: name })
   return stringArray.map(assignLabelsAndValues)
 }
@@ -91,26 +92,29 @@ export function PairwiseDifferentialExpressionGroupPicker({
 }) {
   const groups = getLegendSortedLabels(countsByLabel)
 
-  const aGroups = groups.filter(group => {
+  const deGroupsA = groups.filter(group => {
     const deOption = getMatchingDeOption(deObjects, group, clusterName, annotation)
     return deOption !== undefined
   })
 
   console.log('deGroup', deGroup)
-  const defaultBGroups = aGroups.filter(group => !!deGroup && group !== deGroup)
+  const defaultBGroups = deGroupsA.filter(group => !!deGroup && group !== deGroup)
   console.log('defaultBGroups.slice()', defaultBGroups.slice())
-  const [bGroups, setBGroups] = useState(
-    aGroups.filter(group => !!deGroup && group !== deGroup)
+  const [deGroupsB, setDeGroupsB] = useState(
+    deGroupsA.filter(group => !!deGroup && group !== deGroup)
   )
 
-  console.log('aGroups', aGroups)
-  console.log('bGroups', bGroups)
+  console.log('deGroupsA', deGroupsA)
+  console.log('deGroupsB', deGroupsB)
   console.log('defaultBGroups', defaultBGroups)
 
   /** Update group in differential expression picker */
   async function updateDeGroupA(newGroup) {
-    const newBGroups = aGroups.filter(group => !deGroup || group !== newGroup)
-    setBGroups(newGroup)
+    const newBGroups = deGroupsA.filter(group => !deGroup || group !== newGroup)
+    setDeGroup(newGroup)
+    setDeGroupsB(
+      deGroupsA.filter(group => !!newGroup && group !== newGroup)
+    )
 
     // const deOption = getMatchingDeOption(deObjects, newGroup, clusterName, annotation)
     // const deFileName = deOption[1]
@@ -135,7 +139,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
             <Select
               defaultMenuIsOpen
               options={getSimpleOptions(groups)}
-              data-analytics-name="de-group-select"
+              data-analytics-name="de-group-select-a"
               value={{
                 label: deGroup === null ? noneSelected : deGroup,
                 value: deGroup
@@ -147,13 +151,13 @@ export function PairwiseDifferentialExpressionGroupPicker({
           <span className="vs-note">vs. </span>
           <div className="pairwise-select pairwise-select-b">
             <Select
-              options={getSimpleOptions(groups)}
-              data-analytics-name="de-group-select"
+              options={getSimpleOptions(deGroupsB)}
+              data-analytics-name="de-group-select-b"
               value={{
-                label: deGroup === null ? noneSelected : deGroup,
-                value: deGroup
+                label: deGroupB === null ? noneSelected : deGroupB,
+                value: deGroupB
               }}
-              onChange={newGroup => updateDeGroup(newGroup.value)}
+              onChange={newGroup => updateDeGroupB(newGroup.value)}
               styles={clusterSelectStyle}
             />
           </div>
@@ -164,25 +168,25 @@ export function PairwiseDifferentialExpressionGroupPicker({
         <div className="pairwise-select">
           <Select
             options={getSimpleOptions(groups)}
-            data-analytics-name="de-group-select"
+            data-analytics-name="de-group-select-a"
             value={{
               label: deGroup === null ? noneSelected : deGroup,
               value: deGroup
             }}
-            onChange={newGroup => updateDeGroup(newGroup.value)}
+            onChange={newGroup => updateDeGroupA(newGroup.value)}
             styles={clusterSelectStyle}
           />
         </div>
         <span className="vs-note">vs. </span>
         <div className="pairwise-select pairwise-select-b">
           <Select
-            options={getSimpleOptions(groups)}
-            data-analytics-name="de-group-select"
+            options={getSimpleOptions(deGroupsB)}
+            data-analytics-name="de-group-select-b"
             value={{
-              label: deGroup === null ? noneSelected : deGroup,
-              value: deGroup
+              label: deGroupB === null ? noneSelected : deGroupB,
+              value: deGroupB
             }}
-            onChange={newGroup => updateDeGroup(newGroup.value)}
+            onChange={newGroup => updateDeGroupB(newGroup.value)}
             styles={clusterSelectStyle}
           />
         </div>
