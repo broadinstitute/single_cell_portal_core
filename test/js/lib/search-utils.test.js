@@ -1,4 +1,4 @@
-import { getAutocompleteSuggestions } from 'lib/search-utils'
+import { getAutocompleteSuggestions, NUM_SUGGESTIONS } from 'lib/search-utils'
 
 const targets = [
   'Tns1', 'Pik3ca', 'Pik3cd', 'Hvcn1', 'Tpte',
@@ -20,7 +20,7 @@ describe('Search utilties', () => {
     const suggestions = getAutocompleteSuggestions(inputGene, targets)
 
     expect(suggestions[0]).toEqual('PTEN')
-    expect(suggestions).toHaveLength(8)
+    expect(suggestions).toHaveLength(NUM_SUGGESTIONS)
   })
 
   it('suggests close inexact match first', async () => {
