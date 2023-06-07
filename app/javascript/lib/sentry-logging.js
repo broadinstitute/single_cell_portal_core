@@ -104,7 +104,7 @@ export function setupSentry() {
   Sentry.init({
     dsn: 'https://a713dcf8bbce4a26aa1fe3bf19008d26@o54426.ingest.sentry.io/1424198',
     integrations: [new BrowserTracing()],
-
+    release: getSCPContext().version,
     // Sampling rate for transactions, which enrich Sentry events with traces
     tracesSampleRate: getIsSuppressedEnv() ? 0 : 1.0,
     beforeSend: event => {
