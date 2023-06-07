@@ -334,9 +334,8 @@ export default function ExploreDisplayTabs({
 
   return (
     <>
-
       {/* Render top content for Explore view, i.e. gene search box and plot tabs */}
-      <div className="row">
+      <div className="row bring-element-forward">
         <div className="col-md-5">
           <div className="flexbox">
             <StudyGeneField genes={exploreParams.genes}
