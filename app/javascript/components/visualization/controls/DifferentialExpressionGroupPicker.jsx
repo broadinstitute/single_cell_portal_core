@@ -110,11 +110,29 @@ export function PairwiseDifferentialExpressionGroupPicker({
 
   /** Update group in differential expression picker */
   async function updateDeGroupA(newGroup) {
-    const newBGroups = deGroupsA.filter(group => !deGroup || group !== newGroup)
     setDeGroup(newGroup)
+    setDeGroupB(null) // Clear group B upon changing group A
     setDeGroupsB(
-      deGroupsA.filter(group => !!newGroup && group !== newGroup)
+      deGroupsA.filter(group => group !== newGroup)
     )
+
+    // const deOption = getMatchingDeOption(deObjects, newGroup, clusterName, annotation)
+    // const deFileName = deOption[1]
+
+    // const basePath = '_scp_internal/differential_expression/'
+    // const deFilePath = basePath + deFileName
+
+    // setDeFilePath(deFilePath)
+
+    // const deGenes = await fetchDeGenes(bucketId, deFilePath)
+
+    // setDeGroup(newGroup)
+    // setDeGenes(deGenes)
+  }
+
+  /** Update group in differential expression picker */
+  async function updateDeGroupB(newGroup) {
+    setDeGroupB(newGroup)
 
     // const deOption = getMatchingDeOption(deObjects, newGroup, clusterName, annotation)
     // const deFileName = deOption[1]
@@ -133,7 +151,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
   return (
     <>
       <div className="differential-expression-picker">
-        {!deGenes && <p>Compare one group to another group.</p>}
+        {!deGenes && <p>Compare one group to another.</p>}
         <div className="pairwise-select">
           <Select
             defaultMenuIsOpen={!deGenes}
