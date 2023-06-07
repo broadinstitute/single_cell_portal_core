@@ -315,8 +315,18 @@ function DifferentialExpressionTable({
 export default function DifferentialExpressionPanel({
   deGroup, deGenes, searchGenes,
   exploreInfo, exploreParamsWithDefaults, setShowDeGroupPicker, setDeGenes, setDeGroup,
-  countsByLabel, hasPairwiseDe, numRows=50
+  countsByLabel, hasPairwiseDe, deGroupB, setDeGroupB, numRows=50
 }) {
+  // console.log(
+  //   'deGroup, deGenes, searchGenes,' +
+  //   'exploreInfo, exploreParamsWithDefaults, setShowDeGroupPicker, setDeGenes, setDeGroup,' +
+  //   'countsByLabel, hasPairwiseDe, deGroupB, setDeGroupB, numRows'
+  // )
+  // console.log(
+  //   deGroup, deGenes, searchGenes,
+  //   exploreInfo, exploreParamsWithDefaults, setShowDeGroupPicker, setDeGenes, setDeGroup,
+  //   countsByLabel, hasPairwiseDe, deGroupB, setDeGroupB, numRows
+  // )
   const clusterName = exploreParamsWithDefaults?.cluster
   const bucketId = exploreInfo?.bucketId
   const annotation = getAnnotationObject(exploreParamsWithDefaults, exploreInfo)
@@ -371,11 +381,11 @@ export default function DifferentialExpressionPanel({
     setGenesToShow(filteredGenes)
   }, [deGenes, searchedGene])
 
-  const hasPairwise = true
+  hasPairwiseDe = true
 
   return (
     <>
-      {!hasPairwise &&
+      {!hasPairwiseDe &&
         <DifferentialExpressionGroupPicker
           bucketId={bucketId}
           clusterName={clusterName}
@@ -390,7 +400,7 @@ export default function DifferentialExpressionPanel({
           setDeFilePath={setDeFilePath}
         />
       }
-      {hasPairwise &&
+      {hasPairwiseDe &&
         <PairwiseDifferentialExpressionGroupPicker
           bucketId={bucketId}
           clusterName={clusterName}
@@ -399,16 +409,18 @@ export default function DifferentialExpressionPanel({
           deGenes={deGenes}
           setDeGenes={setDeGenes}
           deGroup={deGroup}
-          deGroupB={deGroup}
           setDeGroup={setDeGroup}
-          setDeGroupB={setDeGroup}
           countsByLabel={countsByLabel}
           deObjects={deObjects}
           setDeFilePath={setDeFilePath}
+          deGroupB={deGroupB}
+          setDeGroupB={setDeGroupB}
         />
       }
 
-      {genesToShow &&
+      {
+        (!hasPairwiseDe && genesToShow) ||
+        (hasPairwiseDe && deGroupB && genesToShow) &&
       <>
         <div className="de-search-box">
           <span className="de-search-icon">
@@ -455,7 +467,7 @@ export default function DifferentialExpressionPanel({
 /** Top matter for differential expression panel shown at right in Explore tab */
 export function DifferentialExpressionPanelHeader({
   setDeGenes, setDeGroup, setShowDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel, isUpstream,
-  cluster, annotation
+  cluster, annotation, setDeGroupB
 }) {
   return (
     <>
@@ -464,6 +476,7 @@ export function DifferentialExpressionPanelHeader({
         onClick={() => {
           setDeGenes(null)
           setDeGroup(null)
+          setDeGroupB(null)
           setShowDifferentialExpressionPanel(false)
           setShowUpstreamDifferentialExpressionPanel(false)
         }}

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 import Select from '~/lib/InstrumentedSelect'
 import { clusterSelectStyle } from '~/lib/cluster-utils'
@@ -85,8 +85,9 @@ function getMatchingDeOption(
 
 /** Pick groups of cells for pairwise differential expression (DE) */
 export function PairwiseDifferentialExpressionGroupPicker({
-  bucketId, clusterName, annotation, deGenes, deGroup, deGroupB, setDeGroup, setDeGroupB,
-  setDeGenes, countsByLabel, deObjects, setDeFilePath
+  bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup,
+  setDeGenes, countsByLabel, deObjects, setDeFilePath,
+  deGroupB, setDeGroupB
 }) {
   const groups = getLegendSortedLabels(countsByLabel)
 
@@ -95,27 +96,34 @@ export function PairwiseDifferentialExpressionGroupPicker({
     return deOption !== undefined
   })
 
-  const bGroups = aGroups.filter(group => !deGroup || group !== deGroup)
+  console.log('deGroup', deGroup)
+  const defaultBGroups = aGroups.filter(group => !!deGroup && group !== deGroup)
+  console.log('defaultBGroups.slice()', defaultBGroups.slice())
+  const [bGroups, setBGroups] = useState(
+    aGroups.filter(group => !!deGroup && group !== deGroup)
+  )
 
   console.log('aGroups', aGroups)
   console.log('bGroups', bGroups)
+  console.log('defaultBGroups', defaultBGroups)
 
   /** Update group in differential expression picker */
-  async function updateDeGroup(newGroup) {
-    setDeGroup(newGroup)
+  async function updateDeGroupA(newGroup) {
+    const newBGroups = aGroups.filter(group => !deGroup || group !== newGroup)
+    setBGroups(newGroup)
 
-    const deOption = getMatchingDeOption(deObjects, newGroup, clusterName, annotation)
-    const deFileName = deOption[1]
+    // const deOption = getMatchingDeOption(deObjects, newGroup, clusterName, annotation)
+    // const deFileName = deOption[1]
 
-    const basePath = '_scp_internal/differential_expression/'
-    const deFilePath = basePath + deFileName
+    // const basePath = '_scp_internal/differential_expression/'
+    // const deFilePath = basePath + deFileName
 
-    setDeFilePath(deFilePath)
+    // setDeFilePath(deFilePath)
 
-    const deGenes = await fetchDeGenes(bucketId, deFilePath)
+    // const deGenes = await fetchDeGenes(bucketId, deFilePath)
 
-    setDeGroup(newGroup)
-    setDeGenes(deGenes)
+    // setDeGroup(newGroup)
+    // setDeGenes(deGenes)
   }
 
   return (
@@ -132,7 +140,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
                 label: deGroup === null ? noneSelected : deGroup,
                 value: deGroup
               }}
-              onChange={newGroup => updateDeGroup(newGroup.value)}
+              onChange={newGroup => updateDeGroupA(newGroup.value)}
               styles={clusterSelectStyle}
             />
           </div>

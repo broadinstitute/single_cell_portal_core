@@ -177,6 +177,7 @@ export default function ExploreDisplayTabs({
   const [, setShowDeGroupPicker] = useState(false)
   const [deGenes, setDeGenes] = useState(null)
   const [deGroup, setDeGroup] = useState(null)
+  const [deGroupB, setDeGroupB] = useState(null)
   const [showDifferentialExpressionPanel, setShowDifferentialExpressionPanel] = useState(deGenes !== null)
   const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(deGenes !== null)
 
@@ -614,6 +615,7 @@ export default function ExploreDisplayTabs({
                 isUpstream={showUpstreamDifferentialExpressionPanel}
                 cluster={exploreParamsWithDefaults.cluster}
                 annotation={shownAnnotation}
+                setDeGroupB={setDeGroupB}
               />
             }
           </div>
@@ -730,6 +732,8 @@ export default function ExploreDisplayTabs({
               setShowDeGroupPicker={setShowDeGroupPicker}
               setDeGenes={setDeGenes}
               setDeGroup={setDeGroup}
+              deGroupB={deGroupB}
+              setDeGroupB={setDeGroupB}
               countsByLabel={countsByLabel}
             />
           </>
