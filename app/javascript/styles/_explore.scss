@@ -243,6 +243,7 @@
   }
 }
 
-.bring-element-forward {
-  z-index: 1;
+// to position content in the explore tab forward
+.position-forward {
+  z-index: 3;
 }
