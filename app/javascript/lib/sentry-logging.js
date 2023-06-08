@@ -69,8 +69,9 @@ function printSuppression(errorObj, reason) {
 /** Determine if current environment should suppress logging to Sentry */
 function getIsSuppressedEnv() {
   const env = getSCPContext().environment
+  return false
   // Return `false` if manually locally testing Sentry logging
-  return ['development', 'test'].includes(env)
+  // return ['development', 'test'].includes(env)
 }
 
 /**
@@ -100,7 +101,18 @@ export function logToSentry(error, useThrottle = false, sampleRate = 0.05) {
 export function setupSentry() {
   Sentry.init({
     dsn: 'https://a713dcf8bbce4a26aa1fe3bf19008d26@o54426.ingest.sentry.io/1424198',
-    integrations: [new BrowserTracing()],
+    integrations: [
+      new Sentry.BrowserTracing(),
+      new Sentry.Replay(
+        {
+          maskAllText: false
+        }
+      )
+    ],
+
+    // replays sampling rates
+    replaysSessionSampleRate: 1.0,
+    replaysOnErrorSampleRate: 1.0,
 
     // Sampling rate for transactions, which enrich Sentry events with traces
     tracesSampleRate: getIsSuppressedEnv() ? 0 : 1.0,
