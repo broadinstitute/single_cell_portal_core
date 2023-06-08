@@ -115,7 +115,7 @@ class IngestJobTest < ActiveSupport::TestCase
     cells = @basic_study.expression_matrix_cells(@basic_study_exp_file)
     num_cells = cells.present? ? cells.count : 0
 
-    ApplicationController.papi_client.stub :get_pipeline, mock do
+    ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
       expected_outputs = {
         perfTime: 60000,
         fileType: @basic_study_exp_file.file_type,
@@ -163,7 +163,7 @@ class IngestJobTest < ActiveSupport::TestCase
     mock.expect :done?, true
 
 
-    ApplicationController.papi_client.stub :get_pipeline, mock do
+    ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
       expected_outputs = {
         perfTime: 120000,
         fileType: @other_matrix.file_type,

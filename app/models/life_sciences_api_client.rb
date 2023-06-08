@@ -1,11 +1,11 @@
 ##
-# PapiClient: a lightweight wrapper around the Google Cloud Genomics V2 Alpha API for submitting/reporting
+# LifeSciencesApiClient: a lightweight wrapper around the Google Cloud Life Sciences V2 beta API for submitting/reporting
 # scp-ingest-service jobs to ingest user-uploaded data
 #
-# requires: googleauth, google-api-client, FireCloudClient class (for bucket access)
+# requires: googleauth, google-apis-ruby-client, FireCloudClient class (for bucket access)
 #
 # Author::  Jon Bistline  (mailto:bistline@broadinstitute.org)
-class PapiClient
+class LifeSciencesApiClient
   extend ServiceAccountManager
 
   attr_accessor :project, :service_account_credentials, :service
@@ -40,13 +40,13 @@ class PapiClient
   # alphanumeric plus - and _
   LABEL_SANITIZER = /[^a-zA-Z\d\-_]/
 
-  # Default constructor for PapiClient
+  # Default constructor for LifeSciencesApiClient
   #
   # * *params*
   #   - +project+: (String) => GCP Project to use (can be overridden by other parameters)
   #   - +service_account_credentials+: (Path) => Absolute filepath to service account credentials
   # * *return*
-  #   - +PapiClient+
+  #   - +LifeSciencesApiClient+
   def initialize(project = self.class.compute_project, service_account_credentials = self.class.get_primary_keyfile)
     credentials = {
       scope: GOOGLE_SCOPES,
@@ -54,7 +54,7 @@ class PapiClient
     }
 
     authorizer = Google::Auth::ServiceAccountCredentials.make_creds(credentials)
-    genomics_service = Google::Apis::GenomicsV2alpha1::GenomicsService.new
+    genomics_service = Google::Apis::LifesciencesV2beta::CloudLifeSciencesService.new
     genomics_service.authorization = authorizer
 
     self.project = project
@@ -77,18 +77,18 @@ class PapiClient
   #   - +page_token+ (String) => Request next page of results using token
   #
   # * *return*
-  #   - (Google::Apis::GenomicsV2alpha1::ListOperationsResponse)
+  #   - (Google::Apis::LifesciencesV2beta::ListOperationsResponse)
   #
   # * *raises*
   #   - (Google::Apis::ServerError) => An error occurred on the server and the request can be retried
   #   - (Google::Apis::ClientError) =>  The request is invalid and should not be retried without modification
   #   - (Google::Apis::AuthorizationError) => Authorization is required
   def list_pipelines(page_token: nil)
-    service.list_project_operations("projects/#{project}/operations", page_token: page_token)
+    service.list_project_location_operations("projects/#{project}/operations", page_token: page_token)
   end
 
   # Runs a pipeline.  Will call sub-methods to instantiate required objects to pass to
-  # Google::Apis::GenomicsV2alpha1::GenomicsService.run_pipeline
+  # Google::Apis::LifesciencesV2beta::CloudLifeSciencesService.run_pipeline
   #
   # * *params*
   #   - +study_file+ (StudyFile) => File to be ingested
@@ -99,7 +99,7 @@ class PapiClient
   #                                must include Parameterizable concern for to_options_array support
   #
   # * *return*
-  #   - (Google::Apis::GenomicsV2alpha1::Operation)
+  #   - (Google::Apis::LifesciencesV2beta::Operation)
   #
   # * *raises*
   #   - (Google::Apis::ServerError) => An error occurred on the server and the request can be retried
@@ -144,7 +144,7 @@ class PapiClient
   #   - +user+ (User) => User that originally submitted pipeline
   #
   # * *return*
-  #   - (Google::Apis::GenomicsV2alpha1::Operation)
+  #   - (Google::Apis::LifesciencesV2beta::Operation)
   def get_pipeline(name:, fields: nil, user: nil)
     quota_user = user.present? ? user.id.to_s : nil
     service.get_project_operation(name, fields: fields, quota_user: quota_user)
@@ -153,27 +153,27 @@ class PapiClient
   # Create a run pipeline request object to send to service.run_pipeline
   #
   # * *params*
-  #   - +pipeline+ (Google::Apis::GenomicsV2alpha1::Pipeline) => Pipeline object from create_pipeline_object
+  #   - +pipeline+ (Google::Apis::LifesciencesV2beta::Pipeline) => Pipeline object from create_pipeline_object
   #   - +labels+ (Hash) => Hash of key/value pairs to set as the pipeline labels
   #
   # * *return*
-  #   - (Google::Apis::GenomicsV2alpha1::RunPipelineRequest)
+  #   - (Google::Apis::LifesciencesV2beta::RunPipelineRequest)
   def create_run_pipeline_request_object(pipeline:, labels: {})
-    Google::Apis::GenomicsV2alpha1::RunPipelineRequest.new(pipeline:, labels:)
+    Google::Apis::LifesciencesV2beta::RunPipelineRequest.new(pipeline:, labels:)
   end
 
   # Create a pipeline object detailing all required information in order to run an ingest job
   #
   # * *params*
-  #   - +actions+ (Array<Google::Apis::GenomicsV2alpha1::Action>) => actions to perform, from create_actions_object
+  #   - +actions+ (Array<Google::Apis::LifesciencesV2beta::Action>) => actions to perform, from create_actions_object
   #   - +environment+ (Hash) => Hash of key/value pairs to set as the container env
-  #   - +resources+ (Google::Apis::GenomicsV2alpha1::Resources) => Resources object from create_resources_object
+  #   - +resources+ (Google::Apis::LifesciencesV2beta::Resources) => Resources object from create_resources_object
   #   - +timeout+ (String) => Maximum runtime of pipeline (defaults to 1 week)
   #
   # * *return*
-  #   - (Google::Apis::GenomicsV2alpha1::Pipeline)
+  #   - (Google::Apis::LifesciencesV2beta::Pipeline)
   def create_pipeline_object(actions:, environment:, resources:, timeout: nil)
-    Google::Apis::GenomicsV2alpha1::Pipeline.new(actions:, environment:, resources:, timeout:)
+    Google::Apis::LifesciencesV2beta::Pipeline.new(actions:, environment:, resources:, timeout:)
   end
 
   # Instantiate actions for pipeline, which holds command line actions, docker information,
@@ -192,9 +192,9 @@ class PapiClient
   #   - +image_uri+: (String) => Override for docker image URI
   #
   #  * *return*
-  #   - (Google::Apis::GenomicsV2alpha1::Action)
+  #   - (Google::Apis::LifesciencesV2beta::Action)
   def create_actions_object(commands: [], environment: {}, flags: [], labels: {}, timeout: nil, image_uri: nil)
-    Google::Apis::GenomicsV2alpha1::Action.new(
+    Google::Apis::LifesciencesV2beta::Action.new(
       commands: commands,
       environment: environment,
       flags: flags,
@@ -247,13 +247,13 @@ class PapiClient
   #
   # * *params*
   #   - +regions+: (Array<String>) => An array of GCP regions allowed for VM allocation
-  #   - +vm+: (Google::Apis::GenomicsV2alpha1::VirtualMachine) => Existing VM config to use, other than default
+  #   - +vm+: (Google::Apis::LifesciencesV2beta::VirtualMachine) => Existing VM config to use, other than default
   #   - +labels+ (Hash) => Key/value pairs of labels for VM
   #
   # * *return*
-  #   - (Google::Apis::GenomicsV2alpha1::Resources)
+  #   - (Google::Apis::LifesciencesV2beta::Resources)
   def create_resources_object(regions:, vm: nil, labels: {})
-    Google::Apis::GenomicsV2alpha1::Resources.new(
+    Google::Apis::LifesciencesV2beta::Resources.new(
       project_id: project,
       regions: regions,
       virtual_machine: vm.nil? ? create_virtual_machine_object(labels:) : vm
@@ -270,21 +270,21 @@ class PapiClient
   #   - +preemptible+ (Boolean) => Indication of whether VM can be preempted (defaults to false)
   #   - +labels+ (Hash) => Key/value pairs of labels for VM
   # * *return*
-  #   - (Google::Apis::GenomicsV2alpha1::VirtualMachine)
+  #   - (Google::Apis::LifesciencesV2beta::VirtualMachine)
   def create_virtual_machine_object(machine_type: DEFAULT_MACHINE_TYPE,
                                     boot_disk_size_gb: 300,
                                     preemptible: false,
                                     labels: {})
-    virtual_machine = Google::Apis::GenomicsV2alpha1::VirtualMachine.new(
+    virtual_machine = Google::Apis::LifesciencesV2beta::VirtualMachine.new(
       machine_type: machine_type,
       preemptible: preemptible,
       boot_disk_size_gb: boot_disk_size_gb,
       labels: labels,
-      service_account: Google::Apis::GenomicsV2alpha1::ServiceAccount.new(email: issuer, scopes: GOOGLE_SCOPES)
+      service_account: Google::Apis::LifesciencesV2beta::ServiceAccount.new(email: issuer, scopes: GOOGLE_SCOPES)
     )
     # assign correct network/sub-network if specified
     if GCP_NETWORK_NAME.present? && GCP_SUB_NETWORK_NAME.present?
-      virtual_machine.network = Google::Apis::GenomicsV2alpha1::Network.new(name: GCP_NETWORK_NAME,
+      virtual_machine.network = Google::Apis::LifesciencesV2beta::Network.new(name: GCP_NETWORK_NAME,
                                                                             subnetwork: GCP_SUB_NETWORK_NAME)
     end
     virtual_machine
