@@ -39,7 +39,8 @@ module Parameterizable
 
   # hash of instance variable names/values
   def attributes
-    self.class::PARAM_DEFAULTS.keys.index_with { |attr| send(attr) }.with_indifferent_access
+    restricted = defined?(self.class::NON_ATTRIBUTE_PARAMS) ? self.class::NON_ATTRIBUTE_PARAMS : []
+    (self.class::PARAM_DEFAULTS.keys - restricted).index_with { |attr| send(attr) }.with_indifferent_access
   end
 
   # return array of all initialized attributes as CLI arguments, e.g. annotation_name => --annotation-name

@@ -71,7 +71,6 @@
 .explore-tab-content {
   background: #fff;
   flex-grow: 1;
-  z-index: 0;
 
   button.action {
     background: #fff;
@@ -242,4 +241,9 @@
     color: #999999;
     border-bottom: 1px solid #ddd;
   }
+}
+
+// to position content in the explore tab forward
+.position-forward {
+  z-index: 3;
 }
