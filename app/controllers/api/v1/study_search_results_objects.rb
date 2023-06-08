@@ -14,7 +14,8 @@ module Api
           total_pages: @results.total_pages,
           matching_accessions: @matching_accessions,
           preset_search: params[:preset_search],
-          match_by_data: @match_by_data
+          match_by_data: @match_by_data,
+          next_azul_page: @next_azul_page
         }
         if @selected_branding_group.present?
           response_obj[:scpbr] = @selected_branding_group.name_as_id

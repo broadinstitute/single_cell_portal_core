@@ -16,6 +16,8 @@ class AzulSearchService
     facet_map ||= {}
     results_matched_by_data ||= {}
     azul_results = ::AzulSearchService.get_results(selected_facets: selected_facets, terms: terms)
+    next_azul_page = azul_results[:__next]
+    azul_results.delete(:__next)
     Rails.logger.info "Found #{azul_results.keys.size} results in Azul"
     azul_results.each do |accession, azul_result|
       existing_studies << azul_result
@@ -23,7 +25,7 @@ class AzulSearchService
     end
     results_matched_by_data['numResults:azul'] = azul_results.size
     results_matched_by_data['numResults:total'] = results_matched_by_data['numResults:scp'].to_i + azul_results.size
-    { studies: existing_studies, facet_map: facet_map, results_matched_by_data: results_matched_by_data }
+    { studies: existing_studies, facet_map: facet_map, results_matched_by_data: results_matched_by_data, next_azul_page: }
   end
 
   # execute a search against Azul API
@@ -42,6 +44,8 @@ class AzulSearchService
     # determine if this is a normal faceted search (1 request), or term-based (split into separate requests and join)
     search_method = terms_to_facets ? :projects_by_facet : :projects
     project_results = client.send(search_method, query: query_json)
+
+
     project_results['hits'].each do |entry|
       entry_hash = entry.with_indifferent_access
       submission_date = entry_hash[:dates].first[:submissionDate]
@@ -86,7 +90,12 @@ class AzulSearchService
         results[short_name] = result
       end
     end
+    results[:__next] = project_results.dig('pagination', 'next')
     results
+  end
+
+  def self.has_more_results?(results)
+    results.dig('pagination', 'next').present?
   end
 
   # iterate through the result entries for each project to determine what facets/filters were matched

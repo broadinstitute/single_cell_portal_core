@@ -284,6 +284,7 @@ module Api
             @studies = azul_results[:studies]
             @studies_by_facet = azul_results[:facet_map]
             @matches_by_data = azul_results[:results_matched_by_data]
+            @next_azul_page = azul_results[:next_azul_page]
             # @studies, @studies_by_facet = ::TdrSearchService.append_results_to_studies(@studies,
             #                                                                             selected_facets: @facets,
             #                                                                             terms: @term_list,
