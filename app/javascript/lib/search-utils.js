@@ -12,7 +12,7 @@ export const NUM_SUGGESTIONS = 50
  * @param {Array<String>} targets List of strings to match against
  * @param {Integer} numSuggestions Number of suggestions to show
  */
-export function getAutocompleteSuggestions(inputText, targets, numSuggestions= NUM_SUGGESTIONS) {
+export function getAutocompleteSuggestions(inputText, targets, numSuggestions=NUM_SUGGESTIONS) {
   // Autocomplete when user starts typing
   if (!targets?.length || !inputText) {
     return []
