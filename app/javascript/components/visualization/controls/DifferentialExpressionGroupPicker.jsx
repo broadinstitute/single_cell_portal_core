@@ -216,7 +216,7 @@ export function DifferentialExpressionGroupPicker({
     setDeGenes(deGenes)
   }
 
-  const containerClass = deGenes ? 'flexbox-align-center flexbox-column' : 'differential-expression-picker'
+  const containerClass = deGenes ? 'differential-expression-picker' : 'flexbox-align-center flexbox-column'
 
   return (
     <>
@@ -226,7 +226,7 @@ export function DifferentialExpressionGroupPicker({
           defaultMenuIsOpen={!deGenes}
           options={getSimpleOptions(groups)}
           data-analytics-name="de-group-select"
-          className="de-group-select"
+          className="one-vs-rest-select"
           value={{
             label: deGroup === null ? noneSelected : deGroup,
             value: deGroup
