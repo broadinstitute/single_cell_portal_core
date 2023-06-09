@@ -38,6 +38,52 @@ function getAnnotationObject(exploreParamsWithDefaults, exploreInfo) {
   })
 }
 
+/** Top matter for differential expression panel shown at right in Explore tab */
+export function DifferentialExpressionPanelHeader({
+  setDeGenes, setDeGroup, setShowDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel, isUpstream,
+  cluster, annotation, setDeGroupB
+}) {
+  return (
+    <>
+      <span>Differential expression</span>
+      <button className="action fa-lg"
+        onClick={() => {
+          setDeGenes(null)
+          setDeGroup(null)
+          setDeGroupB(null)
+          setShowDifferentialExpressionPanel(false)
+          setShowUpstreamDifferentialExpressionPanel(false)
+        }}
+        title="Exit differential expression panel"
+        data-analytics-name="differential-expression-panel-exit">
+        <FontAwesomeIcon icon={faArrowLeft}/>
+      </button>
+      {isUpstream &&
+        <>
+          <div className="de-nondefault-explainer">
+          No DE results for:
+            <br/><br/>
+            <ul className="no-de-summary">
+              <li>
+                <span className="bold">Clustering</span><br/>
+                {cluster}
+              </li>
+              <br/>
+              <li>
+                <span className="bold">Annotation</span><br/>
+                {annotation.name}
+              </li>
+            </ul>
+            <br/>
+          Explore DE results in:
+          </div>
+        </>
+      }
+    </>
+  )
+}
+
+
 /** A small icon-like button that downloads DE data as a file */
 function DownloadButton({ bucketId, deFilePath }) {
   return (
@@ -371,7 +417,7 @@ export default function DifferentialExpressionPanel({
     setGenesToShow(filteredGenes)
   }, [deGenes, searchedGene])
 
-  hasPairwiseDe = true
+  // hasPairwiseDe = true
 
   return (
     <>
@@ -409,8 +455,10 @@ export default function DifferentialExpressionPanel({
       }
 
       {
-        (!hasPairwiseDe && genesToShow) ||
-        (hasPairwiseDe && deGroupB && genesToShow) &&
+        (
+          (!hasPairwiseDe && genesToShow) ||
+          (hasPairwiseDe && deGroupB && genesToShow)
+        ) &&
       <>
         <div className="de-search-box">
           <span className="de-search-icon">
@@ -449,51 +497,6 @@ export default function DifferentialExpressionPanel({
           handleClear={handleClear}
         />
       </>
-      }
-    </>
-  )
-}
-
-/** Top matter for differential expression panel shown at right in Explore tab */
-export function DifferentialExpressionPanelHeader({
-  setDeGenes, setDeGroup, setShowDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel, isUpstream,
-  cluster, annotation, setDeGroupB
-}) {
-  return (
-    <>
-      <span>Differential expression</span>
-      <button className="action fa-lg"
-        onClick={() => {
-          setDeGenes(null)
-          setDeGroup(null)
-          setDeGroupB(null)
-          setShowDifferentialExpressionPanel(false)
-          setShowUpstreamDifferentialExpressionPanel(false)
-        }}
-        title="Exit differential expression panel"
-        data-analytics-name="differential-expression-panel-exit">
-        <FontAwesomeIcon icon={faArrowLeft}/>
-      </button>
-      {isUpstream &&
-        <>
-          <div className="de-nondefault-explainer">
-          No DE results for:
-            <br/><br/>
-            <ul className="no-de-summary">
-              <li>
-                <span className="bold">Clustering</span><br/>
-                {cluster}
-              </li>
-              <br/>
-              <li>
-                <span className="bold">Annotation</span><br/>
-                {annotation.name}
-              </li>
-            </ul>
-            <br/>
-          Explore DE results in:
-          </div>
-        </>
       }
     </>
   )

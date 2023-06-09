@@ -216,45 +216,26 @@ export function DifferentialExpressionGroupPicker({
     setDeGenes(deGenes)
   }
 
+  const containerClass = deGenes ? 'flexbox-align-center flexbox-column' : 'differential-expression-picker'
+
   return (
     <>
-      {!deGenes &&
-        <div className="flexbox-align-center flexbox-column">
-          <span>Compare one group to the rest.</span>
-          <Select
-            defaultMenuIsOpen
-            options={getSimpleOptions(groups)}
-            data-analytics-name="de-group-select"
-            className="de-group-select"
-            value={{
-              label: deGroup === null ? noneSelected : deGroup,
-              value: deGroup
-            }}
-            onChange={newGroup => updateDeGroup(newGroup.value)}
-            styles={clusterSelectStyle}
-          />
-        </div>
-      }
-      {deGenes &&
-      <div className="differential-expression-picker">
-        <div className="one-vs-rest-select">
-          <Select
-            options={getSimpleOptions(groups)}
-            data-analytics-name="de-group-select"
-            className="de-group-select"
-            value={{
-              label: deGroup === null ? noneSelected : deGroup,
-              value: deGroup
-            }}
-            onChange={newGroup => updateDeGroup(newGroup.value)}
-            styles={clusterSelectStyle}
-          />
-        </div>
-        <span className="vs-note">vs. rest</span>
-        <br/>
-        <br/>
+      <div className={containerClass}>
+        {!deGenes && <p>Compare one group to the rest.</p>}
+        <Select
+          defaultMenuIsOpen={!deGenes}
+          options={getSimpleOptions(groups)}
+          data-analytics-name="de-group-select"
+          className="de-group-select"
+          value={{
+            label: deGroup === null ? noneSelected : deGroup,
+            value: deGroup
+          }}
+          onChange={newGroup => updateDeGroup(newGroup.value)}
+          styles={clusterSelectStyle}
+        />
+        {deGenes && <><span className="vs-note">vs. rest</span><br/><br/></>}
       </div>
-      }
     </>
   )
 }
