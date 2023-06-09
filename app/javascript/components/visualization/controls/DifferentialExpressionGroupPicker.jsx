@@ -205,7 +205,6 @@ export function DifferentialExpressionGroupPicker({
     const deOption = getMatchingDeOption(deObjects, newGroup, clusterName, annotation)
     const deFileName = deOption[1]
 
-    const basePath = '_scp_internal/differential_expression/'
     const deFilePath = basePath + deFileName
 
     setDeFilePath(deFilePath)

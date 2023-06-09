@@ -101,25 +101,25 @@ function DownloadButton({ bucketId, deFilePath }) {
 
 /** A small icon-like button that makes a dot plot */
 function DotPlotButton({ dotPlotGenes, searchGenes }) {
-  const actionColor = '#3D5A87'
   // Whipped up via https://boxy-svg.com/app,
   // based on Alexandria-approved mockup at:
   // https://docs.google.com/presentation/d/1j8zt1Hj4otD593FtkXlBsPw4GsxkU4XOVYXQx3Ec--E/edit#slide=id.g19cbfc5899b_0_9
   return (
-    <a
-      className="de-dot-plot-button"
+    <button
+      className="de-dot-plot-button btn btn-primary"
       onClick={() => {searchGenes(dotPlotGenes)}}
       data-analytics-name="differential-expression-dot-plot"
       data-toggle="tooltip"
       data-original-title="View dot plot for genes on this differential expression table page"
     >
-      <svg viewBox="119.295 104.022 40.338 40.976" width="14" height="14">
-        <ellipse style={{ 'fill': actionColor }} cx="130.295" cy="115.041" rx="11" ry="11"></ellipse>
-        <ellipse style={{ 'fill': actionColor }} cx="153.18" cy="115.779" rx="2.5" ry="2.5"></ellipse>
-        <ellipse style={{ 'fill': actionColor }} cx="128.719" cy="137.129" rx="5" ry="5"></ellipse>
-        <ellipse style={{ 'fill': actionColor }} cx="151.633" cy="136.998" rx="8" ry="8"></ellipse>
+      <svg className="de-dot-plot-icon" viewBox="119.295 104.022 40.338 40.976" width="14" height="14">
+        <ellipse style={{ 'fill': '#FFF' }} cx="130.295" cy="115.041" rx="11" ry="11"></ellipse>
+        <ellipse style={{ 'fill': '#FFF' }} cx="153.18" cy="115.779" rx="2.5" ry="2.5"></ellipse>
+        <ellipse style={{ 'fill': '#FFF' }} cx="128.719" cy="137.129" rx="5" ry="5"></ellipse>
+        <ellipse style={{ 'fill': '#FFF' }} cx="151.633" cy="136.998" rx="8" ry="8"></ellipse>
       </svg>
-    </a>
+      Dot plot
+    </button>
   )
 }
 

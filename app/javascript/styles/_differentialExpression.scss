@@ -30,6 +30,13 @@
 
 .de-dot-plot-button {
   margin-right: 0.7em;
+  padding: 2px 5px;
+
+  .de-dot-plot-icon {
+    position: relative;
+    top: 2px;
+    margin-right: 5px;
+  }
 }
 
 .de-search-box {
