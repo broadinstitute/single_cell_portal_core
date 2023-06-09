@@ -14,6 +14,10 @@
   margin-right: -8px;
 }
 
+.pagination {
+  margin: 2px;
+}
+
 .de-download-button {
   margin-right: 0.5em;
   display: inline-block;
@@ -29,7 +33,7 @@
 }
 
 .de-dot-plot-button {
-  margin-right: 0.7em;
+  margin-right: 0.5em;
   padding: 2px 5px;
 
   .de-dot-plot-icon {
@@ -40,7 +44,7 @@
 }
 
 .de-search-box {
-  width: 170px;
+  width: 150px;
   border: 1px solid #CCC;
   border-radius: 3px;
   height: 24px;
@@ -58,7 +62,7 @@
 }
 
 .de-search-input {
-  width: 130px;
+  width: 110px;
 }
 
 .clear-de-search-icon {

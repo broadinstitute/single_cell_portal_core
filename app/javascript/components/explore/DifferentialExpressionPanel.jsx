@@ -110,7 +110,7 @@ function DotPlotButton({ dotPlotGenes, searchGenes }) {
       onClick={() => {searchGenes(dotPlotGenes)}}
       data-analytics-name="differential-expression-dot-plot"
       data-toggle="tooltip"
-      data-original-title="View dot plot for genes on this differential expression table page"
+      data-original-title="For genes on this page"
     >
       <svg className="de-dot-plot-icon" viewBox="119.295 104.022 40.338 40.976" width="14" height="14">
         <ellipse style={{ 'fill': '#FFF' }} cx="130.295" cy="115.041" rx="11" ry="11"></ellipse>
@@ -351,7 +351,7 @@ function DifferentialExpressionTable({
         zeroIndexed={true}
       />
       <a href="https://forms.gle/qPGH5J9oFkurpbD76" target="_blank" title="Take a 1 minute survey">
-          Help improve this new feature
+          Help improve this feature
       </a>
     </>
   )
