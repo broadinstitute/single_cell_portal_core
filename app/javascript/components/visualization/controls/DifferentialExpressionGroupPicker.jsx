@@ -7,12 +7,13 @@ import { fetchBucketFile } from '~/lib/scp-api'
 import PlotUtils from '~/lib/plot'
 const { getLegendSortedLabels } = PlotUtils
 
+const basePath = '_scp_internal/differential_expression/'
+
 // Value to show in menu if user has not selected a group for DE
 const noneSelected = 'Select group'
 
 /** Takes array of strings, converts it to list options suitable for react-select */
 function getSimpleOptions(stringArray) {
-  console.log('in getSimpleOptions, stringArray:', stringArray)
   const assignLabelsAndValues = name => ({ label: name, value: name })
   return stringArray.map(assignLabelsAndValues)
 }
@@ -69,7 +70,7 @@ async function fetchDeGenes(bucketId, deFilePath) {
 
 /** Gets matching deObject for the given group and cluster + annot combo */
 function getMatchingDeOption(
-  deObjects, group, clusterName, annotation, comparison='one_vs_rest'
+  deObjects, group, clusterName, annotation, comparison='one_vs_rest', groupB=null
 ) {
   const deObject = deObjects.find(deObj => {
     return (
@@ -79,9 +80,21 @@ function getMatchingDeOption(
     )
   })
 
-  return deObject.select_options[comparison].find(option => {
-    return option[0] === group
+  const matchingDeOption = deObject.select_options[comparison].find(option => {
+    if (comparison === 'one_vs_rest') {
+      return option[0] === group
+    } else {
+      // Pairwise comparison.  Naturally sort group labels, as only
+      // naturally-sorted option is available, since combinations are not
+      // ordered and we don't want to pass and store 2x the data.
+      const [groupASorted, groupBSorted] = [group, groupB].sort((a, b) => {
+        return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
+      })
+      return option[0] === groupASorted && option[1] === groupBSorted
+    }
   })
+
+  return matchingDeOption
 }
 
 /** Pick groups of cells for pairwise differential expression (DE) */
@@ -97,55 +110,50 @@ export function PairwiseDifferentialExpressionGroupPicker({
     return deOption !== undefined
   })
 
-  console.log('deGroup', deGroup)
-  const defaultBGroups = deGroupsA.filter(group => !!deGroup && group !== deGroup)
-  console.log('defaultBGroups.slice()', defaultBGroups.slice())
   const [deGroupsB, setDeGroupsB] = useState(
     deGroupsA.filter(group => !!deGroup && group !== deGroup)
   )
 
-  console.log('deGroupsA', deGroupsA)
-  console.log('deGroupsB', deGroupsB)
-  console.log('defaultBGroups', defaultBGroups)
+  // console.log('deGroupsA', deGroupsA)
+  // console.log('deGroupsB', deGroupsB)
+  // console.log('defaultBGroups', defaultBGroups)
+  // console.log('deObjects', deObjects)
+
+  /** Update table based on new group selection */
+  async function updateTable(groupA, groupB) {
+    console.log('in updateTable, groupB', groupB)
+    const deOption = getMatchingDeOption(deObjects, groupA, clusterName, annotation, 'pairwise', groupB)
+    console.log('deOption', deOption)
+    const deFileName = deOption[2]
+
+    const deFilePath = basePath + deFileName
+
+    setDeFilePath(deFilePath)
+
+    const deGenes = await fetchDeGenes(bucketId, deFilePath)
+    setDeGenes(deGenes)
+  }
 
   /** Update group in differential expression picker */
   async function updateDeGroupA(newGroup) {
     setDeGroup(newGroup)
-    setDeGroupB(null) // Clear group B upon changing group A
     setDeGroupsB(
       deGroupsA.filter(group => group !== newGroup)
     )
 
-    // const deOption = getMatchingDeOption(deObjects, newGroup, clusterName, annotation)
-    // const deFileName = deOption[1]
+    if (newGroup === deGroupB) {
+      setDeGroupB(null) // Clear group B upon changing group A
+      return
+    }
 
-    // const basePath = '_scp_internal/differential_expression/'
-    // const deFilePath = basePath + deFileName
-
-    // setDeFilePath(deFilePath)
-
-    // const deGenes = await fetchDeGenes(bucketId, deFilePath)
-
-    // setDeGroup(newGroup)
-    // setDeGenes(deGenes)
+    updateTable(newGroup, deGroupB)
   }
 
   /** Update group in differential expression picker */
   async function updateDeGroupB(newGroup) {
     setDeGroupB(newGroup)
 
-    // const deOption = getMatchingDeOption(deObjects, newGroup, clusterName, annotation)
-    // const deFileName = deOption[1]
-
-    // const basePath = '_scp_internal/differential_expression/'
-    // const deFilePath = basePath + deFileName
-
-    // setDeFilePath(deFilePath)
-
-    // const deGenes = await fetchDeGenes(bucketId, deFilePath)
-
-    // setDeGroup(newGroup)
-    // setDeGenes(deGenes)
+    updateTable(deGroup, newGroup)
   }
 
   return (
