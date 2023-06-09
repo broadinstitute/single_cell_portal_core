@@ -114,16 +114,9 @@ export function PairwiseDifferentialExpressionGroupPicker({
     deGroupsA.filter(group => !!deGroup && group !== deGroup)
   )
 
-  // console.log('deGroupsA', deGroupsA)
-  // console.log('deGroupsB', deGroupsB)
-  // console.log('defaultBGroups', defaultBGroups)
-  // console.log('deObjects', deObjects)
-
   /** Update table based on new group selection */
   async function updateTable(groupA, groupB) {
-    console.log('in updateTable, groupB', groupB)
     const deOption = getMatchingDeOption(deObjects, groupA, clusterName, annotation, 'pairwise', groupB)
-    console.log('deOption', deOption)
     const deFileName = deOption[2]
 
     const deFilePath = basePath + deFileName
@@ -165,6 +158,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
             defaultMenuIsOpen={!deGenes}
             options={getSimpleOptions(groups)}
             data-analytics-name="de-group-select-a"
+            className="differential-expression-pairwise de-group-select"
             value={{
               label: deGroup === null ? noneSelected : deGroup,
               value: deGroup
@@ -178,6 +172,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
           <Select
             options={getSimpleOptions(deGroupsB)}
             data-analytics-name="de-group-select-b"
+            className="differential-expression-pairwise de-group-select"
             value={{
               label: deGroupB === null ? noneSelected : deGroupB,
               value: deGroupB
@@ -230,6 +225,7 @@ export function DifferentialExpressionGroupPicker({
             defaultMenuIsOpen
             options={getSimpleOptions(groups)}
             data-analytics-name="de-group-select"
+            className="de-group-select"
             value={{
               label: deGroup === null ? noneSelected : deGroup,
               value: deGroup
@@ -245,6 +241,7 @@ export function DifferentialExpressionGroupPicker({
           <Select
             options={getSimpleOptions(groups)}
             data-analytics-name="de-group-select"
+            className="de-group-select"
             value={{
               label: deGroup === null ? noneSelected : deGroup,
               value: deGroup

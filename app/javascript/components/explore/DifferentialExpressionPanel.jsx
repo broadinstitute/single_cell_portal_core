@@ -317,16 +317,6 @@ export default function DifferentialExpressionPanel({
   exploreInfo, exploreParamsWithDefaults, setShowDeGroupPicker, setDeGenes, setDeGroup,
   countsByLabel, hasPairwiseDe, deGroupB, setDeGroupB, numRows=50
 }) {
-  // console.log(
-  //   'deGroup, deGenes, searchGenes,' +
-  //   'exploreInfo, exploreParamsWithDefaults, setShowDeGroupPicker, setDeGenes, setDeGroup,' +
-  //   'countsByLabel, hasPairwiseDe, deGroupB, setDeGroupB, numRows'
-  // )
-  // console.log(
-  //   deGroup, deGenes, searchGenes,
-  //   exploreInfo, exploreParamsWithDefaults, setShowDeGroupPicker, setDeGenes, setDeGroup,
-  //   countsByLabel, hasPairwiseDe, deGroupB, setDeGroupB, numRows
-  // )
   const clusterName = exploreParamsWithDefaults?.cluster
   const bucketId = exploreInfo?.bucketId
   const annotation = getAnnotationObject(exploreParamsWithDefaults, exploreInfo)
