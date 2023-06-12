@@ -98,15 +98,15 @@ class DifferentialExpressionResult
     # TODO (SCP-5096): Productionize this block, remove example data
     if Rails.env.development? && annotation_name == 'General_Celltype'
       pairwise_comparisons = {
-        'B cells' => ['LC2', 'GPMNB macrophages', 'LC1', 'neutrophils', 'T cells', 'dendritic cells', 'CSN1S1 macrophages', 'eosinophils', 'fibroblasts'],
-        'LC2 cells' => ['GPMNB macrophages', 'LC1', 'neutrophils', 'T cells', 'dendritic cells', 'CSN1S1 macrophages', 'eosinophils', 'fibroblasts'],
-        'GPMNB macrophages' => ['LC1', 'neutrophils', 'T cells', 'dendritic cells', 'CSN1S1 macrophages', 'eosinophils', 'fibroblasts'],
-        'LC1' => ['neutrophils', 'T cells', 'dendritic cells', 'CSN1S1 macrophages', 'eosinophils', 'fibroblasts'],
-        'neutrophils' => ['T cells', 'dendritic cells', 'CSN1S1 macrophages', 'eosinophils', 'fibroblasts'],
-        'T cells' => ['dendritic cells', 'CSN1S1 macrophages', 'eosinophils', 'fibroblasts'],
-        'dendritic cells' => ['CSN1S1 macrophages', 'eosinophils', 'fibroblasts'],
-        'CSN1S1 macrophages' => ['eosinophils', 'fibroblasts'],
-        'eosinophils' => ['fibroblasts']
+        'B cells' => ['CSN1S1 macrophages', 'dendritic cells', 'eosinophils', 'fibroblasts', 'GPMNB macrophages', 'LC1', 'LC2', 'neutrophils', 'T cells'],
+        'CSN1S1 macrophages' => ['dendritic cells', 'eosinophils', 'fibroblasts', 'GPMNB macrophages', 'LC1', 'LC2', 'neutrophils', 'T cells'],
+        'dendritic cells' => ['eosinophils', 'fibroblasts', 'GPMNB macrophages', 'LC1', 'LC2', 'neutrophils', 'T cells'],
+        'eosinophils' => ['fibroblasts', 'GPMNB macrophages', 'LC1', 'LC2', 'neutrophils', 'T cells'],
+        'fibroblasts' => ['GPMNB macrophages', 'LC1', 'LC2', 'neutrophils', 'T cells'],
+        'GPMNB macrophages' => ['LC1', 'LC2', 'neutrophils', 'T cells'],
+        'LC1' => ['LC2', 'neutrophils', 'T cells'],
+        'LC2' => ['neutrophils', 'T cells'],
+        'neutrophils' => ['T cells']
       }
 
       pairwise_comparisons.each_pair do |label, comparisons|
