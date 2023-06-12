@@ -84,19 +84,13 @@ function getMatchingDeOption(
     if (comparison === 'one_vs_rest') {
       return option[0] === group
     } else {
-      if (!group && groupB) {
-        return option[0] === groupB || option[1] === groupB
-      } else if (group && !groupB) {
-        return option[0] === group || option[1] === group
-      } else {
-        // Pairwise comparison.  Naturally sort group labels, as only
-        // naturally-sorted option is available, since combinations are not
-        // ordered and we don't want to pass and store 2x the data.
-        const [groupASorted, groupBSorted] = [group, groupB].sort((a, b) => {
-          return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
-        })
-        return option[0] === groupASorted && option[1] === groupBSorted
-      }
+      // Pairwise comparison.  Naturally sort group labels, as only
+      // naturally-sorted option is available, since combinations are not
+      // ordered and we don't want to pass and store 2x the data.
+      const [groupASorted, groupBSorted] = [group, groupB].sort((a, b) => {
+        return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
+      })
+      return option[0] === groupASorted && option[1] === groupBSorted
     }
   })
 
@@ -112,18 +106,16 @@ export function PairwiseDifferentialExpressionGroupPicker({
   const groups = getLegendSortedLabels(countsByLabel)
 
   const deGroupsA = groups.filter(group => {
-    const deOption = getMatchingDeOption(deObjects, group, clusterName, annotation, 'pairwise', deGroupB)
+    const deOption = getMatchingDeOption(deObjects, group, clusterName, annotation)
     return deOption !== undefined
   })
 
   const [deGroupsB, setDeGroupsB] = useState(
-    deGroupsA.filter(group => group !== deGroup)
+    deGroupsA.filter(group => !!deGroup && group !== deGroup)
   )
 
   /** Update table based on new group selection */
   async function updateTable(groupA, groupB) {
-    if (!groupA || !groupB) {updateTable(newGroup, deGroupB)}
-
     const deOption = getMatchingDeOption(deObjects, groupA, clusterName, annotation, 'pairwise', groupB)
     const deFileName = deOption[2]
 
@@ -148,18 +140,14 @@ export function PairwiseDifferentialExpressionGroupPicker({
       return
     }
 
-    updateTable(newGroup, deGroupB)
+    if (deGroupB) {
+      updateTable(newGroup, deGroupB)
+    }
   }
 
   /** Update group in differential expression picker */
   async function updateDeGroupB(newGroup) {
     setDeGroupB(newGroup)
-
-    if (newGroup === deGroup) {
-      setDeGroup(null) // Clear group A upon changing group B, if A === B
-      setDeGenes(null)
-      return
-    }
 
     updateTable(deGroup, newGroup)
   }
