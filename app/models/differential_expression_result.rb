@@ -87,22 +87,26 @@ class DifferentialExpressionResult
     "#{basename}.tsv"
   end
 
-  # map of all observed result files, of label value => label-specific filenames
+  # map of all observed result files, by comparison type, of label value => label-specific filenames
   # this is important as it sidesteps the issue of study owners renaming clusters, as cluster_name is cached here
+  #
+  # @return [Hash<String => Array<String, String>, Array<String, String, String>]
   def result_files
     one_vs_rest_files = one_vs_rest_comparisons.map { |label| filename_for(label) }
     pairwise_files = []
-    if annotation_name == "General_Celltype"
+
+    # TODO (SCP-5096): Productionize this block, remove example data
+    if Rails.env.development? && annotation_name == 'General_Celltype'
       pairwise_comparisons = {
-        "B cells" => ["LC2", "GPMNB macrophages", "LC1", "neutrophils", "T cells", "dendritic cells", "CSN1S1 macrophages", "eosinophils", "fibroblasts"],
-        "LC2 cells" => ["GPMNB macrophages", "LC1", "neutrophils", "T cells", "dendritic cells", "CSN1S1 macrophages", "eosinophils", "fibroblasts"],
-        "GPMNB macrophages" => ["LC1", "neutrophils", "T cells", "dendritic cells", "CSN1S1 macrophages", "eosinophils", "fibroblasts"],
-        "LC1" => ["neutrophils", "T cells", "dendritic cells", "CSN1S1 macrophages", "eosinophils", "fibroblasts"],
-        "neutrophils" => ["T cells", "dendritic cells", "CSN1S1 macrophages", "eosinophils", "fibroblasts"],
-        "T cells" => ["dendritic cells", "CSN1S1 macrophages", "eosinophils", "fibroblasts"],
-        "dendritic cells" => ["CSN1S1 macrophages", "eosinophils", "fibroblasts"],
-        "CSN1S1 macrophages" => ["eosinophils", "fibroblasts"],
-        "eosinophils" => ["fibroblasts"]
+        'B cells' => ['LC2', 'GPMNB macrophages', 'LC1', 'neutrophils', 'T cells', 'dendritic cells', 'CSN1S1 macrophages', 'eosinophils', 'fibroblasts'],
+        'LC2 cells' => ['GPMNB macrophages', 'LC1', 'neutrophils', 'T cells', 'dendritic cells', 'CSN1S1 macrophages', 'eosinophils', 'fibroblasts'],
+        'GPMNB macrophages' => ['LC1', 'neutrophils', 'T cells', 'dendritic cells', 'CSN1S1 macrophages', 'eosinophils', 'fibroblasts'],
+        'LC1' => ['neutrophils', 'T cells', 'dendritic cells', 'CSN1S1 macrophages', 'eosinophils', 'fibroblasts'],
+        'neutrophils' => ['T cells', 'dendritic cells', 'CSN1S1 macrophages', 'eosinophils', 'fibroblasts'],
+        'T cells' => ['dendritic cells', 'CSN1S1 macrophages', 'eosinophils', 'fibroblasts'],
+        'dendritic cells' => ['CSN1S1 macrophages', 'eosinophils', 'fibroblasts'],
+        'CSN1S1 macrophages' => ['eosinophils', 'fibroblasts'],
+        'eosinophils' => ['fibroblasts']
       }
 
       pairwise_comparisons.each_pair do |label, comparisons|
@@ -111,8 +115,8 @@ class DifferentialExpressionResult
           pairwise_files.push([label, comparison, filename])
         end
       end
-
     end
+
     {
       'one_vs_rest' => one_vs_rest_comparisons.zip(one_vs_rest_files),
       'pairwise' => pairwise_files
