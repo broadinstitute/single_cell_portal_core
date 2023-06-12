@@ -59,18 +59,28 @@ const disabledTooltips = {
   'heatmap': { numToSearch: '2 or more', isMulti: true }
 }
 
+/** Get the selected clustering and annotation, or their defaults */
+function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
+  const annotList = exploreInfo.annotationList
+  let selectedCluster
+  let selectedAnnot
+  if (exploreParams?.cluster) {
+    selectedCluster = exploreParams.cluster
+    selectedAnnot = exploreParams.annotation
+  } else {
+    selectedCluster = annotList.default_cluster
+    selectedAnnot = annotList.default_annotation
+  }
+
+  return [selectedCluster, selectedAnnot]
+}
+
 /** Determine if currently selected cluster has differential expression outputs available */
 function getClusterHasDe(exploreInfo, exploreParams) {
   const flags = getFeatureFlagsWithDefaults()
   if (!flags?.differential_expression_frontend || !exploreInfo) {return false}
   let clusterHasDe = false
-  const annotList = exploreInfo.annotationList
-  let selectedCluster
-  if (exploreParams?.cluster) {
-    selectedCluster = exploreParams.cluster
-  } else {
-    selectedCluster = annotList.default_cluster
-  }
+  const selectedCluster = getSelectedClusterAndAnnot(exploreInfo, exploreParams)[0]
 
   clusterHasDe = exploreInfo.differentialExpression.some(deItem => {
     return (
@@ -79,6 +89,27 @@ function getClusterHasDe(exploreInfo, exploreParams) {
   })
 
   return clusterHasDe
+}
+
+/** Determine if pairwise DE results exist for current annotation */
+function getHasPairwiseDe(exploreInfo, exploreParams) {
+  const flags = getFeatureFlagsWithDefaults()
+  if (!flags?.differential_expression_frontend || !exploreInfo) {return false}
+
+  const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
+
+  const hasPairwiseDe = exploreInfo.differentialExpression.some(deItem => {
+    return (
+      deItem.cluster_name === selectedCluster &&
+      deItem.annotation_name === selectedAnnot.name &&
+      deItem.annotation_scope === selectedAnnot.scope &&
+      deItem.select_options['pairwise'].length > 0
+    )
+  })
+
+  console.log('hasPairwiseDe', hasPairwiseDe)
+
+  return hasPairwiseDe
 }
 
 /** Return list of annotations that have differential expression enabled */
@@ -119,16 +150,7 @@ function getAnnotHasDe(exploreInfo, exploreParams) {
   }
 
   let annotHasDe = false
-  const annotList = exploreInfo.annotationList
-  let selectedCluster
-  let selectedAnnot
-  if (exploreParams?.cluster) {
-    selectedCluster = exploreParams.cluster
-    selectedAnnot = exploreParams.annotation
-  } else {
-    selectedCluster = annotList.default_cluster
-    selectedAnnot = annotList.default_annotation
-  }
+  const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
 
   annotHasDe = exploreInfo.differentialExpression.some(deItem => {
     return (
@@ -140,6 +162,7 @@ function getAnnotHasDe(exploreInfo, exploreParams) {
 
   return annotHasDe
 }
+
 
 /**
  * Renders the gene search box and the tab selection
@@ -170,9 +193,11 @@ export default function ExploreDisplayTabs({
 
   // Differential expression settings
   const flags = getFeatureFlagsWithDefaults()
+  // `differential_expression_frontend` enables exemptions if study owners don't want DE
   const studyHasDe = flags?.differential_expression_frontend && exploreInfo?.differentialExpression.length > 0
   const annotHasDe = getAnnotHasDe(exploreInfo, exploreParams)
   const clusterHasDe = getClusterHasDe(exploreInfo, exploreParams)
+  const hasPairwiseDe = getHasPairwiseDe(exploreInfo, exploreParams)
 
   const [, setShowDeGroupPicker] = useState(false)
   const [deGenes, setDeGenes] = useState(null)
@@ -180,8 +205,6 @@ export default function ExploreDisplayTabs({
   const [deGroupB, setDeGroupB] = useState(null)
   const [showDifferentialExpressionPanel, setShowDifferentialExpressionPanel] = useState(deGenes !== null)
   const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(deGenes !== null)
-
-  const hasPairwiseDe = true
 
   // Hash of trace label names to the number of points in that trace
   const [countsByLabel, setCountsByLabel] = useState(null)
@@ -732,6 +755,7 @@ export default function ExploreDisplayTabs({
               setShowDeGroupPicker={setShowDeGroupPicker}
               setDeGenes={setDeGenes}
               setDeGroup={setDeGroup}
+              hasPairwiseDe={hasPairwiseDe}
               deGroupB={deGroupB}
               setDeGroupB={setDeGroupB}
               countsByLabel={countsByLabel}

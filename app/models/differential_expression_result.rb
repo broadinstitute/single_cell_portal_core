@@ -87,7 +87,7 @@ class DifferentialExpressionResult
     "#{basename}.tsv"
   end
 
-  # map of all observed result files, by comparison type, of label value => label-specific filenames
+  # map listing all result files and their constituent groups , by comparison type
   # this is important as it sidesteps the issue of study owners renaming clusters, as cluster_name is cached here
   #
   # @return [Hash<String => Array<String, String>, Array<String, String, String>]
