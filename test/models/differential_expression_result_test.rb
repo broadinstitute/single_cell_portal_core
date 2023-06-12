@@ -141,17 +141,23 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
 
   test 'should return array of select options for observed outputs' do
     species_opts = {
-      dog: 'cluster_diffexp_txt--species--dog--study--wilcoxon.tsv',
-      cat: 'cluster_diffexp_txt--species--cat--study--wilcoxon.tsv'
+      one_vs_rest: [
+        ['dog', 'cluster_diffexp_txt--species--dog--study--wilcoxon.tsv'],
+        ['cat', 'cluster_diffexp_txt--species--cat--study--wilcoxon.tsv']
+      ],
+      pairwise: []
     }.with_indifferent_access
 
     disease_opts = {
-      measles: 'cluster_diffexp_txt--disease--measles--cluster--wilcoxon.tsv',
-      none: 'cluster_diffexp_txt--disease--none--cluster--wilcoxon.tsv'
+      one_vs_rest: [
+        ['measles', 'cluster_diffexp_txt--disease--measles--cluster--wilcoxon.tsv'],
+        ['none', 'cluster_diffexp_txt--disease--none--cluster--wilcoxon.tsv']
+      ],
+      pairwise: []
     }.with_indifferent_access
 
-    assert_equal species_opts.to_a, @species_result.select_options
-    assert_equal disease_opts.to_a, @disease_result.select_options
+    assert_equal species_opts, @species_result.select_options
+    assert_equal disease_opts, @disease_result.select_options
   end
 
   test 'should return associated files' do
