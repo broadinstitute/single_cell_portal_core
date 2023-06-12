@@ -97,6 +97,15 @@ class DifferentialExpressionResult
 
     # TODO (SCP-5096): Productionize this block, remove example data
     if Rails.env.development? && annotation_name == 'General_Celltype'
+
+      # Two important notes for pairwise comparisons:
+      #
+      #   1.  It conveys observed _combinations_ of groups.  Order does not matter in combinations.
+      #       This means that, with a bit of extra care, we can store 1/2 the data than a naive approach.
+      #
+      #   2.  Per (1), only the _naturally ordered_ pairs appear in the DE results manifest file, and in
+      #       this `pairwise_comparisons` data structure.  Note that all keys in the hash below are naturally
+      #       ordered before all values for that key.
       pairwise_comparisons = {
         'B cells' => ['CSN1S1 macrophages', 'dendritic cells', 'eosinophils', 'fibroblasts', 'GPMNB macrophages', 'LC1', 'LC2', 'neutrophils', 'T cells'],
         'CSN1S1 macrophages' => ['dendritic cells', 'eosinophils', 'fibroblasts', 'GPMNB macrophages', 'LC1', 'LC2', 'neutrophils', 'T cells'],
