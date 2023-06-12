@@ -5,9 +5,6 @@
 import * as Sentry from '@sentry/react'
 import { getSCPContext } from '~/providers/SCPContextProvider'
 
-// permanently ignored errors when dealing with Bard
-const IGNORED_ERRORS = /Error in (JavaScript|fetch response) when logging event to Bard/
-
 /**
  * Log an exception to Sentry for bad response JS fetch executions
  * e.g. requests that result in a 404 response
@@ -76,9 +73,9 @@ function getIsSuppressedEnv() {
   return ['development', 'test'].includes(env)
 }
 
-/** Determine if error is in a list of permanently ignored errors */
-function getErrorIsIgnored(errorObj) {
-  return errorObj?.message.match(IGNORED_ERRORS)
+/** Determine if error is an upstream Bard error that we don't care about */
+function isBardError(errorObj) {
+  return errorObj?.message.match(/Error in (JavaScript|fetch response) when logging event to Bard/)
 }
 
 /**
@@ -93,10 +90,10 @@ function getErrorIsIgnored(errorObj) {
 export function logToSentry(error, useThrottle = false, sampleRate = 0.05) {
   const isThrottled = useThrottle && Math.random() >= sampleRate
   const envIsSuppressed = getIsSuppressedEnv()
-  const errorIsIgnored = getErrorIsIgnored(error)
-  if (errorIsIgnored || isThrottled || envIsSuppressed) {
+  const bardError = isBardError(error)
+  if (bardError || isThrottled || envIsSuppressed) {
     let reason
-    if (errorIsIgnored) {
+    if (bardError) {
       reason = 'ignored'
     } else if (isThrottled) {
       reason = 'throttle'
