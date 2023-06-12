@@ -59,7 +59,7 @@ export default function AnnotationControl({
       <label className="labeled-select">Annotation&nbsp;
         <a className="action help-icon"
            data-toggle="tooltip"
-           data-original-title="Use this menu to specify how the data are grouped or colored">
+           data-original-title="Select how cells are colored">
           <FontAwesomeIcon icon={faInfoCircle}/>
         </a>
         {hasSelection &&

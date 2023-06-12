@@ -385,7 +385,7 @@ export default function ExploreDisplayTabs({
             { !showViewOptionsControls &&
               <button className={showDifferentialExpressionPanel ?
                 "action view-options-toggle view-options-toggle-on" :
-                "action minified-options view-options-toggle view-options-toggle-on"
+                "action view-options-toggle view-options-toggle-on minified-options"
               }
                 onClick={toggleViewOptions}
                 data-analytics-name="view-options-show">
@@ -530,8 +530,8 @@ export default function ExploreDisplayTabs({
             {!showDifferentialExpressionPanel && !showUpstreamDifferentialExpressionPanel &&
               <>
                 <FontAwesomeIcon className="fa-lg" icon={faEye}/> <span className="options-label">OPTIONS</span>
-                <button className={showDifferentialExpressionPanel ? "action" : "action action-with-bg"}
-                  onClick={toggleViewOptions}
+                <button className={`action ${showDifferentialExpressionPanel ? '' : 'action-with-bg'}`}
+                        onClick={toggleViewOptions}
                   title="Hide options"
                   data-analytics-name="view-options-hide">
                   <FontAwesomeIcon className="fa-lg" icon={faTimes}/>
@@ -636,7 +636,7 @@ export default function ExploreDisplayTabs({
               exploreParams={exploreParamsWithDefaults}
               updateExploreParams={updateExploreParams}
               allGenes={exploreInfo ? exploreInfo.uniqueGenes : []}/>
-            <button className="action action-with-bg right-margin-10"
+            <button className="action action-with-bg margin-extra-right"
               onClick={clearExploreParams}
               title="Reset all view options"
               data-analytics-name="explore-view-options-reset">
