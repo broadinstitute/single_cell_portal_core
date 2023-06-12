@@ -25,7 +25,6 @@ import {
 } from '~/lib/search-metrics'
 import { downloadBucketFile } from '~/lib/scp-api'
 
-
 /** Return selected annotation object, including its `values` a.k.a. groups */
 function getAnnotationObject(exploreParamsWithDefaults, exploreInfo) {
   const selectedAnnotation = exploreParamsWithDefaults?.annotation

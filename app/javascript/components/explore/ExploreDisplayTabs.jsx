@@ -107,8 +107,6 @@ function getHasPairwiseDe(exploreInfo, exploreParams) {
     )
   })
 
-  console.log('hasPairwiseDe', hasPairwiseDe)
-
   return hasPairwiseDe
 }
 
@@ -357,8 +355,6 @@ export default function ExploreDisplayTabs({
     setRenderForcer({})
   }, 300)
 
-  console.log('hasPairwiseDe', hasPairwiseDe)
-  console.log('showUpstreamDifferentialExpressionPanel', showUpstreamDifferentialExpressionPanel)
   /** Get widths for main (plots) and side (options or DE) panels, for current Explore state */
   function getPanelWidths() {
     let main
