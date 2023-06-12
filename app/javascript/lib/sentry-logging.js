@@ -74,8 +74,8 @@ function getIsSuppressedEnv() {
 }
 
 /** Determine if error is an upstream Bard error that we don't care about */
-function isBardError(errorObj) {
-  return errorObj?.message.match(/Error in (JavaScript|fetch response) when logging event to Bard/)
+function isBardError(errorMsg) {
+  return errorMsg?.match(/Error in (JavaScript|fetch response) when logging event to Bard/)
 }
 
 /**
@@ -90,7 +90,7 @@ function isBardError(errorObj) {
 export function logToSentry(error, useThrottle = false, sampleRate = 0.05) {
   const isThrottled = useThrottle && Math.random() >= sampleRate
   const envIsSuppressed = getIsSuppressedEnv()
-  const bardError = isBardError(error)
+  const bardError = isBardError(error?.message)
   if (bardError || isThrottled || envIsSuppressed) {
     let reason
     if (bardError) {
