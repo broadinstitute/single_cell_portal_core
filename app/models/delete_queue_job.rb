@@ -112,6 +112,9 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
         object.study_file_bundle.destroy
       end
 
+      # delete any "orphaned" DataArray that might have persisted due to some kind of earlier error
+      delete_orphaned_arrays(study.id)
+
       # overwrite attributes to allow their immediate reuse
       # this must be done with a fresh StudyFile reference, otherwise upload_file_name may not overwrite
       new_name = "DELETE-#{SecureRandom.uuid}"
@@ -169,6 +172,13 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
     models.each do |model|
       model.where(study_file_id: object_id, study_id: study_id).delete_all
     end
+  end
+
+  # ensure there are no orphaned DataArray entries that will cause downstream index violations
+  def delete_orphaned_arrays(study_id)
+    study_file_ids = StudyFile.where(study_id:).pluck(:id)
+    cursor = DataArray.where(study_id:, :study_file_id.nin => study_file_ids)
+    cursor.delete_all if cursor.exists?
   end
 
   # remove all subsampling data when a user deletes a metadata file, as adding a new metadata file will cause all
