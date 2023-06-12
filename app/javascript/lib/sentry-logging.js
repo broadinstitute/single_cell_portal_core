@@ -3,8 +3,10 @@
  *
  */
 import * as Sentry from '@sentry/react'
-import { BrowserTracing } from '@sentry/tracing'
 import { getSCPContext } from '~/providers/SCPContextProvider'
+
+// permanently ignored errors when dealing with Bard
+const IGNORED_ERRORS = /Error in (JavaScript|fetch response) when logging event to Bard/
 
 /**
  * Log an exception to Sentry for bad response JS fetch executions
@@ -54,7 +56,8 @@ export function logJSFetchErrorToSentry(error, titleInfo = '', useThrottle = fal
 function printSuppression(errorObj, reason) {
   const reasonMap = {
     environment: 'in an unlogged environment',
-    throttle: 'this event is throttled by client'
+    throttle: 'this event is throttled by client',
+    ignored: 'this error is permanently ignored'
   }
 
   const message = `Suppressing error report to Sentry: ${reasonMap[reason]}`
@@ -69,9 +72,13 @@ function printSuppression(errorObj, reason) {
 /** Determine if current environment should suppress logging to Sentry */
 function getIsSuppressedEnv() {
   const env = getSCPContext().environment
-  return false
   // Return `false` if manually locally testing Sentry logging
-  // return ['development', 'test'].includes(env)
+  return ['development', 'test'].includes(env)
+}
+
+/** Determine if error is in a list of permanently ignored errors */
+function getErrorIsIgnored(errorObj) {
+  return errorObj?.message.match(IGNORED_ERRORS)
 }
 
 /**
@@ -85,9 +92,17 @@ function getIsSuppressedEnv() {
  */
 export function logToSentry(error, useThrottle = false, sampleRate = 0.05) {
   const isThrottled = useThrottle && Math.random() >= sampleRate
-
-  if (getIsSuppressedEnv() || isThrottled) {
-    const reason = isThrottled ? 'throttle' : 'environment'
+  const envIsSuppressed = getIsSuppressedEnv()
+  const errorIsIgnored = getErrorIsIgnored(error)
+  if (errorIsIgnored || isThrottled || envIsSuppressed) {
+    let reason
+    if (errorIsIgnored) {
+      reason = 'ignored'
+    } else if (isThrottled) {
+      reason = 'throttle'
+    } else {
+      reason = 'environment'
+    }
     printSuppression(error, reason)
     return
   }
@@ -110,9 +125,8 @@ export function setupSentry() {
       )
     ],
 
-    // replays sampling rates
-    replaysSessionSampleRate: 1.0,
-    replaysOnErrorSampleRate: 1.0,
+    // replays sampling rates - this will only record replays for 5% of errors that are reported
+    replaysOnErrorSampleRate: 0.05,
 
     // Sampling rate for transactions, which enrich Sentry events with traces
     tracesSampleRate: getIsSuppressedEnv() ? 0 : 1.0,
