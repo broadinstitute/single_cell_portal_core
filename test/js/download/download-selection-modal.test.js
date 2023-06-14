@@ -2,6 +2,7 @@ import React from 'react'
 import { render, waitForElementToBeRemoved, screen, fireEvent } from '@testing-library/react'
 import camelcaseKeys from 'camelcase-keys'
 import '@testing-library/jest-dom/extend-expect'
+import { setMockOrigin } from 'lib/scp-api'
 
 import DownloadSelectionModal from 'components/search/controls/download/DownloadSelectionModal'
 import * as ScpApi from 'lib/scp-api'
@@ -116,6 +117,9 @@ const EXAMPLE_HUMAN_SYNTH_STUDY_DOWNLOAD_INFO = [
 
 describe('Download selection modal', () => {
   it('shows the correct total size, and generates a command with selected file ids', async () => {
+
+    window.origin = 'http://localhost'
+
     const fetchDownloadInfo = jest.spyOn(ScpApi, 'fetchDownloadInfo')
     // pass in a clone of the response since it may get modified by the cache operations
     fetchDownloadInfo.mockImplementation(() => Promise.resolve(
