@@ -24,7 +24,7 @@ export default function DifferentialExpressionModal() {
       onClick={() => setShowDeModal(true)}
       data-analytics-name="differential-expression-info"
       data-toggle="tooltip"
-      data-original-title="Learn about differential expression in SCP"
+      data-original-title="Click to learn about differential expression in SCP"
       className="de-info-help-icon"
     >
       <FontAwesomeIcon className="action help-icon" icon={faInfoCircle} />
