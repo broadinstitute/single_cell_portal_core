@@ -106,10 +106,6 @@ export function PairwiseDifferentialExpressionGroupPicker({
   const groups = getLegendSortedLabels(countsByLabel)
 
   const defaultGroupsB = []
-
-  if (hasOneVsRestDe) {
-    defaultGroupsB.unshift('rest')
-  }
   const [deGroupsB, setDeGroupsB] = useState(defaultGroupsB)
 
   /** Update table based on new group selection */
@@ -133,7 +129,10 @@ export function PairwiseDifferentialExpressionGroupPicker({
       return deOption !== undefined && deOption !== newGroup
     })
     if (hasOneVsRestDe) {
-      newGroupsB.unshift('rest')
+      const groupHasRest = getMatchingDeOption(deObjects, newGroup, clusterName, annotation)
+      if (groupHasRest) {
+        newGroupsB.unshift('rest')
+      }
     }
     setDeGroupsB(newGroupsB)
 

@@ -92,11 +92,23 @@ class DifferentialExpressionResult
   #
   # @return [Hash<String => Array<String, String>, Array<String, String, String>]
   def result_files
-    one_vs_rest_files = one_vs_rest_comparisons.map { |label| filename_for(label) }
     pairwise_files = []
 
     # TODO (SCP-5096): Productionize this block, remove example data
     if Rails.env.development? && annotation_name == 'General_Celltype'
+
+      self.one_vs_rest_comparisons = [
+        'B cells',
+        # 'CSN1S1 macrophages', # Simulate missing one-vs-rest comparison
+        'dendritic cells',
+        'eosinophils',
+        'fibroblasts',
+        'GPMNB macrophages',
+        'LC1',
+        'LC2',
+        'neutrophils',
+        'T cells'
+      ]
 
       # Two important notes for pairwise comparisons:
       #
@@ -130,6 +142,8 @@ class DifferentialExpressionResult
         end
       end
     end
+
+    one_vs_rest_files = one_vs_rest_comparisons.map { |label| filename_for(label) }
 
     {
       'one_vs_rest' => one_vs_rest_comparisons.zip(one_vs_rest_files),
