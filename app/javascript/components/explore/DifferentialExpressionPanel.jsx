@@ -360,7 +360,7 @@ function DifferentialExpressionTable({
 export default function DifferentialExpressionPanel({
   deGroup, deGenes, searchGenes,
   exploreInfo, exploreParamsWithDefaults, setShowDeGroupPicker, setDeGenes, setDeGroup,
-  countsByLabel, hasPairwiseDe, deGroupB, setDeGroupB, numRows=50
+  countsByLabel, hasOneVsRestDe, hasPairwiseDe, deGroupB, setDeGroupB, numRows=50
 }) {
   const clusterName = exploreParamsWithDefaults?.cluster
   const bucketId = exploreInfo?.bucketId
@@ -450,6 +450,7 @@ export default function DifferentialExpressionPanel({
           setDeFilePath={setDeFilePath}
           deGroupB={deGroupB}
           setDeGroupB={setDeGroupB}
+          hasOneVsRestDe={hasOneVsRestDe}
         />
       }
 

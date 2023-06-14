@@ -91,23 +91,23 @@ function getClusterHasDe(exploreInfo, exploreParams) {
   return clusterHasDe
 }
 
-/** Determine if pairwise DE results exist for current annotation */
-function getHasPairwiseDe(exploreInfo, exploreParams) {
+/** Determine if current annotation has one-vs-rest or pairwise DE */
+function getHasComparisonDe(exploreInfo, exploreParams, comparison) {
   const flags = getFeatureFlagsWithDefaults()
   if (!flags?.differential_expression_frontend || !exploreInfo) {return false}
 
   const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
 
-  const hasPairwiseDe = exploreInfo.differentialExpression.some(deItem => {
+  const hasComparisonDe = exploreInfo.differentialExpression.some(deItem => {
     return (
       deItem.cluster_name === selectedCluster &&
       deItem.annotation_name === selectedAnnot.name &&
       deItem.annotation_scope === selectedAnnot.scope &&
-      deItem.select_options['pairwise'].length > 0
+      deItem.select_options[comparison].length > 0
     )
   })
 
-  return hasPairwiseDe
+  return hasComparisonDe
 }
 
 /** Return list of annotations that have differential expression enabled */
@@ -195,7 +195,8 @@ export default function ExploreDisplayTabs({
   const studyHasDe = flags?.differential_expression_frontend && exploreInfo?.differentialExpression.length > 0
   const annotHasDe = getAnnotHasDe(exploreInfo, exploreParams)
   const clusterHasDe = getClusterHasDe(exploreInfo, exploreParams)
-  const hasPairwiseDe = getHasPairwiseDe(exploreInfo, exploreParams)
+  const hasOneVsRestDe = getHasComparisonDe(exploreInfo, exploreParams, 'one_vs_rest')
+  const hasPairwiseDe = getHasComparisonDe(exploreInfo, exploreParams, 'pairwise')
 
   const [, setShowDeGroupPicker] = useState(false)
   const [deGenes, setDeGenes] = useState(null)
@@ -751,6 +752,7 @@ export default function ExploreDisplayTabs({
               setShowDeGroupPicker={setShowDeGroupPicker}
               setDeGenes={setDeGenes}
               setDeGroup={setDeGroup}
+              hasOneVsRestDe={hasOneVsRestDe}
               hasPairwiseDe={hasPairwiseDe}
               deGroupB={deGroupB}
               setDeGroupB={setDeGroupB}

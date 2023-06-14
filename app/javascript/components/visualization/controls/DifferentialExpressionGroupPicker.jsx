@@ -101,7 +101,7 @@ function getMatchingDeOption(
 export function PairwiseDifferentialExpressionGroupPicker({
   bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup,
   setDeGenes, countsByLabel, deObjects, setDeFilePath,
-  deGroupB, setDeGroupB
+  deGroupB, setDeGroupB, hasOneVsRestDe
 }) {
   const groups = getLegendSortedLabels(countsByLabel)
 
@@ -110,9 +110,11 @@ export function PairwiseDifferentialExpressionGroupPicker({
     return deOption !== undefined
   })
 
-  const [deGroupsB, setDeGroupsB] = useState(
-    deGroupsA.filter(group => !!deGroup && group !== deGroup)
-  )
+  const defaultGroupsB = deGroupsA.slice().filter(group => !!deGroup && group !== deGroup)
+  if (hasOneVsRestDe) {
+    defaultGroupsB.unshift('rest')
+  }
+  const [deGroupsB, setDeGroupsB] = useState(defaultGroupsB)
 
   /** Update table based on new group selection */
   async function updateTable(groupA, groupB) {
@@ -130,9 +132,11 @@ export function PairwiseDifferentialExpressionGroupPicker({
   /** Update group in differential expression picker */
   async function updateDeGroupA(newGroup) {
     setDeGroup(newGroup)
-    setDeGroupsB(
-      deGroupsA.filter(group => group !== newGroup)
-    )
+    const newGroupsB = deGroupsA.filter(group => group !== newGroup)
+    if (hasOneVsRestDe) {
+      newGroupsB.unshift('rest')
+    }
+    setDeGroupsB(newGroupsB)
 
     if (newGroup === deGroupB) {
       setDeGroupB(null) // Clear group B upon changing group A, if A === B
