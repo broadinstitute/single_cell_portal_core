@@ -83,7 +83,7 @@ function getMatchingDeOption(
   const matchingDeOption = deObject.select_options[comparison].find(option => {
     if (comparison === 'one_vs_rest') {
       return option[0] === group
-    } else {
+    } else if (comparison === 'pairwise') {
       // Pairwise comparison.  Naturally sort group labels, as only
       // naturally-sorted option is available, since combinations are not
       // ordered and we don't want to pass and store 2x the data.
@@ -105,12 +105,8 @@ export function PairwiseDifferentialExpressionGroupPicker({
 }) {
   const groups = getLegendSortedLabels(countsByLabel)
 
-  const deGroupsA = groups.filter(group => {
-    const deOption = getMatchingDeOption(deObjects, group, clusterName, annotation)
-    return deOption !== undefined
-  })
+  const defaultGroupsB = []
 
-  const defaultGroupsB = deGroupsA.slice().filter(group => !!deGroup && group !== deGroup)
   if (hasOneVsRestDe) {
     defaultGroupsB.unshift('rest')
   }
@@ -132,7 +128,10 @@ export function PairwiseDifferentialExpressionGroupPicker({
   /** Update group in differential expression picker */
   async function updateDeGroupA(newGroup) {
     setDeGroup(newGroup)
-    const newGroupsB = deGroupsA.filter(group => group !== newGroup)
+    const newGroupsB = groups.filter(group => {
+      const deOption = getMatchingDeOption(deObjects, newGroup, clusterName, annotation, 'pairwise', group)
+      return deOption !== undefined && deOption !== newGroup
+    })
     if (hasOneVsRestDe) {
       newGroupsB.unshift('rest')
     }
