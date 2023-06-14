@@ -128,15 +128,16 @@ export function PairwiseDifferentialExpressionGroupPicker({
       const deOption = getMatchingDeOption(deObjects, newGroup, clusterName, annotation, 'pairwise', group)
       return deOption !== undefined && deOption !== newGroup
     })
+    let groupHasRest = false
     if (hasOneVsRestDe) {
-      const groupHasRest = getMatchingDeOption(deObjects, newGroup, clusterName, annotation)
+      groupHasRest = getMatchingDeOption(deObjects, newGroup, clusterName, annotation)
       if (groupHasRest) {
         newGroupsB.unshift('rest')
       }
     }
     setDeGroupsB(newGroupsB)
 
-    if (newGroup === deGroupB) {
+    if (newGroup === deGroupB || deGroupB && deGroupB === 'rest' && !groupHasRest) {
       setDeGroupB(null) // Clear group B upon changing group A, if A === B
       setDeGenes(null)
       return
