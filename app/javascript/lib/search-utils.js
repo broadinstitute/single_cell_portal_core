@@ -1,5 +1,8 @@
 import stringSimilarity from 'string-similarity'
 
+// max number of autocomplete suggestions
+export const NUM_SUGGESTIONS = 50
+
 /**
  * Get list of autocomplete suggestions, based on input text
  *
@@ -9,7 +12,7 @@ import stringSimilarity from 'string-similarity'
  * @param {Array<String>} targets List of strings to match against
  * @param {Integer} numSuggestions Number of suggestions to show
  */
-export function getAutocompleteSuggestions(inputText, targets, numSuggestions=8) {
+export function getAutocompleteSuggestions(inputText, targets, numSuggestions=NUM_SUGGESTIONS) {
   // Autocomplete when user starts typing
   if (!targets?.length || !inputText) {
     return []

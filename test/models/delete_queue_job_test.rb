@@ -209,4 +209,21 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
       assert_nil study.default_cluster
     end
   end
+
+  test 'ensure all orphaned arrays are removed on file deletion' do
+    # create orphaned data array, but needs actual study file to save
+    study_file = FactoryBot.create(:study_file, study: @basic_study, file_type: 'Other', name: 'test.txt')
+    DataArray.create!(
+      study: @basic_study, study_file_id: study_file.id, name: 'All Cells', array_type: 'cells', array_index: 0,
+      linear_data_id: @basic_study.id, linear_data_type: 'Study', values: %w[A B C D], cluster_name: 'metadata.txt'
+    )
+    assert DataArray.where(study_id: @basic_study.id, name: 'All Cells').exists?
+    study_file.delete
+    metadata_file = FactoryBot.create(
+      :metadata_file, study: @basic_study, use_metadata_convention: false, name: 'new_metadata.txt'
+    )
+    # metadata delete should remove any instance of "all cells" DataArray for this study
+    DeleteQueueJob.new(metadata_file).perform
+    assert_not DataArray.where(study_id: @basic_study.id, name: 'All Cells').exists?
+  end
 end
