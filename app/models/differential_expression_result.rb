@@ -93,12 +93,12 @@ class DifferentialExpressionResult
   # @return [Hash<String => Array<String, String>, Array<String, String, String>]
   def result_files
     pairwise_files = []
-    is_user_de = false
+    is_precomputed_de = false
 
     # TODO (SCP-5096): Productionize this block, remove example data
     if Rails.env.development? && annotation_name == 'General_Celltype'
 
-      is_user_de = true
+      is_precomputed_de = true
 
       self.one_vs_rest_comparisons = [
         'B cells',
@@ -149,7 +149,7 @@ class DifferentialExpressionResult
     one_vs_rest_files = one_vs_rest_comparisons.map { |label| filename_for(label) }
 
     {
-      'is_user_de' => is_user_de,
+      'is_precomputed_de' => is_precomputed_de,
       'one_vs_rest' => one_vs_rest_comparisons.zip(one_vs_rest_files),
       'pairwise' => pairwise_files
     }

@@ -168,12 +168,12 @@ function getAnnotHasDe(exploreInfo, exploreParams) {
  * - Comparison type: either "one-vs-rest" or "pairwise"
  * - Source type: user-generated or SCP-generated
  *
- * User-generated DE is also often called "pre-computed" or "user-uploaded" or "study-owner-generated"
+ * User-generated DE is also often called "precomputed" or "user-uploaded" or "study-owner-generated"
  * or "custom".  Whereas SCP-generated DE is computed only for cell-type-like annotations and only as
  * one-vs-rest comparisons, user-generated DE can be more comprehensive -- it can be available for
  * any annotation, and as one-vs-rest and/or pairwise comparisons.
  */
-function getIsUserDe(exploreInfo, exploreParams) {
+function getIsPrecomputedDe(exploreInfo, exploreParams) {
   if (!exploreInfo) {return false}
 
   const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
@@ -186,9 +186,9 @@ function getIsUserDe(exploreInfo, exploreParams) {
     )
   })
 
-  const isUserDe = deItem?.select_options.is_user_de
+  const isPrecomputedDe = deItem?.select_options.is_precomputed_de
 
-  return isUserDe
+  return isPrecomputedDe
 }
 
 /**
@@ -226,7 +226,7 @@ export default function ExploreDisplayTabs({
   const clusterHasDe = getClusterHasDe(exploreInfo, exploreParams)
   const hasOneVsRestDe = getHasComparisonDe(exploreInfo, exploreParams, 'one_vs_rest')
   const hasPairwiseDe = getHasComparisonDe(exploreInfo, exploreParams, 'pairwise')
-  const isUserDe = getIsUserDe(exploreInfo, exploreParams)
+  const isPrecomputedDe = getIsPrecomputedDe(exploreInfo, exploreParams)
 
   const [, setShowDeGroupPicker] = useState(false)
   const [deGenes, setDeGenes] = useState(null)
@@ -666,7 +666,7 @@ export default function ExploreDisplayTabs({
                 cluster={exploreParamsWithDefaults.cluster}
                 annotation={shownAnnotation}
                 setDeGroupB={setDeGroupB}
-                isUserDe={isUserDe}
+                isPrecomputedDe={isPrecomputedDe}
               />
             }
           </div>

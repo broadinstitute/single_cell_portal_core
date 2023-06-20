@@ -40,11 +40,11 @@ function getAnnotationObject(exploreParamsWithDefaults, exploreInfo) {
 /** Top matter for differential expression panel shown at right in Explore tab */
 export function DifferentialExpressionPanelHeader({
   setDeGenes, setDeGroup, setShowDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel, isUpstream,
-  cluster, annotation, setDeGroupB, isUserDe
+  cluster, annotation, setDeGroupB, isPrecomputedDe
 }) {
   return (
     <>
-      <span>Differential expression {isUserDe && <span className="precomputed">- Pre-computed</span>}</span>
+      <span>Differential expression {isPrecomputedDe && <span className="precomputed">- Precomputed</span>}</span>
       <button className="action fa-lg"
         onClick={() => {
           setDeGenes(null)
