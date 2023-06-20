@@ -9,9 +9,14 @@
   }
 }
 
-.precomputed {
+.de-source {
   font-weight: normal;
-  font-style: italic;
+}
+
+.badge-inverse {
+  color: #555;
+  border: 1px solid #555;
+  background-color: #fff;
 }
 
 .de-table-buttons {

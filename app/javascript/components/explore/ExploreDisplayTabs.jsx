@@ -166,14 +166,14 @@ function getAnnotHasDe(exploreInfo, exploreParams) {
  *
  * DE results have two dimensions:
  * - Comparison type: either "one-vs-rest" or "pairwise"
- * - Source type: user-generated or SCP-generated
+ * - Source: "author-computed" "or SCP-computed"
  *
- * User-generated DE is also often called "precomputed" or "user-uploaded" or "study-owner-generated"
+ * Author-computed DE is also often called "precomputed" or "user-uploaded" or "study-owner-generated"
  * or "custom".  Whereas SCP-generated DE is computed only for cell-type-like annotations and only as
  * one-vs-rest comparisons, user-generated DE can be more comprehensive -- it can be available for
  * any annotation, and as one-vs-rest and/or pairwise comparisons.
  */
-function getIsPrecomputedDe(exploreInfo, exploreParams) {
+function getIsAuthorDe(exploreInfo, exploreParams) {
   if (!exploreInfo) {return false}
 
   const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
@@ -186,9 +186,9 @@ function getIsPrecomputedDe(exploreInfo, exploreParams) {
     )
   })
 
-  const isPrecomputedDe = deItem?.select_options.is_precomputed_de
+  const isAuthorDe = deItem?.select_options.is_author_de
 
-  return isPrecomputedDe
+  return isAuthorDe
 }
 
 /**
@@ -226,7 +226,7 @@ export default function ExploreDisplayTabs({
   const clusterHasDe = getClusterHasDe(exploreInfo, exploreParams)
   const hasOneVsRestDe = getHasComparisonDe(exploreInfo, exploreParams, 'one_vs_rest')
   const hasPairwiseDe = getHasComparisonDe(exploreInfo, exploreParams, 'pairwise')
-  const isPrecomputedDe = getIsPrecomputedDe(exploreInfo, exploreParams)
+  const isAuthorDe = getIsAuthorDe(exploreInfo, exploreParams)
 
   const [, setShowDeGroupPicker] = useState(false)
   const [deGenes, setDeGenes] = useState(null)
@@ -666,7 +666,8 @@ export default function ExploreDisplayTabs({
                 cluster={exploreParamsWithDefaults.cluster}
                 annotation={shownAnnotation}
                 setDeGroupB={setDeGroupB}
-                isPrecomputedDe={isPrecomputedDe}
+                isAuthorDe={isAuthorDe}
+                deGenes={deGenes}
               />
             }
           </div>
