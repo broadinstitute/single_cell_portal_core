@@ -116,6 +116,9 @@ const EXAMPLE_HUMAN_SYNTH_STUDY_DOWNLOAD_INFO = [
 
 describe('Download selection modal', () => {
   it('shows the correct total size, and generates a command with selected file ids', async () => {
+
+    window.origin = 'http://localhost'
+
     const fetchDownloadInfo = jest.spyOn(ScpApi, 'fetchDownloadInfo')
     // pass in a clone of the response since it may get modified by the cache operations
     fetchDownloadInfo.mockImplementation(() => Promise.resolve(

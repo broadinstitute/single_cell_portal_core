@@ -8,7 +8,7 @@ import ValidateFile from '~/lib/validation/validate-file'
 import ValidationMessage from '~/components/validation/ValidationMessage'
 
 // File types which let the user set a custom name for the file in the UX
-const FILE_TYPES_ALLOWING_SET_NAME = ['Cluster', 'Gene List', 'Image']
+const FILE_TYPES_ALLOWING_SET_NAME = ['Cluster', 'Gene List']
 
 
 /** renders a file upload control for the given file object */

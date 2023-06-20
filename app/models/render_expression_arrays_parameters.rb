@@ -18,7 +18,16 @@ class RenderExpressionArraysParameters
   # matrix_file_type: type of processed matrix (dense, sparse)
   # gene_file (optional): genes/features file for sparse matrix
   # barcode_file (optional): barcodes file for sparse matrix
-  attr_accessor :cluster_file, :cluster_name, :matrix_file_path, :matrix_file_type, :gene_file, :barcode_file
+  PARAM_DEFAULTS = {
+    cluster_file: nil,
+    cluster_name: nil,
+    matrix_file_path: nil,
+    matrix_file_type: nil,
+    gene_file: nil,
+    barcode_file: nil
+  }.freeze
+
+  attr_accessor(*PARAM_DEFAULTS.keys)
 
   validates :cluster_file, :cluster_name, :matrix_file_path, :matrix_file_type, presence: true
   validates :cluster_file, :matrix_file_path,
@@ -31,10 +40,6 @@ class RenderExpressionArraysParameters
               message: 'is not a valid GS url'
             },
             if: -> { matrix_file_type == 'mtx' }
-
-  def initialize(attributes = {})
-    super
-  end
 
   # get the size of the source expression matrix
   # used for determining what size image to provision
@@ -57,12 +62,5 @@ class RenderExpressionArraysParameters
     else
       MACHINE_TYPES[:large]
     end
-  end
-
-  # default attributes hash
-  def attributes
-    {
-      cluster_file:, cluster_name:, matrix_file_path:, matrix_file_type:, gene_file:, barcode_file:
-    }.with_indifferent_access
   end
 end

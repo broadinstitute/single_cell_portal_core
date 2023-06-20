@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import _clone from 'lodash/clone'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faLink, faArrowLeft, faCog, faTimes, faUndo } from '@fortawesome/free-solid-svg-icons'
+import { faLink, faArrowLeft, faEye, faTimes, faUndo } from '@fortawesome/free-solid-svg-icons'
 
 import StudyGeneField from './StudyGeneField'
 import ClusterSelector from '~/components/visualization/controls/ClusterSelector'
@@ -23,7 +23,6 @@ import DotPlot from '~/components/visualization/DotPlot'
 import Heatmap from '~/components/visualization/Heatmap'
 import GeneListHeatmap from '~/components/visualization/GeneListHeatmap'
 import GenomeView from './GenomeView'
-import ImageTab from './ImageTab'
 import { getAnnotationValues, getShownAnnotation, getDefaultSpatialGroupsForCluster } from '~/lib/cluster-utils'
 import RelatedGenesIdeogram from '~/components/visualization/RelatedGenesIdeogram'
 import InferCNVIdeogram from '~/components/visualization/InferCNVIdeogram'
@@ -35,29 +34,7 @@ import DifferentialExpressionPanel, { DifferentialExpressionPanelHeader } from '
 import OverlayTrigger from 'react-bootstrap/lib/OverlayTrigger'
 import Tooltip from 'react-bootstrap/lib/Tooltip'
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
-
-const tabList = [
-  { key: 'loading', label: 'Loading...' },
-  { key: 'scatter', label: 'Scatter' },
-  { key: 'annotatedScatter', label: 'Annotated scatter' },
-  { key: 'correlatedScatter', label: 'Correlation' },
-  { key: 'distribution', label: 'Distribution' },
-  { key: 'dotplot', label: 'Dot plot' },
-  { key: 'heatmap', label: 'Heatmap' },
-  { key: 'geneListHeatmap', label: 'Precomputed heatmap' },
-  { key: 'spatial', label: 'Spatial' },
-  { key: 'genome', label: 'Genome' },
-  { key: 'infercnv-genome', label: 'Genome (inferCNV)' },
-  { key: 'images', label: 'Images' }
-]
-
-const disabledTooltips = {
-  'scatter': { numToSearch: '1', isMulti: false },
-  'distribution': { numToSearch: '1', isMulti: false },
-  'correlatedScatter': { numToSearch: '2', isMulti: true },
-  'dotplot': { numToSearch: '2 or more', isMulti: true },
-  'heatmap': { numToSearch: '2 or more', isMulti: true }
-}
+import PlotTabs from './PlotTabs'
 
 /** Get the selected clustering and annotation, or their defaults */
 function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
@@ -285,8 +262,8 @@ export default function ExploreDisplayTabs({
   const isCorrelatedScatter = enabledTabs.includes('correlatedScatter')
 
   const annotationList = exploreInfo ? exploreInfo.annotationList : null
-  // hide the cluster controls if we're on a genome/image tab, or if there aren't clusters to choose
-  const showClusterControls = !['genome', 'infercnv-genome', 'images', 'geneListHeatmap'].includes(shownTab) &&
+  // hide the cluster controls if we're on a genome tab, or if there aren't clusters to choose
+  const showClusterControls = !['genome', 'infercnv-genome', 'geneListHeatmap'].includes(shownTab) &&
                                 annotationList?.clusters?.length
 
   let hasSpatialGroups = false
@@ -390,6 +367,7 @@ export default function ExploreDisplayTabs({
   function getPanelWidths() {
     let main
     let side
+    const isSelectingDE = showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel
     if (showViewOptionsControls) {
       if (
         showDifferentialExpressionTable ||
@@ -401,7 +379,8 @@ export default function ExploreDisplayTabs({
       } else {
         // Default state, when side panel is "Options" and not collapsed
         main = 'col-md-10'
-        side = 'col-md-2'
+        // only set options-bg if we're outside the DE UX
+        side = isSelectingDE ? 'col-md-2' : 'col-md-2 options-bg'
       }
     } else {
       // When options panel is collapsed.  Maximize horizontal space for plots.
@@ -416,7 +395,8 @@ export default function ExploreDisplayTabs({
 
   return (
     <>
-      <div className="row">
+      {/* Render top content for Explore view, i.e. gene search box and plot tabs */}
+      <div className="row position-forward">
         <div className="col-md-5">
           <div className="flexbox">
             <StudyGeneField genes={exploreParams.genes}
@@ -438,46 +418,16 @@ export default function ExploreDisplayTabs({
             }
           </div>
         </div>
-        <div className={isNewExploreUX ? '' : 'col-md-4 col-md-offset-1'}>
-          <ul
-            className={isNewExploreUX ? 'nav nav-tabs study-plot-tabs' : 'nav nav-tabs'}
-            role="tablist"
-            data-analytics-name="explore-tab"
-          >
-            { enabledTabs.map(tabKey => {
-              const label = tabList.find(({ key }) => key === tabKey).label
-              return (
-                <li key={tabKey}
-                  role="presentation"
-                  aria-disabled="false"
-                  className={`study-nav ${tabKey === shownTab ? 'active' : ''} ${tabKey}-tab-anchor`}>
-                  <a onClick={() => updateExploreParams({ tab: tabKey })}>{label}</a>
-                </li>
-              )
-            })}
-            {isNewExploreUX &&
-            disabledTabs.map(tabKey => {
-              const label = tabList.find(({ key }) => key === tabKey).label
-              const tooltip = disabledTooltips[tabKey]
-              const numGenes = tooltip.numToSearch
-              const geneText = `gene${tooltip.isMulti ? 's' : ''}`
-              const text = `To show this plot, search ${numGenes} ${geneText} using the box at left`
-              return (
-                <li key={tabKey}
-                  role="presentation"
-                  aria-disabled="true"
-                  className={`study-nav ${tabKey}-tab-anchor disabled`}
-                  data-toggle="tooltip"
-                  data-original-title={text}
-                ><a>{label}</a>
-                </li>
-              )
-            })
-            }
-          </ul>
-        </div>
+        <PlotTabs
+          shownTab={shownTab}
+          enabledTabs={enabledTabs}
+          disabledTabs={disabledTabs}
+          updateExploreParams={updateExploreParams}
+          isNewExploreUX={isNewExploreUX}
+        />
       </div>
 
+      {/* Render plots for the given Explore view state */}
       <div className="row explore-tab-content">
         <div className={getPanelWidths().main}>
           <div className="explore-plot-tab-content row">
@@ -492,10 +442,13 @@ export default function ExploreDisplayTabs({
               />
             }
             { !showViewOptionsControls &&
-              <button className="action view-options-toggle view-options-toggle-on"
-                onClick={toggleViewOptions}
-                data-analytics-name="view-options-show">
-                OPTIONS <FontAwesomeIcon className="fa-lg" icon={faCog}/>
+              <button className={showDifferentialExpressionPanel ?
+                'action view-options-toggle view-options-toggle-on' :
+                'action view-options-toggle view-options-toggle-on minified-options'
+              }
+              onClick={toggleViewOptions}
+              data-analytics-name="view-options-show">
+                <FontAwesomeIcon className="fa-lg" icon={faEye}/>
               </button>
             }
             { enabledTabs.includes('annotatedScatter') &&
@@ -622,20 +575,6 @@ export default function ExploreDisplayTabs({
               />
             </div>
             }
-            { enabledTabs.includes('images') &&
-              <div className={shownTab === 'images' ? '' : 'hidden'}>
-                <ImageTab
-                  studyAccession={studyAccession}
-                  imageFiles={exploreInfo.imageFiles}
-                  bucketName={exploreInfo.bucketId}
-                  isCellSelecting={isCellSelecting}
-                  isVisible={shownTab === 'images'}
-                  getPlotDimensions={getPlotDimensions}
-                  exploreParams={exploreParams}
-                  plotPointsSelected={plotPointsSelected}
-                />
-              </div>
-            }
             { enabledTabs.includes('loading') &&
               <div className={shownTab === 'loading' ? '' : 'hidden'}>
                 <LoadingSpinner testId="explore-spinner"/>
@@ -643,12 +582,14 @@ export default function ExploreDisplayTabs({
             }
           </div>
         </div>
+
+        {/* Render "Options" panel at right of page */}
         <div className={getPanelWidths().side}>
           <div className="view-options-toggle">
             {!showDifferentialExpressionPanel && !showUpstreamDifferentialExpressionPanel &&
               <>
-                <FontAwesomeIcon className="fa-lg" icon={faCog}/> OPTIONS
-                <button className="action"
+                <FontAwesomeIcon className="fa-lg" icon={faEye}/> <span className="options-label">OPTIONS</span>
+                <button className={`action ${showDifferentialExpressionPanel ? '' : 'action-with-bg'}`}
                   onClick={toggleViewOptions}
                   title="Hide options"
                   data-analytics-name="view-options-hide">
@@ -757,14 +698,14 @@ export default function ExploreDisplayTabs({
               exploreParams={exploreParamsWithDefaults}
               updateExploreParams={updateExploreParams}
               allGenes={exploreInfo ? exploreInfo.uniqueGenes : []}/>
-            <button className="action"
+            <button className="action action-with-bg margin-extra-right"
               onClick={clearExploreParams}
               title="Reset all view options"
               data-analytics-name="explore-view-options-reset">
               <FontAwesomeIcon icon={faUndo}/> Reset view
             </button>
             <button onClick={() => copyLink(routerLocation)}
-              className="action"
+              className="action action-with-bg"
               data-toggle="tooltip"
               title="Copy a link to this visualization to the clipboard">
               <FontAwesomeIcon icon={faLink}/> Get link
@@ -838,11 +779,10 @@ export function getEnabledTabs(exploreInfo, exploreParams) {
   const hasSpatialGroups = exploreParams.spatialGroups?.length > 0
   const hasGenomeFiles = exploreInfo && exploreInfo?.bamBundleList?.length > 0
   const hasIdeogramOutputs = !!exploreInfo?.inferCNVIdeogramFiles
-  const hasImages = exploreInfo?.imageFiles?.length > 0
   const isNumeric = exploreParams?.annotation?.type === 'numeric'
 
   let coreTabs = [
-    !isNumeric ? 'scatter' : 'annotatedScatter',
+    'annotatedScatter', 'scatter',
     'distribution', 'correlatedScatter',
     'dotplot', 'heatmap'
   ]
@@ -883,11 +823,13 @@ export function getEnabledTabs(exploreInfo, exploreParams) {
   if (hasIdeogramOutputs) {
     enabledTabs.push('infercnv-genome')
   }
-  if (hasImages) {
-    enabledTabs.push('images')
-  }
 
-  let disabledTabs = coreTabs.filter(coreTab => !enabledTabs.includes(coreTab))
+  let disabledTabs = coreTabs.filter(tab => {
+    return (
+      !enabledTabs.includes(tab) && // Omit any enabled tabs
+      !(!isNumeric && tab === 'annotatedScatter') // Omit "Annotated scatter" for group annotations
+    )
+  })
 
   if (!exploreInfo) {
     enabledTabs = ['loading']

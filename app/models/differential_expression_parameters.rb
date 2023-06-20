@@ -16,8 +16,24 @@ class DifferentialExpressionParameters
   # gene_file (optional): genes/features file for sparse matrix
   # barcode_file (optional): barcodes file for sparse matrix
   # machine_type (optional): override for default ingest machine type (uses 'n1-highmem-8')
-  attr_accessor :annotation_name, :annotation_scope, :annotation_file, :cluster_file, :cluster_name, :matrix_file_path,
-                :matrix_file_type, :gene_file, :barcode_file, :machine_type
+  PARAM_DEFAULTS = {
+    annotation_name: nil,
+    annotation_type: 'group',
+    annotation_scope: nil,
+    annotation_file: nil,
+    cluster_file: nil,
+    cluster_name: nil,
+    matrix_file_path: nil,
+    matrix_file_type: nil,
+    gene_file: nil,
+    barcode_file: nil,
+    machine_type: 'n1-highmem-8'
+  }.freeze
+
+  # values that are available as methods but not as attributes (and not passed to command line)
+  NON_ATTRIBUTE_PARAMS = %i[machine_type].freeze
+
+  attr_accessor(*PARAM_DEFAULTS.keys)
 
   validates :annotation_name, :annotation_scope, :annotation_file, :cluster_file,
             :cluster_name, :matrix_file_path, :matrix_file_type, presence: true
@@ -33,26 +49,4 @@ class DifferentialExpressionParameters
               message: 'is not a valid GS url'
             },
             if: -> { matrix_file_type == 'mtx' }
-
-  # apply default value for :machine_type, unless overridden
-  def initialize(attributes = {})
-    super
-    @machine_type ||= 'n1-highmem-8'
-  end
-
-  # default attributes hash
-  def attributes
-    {
-      annotation_name: annotation_name,
-      annotation_type: 'group',
-      annotation_scope: annotation_scope,
-      annotation_file: annotation_file,
-      cluster_file: cluster_file,
-      cluster_name: cluster_name,
-      matrix_file_path: matrix_file_path,
-      matrix_file_type: matrix_file_type,
-      gene_file: gene_file,
-      barcode_file: barcode_file
-    }.with_indifferent_access
-  end
 end

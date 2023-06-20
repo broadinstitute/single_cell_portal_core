@@ -81,18 +81,20 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
         study.update(cell_count: 0)
         reset_default_annotation(study:)
       when 'AnnData'
-        delete_convention_data(study: study, metadata_file: object)
-        # delete user annotations first as we lose associations later
-        delete_user_annotations(study:, study_file: object)
-        delete_parsed_data(object.id, study.id, ClusterGroup, CellMetadatum, Gene, DataArray)
-        delete_fragment_files(study:, study_file: object)
-        # reset default options/counts
-        study.reload
-        study.cell_count = study.all_cells_array.size
-        study.gene_count = study.unique_genes.size
-        reset_default_cluster(study:)
-        reset_default_annotation(study:)
-        study.save
+        unless object.is_reference_anndata?
+          delete_convention_data(study: study, metadata_file: object)
+          # delete user annotations first as we lose associations later
+          delete_user_annotations(study:, study_file: object)
+          delete_parsed_data(object.id, study.id, ClusterGroup, CellMetadatum, Gene, DataArray)
+          delete_fragment_files(study:, study_file: object)
+          # reset default options/counts
+          study.reload
+          study.cell_count = study.all_cells_array.size
+          study.gene_count = study.unique_genes.size
+          reset_default_cluster(study:)
+          reset_default_annotation(study:)
+          study.save
+        end
       when 'Gene List'
         delete_parsed_data(object.id, study.id, PrecomputedScore)
       when 'BAM Index'
@@ -109,6 +111,9 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
         end
         object.study_file_bundle.destroy
       end
+
+      # delete any "orphaned" DataArray that might have persisted due to some kind of earlier error
+      delete_orphaned_arrays(study.id)
 
       # overwrite attributes to allow their immediate reuse
       # this must be done with a fresh StudyFile reference, otherwise upload_file_name may not overwrite
@@ -167,6 +172,13 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
     models.each do |model|
       model.where(study_file_id: object_id, study_id: study_id).delete_all
     end
+  end
+
+  # ensure there are no orphaned DataArray entries that will cause downstream index violations
+  def delete_orphaned_arrays(study_id)
+    study_file_ids = StudyFile.where(study_id:).pluck(:id)
+    cursor = DataArray.where(study_id:, :study_file_id.nin => study_file_ids)
+    cursor.delete_all if cursor.exists?
   end
 
   # remove all subsampling data when a user deletes a metadata file, as adding a new metadata file will cause all
@@ -244,7 +256,7 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
 
   # delete all AnnData "fragment" files upon study file deletion
   def delete_fragment_files(study:, study_file:)
-    prefix = "_scp_internal/anndata_ingest/#{study_file.id}"
+    prefix = "_scp_internal/anndata_ingest/#{study.accession}_#{study_file.id}"
     remotes = ApplicationController.firecloud_client.get_workspace_files(study.bucket_id, prefix:)
     remotes.each(&:delete)
   end

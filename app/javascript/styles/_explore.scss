@@ -26,6 +26,7 @@
     float: right;
     background: #fff;
     color: #3D5A87;
+    background-color: $options-color;
     margin-top: -0.5rem;
   }
 
@@ -34,6 +35,7 @@
     float: right;
     background: #fff;
     color: #3D5A87;
+    background-color: $options-color;
     margin-top: -2.5rem;
   }
 
@@ -70,8 +72,8 @@
 
 .explore-tab-content {
   background: #fff;
-  flex-grow: 1;
-  z-index: 0;
+  display: flex;
+  flex-wrap: wrap;
 
   button.action {
     background: #fff;
@@ -242,4 +244,30 @@
     color: #999999;
     border-bottom: 1px solid #ddd;
   }
+}
+
+.options-label {
+  font-size: 1.2em;
+}
+
+.margin-extra-right {
+  margin-right: 10px;
+}
+
+.options-bg {
+  background: $options-color;
+  border-bottom: 1px solid #ccc;
+}
+
+.action-with-bg {
+  background: $options-color !important;
+}
+
+.minified-options {
+  background: #fff;
+}
+
+// to position content in the explore tab forward
+.position-forward {
+  z-index: 3;
 }

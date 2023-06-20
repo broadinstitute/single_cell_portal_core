@@ -521,23 +521,19 @@ module Api
       def delete_anndata_fragment
         @fragment = @study_file.ann_data_file_info.find_fragment(_id: params[:fragment_id])
         study_file_id = @study_file._id
-
-        url = @study_file.ann_data_file_info.fragment_file_url(@study.bucket_id, 'cluster', @study_file._id, @fragment["obsm_key_name"])
+        url = RequestUtils.data_fragment_url(
+          @study_file, 'cluster', gs_url: false, file_type_detail: @fragment['obsm_key_name']
+        )
 
         # get the remote clustering fragment to be deleted
         clustering_to_delete = ApplicationController.firecloud_client.get_workspace_file(@study.bucket_id, url)
-
         begin
           if clustering_to_delete.present?
-          
             Rails.logger.info "Deleting clustering at #{url}"
-
             # delete matching caches
             @study_file.invalidate_cache_by_file_type
             CacheRemovalJob.new(@study.accession).delay(queue: :cache).perform
-
             DeleteQueueJob.new(@fragment, study_file_id).delay.perform
-
             ApplicationController.firecloud_client.delete_workspace_file(@study.bucket_id, url)
             head 204
           end
@@ -545,8 +541,7 @@ module Api
           ErrorTracker.report_exception(e, current_api_user, @study_file, params)
           MetricsService.report_error(e, request, current_api_user, @study)
           logger.error "Error in deleting clustering #{@study_file.upload_file_name} - #{e.message}"
-          render json: {error: "Error deleting remote file in bucket: #{e.message}"}, status: 500
-        
+          render json: {error: "Error deleting remote file in bucket: #{e.message}" }, status: 500
         end
       end
 
@@ -750,7 +745,10 @@ module Api
           ann_data_file_info_attributes: [
             :_id, :reference_file, :has_clusters, :has_metadata, :has_expression, :has_raw_counts,
             data_fragments: AnnDataFileInfo::DATA_FRAGMENT_PARAMS
-          ]
+          ],
+          differential_expression_file_info_attributes: [
+            :_id, :clustering_association, :annotation_association, :computational_method
+          ],
         )
       end
     end
