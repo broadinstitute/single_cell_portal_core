@@ -97,9 +97,7 @@ SecureHeaders::Configuration.default do |config|
                      https://bam.nr-data.net https://*.appcues.com https://*.appcues.net),
     style_src: %w('self' blob: https://maxcdn.bootstrapcdn.com
                       https://*.appcues.com https://*.appcues.net https://fonts.googleapis.com https://fonts.google.com 'unsafe-inline'),
-    upgrade_insecure_requests: true, # see https://www.w3.org/TR/upgrade-insecure-requests/
-    worker_src: %w('self' blob:),
-    child_src: %w('self' blob:)
+    upgrade_insecure_requests: true # see https://www.w3.org/TR/upgrade-insecure-requests/
   }
 
 end
