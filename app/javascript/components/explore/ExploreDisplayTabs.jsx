@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import _clone from 'lodash/clone'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faLink, faArrowLeft, faCog, faTimes, faUndo } from '@fortawesome/free-solid-svg-icons'
+import { faLink, faArrowLeft, faEye, faTimes, faUndo } from '@fortawesome/free-solid-svg-icons'
 
 import StudyGeneField from './StudyGeneField'
 import ClusterSelector from '~/components/visualization/controls/ClusterSelector'
@@ -311,6 +311,7 @@ export default function ExploreDisplayTabs({
   function getPanelWidths() {
     let main
     let side
+    const isSelectingDE = showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel
     if (showViewOptionsControls) {
       if (showDifferentialExpressionTable) {
         // DE table is shown.  Least horizontal space for plots.
@@ -319,7 +320,8 @@ export default function ExploreDisplayTabs({
       } else {
         // Default state, when side panel is "Options" and not collapsed
         main = 'col-md-10'
-        side = 'col-md-2'
+        // only set options-bg if we're outside the DE UX
+        side = isSelectingDE ? 'col-md-2' : 'col-md-2 options-bg'
       }
     } else {
       // When options panel is collapsed.  Maximize horizontal space for plots.
@@ -381,10 +383,13 @@ export default function ExploreDisplayTabs({
               />
             }
             { !showViewOptionsControls &&
-              <button className="action view-options-toggle view-options-toggle-on"
+              <button className={showDifferentialExpressionPanel ?
+                "action view-options-toggle view-options-toggle-on" :
+                "action view-options-toggle view-options-toggle-on minified-options"
+              }
                 onClick={toggleViewOptions}
                 data-analytics-name="view-options-show">
-                OPTIONS <FontAwesomeIcon className="fa-lg" icon={faCog}/>
+                <FontAwesomeIcon className="fa-lg" icon={faEye}/>
               </button>
             }
             { enabledTabs.includes('annotatedScatter') &&
@@ -524,9 +529,9 @@ export default function ExploreDisplayTabs({
           <div className="view-options-toggle">
             {!showDifferentialExpressionPanel && !showUpstreamDifferentialExpressionPanel &&
               <>
-                <FontAwesomeIcon className="fa-lg" icon={faCog}/> OPTIONS
-                <button className="action"
-                  onClick={toggleViewOptions}
+                <FontAwesomeIcon className="fa-lg" icon={faEye}/> <span className="options-label">OPTIONS</span>
+                <button className={`action ${showDifferentialExpressionPanel ? '' : 'action-with-bg'}`}
+                        onClick={toggleViewOptions}
                   title="Hide options"
                   data-analytics-name="view-options-hide">
                   <FontAwesomeIcon className="fa-lg" icon={faTimes}/>
@@ -631,14 +636,14 @@ export default function ExploreDisplayTabs({
               exploreParams={exploreParamsWithDefaults}
               updateExploreParams={updateExploreParams}
               allGenes={exploreInfo ? exploreInfo.uniqueGenes : []}/>
-            <button className="action"
+            <button className="action action-with-bg margin-extra-right"
               onClick={clearExploreParams}
               title="Reset all view options"
               data-analytics-name="explore-view-options-reset">
               <FontAwesomeIcon icon={faUndo}/> Reset view
             </button>
             <button onClick={() => copyLink(routerLocation)}
-              className="action"
+              className="action action-with-bg"
               data-toggle="tooltip"
               title="Copy a link to this visualization to the clipboard">
               <FontAwesomeIcon icon={faLink}/> Get link
