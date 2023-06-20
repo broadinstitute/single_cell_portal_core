@@ -110,8 +110,15 @@ export function PairwiseDifferentialExpressionGroupPicker({
 
   /** Update table based on new group selection */
   async function updateTable(groupA, groupB) {
-    const deOption = getMatchingDeOption(deObjects, groupA, clusterName, annotation, 'pairwise', groupB)
-    const deFileName = deOption[2]
+    let deOption
+    let deFileName
+    if (groupB === 'rest') {
+      deOption = getMatchingDeOption(deObjects, groupA, clusterName, annotation)
+      deFileName = deOption[1]
+    } else {
+      deOption = getMatchingDeOption(deObjects, groupA, clusterName, annotation, 'pairwise', groupB)
+      deFileName = deOption[2]
+    }
 
     const deFilePath = basePath + deFileName
 
