@@ -408,6 +408,7 @@ export default function ExploreDisplayTabs({
                   plotPointsSelected={plotPointsSelected}
                   countsByLabel={countsByLabel}
                   setCountsByLabel={setCountsByLabel}
+                  updateExploreParams={updateExploreParams}
                 />
               </div>
             }
@@ -425,6 +426,7 @@ export default function ExploreDisplayTabs({
                   plotPointsSelected={plotPointsSelected}
                   countsByLabel={countsByLabel}
                   setCountsByLabel={setCountsByLabel}
+                  updateExploreParams={updateExploreParams}
                 />
               </div>
             }
