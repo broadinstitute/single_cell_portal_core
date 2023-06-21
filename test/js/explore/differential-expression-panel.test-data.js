@@ -1,3 +1,317 @@
+export const deObjects = [
+  {
+    'cluster_name': 'All Cells UMAP',
+    'annotation_name': 'General_Celltype',
+    'annotation_scope': 'study',
+    'select_options': {
+      'is_author_de': true,
+      'one_vs_rest': [
+        [
+          'B cells',
+          'cluster_umap_txt--General_Celltype--B_cells--study--wilcoxon.tsv'
+        ],
+        [
+          'dendritic cells',
+          'cluster_umap_txt--General_Celltype--dendritic_cells--study--wilcoxon.tsv'
+        ],
+        [
+          'eosinophils',
+          'cluster_umap_txt--General_Celltype--eosinophils--study--wilcoxon.tsv'
+        ],
+        [
+          'fibroblasts',
+          'cluster_umap_txt--General_Celltype--fibroblasts--study--wilcoxon.tsv'
+        ],
+        [
+          'GPMNB macrophages',
+          'cluster_umap_txt--General_Celltype--GPMNB_macrophages--study--wilcoxon.tsv'
+        ],
+        [
+          'LC1',
+          'cluster_umap_txt--General_Celltype--LC1--study--wilcoxon.tsv'
+        ],
+        [
+          'LC2',
+          'cluster_umap_txt--General_Celltype--LC2--study--wilcoxon.tsv'
+        ],
+        [
+          'neutrophils',
+          'cluster_umap_txt--General_Celltype--neutrophils--study--wilcoxon.tsv'
+        ],
+        [
+          'T cells',
+          'cluster_umap_txt--General_Celltype--T_cells--study--wilcoxon.tsv'
+        ]
+      ],
+      'pairwise': [
+        [
+          'B cells',
+          'dendritic cells',
+          'cluster_umap_txt--General_Celltype--B_cells--dendritic_cells--study--wilcoxon.tsv'
+        ],
+        [
+          'B cells',
+          'eosinophils',
+          'cluster_umap_txt--General_Celltype--B_cells--eosinophils--study--wilcoxon.tsv'
+        ],
+        [
+          'B cells',
+          'fibroblasts',
+          'cluster_umap_txt--General_Celltype--B_cells--fibroblasts--study--wilcoxon.tsv'
+        ],
+        [
+          'B cells',
+          'GPMNB macrophages',
+          'cluster_umap_txt--General_Celltype--B_cells--GPMNB_macrophages--study--wilcoxon.tsv'
+        ],
+        [
+          'B cells',
+          'LC1',
+          'cluster_umap_txt--General_Celltype--B_cells--LC1--study--wilcoxon.tsv'
+        ],
+        [
+          'B cells',
+          'LC2',
+          'cluster_umap_txt--General_Celltype--B_cells--LC2--study--wilcoxon.tsv'
+        ],
+        [
+          'B cells',
+          'neutrophils',
+          'cluster_umap_txt--General_Celltype--B_cells--neutrophils--study--wilcoxon.tsv'
+        ],
+        [
+          'B cells',
+          'T cells',
+          'cluster_umap_txt--General_Celltype--B_cells--T_cells--study--wilcoxon.tsv'
+        ],
+        [
+          'CSN1S1 macrophages',
+          'dendritic cells',
+          'cluster_umap_txt--General_Celltype--CSN1S1_macrophages--dendritic_cells--study--wilcoxon.tsv'
+        ],
+        [
+          'CSN1S1 macrophages',
+          'eosinophils',
+          'cluster_umap_txt--General_Celltype--CSN1S1_macrophages--eosinophils--study--wilcoxon.tsv'
+        ],
+        [
+          'CSN1S1 macrophages',
+          'fibroblasts',
+          'cluster_umap_txt--General_Celltype--CSN1S1_macrophages--fibroblasts--study--wilcoxon.tsv'
+        ],
+        [
+          'CSN1S1 macrophages',
+          'GPMNB macrophages',
+          'cluster_umap_txt--General_Celltype--CSN1S1_macrophages--GPMNB_macrophages--study--wilcoxon.tsv'
+        ],
+        [
+          'CSN1S1 macrophages',
+          'LC1',
+          'cluster_umap_txt--General_Celltype--CSN1S1_macrophages--LC1--study--wilcoxon.tsv'
+        ],
+        [
+          'CSN1S1 macrophages',
+          'LC2',
+          'cluster_umap_txt--General_Celltype--CSN1S1_macrophages--LC2--study--wilcoxon.tsv'
+        ],
+        [
+          'CSN1S1 macrophages',
+          'neutrophils',
+          'cluster_umap_txt--General_Celltype--CSN1S1_macrophages--neutrophils--study--wilcoxon.tsv'
+        ],
+        [
+          'CSN1S1 macrophages',
+          'T cells',
+          'cluster_umap_txt--General_Celltype--CSN1S1_macrophages--T_cells--study--wilcoxon.tsv'
+        ],
+        [
+          'dendritic cells',
+          'eosinophils',
+          'cluster_umap_txt--General_Celltype--dendritic_cells--eosinophils--study--wilcoxon.tsv'
+        ],
+        [
+          'dendritic cells',
+          'fibroblasts',
+          'cluster_umap_txt--General_Celltype--dendritic_cells--fibroblasts--study--wilcoxon.tsv'
+        ],
+        [
+          'dendritic cells',
+          'GPMNB macrophages',
+          'cluster_umap_txt--General_Celltype--GPMNB_macrophages--dendritic_cells--study--wilcoxon.tsv'
+        ],
+        [
+          'dendritic cells',
+          'LC1',
+          'cluster_umap_txt--General_Celltype--LC1--dendritic_cells--study--wilcoxon.tsv'
+        ],
+        [
+          'dendritic cells',
+          'LC2',
+          'cluster_umap_txt--General_Celltype--LC2--dendritic_cells--study--wilcoxon.tsv'
+        ],
+        [
+          'dendritic cells',
+          'neutrophils',
+          'cluster_umap_txt--General_Celltype--dendritic_cells--neutrophils--study--wilcoxon.tsv'
+        ],
+        [
+          'dendritic cells',
+          'T cells',
+          'cluster_umap_txt--General_Celltype--T_cells--dendritic_cells--study--wilcoxon.tsv'
+        ],
+        [
+          'eosinophils',
+          'fibroblasts',
+          'cluster_umap_txt--General_Celltype--eosinophils--fibroblasts--study--wilcoxon.tsv'
+        ],
+        [
+          'eosinophils',
+          'GPMNB macrophages',
+          'cluster_umap_txt--General_Celltype--GPMNB_macrophages--eosinophils--study--wilcoxon.tsv'
+        ],
+        [
+          'eosinophils',
+          'LC1',
+          'cluster_umap_txt--General_Celltype--LC1--eosinophils--study--wilcoxon.tsv'
+        ],
+        [
+          'eosinophils',
+          'LC2',
+          'cluster_umap_txt--General_Celltype--LC2--eosinophils--study--wilcoxon.tsv'
+        ],
+        [
+          'eosinophils',
+          'neutrophils',
+          'cluster_umap_txt--General_Celltype--eosinophils--neutrophils--study--wilcoxon.tsv'
+        ],
+        [
+          'eosinophils',
+          'T cells',
+          'cluster_umap_txt--General_Celltype--T_cells--eosinophils--study--wilcoxon.tsv'
+        ],
+        [
+          'fibroblasts',
+          'GPMNB macrophages',
+          'cluster_umap_txt--General_Celltype--GPMNB_macrophages--fibroblasts--study--wilcoxon.tsv'
+        ],
+        [
+          'fibroblasts',
+          'LC1',
+          'cluster_umap_txt--General_Celltype--LC1--fibroblasts--study--wilcoxon.tsv'
+        ],
+        [
+          'fibroblasts',
+          'LC2',
+          'cluster_umap_txt--General_Celltype--LC2--fibroblasts--study--wilcoxon.tsv'
+        ],
+        [
+          'fibroblasts',
+          'neutrophils',
+          'cluster_umap_txt--General_Celltype--fibroblasts--neutrophils--study--wilcoxon.tsv'
+        ],
+        [
+          'fibroblasts',
+          'T cells',
+          'cluster_umap_txt--General_Celltype--T_cells--fibroblasts--study--wilcoxon.tsv'
+        ],
+        [
+          'GPMNB macrophages',
+          'LC1',
+          'cluster_umap_txt--General_Celltype--GPMNB_macrophages--LC1--study--wilcoxon.tsv'
+        ],
+        [
+          'GPMNB macrophages',
+          'LC2',
+          'cluster_umap_txt--General_Celltype--GPMNB_macrophages--LC2--study--wilcoxon.tsv'
+        ],
+        [
+          'GPMNB macrophages',
+          'neutrophils',
+          'cluster_umap_txt--General_Celltype--GPMNB_macrophages--neutrophils--study--wilcoxon.tsv'
+        ],
+        [
+          'GPMNB macrophages',
+          'T cells',
+          'cluster_umap_txt--General_Celltype--GPMNB_macrophages--T_cells--study--wilcoxon.tsv'
+        ],
+        [
+          'LC1',
+          'LC2',
+          'cluster_umap_txt--General_Celltype--LC1--LC2--study--wilcoxon.tsv'
+        ],
+        [
+          'LC1',
+          'neutrophils',
+          'cluster_umap_txt--General_Celltype--LC1--neutrophils--study--wilcoxon.tsv'
+        ],
+        [
+          'LC1',
+          'T cells',
+          'cluster_umap_txt--General_Celltype--LC1--T_cells--study--wilcoxon.tsv'
+        ],
+        [
+          'LC2',
+          'neutrophils',
+          'cluster_umap_txt--General_Celltype--LC2--neutrophils--study--wilcoxon.tsv'
+        ],
+        [
+          'LC2',
+          'T cells',
+          'cluster_umap_txt--General_Celltype--LC2--T_cells--study--wilcoxon.tsv'
+        ],
+        [
+          'neutrophils',
+          'T cells',
+          'cluster_umap_txt--General_Celltype--T_cells--neutrophils--study--wilcoxon.tsv'
+        ]
+      ]
+    }
+  },
+  {
+    'cluster_name': 'All Cells UMAP',
+    'annotation_name': 'cell_type__ontology_label',
+    'annotation_scope': 'study',
+    'select_options': {
+      'is_author_de': false,
+      'one_vs_rest': [
+        [
+          'epithelial cell',
+          'cluster_umap_txt--cell_type__ontology_label--epithelial_cell--study--wilcoxon.tsv'
+        ],
+        [
+          'macrophage',
+          'cluster_umap_txt--cell_type__ontology_label--macrophage--study--wilcoxon.tsv'
+        ],
+        [
+          'neutrophil',
+          'cluster_umap_txt--cell_type__ontology_label--neutrophil--study--wilcoxon.tsv'
+        ],
+        [
+          'B cell',
+          'cluster_umap_txt--cell_type__ontology_label--B_cell--study--wilcoxon.tsv'
+        ],
+        [
+          'T cell',
+          'cluster_umap_txt--cell_type__ontology_label--T_cell--study--wilcoxon.tsv'
+        ],
+        [
+          'dendritic cell',
+          'cluster_umap_txt--cell_type__ontology_label--dendritic_cell--study--wilcoxon.tsv'
+        ],
+        [
+          'eosinophil',
+          'cluster_umap_txt--cell_type__ontology_label--eosinophil--study--wilcoxon.tsv'
+        ],
+        [
+          'fibroblast',
+          'cluster_umap_txt--cell_type__ontology_label--fibroblast--study--wilcoxon.tsv'
+        ]
+      ],
+      'pairwise': []
+    }
+  }
+]
+
 export const exploreInfo = {
   'cluster': {
     'numPoints': 48478,

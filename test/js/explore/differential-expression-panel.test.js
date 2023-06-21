@@ -7,7 +7,10 @@ import { render, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 
 import DifferentialExpressionPanel from 'components/explore/DifferentialExpressionPanel'
-import { exploreInfo } from './differential-expression-panel.test-data'
+import {
+  PairwiseDifferentialExpressionGroupPicker
+} from 'components/visualization/controls/DifferentialExpressionGroupPicker'
+import { exploreInfo, deObjects } from './differential-expression-panel.test-data'
 
 describe('Differential expression panel', () => {
   it('renders DE genes table', async () => {
@@ -114,5 +117,66 @@ describe('Differential expression panel', () => {
     const deDotPlotButton = container.querySelector('.de-dot-plot-button')
     fireEvent.click(deDotPlotButton)
     expect(searchGenes).toHaveBeenCalled()
+  })
+
+  it('renders pairwise group picker', async () => {
+    // const deGroup = 'KRT high lactocytes 1'
+    const deGroup = null
+    const deGroupB = null
+    const deGenes = null
+    const hasOneVsRestDe = true
+
+    const searchGenes = jest.fn()
+
+    const clusterName = 'All Cells UMAP'
+    const annotation = {
+      'name': 'General_Celltype',
+      'type': 'group',
+      'scope': 'study'
+    }
+
+    const setShowDeGroupPicker = function() {}
+    const setDeGenes = function() {}
+    const setDeGroup = function() {}
+    const setDeFilePath = function() {}
+    const setDeGroupB = function() {}
+
+    const countsByLabel = {
+      'LC2': 35398,
+      'GPMNB macrophages': 5318,
+      'LC1': 4427,
+      'neutrophils': 835,
+      'B cells': 52,
+      'T cells': 792,
+      'dendritic cells': 425,
+      'CSN1S1 macrophages': 1066,
+      'eosinophils': 25,
+      'fibroblasts': 140
+    }
+
+
+    const bucketId = 'fc-febd4c65-881d-497f-b101-01a7ec427e6a'
+
+    const { container } = render((
+      <PairwiseDifferentialExpressionGroupPicker
+        bucketId={bucketId}
+        clusterName={clusterName}
+        annotation={annotation}
+        setShowDeGroupPicker={setShowDeGroupPicker}
+        deGenes={deGenes}
+        setDeGenes={setDeGenes}
+        deGroup={deGroup}
+        setDeGroup={setDeGroup}
+        countsByLabel={countsByLabel}
+        deObjects={deObjects}
+        setDeFilePath={setDeFilePath}
+        deGroupB={deGroupB}
+        setDeGroupB={setDeGroupB}
+        hasOneVsRestDe={hasOneVsRestDe}
+      />
+    ))
+
+    const pairwiseSelectA = container.querySelector('.pairwise-select')
+    expect(pairwiseSelectA).toHaveTextContent('CSN1S1 macrophages')
   })
 })
