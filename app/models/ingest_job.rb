@@ -194,12 +194,12 @@ class IngestJob
   #   - (Hash) => Hash of all instance variables
   def attributes
     {
-      study: study,
-      study_file: study_file,
-      user: user,
-      action: action,
-      reparse: reparse,
-      persist_on_fail: persist_on_fail,
+      study:,
+      study_file:,
+      user:,
+      action:,
+      reparse:,
+      persist_on_fail:,
       params_object: params_object&.attributes
     }
   end
@@ -261,7 +261,7 @@ class IngestJob
   # * *returns*
   #   - (Array<Google::Apis::LifesciencesV2beta::Event>) => Array of pipeline events, sorted by timestamp
   def events
-    metadata['events'].sort_by! {|event| event['timestamp'] }
+    metadata['events'].sort_by! { |event| event['timestamp'] }
   end
 
   # Get all messages from all events
@@ -269,7 +269,7 @@ class IngestJob
   # * *returns*
   #   - (Array<String>) => Array of all messages in chronological order
   def event_messages
-    events.map {|event| event['description']}
+    events.map { |event| event['description'] }
   end
 
   # Get the exit code for the pipeline, if present
@@ -280,7 +280,7 @@ class IngestJob
     return nil unless done?
 
     events.each do |event|
-      status = event.dig('details', 'exitStatus')
+      status = event.dig('containerStopped', 'exitStatus')
       return status.to_i if status
     end
     nil # catch-all
@@ -795,9 +795,9 @@ class IngestJob
       fileName: study_file.name,
       fileType: file_type,
       fileSize: study_file.upload_file_size,
-      action: action,
+      action:,
       studyAccession: study.accession,
-      trigger: trigger,
+      trigger:,
       jobStatus: failed? ? 'failed' : 'success',
       machineType: vm_info['machineType'],
       bootDiskSizeGb: vm_info['bootDiskSizeGb'],

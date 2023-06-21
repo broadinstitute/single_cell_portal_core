@@ -8,7 +8,7 @@
 class LifeSciencesApiClient
   extend ServiceAccountManager
 
-  attr_accessor :project, :service_account_credentials, :service
+  attr_accessor :project, :project_number, :service_account_credentials, :service
 
   # Google authentication scopes necessary for running pipelines
   GOOGLE_SCOPES = %w(https://www.googleapis.com/auth/cloud-platform)
@@ -36,6 +36,9 @@ class LifeSciencesApiClient
   # default GCE machine_type
   DEFAULT_MACHINE_TYPE = 'n1-highmem-4'.freeze
 
+  # default compute region
+  DEFAULT_COMPUTE_REGION = 'us-central1'
+
   # regex to sanitize label values for VMs/pipelines
   # alphanumeric plus - and _
   LABEL_SANITIZER = /[^a-zA-Z\d\-_]/
@@ -43,11 +46,13 @@ class LifeSciencesApiClient
   # Default constructor for LifeSciencesApiClient
   #
   # * *params*
-  #   - +project+: (String) => GCP Project to use (can be overridden by other parameters)
+  #   - +project+: (String) => GCP Project number to use (can be overridden by other parameters)
   #   - +service_account_credentials+: (Path) => Absolute filepath to service account credentials
   # * *return*
   #   - +LifeSciencesApiClient+
-  def initialize(project = self.class.compute_project, service_account_credentials = self.class.get_primary_keyfile)
+  def initialize(project = self.class.compute_project,
+                 project_number = self.class.gcp_project_number,
+                 service_account_credentials = self.class.get_primary_keyfile)
     credentials = {
       scope: GOOGLE_SCOPES,
       json_key_io: File.open(service_account_credentials)
@@ -58,6 +63,7 @@ class LifeSciencesApiClient
     genomics_service.authorization = authorizer
 
     self.project = project
+    self.project_number = project_number
     self.service_account_credentials = service_account_credentials
     self.service = genomics_service
   end
@@ -68,6 +74,14 @@ class LifeSciencesApiClient
   #   - (String) Service Account email
   def issuer
     service.authorization.issuer
+  end
+
+  # the project and location that all requests should be executed against
+  #
+  # * *return*
+  #   - (String) the GCP project number and default compute region
+  def project_location
+    "projects/#{project_number}/locations/#{DEFAULT_COMPUTE_REGION}"
   end
 
   # Returns a list of all pipelines run in this project
@@ -84,7 +98,7 @@ class LifeSciencesApiClient
   #   - (Google::Apis::ClientError) =>  The request is invalid and should not be retried without modification
   #   - (Google::Apis::AuthorizationError) => Authorization is required
   def list_pipelines(page_token: nil)
-    service.list_project_location_operations("projects/#{project}/operations", page_token: page_token)
+    service.list_project_location_operations(project_location, page_token:)
   end
 
   # Runs a pipeline.  Will call sub-methods to instantiate required objects to pass to
@@ -110,10 +124,10 @@ class LifeSciencesApiClient
     labels = job_labels(action:, study:, study_file:, user:, params_object:)
     # override default VM if required for this action
     if needs_custom_vm?(action)
-      custom_vm = create_virtual_machine_object(machine_type: params_object.machine_type, labels: labels)
-      resources = create_resources_object(regions: ['us-central1'], vm: custom_vm)
+      custom_vm = create_virtual_machine_object(machine_type: params_object.machine_type, labels:)
+      resources = create_resources_object(regions: [DEFAULT_COMPUTE_REGION], vm: custom_vm)
     else
-      resources = create_resources_object(regions: ['us-central1'], labels: labels)
+      resources = create_resources_object(regions: [DEFAULT_COMPUTE_REGION], labels:)
     end
 
     user_metrics_uuid = user.metrics_uuid
@@ -122,18 +136,18 @@ class LifeSciencesApiClient
     environment = set_environment_variables(action:)
     if params_object.respond_to?(:docker_image) && params_object.docker_image
       action = create_actions_object(
-        commands: command_line, environment: environment, image_uri: params_object.docker_image
+        commands: command_line, environment:, image_uri: params_object.docker_image
       )
     else
-      action = create_actions_object(commands: command_line, environment: environment)
+      action = create_actions_object(commands: command_line, environment:)
     end
-    pipeline = create_pipeline_object(actions: [action], environment: environment, resources: resources)
+    pipeline = create_pipeline_object(actions: [action], environment:, resources:)
     pipeline_request = create_run_pipeline_request_object(pipeline:, labels:)
-    Rails.logger.info "Request object sent to Google Pipelines API (PAPI), excluding 'environment' parameters:"
+    Rails.logger.info "Request object sent to Google Life Sciences API, excluding 'environment' parameters:"
     sanitized_pipeline_request = pipeline_request.to_h[:pipeline].except(:environment)
     sanitized_pipeline_request[:actions] = sanitized_pipeline_request[:actions][0].except(:environment)
     Rails.logger.info sanitized_pipeline_request.to_yaml
-    service.run_pipeline(pipeline_request, quota_user: user.id.to_s)
+    service.run_pipeline(project_location, pipeline_request, quota_user: user.id.to_s)
   end
 
   # Get an existing pipeline run
@@ -147,7 +161,7 @@ class LifeSciencesApiClient
   #   - (Google::Apis::LifesciencesV2beta::Operation)
   def get_pipeline(name:, fields: nil, user: nil)
     quota_user = user.present? ? user.id.to_s : nil
-    service.get_project_operation(name, fields: fields, quota_user: quota_user)
+    service.get_project_location_operation(name, fields:, quota_user:)
   end
 
   # Create a run pipeline request object to send to service.run_pipeline
@@ -210,6 +224,7 @@ class LifeSciencesApiClient
   #   - +MONGODB_PASSWORD+: Password for above MongoDB user
   #   - +DATABASE_NAME+: Name of current MongoDB schema as defined by Rails environment
   #   - +GOOGLE_PROJECT_ID+: Name of the GCP project this pipeline is running in
+  #   - +GOOGLE_PROJECT_NUMBER+: Number of the GCP project this pipeline is running in
   #   - +SENTRY_DSN+: Sentry Data Source Name (DSN); URL to send Sentry logs to
   #   - +BARD_HOST_URL+: URL for Bard host that proxies Mixpanel
   #   - +NODE_TLS_REJECT_UNAUTHORIZED+: Configure node behavior for self-signed certificates (for :image_pipeline)
@@ -226,6 +241,7 @@ class LifeSciencesApiClient
       'MONGODB_PASSWORD' => ENV['PROD_DATABASE_PASSWORD'],
       'DATABASE_NAME' => Mongoid::Config.clients["default"]["database"],
       'GOOGLE_PROJECT_ID' => project,
+      'GOOGLE_PROJECT_NUMBER' => project_number,
       'SENTRY_DSN' => ENV['SENTRY_DSN'],
       'BARD_HOST_URL' => Rails.application.config.bard_host_url
     }
@@ -254,8 +270,7 @@ class LifeSciencesApiClient
   #   - (Google::Apis::LifesciencesV2beta::Resources)
   def create_resources_object(regions:, vm: nil, labels: {})
     Google::Apis::LifesciencesV2beta::Resources.new(
-      project_id: project,
-      regions: regions,
+      regions:,
       virtual_machine: vm.nil? ? create_virtual_machine_object(labels:) : vm
     )
   end
