@@ -368,6 +368,14 @@ export default function DifferentialExpressionPanel({
   const annotation = getAnnotationObject(exploreParamsWithDefaults, exploreInfo)
   const deObjects = exploreInfo?.differentialExpression
 
+
+  console.log('deGroup', deGroup)
+  console.log('deGenes', deGenes)
+  console.log('exploreParamsWithDefaults', exploreParamsWithDefaults)
+  console.log('clusterName', clusterName)
+  console.log('annotation', annotation)
+  console.log('countsByLabel', countsByLabel)
+
   const delayedDETableLogTimeout = useRef(null)
 
   // filter text for searching the legend

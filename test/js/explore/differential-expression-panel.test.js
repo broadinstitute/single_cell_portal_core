@@ -11,25 +11,26 @@ import { exploreInfo } from './differential-expression-panel.test-data'
 
 describe('Differential expression panel', () => {
   it('renders DE genes table', async () => {
-    const deGroup = 'KRT high lactocytes 1'
+    // const deGroup = 'KRT high lactocytes 1'
+    const deGroup = 'B cells'
     const deGenes = [
       {
-        'score': 77.55,
-        'log2FoldChange': 5,
-        'pval': 0,
-        'pvalAdj': 0,
-        'pctNzGroup': 0.9625,
-        'pctNzReference': 0.5864,
-        'name': 'SOD2'
+        'score': 11.55,
+        'log2FoldChange': 4.138,
+        'pval': 7.695e-31,
+        'pvalAdj': 1.547e-26,
+        'pctNzGroup': 1,
+        'pctNzReference': 0.7262,
+        'name': 'CD74'
       },
       {
-        'score': 75.4,
-        'log2FoldChange': 1,
-        'pval': 0,
-        'pvalAdj': 0.2,
-        'pctNzGroup': 0.8543,
-        'pctNzReference': 0.2124,
-        'name': 'ANXA1'
+        'score': 11.05,
+        'log2FoldChange': 3.753,
+        'pval': 2.291e-28,
+        'pvalAdj': 2.778e-24,
+        'pctNzGroup': 1,
+        'pctNzReference': 0.5595,
+        'name': 'HLA-DPA1'
       }
     ]
 
