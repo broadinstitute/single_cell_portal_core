@@ -37,22 +37,22 @@ describe('Differential expression panel', () => {
     const searchGenes = jest.fn()
 
     const exploreParamsWithDefaults = {
-      'cluster': 'Epithelial Cells UMAP',
+      'cluster': 'All Cells UMAP',
       'annotation': {
-        'name': 'Epithelial Cell Subclusters',
+        'name': 'General_Celltype',
         'type': 'group',
-        'scope': 'cluster'
+        'scope': 'study'
       },
       'genes': [
-        'SOD2'
+        'CD74'
       ]
     }
 
-    const clusterName = 'Epithelial Cells UMAP'
+    const clusterName = 'All Cells UMAP'
     const annotation = {
-      'name': 'Epithelial Cell Subclusters',
+      'name': 'General_Celltype',
       'type': 'group',
-      'scope': 'cluster'
+      'scope': 'study'
     }
 
     const setShowDeGroupPicker = function() {}
@@ -60,12 +60,16 @@ describe('Differential expression panel', () => {
     const setDeGroup = function() {}
 
     const countsByLabel = {
-      'Secretory Lactocytes': 25787,
-      'LC1': 4920,
-      'KRT high lactocytes 1': 3734,
-      'Cycling Lactocytes': 604,
-      'MT High Secretory Lactocytes': 3052,
-      'KRT high lactocytes 2': 1728
+      'LC2': 35398,
+      'GPMNB macrophages': 5318,
+      'LC1': 4427,
+      'neutrophils': 835,
+      'B cells': 52,
+      'T cells': 792,
+      'dendritic cells': 425,
+      'CSN1S1 macrophages': 1066,
+      'eosinophils': 25,
+      'fibroblasts': 140
     }
 
     const { container } = render((
@@ -86,24 +90,24 @@ describe('Differential expression panel', () => {
     ))
 
     const deTable = container.querySelector('.de-table')
-    expect(deTable).toHaveTextContent('ANXA1')
+    expect(deTable).toHaveTextContent('HLA-DPA1')
 
     // Confirm sort
     const pvalAdjHeader = container.querySelector('#pval-adj-header')
     const firstGeneBeforeSort = container.querySelector('.de-gene-row td')
-    expect(firstGeneBeforeSort).toHaveTextContent('SOD2')
+    expect(firstGeneBeforeSort).toHaveTextContent('CD74')
     fireEvent.click(pvalAdjHeader)
     fireEvent.click(pvalAdjHeader)
     fireEvent.click(pvalAdjHeader)
     // screen.debug(deTable) // Print DE table HTML
 
     const firstGeneAfterSort = container.querySelector('.de-gene-row td')
-    expect(firstGeneAfterSort).toHaveTextContent('ANXA1')
+    expect(firstGeneAfterSort).toHaveTextContent('HLA-DPA1')
 
     // Confirm "Find a gene"
     const deSearchBox = container.querySelector('.de-search-box')
     const input = deSearchBox.querySelector('input')
-    fireEvent.change(input, { target: { value: 'SO' } })
+    fireEvent.change(input, { target: { value: 'CD7' } })
     expect(deTable.querySelectorAll('.de-gene-row')).toHaveLength(1)
 
     // Confirm dot plot is invoked upon clicking related button
