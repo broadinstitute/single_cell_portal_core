@@ -782,7 +782,7 @@ class IngestJob
   def get_job_analytics
     file_type = study_file.file_type
 
-    trigger = study_file.remote_location.present? ?  'sync' : 'upload'
+    trigger = study_file.remote_location.present? ? 'sync' : 'upload'
 
     # retrieve pipeline metadata for VM information
     vm_info = metadata.dig('pipeline', 'resources', 'virtualMachine')

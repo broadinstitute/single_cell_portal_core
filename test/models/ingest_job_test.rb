@@ -94,8 +94,8 @@ class IngestJobTest < ActiveSupport::TestCase
     now = DateTime.now.in_time_zone
     mock_metadata = {
       events: [
-        { timestamp: now.to_s },
-        { timestamp: (now + 1.minute).to_s, details: { exitStatus: 0 } }
+        { timestamp: now.to_s }.with_indifferent_access,
+        { timestamp: (now + 1.minute).to_s, containerStopped: { exitStatus: 0 } }.with_indifferent_access
       ],
       pipeline: {
         resources: {
@@ -145,7 +145,7 @@ class IngestJobTest < ActiveSupport::TestCase
     mock_metadata = {
       events: [
         { timestamp: now.to_s },
-        { timestamp: (now + 2.minutes).to_s, details: { exitStatus: 1 } }
+        { timestamp: (now + 2.minutes).to_s, containerStopped: { exitStatus: 1 } }
       ],
       pipeline: {
         resources: {
