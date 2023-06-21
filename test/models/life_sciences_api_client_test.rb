@@ -55,6 +55,12 @@ class LifeSciencesApiClientTest < ActiveSupport::TestCase
     assert issuer.match(/gserviceaccount\.com$/)
   end
 
+  test 'should get project number and location' do
+    location = @client.project_location
+    assert location.include?(@client.project_number)
+    assert location.include?(LifeSciencesApiClient::DEFAULT_COMPUTE_REGION)
+  end
+
   test 'should list pipelines' do
     pipelines = @client.list_pipelines
     skip 'could not find any pipelines' if pipelines.operations.blank?
