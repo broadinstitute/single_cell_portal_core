@@ -151,7 +151,10 @@ function getAnnotHasDe(exploreInfo, exploreParams) {
  * any annotation, and as one-vs-rest and/or pairwise comparisons.
  */
 function getIsAuthorDe(exploreInfo, exploreParams) {
-  if (!exploreInfo) {return false}
+  const flags = getFeatureFlagsWithDefaults()
+  if (!flags?.differential_expression_frontend || !exploreInfo) {
+    return false
+  }
 
   const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
 
