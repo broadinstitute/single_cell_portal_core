@@ -76,7 +76,7 @@ class LifeSciencesApiClientTest < ActiveSupport::TestCase
     ]
     mock.expect :authorization, Google::Auth::ServiceAccountCredentials.new, []
     mock.expect :run_pipeline, Google::Apis::LifesciencesV2beta::Operation.new, [
-      Google::Apis::LifesciencesV2beta::RunPipelineRequest, { quota_user: @user.id.to_s }
+      String, Google::Apis::LifesciencesV2beta::RunPipelineRequest, { quota_user: @user.id.to_s }
     ]
     Google::Apis::LifesciencesV2beta::CloudLifeSciencesService.stub :new, mock do
       client = LifeSciencesApiClient.new
@@ -91,7 +91,7 @@ class LifeSciencesApiClientTest < ActiveSupport::TestCase
     ]
     mock.expect :authorization, Google::Auth::ServiceAccountCredentials.new, []
     mock.expect :run_pipeline, Google::Apis::LifesciencesV2beta::Operation.new, [
-      Google::Apis::LifesciencesV2beta::RunPipelineRequest, { quota_user: @user.id.to_s }
+      String, Google::Apis::LifesciencesV2beta::RunPipelineRequest, { quota_user: @user.id.to_s }
     ]
     Google::Apis::LifesciencesV2beta::CloudLifeSciencesService.stub :new, mock do
       client = LifeSciencesApiClient.new
