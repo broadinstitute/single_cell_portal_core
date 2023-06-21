@@ -176,6 +176,7 @@ describe('Differential expression panel', () => {
       />
     ))
 
+    // Ensure options in menu A display by default
     const pairwiseSelectA = container.querySelector('.pairwise-select')
     expect(pairwiseSelectA).toHaveTextContent('CSN1S1 macrophages')
   })

@@ -186,7 +186,6 @@ export default function ExploreDisplayTabs({
   studyAccession, exploreInfo, setExploreInfo, exploreParams, updateExploreParams,
   clearExploreParams, exploreParamsWithDefaults, routerLocation
 }) {
-  console.log('exploreInfo', exploreInfo)
   const [, setRenderForcer] = useState({})
   const [dataCache] = useState(createCache())
   // tracks whether the view options controls are open or closed

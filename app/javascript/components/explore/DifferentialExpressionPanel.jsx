@@ -417,8 +417,6 @@ export default function DifferentialExpressionPanel({
     setGenesToShow(filteredGenes)
   }, [deGenes, searchedGene])
 
-  // hasPairwiseDe = true
-
   return (
     <>
       {!hasPairwiseDe &&
