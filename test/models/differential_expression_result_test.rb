@@ -158,8 +158,8 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
       is_author_de: false
     }.with_indifferent_access
 
-    assert_equal species_opts, @species_result.select_options
-    assert_equal disease_opts, @disease_result.select_options
+    assert_equal species_opts, @species_result.result_files
+    assert_equal disease_opts, @disease_result.result_files
   end
 
   test 'should return associated files' do
