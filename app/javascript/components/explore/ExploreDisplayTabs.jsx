@@ -36,18 +36,28 @@ import Tooltip from 'react-bootstrap/lib/Tooltip'
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
 import PlotTabs from './PlotTabs'
 
+/** Get the selected clustering and annotation, or their defaults */
+function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
+  const annotList = exploreInfo.annotationList
+  let selectedCluster
+  let selectedAnnot
+  if (exploreParams?.cluster) {
+    selectedCluster = exploreParams.cluster
+    selectedAnnot = exploreParams.annotation
+  } else {
+    selectedCluster = annotList.default_cluster
+    selectedAnnot = annotList.default_annotation
+  }
+
+  return [selectedCluster, selectedAnnot]
+}
+
 /** Determine if currently selected cluster has differential expression outputs available */
 function getClusterHasDe(exploreInfo, exploreParams) {
   const flags = getFeatureFlagsWithDefaults()
   if (!flags?.differential_expression_frontend || !exploreInfo) {return false}
   let clusterHasDe = false
-  const annotList = exploreInfo.annotationList
-  let selectedCluster
-  if (exploreParams?.cluster) {
-    selectedCluster = exploreParams.cluster
-  } else {
-    selectedCluster = annotList.default_cluster
-  }
+  const selectedCluster = getSelectedClusterAndAnnot(exploreInfo, exploreParams)[0]
 
   clusterHasDe = exploreInfo.differentialExpression.some(deItem => {
     return (
@@ -56,6 +66,25 @@ function getClusterHasDe(exploreInfo, exploreParams) {
   })
 
   return clusterHasDe
+}
+
+/** Determine if current annotation has one-vs-rest or pairwise DE */
+function getHasComparisonDe(exploreInfo, exploreParams, comparison) {
+  const flags = getFeatureFlagsWithDefaults()
+  if (!flags?.differential_expression_frontend || !exploreInfo) {return false}
+
+  const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
+
+  const hasComparisonDe = exploreInfo.differentialExpression.some(deItem => {
+    return (
+      deItem.cluster_name === selectedCluster &&
+      deItem.annotation_name === selectedAnnot.name &&
+      deItem.annotation_scope === selectedAnnot.scope &&
+      deItem.select_options[comparison].length > 0
+    )
+  })
+
+  return hasComparisonDe
 }
 
 /** Return list of annotations that have differential expression enabled */
@@ -84,7 +113,7 @@ function getAnnotationsWithDE(exploreInfo) {
   }
 }
 
-/** Determine if currently selected annotation has differential expression outputs available */
+/** Determine if current annotation has differential expression results available */
 function getAnnotHasDe(exploreInfo, exploreParams) {
   const flags = getFeatureFlagsWithDefaults()
   if (!flags?.differential_expression_frontend || !exploreInfo) {
@@ -96,16 +125,7 @@ function getAnnotHasDe(exploreInfo, exploreParams) {
   }
 
   let annotHasDe = false
-  const annotList = exploreInfo.annotationList
-  let selectedCluster
-  let selectedAnnot
-  if (exploreParams?.cluster) {
-    selectedCluster = exploreParams.cluster
-    selectedAnnot = exploreParams.annotation
-  } else {
-    selectedCluster = annotList.default_cluster
-    selectedAnnot = annotList.default_annotation
-  }
+  const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
 
   annotHasDe = exploreInfo.differentialExpression.some(deItem => {
     return (
@@ -119,7 +139,41 @@ function getAnnotHasDe(exploreInfo, exploreParams) {
 }
 
 /**
- * Renders gene search box, plot tabs, plots, and options panel
+ * Determine if current annotation has differential expression results that are user-generated.
+ *
+ * DE results have two dimensions:
+ * - Comparison type: either "one-vs-rest" or "pairwise"
+ * - Source: "author-computed" "or SCP-computed"
+ *
+ * Author-computed DE is also often called "precomputed" or "user-uploaded" or "study-owner-generated"
+ * or "custom".  Whereas SCP-generated DE is computed only for cell-type-like annotations and only as
+ * one-vs-rest comparisons, user-generated DE can be more comprehensive -- it can be available for
+ * any annotation, and as one-vs-rest and/or pairwise comparisons.
+ */
+function getIsAuthorDe(exploreInfo, exploreParams) {
+  const flags = getFeatureFlagsWithDefaults()
+  if (!flags?.differential_expression_frontend || !exploreInfo) {
+    return false
+  }
+
+  const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
+
+  const deItem = exploreInfo.differentialExpression.find(deItem => {
+    return (
+      deItem.cluster_name === selectedCluster &&
+      deItem.annotation_name === selectedAnnot.name &&
+      deItem.annotation_scope === selectedAnnot.scope
+    )
+  })
+
+  const isAuthorDe = deItem?.select_options.is_author_de
+
+  return isAuthorDe
+}
+
+/**
+ * Renders the gene search box and the tab selection
+ * Responsible for determining which tabs are available for a given view of the study
  *
  * We want to mount all components that are enabled, so they can fetch their data and persist
  * even when they are not currently in view. We don't want to mount non-enabled components
@@ -146,13 +200,18 @@ export default function ExploreDisplayTabs({
 
   // Differential expression settings
   const flags = getFeatureFlagsWithDefaults()
+  // `differential_expression_frontend` enables exemptions if study owners don't want DE
   const studyHasDe = flags?.differential_expression_frontend && exploreInfo?.differentialExpression.length > 0
   const annotHasDe = getAnnotHasDe(exploreInfo, exploreParams)
   const clusterHasDe = getClusterHasDe(exploreInfo, exploreParams)
+  const hasOneVsRestDe = getHasComparisonDe(exploreInfo, exploreParams, 'one_vs_rest')
+  const hasPairwiseDe = getHasComparisonDe(exploreInfo, exploreParams, 'pairwise')
+  const isAuthorDe = getIsAuthorDe(exploreInfo, exploreParams)
 
   const [, setShowDeGroupPicker] = useState(false)
   const [deGenes, setDeGenes] = useState(null)
   const [deGroup, setDeGroup] = useState(null)
+  const [deGroupB, setDeGroupB] = useState(null)
   const [showDifferentialExpressionPanel, setShowDifferentialExpressionPanel] = useState(deGenes !== null)
   const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(deGenes !== null)
 
@@ -313,8 +372,11 @@ export default function ExploreDisplayTabs({
     let side
     const isSelectingDE = showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel
     if (showViewOptionsControls) {
-      if (showDifferentialExpressionTable) {
-        // DE table is shown.  Least horizontal space for plots.
+      if (
+        showDifferentialExpressionTable ||
+        (hasPairwiseDe && (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel))
+      ) {
+        // DE table is shown, or pairwise DE is available.  Least horizontal space for plots.
         main = 'col-md-9'
         side = 'col-md-3'
       } else {
@@ -384,11 +446,11 @@ export default function ExploreDisplayTabs({
             }
             { !showViewOptionsControls &&
               <button className={showDifferentialExpressionPanel ?
-                "action view-options-toggle view-options-toggle-on" :
-                "action view-options-toggle view-options-toggle-on minified-options"
+                'action view-options-toggle view-options-toggle-on' :
+                'action view-options-toggle view-options-toggle-on minified-options'
               }
-                onClick={toggleViewOptions}
-                data-analytics-name="view-options-show">
+              onClick={toggleViewOptions}
+              data-analytics-name="view-options-show">
                 <FontAwesomeIcon className="fa-lg" icon={faEye}/>
               </button>
             }
@@ -533,7 +595,7 @@ export default function ExploreDisplayTabs({
               <>
                 <FontAwesomeIcon className="fa-lg" icon={faEye}/> <span className="options-label">OPTIONS</span>
                 <button className={`action ${showDifferentialExpressionPanel ? '' : 'action-with-bg'}`}
-                        onClick={toggleViewOptions}
+                  onClick={toggleViewOptions}
                   title="Hide options"
                   data-analytics-name="view-options-hide">
                   <FontAwesomeIcon className="fa-lg" icon={faTimes}/>
@@ -549,6 +611,9 @@ export default function ExploreDisplayTabs({
                 isUpstream={showUpstreamDifferentialExpressionPanel}
                 cluster={exploreParamsWithDefaults.cluster}
                 annotation={shownAnnotation}
+                setDeGroupB={setDeGroupB}
+                isAuthorDe={isAuthorDe}
+                deGenes={deGenes}
               />
             }
           </div>
@@ -665,6 +730,10 @@ export default function ExploreDisplayTabs({
               setShowDeGroupPicker={setShowDeGroupPicker}
               setDeGenes={setDeGenes}
               setDeGroup={setDeGroup}
+              hasOneVsRestDe={hasOneVsRestDe}
+              hasPairwiseDe={hasPairwiseDe}
+              deGroupB={deGroupB}
+              setDeGroupB={setDeGroupB}
               countsByLabel={countsByLabel}
             />
           </>
