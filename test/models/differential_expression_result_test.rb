@@ -145,7 +145,8 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
         ['dog', 'cluster_diffexp_txt--species--dog--study--wilcoxon.tsv'],
         ['cat', 'cluster_diffexp_txt--species--cat--study--wilcoxon.tsv']
       ],
-      pairwise: []
+      pairwise: [],
+      is_author_de: false
     }.with_indifferent_access
 
     disease_opts = {
@@ -153,7 +154,8 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
         ['measles', 'cluster_diffexp_txt--disease--measles--cluster--wilcoxon.tsv'],
         ['none', 'cluster_diffexp_txt--disease--none--cluster--wilcoxon.tsv']
       ],
-      pairwise: []
+      pairwise: [],
+      is_author_de: false
     }.with_indifferent_access
 
     assert_equal species_opts, @species_result.select_options
