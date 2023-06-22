@@ -143,11 +143,6 @@ class DifferentialExpressionResult
           [label, comparison, filename_for(label, comparison:)]
         end
       end
-        comparisons.each do |comparison|
-          filename = filename_for(label, comparison:)
-          pairwise_files.push([label, comparison, filename])
-        end
-      end
     end
 
     one_vs_rest_files = one_vs_rest_comparisons.map { |label| filename_for(label) }
