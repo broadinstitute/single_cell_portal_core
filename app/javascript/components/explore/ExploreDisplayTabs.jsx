@@ -331,9 +331,6 @@ export default function ExploreDisplayTabs({
     return { main, side }
   }
 
-  // Determine if the flag show_explore_tab_ux_updates is toggled to show explore tab UX updates
-  const isNewExploreUX = getFeatureFlagsWithDefaults()?.show_explore_tab_ux_updates
-
   return (
     <>
       {/* Render top content for Explore view, i.e. gene search box and plot tabs */}
@@ -364,7 +361,6 @@ export default function ExploreDisplayTabs({
           enabledTabs={enabledTabs}
           disabledTabs={disabledTabs}
           updateExploreParams={updateExploreParams}
-          isNewExploreUX={isNewExploreUX}
         />
       </div>
 
