@@ -37,7 +37,7 @@ class IngestJob
     differential_expression render_expression_arrays image_pipeline ingest_anndata
   ].freeze
 
-  # Name of pipeline submission running in GCP (from [PapiClient#run_pipeline])
+  # Name of pipeline submission running in GCP (from [LifeSciencesApiClient#run_pipeline])
   attr_accessor :pipeline_name
   # Study object where file is being ingested
   attr_accessor :study
@@ -64,7 +64,7 @@ class IngestJob
   # Can also clear out existing data if necessary (in case of a re-parse)
   #
   # * *yields*
-  #   - (Google::Apis::GenomicsV2alpha1::Operation) => Will submit an ingest job in PAPI
+  #   - (Google::Apis::LifesciencesV2beta::Operation) => Will submit an ingest job in PAPI
   #   - (IngestJob.new(attributes).poll_for_completion) => Will queue a Delayed::Job to poll for completion
   #
   # * *raises*
@@ -94,8 +94,8 @@ class IngestJob
       else
         if can_launch_ingest?
           Rails.logger.info "Remote found for #{file_identifier}, launching Ingest job"
-          submission = ApplicationController.papi_client.run_pipeline(study_file: study_file, user: user,
-                                                                      action: action, params_object: params_object)
+          submission = ApplicationController.life_sciences_api_client.run_pipeline(study_file: study_file, user: user,
+                                                                                   action: action, params_object: params_object)
           Rails.logger.info "Ingest run initiated: #{submission.name}, queueing Ingest poller"
           IngestJob.new(pipeline_name: submission.name, study: study, study_file: study_file,
                         user: user, action: action, reparse: reparse,
@@ -194,12 +194,12 @@ class IngestJob
   #   - (Hash) => Hash of all instance variables
   def attributes
     {
-      study: study,
-      study_file: study_file,
-      user: user,
-      action: action,
-      reparse: reparse,
-      persist_on_fail: persist_on_fail,
+      study:,
+      study_file:,
+      user:,
+      action:,
+      reparse:,
+      persist_on_fail:,
       params_object: params_object&.attributes
     }
   end
@@ -207,9 +207,9 @@ class IngestJob
   # Return an updated reference to this ingest run in PAPI
   #
   # * *returns*
-  #   - (Google::Apis::GenomicsV2alpha1::Operation)
+  #   - (Google::Apis::LifesciencesV2beta::Operation)
   def get_ingest_run
-    ApplicationController.papi_client.get_pipeline(name: pipeline_name)
+    ApplicationController.life_sciences_api_client.get_pipeline(name: pipeline_name)
   end
 
   # Determine if this ingest run has done by checking current status
@@ -223,7 +223,7 @@ class IngestJob
   # Get all errors for ingest job
   #
   # * *returns*
-  #   - (Google::Apis::GenomicsV2alpha1::Status)
+  #   - (Google::Apis::LifesciencesV2beta::Status)
   def error
     get_ingest_run.error
   end
@@ -259,9 +259,9 @@ class IngestJob
   # Get all the events for a given ingest job in chronological order
   #
   # * *returns*
-  #   - (Array<Google::Apis::GenomicsV2alpha1::Event>) => Array of pipeline events, sorted by timestamp
+  #   - (Array<Google::Apis::LifesciencesV2beta::Event>) => Array of pipeline events, sorted by timestamp
   def events
-    metadata['events'].sort_by! {|event| event['timestamp'] }
+    metadata['events'].sort_by! { |event| event['timestamp'] }
   end
 
   # Get all messages from all events
@@ -269,7 +269,7 @@ class IngestJob
   # * *returns*
   #   - (Array<String>) => Array of all messages in chronological order
   def event_messages
-    events.map {|event| event['description']}
+    events.map { |event| event['description'] }
   end
 
   # Get the exit code for the pipeline, if present
@@ -280,7 +280,7 @@ class IngestJob
     return nil unless done?
 
     events.each do |event|
-      status = event.dig('details', 'exitStatus')
+      status = event.dig('containerStopped', 'exitStatus')
       return status.to_i if status
     end
     nil # catch-all
@@ -533,8 +533,8 @@ class IngestJob
         cluster.update(is_subsampling: true)
         file_identifier = "#{study_file.bucket_location}:#{study_file.id}"
         Rails.logger.info "Launching subsampling ingest run for #{file_identifier} after #{action}"
-        submission = ApplicationController.papi_client.run_pipeline(study_file: study_file, user: user,
-                                                                    action: :ingest_subsample)
+        submission = ApplicationController.life_sciences_api_client.run_pipeline(study_file: study_file, user: user,
+                                                                                 action: :ingest_subsample)
         Rails.logger.info "Subsampling run initiated: #{submission.name}, queueing Ingest poller"
         IngestJob.new(pipeline_name: submission.name, study: study, study_file: study_file,
                       user: user, action: :ingest_subsample, reparse: false,
@@ -551,8 +551,8 @@ class IngestJob
           cluster.update(is_subsampling: true)
           file_identifier = "#{cluster_file.bucket_location}:#{cluster_file.id}"
           Rails.logger.info "Launching subsampling ingest run for #{file_identifier} after #{action} of #{metadata_identifier}"
-          submission = ApplicationController.papi_client.run_pipeline(study_file: cluster_file, user: user,
-                                                                      action: :ingest_subsample)
+          submission = ApplicationController.life_sciences_api_client.run_pipeline(study_file: cluster_file, user: user,
+                                                                                   action: :ingest_subsample)
           Rails.logger.info "Subsampling run initiated: #{submission.name}, queueing Ingest poller"
           IngestJob.new(pipeline_name: submission.name, study: study, study_file: cluster_file,
                         user: user, action: :ingest_subsample, reparse: reparse,
@@ -581,7 +581,7 @@ class IngestJob
             cluster_file:, cell_metadata_file:
           )
           Rails.logger.info "Launching subsampling ingest run for #{file_identifier} after #{action}"
-          submission = ApplicationController.papi_client.run_pipeline(
+          submission = ApplicationController.life_sciences_api_client.run_pipeline(
             study_file:, user:, action: :ingest_subsample, params_object: subsample_params
           )
           IngestJob.new(
@@ -800,7 +800,7 @@ class IngestJob
   def get_job_analytics
     file_type = study_file.file_type
 
-    trigger = study_file.remote_location.present? ?  'sync' : 'upload'
+    trigger = study_file.remote_location.present? ? 'sync' : 'upload'
 
     # retrieve pipeline metadata for VM information
     vm_info = metadata.dig('pipeline', 'resources', 'virtualMachine')
@@ -813,9 +813,9 @@ class IngestJob
       fileName: study_file.name,
       fileType: file_type,
       fileSize: study_file.upload_file_size,
-      action: action,
+      action:,
       studyAccession: study.accession,
-      trigger: trigger,
+      trigger:,
       jobStatus: failed? ? 'failed' : 'success',
       machineType: vm_info['machineType'],
       bootDiskSizeGb: vm_info['bootDiskSizeGb'],

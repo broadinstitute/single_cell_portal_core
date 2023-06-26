@@ -27,8 +27,8 @@ class ApplicationController < ActionController::Base
 
   rescue_from ActionController::InvalidAuthenticityToken, with: :invalid_csrf
 
-  def self.papi_client
-    @@papi_client ||= PapiClient.new
+  def self.life_sciences_api_client
+    @@life_sciences_api_client ||= LifeSciencesApiClient.new
   end
 
   def self.big_query_client

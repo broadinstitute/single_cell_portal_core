@@ -29,13 +29,12 @@ const disabledTooltips = {
  * Responsible for shows tabs available for a given view of the study
 */
 export default function PlotTabs({
-  shownTab, enabledTabs, disabledTabs, updateExploreParams,
-  isNewExploreUX
+  shownTab, enabledTabs, disabledTabs, updateExploreParams
 }) {
   return (
-    <div className={isNewExploreUX ? '' : 'col-md-4 col-md-offset-1'}>
+    <div>
       <ul
-        className={isNewExploreUX ? 'nav nav-tabs study-plot-tabs' : 'nav nav-tabs'}
+        className='nav nav-tabs study-plot-tabs'
         role="tablist"
         data-analytics-name="explore-tab"
       >
@@ -50,8 +49,7 @@ export default function PlotTabs({
             </li>
           )
         })}
-        {isNewExploreUX &&
-          disabledTabs.map(tabKey => {
+        { disabledTabs.map(tabKey => {
             const label = tabList.find(({ key }) => key === tabKey).label
             const tooltip = disabledTooltips[tabKey]
             const numGenes = tooltip.numToSearch

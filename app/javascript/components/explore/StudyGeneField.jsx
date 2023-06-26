@@ -41,9 +41,6 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
   const [notPresentGenes, setNotPresentGenes] = useState(new Set([]))
   const [showNotPresentGeneChoice, setShowNotPresentGeneChoice] = useState(false)
 
-  // Determine if the flag show_explore_tab_ux_updates is toggled to show explore tab UX updates
-  const isNewExploreUX = getFeatureFlagsWithDefaults()?.show_explore_tab_ux_updates
-
   /** Handles a user submitting a gene search */
   function handleSearch(event) {
     event.preventDefault()
@@ -129,14 +126,13 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     }
   }, [genes.join(',')])
 
-  if (isNewExploreUX) {
-    useEffect(() => {
-      if (genes.join(',') !== geneArray.map(opt => opt.label).join(',')) {
-        const selectEvent = new Event('change:multiselect')
-        handleSearch(selectEvent)
-      }
-    }, [geneArray])
-  }
+
+  useEffect(() => {
+    if (genes.join(',') !== geneArray.map(opt => opt.label).join(',')) {
+      const selectEvent = new Event('change:multiselect')
+      handleSearch(selectEvent)
+    }
+  }, [geneArray])
 
   const searchDisabled = !isLoading && !allGenes?.length
 
