@@ -37,21 +37,26 @@ export default function DifferentialExpressionFileForm({
   const annotsAlreadyInUse = []
   // retrieve the annotations that are already in use on a DE file
   allFiles.filter(differentialExpressionFileFilter).filter(
-    diffExpFile => diffExpFile.differential_expression_file_info.annotation_association
+    diffExpFile =>
+      diffExpFile.differential_expression_file_info.annotation_name &&
+      diffExpFile.differential_expression_file_info.annotation_scope
   ).forEach(file => {
-    annotsAlreadyInUse.push(file.differential_expression_file_info.annotation_association)
+    const usedAnnot = annotationIdentifier(file.differential_expression_file_info)
+    annotsAlreadyInUse.push(usedAnnot)
   })
 
   // filter down the annotations to only allow choosing an annotation that hasn't been chosen already
   // each annotation is allowed to be associated with only one DE file
-  const annotationOptions = annotationsAvailOnStudy?.map(
+  const annotationOptions = annotationsAvailOnStudy?.filter(
+    annot => annot.type === 'group' && annot.scope !== 'invalid'
+  ).map(
     cf => ({ label: cf.name, value: `${cf.name}--${cf.type}--${cf.scope}` })
   ).filter(
     annotObj => !annotsAlreadyInUse.includes(annotObj.value)
   )
 
   const associatedAnnotation = annotationOptions?.find(
-    opt => opt.value === file.differential_expression_file_info.annotation_association
+    opt => opt.value === annotationIdentifier(file.differential_expression_file_info)
   )
 
   /* while mapping the computational methods constant to label/value pairs for the select
@@ -68,24 +73,34 @@ export default function DifferentialExpressionFileForm({
     opt => opt.value === file.differential_expression_file_info.computational_method
   )
 
+  /** extract annotation_name and annotation_scope and transform into URL-param like string */
+  function annotationIdentifier(deInfoObject) {
+    console.log(`calling annotationIdentifier: ${`${deInfoObject.annotation_name}--group--${deInfoObject.annotation_scope}`}`)
+    return `${deInfoObject.annotation_name}--group--${deInfoObject.annotation_scope}`
+  }
+
+  /** inverse of above, parse annotation attributes from delimited string */
+  function extractAttributesFromId(identifier) {
+    const annotationAttr = identifier.split('--')
+    return { annotation_name: annotationAttr[0], annotation_scope: annotationAttr[2] }
+  }
+
   /** handle a change in the associated cluster select */
   function updateAssociatedCluster(file, option) {
     let newVal = null
     if (option) {
       newVal = option.value
     }
-    updateFile(file._id, { differential_expression_file_info: { cluster_group_id: newVal } })
+    updateFile(file._id, { differential_expression_file_info: { clustering_association: newVal } })
   }
 
   /** handle a change in the associated annotation select */
   function updateAssociatedAnnotation(file, option) {
-    let annotationName, annotationType, annotationScope
+    let newVal = null
     if (option) {
-      [annotationName, annotationType, annotationScope] = option.value.split('--')
+      newVal = extractAttributesFromId(option.value)
     }
-    updateFile(file._id, { differential_expression_file_info: {
-      annotation_name: annotationName, annotation_scope: annotationScope
-    } })
+    updateFile(file._id, { differential_expression_file_info: newVal })
   }
 
   /** handle a change in the associated computational method select */

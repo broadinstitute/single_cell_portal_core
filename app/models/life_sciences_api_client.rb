@@ -369,7 +369,7 @@ class LifeSciencesApiClient
       command_line += [
         '--annotation-name', de_info.annotation_name, '--annotation-scope', de_info.annotation_scope,
         '--cluster-name', de_info.cluster_group.name, '--differential-expression-file', study_file.gs_url,
-        '--computational-method', de_info.computational_method, action_cli_opt
+        '--study-accession', study.accession , '--method', de_info.computational_method, action_cli_opt
       ]
     when 'image_pipeline'
       # image_pipeline is node-based, so python command line to this point no longer applies

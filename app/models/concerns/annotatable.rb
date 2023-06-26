@@ -30,4 +30,12 @@ module Annotatable
       errors.add(:base, "Annotation: #{annotation_name} (#{annotation_scope}) not found")
     end
   end
+
+  # return a parsed instance from a parent study_file_id, e.g. ClusterGroup
+  def instance_from_study_file_id(study_file_id, associated_class)
+    return nil if study_file_id.blank?
+
+    study_file_id = StudyFile.find(study_file_id).id
+    associated_class.send(:find_by, { study_file_id: })&.id
+  end
 end

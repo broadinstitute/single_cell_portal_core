@@ -85,7 +85,7 @@ class StudyFile
   accepts_nested_attributes_for :heatmap_file_info
   accepts_nested_attributes_for :ann_data_file_info
   accepts_nested_attributes_for :differential_expression_file_info
-  validate :show_exp_file_info_errors
+  validate :show_nested_info_errors
 
   # field definitions
   field :name, type: String
@@ -1455,10 +1455,16 @@ class StudyFile
     end
   end
 
-  def show_exp_file_info_errors
-    if self.expression_file_info.present? && !self.expression_file_info.valid?
-      errors.add(:base, self.expression_file_info.errors.full_messages.join(', '))
-      errors.delete(:expression_file_info) # remove "Expression file info is invalid" message
+  # show errors for nested info documents inline with top-level validation errors
+  def show_nested_info_errors
+    %i[expression_file_info ann_data_file_info differential_expression_file_info].each do |association_name|
+      model = send(association_name)
+      next if model.blank? || model.valid?
+
+      model.errors.full_messages.each do |msg|
+        errors.add(:base, "#{association_name.to_s.humanize} Error - #{msg}")
+      end
+      errors.delete(association_name) if errors[association_name].present?
     end
   end
 

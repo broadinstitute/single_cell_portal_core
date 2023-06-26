@@ -224,7 +224,7 @@ export function RawUploadWizard({ studyAccession, name }) {
       } if (!fileChanged) { // we're updating a stale/no-longer existent file -- discard it
         return prevFormState
       }
-      ['heatmap_file_info', 'expression_file_info'].forEach(nestedProp => {
+      ['heatmap_file_info', 'expression_file_info', 'differential_expression_file_info'].forEach(nestedProp => {
         if (updates[nestedProp]) {
           // merge nested file info properties
           Object.assign(fileChanged[nestedProp], updates[nestedProp])
