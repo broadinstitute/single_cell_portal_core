@@ -32,7 +32,7 @@ class DifferentialExpressionResult
   validates :annotation_scope, inclusion: { in: %w[study cluster] }
   validates :cluster_name, presence: true
   validates :matrix_file_id, presence: true, unless: proc { study_file.present? }
-  validates :computational_method, inclusion: { in: SUPPORTED_COMP_METHODS }
+  validates :computational_method, presence: true
   validates :annotation_name, presence: true, uniqueness: { scope: %i[study cluster_group annotation_scope] }
   validate :comparisons_available?
   validate :matrix_file_exists?
@@ -116,6 +116,24 @@ class DifferentialExpressionResult
   #      { a: [b,c], b: [c] } => 3 comparisons (a:b, a:c, b:c)
   def num_pairwise_comparisons
     pairwise_comparisons.values.map(&:count).reduce(0, &:+)
+  end
+
+  # initialize one-vs-rest and pairwise observations from manifest contents
+  # will clobber any previous values and save in place once completed, so only use with new instances
+  #
+  # * *params*
+  #   -+observations+ (Array<Array<String>>) => Array of arrays of strings, only 1 or 2 entries in each
+  def initialize_observations!(observations)
+    observations.each do |groups|
+      if groups.size == 1
+        one_vs_rest_comparisons << groups.first
+      else
+        observed, comparison = groups
+        pairwise_comparisons[observed] ||= []
+        pairwise_comparisons[observed] << comparison
+      end
+    end
+    save!
   end
 
   private

@@ -74,16 +74,18 @@ export default function DifferentialExpressionFileForm({
     if (option) {
       newVal = option.value
     }
-    updateFile(file._id, { differential_expression_file_info: { clustering_association: newVal } })
+    updateFile(file._id, { differential_expression_file_info: { cluster_group_id: newVal } })
   }
 
   /** handle a change in the associated annotation select */
   function updateAssociatedAnnotation(file, option) {
-    let newVal = null
+    let annotationName, annotationType, annotationScope
     if (option) {
-      newVal = option.value
+      [annotationName, annotationType, annotationScope] = option.value.split('--')
     }
-    updateFile(file._id, { differential_expression_file_info: { annotation_association: newVal } })
+    updateFile(file._id, { differential_expression_file_info: {
+      annotation_name: annotationName, annotation_scope: annotationScope
+    } })
   }
 
   /** handle a change in the associated computational method select */

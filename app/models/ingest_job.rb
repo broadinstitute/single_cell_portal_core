@@ -638,19 +638,10 @@ class IngestJob
                       "user-uploaded file #{study_file.upload_file_name}"
     de_result = DifferentialExpressionResult.new(
       study:, study_file:, cluster_group:, cluster_name: cluster_group.name, is_author_de: true,
-      annotation_name: params_object.annotation_name, annotation_scope: params_object.annotation_scope
+      annotation_name: de_info.annotation_name, annotation_scope: de_info.annotation_scope
     )
     all_observations = read_differential_expression_manifest(de_info, cluster_group)
-    all_observations.each do |groups|
-      if groups.size == 1
-        de_result.one_vs_rest_comparisons << groups.first
-      else
-        observed, comparison = groups
-        de_result.pairwise_comparisons[observed] ||= []
-        de_result.pairwise_comparisons[observed] << comparison
-      end
-    end
-    de_result.save
+    de_result.initialize_observations!(all_observations)
   end
 
   # read the contents of a generated DE manifest to get one-vs-rest and pairwise comparisons

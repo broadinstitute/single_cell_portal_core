@@ -183,5 +183,9 @@ FactoryBot.define do
         file.ann_data_file_info.save
       end
     end
+    factory :differential_expression_file do
+      file_type { 'Differential Expression' }
+      parse_status { 'parsed' }
+    end
   end
 end
