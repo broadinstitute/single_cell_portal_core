@@ -1,10 +1,10 @@
 require 'test_helper'
 
-# tests for creating various Google Pipelines API (PAPI) objects and submitting/getting running pipelines
-class PapiClientTest < ActiveSupport::TestCase
+# tests for creating various Google Life Sciences API objects and submitting/getting running pipelines
+class LifeSciencesApiClientTest < ActiveSupport::TestCase
 
   before(:all) do
-    @client = ApplicationController.papi_client
+    @client = ApplicationController.life_sciences_api_client
     @user = FactoryBot.create(:user, test_array: @@users_to_clean)
     @study = FactoryBot.create(:detached_study,
                                name_prefix: 'Papi Client Test',
@@ -40,10 +40,11 @@ class PapiClientTest < ActiveSupport::TestCase
                                         { name: 'Category', type: 'group', values: %w[bar bar baz] },
                                         { name: 'Intensity', type: 'numeric', values: [1.1, 2.2, 3.3] }
                                       ])
+    @compute_region = LifeSciencesApiClient::DEFAULT_COMPUTE_REGION
   end
 
   test 'should instantiate client and assign attributes' do
-    client = PapiClient.new
+    client = LifeSciencesApiClient.new
     assert client.project.present?
     assert client.service_account_credentials.present?
     assert client.service.present?
@@ -54,9 +55,15 @@ class PapiClientTest < ActiveSupport::TestCase
     assert issuer.match(/gserviceaccount\.com$/)
   end
 
+  test 'should get project number and location' do
+    location = @client.project_location
+    assert location.include?(@client.project_number)
+    assert location.include?(LifeSciencesApiClient::DEFAULT_COMPUTE_REGION)
+  end
+
   test 'should list pipelines' do
     pipelines = @client.list_pipelines
-    skip 'could not find any pipelines' if !!pipelines&.operations&.empty?
+    skip 'could not find any pipelines' if pipelines.operations.blank?
     assert pipelines.present?
     assert pipelines.operations.any?
   end
@@ -68,11 +75,11 @@ class PapiClientTest < ActiveSupport::TestCase
       Google::Auth::ServiceAccountCredentials
     ]
     mock.expect :authorization, Google::Auth::ServiceAccountCredentials.new, []
-    mock.expect :run_pipeline, Google::Apis::GenomicsV2alpha1::Operation.new, [
-      Google::Apis::GenomicsV2alpha1::RunPipelineRequest, { quota_user: @user.id.to_s }
+    mock.expect :run_pipeline, Google::Apis::LifesciencesV2beta::Operation.new, [
+      String, Google::Apis::LifesciencesV2beta::RunPipelineRequest, { quota_user: @user.id.to_s }
     ]
-    Google::Apis::GenomicsV2alpha1::GenomicsService.stub :new, mock do
-      client = PapiClient.new
+    Google::Apis::LifesciencesV2beta::CloudLifeSciencesService.stub :new, mock do
+      client = LifeSciencesApiClient.new
       client.run_pipeline(study_file: @expression_matrix, user: @user, action: :ingest_expression)
       mock.verify
     end
@@ -83,11 +90,11 @@ class PapiClientTest < ActiveSupport::TestCase
       Google::Auth::ServiceAccountCredentials
     ]
     mock.expect :authorization, Google::Auth::ServiceAccountCredentials.new, []
-    mock.expect :run_pipeline, Google::Apis::GenomicsV2alpha1::Operation.new, [
-      Google::Apis::GenomicsV2alpha1::RunPipelineRequest, { quota_user: @user.id.to_s }
+    mock.expect :run_pipeline, Google::Apis::LifesciencesV2beta::Operation.new, [
+      String, Google::Apis::LifesciencesV2beta::RunPipelineRequest, { quota_user: @user.id.to_s }
     ]
-    Google::Apis::GenomicsV2alpha1::GenomicsService.stub :new, mock do
-      client = PapiClient.new
+    Google::Apis::LifesciencesV2beta::CloudLifeSciencesService.stub :new, mock do
+      client = LifeSciencesApiClient.new
       de_opts = {
         annotation_name: 'Category',
         annotation_scope: 'cluster',
@@ -106,7 +113,7 @@ class PapiClientTest < ActiveSupport::TestCase
 
   test 'should get individual pipeline run' do
     pipelines = @client.list_pipelines
-    skip 'could not find any pipelines' if !!pipelines&.operations&.empty?
+    skip 'could not find any pipelines' if pipelines.operations.blank?
     pipeline = pipelines.operations.sample
     requested_pipeline = @client.get_pipeline(name: pipeline.name)
     assert_equal pipeline.name, requested_pipeline.name
@@ -126,25 +133,25 @@ class PapiClientTest < ActiveSupport::TestCase
 
   test 'should create virtual machine config' do
     vm = @client.create_virtual_machine_object
-    assert vm.is_a? Google::Apis::GenomicsV2alpha1::VirtualMachine
+    assert vm.is_a? Google::Apis::LifesciencesV2beta::VirtualMachine
     # create different machine type
     machine_type = 'n2-standard-4'
-    n2_vm = @client.create_virtual_machine_object(machine_type: machine_type, boot_disk_size_gb: 10, preemptible: true)
-    assert n2_vm.is_a? Google::Apis::GenomicsV2alpha1::VirtualMachine
+    n2_vm = @client.create_virtual_machine_object(machine_type:, boot_disk_size_gb: 10, preemptible: true)
+    assert n2_vm.is_a? Google::Apis::LifesciencesV2beta::VirtualMachine
     assert_equal machine_type, n2_vm.machine_type
     assert_equal 10, n2_vm.boot_disk_size_gb
     assert n2_vm.preemptible
   end
 
   test 'should create resources object' do
-    regions = %w[us-central1]
-    resources = @client.create_resources_object(regions: regions)
-    assert resources.is_a? Google::Apis::GenomicsV2alpha1::Resources
+    regions = [@compute_region]
+    resources = @client.create_resources_object(regions:)
+    assert resources.is_a? Google::Apis::LifesciencesV2beta::Resources
     assert_equal regions, resources.regions
     # try overriding default VM
     machine_type = 'n2-standard-4'
-    n2_vm = @client.create_virtual_machine_object(machine_type: machine_type)
-    n2_resources = @client.create_resources_object(regions: regions, vm: n2_vm)
+    n2_vm = @client.create_virtual_machine_object(machine_type:)
+    n2_resources = @client.create_resources_object(regions:, vm: n2_vm)
     assert_equal n2_vm, n2_resources.virtual_machine
   end
 
@@ -205,13 +212,13 @@ class PapiClientTest < ActiveSupport::TestCase
     exp_cmd = @client.get_command_line(study_file: @expression_matrix, action: :ingest_expression,
                                        user_metrics_uuid: @user.metrics_uuid)
     environment = @client.set_environment_variables
-    actions = @client.create_actions_object(commands: exp_cmd, environment: environment)
-    regions = %w[us-central1]
-    resources = @client.create_resources_object(regions: regions)
-    pipeline = @client.create_pipeline_object(actions: actions, environment: environment, resources: resources)
+    actions = @client.create_actions_object(commands: exp_cmd, environment:)
+    regions = [@compute_region]
+    resources = @client.create_resources_object(regions:)
+    pipeline = @client.create_pipeline_object(actions:, environment:, resources:)
     labels = { foo: 'bar' }
-    pipeline_request = @client.create_run_pipeline_request_object(pipeline: pipeline, labels: labels)
-    assert pipeline_request.is_a? Google::Apis::GenomicsV2alpha1::RunPipelineRequest
+    pipeline_request = @client.create_run_pipeline_request_object(pipeline:, labels:)
+    assert pipeline_request.is_a? Google::Apis::LifesciencesV2beta::RunPipelineRequest
     assert_equal pipeline, pipeline_request.pipeline
     assert_equal actions, pipeline_request.pipeline.actions
     assert_equal environment, pipeline_request.pipeline.environment
@@ -235,18 +242,18 @@ class PapiClientTest < ActiveSupport::TestCase
     de_cmd = @client.get_command_line(study_file: @cluster_file, action: :differential_expression,
                                       user_metrics_uuid: @user.metrics_uuid, params_object: de_params)
     environment = @client.set_environment_variables
-    actions = @client.create_actions_object(commands: de_cmd, environment: environment)
-    regions = %w[us-central1]
+    actions = @client.create_actions_object(commands: de_cmd, environment:)
+    regions = [@compute_region]
     labels = @client.job_labels(
       action: :differential_expression, study: @study, study_file: @cluster_file, user: @user,
       params_object: de_params
     )
     machine_type = de_params.machine_type
     custom_vm = @client.create_virtual_machine_object(machine_type:, labels:)
-    resources = @client.create_resources_object(regions: regions, vm: custom_vm)
+    resources = @client.create_resources_object(regions:, vm: custom_vm)
     pipeline = @client.create_pipeline_object(actions:, environment:, resources:)
     pipeline_request = @client.create_run_pipeline_request_object(pipeline:, labels:)
-    assert pipeline_request.is_a? Google::Apis::GenomicsV2alpha1::RunPipelineRequest
+    assert pipeline_request.is_a? Google::Apis::LifesciencesV2beta::RunPipelineRequest
     assert_equal pipeline, pipeline_request.pipeline
     assert_equal actions, pipeline_request.pipeline.actions
     assert_equal environment, pipeline_request.pipeline.environment
@@ -273,14 +280,14 @@ class PapiClientTest < ActiveSupport::TestCase
       docker_tag: ingest_tag,
       environment: 'test',
       file_type: 'cluster',
-      machine_type: PapiClient::DEFAULT_MACHINE_TYPE,
+      machine_type: LifeSciencesApiClient::DEFAULT_MACHINE_TYPE,
       boot_disk_size_gb: '300'
     }
     assert_equal expected_labels, labels
   end
 
   test 'should get correct label for action' do
-    PapiClient::FILE_TYPES_BY_ACTION.keys.select { |k| k =~ /ingest/ }.each do |action|
+    LifeSciencesApiClient::FILE_TYPES_BY_ACTION.keys.select { |k| k =~ /ingest/ }.each do |action|
       assert_equal 'ingest_pipeline', @client.label_for_action(action)
     end
     assert_equal 'differential_expression', @client.label_for_action('differential_expression')
