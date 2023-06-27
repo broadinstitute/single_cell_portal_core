@@ -94,9 +94,10 @@ class DifferentialExpressionResult
   # @return [Hash<String => Array<String, String>, Array<String, String, String>]
   def result_files
     one_vs_rest_files = one_vs_rest_comparisons.map { |label| filename_for(label) }
-    pairwise_files = pairwise_comparisons.map do |label, comparisons|
+    pairwise_files = []
+    pairwise_comparisons.map do |label, comparisons|
       comparisons.map do |comparison|
-        [label, comparison, filename_for(label, comparison:)]
+        pairwise_files << [label, comparison, filename_for(label, comparison:)]
       end
     end
     {
@@ -126,11 +127,11 @@ class DifferentialExpressionResult
   def initialize_observations!(observations)
     observations.each do |groups|
       if groups.size == 1
-        one_vs_rest_comparisons << groups.first
+        one_vs_rest_comparisons << groups.first.strip
       else
         observed, comparison = groups
         pairwise_comparisons[observed] ||= []
-        pairwise_comparisons[observed] << comparison
+        pairwise_comparisons[observed] << comparison.strip
       end
     end
     save!
