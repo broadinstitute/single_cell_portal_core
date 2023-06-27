@@ -94,10 +94,9 @@ class DifferentialExpressionResult
   # @return [Hash<String => Array<String, String>, Array<String, String, String>]
   def result_files
     one_vs_rest_files = one_vs_rest_comparisons.map { |label| filename_for(label) }
-    pairwise_files = []
-    pairwise_comparisons.map do |label, comparisons|
+    pairwise_files = pairwise_comparisons.map do |label, comparisons|
       comparisons.map do |comparison|
-        pairwise_files << [label, comparison, filename_for(label, comparison:)]
+        [label, comparison, filename_for(label, comparison:)]
       end
     end
     {
