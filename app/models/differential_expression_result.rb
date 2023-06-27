@@ -186,5 +186,14 @@ class DifferentialExpressionResult
         remote.delete
       end
     end
+
+    if is_author_de
+      filepath = DifferentialExpressionService.encode_filename(
+        [cluster_group.name, annotation_name, 'manifest']
+      )
+      remote = ApplicationController.firecloud_client.get_workspace_file(study.bucket_id, filepath)
+      Rails.logger.info "Removing manifest for #{identifier} at #{filepath}"
+      remote.delete if remote.present?
+    end
   end
 end

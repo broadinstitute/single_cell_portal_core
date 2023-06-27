@@ -654,7 +654,7 @@ class IngestJob
   # read the contents of a generated DE manifest to get one-vs-rest and pairwise comparisons
   def read_differential_expression_manifest(info_obj, cluster)
     manifest_basename = DifferentialExpressionService.encode_filename(
-      [cluster.name, info_obj.annotation_name]
+      [cluster.name, info_obj.annotation_name, 'manifest']
     )
     manifest_path = "_scp_internal/differential_expression/#{manifest_basename}.tsv"
     raw_manifest = ApplicationController.firecloud_client.execute_gcloud_method(
