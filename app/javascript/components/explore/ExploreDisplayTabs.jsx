@@ -732,6 +732,7 @@ export default function ExploreDisplayTabs({
               setDeGroup={setDeGroup}
               hasOneVsRestDe={hasOneVsRestDe}
               hasPairwiseDe={hasPairwiseDe}
+              isAuthorDe={isAuthorDe}
               deGroupB={deGroupB}
               setDeGroupB={setDeGroupB}
               countsByLabel={countsByLabel}

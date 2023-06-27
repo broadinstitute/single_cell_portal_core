@@ -18,7 +18,7 @@ function getSimpleOptions(stringArray) {
   return stringArray.map(assignLabelsAndValues)
 }
 
-// to round to n decimal places
+/** to round to n decimal places */
 function round(num, places) {
   const multiplier = Math.pow(10, places)
   return Math.round(num * multiplier) / multiplier
@@ -27,7 +27,7 @@ function round(num, places) {
 /**
  * Transform raw TSV text into array of differential expression gene objects
  */
-function parseDeFile(tsvText, isAuthorDe=true) {
+function parseDeFile(tsvText, isAuthorDe=false) {
   const deGenes = []
   const tsvLines = tsvText.split(newlineRegex)
   for (let i = 1; i < tsvLines.length; i++) {
@@ -55,6 +55,7 @@ function parseDeFile(tsvText, isAuthorDe=true) {
         name, log2FoldChange, qval, mean
       ] = tsvLines[i].split('\t')
       const deGene = {
+        // TODO (SCP-5201): Show significant zeros, e.g. 0's to right of 9 in 0.900
         log2FoldChange: round(log2FoldChange, 3),
         qval: round(qval, 3),
         mean: round(mean, 3)
@@ -76,6 +77,7 @@ function parseDeFile(tsvText, isAuthorDe=true) {
  *
  * @param {String} bucketId Identifier for study's Google bucket
  * @param {String} deFilePath File path of differential expression file in Google bucket
+ * @param {Boolean} isAuthorDe If requesting author-computed DE data
  *
  * @return {Array} deGenes Array of DE gene objects, each with properties:
  *   name: Gene name
@@ -86,10 +88,10 @@ function parseDeFile(tsvText, isAuthorDe=true) {
  *   pctNzGroup: Percent non-zero, group.  % of cells with non-zero expression in selected group.
  *   pctNzReference: Percent non-zero, reference.  % of cells with non-zero expression in non-selected groups.
  **/
-async function fetchDeGenes(bucketId, deFilePath) {
+async function fetchDeGenes(bucketId, deFilePath, isAuthorDe=false) {
   const data = await fetchBucketFile(bucketId, deFilePath)
   const tsvText = await data.text()
-  const deGenes = parseDeFile(tsvText)
+  const deGenes = parseDeFile(tsvText, isAuthorDe)
   return deGenes
 }
 
@@ -149,7 +151,8 @@ export function PairwiseDifferentialExpressionGroupPicker({
 
     setDeFilePath(deFilePath)
 
-    const deGenes = await fetchDeGenes(bucketId, deFilePath)
+    const isAuthorDe = true // SCP doesn't currently automatically compute pairwise DE
+    const deGenes = await fetchDeGenes(bucketId, deFilePath, isAuthorDe)
     setDeGenes(deGenes)
   }
 
@@ -228,7 +231,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
 /** Pick groups of cells for one-vs-rest-only differential expression (DE) */
 export function DifferentialExpressionGroupPicker({
   bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup, setDeGenes,
-  countsByLabel, deObjects, setDeFilePath
+  countsByLabel, deObjects, setDeFilePath, isAuthorDe
 }) {
   let groups = getLegendSortedLabels(countsByLabel)
   groups = groups.filter(group => {

@@ -164,12 +164,6 @@ function searchGenesFromTable(selectedGenes, searchGenes, logProps) {
   )
 }
 
-
-const defaultSorting = [
-  { id: 'pvalAdj', desc: false },
-  { id: 'log2FoldChange', desc: true }
-]
-
 /** Table of DE data for genes */
 function DifferentialExpressionTable({
   genesToShow, searchGenes, clusterName, annotation, species, numRows,
@@ -180,6 +174,14 @@ function DifferentialExpressionTable({
     pageSize: numRows
   }
 
+  console.log('genesToShow', genesToShow)
+
+  const defaultPrimaryKey = !isAuthorDe ? 'pvalAdj' : 'qval'
+  const defaultSorting = [
+    { id: defaultPrimaryKey, desc: false },
+    { id: 'log2FoldChange', desc: true }
+  ]
+
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = React.useState(defaultSorting)
   const [pagination, setPagination] = React.useState(defaultPagination)
@@ -188,35 +190,37 @@ function DifferentialExpressionTable({
     species, clusterName, annotation
   }
 
-  // const pValColumnHelper = columnHelper.accessor('pvalAdj', {
-  //   header: () => (
-  //     <span
-  //       id="pval-adj-header"
-  //       className="glossary"
-  //       data-toggle="tooltip"
-  //       data-original-title="p-value adjusted with Benjamini-Hochberg FDR correction">
-  //       Adj. p-value
-  //     </span>
-  //   ),
-  //   cell: deGene => {
-  //     return deGene.getValue()
-  //   }
-  // })
+  const pvalAdjColumnHelper = columnHelper.accessor('pvalAdj', {
+    header: () => (
+      <span
+        id="pval-adj-header"
+        className="glossary"
+        data-toggle="tooltip"
+        data-original-title="p-value adjusted with Benjamini-Hochberg FDR correction">
+        Adj. p-value
+      </span>
+    ),
+    cell: deGene => {
+      return deGene.getValue()
+    }
+  })
 
-  // const qValColumnHelper = columnHelper.accessor('qval', {
-  //   header: () => (
-  //     <span
-  //       id="qval-header"
-  //       className="glossary"
-  //       data-toggle="tooltip"
-  //       data-original-title="q-value">
-  //       q-value
-  //     </span>
-  //   ),
-  //   cell: deGene => {
-  //     return deGene.getValue()
-  //   }
-  // })
+  const qvalColumnHelper = columnHelper.accessor('qval', {
+    header: () => (
+      <span
+        id="qval-header"
+        className="glossary"
+        data-toggle="tooltip"
+        data-original-title="Expected positive false discovery rate">
+        q-value
+      </span>
+    ),
+    cell: deGene => {
+      return deGene.getValue()
+    }
+  })
+
+  const significanceColumnHelper = !isAuthorDe ? pvalAdjColumnHelper : qvalColumnHelper
 
   const columns = React.useMemo(() => [
     columnHelper.accessor('name', {
@@ -261,20 +265,7 @@ function DifferentialExpressionTable({
         return deGene.getValue()
       }
     }),
-    columnHelper.accessor('qval', {
-      header: () => (
-        <span
-          id="qval-header"
-          className="glossary"
-          data-toggle="tooltip"
-          data-original-title="Estimate of false discovery rate (FDR)">
-        q-value
-        </span>
-      ),
-      cell: deGene => {
-        return deGene.getValue()
-      }
-    })
+    significanceColumnHelper
   ]
   , [genesToShow]
   )
@@ -391,7 +382,7 @@ function DifferentialExpressionTable({
 export default function DifferentialExpressionPanel({
   deGroup, deGenes, searchGenes,
   exploreInfo, exploreParamsWithDefaults, setShowDeGroupPicker, setDeGenes, setDeGroup,
-  countsByLabel, hasOneVsRestDe, hasPairwiseDe, deGroupB, setDeGroupB, numRows=50
+  countsByLabel, hasOneVsRestDe, hasPairwiseDe, isAuthorDe, deGroupB, setDeGroupB, numRows=50
 }) {
   const clusterName = exploreParamsWithDefaults?.cluster
   const bucketId = exploreInfo?.bucketId
@@ -462,6 +453,7 @@ export default function DifferentialExpressionPanel({
           countsByLabel={countsByLabel}
           deObjects={deObjects}
           setDeFilePath={setDeFilePath}
+          isAuthorDe={isAuthorDe}
         />
       }
       {hasPairwiseDe &&
