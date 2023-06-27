@@ -170,7 +170,6 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
   end
 
   test 'should clean up files on destroy' do
-    @study.detached = false # temporarily set to false to allow delete code to be called, which is mocked below
     sub_cluster = DifferentialExpressionResult.create(
       study: @study, cluster_group: @cluster_file.cluster_groups.first, annotation_name: 'sub-cluster',
       annotation_scope: 'cluster', matrix_file_id: @raw_matrix.id
@@ -184,11 +183,13 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
       mock.expect :get_workspace_file, file_mock, [@study.bucket_id, file]
     end
     ApplicationController.stub :firecloud_client, mock do
-      sub_cluster.destroy
-      mock.verify
-      assert_not DifferentialExpressionResult.where(study: @study, cluster_group: @cluster_file.cluster_groups.first,
-                                                    annotation_name: 'sub-cluster', annotation_scope: 'cluster',
-                                                    matrix_file_id: @raw_matrix.id).exists?
+      @study.stub :detached, false do
+        sub_cluster.destroy
+        mock.verify
+        assert_not DifferentialExpressionResult.where(study: @study, cluster_group: @cluster_file.cluster_groups.first,
+                                                      annotation_name: 'sub-cluster', annotation_scope: 'cluster',
+                                                      matrix_file_id: @raw_matrix.id).exists?
+      end
     end
   end
 

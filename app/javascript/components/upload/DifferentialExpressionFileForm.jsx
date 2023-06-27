@@ -5,7 +5,6 @@ import { TextFormField } from './form-components'
 import ExpandableFileForm from './ExpandableFileForm'
 import Select from '~/lib/InstrumentedSelect'
 import { clusterFileFilter } from './ClusteringStep'
-import { differentialExpressionFileFilter } from './DifferentialExpressionStep'
 import CreatableSelect from 'react-select/creatable'
 
 const allowedFileExts = FileTypeExtensions.plainText
@@ -33,28 +32,7 @@ export default function DifferentialExpressionFileForm({
   const associatedCluster = clusterFileOptions?.find(
     opt => opt.value === file.differential_expression_file_info.clustering_association
   )
-
-  const annotsAlreadyInUse = []
-  // retrieve the annotations that are already in use on a DE file
-  allFiles.filter(differentialExpressionFileFilter).filter(
-    diffExpFile =>
-      diffExpFile.differential_expression_file_info.annotation_name &&
-      diffExpFile.differential_expression_file_info.annotation_scope
-  ).forEach(file => {
-    const usedAnnot = annotationIdentifier(file.differential_expression_file_info)
-    annotsAlreadyInUse.push(usedAnnot)
-  })
-
-  // filter down the annotations to only allow choosing an annotation that hasn't been chosen already
-  // each annotation is allowed to be associated with only one DE file
-  const annotationOptions = annotationsAvailOnStudy?.filter(
-    annot => annot.type === 'group' && annot.scope !== 'invalid'
-  ).map(
-    cf => ({ label: cf.name, value: `${cf.name}--${cf.type}--${cf.scope}` })
-  ).filter(
-    annotObj => !annotsAlreadyInUse.includes(annotObj.value)
-  )
-
+  let annotationOptions = setAnnotationOptions()
   const associatedAnnotation = annotationOptions?.find(
     opt => opt.value === annotationIdentifier(file.differential_expression_file_info)
   )
@@ -75,7 +53,6 @@ export default function DifferentialExpressionFileForm({
 
   /** extract annotation_name and annotation_scope and transform into URL-param like string */
   function annotationIdentifier(deInfoObject) {
-    console.log(`calling annotationIdentifier: ${`${deInfoObject.annotation_name}--group--${deInfoObject.annotation_scope}`}`)
     return `${deInfoObject.annotation_name}--group--${deInfoObject.annotation_scope}`
   }
 
@@ -85,6 +62,15 @@ export default function DifferentialExpressionFileForm({
     return { annotation_name: annotationAttr[0], annotation_scope: annotationAttr[2] }
   }
 
+  /** format a label for the available annotations dropdown, noting annotation scope */
+  function annotationLabel(annotation) {
+    if (annotation.scope === 'cluster' ) {
+      return `${annotation.name} (${annotation.cluster_name} only)`
+    } else {
+      return `${annotation.name}`
+    }
+  }
+
   /** handle a change in the associated cluster select */
   function updateAssociatedCluster(file, option) {
     let newVal = null
@@ -92,6 +78,7 @@ export default function DifferentialExpressionFileForm({
       newVal = option.value
     }
     updateFile(file._id, { differential_expression_file_info: { clustering_association: newVal } })
+    annotationOptions = setAnnotationOptions()
   }
 
   /** handle a change in the associated annotation select */
@@ -110,6 +97,17 @@ export default function DifferentialExpressionFileForm({
       newVal = option.value
     }
     updateFile(file._id, { differential_expression_file_info: { computational_method: newVal } })
+  }
+
+  /** set available annotations based off of selected cluster file */
+  function setAnnotationOptions() {
+    return annotationsAvailOnStudy?.filter(
+      annot => annot.type === 'group' && annot.scope !== 'invalid'
+    ).filter(
+      opt => opt.cluster_name === associatedCluster?.label || opt.scope === 'study'
+    ).map(
+      cf => ({ label: annotationLabel(cf), value: `${cf.name}--${cf.type}--${cf.scope}` })
+    )
   }
 
   return <ExpandableFileForm {...{

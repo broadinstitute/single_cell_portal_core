@@ -331,14 +331,14 @@ class IngestJobTest < ActiveSupport::TestCase
                                      study:,
                                      cell_input: { x: coords, y: coords, cells: }
     )
-    cluster_group = ClusterGroup.find_by(study:, study_file: cluster_file, name: cluster_name)
-    differential_expression_file_info = {
-      annotation_name: 'cell_type__custom', annotation_scope: 'study', cluster_group:, computational_method: 'custom'
-    }
+    cluster_group = ClusterGroup.find_by(study:, study_file: cluster_file)
     de_file = FactoryBot.create(:differential_expression_file,
                                 study:,
                                 name: 'user_de.txt',
-                                differential_expression_file_info:
+                                annotation_name: 'cell_type__custom',
+                                annotation_scope: 'study',
+                                cluster_group:,
+                                computational_method: 'custom'
     )
     job = IngestJob.new(study:, study_file: de_file, action: :ingest_differential_expression, user: @user)
     mock = Minitest::Mock.new
@@ -356,6 +356,69 @@ class IngestJobTest < ActiveSupport::TestCase
       expected_pairwise_keys = cell_types.dup - ['T cells']
       assert_equal expected_pairwise_keys, de_result.pairwise_comparisons.keys
       assert_not_includes de_result.pairwise_comparisons['B cells'], 'CSN1S1 macrophages'
+    end
+  end
+
+  test 'should remove non-author differential expression results after user upload' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'DE Auto Cleanup Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    cells = %w[A B C D E F G]
+    coordinates = 1.upto(7).to_a
+    custom_cell_types = [
+      'Custom 2', 'Custom 10', 'Custom 2', 'Custom 10', 'Custom 10', 'Custom 2', 'Custom 2'
+    ]
+    raw_matrix = FactoryBot.create(:expression_file,
+                                   name: 'raw.txt',
+                                   study:,
+                                   expression_file_info: {
+                                     is_raw_counts: true,
+                                     units: 'raw counts',
+                                     library_preparation_protocol: 'Drop-seq',
+                                     biosample_input_type: 'Whole cell',
+                                     modality: 'Proteomic'
+                                   })
+    cluster_file = FactoryBot.create(:cluster_file,
+                                     name: 'cluster_diffexp.txt',
+                                     study: study,
+                                     cell_input: {
+                                       x: coordinates,
+                                       y: coordinates,
+                                       cells:
+                                     })
+    cluster_group = ClusterGroup.find_by(study:, study_file: cluster_file)
+
+    FactoryBot.create(:metadata_file,
+                      name: 'metadata.txt',
+                      study:,
+                      cell_input: cells,
+                      annotation_input: [
+                        {
+                          name: 'cell_type__custom',
+                          type: 'group',
+                          values: custom_cell_types
+                        }
+                      ])
+    result = DifferentialExpressionResult.create(
+        study:, cluster_group:, annotation_name: 'cell_type__custom', annotation_scope: 'study',
+        matrix_file_id: raw_matrix.id
+    )
+    job = IngestJob.new(study:, action: :ingest_differential_expression)
+    mock = Minitest::Mock.new
+    result.bucket_files.each do |file|
+      file_mock = Minitest::Mock.new
+      file_mock.expect :present?, true
+      file_mock.expect :delete, true
+      mock.expect :get_workspace_file, file_mock, [study.bucket_id, file]
+    end
+    ApplicationController.stub :firecloud_client, mock do
+      study.stub :detached, false do
+        job.delete_auto_differential_expression_results
+        mock.verify
+
+        assert DifferentialExpressionResult.where(study:).empty?
+      end
     end
   end
 end

@@ -103,7 +103,7 @@ class DifferentialExpressionResult
       is_author_de:,
       one_vs_rest: one_vs_rest_comparisons.zip(one_vs_rest_files),
       pairwise: pairwise_files
-    }
+    }.with_indifferent_access
   end
 
   # array of result file paths relative to associated bucket root
@@ -179,7 +179,7 @@ class DifferentialExpressionResult
     return true if study.nil? || study.detached || study.queued_for_deletion
 
     bucket_files.each do |filepath|
-      identifier = " #{study.accession}:#{annotation_name}--group--#{annotation_scope}"
+      identifier = " #{study.accession}:#{annotation_identifier}"
       remote = ApplicationController.firecloud_client.get_workspace_file(study.bucket_id, filepath)
       if remote.present?
         Rails.logger.info "Removing DE output #{identifier} at #{filepath}"

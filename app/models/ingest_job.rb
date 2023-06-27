@@ -417,6 +417,7 @@ class IngestJob
     when :differential_expression
       create_differential_expression_results
     when :ingest_differential_expression
+      delete_auto_differential_expression_results
       create_user_differential_expression_results
     when :render_expression_arrays
       launch_image_pipeline_job
@@ -626,6 +627,12 @@ class IngestJob
       matrix_file_id: matrix_file.id
     )
     de_result.save
+  end
+
+  # remove any auto-calculated differential expression results after user-uploaded ingest
+  def delete_auto_differential_expression_results
+    Rails.logger.info "Removing auto-calculated differential expression results in #{study.accession}"
+    study.differential_expression_results.automated.map(&:destroy)
   end
 
   # read the DE manifest file generated during ingest_differential_expression to create DifferentialExpressionResult

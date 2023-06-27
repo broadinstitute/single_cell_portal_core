@@ -15,13 +15,14 @@ class DifferentialExpressionFileInfo
   validates :annotation_scope, presence: true
   validate :annotation_exists?
 
-  before_validation :set_cluster_from_association
+  before_validation :set_cluster_from_association, on: :create
 
   delegate :study, to: :study_file
 
   private
 
+  # handle setting association to ClusterGroup from form file ID
   def set_cluster_from_association
-    self.cluster_group_id = instance_from_study_file_id(clustering_association, ClusterGroup)
+    self.cluster_group = instance_from_study_file_id(clustering_association, ClusterGroup) unless cluster_group
   end
 end

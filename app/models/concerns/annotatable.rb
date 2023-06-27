@@ -36,6 +36,6 @@ module Annotatable
     return nil if study_file_id.blank?
 
     study_file_id = StudyFile.find(study_file_id).id
-    associated_class.send(:find_by, { study_file_id: })&.id
+    associated_class.send(:find_by, { study_file_id: })
   end
 end
