@@ -173,7 +173,7 @@ const defaultSorting = [
 /** Table of DE data for genes */
 function DifferentialExpressionTable({
   genesToShow, searchGenes, clusterName, annotation, species, numRows,
-  bucketId, deFilePath, handleClear
+  bucketId, deFilePath, handleClear, isAuthorDe
 }) {
   const defaultPagination = {
     pageIndex: 0,
@@ -187,6 +187,36 @@ function DifferentialExpressionTable({
   const logProps = {
     species, clusterName, annotation
   }
+
+  // const pValColumnHelper = columnHelper.accessor('pvalAdj', {
+  //   header: () => (
+  //     <span
+  //       id="pval-adj-header"
+  //       className="glossary"
+  //       data-toggle="tooltip"
+  //       data-original-title="p-value adjusted with Benjamini-Hochberg FDR correction">
+  //       Adj. p-value
+  //     </span>
+  //   ),
+  //   cell: deGene => {
+  //     return deGene.getValue()
+  //   }
+  // })
+
+  // const qValColumnHelper = columnHelper.accessor('qval', {
+  //   header: () => (
+  //     <span
+  //       id="qval-header"
+  //       className="glossary"
+  //       data-toggle="tooltip"
+  //       data-original-title="q-value">
+  //       q-value
+  //     </span>
+  //   ),
+  //   cell: deGene => {
+  //     return deGene.getValue()
+  //   }
+  // })
 
   const columns = React.useMemo(() => [
     columnHelper.accessor('name', {
@@ -231,14 +261,14 @@ function DifferentialExpressionTable({
         return deGene.getValue()
       }
     }),
-    columnHelper.accessor('pvalAdj', {
+    columnHelper.accessor('qval', {
       header: () => (
         <span
-          id="pval-adj-header"
+          id="qval-header"
           className="glossary"
           data-toggle="tooltip"
-          data-original-title="p-value adjusted with Benjamini-Hochberg FDR correction">
-          Adj. p-value
+          data-original-title="Estimate of false discovery rate (FDR)">
+        q-value
         </span>
       ),
       cell: deGene => {
@@ -494,6 +524,7 @@ export default function DifferentialExpressionPanel({
           bucketId={bucketId}
           deFilePath={deFilePath}
           handleClear={handleClear}
+          isAuthorDe={hasPairwiseDe}
         />
       </>
       }
