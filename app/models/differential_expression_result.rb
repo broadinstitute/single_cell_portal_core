@@ -79,7 +79,7 @@ class DifferentialExpressionResult
   # this is to handle cases where + or - are the only difference in labels, such as CD4+ and CD4-
   def filename_for(label, comparison: nil)
     if comparison.present?
-      first_label, second_label = Naturally.sort([label, comparison]) # comparisons must be sorted alphabetically
+      first_label, second_label = Naturally.sort([label, comparison]) # comparisons must be sorted
       values = [cluster_name, annotation_name, first_label, second_label, annotation_scope, computational_method]
     else
       values = [cluster_name, annotation_name, label, annotation_scope, computational_method]
@@ -88,28 +88,54 @@ class DifferentialExpressionResult
     "#{basename}.tsv"
   end
 
+  # get all output files for a comparison type, e.g. one-vs-rest or pairwise
+  #
+  # * *params*
+  #   - +observation_type+ (String, Symbol) => :one_vs_rest or :pairwise observations
+  #   - +transform+ (Symbol) => method to apply to filename (:filename_for or :bucket_path_for)
+  #   - +include_labels+ (Boolean) => T/F to prepend observation labels (including pairwise comparison)
+  #
+  # * *returns*
+  #   - (Array<String>)
+  def files_for(observation_type, transform: :filename_for, include_labels: false)
+    case observation_type.to_sym
+    when :one_vs_rest
+      one_vs_rest_comparisons.map do |label|
+        filename = send(transform, label)
+        include_labels ? [label, filename] : filename
+      end
+    when :pairwise
+      pairwise_files = []
+      pairwise_comparisons.each_pair do |label, comparisons|
+        comparisons.each do |comparison|
+          filename = send(transform, label, comparison:)
+          result = include_labels ? [label, comparison, filename] : filename
+          pairwise_files << result
+        end
+      end
+      pairwise_files
+    else
+      []
+    end
+  end
+
   # map listing all result files and their constituent groups , by comparison type
   # this is important as it sidesteps the issue of study owners renaming clusters, as cluster_name is cached here
   #
   # @return [Hash<String => Array<String, String>, Array<String, String, String>]
   def result_files
-    one_vs_rest_files = one_vs_rest_comparisons.map { |label| filename_for(label) }
-    pairwise_files = []
-    pairwise_comparisons.map do |label, comparisons|
-      comparisons.map do |comparison|
-        pairwise_files << [label, comparison, filename_for(label, comparison:)]
-      end
-    end
     {
       is_author_de:,
-      one_vs_rest: one_vs_rest_comparisons.zip(one_vs_rest_files),
-      pairwise: pairwise_files
+      one_vs_rest: files_for(:one_vs_rest, include_labels: true),
+      pairwise: files_for(:pairwise, include_labels: true)
     }.with_indifferent_access
   end
 
-  # array of result file paths relative to associated bucket root
+  # array of all result files paths relative to associated bucket root for one-vs-rest & pairwise
   def bucket_files
-    one_vs_rest_comparisons.map { |label| bucket_path_for(label) }
+    %i[one_vs_rest pairwise].map do |observation|
+      files_for(observation, transform: :bucket_path_for)
+    end.flatten
   end
 
   # number of different pairwise comparisons
@@ -129,8 +155,7 @@ class DifferentialExpressionResult
       if groups.size == 1
         one_vs_rest_comparisons << groups.first.strip
       else
-        # defensive sort in case values are in the wrong order
-        observed, comparison = groups.sort.map(&:strip)
+        observed, comparison = groups.map(&:strip)
         pairwise_comparisons[observed] ||= []
         pairwise_comparisons[observed] << comparison unless pairwise_comparisons[observed].include?(observed)
       end
@@ -180,8 +205,8 @@ class DifferentialExpressionResult
     # in production, DeleteQueueJob will handle all necessary cleanup
     return true if study.nil? || study.detached || study.queued_for_deletion
 
+    identifier = " #{study.accession}:#{annotation_identifier}"
     bucket_files.each do |filepath|
-      identifier = " #{study.accession}:#{annotation_identifier}"
       remote = ApplicationController.firecloud_client.get_workspace_file(study.bucket_id, filepath)
       if remote.present?
         Rails.logger.info "Removing DE output #{identifier} at #{filepath}"

@@ -139,6 +139,55 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
     end
   end
 
+  test 'should get output files for observation types and paths' do
+    name = 'General_Celltype'
+    result = DifferentialExpressionResult.new(
+      study: @study, cluster_group: @cluster_group, cluster_name: @cluster_group.name, annotation_name: name,
+      annotation_scope: 'study', matrix_file_id: @raw_matrix.id,
+      one_vs_rest_comparisons: ['B cells', 'CSN1S1 macrophages', 'dendritic cells'],
+      pairwise_comparisons: {
+        'B cells' => ['CSN1S1 macrophages', 'dendritic cells'],
+        'CSN1S1 macrophages' => ['eosinophils']
+      }
+    )
+    one_vs_rest_files = result.one_vs_rest_comparisons.map do |label|
+      safe_label = label.gsub(/\W/, '_')
+      "cluster_diffexp_txt--#{name}--#{safe_label}--study--wilcoxon.tsv"
+    end
+    one_vs_rest_files_labels = result.one_vs_rest_comparisons.map do |label|
+      safe_label = label.gsub(/\W/, '_')
+      [label, "cluster_diffexp_txt--#{name}--#{safe_label}--study--wilcoxon.tsv"]
+    end
+    pairwise_files = result.pairwise_comparisons.map do |label, comparisons|
+      safe_label = label.gsub(/\W/, '_')
+      comparisons.map do |comparison|
+        safe_comparison = comparison.gsub(/\W/, '_')
+        "cluster_diffexp_txt--#{name}--#{safe_label}--#{safe_comparison}--study--wilcoxon.tsv"
+      end
+    end.flatten
+    pairwise_files_labels = []
+    result.pairwise_comparisons.map do |label, comparisons|
+      safe_label = label.gsub(/\W/, '_')
+      comparisons.map do |comparison|
+        safe_comparison = comparison.gsub(/\W/, '_')
+        pairwise_files_labels << [
+          label,
+          comparison,
+          "cluster_diffexp_txt--#{name}--#{safe_label}--#{safe_comparison}--study--wilcoxon.tsv"
+        ]
+      end
+    end
+    assert_equal one_vs_rest_files, result.files_for(:one_vs_rest)
+    assert_equal one_vs_rest_files_labels, result.files_for(:one_vs_rest, include_labels: true)
+    assert_equal pairwise_files, result.files_for(:pairwise)
+    assert_equal pairwise_files_labels, result.files_for(:pairwise, include_labels: true)
+    prefix = '_scp_internal/differential_expression'
+    assert_equal one_vs_rest_files.map { |f| "#{prefix}/#{f}" },
+                 result.files_for(:one_vs_rest, transform: :bucket_path_for)
+    assert_equal pairwise_files.map { |f| "#{prefix}/#{f}" },
+                 result.files_for(:pairwise, transform: :bucket_path_for)
+  end
+
   test 'should return array of select options for observed outputs' do
     species_opts = {
       one_vs_rest: [
