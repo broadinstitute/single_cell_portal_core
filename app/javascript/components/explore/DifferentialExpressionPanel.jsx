@@ -16,7 +16,7 @@ import {
 
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
 import {
-  DifferentialExpressionGroupPicker, PairwiseDifferentialExpressionGroupPicker
+  OneVsRestDifferentialExpressionGroupPicker, PairwiseDifferentialExpressionGroupPicker
 } from '~/components/visualization/controls/DifferentialExpressionGroupPicker'
 
 import {
@@ -82,7 +82,6 @@ export function DifferentialExpressionPanelHeader({
     </>
   )
 }
-
 
 /** A small icon-like button that downloads DE data as a file */
 function DownloadButton({ bucketId, deFilePath }) {
@@ -173,8 +172,6 @@ function DifferentialExpressionTable({
     pageIndex: 0,
     pageSize: numRows
   }
-
-  console.log('genesToShow', genesToShow)
 
   const defaultPrimaryKey = !isAuthorDe ? 'pvalAdj' : 'qval'
   const defaultSorting = [
@@ -441,7 +438,7 @@ export default function DifferentialExpressionPanel({
   return (
     <>
       {!hasPairwiseDe &&
-        <DifferentialExpressionGroupPicker
+        <OneVsRestDifferentialExpressionGroupPicker
           bucketId={bucketId}
           clusterName={clusterName}
           annotation={annotation}

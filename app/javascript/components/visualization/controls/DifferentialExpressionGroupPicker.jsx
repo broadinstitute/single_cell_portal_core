@@ -229,7 +229,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
 }
 
 /** Pick groups of cells for one-vs-rest-only differential expression (DE) */
-export function DifferentialExpressionGroupPicker({
+export function OneVsRestDifferentialExpressionGroupPicker({
   bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup, setDeGenes,
   countsByLabel, deObjects, setDeFilePath, isAuthorDe
 }) {
