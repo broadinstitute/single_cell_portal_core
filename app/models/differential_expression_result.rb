@@ -88,6 +88,14 @@ class DifferentialExpressionResult
     "#{basename}.tsv"
   end
 
+  # path to auto-generate manifest for author-uploaded DE files
+  def manifest_bucket_path
+    manifest_basename = DifferentialExpressionService.encode_filename(
+      [cluster_name, annotation_name, 'manifest']
+    )
+    "_scp_internal/differential_expression/#{manifest_basename}.tsv"
+  end
+
   # get all output files for a comparison type, e.g. one-vs-rest or pairwise
   #
   # * *params*
@@ -205,7 +213,7 @@ class DifferentialExpressionResult
     # in production, DeleteQueueJob will handle all necessary cleanup
     return true if study.nil? || study.detached || study.queued_for_deletion
 
-    identifier = " #{study.accession}:#{annotation_identifier}"
+    identifier = "#{study.accession}:#{annotation_identifier}"
     bucket_files.each do |filepath|
       remote = ApplicationController.firecloud_client.get_workspace_file(study.bucket_id, filepath)
       if remote.present?
@@ -215,9 +223,7 @@ class DifferentialExpressionResult
     end
 
     if is_author_de
-      filepath = DifferentialExpressionService.encode_filename(
-        [cluster_group.name, annotation_name, 'manifest']
-      )
+      filepath = manifest_bucket_path
       remote = ApplicationController.firecloud_client.get_workspace_file(study.bucket_id, filepath)
       Rails.logger.info "Removing manifest for #{identifier} at #{filepath}"
       remote.delete if remote.present?
