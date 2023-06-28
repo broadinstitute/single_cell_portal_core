@@ -89,9 +89,11 @@ class SummaryStatsUtils
   # defaults to current day
   def self.ingest_run_count(start_date: Time.zone.today, end_date: Time.zone.today + 1.day)
     # make sure we only look at instances of runs for this schema (e.g. exclude test from staging/prod)
-    schema = Mongoid::Config.clients["default"]["database"]
+    schema = Mongoid::Config.clients.dig('default', 'database')
     ingest_jobs = 0
-    jobs = ApplicationController.papi_client.list_pipelines
+    jobs = ApplicationController.life_sciences_api_client.list_pipelines
+    return ingest_jobs if jobs.operations.blank?
+
     all_from_range = false
     date_range = start_date..end_date
     until all_from_range
@@ -114,7 +116,7 @@ class SummaryStatsUtils
       if all_from_range || jobs.next_page_token.blank?
         break
       else
-        jobs = ApplicationController.papi_client.list_pipelines(page_token: jobs.next_page_token)
+        jobs = ApplicationController.life_sciences_api_client.list_pipelines(page_token: jobs.next_page_token)
       end
     end
     ingest_jobs

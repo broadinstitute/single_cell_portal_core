@@ -73,7 +73,7 @@ class DifferentialExpressionResult
     "_scp_internal/differential_expression/#{filename_for(label, comparison:)}"
   end
 
-  # individual filename of label-specific result, or pairwise comparison
+  # individual filename of one-vs-rest comparison or pairwise comparison
   # will convert non-word characters to underscores "_", except plus signs "+" which are changed to "pos"
   # this is to handle cases where + or - are the only difference in labels, such as CD4+ and CD4-
   def filename_for(label, comparison: nil)
@@ -87,11 +87,71 @@ class DifferentialExpressionResult
     "#{basename}.tsv"
   end
 
-  # map of all observed result files, of label value => label-specific filenames
+  # map listing all result files and their constituent groups , by comparison type
   # this is important as it sidesteps the issue of study owners renaming clusters, as cluster_name is cached here
+  #
+  # @return [Hash<String => Array<String, String>, Array<String, String, String>]
   def result_files
-    files = one_vs_rest_comparisons.map { |label| filename_for(label) }
-    Hash[one_vs_rest_comparisons.zip(files)]
+    pairwise_files = []
+    is_author_de = false
+
+    # TODO (SCP-5096): Productionize this block, remove example data
+    if Rails.env.development? && annotation_name == 'General_Celltype'
+
+      is_author_de = true
+
+      self.one_vs_rest_comparisons = [
+        'B cells',
+        # 'CSN1S1 macrophages', # Simulate missing one-vs-rest comparison
+        'dendritic cells',
+        'eosinophils',
+        'fibroblasts',
+        'GPMNB macrophages',
+        'LC1',
+        'LC2',
+        'neutrophils',
+        'T cells'
+      ]
+
+      # Two important notes for pairwise comparisons:
+      #
+      #   1.  It conveys observed _combinations_ of groups.  Order does not
+      #       matter in combinations.  This means that, with a bit of extra
+      #       care, we can store 1/2 the data than a naive approach.
+      #
+      #   2.  Per (1), only the _naturally ordered_ pairs appear in the DE
+      #       results manifest file, and in this `pairwise_comparisons` data
+      #       structure.  Note that all keys in the hash below are naturally
+      #       ordered before all values for that key.
+      pairwise_comparisons = {
+        # Note that first key ('B cells') lacks comparison to 'CSN1S1 macrophages',
+        # which mimics realistic potential missing pairwise comparison in
+        # user-uploaded DE data.
+        'B cells' => ['dendritic cells', 'eosinophils', 'fibroblasts', 'GPMNB macrophages', 'LC1', 'LC2', 'neutrophils', 'T cells'],
+        'CSN1S1 macrophages' => ['dendritic cells', 'eosinophils', 'fibroblasts', 'GPMNB macrophages', 'LC1', 'LC2', 'neutrophils', 'T cells'],
+        'dendritic cells' => ['eosinophils', 'fibroblasts', 'GPMNB macrophages', 'LC1', 'LC2', 'neutrophils', 'T cells'],
+        'eosinophils' => ['fibroblasts', 'GPMNB macrophages', 'LC1', 'LC2', 'neutrophils', 'T cells'],
+        'fibroblasts' => ['GPMNB macrophages', 'LC1', 'LC2', 'neutrophils', 'T cells'],
+        'GPMNB macrophages' => ['LC1', 'LC2', 'neutrophils', 'T cells'],
+        'LC1' => ['LC2', 'neutrophils', 'T cells'],
+        'LC2' => ['neutrophils', 'T cells'],
+        'neutrophils' => ['T cells']
+      }
+
+      pairwise_files = pairwise_comparisons.map do |label, comparisons|
+        comparisons.map do |comparison|
+          [label, comparison, filename_for(label, comparison:)]
+        end
+      end
+    end
+
+    one_vs_rest_files = one_vs_rest_comparisons.map { |label| filename_for(label) }
+
+    {
+      'is_author_de' => is_author_de,
+      'one_vs_rest' => one_vs_rest_comparisons.zip(one_vs_rest_files),
+      'pairwise' => pairwise_files
+    }
   end
 
   # array of result file paths relative to associated bucket root
@@ -101,7 +161,7 @@ class DifferentialExpressionResult
 
   # nested array of arrays representation of :result_files (for select menu options)
   def select_options
-    result_files.to_a
+    result_files
   end
 
   # number of different pairwise comparisons

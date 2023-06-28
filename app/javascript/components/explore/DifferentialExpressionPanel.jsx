@@ -15,14 +15,15 @@ import {
 } from '@tanstack/react-table'
 
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
-import DifferentialExpressionGroupPicker from '~/components/visualization/controls/DifferentialExpressionGroupPicker'
+import {
+  DifferentialExpressionGroupPicker, PairwiseDifferentialExpressionGroupPicker
+} from '~/components/visualization/controls/DifferentialExpressionGroupPicker'
 
 import {
   logDifferentialExpressionTableSearch,
   logSearchFromDifferentialExpression
 } from '~/lib/search-metrics'
 import { downloadBucketFile } from '~/lib/scp-api'
-
 
 /** Return selected annotation object, including its `values` a.k.a. groups */
 function getAnnotationObject(exploreParamsWithDefaults, exploreInfo) {
@@ -35,6 +36,53 @@ function getAnnotationObject(exploreParamsWithDefaults, exploreInfo) {
     )
   })
 }
+
+/** Top matter for differential expression panel shown at right in Explore tab */
+export function DifferentialExpressionPanelHeader({
+  setDeGenes, setDeGroup, setShowDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel, isUpstream,
+  cluster, annotation, setDeGroupB, isAuthorDe, deGenes
+}) {
+  const deSource = `${isAuthorDe ? 'Author' : 'SCP'}-computed`
+  return (
+    <>
+      <span>Differential expression {deGenes && <span className="margin-left de-source badge badge-inverse">{deSource}</span>}</span>
+      <button className="action fa-lg"
+        onClick={() => {
+          setDeGenes(null)
+          setDeGroup(null)
+          setDeGroupB(null)
+          setShowDifferentialExpressionPanel(false)
+          setShowUpstreamDifferentialExpressionPanel(false)
+        }}
+        title="Exit differential expression panel"
+        data-analytics-name="differential-expression-panel-exit">
+        <FontAwesomeIcon icon={faArrowLeft}/>
+      </button>
+      {isUpstream &&
+        <>
+          <div className="de-nondefault-explainer">
+          No DE results for:
+            <br/><br/>
+            <ul className="no-de-summary">
+              <li>
+                <span className="bold">Clustering</span><br/>
+                {cluster}
+              </li>
+              <br/>
+              <li>
+                <span className="bold">Annotation</span><br/>
+                {annotation.name}
+              </li>
+            </ul>
+            <br/>
+          Explore DE results in:
+          </div>
+        </>
+      }
+    </>
+  )
+}
+
 
 /** A small icon-like button that downloads DE data as a file */
 function DownloadButton({ bucketId, deFilePath }) {
@@ -53,25 +101,25 @@ function DownloadButton({ bucketId, deFilePath }) {
 
 /** A small icon-like button that makes a dot plot */
 function DotPlotButton({ dotPlotGenes, searchGenes }) {
-  const actionColor = '#3D5A87'
   // Whipped up via https://boxy-svg.com/app,
   // based on Alexandria-approved mockup at:
   // https://docs.google.com/presentation/d/1j8zt1Hj4otD593FtkXlBsPw4GsxkU4XOVYXQx3Ec--E/edit#slide=id.g19cbfc5899b_0_9
   return (
-    <a
-      className="de-dot-plot-button"
+    <button
+      className="de-dot-plot-button btn btn-primary"
       onClick={() => {searchGenes(dotPlotGenes)}}
       data-analytics-name="differential-expression-dot-plot"
       data-toggle="tooltip"
-      data-original-title="View dot plot for genes on this differential expression table page"
+      data-original-title="For genes on this page"
     >
-      <svg viewBox="119.295 104.022 40.338 40.976" width="14" height="14">
-        <ellipse style={{ 'fill': actionColor }} cx="130.295" cy="115.041" rx="11" ry="11"></ellipse>
-        <ellipse style={{ 'fill': actionColor }} cx="153.18" cy="115.779" rx="2.5" ry="2.5"></ellipse>
-        <ellipse style={{ 'fill': actionColor }} cx="128.719" cy="137.129" rx="5" ry="5"></ellipse>
-        <ellipse style={{ 'fill': actionColor }} cx="151.633" cy="136.998" rx="8" ry="8"></ellipse>
+      <svg className="de-dot-plot-icon" viewBox="119.295 104.022 40.338 40.976" width="14" height="14">
+        <ellipse style={{ 'fill': '#FFF' }} cx="130.295" cy="115.041" rx="11" ry="11"></ellipse>
+        <ellipse style={{ 'fill': '#FFF' }} cx="153.18" cy="115.779" rx="2.5" ry="2.5"></ellipse>
+        <ellipse style={{ 'fill': '#FFF' }} cx="128.719" cy="137.129" rx="5" ry="5"></ellipse>
+        <ellipse style={{ 'fill': '#FFF' }} cx="151.633" cy="136.998" rx="8" ry="8"></ellipse>
       </svg>
-    </a>
+      Dot plot
+    </button>
   )
 }
 
@@ -303,7 +351,7 @@ function DifferentialExpressionTable({
         zeroIndexed={true}
       />
       <a href="https://forms.gle/qPGH5J9oFkurpbD76" target="_blank" title="Take a 1 minute survey">
-          Help improve this new feature
+          Help improve this feature
       </a>
     </>
   )
@@ -313,7 +361,7 @@ function DifferentialExpressionTable({
 export default function DifferentialExpressionPanel({
   deGroup, deGenes, searchGenes,
   exploreInfo, exploreParamsWithDefaults, setShowDeGroupPicker, setDeGenes, setDeGroup,
-  countsByLabel, numRows=50
+  countsByLabel, hasOneVsRestDe, hasPairwiseDe, deGroupB, setDeGroupB, numRows=50
 }) {
   const clusterName = exploreParamsWithDefaults?.cluster
   const bucketId = exploreInfo?.bucketId
@@ -371,21 +419,45 @@ export default function DifferentialExpressionPanel({
 
   return (
     <>
-      <DifferentialExpressionGroupPicker
-        bucketId={bucketId}
-        clusterName={clusterName}
-        annotation={annotation}
-        setShowDeGroupPicker={setShowDeGroupPicker}
-        deGenes={deGenes}
-        setDeGenes={setDeGenes}
-        deGroup={deGroup}
-        setDeGroup={setDeGroup}
-        countsByLabel={countsByLabel}
-        deObjects={deObjects}
-        setDeFilePath={setDeFilePath}
-      />
+      {!hasPairwiseDe &&
+        <DifferentialExpressionGroupPicker
+          bucketId={bucketId}
+          clusterName={clusterName}
+          annotation={annotation}
+          setShowDeGroupPicker={setShowDeGroupPicker}
+          deGenes={deGenes}
+          setDeGenes={setDeGenes}
+          deGroup={deGroup}
+          setDeGroup={setDeGroup}
+          countsByLabel={countsByLabel}
+          deObjects={deObjects}
+          setDeFilePath={setDeFilePath}
+        />
+      }
+      {hasPairwiseDe &&
+        <PairwiseDifferentialExpressionGroupPicker
+          bucketId={bucketId}
+          clusterName={clusterName}
+          annotation={annotation}
+          setShowDeGroupPicker={setShowDeGroupPicker}
+          deGenes={deGenes}
+          setDeGenes={setDeGenes}
+          deGroup={deGroup}
+          setDeGroup={setDeGroup}
+          countsByLabel={countsByLabel}
+          deObjects={deObjects}
+          setDeFilePath={setDeFilePath}
+          deGroupB={deGroupB}
+          setDeGroupB={setDeGroupB}
+          hasOneVsRestDe={hasOneVsRestDe}
+        />
+      }
 
-      {genesToShow &&
+      {
+        (
+          (!hasPairwiseDe && genesToShow) ||
+          (hasPairwiseDe && deGroupB && genesToShow)
+        ) &&
       <>
         <div className="de-search-box">
           <span className="de-search-icon">
@@ -424,50 +496,6 @@ export default function DifferentialExpressionPanel({
           handleClear={handleClear}
         />
       </>
-      }
-    </>
-  )
-}
-
-/** Top matter for differential expression panel shown at right in Explore tab */
-export function DifferentialExpressionPanelHeader({
-  setDeGenes, setDeGroup, setShowDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel, isUpstream,
-  cluster, annotation
-}) {
-  return (
-    <>
-      <span>Differential expression</span>
-      <button className="action fa-lg"
-        onClick={() => {
-          setDeGenes(null)
-          setDeGroup(null)
-          setShowDifferentialExpressionPanel(false)
-          setShowUpstreamDifferentialExpressionPanel(false)
-        }}
-        title="Exit differential expression panel"
-        data-analytics-name="differential-expression-panel-exit">
-        <FontAwesomeIcon icon={faArrowLeft}/>
-      </button>
-      {isUpstream &&
-        <>
-          <div className="de-nondefault-explainer">
-          No DE results for:
-            <br/><br/>
-            <ul className="no-de-summary">
-              <li>
-                <span className="bold">Clustering</span><br/>
-                {cluster}
-              </li>
-              <br/>
-              <li>
-                <span className="bold">Annotation</span><br/>
-                {annotation.name}
-              </li>
-            </ul>
-            <br/>
-          Explore DE results in:
-          </div>
-        </>
       }
     </>
   )
