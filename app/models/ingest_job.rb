@@ -648,7 +648,7 @@ class IngestJob
       annotation_name: de_info.annotation_name, annotation_scope: de_info.annotation_scope
     )
     all_observations = read_differential_expression_manifest(de_info, cluster_group)
-    de_result.initialize_observations!(all_observations)
+    de_result.initialize_comparisons!(all_observations)
   end
 
   # read the contents of a generated DE manifest to get one-vs-rest and pairwise comparisons

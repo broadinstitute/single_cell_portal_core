@@ -131,10 +131,10 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
     )
     prefix = "_scp_internal/differential_expression"
     result.pairwise_comparisons.each_pair do |label, comparisons|
-      comparisons.each do |comparison|
+      comparisons.each do |comparison_group|
         # should sort labels naturally and put 'Custom 2' in front of 'Custom 10'
         expected_filename = "#{prefix}/cluster_diffexp_txt--#{name}--Custom_2--Custom_10--study--wilcoxon.tsv"
-        assert_equal expected_filename, result.bucket_path_for(label, comparison:)
+        assert_equal expected_filename, result.bucket_path_for(label, comparison_group:)
       end
     end
   end

@@ -70,16 +70,16 @@ class DifferentialExpressionResult
   end
 
   # compute the relative path inside a GCS bucket of a DE output file for a given label/comparison
-  def bucket_path_for(label, comparison: nil)
-    "_scp_internal/differential_expression/#{filename_for(label, comparison:)}"
+  def bucket_path_for(label, comparison_group: nil)
+    "_scp_internal/differential_expression/#{filename_for(label, comparison_group:)}"
   end
 
   # individual filename of one-vs-rest comparison or pairwise comparison
   # will convert non-word characters to underscores "_", except plus signs "+" which are changed to "pos"
   # this is to handle cases where + or - are the only difference in labels, such as CD4+ and CD4-
-  def filename_for(label, comparison: nil)
-    if comparison.present?
-      first_label, second_label = Naturally.sort([label, comparison]) # comparisons must be sorted
+  def filename_for(label, comparison_group: nil)
+    if comparison_group.present?
+      first_label, second_label = Naturally.sort([label, comparison_group]) # comparisons must be sorted
       values = [cluster_name, annotation_name, first_label, second_label, annotation_scope, computational_method]
     else
       values = [cluster_name, annotation_name, label, annotation_scope, computational_method]
@@ -99,14 +99,14 @@ class DifferentialExpressionResult
   # get all output files for a comparison type, e.g. one-vs-rest or pairwise
   #
   # * *params*
-  #   - +observation_type+ (String, Symbol) => :one_vs_rest or :pairwise observations
+  #   - +comparison_type+ (String, Symbol) => :one_vs_rest or :pairwise comparisons
   #   - +transform+ (Symbol) => method to apply to filename (:filename_for or :bucket_path_for)
   #   - +include_labels+ (Boolean) => T/F to prepend observation labels (including pairwise comparison)
   #
   # * *returns*
   #   - (Array<String>)
-  def files_for(observation_type, transform: :filename_for, include_labels: false)
-    case observation_type.to_sym
+  def files_for(comparison_type, transform: :filename_for, include_labels: false)
+    case comparison_type.to_sym
     when :one_vs_rest
       one_vs_rest_comparisons.map do |label|
         filename = send(transform, label)
@@ -114,10 +114,10 @@ class DifferentialExpressionResult
       end
     when :pairwise
       pairwise_files = []
-      pairwise_comparisons.each_pair do |label, comparisons|
-        comparisons.each do |comparison|
-          filename = send(transform, label, comparison:)
-          result = include_labels ? [label, comparison, filename] : filename
+      pairwise_comparisons.each_pair do |group, comparison_groups|
+        comparison_groups.each do |comparison_group|
+          filename = send(transform, group, comparison_group:)
+          result = include_labels ? [group, comparison_group, filename] : filename
           pairwise_files << result
         end
       end
@@ -141,8 +141,8 @@ class DifferentialExpressionResult
 
   # array of all result files paths relative to associated bucket root for one-vs-rest & pairwise
   def bucket_files
-    %i[one_vs_rest pairwise].map do |observation|
-      files_for(observation, transform: :bucket_path_for)
+    %i[one_vs_rest pairwise].map do |comparison_type|
+      files_for(comparison_type, transform: :bucket_path_for)
     end.flatten
   end
 
@@ -153,19 +153,19 @@ class DifferentialExpressionResult
     pairwise_comparisons.values.map(&:count).reduce(0, &:+)
   end
 
-  # initialize one-vs-rest and pairwise observations from manifest contents
+  # initialize one-vs-rest and pairwise comparisons from manifest contents
   # will clobber any previous values and save in place once completed, so only use with new instances
   #
   # * *params*
-  #   -+observations+ (Array<Array<String>>) => Array of arrays of strings, only 1 or 2 entries in each
-  def initialize_observations!(observations)
-    observations.each do |groups|
+  #   -+comparisons+ (Array<Array<String>>) => Array of arrays of strings, only 1 or 2 entries in each
+  def initialize_comparisons!(comparisons)
+    comparisons.each do |groups|
       if groups.size == 1
         one_vs_rest_comparisons << groups.first.strip
       else
-        observed, comparison = groups.map(&:strip)
-        pairwise_comparisons[observed] ||= []
-        pairwise_comparisons[observed] << comparison unless pairwise_comparisons[observed].include?(observed)
+        group, comparison_group = groups.map(&:strip)
+        pairwise_comparisons[group] ||= []
+        pairwise_comparisons[group] << comparison_group unless pairwise_comparisons[group].include?(comparison_group)
       end
     end
     save!

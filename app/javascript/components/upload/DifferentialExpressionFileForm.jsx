@@ -101,11 +101,12 @@ export default function DifferentialExpressionFileForm({
 
   /** set available annotations based off of selected cluster file */
   function setAnnotationOptions() {
-    return annotationsAvailOnStudy?.filter(
-      annot => annot.type === 'group' && annot.scope !== 'invalid'
-    ).filter(
-      opt => opt.cluster_name === associatedCluster?.label || opt.scope === 'study'
-    ).map(
+    return annotationsAvailOnStudy?.filter((annot) => {
+      return (
+        (annot.type === 'group' && annot.scope !== 'invalid') &&
+        (annot.cluster_name === associatedCluster?.label || annot.scope === 'study')
+      )
+    }).map(
       cf => ({ label: annotationLabel(cf), value: `${cf.name}--${cf.type}--${cf.scope}` })
     )
   }
