@@ -138,9 +138,10 @@ class DifferentialExpressionResult
         'neutrophils' => ['T cells']
       }
 
-      pairwise_files = pairwise_comparisons.map do |label, comparisons|
-        comparisons.map do |comparison|
-          [label, comparison, filename_for(label, comparison:)]
+      pairwise_comparisons.each_pair do |label, comparisons|
+        comparisons.each do |comparison|
+          filename = filename_for(label, comparison:)
+          pairwise_files.push([label, comparison, filename])
         end
       end
     end

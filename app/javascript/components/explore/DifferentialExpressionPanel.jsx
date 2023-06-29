@@ -16,7 +16,7 @@ import {
 
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
 import {
-  DifferentialExpressionGroupPicker, PairwiseDifferentialExpressionGroupPicker
+  OneVsRestDifferentialExpressionGroupPicker, PairwiseDifferentialExpressionGroupPicker
 } from '~/components/visualization/controls/DifferentialExpressionGroupPicker'
 
 import {
@@ -82,7 +82,6 @@ export function DifferentialExpressionPanelHeader({
     </>
   )
 }
-
 
 /** A small icon-like button that downloads DE data as a file */
 function DownloadButton({ bucketId, deFilePath }) {
@@ -164,21 +163,21 @@ function searchGenesFromTable(selectedGenes, searchGenes, logProps) {
   )
 }
 
-
-const defaultSorting = [
-  { id: 'pvalAdj', desc: false },
-  { id: 'log2FoldChange', desc: true }
-]
-
 /** Table of DE data for genes */
 function DifferentialExpressionTable({
   genesToShow, searchGenes, clusterName, annotation, species, numRows,
-  bucketId, deFilePath, handleClear
+  bucketId, deFilePath, handleClear, isAuthorDe
 }) {
   const defaultPagination = {
     pageIndex: 0,
     pageSize: numRows
   }
+
+  const defaultPrimaryKey = !isAuthorDe ? 'pvalAdj' : 'qval'
+  const defaultSorting = [
+    { id: defaultPrimaryKey, desc: false },
+    { id: 'log2FoldChange', desc: true }
+  ]
 
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = React.useState(defaultSorting)
@@ -187,6 +186,38 @@ function DifferentialExpressionTable({
   const logProps = {
     species, clusterName, annotation
   }
+
+  const pvalAdjColumnHelper = columnHelper.accessor('pvalAdj', {
+    header: () => (
+      <span
+        id="pval-adj-header"
+        className="glossary"
+        data-toggle="tooltip"
+        data-original-title="p-value adjusted with Benjamini-Hochberg FDR correction">
+        Adj. p-value
+      </span>
+    ),
+    cell: deGene => {
+      return deGene.getValue()
+    }
+  })
+
+  const qvalColumnHelper = columnHelper.accessor('qval', {
+    header: () => (
+      <span
+        id="qval-header"
+        className="glossary"
+        data-toggle="tooltip"
+        data-original-title="Expected positive false discovery rate">
+        q-value
+      </span>
+    ),
+    cell: deGene => {
+      return deGene.getValue()
+    }
+  })
+
+  const significanceColumnHelper = !isAuthorDe ? pvalAdjColumnHelper : qvalColumnHelper
 
   const columns = React.useMemo(() => [
     columnHelper.accessor('name', {
@@ -231,20 +262,7 @@ function DifferentialExpressionTable({
         return deGene.getValue()
       }
     }),
-    columnHelper.accessor('pvalAdj', {
-      header: () => (
-        <span
-          id="pval-adj-header"
-          className="glossary"
-          data-toggle="tooltip"
-          data-original-title="p-value adjusted with Benjamini-Hochberg FDR correction">
-          Adj. p-value
-        </span>
-      ),
-      cell: deGene => {
-        return deGene.getValue()
-      }
-    })
+    significanceColumnHelper
   ]
   , [genesToShow]
   )
@@ -361,7 +379,7 @@ function DifferentialExpressionTable({
 export default function DifferentialExpressionPanel({
   deGroup, deGenes, searchGenes,
   exploreInfo, exploreParamsWithDefaults, setShowDeGroupPicker, setDeGenes, setDeGroup,
-  countsByLabel, hasOneVsRestDe, hasPairwiseDe, deGroupB, setDeGroupB, numRows=50
+  countsByLabel, hasOneVsRestDe, hasPairwiseDe, isAuthorDe, deGroupB, setDeGroupB, numRows=50
 }) {
   const clusterName = exploreParamsWithDefaults?.cluster
   const bucketId = exploreInfo?.bucketId
@@ -420,7 +438,7 @@ export default function DifferentialExpressionPanel({
   return (
     <>
       {!hasPairwiseDe &&
-        <DifferentialExpressionGroupPicker
+        <OneVsRestDifferentialExpressionGroupPicker
           bucketId={bucketId}
           clusterName={clusterName}
           annotation={annotation}
@@ -432,6 +450,7 @@ export default function DifferentialExpressionPanel({
           countsByLabel={countsByLabel}
           deObjects={deObjects}
           setDeFilePath={setDeFilePath}
+          isAuthorDe={isAuthorDe}
         />
       }
       {hasPairwiseDe &&
@@ -494,6 +513,7 @@ export default function DifferentialExpressionPanel({
           bucketId={bucketId}
           deFilePath={deFilePath}
           handleClear={handleClear}
+          isAuthorDe={hasPairwiseDe}
         />
       </>
       }
