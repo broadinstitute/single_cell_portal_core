@@ -37,6 +37,7 @@
     "jquery": "3.5.1",
     "jquery-ui": "1.13.2",
     "morpheus-app": "1.0.18",
+    "nouislider": "^15.7.1",
     "plotly.js-dist": "2.2.0",
     "pluralize": "^8.0.0",
     "postcss": "^8.2.10",
@@ -61,7 +62,6 @@
     "web-vitals": "^1.1.1"
   },
   "devDependencies": {
-    "babel-plugin-dynamic-import-node": "^2.3.3",
     "@babel/plugin-proposal-class-properties": "^7.18.6",
     "@babel/plugin-proposal-object-rest-spread": "^7.20.7",
     "@babel/plugin-proposal-private-methods": "^7.18.6",
@@ -74,6 +74,7 @@
     "autoprefixer": "^10.4.14",
     "babel-eslint": "^10.0.3",
     "babel-loader": "^8.2.2",
+    "babel-plugin-dynamic-import-node": "^2.3.3",
     "browser-cache-mock": "^0.1.7",
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.2",

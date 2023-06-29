@@ -5,6 +5,8 @@ import { faArrowLeft, faDownload, faSearch, faTimes, faAngleUp, faAngleDown, faU
 import Button from 'react-bootstrap/lib/Button'
 
 import PagingControl from '~/components/search/results/PagingControl'
+import DifferentialExpressionFilters from './DifferentialExpressionFilters'
+
 import {
   createColumnHelper,
   flexRender,
@@ -306,6 +308,7 @@ function DifferentialExpressionTable({
     handleClear()
   }
 
+
   return (
     <>
       <div className="de-table-buttons">
@@ -478,6 +481,9 @@ export default function DifferentialExpressionPanel({
           (hasPairwiseDe && deGroupB && genesToShow)
         ) &&
       <>
+        <DifferentialExpressionFilters
+          genesToShow={genesToShow}
+        />
         <div className="de-search-box">
           <span className="de-search-icon">
             <FontAwesomeIcon icon={faSearch} />
@@ -501,7 +507,6 @@ export default function DifferentialExpressionPanel({
             <FontAwesomeIcon icon={faTimes} />
           </Button> }
         </div>
-
 
         <DifferentialExpressionTable
           genesToShow={genesToShow}
