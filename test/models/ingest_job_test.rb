@@ -342,7 +342,9 @@ class IngestJobTest < ActiveSupport::TestCase
     )
     job = IngestJob.new(study:, study_file: de_file, action: :ingest_differential_expression, user: @user)
     mock = Minitest::Mock.new
-    manifest = File.open('test/test_data/differential_expression/All_Cells_UMAP--General_Celltype--manifest.tsv')
+    manifest = File.open(
+      Rails.root.join('test', 'test_data', 'differential_expression', 'All_Cells_UMAP--General_Celltype--manifest.tsv')
+    )
     mock.expect(:execute_gcloud_method, manifest, [:read_workspace_file, 0, study.bucket_id, String])
     ApplicationController.stub :firecloud_client, mock do
       job.create_user_differential_expression_results
