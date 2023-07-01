@@ -84,7 +84,8 @@ class StudyFile
   accepts_nested_attributes_for :cluster_file_info
   accepts_nested_attributes_for :heatmap_file_info
   accepts_nested_attributes_for :ann_data_file_info
-  validate :show_exp_file_info_errors
+  accepts_nested_attributes_for :differential_expression_file_info
+  validate :show_nested_info_errors
 
   # field definitions
   field :name, type: String
@@ -633,7 +634,7 @@ class StudyFile
   before_validation   :set_file_name_and_data_dir, on: :create
   before_save         :sanitize_name
   after_save          :set_cluster_group_ranges, :set_options_by_file_type
-  after_update        :handle_clustering_fragment_updates 
+  after_update        :handle_clustering_fragment_updates
 
   validates_uniqueness_of :upload_file_name, scope: :study_id, unless: Proc.new { |f| f.human_data? }
   validates_presence_of :name
@@ -1351,7 +1352,7 @@ class StudyFile
           curr_id = cluster_data_fragment&.[]("_id")
 
           # if it's an existing clustering just update don't parse
-          if prev_ids.include? curr_id 
+          if prev_ids.include? curr_id
             name = cluster_data_fragment&.[](:name) || fragment # fallback if we can't find data_fragment
 
             if prev_ids[curr_id]["name"] != name
@@ -1366,7 +1367,7 @@ class StudyFile
           else
             FileParseService.run_parse_job(self, study, study.user, obsm_key: fragment)
           end
-        end     
+        end
       end
     end
   end
@@ -1454,10 +1455,16 @@ class StudyFile
     end
   end
 
-  def show_exp_file_info_errors
-    if self.expression_file_info.present? && !self.expression_file_info.valid?
-      errors.add(:base, self.expression_file_info.errors.full_messages.join(', '))
-      errors.delete(:expression_file_info) # remove "Expression file info is invalid" message
+  # show errors for nested info documents inline with top-level validation errors
+  def show_nested_info_errors
+    %i[expression_file_info ann_data_file_info differential_expression_file_info].each do |association_name|
+      model = send(association_name)
+      next if model.blank? || model.valid?
+
+      model.errors.full_messages.each do |msg|
+        errors.add(:base, msg)
+      end
+      errors.delete(association_name) if errors[association_name].present?
     end
   end
 

@@ -747,7 +747,7 @@ module Api
             data_fragments: AnnDataFileInfo::DATA_FRAGMENT_PARAMS
           ],
           differential_expression_file_info_attributes: [
-            :_id, :clustering_association, :annotation_association, :computational_method
+            :_id, :clustering_association, :annotation_name, :annotation_scope, :computational_method
           ],
         )
       end

@@ -99,6 +99,8 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
         delete_parsed_data(object.id, study.id, PrecomputedScore)
       when 'BAM Index'
         remove_file_from_bundle
+      when 'Differential Expression'
+        delete_differential_expression_results(study:, study_file: object)
       else
         nil
       end
@@ -202,12 +204,14 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
   def delete_differential_expression_results(study:, study_file:)
     case study_file.file_type
     when 'Metadata'
-      results = DifferentialExpressionResult.where(study: study, annotation_scope: 'study')
+      results = DifferentialExpressionResult.where(study:, annotation_scope: 'study')
     when 'Cluster'
-      cluster = ClusterGroup.find_by(study: study, study_file: study_file)
-      results = DifferentialExpressionResult.where(study: study, cluster_group: cluster)
+      cluster = ClusterGroup.find_by(study:, study_file: study_file)
+      results = DifferentialExpressionResult.where(study:, cluster_group: cluster)
     when 'Expression Matrix', 'MM Coordinate Matrix'
-      results = DifferentialExpressionResult.where(study: study, matrix_file_id: study_file.id)
+      results = DifferentialExpressionResult.where(study:, matrix_file_id: study_file.id)
+    when 'Differential Expression'
+      results = DifferentialExpressionResult.where(study_file: object)
     end
     # extract results to Array to prevent open DB cursor from hanging and timing out as files are deleted in bucket
     results.to_a.each(&:destroy)

@@ -27,11 +27,12 @@ class DifferentialExpressionResult
   field :annotation_scope, type: String
   field :computational_method, type: String, default: DEFAULT_COMP_METHOD
   field :matrix_file_id, type: BSON::ObjectId # associated raw count matrix study file
+  field :is_author_de, type: Boolean, default: false
 
   validates :annotation_scope, inclusion: { in: %w[study cluster] }
   validates :cluster_name, presence: true
   validates :matrix_file_id, presence: true, unless: proc { study_file.present? }
-  validates :computational_method, inclusion: { in: SUPPORTED_COMP_METHODS }
+  validates :computational_method, presence: true
   validates :annotation_name, presence: true, uniqueness: { scope: %i[study cluster_group annotation_scope] }
   validate :comparisons_available?
   validate :matrix_file_exists?
@@ -69,22 +70,61 @@ class DifferentialExpressionResult
   end
 
   # compute the relative path inside a GCS bucket of a DE output file for a given label/comparison
-  def bucket_path_for(label, comparison: nil)
-    "_scp_internal/differential_expression/#{filename_for(label, comparison:)}"
+  def bucket_path_for(label, comparison_group: nil)
+    "_scp_internal/differential_expression/#{filename_for(label, comparison_group:)}"
   end
 
   # individual filename of one-vs-rest comparison or pairwise comparison
   # will convert non-word characters to underscores "_", except plus signs "+" which are changed to "pos"
   # this is to handle cases where + or - are the only difference in labels, such as CD4+ and CD4-
-  def filename_for(label, comparison: nil)
-    if comparison.present?
-      first_label, second_label = Naturally.sort([label, comparison]) # comparisons must be sorted alphabetically
+  def filename_for(label, comparison_group: nil)
+    if comparison_group.present?
+      first_label, second_label = Naturally.sort([label, comparison_group]) # comparisons must be sorted
       values = [cluster_name, annotation_name, first_label, second_label, annotation_scope, computational_method]
     else
       values = [cluster_name, annotation_name, label, annotation_scope, computational_method]
     end
-    basename = values.map { |val| val.gsub(/\+/, 'pos').gsub(/\W/, '_') }.join('--')
+    basename = DifferentialExpressionService.encode_filename(values)
     "#{basename}.tsv"
+  end
+
+  # path to auto-generate manifest for author-uploaded DE files
+  def manifest_bucket_path
+    manifest_basename = DifferentialExpressionService.encode_filename(
+      [cluster_name, annotation_name, 'manifest']
+    )
+    "_scp_internal/differential_expression/#{manifest_basename}.tsv"
+  end
+
+  # get all output files for a comparison type, e.g. one-vs-rest or pairwise
+  #
+  # * *params*
+  #   - +comparison_type+ (String, Symbol) => :one_vs_rest or :pairwise comparisons
+  #   - +transform+ (Symbol) => method to apply to filename (:filename_for or :bucket_path_for)
+  #   - +include_labels+ (Boolean) => T/F to prepend observation labels (including pairwise comparison)
+  #
+  # * *returns*
+  #   - (Array<String>)
+  def files_for(comparison_type, transform: :filename_for, include_labels: false)
+    case comparison_type.to_sym
+    when :one_vs_rest
+      one_vs_rest_comparisons.map do |label|
+        filename = send(transform, label)
+        include_labels ? [label, filename] : filename
+      end
+    when :pairwise
+      pairwise_files = []
+      pairwise_comparisons.each_pair do |group, comparison_groups|
+        comparison_groups.each do |comparison_group|
+          filename = send(transform, group, comparison_group:)
+          result = include_labels ? [group, comparison_group, filename] : filename
+          pairwise_files << result
+        end
+      end
+      pairwise_files
+    else
+      []
+    end
   end
 
   # map listing all result files and their constituent groups , by comparison type
@@ -92,77 +132,18 @@ class DifferentialExpressionResult
   #
   # @return [Hash<String => Array<String, String>, Array<String, String, String>]
   def result_files
-    pairwise_files = []
-    is_author_de = false
-
-    # TODO (SCP-5096): Productionize this block, remove example data
-    if Rails.env.development? && annotation_name == 'General_Celltype'
-
-      is_author_de = true
-
-      self.one_vs_rest_comparisons = [
-        'B cells',
-        # 'CSN1S1 macrophages', # Simulate missing one-vs-rest comparison
-        'dendritic cells',
-        'eosinophils',
-        'fibroblasts',
-        'GPMNB macrophages',
-        'LC1',
-        'LC2',
-        'neutrophils',
-        'T cells'
-      ]
-
-      # Two important notes for pairwise comparisons:
-      #
-      #   1.  It conveys observed _combinations_ of groups.  Order does not
-      #       matter in combinations.  This means that, with a bit of extra
-      #       care, we can store 1/2 the data than a naive approach.
-      #
-      #   2.  Per (1), only the _naturally ordered_ pairs appear in the DE
-      #       results manifest file, and in this `pairwise_comparisons` data
-      #       structure.  Note that all keys in the hash below are naturally
-      #       ordered before all values for that key.
-      pairwise_comparisons = {
-        # Note that first key ('B cells') lacks comparison to 'CSN1S1 macrophages',
-        # which mimics realistic potential missing pairwise comparison in
-        # user-uploaded DE data.
-        'B cells' => ['dendritic cells', 'eosinophils', 'fibroblasts', 'GPMNB macrophages', 'LC1', 'LC2', 'neutrophils', 'T cells'],
-        'CSN1S1 macrophages' => ['dendritic cells', 'eosinophils', 'fibroblasts', 'GPMNB macrophages', 'LC1', 'LC2', 'neutrophils', 'T cells'],
-        'dendritic cells' => ['eosinophils', 'fibroblasts', 'GPMNB macrophages', 'LC1', 'LC2', 'neutrophils', 'T cells'],
-        'eosinophils' => ['fibroblasts', 'GPMNB macrophages', 'LC1', 'LC2', 'neutrophils', 'T cells'],
-        'fibroblasts' => ['GPMNB macrophages', 'LC1', 'LC2', 'neutrophils', 'T cells'],
-        'GPMNB macrophages' => ['LC1', 'LC2', 'neutrophils', 'T cells'],
-        'LC1' => ['LC2', 'neutrophils', 'T cells'],
-        'LC2' => ['neutrophils', 'T cells'],
-        'neutrophils' => ['T cells']
-      }
-
-      pairwise_comparisons.each_pair do |label, comparisons|
-        comparisons.each do |comparison|
-          filename = filename_for(label, comparison:)
-          pairwise_files.push([label, comparison, filename])
-        end
-      end
-    end
-
-    one_vs_rest_files = one_vs_rest_comparisons.map { |label| filename_for(label) }
-
     {
-      'is_author_de' => is_author_de,
-      'one_vs_rest' => one_vs_rest_comparisons.zip(one_vs_rest_files),
-      'pairwise' => pairwise_files
-    }
+      is_author_de:,
+      one_vs_rest: files_for(:one_vs_rest, include_labels: true),
+      pairwise: files_for(:pairwise, include_labels: true)
+    }.with_indifferent_access
   end
 
-  # array of result file paths relative to associated bucket root
+  # array of all result files paths relative to associated bucket root for one-vs-rest & pairwise
   def bucket_files
-    one_vs_rest_comparisons.map { |label| bucket_path_for(label) }
-  end
-
-  # nested array of arrays representation of :result_files (for select menu options)
-  def select_options
-    result_files
+    %i[one_vs_rest pairwise].map do |comparison_type|
+      files_for(comparison_type, transform: :bucket_path_for)
+    end.flatten
   end
 
   # number of different pairwise comparisons
@@ -170,6 +151,24 @@ class DifferentialExpressionResult
   #      { a: [b,c], b: [c] } => 3 comparisons (a:b, a:c, b:c)
   def num_pairwise_comparisons
     pairwise_comparisons.values.map(&:count).reduce(0, &:+)
+  end
+
+  # initialize one-vs-rest and pairwise comparisons from manifest contents
+  # will clobber any previous values and save in place once completed, so only use with new instances
+  #
+  # * *params*
+  #   -+comparisons+ (Array<Array<String>>) => Array of arrays of strings, only 1 or 2 entries in each
+  def initialize_comparisons!(comparisons)
+    comparisons.each do |groups|
+      if groups.size == 1
+        one_vs_rest_comparisons << groups.first.strip
+      else
+        group, comparison_group = groups.map(&:strip)
+        pairwise_comparisons[group] ||= []
+        pairwise_comparisons[group] << comparison_group unless pairwise_comparisons[group].include?(comparison_group)
+      end
+    end
+    save!
   end
 
   private
@@ -214,13 +213,20 @@ class DifferentialExpressionResult
     # in production, DeleteQueueJob will handle all necessary cleanup
     return true if study.nil? || study.detached || study.queued_for_deletion
 
+    identifier = "#{study.accession}:#{annotation_identifier}"
     bucket_files.each do |filepath|
-      identifier = " #{study.accession}:#{annotation_name}--group--#{annotation_scope}"
       remote = ApplicationController.firecloud_client.get_workspace_file(study.bucket_id, filepath)
       if remote.present?
         Rails.logger.info "Removing DE output #{identifier} at #{filepath}"
         remote.delete
       end
+    end
+
+    if is_author_de
+      filepath = manifest_bucket_path
+      remote = ApplicationController.firecloud_client.get_workspace_file(study.bucket_id, filepath)
+      Rails.logger.info "Removing manifest for #{identifier} at #{filepath}"
+      remote.delete if remote.present?
     end
   end
 end

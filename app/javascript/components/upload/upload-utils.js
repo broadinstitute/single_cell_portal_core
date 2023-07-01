@@ -49,7 +49,8 @@ export function newStudyFileObj(studyId) {
     parse_status: 'unparsed',
     spatial_cluster_associations: [],
     expression_file_info: {},
-    heatmap_file_info: {}
+    heatmap_file_info: {},
+    differential_expression_file_info: {}
   }
 }
 

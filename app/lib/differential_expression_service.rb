@@ -309,4 +309,15 @@ class DifferentialExpressionService
     Rails.logger.info message
   end
 
+  # construct a filename for a differential expression output file/manifest given a set of values
+  # handles special case of encoding plus signs (+) as 'pos'
+  #
+  # * *params*
+  #   -+values+ (Array<String>) => Array of values to transform into encoded name
+  #
+  # * *returns*
+  #   - (String)
+  def self.encode_filename(values)
+    values.map { |val| val.gsub(/\+/, 'pos').gsub(/\W/, '_') }.join('--')
+  end
 end

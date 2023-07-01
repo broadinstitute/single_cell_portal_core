@@ -243,7 +243,15 @@ class Study
   has_one :reviewer_access, dependent: :delete_all
   accepts_nested_attributes_for :reviewer_access, allow_destroy: true
 
-  has_many :differential_expression_results, dependent: :delete_all
+  has_many :differential_expression_results, dependent: :delete_all do
+    def automated
+      where(:is_author_de.in => [nil, false])
+    end
+
+    def author
+      where(is_author_de: true)
+    end
+  end
 
   # field definitions
   field :name, type: String
