@@ -18,45 +18,45 @@ function MetricDisplayValue({ metric }) {
   * Adds slider widget for a numerical metric
   **/
 function SliderContainer({ metric }) {
-  // const metricId = metric.replace(/\./g, '')
-  // const sliderId = `${metricId }-${ comparisonId}`
-  // const metricLabel = metricLabels[metric]
   return (
-    <div style="margin-bottom: 115px; margin-left: 15px;">
-      <div style="margin-left: -15px; z-index: 2;">
-        <input type="checkbox" className="slider-checkbox" id="slider-checkbox-${sliderId}"/>
-        <label htmlFor="slider-checkbox-${sliderId}">
+    <div style={{ marginBottom: '115px', marginLeft: '15px' }}>
+      <div style={{ marginLeft: '-15px', zIndex: '2' }}>
+        <input type="checkbox" className="slider-checkbox" id={`slider-checkbox-${metric}`}/>
+        <label htmlFor={`slider-checkbox-${metric}`}>
           <MetricDisplayValue metric={metric} />
         </label>
       </div>
-      <div id="${sliderId}" className="ideogramSlider" style="top: 40px"></div>
+      {/* <div id="${sliderId}" className="ideogramSlider" style="top: 40px"></div> */}
+
+      <div className={`de-slider-${metric}`}></div>
     </div>
   )
 }
 
 /** Range filters for DE table */
 export default function DifferentialExpressionFilters(genesToShow) {
+  const metrics = ['log2FoldChange', 'pvalAdj']
   useEffect(() => {
-    const slider = document.querySelector('.de-slider')
+    metrics.forEach(metric => {
+      const slider = document.querySelector(`.de-slider-${metric}`)
 
-    if (!slider.noUiSlider) {
-      noUiSlider.create(slider, {
-        start: [20, 80],
-        connect: true,
-        range: {
-          'min': 0,
-          'max': 100
-        }
-      })
-    }
+      if (!slider.noUiSlider) {
+        noUiSlider.create(slider, {
+          start: [20, 80],
+          connect: true,
+          range: {
+            'min': 0,
+            'max': 100
+          }
+        })
+      }
+    })
   })
-
-  const metric = 'log2FoldChange'
 
   return (
     <div>
-      <SliderContainer metric={metric}
-      <div className="de-slider"></div>
+      <SliderContainer metric='log2FoldChange' />
+      <SliderContainer metric='pvalAdj' />
       <br/>
     </div>
   )
