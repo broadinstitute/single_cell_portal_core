@@ -17,20 +17,76 @@ function MetricDisplayValue({ metric }) {
 /**
   * Adds slider widget for a numerical metric
   **/
-function SliderContainer({ metric }) {
+function SliderContainer({ metric, i }) {
   return (
-    <div style={{ marginBottom: '115px', marginLeft: '15px' }}>
-      <div style={{ marginLeft: '-15px', zIndex: '2' }}>
+    <div className="de-slider-container">
+      <div style={{ marginLeft: '-25px', zIndex: '2' }}>
         <input type="checkbox" className="slider-checkbox" id={`slider-checkbox-${metric}`}/>
-        <label htmlFor={`slider-checkbox-${metric}`}>
+        <label htmlFor={`slider-checkbox-${metric}`} style={{ marginLeft: '5px', fontWeight: 'normal' }}>
           <MetricDisplayValue metric={metric} />
         </label>
       </div>
-      {/* <div id="${sliderId}" className="ideogramSlider" style="top: 40px"></div> */}
-
-      <div className={`de-slider-${metric}`}></div>
+      <div style={{ width: '225px', float: 'left', marginLeft: '90px', position: 'relative', top: ' -20px' }} className={`de-slider-${metric}`}></div>
     </div>
   )
+}
+
+/**
+* Provides "noUiSlider" configuration object for the given metric
+*
+* noUiSlider docs: https://refreshless.com/nouislider/
+**/
+function getSliderConfig(metric) {
+  const props = {
+    'pvalAdj': {
+      range: {
+        'min': [0, 0.001],
+        '50%': [0.05, 0.01],
+        'max': 1
+      },
+      start: [0, 0.05],
+      sliderDecimals: 3,
+      pipDecimals: 3,
+      connect: true,
+      values: [0, 25, 50, 73.5, 100],
+      density: 4
+    },
+    'log2FoldChange': {
+      range: {
+        'min': [-1.5],
+        'max': 1.5
+      },
+      start: [-1.5, -0.26, 0.26, 1.5],
+      sliderDecimals: 2,
+      pipDecimals: 1,
+      connect: [false, true, false, true, false],
+      values: [0, 16.7, 34.4, 50, 66.7, 84.4, 100],
+      density: 3
+    }
+  }
+
+  return {
+    range: props[metric].range,
+
+    // Handles start at ...
+    start: props[metric].start,
+
+    connect: props[metric].connect,
+
+    // Move handle on tap, bars are draggable
+    behaviour: 'tap-drag',
+    tooltips: true,
+    // format: sliderDecimals,
+
+    // Show a scale with the slider
+    pips: {
+      mode: 'positions',
+      values: props[metric].values,
+      stepped: true,
+      density: props[metric].density
+      // format: pipDecimals
+    }
+  }
 }
 
 /** Range filters for DE table */
@@ -41,14 +97,7 @@ export default function DifferentialExpressionFilters(genesToShow) {
       const slider = document.querySelector(`.de-slider-${metric}`)
 
       if (!slider.noUiSlider) {
-        noUiSlider.create(slider, {
-          start: [20, 80],
-          connect: true,
-          range: {
-            'min': 0,
-            'max': 100
-          }
-        })
+        noUiSlider.create(slider, getSliderConfig(metric))
       }
     })
   })

@@ -122,3 +122,30 @@
     margin-left: 10px;
   }
 }
+
+
+.de-slider-container {
+  margin-bottom: 75px;
+  margin-left: 15px;
+}
+
+.de-slider-container:last-of-type {
+  margin-bottom: 25px;
+}
+
+.explore-tab-content {
+  .noUi-value-horizontal {transform: translate(-50%, 70%);}
+  .noUi-horizontal {height: 12px;}
+  .noUi-horizontal .noUi-handle {width: 20px; right: -10px; height: 22px; top: -6px;}
+  .noUi-handle:before, .noUi-handle:before {left: 7px; top: 3px;}
+  .noUi-handle:after, .noUi-handle:after {left: 10px; top: 3px;}
+  .noUi-marker-horizontal.noUi-marker-large {height: 12px;}
+  .noUi-marker .noUi-marker-horizontal .noUi-marker-normal {height: 3px;}
+  .noUi-horizontal .noUi-tooltip {bottom: 115%;}
+  .noUi-tooltip {padding: 2px; padding-bottom: 0px; font-size: 12px;}
+  .noUi-connect {background-color: $action-color}
+  .noUi-pips {font-size: 13px;}
+
+  .inactive .noUi-connect {background: #AAA;}
+  .inactive .noUi-tooltip {color: #AAA;}
+}
