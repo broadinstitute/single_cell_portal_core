@@ -203,7 +203,7 @@ class AnnotationVizService
         cluster_name: diff_exp_result.cluster_group&.name,
         annotation_name: diff_exp_result.annotation_name,
         annotation_scope: diff_exp_result.annotation_scope,
-        select_options: diff_exp_result.select_options
+        select_options: diff_exp_result.result_files
       }
     end
   end

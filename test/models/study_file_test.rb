@@ -98,7 +98,7 @@ class StudyFileTest < ActiveSupport::TestCase
     assert_equal false, invalid_study_file.valid?
     expected_errors = {
       base: [
-        'Units is not included in the list, ' \
+        'Units is not included in the list',
         'Library preparation protocol is not included in the list'
       ]
     }

@@ -1,0 +1,52 @@
+B cells
+dendritic cells
+eosinophils
+fibroblasts
+GPMNB macrophages
+LC1
+LC2
+neutrophils
+T cells
+B cells	dendritic cells
+B cells	eosinophils 
+B cells	fibroblasts
+B cells	GPMNB macrophages
+B cells	LC1
+B cells	LC2
+B cells	neutrophils
+B cells	T cells
+CSN1S1 macrophages	dendritic cells
+CSN1S1 macrophages	eosinophils
+CSN1S1 macrophages	fibroblasts
+CSN1S1 macrophages	GPMNB macrophages
+CSN1S1 macrophages	LC1
+CSN1S1 macrophages	LC2
+CSN1S1 macrophages	neutrophils
+CSN1S1 macrophages	T cells
+dendritic cells	eosinophils
+dendritic cells	fibroblasts
+dendritic cells	GPMNB macrophages
+dendritic cells	LC1
+dendritic cells	LC2
+dendritic cells	neutrophils
+dendritic cells	T cells
+eosinophils	fibroblasts
+eosinophils	GPMNB macrophages
+eosinophils	LC1
+eosinophils	LC2
+eosinophils	neutrophils
+eosinophils	T cells
+fibroblasts	GPMNB macrophages
+fibroblasts	LC1
+fibroblasts	LC2
+fibroblasts	T cells
+GPMNB macrophages	LC1
+GPMNB macrophages	LC2
+GPMNB macrophages	neutrophils
+GPMNB macrophages	T cells
+LC1	LC2
+LC1	neutrophils
+LC1	T cells
+LC2	neutrophils
+LC2	T cells
+neutrophils	T cells
