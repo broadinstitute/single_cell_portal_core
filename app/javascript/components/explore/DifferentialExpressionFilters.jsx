@@ -17,16 +17,16 @@ function MetricDisplayValue({ metric }) {
 /**
   * Adds slider widget for a numerical metric
   **/
-function SliderContainer({ metric, i }) {
+function SliderContainer({ metric }) {
   return (
     <div className="de-slider-container">
-      <div style={{ marginLeft: '-25px', zIndex: '2' }}>
+      <div className="de-slider-checkbox-container">
         <input type="checkbox" className="slider-checkbox" id={`slider-checkbox-${metric}`}/>
-        <label htmlFor={`slider-checkbox-${metric}`} style={{ marginLeft: '5px', fontWeight: 'normal' }}>
+        <label htmlFor={`slider-checkbox-${metric}`} >
           <MetricDisplayValue metric={metric} />
         </label>
       </div>
-      <div style={{ width: '225px', float: 'left', marginLeft: '90px', position: 'relative', top: ' -20px' }} className={`de-slider-${metric}`}></div>
+      <div className={`de-slider de-slider-${metric}`}></div>
     </div>
   )
 }

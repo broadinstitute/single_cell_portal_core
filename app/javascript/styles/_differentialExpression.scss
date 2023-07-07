@@ -133,9 +133,26 @@
   margin-bottom: 25px;
 }
 
+.de-slider-checkbox-container {
+  margin-left: -25px;
+}
+
+.de-slider-checkbox-container label {
+  margin-left: 5px;
+  font-weight: normal;
+}
+
+.de-slider {
+  width: 225px;
+  float: left;
+  margin-left: 90px;
+  position: relative;
+  top: -20px;
+}
+
 .explore-tab-content {
   .noUi-value-horizontal {transform: translate(-50%, 70%);}
-  .noUi-horizontal {height: 12px;}
+  .noUi-horizontal {height: 12px; z-index: 0;}
   .noUi-horizontal .noUi-handle {width: 20px; right: -10px; height: 22px; top: -6px;}
   .noUi-handle:before, .noUi-handle:before {left: 7px; top: 3px;}
   .noUi-handle:after, .noUi-handle:after {left: 10px; top: 3px;}
