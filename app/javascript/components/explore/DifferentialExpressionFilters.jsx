@@ -51,6 +51,19 @@ function getSliderConfig(metric) {
       values: [0, 25, 50, 73.5, 100],
       density: 4
     },
+    'qval': {
+      range: {
+        'min': [0, 0.001],
+        '50%': [0.05, 0.01],
+        'max': 1
+      },
+      start: [0, 0.05],
+      sliderDecimals: 3,
+      pipDecimals: 3,
+      connect: true,
+      values: [0, 25, 50, 73.5, 100],
+      density: 4
+    },
     'log2FoldChange': {
       range: {
         'min': [-1.5],
@@ -90,8 +103,9 @@ function getSliderConfig(metric) {
 }
 
 /** Range filters for DE table */
-export default function DifferentialExpressionFilters(genesToShow) {
-  const metrics = ['log2FoldChange', 'pvalAdj']
+export default function DifferentialExpressionFilters(genesToShow, isAuthorDe) {
+  const fdrMetric = isAuthorDe ? 'qval' : 'pvalAdj'
+  const metrics = ['log2FoldChange', fdrMetric]
   useEffect(() => {
     metrics.forEach(metric => {
       const slider = document.querySelector(`.de-slider-${metric}`)
@@ -104,9 +118,7 @@ export default function DifferentialExpressionFilters(genesToShow) {
 
   return (
     <div>
-      <SliderContainer metric='log2FoldChange' />
-      <SliderContainer metric='pvalAdj' />
-      <br/>
+      {metrics.map(metric => <><SliderContainer metric={metric} /><br/></>)}
     </div>
   )
 }
