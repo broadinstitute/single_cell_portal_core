@@ -297,7 +297,7 @@ function DifferentialExpressionTable({
     })[0]
   ))
 
-  const verticalPad = 400 // Accounts for all UI real estate above table header
+  const verticalPad = 560 // Accounts for all UI real estate above table header
   const tableHeight = window.innerHeight - verticalPad
 
   /** Put DE table back to its original state */
