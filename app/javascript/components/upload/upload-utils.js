@@ -2,7 +2,7 @@ import _get from 'lodash/get'
 import React from 'react'
 
 export const PARSEABLE_TYPES = ['Cluster', 'Coordinate Labels', 'Expression Matrix', 'MM Coordinate Matrix',
-  '10X Genes File', '10X Barcodes File', 'Gene List', 'Metadata', 'Analysis Output', 'AnnData']
+  '10X Genes File', '10X Barcodes File', 'Gene List', 'Metadata', 'Analysis Output']
 
 const EXPRESSION_INFO_TYPES = ['Expression Matrix', 'MM Coordinate Matrix']
 

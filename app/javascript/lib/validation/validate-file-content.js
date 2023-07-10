@@ -10,7 +10,7 @@
 
 import { readFileBytes, oneMiB } from './io'
 import ChunkedLineReader, { GZIP_MAX_LINES } from './chunked-line-reader'
-import { PARSEABLE_TYPES } from '~/components/upload/upload-utils'
+import { PARSEABLE_TYPES, FileTypeExtensions } from '~/components/upload/upload-utils'
 import {
   parseDenseMatrixFile, parseFeaturesFile, parseBarcodesFile, parseSparseMatrixFile
 } from './expression-matrices-validation'
@@ -319,7 +319,12 @@ export async function parseClusterFile(chunker, mimeType) {
 /** confirm that the presence/absence of a .gz suffix matches the lead byte of the file
  * Throws an exception if the gzip is conflicted, since we don't want to parse further in that case
 */
-export async function validateGzipEncoding(file) {
+export async function validateGzipEncoding(file, fileType) {
+  // do not attempt to read AnnData files as this throws an error and prevents upload/sync
+  if (fileType === 'AnnData') {
+    return false
+  }
+
   const GZIP_MAGIC_NUMBER = '\x1F'
   const fileName = file.name
   let isGzipped = null
@@ -370,7 +375,7 @@ async function parseFile(file, fileType, fileOptions={}, sizeProps={}) {
   const parseResult = { fileInfo, issues: [] }
 
   try {
-    fileInfo.isGzipped = await validateGzipEncoding(file)
+    fileInfo.isGzipped = await validateGzipEncoding(file, fileType)
     // if the file is compressed or we can't figure out the compression, don't try to parse further
     const isFileFragment = file.size > sizeProps?.fileSizeTotal // likely a partial download from a GCP bucket
     if (
