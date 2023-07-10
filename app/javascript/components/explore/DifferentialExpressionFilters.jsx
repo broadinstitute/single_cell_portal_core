@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 
 import noUiSlider from 'nouislider'
 import 'nouislider/dist/nouislider.css'
+import wNumb from 'wnumb'
 
 /** Get display value for given metric */
 function MetricDisplayValue({ metric }) {
@@ -80,35 +81,50 @@ const defaultSliderConfigProps = {
 function getSliderConfig(metric, range) {
   const defaultProps = defaultSliderConfigProps[metric]
 
-  const configRange = {
-    max: range.shownMax,
-    min: range.shownMin
+  let configRange
+  let configStart
+  if (['pvalAdj', 'qval'].includes(metric)) {
+    configRange = {
+      'min': [0, 0.001],
+      '50%': [0.05, 0.01],
+      'max': 1
+    }
+    configStart = [0, 0.05]
+  } else {
+    const max = range.shownMax
+    const min = range.shownMin
+    configRange = { max, min: [min] }
+    configStart = [min, min/2, max/2, max]
   }
+
+  const pipDecimals = wNumb({ decimals: defaultProps.pipDecimals })
+
+  const sliderDecimals = wNumb({ decimals: defaultProps.sliderDecimals })
 
   const config = {
     range: configRange,
 
     // Handles start at ...
-    start: defaultProps.start,
+    start: configStart,
 
     connect: defaultProps.connect,
 
     // Move handle on tap, bars are draggable
     behaviour: 'tap-drag',
     tooltips: true,
-    // format: sliderDecimals,
+    format: sliderDecimals,
 
     // Show a scale with the slider
     pips: {
       mode: 'positions',
       values: defaultProps.values,
       stepped: true,
-      density: defaultProps.density
-      // format: pipDecimals
+      density: defaultProps.density,
+      format: pipDecimals
     }
   }
 
-  console.log('config', config)
+  return config
 }
 
 /** Get max and min for each metric among DE genes to show */
@@ -155,6 +171,9 @@ function getRanges(metrics, genesToShow) {
       const shownMin = !isMaxAbsolutelyGreater ? min : absoluteMax
       rangesByMetric[metric].shownMax = shownMax
       rangesByMetric[metric].shownMin = shownMin
+    } else {
+      rangesByMetric[metric].shownMax = max
+      rangesByMetric[metric].shownMin = min
     }
   })
 
@@ -167,7 +186,6 @@ export default function DifferentialExpressionFilters({ genesToShow, isAuthorDe 
   const metrics = ['log2FoldChange', fdrMetric]
 
   const rangesByMetric = getRanges(metrics, genesToShow)
-  console.log('rangesByMetric', rangesByMetric)
 
   useEffect(() => {
     metrics.forEach(metric => {
