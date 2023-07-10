@@ -31,60 +31,67 @@ function SliderContainer({ metric }) {
   )
 }
 
+const defaultSliderConfigProps = {
+  'pvalAdj': {
+    range: {
+      'min': [0, 0.001],
+      '50%': [0.05, 0.01],
+      'max': 1
+    },
+    start: [0, 0.05],
+    sliderDecimals: 3,
+    pipDecimals: 3,
+    connect: true,
+    values: [0, 25, 50, 73.5, 100],
+    density: 4
+  },
+  'qval': {
+    range: {
+      'min': [0, 0.001],
+      '50%': [0.05, 0.01],
+      'max': 1
+    },
+    start: [0, 0.05],
+    sliderDecimals: 3,
+    pipDecimals: 3,
+    connect: true,
+    values: [0, 25, 50, 73.5, 100],
+    density: 4
+  },
+  'log2FoldChange': {
+    range: {
+      'min': [-1.5],
+      'max': 1.5
+    },
+    start: [-1.5, -0.26, 0.26, 1.5],
+    sliderDecimals: 2,
+    pipDecimals: 1,
+    connect: [false, true, false, true, false],
+    values: [0, 16.7, 34.4, 50, 66.7, 84.4, 100],
+    density: 3
+  }
+}
+
 /**
 * Provides "noUiSlider" configuration object for the given metric
 *
 * noUiSlider docs: https://refreshless.com/nouislider/
 **/
-function getSliderConfig(metric) {
-  const props = {
-    'pvalAdj': {
-      range: {
-        'min': [0, 0.001],
-        '50%': [0.05, 0.01],
-        'max': 1
-      },
-      start: [0, 0.05],
-      sliderDecimals: 3,
-      pipDecimals: 3,
-      connect: true,
-      values: [0, 25, 50, 73.5, 100],
-      density: 4
-    },
-    'qval': {
-      range: {
-        'min': [0, 0.001],
-        '50%': [0.05, 0.01],
-        'max': 1
-      },
-      start: [0, 0.05],
-      sliderDecimals: 3,
-      pipDecimals: 3,
-      connect: true,
-      values: [0, 25, 50, 73.5, 100],
-      density: 4
-    },
-    'log2FoldChange': {
-      range: {
-        'min': [-1.5],
-        'max': 1.5
-      },
-      start: [-1.5, -0.26, 0.26, 1.5],
-      sliderDecimals: 2,
-      pipDecimals: 1,
-      connect: [false, true, false, true, false],
-      values: [0, 16.7, 34.4, 50, 66.7, 84.4, 100],
-      density: 3
-    }
+function getSliderConfig(metric, range) {
+  const defaultProps = defaultSliderConfigProps[metric]
+
+  const configRange = {
+    max: range.shownMax,
+    min: range.shownMin
   }
 
-  return {
-    range: props[metric].range,
+  const config = {
+    range: configRange,
 
     // Handles start at ...
-    start: props[metric].start,
+    start: defaultProps.start,
 
-    connect: props[metric].connect,
+    connect: defaultProps.connect,
 
     // Move handle on tap, bars are draggable
     behaviour: 'tap-drag',
@@ -94,24 +101,82 @@ function getSliderConfig(metric) {
     // Show a scale with the slider
     pips: {
       mode: 'positions',
-      values: props[metric].values,
+      values: defaultProps.values,
       stepped: true,
-      density: props[metric].density
+      density: defaultProps.density
       // format: pipDecimals
     }
   }
+
+  console.log('config', config)
+}
+
+/** Get max and min for each metric among DE genes to show */
+function getRanges(metrics, genesToShow) {
+  const rangesByMetric = {}
+
+  metrics.forEach(metric => {
+    rangesByMetric[metric] = {
+      max: 0,
+      min: 0,
+      shownMax: 0,
+      shownMin: 0
+    }
+  })
+  const numMetrics = metrics.length
+
+  // Classic `for` loops for fastest performance
+  for (let i = 0; i < genesToShow.length; i++) {
+    const deGene = genesToShow[i]
+    for (let j = 0; j < numMetrics; j++) {
+      const metric = metrics[j]
+      const value = deGene[metric]
+      const range = rangesByMetric[metric]
+      if (value < range.min) {
+        // Minimum observed value
+        rangesByMetric[metric].min = value
+      } else if (value > range.max) {
+        // Maximum observed value
+        rangesByMetric[metric].max = value
+      }
+    }
+  }
+
+  // Make sliders with + _and_ - values symmetric in _shown_ range.
+  // This accounts for and helps highlight skewed distributions.
+  metrics.forEach(metric => {
+    const min = rangesByMetric[metric].min
+    const max = rangesByMetric[metric].max
+    if (min < 0 && max > 0) {
+      const absoluteMax = Math.abs(max)
+      const absoluteMin = Math.abs(min)
+      const isMaxAbsolutelyGreater = absoluteMax > absoluteMin
+      const shownMax = isMaxAbsolutelyGreater ? max : absoluteMin
+      const shownMin = !isMaxAbsolutelyGreater ? min : absoluteMax
+      rangesByMetric[metric].shownMax = shownMax
+      rangesByMetric[metric].shownMin = shownMin
+    }
+  })
+
+  return rangesByMetric
 }
 
 /** Range filters for DE table */
-export default function DifferentialExpressionFilters(genesToShow, isAuthorDe) {
+export default function DifferentialExpressionFilters({ genesToShow, isAuthorDe }) {
   const fdrMetric = isAuthorDe ? 'qval' : 'pvalAdj'
   const metrics = ['log2FoldChange', fdrMetric]
+
+  const rangesByMetric = getRanges(metrics, genesToShow)
+  console.log('rangesByMetric', rangesByMetric)
+
   useEffect(() => {
     metrics.forEach(metric => {
       const slider = document.querySelector(`.de-slider-${metric}`)
 
       if (!slider.noUiSlider) {
-        noUiSlider.create(slider, getSliderConfig(metric))
+        const range = rangesByMetric[metric]
+        const config = getSliderConfig(metric, range)
+        noUiSlider.create(slider, config)
       }
     })
   })

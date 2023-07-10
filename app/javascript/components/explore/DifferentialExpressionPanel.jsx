@@ -483,6 +483,7 @@ export default function DifferentialExpressionPanel({
       <>
         <DifferentialExpressionFilters
           genesToShow={genesToShow}
+          isAuthorDe={isAuthorDe}
         />
         <div className="de-search-box">
           <span className="de-search-icon">
