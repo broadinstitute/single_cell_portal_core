@@ -64,7 +64,6 @@ const defaultSliderConfigProps = {
       'min': [-1.5],
       'max': 1.5
     },
-    start: [-1.5, -0.26, 0.26, 1.5],
     sliderDecimals: 2,
     pipDecimals: 1,
     connect: [false, true, false, true, false],
@@ -78,7 +77,7 @@ const defaultSliderConfigProps = {
 *
 * noUiSlider docs: https://refreshless.com/nouislider/
 **/
-function getSliderConfig(metric, range) {
+function getSliderConfig(metric) {
   const defaultProps = defaultSliderConfigProps[metric]
 
   let configRange
@@ -91,10 +90,11 @@ function getSliderConfig(metric, range) {
     }
     configStart = [0, 0.05]
   } else {
-    const max = range.shownMax
-    const min = range.shownMin
-    configRange = { max, min: [min] }
-    configStart = [min, min/2, max/2, max]
+    configRange = {
+      'min': [-1.5],
+      'max': 1.5
+    },
+    configStart = [-1.5, -0.26, 0.26, 1.5]
   }
 
   const pipDecimals = wNumb({ decimals: defaultProps.pipDecimals })
@@ -127,74 +127,26 @@ function getSliderConfig(metric, range) {
   return config
 }
 
-/** Get max and min for each metric among DE genes to show */
-function getRanges(metrics, genesToShow) {
-  const rangesByMetric = {}
-
-  metrics.forEach(metric => {
-    rangesByMetric[metric] = {
-      max: 0,
-      min: 0,
-      shownMax: 0,
-      shownMin: 0
-    }
-  })
-  const numMetrics = metrics.length
-
-  // Classic `for` loops for fastest performance
-  for (let i = 0; i < genesToShow.length; i++) {
-    const deGene = genesToShow[i]
-    for (let j = 0; j < numMetrics; j++) {
-      const metric = metrics[j]
-      const value = deGene[metric]
-      const range = rangesByMetric[metric]
-      if (value < range.min) {
-        // Minimum observed value
-        rangesByMetric[metric].min = value
-      } else if (value > range.max) {
-        // Maximum observed value
-        rangesByMetric[metric].max = value
-      }
-    }
-  }
-
-  // Make sliders with + _and_ - values symmetric in _shown_ range.
-  // This accounts for and helps highlight skewed distributions.
-  metrics.forEach(metric => {
-    const min = rangesByMetric[metric].min
-    const max = rangesByMetric[metric].max
-    if (min < 0 && max > 0) {
-      const absoluteMax = Math.abs(max)
-      const absoluteMin = Math.abs(min)
-      const isMaxAbsolutelyGreater = absoluteMax > absoluteMin
-      const shownMax = isMaxAbsolutelyGreater ? max : absoluteMin
-      const shownMin = !isMaxAbsolutelyGreater ? min : absoluteMax
-      rangesByMetric[metric].shownMax = shownMax
-      rangesByMetric[metric].shownMin = shownMin
-    } else {
-      rangesByMetric[metric].shownMax = max
-      rangesByMetric[metric].shownMin = min
-    }
-  })
-
-  return rangesByMetric
-}
-
 /** Range filters for DE table */
 export default function DifferentialExpressionFilters({ genesToShow, isAuthorDe }) {
   const fdrMetric = isAuthorDe ? 'qval' : 'pvalAdj'
   const metrics = ['log2FoldChange', fdrMetric]
 
-  const rangesByMetric = getRanges(metrics, genesToShow)
-
   useEffect(() => {
     metrics.forEach(metric => {
-      const slider = document.querySelector(`.de-slider-${metric}`)
+      const sliderSelector = `.de-slider-${metric}`
+      const slider = document.querySelector(sliderSelector)
 
       if (!slider.noUiSlider) {
-        const range = rangesByMetric[metric]
-        const config = getSliderConfig(metric, range)
+        // const range = rangesByMetric[metric]
+        const config = getSliderConfig(metric)
         noUiSlider.create(slider, config)
+        if (metric === 'log2FoldChange') {
+          const val1 = document.querySelector(`${sliderSelector} .noUi-value:nth-child(2)`)
+          val1.innerHTML = `≤ ${ val1.innerHTML}`
+          const val2 = document.querySelector(`${sliderSelector} .noUi-value:last-child`)
+          val2.innerHTML = `≥ ${ val2.innerHTML}`
+        }
       }
     })
   })
