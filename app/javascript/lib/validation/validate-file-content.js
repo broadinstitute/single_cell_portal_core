@@ -10,7 +10,7 @@
 
 import { readFileBytes, oneMiB } from './io'
 import ChunkedLineReader, { GZIP_MAX_LINES } from './chunked-line-reader'
-import { PARSEABLE_TYPES } from '~/components/upload/upload-utils'
+import { CSFV_VALIDATED_TYPES, UNVALIDATED_TYPES } from '~/components/upload/upload-utils'
 import {
   parseDenseMatrixFile, parseFeaturesFile, parseBarcodesFile, parseSparseMatrixFile
 } from './expression-matrices-validation'
@@ -320,8 +320,8 @@ export async function parseClusterFile(chunker, mimeType) {
  * Throws an exception if the gzip is conflicted, since we don't want to parse further in that case
 */
 export async function validateGzipEncoding(file, fileType) {
-  // do not attempt to read AnnData files as this throws an error and prevents upload/sync
-  if (fileType === 'AnnData') {
+  // skip check on any file type not included in CSFV
+  if (UNVALIDATED_TYPES.includes(fileType)) {
     return false
   }
 
@@ -379,7 +379,7 @@ async function parseFile(file, fileType, fileOptions={}, sizeProps={}) {
     // if the file is compressed or we can't figure out the compression, don't try to parse further
     const isFileFragment = file.size > sizeProps?.fileSizeTotal // likely a partial download from a GCP bucket
     if (
-      !PARSEABLE_TYPES.includes(fileType) ||
+      !CSFV_VALIDATED_TYPES.includes(fileType) ||
       fileInfo.isGzipped && (isFileFragment || file.size >= MAX_GZIP_FILESIZE)
       // current gunzip implementation needs a whole file; see comment for MAX_GZIP_FILESIZE
     ) {
