@@ -395,6 +395,11 @@ export default function DifferentialExpressionPanel({
   const [genesToShow, setGenesToShow] = useState(deGenes)
   const [searchedGene, setSearchedGene] = useState('')
 
+  const defaultFacets = { 'log2FoldChange': [] }
+  const fdrMetric = !isAuthorDe ? 'pvalAdj' : 'qval'
+  defaultFacets[fdrMetric] = []
+  const [facets, setFacets] = useState(defaultFacets)
+
   const [deFilePath, setDeFilePath] = useState(null)
 
   const species = exploreInfo?.taxonNames
@@ -482,7 +487,8 @@ export default function DifferentialExpressionPanel({
         ) &&
       <>
         <DifferentialExpressionFilters
-          genesToShow={genesToShow}
+          facets={facets}
+          setFacets={setFacets}
           isAuthorDe={isAuthorDe}
         />
         <div className="de-search-box">

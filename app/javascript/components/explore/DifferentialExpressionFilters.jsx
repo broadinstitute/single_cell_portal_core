@@ -27,7 +27,7 @@ function SliderContainer({ metric }) {
           <MetricDisplayValue metric={metric} />
         </label>
       </div>
-      <div className={`de-slider de-slider-${metric}`}></div>
+      <div className={`de-slider de-slider-${metric}`} data-metric={metric}></div>
     </div>
   )
 }
@@ -128,9 +128,30 @@ function getSliderConfig(metric) {
 }
 
 /** Range filters for DE table */
-export default function DifferentialExpressionFilters({ genesToShow, isAuthorDe }) {
+export default function DifferentialExpressionFilters({ facets, setFacets, isAuthorDe }) {
+  console.log('atop DifferentialExpressionFilters, facets:', facets)
   const fdrMetric = isAuthorDe ? 'qval' : 'pvalAdj'
   const metrics = ['log2FoldChange', fdrMetric]
+
+  /** Update facets upon changing range filter selection */
+  function onUpdateFacets(range) {
+    // eslint-disable-next-line no-invalid-this
+    const slider = this
+    const metric = slider.target.dataset['metric']
+
+    range = range.map(d => parseFloat(d))
+    if (metric === 'log2FoldChange') {
+      range = range.map(v => {
+        if (v === -1.5) {return -Infinity}
+        if (v === 1.5) {return Infinity}
+        return v
+      })
+    }
+    facets[metric] = range
+
+    console.log('upon update, facets:', facets)
+    setFacets(facets)
+  }
 
   useEffect(() => {
     metrics.forEach(metric => {
@@ -147,12 +168,14 @@ export default function DifferentialExpressionFilters({ genesToShow, isAuthorDe 
           const val2 = document.querySelector(`${sliderSelector} .noUi-value:last-child`)
           val2.innerHTML = `≥ ${ val2.innerHTML}`
         }
+        slider.noUiSlider.on('change', onUpdateFacets)
       }
     })
   })
 
   return (
     <div>
+      {!isAuthorDe && <br/>}
       {metrics.map(metric => <><SliderContainer metric={metric} /><br/></>)}
     </div>
   )
