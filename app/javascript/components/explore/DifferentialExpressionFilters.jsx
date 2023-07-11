@@ -146,6 +146,9 @@ export default function DifferentialExpressionFilters({ facets, updateFacets, is
         if (v === 1.5) {return Infinity}
         return v
       })
+      range = [{ min: range[0], max: range[1] }, { min: range[2], max: range[3] }]
+    } else {
+      range = [{ min: range[0], max: range[1] }]
     }
     facets[metric] = range
 

@@ -386,22 +386,26 @@ function rangeFilterGenes(facets, deGenes) {
   console.log('Applying range filters, deGenes.length', deGenes.length)
 
   const facetEntries = Object.entries(facets)
-  deGenes = deGenes.filter(deGene => {
-    let satisfiesFilters = true
+  const filteredGenes = deGenes.filter(deGene => {
+    let isMatch = true
     facetEntries.forEach(([facetName, filters]) => {
       if (filters.length === 0) {return}
+      let satisfiesFilters = false
       const metricValue = deGene[facetName]
-      const min = filters[0]
-      const max = filters[1]
-      if (metricValue < min || metricValue > max) {
-        satisfiesFilters = false
-      }
+      filters.forEach(range => {
+        if (metricValue >= range.min && metricValue <= range.max) {
+          satisfiesFilters = true
+        } else {
+          // console.log('deGene, facetName, range', deGene, facetName, range)
+        }
+      })
+      if (!satisfiesFilters) {isMatch = false}
     })
-    return satisfiesFilters
+    return isMatch
   })
 
-  console.log('Applied range filters, deGenes.length', deGenes.length)
-  return deGenes
+  console.log('Applied range filters, filteredGenes.length', filteredGenes.length)
+  return filteredGenes
 }
 
 // /** Convert facets object to string, so React can detect changes in it */
