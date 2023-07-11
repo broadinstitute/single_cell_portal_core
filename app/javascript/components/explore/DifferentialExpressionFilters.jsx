@@ -128,7 +128,7 @@ function getSliderConfig(metric) {
 }
 
 /** Range filters for DE table */
-export default function DifferentialExpressionFilters({ facets, setFacets, isAuthorDe }) {
+export default function DifferentialExpressionFilters({ facets, updateFacets, isAuthorDe }) {
   console.log('atop DifferentialExpressionFilters, facets:', facets)
   const fdrMetric = isAuthorDe ? 'qval' : 'pvalAdj'
   const metrics = ['log2FoldChange', fdrMetric]
@@ -150,7 +150,8 @@ export default function DifferentialExpressionFilters({ facets, setFacets, isAut
     facets[metric] = range
 
     console.log('upon update, facets:', facets)
-    setFacets(facets)
+    console.log('in onUpdateFacets, updateFacets:', updateFacets)
+    updateFacets(facets)
   }
 
   useEffect(() => {
