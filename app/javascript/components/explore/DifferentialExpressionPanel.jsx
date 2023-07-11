@@ -428,14 +428,19 @@ export default function DifferentialExpressionPanel({
 
   const delayedDETableLogTimeout = useRef(null)
 
+  const defaultFacets = {
+    'log2FoldChange': [{ min: -Infinity, max: 0.26 }, { min: 0.26, max: Infinity }]
+  }
+  const fdrMetric = !isAuthorDe ? 'pvalAdj' : 'qval'
+  defaultFacets[fdrMetric] = [{ min: 0, max: 0.05 }]
+  const [facets, setFacets] = useState(defaultFacets)
+
+  const filteredDeGenes = rangeFilterGenes(facets, deGenes)
+
   // filter text for searching the legend
-  const [genesToShow, setGenesToShow] = useState(deGenes)
+  const [genesToShow, setGenesToShow] = useState(filteredDeGenes)
   const [searchedGene, setSearchedGene] = useState('')
 
-  const defaultFacets = { 'log2FoldChange': [] }
-  const fdrMetric = !isAuthorDe ? 'pvalAdj' : 'qval'
-  defaultFacets[fdrMetric] = []
-  const [facets, setFacets] = useState(defaultFacets)
 
   /** Update facets */
   function updateFacets(newFacets) {
@@ -486,7 +491,7 @@ export default function DifferentialExpressionPanel({
 
     filteredGenes = rangeFilterGenes(facets, filteredGenes)
     setGenesToShow(filteredGenes)
-  }, [deGenes, searchedGene, facets])
+  }, [deGenes, searchedGene])
 
   return (
     <>
