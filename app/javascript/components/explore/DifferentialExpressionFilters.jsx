@@ -18,13 +18,14 @@ function MetricDisplayValue({ metric }) {
 /**
   * Adds slider widget for a numerical metric
   **/
-function SliderContainer({ metric, toggleFacet }) {
+function SliderContainer({ metric, toggleFacet, isActive }) {
   return (
-    <div className="de-slider-container">
+    <div className={`de-slider-container ${isActive ? '' : 'inactive'}`}>
       <div className="de-slider-checkbox-container">
         <input
           type="checkbox"
-          className="slider-checkbox"
+          checked={isActive}
+          className='slider-checkbox'
           id={`slider-checkbox-${metric}`}
           onChange={() => {toggleFacet(metric)}}
         />
@@ -134,7 +135,7 @@ function getSliderConfig(metric) {
 
 /** Range filters for DE table */
 export default function DifferentialExpressionFilters({
-  facets, updateFacets, toggleFacet, isAuthorDe
+  facets, activeFacets, updateFacets, toggleFacet, isAuthorDe
 }) {
   console.log('atop DifferentialExpressionFilters, facets:', facets)
   const fdrMetric = isAuthorDe ? 'qval' : 'pvalAdj'
@@ -188,7 +189,14 @@ export default function DifferentialExpressionFilters({
     <div>
       {!isAuthorDe && <br/>}
       {metrics.map(metric =>
-        <><SliderContainer metric={metric} toggleFacet={toggleFacet}/><br/></>
+        <>
+          <SliderContainer
+            metric={metric}
+            toggleFacet={toggleFacet}
+            isActive={activeFacets[metric]}
+          />
+          <br/>
+        </>
       )}
     </div>
   )
