@@ -18,11 +18,16 @@ function MetricDisplayValue({ metric }) {
 /**
   * Adds slider widget for a numerical metric
   **/
-function SliderContainer({ metric }) {
+function SliderContainer({ metric, toggleFacet }) {
   return (
     <div className="de-slider-container">
       <div className="de-slider-checkbox-container">
-        <input type="checkbox" className="slider-checkbox" id={`slider-checkbox-${metric}`}/>
+        <input
+          type="checkbox"
+          className="slider-checkbox"
+          id={`slider-checkbox-${metric}`}
+          onChange={() => {toggleFacet(metric)}}
+        />
         <label htmlFor={`slider-checkbox-${metric}`} >
           <MetricDisplayValue metric={metric} />
         </label>
@@ -128,7 +133,9 @@ function getSliderConfig(metric) {
 }
 
 /** Range filters for DE table */
-export default function DifferentialExpressionFilters({ facets, updateFacets, isAuthorDe }) {
+export default function DifferentialExpressionFilters({
+  facets, updateFacets, toggleFacet, isAuthorDe
+}) {
   console.log('atop DifferentialExpressionFilters, facets:', facets)
   const fdrMetric = isAuthorDe ? 'qval' : 'pvalAdj'
   const metrics = ['log2FoldChange', fdrMetric]
@@ -180,7 +187,9 @@ export default function DifferentialExpressionFilters({ facets, updateFacets, is
   return (
     <div>
       {!isAuthorDe && <br/>}
-      {metrics.map(metric => <><SliderContainer metric={metric} /><br/></>)}
+      {metrics.map(metric =>
+        <><SliderContainer metric={metric} toggleFacet={toggleFacet}/><br/></>
+      )}
     </div>
   )
 }

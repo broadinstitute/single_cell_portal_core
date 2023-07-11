@@ -379,24 +379,26 @@ function DifferentialExpressionTable({
 }
 
 /** Apply range filters to DE genes */
-function rangeFilterGenes(facets, deGenes) {
+function rangeFilterGenes(facets, deGenes, activeFacets) {
   if (!deGenes || !Object.values(facets).some(filters => filters.length > 0)) {
     return deGenes
   }
-  console.log('Applying range filters, deGenes.length', deGenes.length)
 
   const facetEntries = Object.entries(facets)
   const filteredGenes = deGenes.filter(deGene => {
     let isMatch = true
     facetEntries.forEach(([facetName, filters]) => {
-      if (filters.length === 0) {return}
+      if (
+        filters.length === 0 ||
+        activeFacets[facetName] === false
+      ) {
+        return
+      }
       let satisfiesFilters = false
       const metricValue = deGene[facetName]
       filters.forEach(range => {
         if (metricValue >= range.min && metricValue <= range.max) {
           satisfiesFilters = true
-        } else {
-          // console.log('deGene, facetName, range', deGene, facetName, range)
         }
       })
       if (!satisfiesFilters) {isMatch = false}
@@ -404,7 +406,6 @@ function rangeFilterGenes(facets, deGenes) {
     return isMatch
   })
 
-  console.log('Applied range filters, filteredGenes.length', filteredGenes.length)
   return filteredGenes
 }
 
@@ -433,19 +434,31 @@ export default function DifferentialExpressionPanel({
   }
   const fdrMetric = !isAuthorDe ? 'pvalAdj' : 'qval'
   defaultFacets[fdrMetric] = [{ min: 0, max: 0.05 }]
+  const defaultActiveFacets = { 'log2FoldChange': true }
+  defaultActiveFacets[fdrMetric] = true
   const [facets, setFacets] = useState(defaultFacets)
+  const [activeFacets, setActiveFacets] = useState(defaultActiveFacets)
 
-  const filteredDeGenes = rangeFilterGenes(facets, deGenes)
+  const filteredDeGenes = rangeFilterGenes(facets, deGenes, activeFacets)
 
   // filter text for searching the legend
   const [genesToShow, setGenesToShow] = useState(filteredDeGenes)
   const [searchedGene, setSearchedGene] = useState('')
 
-
-  /** Update facets */
+  /** Update slider range facets */
   function updateFacets(newFacets) {
     setFacets(newFacets)
-    const filteredGenes = rangeFilterGenes(facets, deGenes)
+    const filteredGenes = rangeFilterGenes(facets, deGenes, activeFacets)
+    setGenesToShow(filteredGenes)
+  }
+
+  /** Enable or disable slider range facet, without clearing filter */
+  function toggleFacet(metric) {
+    console.log('metric', metric)
+    const newActiveFacets = Object.assign({}, activeFacets)
+    newActiveFacets[metric] = !newActiveFacets[metric]
+    setActiveFacets(newActiveFacets)
+    const filteredGenes = rangeFilterGenes(facets, deGenes, activeFacets)
     setGenesToShow(filteredGenes)
   }
 
@@ -489,7 +502,7 @@ export default function DifferentialExpressionPanel({
       filteredGenes = deGenes.filter(d => d.name.toLowerCase().includes(lowerCaseSearchedGene))
     }
 
-    filteredGenes = rangeFilterGenes(facets, filteredGenes)
+    filteredGenes = rangeFilterGenes(facets, filteredGenes, activeFacets)
     setGenesToShow(filteredGenes)
   }, [deGenes, searchedGene])
 
@@ -539,6 +552,7 @@ export default function DifferentialExpressionPanel({
         <DifferentialExpressionFilters
           facets={facets}
           updateFacets={updateFacets}
+          toggleFacet={toggleFacet}
           isAuthorDe={isAuthorDe}
         />
         <div className="de-search-box">
