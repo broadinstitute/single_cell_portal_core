@@ -14,7 +14,7 @@ class IngestJob
 
   # valid ingest actions to perform
   VALID_ACTIONS = %i[
-    ingest_expression ingest_cluster ingest_cell_metadata ingest_anndata ingest_differential_expression subsample
+    ingest_expression ingest_cluster ingest_cell_metadata ingest_anndata ingest_differential_expression ingest_subsample
     differential_expression render_expression_arrays
   ].freeze
 
