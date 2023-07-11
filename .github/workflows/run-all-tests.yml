@@ -62,6 +62,7 @@ jobs:
                                   -n single-cell-portal-test
       - name: Preserve all test logs
         uses: actions/upload-artifact@v3
+        if: failure() # only save logs if CI run fails
         with:
           name: test-logs
           path: |
