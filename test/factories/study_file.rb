@@ -183,5 +183,23 @@ FactoryBot.define do
         file.ann_data_file_info.save
       end
     end
+    factory :differential_expression_file do
+      file_type { 'Differential Expression' }
+      parse_status { 'parsed' }
+      transient do
+        cluster_group {}
+        annotation_name {}
+        annotation_scope {}
+        computational_method {}
+      end
+      after(:create) do |file, evaluator|
+        file.build_differential_expression_file_info
+        file.differential_expression_file_info.cluster_group = evaluator.cluster_group
+        file.differential_expression_file_info.annotation_name = evaluator.annotation_name
+        file.differential_expression_file_info.annotation_scope = evaluator.annotation_scope
+        file.differential_expression_file_info.computational_method = evaluator.computational_method
+        file.save
+      end
+    end
   end
 end

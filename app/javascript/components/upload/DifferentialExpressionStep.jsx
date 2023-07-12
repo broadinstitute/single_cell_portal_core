@@ -8,8 +8,9 @@ const DEFAULT_NEW_DE_FILE = {
   file_type: 'Differential Expression',
   differential_expression_file_info: {
     clustering_association: undefined,
-    annotation_association: undefined,
-    computational_method: undefined
+    computational_method: undefined,
+    annotation_name: undefined,
+    annotation_scope: undefined
   }
 }
 

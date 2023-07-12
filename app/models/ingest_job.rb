@@ -14,7 +14,7 @@ class IngestJob
 
   # valid ingest actions to perform
   VALID_ACTIONS = %i[
-    ingest_expression ingest_cluster ingest_cell_metadata ingest_anndata ingest_differential_expression subsample
+    ingest_expression ingest_cluster ingest_cell_metadata ingest_anndata ingest_differential_expression ingest_subsample
     differential_expression render_expression_arrays
   ].freeze
 
@@ -417,7 +417,8 @@ class IngestJob
     when :differential_expression
       create_differential_expression_results
     when :ingest_differential_expression
-      load_differential_expression_manifest
+      delete_auto_differential_expression_results
+      create_user_differential_expression_results
     when :render_expression_arrays
       launch_image_pipeline_job
     when :image_pipeline
@@ -628,14 +629,38 @@ class IngestJob
     de_result.save
   end
 
+  # remove any auto-calculated differential expression results after user-uploaded ingest
+  def delete_auto_differential_expression_results
+    Rails.logger.info "Removing auto-calculated differential expression results in #{study.accession}"
+    study.differential_expression_results.automated.map(&:destroy)
+  end
+
   # read the DE manifest file generated during ingest_differential_expression to create DifferentialExpressionResult
   # entry for given annotation/cluster, and populate any one-vs-rest or pairwise_comparisons
-  def load_differential_expression_manifest
+  def create_user_differential_expression_results
     de_info = study_file.differential_expression_file_info
+    cluster_group = de_info.cluster_group
     annotation_identifier = "#{de_info.annotation_name}--group--#{de_info.annotation_scope}"
     Rails.logger.info "Creating differential expression result object for annotation: #{annotation_identifier} from " \
                       "user-uploaded file #{study_file.upload_file_name}"
-    # TODO: SCP-5096, once SCP-4999 & SCP-5087 are completed
+    de_result = DifferentialExpressionResult.new(
+      study:, study_file:, cluster_group:, cluster_name: cluster_group.name, is_author_de: true,
+      annotation_name: de_info.annotation_name, annotation_scope: de_info.annotation_scope
+    )
+    all_observations = read_differential_expression_manifest(de_info, cluster_group)
+    de_result.initialize_comparisons!(all_observations)
+  end
+
+  # read the contents of a generated DE manifest to get one-vs-rest and pairwise comparisons
+  def read_differential_expression_manifest(info_obj, cluster)
+    manifest_basename = DifferentialExpressionService.encode_filename(
+      [cluster.name, info_obj.annotation_name, 'manifest']
+    )
+    manifest_path = "_scp_internal/differential_expression/#{manifest_basename}.tsv"
+    raw_manifest = ApplicationController.firecloud_client.execute_gcloud_method(
+      :read_workspace_file, 0, study.bucket_id, manifest_path
+    )
+    raw_manifest.read.split("\n").map { |line| line.split("\t") }
   end
 
   # launch an image pipeline job once :render_expression_arrays completes

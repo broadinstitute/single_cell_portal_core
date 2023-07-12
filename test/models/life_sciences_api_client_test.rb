@@ -193,7 +193,9 @@ class LifeSciencesApiClientTest < ActiveSupport::TestCase
     assert de_cmd.include? annotation_scope
     assert de_cmd.include? '--cluster-name'
     assert de_cmd.include? cluster_group.name
-    assert de_cmd.include? '--computational-method'
+    assert de_cmd.include? '--study-accession'
+    assert de_cmd.include? @study.accession
+    assert de_cmd.include? '--method'
     assert de_cmd.include? DifferentialExpressionResult::DEFAULT_COMP_METHOD
     assert de_cmd.include? '--ingest-differential-expression'
   end
