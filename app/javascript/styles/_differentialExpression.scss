@@ -175,7 +175,7 @@
   .noUi-tooltip {padding: 0 3px; font-size: 12px;}
   .noUi-connect {background-color: $action-color}
   .noUi-pips {font-size: 13px;}
-  .noUi-pips-horizontal {padding: 5px 0 0 0;}
+  .noUi-pips-horizontal {padding: 5px 0 0 0; height: inherit;}
 
   .inactive .noUi-connect {background: #AAA;}
   .inactive .noUi-tooltip {color: #AAA;}
