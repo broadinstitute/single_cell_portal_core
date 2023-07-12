@@ -138,8 +138,8 @@
 }
 
 .de-slider-checkbox-container label {
-  margin-left: 5px;
   font-weight: normal;
+  margin-left: 5px;
 }
 
 .de-slider {
@@ -148,6 +148,19 @@
   margin-left: 90px;
   position: relative;
   top: -20px;
+}
+
+@media (max-width: 1415px) {
+  .de-slider-checkbox-container input {
+    display: block;
+  }
+  .de-slider-checkbox-container label {
+    margin-left: 0px;
+  }
+  .de-slider {
+    width: calc(100% - 80px);
+    margin-left: 70px;
+  }
 }
 
 .explore-tab-content {
