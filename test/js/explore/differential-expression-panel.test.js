@@ -113,6 +113,14 @@ describe('Differential expression panel', () => {
     fireEvent.change(input, { target: { value: 'CD7' } })
     expect(deTable.querySelectorAll('.de-gene-row')).toHaveLength(1)
 
+    // Confirm range slider facets appear
+    const rangeSliderFacets = container.querySelectorAll('.de-slider-container')
+    expect(rangeSliderFacets).toHaveLength(2)
+    const log2FoldChangeCheckbox = container.querySelector('#slider-checkbox-log2FoldChange')
+    fireEvent.click(log2FoldChangeCheckbox)
+    const inactiveFacets = container.querySelectorAll('.inactive.de-slider-container')
+    expect(inactiveFacets).toHaveLength(1)
+
     // Confirm dot plot is invoked upon clicking related button
     const deDotPlotButton = container.querySelector('.de-dot-plot-button')
     fireEvent.click(deDotPlotButton)

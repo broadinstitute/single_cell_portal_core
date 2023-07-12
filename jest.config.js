@@ -26,6 +26,7 @@ module.exports = {
     '\\.(jpg|ico|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$': '<rootDir>/test/js/jest-mocks/file-mock.js',
     '^~/(.*)$': '$1', // strip off the ~/, as jest doesn't need it since it has configured module directories
     '@single-cell-portal/igv': '<rootDir>/test/js/jest-mocks/igv-mock.js', // mock igv as jest has trouble parsing it
-    'ideogram': '<rootDir>/test/js/jest-mocks/file-mock.js' // mock igv as jest has trouble parsing it
+    'ideogram': '<rootDir>/test/js/jest-mocks/file-mock.js', // mock igv as jest has trouble parsing it
+    '\\.css$': '<rootDir>/test/js/jest-mocks/file-mock.js' // mock CSS files as jest has trouble parsing them
   }
 }

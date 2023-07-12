@@ -462,7 +462,6 @@ export default function DifferentialExpressionPanel({
 
   /** Enable or disable slider range facet; preserve filter in background */
   function toggleFacet(metric) {
-    console.log('metric', metric)
     const newActiveFacets = Object.assign({}, activeFacets)
     newActiveFacets[metric] = !newActiveFacets[metric]
     const filteredGenes = rangeFilterGenes(facets, deGenes, newActiveFacets)

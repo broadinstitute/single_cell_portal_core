@@ -137,7 +137,6 @@ function getSliderConfig(metric) {
 export default function DifferentialExpressionFilters({
   facets, activeFacets, updateFacets, toggleFacet, isAuthorDe
 }) {
-  console.log('atop DifferentialExpressionFilters, facets:', facets)
   const fdrMetric = isAuthorDe ? 'qval' : 'pvalAdj'
   const metrics = ['log2FoldChange', fdrMetric]
 
