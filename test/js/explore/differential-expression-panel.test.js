@@ -113,7 +113,7 @@ describe('Differential expression panel', () => {
     fireEvent.change(input, { target: { value: 'CD7' } })
     expect(deTable.querySelectorAll('.de-gene-row')).toHaveLength(1)
 
-    // Confirm range slider facets appear
+    // Confirm range slider facets appear, and can toggle
     const rangeSliderFacets = container.querySelectorAll('.de-slider-container')
     expect(rangeSliderFacets).toHaveLength(2)
     const log2FoldChangeCheckbox = container.querySelector('#slider-checkbox-log2FoldChange')
