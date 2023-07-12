@@ -445,11 +445,19 @@ export default function DifferentialExpressionPanel({
   const [genesToShow, setGenesToShow] = useState(filteredDeGenes)
   const [searchedGene, setSearchedGene] = useState('')
 
+  const [deFilePath, setDeFilePath] = useState(null)
+
+  const species = exploreInfo?.taxonNames
+
+
   /** Change filter values for slider range facets */
-  function updateFacets(newFacets) {
+  function updateFacets(newFacets, metric) {
     setFacets(newFacets)
     const filteredGenes = rangeFilterGenes(facets, deGenes, activeFacets)
     setGenesToShow(filteredGenes)
+
+    const otherProps = { trigger: 'update-facet', facet: metric }
+    logDifferentialExpressionTableSearch([searchedGene], species, otherProps)
   }
 
   /** Enable or disable slider range facet; preserve filter in background */
@@ -460,11 +468,10 @@ export default function DifferentialExpressionPanel({
     const filteredGenes = rangeFilterGenes(facets, deGenes, newActiveFacets)
     setActiveFacets(newActiveFacets)
     setGenesToShow(filteredGenes)
+
+    const otherProps = { trigger: 'toggle-facet', facet: metric }
+    logDifferentialExpressionTableSearch([searchedGene], species, otherProps)
   }
-
-  const [deFilePath, setDeFilePath] = useState(null)
-
-  const species = exploreInfo?.taxonNames
 
   /** Handle a user pressing the 'x' to clear the field */
   function handleClear() {

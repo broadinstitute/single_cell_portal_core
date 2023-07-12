@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 
 import noUiSlider from 'nouislider'
 import 'nouislider/dist/nouislider.css'
@@ -160,9 +160,7 @@ export default function DifferentialExpressionFilters({
     }
     facets[metric] = range
 
-    console.log('upon update, facets:', facets)
-    console.log('in onUpdateFacets, updateFacets:', updateFacets)
-    updateFacets(facets)
+    updateFacets(facets, metric)
   }
 
   useEffect(() => {
