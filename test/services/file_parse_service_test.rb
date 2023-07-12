@@ -128,10 +128,81 @@ class FileParseServiceTest < ActiveSupport::TestCase
     assert cluster_file.gzipped?
   end
 
-  # TODO: once SCP-2765 is completed, test that all genes/values are parsed from mtx bundle
-  # this will replace the deprecated 'should parse valid mtx bundle' from study_validation_test.rb
-  test 'should store all genes and expression values from mtx parse' do
-    assert true
-  end
+  test 'should remove non-author differential expression results after user upload' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'DE Auto Cleanup Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    cells = %w[A B C D E F G]
+    coordinates = 1.upto(7).to_a
+    custom_cell_types = [
+      'Custom 2', 'Custom 10', 'Custom 2', 'Custom 10', 'Custom 10', 'Custom 2', 'Custom 2'
+    ]
+    raw_matrix = FactoryBot.create(:expression_file,
+                                   name: 'raw.txt',
+                                   study:,
+                                   expression_file_info: {
+                                     is_raw_counts: true,
+                                     units: 'raw counts',
+                                     library_preparation_protocol: 'Drop-seq',
+                                     biosample_input_type: 'Whole cell',
+                                     modality: 'Proteomic'
+                                   })
+    cluster_file = FactoryBot.create(:cluster_file,
+                                     name: 'cluster_diffexp.txt',
+                                     study:,
+                                     cell_input: {
+                                       x: coordinates,
+                                       y: coordinates,
+                                       cells:
+                                     })
+    cluster_group = ClusterGroup.find_by(study:, study_file: cluster_file)
 
+    FactoryBot.create(:metadata_file,
+                      name: 'metadata.txt',
+                      study:,
+                      cell_input: cells,
+                      annotation_input: [
+                        {
+                          name: 'cell_type__custom',
+                          type: 'group',
+                          values: custom_cell_types
+                        }
+                      ])
+    result = DifferentialExpressionResult.create(
+      study:, cluster_group:, annotation_name: 'cell_type__custom', annotation_scope: 'study',
+      matrix_file_id: raw_matrix.id
+    )
+    de_file = FactoryBot.create(:differential_expression_file,
+                                study:,
+                                parse_status: 'unparsed',
+                                name: 'author_de.tsv',
+                                cluster_group:,
+                                annotation_name: 'cell_type__custom',
+                                annotation_scope: 'group',
+                                computational_method: 'wilcoxon')
+    # three levels of stubs/mocks are needed to intercept both the call to :push_remote_and_launch_ingest
+    # and the delete calls for files in the GCS bucket
+    job_mock = Minitest::Mock.new
+    job_mock.expect :push_remote_and_launch_ingest, nil
+    delay_mock = Minitest::Mock.new
+    delay_mock.expect :delay, job_mock
+    result_mock = Minitest::Mock.new
+    result.bucket_files.each do |file|
+      file_mock = Minitest::Mock.new
+      file_mock.expect :present?, true
+      file_mock.expect :delete, true
+      result_mock.expect :get_workspace_file, file_mock, [study.bucket_id, file]
+    end
+    IngestJob.stub :new, delay_mock do
+      ApplicationController.stub :firecloud_client, result_mock do
+        study.stub :detached, false do
+          FileParseService.run_parse_job(de_file, study, @user)
+          delay_mock.verify
+          result_mock.verify
+          assert DifferentialExpressionResult.where(study:).empty?
+        end
+      end
+    end
+  end
 end

@@ -417,7 +417,6 @@ class IngestJob
     when :differential_expression
       create_differential_expression_results
     when :ingest_differential_expression
-      delete_auto_differential_expression_results
       create_user_differential_expression_results
     when :render_expression_arrays
       launch_image_pipeline_job

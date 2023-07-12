@@ -127,6 +127,9 @@ class FileParseService
         )
         job.delay.push_remote_and_launch_ingest
       when 'Differential Expression'
+        Rails.logger.info "Removing auto-calculated differential expression results in #{study.accession}"
+        study.differential_expression_results.automated.map(&:destroy)
+
         action = :ingest_differential_expression
         job = IngestJob.new(study:, study_file:, user:, action: , reparse:, persist_on_fail:)
         job.delay.push_remote_and_launch_ingest
