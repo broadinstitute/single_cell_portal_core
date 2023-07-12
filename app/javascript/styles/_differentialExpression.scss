@@ -143,7 +143,7 @@
 }
 
 .de-slider {
-  width: 225px;
+  width: calc(100% - 100px);
   float: left;
   margin-left: 90px;
   position: relative;
