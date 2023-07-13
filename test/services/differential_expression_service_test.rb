@@ -69,6 +69,7 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
   teardown do
     DataArray.find_by(@all_cells_array_params)&.destroy
     @basic_study.differential_expression_results.destroy_all
+    StudyFile.where(file_type: 'Differential Expression').delete_all
     @basic_study.public = true
     @basic_study.save(validate: false) # skip callbacks for performance
   end
@@ -264,5 +265,17 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
                                     user: @user,
                                     test_array: @@studies_to_clean)
     assert_not DifferentialExpressionService.study_eligible?(empty_study)
+  end
+
+  test 'should not mark studies with author de as eligible' do
+    assert DifferentialExpressionService.study_eligible?(@basic_study)
+    FactoryBot.create(:differential_expression_file,
+                      study: @basic_study,
+                      name: 'author_de.tsv',
+                      cluster_group: @basic_study.cluster_groups.first,
+                      annotation_name: 'cell_type__ontology_label',
+                      annotation_scope: 'group',
+                      computational_method: 'wilcoxon')
+    assert_not DifferentialExpressionService.study_eligible?(@basic_study)
   end
 end
