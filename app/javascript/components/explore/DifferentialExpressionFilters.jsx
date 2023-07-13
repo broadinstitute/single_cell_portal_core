@@ -18,7 +18,7 @@ function MetricDisplayValue({ metric }) {
 /**
   * Adds slider widget for a numerical metric
   **/
-function SliderContainer({ metric, toggleFacet, isActive }) {
+function SliderContainer({ metric, toggleDeFacet, isActive }) {
   return (
     <div className={`de-slider-container ${isActive ? '' : 'inactive'}`}>
       <div className="de-slider-checkbox-container">
@@ -27,7 +27,7 @@ function SliderContainer({ metric, toggleFacet, isActive }) {
           checked={isActive}
           className='slider-checkbox'
           id={`slider-checkbox-${metric}`}
-          onChange={() => {toggleFacet(metric)}}
+          onChange={() => {toggleDeFacet(metric)}}
         />
         <label htmlFor={`slider-checkbox-${metric}`} >
           <MetricDisplayValue metric={metric} />
@@ -135,13 +135,13 @@ function getSliderConfig(metric) {
 
 /** Range filters for DE table */
 export default function DifferentialExpressionFilters({
-  facets, activeFacets, updateFacets, toggleFacet, isAuthorDe
+  deFacets, activeFacets, updateDeFacets, toggleDeFacet, isAuthorDe
 }) {
   const fdrMetric = isAuthorDe ? 'qval' : 'pvalAdj'
   const metrics = ['log2FoldChange', fdrMetric]
 
-  /** Update facets upon changing range filter selection */
-  function onUpdateFacets(range) {
+  /** Update DE facets upon changing range filter selection */
+  function onUpdateDeFacets(range) {
     // eslint-disable-next-line no-invalid-this
     const slider = this
     const metric = slider.target.dataset['metric']
@@ -157,9 +157,9 @@ export default function DifferentialExpressionFilters({
     } else {
       range = [{ min: range[0], max: range[1] }]
     }
-    facets[metric] = range
+    deFacets[metric] = range
 
-    updateFacets(facets, metric)
+    updateDeFacets(deFacets, metric)
   }
 
   useEffect(() => {
@@ -177,7 +177,7 @@ export default function DifferentialExpressionFilters({
           const val2 = document.querySelector(`${sliderSelector} .noUi-value:last-child`)
           val2.innerHTML = `≥ ${ val2.innerHTML}`
         }
-        slider.noUiSlider.on('change', onUpdateFacets)
+        slider.noUiSlider.on('change', onUpdateDeFacets)
       }
     })
   })
@@ -189,7 +189,7 @@ export default function DifferentialExpressionFilters({
         <>
           <SliderContainer
             metric={metric}
-            toggleFacet={toggleFacet}
+            toggleDeFacet={toggleDeFacet}
             isActive={activeFacets[metric]}
           />
           <br/>

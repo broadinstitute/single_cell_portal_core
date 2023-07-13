@@ -168,7 +168,7 @@ function searchGenesFromTable(selectedGenes, searchGenes, logProps) {
 /** Table of DE data for genes */
 function DifferentialExpressionTable({
   genesToShow, searchGenes, clusterName, annotation, species, numRows,
-  bucketId, deFilePath, handleClear, isAuthorDe, facets
+  bucketId, deFilePath, handleClear, isAuthorDe, deFacets
 }) {
   const defaultPagination = {
     pageIndex: 0,
@@ -379,12 +379,12 @@ function DifferentialExpressionTable({
 }
 
 /** Apply range filters to DE genes */
-function rangeFilterGenes(facets, deGenes, activeFacets) {
-  if (!deGenes || !Object.values(facets).some(filters => filters.length > 0)) {
+function rangeFilterGenes(deFacets, deGenes, activeFacets) {
+  if (!deGenes || !Object.values(deFacets).some(filters => filters.length > 0)) {
     return deGenes
   }
 
-  const facetEntries = Object.entries(facets)
+  const facetEntries = Object.entries(deFacets)
   const filteredGenes = deGenes.filter(deGene => {
     let isMatch = true
     facetEntries.forEach(([facetName, filters]) => {
@@ -418,10 +418,10 @@ function substringSearchGeneNames(queryText, deGenes) {
 }
 
 /** Apply "Find a gene" and range slider facets to DE genes, return matches */
-function filterGenes(searchedGene, deGenes, facets, activeFacets) {
+function filterGenes(searchedGene, deGenes, deFacets, activeFacets) {
   if (!deGenes) {return deGenes}
-  let filteredGenes = substringSearchGeneNames(searchedGene, deGenes, facets, activeFacets)
-  filteredGenes = rangeFilterGenes(facets, filteredGenes, activeFacets)
+  let filteredGenes = substringSearchGeneNames(searchedGene, deGenes, deFacets, activeFacets)
+  filteredGenes = rangeFilterGenes(deFacets, filteredGenes, activeFacets)
   return filteredGenes
 }
 
@@ -438,17 +438,17 @@ export default function DifferentialExpressionPanel({
 
   const delayedDETableLogTimeout = useRef(null)
 
-  const defaultFacets = {
+  const defaultDeFacets = {
     'log2FoldChange': [{ min: -Infinity, max: 0.26 }, { min: 0.26, max: Infinity }]
   }
   const fdrMetric = !isAuthorDe ? 'pvalAdj' : 'qval'
-  defaultFacets[fdrMetric] = [{ min: 0, max: 0.05 }]
+  defaultDeFacets[fdrMetric] = [{ min: 0, max: 0.05 }]
   const defaultActiveFacets = { 'log2FoldChange': true }
   defaultActiveFacets[fdrMetric] = true
-  const [facets, setFacets] = useState(defaultFacets)
+  const [deFacets, setDeFacets] = useState(defaultDeFacets)
   const [activeFacets, setActiveFacets] = useState(defaultActiveFacets)
 
-  const filteredDeGenes = rangeFilterGenes(facets, deGenes, activeFacets)
+  const filteredDeGenes = rangeFilterGenes(deFacets, deGenes, activeFacets)
 
   // filter text for searching the legend
   const [genesToShow, setGenesToShow] = useState(filteredDeGenes)
@@ -459,8 +459,8 @@ export default function DifferentialExpressionPanel({
   const species = exploreInfo?.taxonNames
 
   /** Change filter values for range slider facets */
-  function updateFacets(newFacets, metric) {
-    setFacets(newFacets)
+  function updateDeFacets(newFacets, metric) {
+    setDeFacets(newFacets)
     const filteredGenes = filterGenes(searchedGene, deGenes, newFacets, activeFacets)
     setGenesToShow(filteredGenes)
 
@@ -469,11 +469,11 @@ export default function DifferentialExpressionPanel({
   }
 
   /** Enable or disable slider range facet; preserve filter in background */
-  function toggleFacet(metric) {
+  function toggleDeFacet(metric) {
     const newActiveFacets = Object.assign(activeFacets, {})
     newActiveFacets[metric] = !newActiveFacets[metric]
 
-    const filteredGenes = filterGenes(searchedGene, deGenes, facets, newActiveFacets)
+    const filteredGenes = filterGenes(searchedGene, deGenes, deFacets, newActiveFacets)
 
     setActiveFacets(newActiveFacets)
     setGenesToShow(filteredGenes)
@@ -487,7 +487,7 @@ export default function DifferentialExpressionPanel({
     updateSearchedGene('', 'clear')
 
     // Clicking 'x' doesn't clear facets, so apply any active facets
-    const filteredGenes = filterGenes('', deGenes, facets, activeFacets)
+    const filteredGenes = filterGenes('', deGenes, deFacets, activeFacets)
 
     setGenesToShow(filteredGenes)
   }
@@ -514,7 +514,7 @@ export default function DifferentialExpressionPanel({
 
   /** Update genes in table based on what user searches, filters */
   useEffect(() => {
-    const filteredGenes = filterGenes(searchedGene, deGenes, facets, activeFacets)
+    const filteredGenes = filterGenes(searchedGene, deGenes, deFacets, activeFacets)
     setGenesToShow(filteredGenes)
   }, [deGenes, searchedGene])
 
@@ -562,10 +562,10 @@ export default function DifferentialExpressionPanel({
         ) &&
       <>
         <DifferentialExpressionFilters
-          facets={facets}
+          deFacets={deFacets}
           activeFacets={activeFacets}
-          updateFacets={updateFacets}
-          toggleFacet={toggleFacet}
+          updateDeFacets={updateDeFacets}
+          toggleDeFacet={toggleDeFacet}
           isAuthorDe={isAuthorDe}
         />
         <div className="de-search-box">
@@ -603,7 +603,7 @@ export default function DifferentialExpressionPanel({
           deFilePath={deFilePath}
           handleClear={handleClear}
           isAuthorDe={hasPairwiseDe}
-          facets={facets}
+          deFacets={deFacets}
         />
       </>
       }
