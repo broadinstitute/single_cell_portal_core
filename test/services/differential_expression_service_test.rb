@@ -267,7 +267,7 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     assert_not DifferentialExpressionService.study_eligible?(empty_study)
   end
 
-  test 'should not mark studies with author de as eligible' do
+  test 'should not mark studies with author DE as eligible' do
     assert DifferentialExpressionService.study_eligible?(@basic_study)
     FactoryBot.create(:differential_expression_file,
                       study: @basic_study,
