@@ -85,7 +85,7 @@ class FireCloudClient
   #   - +project+: (String) => Default GCP Project to use (can be overridden by other parameters)
   # * *return*
   #   - +FireCloudClient+ object
-  def initialize(user = nil, project = nil, service_account = self.class.get_primary_keyfile)
+  def initialize(user: nil, project: nil, service_account: self.class.get_primary_keyfile, api_root: BASE_URL)
     # when initializing without a user, default to base configuration
     if user.nil?
       # instantiate Google Cloud Storage driver to work with files in workspace buckets
@@ -130,8 +130,7 @@ class FireCloudClient
 
       self.storage = Google::Cloud::Storage.new(**storage_attr)
     end
-    # set FireCloud API base url
-    self.api_root = BASE_URL
+    self.api_root = api_root.chomp('/')
   end
 
   # return a hash of instance attributes for this client
@@ -1285,7 +1284,7 @@ class FireCloudClient
   end
 
   # get JSON keyfile contents for a user's pet service account in the requested project
-  # response from this API call can be passed to FireCloudClient.new(user, project_name, service_account_contents)
+  # response from this API call can be passed to FireCloudClient.new(**params)
   # to create an instance of FireCloudClient that is able to call GCS methods as the user in the request project
   #
   # * *params*

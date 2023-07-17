@@ -778,7 +778,7 @@ class Study
       shares = StudyShare.where(email: /#{user.email}/i).map(&:study).select {|s| !s.queued_for_deletion }.map(&:id)
       group_shares = []
       if user.registered_for_firecloud && (user.refresh_token.present? || user.api_access_token.present?)
-        user_client = FireCloudClient.new(user, FireCloudClient::PORTAL_NAMESPACE)
+        user_client = FireCloudClient.new(user:, project: FireCloudClient::PORTAL_NAMESPACE)
         user_groups = user_client.get_user_groups.map {|g| g['groupEmail']}
         group_shares = StudyShare.where(:email.in => user_groups).map(&:study).select {|s| !s.queued_for_deletion }.map(&:id)
       end
@@ -797,7 +797,7 @@ class Study
       shares = StudyShare.where(email: /#{user.email}/i).map(&:study).select {|s| !s.queued_for_deletion }.map(&:_id)
       group_shares = []
       if user.registered_for_firecloud
-        user_client = FireCloudClient.new(user, FireCloudClient::PORTAL_NAMESPACE)
+        user_client = FireCloudClient.new(user:, project: FireCloudClient::PORTAL_NAMESPACE)
         user_groups = user_client.get_user_groups.map {|g| g['groupEmail']}
         group_shares = StudyShare.where(:email.in => user_groups).map(&:study).select {|s| !s.queued_for_deletion }.map(&:id)
       end
@@ -900,7 +900,7 @@ class Study
       group_shares = self.study_shares.keep_if {|share| share.is_group_share?}.select {|share| permissions.include?(share.permission)}.map(&:email)
       # get user's FC groups
       if user.access_token.present?
-        client = FireCloudClient.new(user, FireCloudClient::PORTAL_NAMESPACE)
+        client = FireCloudClient.new(user:, project: FireCloudClient::PORTAL_NAMESPACE)
       elsif user.api_access_token.present?
         client = FireCloudClient.new
         client.access_token[:access_token] = user.api_access_token
@@ -1829,7 +1829,7 @@ class Study
 
     # check if project is valid to use
     if self.firecloud_project != FireCloudClient::PORTAL_NAMESPACE
-      client = FireCloudClient.new(self.user, self.firecloud_project)
+      client = FireCloudClient.new(user: self.user, project: self.firecloud_project)
       projects = client.get_billing_projects.map {|project| project['projectName']}
       unless projects.include?(self.firecloud_project)
         errors.add(:firecloud_project, ' is not a project you are a member of.  Please choose another project.')
@@ -1942,7 +1942,7 @@ class Study
 
     # check if project is valid to use
     if self.firecloud_project != FireCloudClient::PORTAL_NAMESPACE
-      client = FireCloudClient.new(self.user, self.firecloud_project)
+      client = FireCloudClient.new(user: self.user, project: self.firecloud_project)
       projects = client.get_billing_projects.map {|project| project['projectName']}
       unless projects.include?(self.firecloud_project)
         errors.add(:firecloud_project, ' is not a project you are a member of.  Please choose another project.')
@@ -2065,7 +2065,7 @@ class Study
       if self.firecloud_project == FireCloudClient::PORTAL_NAMESPACE
         client = ApplicationController.firecloud_client
       else
-        client = FireCloudClient.new(self.user, self.firecloud_project)
+        client = FireCloudClient.new(user: self.user, project: self.firecloud_project)
       end
       group_email = sa_owner_group['groupEmail']
       acl = client.create_workspace_acl(group_email, 'OWNER', true, false)

@@ -1066,7 +1066,7 @@ class StudiesController < ApplicationController
   def set_user_projects
     @projects = [['Default Project', FireCloudClient::PORTAL_NAMESPACE]]
     begin
-      client = FireCloudClient.new(current_user, 'single-cell-portal')
+      client = FireCloudClient.new(user: current_user, project: 'single-cell-portal')
       if current_user.registered_for_firecloud && client.registered?
         available_projects = client.get_billing_projects
         available_projects.each do |project|
