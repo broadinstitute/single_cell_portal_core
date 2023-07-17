@@ -1,9 +1,12 @@
 <% if controller_name == 'site' && @study %>
-<ul class="nav navbar-nav" id="breadcrumbs" style="width: calc(100% - 490px)">
+<div style="font-weight: bold !important;font-size: 16px;margin: 0; /* text-overflow: ellipsis; *//* overflow: hidden; *//* white-space: nowrap; */color: white;width: calc(100% - 400px); padding: 15px 15px 0 15px;">
+<span class='fas fa-chevron-right'></span>
+<%= @study.name %>
+</div>
 <% else %>
 <ul class="nav navbar-nav" id="breadcrumbs">
-<% end %>
   <% set_breadcrumbs.each do |breadcrumb| %>
     <li><%= scp_link_to "<span class='fas fa-chevron-right'></span> 	#{breadcrumb[:title]}".html_safe, breadcrumb[:link], class: 'check-upload' %></li>
   <% end %>
 </ul>
+<% end %>

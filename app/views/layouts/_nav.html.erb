@@ -1,5 +1,5 @@
-<% if @study %>
-<nav class="navbar fluid navbar-inverse navbar-fixed-top sc-navbar rectangle study-rectangle" role="navigation" id="single-cell-navbar">
+<% if controller_name == 'site' && @study %>
+<nav style="display: flex; flex-flow: row;" class="navbar fluid navbar-inverse navbar-fixed-top sc-navbar rectangle study-rectangle" role="navigation" id="single-cell-navbar">
 <% else %>
 <nav class="navbar fluid navbar-inverse navbar-fixed-top sc-navbar rectangle" role="navigation" id="single-cell-navbar">
 <% end %>
@@ -19,9 +19,15 @@
       <% end %>
     </div>
   </div>
+  <% if controller_name == 'site' && !@study %>
   <div class="collapse navbar-collapse" id="scp-navbar-dropdown-collapse">
+  <% end %>
     <%= render partial: '/layouts/breadcrumbs' %>
+    <% if controller_name == 'site' && !@study %>
     <ul class="nav navbar-nav pull-right">
+    <% else %>
+    <ul class="nav navbar-nav pull-right" style="min-width: 350px;">
+    <% end %>
       <li class='dropdown'><%= scp_link_to "<span class='fas fa-question-circle'></span> Help <span class='caret'></span>".html_safe,
                                            "#", class: "dropdown-toggle", "data-toggle" => "dropdown" %>
         <ul class="dropdown-menu dropdown-menu-right">
@@ -104,7 +110,9 @@
         <li><%= scp_link_to "<span class='fas fa-sign-in-alt fa-fw'></span> Sign in".html_safe, user_google_oauth2_omniauth_authorize_path, method: :post, class: 'left-border-0-5', id: 'login-nav' %></li>
       <% end %>
     </ul>
+  <% if controller_name == 'site' && !@study %>
   </div>
+  <% end %>
   <% if @deployment_notification.present? %>
     <% if Time.zone.now >= @deployment_notification.display_time %>
       <% if cookies[:hide_deployment_notification].nil? || cookies[:hide_deployment_notification] != @deployment_notification.id.to_s %>
