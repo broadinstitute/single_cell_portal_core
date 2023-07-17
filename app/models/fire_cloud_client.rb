@@ -138,10 +138,15 @@ class FireCloudClient
   # * *return*
   #   - +Hash+ of values for all instance variables for this client
   def attributes
-    sanitized_values = self.to_h.dup
-    sanitized_values[:access_token] = 'REDACTED'
-    sanitized_values[:issuer] = self.issuer
-    sanitized_values
+    {
+      user:,
+      project:,
+      access_token: 'REDACTED',
+      issuer:,
+      api_root:,
+      storage:, expires_at:,
+      service_account_credentials:
+    }
   end
 
   #
