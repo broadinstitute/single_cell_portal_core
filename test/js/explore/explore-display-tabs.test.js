@@ -21,6 +21,7 @@ import React from 'react'
 import { render } from '@testing-library/react'
 import * as UserProvider from '~/providers/UserProvider'
 import ExploreDisplayTabs, { getEnabledTabs } from 'components/explore/ExploreDisplayTabs'
+import PlotTabs from 'components/explore/PlotTabs'
 import {
   exploreInfo as exploreInfoDe,
   exploreParams as exploreParamsDe
@@ -55,6 +56,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
     }
     const expectedResults = {
       enabledTabs: ['loading'],
+      disabledTabs: [],
       isGeneList: false,
       isGene: false,
       isMultiGene: false,
@@ -76,8 +78,69 @@ describe('explore tabs are activated based on study info and parameters', () => 
     }
     const expectedResults = {
       enabledTabs: ['scatter'],
+      disabledTabs: ['distribution', 'correlatedScatter', 'dotplot', 'heatmap'],
       isGeneList: false,
       isGene: false,
+      isMultiGene: false,
+      hasIdeogramOutputs: false
+    }
+
+    expect(expectedResults).toEqual(getEnabledTabs(exploreInfo, exploreParams))
+  })
+
+  it('should handle numeric annotations in no-gene view', async () => {
+    const exploreInfo = defaultExploreInfo
+    const exploreParams = {
+      cluster: 'foo', // request params loading only a cluster
+      annotation: { name: 'bar', type: 'numeric', scope: 'study' },
+      userSpecified: {
+        annotation: true,
+        cluster: true
+      }
+    }
+    const expectedResults = {
+      enabledTabs: ['scatter'],
+      disabledTabs: ['annotatedScatter', 'distribution', 'correlatedScatter', 'dotplot', 'heatmap'],
+      isGeneList: false,
+      isGene: false,
+      isMultiGene: false,
+      hasIdeogramOutputs: false
+    }
+
+    expect(expectedResults).toEqual(getEnabledTabs(exploreInfo, exploreParams))
+  })
+
+  it('should render disabled "Annotated scatter" tab', async () => {
+    const { container } = render((
+      <PlotTabs
+        shownTab={'scatter'}
+        enabledTabs={['scatter']}
+        disabledTabs={['annotatedScatter', 'distribution', 'correlatedScatter', 'dotplot', 'heatmap']}
+        updateExploreParams={function() {}}
+        isNewExploreUX={true}
+      />
+    ))
+
+    const deButton = container.querySelector('.annotatedScatter-tab-anchor')
+    expect(deButton).toHaveTextContent('Annotated scatter')
+  })
+
+  it('should handle numeric annotations in 1-gene view', async () => {
+    const exploreInfo = defaultExploreInfo
+    const exploreParams = {
+      cluster: 'foo', // request params loading only a cluster
+      annotation: { name: 'bar', type: 'numeric', scope: 'study' },
+      genes: ['Agpat2'],
+      userSpecified: {
+        annotation: true,
+        cluster: true
+      }
+    }
+    const expectedResults = {
+      enabledTabs: ['annotatedScatter', 'scatter'],
+      disabledTabs: ['distribution', 'correlatedScatter', 'dotplot', 'heatmap'],
+      isGeneList: false,
+      isGene: true,
       isMultiGene: false,
       hasIdeogramOutputs: false
     }
@@ -107,6 +170,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
     }
     const expectedResults = {
       enabledTabs: ['scatter', 'genome'],
+      disabledTabs: ['distribution', 'correlatedScatter', 'dotplot', 'heatmap'],
       isGeneList: false,
       isGene: false,
       isMultiGene: false,
@@ -131,6 +195,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
     }
     const expectedResults = {
       enabledTabs: ['geneListHeatmap'],
+      disabledTabs: ['scatter', 'distribution', 'correlatedScatter', 'dotplot', 'heatmap'],
       isGeneList: true,
       isGene: false,
       isMultiGene: false,
@@ -140,7 +205,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
     expect(expectedResults).toEqual(getEnabledTabs(exploreInfo, exploreParams))
   })
 
-  it('should enable scatter/distribution tabs when searching one gene', async () => {
+  it('should enable scatter and distribution tabs when searching one gene', async () => {
     const exploreInfo = defaultExploreInfo
 
     const exploreParams = {
@@ -156,6 +221,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
 
     const expectedResults = {
       enabledTabs: ['scatter', 'distribution'],
+      disabledTabs: ['correlatedScatter', 'dotplot', 'heatmap'],
       isGeneList: false,
       isGene: true,
       isMultiGene: false,
@@ -165,7 +231,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
     expect(expectedResults).toEqual(getEnabledTabs(exploreInfo, exploreParams))
   })
 
-  it('should enable dotplot/heatmap tabs when searching multiple genes', async () => {
+  it('should enable dotplot and heatmap tabs when searching multiple genes', async () => {
     const exploreInfo = {
       ...defaultExploreInfo
     }
@@ -183,6 +249,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
 
     const expectedResults = {
       enabledTabs: ['correlatedScatter', 'dotplot', 'heatmap'],
+      disabledTabs: ['scatter', 'distribution'],
       isGeneList: false,
       isGene: true,
       isMultiGene: true,
@@ -192,7 +259,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
     expect(expectedResults).toEqual(getEnabledTabs(exploreInfo, exploreParams))
   })
 
-  it('should enable scatter/dotplot/heatmap tabs when searching multiple genes', async () => {
+  it('should enable scatter, dotplot, and heatmap tabs when searching multiple genes', async () => {
     const exploreInfo = {
       ...defaultExploreInfo,
       spatialGroupNames: ['bing', 'baz'],
@@ -217,6 +284,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
 
     const expectedResults = {
       enabledTabs: ['scatter', 'dotplot', 'heatmap'],
+      disabledTabs: ['distribution', 'correlatedScatter'],
       isGeneList: false,
       isGene: true,
       isMultiGene: true,
@@ -226,7 +294,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
     expect(expectedResults).toEqual(getEnabledTabs(exploreInfo, exploreParams))
   })
 
-  it('should enable scatter/distribution/dotplot tabs when searching multiple genes w/ consensus', async () => {
+  it('should enable scatter, distribution, and dotplot tabs when searching multiple genes w/ consensus', async () => {
     const exploreInfo = defaultExploreInfo
 
     const exploreParams = {
@@ -244,6 +312,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
 
     const expectedResults = {
       enabledTabs: ['scatter', 'distribution', 'dotplot'],
+      disabledTabs: [],
       isGeneList: false,
       isGene: true,
       isMultiGene: true,
@@ -281,6 +350,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
 
     const expectedResults = {
       enabledTabs: ['infercnv-genome'],
+      disabledTabs: ['scatter', 'distribution', 'correlatedScatter', 'dotplot', 'heatmap'],
       isGeneList: false,
       isGene: false,
       isMultiGene: false,
@@ -297,9 +367,9 @@ describe('explore tabs are activated based on study info and parameters', () => 
         differential_expression_frontend: true
       })
 
-    const {container} = render((
+    const { container } = render((
       <ExploreDisplayTabs
-        studyAccession={"SCP123"}
+        studyAccession={'SCP123'}
         exploreParams={exploreParamsDe}
         exploreParamsWithDefaults={exploreParamsDe}
         exploreInfo={exploreInfoDe}

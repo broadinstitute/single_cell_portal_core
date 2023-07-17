@@ -131,27 +131,84 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
     )
     prefix = "_scp_internal/differential_expression"
     result.pairwise_comparisons.each_pair do |label, comparisons|
-      comparisons.each do |comparison|
+      comparisons.each do |comparison_group|
         # should sort labels naturally and put 'Custom 2' in front of 'Custom 10'
         expected_filename = "#{prefix}/cluster_diffexp_txt--#{name}--Custom_2--Custom_10--study--wilcoxon.tsv"
-        assert_equal expected_filename, result.bucket_path_for(label, comparison:)
+        assert_equal expected_filename, result.bucket_path_for(label, comparison_group:)
       end
     end
   end
 
+  test 'should get output files for observation types and paths' do
+    name = 'General_Celltype'
+    result = DifferentialExpressionResult.new(
+      study: @study, cluster_group: @cluster_group, cluster_name: @cluster_group.name, annotation_name: name,
+      annotation_scope: 'study', matrix_file_id: @raw_matrix.id,
+      one_vs_rest_comparisons: ['B cells', 'CSN1S1 macrophages', 'dendritic cells'],
+      pairwise_comparisons: {
+        'B cells' => ['CSN1S1 macrophages', 'dendritic cells'],
+        'CSN1S1 macrophages' => ['eosinophils']
+      }
+    )
+    one_vs_rest_files = result.one_vs_rest_comparisons.map do |label|
+      safe_label = label.gsub(/\W/, '_')
+      "cluster_diffexp_txt--#{name}--#{safe_label}--study--wilcoxon.tsv"
+    end
+    one_vs_rest_files_labels = result.one_vs_rest_comparisons.map do |label|
+      safe_label = label.gsub(/\W/, '_')
+      [label, "cluster_diffexp_txt--#{name}--#{safe_label}--study--wilcoxon.tsv"]
+    end
+    pairwise_files = result.pairwise_comparisons.map do |label, comparisons|
+      safe_label = label.gsub(/\W/, '_')
+      comparisons.map do |comparison|
+        safe_comparison = comparison.gsub(/\W/, '_')
+        "cluster_diffexp_txt--#{name}--#{safe_label}--#{safe_comparison}--study--wilcoxon.tsv"
+      end
+    end.flatten
+    pairwise_files_labels = []
+    result.pairwise_comparisons.map do |label, comparisons|
+      safe_label = label.gsub(/\W/, '_')
+      comparisons.map do |comparison|
+        safe_comparison = comparison.gsub(/\W/, '_')
+        pairwise_files_labels << [
+          label,
+          comparison,
+          "cluster_diffexp_txt--#{name}--#{safe_label}--#{safe_comparison}--study--wilcoxon.tsv"
+        ]
+      end
+    end
+    assert_equal one_vs_rest_files, result.files_for(:one_vs_rest)
+    assert_equal one_vs_rest_files_labels, result.files_for(:one_vs_rest, include_labels: true)
+    assert_equal pairwise_files, result.files_for(:pairwise)
+    assert_equal pairwise_files_labels, result.files_for(:pairwise, include_labels: true)
+    prefix = '_scp_internal/differential_expression'
+    assert_equal one_vs_rest_files.map { |f| "#{prefix}/#{f}" },
+                 result.files_for(:one_vs_rest, transform: :bucket_path_for)
+    assert_equal pairwise_files.map { |f| "#{prefix}/#{f}" },
+                 result.files_for(:pairwise, transform: :bucket_path_for)
+  end
+
   test 'should return array of select options for observed outputs' do
     species_opts = {
-      dog: 'cluster_diffexp_txt--species--dog--study--wilcoxon.tsv',
-      cat: 'cluster_diffexp_txt--species--cat--study--wilcoxon.tsv'
+      one_vs_rest: [
+        ['dog', 'cluster_diffexp_txt--species--dog--study--wilcoxon.tsv'],
+        ['cat', 'cluster_diffexp_txt--species--cat--study--wilcoxon.tsv']
+      ],
+      pairwise: [],
+      is_author_de: false
     }.with_indifferent_access
 
     disease_opts = {
-      measles: 'cluster_diffexp_txt--disease--measles--cluster--wilcoxon.tsv',
-      none: 'cluster_diffexp_txt--disease--none--cluster--wilcoxon.tsv'
+      one_vs_rest: [
+        ['measles', 'cluster_diffexp_txt--disease--measles--cluster--wilcoxon.tsv'],
+        ['none', 'cluster_diffexp_txt--disease--none--cluster--wilcoxon.tsv']
+      ],
+      pairwise: [],
+      is_author_de: false
     }.with_indifferent_access
 
-    assert_equal species_opts.to_a, @species_result.select_options
-    assert_equal disease_opts.to_a, @disease_result.select_options
+    assert_equal species_opts, @species_result.result_files
+    assert_equal disease_opts, @disease_result.result_files
   end
 
   test 'should return associated files' do
@@ -162,7 +219,6 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
   end
 
   test 'should clean up files on destroy' do
-    @study.detached = false # temporarily set to false to allow delete code to be called, which is mocked below
     sub_cluster = DifferentialExpressionResult.create(
       study: @study, cluster_group: @cluster_file.cluster_groups.first, annotation_name: 'sub-cluster',
       annotation_scope: 'cluster', matrix_file_id: @raw_matrix.id
@@ -176,11 +232,13 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
       mock.expect :get_workspace_file, file_mock, [@study.bucket_id, file]
     end
     ApplicationController.stub :firecloud_client, mock do
-      sub_cluster.destroy
-      mock.verify
-      assert_not DifferentialExpressionResult.where(study: @study, cluster_group: @cluster_file.cluster_groups.first,
-                                                    annotation_name: 'sub-cluster', annotation_scope: 'cluster',
-                                                    matrix_file_id: @raw_matrix.id).exists?
+      @study.stub :detached, false do
+        sub_cluster.destroy
+        mock.verify
+        assert_not DifferentialExpressionResult.where(study: @study, cluster_group: @cluster_file.cluster_groups.first,
+                                                      annotation_name: 'sub-cluster', annotation_scope: 'cluster',
+                                                      matrix_file_id: @raw_matrix.id).exists?
+      end
     end
   end
 

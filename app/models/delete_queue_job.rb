@@ -1,4 +1,4 @@
-class DeleteQueueJob < Struct.new(:object)
+class DeleteQueueJob < Struct.new(:object, :study_file_id)
 
   ###
   #
@@ -10,6 +10,7 @@ class DeleteQueueJob < Struct.new(:object)
   def perform
     # determine type of delete job
     case object.class.name
+
     when 'Study'
       # first check if we have convention metadata to delete
       if object.metadata_file.present?
@@ -23,9 +24,9 @@ class DeleteQueueJob < Struct.new(:object)
       object.assign_attributes(public: false, name: new_name, url_safe_name: new_name, firecloud_workspace: new_name)
       object.save(validate: false)
     when 'StudyFile'
+
       file_type = object.file_type
       study = object.study
-
       # remove all nested documents if present to avoid validation issues later
       # not all of them have validations but this guards against future errors in case they are added later
       # :nested_attributes returns all :accepts_nested_attributes_for documents in StudyFile as a Hash
@@ -80,22 +81,26 @@ class DeleteQueueJob < Struct.new(:object)
         study.update(cell_count: 0)
         reset_default_annotation(study:)
       when 'AnnData'
-        delete_convention_data(study: study, metadata_file: object)
-        # delete user annotations first as we lose associations later
-        delete_user_annotations(study:, study_file: object)
-        delete_parsed_data(object.id, study.id, ClusterGroup, CellMetadatum, Gene, DataArray)
-        delete_fragment_files(study:, study_file: object)
-        # reset default options/counts
-        study.reload
-        study.cell_count = study.all_cells_array.size
-        study.gene_count = study.unique_genes.size
-        reset_default_cluster(study:)
-        reset_default_annotation(study:)
-        study.save
+        unless object.is_reference_anndata?
+          delete_convention_data(study: study, metadata_file: object)
+          # delete user annotations first as we lose associations later
+          delete_user_annotations(study:, study_file: object)
+          delete_parsed_data(object.id, study.id, ClusterGroup, CellMetadatum, Gene, DataArray)
+          delete_fragment_files(study:, study_file: object)
+          # reset default options/counts
+          study.reload
+          study.cell_count = study.all_cells_array.size
+          study.gene_count = study.unique_genes.size
+          reset_default_cluster(study:)
+          reset_default_annotation(study:)
+          study.save
+        end
       when 'Gene List'
         delete_parsed_data(object.id, study.id, PrecomputedScore)
       when 'BAM Index'
         remove_file_from_bundle
+      when 'Differential Expression'
+        delete_differential_expression_results(study:, study_file: object)
       else
         nil
       end
@@ -108,6 +113,9 @@ class DeleteQueueJob < Struct.new(:object)
         end
         object.study_file_bundle.destroy
       end
+
+      # delete any "orphaned" DataArray that might have persisted due to some kind of earlier error
+      delete_orphaned_arrays(study.id)
 
       # overwrite attributes to allow their immediate reuse
       # this must be done with a fresh StudyFile reference, otherwise upload_file_name may not overwrite
@@ -142,7 +150,11 @@ class DeleteQueueJob < Struct.new(:object)
         files = object.next
         files.each {|f| f.delete}
       end
+    when 'BSON::Document'
+      study_file = StudyFile.find(study_file_id)
+      delete_parsed_anndata_entries(study_file_id, study_file.study._id, object)
     end
+
   end
 
   private
@@ -162,6 +174,13 @@ class DeleteQueueJob < Struct.new(:object)
     models.each do |model|
       model.where(study_file_id: object_id, study_id: study_id).delete_all
     end
+  end
+
+  # ensure there are no orphaned DataArray entries that will cause downstream index violations
+  def delete_orphaned_arrays(study_id)
+    study_file_ids = StudyFile.where(study_id:).pluck(:id)
+    cursor = DataArray.where(study_id:, :study_file_id.nin => study_file_ids)
+    cursor.delete_all if cursor.exists?
   end
 
   # remove all subsampling data when a user deletes a metadata file, as adding a new metadata file will cause all
@@ -185,12 +204,14 @@ class DeleteQueueJob < Struct.new(:object)
   def delete_differential_expression_results(study:, study_file:)
     case study_file.file_type
     when 'Metadata'
-      results = DifferentialExpressionResult.where(study: study, annotation_scope: 'study')
+      results = DifferentialExpressionResult.where(study:, annotation_scope: 'study')
     when 'Cluster'
-      cluster = ClusterGroup.find_by(study: study, study_file: study_file)
-      results = DifferentialExpressionResult.where(study: study, cluster_group: cluster)
+      cluster = ClusterGroup.find_by(study:, study_file: study_file)
+      results = DifferentialExpressionResult.where(study:, cluster_group: cluster)
     when 'Expression Matrix', 'MM Coordinate Matrix'
-      results = DifferentialExpressionResult.where(study: study, matrix_file_id: study_file.id)
+      results = DifferentialExpressionResult.where(study:, matrix_file_id: study_file.id)
+    when 'Differential Expression'
+      results = DifferentialExpressionResult.where(study_file: object)
     end
     # extract results to Array to prevent open DB cursor from hanging and timing out as files are deleted in bucket
     results.to_a.each(&:destroy)
@@ -239,8 +260,25 @@ class DeleteQueueJob < Struct.new(:object)
 
   # delete all AnnData "fragment" files upon study file deletion
   def delete_fragment_files(study:, study_file:)
-    prefix = "_scp_internal/anndata_ingest/#{study_file.id}"
+    prefix = "_scp_internal/anndata_ingest/#{study.accession}_#{study_file.id}"
     remotes = ApplicationController.firecloud_client.get_workspace_files(study.bucket_id, prefix:)
     remotes.each(&:delete)
+  end
+
+  # to delete clustering data from parsed AnnData files
+  # uses data_fragment entries to refine queries
+  def delete_parsed_anndata_entries(study_file_id, study_id, fragment)
+    safe_fragment = fragment.with_indifferent_access
+    fragment_type = safe_fragment[:data_type]
+    case fragment_type
+    when "cluster"
+      cluster_group = ClusterGroup.find_by(study_file_id:, study_id:, name: fragment[:name])
+
+      data_arrays = DataArray.where(
+        linear_data_type: 'ClusterGroup', linear_data_id: cluster_group.id, study_id:, study_file_id:
+      )
+      cluster_group.delete
+      data_arrays.delete
+    end
   end
 end

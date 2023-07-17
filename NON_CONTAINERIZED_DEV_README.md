@@ -62,13 +62,24 @@ to determine which `vault` paths to read from).
 13. Add `config/certs/localhost.crt` to your system's trusted certificates. 
   -  Automatic route (preferred), run `sudo security add-trusted-cert -d -r trustAsRoot -k /Library/Keychains/System.keychain config/certs/localhost.crt`
   - Manual route (alternative): On macOS, drag the certificate file into the Keychain Access app, use the "System" keychain, and the "Certificates" category. Then left click on the newly added certificate in the Keychain Access app, click "Get Info", then toggle open the "Trust" section, then set "When using this certificate" to "Always Trust" rather than "Use System Defaults"; and ensure "Always Trust" also gets set on all other drop-down menus in the "Trust" section.
-14. Run `rails s`
-15. If you're developing JS, for hot module replacement and live reload, in a separate terminal, run `bin/vite dev`
-16. If you are working on functionality that involves delayed jobs, like uploading data:
+14. Avoid errors related to hot module replacement (HMR) (i.e. `Too many open files` / `net::ERR_ABORTED 500 (Internal Server Error)`) like so:
+  - Run `ulimit -Sn`, confirm you see `256`
+  - In your `~/.zshrc` (or `~/.bash_profile`), add:
+```
+# Avoid errors caused by Vite in native local SCP using many sockets, e.g.:
+#   "Errno::EMFILE: Failed to open TCP connection to 127.0.0.1:3036 (Too many open files - socket(2) for "127.0.0.1" port 3036"
+# More context: https://github.com/broadinstitute/single_cell_portal_core/pull/1765
+ulimit -Sn 10240
+```
+  - Run `source ~/.zshrc` (or `source ~/.bash_profile`), to update your running shell with those changes
+  - Run `ulimit -Sn` again, confirm you see `10240`
+15. Run `rails s`
+16. In a separate terminal, run `bin/vite dev`
+17. If you are working on functionality that involves delayed jobs, like uploading data:
     * In another terminal, run the source command output in step 7
     * run `rails jobs:work`
-17. You're all set!  You can now go to https://localhost:3000 and see the website.
-18. Confirm you can sign in and upload a file
+18. You're all set!  You can now go to https://localhost:3000 and see the website.
+19. Confirm you can sign in and upload a file
 
 ## REGULAR DEVELOPMENT
 Adding `source <<path-to-single-cell-portal-core>>/config/secrets/.source_env.bash` to your .zschrc or .bash_profile will source the 

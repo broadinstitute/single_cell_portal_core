@@ -25,7 +25,7 @@
 }
 .highlight {
   color: green;
-  background: rgba($color: #74ae43, $alpha: 0.2);
+  background: #EAF3E2;
 }
 .results-panel > div > ul {
   background-color: #dce3e9;
@@ -83,15 +83,16 @@
     word-wrap: break-word;
   }
   .cell-count {
-    background-color: #74ae43;
+    color: #000;
+    background-color: #deeed0;
     font-weight: normal;
-    margin-right: 0.5em
+    margin-right: 0.5em;
   }
   .facet-match, .gene-match {
     background-color: #fff;
     margin-right: 0.5em;
-    color: #74ae43;
-    border: 1px solid #74ae43;
+    color: #4C841F;
+    border: 1.25px solid #59a319;
     font-weight: normal;
   }
   &.inferred-match {
@@ -106,7 +107,7 @@
     font-style: italic;
     margin-bottom: 5px;
     border: 1px solid #ddd;
-    color: #888;
+    color: #6C6B6B;
   }
 }
 .pagination {
@@ -129,10 +130,10 @@
 }
 
 .study-type {
-  border: 1px solid #4d72aa;
+  border: 1.25px solid #4d72aa;
   background-color: white;
   font-weight: normal;
-  color: #777;
+  color: #545454;
   min-width: 44px;
   height: 20px;
   margin-right: 0.5em;

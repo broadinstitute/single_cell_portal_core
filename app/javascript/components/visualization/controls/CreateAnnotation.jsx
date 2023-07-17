@@ -215,6 +215,7 @@ function CreateAnnotation({
                   <button
                     className="btn btn-primary"
                     disabled={!isCreateEnabled}
+                    aria-disabled={!isCreateEnabled}
                     data-analytics-name="create-annotation-create"
                     onClick={handleCreate}>Create</button>
                   &nbsp;
@@ -363,6 +364,7 @@ function CreateAnnotationButton({ expanded = false, ...props }) {
   return <button className = {buttonClass}
     data-analytics-name = {!isUserLoggedIn() ? 'toggle-create-annotation-signedout' :'toggle-create-annotation'}
     data-toggle="tooltip"
+    aria-label="Add annotation"
     data-original-title = {toolTipchoice()} // necessary to dynamically update the tooltip text
     {...props}>
     <FontAwesomeIcon icon={iconShape}/> &nbsp;

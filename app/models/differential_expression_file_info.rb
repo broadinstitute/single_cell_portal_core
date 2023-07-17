@@ -9,11 +9,20 @@ class DifferentialExpressionFileInfo
   field :annotation_name, type: String
   field :annotation_scope, type: String
   field :computational_method, type: String, default: DifferentialExpressionResult::DEFAULT_COMP_METHOD
+  field :clustering_association, type: String # associated clustering StudyFile, for upload UI
 
-  validates :computational_method, inclusion: { in: DifferentialExpressionResult::SUPPORTED_COMP_METHODS }
   validates :annotation_name, presence: true, uniqueness: { scope: %i[annotation_scope cluster_group] }
   validates :annotation_scope, presence: true
   validate :annotation_exists?
 
+  before_validation :set_cluster_from_association, on: :create
+
   delegate :study, to: :study_file
+
+  private
+
+  # handle setting association to ClusterGroup from form file ID
+  def set_cluster_from_association
+    self.cluster_group = instance_from_study_file_id(clustering_association, ClusterGroup) unless cluster_group
+  end
 end

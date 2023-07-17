@@ -1,5 +1,5 @@
 # handle converting ActiveModel attributes into a command line string
-# used in PAPI jobs via PapiClient and IngestJob
+# used in PAPI jobs via LifeSciencesApiClient and IngestJob
 module Parameterizable
   extend ActiveSupport::Concern
 
@@ -27,6 +27,20 @@ module Parameterizable
   # convert attribute name into CLI-formatted option
   def self.to_cli_opt(param_name)
     "--#{param_name.to_s.gsub(/_/, '-')}"
+  end
+
+  # default constructor
+  def initialize(attributes = {})
+    self.class::PARAM_DEFAULTS.each do |attribute_name, default|
+      send("#{attribute_name}=", default) if default.present?
+    end
+    super
+  end
+
+  # hash of instance variable names/values
+  def attributes
+    restricted = defined?(self.class::NON_ATTRIBUTE_PARAMS) ? self.class::NON_ATTRIBUTE_PARAMS : []
+    (self.class::PARAM_DEFAULTS.keys - restricted).index_with { |attr| send(attr) }.with_indifferent_access
   end
 
   # return array of all initialized attributes as CLI arguments, e.g. annotation_name => --annotation-name

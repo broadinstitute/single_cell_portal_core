@@ -4,22 +4,23 @@ import { faSearch, faFileUpload } from '@fortawesome/free-solid-svg-icons'
 import Button from 'react-bootstrap/lib/Button'
 import Modal from 'react-bootstrap/lib/Modal'
 import CreatableSelect from 'react-select/creatable'
-import _differenceBy from 'lodash/differenceBy'
 
 import { getAutocompleteSuggestions } from '~/lib/search-utils'
 import { log } from '~/lib/metrics-api'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
+import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
 
-/** renders the gene text input
-  * This shares a lot of logic with search/genes/GeneKeyword, but is kept as a separate component for
-  * now, as the need for autocomplete raises additional complexity
-  *
-  * @param genes Array of genes currently inputted
-  * @param searchGenes Function to call to execute the API search
-  * @param allGenes String array of valid genes in the study
-  * @param speciesList String array of species scientific names
-  */
+/**
+* Renders the gene text input
+* This shares a lot of logic with search/genes/GeneKeyword, but is kept as a separate component for
+* now, as the need for autocomplete raises additional complexity
+*
+* @param genes Array of genes currently inputted
+* @param searchGenes Function to call to execute the API search
+* @param allGenes String array of valid genes in the study
+* @param speciesList String array of species scientific names
+*/
 export default function StudyGeneField({ genes, searchGenes, allGenes, speciesList, isLoading=false }) {
   const [inputText, setInputText] = useState('')
 
@@ -35,13 +36,12 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     * an array of already entered genes (geneArray),
     * and the current text the user is typing (inputText) */
   const [geneArray, setGeneArray] = useState(enteredGeneArray)
-  const [showEmptySearchModal, setShowEmptySearchModal] = useState(false)
   const [showTooManyGenesModal, setShowTooManyGenesModal] = useState(false)
 
   const [notPresentGenes, setNotPresentGenes] = useState(new Set([]))
   const [showNotPresentGeneChoice, setShowNotPresentGeneChoice] = useState(false)
 
-  /** handles a user submitting a gene search */
+  /** Handles a user submitting a gene search */
   function handleSearch(event) {
     event.preventDefault()
     const newGeneArray = syncGeneArrayToInputText()
@@ -61,7 +61,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     } else if (newGeneArray && newGeneArray.length) {
       const genesToSearch = newGeneArray.map(g => g.value)
       if (genesToSearch.length > window.MAX_GENE_SEARCH) {
-        log('search-too-many-genes', {numGenes: genesToSearch.length})
+        log('search-too-many-genes', { numGenes: genesToSearch.length })
         setShowTooManyGenesModal(true)
       } else {
         if (event) { // this was not a 'clear'
@@ -70,8 +70,6 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
         }
         searchGenes(genesToSearch)
       }
-    } else {
-      setShowEmptySearchModal(true)
     }
   }
 
@@ -82,13 +80,12 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
       return geneArray
     }
     const newGeneArray = geneArray.concat(getOptionsFromGenes(inputTextValues))
-    logGeneArrayChange(newGeneArray)
     setInputText(' ')
     setGeneArray(newGeneArray)
     return newGeneArray
   }
 
-  /** detects presses of the space bar to create a new gene chunk */
+  /** Detects presses of the space bar to create a new gene chunk */
   function handleKeyDown(event) {
     if (!inputText) {
       return
@@ -101,7 +98,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     }
   }
 
-  /** handles a user selecting a gene list file to use */
+  /** Handles a user selecting a gene list file to use */
   function readGeneListFile(file) {
     const fileReader = new FileReader()
     fileReader.onloadend = () => {
@@ -111,36 +108,12 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     fileReader.readAsText(file)
   }
 
-  /** send analytics on how the gene search input changed */
-  function logGeneArrayChange(newArray) {
-    try {
-      let actionName = ''
-      let geneDiff = []
-      if (newArray.length > geneArray.length) {
-        actionName = 'add'
-        geneDiff = _differenceBy(newArray, geneArray, 'value')
-      } else {
-        actionName = 'remove'
-        geneDiff = _differenceBy(geneArray, newArray, 'value')
-      }
-      log('change:multiselect', {
-        text: geneDiff.map(item => item.value).join(','),
-        action: actionName,
-        type: 'gene',
-        numPreviousGenes: geneArray.length
-      })
-    } catch (err) {
-      // no-op, we just don't want logging fails to break the application
-    }
-  }
-
-  /** handles the change event corresponding a a user adding or clearing one or more genes */
+  /** Handles the change event corresponding a user adding or clearing one or more genes */
   function handleSelectChange(value) {
     // react-select doesn't expose the actual click events, so we deduce the kind
     // of operation based on whether it lengthened or shortened the list
     const newValue = value ? value : []
     setNotPresentGenes(new Set([]))
-    logGeneArrayChange(newValue)
     setGeneArray(newValue)
   }
 
@@ -153,6 +126,14 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     }
   }, [genes.join(',')])
 
+
+  useEffect(() => {
+    if (genes.join(',') !== geneArray.map(opt => opt.label).join(',')) {
+      const selectEvent = new Event('change:multiselect')
+      handleSearch(selectEvent)
+    }
+  }, [geneArray])
+
   const searchDisabled = !isLoading && !allGenes?.length
 
   return (
@@ -160,7 +141,13 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
       <div className="flexbox align-center">
         <div className="input-group">
           <div className="input-group-append">
-            <Button type="button" data-analytics-name="gene-search-submit" onClick={handleSearch} disabled={searchDisabled}>
+            <Button
+              type="button"
+              aria-label="Search genes"
+              aria-disabled={searchDisabled}
+              data-analytics-name="gene-search-submit"
+              onClick={handleSearch}
+              disabled={searchDisabled}>
               <FontAwesomeIcon icon={faSearch} />
             </Button>
           </div>
@@ -207,21 +194,12 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
         </label>}
       </div>
       <Modal
-        show={showEmptySearchModal}
-        onHide={() => {setShowEmptySearchModal(false)}}
-        animation={false}
-        bsSize='small'>
-        <Modal.Body className="text-center">
-          Enter at least one gene to search
-        </Modal.Body>
-      </Modal>
-      <Modal
         show={showNotPresentGeneChoice}
         onHide={() => {setShowNotPresentGeneChoice(false)}}
         animation={false}
         bsSize='small'>
         <Modal.Body className="text-center">
-        Invalid Search - Please remove &quot;{Array.from(notPresentGenes).join('", "')}&quot; from gene search.
+        Invalid search.  Please remove &quot;{Array.from(notPresentGenes).join('", "')}&quot; from gene search.
         </Modal.Body>
       </Modal>
       <Modal

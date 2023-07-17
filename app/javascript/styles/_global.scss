@@ -112,13 +112,13 @@ label {
 }
 
 .bs-callout-warning {
-  background-color: #fcf8f2;
-  border-left: 5px solid #f0ad4e;
-  color: #f0ad4e;
+  background-color: #C45500;
+  border-left: 5px solid #fff;
+  color: #fff;
 }
 
 .bs-callout-warning ul {
-  color: #f0ad4e;
+  color: #fff;
 }
 
 .bs-callout-info {
@@ -339,8 +339,13 @@ label {
   top: -5px;
 }
 
-.disabled > a {
+.disabled > a,
+button[disabled] {
   color: #999 !important;
+}
+
+button[disabled] {
+  cursor: initial !important;
 }
 
 .enabled > a {
@@ -356,7 +361,7 @@ label {
 }
 
 #cell-count {
-  background-color: #337ab7;
+  background-color: $action-color;
   color: #fff;
 }
 
@@ -480,7 +485,7 @@ h6,
 
 .detail {
   font-style: italic;
-  color: #777;
+  color: #6c6c6c;
   font-weight: normal;
 }
 
@@ -874,4 +879,50 @@ figcaption.ck-editor__editable {
 
 .glossary {
   border-bottom: 1px #555 dashed;
+}
+
+.sort-icon {
+  margin-left: 4px;
+  border: none;
+  background: transparent;
+  color: $action-color;
+}
+
+.btn-primary {
+  background-color: $action-color;
+}
+
+.btn-primary:hover {
+  background-color: lighten($action-color, 10%);
+}
+
+.btn-primary:disabled,
+.btn-primary[disabled]{
+  background-color: #fff;
+  border-color: #666666;
+}
+
+.btn-warning-scp {
+  background-color: #C45500;
+  color: #fff;
+  border-color: #C45500;
+}
+
+.btn-warning-scp:hover, .btn-warning-scp:focus{
+  color: #fff;
+  background-color: #a54a05;
+  border-color: #a54a05;
+}
+
+.btn-warning-scp-icon {
+  background-color: #fff;
+  color: #C45500;
+}
+
+.link-darker-blue {
+  color: #1b476d
+}
+
+.disabled-download {
+  background-color: $danger-color;
 }

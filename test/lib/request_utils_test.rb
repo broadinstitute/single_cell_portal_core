@@ -6,24 +6,19 @@ require 'includes_helper'
 class RequestUtilsTest < ActionDispatch::IntegrationTest
 
   before(:all) do
-    @user = FactoryBot.create(:user,
-      registered_for_firecloud: true,
-      test_array: @@users_to_clean
-    )
+    @user = FactoryBot.create(:user, registered_for_firecloud: true, test_array: @@users_to_clean)
 
-    @public_study = FactoryBot.create(:study,
-      name_prefix: 'Public study',
-      public: true,
-      user: @user,
-      test_array: @@studies_to_clean
-    )
+    @public_study = FactoryBot.create(:detached_study,
+                                      name_prefix: 'Public study',
+                                      public: true,
+                                      user: @user,
+                                      test_array: @@studies_to_clean)
 
-    @private_study = FactoryBot.create(:study,
-      name_prefix: 'Private study',
-      public: false,
-      user: @user,
-      test_array: @@studies_to_clean
-    )
+    @private_study = FactoryBot.create(:detached_study,
+                                       name_prefix: 'Private study',
+                                       public: false,
+                                       user: @user,
+                                       test_array: @@studies_to_clean)
   end
 
   test 'should sanitize page inputs' do
@@ -188,4 +183,15 @@ class RequestUtilsTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test 'should construct data fragment urls' do
+    file = FactoryBot.create(:ann_data_file, name: 'data.h5ad', study: @public_study)
+    %w[X_umap X_tsne].each do |file_type_detail|
+      prefix = "gs://#{@public_study.bucket_id}/"
+      accession = @public_study.accession
+      path = "_scp_internal/anndata_ingest/#{accession}_#{file.id}/h5ad_frag.cluster.#{file_type_detail}.tsv.gz"
+      url = prefix + path
+      assert_equal url, RequestUtils.data_fragment_url(file, 'cluster',  file_type_detail:)
+      assert_equal path, RequestUtils.data_fragment_url(file, 'cluster',  gs_url: false, file_type_detail:)
+    end
+  end
 end

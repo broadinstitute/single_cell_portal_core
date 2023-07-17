@@ -233,10 +233,6 @@ class FireCloudClient
       log_message = "#{e.message}: #{e.http_body}; #{context}"
       Rails.logger.error log_message
 
-      if e.http_code == 401
-        raise e
-      end
-
       # only retry if status code indicates a possible temporary error, and we are under the retry limit and
       # not calling a method that is blocked from retries
       if should_retry?(e.http_code) && retry_count < ApiHelpers::MAX_RETRY_COUNT && !ERROR_IGNORE_LIST.include?(path)
@@ -251,8 +247,12 @@ class FireCloudClient
         end
         error_message = parse_error_message(e)
         Rails.logger.error "Retry count exceeded when requesting '#{path}' - #{error_message}"
-        raise RuntimeError.new(error_message)
+        raise e
       end
+    rescue => e
+      # fallback error handler
+      Rails.logger.error "Unknown error: #{e.class} - #{e.message}"
+      raise e
     end
   end
 
@@ -1640,6 +1640,6 @@ class FireCloudClient
   def extract_status_code(error)
     return 500 if error.is_a?(RuntimeError)
 
-    error.try(:status_code) || error.try(:code) || 500
+    error.try(:http_code) || error.try(:code) || 500
   end
 end

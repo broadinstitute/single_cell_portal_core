@@ -347,12 +347,14 @@ PlotUtils.getPlotDimensions = function({
   hasLabelLegend=false,
   hasTitle=false,
   showRelatedGenesIdeogram=false,
-  showViewOptionsControls=true
+  showViewOptionsControls=true,
+  showDifferentialExpressionTable=false
 }) {
-  // Get width, and account for expanding "View Options" after page load
+  // Account for options panel and DE table
   let baseWidth = $(window).width()
   if (showViewOptionsControls) {
-    baseWidth = Math.round(baseWidth * 10 / 12)
+    const unitWidth = showDifferentialExpressionTable ? 9 : 10
+    baseWidth = Math.round(baseWidth * unitWidth / 12)
   }
   if (hasLabelLegend) {
     const factor = isTwoColumn ? 2 : 1

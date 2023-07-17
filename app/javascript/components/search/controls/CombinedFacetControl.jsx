@@ -60,6 +60,7 @@ export default function CombinedFacetControl({ controlDisplayName, facetIds }) {
         <button
           ref={clearNode}
           className='facet-clear'
+          aria-label='Clear facet filters'
           onClick={() => clearFilters(true)}
         >
           <FontAwesomeIcon icon={faTimesCircle}/>

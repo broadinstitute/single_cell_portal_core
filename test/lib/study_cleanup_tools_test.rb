@@ -6,7 +6,7 @@ class StudyCleanupToolsTest < ActiveSupport::TestCase
 
   before(:all) do
     @user = FactoryBot.create(:user, test_array: @@users_to_clean)
-    @basic_study = FactoryBot.create(:study,
+    @basic_study = FactoryBot.create(:detached_study,
                                      name_prefix: 'Cleanup Security Checks',
                                      user: @user,
                                      test_array: @@studies_to_clean)
@@ -69,10 +69,19 @@ class StudyCleanupToolsTest < ActiveSupport::TestCase
   end
 
   test 'should match workspace creator for service account' do
-    workspace = ApplicationController.firecloud_client.get_workspace(@basic_study.firecloud_project, @basic_study.firecloud_workspace)
+    # use mock workspace JSON
+    workspace = {
+      workspace: {
+        bucketName: "fc-#{SecureRandom.uuid}",
+        createdBy: ApplicationController.firecloud_client.issuer,
+        createdDate: DateTime.now.in_time_zone,
+        lastModified: DateTime.now.in_time_zone,
+        name: @basic_study.firecloud_workspace,
+        namespace: @basic_study.firecloud_project,
+      }
+    }
     assert StudyCleanupTools.service_account_created_workspace?(workspace)
 
-    # negative test with mock workspace JSON
     not_owned_by_portal = {workspace: {createdBy: @user.email}}
     refute StudyCleanupTools.service_account_created_workspace?(not_owned_by_portal)
   end

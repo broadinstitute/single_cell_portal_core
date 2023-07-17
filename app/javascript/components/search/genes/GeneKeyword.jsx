@@ -92,7 +92,7 @@ export default function GeneKeyword({ placeholder, helpTextContent }) {
           placeholder={placeholder}
         />
         <div className="input-group-append">
-          <Button type="submit">
+          <Button type="submit" aria-label="Search genes">
             <FontAwesomeIcon icon={faSearch} />
           </Button>
         </div>

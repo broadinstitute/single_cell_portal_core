@@ -43,6 +43,11 @@ module ServiceAccountManager
     ENV['GOOGLE_CLOUD_PROJECT']
   end
 
+  # project number of the above GCP project
+  def gcp_project_number
+    ENV['GOOGLE_PROJECT_NUMBER']
+  end
+
   # resolve filepath to primary service account (e.g. project owner) keyfile
   def get_primary_keyfile
     ENV['NOT_DOCKERIZED'] ? ENV['SERVICE_ACCOUNT_KEY'] : File.absolute_path(ENV['SERVICE_ACCOUNT_KEY'])

@@ -142,17 +142,15 @@ class BulkDownloadService
   # * *raises*
   #   - (RuntimeError) => User download quota exceeded
   def self.update_user_download_quota(user:, files:, directories: [])
-    download_quota = ApplicationController.get_download_quota
-    file_bytes_requested = files.map(&:upload_file_size).compact.reduce(0, :+)
-    dir_bytes_requested = directories.map(&:total_bytes).reduce(0, :+)
+    file_bytes_requested = get_requested_bytes(files)
+    dir_bytes_requested = get_requested_bytes(directories, size_method: :total_bytes)
     bytes_requested = file_bytes_requested + dir_bytes_requested
-    bytes_allowed = download_quota - user.daily_download_quota
-    if bytes_requested > bytes_allowed
-      raise RuntimeError.new "Total file size exceeds user download quota: #{bytes_requested} bytes requested, #{bytes_allowed} bytes allowed"
+    if DownloadQuotaService.download_exceeds_quota?(user, bytes_requested)
+      raise "Total file size exceeds user download quota: #{bytes_requested} bytes requested, #{bytes_allowed} bytes " \
+            "allowed.  #{DownloadQuotaService::QUOTA_HELP_EMAIL}"
     else
       Rails.logger.info "Adding #{bytes_requested} bytes to user: #{user.id} download quota for bulk download"
-      user.daily_download_quota += bytes_requested
-      user.save
+      DownloadQuotaService.increment_user_quota(user, bytes_requested)
     end
   end
 
@@ -266,7 +264,7 @@ class BulkDownloadService
   # Get download preview information for a single StudyFile
   #
   # * *params*
-  #   -+study_file+ (StudyFile) => The study to retrieve download preview information for
+  #   - +study_file+ (StudyFile) => The study to retrieve download preview information for
   #
   # * *returns*
   #   - (Hash) => Hash of download information about the study file, including type and size
@@ -281,6 +279,18 @@ class BulkDownloadService
       study_file_obj[:bundled_files] = study_file.bundled_files.map { |sf| study_file_download_info(sf) }
     end
     study_file_obj
+  end
+
+  # get a tally of total bytes for a list of StudyFile or DirectoryListing objects
+  #
+  # * *params*
+  #   - +study_files+ (Array<StudyFile>, Array(DirectoryListing), Mongoid::Criteria) => List of objects
+  #   - +size_method+ (Symbol) => method to call to get size of object in bytes
+  #
+  # * *returns*
+  #   - (Integer) => amount of total bytes counted against user download quota
+  def self.get_requested_bytes(entries, size_method: :upload_file_size)
+    entries.map(&size_method).compact.reduce(0, :+)
   end
 
   # Get a preview of the number of files/total bytes by DirectoryListing name (single study)

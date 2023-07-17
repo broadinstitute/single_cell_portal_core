@@ -1,9 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faImage } from '@fortawesome/free-solid-svg-icons'
+import React, { useEffect, useRef } from 'react'
 
 import ScatterPlot from '~/components/visualization/ScatterPlot'
-import BucketImage from '~/components/visualization/BucketImage'
 
 // we allow 8 plotly contexts -- each plotly graph consumes 3 webgl contexts,
 // and chrome by defualt allows up to 32 simultaneous webgl contexts
@@ -16,21 +13,13 @@ const MAX_PLOTS = PLOTLY_CONTEXT_NAMES.length
   */
 export default function ScatterTab({
   exploreInfo, exploreParamsWithDefaults, updateExploreParamsWithDefaults, studyAccession, isGene, isMultiGene,
-  plotPointsSelected, isCellSelecting, showRelatedGenesIdeogram, showViewOptionsControls, scatterColor,
-  countsByLabel, setCountsByLabel, dataCache
+  plotPointsSelected, isCellSelecting, showRelatedGenesIdeogram, showViewOptionsControls, showDifferentialExpressionTable,
+  scatterColor, countsByLabel, setCountsByLabel, dataCache
 }) {
   // maintain the map of plotly contexts to the params that generated the corresponding visualization
   const plotlyContextMap = useRef({})
   const { scatterParams, isTwoColumn, isMultiRow, firstRowSingleCol } =
     getScatterParams(exploreParamsWithDefaults, isGene, isMultiGene)
-
-  const imagesForClusters = {}
-  exploreInfo.imageFiles.map(file => {
-    file.associated_clusters.map(clusterName => {
-      imagesForClusters[clusterName] = imagesForClusters[clusterName] ? imagesForClusters[clusterName] : []
-      imagesForClusters[clusterName].push(file)
-    })
-  })
 
   /** helper function for Scatter plot color updates */
   function updateScatterColor(color) {
@@ -47,11 +36,6 @@ export default function ScatterTab({
   return <div className="row">
     {
       scatterParams.map((params, index) => {
-        let associatedImages = []
-        if (imagesForClusters[params.cluster] && params.genes.length === 0) {
-          // only show the reference image under the cluster plot, not the expression plot
-          associatedImages = imagesForClusters[params.cluster]
-        }
         const isTwoColRow = isTwoColumn && !(index === 0 && firstRowSingleCol)
         const key = getKeyFromScatterParams(params)
         let rowDivider = <span key={`d${index}`}></span>
@@ -74,13 +58,10 @@ export default function ScatterTab({
               dimensionProps={{
                 isMultiRow,
                 isTwoColumn: isTwoColRow,
-                showRelatedGenesIdeogram, showViewOptionsControls
+                showRelatedGenesIdeogram, showViewOptionsControls,
+                showDifferentialExpressionTable
               }}
             />
-            { associatedImages.map(imageFile => <ImageDisplay
-              key={imageFile.name}
-              file={imageFile}
-              bucketName={exploreInfo.bucketId}/>) }
           </div>,
           rowDivider
         ]
@@ -94,30 +75,6 @@ export default function ScatterTab({
     }
   </div>
 }
-
-
-/** Renders a given image with name and description and show/hide controls */
-function ImageDisplay({ file, bucketName }) {
-  const [show, setShow] = useState(true)
-  return <div>
-    <h5 className="plot-title">
-      <FontAwesomeIcon icon={faImage} className="fa-lg fas"/> {file.name}
-      &nbsp;
-      <button className="action" onClick={() => setShow(!show)}>[{show ? 'hide' : 'show'}]</button>
-    </h5>
-    { show &&
-      <div>
-        <BucketImage fileName={file.bucket_file_name} bucketName={bucketName}/>
-        <p className="help-block">
-          { file.description &&
-            <span>{file.description}</span>
-          }
-        </p>
-      </div>
-    }
-  </div>
-}
-
 
 /** returns an array of params objects suitable for passing into ScatterPlot components
  * (one for each plot).  Also returns layout variables

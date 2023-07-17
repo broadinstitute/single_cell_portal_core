@@ -1,8 +1,8 @@
 <div class="mask" id="main-banner">
   <% if FeatureAnnouncement.latest_features? %>
-    <%= scp_link_to "<span class='badge'>#{FeatureAnnouncement.latest.count}</span> " \
+    <%= scp_link_to "<span class='badge btn-warning-scp-icon'>#{FeatureAnnouncement.latest.count}</span> " \
                     "#{pluralize_without_count(FeatureAnnouncement.latest.count, "New feature")}".html_safe,
-                    latest_feature_announcements_path, class: 'btn btn-warning', id: 'latest-features-btn',
+                    latest_feature_announcements_path, class: 'btn btn-warning-scp', id: 'latest-features-btn',
                     data: { toggle: 'tooltip', placement: 'left' }, title: 'Learn about new Single Cell Portal features!' %>
   <% end %>
   <% if @selected_branding_group.present? %>
@@ -23,7 +23,7 @@
     </div>
   <% else %>
     <div id="main-banner-logo">
-      <%= image_tag "SCP-logo.png", id: 'scp-logo' %>
+      <%= image_tag "SCP-logo.png", id: 'scp-logo', alt:'Single Cell Portal logo'%>
       <p id='main-banner-tag-line' class="scp-banner-position">Reducing barriers and accelerating single-cell research</p>
     </div>
   <% end %>

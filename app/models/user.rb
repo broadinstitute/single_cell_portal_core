@@ -230,7 +230,7 @@ class User
         project_name = workspace.dig('workspace', 'googleProject') || FireCloudClient::PORTAL_NAMESPACE
         client = FireCloudClient.new(self, project_name)
         client.get_pet_service_account_token(project_name)
-      rescue RuntimeError => e
+      rescue RestClient::Exception
         # returning nil here will be caught at the UI level and show an error message
         # see UserProvider.js -> getReadOnlyToken() and userHasTerraProfile()
         nil
@@ -323,6 +323,11 @@ class User
   #
   ###
 
+  # check if user currently has a download exemption (daily_download_quota: nil)
+  def quota_exemption?
+    daily_download_quota.nil?
+  end
+
   # determine if user has access to reports functionality
   def acts_like_reporter?
     self.admin? || self.reporter?
@@ -364,29 +369,41 @@ class User
     end
   end
 
-  # determine if user needs to accept an updated Terra Terms of Service agreement
+  # determine if user needs to accept an updated Terra terms of service agreement
   def must_accept_terra_tos?
     return false unless registered_for_firecloud
 
+    check_terra_tos_status[:must_accept]
+  end
+
+  # returns a Hash with a boolean for "must_accept" as well as the HTTP status code from the request
+  # if a user is out of compliance with the Terra terms of service, then the value for tosAccepted will
+  # be false.
+  #
+  # * *returns*
+  #   - (Hash) => { must_accept: T/F, status: HTTP status code }
+  def check_terra_tos_status
     begin
       client = FireCloudClient.new(self, FireCloudClient::PORTAL_NAMESPACE)
       user_registration = client.get_registration&.with_indifferent_access
       tos_accepted = user_registration.dig('enabled', 'tosAccepted')
-      return false if tos_accepted.nil? # failover protection for when ToS acceptance is not enforced at API level
+      tos_accepted = true if tos_accepted.nil? # failover protection if status isn't found
 
       # return inverse as value of 'false' here means the user must accept the updated Terra ToS
-      !tos_accepted
-    rescue RuntimeError
-      # this most likely is not an actual error, but rather a 401/403 from orchestration API because request was
-      # rejected due to the user needing to accept the updated Terms of Service
-      # as such, no error reporting is necessary
-      true
+      { must_accept: !tos_accepted, http_code: 200 }
+    rescue RestClient::Exception => e
+      # HTTP STATUS CODE EXPLANATIONS
+      # 401: user is not in compliance with Terra ToS (/register endpoint shouldn't give this but check anyway)
+      # 404: user is not registered, does not need to accept Terra ToS
+      # 5xx: upstream error, do not rely on this response
+      must_accept = e.http_code == 401
+      { must_accept:, http_code: e.http_code }
     rescue => e
       # report error upstream to Sentry
       # cannot report to Mixpanel via MetricsService#report_error as there is no associated HTTP request
       Rails.logger.error "Error checking user:#{id} Terra ToS status: #{e.class.name} - #{e.message}"
       ErrorTracker.report_exception(e, self)
-      false # we don't know the status of the user here, so default to false
+      { must_accept: false, http_code: 500 } # we don't know the status of the user here, so default to false
     end
   end
 

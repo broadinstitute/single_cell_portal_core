@@ -33,6 +33,7 @@ export default function FiltersSearchBar({ searchFilters, filtersBoxId }) {
           <Button
             className='search-button'
             onClick={handleFilterSearchSubmit}
+            aria-label='Search'
           >
             <FontAwesomeIcon icon={faSearch}/>
           </Button>

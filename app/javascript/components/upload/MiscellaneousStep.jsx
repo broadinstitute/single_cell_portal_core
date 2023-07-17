@@ -25,7 +25,8 @@ function MiscellaneousForm({
   addNewFile,
   updateFile,
   saveFile,
-  deleteFile
+  deleteFile,
+  isAnnDataExperience
 }) {
   const miscFiles = formState.files.filter(miscFileFilter)
 
@@ -53,7 +54,9 @@ function MiscellaneousForm({
         deleteFile={deleteFile}
         miscFileTypes={miscFileTypes}
         bucketName={formState.study.bucket_id}
-        isInitiallyExpanded={miscFiles.length === 1}/>
+        isInitiallyExpanded={miscFiles.length === 1}
+        isAnnDataExperience={isAnnDataExperience}
+      />
     })}
     <AddFileButton addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_OTHER_FILE}/>
   </div>

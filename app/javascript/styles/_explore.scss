@@ -18,13 +18,15 @@
 
   button.action {
     border: none;
+    background: none;
   }
 
   button.action-plus {
     border: none;
     float: right;
     background: #fff;
-    color: #4d72aa;
+    color: #3D5A87;
+    background-color: $options-color;
     margin-top: -0.5rem;
   }
 
@@ -32,7 +34,8 @@
     border: none;
     float: right;
     background: #fff;
-    color: #4d72aa;
+    color: #3D5A87;
+    background-color: $options-color;
     margin-top: -2.5rem;
   }
 
@@ -69,7 +72,8 @@
 
 .explore-tab-content {
   background: #fff;
-  flex-grow: 1;
+  display: flex;
+  flex-wrap: wrap;
 
   button.action {
     background: #fff;
@@ -211,4 +215,59 @@
     height: 1.5em;
     display: inline-block;
   }
+}
+
+.study-plot-tabs {
+  li  {
+    a {
+      font-size: larger;
+      color: #fff;
+      background: $action-color;
+      align-self: baseline;
+    }
+    a:hover {
+      background: lighten($action-color, 10%);
+    }
+  }
+  li.active > a {
+    border-left: 1px solid $action-color;
+    border-right: 1px solid $action-color;
+    border-top: 1px solid $action-color;
+    background: #fff;
+    color: #333;
+    margin-right: 8px;
+    margin-left: 8px;
+  }
+
+  li.disabled > a {
+    background: #fff;
+    color: #999999;
+    border-bottom: 1px solid #ddd;
+  }
+}
+
+.options-label {
+  font-size: 1.2em;
+}
+
+.margin-extra-right {
+  margin-right: 10px;
+}
+
+.options-bg {
+  background: $options-color;
+  border-bottom: 1px solid #ccc;
+}
+
+.action-with-bg {
+  background: $options-color !important;
+}
+
+.minified-options {
+  background: #fff;
+}
+
+// to position content in the explore tab forward
+.position-forward {
+  z-index: 3;
 }

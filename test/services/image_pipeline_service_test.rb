@@ -110,8 +110,13 @@ class ImagePipelineServiceTest < ActiveSupport::TestCase
     end
 
     # should fail because file is not in bucket
+    # use mock to suppress error logging
     assert_raise ArgumentError do
-      ImagePipelineService.run_render_expression_arrays_job(@study, @cluster_file, @dense_matrix)
+      mock = Minitest::Mock.new
+      mock.expect :workspace_file_exists?, false, [String, String]
+      ApplicationController.stub :firecloud_client, mock do
+        ImagePipelineService.run_render_expression_arrays_job(@study, @cluster_file, @dense_matrix)
+      end
     end
   end
 

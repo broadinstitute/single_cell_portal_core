@@ -3,7 +3,6 @@
  *
  */
 import * as Sentry from '@sentry/react'
-import { BrowserTracing } from '@sentry/tracing'
 import { getSCPContext } from '~/providers/SCPContextProvider'
 
 /**
@@ -54,7 +53,8 @@ export function logJSFetchErrorToSentry(error, titleInfo = '', useThrottle = fal
 function printSuppression(errorObj, reason) {
   const reasonMap = {
     environment: 'in an unlogged environment',
-    throttle: 'this event is throttled by client'
+    throttle: 'this event is throttled by client',
+    ignored: 'this error is permanently ignored'
   }
 
   const message = `Suppressing error report to Sentry: ${reasonMap[reason]}`
@@ -73,6 +73,11 @@ function getIsSuppressedEnv() {
   return ['development', 'test'].includes(env)
 }
 
+/** Determine if error is an upstream Bard error that we don't care about */
+function isBardError(errorMsg) {
+  return errorMsg?.match(/Error in (JavaScript|fetch response) when logging event to Bard/)
+}
+
 /**
  * Log to Sentry, except if in unlogged environment or throttled away
  * @param {Object} error - Error object to log to Sentry
@@ -84,9 +89,17 @@ function getIsSuppressedEnv() {
  */
 export function logToSentry(error, useThrottle = false, sampleRate = 0.05) {
   const isThrottled = useThrottle && Math.random() >= sampleRate
-
-  if (getIsSuppressedEnv() || isThrottled) {
-    const reason = isThrottled ? 'throttle' : 'environment'
+  const envIsSuppressed = getIsSuppressedEnv()
+  const bardError = isBardError(error?.message)
+  if (bardError || isThrottled || envIsSuppressed) {
+    let reason
+    if (bardError) {
+      reason = 'ignored'
+    } else if (isThrottled) {
+      reason = 'throttle'
+    } else {
+      reason = 'environment'
+    }
     printSuppression(error, reason)
     return
   }
@@ -100,7 +113,13 @@ export function logToSentry(error, useThrottle = false, sampleRate = 0.05) {
 export function setupSentry() {
   Sentry.init({
     dsn: 'https://a713dcf8bbce4a26aa1fe3bf19008d26@o54426.ingest.sentry.io/1424198',
-    integrations: [new BrowserTracing()],
+    integrations: [
+      new Sentry.BrowserTracing(),
+      new Sentry.Replay()
+    ],
+
+    // replays sampling rates - this will only record replays for 5% of errors that are reported
+    replaysOnErrorSampleRate: 0.05,
 
     // Sampling rate for transactions, which enrich Sentry events with traces
     tracesSampleRate: getIsSuppressedEnv() ? 0 : 1.0,

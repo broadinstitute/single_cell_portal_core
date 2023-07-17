@@ -9,9 +9,23 @@
   }
 }
 
+.de-source {
+  font-weight: normal;
+}
+
+.badge-inverse {
+  color: #555;
+  border: 1px solid #555;
+  background-color: #fff;
+}
+
 .de-table-buttons {
   float: right;
   margin-right: -8px;
+}
+
+.pagination {
+  margin: 2px;
 }
 
 .de-download-button {
@@ -20,10 +34,27 @@
   vertical-align: middle;
   padding: 2px 5px;
   border-radius: 4px;
+  color: $action-color;
+}
+
+.de-reset-button {
+  margin-right: 0.6em;
+  color: $action-color;
+}
+
+.de-dot-plot-button {
+  margin-right: 0.5em;
+  padding: 2px 5px;
+
+  .de-dot-plot-icon {
+    position: relative;
+    top: 2px;
+    margin-right: 5px;
+  }
 }
 
 .de-search-box {
-  width: 170px;
+  width: 150px;
   border: 1px solid #CCC;
   border-radius: 3px;
   height: 24px;
@@ -41,7 +72,7 @@
 }
 
 .de-search-input {
-  width: 130px;
+  width: 110px;
 }
 
 .clear-de-search-icon {
@@ -67,4 +98,27 @@
 
 .no-de-summary {
   padding-left: 10px
+}
+
+.differential-expression-picker {
+  margin-bottom: 20px;
+
+  .one-vs-rest-select {
+    float: left;
+    width: calc(100% - 100px); // leave room for vs-note content
+  }
+
+  .pairwise-select {
+    float: left;
+    width: calc(45%); // leave room for vs-note, other select
+  }
+  .pairwise-select-b {
+    float: right;
+  }
+
+  .vs-note {
+    position: relative;
+    top: 10px;
+    margin-left: 10px;
+  }
 }

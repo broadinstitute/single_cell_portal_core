@@ -82,14 +82,14 @@ export default function KeywordSearch({ keywordPrompt }) {
           placeholder={placeholder}
           name="keywordText"/>
         <div className="input-group-append">
-          <Button type='submit'>
+          <Button type='submit' aria-label='Search keywords'>
             <FontAwesomeIcon icon={faSearch} />
           </Button>
         </div>
         { showClear &&
           <Button className="keyword-clear"
             type='button'
-            onClick={handleClear} >
+            onClick={handleClear} aria-label='Clear' >
             <FontAwesomeIcon icon={faTimes} />
           </Button> }
       </InputGroup>

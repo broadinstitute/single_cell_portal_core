@@ -361,6 +361,23 @@ export async function deleteStudyFile(studyAccession, fileId, mock=false) {
   return response
 }
 
+/**
+ * Deletes a clustering fragment
+ *
+ * @param {String} studyAccession Study accession
+ * @param {fileId} the guid of the file to delete
+ * @param {fragId} the guid of the file to delete
+
+*/
+export async function deleteAnnDataFragment(studyAccession, fileId, fragId, mock=false) {
+  const apiUrl = `/studies/${studyAccession}/study_files/${fileId}/${fragId}`
+  const init = Object.assign({}, defaultInit(), {
+    method: 'DELETE'
+  })
+  const [response] = await scpApi(apiUrl, init, mock, false)
+  return response
+}
+
 
 /**
  * Fetches a given resource from a GCP bucket -- this handles adding the
@@ -907,26 +924,30 @@ export default async function scpApi(
     } else {
       return [response, perfTimes, true]
     }
-  } else if (response.status === 401 || response.status === 403) {
-    showMessage(
-      <div>
-        Authentication failed<br/>
-        Your session may have timed out. Please sign in again.<br/><br/>
-      </div>,
-      'api-auth-failure',
-      {
-        source: 'api',
-        url,
-        isError: true,
-        messageType: 'error-client',
-        statusCode: response.status
-      }
-    )
-    throw new Error(`Authentication error: ${response.status}`)
   }
   if (toJson) {
     const json = await response.json()
-    if (Array.isArray(json.errors)) {
+    // special handling for Terra terms of service checks
+    // don't throw error so we can pass back JSON response
+    if (typeof json.must_accept !== 'undefined') {
+      return [camelcaseKeys(json)]
+    } else if (response.status === 401 || response.status === 403) {
+      showMessage(
+        <div>
+          Authentication failed<br/>
+          Your session may have timed out. Please sign in again.<br/><br/>
+        </div>,
+        'api-auth-failure',
+        {
+          source: 'api',
+          url,
+          isError: true,
+          messageType: 'error-client',
+          statusCode: response.status
+        }
+      )
+      throw new Error(`Authentication error: ${response.status}`)
+    } else if (Array.isArray(json.errors)) {
       throw new ApiError(json, response.status, path)
     } else {
       throw new Error(json.error || json.errors)

@@ -274,7 +274,7 @@ class StudiesController < ApplicationController
       # delete firecloud workspace so it can be reused (unless specified by user), and raise error if unsuccessful
       # if successful, we're clear to queue the study for deletion
       # if a study is detached, then force the 'persist' option as it will fail otherwise
-      if params[:workspace] == 'persist' || @study.detached
+      if params[:workspace] == 'persist' || @study.detached?
         @study.update(firecloud_workspace: SecureRandom.uuid)
       else
         begin
@@ -983,7 +983,9 @@ class StudiesController < ApplicationController
                                                  :cluster_name, :annotation_name],
                                        expression_file_info_attributes: [:id, :library_preparation_protocol, :units,
                                                                          :biosample_input_type, :modality, :is_raw_counts,
-                                                                         raw_counts_associations: []])
+                                                                         raw_counts_associations: []],
+                                       differential_expression_file_info_attributes: [:_id, :clustering_association, :annotation_association, :computational_method]
+                                       )
   end
 
   def directory_listing_params
@@ -1112,7 +1114,7 @@ class StudiesController < ApplicationController
 
   # check if a study is 'detached' and handle accordingly
   def check_study_detached
-    if @study.detached
+    if @study.detached?
       redirect_to merge_default_redirect_params(request.referrer, scpbr: params[:scpbr]),
                   alert: "We were unable to complete your request as the study is question is detached from the workspace " \
                          "(maybe the workspace was deleted?).  #{SCP_SUPPORT_EMAIL}" and return

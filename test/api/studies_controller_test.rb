@@ -2,14 +2,15 @@ require 'api_test_helper'
 require 'user_tokens_helper'
 require 'test_helper'
 require 'includes_helper'
+require 'detached_helper'
 
 class StudiesControllerTest < ActionDispatch::IntegrationTest
 
   before(:all) do
     @user = FactoryBot.create(:api_user, test_array: @@users_to_clean)
     @user_2 = FactoryBot.create(:api_user, test_array: @@users_to_clean)
-    @study = FactoryBot.create(:study,
-                               name_prefix: "Test Studies API",
+    @study = FactoryBot.create(:detached_study,
+                               name_prefix: 'Test Studies API',
                                user: @user,
                                public: true,
                                test_array: @@studies_to_clean)
@@ -19,7 +20,7 @@ class StudiesControllerTest < ActionDispatch::IntegrationTest
   end
 
   after(:all) do
-    Study.where(name: /#{@random_seed}/).map(&:destroy_and_remove_workspace)
+    Study.where(name: /#{@random_seed}/, queued_for_deletion: false).map(&:destroy_and_remove_workspace)
     @feature_flag.destroy
   end
 
@@ -34,28 +35,30 @@ class StudiesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'should get study' do
-    execute_http_request(:get, api_v1_study_path(@study))
-    assert_response :success
-    # check all attributes against database
-    @study.attributes.each do |attribute, value|
-      if attribute =~ /_id/ && attribute != 'bucket_id' # make sure we're not parsing string as JSON
-        assert json[attribute] == JSON.parse(value.to_json), "Attribute mismatch: #{attribute} is incorrect, expected #{JSON.parse(value.to_json)} but found #{json[attribute.to_s]}"
-      elsif attribute =~ /_at/
-        assert_equal value.to_i, DateTime.parse(json[attribute]).to_i, "Attribute mismatch: #{attribute} is incorrect, expected #{value} but found #{DateTime.parse(json[attribute])}"
-      else
-        assert json[attribute] == value, "Attribute mismatch: #{attribute} is incorrect, expected #{value} but found #{json[attribute.to_s]}"
+    mock_not_detached @study, :any_of do
+      execute_http_request(:get, api_v1_study_path(@study))
+      assert_response :success
+      # check all attributes against database
+      @study.attributes.each do |attribute, value|
+        if attribute =~ /_id/ && attribute != 'bucket_id' # make sure we're not parsing string as JSON
+          assert json[attribute] == JSON.parse(value.to_json), "Attribute mismatch: #{attribute} is incorrect, expected #{JSON.parse(value.to_json)} but found #{json[attribute.to_s]}"
+        elsif attribute =~ /_at/
+          assert_equal value.to_i, DateTime.parse(json[attribute]).to_i, "Attribute mismatch: #{attribute} is incorrect, expected #{value} but found #{DateTime.parse(json[attribute])}"
+        else
+          assert json[attribute] == value, "Attribute mismatch: #{attribute} is incorrect, expected #{value} but found #{json[attribute.to_s]}"
+        end
       end
+
+      # ensure we can get study by accession
+      execute_http_request(:get, "/single_cell/api/v1/studies/#{@study.accession}")
+      assert_response :success
+      assert_equal @study.accession, json['accession']
+
+      # ensure other users cannot access study
+      sign_in_and_update(@user_2)
+      execute_http_request(:get, api_v1_study_path(@study), user: @user_2)
+      assert_response 403
     end
-
-    # ensure we can get study by accession
-    execute_http_request(:get, "/single_cell/api/v1/studies/#{@study.accession}")
-    assert_response :success
-    assert_equal @study.accession, json['accession']
-
-    # ensure other users cannot access study
-    sign_in_and_update(@user_2)
-    execute_http_request(:get, api_v1_study_path(@study), user: @user_2)
-    assert_response 403
   end
 
   # create, update & delete tested together to use new object rather than main testing study
@@ -93,19 +96,21 @@ class StudiesControllerTest < ActionDispatch::IntegrationTest
 
   # get the study manifest for a study
   test 'should get study manifest' do
-    totat = @user.create_totat(30, manifest_api_v1_study_path(@study))
-    get manifest_api_v1_study_path(@study), params: { auth_code: totat[:totat] }
-    assert_response :success
+    mock_not_detached @study, :any_of do
+      totat = @user.create_totat(30, manifest_api_v1_study_path(@study))
+      get manifest_api_v1_study_path(@study), params: { auth_code: totat[:totat] }
+      assert_response :success
 
-    # should fail with bad totat
-    totat = @user.create_totat(30, manifest_api_v1_study_path(@study))
-    get manifest_api_v1_study_path(@study), params: { auth_code: 'haxxor' }
-    assert_response 401
+      # should fail with bad totat
+      totat = @user.create_totat(30, manifest_api_v1_study_path(@study))
+      get manifest_api_v1_study_path(@study), params: { auth_code: 'haxxor' }
+      assert_response 401
 
-    # should fail if totat for a different purpose
-    totat = @user.create_totat(30, "/api/v1/some/other/thing")
-    get manifest_api_v1_study_path(@study), params: { auth_code: totat[:totat] }
-    assert_response 401
+      # should fail if totat for a different purpose
+      totat = @user.create_totat(30, "/api/v1/some/other/thing")
+      get manifest_api_v1_study_path(@study), params: { auth_code: totat[:totat] }
+      assert_response 401
+    end
   end
 
   # test sync function by manually creating a new study using FireCloudClient methods, adding shares and files to the bucket,
@@ -177,37 +182,41 @@ class StudiesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'should enforce edit access restrictions on studies' do
-    # auth as other user
-    sign_in_and_update(@user_2)
-    update_attributes = {
-      study: {
-        public: false
+    mock_not_detached @study, :any_of do
+      # auth as other user
+      sign_in_and_update(@user_2)
+      update_attributes = {
+        study: {
+          public: false
+        }
       }
-    }
-    execute_http_request(:patch, api_v1_study_path(id: @study.id.to_s), request_payload: update_attributes, user: @user_2)
-    assert_response 403
+      execute_http_request(:patch, api_v1_study_path(id: @study.id.to_s), request_payload: update_attributes, user: @user_2)
+      assert_response 403
+    end
   end
 
   test 'should get study file_info hash' do
-    sign_in_and_update(@user)
-    execute_http_request(:get, file_info_api_v1_study_path(@study.accession, params: {include_options: true}), user: @user)
-    assert_response :success
-    %w[study files feature_flags menu_options].each do |key|
-      assert json.keys.include?(key), "Did not find #{key} in json response: #{json.keys}"
+    mock_not_detached @study, :any_of do
+      sign_in_and_update(@user)
+      execute_http_request(:get, file_info_api_v1_study_path(@study.accession, params: {include_options: true}), user: @user)
+      assert_response :success
+      %w[study files feature_flags menu_options].each do |key|
+        assert json.keys.include?(key), "Did not find #{key} in json response: #{json.keys}"
+      end
+      # validate that feature flags are represented
+      @user.set_flag_option(@feature_flag.name, true)
+      @user.reload
+      execute_http_request(:get, file_info_api_v1_study_path(@study.accession), user: @user)
+      assert_response :success
+      returned_flag = json.dig('feature_flags', @feature_flag.name)
+      assert returned_flag
+      # confirm study overrides user flags
+      @study.set_flag_option(@feature_flag.name, false)
+      @study.reload
+      execute_http_request(:get, file_info_api_v1_study_path(@study.accession), user: @user)
+      assert_response :success
+      returned_flag = json.dig('feature_flags', @feature_flag.name)
+      assert_not returned_flag
     end
-    # validate that feature flags are represented
-    @user.set_flag_option(@feature_flag.name, true)
-    @user.reload
-    execute_http_request(:get, file_info_api_v1_study_path(@study.accession), user: @user)
-    assert_response :success
-    returned_flag = json.dig('feature_flags', @feature_flag.name)
-    assert returned_flag
-    # confirm study overrides user flags
-    @study.set_flag_option(@feature_flag.name, false)
-    @study.reload
-    execute_http_request(:get, file_info_api_v1_study_path(@study.accession), user: @user)
-    assert_response :success
-    returned_flag = json.dig('feature_flags', @feature_flag.name)
-    assert_not returned_flag
   end
 end

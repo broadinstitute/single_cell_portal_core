@@ -459,6 +459,33 @@ export const IMAGE_FILE = {
 }
 
 export const ANNDATA_FILE = {
+  ann_data_file_info: {
+    reference_file: false,
+    data_fragments: [
+      {
+        '_id': '123445681',
+        'data_type': 'expression',
+        'taxon_id': '60b9175a6e5ec555cec81696',
+        'expression_file_info': {
+          'library_preparation_protocol': '10x 3\' v2',
+          'units': 'UMI-corrected raw counts',
+          'biosample_input_type': 'Whole cell',
+          'modality': 'Transcriptomic: unbiased',
+          'is_raw_counts': 'false'
+        }
+      },
+      {
+        '_id': '123445682',
+        'data_type': 'cluster',
+        'name': 'i am a clustering',
+        'description': '',
+        'obsm_key_name': 'X_umap',
+        'spatial_cluster_associations': [
+          ''
+        ]
+      }
+    ]
+  },
   created_at: '2021-11-15T18:31:41.598Z',
   data_dir: '71e1a89e5c5d9300aabd0e757d1b569eb66644872b40bcbb720e2b39bc7e3822',
   description: '',
@@ -467,7 +494,7 @@ export const ANNDATA_FILE = {
   is_spatial: false,
   name: 'anndata.h5ad',
   options: {},
-  parse_status: 'unparsed',
+  parse_status: 'parsed',
   queued_for_deletion: false,
   remote_location: '',
   status: 'uploaded',
@@ -606,4 +633,44 @@ export const EMPTY_STUDY = {
   files: [],
   feature_flags: {},
   menu_options: BASIC_MENU_OPTIONS
+}
+
+export const GENERIC_EXPLORE_INFO = {
+  'inferCNVIdeogramFiles': null,
+  'bamBundleList': [],
+  'uniqueGenes': [
+    'ADCY5',
+    'AGPAT2'
+  ],
+  'geneLists': [
+    {
+      'name': 'time_varying_genes',
+      'heatmap_file_info': {
+        '_id': {
+          '$oid': '626892f3cc7ba073111aae92'
+        },
+        'custom_scaling': true,
+        'color_min': -1,
+        'color_max': 0.6,
+        'legend_label': 'diffExp4'
+      },
+      'description': 'genes varying over time (SCP4 staging)'
+    }
+  ],
+  'precomputedHeatmapLabel': 'custom diff. expression',
+  'annotationList': {
+    'default_cluster': null,
+    'default_annotation': null,
+    'annotations': [],
+    'clusters': [],
+    'subsample_thresholds': {}
+  },
+  'clusterGroupNames': [],
+  'spatialGroups': [],
+  'imageFiles': [],
+  'taxonNames': [],
+  'genes': [],
+  'clusterPointAlpha': 1,
+  'colorProfile': null,
+  'bucketId': 'fc-6e8a0a4d-6493-401c-b47c-1025a583f237'
 }

@@ -94,8 +94,8 @@ class IngestJobTest < ActiveSupport::TestCase
     now = DateTime.now.in_time_zone
     mock_metadata = {
       events: [
-        { timestamp: now.to_s },
-        { timestamp: (now + 1.minute).to_s, details: { exitStatus: 0 } }
+        { timestamp: now.to_s }.with_indifferent_access,
+        { timestamp: (now + 1.minute).to_s, containerStopped: { exitStatus: 0 } }.with_indifferent_access
       ],
       pipeline: {
         resources: {
@@ -115,7 +115,7 @@ class IngestJobTest < ActiveSupport::TestCase
     cells = @basic_study.expression_matrix_cells(@basic_study_exp_file)
     num_cells = cells.present? ? cells.count : 0
 
-    ApplicationController.papi_client.stub :get_pipeline, mock do
+    ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
       expected_outputs = {
         perfTime: 60000,
         fileType: @basic_study_exp_file.file_type,
@@ -145,7 +145,7 @@ class IngestJobTest < ActiveSupport::TestCase
     mock_metadata = {
       events: [
         { timestamp: now.to_s },
-        { timestamp: (now + 2.minutes).to_s, details: { exitStatus: 1 } }
+        { timestamp: (now + 2.minutes).to_s, containerStopped: { exitStatus: 1 } }
       ],
       pipeline: {
         resources: {
@@ -163,7 +163,7 @@ class IngestJobTest < ActiveSupport::TestCase
     mock.expect :done?, true
 
 
-    ApplicationController.papi_client.stub :get_pipeline, mock do
+    ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
       expected_outputs = {
         perfTime: 120000,
         fileType: @other_matrix.file_type,
@@ -304,6 +304,123 @@ class IngestJobTest < ActiveSupport::TestCase
       job.launch_differential_expression_jobs
       mock.verify
       job_mock.verify
+    end
+  end
+
+  test 'should create differential expression results from user-uploaded file' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'User DE Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    coords = 1.upto(20).to_a
+    cells = coords.map { |i| "cell_#{i}" }
+    cluster_name = 'de_cluster.txt'
+    cell_types = [
+      'B cells', 'CSN1S1 macrophages', 'dendritic cells', 'eosinophils', 'fibroblasts', 'GPMNB macrophages', 'LC1',
+      'LC2', 'neutrophils', 'T cells'
+    ]
+    values = cell_types + cell_types
+    FactoryBot.create(:metadata_file,
+                      name: 'metadata.txt',
+                      study:,
+                      cell_input: cells,
+                      annotation_input: [{ name: 'cell_type__custom', type: 'group', values: }]
+    )
+    cluster_file = FactoryBot.create(:cluster_file,
+                                     name: cluster_name,
+                                     study:,
+                                     cell_input: { x: coords, y: coords, cells: }
+    )
+    cluster_group = ClusterGroup.find_by(study:, study_file: cluster_file)
+    de_file = FactoryBot.create(:differential_expression_file,
+                                study:,
+                                name: 'user_de.txt',
+                                annotation_name: 'cell_type__custom',
+                                annotation_scope: 'study',
+                                cluster_group:,
+                                computational_method: 'custom'
+    )
+    job = IngestJob.new(study:, study_file: de_file, action: :ingest_differential_expression, user: @user)
+    mock = Minitest::Mock.new
+    manifest = File.open(
+      Rails.root.join('test', 'test_data', 'differential_expression', 'All_Cells_UMAP--General_Celltype--manifest.tsv')
+    )
+    mock.expect(:execute_gcloud_method, manifest, [:read_workspace_file, 0, study.bucket_id, String])
+    ApplicationController.stub :firecloud_client, mock do
+      job.create_user_differential_expression_results
+      mock.verify
+
+      de_result = DifferentialExpressionResult.find_by(study:, study_file: de_file, annotation_name: 'cell_type__custom')
+      assert de_result.present?
+      assert de_result.is_author_de
+      expected_one_vs_rest = cell_types.dup - ['CSN1S1 macrophages']
+      assert_equal expected_one_vs_rest, de_result.one_vs_rest_comparisons
+      expected_pairwise_keys = cell_types.dup - ['T cells']
+      assert_equal expected_pairwise_keys, de_result.pairwise_comparisons.keys
+      assert_not_includes de_result.pairwise_comparisons['B cells'], 'CSN1S1 macrophages'
+    end
+  end
+
+  test 'should remove non-author differential expression results after user upload' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'DE Auto Cleanup Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    cells = %w[A B C D E F G]
+    coordinates = 1.upto(7).to_a
+    custom_cell_types = [
+      'Custom 2', 'Custom 10', 'Custom 2', 'Custom 10', 'Custom 10', 'Custom 2', 'Custom 2'
+    ]
+    raw_matrix = FactoryBot.create(:expression_file,
+                                   name: 'raw.txt',
+                                   study:,
+                                   expression_file_info: {
+                                     is_raw_counts: true,
+                                     units: 'raw counts',
+                                     library_preparation_protocol: 'Drop-seq',
+                                     biosample_input_type: 'Whole cell',
+                                     modality: 'Proteomic'
+                                   })
+    cluster_file = FactoryBot.create(:cluster_file,
+                                     name: 'cluster_diffexp.txt',
+                                     study: study,
+                                     cell_input: {
+                                       x: coordinates,
+                                       y: coordinates,
+                                       cells:
+                                     })
+    cluster_group = ClusterGroup.find_by(study:, study_file: cluster_file)
+
+    FactoryBot.create(:metadata_file,
+                      name: 'metadata.txt',
+                      study:,
+                      cell_input: cells,
+                      annotation_input: [
+                        {
+                          name: 'cell_type__custom',
+                          type: 'group',
+                          values: custom_cell_types
+                        }
+                      ])
+    result = DifferentialExpressionResult.create(
+        study:, cluster_group:, annotation_name: 'cell_type__custom', annotation_scope: 'study',
+        matrix_file_id: raw_matrix.id
+    )
+    job = IngestJob.new(study:, action: :ingest_differential_expression)
+    mock = Minitest::Mock.new
+    result.bucket_files.each do |file|
+      file_mock = Minitest::Mock.new
+      file_mock.expect :present?, true
+      file_mock.expect :delete, true
+      mock.expect :get_workspace_file, file_mock, [study.bucket_id, file]
+    end
+    ApplicationController.stub :firecloud_client, mock do
+      study.stub :detached, false do
+        job.delete_auto_differential_expression_results
+        mock.verify
+
+        assert DifferentialExpressionResult.where(study:).empty?
+      end
     end
   end
 end

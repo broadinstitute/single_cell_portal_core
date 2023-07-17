@@ -272,7 +272,8 @@ module Api
                 k[:id] = k[:id].to_s
                 k[:taxon_id] = k[:taxon_id].to_s;
                 k
-              end
+              end,
+            de_computational_method: DifferentialExpressionResult::SUPPORTED_COMP_METHODS
           }
         end
         render json: response_obj

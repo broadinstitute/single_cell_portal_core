@@ -3,6 +3,9 @@ import React from 'react'
 
 export const PARSEABLE_TYPES = ['Cluster', 'Coordinate Labels', 'Expression Matrix', 'MM Coordinate Matrix',
   '10X Genes File', '10X Barcodes File', 'Gene List', 'Metadata', 'Analysis Output', 'AnnData']
+// file types to ignore in CSFV context (still validated server-side)
+export const UNVALIDATED_TYPES = ['AnnData']
+export const CSFV_VALIDATED_TYPES = PARSEABLE_TYPES.filter(ft => !UNVALIDATED_TYPES.includes(ft))
 
 const EXPRESSION_INFO_TYPES = ['Expression Matrix', 'MM Coordinate Matrix']
 
@@ -49,7 +52,8 @@ export function newStudyFileObj(studyId) {
     parse_status: 'unparsed',
     spatial_cluster_associations: [],
     expression_file_info: {},
-    heatmap_file_info: {}
+    heatmap_file_info: {},
+    differential_expression_file_info: {}
   }
 }
 
@@ -173,7 +177,7 @@ export function validateFile({ file, allFiles, allowedFileExts=[], requiredField
 
   const validationMessages = {}
   if (file.status === 'new') {
-    if (!file.uploadSelection) {
+    if (!file.uploadSelection && !isAnnDataExperience) {
       validationMessages.uploadSelection = 'You must select a file to upload'
     }
   }
@@ -240,6 +244,7 @@ export function addObjectPropertyToForm(obj, propertyName, formData, nested) {
   if (propertyName === '_id') {
     appendFormData(formData, propertyName, getIdValue(obj[propertyName]))
   }
+
   if (DEEPLY_NESTED_PROPS.includes(propertyName)) {
     obj[propertyName].forEach(fragment => {
       Object.keys(fragment).forEach(fragmentKey => {
@@ -313,7 +318,6 @@ export function generateMongoId() {
 
 const plainTextExtensions = ['.txt', '.tsv', '.text', '.csv']
 const mtxExtensions = ['.mtx', '.mm', '.txt', '.text']
-const imageExtensions = ['.jpeg', '.jpg', '.png', '.bmp']
 const miscExtensions = ['.txt', '.text', '.tsv', '.csv', '.jpg', '.jpeg', '.png', '.pdf',
   '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip', '.loom', '.ipynb']
 const sequenceExtensions = ['.fq', '.fastq', '.fq.tar.gz', '.fastq.tar.gz', '.fq.gz', '.fastq.gz', '.bam']
@@ -324,7 +328,6 @@ const seuratExtensions = ['.Rds', '.rds', '.RDS', '.seuratdata', '.h5seurat', '.
 export const FileTypeExtensions = {
   plainText: plainTextExtensions.concat(plainTextExtensions.map(ext => `${ext}.gz`)),
   mtx: mtxExtensions.concat(mtxExtensions.map(ext => `${ext}.gz`)),
-  image: imageExtensions,
   misc: miscExtensions.concat(miscExtensions.map(ext => `${ext}.gz`)),
   sequence: sequenceExtensions,
   bai: baiExtensions,
