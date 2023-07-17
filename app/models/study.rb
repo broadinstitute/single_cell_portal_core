@@ -822,13 +822,9 @@ class Study
   # google allows arbitrary periods in email addresses so if the email is a gmail account remove any excess periods
   def remove_gmail_periods(email_address)
     email_address = email_address.downcase
-    if email_address.end_with?('gmail.com')
-      # sub out any periods with blanks, then replace the period for the '.com' at the end of the address
-      email_address = email_address.gsub('.', '').gsub(/com\z/, '.com')
-      return email_address
-    else 
-      return email_address
-    end
+    return email_address unless email_address.end_with?('gmail.com')
+    # sub out any periods with blanks, then replace the period for the '.com' at the end of the address
+    email_address = email_address.gsub('.', '').gsub(/com\z/, '.com')
   end
 
   # check if a given user can view study by share (does not take public into account - use Study.viewable(user) instead)
@@ -837,9 +833,9 @@ class Study
       false
     else
       # use if/elsif with explicit returns to ensure skipping downstream calls
-      if self.study_shares.can_view.map{
-        |email_address| remove_gmail_periods(email_address)
-      }.include?(remove_gmail_periods(user.email))
+      if self.study_shares.can_view.map do |email_address| 
+        remove_gmail_periods(email_address)
+      end.include?(remove_gmail_periods(user.email))
         return true
       elsif self.can_edit?(user)
         return true
