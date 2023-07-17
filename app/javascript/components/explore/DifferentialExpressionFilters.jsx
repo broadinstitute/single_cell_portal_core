@@ -168,7 +168,6 @@ export default function DifferentialExpressionFilters({
       const slider = document.querySelector(sliderSelector)
 
       if (!slider.noUiSlider) {
-        // const range = rangesByMetric[metric]
         const config = getSliderConfig(metric)
         noUiSlider.create(slider, config)
         if (metric === 'log2FoldChange') {
