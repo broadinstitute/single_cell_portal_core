@@ -12,7 +12,16 @@ require 'test_helper'
 class FireCloudClientTest < ActiveSupport::TestCase
 
   before(:all) do
-    @fire_cloud_client = ApplicationController.firecloud_client
+    if ENV['ORCH_SMOKE_TEST'] == 'true'
+      @fire_cloud_client = FireCloudClient.new(
+        api_root: 'https://firecloud-orchestration.dsde-staging.broadinstitute.org'
+      )
+      puts "SMOKE TEST: #{@fire_cloud_client.attributes}"
+      exit
+    else
+      @fire_cloud_client = ApplicationController.firecloud_client
+    end
+
     @test_email = 'singlecelltest@gmail.com'
     @random_test_seed = SecureRandom.uuid # use same random seed to differentiate between entire runs
     @resource_error_msg = 'Resource representation is only available with these types' # for error handling
