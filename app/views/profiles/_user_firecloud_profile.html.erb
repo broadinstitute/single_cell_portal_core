@@ -1,9 +1,7 @@
 <%= form_for(@fire_cloud_profile, url: update_user_firecloud_profile_path, html: {class: 'form', id: 'firecloud-profile', data: {remote: true}}) do |f| %>
   <%= f.hidden_field :email %>
   <div class="bs-callout bs-callout-primary">
-    <p class="text-primary">Use this form to register or update your Terra profile.
-      <span class="text-danger"> <i class="fas fa-fw fa-exclamation-triangle"></i> All fields are required.</span>
-    </p>
+    <p class="text-primary">Use this form to register or update your Terra profile. <span class="text-danger"><i class="fas fa-fw fa-exclamation-triangle"></i> All fields are required.</span></p>
   </div>
   <% if @fire_cloud_profile.errors.any? %>
     <div class="bs-callout bs-callout-danger" id="study-errors-block">
@@ -77,19 +75,7 @@
 
     <div class="form-group row">
       <div class="col-xs-12 text-center">
-        <div class="checkbox">
-          <h4>
-            <label for="fire_cloud_profile_termsOfService">
-              <%= f.check_box :termsOfService, { checked: false }, FireCloudProfile::TERRA_TOS_URL, '' %>
-              I have read and accept Terra's
-              <%= link_to 'terms of service', FireCloudProfile::TERRA_TOS_URL, target: :_blank %>
-            </label>
-          </h4>
-        </div>
-        <%= link_to 'Update profile', '#/',
-                    class: 'btn btn-lg btn-success',
-                    id: 'update-user-firecloud-profile',
-                    disabled: true %>
+        <%= link_to 'Update profile', '#/', class: 'btn btn-lg btn-success', id: 'update-user-firecloud-profile'%>
       </div>
     </div>
   </div>
@@ -97,13 +83,7 @@
 <% end %>
 
 <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
-    const submitBtn = $('#update-user-firecloud-profile')
-    $('#fire_cloud_profile_termsOfService').click(function() {
-      let hasAccepted = $(this).prop('checked')
-      submitBtn.attr('disabled', !hasAccepted)
-    });
-
-    submitBtn.click(function(event) {
+    $('#firecloud-profile .form-control').click(function(event) {
         var formElements = $('#firecloud-profile .form-control');
         var valid = true;
         formElements.each(function(index, el) {
