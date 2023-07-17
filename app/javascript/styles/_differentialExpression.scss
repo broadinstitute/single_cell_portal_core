@@ -25,7 +25,7 @@
 }
 
 .pagination {
-  margin: 2px;
+  margin: -10px 0 4px 0;
 }
 
 .de-download-button {
@@ -121,4 +121,62 @@
     top: 10px;
     margin-left: 10px;
   }
+}
+
+
+.de-slider-container {
+  margin-bottom: 40px;
+  margin-left: 15px;
+}
+
+.de-slider-container:last-of-type {
+  margin-bottom: 20px;
+}
+
+.de-slider-checkbox-container {
+  margin-left: -25px;
+}
+
+.de-slider-checkbox-container label {
+  font-weight: normal;
+  margin-left: 5px;
+}
+
+.de-slider {
+  width: calc(100% - 100px);
+  float: left;
+  margin-left: 90px;
+  position: relative;
+  top: -20px;
+}
+
+@media (max-width: 1415px) {
+  .de-slider-checkbox-container input {
+    display: block;
+  }
+  .de-slider-checkbox-container label {
+    margin-left: 0px;
+  }
+  .de-slider {
+    width: calc(100% - 80px);
+    margin-left: 70px;
+  }
+}
+
+.explore-tab-content {
+  .noUi-value-horizontal {transform: translate(-50%, 50%);}
+  .noUi-horizontal {height: 10px; z-index: 0;}
+  .noUi-horizontal .noUi-handle {width: 20px; right: -10px; height: 22px; top: -6px;}
+  .noUi-handle:before, .noUi-handle:before {left: 7px; top: 3px;}
+  .noUi-handle:after, .noUi-handle:after {left: 10px; top: 3px;}
+  .noUi-marker-horizontal.noUi-marker-large {height: 10px;}
+  .noUi-marker .noUi-marker-horizontal .noUi-marker-normal {height: 3px;}
+  .noUi-horizontal .noUi-tooltip {bottom: 115%;}
+  .noUi-tooltip {padding: 0 3px; font-size: 12px;}
+  .noUi-connect {background-color: $action-color}
+  .noUi-pips {font-size: 13px;}
+  .noUi-pips-horizontal {padding: 5px 0 0 0; height: inherit;}
+
+  .inactive .noUi-connect {background: #AAA;}
+  .inactive .noUi-tooltip {color: #AAA;}
 }

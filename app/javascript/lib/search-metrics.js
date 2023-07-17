@@ -298,16 +298,16 @@ export function logSelectSearchResult(study, logProps={}) {
  * Log search of the differential expression table, to find genes in it.
  */
 export function logDifferentialExpressionTableSearch(genes, speciesList, otherProps) {
-
   // Log blank gene searches (e.g. upon clearing) as searching 0 genes, not 1
-  if (genes.length === 1 && genes[0] === '') genes = []
+  if (genes.length === 1 && genes[0] === '') {genes = []}
 
   numDifferentialExpressionTableSearches += 1
+  const trigger = otherProps.trigger
 
   const props = Object.assign({
     type: 'gene',
     context: 'differential-expression-table',
-    trigger: 'change',
+    trigger,
     genes,
     numGenes: genes.length,
     speciesList,
