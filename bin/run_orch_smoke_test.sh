@@ -45,4 +45,4 @@ docker run --rm -t --name single_cell_test -h localhost -v "$(pwd):/home/app/web
 	-e GOOGLE_CLOUD_PROJECT="$GOOGLE_CLOUD_PROJECT" -e CODECOV_TOKEN="$CODECOV_TOKEN" \
 	-e RAILS_LOG_TO_STDOUT="$RAILS_LOG_TO_STDOUT" -e CI="$CI" \
 	-e GOOGLE_PROJECT_NUMBER="$GOOGLE_PROJECT_NUMBER" $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_VERSION \
-	bin/rails test test/integration/external/fire_cloud_client_test.rb
+	RAILS_ENV=$PASSENGER_APP_ENV bin/rails test test/integration/external/fire_cloud_client_test.rb

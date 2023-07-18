@@ -38,7 +38,6 @@ jobs:
         env:
           VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-          RAILS_LOG_TO_STDOUT: true
           VAULT_ROLE_ID: ${{ secrets.VAULT_ROLE_ID }}
           VAULT_SECRET_ID: ${{ secrets.VAULT_SECRET_ID }}
           ORCH_SMOKE_TEST: true
@@ -66,4 +65,3 @@ jobs:
           name: test-logs
           path: |
             log/test.log
-            log/delayed_job.test.log
