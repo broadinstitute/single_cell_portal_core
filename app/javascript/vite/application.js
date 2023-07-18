@@ -14,7 +14,6 @@ import ValidationMessage from '~/components/validation/ValidationMessage'
 import ClusterAssociationSelect from '~/components/upload/ClusterAssociationSelect'
 import RawAssociationSelect from '~/components/upload/RawAssociationSelect'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
-import checkMissingAuthToken from '~/lib/user-auth-tokens'
 import ValidateFile from '~/lib/validation/validate-file'
 import { setupSentry } from '~/lib/sentry-logging'
 import { clearOldServiceWorkerCaches } from '~/lib/service-worker-cache'
@@ -60,8 +59,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     })
   }
-
-  setTimeout(checkMissingAuthToken, 1000);
+  setTimeout(() => {
+    ScpApi.refreshAuthToken(window.SCP.studyAccession).then(response =>
+      log('refresh auth token', { 'status': response })
+    )
+  }, 1000)
 })
 
 const componentsToExport = {

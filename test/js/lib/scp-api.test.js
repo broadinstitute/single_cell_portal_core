@@ -3,7 +3,7 @@
 import CacheMock from 'browser-cache-mock';
 import 'isomorphic-fetch';
 
-import scpApi, { fetchSearch, fetchFacetFilters, setupRenewalForReadOnlyToken } from 'lib/scp-api'
+import scpApi, { fetchSearch, fetchFacetFilters, setupRenewalForReadOnlyToken, refreshAuthToken } from 'lib/scp-api'
 import * as ServiceWorkerCache from 'lib/service-worker-cache'
 import * as SCPContextProvider from '~/providers/SCPContextProvider'
 
@@ -170,5 +170,42 @@ describe('JavaScript client for SCP REST API', () => {
       done()
     })
   })
+
+  it('should reset the access token when the token is an empty string', async done => {
+    const mockSuccessResponse = {accessToken : 'new_token'}
+    const mockJsonPromise = Promise.resolve(mockSuccessResponse)
+    const mockFetchPromise = Promise.resolve({
+      ok: true,
+      json: () => {
+        mockJsonPromise
+      },
+      clone: () => {}
+    })
+    jest.spyOn(global, 'fetch').mockImplementation(() => mockFetchPromise)
+
+
+    window.SCP = {
+      userAccessToken : 'i_am_a_token',
+      userSignedIn : true
+    }
+
+    // the userAccessToken is present then the call to renew it should not have occurred
+    expect(fetch).toHaveBeenCalledTimes(0);
+
+    window.SCP = {
+      userAccessToken : '',
+      userSignedIn : true
+    }
+
+    await refreshAuthToken('SCP123')
+
+    // the userAccessToken is now an empty string the call to renew it should have been made
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    process.nextTick(() => {
+      done()
+    })
+  })
+
 
 })
