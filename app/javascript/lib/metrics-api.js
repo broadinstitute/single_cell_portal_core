@@ -425,6 +425,9 @@ export function log(name, props = {}) {
     props['tab'] = tab
   }
 
+  props['viewportWidth'] = window.innerWidth
+  props['viewportHeight'] = window.innerHeight
+
   props['timeSincePageLoad'] = Math.round(performance.now())
 
   if (window.SCP && window.SCP.currentStudyAccession) {
