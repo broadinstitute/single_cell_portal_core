@@ -75,7 +75,7 @@
 
     <div class="form-group row">
       <div class="col-xs-12 text-center">
-        <%= link_to 'Update profile', '#/', class: 'btn btn-lg btn-success', id: 'update-user-firecloud-profile'%>
+        <%= link_to 'Update profile', '#/', class: 'btn btn-lg btn-success', id: 'update-user-firecloud-profile' %>
       </div>
     </div>
   </div>
@@ -83,7 +83,7 @@
 <% end %>
 
 <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
-    $('#firecloud-profile .form-control').click(function(event) {
+    $('#update-user-firecloud-profile').click(function(event) {
         var formElements = $('#firecloud-profile .form-control');
         var valid = true;
         formElements.each(function(index, el) {
