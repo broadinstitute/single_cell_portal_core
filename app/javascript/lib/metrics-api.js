@@ -17,6 +17,10 @@ import { setupWebVitalsLog, addPerfMetrics } from './metrics-perf'
 
 let metricsApiMock = false
 
+const numSincePageLoadByEventName = {}
+let numClicksSincePageLoad = 0
+const numSincePageLoadByEventText = {}
+
 const defaultInit = {
   method: 'POST',
   headers: {
@@ -429,6 +433,33 @@ export function log(name, props = {}) {
   props['viewportHeight'] = window.innerHeight
 
   props['timeSincePageLoad'] = Math.round(performance.now())
+
+  // Enables answering e.g.:
+  //  - How many times has the plot legend been clicked on this page load?
+  //  - How many times has the Annotation been changed on this page load?
+  //  - How many clientside file validations have been done on this page load?
+  //  - How many clicks have been done since page load?
+  //  - How many events with this `text` have been done since page load?
+  if (name in numSincePageLoadByEventName) {
+    numSincePageLoadByEventName[name] += 1
+  } else {
+    numSincePageLoadByEventName[name] = 1
+  }
+  props['numThisPageLoad:thisName'] = numSincePageLoadByEventName[name]
+  if (name.includes('click')) {
+    numClicksSincePageLoad += 1
+  }
+  props['numSincePageLoad:clicks'] = numClicksSincePageLoad
+  if ('text' in props || 'label' in props) {
+    const text = 'text' in props ? props['text'] : props['label']
+    if (text in numSincePageLoadByEventText) {
+      numSincePageLoadByEventText[text] += 1
+    } else {
+      numSincePageLoadByEventText[text] = 1
+    }
+    props['numSincePageLoad:thisText'] = numSincePageLoadByEventName[name]
+  }
+
 
   if (window.SCP && window.SCP.currentStudyAccession) {
     props['studyAccession'] = window.SCP.currentStudyAccession
