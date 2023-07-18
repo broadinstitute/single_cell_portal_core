@@ -15,7 +15,7 @@ class FireCloudClientTest < ActiveSupport::TestCase
     @smoke_test = ENV['ORCH_SMOKE_TEST'] == 'true'
     if @smoke_test
       api_root = 'https://firecloud-orchestration.dsde-staging.broadinstitute.org'
-      Rails.logger.info "Running smoke test against Terra orchestration API at #{api_root}"
+      puts "Running smoke test against Terra orchestration API at #{api_root}"
       @fire_cloud_client = FireCloudClient.new(api_root:)
     else
       @fire_cloud_client = ApplicationController.firecloud_client
