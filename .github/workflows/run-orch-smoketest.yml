@@ -1,5 +1,4 @@
 name: Terra Orchestration API Smoke Test
-description: 'Limited CI to run against staging instance of Terra orchestration API'
 on:
   push:
     branches:
