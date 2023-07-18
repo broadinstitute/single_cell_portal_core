@@ -369,18 +369,6 @@ export function logSearchFromDifferentialExpression(
 
   numDifferentialGeneSelections += 1
 
-  // Put DE properties together by prepending them with `de:`.
-  // This makes them more coherent in Network panel and Mixpanel "Events" view
-  const deProps = {}
-  Object.entries(deGene).forEach(([key, value]) => {
-    if (key === 'name') {
-      // Redundant with pre-existing `genes` Mixpanel prop
-      return
-    }
-    deProps[`de:${key}`] = value
-  })
-  deProps['de:rank'] = rank
-
   const otherProps = Object.assign({
     // Consider logging cluster and annotation for all Explore events
     cluster,
@@ -388,7 +376,7 @@ export function logSearchFromDifferentialExpression(
 
     // Helps assess level of engagement
     numEventsSincePageView: numDifferentialGeneSelections
-  }, deProps)
+  })
 
   // Log time since last search via DE gene selection.  This can help answer
   // questions like "How much would instant gene expression plots help?" and
@@ -399,7 +387,7 @@ export function logSearchFromDifferentialExpression(
     otherProps.timeSinceLastSelection = Math.round(timeLast)
   }
 
-  logStudyGeneSearch([deGene.name], trigger, speciesList, otherProps)
+  logStudyGeneSearch(deGene, trigger, speciesList, otherProps)
 
   timeLastDifferentialExpressionSelection = performance.now()
 }
