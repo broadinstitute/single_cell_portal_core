@@ -81,8 +81,11 @@ class FireCloudClient
   # will set the access token, FireCloud api url root and GCP storage driver instance
   #
   # * *params*
+  #   - +service_account+ (String) => File path to JSON keyfile for service account
   #   - +user+: (User) => User object from which access tokens are generated
   #   - +project+: (String) => Default GCP Project to use (can be overridden by other parameters)
+  #   - +api_root+ (String) => URL for base Terra orchestration API instance (defaults to api.firecloud.org)
+  #
   # * *return*
   #   - +FireCloudClient+ object
   def initialize(user: nil, project: nil, service_account: self.class.get_primary_keyfile, api_root: BASE_URL)
@@ -1252,10 +1255,10 @@ class FireCloudClient
   #   - +FireCloudClient+ instance, or nil if user has not registered with Terra
   def self.new_with_pet_account(user, project)
     # create a temporary client in order to retrieve the user's pet service account keyfile
-    tmp_client = self.new(user, project)
+    tmp_client = new(user:, project:)
     if tmp_client.registered?
       pet_service_account_json = tmp_client.get_pet_service_account_key(project)
-      self.new(user, project, pet_service_account_json)
+      new(user:, project:, service_account: pet_service_account_json)
     else
       nil
     end

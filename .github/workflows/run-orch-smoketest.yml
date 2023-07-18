@@ -1,0 +1,69 @@
+name: SCP Continuous Integration
+on:
+  push:
+    branches:
+      - jb-alpha-orch-ci
+      - development
+      - master
+env:
+  DOCKER_IMAGE_NAME: "gcr.io/broad-singlecellportal-staging/single-cell-portal"
+
+jobs:
+  Run-Orch-Smoketest:
+    runs-on: self-hosted
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install vault
+        run: |
+          sudo apt-get update && sudo apt-get -y install curl unzip jq
+          sudo curl -O https://releases.hashicorp.com/vault/1.9.0/vault_1.9.0_linux_amd64.zip
+          sudo unzip vault_1.9.0_linux_amd64.zip
+          sudo mv vault /usr/local/bin
+      - name: Detect changes to Dockerfile
+        id: changed-dockerfile
+        uses: tj-actions/changed-files@v35.4.4
+        with:
+          files: Dockerfile
+      - name: Rebuild local image if Dockerfile changed
+        if: steps.changed-dockerfile.outputs.any_changed == 'true'
+        run: |
+          # the previous step uses the changed-files action to detect if the Dockerfile has any updates
+          # this will require rebuilding the image locally as the downstream "test" image will fail otherwise
+          # see https://github.com/marketplace/actions/changed-files for more info on this action
+          echo "#### CHANGES DETECTED TO DOCKERFILE, REBUILDING IMAGE LOCALLY ####"
+          docker build -t $DOCKER_IMAGE_NAME:development -f Dockerfile .
+      - name: Load secrets and run tests
+        env:
+          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          RAILS_LOG_TO_STDOUT: true
+          VAULT_ROLE_ID: ${{ secrets.VAULT_ROLE_ID }}
+          VAULT_SECRET_ID: ${{ secrets.VAULT_SECRET_ID }}
+          ORCH_SMOKE_TEST: true
+          CI: true
+        run: |
+          export VAULT_TOKEN=$( vault write -field=token auth/approle/login role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID )
+          # The "broad-singlecellportal-staging" GCR repository is used in production.
+          # The "development" tag is used in non-production deployment.  For production deployment, tag is version number for
+          # upcoming release, e.g. 1.20.0.
+          # More context: https://github.com/broadinstitute/single_cell_portal_core/pull/1552#discussion_r910424433
+          # TODO: (SCP-4496): Move production-related GCR images out of staging project
+          # add ci- prefix to avoid post-merge build failing due to missing GITHUB_HEAD_REF
+          # and strip any slashes from GITHUB_HEAD_REF to avoid 'invalid reference format' error with tag
+          # this will happen on dependabot PRs
+          SAFE_HEAD_REF=$(echo $GITHUB_HEAD_REF | sed -e 's/\//_/g')
+          DOCKER_IMAGE_TAG="ci-$SAFE_HEAD_REF-$GITHUB_SHA"
+          docker build -t $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG -f test/Dockerfile-test .
+          bin/load_env_secrets.sh -p secret/kdux/scp/staging/scp_config.json \
+                                  -s secret/kdux/scp/staging/scp_service_account.json \
+                                  -e test -v $DOCKER_IMAGE_TAG -n single-cell-portal-test \
+                                  -c bin/run_orch_smoke_test.sh
+      - name: Preserve all test logs
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-logs
+          path: |
+            log/test.log
+            log/delayed_job.test.log

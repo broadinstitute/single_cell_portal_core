@@ -12,12 +12,11 @@ require 'test_helper'
 class FireCloudClientTest < ActiveSupport::TestCase
 
   before(:all) do
-    if ENV['ORCH_SMOKE_TEST'] == 'true'
-      @fire_cloud_client = FireCloudClient.new(
-        api_root: 'https://firecloud-orchestration.dsde-staging.broadinstitute.org'
-      )
-      puts "SMOKE TEST: #{@fire_cloud_client.attributes}"
-      exit
+    @smoke_test = ENV['ORCH_SMOKE_TEST'] == 'true'
+    if @smoke_test
+      api_root = 'https://firecloud-orchestration.dsde-staging.broadinstitute.org'
+      Rails.logger.info "Running smoke test against Terra orchestration API at #{api_root}"
+      @fire_cloud_client = FireCloudClient.new(api_root:)
     else
       @fire_cloud_client = ApplicationController.firecloud_client
     end
@@ -250,6 +249,7 @@ class FireCloudClientTest < ActiveSupport::TestCase
 
   # get queue status
   def test_get_submission_queue_status
+    skip if @smoke_test # relies on assets that don't exist in staging Rawls
     status = @fire_cloud_client.get_submission_queue_status
     assert status.any?, 'Did not receive queue status object'
     assert status['workflowCountsByStatus'].any?, 'Did not receive queue count status'
@@ -274,6 +274,7 @@ class FireCloudClientTest < ActiveSupport::TestCase
 
   # get method configurations
   def test_get_configurations
+    skip if @smoke_test # relies on assets that don't exist in staging Rawls
     # get all available configurations
     workflow_configurations = @fire_cloud_client.get_configurations
     assert workflow_configurations.any?, 'Did not find any method configurations'
@@ -297,6 +298,7 @@ class FireCloudClientTest < ActiveSupport::TestCase
 
   # create a method configuration template from a method
   def test_create_configuration_template
+    skip if @smoke_test # relies on assets that don't exist in staging Rawls
     method = @fire_cloud_client.get_method('single-cell-portal', 'split-cluster', 1)
     assert method.present?, 'Did not retrieve a method to create a configuration template from'
 

@@ -44,7 +44,7 @@ case $OPTION in
     COMMAND="$OPTARG"
     ;;
   v)
-    COMMAND=$COMMAND" -D $OPTARG"
+    DOCKER_IMAGE_TAG="$OPTARG"
     ;;
   e)
     PASSENGER_APP_ENV="$OPTARG"
@@ -115,10 +115,16 @@ if [[ -n $READ_ONLY_SERVICE_ACCOUNT_PATH ]] ; then
   COMMAND=$COMMAND" -K /home/app/webapp/config/.read_only_service_account.json"
 fi
 
-# insert connection information for MongoDB if this is not a CI run
-COMMAND=$COMMAND" -m $MONGO_LOCALHOST -p $PROD_DATABASE_PASSWORD -M $MONGO_INTERNAL_IP"
+# check for override of default bin/boot_docker command
+if [[ "$COMMAND" != "bin/boot_docker" ]] ; then
+  echo "RUNNING NON-STANDARD COMMAND: $COMMAND"
+  $COMMAND -e $PASSENGER_APP_ENV -v $DOCKER_IMAGE_TAG
+else
+  # insert connection information for MongoDB if this is not a CI run
+  COMMAND=$COMMAND" -m $MONGO_LOCALHOST -p $PROD_DATABASE_PASSWORD -M $MONGO_INTERNAL_IP"
 
-# Filter credentials from log, just show Rails environment and Terra billing project
-echo "BOOTING PORTAL WITH: -e $PASSENGER_APP_ENV -N $PORTAL_NAMESPACE"
-# execute requested command
-$COMMAND -e $PASSENGER_APP_ENV -N $PORTAL_NAMESPACE
+  # Filter credentials from log, just show Rails environment and Terra billing project
+  echo "BOOTING PORTAL WITH: -e $PASSENGER_APP_ENV -N $PORTAL_NAMESPACE"
+  # execute requested command
+  $COMMAND -D $DOCKER_IMAGE_TAG -e $PASSENGER_APP_ENV -N $PORTAL_NAMESPACE
+fi
