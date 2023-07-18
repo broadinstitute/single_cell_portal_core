@@ -11,6 +11,9 @@ let numSearchRequests = 0
 // Number of searches insofar as usage analytics is concerned
 export let numSearches = 0
 
+// Previous number of genes in search
+let prevNumGenes = 0
+
 let numDifferentialExpressionTableSearches = 0
 
 const filterNamesById = {}
@@ -177,6 +180,37 @@ export function logSearch(type, searchParams, perfTimes, searchResults) {
   )
 }
 
+/**
+ * Get number of searched genes that appear in other UI components, e.g.
+ * DE table and ideogram
+ */
+function detectSearchedGenesElsewhere(searchedGenes) {
+  // Genes shown in DE table
+  let numSearchedGenesInDifferentialExpressionTable = -1
+  const differentialExpressionGenes =
+      Array.from(document.querySelectorAll('.de-gene-row td:first-child'))
+        .map(deGeneTd => deGeneTd.textContent)
+  if (differentialExpressionGenes?.length > 0) {
+    numSearchedGenesInDifferentialExpressionTable = searchedGenes.filter(
+      searchedGene => differentialExpressionGenes.includes(searchedGene)
+    ).length
+  }
+
+  // Genes shown in related genes ideogram
+  let numSearchedGenesInIdeogram = -1
+  const ideogramGenes = window.ideogram?.relatedAnnots?.map(annot => annot.name)
+  if (prevNumGenes === 1 && ideogramGenes?.length > 0) {
+    numSearchedGenesInIdeogram = searchedGenes.filter(
+      searchedGene => ideogramGenes.includes(searchedGene)
+    ).length
+  }
+
+  return {
+    numSearchedGenesInDifferentialExpressionTable,
+    numSearchedGenesInIdeogram
+  }
+}
+
 /** log a search from the study explore tab */
 export function logStudyGeneSearch(genes, trigger, speciesList, otherProps) {
   // Properties logged for all gene searches from Study Overview
@@ -185,15 +219,22 @@ export function logStudyGeneSearch(genes, trigger, speciesList, otherProps) {
     context: 'study',
     genes,
     numGenes: genes.length,
+    prevNumGenes,
     trigger, // "submit", "click", or "click-related-genes"
     speciesList
   }
+
+  // Log number of searched genes that are shown in UI widgets
+  const genesElsewhere = detectSearchedGenesElsewhere(genes)
+  Object.assign(logProps, genesElsewhere)
 
   // Merge log props from custom event
   if (otherProps) {
     Object.assign(logProps, otherProps)
   }
   log('search', logProps)
+
+  prevNumGenes = genes.length
 }
 
 let numDifferentialGeneSelections = 0
