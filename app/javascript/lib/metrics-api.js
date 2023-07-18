@@ -445,11 +445,11 @@ export function log(name, props = {}) {
   } else {
     numSincePageLoadByEventName[name] = 1
   }
-  props['numThisPageLoad:thisName'] = numSincePageLoadByEventName[name]
+  props['numEventsThisPageLoad:thisName'] = numSincePageLoadByEventName[name]
   if (name.includes('click')) {
     numClicksSincePageLoad += 1
   }
-  props['numSincePageLoad:clicks'] = numClicksSincePageLoad
+  props['numEventsSincePageLoad:clicks'] = numClicksSincePageLoad
   if ('text' in props || 'label' in props) {
     const text = 'text' in props ? props['text'] : props['label']
     if (text in numSincePageLoadByEventText) {
@@ -457,7 +457,7 @@ export function log(name, props = {}) {
     } else {
       numSincePageLoadByEventText[text] = 1
     }
-    props['numSincePageLoad:thisText'] = numSincePageLoadByEventName[name]
+    props['numEventsSincePageLoad:thisText'] = numSincePageLoadByEventName[name]
   }
 
 
