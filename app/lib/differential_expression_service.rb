@@ -232,6 +232,7 @@ class DifferentialExpressionService
   # 2. has clustering/metadata
   # 3. has raw counts
   # 4. has group-based annotations that can be visualized
+  # 5. study owner has not uploaded any of their own differential expression results
   # Individual annotations will be validated at submission time as this is more time/resource intensive
   #
   # * *params*
@@ -243,7 +244,9 @@ class DifferentialExpressionService
   def self.study_eligible?(study, skip_existing: false)
     begin
       validate_study(study)
-      find_eligible_annotations(study, skip_existing:).any? && study.has_raw_counts_matrices?
+      find_eligible_annotations(study, skip_existing:).any? &&
+        study.has_raw_counts_matrices? &&
+        !study_has_author_de?(study)
     rescue ArgumentError
       false
     end
@@ -301,6 +304,18 @@ class DifferentialExpressionService
   def self.validate_study(study)
     raise ArgumentError, 'Requested study does not exist' if study.nil?
     raise ArgumentError, "#{study.accession} cannot view cluster plots" unless study.can_visualize_clusters?
+  end
+
+  # determine if a study has author-uploaded DE results
+  # this will stop the automatic calculation of new DE results if they add more data
+  #
+  # * *params*
+  #   - +study+ (Study) => Study to validate
+  #
+  # * *returns*
+  #   - (Boolean)
+  def self.study_has_author_de?(study)
+    study.study_files.by_type('Differential Expression').any?
   end
 
   # shortcut to log to STDOUT and Rails log simultaneously
