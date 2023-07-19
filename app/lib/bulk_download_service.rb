@@ -145,8 +145,8 @@ class BulkDownloadService
     file_bytes_requested = get_requested_bytes(files)
     dir_bytes_requested = get_requested_bytes(directories, size_method: :total_bytes)
     bytes_requested = file_bytes_requested + dir_bytes_requested
-    bytes_allowed = DownloadQuotaService.download_quota
     if DownloadQuotaService.download_exceeds_quota?(user, bytes_requested)
+      bytes_allowed = DownloadQuotaService.download_quota - user.daily_download_quota
       raise "Total file size exceeds user download quota: #{bytes_requested} bytes requested, #{bytes_allowed} bytes " \
             "allowed.  #{DownloadQuotaService::QUOTA_HELP_EMAIL}"
     else
