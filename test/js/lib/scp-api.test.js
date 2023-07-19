@@ -3,7 +3,7 @@
 import CacheMock from 'browser-cache-mock';
 import 'isomorphic-fetch';
 
-import scpApi, { fetchSearch, fetchFacetFilters, setupRenewalForReadOnlyToken, refreshAuthToken } from 'lib/scp-api'
+import scpApi, { fetchSearch, fetchFacetFilters, setupRenewalForReadOnlyToken, renewUserAccessToken } from 'lib/scp-api'
 import * as ServiceWorkerCache from 'lib/service-worker-cache'
 import * as SCPContextProvider from '~/providers/SCPContextProvider'
 
@@ -196,8 +196,8 @@ describe('JavaScript client for SCP REST API', () => {
       userAccessToken : '',
       userSignedIn : true
     }
-
-    await refreshAuthToken('SCP123')
+    
+    await renewUserAccessToken('SCP123')
 
     // the userAccessToken is now an empty string the call to renew it should have been made
     expect(fetch).toHaveBeenCalledTimes(1);

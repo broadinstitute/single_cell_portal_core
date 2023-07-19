@@ -21,7 +21,7 @@ import { clearOldServiceWorkerCaches } from '~/lib/service-worker-cache'
 const { validateRemoteFile } = ValidateFile
 
 import {
-  logPageView, logClick, logMenuChange, setupPageTransitionLog, log, logCopy, logContextMenu
+  logPageView, logClick, logMenuChange, setupPageTransitionLog, log, logCopy, logContextMenu, logError
 } from '~/lib/metrics-api'
 import * as ScpApi from '~/lib/scp-api'
 
@@ -60,9 +60,14 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
   setTimeout(() => {
-    ScpApi.refreshAuthToken(window.SCP.studyAccession).then(response =>
-      log('refresh auth token', { 'status': response })
-    )
+    if (window.SCP.userAccessToken === '' && window.SCP.userSignedIn) {
+      ScpApi.renewUserAccessToken(window.SCP.studyAccession).then(response => {
+        if (response.ok) {
+          log('renew-token:user-access')
+        }
+      }
+      ).catch(error => logError('Error renewing user access token', error))
+    }
   }, 1000)
 })
 

@@ -245,15 +245,14 @@ export function setupRenewalForReadOnlyToken(studyAccession) {
 
 
 /**
- * Refresh userAccessToken if the user is still logged in and the token has gone away
+ * Renew userAccessToken
  * @param {String} studyAccession Study accession, e.g. SCP123
  */
-export async function refreshAuthToken(studyAccession) {
-  if (window.SCP.userAccessToken === '' && window.SCP.userSignedIn && studyAccession) {
-    const apiUrl = `/site/studies/${studyAccession}/renew_token`
-    const response = await scpApi(apiUrl, defaultInit())
-    window.SCP.userAccessToken = response.accessToken
-  }
+export async function renewUserAccessToken(studyAccession) {
+  const apiUrl = `/site/studies/${studyAccession}/renew_token`
+  const response = await scpApi(apiUrl, defaultInit())
+  window.SCP.userAccessToken = response.accessToken
+  return response
 }
 
 
