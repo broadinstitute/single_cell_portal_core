@@ -34,6 +34,7 @@ function SliderContainer({ metric, toggleDeFacet, isActive }) {
         </label>
       </div>
       <div className={`de-slider de-slider-${metric}`} data-metric={metric}></div>
+      <br/>
     </div>
   )
 }
@@ -185,14 +186,12 @@ export default function DifferentialExpressionFilters({
     <div>
       {!isAuthorDe && <br/>}
       {metrics.map(metric =>
-        <>
-          <SliderContainer
-            metric={metric}
-            toggleDeFacet={toggleDeFacet}
-            isActive={activeFacets[metric]}
-          />
-          <br/>
-        </>
+        <SliderContainer
+          metric={metric}
+          key={metric}
+          toggleDeFacet={toggleDeFacet}
+          isActive={activeFacets[metric]}
+        />
       )}
     </div>
   )
