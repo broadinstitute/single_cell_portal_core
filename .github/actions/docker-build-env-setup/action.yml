@@ -1,7 +1,7 @@
 name: 'Docker Build Env Setup'
 description: 'Installs vault and runs docker build during CI, incorporating changes as necessary'
 outputs:
-  build-test-image:
+  docker-tag:
     description: 'Tag for locally built Docker image'
     value: ${{ steps.build-test-image.outputs.docker-tag }}
 runs:
