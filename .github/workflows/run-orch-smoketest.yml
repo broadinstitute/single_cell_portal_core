@@ -1,10 +1,7 @@
 name: Terra Orchestration API Smoke Test
 on:
-  push:
-    branches:
-      - jb-alpha-orch-ci
-      - development
-      - master
+  schedule:
+    - cron: "0 8 * * 1,3,5"
 env:
   DOCKER_IMAGE_NAME: "gcr.io/broad-singlecellportal-staging/single-cell-portal"
 
