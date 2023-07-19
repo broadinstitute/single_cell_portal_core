@@ -1,5 +1,9 @@
 name: 'Docker Build Env Setup'
 description: 'Installs vault and runs docker build during CI, incorporating changes as necessary'
+outputs:
+  build-test-image:
+    description: 'Tag for locally built Docker image'
+    value: ${{ steps.build-test-image.outputs.docker-tag }}
 runs:
   using: 'composite'
   steps:
@@ -25,6 +29,7 @@ runs:
         echo "#### CHANGES DETECTED TO DOCKERFILE, REBUILDING IMAGE LOCALLY ####"
         docker build -t $DOCKER_IMAGE_NAME:development -f Dockerfile .
     - name: Build test docker image
+      id: build-test-image
       shell: bash
       run: |
         # The "broad-singlecellportal-staging" GCR repository is used in production.
@@ -37,4 +42,6 @@ runs:
         # this will happen on dependabot PRs
         SAFE_HEAD_REF=$(echo $GITHUB_HEAD_REF | sed -e 's/\//_/g')
         DOCKER_IMAGE_TAG="ci-$SAFE_HEAD_REF-$GITHUB_SHA"
+        # output Docker tag for use downstream
+        echo "docker-tag=$DOCKER_IMAGE_TAG" >> $GITHUB_OUTPUT
         docker build -t $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG -f test/Dockerfile-test .

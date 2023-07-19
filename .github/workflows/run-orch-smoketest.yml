@@ -13,6 +13,7 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v2
       - name: Build image and setup env
+        id: build-image-setup-env
         uses: ./.github/actions/docker-build-env-setup
       - name: Load secrets and run tests
         env:
@@ -20,6 +21,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
           VAULT_ROLE_ID: ${{ secrets.VAULT_ROLE_ID }}
           VAULT_SECRET_ID: ${{ secrets.VAULT_SECRET_ID }}
+          DOCKER_IMAGE_TAG: ${{ steps.build-image-setup-env.outputs.docker-tag }}
           ORCH_SMOKE_TEST: true
           CI: true
         run: |
