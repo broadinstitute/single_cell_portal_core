@@ -13,7 +13,7 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v2
       - name: Build image and setup env
-        uses: actions/docker-build-env-setup-composite-action@v1
+        uses: ./.github/actions/docker-build-env-setup
       - name: Load secrets and run tests
         env:
           VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
