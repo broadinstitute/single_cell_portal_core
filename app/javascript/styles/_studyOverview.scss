@@ -17,3 +17,15 @@
 .multiplot .plot {
   margin: 0 10px;
 }
+
+/** eweitz 2023-07-19: draft for narrow viewport */
+.scp-navbar-dropdown-collapse {
+  min-width: 220px;
+  position: absolute;
+  left: calc(100% - 211px);
+  top: 57px;
+}
+
+.navbar-toggle {
+ margin-left: auto;
+}
