@@ -158,7 +158,6 @@ const columnHelper = createColumnHelper()
 function searchGenesFromTable(selectedGenes, searchGenes, logProps) {
   searchGenes(selectedGenes)
 
-  console.log('selectedGenes', selectedGenes)
   // Log this search to Mixpanel
   logSearchFromDifferentialExpression(
     logProps.event, selectedGenes, logProps.species, logProps.rank,
