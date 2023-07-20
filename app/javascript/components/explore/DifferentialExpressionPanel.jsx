@@ -410,17 +410,25 @@ function rangeFilterGenes(deFacets, deGenes, activeFacets) {
 }
 
 /** Return hits for substring text search on DE gene names */
-function substringSearchGeneNames(queryText, deGenes) {
-  if (queryText === '') {return deGenes}
-  const lowerCaseText = queryText.toLowerCase()
-  const filteredGenes = deGenes.filter(d => d.name.toLowerCase().includes(lowerCaseText))
+function substringSearchGeneNames(genesQuery, deGenes) {
+  if (genesQuery === '') {return deGenes}
+  const lowerCaseTexts =
+    genesQuery.split(/[ ,]+/) // Splits "FOO,BAR", "FOO BAR", or "FOO, BAR"
+      .map(text => text.toLowerCase())
+      .filter(text => text !== '')
+
+  const filteredGenes = deGenes.filter(deGene => {
+    const lcGeneName = deGene.name.toLowerCase()
+    return lowerCaseTexts.some(lcText => lcGeneName.includes(lcText))
+  })
+
   return filteredGenes
 }
 
 /** Apply "Find a gene" and range slider facets to DE genes, return matches */
-function filterGenes(searchedGene, deGenes, deFacets, activeFacets) {
+function filterGenes(searchedGenes, deGenes, deFacets, activeFacets) {
   if (!deGenes) {return deGenes}
-  let filteredGenes = substringSearchGeneNames(searchedGene, deGenes, deFacets, activeFacets)
+  let filteredGenes = substringSearchGeneNames(searchedGenes, deGenes, deFacets, activeFacets)
   filteredGenes = rangeFilterGenes(deFacets, filteredGenes, activeFacets)
   return filteredGenes
 }
@@ -452,7 +460,7 @@ export default function DifferentialExpressionPanel({
 
   // filter text for searching the legend
   const [genesToShow, setGenesToShow] = useState(filteredDeGenes)
-  const [searchedGene, setSearchedGene] = useState('')
+  const [searchedGenes, setSearchedGenes] = useState('')
 
   const [deFilePath, setDeFilePath] = useState(null)
 
@@ -461,11 +469,11 @@ export default function DifferentialExpressionPanel({
   /** Change filter values for range slider facets */
   function updateDeFacets(newFacets, metric) {
     setDeFacets(newFacets)
-    const filteredGenes = filterGenes(searchedGene, deGenes, newFacets, activeFacets)
+    const filteredGenes = filterGenes(searchedGenes, deGenes, newFacets, activeFacets)
     setGenesToShow(filteredGenes)
 
     const otherProps = { trigger: 'update-facet', facet: metric }
-    logDifferentialExpressionTableSearch([searchedGene], species, otherProps)
+    logDifferentialExpressionTableSearch([searchedGenes], species, otherProps)
   }
 
   /** Enable or disable slider range facet; preserve filter in background */
@@ -473,18 +481,18 @@ export default function DifferentialExpressionPanel({
     const newActiveFacets = Object.assign(activeFacets, {})
     newActiveFacets[metric] = !newActiveFacets[metric]
 
-    const filteredGenes = filterGenes(searchedGene, deGenes, deFacets, newActiveFacets)
+    const filteredGenes = filterGenes(searchedGenes, deGenes, deFacets, newActiveFacets)
 
     setActiveFacets(newActiveFacets)
     setGenesToShow(filteredGenes)
 
     const otherProps = { trigger: 'toggle-facet', facet: metric }
-    logDifferentialExpressionTableSearch([searchedGene], species, otherProps)
+    logDifferentialExpressionTableSearch([searchedGenes], species, otherProps)
   }
 
   /** Handle a user pressing the 'x' to clear the 'Find a gene' field */
   function handleClear() {
-    updateSearchedGene('', 'clear')
+    updateSearchedGenes('', 'clear')
 
     // Clicking 'x' doesn't clear facets, so apply any active facets
     const filteredGenes = filterGenes('', deGenes, deFacets, activeFacets)
@@ -493,11 +501,11 @@ export default function DifferentialExpressionPanel({
   }
 
   /** Only show clear button if text is entered in search box */
-  const showClear = searchedGene !== ''
+  const showClear = searchedGenes !== ''
 
   /** Set searched gene, and log search after 1 second delay */
-  function updateSearchedGene(newSearchedGene, trigger) {
-    setSearchedGene(newSearchedGene)
+  function updateSearchedGenes(newSearchedGenes, trigger) {
+    setSearchedGenes(newSearchedGenes)
 
     // Log search on DE table after 1 second since last change
     // This prevents logging "searches" on "P", "T", "E", and "N" if
@@ -507,16 +515,16 @@ export default function DifferentialExpressionPanel({
     clearTimeout(delayedDETableLogTimeout.current)
     delayedDETableLogTimeout.current = setTimeout(() => {
       const otherProps = { trigger }
-      const genes = [newSearchedGene]
+      const genes = [newSearchedGenes]
       logDifferentialExpressionTableSearch(genes, species, otherProps)
     }, 1000)
   }
 
   /** Update genes in table based on what user searches, filters */
   useEffect(() => {
-    const filteredGenes = filterGenes(searchedGene, deGenes, deFacets, activeFacets)
+    const filteredGenes = filterGenes(searchedGenes, deGenes, deFacets, activeFacets)
     setGenesToShow(filteredGenes)
-  }, [deGenes, searchedGene])
+  }, [deGenes, searchedGenes])
 
   return (
     <>
@@ -578,8 +586,8 @@ export default function DifferentialExpressionPanel({
             type="text"
             autoComplete="off"
             placeholder="Find a gene" // Consensus per demo, to distinguish from main "Search genes" in same UI
-            value={searchedGene}
-            onChange={event => updateSearchedGene(event.target.value, 'keydown')}
+            value={searchedGenes}
+            onChange={event => updateSearchedGenes(event.target.value, 'keydown')}
             data-analytics-name="differential-expression-search"
           />
           { showClear && <Button
