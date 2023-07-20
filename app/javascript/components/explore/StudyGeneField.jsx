@@ -167,7 +167,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
             // the default blur behavior removes any entered free text,
             // we want to instead auto-convert entered free text to a gene tag
             onBlur={syncGeneArrayToInputText}
-            placeholder={searchDisabled ? 'No expression data to search' : 'Genes (e.g. "PTEN NF2")'}
+            placeholder={searchDisabled ? 'No expression data to search' : 'Search gene(s) and find plots'}
             isDisabled={searchDisabled}
             styles={{
               // if more genes are entered than fit, use a vertical scrollbar
