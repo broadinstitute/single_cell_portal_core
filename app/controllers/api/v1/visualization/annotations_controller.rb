@@ -156,6 +156,113 @@ module Api
           render plain: AnnotationVizService.annotation_cell_values_tsv(@study, cell_cluster, annotation)
         end
 
+        swagger_path '/studies/{accession}/annotations/facets' do
+          operation :get do
+            key :tags, [
+              'Visualization'
+            ]
+            key :summary, 'Get facet assignments for a cluster'
+            key :description, 'Get annotation assignments (i.e facets) for specified cells from a cluster'
+            key :operationId, 'study_annotation_facets_path'
+            parameter do
+              key :name, :accession
+              key :in, :path
+              key :description, 'Study accession number'
+              key :example, 'SCP1234'
+              key :required, true
+              key :type, :string
+            end
+            parameter do
+              key :name, :annotations
+              key :in, :query
+              key :description, 'List of annotations'
+              key :example, 'cell_type__ontology_label--group--study,disease__ontology_label'
+              key :required, true
+              key :type, :string
+            end
+            parameter do
+              key :name, :cluster
+              key :in, :query
+              key :description, 'Name of requested cluster'
+              key :type, :string
+              key :required, true
+            end
+            parameter do
+              key :name, :subsampling_threshold
+              key :in, :query
+              key :description, 'Requested subsampling level'
+              key :type, :string
+              key :required, false
+              key :enum, ['all'] + ClusterGroup::SUBSAMPLE_THRESHOLDS
+            end
+            response 200 do
+              key :description, 'Hash of integer-based annotation assignments for all cells in requested cluster'
+              schema do
+                key :title, 'Annotations'
+                property :cells do
+                  key :type, :array
+                  key :description, 'Array of arrays of integer assignments of each cell for all requested annotations'
+                  items do
+                    key :type, :array
+                    key :example, [[0, 0], [0, 1], [1, 2], [2, 2], [2, 0]]
+                    items do
+                      key :type, :integer
+                      key :minItems, 2
+                    end
+                  end
+                end
+                property :facets do
+                  key :type, :array
+                  key :minItems, 2
+                  key :example, [
+                    {
+                      annotation: 'cell_type__ontology_label--group--study',
+                      groups: %w[eosinophil macrophage lymphocyte]
+                    },
+                    {
+                      annotation: 'disease__ontology_label--group--study',
+                      groups: ['Crohn disease', 'acute myeloid leukemia', 'chronic lymphocytic leukemia']
+                    }
+                  ].as_json
+                  items do
+                    key :type, :object
+                    property :annotation do
+                      key :type, :string
+                      key :description, 'Annotation identifier'
+                    end
+                    property :groups do
+                      key :type, :array
+                      key :description, 'List of unique values for requested annotation'
+                      key :example, "['eosinophil', 'macrophage', 'lymphocyte']"
+                      items do
+                        key :type, :string
+                      end
+                    end
+                  end
+                end
+              end
+            end
+            extend SwaggerResponses::StudyControllerResponses
+          end
+        end
+
+        def facets
+          cluster = ClusterVizService.get_cluster_group(@study, params)
+          if cluster.nil?
+            render json: { error: "Cannot find cluster: #{params[:cluster]}" }, status: :not_found and return
+          end
+          annotations = self.class.get_facet_annotations(@study, cluster, params[:annotations])
+          if annotations.empty?
+            render json: { error: "Cannot find annotations: #{params[:annotations]}" }, status: :not_found and return
+          end
+          response = {
+            facets: annotations.map do |annot|
+              { annotation: "#{annot[:name]}--#{annot[:type]}--#{annot[:scope]}", groups: annot[:values] }
+            end
+          }
+          render json: response
+        end
+
         swagger_path '/studies/{accession}/annotations/gene_lists/{gene_list}' do
           operation :get do
             key :tags, [
@@ -210,6 +317,16 @@ module Api
                                                        annot_scope: annot_params[:scope])
         end
 
+        def self.get_facet_annotations(study, cluster, annot_param)
+          annotations = annot_param.split(',').map { |annot| convert_annotation_param(annot) }
+          puts annotations
+          annotations.map { |annotation| AnnotationVizService.get_selected_annotation(study, cluster:, **annotation) }
+        end
+
+        def self.convert_annotation_param(annotation_param)
+          annot_name, annot_type, annot_scope = annotation_param.split('--')
+          { annot_name:, annot_type:, annot_scope: }
+        end
 
         # parses url params into an object with name, type, and scope keys
         def self.get_annotation_params(url_params)
