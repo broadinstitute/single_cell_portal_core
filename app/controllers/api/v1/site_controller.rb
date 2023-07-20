@@ -653,7 +653,7 @@ module Api
 
           # submission must be done as user, so create a client with current_user and submit
           # TODO: figure out better way to assign access token based on API vs. MVC app, and figure out how to set submitter correctly
-          user_client = FireCloudClient.new(current_api_user, @study.firecloud_project)
+          user_client = FireCloudClient.new(user: current_api_user, project: @study.firecloud_project)
 
           logger.info "Creating submission for #{@analysis_configuration.configuration_identifier} using configuration: #{submission_config['name']} in #{@study.firecloud_project}/#{@study.firecloud_workspace}"
           @submission = user_client.create_workspace_submission(@study.firecloud_project, @study.firecloud_workspace,
