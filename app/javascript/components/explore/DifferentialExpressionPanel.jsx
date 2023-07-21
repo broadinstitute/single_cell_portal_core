@@ -6,6 +6,7 @@ import Button from 'react-bootstrap/lib/Button'
 
 import PagingControl from '~/components/search/results/PagingControl'
 import DifferentialExpressionFilters from './DifferentialExpressionFilters'
+import { supportEmailLink } from '~/lib/error-utils'
 
 import {
   createColumnHelper,
@@ -317,63 +318,76 @@ function DifferentialExpressionTable({
         <DifferentialExpressionResetButton onClick={resetDifferentialExpression} />
         <DifferentialExpressionModal />
       </div>
-      <table
-        className="de-table table table-terra table-scp-compact"
-        style={{ height: `${tableHeight}px` }}
-      >
-        <thead>
-          {table.getHeaderGroups().map(headerGroup => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map(header => (
-                <th key={header.id}>
-                  {header.isPlaceholder ? null : (
-                    <div
-                      {...{
-                        style: header.column.getCanSort() ?
-                          { cursor: 'pointer', userSelect: 'none' } :
-                          '',
-                        onClick: header.column.getToggleSortingHandler()
-                      }}
-                    >
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                      {{
-                        asc: <SortIcon order='asc' />,
-                        desc: <SortIcon order='desc' />
-                      }[header.column.getIsSorted()] ?? null}
-                    </div>
-                  )}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.slice(0, numRows).map(row => (
-            <tr className="de-gene-row" key={row.id}>
-              {row.getVisibleCells().map(cell => (
-                <td key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          )
-          )}
-        </tbody>
-      </table>
-      <PagingControl
-        currentPage={table.getState().pagination.pageIndex}
-        totalPages={table.getPageCount()}
-        changePage={table.setPageIndex}
-        canPreviousPage={table.getCanPreviousPage()}
-        canNextPage={table.getCanNextPage()}
-        zeroIndexed={true}
-      />
-      <a href="https://forms.gle/qPGH5J9oFkurpbD76" target="_blank" title="Take a 1 minute survey">
+      {genesToShow.length === 0 &&
+      <div style={{ paddingTop: '20px', fontSize: '13px' }}>
+        <b>No genes found</b>.<br/><br/>
+
+        Try broadening your search, or contact us at <br/>
+        {supportEmailLink} for help.
+      </div>
+      }
+      {genesToShow.length > 0 &&
+      <>
+        <table
+          className="de-table table table-terra table-scp-compact"
+          style={{ height: `${tableHeight}px` }}
+        >
+          <thead>
+            {table.getHeaderGroups().map(headerGroup => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map(header => (
+                  <th key={header.id}>
+                    {header.isPlaceholder ? null : (
+                      <div
+                        {...{
+                          style: header.column.getCanSort() ?
+                            { cursor: 'pointer', userSelect: 'none' } :
+                            '',
+                          onClick: header.column.getToggleSortingHandler()
+                        }}
+                      >
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                        {{
+                          asc: <SortIcon order='asc' />,
+                          desc: <SortIcon order='desc' />
+                        }[header.column.getIsSorted()] ?? null}
+                      </div>
+                    )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.slice(0, numRows).map(row => (
+              <tr className="de-gene-row" key={row.id}>
+                {row.getVisibleCells().map(cell => (
+                  <td key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            )
+            )}
+          </tbody>
+        </table>
+        <PagingControl
+          currentPage={table.getState().pagination.pageIndex}
+          totalPages={table.getPageCount()}
+          changePage={table.setPageIndex}
+          canPreviousPage={table.getCanPreviousPage()}
+          canNextPage={table.getCanNextPage()}
+          zeroIndexed={true}
+        />
+        <a href="https://forms.gle/qPGH5J9oFkurpbD76" target="_blank" title="Take a 1 minute survey">
           Help improve this feature
-      </a>
+        </a>
+      </>
+      }
+
     </>
   )
 }
