@@ -188,12 +188,12 @@ module Api
               key :required, true
             end
             parameter do
-              key :name, :subsampling_threshold
+              key :name, :subsample_threshold
               key :in, :query
-              key :description, 'Requested subsampling level'
+              key :description, 'Must be All Cells'
               key :type, :string
-              key :required, false
-              key :enum, ['all'] + ClusterGroup::SUBSAMPLE_THRESHOLDS
+              key :required, true
+              key :enum, ['all']
             end
             response 200 do
               key :description, 'Hash of integer-based annotation assignments for all cells in requested cluster'
@@ -247,19 +247,46 @@ module Api
         end
 
         def facets
+          if params[:subsample_threshold] != 'all'
+            render json: { error: 'Must use full resolution data for faceted search' }, status: :bad_request and return
+          end
+
           cluster = ClusterVizService.get_cluster_group(@study, params)
           if cluster.nil?
             render json: { error: "Cannot find cluster: #{params[:cluster]}" }, status: :not_found and return
           end
-          annotations = self.class.get_facet_annotations(@study, cluster, params[:annotations])
-          if annotations.empty?
-            render json: { error: "Cannot find annotations: #{params[:annotations]}" }, status: :not_found and return
+
+          all_cells = @study.all_cells_array
+          cluster_cells = cluster.concatenate_data_arrays('text', 'cells')
+          annotation_identifiers = params[:annotations].split(',')
+          annotation_arrays = {}
+          response = { cells: [], facets: [] }
+          # build arrays of annotation values, and pre-populate response object
+          annotation_identifiers.each do |annotation|
+            annot_name, annot_type, annot_scope = annotation.split('--')
+            annot = { annot_name:, annot_type:, annot_scope: }
+            annot_obj = AnnotationVizService.get_selected_annotation(@study, cluster:, **annot)
+            data_obj = annot_scope == 'study' ? @study.cell_metadata.by_name_and_type(annot_name, annot_type) : cluster
+            study_file_id = annot_scope == 'study' ? @study.metadata_file.id : cluster.study_file_id
+            array_query = {
+              name: annot_name, array_type: 'annotations', linear_data_type: data_obj.class.name,
+              linear_data_id: data_obj.id, study_id: @study.id, study_file_id:
+            }
+            annotation_arrays[annotation] = DataArray.concatenate_arrays(array_query)
+            response[:facets] << { annotation:, groups: annot_obj[:values] }
           end
-          response = {
-            facets: annotations.map do |annot|
-              { annotation: "#{annot[:name]}--#{annot[:type]}--#{annot[:scope]}", groups: annot[:values] }
+          # iterate through list of cluster cells to compute annotation value indices
+          cluster_cells.each do |cell|
+            cell_array = []
+            response[:facets].each do |facet|
+              annotation = facet[:annotation]
+              control_list = annotation.split('--').last == 'study' ? all_cells : cluster_cells
+              position = control_list.index(cell)
+              annotation_value = annotation_arrays[annotation][position]
+              cell_array << facet[:groups].index(annotation_value)
             end
-          }
+            response[:cells] << cell_array
+          end
           render json: response
         end
 
@@ -319,7 +346,6 @@ module Api
 
         def self.get_facet_annotations(study, cluster, annot_param)
           annotations = annot_param.split(',').map { |annot| convert_annotation_param(annot) }
-          puts annotations
           annotations.map { |annotation| AnnotationVizService.get_selected_annotation(study, cluster:, **annotation) }
         end
 
@@ -330,7 +356,7 @@ module Api
 
         # parses url params into an object with name, type, and scope keys
         def self.get_annotation_params(url_params)
-           {
+          {
             name: url_params[:annotation_name].blank? ? nil : url_params[:annotation_name],
             type: url_params[:annotation_type].blank? ? nil : url_params[:annotation_type],
             scope: url_params[:annotation_scope].blank? ? nil : url_params[:annotation_scope]
