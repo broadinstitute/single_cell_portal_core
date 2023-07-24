@@ -424,27 +424,41 @@ function rangeFilterGenes(deFacets, deGenes, activeFacets) {
 }
 
 /** Return hits for substring text search on DE gene names */
-function substringSearchGeneNames(genesQuery, deGenes) {
-  if (genesQuery === '') {return deGenes}
-  const lowerCaseTexts =
-    genesQuery.split(/[ ,]+/) // Splits "FOO,BAR", "FOO BAR", or "FOO, BAR"
-      .map(text => text.toLowerCase())
+function substringSearchGeneNames(searchedGenes, deGenes) {
+  let texts = [searchedGenes]
+
+  if (searchedGenes === '') {
+    return [deGenes, texts]
+  }
+
+  texts =
+    searchedGenes.split(/[ ,]+/) // Splits "FOO,BAR", "FOO BAR", or "FOO, BAR"
       .filter(text => text !== '')
+
+  const lowerCaseTexts = texts.map(text => text.toLowerCase())
 
   const filteredGenes = deGenes.filter(deGene => {
     const lcGeneName = deGene.name.toLowerCase()
     return lowerCaseTexts.some(lcText => lcGeneName.includes(lcText))
   })
 
-  return filteredGenes
+  return [filteredGenes, texts]
 }
 
 /** Apply "Find a gene" and range slider facets to DE genes, return matches */
 function filterGenes(searchedGenes, deGenes, deFacets, activeFacets) {
-  if (!deGenes) {return deGenes}
-  let filteredGenes = substringSearchGeneNames(searchedGenes, deGenes, deFacets, activeFacets)
+  let unfoundNames = []
+  if (!deGenes) {return [deGenes, unfoundNames]}
+
+  let [filteredGenes, texts] =
+    substringSearchGeneNames(searchedGenes, deGenes, deFacets, activeFacets)
   filteredGenes = rangeFilterGenes(deFacets, filteredGenes, activeFacets)
-  return filteredGenes
+
+  unfoundNames = texts.filter(
+    text => !filteredGenes.some(gene => gene.name === text.toLowerCase())
+  )
+
+  return [filteredGenes, unfoundNames]
 }
 
 /** Differential expression panel shown at right in Explore tab */
@@ -475,6 +489,7 @@ export default function DifferentialExpressionPanel({
   // filter text for searching the legend
   const [genesToShow, setGenesToShow] = useState(filteredDeGenes)
   const [searchedGenes, setSearchedGenes] = useState('')
+  const [unfoundGenes, setUnfoundGenes] = useState([])
 
   const [deFilePath, setDeFilePath] = useState(null)
 
@@ -483,8 +498,9 @@ export default function DifferentialExpressionPanel({
   /** Change filter values for range slider facets */
   function updateDeFacets(newFacets, metric) {
     setDeFacets(newFacets)
-    const filteredGenes = filterGenes(searchedGenes, deGenes, newFacets, activeFacets)
+    const [filteredGenes, unfoundNames] = filterGenes(searchedGenes, deGenes, newFacets, activeFacets)
     setGenesToShow(filteredGenes)
+    setUnfoundGenes(unfoundNames)
 
     const otherProps = { trigger: 'update-facet', facet: metric }
     logDifferentialExpressionTableSearch([searchedGenes], species, otherProps)
@@ -495,10 +511,11 @@ export default function DifferentialExpressionPanel({
     const newActiveFacets = Object.assign(activeFacets, {})
     newActiveFacets[metric] = !newActiveFacets[metric]
 
-    const filteredGenes = filterGenes(searchedGenes, deGenes, deFacets, newActiveFacets)
+    const [filteredGenes, unfoundNames] = filterGenes(searchedGenes, deGenes, deFacets, newActiveFacets)
 
     setActiveFacets(newActiveFacets)
     setGenesToShow(filteredGenes)
+    setUnfoundGenes(unfoundNames)
 
     const otherProps = { trigger: 'toggle-facet', facet: metric }
     logDifferentialExpressionTableSearch([searchedGenes], species, otherProps)
@@ -509,9 +526,10 @@ export default function DifferentialExpressionPanel({
     updateSearchedGenes('', 'clear')
 
     // Clicking 'x' doesn't clear facets, so apply any active facets
-    const filteredGenes = filterGenes('', deGenes, deFacets, activeFacets)
+    const [filteredGenes, unfoundNames] = filterGenes('', deGenes, deFacets, activeFacets)
 
     setGenesToShow(filteredGenes)
+    setUnfoundGenes(unfoundNames)
   }
 
   /** Only show clear button if text is entered in search box */
@@ -538,8 +556,9 @@ export default function DifferentialExpressionPanel({
 
   /** Update genes in table based on what user searches, filters */
   useEffect(() => {
-    const filteredGenes = filterGenes(searchedGenes, deGenes, deFacets, activeFacets)
+    const [filteredGenes, unfoundNames] = filterGenes(searchedGenes, deGenes, deFacets, activeFacets)
     setGenesToShow(filteredGenes)
+    setUnfoundGenes(unfoundNames)
   }, [deGenes, searchedGenes])
 
   return (
@@ -615,7 +634,19 @@ export default function DifferentialExpressionPanel({
             <FontAwesomeIcon icon={faTimes} />
           </Button> }
         </div>
-
+        {unfoundGenes.length > 1 &&
+        <div>
+        Genes not found:
+          {unfoundGenes.map(unfoundGene => {
+            const id = `unfound-gene-${unfoundGene}`
+            return (<span
+              className="unfound-gene"
+              id={id}>
+              {unfoundGene}
+            </span>)
+          })}
+        </div>
+        }
         <DifferentialExpressionTable
           genesToShow={genesToShow}
           searchGenes={searchGenes}
