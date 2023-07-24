@@ -519,6 +519,8 @@ export default function DifferentialExpressionPanel({
 
   /** Set searched gene, and log search after 1 second delay */
   function updateSearchedGenes(newSearchedGenes, trigger) {
+    newSearchedGenes = newSearchedGenes.replace(/n/g, ' ')
+
     setSearchedGenes(newSearchedGenes)
 
     // Log search on DE table after 1 second since last change
