@@ -83,8 +83,16 @@
   color: #CCC;
 }
 
+.clear-de-search-icon:hover,
+.clear-de-search-icon:active:hover {
+  background: none;
+  color: #AAA;
+  box-shadow: none;
+  outline: none;
+}
 
 .clear-de-unfound-genes-icon {
+  float: none;
   color: #555;
 }
 

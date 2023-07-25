@@ -504,6 +504,9 @@ function clearUnfoundGeneNames(unfoundGenes, searchedGenes, setSearchedGenes) {
   const searchedGenesArray = splitSearchedGenesString(searchedGenes)
   const newSearchedGenes = searchedGenesArray.filter(g => !unfoundGenes.includes(g))
   setSearchedGenes(newSearchedGenes.join(' '))
+
+  // Clear tooltip
+  document.querySelectorAll('.tooltip.fade.top.in').forEach(e => e.remove())
 }
 
 /** Summarize genes not found among DE query results */
@@ -524,7 +527,7 @@ function UnfoundGenesContainer({ unfoundGenes, searchedGenes, setSearchedGenes }
           <span>and&nbsp;
             <span
               className="unfound-genes-list glossary"
-              data-toggle='tooltip'
+              data-toggle="tooltip"
               data-original-title={`Unfound gene names: ${unfoundGenes.join(', ')}`}
             >{unfoundGenes.length - 2} more</span>
           </span>
@@ -532,10 +535,10 @@ function UnfoundGenesContainer({ unfoundGenes, searchedGenes, setSearchedGenes }
             className='btn-copy-unfound'
             onClick={() => {copyUnfoundGenes(unfoundGenes)}}
             data-analytics-name='unfound-genes-copy'
-            data-toggle='tooltip'
-            data-original-title='Copy unfound gene names'
+            data-toggle="tooltip"
+            data-original-title="Copy unfound gene names"
           >
-            <i className='far fa-copy'></i>
+            <i className="far fa-copy"></i>
           </button>
         </>
       }
@@ -543,8 +546,8 @@ function UnfoundGenesContainer({ unfoundGenes, searchedGenes, setSearchedGenes }
         type="button"
         data-analytics-name="clear-de-unfound-genes"
         className="clear-de-search-icon clear-de-unfound-genes-icon"
-        data-toggle='tooltip'
-        // data-original-title='Clear unfound gene names'
+        data-toggle="tooltip"
+        data-original-title="Clear unfound gene names"
         onClick={() => {clearUnfoundGeneNames(unfoundGenes, searchedGenes, setSearchedGenes)}} >
         <FontAwesomeIcon icon={faTimes} />
       </Button>
