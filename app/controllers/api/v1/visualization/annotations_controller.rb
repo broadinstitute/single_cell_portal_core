@@ -280,9 +280,9 @@ module Api
               annotation = facet[:annotation]
               scope = annotation.split('--').last
               if scope == 'study'
-                label = annotation_arrays[annotation][value]
+                label = annotation_arrays[annotation][value] || '--Unspecified--'
               else
-                label = annotation_arrays[annotation][index]
+                label = annotation_arrays[annotation][index] || '--Unspecified--'
               end
               facet[:groups].index(label)
             end
