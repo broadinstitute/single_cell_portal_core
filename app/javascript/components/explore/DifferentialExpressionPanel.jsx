@@ -325,8 +325,12 @@ function DifferentialExpressionTable({
   return (
     <>
       <div className="de-table-buttons">
-        <DotPlotButton dotPlotGenes={dotPlotGenes} searchGenes={searchGenes} />
-        <DownloadButton bucketId={bucketId} deFilePath={deFilePath} />
+        {genesToShow.length > 0 &&
+        <>
+          <DotPlotButton dotPlotGenes={dotPlotGenes} searchGenes={searchGenes} />
+          <DownloadButton bucketId={bucketId} deFilePath={deFilePath} />
+        </>
+        }
         <DifferentialExpressionResetButton onClick={resetDifferentialExpression} />
         <DifferentialExpressionModal />
       </div>
