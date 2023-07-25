@@ -97,15 +97,21 @@ class ExpressionVizService
         values[annotations[index]][:cells] << cell
       end
     else
-      # since annotations are in a hash format, subsampling isn't necessary as we're going to retrieve values by key lookup
-      annotations = study.cell_metadata.by_name_and_type(annotation[:name], annotation[:type])&.cell_annotations || {}
-      cells.each do |cell|
-        val = annotations[cell]
+      if subsample_threshold
+        annotations = study.cell_metadata.by_name_and_type(annotation[:name], annotation[:type])&.cell_annotations || {}
+      else
+        annotation_array = ClusterVizService.get_annotation_values_array(
+          study, cluster, annotation, cells, nil, nil
+        )
+      end
+      cells.each_with_index do |cell, index|
+        val_params = { subsample_threshold:, annotations:, annotation_array: }
+        val = set_expression_value(cell, index, **val_params)
         # must check if key exists
-        if values.has_key?(val)
-          values[annotations[cell]][:y] << gene['scores'][cell].to_f.round(4)
-          values[annotations[cell]][:cells] << cell
-        end
+        next unless values.key?(val)
+
+        values[val][:y] << gene['scores'][cell].to_f.round(4)
+        values[val][:cells] << cell
       end
     end
     # remove any empty values as annotations may have created keys that don't exist in cluster
@@ -227,21 +233,27 @@ class ExpressionVizService
         end
       end
     else
-      # no need to subsample annotation since they are in hash format (lookup done by key)
-      annotations = study.cell_metadata.by_name_and_type(annotation[:name], annotation[:type])&.cell_annotations || {}
-      cells.each do |cell|
-        val = annotations[cell]
+      if subsample_threshold
+        annotations = study.cell_metadata.by_name_and_type(annotation[:name], annotation[:type])&.cell_annotations || {}
+      else
+        annotation_array = ClusterVizService.get_annotation_values_array(
+          study, cluster, annotation, cells, nil, nil
+        )
+      end
+      cells.each_with_index do |cell, index|
+        val_params = { subsample_threshold:, annotations:, annotation_array: }
+        val = set_expression_value(cell, index, **val_params)
         # must check if key exists
-        if values.has_key?(val)
-          values[annotations[cell]][:cells] << cell
-          case consensus
-          when 'mean'
-            values[annotations[cell]][:y] << calculate_mean(genes, cell)
-          when 'median'
-            values[annotations[cell]][:y] << calculate_median(genes, cell)
-          else
-            values[annotations[cell]][:y] << calculate_mean(genes, cell)
-          end
+        next unless values.key?(val)
+
+        values[val][:cells] << cell
+        case consensus
+        when 'mean'
+          values[val][:y] << calculate_mean(genes, cell)
+        when 'median'
+          values[val][:y] << calculate_median(genes, cell)
+        else
+          values[val][:y] << calculate_mean(genes, cell)
         end
       end
     end
@@ -271,20 +283,20 @@ class ExpressionVizService
 
     cells.each_with_index do |cell, index|
       annotation_value = annotation_array[index]
-      if !annotation_value.nil?
-        case consensus
-        when 'mean'
-          expression_value = calculate_mean(genes, cell)
-        when 'median'
-          expression_value = calculate_median(genes, cell)
-        else
-          expression_value = calculate_mean(genes, cell)
-        end
-        viz_data[:annotations] << annotation_value
-        viz_data[:x] << annotation_value
-        viz_data[:y] << expression_value
-        viz_data[:cells] << cell
+      next if annotation_value.nil?
+
+      case consensus
+      when 'mean'
+        expression_value = calculate_mean(genes, cell)
+      when 'median'
+        expression_value = calculate_median(genes, cell)
+      else
+        expression_value = calculate_mean(genes, cell)
       end
+      viz_data[:annotations] << annotation_value
+      viz_data[:x] << annotation_value
+      viz_data[:y] << expression_value
+      viz_data[:cells] << cell
     end
     viz_data
   end
@@ -322,6 +334,18 @@ class ExpressionVizService
   def self.calculate_median(genes, cell)
     values = genes.map {|gene| gene['scores'][cell].to_f}
     Gene.array_median(values)
+  end
+
+  # extract expression value from appropriate object, depending on scenario
+  #
+  # * *params*
+  #   * +cell_name+ (String) => cluster cell name
+  #   * +index+ (Integer) => array index from cluster cells
+  #   * +subsample_threshold+ (Integer, nil) => subsampling threshold, used to determine which object to query
+  #   * +annotation_array+ (Array) => array of annotation values, reordered to match cluster cells
+  #   * +annotations+ (Hash) => cell metadata annotations hash
+  def self.set_expression_value(cell_name, index, subsample_threshold: nil, annotation_array: [], annotations: {})
+    subsample_threshold ? annotations[cell_name] : annotation_array[index]
   end
 
   # return a text file for morpheus to use when rendering dotplots/heatmaps
