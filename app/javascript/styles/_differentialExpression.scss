@@ -92,7 +92,8 @@
 }
 
 .unfound-genes-container {
-  margin: 10px 0;
+  margin: 10px 0 10px -10px;
+  font-size: 13px;
 }
 
 .unfound-gene {
@@ -101,6 +102,11 @@
   border: 1px solid $warning-icon-color;
   margin-right: 6px;
   padding: 1px 3px;
+}
+
+.btn-copy-unfound {
+  border: none;
+  background-color: white;
 }
 
 .de-nondefault-explainer {

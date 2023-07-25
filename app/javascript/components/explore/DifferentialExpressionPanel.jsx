@@ -6,7 +6,7 @@ import Button from 'react-bootstrap/lib/Button'
 
 import PagingControl from '~/components/search/results/PagingControl'
 import DifferentialExpressionFilters from './DifferentialExpressionFilters'
-import { supportEmailLink } from '~/lib/error-utils'
+import { contactUsLink } from '~/lib/error-utils'
 
 import {
   createColumnHelper,
@@ -38,6 +38,15 @@ function getAnnotationObject(exploreParamsWithDefaults, exploreInfo) {
       thisAnnotation.scope === selectedAnnotation.scope
     )
   })
+}
+
+/** Message shown around DE table for no results, or unfound genes */
+function BroadenSearchMessage() {
+  return (
+    <>
+    Try broadening your search, or {contactUsLink} for help.
+    </>
+  )
 }
 
 /** Top matter for differential expression panel shown at right in Explore tab */
@@ -169,7 +178,7 @@ function searchGenesFromTable(selectedGenes, searchGenes, logProps) {
 /** Table of DE data for genes */
 function DifferentialExpressionTable({
   genesToShow, searchGenes, clusterName, annotation, species, numRows,
-  bucketId, deFilePath, handleClear, isAuthorDe, deFacets
+  bucketId, deFilePath, handleClear, isAuthorDe, deFacets, unfoundGenes
 }) {
   const defaultPagination = {
     pageIndex: 0,
@@ -318,12 +327,16 @@ function DifferentialExpressionTable({
         <DifferentialExpressionResetButton onClick={resetDifferentialExpression} />
         <DifferentialExpressionModal />
       </div>
+      {unfoundGenes.length > 1 && genesToShow.length > 0 &&
+          <UnfoundGenesContainer
+            unfoundGenes={unfoundGenes}
+          />
+      }
       {genesToShow.length === 0 &&
       <div style={{ paddingTop: '20px', fontSize: '13px' }}>
         <b>No genes found</b>.<br/><br/>
 
-        Try broadening your search, or contact us at <br/>
-        {supportEmailLink} for help.
+        <BroadenSearchMessage />
       </div>
       }
       {genesToShow.length > 0 &&
@@ -458,9 +471,61 @@ function filterGenes(searchedGenes, deGenes, deFacets, activeFacets) {
     text => !filteredGenes.some(gene => gene.name.toLowerCase() === text.toLowerCase())
   )
 
-  console.log('unfoundNames', unfoundNames)
-
   return [filteredGenes, unfoundNames]
+}
+
+/** Copy text user's system clipboard */
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    console.log('Async: Copying to clipboard was successful!')
+  }, err => {
+    console.error('Async: Could not copy text: ', err)
+  })
+}
+
+/** Copy unfound genes to user's system clipboard */
+function copyUnfoundGenes(unfoundGenes) {
+  const numUnfound = unfoundGenes.length
+  const unfound = unfoundGenes.join(', ')
+  copyToClipboard(`Gene names not found (${numUnfound}): ${unfound}`)
+}
+
+/** Summarize genes not found among DE query results */
+function UnfoundGenesContainer({ unfoundGenes }) {
+  return (
+    <div className="unfound-genes-container">
+          Gene names not found:&nbsp;
+      {unfoundGenes.slice(0, 2).map(unfoundGene => {
+        const id = `unfound-gene-${unfoundGene}`
+        return (<span
+          className="unfound-gene"
+          id={id}>
+          {unfoundGene}
+        </span>)
+      })}
+      {unfoundGenes.length > 3 &&
+        <>
+          <span>and&nbsp;
+            <span
+              className="unfound-genes-list glossary"
+              data-toggle='tooltip'
+              data-original-title={`Unfound gene names: ${unfoundGenes.join(', ')}`}
+            >{unfoundGenes.length - 2} more</span>
+          </span>
+          <button
+            className='btn-copy-unfound'
+            onClick={() => {copyUnfoundGenes(unfoundGenes)}}
+            data-analytics-name='unfound-genes-copy'
+            data-toggle='tooltip'
+            data-original-title='Copy unfound gene names'
+          >
+            <i className='far fa-copy'></i>
+          </button>
+        </>
+      }
+
+    </div>
+  )
 }
 
 /** Differential expression panel shown at right in Explore tab */
@@ -622,7 +687,7 @@ export default function DifferentialExpressionPanel({
             name="de-search-input"
             type="text"
             autoComplete="off"
-            placeholder="Find a gene" // Consensus per demo, to distinguish from main "Search genes" in same UI
+            placeholder="Find genes" // Distinguishing from main "Search genes" in same UI
             value={searchedGenes}
             onChange={event => updateSearchedGenes(event.target.value, 'keydown')}
             data-analytics-name="differential-expression-search"
@@ -636,22 +701,6 @@ export default function DifferentialExpressionPanel({
             <FontAwesomeIcon icon={faTimes} />
           </Button> }
         </div>
-        {unfoundGenes.length > 1 &&
-        <div className="unfound-genes-container">
-        Genes not found:&nbsp;
-          {unfoundGenes.slice(0, 2).map(unfoundGene => {
-            const id = `unfound-gene-${unfoundGene}`
-            return (<span
-              className="unfound-gene"
-              id={id}>
-              {unfoundGene}
-            </span>)
-          })}
-          {unfoundGenes.length > 3 &&
-          <>and {unfoundGenes.length - 2} more</>
-          }
-        </div>
-        }
         <DifferentialExpressionTable
           genesToShow={genesToShow}
           searchGenes={searchGenes}
@@ -664,6 +713,7 @@ export default function DifferentialExpressionPanel({
           handleClear={handleClear}
           isAuthorDe={hasPairwiseDe}
           deFacets={deFacets}
+          unfoundGenes={unfoundGenes}
         />
       </>
       }
