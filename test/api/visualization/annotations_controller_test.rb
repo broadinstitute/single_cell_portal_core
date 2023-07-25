@@ -136,4 +136,56 @@ class AnnotationsControllerTest < ActionDispatch::IntegrationTest
     execute_http_request(:get, api_v1_study_annotations_gene_list_path(@basic_study, 'gene_list.with.periods'))
     assert_response :success
   end
+
+  test 'should get annotation facets' do
+    sign_in_and_update @user
+    annotations = 'species--group--study,disease--group--study'
+    facet_params = { cluster: 'clusterA.txt', annotations: }
+    execute_http_request(:get, api_v1_study_annotations_facets_path(@basic_study, **facet_params))
+    assert_response :success
+    assert json['cells'].size == 3
+    expected_facets = [
+      { annotation: 'species--group--study', groups: %w[dog cat] }.with_indifferent_access,
+      { annotation: 'disease--group--study', groups: %w[none measles] }.with_indifferent_access
+    ]
+    # test validations
+    assert_equal expected_facets, json['facets']
+    execute_http_request(:get, api_v1_study_annotations_facets_path(
+      @basic_study, cluster: 'does-not-exist', annotations: ''
+    ))
+    assert_response :not_found
+    execute_http_request(:get, api_v1_study_annotations_facets_path(
+      @basic_study, cluster: 'clusterA.txt',  annotations: 'foo--numeric--study'
+    ))
+    assert_response :bad_request
+    execute_http_request(:get, api_v1_study_annotations_facets_path(
+      @basic_study, cluster: 'clusterA.txt', annotations: 'not-found--group--study'
+    ))
+    assert_response :not_found
+  end
+
+  test 'should load requested facet annotations' do
+    annotation_param = 'species--group--study,disease--group--study'
+    cluster = @basic_study.cluster_groups.by_name('clusterA.txt')
+    annotations = Api::V1::Visualization::AnnotationsController.get_facet_annotations(
+      @basic_study, cluster, annotation_param
+    )
+    assert_equal 2, annotations.size
+    expected_annotations = @basic_study.cell_metadata.map do |meta|
+      {
+        name: meta.name, type: meta.annotation_type, scope: 'study', values: meta.values,
+        identifier: meta.annotation_select_value
+      }
+    end
+    assert_equal expected_annotations, annotations
+    assert_empty Api::V1::Visualization::AnnotationsController.get_facet_annotations(
+      @basic_study, cluster, 'does-not-exist--group--study'
+    )
+  end
+
+  test 'should convert annotation identifiers to hash' do
+    expected = { annot_name: 'species', annot_type: 'group', annot_scope: 'study' }
+    assert_equal expected,
+                 Api::V1::Visualization::AnnotationsController.convert_annotation_param('species--group--study')
+  end
 end
