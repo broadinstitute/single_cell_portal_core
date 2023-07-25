@@ -178,7 +178,8 @@ function searchGenesFromTable(selectedGenes, searchGenes, logProps) {
 /** Table of DE data for genes */
 function DifferentialExpressionTable({
   genesToShow, searchGenes, clusterName, annotation, species, numRows,
-  bucketId, deFilePath, handleClear, isAuthorDe, deFacets, unfoundGenes
+  bucketId, deFilePath, handleClear, isAuthorDe, deFacets,
+  unfoundGenes, searchedGenes, setSearchedGenes
 }) {
   const defaultPagination = {
     pageIndex: 0,
@@ -330,6 +331,8 @@ function DifferentialExpressionTable({
       {unfoundGenes.length > 1 && genesToShow.length > 0 &&
           <UnfoundGenesContainer
             unfoundGenes={unfoundGenes}
+            searchedGenes={searchedGenes}
+            setSearchedGenes={setSearchedGenes}
           />
       }
       {genesToShow.length === 0 &&
@@ -436,6 +439,14 @@ function rangeFilterGenes(deFacets, deGenes, activeFacets) {
   return filteredGenes
 }
 
+/** Splits "FOO,BAR", "FOO BAR", or "FOO, BAR" into array */
+function splitSearchedGenesString(searchedGenes) {
+  if (Array.isArray(searchedGenes)) {return searchedGenes}
+  if (searchedGenes === '') {return []}
+  return searchedGenes.split(/[ ,]+/)
+    .filter(text => text !== '')
+}
+
 /** Return hits for substring text search on DE gene names */
 function substringSearchGeneNames(searchedGenes, deGenes) {
   let texts = [searchedGenes]
@@ -444,9 +455,7 @@ function substringSearchGeneNames(searchedGenes, deGenes) {
     return [deGenes, texts]
   }
 
-  texts =
-    searchedGenes.split(/[ ,]+/) // Splits "FOO,BAR", "FOO BAR", or "FOO, BAR"
-      .filter(text => text !== '')
+  texts = splitSearchedGenesString(searchedGenes)
 
   const lowerCaseTexts = texts.map(text => text.toLowerCase())
 
@@ -490,8 +499,15 @@ function copyUnfoundGenes(unfoundGenes) {
   copyToClipboard(`Gene names not found (${numUnfound}): ${unfound}`)
 }
 
+/** Clear gene names that haven't been found in multi-gene DE search */
+function clearUnfoundGeneNames(unfoundGenes, searchedGenes, setSearchedGenes) {
+  const searchedGenesArray = splitSearchedGenesString(searchedGenes)
+  const newSearchedGenes = searchedGenesArray.filter(g => !unfoundGenes.includes(g))
+  setSearchedGenes(newSearchedGenes.join(' '))
+}
+
 /** Summarize genes not found among DE query results */
-function UnfoundGenesContainer({ unfoundGenes }) {
+function UnfoundGenesContainer({ unfoundGenes, searchedGenes, setSearchedGenes }) {
   return (
     <div className="unfound-genes-container">
           Gene names not found:&nbsp;
@@ -503,7 +519,7 @@ function UnfoundGenesContainer({ unfoundGenes }) {
           {unfoundGene}
         </span>)
       })}
-      {unfoundGenes.length > 3 &&
+      {unfoundGenes.length > 2 &&
         <>
           <span>and&nbsp;
             <span
@@ -523,6 +539,15 @@ function UnfoundGenesContainer({ unfoundGenes }) {
           </button>
         </>
       }
+      <Button
+        type="button"
+        data-analytics-name="clear-de-unfound-genes"
+        className="clear-de-search-icon clear-de-unfound-genes-icon"
+        data-toggle='tooltip'
+        // data-original-title='Clear unfound gene names'
+        onClick={() => {clearUnfoundGeneNames(unfoundGenes, searchedGenes, setSearchedGenes)}} >
+        <FontAwesomeIcon icon={faTimes} />
+      </Button>
 
     </div>
   )
@@ -714,6 +739,8 @@ export default function DifferentialExpressionPanel({
           isAuthorDe={hasPairwiseDe}
           deFacets={deFacets}
           unfoundGenes={unfoundGenes}
+          searchedGenes={searchedGenes}
+          setSearchedGenes={setSearchedGenes}
         />
       </>
       }
