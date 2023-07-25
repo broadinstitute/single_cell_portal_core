@@ -508,6 +508,11 @@ function copyToClipboard(text) {
   })
 }
 
+/** Clear tooltips, i.e. close / remove any open small black tooltips */
+function clearTooltips() {
+  document.querySelectorAll('.tooltip.fade.top.in').forEach(e => e.remove())
+}
+
 /** Copy unfound genes to user's system clipboard */
 function copyUnfoundGenes(unfoundGenes) {
   const numUnfound = unfoundGenes.length
@@ -521,8 +526,7 @@ function clearUnfoundGeneNames(unfoundGenes, searchedGenes, setSearchedGenes) {
   const newSearchedGenes = searchedGenesArray.filter(g => !unfoundGenes.includes(g))
   setSearchedGenes(newSearchedGenes.join(' '))
 
-  // Clear tooltip
-  document.querySelectorAll('.tooltip.fade.top.in').forEach(e => e.remove())
+  clearTooltips()
 }
 
 /** Summarize genes not found among DE query results */
@@ -650,6 +654,7 @@ export default function DifferentialExpressionPanel({
   function handleFindModeToggle() {
     const newFindMode = findMode === 'partial' ? 'full' : 'partial'
     setFindMode(newFindMode)
+    clearTooltips()
   }
 
   /** Only show clear button if text is entered in search box */
@@ -760,7 +765,9 @@ export default function DifferentialExpressionPanel({
             data-analytics-name="de-find-mode"
             className={`de-find-mode-icon ${findMode}`}
             data-toggle="tooltip"
-            data-original-title={`Matching ${findMode} names.  Click for ${findMode === 'partial' ? 'full' : 'partial'} matches.`}
+            data-original-title={
+              `Matching ${findMode} names.  Click for ${findMode === 'partial' ? 'full' : 'partial'} matches.`
+            }
             onClick={handleFindModeToggle} >
             <FontAwesomeIcon icon={faBullseye} />
           </a>
