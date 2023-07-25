@@ -334,7 +334,7 @@ function DifferentialExpressionTable({
         <DifferentialExpressionResetButton onClick={resetDifferentialExpression} />
         <DifferentialExpressionModal />
       </div>
-      {unfoundGenes.length > 1 && genesToShow.length > 0 &&
+      {unfoundGenes.length > 0 && genesToShow.length > 0 &&
           <UnfoundGenesContainer
             unfoundGenes={unfoundGenes}
             searchedGenes={searchedGenes}
@@ -498,18 +498,13 @@ function filterGenes(searchedGenes, deGenes, deFacets, activeFacets, findMode) {
         return lcGeneName.includes(lcText)
       }
     })
-  )
-
+  ).filter(name => name !== '')
   return [filteredGenes, unfoundNames]
 }
 
 /** Copy text user's system clipboard */
 function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(() => {
-    console.log('Async: Copying to clipboard was successful!')
-  }, err => {
-    console.error('Async: Could not copy text: ', err)
-  })
+  navigator.clipboard.writeText(text)
 }
 
 /** Clear tooltips, i.e. close / remove any open small black tooltips */
@@ -542,6 +537,7 @@ function UnfoundGenesContainer({ unfoundGenes, searchedGenes, setSearchedGenes }
         const id = `unfound-gene-${unfoundGene}`
         return (<span
           className="unfound-gene"
+          key={id}
           id={id}>
           {unfoundGene}
         </span>)
