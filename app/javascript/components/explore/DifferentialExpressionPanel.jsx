@@ -662,8 +662,10 @@ export default function DifferentialExpressionPanel({
 
   /** Set searched gene, and log search after 1 second delay */
   function updateSearchedGenes(newSearchedGenes, trigger) {
-    // Replace newlines (Unix- or Windows-style) with spaces
-    newSearchedGenes = newSearchedGenes.replace(/\r?\n/g, ' ')
+    newSearchedGenes =
+      newSearchedGenes
+        .replace(/\r?\n/g, ' ') // Replace newlines (Unix- or Windows-style) with spaces
+        .replace(/\t/g, ' ')
 
     setSearchedGenes(newSearchedGenes)
 
