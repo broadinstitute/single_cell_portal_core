@@ -53,6 +53,15 @@
   }
 }
 
+.de-find-mode-icon {
+  margin-left: 5px;
+  color: $action-color;
+}
+
+.de-find-mode-icon.partial {
+  color: #AAA;
+}
+
 .de-search-box {
   width: 150px;
   border: 1px solid #CCC;

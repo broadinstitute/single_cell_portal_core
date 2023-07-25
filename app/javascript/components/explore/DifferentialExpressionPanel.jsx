@@ -1,7 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft, faDownload, faSearch, faTimes, faAngleUp, faAngleDown, faUndo } from '@fortawesome/free-solid-svg-icons'
+import {
+  faArrowLeft, faDownload, faSearch, faTimes, faAngleUp, faAngleDown, faUndo, faBullseye
+} from '@fortawesome/free-solid-svg-icons'
 import Button from 'react-bootstrap/lib/Button'
 
 import PagingControl from '~/components/search/results/PagingControl'
@@ -448,7 +450,7 @@ function splitSearchedGenesString(searchedGenes) {
 }
 
 /** Return hits for substring text search on DE gene names */
-function substringSearchGeneNames(searchedGenes, deGenes) {
+function searchGeneNames(searchedGenes, deGenes, findMode) {
   let texts = [searchedGenes]
 
   if (searchedGenes === '') {
@@ -461,23 +463,37 @@ function substringSearchGeneNames(searchedGenes, deGenes) {
 
   const filteredGenes = deGenes.filter(deGene => {
     const lcGeneName = deGene.name.toLowerCase()
-    return lowerCaseTexts.some(lcText => lcGeneName.includes(lcText))
+    return lowerCaseTexts.some(lcText => {
+      if (findMode === 'full') {
+        return lcGeneName === lcText
+      } else {
+        return lcGeneName.includes(lcText)
+      }
+    })
   })
 
   return [filteredGenes, texts]
 }
 
 /** Apply "Find a gene" and range slider facets to DE genes, return matches */
-function filterGenes(searchedGenes, deGenes, deFacets, activeFacets) {
+function filterGenes(searchedGenes, deGenes, deFacets, activeFacets, findMode) {
   let unfoundNames = []
   if (!deGenes) {return [deGenes, unfoundNames]}
 
   let [filteredGenes, texts] =
-    substringSearchGeneNames(searchedGenes, deGenes, deFacets, activeFacets)
+    searchGeneNames(searchedGenes, deGenes, findMode)
   filteredGenes = rangeFilterGenes(deFacets, filteredGenes, activeFacets)
 
   unfoundNames = texts.filter(
-    text => !filteredGenes.some(gene => gene.name.toLowerCase() === text.toLowerCase())
+    text => !filteredGenes.some(gene => {
+      const lcGeneName = gene.name.toLowerCase()
+      const lcText = text.toLowerCase()
+      if (findMode === 'full') {
+        return lcGeneName === lcText
+      } else {
+        return lcGeneName.includes(lcText)
+      }
+    })
   )
 
   return [filteredGenes, unfoundNames]
@@ -496,7 +512,7 @@ function copyToClipboard(text) {
 function copyUnfoundGenes(unfoundGenes) {
   const numUnfound = unfoundGenes.length
   const unfound = unfoundGenes.join(', ')
-  copyToClipboard(`Gene names not found (${numUnfound}): ${unfound}`)
+  copyToClipboard(`Genes not found (${numUnfound}): ${unfound}`)
 }
 
 /** Clear gene names that haven't been found in multi-gene DE search */
@@ -513,7 +529,7 @@ function clearUnfoundGeneNames(unfoundGenes, searchedGenes, setSearchedGenes) {
 function UnfoundGenesContainer({ unfoundGenes, searchedGenes, setSearchedGenes }) {
   return (
     <div className="unfound-genes-container">
-          Gene names not found:&nbsp;
+          Genes not found:&nbsp;
       {unfoundGenes.slice(0, 2).map(unfoundGene => {
         const id = `unfound-gene-${unfoundGene}`
         return (<span
@@ -579,6 +595,9 @@ export default function DifferentialExpressionPanel({
   const [deFacets, setDeFacets] = useState(defaultDeFacets)
   const [activeFacets, setActiveFacets] = useState(defaultActiveFacets)
 
+  // Whether to match on full string or partial string for each token in "Find genes"
+  const [findMode, setFindMode] = useState('partial')
+
   const filteredDeGenes = rangeFilterGenes(deFacets, deGenes, activeFacets)
 
   // filter text for searching the legend
@@ -593,7 +612,7 @@ export default function DifferentialExpressionPanel({
   /** Change filter values for range slider facets */
   function updateDeFacets(newFacets, metric) {
     setDeFacets(newFacets)
-    const [filteredGenes, unfoundNames] = filterGenes(searchedGenes, deGenes, newFacets, activeFacets)
+    const [filteredGenes, unfoundNames] = filterGenes(searchedGenes, deGenes, newFacets, activeFacets, findMode)
     setGenesToShow(filteredGenes)
     setUnfoundGenes(unfoundNames)
 
@@ -606,7 +625,7 @@ export default function DifferentialExpressionPanel({
     const newActiveFacets = Object.assign(activeFacets, {})
     newActiveFacets[metric] = !newActiveFacets[metric]
 
-    const [filteredGenes, unfoundNames] = filterGenes(searchedGenes, deGenes, deFacets, newActiveFacets)
+    const [filteredGenes, unfoundNames] = filterGenes(searchedGenes, deGenes, deFacets, newActiveFacets, findMode)
 
     setActiveFacets(newActiveFacets)
     setGenesToShow(filteredGenes)
@@ -621,10 +640,16 @@ export default function DifferentialExpressionPanel({
     updateSearchedGenes('', 'clear')
 
     // Clicking 'x' doesn't clear facets, so apply any active facets
-    const [filteredGenes, unfoundNames] = filterGenes('', deGenes, deFacets, activeFacets)
+    const [filteredGenes, unfoundNames] = filterGenes('', deGenes, deFacets, activeFacets, findMode)
 
     setGenesToShow(filteredGenes)
     setUnfoundGenes(unfoundNames)
+  }
+
+  /** Switch match mode for "Find genes" */
+  function handleFindModeToggle() {
+    const newFindMode = findMode === 'partial' ? 'full' : 'partial'
+    setFindMode(newFindMode)
   }
 
   /** Only show clear button if text is entered in search box */
@@ -652,10 +677,10 @@ export default function DifferentialExpressionPanel({
 
   /** Update genes in table based on what user searches, filters */
   useEffect(() => {
-    const [filteredGenes, unfoundNames] = filterGenes(searchedGenes, deGenes, deFacets, activeFacets)
+    const [filteredGenes, unfoundNames] = filterGenes(searchedGenes, deGenes, deFacets, activeFacets, findMode)
     setGenesToShow(filteredGenes)
     setUnfoundGenes(unfoundNames)
-  }, [deGenes, searchedGenes])
+  }, [deGenes, searchedGenes, findMode])
 
   return (
     <>
@@ -730,6 +755,16 @@ export default function DifferentialExpressionPanel({
             <FontAwesomeIcon icon={faTimes} />
           </Button> }
         </div>
+        {searchedGenes.length > 0 &&
+          <a
+            data-analytics-name="de-find-mode"
+            className={`de-find-mode-icon ${findMode}`}
+            data-toggle="tooltip"
+            data-original-title={`Matching ${findMode} names.  Click for ${findMode === 'partial' ? 'full' : 'partial'} matches.`}
+            onClick={handleFindModeToggle} >
+            <FontAwesomeIcon icon={faBullseye} />
+          </a>
+        }
         <DifferentialExpressionTable
           genesToShow={genesToShow}
           searchGenes={searchGenes}
