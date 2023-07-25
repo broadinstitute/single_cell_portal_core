@@ -91,6 +91,18 @@
   outline: none;
 }
 
+.unfound-genes-container {
+  margin: 10px 0;
+}
+
+.unfound-gene {
+  border-radius: 3px;
+  background-color: $warning-background-color;
+  border: 1px solid $warning-icon-color;
+  margin-right: 6px;
+  padding: 1px 3px;
+}
+
 .de-nondefault-explainer {
   margin-top: 16px;
   font-weight: normal;

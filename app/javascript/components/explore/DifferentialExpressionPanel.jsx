@@ -455,8 +455,10 @@ function filterGenes(searchedGenes, deGenes, deFacets, activeFacets) {
   filteredGenes = rangeFilterGenes(deFacets, filteredGenes, activeFacets)
 
   unfoundNames = texts.filter(
-    text => !filteredGenes.some(gene => gene.name === text.toLowerCase())
+    text => !filteredGenes.some(gene => gene.name.toLowerCase() === text.toLowerCase())
   )
+
+  console.log('unfoundNames', unfoundNames)
 
   return [filteredGenes, unfoundNames]
 }
@@ -635,9 +637,9 @@ export default function DifferentialExpressionPanel({
           </Button> }
         </div>
         {unfoundGenes.length > 1 &&
-        <div>
-        Genes not found:
-          {unfoundGenes.map(unfoundGene => {
+        <div className="unfound-genes-container">
+        Genes not found:&nbsp;
+          {unfoundGenes.slice(0, 2).map(unfoundGene => {
             const id = `unfound-gene-${unfoundGene}`
             return (<span
               className="unfound-gene"
@@ -645,6 +647,9 @@ export default function DifferentialExpressionPanel({
               {unfoundGene}
             </span>)
           })}
+          {unfoundGenes.length > 3 &&
+          <>and {unfoundGenes.length - 2} more</>
+          }
         </div>
         }
         <DifferentialExpressionTable
