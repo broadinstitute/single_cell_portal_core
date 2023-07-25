@@ -370,6 +370,28 @@ class ClusterGroup
     self.points
   end
 
+  # index the cells from this cluster against the 'all cells' array at the study level
+  def cell_name_index(study_cells)
+    concatenate_data_arrays('text', 'cells').map { |cell| study_cells.index(cell) }
+  end
+
+  # create all necessary data array entries for cell_name_index
+  def create_cell_name_index!
+    return nil if study.metadata_file.nil?
+
+    study_cells = study.all_cells_array
+    cell_name_index(study_cells).each_slice(DataArray::MAX_ENTRIES).with_index do |slice, index|
+      begin
+        DataArray.create!(
+          name: 'index', array_type: 'cells', array_index: index, values: slice, linear_data_type: 'ClusterGroup',
+          linear_data_id: id, study_id: study.id, study_file_id:, cluster_name: name
+        )
+      rescue => e
+        ErrorTracker.report_exception(e, nil, self, cluster_group, { job: :create_cluster_cells_index })
+      end
+    end
+  end
+
   ##
   #
   # CLASS INSTANCE METHODS
