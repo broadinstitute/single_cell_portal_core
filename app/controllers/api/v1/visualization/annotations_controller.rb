@@ -188,7 +188,7 @@ module Api
               key :required, true
             end
             response 200 do
-              key :description, 'Hash of integer-based annotation assignments for all cells in requested cluster'
+              key :description, 'Array of integer-based annotation assignments for all cells in requested cluster'
               schema do
                 key :title, 'Annotations'
                 property :cells do
@@ -248,15 +248,16 @@ module Api
             render json: { error: 'Cannot use numeric annotations for facets' }, status: :bad_request and return
           end
 
-          # use new cell index arrays to load data much faster
-          indexed_cluster_cells = cluster.concatenate_data_arrays('index', 'cells')
-          annotation_arrays = {}
-          facets = []
           annotations = self.class.get_facet_annotations(@study, cluster, params[:annotations])
           missing = self.class.find_missing_annotations(annotations, params[:annotations])
           if missing.any?
             render json: { error: "Cannot find annotations: #{missing.join(', ')}" }, status: :not_found and return
           end
+
+          # use new cell index arrays to load data much faster
+          indexed_cluster_cells = cluster.concatenate_data_arrays('index', 'cells')
+          annotation_arrays = {}
+          facets = []
           # build arrays of annotation values, and populate facets response array
           annotations.each do |annotation|
             scope = annotation[:scope]
