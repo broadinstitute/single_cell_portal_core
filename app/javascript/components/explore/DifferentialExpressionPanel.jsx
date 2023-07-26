@@ -60,7 +60,7 @@ export function DifferentialExpressionPanelHeader({
   return (
     <>
       <span>Differential expression {deGenes && <span className="margin-left de-source badge badge-inverse">{deSource}</span>}</span>
-      <button className="action fa-lg"
+      <button className="action fa-lg de-exit-panel"
         onClick={() => {
           setDeGenes(null)
           setDeGroup(null)
@@ -310,8 +310,12 @@ function DifferentialExpressionTable({
     })[0]
   ))
 
-  const verticalPad = 560 // Accounts for all UI real estate above table header
-  const tableHeight = window.innerHeight - verticalPad
+  const isShowingUnfoundGenes = unfoundGenes.length > 0 && genesToShow.length > 0
+
+  let verticalPad = 560 // Accounts for all UI real estate above table header
+  if (isShowingUnfoundGenes) {verticalPad += 100}
+  const tableHeight = Math.max(window.innerHeight - verticalPad, 160)
+  console.log('tableHeight', tableHeight)
 
   /** Put DE table back to its original state */
   function resetDifferentialExpression() {
@@ -334,7 +338,7 @@ function DifferentialExpressionTable({
         <DifferentialExpressionResetButton onClick={resetDifferentialExpression} />
         <DifferentialExpressionModal />
       </div>
-      {unfoundGenes.length > 0 && genesToShow.length > 0 &&
+      {isShowingUnfoundGenes > 0 &&
           <UnfoundGenesContainer
             unfoundGenes={unfoundGenes}
             searchedGenes={searchedGenes}
@@ -530,10 +534,12 @@ function clearUnfoundGeneNames(unfoundGenes, searchedGenes, setSearchedGenes) {
 
 /** Summarize genes not found among DE query results */
 function UnfoundGenesContainer({ unfoundGenes, searchedGenes, setSearchedGenes }) {
+  const numShownUnfound = window.innerWidth >= 1370 ? 2 : 1 // For responsive layout
+
   return (
     <div className="unfound-genes-container">
           Genes not found:&nbsp;
-      {unfoundGenes.slice(0, 2).map(unfoundGene => {
+      {unfoundGenes.slice(0, numShownUnfound).map(unfoundGene => {
         const id = `unfound-gene-${unfoundGene}`
         return (<span
           className="unfound-gene"
@@ -542,14 +548,14 @@ function UnfoundGenesContainer({ unfoundGenes, searchedGenes, setSearchedGenes }
           {unfoundGene}
         </span>)
       })}
-      {unfoundGenes.length > 2 &&
+      {unfoundGenes.length > numShownUnfound &&
         <>
           <span>and&nbsp;
             <span
               className="unfound-genes-list glossary"
               data-toggle="tooltip"
               data-original-title={`Unfound gene names: ${unfoundGenes.join(', ')}`}
-            >{unfoundGenes.length - 2} more</span>
+            >{unfoundGenes.length - numShownUnfound} more</span>
           </span>
           <button
             className='btn-copy-unfound'
@@ -769,7 +775,7 @@ export default function DifferentialExpressionPanel({
             className={`de-find-mode-icon ${findMode}`}
             data-toggle="tooltip"
             data-original-title={
-              `Matching ${findMode} names.  Click for ${findMode === 'partial' ? 'full' : 'partial'} matches.`
+              `Matching ${findMode} names.  Click for ${findMode === 'partial' ? 'only full' : 'partial'} matches.`
             }
             onClick={handleFindModeToggle} >
             <FontAwesomeIcon icon={faBullseye} />

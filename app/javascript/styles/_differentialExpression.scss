@@ -71,6 +71,8 @@
   display: inline-block;
 }
 
+
+
 .de-search-box:focus-within {
   border: 1px solid #AAA;
 }
@@ -188,6 +190,7 @@
   top: -20px;
 }
 
+/** Make layout responsive to narrow viewports */
 @media (max-width: 1415px) {
   .de-slider-checkbox-container input {
     display: block;
@@ -198,6 +201,31 @@
   .de-slider {
     width: calc(100% - 80px);
     margin-left: 70px;
+  }
+}
+
+@media (max-width: 1340px) {
+  .de-search-box {
+    width: 130px;
+  }
+
+  .de-search-input {
+    width: 90px;
+  }
+}
+
+@media (max-width: 1315px) {
+  .de-source.margin-left {
+    margin-left: 0px;
+  }
+  .de-exit-panel {
+    margin-right: -10px;
+  }
+}
+
+@media (max-width: 1250px) {
+  .de-dot-plot-button {
+    width: 26px;
   }
 }
 
