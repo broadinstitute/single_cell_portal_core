@@ -228,7 +228,7 @@ class User
       begin
         workspace = ApplicationController.firecloud_client.get_workspace(study.firecloud_project, study.firecloud_workspace)
         project_name = workspace.dig('workspace', 'googleProject') || FireCloudClient::PORTAL_NAMESPACE
-        client = FireCloudClient.new(self, project_name)
+        client = FireCloudClient.new(user: self, project: project_name)
         client.get_pet_service_account_token(project_name)
       rescue RestClient::Exception
         # returning nil here will be caught at the UI level and show an error message
@@ -360,7 +360,7 @@ class User
     if self.registered_for_firecloud
       nil
     else
-      client = FireCloudClient.new(self, FireCloudClient::PORTAL_NAMESPACE)
+      client = FireCloudClient.new(user: self, project: FireCloudClient::PORTAL_NAMESPACE)
       if client.registered?
         Rails.logger.info "#{Time.zone.now} - setting user firecloud registrations status for #{self.email} to true"
         self.update(registered_for_firecloud: true)
@@ -384,7 +384,7 @@ class User
   #   - (Hash) => { must_accept: T/F, status: HTTP status code }
   def check_terra_tos_status
     begin
-      client = FireCloudClient.new(self, FireCloudClient::PORTAL_NAMESPACE)
+      client = FireCloudClient.new(user: self, project: FireCloudClient::PORTAL_NAMESPACE)
       user_registration = client.get_registration&.with_indifferent_access
       tos_accepted = user_registration.dig('enabled', 'tosAccepted')
       tos_accepted = true if tos_accepted.nil? # failover protection if status isn't found
@@ -411,7 +411,7 @@ class User
   def get_billing_projects
     projects = {User: [], Owner: []}
     if self.registered_for_firecloud
-      client = FireCloudClient.new(self, FireCloudClient::PORTAL_NAMESPACE)
+      client = FireCloudClient.new(user: self, project: FireCloudClient::PORTAL_NAMESPACE)
       user_projects = client.get_billing_projects
       user_projects.each do |project|
         if project['creationStatus'] == 'Ready'

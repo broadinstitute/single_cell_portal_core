@@ -415,7 +415,7 @@ class SiteController < ApplicationController
       ApplicationController.firecloud_client.create_workspace_configuration(@study.firecloud_project, @study.firecloud_workspace, submission_config)
 
       # submission must be done as user, so create a client with current_user and submit
-      client = FireCloudClient.new(current_user, @study.firecloud_project)
+      client = FireCloudClient.new(user: current_user, project: @study.firecloud_project)
       logger.info "Creating submission for #{@analysis_configuration.configuration_identifier} using configuration: #{submission_config['name']} in #{@study.firecloud_project}/#{@study.firecloud_workspace}"
       @submission = client.create_workspace_submission(@study.firecloud_project, @study.firecloud_workspace,
                                                          submission_config['namespace'], submission_config['name'],

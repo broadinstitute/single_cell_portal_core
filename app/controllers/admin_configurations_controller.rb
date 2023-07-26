@@ -250,7 +250,7 @@ class AdminConfigurationsController < ApplicationController
         portal_users.each do |user|
           unless user_group['membersEmails'].include?(user.email)
             # check if user is FireCloud member first
-            user_client = FireCloudClient.new(user, FireCloudClient::PORTAL_NAMESPACE)
+            user_client = FireCloudClient.new(user:, project: FireCloudClient::PORTAL_NAMESPACE)
             if user_client.registered?
               logger.info "#{Time.zone.now}: adding #{user.email} to #{@group_name}"
               ApplicationController.firecloud_client.add_user_to_group(@group_name, 'member', user_email)

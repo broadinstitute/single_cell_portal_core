@@ -29,6 +29,7 @@ PASSENGER_APP_ENV="development"
 COMMAND="bin/boot_docker"
 THIS_DIR="$(cd "$(dirname "$0")"; pwd)"
 CONFIG_DIR="$THIS_DIR/../config"
+SPECIAL_CMD="false"
 while getopts "p:s:r:c:e:v:n:H" OPTION; do
 case $OPTION in
   p)
@@ -42,9 +43,10 @@ case $OPTION in
     ;;
   c)
     COMMAND="$OPTARG"
+    SPECIAL_CMD="true"
     ;;
   v)
-    COMMAND=$COMMAND" -D $OPTARG"
+    DOCKER_IMAGE_TAG="$OPTARG"
     ;;
   e)
     PASSENGER_APP_ENV="$OPTARG"
@@ -109,16 +111,22 @@ if [[ -n $READ_ONLY_SERVICE_ACCOUNT_PATH ]] ; then
   echo "setting value for: READ_ONLY_GOOGLE_CLOUD_KEYFILE_JSON"
   READ_ONLY_CREDS_VALS=$(vault read -format=json $READ_ONLY_SERVICE_ACCOUNT_PATH)
   READ_ONLY_JSON_CONTENTS=$(echo $READ_ONLY_CREDS_VALS | jq --raw-output .data)
-	echo "*** WRITING READ ONLY SERVICE ACCOUNT CREDENTIALS ***"
-	READONLY_FILEPATH="$CONFIG_DIR/.read_only_service_account.json"
-	echo $READ_ONLY_JSON_CONTENTS >| $READONLY_FILEPATH
+  echo "*** WRITING READ ONLY SERVICE ACCOUNT CREDENTIALS ***"
+  READONLY_FILEPATH="$CONFIG_DIR/.read_only_service_account.json"
+  echo $READ_ONLY_JSON_CONTENTS >| $READONLY_FILEPATH
   COMMAND=$COMMAND" -K /home/app/webapp/config/.read_only_service_account.json"
 fi
 
-# insert connection information for MongoDB if this is not a CI run
-COMMAND=$COMMAND" -m $MONGO_LOCALHOST -p $PROD_DATABASE_PASSWORD -M $MONGO_INTERNAL_IP"
+# check for override of default bin/boot_docker command
+if [[ "$SPECIAL_CMD" = "true" ]] ; then
+  echo "RUNNING NON-STANDARD COMMAND: $COMMAND"
+  $COMMAND -e $PASSENGER_APP_ENV -v $DOCKER_IMAGE_TAG
+else
+  # insert connection information for MongoDB if this is not a CI run
+  COMMAND=$COMMAND" -m $MONGO_LOCALHOST -p $PROD_DATABASE_PASSWORD -M $MONGO_INTERNAL_IP"
 
-# Filter credentials from log, just show Rails environment and Terra billing project
-echo "BOOTING PORTAL WITH: -e $PASSENGER_APP_ENV -N $PORTAL_NAMESPACE"
-# execute requested command
-$COMMAND -e $PASSENGER_APP_ENV -N $PORTAL_NAMESPACE
+  # Filter credentials from log, just show Rails environment and Terra billing project
+  echo "BOOTING PORTAL WITH: -e $PASSENGER_APP_ENV -N $PORTAL_NAMESPACE"
+  # execute requested command
+  $COMMAND -D $DOCKER_IMAGE_TAG -e $PASSENGER_APP_ENV -N $PORTAL_NAMESPACE
+fi

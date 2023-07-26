@@ -55,7 +55,10 @@ export default function GeneSearchView() {
     <div>
       <div className="row">
         <div className="col-md-12 col-sm-12 col-xs-12">
-          <GeneKeyword placeholder={geneSearchPlaceholder} helpTextContent={helpTextContent} />
+          <span className='text-search search-title'>
+          Search by genes
+            <GeneKeyword placeholder={geneSearchPlaceholder} helpTextContent={helpTextContent} />
+          </span>
         </div>
       </div>
       <div className="row">

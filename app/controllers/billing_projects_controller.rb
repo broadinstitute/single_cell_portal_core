@@ -148,7 +148,7 @@ class BillingProjectsController < ApplicationController
     # parallelize retrieving workspace storage estimates
     Parallel.map(workspaces, in_threads: 100) do |workspace|
       begin
-        client = FireCloudClient.new(current_user, params[:project_name])
+        client = FireCloudClient.new(user: current_user, project: params[:project_name])
         workspace_name = workspace.dig('workspace', 'name')
         cost_estimate = client.get_workspace_storage_cost(params[:project_name], workspace_name)
         actual_cost = cost_estimate['estimate'].gsub(/\$/, '').to_f
@@ -184,7 +184,7 @@ class BillingProjectsController < ApplicationController
   # create client scoped to current user
   def create_firecloud_client
     project_name = params[:project_name].present? ? params[:project_name] : 'single-cell-portal'
-    @fire_cloud_client = FireCloudClient.new(current_user, project_name)
+    @fire_cloud_client = FireCloudClient.new(user: current_user, project: project_name)
   end
 
   # load portal service account email for use in view (we don't want to display this in the portal)

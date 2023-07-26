@@ -21,13 +21,13 @@ describe('Search query display text', () => {
 
   it('is disabled if there are no genes to search', async () => {
     const { container } = render(<StudyGeneField genes={[]} searchGenes={() => {}} allGenes={['PTEN']} speciesList={[]} />)
-    expect(container.querySelector('.gene-keyword-search-input').textContent.trim()).toEqual('Genes (e.g. "PTEN NF2")')
+    expect(container.querySelector('.gene-keyword-search-input').textContent.trim()).toEqual('Search gene(s) and find plots')
 
     const { container: emptyContainer } = render(<StudyGeneField genes={[]} searchGenes={() => {}} allGenes={[]} speciesList={[]} />)
     expect(emptyContainer.querySelector('.gene-keyword-search-input').textContent.trim()).toEqual('No expression data to search')
 
     const { container: loadingContainer } = render(<StudyGeneField genes={[]} searchGenes={() => {}} allGenes={[]} speciesList={[]} isLoading={true}/>)
-    expect(loadingContainer.querySelector('.gene-keyword-search-input').textContent.trim()).toEqual('Genes (e.g. "PTEN NF2")')
+    expect(loadingContainer.querySelector('.gene-keyword-search-input').textContent.trim()).toEqual('Search gene(s) and find plots')
   })
 })
 
