@@ -312,10 +312,13 @@ function DifferentialExpressionTable({
 
   const isShowingUnfoundGenes = unfoundGenes.length > 0 && genesToShow.length > 0
 
-  let verticalPad = 560 // Accounts for all UI real estate above table header
-  if (isShowingUnfoundGenes) {verticalPad += 100}
-  const tableHeight = Math.max(window.innerHeight - verticalPad, 160)
-  console.log('tableHeight', tableHeight)
+  let verticalPad = 540 // Accounts for all UI real estate above table header
+
+  // Retain layout to paginate w/o scrolling
+  if (isShowingUnfoundGenes) {verticalPad += 38}
+  if (window.innerWidth < 1415) {verticalPad += 24}
+
+  const tableHeight = window.innerHeight - verticalPad
 
   /** Put DE table back to its original state */
   function resetDifferentialExpression() {
