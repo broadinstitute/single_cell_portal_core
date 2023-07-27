@@ -69,6 +69,7 @@ FactoryBot.define do
                             study_file: evaluator.study_file)
         end
         cluster.set_point_count!
+        cluster.create_cell_name_index!
       end
     end
   end

@@ -214,8 +214,16 @@ class ClusterVizService
     else
       # for study-wide annotations, load from study_metadata values instead of cluster-specific annotations
       metadata_obj = study.cell_metadata.by_name_and_type(annotation[:name], annotation[:type])
-      annotation_hash = metadata_obj&.cell_annotations || {}
-      annotation_array = cells&.map { |cell| annotation_hash[cell] } || []
+      if subsample_annotation
+        annotation_hash = metadata_obj&.cell_annotations || {}
+        annotation_array = cells&.map { |cell| annotation_hash[cell] } || []
+      else
+        # full-resolution data can use the indexed cell names array for better performance (~3-5x)
+        # benefit is most noticeable > 100k cells
+        index = cluster.concatenate_data_arrays('index', 'cells') || []
+        annotations = metadata_obj&.concatenate_data_arrays(metadata_obj.name, 'annotations') || []
+        annotation_array = index.map { |idx| annotations[idx] }
+      end
     end
     AnnotationVizService.sanitize_values_array(annotation_array, annotation[:type])
   end

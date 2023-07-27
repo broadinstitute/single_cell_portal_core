@@ -60,6 +60,7 @@ Rails.application.routes.draw do
                       only: [:show, :index],
                       param: :cluster_name,
                       constraints: { cluster_name: /[^\/]+/ } # needed to allow '.' in cluster names
+            get 'annotations/facets', to: 'visualization/annotations#facets'
             resources :annotations, controller: 'visualization/annotations',
                       only: [:show, :index],
                       param: :annotation_name,
