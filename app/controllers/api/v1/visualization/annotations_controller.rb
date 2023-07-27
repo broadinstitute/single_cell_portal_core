@@ -244,6 +244,11 @@ module Api
             render json: { error: "Cannot find cluster: #{params[:cluster]}" }, status: :not_found and return
           end
 
+          # need to check for presence as some clusters will not have them if cells were not found in all_cells_array
+          unless cluster.indexed
+            render json: { error: 'Cluster is not indexed' }, status: :bad_request and return
+          end
+
           if params[:annotations].include?('--numeric--')
             render json: { error: 'Cannot use numeric annotations for facets' }, status: :bad_request and return
           end

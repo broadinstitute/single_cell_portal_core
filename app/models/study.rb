@@ -1399,8 +1399,7 @@ class Study
   # for every cluster in this study, generate an indexed array of cluster cells using 'all cells' as the map
   # returns number of arrays created
   def create_all_cluster_cell_indices!
-    study_cells = all_cells_array
-    return nil if cluster_groups.empty? || study_cells.empty?
+    return nil if cluster_groups.empty?
 
     cluster_groups.each do |cluster_group|
       Rails.logger.info "creating cell index in #{accession} for #{cluster_group.name}"

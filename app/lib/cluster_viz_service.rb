@@ -214,7 +214,7 @@ class ClusterVizService
     else
       # for study-wide annotations, load from study_metadata values instead of cluster-specific annotations
       metadata_obj = study.cell_metadata.by_name_and_type(annotation[:name], annotation[:type])
-      if subsample_annotation
+      if !cluster.indexed? || (subsample_annotation && subsample_threshold)
         annotation_hash = metadata_obj&.cell_annotations || {}
         annotation_array = cells&.map { |cell| annotation_hash[cell] } || []
       else

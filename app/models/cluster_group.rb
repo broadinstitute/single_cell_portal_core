@@ -26,6 +26,10 @@ class ClusterGroup
   field :subsampled, type: Boolean, default: false
   field :is_subsampling, type: Boolean, default: false
 
+  # indexing flags to control creating cluster cell index arrays
+  field :indexed, type: Boolean, default: false
+  field :is_indexing, type: Boolean, default: false
+
   # denotes when image_pipeline has been run for this cluster_group
   field :has_image_cache, type: Boolean, default: false
 
@@ -370,25 +374,51 @@ class ClusterGroup
     self.points
   end
 
+  # helper to check if cell name index can be created safely
+  # both the parent study file & metadata file must be parsed, and cluster is not being indexed in another process
+  def can_index?
+    study.metadata_file.present? && study.metadata_file.parsed? && study_file.parsed? && !indexed && !is_indexing
+  end
+
   # index the cells from this cluster against the 'all cells' array at the study level
+  # study_cells.index_with.with_index creates hash of cell names => array index position
+  # averts CPU saturation of calling Array#index on very large arrays
   def cell_name_index(study_cells)
-    concatenate_data_arrays('text', 'cells').map { |cell| study_cells.index(cell) }
+    cluster_cells = concatenate_data_arrays('text', 'cells')
+    # if cluster cells & study cells are identical, index is 1 up to length of array (or #each_index)
+    if cluster_cells == study_cells
+      cluster_cells.each_index
+    else
+      all_cells_hash = study_cells.index_with.with_index { |_, index| index }
+      cluster_cells.map { |cell| all_cells_hash[cell] }
+    end
   end
 
   # create all necessary data array entries for cell_name_index
   def create_cell_name_index!
-    return nil if study.metadata_file.nil?
+    return nil unless can_index?
 
+    update!(is_indexing: true)
     study_cells = study.all_cells_array
-    cell_name_index(study_cells).each_slice(DataArray::MAX_ENTRIES).with_index do |slice, index|
-      begin
-        DataArray.create!(
-          name: 'index', array_type: 'cells', array_index: index, values: slice, linear_data_type: 'ClusterGroup',
-          linear_data_id: id, study_id: study.id, study_file_id:, cluster_name: name
-        )
-      rescue => e
-        ErrorTracker.report_exception(e, nil, self, cluster_group, { job: :create_cluster_cells_index })
+    cell_index = cell_name_index(study_cells)
+    # if some cells are not indexed, don't create array as this will break things downstream
+    index_count = cell_index.compact.size
+    if index_count != points
+      Rails.logger.info "aborting cell index for #{name} - #{points - index_count} cells not found"
+      update!(is_indexing: false)
+    else
+      cell_index.each_slice(DataArray::MAX_ENTRIES).with_index do |slice, index|
+        begin
+          DataArray.create!(
+            name: 'index', array_type: 'cells', array_index: index, values: slice, linear_data_type: 'ClusterGroup',
+            linear_data_id: id, study_id: study.id, study_file_id:, cluster_name: name
+          )
+        rescue => e
+          update!(is_indexing: false)
+          ErrorTracker.report_exception(e, nil, study, self, { job: :create_cell_name_index! })
+        end
       end
+      update!(is_indexing: false, indexed: true)
     end
   end
 
