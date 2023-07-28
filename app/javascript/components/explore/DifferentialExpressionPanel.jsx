@@ -630,7 +630,9 @@ export default function DifferentialExpressionPanel({
     setUnfoundGenes(unfoundNames)
 
     const otherProps = { trigger: 'update-facet', facet: metric }
-    logDifferentialExpressionTableSearch([searchedGenes], species, otherProps)
+
+    const searchedGenesArray = splitSearchedGenesString(searchedGenes)
+    logDifferentialExpressionTableSearch(searchedGenesArray, species, otherProps)
   }
 
   /** Enable or disable slider range facet; preserve filter in background */
@@ -645,7 +647,8 @@ export default function DifferentialExpressionPanel({
     setUnfoundGenes(unfoundNames)
 
     const otherProps = { trigger: 'toggle-facet', facet: metric }
-    logDifferentialExpressionTableSearch([searchedGenes], species, otherProps)
+    const searchedGenesArray = splitSearchedGenesString(searchedGenes)
+    logDifferentialExpressionTableSearch(searchedGenesArray, species, otherProps)
   }
 
   /** Handle a user pressing the 'x' to clear the 'Find a gene' field */
@@ -673,7 +676,6 @@ export default function DifferentialExpressionPanel({
   function updateSearchedGenes(newSearchedGenes, trigger) {
     newSearchedGenes =
       newSearchedGenes
-        .trim()
         .replace(/\r?\n/g, ' ') // Replace newlines (Unix- or Windows-style) with spaces
         .replace(/\t/g, ' ')
 
@@ -688,7 +690,8 @@ export default function DifferentialExpressionPanel({
     delayedDETableLogTimeout.current = setTimeout(() => {
       const otherProps = { trigger }
       const genes = [newSearchedGenes]
-      logDifferentialExpressionTableSearch(genes, species, otherProps)
+      const searchedGenesArray = splitSearchedGenesString(newSearchedGenes)
+      logDifferentialExpressionTableSearch(searchedGenesArray, species, otherProps)
     }, 1000)
   }
 
