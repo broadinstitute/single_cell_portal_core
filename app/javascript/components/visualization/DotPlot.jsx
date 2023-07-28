@@ -31,7 +31,7 @@ function patchServiceWorkerCache() {
 
   /**
    * Monkeypatched from
-   * https://github.com/cmap/morpheus.js/blob/8331b8db8696d1bf3255da2261ac729bfc7ea66a/sw.js#L24
+   * https://github.com/cmap/morpheus.js/blob/8331b8db8696d1bf3255da2261ac729bfc7ea66a/src/io/buffered_reader.js#L36
    * to enable service worker cache (SWC) in frontend-only SCP development.
    */
   window.morpheus.BufferedReader.parse = async function(url, options) {
@@ -68,6 +68,9 @@ function patchServiceWorkerCache() {
 
   /**
  * Adds rudimentary service worker cache optimization to Morpheus
+ *
+ * Monkeypatched from:
+ * https://github.com/cmap/morpheus.js/blob/8331b8db8696d1bf3255da2261ac729bfc7ea66a/src/util/util.js#L1444
  *
  * @param file
  *            a File or url
