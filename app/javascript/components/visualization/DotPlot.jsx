@@ -35,7 +35,6 @@ function patchServiceWorkerCache() {
    * to enable service worker cache (SWC) in frontend-only SCP development.
    */
   window.morpheus.BufferedReader.parse = async function(url, options) {
-    console.log('from eweitz, in window.morpheus.BufferedReader.parse')
     const delim = options.delimiter
     const regex = new RegExp(delim)
     const handleTokens = options.handleTokens
