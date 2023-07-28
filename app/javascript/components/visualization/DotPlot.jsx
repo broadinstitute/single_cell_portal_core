@@ -9,6 +9,8 @@ import { getAnnotationCellValuesURL, getExpressionHeatmapURL } from '~/lib/scp-a
 import useErrorMessage, { morpheusErrorHandler } from '~/lib/error-message'
 import { withErrorBoundary } from '~/lib/ErrorBoundary'
 import LoadingSpinner from '~/lib/LoadingSpinner'
+import { fetchServiceWorkerCache } from '~/lib/service-worker-cache'
+import { getSCPContext } from '~/providers/SCPContextProvider'
 
 export const dotPlotColorScheme = {
   // Blue, purple, red.  These red and blue hues are accessible, per WCAG.
@@ -16,6 +18,53 @@ export const dotPlotColorScheme = {
 
   // TODO: Incorporate expression units, once such metadata is available.
   values: [0, 0.5, 1]
+}
+
+/**
+ * Adds rudimentary service worker cache optimization to Morpheus
+ *
+ * Monkeypatched from
+ * https://github.com/cmap/morpheus.js/blob/8331b8db8696d1bf3255da2261ac729bfc7ea66a/sw.js#L24
+ * to enable service worker cache (SWC) in frontend-only SCP development.
+ *
+ * Without SWC, dot plots can take prohibitively long to load in local development
+ * for realistic datasets.
+ */
+function patchServiceWorkerCache() {
+  const isServiceWorkerCacheEnabled = getSCPContext().isServiceWorkerCacheEnabled
+  window.morpheus.BufferedReader.parse = async function(url, options) {
+    console.log('from eweitz, in window.morpheus.BufferedReader.parse')
+    const delim = options.delimiter
+    const regex = new RegExp(delim)
+    const handleTokens = options.handleTokens
+    const complete = options.complete
+    const fetchOptions = {}
+    if (url.headers) {
+      for (const header in fetchOptions.headers = new Headers,
+      url.headers) {fetchOptions.headers.append(header, url.headers[header])}
+    }
+
+    let response
+    let isServiceWorkerCacheHit = false
+    if (isServiceWorkerCacheEnabled) {
+      const fetchSWCacheResult = await fetchServiceWorkerCache(url, fetchOptions)
+      response = fetchSWCacheResult[0]
+      isServiceWorkerCacheHit = fetchSWCacheResult[1]
+    } else {
+      response = fetch(url, fetchOptions)
+    }
+
+    if (response.ok) {
+      const reader = response.body.getReader()
+      new morpheus.BufferedReader(reader, (line => {
+        handleTokens(line.split(regex))
+      })
+      , (() => {
+        complete()
+      })
+      )
+    } else {options.error('Network error')}
+  }
 }
 
 /** renders a morpheus powered dotPlot for the given URL paths and annotation
@@ -153,6 +202,8 @@ function renderDotPlot({
   }
 
   config.colorScheme = dotPlotColorScheme
+
+  patchServiceWorkerCache()
 
   // Instantiate dot plot and embed in DOM element
   new window.morpheus.HeatMap(config)
