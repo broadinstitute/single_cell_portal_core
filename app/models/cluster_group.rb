@@ -29,6 +29,7 @@ class ClusterGroup
   # indexing flags to control creating cluster cell index arrays
   field :indexed, type: Boolean, default: false
   field :is_indexing, type: Boolean, default: false
+  field :use_default_index, type: Boolean, default: false
 
   # denotes when image_pipeline has been run for this cluster_group
   field :has_image_cache, type: Boolean, default: false
@@ -385,13 +386,11 @@ class ClusterGroup
   # averts CPU saturation of calling Array#index on very large arrays
   def cell_name_index(study_cells)
     cluster_cells = concatenate_data_arrays('text', 'cells')
-    # if cluster cells & study cells are identical, index is 1 up to length of array (or #each_index)
-    if cluster_cells == study_cells
-      cluster_cells.each_index
-    else
-      all_cells_hash = study_cells.index_with.with_index { |_, index| index }
-      cluster_cells.map { |cell| all_cells_hash[cell] }
-    end
+    # if cluster cells & study cells are identical, return empty array so we can set #use_default_index
+    return [] if cluster_cells == study_cells
+
+    all_cells_hash = study_cells.index_with.with_index { |_, index| index }
+    cluster_cells.map { |cell| all_cells_hash[cell] }
   end
 
   # create all necessary data array entries for cell_name_index
@@ -403,8 +402,11 @@ class ClusterGroup
     cell_index = cell_name_index(study_cells)
     # if some cells are not indexed, don't create array as this will break things downstream
     index_count = cell_index.compact.size
-    if index_count != points
-      Rails.logger.info "aborting cell index for #{name} - #{points - index_count} cells not found"
+    if cell_index.empty?
+      Rails.logger.info "using default cell index for #{study.accession}:#{name}"
+      update!(is_indexing: false, indexed: true, use_default_index: true)
+    elsif index_count != points
+      Rails.logger.info "aborting cell index for #{study.accession}:#{name} - #{points - index_count} cells not found"
       update!(is_indexing: false)
     else
       cell_index.each_slice(DataArray::MAX_ENTRIES).with_index do |slice, index|
@@ -420,6 +422,11 @@ class ClusterGroup
       end
       update!(is_indexing: false, indexed: true)
     end
+  end
+
+  # load indexed cell name array, or use default enumerator if identical to metadata file
+  def cell_index_array
+    use_default_index ? 0.upto(points - 1) : concatenate_data_arrays('index', 'cells')
   end
 
   ##

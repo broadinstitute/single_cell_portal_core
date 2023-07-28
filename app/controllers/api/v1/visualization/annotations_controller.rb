@@ -260,7 +260,7 @@ module Api
           end
 
           # use new cell index arrays to load data much faster
-          indexed_cluster_cells = cluster.concatenate_data_arrays('index', 'cells')
+          indexed_cluster_cells = cluster.cell_index_array
           annotation_arrays = {}
           facets = []
           # build arrays of annotation values, and populate facets response array

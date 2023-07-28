@@ -220,7 +220,7 @@ class ClusterVizService
       else
         # full-resolution data can use the indexed cell names array for better performance (~3-5x)
         # benefit is most noticeable > 100k cells
-        index = cluster.concatenate_data_arrays('index', 'cells') || []
+        index = cluster.cell_index_array || []
         annotations = metadata_obj&.concatenate_data_arrays(metadata_obj.name, 'annotations') || []
         annotation_array = index.map { |idx| annotations[idx] }
       end
