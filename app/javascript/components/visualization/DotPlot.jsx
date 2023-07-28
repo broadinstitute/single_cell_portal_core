@@ -47,11 +47,9 @@ function patchServiceWorkerCache() {
     }
 
     let response
-    let isServiceWorkerCacheHit = false
     if (isServiceWorkerCacheEnabled) {
       const fetchSWCacheResult = await fetchServiceWorkerCache(url, fetchOptions)
       response = fetchSWCacheResult[0]
-      isServiceWorkerCacheHit = fetchSWCacheResult[1]
     } else {
       response = fetch(url, fetchOptions)
     }
@@ -92,11 +90,9 @@ function patchServiceWorkerCache() {
             }
           }
           let response
-          let isServiceWorkerCacheHit = false
           if (isServiceWorkerCacheEnabled) {
             const fetchSWCacheResult = await fetchServiceWorkerCache(fileOrUrl, fetchOptions)
             response = fetchSWCacheResult[0]
-            isServiceWorkerCacheHit = fetchSWCacheResult[1]
           } else {
             response = fetch(fileOrUrl, fetchOptions)
           }
@@ -125,11 +121,9 @@ function patchServiceWorkerCache() {
           }
         } else {
           let response
-          let isServiceWorkerCacheHit = false
           if (isServiceWorkerCacheEnabled) {
             const fetchSWCacheResult = await fetchServiceWorkerCache(fileOrUrl, fetchOptions)
             response = fetchSWCacheResult[0]
-            isServiceWorkerCacheHit = fetchSWCacheResult[1]
           } else {
             response = fetch(fileOrUrl, fetchOptions)
           }
