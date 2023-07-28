@@ -23,15 +23,17 @@ export const dotPlotColorScheme = {
 /**
  * Adds rudimentary service worker cache optimization to Morpheus
  *
- * Monkeypatched from
- * https://github.com/cmap/morpheus.js/blob/8331b8db8696d1bf3255da2261ac729bfc7ea66a/sw.js#L24
- * to enable service worker cache (SWC) in frontend-only SCP development.
- *
  * Without SWC, dot plots can take prohibitively long to load in local development
  * for realistic datasets.
  */
 function patchServiceWorkerCache() {
   const isServiceWorkerCacheEnabled = getSCPContext().isServiceWorkerCacheEnabled
+
+  /**
+   * Monkeypatched from
+   * https://github.com/cmap/morpheus.js/blob/8331b8db8696d1bf3255da2261ac729bfc7ea66a/sw.js#L24
+   * to enable service worker cache (SWC) in frontend-only SCP development.
+   */
   window.morpheus.BufferedReader.parse = async function(url, options) {
     console.log('from eweitz, in window.morpheus.BufferedReader.parse')
     const delim = options.delimiter
@@ -65,6 +67,110 @@ function patchServiceWorkerCache() {
       )
     } else {options.error('Network error')}
   }
+
+
+/**
+ * @param file
+ *            a File or url
+ * @return A deferred object that resolves to an array of strings
+ */
+morpheus.Util.readLines = function (fileOrUrl, interactive) {
+  return new Promise(function (resolve, reject) {
+    var isFile = morpheus.Util.isFile(fileOrUrl);
+    var isString = morpheus.Util.isString(fileOrUrl);
+    var name = morpheus.Util.getFileName(fileOrUrl);
+    var ext = morpheus.Util.getExtension(name);
+
+    if (isString) { // URL
+      if (ext === 'xlsx') {
+        var fetchOptions = {};
+        if (fileOrUrl.headers) {
+          fetchOptions.headers = new Headers();
+          for (var header in fileOrUrl.headers) {
+            fetchOptions.headers.append(header, fileOrUrl.headers[header]);
+          }
+        }
+        fetch(fileOrUrl, fetchOptions).then(function (response) {
+          if (response.ok) {
+            return response.arrayBuffer();
+          } else {
+            deferred.reject(response);
+          }
+        }).then(function (arrayBuffer) {
+          if (arrayBuffer) {
+            var data = new Uint8Array(arrayBuffer);
+            var arr = [];
+            for (var i = 0; i != data.length; ++i) {
+              arr[i] = String.fromCharCode(data[i]);
+            }
+            var bstr = arr.join('');
+            morpheus.Util.xlsxTo1dArray({
+              data: bstr,
+              prompt: interactive
+            }, function (err, lines) {
+              deferred.resolve(lines);
+            });
+
+          } else {
+            deferred.reject();
+          }
+        });
+      } else {
+        fetch(fileOrUrl, fetchOptions).then(function (response) {
+          if (response.ok) {
+            return response.text();
+          } else {
+            reject();
+          }
+        }).then(function (text) {
+          resolve(morpheus.Util.splitOnNewLine(text));
+        }).catch(function (err) {
+          reject(err);
+        });
+      }
+    } else if (isFile) {
+      var reader = new FileReader();
+      reader.onerror = function () {
+        console.log('Unable to read file');
+        reject('Unable to read file');
+      };
+      reader.onload = function (event) {
+        var arrayBuffer = event.target.result;
+        var data = new Uint8Array(arrayBuffer);
+        if (ext === 'xlsx' || ext === 'xls') {
+          var arr = [];
+          for (var i = 0; i != data.length; ++i) {
+            arr[i] = String.fromCharCode(data[i]);
+          }
+          var bstr = arr.join('');
+          morpheus.Util
+            .xlsxTo1dArray({
+              data: bstr,
+              prompt: interactive
+            }, function (err, lines) {
+              resolve(lines);
+            });
+        } else {
+          var br = new morpheus.ArrayBufferReader(data);
+          var s;
+          var lines = [];
+          var rtrim = /\s+$/;
+          while ((s = br.readLine()) !== null) {
+            var line = s.replace(rtrim, '');
+            if (line !== '') {
+              lines.push(line);
+            }
+          }
+          resolve(lines);
+        }
+
+      };
+      reader.readAsArrayBuffer(fileOrUrl);
+    } else { // it's already lines?
+      resolve(fileOrUrl);
+    }
+  });
+
 }
 
 /** renders a morpheus powered dotPlot for the given URL paths and annotation
