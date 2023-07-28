@@ -51,7 +51,7 @@ function patchServiceWorkerCache() {
       const fetchSWCacheResult = await fetchServiceWorkerCache(url, fetchOptions)
       response = fetchSWCacheResult[0]
     } else {
-      response = fetch(url, fetchOptions)
+      response = await fetch(url, fetchOptions)
     }
 
     if (response.ok) {
@@ -128,7 +128,7 @@ function patchServiceWorkerCache() {
             const fetchSWCacheResult = await fetchServiceWorkerCache(fileOrUrl, fetchOptions)
             response = fetchSWCacheResult[0]
           } else {
-            response = fetch(fileOrUrl, fetchOptions)
+            response = await fetch(fileOrUrl, fetchOptions)
           }
           let text
           if (response.ok) {
