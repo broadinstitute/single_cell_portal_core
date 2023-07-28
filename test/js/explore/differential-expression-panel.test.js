@@ -34,6 +34,15 @@ describe('Differential expression panel', () => {
         'pctNzGroup': 1,
         'pctNzReference': 0.5595,
         'name': 'HLA-DPA1'
+      },
+      {
+        'score': 11.05,
+        'log2FoldChange': 3.753,
+        'pval': 2.291e-28,
+        'pvalAdj': 2.778e-24,
+        'pctNzGroup': 1,
+        'pctNzReference': 0.5595,
+        'name': 'HLA-FOOBAR'
       }
     ]
 
@@ -107,11 +116,16 @@ describe('Differential expression panel', () => {
     const firstGeneAfterSort = container.querySelector('.de-gene-row td')
     expect(firstGeneAfterSort).toHaveTextContent('HLA-DPA1')
 
-    // Confirm "Find a gene"
+    // Confirm base case for "Find genes"
     const deSearchBox = container.querySelector('.de-search-box')
     const input = deSearchBox.querySelector('input')
     fireEvent.change(input, { target: { value: 'CD7' } })
     expect(deTable.querySelectorAll('.de-gene-row')).toHaveLength(1)
+
+    // Confirm behavior for clear icon ("x" at right in DE find search box)
+    const clearIcon = container.querySelector('.clear-de-search-icon')
+    fireEvent.click(clearIcon)
+    expect(deTable.querySelectorAll('.de-gene-row')).toHaveLength(3)
 
     // Confirm range slider facets appear, and can toggle
     const rangeSliderFacets = container.querySelectorAll('.de-slider-container')
