@@ -349,8 +349,8 @@ function DifferentialExpressionTable({
           />
       }
       {genesToShow.length === 0 &&
-      <div style={{ paddingTop: '20px', fontSize: '13px' }}>
-        <b>No genes found</b>.<br/><br/>
+      <div className="de-no-genes-found">
+        <span className="bold">No genes found</span>.<br/><br/>
 
         <BroadenSearchMessage />
       </div>

@@ -3,7 +3,7 @@
  */
 
 import React from 'react'
-import { render, fireEvent } from '@testing-library/react'
+import { render, fireEvent, screen } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 
 import DifferentialExpressionPanel from 'components/explore/DifferentialExpressionPanel'
@@ -101,7 +101,7 @@ describe('Differential expression panel', () => {
       />
     ))
 
-    const deTable = container.querySelector('.de-table')
+    let deTable = container.querySelector('.de-table')
     expect(deTable).toHaveTextContent('HLA-DPA1')
 
     // Confirm sort
@@ -118,14 +118,31 @@ describe('Differential expression panel', () => {
 
     // Confirm base case for "Find genes"
     const deSearchBox = container.querySelector('.de-search-box')
-    const input = deSearchBox.querySelector('input')
+    let input = deSearchBox.querySelector('input')
     fireEvent.change(input, { target: { value: 'CD7' } })
     expect(deTable.querySelectorAll('.de-gene-row')).toHaveLength(1)
 
     // Confirm behavior for clear icon ("x" at right in DE find search box)
-    const clearIcon = container.querySelector('.clear-de-search-icon')
+    let clearIcon = container.querySelector('.clear-de-search-icon')
     fireEvent.click(clearIcon)
     expect(deTable.querySelectorAll('.de-gene-row')).toHaveLength(3)
+
+    // Confirm multi-gene DE find
+    fireEvent.change(input, { target: { value: 'HLA-' } })
+    expect(deTable.querySelectorAll('.de-gene-row')).toHaveLength(2)
+
+    // Clear gene names query
+    clearIcon = container.querySelector('.clear-de-search-icon')
+    fireEvent.click(clearIcon)
+    expect(deTable.querySelectorAll('.de-gene-row')).toHaveLength(3)
+
+    // Confirm "No genes found" message
+    input = deSearchBox.querySelector('input')
+    fireEvent.change(input, { target: { value: 'zxcv' } })
+    const noGenesContainer = container.querySelector('.de-no-genes-found')
+    expect(noGenesContainer).toHaveTextContent('No genes found.')
+    clearIcon = container.querySelector('.clear-de-search-icon')
+    fireEvent.click(clearIcon)
 
     // Confirm range slider facets appear, and can toggle
     const rangeSliderFacets = container.querySelectorAll('.de-slider-container')
@@ -136,6 +153,8 @@ describe('Differential expression panel', () => {
     expect(inactiveFacets).toHaveLength(1)
 
     // Confirm dot plot is invoked upon clicking related button
+    deTable = container.querySelector('.de-table')
+    expect(deTable.querySelectorAll('.de-gene-row')).toHaveLength(3)
     const deDotPlotButton = container.querySelector('.de-dot-plot-button')
     fireEvent.click(deDotPlotButton)
     expect(searchGenes).toHaveBeenCalled()
