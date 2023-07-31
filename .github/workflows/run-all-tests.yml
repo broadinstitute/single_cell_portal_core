@@ -36,6 +36,7 @@ jobs:
                                   -n single-cell-portal-test
       - name: Preserve all test logs
         uses: actions/upload-artifact@v3
+        if: always()
         with:
           name: test-logs
           path: |
