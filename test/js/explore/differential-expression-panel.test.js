@@ -147,7 +147,7 @@ describe('Differential expression panel', () => {
     // Confirm range slider facets appear, and can toggle
     const rangeSliderFacets = container.querySelectorAll('.de-slider-container')
     expect(rangeSliderFacets).toHaveLength(2)
-    const log2FoldChangeCheckbox = container.querySelector('#slider-checkbox-log2FoldChange')
+    const log2FoldChangeCheckbox = container.querySelector('.slider-checkbox-log2FoldChange')
     fireEvent.click(log2FoldChangeCheckbox)
     const inactiveFacets = container.querySelectorAll('.inactive.de-slider-container')
     expect(inactiveFacets).toHaveLength(1)
