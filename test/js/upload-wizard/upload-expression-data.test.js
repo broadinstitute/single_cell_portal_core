@@ -51,9 +51,9 @@ describe('it allows uploading of expression matrices', () => {
     expect(mainSaveButton()).toBeDisabled()
 
     fireEvent.mouseOver(mainSaveButton())
-    expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify units')
-    expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify species')
-    expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify Library preparation protocol')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify: units')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify: species')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify: Library preparation protocol')
 
     await selectEvent.select(getSelectByLabelText(screen, 'Species *'), 'chicken')
     await selectEvent.select(getSelectByLabelText(screen, 'Library preparation protocol *'), 'Drop-seq')
