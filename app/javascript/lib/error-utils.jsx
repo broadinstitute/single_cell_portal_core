@@ -7,6 +7,10 @@ export const supportEmailLink = (
   </a>
 )
 
+export const contactUsLink = (
+  <a href={`mailto:${supportEmailAddress}`}>contact us</a>
+)
+
 export const serverErrorEnd = <div>
   Sorry, an error has occurred. Support has been notified. Please try
   again. If this error persists, or you require assistance, please

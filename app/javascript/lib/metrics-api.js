@@ -314,6 +314,7 @@ function logClickInput(target) {
       props.text = target.value
     }
   }
+  props.classList = getClassListAsArray(target)
   const element = `input-${target.type}`
   log(`click:${element}`, props)
 }
