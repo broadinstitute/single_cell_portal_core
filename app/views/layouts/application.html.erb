@@ -32,7 +32,7 @@
           localStorage.removeItem('previous-search-url');
           window.location = searchUrl;
       }
-
+      window.SCP.userAccessTokenObject = <%= raw get_user_access_token(current_user).to_json %>
       window.SCP.userAccessToken = '<%= get_user_access_token(current_user) %>';
       window.SCP.userSignedIn = <%= user_signed_in? %>;
       window.SCP.environment = '<%= Rails.env %>';
