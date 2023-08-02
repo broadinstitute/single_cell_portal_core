@@ -220,7 +220,7 @@ module Api
             key :description, ApiBaseController.unauthorized
           end
           response 403 do
-            key :description, ApiBaseController.forbidden('')
+            key :description, ApiBaseController.forbidden('renew access token')
           end
           response 404 do
             key :description, ApiBaseController.not_found(User)
