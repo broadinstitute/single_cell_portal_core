@@ -21,7 +21,7 @@ import { clearOldServiceWorkerCaches } from '~/lib/service-worker-cache'
 const { validateRemoteFile } = ValidateFile
 
 import {
-  logPageView, logClick, logMenuChange, setupPageTransitionLog, log, logCopy, logContextMenu, logError
+  logPageView, logClick, logMenuChange, setupPageTransitionLog, log, logCopy, logContextMenu
 } from '~/lib/metrics-api'
 import * as ScpApi from '~/lib/scp-api'
 

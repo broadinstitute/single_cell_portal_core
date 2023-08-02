@@ -41,6 +41,8 @@ describe('JavaScript client for SCP REST API', () => {
   afterEach(() => {
     // Restores all mocks back to their original value
     jest.restoreAllMocks()
+    jest.spyOn(global, 'setTimeout').mockReset()
+
   })
 
   afterAll(() => {
@@ -182,7 +184,7 @@ describe('JavaScript client for SCP REST API', () => {
 
     const expectedRenewalTime = 3300 * 1000 // 55 minutes in milliseconds
 
-    setUpRenewalForUserAccessToken('SCP123')
+    setUpRenewalForUserAccessToken()
     expect(setTimeout).toHaveBeenCalledTimes(1);
     expect(setTimeout).toHaveBeenLastCalledWith(expect.any(Function), expectedRenewalTime);
 
