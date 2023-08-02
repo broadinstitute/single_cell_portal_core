@@ -310,7 +310,9 @@ function DifferentialExpressionTable({
     })[0]
   ))
 
-  const isShowingUnfoundGenes = unfoundGenes.length > 0 && genesToShow.length > 0
+  const numGenesToShow = genesToShow.length
+
+  const isShowingUnfoundGenes = unfoundGenes.length > 0 && numGenesToShow > 0
 
   let verticalPad = 540 // Accounts for all UI real estate above table header
 
@@ -332,7 +334,7 @@ function DifferentialExpressionTable({
   return (
     <>
       <div className="de-table-buttons">
-        {genesToShow.length > 0 &&
+        {numGenesToShow > 0 &&
         <>
           <DotPlotButton dotPlotGenes={dotPlotGenes} searchGenes={searchGenes} />
           <DownloadButton bucketId={bucketId} deFilePath={deFilePath} />
@@ -348,14 +350,14 @@ function DifferentialExpressionTable({
             setSearchedGenes={setSearchedGenes}
           />
       }
-      {genesToShow.length === 0 &&
+      {numGenesToShow === 0 &&
       <div className="de-no-genes-found">
         <span className="bold">No genes found</span>.<br/><br/>
 
         <BroadenSearchMessage />
       </div>
       }
-      {genesToShow.length > 0 &&
+      {numGenesToShow > 0 &&
       <>
         <table
           className="de-table table table-terra table-scp-compact"
