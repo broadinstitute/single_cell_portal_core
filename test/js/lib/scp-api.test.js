@@ -3,7 +3,7 @@
 import CacheMock from 'browser-cache-mock';
 import 'isomorphic-fetch';
 
-import scpApi, { fetchSearch, fetchFacetFilters, setupRenewalForReadOnlyToken, renewUserAccessToken } from 'lib/scp-api'
+import scpApi, { fetchSearch, fetchFacetFilters, setupRenewalForReadOnlyToken, setUpRenewalForUserAccessToken } from 'lib/scp-api'
 import * as ServiceWorkerCache from 'lib/service-worker-cache'
 import * as SCPContextProvider from '~/providers/SCPContextProvider'
 
@@ -151,7 +151,7 @@ describe('JavaScript client for SCP REST API', () => {
     done()
   })
 
-  it('sets timer for access token renewal', done => {
+  it('sets timer for read only access token renewal', done => {
     window.SCP = {
       readOnlyTokenObject: {
           'access_token': 'ya11.b.foo_bar-baz',
@@ -171,41 +171,24 @@ describe('JavaScript client for SCP REST API', () => {
     })
   })
 
-  it('should reset the access token when the token is an empty string', async done => {
-    const mockSuccessResponse = {accessToken : 'new_token'}
-    const mockJsonPromise = Promise.resolve(mockSuccessResponse)
-    const mockFetchPromise = Promise.resolve({
-      ok: true,
-      json: () => {
-        mockJsonPromise
-      },
-      clone: () => {}
-    })
-    jest.spyOn(global, 'fetch').mockImplementation(() => mockFetchPromise)
-
-
+  it('sets timer for user access token renewal', done => {
     window.SCP = {
-      userAccessToken : 'i_am_a_token',
-      userSignedIn : true
+      userAccessTokenObject: {
+          'access_token': 'ya11.b.foo_bar-baz',
+          'expires_in': 3600, // 1 hour in seconds
+          'expires_at': '2023-03-28T11:12:02.044-04:00'
+      }
     }
 
-    // the userAccessToken is present then the call to renew it should not have occurred
-    expect(fetch).toHaveBeenCalledTimes(0);
+    const expectedRenewalTime = 3300 * 1000 // 55 minutes in milliseconds
 
-    window.SCP = {
-      userAccessToken : '',
-      userSignedIn : true
-    }
-    
-    await renewUserAccessToken('SCP123')
-
-    // the userAccessToken is now an empty string the call to renew it should have been made
-    expect(fetch).toHaveBeenCalledTimes(1);
+    setUpRenewalForUserAccessToken('SCP123')
+    expect(setTimeout).toHaveBeenCalledTimes(1);
+    expect(setTimeout).toHaveBeenLastCalledWith(expect.any(Function), expectedRenewalTime);
 
     process.nextTick(() => {
       done()
     })
   })
-
 
 })

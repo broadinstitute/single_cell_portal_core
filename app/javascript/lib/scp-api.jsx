@@ -20,7 +20,6 @@ import { showMessage } from '~/lib/MessageModal'
 import { fetchServiceWorkerCache } from './service-worker-cache'
 import { getSCPContext } from '~/providers/SCPContextProvider'
 import { STEP_NOT_NEEDED } from './metrics-perf'
-
 // If true, returns mock data for all API responses.  Only for dev.
 let globalMock = false
 
@@ -234,7 +233,7 @@ export function setupRenewalForReadOnlyToken(studyAccession) {
   const renewalTime = readOnlyTokenObject.expiresIn * 1000 - FIVE_MINUTES
 
   setTimeout(async () => {
-    const apiUrl = `/site/studies/${studyAccession}/renew_token`
+    const apiUrl = `/site/studies/${studyAccession}/renew_read_only_access_token`
     const [response] = await scpApi(apiUrl, defaultInit())
     const readOnlyTokenObject = response
     window.SCP.readOnlyToken = readOnlyTokenObject.accessToken
@@ -245,14 +244,28 @@ export function setupRenewalForReadOnlyToken(studyAccession) {
 
 
 /**
- * Renew userAccessToken
- * @param {String} studyAccession Study accession, e.g. SCP123
+ * Renew userAccessToken, very similiar to above function to renew readOnlyToken but
+ * this is for the userAccessToken instead
+ * setting of the token on the window is done in the generate function in the user model
  */
-export async function renewUserAccessToken(studyAccession) {
-  const apiUrl = `/site/studies/${studyAccession}/renew_token`
-  const response = await scpApi(apiUrl, defaultInit())
-  window.SCP.userAccessToken = response.accessToken
-  return response
+export function setUpRenewalForUserAccessToken() {
+  let renewalTime = 60000 * 55 * 1000 // 55 minutes default
+
+  // if the token object has been set already use that expiration time instead
+  if (window.SCP.userAccessTokenObject) {
+    const userAccessTokenObject = camelcaseKeys(window.SCP.userAccessTokenObject)
+    // Set the renewal time to be 5 minutes before expiration
+    renewalTime = userAccessTokenObject.expiresIn * 1000 - FIVE_MINUTES
+  }
+
+  setTimeout(async () => {
+    const apiUrl = `/site/renew_user_access_token`
+    const [response] = await scpApi(apiUrl, defaultInit())
+    const userAccessTokenObj = response
+    window.SCP.userAccessTokenObject = userAccessTokenObj
+    // the userAccessToken is set in the window in the generate_access_token in the user model
+    setUpRenewalForUserAccessToken()
+  }, renewalTime)
 }
 
 

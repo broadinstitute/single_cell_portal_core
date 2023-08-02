@@ -230,4 +230,10 @@ class RequestUtils
       nil # there is no 'safe' token that will work as user has no Terra profile
     end
   end
+
+  # Get user access token object via the user model function to generate a token
+  # The object contains the accessToken, expiresAt and expiresIn values
+  def self.get_user_access_token(user)
+    user.generate_access_token()
+  end
 end

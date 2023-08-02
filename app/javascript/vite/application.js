@@ -59,16 +59,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     })
   }
-  setTimeout(() => {
-    if (window.SCP.userAccessToken === '' && window.SCP.userSignedIn) {
-      ScpApi.renewUserAccessToken(window.SCP.studyAccession).then(response => {
-        if (response.ok) {
-          log('renew-token:user-access')
-        }
-      }
-      ).catch(error => logError('Error renewing user access token', error))
-    }
-  }, 1000)
+
+  if (window.SCP.userSignedIn) {
+    ScpApi.setUpRenewalForUserAccessToken()
+  }
+
 })
 
 const componentsToExport = {
