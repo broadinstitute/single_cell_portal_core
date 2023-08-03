@@ -54,35 +54,35 @@ export function DifferentialFileUploadForm({
             <div className="col-md-12">
               <div className="col-sm-6 padded">
                 <b>Long format</b>
-                <pre>
-                  genes&#09;group&#09;comparison_group&#09;logfoldchanges&#09;qval&#09;mean&#09;...<br/>
-                  It2ma&#09;A&#09;rest&#09;0.00049&#09;0.00009&#09;12.00009&#09;...<br/>
-                  Sergef&#09;A&#09;rest&#09;-0.00036&#09;0.00009&#09;12.00009&#09;...<br/>
-                  Chil5&#09;A&#09;rest&#09;2.95114&#09;0.00009&#09;12.00009&#09;...<br/>
-                  ...<br/>
-                  It2ma&#09;B&#09;rest&#09;-3.00246&#09;0.00009&#09;12.00009&#09;...<br/>
-                  Sergef&#09;B&#09;rest&#09;0.00036&#09;0.00009&#09;12.00009&#09;...<br/>
-                  Chil5&#09;B&#09;rest&#09;0.00329&#09;0.00009&#09;12.00009&#09;...<br/>
-                  ...<br/>
-                  It2ma&#09;A&#09;B&#09;-0.10246&#09;0.00009&#09;12.00009&#09;...<br/>
-                  Sergef&#09;A&#09;B&#09;0.00060&#09;0.00009&#09;12.00009&#09;...<br/>
-                  Chil5&#09;A&#09;B&#09;14.00309&#09;0.00009&#09;12.00009&#09;...<br/>
-                  ...<br/>
-                  It2ma&#09;A&#09;C&#09;0.00249&#09;0.00009&#09;12.00009&#09;...<br/>
-                  Sergef&#09;A&#09;C&#09;-0.00049&#09;0.00009&#09;12.00009&#09;...<br/>
-                  Chil5&#09;A&#09;C&#09;1.30079&#09;0.00009&#09;12.00009&#09;...<br/>
-                  ...
-                </pre>
+                <table className="table-terra de-example" style={{ 'background': '#EEE', 'fontFamily': 'Menlo, Monaco, Consolas, "Courier New", monospace' }}>
+                  <thead>
+                    <tr><td>genes</td><td>group</td><td>comparison_group</td><td>logfoldchanges</td><td>qval</td><td>mean</td><td>...</td></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>It2ma</td><td className="blue">A</td><td className="red">rest</td><td>0.00049</td><td>0.00009</td><td>12.00009</td><td>...</td></tr>
+                    <tr><td>Sergef</td><td className="blue">A</td><td className="red">rest</td><td>-0.00036</td><td>0.00009</td><td>12.00009</td><td>...</td></tr>
+                    <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td>It2ma</td><td className="yellow">B</td><td className="red">rest</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td>...</td></tr>
+                    <tr><td>Sergef</td><td className="yellow">B</td><td className="red">rest</td><td>0.00036</td><td>0.00009</td><td>12.00009</td><td>...</td></tr>
+                    <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td>It2ma</td><td className="blue">A</td><td className="yellow">B</td><td>-0.10246</td><td>0.00009</td><td>12.00009</td><td>...</td></tr>
+                    <tr><td>Sergef</td><td className="blue">A</td><td className="yellow">B</td><td>0.00060</td><td>0.00009</td><td>12.00009</td><td>...</td></tr>
+                    <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td>It2ma</td><td className="blue">A</td><td className="green">C</td><td>0.00249</td><td>0.00009</td><td>12.00009</td><td>...</td></tr>
+                    <tr><td>Sergef</td><td className="blue">A</td><td className="green">C</td><td>-0.00049</td><td>0.00009</td><td>12.00009</td><td>...</td></tr>
+                    <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                  </tbody>
+                </table>
                 "Long format" has values that repeat in the first column.
               </div>
               <div className="col-sm-6 padded" >
                 <b>Wide format</b>
-                <pre>
-                  genes&#09;A--rest--logfoldchanges&#09;A--rest--qval&#09;A--rest--mean&#09;B--rest--logfoldchanges&#09;B--rest--qval&#09;B--rest--mean&#09;...&#09;A--B--logfoldchanges&#09;A--B--qval&#09;A--B--mean&#09;A--C--logfoldchanges&#09;A--C--qval&#09;A--C--mean&#09;...<br/>
-                  It2ma&#09;A&#09;rest&#09;0.00049&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;<br/>
-                  Sergef&#09;A&#09;rest&#09;-0.00036&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;<br/>
-                  Chil5&#09;A&#09;rest&#09;2.95114&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;<br/>
-                </pre>
+                {/* <pre>
+                  genes</td><td>A--rest--logfoldchanges</td><td>A--rest--qval</td><td>A--rest--mean</td><td>B--rest--logfoldchanges</td><td>B--rest--qval</td><td>B--rest--mean</td><td>...</td><td>A--B--logfoldchanges</td><td>A--B--qval</td><td>A--B--mean</td><td>A--C--logfoldchanges</td><td>A--C--qval</td><td>A--C--mean</td><td>...<br/>
+                  It2ma</td><td>A</td><td>rest</td><td>0.00049</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td><br/>
+                  Sergef</td><td>A</td><td>rest</td><td>-0.00036</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td><br/>
+                  Chil5</td><td>A</td><td>rest</td><td>2.95114</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td><br/>
+                </pre> */}
                 "Wide format" has values that <i>do not</i> repeat in the first column.
               </div>
             </div>
