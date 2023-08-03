@@ -232,15 +232,13 @@ module Api
       end
 
       def renew_user_access_token      
-          
         if current_api_user
-          Rails.logger.info "Renewing user access token via SCP API for #{current_api_user}"
+          Rails.logger.info "Renewing user access token via SCP API for #{current_api_user.id}"
           render json: RequestUtils.get_user_access_token(current_api_user)
         else
           Rails.logger.info "Cannot get a user access token for a user not signed in"
         end
       end
-
 
 
       swagger_path '/site/studies/{accession}/download' do
