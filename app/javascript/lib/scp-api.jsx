@@ -246,7 +246,6 @@ export function setupRenewalForReadOnlyToken(studyAccession) {
 /**
  * Renew userAccessToken, very similiar to above function to renew readOnlyToken but
  * this is for the userAccessToken instead
- * setting of the token on the window is done in the generate function in the user model
  */
 export function setUpRenewalForUserAccessToken() {
   let renewalTime = 60000 * 55 * 1000 // 55 minutes default
@@ -262,8 +261,8 @@ export function setUpRenewalForUserAccessToken() {
     const apiUrl = `/site/renew_user_access_token`
     const [response] = await scpApi(apiUrl, defaultInit())
     const userAccessTokenObj = response
+    window.SCP.userAccessToken = userAccessTokenObj.accessToken
     window.SCP.userAccessTokenObject = userAccessTokenObj
-    // the userAccessToken is set in the window in the generate_access_token in the user model
     setUpRenewalForUserAccessToken()
   }, renewalTime)
 }
