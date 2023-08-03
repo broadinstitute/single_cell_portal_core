@@ -7,6 +7,7 @@ class ClusterGroup
   ###
 
   include Mongoid::Document
+  include Indexer
 
   field :name, type: String
   field :cluster_type, type: String
@@ -389,7 +390,7 @@ class ClusterGroup
     # if cluster cells & study cells are identical, return empty array so we can set #use_default_index
     return [] if cluster_cells == study_cells
 
-    all_cells_hash = study_cells.index_with.with_index { |_, index| index }
+    all_cells_hash = array_to_hashmap(study_cells)
     cluster_cells.map { |cell| all_cells_hash[cell] }
   end
 

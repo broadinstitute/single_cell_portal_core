@@ -532,6 +532,7 @@ export default function ExploreDisplayTabs({
                      exploreParamsWithDefaults?.annotation,
                      exploreParamsWithDefaults?.annotationList?.annotations
                   )}
+                  useJson={true}
                   dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
                 />
               </div>
@@ -541,6 +542,7 @@ export default function ExploreDisplayTabs({
                 <Heatmap
                   studyAccession={studyAccession}
                   {... exploreParamsWithDefaults}
+                  useJson={true}
                   dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
                 />
               </div>

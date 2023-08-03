@@ -5,7 +5,7 @@ import { log } from '~/lib/metrics-api'
 import PlotUtils from '~/lib/plot'
 const getColorBrewerColor = PlotUtils.getColorBrewerColor
 import DotPlotLegend from './DotPlotLegend'
-import { getAnnotationCellValuesURL, getExpressionHeatmapURL } from '~/lib/scp-api'
+import { getAnnotationCellValuesURL, getExpressionHeatmapURL, fetchMorpheusJson } from '~/lib/scp-api'
 import useErrorMessage, { morpheusErrorHandler } from '~/lib/error-message'
 import { withErrorBoundary } from '~/lib/ErrorBoundary'
 import LoadingSpinner from '~/lib/LoadingSpinner'
@@ -191,7 +191,7 @@ function patchServiceWorkerCache() {
   */
 function RawDotPlot({
   studyAccession, genes=[], cluster, annotation={},
-  subsample, annotationValues
+  subsample, annotationValues, useJson=false
 }) {
   const [graphId] = useState(_uniqueId('dotplot-'))
   const { ErrorComponent, showError, setShowError, setErrorContent } = useErrorMessage()
@@ -207,22 +207,61 @@ function RawDotPlot({
 
   useEffect(() => {
     if (annotation.name) {
-      performance.mark(`perfTimeStart-${graphId}`)
-
-      log('dot-plot:initialize')
-      setShowError(false)
-      renderDotPlot({
-        target: `#${graphId}`,
-        expressionValuesURL,
-        annotationCellValuesURL,
-        annotationName: annotation.name,
-        annotationValues,
-        setErrorContent,
-        setShowError,
-        genes
-      })
+      let datasetSource
+      if (useJson) {
+        async function getDataset() {
+          console.log('calling fetchMorpheusJson')
+          const [dataset, perfTimes] = await fetchMorpheusJson(
+            studyAccession,
+            genes,
+            cluster,
+            annotation.name,
+            annotation.type,
+            annotation.scope,
+            subsample
+          )
+          return dataset
+        }
+        getDataset().then(dataset => {
+          performance.mark(`perfTimeStart-${graphId}`)
+          datasetSource = dataset
+          console.log('calling renderDotPlot with dataset')
+          log('dot-plot:initialize')
+          setShowError(false)
+          renderDotPlot({
+            target: `#${graphId}`,
+            datasetSource,
+            annotationCellValuesURL,
+            annotationName: annotation.name,
+            annotationValues,
+            setErrorContent,
+            setShowError,
+            genes
+          })
+        }).catch(error => {
+          console.log(error.message)
+        })
+      } else {
+        performance.mark(`perfTimeStart-${graphId}`)
+        console.log(`calling renderDotPlot with ${expressionValuesURL}`)
+        log('dot-plot:initialize')
+        datasetSource = expressionValuesURL
+        setShowError(false)
+        renderDotPlot({
+          target: `#${graphId}`,
+          datasetSource,
+          annotationCellValuesURL,
+          annotationName: annotation.name,
+          annotationValues,
+          setErrorContent,
+          setShowError,
+          genes
+        })
+      }
     }
   }, [
+    cluster,
+    subsample,
     expressionValuesURL,
     annotationCellValuesURL,
     annotation.name,
@@ -247,7 +286,7 @@ export default DotPlot
 
 /** Render Morpheus dot plot */
 function renderDotPlot({
-  target, expressionValuesURL, annotationCellValuesURL, annotationName, annotationValues,
+  target, datasetSource, annotationCellValuesURL, annotationName, annotationValues,
   setShowError, setErrorContent, genes
 }) {
   const $target = $(target)
@@ -270,7 +309,7 @@ function renderDotPlot({
 
   const config = {
     shape: 'circle',
-    dataset: expressionValuesURL,
+    dataset: datasetSource,
     el: $target,
     menu: null,
     error: morpheusErrorHandler($target, setShowError, setErrorContent),
@@ -319,7 +358,7 @@ function renderDotPlot({
   patchServiceWorkerCache()
 
   // Instantiate dot plot and embed in DOM element
-  new window.morpheus.HeatMap(config)
+  window.dotPlot = new window.morpheus.HeatMap(config)
 }
 
 /** return a trivial tab manager that handles focus and sizing
