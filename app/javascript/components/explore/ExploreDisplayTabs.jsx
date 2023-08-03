@@ -198,6 +198,8 @@ export default function ExploreDisplayTabs({
   // a plotly points_selected event
   const [currentPointsSelected, setCurrentPointsSelected] = useState(null)
 
+  // morpheus JSON data
+  const [morpheusData, setMorpheusData] = useState(null)
   // Differential expression settings
   const flags = getFeatureFlagsWithDefaults()
   // `differential_expression_frontend` enables exemptions if study owners don't want DE
@@ -532,7 +534,7 @@ export default function ExploreDisplayTabs({
                      exploreParamsWithDefaults?.annotation,
                      exploreParamsWithDefaults?.annotationList?.annotations
                   )}
-                  useJson={true}
+                  setMorpheusData={setMorpheusData}
                   dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
                 />
               </div>
@@ -542,7 +544,7 @@ export default function ExploreDisplayTabs({
                 <Heatmap
                   studyAccession={studyAccession}
                   {... exploreParamsWithDefaults}
-                  useJson={true}
+                  morpheusData={morpheusData}
                   dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
                 />
               </div>

@@ -1,5 +1,6 @@
 class ExpressionVizService
-  extend Indexer
+  # default properties for morpheus metadata
+  MORPHEUS_STRING_PROPS = { 'morpheus.discrete' => true, 'morpheus.dataType' => 'string' }.freeze
 
   def self.get_global_expression_render_data(study:,
                                              subsample:,
@@ -409,7 +410,7 @@ class ExpressionVizService
     row_data.join("\n")
   end
 
-  # return expression data in JSON format to be shared across multiple Morpheus components
+  # expression data in JSON format to be shared across multiple morpheus components
   # data structure defined at https://software.broadinstitute.org/morpheus/configuration.html#datasetJSON
   #
   # * *params*
@@ -418,59 +419,55 @@ class ExpressionVizService
   #   * +cluster+ (ClusterGroup) => clustering object to query cells from
   #   * +annotation+ (Hash) => annotation object
   #   * +subsample_threshold+ (Integer, nil) => subsampling threshold, used to determine which cells/annotations to load
-  #   * ++
   def self.get_morpheus_json_data(study:, genes:, cluster:, annotation:, subsample_threshold:)
     subsample_annotation = "#{annotation[:name]}--#{annotation[:type]}--#{annotation[:scope]}"
     cells = cluster.concatenate_data_arrays('text', 'cells', subsample_threshold, subsample_annotation)
     annotation_array = ClusterVizService.get_annotation_values_array(
       study, cluster, annotation, cells, subsample_annotation, subsample_threshold
     )
-    gene_names = genes.map { |g| g['name'] }
-    row_count = gene_names.count
-    col_count = cells.count
-    string_props = { 'morpheus.discrete' => true, 'morpheus.dataType' => 'string' }
-    data_type = 'Float32'
-    # data structure for Morpheus
     {
       seriesNames: [subsample_annotation],
-      seriesArrays: {
-        options: {
-          name: subsample_annotation, rows: row_count, columns: col_count, array: get_series_arrays(cells, genes),
-          defaultValue: 0, dataType: data_type
-        }
-      },
-      seriesDataTypes: [data_type],
-      rows: row_count,
-      columns: col_count,
-      rowMetadataModel: {
-        itemCount: 2,
-        vectors: [
-          { array: gene_names, name: 'id', n: row_count, properties: string_props },
-          { array: row_count.times.map { '' }, name: 'Description', n: row_count, properties: {} } # mimic GCT format
-        ]
-      },
-      columnMetadataModel: {
-        itemCount: col_count,
-        vectors: [
-          { array: cells, name: 'id', n: col_count, properties: {} },
-          { array: annotation_array, name: annotation[:name], n: col_count, properties: string_props }
-        ]
-      }
+      seriesArrays: get_series_arrays(cells, genes),
+      seriesDataTypes: %w[Float32],
+      rows: genes.count,
+      columns: cells.count,
+      rowMetadataModel: get_row_metadata(genes),
+      columnMetadataModel: get_column_metadata(cells, annotation[:name], annotation_array)
     }
   end
 
+  # arrays of arrays mapping to expression values
   def self.get_series_arrays(cells, genes)
-    cell_index = array_to_hashmap(cells)
-    genes.map do |gene|
-      series = { values: [], indices: [] }
-      gene['scores'].each do |cell, exp_val|
-        cell_position = cell_index[cell]
-        next if cell_position.nil?
-
-        series[:values] << exp_val
-        series[:indices] << cell_position
+    series = genes.count.times.map { [] }
+    cells.each do |cell|
+      genes.each_with_index do |gene, index|
+        series[index] << gene.dig('scores', cell).to_f
       end
-      series
     end
+    [series] # morpheus expects nested arrays
+  end
+
+  # information about gene rows
+  def self.get_row_metadata(genes)
+    gene_names = genes.map { |g| g['name'] }
+    row_count = gene_names.count
+    {
+      itemCount: 1,
+      vectors: [
+        { array: gene_names, name: 'id', n: row_count, properties: MORPHEUS_STRING_PROPS }
+      ]
+    }
+  end
+
+  # information about columns (either cells or annotations, depending on view)
+  def self.get_column_metadata(cells, annotation_name, annotations)
+    col_count = cells.count
+    {
+      itemCount: col_count,
+      vectors: [
+        { array: cells, name: 'id', n: col_count, properties: MORPHEUS_STRING_PROPS },
+        { array: annotations, name: annotation_name, n: col_count, properties: MORPHEUS_STRING_PROPS }
+      ]
+    }
   end
 end
