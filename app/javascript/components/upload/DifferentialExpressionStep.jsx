@@ -50,12 +50,12 @@ export function DifferentialFileUploadForm({
       <div className="col-md-12">
         <p className="form-terra">
           <p>Upload differential expression files that compare groups in an annotation.  Use long or wide format, one file per annotation.  Comparisons can be one-vs-rest or pairwise.</p>
-          In both formats, headers for "logfoldchanges" -- i.e. log<sub>2</sub>(fold change) -- and "qval" -- q-value -- are required.  Other metrics, e.g. "mean", are optional.
+          In both formats, headers for "logfoldchanges" and "qval" are required; these let users see log<sub>2</sub>(fold change) and q-value, respectively.  Other metrics like "mean" are optional.
           <div className="row">
             <div className="col-md-12">
               <div className="col-sm-6 padded">
                 <b>Long format</b>
-                <table className="table-terra de-example" style={{ 'background': '#EEE', 'fontFamily': 'Menlo, Monaco, Consolas, "Courier New", monospace' }}>
+                <table className="table-terra de-example">
                   <thead>
                     <tr><td>genes</td><td>group</td><td>comparison_group</td><td>logfoldchanges</td><td>qval</td><td className="optional">mean</td><td>...</td></tr>
                   </thead>
@@ -78,12 +78,34 @@ export function DifferentialFileUploadForm({
               </div>
               <div className="col-sm-6 padded" >
                 <b>Wide format</b>
-                {/* <pre>
-                  genes</td><td>A--rest--logfoldchanges</td><td>A--rest--qval</td><td>A--rest--mean</td><td>B--rest--logfoldchanges</td><td>B--rest--qval</td><td>B--rest--mean</td><td>...</td><td>A--B--logfoldchanges</td><td>A--B--qval</td><td>A--B--mean</td><td>A--C--logfoldchanges</td><td>A--C--qval</td><td>A--C--mean</td><td>...<br/>
-                  It2ma</td><td>A</td><td>rest</td><td>0.00049</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td><br/>
-                  Sergef</td><td>A</td><td>rest</td><td>-0.00036</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td><br/>
-                  Chil5</td><td>A</td><td>rest</td><td>2.95114</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td>...</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td><br/>
-                </pre> */}
+                <table className="table-terra de-example wide-format">
+                  <colgroup>
+                    <col style={{ 'width': '60px' }} />
+                    <col style={{ 'width': '180px' }} />
+                    <col style={{ 'width': '110px' }} />
+                    <col style={{ 'width': '110px' }} />
+                    <col style={{ 'width': '40px' }} />
+                    <col style={{ 'width': '180px' }} />
+                    <col style={{ 'width': '110px' }} />
+                    <col style={{ 'width': '110px' }} />
+                    <col style={{ 'width': '40px' }} />
+                    <col style={{ 'width': '180px' }} />
+                    <col style={{ 'width': '110px' }} />
+                    <col style={{ 'width': '110px' }} />
+                    <col style={{ 'width': '40px' }} />
+                    <col style={{ 'width': '180px' }} />
+                    <col style={{ 'width': '110px' }} />
+                    <col style={{ 'width': '110px' }} />
+                    <col style={{ 'width': '40px' }} />
+                  </colgroup>
+                  <thead>
+                    <td>genes</td><td>A--rest--logfoldchanges</td><td>A--rest--qval</td><td>A--rest--mean</td><td>...</td><td>B--rest--logfoldchanges</td><td>B--rest--qval</td><td>B--rest--mean</td><td>...</td><td>A--B--logfoldchanges</td><td>A--B--qval</td><td>A--B--mean</td><td>...</td><td>A--C--logfoldchanges</td><td>A--C--qval</td><td>A--C--mean</td><td>...</td>
+                  </thead>
+                  <tbody>
+                    <tr><td>It2ma</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td><td>-3.00246</td><td>0.00000</td><td>0.51128</td><td>...</td><td>-0.10246</td><td>0.40019</td><td>0.41357</td><td>...</td><td>0.00249</td><td>0.00103</td><td>0.42130</td><td>...</td></tr>
+                    <tr><td>Sergef</td><td>-0.00036</td><td>0.00239</td><td>4.20466</td><td>...</td><td>0.00036</td><td>0.074825</td><td>12.71389</td><td>...</td><td>0.00060</td><td>0.00005</td><td>1.82731</td><td>...</td><td>-0.00049</td><td>0.02648</td><td>1.06551</td><td>...</td></tr>
+                  </tbody>
+                </table>
                 "Wide format" has values that <i>do not</i> repeat in the first column.
               </div>
             </div>

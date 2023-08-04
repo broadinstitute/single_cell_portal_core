@@ -132,9 +132,20 @@
       padding: 0.1em 0.5em;
     }
   }
-  &.de-example {
+  &.de-example.wide-format {
+    table-layout: fixed;
+    width: 600px;
+
     td {
-      padding: 0.1em 1em;
+      padding: 0.1em 0;
+    }
+  }
+  &.de-example {
+    background: #EEE;
+    font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+
+    td {
+      padding: 0.1em 0.8em;
       font-size: 11px;
 
       color: #333333;
