@@ -49,7 +49,7 @@ export function DifferentialFileUploadForm({
     <div className="row">
       <div className="col-md-12">
         <p className="form-terra">
-          Upload a file with differential expression for a particular clustering and annotation.  (Either format, note auto-detection.  Use tables themed like pre to align columns.  Move tab to top of other files.)
+          Upload differential expression files that compare groups in an annotation.  Use long or wide format, one file per annotation.  Comparisons can be one-vs-rest or pairwise.
           <div className="row">
             <div className="col-md-12">
               <div className="col-sm-6 padded">
@@ -59,21 +59,21 @@ export function DifferentialFileUploadForm({
                     <tr><td>genes</td><td>group</td><td>comparison_group</td><td>logfoldchanges</td><td>qval</td><td>mean</td><td>...</td></tr>
                   </thead>
                   <tbody>
-                    <tr><td>It2ma</td><td className="blue">A</td><td className="red">rest</td><td>0.00049</td><td>0.00009</td><td>12.00009</td><td>...</td></tr>
-                    <tr><td>Sergef</td><td className="blue">A</td><td className="red">rest</td><td>-0.00036</td><td>0.00009</td><td>12.00009</td><td>...</td></tr>
+                    <tr><td>It2ma</td><td className="blue">A</td><td className="red">rest</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td></tr>
+                    <tr><td>Sergef</td><td className="blue">A</td><td className="red">rest</td><td>-0.00036</td><td>0.00239</td><td>4.20466</td><td>...</td></tr>
                     <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                    <tr><td>It2ma</td><td className="yellow">B</td><td className="red">rest</td><td>-3.00246</td><td>0.00009</td><td>12.00009</td><td>...</td></tr>
-                    <tr><td>Sergef</td><td className="yellow">B</td><td className="red">rest</td><td>0.00036</td><td>0.00009</td><td>12.00009</td><td>...</td></tr>
+                    <tr><td>It2ma</td><td className="yellow">B</td><td className="red">rest</td><td>-3.00246</td><td>0.00000</td><td>0.51128</td><td>...</td></tr>
+                    <tr><td>Sergef</td><td className="yellow">B</td><td className="red">rest</td><td>0.00036</td><td>0.074825</td><td>12.71389</td><td>...</td></tr>
                     <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                    <tr><td>It2ma</td><td className="blue">A</td><td className="yellow">B</td><td>-0.10246</td><td>0.00009</td><td>12.00009</td><td>...</td></tr>
-                    <tr><td>Sergef</td><td className="blue">A</td><td className="yellow">B</td><td>0.00060</td><td>0.00009</td><td>12.00009</td><td>...</td></tr>
+                    <tr><td>It2ma</td><td className="blue">A</td><td className="yellow">B</td><td>-0.10246</td><td>0.40019</td><td>0.41357</td><td>...</td></tr>
+                    <tr><td>Sergef</td><td className="blue">A</td><td className="yellow">B</td><td>0.00060</td><td>0.00005</td><td>1.82731</td><td>...</td></tr>
                     <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                    <tr><td>It2ma</td><td className="blue">A</td><td className="green">C</td><td>0.00249</td><td>0.00009</td><td>12.00009</td><td>...</td></tr>
-                    <tr><td>Sergef</td><td className="blue">A</td><td className="green">C</td><td>-0.00049</td><td>0.00009</td><td>12.00009</td><td>...</td></tr>
+                    <tr><td>It2ma</td><td className="blue">A</td><td className="green">C</td><td>0.00249</td><td>0.00103</td><td>0.42130</td><td>...</td></tr>
+                    <tr><td>Sergef</td><td className="blue">A</td><td className="green">C</td><td>-0.00049</td><td>0.02648</td><td>1.06551</td><td>...</td></tr>
                     <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
                   </tbody>
                 </table>
-                "Long format" has values that repeat in the first column.
+                Long format has values that repeat in the first column.  All headers except "mean" are required.
               </div>
               <div className="col-sm-6 padded" >
                 <b>Wide format</b>
