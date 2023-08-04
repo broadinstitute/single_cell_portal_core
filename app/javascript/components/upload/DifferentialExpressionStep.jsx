@@ -57,7 +57,7 @@ export function DifferentialFileUploadForm({
                 <b>Long format</b>
                 <table className="table-terra de-example">
                   <thead>
-                    <tr><td>genes</td><td>group</td><td>comparison_group</td><td>logfoldchanges</td><td>qval</td><td className="optional">mean</td><td>...</td></tr>
+                    <tr><td>genes</td><td>group</td><td>comparison_group</td><td className="orange">logfoldchanges</td><td className="pink">qval</td><td className="optional">mean</td><td>...</td></tr>
                   </thead>
                   <tbody>
                     <tr><td>It2ma</td><td className="blue">A</td><td className="red">rest</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td></tr>
@@ -99,7 +99,7 @@ export function DifferentialFileUploadForm({
                     <col style={{ 'width': '40px' }} />
                   </colgroup>
                   <thead>
-                    <td>genes</td><td>A--rest--logfoldchanges</td><td>A--rest--qval</td><td>A--rest--mean</td><td>...</td><td>B--rest--logfoldchanges</td><td>B--rest--qval</td><td>B--rest--mean</td><td>...</td><td>A--B--logfoldchanges</td><td>A--B--qval</td><td>A--B--mean</td><td>...</td><td>A--C--logfoldchanges</td><td>A--C--qval</td><td>A--C--mean</td><td>...</td>
+                    <td>genes</td><td><span className="blue">A</span>--<span className="red">rest</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="red">rest</span>--qval</td><td><span className="blue">A</span>--<span className="red">rest</span>--mean</td><td>...</td><td><span className="yellow">B</span>--<span className="red">rest</span>--logfoldchanges</td><td><span className="yellow">B</span>--<span className="red">rest</span>--qval</td><td><span className="yellow">B</span>--rest--mean</td><td>...</td><td>A--<span className="yellow">B</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="yellow">B</span>--qval</td><td><span className="blue">A</span>--<span className="yellow">B</span>--mean</td><td>...</td><td><span className="blue">A</span>--C--logfoldchanges</td><td><span className="blue">A</span>--C--qval</td><td><span className="blue">A</span>--C--mean</td><td>...</td>
                   </thead>
                   <tbody>
                     <tr><td>It2ma</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td><td>-3.00246</td><td>0.00000</td><td>0.51128</td><td>...</td><td>-0.10246</td><td>0.40019</td><td>0.41357</td><td>...</td><td>0.00249</td><td>0.00103</td><td>0.42130</td><td>...</td></tr>
@@ -131,5 +131,3 @@ export function DifferentialFileUploadForm({
     <AddFileButton addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_DE_FILE}/>
   </div>
 }
-
-

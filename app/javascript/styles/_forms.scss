@@ -144,26 +144,22 @@
     background: #EEE;
     font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 
-    td {
+    td, td > span {
       padding: 0.1em 0.8em;
       font-size: 11px;
 
-      color: #333333;
-      &.blue {
-        background: #CCF;
-      }
-      &.red {
-        background: #FCC;
-      }
-      &.yellow {
-        background: #FFC;
-      }
-      &.green {
-        background: #CFC;
-      }
+      color: #000;
+      &.red { background: #FCC; }
+      &.yellow { background: #FFC; }
+      &.green { background: #CFC; }
+      &.blue { background: #CCF; }
       &.optional {
         font-weight: normal;
       }
+    }
+
+    td > span {
+      padding: 0;
     }
   }
 }
