@@ -49,14 +49,15 @@ export function DifferentialFileUploadForm({
     <div className="row">
       <div className="col-md-12">
         <p className="form-terra">
-          Upload differential expression files that compare groups in an annotation.  Use long or wide format, one file per annotation.  Comparisons can be one-vs-rest or pairwise.
+          <p>Upload differential expression files that compare groups in an annotation.  Use long or wide format, one file per annotation.  Comparisons can be one-vs-rest or pairwise.</p>
+          In both formats, headers for "logfoldchanges" -- i.e. log<sub>2</sub>(fold change) -- and "qval" -- q-value -- are required.  Other metrics, e.g. "mean", are optional.
           <div className="row">
             <div className="col-md-12">
               <div className="col-sm-6 padded">
                 <b>Long format</b>
                 <table className="table-terra de-example" style={{ 'background': '#EEE', 'fontFamily': 'Menlo, Monaco, Consolas, "Courier New", monospace' }}>
                   <thead>
-                    <tr><td>genes</td><td>group</td><td>comparison_group</td><td>logfoldchanges</td><td>qval</td><td>mean</td><td>...</td></tr>
+                    <tr><td>genes</td><td>group</td><td>comparison_group</td><td>logfoldchanges</td><td>qval</td><td className="optional">mean</td><td>...</td></tr>
                   </thead>
                   <tbody>
                     <tr><td>It2ma</td><td className="blue">A</td><td className="red">rest</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td></tr>
@@ -73,7 +74,7 @@ export function DifferentialFileUploadForm({
                     <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
                   </tbody>
                 </table>
-                Long format has values that repeat in the first column.  All headers except "mean" are required.
+                Long format has values that repeat in the first column.
               </div>
               <div className="col-sm-6 padded" >
                 <b>Wide format</b>
