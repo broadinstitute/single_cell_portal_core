@@ -21,7 +21,7 @@ import { clearOldServiceWorkerCaches } from '~/lib/service-worker-cache'
 const { validateRemoteFile } = ValidateFile
 
 import {
-  logPageView, logClick, logMenuChange, setupPageTransitionLog, log, logCopy, logContextMenu
+  logPageView, logClick, logMenuChange, setupPageTransitionLog, log, logCopy, logContextMenu, logError
 } from '~/lib/metrics-api'
 import * as ScpApi from '~/lib/scp-api'
 
@@ -61,9 +61,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (window.SCP.userSignedIn) {
+    if (window.SCP.userAccessToken === '') {
+      logError('User access token is empty string')
+    }
     ScpApi.setUpRenewalForUserAccessToken()
   }
-
 })
 
 const componentsToExport = {
