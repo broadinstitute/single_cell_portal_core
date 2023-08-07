@@ -44,7 +44,7 @@ module Api
               key :description, 'Type of plot data requested'
               key :required, true
               key :type, :string
-              key :enum, %w(violin heatmap json)
+              key :enum, %w(violin heatmap morpheus)
             end
             parameter do
               key :name, :cluster
@@ -108,9 +108,9 @@ module Api
           case data_type
           when 'violin'
             render_violin
-          when 'heatmap'
+          when 'heatmap' # Only used for pre-computed heatmaps
             render_heatmap
-          when 'json'
+          when 'morpheus'
             render_morpheus_json
           else
             render json: { error: "Unknown expression data type: #{data_type}" }, status: :bad_request

@@ -197,24 +197,26 @@ function RawDotPlot({
   const { ErrorComponent, showError, setShowError, setErrorContent } = useErrorMessage()
 
   useEffect(() => {
+    /** Fetch Morpheus data for dot plot */
+    async function getDataset() {
+      const [dataset, perfTimes] = await fetchMorpheusJson(
+        studyAccession,
+        genes,
+        cluster,
+        annotation.name,
+        annotation.type,
+        annotation.scope,
+        subsample
+      )
+      logFetchMorpheusDataset(perfTimes, cluster, annotation, genes)
+      return dataset
+    }
     if (annotation.name) {
       // put spinner up manually
       const target = `#${graphId}`
       $(target).empty()
-      $(target).html( morpheusLoadingSpinner())
-      async function getDataset() {
-        const [dataset, perfTimes] = await fetchMorpheusJson(
-          studyAccession,
-          genes,
-          cluster,
-          annotation.name,
-          annotation.type,
-          annotation.scope,
-          subsample
-        )
-        logFetchMorpheusDataset(perfTimes, cluster, annotation, genes)
-        return dataset
-      }
+      $(target).html(morpheusLoadingSpinner())
+
       getDataset().then(dataset => {
         performance.mark(`perfTimeStart-${graphId}`)
         log('dot-plot:initialize')

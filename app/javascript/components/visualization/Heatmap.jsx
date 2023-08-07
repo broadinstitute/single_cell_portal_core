@@ -33,7 +33,7 @@ function RawHeatmap({
     if (canRender) {
       const target = `#${graphId}`
       $(target).empty()
-      $(target).html( morpheusLoadingSpinner())
+      $(target).html(morpheusLoadingSpinner())
       performance.mark(`perfTimeStart-${graphId}`)
       log('heatmap:initialize')
       setShowError(false)
