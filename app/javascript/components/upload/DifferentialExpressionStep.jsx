@@ -50,6 +50,7 @@ export function DifferentialFileUploadForm({
       <div className="col-md-12">
         <p className="form-terra">
           Upload a file with differential expression for a particular clustering and annotation.  (Either format, note auto-detection.  Use tables themed like pre to align columns.  Move tab to top of other files.)
+          <strong>Parsed metadata and clustering files are required before uploading</strong>
           <div className="row">
             <div className="col-md-12">
               <div className="col-sm-6 padded">

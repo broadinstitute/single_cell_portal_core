@@ -83,13 +83,13 @@ async function testRawCountsUpload({ createFileSpy }) {
 
   fireEvent.mouseOver(saveButton())
   expect(screen.getByRole('tooltip')).not.toHaveTextContent('You must select a file')
-  expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify units')
-  expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify species')
-  expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify Library preparation protocol')
+  expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify: units')
+  expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify: species')
+  expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify: Library preparation protocol')
 
   await selectEvent.select(getSelectByLabelText(screen, 'Species *'), 'chicken')
   fireEvent.mouseOver(saveButton())
-  expect(screen.getByRole('tooltip')).not.toHaveTextContent('You must specify species')
+  expect(screen.getByRole('tooltip')).not.toHaveTextContent('You must specify: species')
 
   await selectEvent.select(getSelectByLabelText(screen, 'Library preparation protocol *'), 'Drop-seq')
   await selectEvent.select(getSelectByLabelText(screen, 'Units *'), 'raw counts')
@@ -131,7 +131,7 @@ async function testProcessedUpload({ createFileSpy }) {
   expect(saveButton()).toBeDisabled()
   fireEvent.mouseOver(saveButton())
   expect(screen.getByRole('tooltip')).toHaveTextContent('You must select a file')
-  expect(screen.getByRole('tooltip')).not.toHaveTextContent('You must specify units')
+  expect(screen.getByRole('tooltip')).not.toHaveTextContent('You must specify: units')
 
   fireFileSelectionEvent(screen.getByTestId('file-input'), {
     fileName: processedFileName,
@@ -141,13 +141,13 @@ async function testProcessedUpload({ createFileSpy }) {
   expect(screen.getByTestId('file-selection-name')).toHaveTextContent(processedFileName)
   fireEvent.mouseOver(saveButton())
   expect(screen.getByRole('tooltip')).not.toHaveTextContent('You must select a file')
-  expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify species')
-  expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify Library preparation protocol')
+  expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify: species')
+  expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify: Library preparation protocol')
 
   expect(saveButton()).toBeDisabled()
   await selectEvent.select(getSelectByLabelText(screen, 'Species *'), 'chicken')
   fireEvent.mouseOver(saveButton())
-  expect(screen.getByRole('tooltip')).not.toHaveTextContent('You must specify species')
+  expect(screen.getByRole('tooltip')).not.toHaveTextContent('You must specify: species')
 
   await selectEvent.select(getSelectByLabelText(screen, 'Library preparation protocol *'), 'Drop-seq')
   expect(saveButton()).toBeDisabled()
@@ -356,7 +356,7 @@ async function testCoordinateLabelUpload({ createFileSpy }) {
   expect(screen.getByTestId('file-selection-name')).toHaveTextContent(goodFileName)
   expect(saveButton()).toBeDisabled()
   fireEvent.mouseOver(saveButton())
-  expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify Corresponding cluster')
+  expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify: Corresponding cluster')
 
   await selectEvent.select(getSelectByLabelText(screen, 'Corresponding cluster / spatial data *'), 'cluster.txt')
 
@@ -408,7 +408,7 @@ async function testSequenceFileUpload({ createFileSpy }) {
   expect(screen.getByTestId('file-selection-name')).toHaveTextContent(goodFileName)
   expect(saveButton()).toBeDisabled()
   fireEvent.mouseOver(saveButton())
-  expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify species')
+  expect(screen.getByRole('tooltip')).toHaveTextContent('You must specify: species')
 
   await selectEvent.select(getSelectByLabelText(screen, 'Species *'), 'chicken')
 
