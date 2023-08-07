@@ -5,13 +5,13 @@ module Api
       before_action :authenticate_api_user!, only: [:download_data, :stream_data, :get_study_analysis_config,
                                                     :submit_study_analysis, :get_study_submissions,
                                                     :get_study_submission, :sync_submission_outputs]
-      before_action :set_study, except: [:studies, :check_terra_tos_acceptance, :analyses, :get_analysis]
+      before_action :set_study, except: [:studies, :check_terra_tos_acceptance, :analyses, :get_analysis, :renew_user_access_token]
       before_action :set_analysis_configuration, only: [:get_analysis, :get_study_analysis_config]
       before_action :check_study_detached, only: [:download_data, :stream_data, :get_study_analysis_config,
                                                   :submit_study_analysis, :get_study_submissions,
                                                   :get_study_submission, :sync_submission_outputs,
-                                                  :renew_token]
-      before_action :check_study_view_permission, except: [:studies, :check_terra_tos_acceptance, :analyses, :get_analysis]
+                                                  :renew_read_only_access_token]
+      before_action :check_study_view_permission, except: [:studies, :check_terra_tos_acceptance, :analyses, :get_analysis, :renew_user_access_token]
       before_action :check_study_compute_permission,
                     only: [:get_study_analysis_config, :submit_study_analysis, :get_study_submissions,
                            :get_study_submission, :sync_submission_outputs]
@@ -162,14 +162,14 @@ module Api
         end
       end
 
-      swagger_path '/site/studies/{accession}/renew_token' do
+      swagger_path '/site/studies/{accession}/renew_read_only_access_token' do
         operation :get do
           key :tags, [
               'Site'
           ]
           key :summary, 'Renew a soon-expiring GCS access token for a study'
           key :description, 'Get a new 1-hour access token, within the authentication session duration'
-          key :operationId, 'site_study_renew_token_path'
+          key :operationId, 'site_study_renew_read_only_access_token'
           parameter do
             key :name, :accession
             key :in, :path
@@ -195,14 +195,52 @@ module Api
         end
       end
 
-      def renew_token
+      def renew_read_only_access_token
         renewing_user = "an unauthenticated user (via read-only service account)"
         if current_api_user
           renewing_user = "user #{current_api_user.id}"
         end
-        Rails.logger.info "Renewing token via SCP API for #{renewing_user} in study #{@study.accession}"
+        Rails.logger.info "Renewing read only access token via SCP API for #{renewing_user} in study #{@study.accession}"
         render json: RequestUtils.get_read_access_token(@study, current_api_user, renew: true)
       end
+
+
+      swagger_path '/site/renew_user_access_token' do
+        operation :get do
+          key :tags, [
+              'Site'
+          ]
+          key :summary, 'Renew the user access token for a signed in user'
+          key :description, 'Get a new access token'
+          key :operationId, 'site_renew_user_access_token'
+          response 200 do
+            key :description, 'User access token for current signed in user'
+          end
+          response 204 do
+            key :description, 'No user credentials supplied'
+          end
+          response 403 do
+            key :description, ApiBaseController.forbidden('renew access token')
+          end
+          response 404 do
+            key :description, ApiBaseController.not_found(User)
+          end
+          response 406 do
+            key :description, ApiBaseController.not_acceptable
+          end
+        end
+      end
+
+      def renew_user_access_token      
+        if current_api_user
+          Rails.logger.info "Renewing user access token via SCP API for #{current_api_user.id}"
+          render json: RequestUtils.get_user_access_token(current_api_user)
+        else
+          Rails.logger.info "Cannot get a user access token for a user not signed in"
+          head :no_content
+        end
+      end
+
 
       swagger_path '/site/studies/{accession}/download' do
         operation :get do
