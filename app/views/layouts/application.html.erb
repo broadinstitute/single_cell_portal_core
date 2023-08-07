@@ -34,7 +34,7 @@
       }
 
       window.SCP.userAccessTokenObject = <%= raw get_user_access_token_hash(current_user).to_json %>;
-      window.SCP.userAccessToken = window.SCP.userAccessTokenObject.access_token;
+      window.SCP.userAccessToken = window.SCP.userAccessTokenObject?.access_token ? window.SCP.userAccessTokenObject.access_token : "";
       window.SCP.userSignedIn = <%= user_signed_in? %>;
       window.SCP.environment = '<%= Rails.env %>';
       window.SCP.abTests = <%= raw @ab_test_assignments %>

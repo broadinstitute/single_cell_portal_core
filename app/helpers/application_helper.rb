@@ -354,6 +354,8 @@ module ApplicationHelper
   def get_user_access_token_hash(user)
     if user.present?
       user.valid_access_token
+    else
+      {}
     end
   end
 
