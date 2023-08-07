@@ -49,7 +49,7 @@ export function DifferentialFileUploadForm({
     <div className="row">
       <div className="col-md-12">
         <p className="form-terra">
-          <p>Upload differential expression files that compare groups in an annotation.  Use long or wide format, one file per annotation.  Comparisons can be one-vs-rest or pairwise.</p>
+          <p>Upload differential expression (DE) files to enable users to compare genes by DE in cells grouped by type, disease, treatment, and other experimental conditions.  Use long or wide format, one file per annotation.  Comparisons can be one-vs-rest or pairwise.</p>
           In both formats, headers for "logfoldchanges" and "qval" are required; these let users see log<sub>2</sub>(fold change) and q-value, respectively.  Other metrics like "mean" are optional.
           <div className="row">
             <div className="col-md-12">
