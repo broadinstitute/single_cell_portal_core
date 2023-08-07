@@ -222,6 +222,11 @@
   font-size: 14px;
 }
 
+.code {
+  font-size: 13px;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
 /** Used in "Differential expression" tab */
 .de-example.wide-format {
   table-layout: fixed;

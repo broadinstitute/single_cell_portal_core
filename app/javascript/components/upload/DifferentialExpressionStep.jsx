@@ -74,7 +74,7 @@ export function DifferentialFileUploadForm({
                     <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
                   </tbody>
                 </table>
-                Long format has values that repeat in the first column.
+                Long format repeats values in the first column.
               </div>
               <div className="col-sm-6 padded de-example-wide-format" >
                 <b>Wide format</b>
@@ -106,7 +106,9 @@ export function DifferentialFileUploadForm({
                     <tr><td>Sergef</td><td>-0.00036</td><td>0.00239</td><td>4.20466</td><td>...</td><td>0.00036</td><td>0.074825</td><td>12.71389</td><td>...</td><td>0.00060</td><td>0.00005</td><td>1.82731</td><td>...</td><td>-0.00049</td><td>0.02648</td><td>1.06551</td><td>...</td></tr>
                   </tbody>
                 </table>
-                "Wide format" has values that <i>do not</i> repeat in the first column.
+                "Wide format" <i>does not</i> repeat values in the first column.
+                <br/><br/>
+                <p>Wide headers have the form <span className="code">&lt;group&gt;--&lt;comparison_group&gt;--&lt;metric&gt;</span>.</p>
               </div>
             </div>
           </div>
