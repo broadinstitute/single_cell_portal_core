@@ -419,7 +419,7 @@ class ExpressionVizService
   #   * +cluster+ (ClusterGroup) => clustering object to query cells from
   #   * +annotation+ (Hash) => annotation object
   #   * +subsample_threshold+ (Integer, nil) => subsampling threshold, used to determine which cells/annotations to load
-  def self.get_morpheus_json_data(study:, genes:, cluster:, annotation:, subsample_threshold:)
+  def self.get_morpheus_json_data(study:, genes:, cluster:, annotation:, subsample_threshold: nil)
     subsample_annotation = "#{annotation[:name]}--#{annotation[:type]}--#{annotation[:scope]}"
     cells = cluster.concatenate_data_arrays('text', 'cells', subsample_threshold, subsample_annotation)
     annotation_array = ClusterVizService.get_annotation_values_array(
