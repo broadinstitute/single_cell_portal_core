@@ -253,9 +253,6 @@
     &.yellow { background: #FFC; }
     &.green { background: #CFC; }
     &.blue { background: #CCF; }
-    &.optional {
-      font-weight: normal;
-    }
   }
 
   td > span {
@@ -268,6 +265,11 @@
   col.col-mean { width: 110px; }
   col.col-ellipsis { width: 40px; }
 }
+
+.optional {
+  font-weight: normal;
+}
+
 .de-example-wide-format {
   overflow-x: auto;
 }
