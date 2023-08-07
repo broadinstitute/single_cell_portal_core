@@ -27,7 +27,7 @@ class FireCloudClientTest < ActiveSupport::TestCase
 
     # seed one workspace to prevent test_workspaces from failing due to order of operations corner case
     workspace_name = "workspace-#{@random_test_seed}"
-    Rails.logger.info "seeing #{workspace_name} for testing"
+    Rails.logger.info "seeding #{workspace_name} for testing"
     @fire_cloud_client.create_workspace(@fire_cloud_client.project, workspace_name)
   end
 
