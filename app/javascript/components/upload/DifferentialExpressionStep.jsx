@@ -80,23 +80,23 @@ export function DifferentialFileUploadForm({
                 <b>Wide format</b>
                 <table className="table-terra de-example wide-format">
                   <colgroup>
-                    <col style={{ 'width': '60px' }} />
-                    <col style={{ 'width': '180px' }} />
-                    <col style={{ 'width': '110px' }} />
-                    <col style={{ 'width': '110px' }} />
-                    <col style={{ 'width': '40px' }} />
-                    <col style={{ 'width': '180px' }} />
-                    <col style={{ 'width': '110px' }} />
-                    <col style={{ 'width': '110px' }} />
-                    <col style={{ 'width': '40px' }} />
-                    <col style={{ 'width': '180px' }} />
-                    <col style={{ 'width': '110px' }} />
-                    <col style={{ 'width': '110px' }} />
-                    <col style={{ 'width': '40px' }} />
-                    <col style={{ 'width': '180px' }} />
-                    <col style={{ 'width': '110px' }} />
-                    <col style={{ 'width': '110px' }} />
-                    <col style={{ 'width': '40px' }} />
+                    <col className="col-genes" />
+                    <col className="col-logfoldchanges" />
+                    <col className="col-qval" />
+                    <col className="col-mean" />
+                    <col className="col-ellipsis" />
+                    <col className="col-logfoldchanges" />
+                    <col className="col-qval" />
+                    <col className="col-mean" />
+                    <col className="col-ellipsis" />
+                    <col className="col-logfoldchanges" />
+                    <col className="col-qval" />
+                    <col className="col-mean" />
+                    <col className="col-ellipsis" />
+                    <col className="col-logfoldchanges" />
+                    <col className="col-qval" />
+                    <col className="col-mean" />
+                    <col className="col-ellipsis" />
                   </colgroup>
                   <thead>
                     <tr><td>genes</td><td><span className="blue">A</span>--<span className="red">rest</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="red">rest</span>--qval</td><td><span className="blue">A</span>--<span className="red">rest</span>--mean</td><td>...</td><td><span className="green">B</span>--<span className="red">rest</span>--logfoldchanges</td><td><span className="green">B</span>--<span className="red">rest</span>--qval</td><td><span className="green">B</span>--rest--mean</td><td>...</td><td>A--<span className="green">B</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="green">B</span>--qval</td><td><span className="blue">A</span>--<span className="green">B</span>--mean</td><td>...</td><td><span className="blue">A</span>--<span className="yellow">C</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="yellow">C</span>--qval</td><td><span className="blue">A</span>--<span className="yellow">C</span>--mean</td><td>...</td></tr>

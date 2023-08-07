@@ -256,6 +256,12 @@
   td > span {
     padding: 0;
   }
+
+  col.col-genes { width: 60px; }
+  col.col-logfoldchanges { width: 180px; }
+  col.col-qval { width: 110px; }
+  col.col-mean { width: 110px; }
+  col.col-ellipsis { width: 40px; }
 }
 .de-example-wide-format {
   overflow-x: auto;
