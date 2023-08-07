@@ -76,7 +76,7 @@ export function DifferentialFileUploadForm({
                 </table>
                 Long format has values that repeat in the first column.
               </div>
-              <div className="col-sm-6 padded" >
+              <div className="col-sm-6 padded de-example-wide-format" >
                 <b>Wide format</b>
                 <table className="table-terra de-example wide-format">
                   <colgroup>
@@ -99,7 +99,7 @@ export function DifferentialFileUploadForm({
                     <col style={{ 'width': '40px' }} />
                   </colgroup>
                   <thead>
-                    <td>genes</td><td><span className="blue">A</span>--<span className="red">rest</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="red">rest</span>--qval</td><td><span className="blue">A</span>--<span className="red">rest</span>--mean</td><td>...</td><td><span className="green">B</span>--<span className="red">rest</span>--logfoldchanges</td><td><span className="green">B</span>--<span className="red">rest</span>--qval</td><td><span className="green">B</span>--rest--mean</td><td>...</td><td>A--<span className="green">B</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="green">B</span>--qval</td><td><span className="blue">A</span>--<span className="green">B</span>--mean</td><td>...</td><td><span className="blue">A</span>--<span className="yellow">C</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="yellow">C</span>--qval</td><td><span className="blue">A</span>--<span className="yellow">C</span>--mean</td><td>...</td>
+                    <tr><td>genes</td><td><span className="blue">A</span>--<span className="red">rest</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="red">rest</span>--qval</td><td><span className="blue">A</span>--<span className="red">rest</span>--mean</td><td>...</td><td><span className="green">B</span>--<span className="red">rest</span>--logfoldchanges</td><td><span className="green">B</span>--<span className="red">rest</span>--qval</td><td><span className="green">B</span>--rest--mean</td><td>...</td><td>A--<span className="green">B</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="green">B</span>--qval</td><td><span className="blue">A</span>--<span className="green">B</span>--mean</td><td>...</td><td><span className="blue">A</span>--<span className="yellow">C</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="yellow">C</span>--qval</td><td><span className="blue">A</span>--<span className="yellow">C</span>--mean</td><td>...</td></tr>
                   </thead>
                   <tbody>
                     <tr><td>It2ma</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td><td>-3.00246</td><td>0.00000</td><td>0.51128</td><td>...</td><td>-0.10246</td><td>0.40019</td><td>0.41357</td><td>...</td><td>0.00249</td><td>0.00103</td><td>0.42130</td><td>...</td></tr>

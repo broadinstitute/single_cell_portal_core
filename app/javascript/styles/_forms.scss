@@ -132,36 +132,6 @@
       padding: 0.1em 0.5em;
     }
   }
-  &.de-example.wide-format {
-    table-layout: fixed;
-    width: 600px;
-
-    td {
-      padding: 0.1em 0;
-    }
-  }
-  &.de-example {
-    background: #EEE;
-    font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
-
-    td, td > span {
-      padding: 0.1em 0.8em;
-      font-size: 11px;
-
-      color: #000;
-      &.red { background: #FCC; }
-      &.yellow { background: #FFC; }
-      &.green { background: #CFC; }
-      &.blue { background: #CCF; }
-      &.optional {
-        font-weight: normal;
-      }
-    }
-
-    td > span {
-      padding: 0;
-    }
-  }
 }
 
 .form-terra {
