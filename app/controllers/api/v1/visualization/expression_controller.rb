@@ -11,6 +11,10 @@ module Api
         before_action :check_study_view_permission
         before_action :check_gene_limit
         before_action :check_api_cache!
+        before_action :set_cluster
+        before_action :set_genes
+        before_action :set_selected_annotation
+        before_action :set_subsampling_threshold
         after_action :write_api_cache!
 
         # Returns the specified expression data for the gene within the given study, optimized for rendering
@@ -40,7 +44,7 @@ module Api
               key :description, 'Type of plot data requested'
               key :required, true
               key :type, :string
-              key :enum, %w(violin heatmap)
+              key :enum, %w(violin heatmap json)
             end
             parameter do
               key :name, :cluster
@@ -94,51 +98,48 @@ module Api
         end
 
         def show
-          if ((!@study.has_expression_data? || !@study.can_visualize_clusters?) && !params[:gene_list])
-            render(json: {error: "Study #{@study.accession} does not support expression rendering"}, status: 400) and return
+          if (!@study.has_expression_data? || !@study.can_visualize_clusters?) && !params[:gene_list]
+            render json: {
+              error: "Study #{@study.accession} does not support expression rendering"
+            }, status: :bad_request and return
           end
+
           data_type = params[:data_type]
-          if (data_type == 'violin')
+          case data_type
+          when 'violin'
             render_violin
-          elsif (data_type == 'heatmap')
+          when 'heatmap'
             render_heatmap
+          when 'json'
+            render_morpheus_json
           else
-            render json: {error: "Unknown expression data type: #{data_type}"}, status: 400
+            render json: { error: "Unknown expression data type: #{data_type}" }, status: :bad_request
           end
         end
 
         def render_violin
-          cluster = ClusterVizService.get_cluster_group(@study, params)
-          if cluster.nil?
+          if @cluster.nil?
             render json: { error: 'Requested cluster not found' }, status: :not_found and return
           end
 
-          annotation = AnnotationVizService.get_selected_annotation(@study,
-                                                                    cluster: cluster,
-                                                                    annot_name: params[:annotation_name],
-                                                                    annot_type: params[:annotation_type],
-                                                                    annot_scope: params[:annotation_scope])
-          subsample = ClustersController.get_selected_subsample_threshold(params[:subsample], cluster)
-          genes = RequestUtils.get_genes_from_param(@study, params[:genes])
-
-          if genes.empty?
+          if @genes.empty?
             if params[:genes].empty?
-              render json: {error: 'You must supply at least one gene'}, status: 400
+              render json: { error: 'You must supply at least one gene' }, status: :bad_request
             else
-              render json: {error: 'No genes in this study matched your search'}, status: 404
+              render json: { error: 'No genes in this study matched your search' }, status: :not_found
             end
           else
             render_data = ExpressionVizService.get_global_expression_render_data(
               study: @study,
-              subsample: subsample,
-              genes: genes,
-              cluster: cluster,
-              selected_annotation: annotation,
+              subsample: @subsample,
+              genes: @genes,
+              cluster: @cluster,
+              selected_annotation: @annotation,
               boxpoints: params[:boxpoints],
               consensus: params[:consensus],
               current_user: current_api_user
             )
-            render json: render_data, status: 200
+            render json: render_data, status: :ok
           end
         end
 
@@ -148,18 +149,32 @@ module Api
             gene_list = @study.precomputed_scores.by_name(params[:gene_list])
             expression_data = gene_list&.to_gct
           else
-            cluster = ClusterVizService.get_cluster_group(@study, params)
-
-            collapse_by = params[:row_centered]
-            genes = RequestUtils.get_genes_from_param(@study, params[:genes])
-
             expression_data = ExpressionVizService.get_morpheus_text_data(
-              genes: genes, cluster: cluster, collapse_by: collapse_by, file_type: :gct
+              genes: @genes, cluster: @cluster, collapse_by: params[:row_centered], file_type: :gct
             )
           end
 
-          render plain: expression_data, status: 200
+          render plain: expression_data, status: :ok
         end
+
+        # return data in JSON format for Morpheus to be shared across multiple instances
+        def render_morpheus_json
+          if @cluster.nil?
+            render json: { error: 'Requested cluster not found' }, status: :not_found and return
+          end
+
+          if @annotation.nil?
+            render json: { error: 'Requested annotation not found' }, status: :not_found and return
+          end
+
+          expression_data = ExpressionVizService.get_morpheus_json_data(
+            study: @study, genes: @genes, cluster: @cluster, annotation: @annotation, subsample_threshold: @subsample
+          )
+
+          render json: expression_data, status: :ok
+        end
+
+        private
 
         # enforce a limit on number of genes allowed for visualization requests
         # see StudySearchService::MAX_GENE_SEARCH
@@ -172,6 +187,27 @@ module Api
             MetricsService.log('search-too-many-genes', { numGenes: num_genes }, current_api_user, request:)
             render json: { error: StudySearchService::MAX_GENE_SEARCH_MSG }, status: :unprocessable_entity
           end
+        end
+
+        def set_cluster
+          @cluster = ClusterVizService.get_cluster_group(@study, params)
+        end
+
+        def set_genes
+          @genes = RequestUtils.get_genes_from_param(@study, params[:genes])
+        end
+
+        def set_selected_annotation
+          @annotation = AnnotationVizService.get_selected_annotation(@study,
+                                                                     cluster: @cluster,
+                                                                     annot_name: params[:annotation_name],
+                                                                     annot_type: params[:annotation_type],
+                                                                     annot_scope: params[:annotation_scope],
+                                                                     fallback: false)
+        end
+
+        def set_subsampling_threshold
+          @subsample = ClustersController.get_selected_subsample_threshold(params[:subsample], @cluster)
         end
       end
     end

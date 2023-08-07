@@ -1,4 +1,7 @@
 class ExpressionVizService
+  # default properties for morpheus metadata
+  MORPHEUS_STRING_PROPS = { 'morpheus.discrete' => true, 'morpheus.dataType' => 'string' }.freeze
+
   def self.get_global_expression_render_data(study:,
                                              subsample:,
                                              genes:,
@@ -405,5 +408,66 @@ class ExpressionVizService
       row_data = [headers.join("\t"), rows.join("\n")]
     end
     row_data.join("\n")
+  end
+
+  # expression data in JSON format to be shared across multiple morpheus components
+  # data structure defined at https://software.broadinstitute.org/morpheus/configuration.html#datasetJSON
+  #
+  # * *params*
+  #   * +study+ (Study) => study to query expression data from
+  #   * +genes+ (Array<Hash>) => array of gene expression data
+  #   * +cluster+ (ClusterGroup) => clustering object to query cells from
+  #   * +annotation+ (Hash) => annotation object
+  #   * +subsample_threshold+ (Integer, nil) => subsampling threshold, used to determine which cells/annotations to load
+  def self.get_morpheus_json_data(study:, genes:, cluster:, annotation:, subsample_threshold: nil)
+    subsample_annotation = "#{annotation[:name]}--#{annotation[:type]}--#{annotation[:scope]}"
+    cells = cluster.concatenate_data_arrays('text', 'cells', subsample_threshold, subsample_annotation)
+    annotation_array = ClusterVizService.get_annotation_values_array(
+      study, cluster, annotation, cells, subsample_annotation, subsample_threshold
+    )
+    {
+      seriesNames: [subsample_annotation],
+      seriesArrays: get_series_arrays(cells, genes),
+      seriesDataTypes: %w[Float32],
+      rows: genes.count,
+      columns: cells.count,
+      rowMetadataModel: get_row_metadata(genes),
+      columnMetadataModel: get_column_metadata(cells, annotation[:name], annotation_array)
+    }
+  end
+
+  # arrays of arrays mapping to expression values
+  def self.get_series_arrays(cells, genes)
+    series = genes.count.times.map { [] }
+    cells.each do |cell|
+      genes.each_with_index do |gene, index|
+        series[index] << gene.dig('scores', cell).to_f
+      end
+    end
+    [series] # morpheus expects nested arrays
+  end
+
+  # information about gene rows
+  def self.get_row_metadata(genes)
+    gene_names = genes.map { |g| g['name'] }
+    row_count = gene_names.count
+    {
+      itemCount: 1,
+      vectors: [
+        { array: gene_names, name: 'id', n: row_count, properties: MORPHEUS_STRING_PROPS }
+      ]
+    }
+  end
+
+  # information about columns (either cells or annotations, depending on view)
+  def self.get_column_metadata(cells, annotation_name, annotations)
+    col_count = cells.count
+    {
+      itemCount: col_count,
+      vectors: [
+        { array: cells, name: 'id', n: col_count, properties: MORPHEUS_STRING_PROPS },
+        { array: annotations, name: annotation_name, n: col_count, properties: MORPHEUS_STRING_PROPS }
+      ]
+    }
   end
 end
