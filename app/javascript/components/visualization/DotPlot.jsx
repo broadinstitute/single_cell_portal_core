@@ -9,6 +9,8 @@ import { getAnnotationCellValuesURL, getExpressionHeatmapURL } from '~/lib/scp-a
 import useErrorMessage, { morpheusErrorHandler } from '~/lib/error-message'
 import { withErrorBoundary } from '~/lib/ErrorBoundary'
 import LoadingSpinner from '~/lib/LoadingSpinner'
+import { fetchServiceWorkerCache } from '~/lib/service-worker-cache'
+import { getSCPContext } from '~/providers/SCPContextProvider'
 
 export const dotPlotColorScheme = {
   // Blue, purple, red.  These red and blue hues are accessible, per WCAG.
@@ -16,6 +18,166 @@ export const dotPlotColorScheme = {
 
   // TODO: Incorporate expression units, once such metadata is available.
   values: [0, 0.5, 1]
+}
+
+/**
+ * Adds rudimentary service worker cache optimization to Morpheus
+ *
+ * Without SWC, dot plots can take prohibitively long to load in local development
+ * for realistic datasets.
+ */
+function patchServiceWorkerCache() {
+  const isServiceWorkerCacheEnabled = getSCPContext().isServiceWorkerCacheEnabled
+
+  /**
+   * Monkeypatched from
+   * https://github.com/cmap/morpheus.js/blob/8331b8db8696d1bf3255da2261ac729bfc7ea66a/src/io/buffered_reader.js#L36
+   * to enable service worker cache (SWC) in frontend-only SCP development.
+   */
+  window.morpheus.BufferedReader.parse = async function(url, options) {
+    const delim = options.delimiter
+    const regex = new RegExp(delim)
+    const handleTokens = options.handleTokens
+    const complete = options.complete
+    const fetchOptions = {}
+    if (url.headers) {
+      for (const header in fetchOptions.headers = new Headers,
+      url.headers) {fetchOptions.headers.append(header, url.headers[header])}
+    }
+
+    let response
+    if (isServiceWorkerCacheEnabled) {
+      const fetchSWCacheResult = await fetchServiceWorkerCache(url, fetchOptions)
+      response = fetchSWCacheResult[0]
+    } else {
+      response = await fetch(url, fetchOptions)
+    }
+
+    if (response.ok) {
+      const reader = response.body.getReader()
+      new morpheus.BufferedReader(reader, (line => {
+        handleTokens(line.split(regex))
+      })
+      , (() => {
+        complete()
+      })
+      )
+    } else {options.error('Network error')}
+  }
+
+  /**
+ * Adds rudimentary service worker cache optimization to Morpheus
+ *
+ * Monkeypatched from:
+ * https://github.com/cmap/morpheus.js/blob/8331b8db8696d1bf3255da2261ac729bfc7ea66a/src/util/util.js#L1444
+ *
+ * @param file
+ *            a File or url
+ * @return A deferred object that resolves to an array of strings
+ */
+  window.morpheus.Util.readLines = function(fileOrUrl, interactive) {
+    return new Promise((async (resolve, reject) => {
+      const isFile = morpheus.Util.isFile(fileOrUrl)
+      const isString = morpheus.Util.isString(fileOrUrl)
+      const name = morpheus.Util.getFileName(fileOrUrl)
+      const ext = morpheus.Util.getExtension(name)
+
+      if (isString) { // URL
+        if (ext === 'xlsx') {
+          var fetchOptions = {}
+          if (fileOrUrl.headers) {
+            fetchOptions.headers = new Headers()
+            for (const header in fileOrUrl.headers) {
+              fetchOptions.headers.append(header, fileOrUrl.headers[header])
+            }
+          }
+          let response
+          if (isServiceWorkerCacheEnabled) {
+            const fetchSWCacheResult = await fetchServiceWorkerCache(fileOrUrl, fetchOptions)
+            response = fetchSWCacheResult[0]
+          } else {
+            response = fetch(fileOrUrl, fetchOptions)
+          }
+          let arrayBuffer
+          if (response.ok) {
+            arrayBuffer = await response.arrayBuffer()
+          } else {
+            deferred.reject(response)
+          }
+
+          if (arrayBuffer) {
+            const data = new Uint8Array(arrayBuffer)
+            const arr = []
+            for (let i = 0; i != data.length; ++i) {
+              arr[i] = String.fromCharCode(data[i])
+            }
+            const bstr = arr.join('')
+            morpheus.Util.xlsxTo1dArray({
+              data: bstr,
+              prompt: interactive
+            }, (err, lines) => {
+              deferred.resolve(lines)
+            })
+          } else {
+            deferred.reject()
+          }
+        } else {
+          let response
+          if (isServiceWorkerCacheEnabled) {
+            const fetchSWCacheResult = await fetchServiceWorkerCache(fileOrUrl, fetchOptions)
+            response = fetchSWCacheResult[0]
+          } else {
+            response = await fetch(fileOrUrl, fetchOptions)
+          }
+          let text
+          if (response.ok) {
+            text = await response.text()
+          }
+
+          resolve(morpheus.Util.splitOnNewLine(text))
+        }
+      } else if (isFile) {
+        const reader = new FileReader()
+        reader.onerror = function() {
+          console.log('Unable to read file')
+          reject('Unable to read file')
+        }
+        reader.onload = function(event) {
+          const arrayBuffer = event.target.result
+          const data = new Uint8Array(arrayBuffer)
+          if (ext === 'xlsx' || ext === 'xls') {
+            const arr = []
+            for (let i = 0; i != data.length; ++i) {
+              arr[i] = String.fromCharCode(data[i])
+            }
+            const bstr = arr.join('')
+            morpheus.Util
+              .xlsxTo1dArray({
+                data: bstr,
+                prompt: interactive
+              }, (err, lines) => {
+                resolve(lines)
+              })
+          } else {
+            const br = new morpheus.ArrayBufferReader(data)
+            let s
+            const lines = []
+            const rtrim = /\s+$/
+            while ((s = br.readLine()) !== null) {
+              const line = s.replace(rtrim, '')
+              if (line !== '') {
+                lines.push(line)
+              }
+            }
+            resolve(lines)
+          }
+        }
+        reader.readAsArrayBuffer(fileOrUrl)
+      } else { // it's already lines?
+        resolve(fileOrUrl)
+      }
+    }))
+  }
 }
 
 /** renders a morpheus powered dotPlot for the given URL paths and annotation
@@ -153,6 +315,8 @@ function renderDotPlot({
   }
 
   config.colorScheme = dotPlotColorScheme
+
+  patchServiceWorkerCache()
 
   // Instantiate dot plot and embed in DOM element
   new window.morpheus.HeatMap(config)

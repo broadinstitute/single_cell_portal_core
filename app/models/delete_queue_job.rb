@@ -200,6 +200,7 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
       study_id: study.id, :study_file_ids.in => cluster_file_ids
     )
     cursor.delete_all if cursor.exists?
+    study.cluster_groups.update_all(indexed: false)
   end
 
   # delete convention data from BQ if a user deletes a convention metadata file, or a study that contains convention data

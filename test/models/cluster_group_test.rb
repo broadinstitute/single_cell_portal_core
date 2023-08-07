@@ -60,5 +60,60 @@ class ClusterGroupTest < ActiveSupport::TestCase
     assert_equal 3, points
     assert_equal 3, @cluster.points
   end
+
+  test 'should generate cell index' do
+    study_cells = 'A'.upto('zzz').to_a
+    coords = study_cells.each_index.to_a
+    FactoryBot.create(:cluster_file,
+                      study: @study,
+                      name: 'identical.txt',
+                      cell_input: {
+                        x: coords,
+                        y: coords,
+                        cells: study_cells
+                      })
+    identical_cluster = @study.cluster_groups.by_name('identical.txt')
+    index = identical_cluster.cell_name_index(study_cells)
+    assert index.empty?
+    cluster_cells = study_cells.take(10_000).shuffle
+    cluster_coords = cluster_cells.each_index.to_a
+    FactoryBot.create(:cluster_file,
+                      study: @study,
+                      name: 'different.txt',
+                      cell_input: {
+                        x: cluster_coords,
+                        y: cluster_coords,
+                        cells: cluster_cells
+                      })
+    different_cluster = @study.cluster_groups.by_name('different.txt')
+    index = different_cluster.cell_name_index(study_cells)
+    assert index.is_a?(Array)
+    expected_index = cluster_cells.map { |c| study_cells.index(c) }
+    assert_equal expected_index, index
+  end
+
+  test 'uses default cell index' do
+    cells = "A".upto("Z").to_a
+    enumerator = 0.upto(25)
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Default Cell Array',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    FactoryBot.create(:metadata_file,
+                      study:,
+                      name: 'metadata.txt',
+                      cell_input: cells)
+    FactoryBot.create(:cluster_file,
+                      study:,
+                      name: 'cluster.txt',
+                      cell_input: {
+                        x: enumerator.to_a,
+                        y: enumerator.to_a,
+                        cells:
+                      })
+    cluster = study.cluster_groups.first
+    assert_equal enumerator.to_a, cluster.cell_index_array.to_a
+    assert cluster.use_default_index
+  end
 end
 

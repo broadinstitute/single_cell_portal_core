@@ -244,6 +244,11 @@ module Api
             render json: { error: "Cannot find cluster: #{params[:cluster]}" }, status: :not_found and return
           end
 
+          # need to check for presence as some clusters will not have them if cells were not found in all_cells_array
+          unless cluster.indexed
+            render json: { error: 'Cluster is not indexed' }, status: :bad_request and return
+          end
+
           if params[:annotations].include?('--numeric--')
             render json: { error: 'Cannot use numeric annotations for facets' }, status: :bad_request and return
           end
@@ -255,7 +260,7 @@ module Api
           end
 
           # use new cell index arrays to load data much faster
-          indexed_cluster_cells = cluster.concatenate_data_arrays('index', 'cells')
+          indexed_cluster_cells = cluster.cell_index_array
           annotation_arrays = {}
           facets = []
           # build arrays of annotation values, and populate facets response array

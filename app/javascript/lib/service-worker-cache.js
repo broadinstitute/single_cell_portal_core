@@ -28,7 +28,7 @@ export async function fetchServiceWorkerCache(url, init) {
     isHit = false
   }
   const hitOrMiss = isHit ? 'hit' : 'miss'
-  console.debug(`Service worker cache ${hitOrMiss} for SCP API fetch of URL: ${url}`)
+  console.log(`Service worker cache ${hitOrMiss} for SCP API fetch of URL: ${url}`)
   return [response, isHit]
 }
 

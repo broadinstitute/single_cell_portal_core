@@ -13,7 +13,8 @@ class CreateClusterIndexArrays < Mongoid::Migration
     study_ids = Study.pluck(:id)
     DataArray.where(
       name: 'index', array_type: 'cells', linear_data_type: 'ClusterGroup', :linear_data_id.in => cluster_ids,
-      :study_ids.in => study_ids, :study_file_ids.in => cluster_file_ids
+      :study_id.in => study_ids, :study_file_id.in => cluster_file_ids
     ).delete_all
+    ClusterGroup.update_all(indexed: false, is_indexing: false)
   end
 end

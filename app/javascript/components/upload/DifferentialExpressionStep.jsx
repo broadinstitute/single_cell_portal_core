@@ -49,8 +49,45 @@ export function DifferentialFileUploadForm({
     <div className="row">
       <div className="col-md-12">
         <p className="form-terra">
-          Upload a file with differential expression for a particular clustering and annotation.  <strong>Parsed metadata
-          and clustering files are required before uploading</strong>.
+          Upload a file with differential expression for a particular clustering and annotation.  (Either format, note auto-detection.  Use tables themed like pre to align columns.  Move tab to top of other files.)
+          <strong>Parsed metadata and clustering files are required before uploading</strong>
+          <div className="row">
+            <div className="col-md-12">
+              <div className="col-sm-6 padded">
+                <b>Long format</b>
+                <pre>
+                  genes&#09;group&#09;comparison_group&#09;logfoldchanges&#09;qval&#09;mean&#09;...<br/>
+                  It2ma&#09;A&#09;rest&#09;0.00049&#09;0.00009&#09;12.00009&#09;...<br/>
+                  Sergef&#09;A&#09;rest&#09;-0.00036&#09;0.00009&#09;12.00009&#09;...<br/>
+                  Chil5&#09;A&#09;rest&#09;2.95114&#09;0.00009&#09;12.00009&#09;...<br/>
+                  ...<br/>
+                  It2ma&#09;B&#09;rest&#09;-3.00246&#09;0.00009&#09;12.00009&#09;...<br/>
+                  Sergef&#09;B&#09;rest&#09;0.00036&#09;0.00009&#09;12.00009&#09;...<br/>
+                  Chil5&#09;B&#09;rest&#09;0.00329&#09;0.00009&#09;12.00009&#09;...<br/>
+                  ...<br/>
+                  It2ma&#09;A&#09;B&#09;-0.10246&#09;0.00009&#09;12.00009&#09;...<br/>
+                  Sergef&#09;A&#09;B&#09;0.00060&#09;0.00009&#09;12.00009&#09;...<br/>
+                  Chil5&#09;A&#09;B&#09;14.00309&#09;0.00009&#09;12.00009&#09;...<br/>
+                  ...<br/>
+                  It2ma&#09;A&#09;C&#09;0.00249&#09;0.00009&#09;12.00009&#09;...<br/>
+                  Sergef&#09;A&#09;C&#09;-0.00049&#09;0.00009&#09;12.00009&#09;...<br/>
+                  Chil5&#09;A&#09;C&#09;1.30079&#09;0.00009&#09;12.00009&#09;...<br/>
+                  ...
+                </pre>
+                "Long format" has values that repeat in the first column.
+              </div>
+              <div className="col-sm-6 padded" >
+                <b>Wide format</b>
+                <pre>
+                  genes&#09;A--rest--logfoldchanges&#09;A--rest--qval&#09;A--rest--mean&#09;B--rest--logfoldchanges&#09;B--rest--qval&#09;B--rest--mean&#09;...&#09;A--B--logfoldchanges&#09;A--B--qval&#09;A--B--mean&#09;A--C--logfoldchanges&#09;A--C--qval&#09;A--C--mean&#09;...<br/>
+                  It2ma&#09;A&#09;rest&#09;0.00049&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;<br/>
+                  Sergef&#09;A&#09;rest&#09;-0.00036&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;<br/>
+                  Chil5&#09;A&#09;rest&#09;2.95114&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;...&#09;-3.00246&#09;0.00009&#09;12.00009&#09;<br/>
+                </pre>
+                "Wide format" has values that <i>do not</i> repeat in the first column.
+              </div>
+            </div>
+          </div>
         </p>
       </div>
     </div>
