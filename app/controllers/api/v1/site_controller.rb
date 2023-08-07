@@ -216,8 +216,8 @@ module Api
           response 200 do
             key :description, 'User access token for current signed in user'
           end
-          response 401 do
-            key :description, ApiBaseController.unauthorized
+          response 204 do
+            key :description, 'No user credentials supplied'
           end
           response 403 do
             key :description, ApiBaseController.forbidden('renew access token')
@@ -237,6 +237,7 @@ module Api
           render json: RequestUtils.get_user_access_token(current_api_user)
         else
           Rails.logger.info "Cannot get a user access token for a user not signed in"
+          head :no_content
         end
       end
 
