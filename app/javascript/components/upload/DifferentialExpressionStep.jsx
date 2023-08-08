@@ -49,8 +49,8 @@ export function DifferentialFileUploadForm({
     <div className="row">
       <div className="col-md-12">
         <p className="form-terra">
-          <p>Upload differential expression (DE) files to enable users to compare genes by DE in cells grouped by type, disease, treatment, and other experimental conditions.  Use long or wide format, one file per annotation.  Comparisons can be one-vs-rest or pairwise.</p>
-          In both formats, headers for <strong>"logfoldchanges" and "qval" are required</strong>; these let users see log<sub>2</sub>(fold change) and q-value, respectively.  Other metrics like "mean" are optional.  <strong>Parsed metadata and clustering files are also required before uploading</strong>.
+          <p>Upload differential expression (DE) files to enable comparing genes by DE in cells grouped by type, disease, treatment, and other experimental conditions.  Use long or wide format, one file per annotation.  Comparisons can be one-vs-rest or pairwise.</p>
+          In both formats, headers for <strong>"logfoldchanges" and "qval" are required</strong>; these show log<sub>2</sub>(fold change) and q-value, respectively.  Other metrics like "mean" are optional.  <strong>Parsed metadata and clustering files are also required before uploading</strong>.
           <div className="row">
             <div className="col-md-12">
               <div className="col-sm-6 padded">
@@ -76,7 +76,7 @@ export function DifferentialFileUploadForm({
                 </table>
                 Long format repeats values in the first column.
               </div>
-              <div className="col-sm-6 padded ">
+              <div className="col-sm-6 padded">
                 <b>Wide format</b>
                 <div className="de-example-wide-format">
                   <table className="table-terra de-example wide-format">
@@ -108,7 +108,7 @@ export function DifferentialFileUploadForm({
                     </tbody>
                   </table>
                 </div>
-                "Wide format" <i>does not</i> repeat values in the first column.
+                Wide format <i>does not</i> repeat values in the first column.
                 <br/><br/>
                 <p>Wide headers have the form <span className="code">&lt;group&gt;--&lt;comparison_group&gt;--&lt;metric&gt;</span>.</p>
               </div>
