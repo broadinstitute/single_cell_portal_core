@@ -340,9 +340,7 @@ class ExpressionVizServiceTest < ActiveSupport::TestCase
   end
 
   test 'should load gene correlation visualization' do
-    genes = ['PTEN', 'AGPAT2'].map do |gene_name|
-      @basic_study.genes.by_name_or_id(gene_name, @basic_study.expression_matrix_files.pluck(:id))
-    end
+    genes = load_all_genes(@basic_study)
     cluster = @basic_study.default_cluster
     default_annot = @basic_study.default_annotation
     annot_name, annot_type, annot_scope = default_annot.split('--')
@@ -351,5 +349,44 @@ class ExpressionVizServiceTest < ActiveSupport::TestCase
     viz_data = ExpressionVizService.load_correlated_data_array_scatter(@basic_study, genes, cluster, annotation)
     expected = {:annotations=>["dog", "cat", "dog"], :cells=>["A", "B", "C"], :x=>[0.0, 3.0, 1.5], :y=>[0.0, 0.0, 8.0]}
     assert_equal expected, viz_data
+  end
+
+  test 'should load dotplot/heatmap JSON data' do
+    genes = load_all_genes(@basic_study)
+    gene_names = genes.map { |g| g['name'] }
+    cluster = @basic_study.default_cluster
+    cells = cluster.concatenate_data_arrays('text', 'cells')
+    default_annot = @basic_study.default_annotation
+    annot_name, annot_type, annot_scope = default_annot.split('--')
+    annotation = AnnotationVizService.get_selected_annotation(
+      @basic_study, cluster:, annot_name:, annot_type:, annot_scope:
+    )
+    labels = ClusterVizService.get_annotation_values_array(@basic_study, cluster, annotation, cells, nil, nil)
+    data = ExpressionVizService.get_morpheus_json_data(study: @basic_study, genes:, cluster:, annotation:)
+    assert_equal "#{annot_name}--#{annot_type}--#{annot_scope}", data[:seriesNames].first
+    expected_keys = %i[seriesNames seriesArrays seriesDataTypes rows columns rowMetadataModel columnMetadataModel]
+    assert_equal expected_keys.sort, data.keys.sort
+    assert_equal gene_names.count, data[:rows]
+    assert_equal labels.count, data[:columns]
+    data_genes = data.dig(:rowMetadataModel, :vectors).detect { |vector| vector[:name] == 'id' }
+    assert_equal gene_names, data_genes[:array]
+    assert_equal gene_names.count, data_genes[:n]
+    data_labels = data.dig(:columnMetadataModel, :vectors).detect { |vector| vector[:name] == annot_name }
+    assert data_labels.present?
+    assert_equal labels, data_labels[:array]
+    assert_equal labels.count, data_labels[:n]
+    data_cells = data.dig(:columnMetadataModel, :vectors).detect { |vector| vector[:name] == 'id' }
+    assert_equal cells, data_cells[:array]
+    assert_equal cells.count, data_cells[:n]
+    # confirm expected values appear at correct indices
+    genes.each_with_index do |gene, gene_index|
+      gene['scores'].each do |cell, exp_score|
+        index = cells.index(cell)
+        data_score = data[:seriesArrays].first[gene_index][index]
+        assert_equal exp_score.to_f,
+                     data_score,
+                     "expected #{exp_score} for #{cell} in #{gene['name']} but found #{data_score}"
+      end
+    end
   end
 end

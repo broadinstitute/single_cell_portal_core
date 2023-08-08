@@ -4,14 +4,14 @@ import { morpheusErrorHandler } from '~/lib/error-message'
 
 /** Render Morpheus heatmap */
 export function renderHeatmap({
-  target, expressionValuesURL, annotationCellValuesURL, annotationName,
-  fit, rowCentering, sortColumns=true, setShowError, setError, genes, colorMin, colorMax
+  target, dataset, annotationCellValuesURL, annotationName,
+  fit, rowCentering, sortColumns=true, setShowError, setError, genes, colorMin, colorMax,
 }) {
   const $target = $(target)
   $target.empty()
 
   const config = {
-    dataset: expressionValuesURL,
+    dataset,
     el: $target,
     menu: null,
     error: morpheusErrorHandler($target, setShowError, setError),
@@ -48,12 +48,15 @@ export function renderHeatmap({
 
   // Load annotations if specified
   if (annotationCellValuesURL !== '') {
-    config.columnAnnotations = [{
-      file: annotationCellValuesURL,
-      datasetField: 'id',
-      fileField: 'NAME',
-      include: [annotationName]
-    }]
+    if (typeof dataset !== 'object') {
+      config.columnAnnotations = [{
+        file: annotationCellValuesURL,
+        datasetField: 'id',
+        fileField: 'NAME',
+        include: [annotationName]
+      }]
+    }
+
     if (sortColumns) {
       config.columnSortBy = [
         { field: annotationName, order: 0 }

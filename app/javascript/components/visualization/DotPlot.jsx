@@ -5,10 +5,10 @@ import { log } from '~/lib/metrics-api'
 import PlotUtils from '~/lib/plot'
 const getColorBrewerColor = PlotUtils.getColorBrewerColor
 import DotPlotLegend from './DotPlotLegend'
-import { getAnnotationCellValuesURL, getExpressionHeatmapURL } from '~/lib/scp-api'
+import { getExpressionHeatmapURL, getAnnotationCellValuesURL, fetchMorpheusJson } from '~/lib/scp-api'
 import useErrorMessage, { morpheusErrorHandler } from '~/lib/error-message'
 import { withErrorBoundary } from '~/lib/ErrorBoundary'
-import LoadingSpinner from '~/lib/LoadingSpinner'
+import LoadingSpinner, { morpheusLoadingSpinner } from '~/lib/LoadingSpinner'
 import { fetchServiceWorkerCache } from '~/lib/service-worker-cache'
 import { getSCPContext } from '~/providers/SCPContextProvider'
 
@@ -191,40 +191,51 @@ function patchServiceWorkerCache() {
   */
 function RawDotPlot({
   studyAccession, genes=[], cluster, annotation={},
-  subsample, annotationValues
+  subsample, annotationValues, setMorpheusData
 }) {
   const [graphId] = useState(_uniqueId('dotplot-'))
   const { ErrorComponent, showError, setShowError, setErrorContent } = useErrorMessage()
-  const expressionValuesURL = getExpressionHeatmapURL({ studyAccession, genes, cluster })
-  const annotationCellValuesURL = getAnnotationCellValuesURL({
-    studyAccession,
-    cluster,
-    annotationName: annotation.name,
-    annotationScope: annotation.scope,
-    annotationType: annotation.type,
-    subsample
-  })
 
   useEffect(() => {
+    /** Fetch Morpheus data for dot plot */
+    async function getDataset() {
+      const [dataset, perfTimes] = await fetchMorpheusJson(
+        studyAccession,
+        genes,
+        cluster,
+        annotation.name,
+        annotation.type,
+        annotation.scope,
+        subsample
+      )
+      logFetchMorpheusDataset(perfTimes, cluster, annotation, genes)
+      return dataset
+    }
     if (annotation.name) {
-      performance.mark(`perfTimeStart-${graphId}`)
+      // put spinner up manually
+      const target = `#${graphId}`
+      $(target).empty()
+      $(target).html(morpheusLoadingSpinner())
 
-      log('dot-plot:initialize')
-      setShowError(false)
-      renderDotPlot({
-        target: `#${graphId}`,
-        expressionValuesURL,
-        annotationCellValuesURL,
-        annotationName: annotation.name,
-        annotationValues,
-        setErrorContent,
-        setShowError,
-        genes
+      getDataset().then(dataset => {
+        performance.mark(`perfTimeStart-${graphId}`)
+        log('dot-plot:initialize')
+        setShowError(false)
+        renderDotPlot({
+          target,
+          dataset,
+          annotationName: annotation.name,
+          annotationValues,
+          setErrorContent,
+          setShowError,
+          genes
+        })
+        setMorpheusData(dataset)
       })
     }
   }, [
-    expressionValuesURL,
-    annotationCellValuesURL,
+    cluster,
+    genes.join(','),
     annotation.name,
     annotation.scope
   ])
@@ -247,7 +258,7 @@ export default DotPlot
 
 /** Render Morpheus dot plot */
 function renderDotPlot({
-  target, expressionValuesURL, annotationCellValuesURL, annotationName, annotationValues,
+  target, dataset, annotationName, annotationValues,
   setShowError, setErrorContent, genes
 }) {
   const $target = $(target)
@@ -270,7 +281,7 @@ function renderDotPlot({
 
   const config = {
     shape: 'circle',
-    dataset: expressionValuesURL,
+    dataset,
     el: $target,
     menu: null,
     error: morpheusErrorHandler($target, setShowError, setErrorContent),
@@ -284,35 +295,28 @@ function renderDotPlot({
   }
 
   // Load annotations if specified
-  if (annotationCellValuesURL !== '') {
-    config.columnAnnotations = [{
-      file: annotationCellValuesURL,
-      datasetField: 'id',
-      fileField: 'NAME',
-      include: [annotationName]
-    }]
-    config.columnSortBy = [
-      { field: annotationName, order: 0 }
-    ]
-    config.columns = [
-      { field: annotationName, display: 'text' }
-    ]
-    config.rows = [
-      { field: 'id', display: 'text' }
-    ]
+  config.columnSortBy = [
+    { field: annotationName, order: 0 }
+  ]
+  config.columns = [
+    { field: annotationName, display: 'text' }
+  ]
+  config.rows = [
+    { field: 'id', display: 'text' }
+  ]
 
-    // Create mapping of selected annotations to colorBrewer colors
-    const annotColorModel = {}
-    annotColorModel[annotationName] = {}
-    const sortedAnnots = annotationValues.sort()
+  // Create mapping of selected annotations to colorBrewer colors
+  const annotColorModel = {}
+  annotColorModel[annotationName] = {}
+  const sortedAnnots = annotationValues.sort()
 
-    // Calling % 27 will always return to the beginning of colorBrewerSet
-    // once we use all 27 values
-    $(sortedAnnots).each((index, annot) => {
-      annotColorModel[annotationName][annot] = getColorBrewerColor(index)
-    })
-    config.columnColorModel = annotColorModel
-  }
+  // Calling % 27 will always return to the beginning of colorBrewerSet
+  // once we use all 27 values
+  $(sortedAnnots).each((index, annot) => {
+    annotColorModel[annotationName][annot] = getColorBrewerColor(index)
+  })
+  config.columnColorModel = annotColorModel
+
 
   config.colorScheme = dotPlotColorScheme
 
@@ -343,7 +347,7 @@ export function morpheusTabManager($target) {
   }
 }
 
-/** Log performance timing for Morpheus dot plots and heatmaps */
+/** Log render performance timing for Morpheus dot plots and heatmaps */
 export function logMorpheusPerfTime(target, plotType, genes) {
   const graphId = target.slice(1) // e.g. #dotplot-1 -> dotplot-1
   performance.measure(graphId, `perfTimeStart-${graphId}`)
@@ -352,4 +356,17 @@ export function logMorpheusPerfTime(target, plotType, genes) {
   )
 
   log(`plot:${plotType}`, { perfTime, genes })
+}
+
+/** Log performance of loading JSON datasets for Morpheus */
+export function logFetchMorpheusDataset(perfTimes, cluster, annotation, genes) {
+  const props = {
+    perfTimes,
+    cluster,
+    annotName: annotation.name,
+    annotType: annotation.type,
+    annotScope: annotation.scope,
+    genes
+  }
+  log(`dot-plot:dataset`, props)
 }
