@@ -52,11 +52,11 @@ const ALL_POSSIBLE_STEPS = [
   MetadataStep,
   ClusteringStep,
   AnnDataUploadStep,
+  DifferentialExpressionStep,
   SpatialStep,
   CoordinateLabelStep,
   SequenceFileStep,
   GeneListStep,
-  DifferentialExpressionStep,
   MiscellaneousStep,
   SeuratStep,
   AnnDataStep
@@ -107,9 +107,8 @@ export function RawUploadWizard({ studyAccession, name }) {
   } else {
     MAIN_STEPS = MAIN_STEPS_CLASSIC
     SUPPLEMENTAL_STEPS = serverState?.feature_flags?.show_de_upload ?
-      ALL_POSSIBLE_STEPS.slice(5, 10) : ALL_POSSIBLE_STEPS.slice(5, 9)
+      ALL_POSSIBLE_STEPS.slice(5, 10) : ALL_POSSIBLE_STEPS.slice(6, 10)
     NON_VISUALIZABLE_STEPS = ALL_POSSIBLE_STEPS.slice(10, 13)
-
   }
   const STEPS = MAIN_STEPS.concat(SUPPLEMENTAL_STEPS, NON_VISUALIZABLE_STEPS)
 
