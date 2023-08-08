@@ -30,6 +30,12 @@
     <%= text_field_tag :curator_emails, @branding_group.curator_list.join(', '), class: 'form-control' %>
   </div>
   <div class="form-group">
+    <%= f.label :user_ids, 'Included studies' %><br />
+    <p class="help-block">Add/remove study accessions in a comma-delimited list</p>
+    <%= f.hidden_field :study_ids %>
+    <%= text_field_tag :study_accessions, @branding_group.study_list.join(', '), class: 'form-control' %>
+  </div>
+  <div class="form-group">
     <%= f.label :external_link_url, 'External Link URL <span class="fas fa-question-circle" data-toggle="tooltip" data-placement="top" title="This link will be available in the \"Help & Resources\" dropdown inside the collection, as well as in the Collections Directory."></span>'.html_safe %>
     <%= f.text_field :external_link_url, class: 'form-control' %>
   </div>

@@ -38,6 +38,8 @@ class BrandingGroupsController < ApplicationController
     clean_params = branding_group_params.to_h
     clean_params[:users] = self.class.merge_curator_params(params[:curator_emails], nil, current_user)
     clean_params.delete(:user_ids)
+    clean_params[:studies] = self.class.merge_study_params(params[:study_accessions], current_user)
+    clean_params.delete(:study_ids)
     @branding_group = BrandingGroup.new(clean_params)
 
     respond_to do |format|
@@ -67,11 +69,15 @@ class BrandingGroupsController < ApplicationController
         # delete the param since it is not a real model param
         clean_params.delete("reset_#{image_name}")
 
-        # merge in curator params
+        # merge in curator and study params
         clean_params[:users] = self.class.merge_curator_params(
           params[:curator_emails], @branding_group, current_user
         )
         clean_params.delete(:user_ids)
+        clean_params[:studies] = self.class.merge_study_params(
+          params[:study_accessions], current_user
+        )
+        clean_params.delete(:study_ids)
       end
 
       if @branding_group.update(clean_params)
@@ -109,6 +115,13 @@ class BrandingGroupsController < ApplicationController
     users
   end
 
+  # allow mass assignment of studies from collection edit view
+  def self.merge_study_params(study_list, user)
+    accessions = study_list.split(',').map(&:strip)
+    # skip checking group shares for performance reasons
+    Study.where(:accession.in => accessions).select { |study| study.can_view?(user, check_groups: false) }
+  end
+
   private
 
   # Use callbacks to share common setup or constraints between actions.
@@ -120,8 +133,8 @@ class BrandingGroupsController < ApplicationController
   def branding_group_params
     params.require(:branding_group).permit(:name, :tag_line, :public, :background_color, :font_family, :font_color,
                                            :splash_image, :banner_image, :footer_image, :external_link_url, :external_link_description,
-                                           :reset_splash_image, :reset_footer_image, :reset_banner_image,
-                                           user_ids: [])
+                                           :reset_splash_image, :reset_footer_image, :reset_banner_image, :user_ids,
+                                           :study_ids)
   end
 
   def authenticate_curator
