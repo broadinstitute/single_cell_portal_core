@@ -12,9 +12,10 @@ class AnnotationVizService
   # - annot_name: string name of the annotation
   # - annot_type: string type (group or numeric)
   # - annot_scope: string scope (study, cluster, or user)
+  # - fallback: allow rescue to select first available annotation
   # Returns:
   # - See populate_annotation_by_class for the object structure
-  def self.get_selected_annotation(study, cluster: nil, annot_name: nil, annot_type: nil, annot_scope: nil)
+  def self.get_selected_annotation(study, cluster: nil, annot_name: nil, annot_type: nil, annot_scope: nil, fallback: true)
     # construct object based on name, type & scope
     if annot_name.blank?
       # get the default annotation
@@ -51,7 +52,7 @@ class AnnotationVizService
       annotation_source = study.cell_metadata.by_name_and_type(annot_name, annot_type)
     end
     # rescue from an invalid annotation request by defaulting to the first cell metadatum present
-    if annotation_source.nil?
+    if annotation_source.nil? && fallback
       annotation_source = study.cell_metadata.first
     end
     populate_annotation_by_class(source: annotation_source, scope: annot_scope, type: annot_type)
@@ -136,9 +137,10 @@ class AnnotationVizService
   # helper method to efficiently list out metadata annotations classed as valid/invalid for visualization
   def self.available_metadata_annotations(study, annotation_type: nil)
     # get all the metadata in a single query
-    all_metadata = study.cell_metadata.to_a
+    all_metadata = annotation_type ? study.cell_metadata.where(annotation_type:) : study.cell_metadata
     all_names = all_metadata.map(&:name)
     all_metadata.map do |annot|
+
       # viewable if the type is numeric or there's no corresponding label and it's within the range of visualization values
       is_viewable = annot.annotation_type == 'numeric' ||
         study.override_viz_limit_annotations.include?(annot.name) ||

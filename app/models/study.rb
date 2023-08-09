@@ -833,7 +833,7 @@ class Study
       false
     else
       # use if/elsif with explicit returns to ensure skipping downstream calls
-      if self.study_shares.can_view.map do |email_address| 
+      if self.study_shares.can_view.map do |email_address|
         remove_gmail_periods(email_address)
       end.include?(remove_gmail_periods(user.email))
         return true
@@ -1394,6 +1394,18 @@ class Study
       all_cells += expression_matrix_cells(file)
     end
     all_cells.uniq # account for raw counts & processed matrix files repeating cell names
+  end
+
+  # for every cluster in this study, generate an indexed array of cluster cells using 'all cells' as the map
+  # returns number of arrays created
+  def create_all_cluster_cell_indices!
+    return nil if cluster_groups.empty?
+
+    cluster_groups.each do |cluster_group|
+      Rails.logger.info "creating cell index for #{accession}:#{cluster_group.name}"
+      cluster_group.create_cell_name_index!
+      Rails.logger.info "finished cell index for #{accession}:#{cluster_group.name}"
+    end
   end
 
   # return the cells found in a single expression matrix

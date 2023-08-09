@@ -32,6 +32,7 @@ jobs:
                                   -c bin/run_orch_smoke_test.sh
       - name: Preserve all test logs
         uses: actions/upload-artifact@v3
+        if: always()
         with:
           name: test-logs
           path: |

@@ -24,6 +24,11 @@ class FireCloudClientTest < ActiveSupport::TestCase
     @test_email = 'singlecelltest@gmail.com'
     @random_test_seed = SecureRandom.uuid # use same random seed to differentiate between entire runs
     @resource_error_msg = 'Resource representation is only available with these types' # for error handling
+
+    # seed one workspace to prevent test_workspaces from failing due to order of operations corner case
+    workspace_name = "workspace-#{@random_test_seed}"
+    Rails.logger.info "seeding #{workspace_name} for testing"
+    @fire_cloud_client.create_workspace(@fire_cloud_client.project, workspace_name)
   end
 
   # given ongoing issues with workspace deletion throwing spurious errors, do cleanup at end and ignore errors

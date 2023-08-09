@@ -25,8 +25,7 @@ function SliderContainer({ metric, toggleDeFacet, isActive }) {
         <input
           type="checkbox"
           checked={isActive}
-          className='slider-checkbox'
-          id={`slider-checkbox-${metric}`}
+          className={`slider-checkbox slider-checkbox-${metric}`}
           onChange={() => {toggleDeFacet(metric)}}
         />
         <label htmlFor={`slider-checkbox-${metric}`} >

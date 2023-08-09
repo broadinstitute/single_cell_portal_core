@@ -29,6 +29,7 @@ FactoryBot.define do
                             values: evaluator.cell_input,
                             study_file: file)
         end
+        file.study.create_all_cluster_cell_indices!
       end
     end
     factory :cluster_file do
