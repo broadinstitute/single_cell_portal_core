@@ -48,28 +48,26 @@ export function renderHeatmap({
 
   // Load annotations if specified
   if (annotationCellValuesURL !== '') {
-    if (typeof dataset !== 'object') {
-      config.columnAnnotations = [{
-        file: annotationCellValuesURL,
-        datasetField: 'id',
-        fileField: 'NAME',
-        include: [annotationName]
-      }]
-    }
+    config.columnAnnotations = [{
+      file: annotationCellValuesURL,
+      datasetField: 'id',
+      fileField: 'NAME',
+      include: [annotationName]
+    }]
+  }
 
-    if (sortColumns) {
-      config.columnSortBy = [
-        { field: annotationName, order: 0 }
-      ]
-    }
-    config.columns = [
-      { field: 'id', display: 'text' },
-      { field: annotationName, display: 'color' }
-    ]
-    config.rows = [
-      { field: 'id', display: 'text' }
+  if (sortColumns) {
+    config.columnSortBy = [
+      { field: annotationName, order: 0 }
     ]
   }
+  config.columns = [
+    { field: 'id', display: 'text' },
+    { field: annotationName, display: 'color' }
+  ]
+  config.rows = [
+    { field: 'id', display: 'text' }
+  ]
   return new window.morpheus.HeatMap(config)
 }
 
