@@ -1,3 +1,5 @@
+import { TextEncoder, TextDecoder } from 'util'
+
 import { configure } from 'enzyme'
 import Adapter from 'enzyme-adapter-react-16'
 // Mock `window.location` with Jest spies and extend expect
@@ -17,6 +19,10 @@ setMockOrigin('https://localhost:3000')
 
 // convert scrolls to no-ops as otherwise they will error
 global.scrollTo = jest.fn()
+
+// For e.g. tests of client-side file validation (CSFV)
+global.TextEncoder = TextEncoder
+global.TextDecoder = TextDecoder
 
 // Needed for tests that import Plotly
 window.URL.createObjectURL = function() {}
