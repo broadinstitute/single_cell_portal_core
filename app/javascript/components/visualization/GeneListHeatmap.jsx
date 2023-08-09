@@ -48,7 +48,7 @@ function RawGeneListHeatmap({
     setShowError(false)
     morpheusHeatmap.current = renderHeatmap({
       target: `#${graphId}`,
-      expressionValuesURL,
+      dataset: expressionValuesURL,
       annotationCellValuesURL,
       annotationName: geneListName,
       fit: heatmapFit,
