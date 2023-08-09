@@ -85,9 +85,10 @@ class BrandingGroupControllerTest < ActionDispatch::IntegrationTest
     assert_equal 3, @collection.study_list.size
     assert_equal accessions.sort, @collection.study_list.sort
     accessions = [studies.first.accession]
+    # test sanitizer logic by using blank space and extra commas
     curator_params = {
-      curator_emails: @user.email,
-      study_accessions: accessions.join(','),
+      curator_emails: " #{@user.email}  , ,",
+      study_accessions: "      #{studies.first.accession},,, ",
       branding_group: {
         name: @collection.name
       }
