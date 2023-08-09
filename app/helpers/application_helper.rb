@@ -349,10 +349,13 @@ module ApplicationHelper
     RequestUtils.get_read_access_token(study, user)
   end
 
-  # Return the user's access token for bulk download of faceted search results
-  def get_user_access_token(user)
+  # Return the user's access token hash which includes the token and expiration info
+  # used at minimum for bulk download of faceted search results 
+  def get_user_access_token_hash(user)
     if user.present?
-      user.valid_access_token.try(:[], :access_token)
+      user.valid_access_token
+    else
+      {}
     end
   end
 

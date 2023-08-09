@@ -201,7 +201,7 @@ function validateRequiredFields(file, requiredFields, validationMessages) {
     const existingValue = _get(file, field.propertyName)
     const isBlank = !existingValue || (typeof existingValue === 'object' && existingValue.length === 0)
     if (isBlank) {
-      validationMessages[field.propertyName] = `You must specify ${field.label}`
+      validationMessages[field.propertyName] = `You must specify: ${field.label}`
     }
   })
 }
