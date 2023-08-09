@@ -65,6 +65,7 @@ class BrandingGroup
     users.map(&:email)
   end
 
+  # list of study accessions
   def study_list
     studies.map(&:accession)
   end
