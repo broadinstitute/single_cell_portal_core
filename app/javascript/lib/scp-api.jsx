@@ -263,7 +263,10 @@ export function setUpRenewalForUserAccessToken() {
     const userAccessTokenObj = response
     window.SCP.userAccessToken = userAccessTokenObj.accessToken
     window.SCP.userAccessTokenObject = userAccessTokenObj
-    setUpRenewalForUserAccessToken()
+    // response is 204 if user is not signed in anymore so stop trying to renew token
+    if (response.status !== 204) {
+      setUpRenewalForUserAccessToken()
+    }
   }, renewalTime)
 }
 
