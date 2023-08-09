@@ -9,6 +9,7 @@ import { getAutocompleteSuggestions } from '~/lib/search-utils'
 import { log } from '~/lib/metrics-api'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
+import debounce from 'lodash.debounce'
 
 
 /**
@@ -41,8 +42,12 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
   const [notPresentGenes, setNotPresentGenes] = useState(new Set([]))
   const [showNotPresentGeneChoice, setShowNotPresentGeneChoice] = useState(false)
 
-  /** Handles a user submitting a gene search */
-  function handleSearch(event) {
+  /**
+   * Handle gene searches by wrapping the search execution in a debounce to delay
+   * the call and allow it to be canceled if another search comes in. This prevents
+   * the API calls to search genes overloading the server
+   */
+  const debouncedHandleGeneSearch = debounce(event => {
     event.preventDefault()
     const newGeneArray = syncGeneArrayToInputText()
     const newNotPresentGenes = new Set([])
@@ -71,7 +76,20 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
         searchGenes(genesToSearch)
       }
     }
+  }, 500) // ms to delay the search being executed
+
+  /** Handles a user submitting a gene search */
+  function handleSearch(event) {
+    debouncedHandleGeneSearch(event)
   }
+
+  /** Enables canceling of gene searches in flight when a new one occurs */
+  useEffect(() => {
+    return () => {
+      debouncedHandleGeneSearch.cancel()
+    }
+  }, [debouncedHandleGeneSearch])
+
 
   /** Converts any current typed free text to a gene array entry */
   function syncGeneArrayToInputText() {
