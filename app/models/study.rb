@@ -789,14 +789,14 @@ class Study
   end
 
   # return all studies either owned by or shared with a given user as a Mongoid criterion
-  def self.accessible(user)
+  def self.accessible(user, check_groups: true)
     if user.admin?
       self.where(queued_for_deletion: false)
     else
       owned = self.where(user_id: user._id, queued_for_deletion: false).map(&:_id)
       shares = StudyShare.where(email: /#{user.email}/i).map(&:study).select {|s| !s.queued_for_deletion }.map(&:_id)
       group_shares = []
-      if user.registered_for_firecloud
+      if user.registered_for_firecloud && check_groups
         user_client = FireCloudClient.new(user:, project: FireCloudClient::PORTAL_NAMESPACE)
         user_groups = user_client.get_user_groups.map {|g| g['groupEmail']}
         group_shares = StudyShare.where(:email.in => user_groups).map(&:study).select {|s| !s.queued_for_deletion }.map(&:id)
