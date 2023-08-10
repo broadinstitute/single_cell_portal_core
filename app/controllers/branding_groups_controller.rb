@@ -6,7 +6,6 @@ class BrandingGroupsController < ApplicationController
 
   before_action :authenticate_curator, only: [:show, :edit, :update]
   before_action :authenticate_admin, only: [:index, :create, :destroy]
-  before_action :set_viewable_studies, only: [:edit]
 
   # GET /branding_groups
   # GET /branding_groups.json
@@ -157,10 +156,6 @@ class BrandingGroupsController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_branding_group
     @branding_group = BrandingGroup.find(params[:id])
-  end
-
-  def set_viewable_studies
-    @viewable_studies = Study.accessible(current_user)
   end
 
   # Never trust parameters from the scary internet, only allow the permit list through.
