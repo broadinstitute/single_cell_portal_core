@@ -1835,6 +1835,11 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
+"@popperjs/core@^2.9.0":
+  version "2.11.8"
+  resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.11.8.tgz#6b79032e760a0899cd4204710beede972a3a185f"
+  integrity sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==
+
 "@ranfdev/deepobj@1.0.2":
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/@ranfdev/deepobj/-/deepobj-1.0.2.tgz#9dba923578fa24aed3d3961975037b6423a03771"
@@ -5145,10 +5150,10 @@ iconv-lite@0.4, iconv-lite@0.4.24, iconv-lite@^0.4.24:
   dependencies:
     safer-buffer ">= 2.1.2 < 3"
 
-ideogram@1.42.0:
-  version "1.42.0"
-  resolved "https://registry.yarnpkg.com/ideogram/-/ideogram-1.42.0.tgz#35203b567f330eb0c8a6af5fb5934eb48c734874"
-  integrity sha512-2iYz8Hre7lm5IzuFLYen4/NgI7bCyk25NFZT3CHm9ww/C8yu85h8UTlsgzmlnzHzUNnknZ8z305YXhRKLa+kLg==
+ideogram@1.43.0:
+  version "1.43.0"
+  resolved "https://registry.yarnpkg.com/ideogram/-/ideogram-1.43.0.tgz#a1f695183616946bd76a4216feec2a63e7e8d997"
+  integrity sha512-0maLlGAYOo80IN9yO+YsgaBpGEZtI5AFRahJlopTgj5w7hWAnxOa1R/8Dwb+hsQ+6a6odYgkWJF43xLcvL5tWg==
   dependencies:
     crossfilter2 "1.5.2"
     d3-array "^2.8.0"
@@ -5158,6 +5163,7 @@ ideogram@1.42.0:
     d3-format "^2.0.0"
     d3-scale "^4.0.2"
     fflate "^0.7.3"
+    tippy.js "6.3.7"
 
 ignore@^4.0.6:
   version "4.0.6"
@@ -8945,6 +8951,13 @@ through@^2.3.6:
   version "2.3.8"
   resolved "https://registry.yarnpkg.com/through/-/through-2.3.8.tgz#0dd4c9ffaabc357960b1b724115d7e0e86a2e1f5"
   integrity sha512-w89qg7PI8wAdvX60bMDP+bFoD5Dvhm9oLheFp5O4a2QF0cSBGsBX4qZmadPMvVqlLJBBci+WqGGOAPvcDeNSVg==
+
+tippy.js@6.3.7:
+  version "6.3.7"
+  resolved "https://registry.yarnpkg.com/tippy.js/-/tippy.js-6.3.7.tgz#8ccfb651d642010ed9a32ff29b0e9e19c5b8c61c"
+  integrity sha512-E1d3oP2emgJ9dRQZdf3Kkn0qJgI6ZLpyS5z6ZkY1DF3kaQaBsGZsndEpHwx+eC+tYM41HaSNvNtLx8tU57FzTQ==
+  dependencies:
+    "@popperjs/core" "^2.9.0"
 
 tmp@^0.0.33:
   version "0.0.33"
