@@ -1,6 +1,6 @@
 name: Terra Orchestration API Smoke Test
 on:
-  pull_request:
+  push:
     branches:
       - jb-slack-notify-ci-job
   schedule:
