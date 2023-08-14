@@ -47,7 +47,7 @@ class BrandingGroupsController < ApplicationController
 
     respond_to do |format|
       if @branding_group.save
-        notice = "Collection '#{@branding_group.name}' was successfully updated."
+        notice = "Successfully updated collection \"#{@branding_group.name}\""
         if missing_studies.any?
           notice += " #{missing_studies.join(', ')} could not be added to this collection."
         end
@@ -141,7 +141,7 @@ class BrandingGroupsController < ApplicationController
     Study.where(:accession.in => accessions).select { |study| study.can_view?(user, check_groups: false) }
   end
 
-  # covert a comma- or space-delimited string to an array of strings, removing empty values
+  # convert a comma- or space-delimited string to an array of strings, removing empty values
   def self.param_to_array(param)
     param.split(/[,\s]/).map(&:strip).reject(&:blank?)
   end
