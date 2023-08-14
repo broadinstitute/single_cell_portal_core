@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import rubyPlugin from 'vite-plugin-ruby'
 import react from '@vitejs/plugin-react'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 import { readFileSync } from 'fs'
 
 // Match latest non-draft at https://github.com/broadinstitute/single_cell_portal_core/releases
@@ -17,9 +18,16 @@ export default defineConfig({
     rubyPlugin(),
     react({
       jsxRuntime: 'classic'
+    }),
+    sentryVitePlugin({
+      'org': 'broad-institute',
+      'project': 'single-cell-portal',
+      'authToken': process.env.SENTRY_AUTH_TOKEN,
+      'telemetry': false
     })
   ],
   'build': {
+    'sourcemap': true,
     'chunkSizeWarningLimit': 4096,
     'rollupOptions': {
       'output': {
