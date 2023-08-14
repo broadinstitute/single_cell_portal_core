@@ -50,7 +50,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }"
+                    "text": "URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                 }
               ]
             }
