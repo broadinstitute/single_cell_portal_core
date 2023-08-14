@@ -5,6 +5,8 @@ on:
       - development
       - master
   pull_request:
+    branches-ignore:
+      - jb-slack-notify-ci-job # temporarily disable to reduce CI backlog
 env:
   DOCKER_IMAGE_NAME: "gcr.io/broad-singlecellportal-staging/single-cell-portal"
 
