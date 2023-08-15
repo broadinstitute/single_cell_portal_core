@@ -44,13 +44,13 @@ jobs:
           channel-id: "C05JHJ0UA1M" #scp-alerts
           payload: |
             {
-              "text": "Orchestration smoke test ${{ steps.date.outputs.date }}: ${{ job.status }}",
               "blocks": [
                 { 
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    "text": "Orchestration smoke test ${{ steps.date.outputs.date }}: ${{ job.status }}\n
+                             https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                   }
                 }
               ]
