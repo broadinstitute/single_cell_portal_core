@@ -39,7 +39,6 @@ jobs:
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
       - name: Notify Slack failure
-        id: slack-notify
         uses: slackapi/slack-github-action@v1.24.0
         if: failure()
         with:
@@ -59,7 +58,6 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACKBOT_TOKEN }}
       - name: Notify Slack success
-        id: slack-notify
         uses: slackapi/slack-github-action@v1.24.0
         if: success()
         with:
@@ -78,10 +76,10 @@ jobs:
             }
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACKBOT_TOKEN }}
-      - name: Preserve all test logs
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: test-logs
-          path: |
-            log/test.log
+#      - name: Preserve all test logs
+#        uses: actions/upload-artifact@v3
+#        if: always()
+#        with:
+#          name: test-logs
+#          path: |
+#            log/test.log
