@@ -13,11 +13,11 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      - name: Build image and setup env
-        id: build-image-setup-env
-        uses: ./.github/actions/docker-build-env-setup
+#      - name: Check out repository code
+#        uses: actions/checkout@v2
+#      - name: Build image and setup env
+#        id: build-image-setup-env
+#        uses: ./.github/actions/docker-build-env-setup
       - name: Load secrets and run tests
         id: run-smoke-test
         env:
@@ -25,7 +25,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
           VAULT_ROLE_ID: ${{ secrets.VAULT_ROLE_ID }}
           VAULT_SECRET_ID: ${{ secrets.VAULT_SECRET_ID }}
-          DOCKER_IMAGE_TAG: ${{ steps.build-image-setup-env.outputs.docker-tag }}
+          # DOCKER_IMAGE_TAG: ${{ steps.build-image-setup-env.outputs.docker-tag }}
           ORCH_SMOKE_TEST: true
           CI: true
         run: |
@@ -38,18 +38,10 @@ jobs:
       - name: Get current date
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
-      - name: Set Slack message content
-        id: slack-message
-        run: |
-          if ${{ steps.run-smoke-test.outcome == 'failure' }}; then
-            echo "::set-output name=message::@channel :x Orchestration smoke test ${{ steps.date.outputs.date }}: ${{ job.status }}"
-          else
-            echo "::set-output name=message:::green_check_mark Orchestration smoke test ${{ steps.date.outputs.date }}: ${{ job.status }}"
-          fi
-      - name: Notify Slack
+      - name: Notify Slack failure
         id: slack-notify
         uses: slackapi/slack-github-action@v1.24.0
-        if: always()
+        if: failure()
         with:
           channel-id: "C05JHJ0UA1M" #scp-alerts
           payload: |
@@ -59,7 +51,27 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "${{ steps.slack-message.outputs.message }} \nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    "text": "@channel :x Orchestration smoke test ${{ steps.date.outputs.date }}: ${{ job.status }}\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACKBOT_TOKEN }}
+      - name: Notify Slack success
+        id: slack-notify
+        uses: slackapi/slack-github-action@v1.24.0
+        if: success()
+        with:
+          channel-id: "C05JHJ0UA1M" #scp-alerts
+          payload: |
+            {
+              "blocks": [
+                { 
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":green_check_mark Orchestration smoke test ${{ steps.date.outputs.date }}: ${{ job.status }}\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                   }
                 }
               ]
