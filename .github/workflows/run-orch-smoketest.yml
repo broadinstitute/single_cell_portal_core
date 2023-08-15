@@ -58,7 +58,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "${{steps.slack-message.outputs.message}} \nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    "text": "${{ steps.slack-message.outputs.message }} \nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                   }
                 }
               ]
