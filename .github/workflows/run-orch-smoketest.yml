@@ -29,11 +29,12 @@ jobs:
           ORCH_SMOKE_TEST: true
           CI: true
         run: |
-          export VAULT_TOKEN=$( vault write -field=token auth/approle/login role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID )
-          bin/load_env_secrets.sh -p secret/kdux/scp/staging/scp_config.json \
-                                  -s secret/kdux/scp/staging/scp_service_account.json \
-                                  -e test -v $DOCKER_IMAGE_TAG -n single-cell-portal-test \
-                                  -c bin/run_orch_smoke_test.sh
+          exit 1 # manual testing for faster iteration
+#          export VAULT_TOKEN=$( vault write -field=token auth/approle/login role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID )
+#          bin/load_env_secrets.sh -p secret/kdux/scp/staging/scp_config.json \
+#                                  -s secret/kdux/scp/staging/scp_service_account.json \
+#                                  -e test -v $DOCKER_IMAGE_TAG -n single-cell-portal-test \
+#                                  -c bin/run_orch_smoke_test.sh
       - name: Get current date
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
@@ -41,9 +42,9 @@ jobs:
         id: slack-message
         run: |
           if ${{ steps.run-smoke-test.outcome == 'failure' }}; then
-            echo "::set-output name=message::\"@channel :x Orchestration smoke test ${{ steps.date.outputs.date }}: ${{ job.status }}\""
+            echo "::set-output name=message::@channel :x Orchestration smoke test ${{ steps.date.outputs.date }}: ${{ job.status }}"
           else
-            echo "::set-output name=message::\":green_check_mark Orchestration smoke test ${{ steps.date.outputs.date }}: ${{ job.status }}\""
+            echo "::set-output name=message:::green_check_mark Orchestration smoke test ${{ steps.date.outputs.date }}: ${{ job.status }}"
           fi
       - name: Notify Slack
         id: slack-notify
