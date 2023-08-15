@@ -94,7 +94,7 @@ class BrandingGroupsController < ApplicationController
       )
 
       if @branding_group.update(clean_params)
-        notice = "Collection '#{@branding_group.name}' was successfully updated."
+        notice = "Successfully updated collection \"#{@branding_group.name}\""
         if missing_studies.any?
           notice += " #{missing_studies.join(', ')} could not be added to this collection."
         end
