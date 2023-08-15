@@ -41,7 +41,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.24.0
         if: always()
         with:
-          channel-id: 'CBEHTH601' #scp-implementation
+          channel-id: "C05JHJ0UA1M" #scp-alerts
           payload: |
             {
               "text": "Orchestration smoke test ${{ steps.date.outputs.date }}: ${{ job.status }}",
@@ -55,7 +55,6 @@ jobs:
                 }
               ]
             }
-
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACKBOT_TOKEN }}
       - name: Preserve all test logs
