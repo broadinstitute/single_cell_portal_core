@@ -1,8 +1,5 @@
 name: Terra Orchestration API Smoke Test
 on:
-  push:
-    branches:
-      - jb-slack-notify-ci-job
   schedule:
     - cron: "0 8 * * 1,3,5"
 env:
@@ -67,7 +64,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": ":green_check_mark Orchestration smoke test: ${{ job.status }}\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    "text": ":green_check: Orchestration smoke test: ${{ job.status }}\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                   }
                 }
               ]
