@@ -49,8 +49,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "Orchestration smoke test ${{ steps.date.outputs.date }}: ${{ job.status }}\n
-                             https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    "text": "Orchestration smoke test ${{ steps.date.outputs.date }}: ${{ job.status }}\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                   }
                 }
               ]
