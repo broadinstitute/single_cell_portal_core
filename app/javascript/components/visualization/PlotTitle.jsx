@@ -1,6 +1,28 @@
 import React from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
+import { Popover, OverlayTrigger } from 'react-bootstrap'
+
+// divide gene list into two parts, only showing first 3
+function formatGeneList(genes) {
+  const shown = genes.slice(0, 3)
+  const hidden = genes.slice(3, genes.length + 1)
+  let formattedGenes = []
+  shown.map(gene => {
+    let badge = <span className="badge" key={gene}>{gene}</span>
+    formattedGenes.push(badge)
+  })
+  if (hidden.length === 0) {
+    return formattedGenes
+  }
+  const hiddenGenes = <Popover id="genes-tooltip" className="tooltip-wide">{hidden.join(', ')}</Popover>
+  const hiddenOverlay = <OverlayTrigger trigger={['hover','focus']} key='hidden-genes' rootClose placement="right"
+                                        overlay={hiddenGenes}>
+    <span className='badge'>and {hidden.length} more</span>
+  </OverlayTrigger>
+  formattedGenes.push(hiddenOverlay)
+  return formattedGenes
+}
 
 /** Renders a plot title for scatter plots */
 export default function PlotTitle({
@@ -14,9 +36,7 @@ export default function PlotTitle({
     the data may not be suited for correlation analysis and you should trust the plot`
 
   if (genes.length) {
-    const geneList = genes.map(gene => {
-      return <span className="badge" key={gene}>{gene}</span>
-    })
+    const geneList = formatGeneList(genes)
     if (isCorrelatedScatter) {
       geneList.splice(1, 0, <span key="vs"> vs. </span>)
     }
