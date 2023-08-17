@@ -18,7 +18,7 @@ export function formatGeneList(genes) {
     return formattedGenes
   }
   const hiddenGenes = <Popover id="genes-tooltip" className="tooltip-wide">{makeGeneBadges(hidden)}</Popover>
-  const hiddenOverlay = <OverlayTrigger trigger={['hover', 'focus']} key='hidden-genes' rootClose placement="right"
+  const hiddenOverlay = <OverlayTrigger trigger={['hover','focus']} key='hidden-genes' rootClose placement="right"
                                         overlay={hiddenGenes}>
     <span className='badge'>and {hidden.length} more</span>
   </OverlayTrigger>
