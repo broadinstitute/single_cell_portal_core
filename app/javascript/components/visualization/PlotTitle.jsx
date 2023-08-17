@@ -3,20 +3,22 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 import { Popover, OverlayTrigger } from 'react-bootstrap'
 
+function makeGeneBadges(genes) {
+  return genes.map(gene => {
+    return <span className="badge popover-badge" key={gene}>{gene}</span>
+  })
+}
+
 // divide gene list into two parts, only showing first 3
-function formatGeneList(genes) {
+export function formatGeneList(genes) {
   const shown = genes.slice(0, 3)
   const hidden = genes.slice(3, genes.length + 1)
-  let formattedGenes = []
-  shown.map(gene => {
-    let badge = <span className="badge" key={gene}>{gene}</span>
-    formattedGenes.push(badge)
-  })
+  let formattedGenes = makeGeneBadges(shown)
   if (hidden.length === 0) {
     return formattedGenes
   }
-  const hiddenGenes = <Popover id="genes-tooltip" className="tooltip-wide">{hidden.join(', ')}</Popover>
-  const hiddenOverlay = <OverlayTrigger trigger={['hover','focus']} key='hidden-genes' rootClose placement="right"
+  const hiddenGenes = <Popover id="genes-tooltip" className="tooltip-wide">{makeGeneBadges(hidden)}</Popover>
+  const hiddenOverlay = <OverlayTrigger trigger={['hover', 'focus']} key='hidden-genes' rootClose placement="right"
                                         overlay={hiddenGenes}>
     <span className='badge'>and {hidden.length} more</span>
   </OverlayTrigger>

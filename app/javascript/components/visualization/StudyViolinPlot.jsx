@@ -14,6 +14,7 @@ import { withErrorBoundary } from '~/lib/ErrorBoundary'
 import useErrorMessage from '~/lib/error-message'
 import { logViolinPlot } from '~/lib/scp-api-metrics'
 import LoadingSpinner from '~/lib/LoadingSpinner'
+import { formatGeneList} from '~/components/visualization/PlotTitle'
 
 
 /** displays a violin plot of expression data for the given gene and study
@@ -134,7 +135,7 @@ function RawStudyViolinPlot({
        sometimes render a zero to the page*/}
       { isCollapsedView && studyGeneNames.length > 0 &&
         <div className="text-center">
-          <span>{_capitalize(consensus)} expression of {studyGeneNames.join(', ')}</span>
+          <span>{_capitalize(consensus)} expression of {formatGeneList(studyGeneNames)}</span>
         </div>
       }
     </div>
