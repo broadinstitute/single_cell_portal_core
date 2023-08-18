@@ -29,3 +29,13 @@
 .navbar-toggle {
  margin-left: auto;
 }
+
+.study-badges {
+  float: right !important;
+  padding-top: 10px;
+
+  .badge {
+    background-color: $action-color;
+    color: #fff;
+  }
+}
