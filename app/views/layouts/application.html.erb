@@ -133,7 +133,12 @@
   <%= yield %>
 <% else %>
   <div class="container-fluid" id="wrap">
+    <% if controller_name == 'site' && @study %>
+    <%# Only use section-pad outside Study Overview %>
     <div class="row" id="main-body">
+    <% else %>
+    <div class="row section-pad" id="main-body">
+    <% end %>
       <div class="col-md-12">
         <%= yield %>
       </div>
