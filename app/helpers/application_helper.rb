@@ -94,10 +94,6 @@ module ApplicationHelper
     breadcrumbs
   end
 
-  def username
-    current_user.email.split('@').first
-  end
-
   # construct a dropdown for navigating to single gene-level expression views
   def load_gene_nav(genes)
     nav = [['All queried genes', '']]

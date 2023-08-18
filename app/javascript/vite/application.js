@@ -17,6 +17,7 @@ import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 import checkMissingAuthToken from '~/lib/user-auth-tokens'
 import ValidateFile from '~/lib/validation/validate-file'
 import { setupSentry } from '~/lib/sentry-logging'
+import { setGlobalHeaderEndWidth } from '~/lib/layout-utils'
 import { clearOldServiceWorkerCaches } from '~/lib/service-worker-cache'
 
 const { validateRemoteFile } = ValidateFile
@@ -35,9 +36,8 @@ setupSentry()
 clearOldServiceWorkerCaches()
 
 document.addEventListener('DOMContentLoaded', () => {
-  const minWidth = getGlobalHeaderEndWidth(window.SCP.username)
-  const globalHeaderEnd = document.getElementById('scp-navbar-dropdown-collapse')
-  globalHeaderEnd.style.minWidth = `${minWidth}px`
+  // Set min-width of container for menus on help, create study, and sign in / username
+  setGlobalHeaderEndWidth()
 
   // Logs only page views for faceted search UI
   logPageView()
@@ -67,12 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setTimeout(checkMissingAuthToken, 1000)
 })
-
-/** Set min-width of container for menus on help, create study, <username> */
-function getGlobalHeaderEndWidth(username) {
-  const minWidth = 285 + (username.length * 11)
-  return minWidth
-}
 
 const componentsToExport = {
   HomePageContent, ExploreView, UploadWizard, ValidationMessage, ClusterAssociationSelect,
