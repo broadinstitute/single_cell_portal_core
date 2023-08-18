@@ -29,7 +29,7 @@
     <% else %>
     <ul id="scp-navbar-dropdown-collapse" class="nav navbar-nav pull-right collapse navbar-collapse">
     <% end %>
-      <li class='dropdown'><%= scp_link_to "<span class='fas fa-question-circle'></span> Help <span class='caret'></span>".html_safe,
+      <li class='dropdown'><%= scp_link_to "Help <span class='caret'></span>".html_safe,
                                            "#", class: "dropdown-toggle", "data-toggle" => "dropdown" %>
         <ul class="dropdown-menu dropdown-menu-right">
           <% if @selected_branding_group.present? && @selected_branding_group.external_link_url %>
@@ -55,7 +55,7 @@
                         class: 'check-upload', 'data-analytics-name' => 'prominent-create-study-button' %>
       </li>
       <% if user_signed_in? %>
-        <li class="dropdown"><%= scp_link_to "<span class='fas fa-user'></span> #{current_user.email.split('@').first} <span class='caret'></span>".html_safe,
+        <li class="dropdown"><%= scp_link_to "#{current_user.email.split('@').first} <span class='caret'></span>".html_safe,
                                              "#", class: "dropdown-toggle left-border-0-5", "data-toggle" => "dropdown",
                                              id: 'profile-nav' %>
           <ul class="dropdown-menu dropdown-menu-right dropdown-scroll">
