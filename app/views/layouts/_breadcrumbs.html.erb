@@ -1,7 +1,7 @@
 <% if controller_name == 'site' && @study %>
-<div class="study-header">
+<h1 class="study-header">
 <%= @study.name %>
-</div>
+</h1>
 <% else %>
 <ul class="nav navbar-nav" id="breadcrumbs">
   <% set_breadcrumbs.each do |breadcrumb| %>
