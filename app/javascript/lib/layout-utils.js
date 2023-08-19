@@ -64,7 +64,7 @@ export function adjustGlobalHeader() {
   const titleText = studyHeader.innerText
   const titleFont = getStyle(studyHeader, 'font')
   const studyTitleWidth = getTextSize(titleText, titleFont).width
-  const isMaxWidth = window.outerWidth - window.innerWidth < 50
+  const isMaxWidth = window.screen.availWidth - window.innerWidth < 50
   if (studyTitleWidth > studyHeaderWidth && isMaxWidth) {
     // Decrease font size by 1px and padding at left by 1/2 original
     const fontSize = pxToNumber(getStyle(studyHeader, 'font-size')) // e.g. '14px' -> 14
