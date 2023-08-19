@@ -36,8 +36,11 @@ setupSentry()
 clearOldServiceWorkerCaches()
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Set min-width of container for menus on help, create study, and sign in / username
-  setGlobalHeaderEndWidth()
+  if (window.SCP.analyticsPageName === 'site-study') {
+  // For Study Overview page,
+  // set min-width of container for menus on help, create study, and sign in / username
+    setGlobalHeaderEndWidth()
+  }
 
   // Logs only page views for faceted search UI
   logPageView()

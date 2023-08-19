@@ -10,20 +10,17 @@
   padding: 15px 0px 0 15px;
 }
 
+.study-navbar#single-cell-navbar {
+  display: flex;
+  flex-flow: row;
+}
+
 .multiplot {
   display: flex;
 }
 
 .multiplot .plot {
   margin: 0 10px;
-}
-
-/** eweitz 2023-07-19: draft for narrow viewport */
-.scp-navbar-dropdown-collapse {
-  min-width: 220px;
-  position: absolute;
-  left: calc(100% - 211px);
-  top: 57px;
 }
 
 .navbar-toggle {
@@ -37,5 +34,37 @@
   .badge {
     background-color: $action-color;
     color: #fff;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .study-navbar#single-cell-navbar {
+    display: block;
+  }
+  .study-header {
+    padding: 0 10px 10px 10px;
+  }
+
+  .study-badges .badge {
+    display: none;
+  }
+
+  ul#scp-navbar-dropdown-collapse {
+    margin-top: -2.4em;
+    z-index: 3;
+    position: absolute;
+    border-left: 1px solid black;
+    left: calc(100% - 150px);
+    padding-left: 0;
+  }
+
+  #scp-navbar-dropdown-collapse {
+    .check-upload .fa-plus {
+      display: none;
+    }
+
+    .left-border-0-5 {
+      border-left: none;
+    }
   }
 }
