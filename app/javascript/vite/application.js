@@ -17,7 +17,7 @@ import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 import checkMissingAuthToken from '~/lib/user-auth-tokens'
 import ValidateFile from '~/lib/validation/validate-file'
 import { setupSentry } from '~/lib/sentry-logging'
-import { setGlobalHeaderEndWidth } from '~/lib/layout-utils'
+import { adjustGlobalHeader } from '~/lib/layout-utils'
 import { clearOldServiceWorkerCaches } from '~/lib/service-worker-cache'
 
 const { validateRemoteFile } = ValidateFile
@@ -36,11 +36,9 @@ setupSentry()
 clearOldServiceWorkerCaches()
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (window.SCP.analyticsPageName === 'site-study') {
   // For Study Overview page,
-  // set min-width of container for menus on help, create study, and sign in / username
-    setGlobalHeaderEndWidth()
-  }
+  // Set global header end width, and mitigate long study titles on narrow screens
+  adjustGlobalHeader()
 
   // Logs only page views for faceted search UI
   logPageView()
