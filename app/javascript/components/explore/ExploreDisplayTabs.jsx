@@ -296,7 +296,7 @@ export default function ExploreDisplayTabs({
     const cellsByFacet = cellFaceting.cellsByFacet
     const facets = cellFaceting.facets
     const filterableCells = cellFaceting.filterableCells
-    const newFilteredCells = filterCells(selections, cellsByFacet, facets, filterableCells)
+    const newFilteredCells = filterCells(selections, cellsByFacet, facets, filterableCells)[0]
     console.log('newFilteredCells', newFilteredCells)
     setFilteredCells(newFilteredCells)
   }
@@ -535,7 +535,8 @@ export default function ExploreDisplayTabs({
                     scatterColor: exploreParamsWithDefaults.scatterColor,
                     countsByLabel,
                     setCountsByLabel,
-                    dataCache
+                    dataCache,
+                    filteredCells
                   }}/>
               </div>
             }
