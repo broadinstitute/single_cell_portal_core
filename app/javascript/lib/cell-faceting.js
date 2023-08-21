@@ -24,7 +24,7 @@ import crossfilter from 'crossfilter2'
  * Annotations in above categories often don't exist, in which case we fall to the
  * the next prioritization rule.
  */
-function prioritizeAnnotations(annotList) {
+function prioritizeAnnotations(selectedAnnot, annotList) {
   let annotsToFacet = []
   const seenAnnots = new Set()
 
@@ -34,6 +34,14 @@ function prioritizeAnnotations(annotList) {
     return annot
   })
 
+  /** Return if annotation is valid to add to accrueing list */
+  function isValid(annot) {
+    return (
+      !(selectedAnnot === annot.identifier) && // Doesn't match selected annot
+      !seenAnnots.has(annot.identifier) // Isn't yet in accrued list
+    )
+  }
+
   const cellTypeAndDiseaseAnnots = annotList.filter(
     annot => ['cell_type__ontology_label', 'disease__ontology_label'].includes(annot.name)
   )
@@ -41,19 +49,19 @@ function prioritizeAnnotations(annotList) {
   annotsToFacet = annotsToFacet.concat(cellTypeAndDiseaseAnnots)
 
   const otherConventionalAnnots = annotList.filter(
-    annot => annot.name.endsWith('__ontology_label') && !seenAnnots.has(annot.identifier)
+    annot => annot.name.endsWith('__ontology_label') && isValid(annot)
   ).slice(0, 2)
   otherConventionalAnnots.forEach(annot => seenAnnots.add(annot.identifiers))
   annotsToFacet = annotsToFacet.concat(otherConventionalAnnots)
 
   const clusterAnnots = annotList.filter(
-    annot => ('cluster_name' in annot) && !seenAnnots.has(annot.identifier)
+    annot => ('cluster_name' in annot) && isValid(annot)
   )
   clusterAnnots.forEach(annot => seenAnnots.add(annot.identifiers))
   annotsToFacet = annotsToFacet.concat(clusterAnnots)
 
   const studyAnnots = annotList.filter(
-    annot => !('cluster_name' in annot) && !seenAnnots.has(annot.identifier)
+    annot => !('cluster_name' in annot) && isValid(annot)
   )
   studyAnnots.forEach(annot => seenAnnots.add(annot.identifiers))
   annotsToFacet = annotsToFacet.concat(studyAnnots)
@@ -155,7 +163,7 @@ export async function initAnnotationFacets(
     getGroupAnnotationsForClusterAndStudy(allAnnots, selectedCluster)
       .filter(annotation => annotation.values.length > 1)
   )
-  const annotsToFacet = prioritizeAnnotations(applicableAnnots)
+  const annotsToFacet = prioritizeAnnotations(selectedAnnot, applicableAnnots)
   const facetData = await fetchAnnotationFacets(studyAccession, annotsToFacet, selectedCluster)
 
   const { filterableCells, cellsByFacet } = initCrossfilter(facetData)
@@ -167,7 +175,6 @@ export async function initAnnotationFacets(
     filterableCells,
     getFilteredResults
   }
-
   // const getAnnotationForIdentifier(identifier)
 }
 
