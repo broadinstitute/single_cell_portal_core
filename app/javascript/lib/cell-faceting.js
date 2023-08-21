@@ -1,7 +1,8 @@
 import {
-  getGroupAnnotationsForClusterAndStudy, getIdentifierForAnnotation
+  getGroupAnnotationsForClusterAndStudy, getIdentifierForAnnotation, getAnnotationForIdentifier
 } from '~/lib/cluster-utils'
-import { fetchAnnotationFacetData } from '~/lib/scp-api'
+import { fetchAnnotationFacets } from '~/lib/scp-api'
+import crossfilter from 'crossfilter2'
 
 
 /**
@@ -67,9 +68,10 @@ function prioritizeAnnotations(annotList) {
 }
 
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
-export async function fetchAnnotationFacets(
+export async function initAnnotationFacets(
   selectedCluster, selectedAnnot, studyAccession, exploreInfo
 ) {
+  // Prioritize and fetch annotation facets for all cells
   const allAnnots = exploreInfo?.annotationList
   if (!allAnnots) {return}
   console.log('allAnnots', allAnnots)
@@ -80,8 +82,30 @@ export async function fetchAnnotationFacets(
   const annotsToFacet = prioritizeAnnotations(applicableAnnots)
   console.log('selectedCluster, selectedAnnot', selectedCluster, selectedAnnot)
   console.log('annotsToFacet', annotsToFacet)
-  const facets = await fetchAnnotationFacetData(studyAccession, annotsToFacet, selectedCluster)
-  console.log('facets', facets)
+  const facetData = await fetchAnnotationFacets(studyAccession, annotsToFacet, selectedCluster)
+  console.log('facetData', facetData)
+
+  const { cells, facets } = facetData
+  const annotationFacets = facets
+  const filterableCells = []
+  for (let i = 0; i < cells.length; i++) {
+    const filterableCell = {}
+
+    // An array of integers, e.g. [6, 0, 7, 0, 0]
+    // Each element in the array is the index-offset of the cell's group value assignment
+    // for the annotation facet at that index.
+    //
+    //  So, for the first element, `6`, we look up the element at index 0 in annotationFacets,
+    //  and get its `groups`.  Then the group value assignment would be the 6th string in the
+    //  `groups` array for the 0th annotation.
+    const cellGroupIndexes = cells[i]
+    for (let j = 0; j < cellGroupIndexes.length; j++) {
+      const annotationIdentifier = annotationFacets[j].annotation
+      filterableCell[annotationIdentifier] = cellGroupIndexes[j]
+    }
+    filterableCells.push(filterableCell)
+  }
+  window.SCP.crossfilter = crossfilter(filterableCells)
+  // const getAnnotationForIdentifier(identifier)
 }
 
-window.SCP.fetchAnnotationFacets = fetchAnnotationFacets

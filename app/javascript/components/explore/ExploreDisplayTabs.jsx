@@ -35,7 +35,7 @@ import OverlayTrigger from 'react-bootstrap/lib/OverlayTrigger'
 import Tooltip from 'react-bootstrap/lib/Tooltip'
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
 import PlotTabs from './PlotTabs'
-import { fetchAnnotationFacets } from '~/lib/cell-faceting'
+import { initAnnotationFacets } from '~/lib/cell-faceting'
 
 /** Get the selected clustering and annotation, or their defaults */
 function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
@@ -281,7 +281,7 @@ export default function ExploreDisplayTabs({
   const shownAnnotation = getShownAnnotation(exploreParamsWithDefaults.annotation, annotationList)
 
   const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
-  const annotationFacets = fetchAnnotationFacets(
+  const annotationFacets = initAnnotationFacets(
     selectedCluster, selectedAnnot, studyAccession, exploreInfo
   )
 

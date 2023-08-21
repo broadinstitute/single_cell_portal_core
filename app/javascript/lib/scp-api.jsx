@@ -152,7 +152,7 @@ export async function createUserAnnotation(
  *
  * Docs: https://singlecell.broadinstitute.org/single_cell/api/v1#/Visualization/study_annotation_facets_path
  */
-export async function fetchAnnotationFacetData(studyAccession, annotations, cluster) {
+export async function fetchAnnotationFacets(studyAccession, annotations, cluster) {
   annotations = annotations.join(',')
   const params = `annotations=${annotations}&cluster=${cluster}`
   const apiUrl = `/studies/${studyAccession}/annotations/facets?${params}`
