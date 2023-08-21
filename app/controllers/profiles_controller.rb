@@ -24,7 +24,7 @@ class ProfilesController < ApplicationController
     @profiles_available = ApplicationController.firecloud_client.services_available?(FireCloudClient::THURLOE_SERVICE)
     if @profiles_available
       begin
-        user_client = FireCloudClient.new(current_user, FireCloudClient::PORTAL_NAMESPACE)
+        user_client = FireCloudClient.new(user: current_user, project: FireCloudClient::PORTAL_NAMESPACE)
         profile = user_client.get_profile
         profile['keyValuePairs'].each do |attribute|
           if @fire_cloud_profile.respond_to?("#{attribute['key']}=")
@@ -74,7 +74,7 @@ class ProfilesController < ApplicationController
     begin
       @fire_cloud_profile = FireCloudProfile.new(profile_params)
       if @fire_cloud_profile.valid?
-        user_client = FireCloudClient.new(current_user, FireCloudClient::PORTAL_NAMESPACE)
+        user_client = FireCloudClient.new(user: current_user, project: FireCloudClient::PORTAL_NAMESPACE)
         user_client.set_profile(profile_params)
         # log that user has registered so we can use this elsewhere
         if !current_user.registered_for_firecloud
@@ -159,7 +159,7 @@ class ProfilesController < ApplicationController
   def profile_params
     params.require(:fire_cloud_profile).permit(:contactEmail, :email, :firstName, :lastName, :institute, :institutionalProgram,
                                             :nonProfitStatus, :pi, :programLocationCity, :programLocationState,
-                                            :programLocationCountry, :title)
+                                            :programLocationCountry, :title, :termsOfService)
   end
 
   def tos_params

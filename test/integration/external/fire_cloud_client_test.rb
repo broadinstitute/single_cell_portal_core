@@ -12,10 +12,23 @@ require 'test_helper'
 class FireCloudClientTest < ActiveSupport::TestCase
 
   before(:all) do
-    @fire_cloud_client = ApplicationController.firecloud_client
+    @smoke_test = ENV['ORCH_SMOKE_TEST'] == 'true'
+    if @smoke_test
+      api_root = 'https://firecloud-orchestration.dsde-staging.broadinstitute.org'
+      puts "Running smoke test against Terra orchestration API at #{api_root}"
+      @fire_cloud_client = FireCloudClient.new(api_root:)
+    else
+      @fire_cloud_client = ApplicationController.firecloud_client
+    end
+
     @test_email = 'singlecelltest@gmail.com'
     @random_test_seed = SecureRandom.uuid # use same random seed to differentiate between entire runs
     @resource_error_msg = 'Resource representation is only available with these types' # for error handling
+
+    # seed one workspace to prevent test_workspaces from failing due to order of operations corner case
+    workspace_name = "workspace-#{@random_test_seed}"
+    Rails.logger.info "seeding #{workspace_name} for testing"
+    @fire_cloud_client.create_workspace(@fire_cloud_client.project, workspace_name)
   end
 
   # given ongoing issues with workspace deletion throwing spurious errors, do cleanup at end and ignore errors
@@ -241,6 +254,7 @@ class FireCloudClientTest < ActiveSupport::TestCase
 
   # get queue status
   def test_get_submission_queue_status
+    skip if @smoke_test # relies on assets that don't exist in staging Rawls
     status = @fire_cloud_client.get_submission_queue_status
     assert status.any?, 'Did not receive queue status object'
     assert status['workflowCountsByStatus'].any?, 'Did not receive queue count status'
@@ -265,6 +279,7 @@ class FireCloudClientTest < ActiveSupport::TestCase
 
   # get method configurations
   def test_get_configurations
+    skip if @smoke_test # relies on assets that don't exist in staging Rawls
     # get all available configurations
     workflow_configurations = @fire_cloud_client.get_configurations
     assert workflow_configurations.any?, 'Did not find any method configurations'
@@ -288,6 +303,7 @@ class FireCloudClientTest < ActiveSupport::TestCase
 
   # create a method configuration template from a method
   def test_create_configuration_template
+    skip if @smoke_test # relies on assets that don't exist in staging Rawls
     method = @fire_cloud_client.get_method('single-cell-portal', 'split-cluster', 1)
     assert method.present?, 'Did not retrieve a method to create a configuration template from'
 

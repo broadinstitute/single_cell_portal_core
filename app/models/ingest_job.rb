@@ -403,6 +403,7 @@ class IngestJob
       end
       launch_differential_expression_jobs unless study_file.is_anndata?
       set_anndata_file_info if study_file.is_anndata?
+      create_cell_name_indexes
     when :ingest_expression
       study.delay.set_gene_count
       launch_differential_expression_jobs
@@ -412,12 +413,12 @@ class IngestJob
       launch_subsample_jobs
       launch_differential_expression_jobs unless study_file.is_anndata?
       set_anndata_file_info if study_file.is_anndata?
+      create_cell_name_indexes
     when :ingest_subsample
       set_subsampling_flags
     when :differential_expression
       create_differential_expression_results
     when :ingest_differential_expression
-      delete_auto_differential_expression_results
       create_user_differential_expression_results
     when :render_expression_arrays
       launch_image_pipeline_job
@@ -515,6 +516,17 @@ class IngestJob
   def set_study_initialized
     if study.cluster_groups.any? && study.genes.any? && study.cell_metadata.any? && !study.initialized?
       study.update(initialized: true)
+    end
+  end
+
+  # create 'all cells' => cluster cells index arrays for visualization requests
+  def create_cell_name_indexes
+    case action
+    when :ingest_cell_metadata
+      study.create_all_cluster_cell_indices!
+    when :ingest_cluster
+      cluster = ClusterGroup.find_by(study:, study_file:, name: cluster_name_by_file_type)
+      cluster.create_cell_name_index!
     end
   end
 

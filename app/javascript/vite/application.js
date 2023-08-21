@@ -14,7 +14,6 @@ import ValidationMessage from '~/components/validation/ValidationMessage'
 import ClusterAssociationSelect from '~/components/upload/ClusterAssociationSelect'
 import RawAssociationSelect from '~/components/upload/RawAssociationSelect'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
-import checkMissingAuthToken from '~/lib/user-auth-tokens'
 import ValidateFile from '~/lib/validation/validate-file'
 import { setupSentry } from '~/lib/sentry-logging'
 import { adjustGlobalHeader } from '~/lib/layout-utils'
@@ -23,7 +22,7 @@ import { clearOldServiceWorkerCaches } from '~/lib/service-worker-cache'
 const { validateRemoteFile } = ValidateFile
 
 import {
-  logPageView, logClick, logMenuChange, setupPageTransitionLog, log, logCopy, logContextMenu
+  logPageView, logClick, logMenuChange, setupPageTransitionLog, log, logCopy, logContextMenu, logError
 } from '~/lib/metrics-api'
 import * as ScpApi from '~/lib/scp-api'
 
@@ -66,7 +65,12 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
 
-  setTimeout(checkMissingAuthToken, 1000)
+  if (window.SCP.userSignedIn) {
+    if (window.SCP.userAccessToken === '') {
+      logError('User access token is empty string')
+    }
+    ScpApi.setUpRenewalForUserAccessToken()
+  }
 })
 
 const componentsToExport = {

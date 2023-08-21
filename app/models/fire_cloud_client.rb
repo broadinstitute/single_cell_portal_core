@@ -81,11 +81,14 @@ class FireCloudClient
   # will set the access token, FireCloud api url root and GCP storage driver instance
   #
   # * *params*
+  #   - +service_account+ (String) => File path to JSON keyfile for service account
   #   - +user+: (User) => User object from which access tokens are generated
   #   - +project+: (String) => Default GCP Project to use (can be overridden by other parameters)
+  #   - +api_root+ (String) => URL for base Terra orchestration API instance (defaults to api.firecloud.org)
+  #
   # * *return*
   #   - +FireCloudClient+ object
-  def initialize(user = nil, project = nil, service_account = self.class.get_primary_keyfile)
+  def initialize(user: nil, project: nil, service_account: self.class.get_primary_keyfile, api_root: BASE_URL)
     # when initializing without a user, default to base configuration
     if user.nil?
       # instantiate Google Cloud Storage driver to work with files in workspace buckets
@@ -130,8 +133,7 @@ class FireCloudClient
 
       self.storage = Google::Cloud::Storage.new(**storage_attr)
     end
-    # set FireCloud API base url
-    self.api_root = BASE_URL
+    self.api_root = api_root.chomp('/')
   end
 
   # return a hash of instance attributes for this client
@@ -139,10 +141,15 @@ class FireCloudClient
   # * *return*
   #   - +Hash+ of values for all instance variables for this client
   def attributes
-    sanitized_values = self.to_h.dup
-    sanitized_values[:access_token] = 'REDACTED'
-    sanitized_values[:issuer] = self.issuer
-    sanitized_values
+    {
+      user:,
+      project:,
+      access_token: 'REDACTED',
+      issuer:,
+      api_root:,
+      storage:, expires_at:,
+      service_account_credentials:
+    }
   end
 
   #
@@ -1248,10 +1255,10 @@ class FireCloudClient
   #   - +FireCloudClient+ instance, or nil if user has not registered with Terra
   def self.new_with_pet_account(user, project)
     # create a temporary client in order to retrieve the user's pet service account keyfile
-    tmp_client = self.new(user, project)
+    tmp_client = new(user:, project:)
     if tmp_client.registered?
       pet_service_account_json = tmp_client.get_pet_service_account_key(project)
-      self.new(user, project, pet_service_account_json)
+      new(user:, project:, service_account: pet_service_account_json)
     else
       nil
     end
@@ -1285,7 +1292,7 @@ class FireCloudClient
   end
 
   # get JSON keyfile contents for a user's pet service account in the requested project
-  # response from this API call can be passed to FireCloudClient.new(user, project_name, service_account_contents)
+  # response from this API call can be passed to FireCloudClient.new(**params)
   # to create an instance of FireCloudClient that is able to call GCS methods as the user in the request project
   #
   # * *params*

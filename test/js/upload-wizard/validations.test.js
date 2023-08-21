@@ -123,7 +123,7 @@ describe('it checks presence of required fields', () => {
       file, allFiles, allowedFileExts: ['.txt', '.txt.gz'],
       requiredFields: [{ label: 'species', propertyName: 'taxon_id' }]
     })
-    expect(msgs.taxon_id).toEqual('You must specify species')
+    expect(msgs.taxon_id).toEqual('You must specify: species')
   })
 
   it('messages both if multiple required fields are not present', async () => {
@@ -139,8 +139,8 @@ describe('it checks presence of required fields', () => {
       requiredFields: [{ label: 'species', propertyName: 'taxon_id' },
         { label: 'genome assembly', propertyName: 'genome_assembly_id' }]
     })
-    expect(msgs.taxon_id).toEqual('You must specify species')
-    expect(msgs.genome_assembly_id).toEqual('You must specify genome assembly')
+    expect(msgs.taxon_id).toEqual('You must specify: species')
+    expect(msgs.genome_assembly_id).toEqual('You must specify: genome assembly')
   })
 
   it('handles validating nested properties', async () => {
@@ -159,6 +159,6 @@ describe('it checks presence of required fields', () => {
         { label: 'biosample input type', propertyName: 'expression_file_info.biosample_input_type' }]
     })
     expect(msgs['expression_file_info.units']).toEqual(undefined)
-    expect(msgs['expression_file_info.biosample_input_type']).toEqual('You must specify biosample input type')
+    expect(msgs['expression_file_info.biosample_input_type']).toEqual('You must specify: biosample input type')
   })
 })

@@ -25,7 +25,7 @@
 }
 
 .pagination {
-  margin: 2px;
+  margin: -10px 0 4px 0;
 }
 
 .de-download-button {
@@ -51,6 +51,15 @@
     top: 2px;
     margin-right: 5px;
   }
+}
+
+.de-find-mode-icon {
+  margin-left: 5px;
+  color: $action-color;
+}
+
+.de-find-mode-icon.partial {
+  color: #AAA;
 }
 
 .de-search-box {
@@ -91,6 +100,40 @@
   outline: none;
 }
 
+.clear-de-unfound-genes-icon {
+  float: none;
+  color: #555;
+}
+
+.clear-de-unfound-genes-icon:hover,
+.clear-de-unfound-genes-icon:active:hover {
+  background-color: white;
+  color: #000;
+}
+
+.de-no-genes-found {
+  padding-top: 20px;
+  font-size: 13px;
+}
+
+.unfound-genes-container {
+  margin: 10px 0 10px -10px;
+  font-size: 13px;
+}
+
+.unfound-gene {
+  border-radius: 3px;
+  background-color: $warning-background-color;
+  border: 1px solid $warning-icon-color;
+  margin-right: 6px;
+  padding: 1px 3px;
+}
+
+.btn-copy-unfound {
+  border: none;
+  background-color: white;
+}
+
 .de-nondefault-explainer {
   margin-top: 16px;
   font-weight: normal;
@@ -120,5 +163,142 @@
     position: relative;
     top: 10px;
     margin-left: 10px;
+  }
+}
+
+
+.de-slider-container {
+  margin-bottom: 40px;
+  margin-left: 15px;
+}
+
+.de-slider-container:last-of-type {
+  margin-bottom: 20px;
+}
+
+.de-slider-checkbox-container {
+  margin-left: -25px;
+}
+
+.de-slider-checkbox-container label {
+  font-weight: normal;
+  margin-left: 5px;
+}
+
+.de-slider {
+  width: calc(100% - 100px);
+  float: left;
+  margin-left: 90px;
+  position: relative;
+  top: -20px;
+}
+
+/** Make layout responsive to narrow viewports */
+@media (max-width: 1415px) {
+  .de-slider-checkbox-container input {
+    display: block;
+  }
+  .de-slider-checkbox-container label {
+    margin-left: 0px;
+  }
+  .de-slider {
+    width: calc(100% - 80px);
+    margin-left: 70px;
+  }
+}
+
+@media (max-width: 1340px) {
+  .de-search-box {
+    width: 130px;
+  }
+
+  .de-search-input {
+    width: 90px;
+  }
+}
+
+@media (max-width: 1315px) {
+  .de-source.margin-left {
+    margin-left: 0px;
+  }
+  .de-exit-panel {
+    margin-right: -10px;
+  }
+}
+
+@media (max-width: 1250px) {
+  .de-dot-plot-button {
+    width: 26px;
+  }
+}
+
+.explore-tab-content {
+  .noUi-value-horizontal {transform: translate(-50%, 50%);}
+  .noUi-horizontal {height: 10px; z-index: 0;}
+  .noUi-horizontal .noUi-handle {width: 20px; right: -10px; height: 22px; top: -6px;}
+  .noUi-handle:before, .noUi-handle:before {left: 7px; top: 3px;}
+  .noUi-handle:after, .noUi-handle:after {left: 10px; top: 3px;}
+  .noUi-marker-horizontal.noUi-marker-large {height: 10px;}
+  .noUi-marker .noUi-marker-horizontal .noUi-marker-normal {height: 3px;}
+  .noUi-horizontal .noUi-tooltip {bottom: 115%;}
+  .noUi-tooltip {padding: 0 3px; font-size: 12px;}
+  .noUi-connect {background-color: $action-color}
+  .noUi-pips {font-size: 13px;}
+  .noUi-pips-horizontal {padding: 5px 0 0 0; height: inherit;}
+
+  .inactive .noUi-connect {background: #AAA;}
+  .inactive .noUi-tooltip {color: #AAA;}
+}
+
+
+// Used in e.g. differential expression (DE) view
+.table.table-scp-compact {
+  overflow-y: scroll;
+  display: flex;
+  flex-flow: column;
+  margin-bottom: 10px;
+  width: 108%;
+  max-width: inherit;
+  position: relative;
+  left: -15px;
+
+  input {
+    margin-left: 2px;
+    margin-right: 8px;
+  }
+
+  thead {
+    flex: 0 0 auto;
+  }
+
+  tbody {
+    flex: 1 1 auto;
+    display: block;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  tr {
+    font-size: 13px;
+    width: 100%;
+    display: table;
+    table-layout: fixed;
+  }
+
+  tr td {
+    font-size: 13px;
+  }
+
+  th:last-child {
+    padding-right: 2;
+  }
+
+  th {
+    padding: 4px;
+  }
+
+  td {
+    padding: 0 2px;
+    vertical-align: baseline;
   }
 }

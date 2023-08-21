@@ -243,9 +243,16 @@
   }
 }
 
-#latest-features-btn {
+#whitepaper-btn {
   position: absolute;
   top: 245px;
+  right: 15px;
+  z-index: 500;
+}
+
+#latest-features-btn {
+  top: 200px;
+  position: absolute;
   right: 15px;
   z-index: 500;
 }

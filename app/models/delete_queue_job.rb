@@ -38,7 +38,7 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
       # now remove all child objects first to free them up to be re-used.
       case file_type
       when 'Cluster'
-        delete_differential_expression_results(study: study, study_file: object)
+        delete_differential_expression_results(study:, study_file: object)
         delete_parsed_data(object.id, study.id, ClusterGroup, DataArray)
         delete_user_annotations(study:, study_file: object)
         reset_default_cluster(study:)
@@ -48,10 +48,10 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
         remove_file_from_bundle
       when 'Expression Matrix'
         delete_parsed_data(object.id, study.id, Gene, DataArray)
-        delete_differential_expression_results(study: study, study_file: object)
+        delete_differential_expression_results(study:, study_file: object)
         study.set_gene_count
       when 'MM Coordinate Matrix'
-        delete_differential_expression_results(study: study, study_file: object)
+        delete_differential_expression_results(study:, study_file: object)
         delete_parsed_data(object.id, study.id, Gene, DataArray)
         study.set_gene_count
       when /10X/
@@ -69,20 +69,21 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
         end
         remove_file_from_bundle
       when 'Metadata'
-        delete_convention_data(study: study, metadata_file: object)
+        delete_convention_data(study:, metadata_file: object)
 
         # clean up all subsampled data, as it is now invalid and will be regenerated
         # once a user adds another metadata file
         ClusterGroup.where(study_id: study.id).each do |cluster_group|
           delete_subsampled_data(cluster_group)
         end
-        delete_differential_expression_results(study: study, study_file: object)
+        delete_differential_expression_results(study:, study_file: object)
         delete_parsed_data(object.id, study.id, CellMetadatum, DataArray)
+        delete_cell_index_arrays(study)
         study.update(cell_count: 0)
         reset_default_annotation(study:)
       when 'AnnData'
         unless object.is_reference_anndata?
-          delete_convention_data(study: study, metadata_file: object)
+          delete_convention_data(study:, metadata_file: object)
           # delete user annotations first as we lose associations later
           delete_user_annotations(study:, study_file: object)
           delete_parsed_data(object.id, study.id, ClusterGroup, CellMetadatum, Gene, DataArray)
@@ -188,6 +189,18 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
   def delete_subsampled_data(cluster)
     cluster.find_subsampled_data_arrays.delete_all
     cluster.update(subsampled: false)
+  end
+
+  # remove all indexed arrays of cluster-based cell names when deleting a metadata file
+  def delete_cell_index_arrays(study)
+    cluster_file_ids = study.study_files.where(file_type: 'Cluster').pluck(:id)
+    cluster_ids = study.cluster_groups.pluck(:id)
+    cursor = DataArray.where(
+      name: 'index', array_type: 'cells', linear_data_type: 'ClusterGroup', :linear_data_id.in => cluster_ids,
+      study_id: study.id, :study_file_ids.in => cluster_file_ids
+    )
+    cursor.delete_all if cursor.exists?
+    study.cluster_groups.update_all(indexed: false)
   end
 
   # delete convention data from BQ if a user deletes a convention metadata file, or a study that contains convention data

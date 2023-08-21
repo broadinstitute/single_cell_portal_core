@@ -7,7 +7,7 @@ const PagingControl = ({ currentPage, totalPages, changePage, canPreviousPage, c
   return (
     <div className="pagination">
       <button
-        className="text-button"
+        className="text-button paginate-start"
         onClick={() => {changePage(zeroIndexed ? 0 : 1)}}
         disabled={!canPreviousPage}
         aria-disabled={!canPreviousPage}
@@ -15,7 +15,7 @@ const PagingControl = ({ currentPage, totalPages, changePage, canPreviousPage, c
         <FontAwesomeIcon icon={faAngleDoubleLeft}/>
       </button>
       <button
-        className="text-button"
+        className="text-button paginate-back"
         onClick={() => {changePage(currentPage - 1)}}
         disabled={!canPreviousPage}
         aria-disabled={!canPreviousPage}
@@ -26,7 +26,7 @@ const PagingControl = ({ currentPage, totalPages, changePage, canPreviousPage, c
           Page {zeroIndexed ? currentPage + 1 : currentPage} of {totalPages}
       </span>
       <button
-        className="text-button"
+        className="text-button paginate-next"
         onClick={() => {changePage(currentPage + 1)}}
         disabled={!canNextPage}
         aria-disabled={!canNextPage}
@@ -34,7 +34,7 @@ const PagingControl = ({ currentPage, totalPages, changePage, canPreviousPage, c
         <FontAwesomeIcon icon={faAngleRight}/>
       </button>
       <button
-        className="text-button"
+        className="text-button paginate-end"
         onClick={() => {changePage(zeroIndexed ? totalPages - 1 : totalPages)}}
         disabled={!canNextPage}
         aria-disabled={!canNextPage}

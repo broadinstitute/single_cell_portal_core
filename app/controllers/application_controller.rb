@@ -42,7 +42,10 @@ class ApplicationController < ActionController::Base
 
   def self.read_only_firecloud_client
     if ENV['READ_ONLY_SERVICE_ACCOUNT_KEY'].present?
-      @@read_only_client ||= FireCloudClient.new(nil, FireCloudClient::PORTAL_NAMESPACE, File.absolute_path(ENV['READ_ONLY_SERVICE_ACCOUNT_KEY']))
+      @@read_only_client ||= FireCloudClient.new(user: nil,
+                                                 project: FireCloudClient::PORTAL_NAMESPACE,
+                                                 service_account: File.absolute_path(ENV['READ_ONLY_SERVICE_ACCOUNT_KEY'])
+      )
     end
   end
 

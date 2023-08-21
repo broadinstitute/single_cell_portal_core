@@ -20,7 +20,6 @@ import { showMessage } from '~/lib/MessageModal'
 import { fetchServiceWorkerCache } from './service-worker-cache'
 import { getSCPContext } from '~/providers/SCPContextProvider'
 import { STEP_NOT_NEEDED } from './metrics-perf'
-
 // If true, returns mock data for all API responses.  Only for dev.
 let globalMock = false
 
@@ -234,7 +233,7 @@ export function setupRenewalForReadOnlyToken(studyAccession) {
   const renewalTime = readOnlyTokenObject.expiresIn * 1000 - FIVE_MINUTES
 
   setTimeout(async () => {
-    const apiUrl = `/site/studies/${studyAccession}/renew_token`
+    const apiUrl = `/site/studies/${studyAccession}/renew_read_only_access_token`
     const [response] = await scpApi(apiUrl, defaultInit())
     const readOnlyTokenObject = response
     window.SCP.readOnlyToken = readOnlyTokenObject.accessToken
@@ -242,6 +241,35 @@ export function setupRenewalForReadOnlyToken(studyAccession) {
     setupRenewalForReadOnlyToken(studyAccession)
   }, renewalTime)
 }
+
+
+/**
+ * Renew userAccessToken, very similiar to above function to renew readOnlyToken but
+ * this is for the userAccessToken instead
+ */
+export function setUpRenewalForUserAccessToken() {
+  let renewalTime = 60000 * 55 * 1000 // 55 minutes default
+
+  // if the token object has been set already use that expiration time instead
+  if (window.SCP.userAccessTokenObject) {
+    const userAccessTokenObject = camelcaseKeys(window.SCP.userAccessTokenObject)
+    // Set the renewal time to be 5 minutes before expiration
+    renewalTime = userAccessTokenObject.expiresIn * 1000 - FIVE_MINUTES
+  }
+
+  setTimeout(async () => {
+    const apiUrl = `/site/renew_user_access_token`
+    const [response] = await scpApi(apiUrl, defaultInit())
+    const userAccessTokenObj = response
+    window.SCP.userAccessToken = userAccessTokenObj.accessToken
+    window.SCP.userAccessTokenObject = userAccessTokenObj
+    // response is 204 if user is not signed in anymore so stop trying to renew token
+    if (response.status !== 204) {
+      setUpRenewalForUserAccessToken()
+    }
+  }, renewalTime)
+}
+
 
 /**
  * Check Terra Terms of Service acceptance
@@ -628,6 +656,51 @@ export async function fetchExpressionViolin(
     genes: geneString
   }
   const apiUrl = `/studies/${studyAccession}/expression/violin${stringifyQuery(paramObj)}`
+  // don't camelcase the keys since those can be cluster names,
+  // so send false for the 4th argument
+  const [violin, perfTimes] = await scpApi(apiUrl, defaultInit(), mock, false)
+
+  return [violin, perfTimes]
+}
+
+/**
+ * Returns an object with a Morpheus JSON dataset data to share among components
+ *
+ * See definition: app/controllers/api/v1/visualization/expression_controller.rb
+ *
+ * @param {String} studyAccession Study accession
+ * @param {(String|String[])} genes Gene name or array of gene names
+ * @param {String} clusterName Name of cluster
+ * @param {String} annotationName Name of annotation
+ * @param {String} annotationType Type of annotation ("group" or "numeric")
+ * @param {String} annotationName Scope of annotation ("study" or "cluster")
+ * @param {String} subsample Subsampling threshold
+ * @param {Boolean} mock If using mock data.  Helps development, tests.
+ *
+ */
+export async function fetchMorpheusJson(
+  studyAccession,
+  genes,
+  clusterName,
+  annotationName,
+  annotationType,
+  annotationScope,
+  subsample,
+  mock=false
+) {
+  let geneString = genes
+  if (Array.isArray(genes)) {
+    geneString = genes.join(',')
+  }
+  const paramObj = {
+    cluster: clusterName,
+    annotation_name: annotationName,
+    annotation_type: annotationType,
+    annotation_scope: annotationScope,
+    subsample,
+    genes: geneString
+  }
+  const apiUrl = `/studies/${studyAccession}/expression/morpheus${stringifyQuery(paramObj)}`
   // don't camelcase the keys since those can be cluster names,
   // so send false for the 4th argument
   const [violin, perfTimes] = await scpApi(apiUrl, defaultInit(), mock, false)

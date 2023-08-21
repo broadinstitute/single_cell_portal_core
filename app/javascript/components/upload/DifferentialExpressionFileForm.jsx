@@ -8,6 +8,10 @@ import { clusterFileFilter } from './ClusteringStep'
 import CreatableSelect from 'react-select/creatable'
 
 const allowedFileExts = FileTypeExtensions.plainText
+const requiredFields = [
+  { label: 'Associated annotation', propertyName: 'differential_expression_file_info.annotation_name'},
+  { label: 'Associated clustering file', propertyName: 'differential_expression_file_info.clustering_association'},
+]
 
 /** renders a form for editing/uploading a differential expression file */
 export default function DifferentialExpressionFileForm({
@@ -23,7 +27,7 @@ export default function DifferentialExpressionFileForm({
   menuOptions
 }) {
   // TODO (SCP-5154) Add DE specific clientside validation
-  const validationMessages = validateFile({ file, allFiles, allowedFileExts })
+  const validationMessages = validateFile({ file, allFiles, allowedFileExts, requiredFields })
 
   const fragmentType = isAnnDataExperience ? 'cluster' : null
 
