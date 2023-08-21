@@ -75,7 +75,8 @@ function prioritizeAnnotations(selectedAnnot, annotList) {
 }
 
 /** Get filtered cell results */
-function getFilteredResults(selections, cellsByFacet, facets, filterableCells) {
+export function filterCells(selections, cellsByFacet, facets, filterableCells) {
+  facets = facets.map(facet => facet.annotation)
   let fn; let i; let facet; let results; let filter
   const counts = {}
 
@@ -124,7 +125,7 @@ function initCrossfilter(facetData) {
   const annotationFacets = facets.map(facet => facet.annotation)
   const filterableCells = []
   for (let i = 0; i < cells.length; i++) {
-    const filterableCell = {}
+    const filterableCell = { 'allCellsIndex': i }
 
     // An array of integers, e.g. [6, 0, 7, 0, 0]
     // Each element in the array is the index-offset of the cell's group value assignment
@@ -153,12 +154,14 @@ function initCrossfilter(facetData) {
 }
 
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
-export async function initAnnotationFacets(
-  selectedCluster, selectedAnnot, studyAccession, exploreInfo
+export async function initCellFaceting(
+  selectedCluster, selectedAnnot, studyAccession, exploreInfo,
+  setCellFaceting
 ) {
   // Prioritize and fetch annotation facets for all cells
   const allAnnots = exploreInfo?.annotationList
-  if (!allAnnots) {return}
+  if (!allAnnots || allAnnots.annotations.length === 0) {return}
+  console.log('allAnnots', allAnnots)
   const applicableAnnots = [selectedAnnot].concat(
     getGroupAnnotationsForClusterAndStudy(allAnnots, selectedCluster)
       .filter(annotation => annotation.values.length > 1)
@@ -168,13 +171,11 @@ export async function initAnnotationFacets(
 
   const { filterableCells, cellsByFacet } = initCrossfilter(facetData)
 
-  window.SCP.cellFaceting = {
+  setCellFaceting({
     cellsByFacet,
     annotFacetSelections: [],
-    facets: facetData.facets.map(facet => facet.annotation),
-    filterableCells,
-    getFilteredResults
-  }
-  // const getAnnotationForIdentifier(identifier)
+    facets: facetData.facets,
+    filterableCells
+  })
 }
 

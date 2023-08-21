@@ -35,7 +35,7 @@ import OverlayTrigger from 'react-bootstrap/lib/OverlayTrigger'
 import Tooltip from 'react-bootstrap/lib/Tooltip'
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
 import PlotTabs from './PlotTabs'
-import { initAnnotationFacets } from '~/lib/cell-faceting'
+import { initCellFaceting, filterCells } from '~/lib/cell-faceting'
 
 /** Get the selected clustering and annotation, or their defaults */
 function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
@@ -219,6 +219,9 @@ export default function ExploreDisplayTabs({
   const [showDifferentialExpressionPanel, setShowDifferentialExpressionPanel] = useState(deGenes !== null)
   const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(deGenes !== null)
 
+  const [cellFaceting, setCellFaceting] = useState(null)
+  const [filteredCells, setFilteredCells] = useState(null)
+
   // Hash of trace label names to the number of points in that trace
   const [countsByLabel, setCountsByLabel] = useState(null)
 
@@ -281,9 +284,24 @@ export default function ExploreDisplayTabs({
   const shownAnnotation = getShownAnnotation(exploreParamsWithDefaults.annotation, annotationList)
 
   const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
-  const annotationFacets = initAnnotationFacets(
-    selectedCluster, selectedAnnot, studyAccession, exploreInfo
-  )
+
+  if (!cellFaceting) {
+    initCellFaceting(
+      selectedCluster, selectedAnnot, studyAccession, exploreInfo, setCellFaceting
+    )
+  }
+
+  /** Update filtered cells to only those that match annotation group value filter selections */
+  function updateFilteredCells(selections) {
+    const cellsByFacet = cellFaceting.cellsByFacet
+    const facets = cellFaceting.facets
+    const filterableCells = cellFaceting.filterableCells
+    const newFilteredCells = filterCells(selections, cellsByFacet, facets, filterableCells)
+    console.log('newFilteredCells', newFilteredCells)
+    setFilteredCells(newFilteredCells)
+  }
+  window.SCP.updateFilteredCells = updateFilteredCells
+  // Pass getFilteredResults
 
   /** in the event a component takes an action which updates the list of annotations available
     * e.g. by creating a user annotation, this updates the list */
