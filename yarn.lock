@@ -5150,10 +5150,10 @@ iconv-lite@0.4, iconv-lite@0.4.24, iconv-lite@^0.4.24:
   dependencies:
     safer-buffer ">= 2.1.2 < 3"
 
-ideogram@1.43.0:
-  version "1.43.0"
-  resolved "https://registry.yarnpkg.com/ideogram/-/ideogram-1.43.0.tgz#a1f695183616946bd76a4216feec2a63e7e8d997"
-  integrity sha512-0maLlGAYOo80IN9yO+YsgaBpGEZtI5AFRahJlopTgj5w7hWAnxOa1R/8Dwb+hsQ+6a6odYgkWJF43xLcvL5tWg==
+ideogram@1.44.0:
+  version "1.44.0"
+  resolved "https://registry.yarnpkg.com/ideogram/-/ideogram-1.44.0.tgz#30af5fd22fe23c38260814d9a3836b4f70d6278c"
+  integrity sha512-OoNOR/LBtGNwrmLVDAafLMiQSRjZ2yd3JFqxavq9XtD4VeUrBHnN82XdXapTB8n6/JEL6m+7A4vFVHYEh79Uow==
   dependencies:
     crossfilter2 "1.5.2"
     d3-array "^2.8.0"
