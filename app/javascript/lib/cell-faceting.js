@@ -33,7 +33,6 @@ function prioritizeAnnotations(annotList) {
     annot.identifier = getIdentifierForAnnotation(annot)
     return annot
   })
-  console.log('0 annotList', annotList)
 
   const cellTypeAndDiseaseAnnots = annotList.filter(
     annot => ['cell_type__ontology_label', 'disease__ontology_label'].includes(annot.name)
@@ -62,31 +61,59 @@ function prioritizeAnnotations(annotList) {
   annotsToFacet =
     annotsToFacet
       .map(annot => annot.identifier)
-      .slice(0, 5)
+      .slice(0, 4)
 
   return annotsToFacet
 }
 
-/** Get 5 default annotation facets: 1 for selected, and 4 others */
-export async function initAnnotationFacets(
-  selectedCluster, selectedAnnot, studyAccession, exploreInfo
-) {
-  // Prioritize and fetch annotation facets for all cells
-  const allAnnots = exploreInfo?.annotationList
-  if (!allAnnots) {return}
-  console.log('allAnnots', allAnnots)
-  const applicableAnnots =
-    getGroupAnnotationsForClusterAndStudy(allAnnots, selectedCluster)
-      .filter(annotation => annotation.values.length > 1)
-  console.log('applicableAnnots', applicableAnnots)
-  const annotsToFacet = prioritizeAnnotations(applicableAnnots)
-  console.log('selectedCluster, selectedAnnot', selectedCluster, selectedAnnot)
-  console.log('annotsToFacet', annotsToFacet)
-  const facetData = await fetchAnnotationFacets(studyAccession, annotsToFacet, selectedCluster)
-  console.log('facetData', facetData)
+/** Get filtered cell results */
+function getFilteredResults(selections, cellsByFacet, facets, filterableCells) {
+  let fn; let i; let facet; let results; let filter
+  const counts = {}
 
+  if (Object.keys(selections).length === 0) {
+    results = filterableCells
+  } else {
+    for (i = 0; i < facets.length; i++) {
+      facet = facets[i]
+      if (facet in selections) {
+        filter = selections[facet]
+        if (Array.isArray(filter)) {
+          fn = function(d) {
+            // Filter is numeric range
+            if (filter.length === 2) {
+              // [min, max]
+              return filter[0] <= d && d < filter[1]
+            } else if (filter.length === 4) {
+              // [min1, max1, min2, max2]
+              return (
+                filter[0] <= d && d < filter[1] ||
+                filter[2] <= d && d < filter[3]
+              )
+            }
+          }
+        } else {
+          fn = function(d) {
+            // Filter is set of categories
+            return (d in filter)
+          }
+        }
+      } else {
+        fn = null
+      }
+      cellsByFacet[facet].filter(fn)
+      counts[facet] = cellsByFacet[facet].group().top(Infinity)
+    }
+    results = cellsByFacet[facet].top(Infinity)
+  }
+
+  return [results, counts]
+}
+
+/** Initialize crossfilter, return cells by facet */
+function initCrossfilter(facetData) {
   const { cells, facets } = facetData
-  const annotationFacets = facets
+  const annotationFacets = facets.map(facet => facet.annotation)
   const filterableCells = []
   for (let i = 0; i < cells.length; i++) {
     const filterableCell = {}
@@ -100,12 +127,47 @@ export async function initAnnotationFacets(
     //  `groups` array for the 0th annotation.
     const cellGroupIndexes = cells[i]
     for (let j = 0; j < cellGroupIndexes.length; j++) {
-      const annotationIdentifier = annotationFacets[j].annotation
+      const annotationIdentifier = annotationFacets[j]
       filterableCell[annotationIdentifier] = cellGroupIndexes[j]
     }
     filterableCells.push(filterableCell)
   }
-  window.SCP.crossfilter = crossfilter(filterableCells)
+
+  const cellCrossfilter = crossfilter(filterableCells)
+  const cellsByFacet = {}
+  for (let i = 0; i < annotationFacets.length; i++) {
+    const facet = annotationFacets[i]
+    cellsByFacet[facet] = cellCrossfilter.dimension(d => d[facet])
+  }
+  console.log('cellsByFacet', cellsByFacet)
+
+  return { filterableCells, cellsByFacet }
+}
+
+/** Get 5 default annotation facets: 1 for selected, and 4 others */
+export async function initAnnotationFacets(
+  selectedCluster, selectedAnnot, studyAccession, exploreInfo
+) {
+  // Prioritize and fetch annotation facets for all cells
+  const allAnnots = exploreInfo?.annotationList
+  if (!allAnnots) {return}
+  const applicableAnnots = [selectedAnnot].concat(
+    getGroupAnnotationsForClusterAndStudy(allAnnots, selectedCluster)
+      .filter(annotation => annotation.values.length > 1)
+  )
+  const annotsToFacet = prioritizeAnnotations(applicableAnnots)
+  const facetData = await fetchAnnotationFacets(studyAccession, annotsToFacet, selectedCluster)
+
+  const { filterableCells, cellsByFacet } = initCrossfilter(facetData)
+
+  window.SCP.cellFaceting = {
+    cellsByFacet,
+    annotFacetSelections: [],
+    facets: facetData.facets.map(facet => facet.annotation),
+    filterableCells,
+    getFilteredResults
+  }
+
   // const getAnnotationForIdentifier(identifier)
 }
 
