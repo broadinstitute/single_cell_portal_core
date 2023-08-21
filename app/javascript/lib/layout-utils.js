@@ -26,7 +26,7 @@ function getTextSize(text, font) {
 
 /** Get min-width of container for menus on help, create study, and sign in / username */
 export function getGlobalHeaderEndWidth(text, font) {
-  const baseWidth = 249 // Width of "Help", "Create study", icons, padding, etc.
+  const baseWidth = 252 // Width of "Help", "Create study", icons, padding, etc.
   const userOrSignInTextWidth = getTextSize(text, font).width
   const globalHeaderEndWidth = baseWidth + userOrSignInTextWidth
   return globalHeaderEndWidth
@@ -73,5 +73,9 @@ export function adjustGlobalHeader() {
     const paddingLeft = pxToNumber(getStyle(studyHeader, 'padding-left'))
     const smallerPaddingLeft = `${paddingLeft / 2}px`
     studyHeader.style.paddingLeft = smallerPaddingLeft
+
+    // Show tooltip for especially long cases
+    studyHeader.setAttribute('data-toggle', 'tooltip')
+    studyHeader.setAttribute('data-original-title', titleText)
   }
 }
