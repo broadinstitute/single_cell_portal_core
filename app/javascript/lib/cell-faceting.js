@@ -1,6 +1,7 @@
 import {
   getGroupAnnotationsForClusterAndStudy, getIdentifierForAnnotation
 } from '~/lib/cluster-utils'
+import { fetchAnnotationFacetData } from '~/lib/scp-api'
 
 
 /**
@@ -57,13 +58,18 @@ function prioritizeAnnotations(annotList) {
   studyAnnots.forEach(annot => seenAnnots.add(annot.identifiers))
   annotsToFacet = annotsToFacet.concat(studyAnnots)
 
-  annotsToFacet = annotsToFacet.slice(0, 5)
+  annotsToFacet =
+    annotsToFacet
+      .map(annot => annot.identifier)
+      .slice(0, 5)
 
   return annotsToFacet
 }
 
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
-export function fetchAnnotationFacets(selectedCluster, selectedAnnot, exploreInfo) {
+export async function fetchAnnotationFacets(
+  selectedCluster, selectedAnnot, studyAccession, exploreInfo
+) {
   const allAnnots = exploreInfo?.annotationList
   if (!allAnnots) {return}
   console.log('allAnnots', allAnnots)
@@ -74,6 +80,8 @@ export function fetchAnnotationFacets(selectedCluster, selectedAnnot, exploreInf
   const annotsToFacet = prioritizeAnnotations(applicableAnnots)
   console.log('selectedCluster, selectedAnnot', selectedCluster, selectedAnnot)
   console.log('annotsToFacet', annotsToFacet)
+  const facets = await fetchAnnotationFacetData(studyAccession, annotsToFacet, selectedCluster)
+  console.log('facets', facets)
 }
 
 window.SCP.fetchAnnotationFacets = fetchAnnotationFacets

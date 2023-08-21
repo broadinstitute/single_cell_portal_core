@@ -281,7 +281,9 @@ export default function ExploreDisplayTabs({
   const shownAnnotation = getShownAnnotation(exploreParamsWithDefaults.annotation, annotationList)
 
   const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
-  const annotationFacets = fetchAnnotationFacets(selectedCluster, selectedAnnot, exploreInfo)
+  const annotationFacets = fetchAnnotationFacets(
+    selectedCluster, selectedAnnot, studyAccession, exploreInfo
+  )
 
   /** in the event a component takes an action which updates the list of annotations available
     * e.g. by creating a user annotation, this updates the list */
