@@ -67,6 +67,20 @@ module ApplicationHelper
         when 'view_all_gene_expression_heatmap'
           breadcrumbs << {title: "Gene expression <span class='badge'>All</span>", link: 'javascript:;'}
       end
+    elsif controller_name == 'studies'
+      breadcrumbs << {title: "My studies", link: studies_path}
+      case action_name
+        when 'new'
+          breadcrumbs << {title: "New study", link: 'javascript:;'}
+        when 'edit'
+          breadcrumbs << {title: "Editing '#{truncate(@study.name, length: 20)}'", link: 'javascript:;'}
+        when 'show'
+          breadcrumbs << {title: "Showing '#{truncate(@study.name, length: 20)}'", link: 'javascript:;'}
+        when 'initialize_study'
+          breadcrumbs << {title: "Upload/Edit study data", link: 'javascript:;'}
+        when 'sync_study'
+          breadcrumbs << {title: "Synchronize workspace", link: 'javascript:;'}
+      end
     elsif controller_name == 'admin_configurations'
       breadcrumbs << {title: 'Admin control panel', link: admin_configurations_path}
       case action_name
