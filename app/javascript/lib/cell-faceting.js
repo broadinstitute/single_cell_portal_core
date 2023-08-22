@@ -69,7 +69,7 @@ function prioritizeAnnotations(selectedAnnot, annotList) {
   annotsToFacet =
     annotsToFacet
       .map(annot => annot.identifier)
-      .slice(0, 4)
+      .slice(0, 10)
 
   return annotsToFacet
 }
