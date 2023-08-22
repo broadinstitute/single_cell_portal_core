@@ -548,6 +548,12 @@ function RawScatterPlot({
     }
   }, [])
 
+  const hasLegend = scatterData && countsByLabel && isRefGroup
+  let descriptionStyle = {}
+  if (hasLegend) {
+    descriptionStyle = { 'position': 'relative', 'top': '-10px' }
+  }
+
   return (
     <div className="plot">
       { ErrorComponent }
@@ -564,7 +570,7 @@ function RawScatterPlot({
         id={graphElementId}
         data-testid={graphElementId}
       >
-        { scatterData && countsByLabel && isRefGroup &&
+        { hasLegend &&
           <ScatterPlotLegend
             name={scatterData.annotParams.name}
             height={scatterData.height}
@@ -589,7 +595,7 @@ function RawScatterPlot({
       </div>
       <p className="help-block">
         { scatterData && scatterData.description &&
-          <span>{scatterData.description}</span>
+          <span style={descriptionStyle}>{scatterData.description}</span>
         }
       </p>
       {

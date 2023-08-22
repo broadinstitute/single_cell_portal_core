@@ -200,7 +200,7 @@ export default function ScatterPlotLegend({
 
   const [labelsToShow, setLabelsToShow] = useState(labels)
 
-  const style = { width: scatterLabelLegendWidth, height, position: 'relative', top: '-30px' }
+  const style = { width: scatterLabelLegendWidth, height, position: 'relative', top: '-35px' }
   const filteredClass = (hiddenTraces.length === 0) ? 'unfiltered' : ''
   const [showIsEnabled, hideIsEnabled] =
     getShowHideEnabled(hiddenTraces, countsByLabel)
