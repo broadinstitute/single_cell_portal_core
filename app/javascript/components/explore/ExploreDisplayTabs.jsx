@@ -548,6 +548,7 @@ export default function ExploreDisplayTabs({
                   dimensions={getPlotDimensions({
                     showRelatedGenesIdeogram, showViewOptionsControls, showDifferentialExpressionTable
                   })}
+                  filteredCells={filteredCells}
                   {...exploreParams}/>
               </div>
             }
