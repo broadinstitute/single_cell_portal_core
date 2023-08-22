@@ -67,7 +67,7 @@ function updateExploreParams(newOptions, wasUserSpecified=true) {
   // it should take them to the page they were on before they came to the explore tab
 
   // if it's a gene search utilize the timeout otherwise navigate right away
-  if (newOptions.genes) {
+  if (newOptions.genes.length > 2) {
     // cancel the current timeout function
     window.clearTimeout(window.exploreGeneUpdatesCurrentId)
     // save the latest gene exploreParams for comparison later
@@ -77,6 +77,12 @@ function updateExploreParams(newOptions, wasUserSpecified=true) {
     window.exploreGeneUpdatesCurrentId = window.setTimeout(async () => {
       await navigate(`${query}#study-visualize`, { replace: true })
     }, 1000) // ms to delay the search being executed
+  } else if (window.exploreGeneUpdatesLastCompletedQuery) {
+    // cancel the current timeout function
+    window.clearTimeout(window.exploreGeneUpdatesCurrentId)
+    window.exploreGeneUpdatesLastCompletedQuery = null
+    navigate(`${query}#study-visualize`, { replace: true })
+
   } else {
     navigate(`${query}#study-visualize`, { replace: true })
   }
