@@ -199,7 +199,16 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
         animation={false}
         bsSize='small'>
         <Modal.Body className="text-center">
-        Invalid search.  Please remove &quot;{Array.from(notPresentGenes).join('", "')}&quot; from gene search.
+          <p>
+            Invalid search. &quot;{Array.from(notPresentGenes).join('", "')}&quot;
+            is not a gene that was assayed in this study.
+          </p>
+          <p>
+            Please remove &quot;{Array.from(notPresentGenes).join('", "')}&quot; from gene search.
+          </p>
+          <p>
+            Hint: Start typing or hit space in the search bar to see suggestions of genes present in the study.
+          </p>
         </Modal.Body>
       </Modal>
       <Modal
