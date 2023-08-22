@@ -8,7 +8,6 @@ import CreatableSelect from 'react-select/creatable'
 import { getAutocompleteSuggestions } from '~/lib/search-utils'
 import { log } from '~/lib/metrics-api'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
-import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 import debounce from 'lodash.debounce'
 
 
@@ -76,7 +75,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
         searchGenes(genesToSearch)
       }
     }
-  }, 500) // ms to delay the search being executed
+  }, 300) // ms to delay the search being executed
 
   /** Handles a user submitting a gene search */
   function handleSearch(event) {

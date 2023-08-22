@@ -217,27 +217,39 @@ function RawDotPlot({
       $(target).empty()
       $(target).html(morpheusLoadingSpinner())
 
-      getDataset().then(dataset => {
-        performance.mark(`perfTimeStart-${graphId}`)
-        log('dot-plot:initialize')
-        setShowError(false)
-        renderDotPlot({
-          target,
-          dataset,
-          annotationName: annotation.name,
-          annotationValues,
-          setErrorContent,
-          setShowError,
-          genes
+      const urlParams = new URLSearchParams(window.location.search)
+      const currentGenes = urlParams.get('genes')
+      window.currentGenes = currentGenes
+      // check that the genes in the query match the genes in the url query params
+      // before fetching data (or is falsy if it's first page load with query params already there)
+      if (window.exploreGeneUpdatesLastCompletedQuery === currentGenes || !window.exploreGeneUpdatesLastCompletedQuery ) {
+        getDataset().then(dataset => {
+          // check that the genes match again before render since a new query could have
+          // occurred while data was being fetched
+          if (window.exploreGeneUpdatesLastCompletedQuery === currentGenes || !window.exploreGeneUpdatesLastCompletedQuery) {
+            performance.mark(`perfTimeStart-${graphId}`)
+            log('dot-plot:initialize')
+            setShowError(false)
+            renderDotPlot({
+              target,
+              dataset,
+              annotationName: annotation.name,
+              annotationValues,
+              setErrorContent,
+              setShowError,
+              genes
+            })
+            setMorpheusData(dataset)
+          }
         })
-        setMorpheusData(dataset)
-      })
+      }
     }
   }, [
     cluster,
     genes.join(','),
     annotation.name,
-    annotation.scope
+    annotation.scope,
+    window.exploreGeneUpdatesLastCompletedQuery
   ])
 
   return (

@@ -58,8 +58,8 @@ export default function AnnotationControl({
     <div className="form-group">
       <label className="labeled-select">Annotation&nbsp;
         <a className="action help-icon"
-           data-toggle="tooltip"
-           data-original-title="Select how cells are colored">
+          data-toggle="tooltip"
+          data-original-title="Select how cells are colored">
           <FontAwesomeIcon icon={faInfoCircle}/>
         </a>
         {hasSelection &&

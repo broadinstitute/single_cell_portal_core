@@ -22,6 +22,9 @@ export default function useExploreTabRouter() {
 
   /** reset to the default view for a study */
   function clearExploreParams() {
+    if (window.exploreGeneUpdatesCurrentId) {
+      clearTimeout(window.exploreGeneUpdatesCurrentId)
+    }
     navigate(`?#study-visualize`)
   }
 
@@ -62,7 +65,21 @@ function updateExploreParams(newOptions, wasUserSpecified=true) {
   // view options settings should not add history entries
   // e.g. when a user hits 'back', it shouldn't undo their cluster selection,
   // it should take them to the page they were on before they came to the explore tab
-  navigate(`${query}#study-visualize`, { replace: true })
+
+  // if it's a gene search utilize the timeout otherwise navigate right away
+  if (newOptions.genes) {
+    // cancel the current timeout function
+    window.clearTimeout(window.exploreGeneUpdatesCurrentId)
+    // save the latest gene exploreParams for comparison later
+    window.exploreGeneUpdatesLastCompletedQuery = mergedOpts.genes.join(',')
+
+    // navigate after a short delay to allow the user to stop changing the gene params
+    window.exploreGeneUpdatesCurrentId = window.setTimeout(async () => {
+      await navigate(`${query}#study-visualize`, { replace: true })
+    }, 1000) // ms to delay the search being executed
+  } else {
+    navigate(`${query}#study-visualize`, { replace: true })
+  }
 }
 
 /** converts query string parameters into the dataParams object */

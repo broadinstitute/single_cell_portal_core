@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react'
 import _uniqueId from 'lodash/uniqueId'
 
 import { log } from '~/lib/metrics-api'
-import { getExpressionHeatmapURL, getAnnotationCellValuesURL, fetchMorpheusJson } from '~/lib/scp-api'
 
 import { useUpdateEffect } from '~/hooks/useUpdate'
 import useErrorMessage from '~/lib/error-message'
@@ -34,21 +33,29 @@ function RawHeatmap({
       const target = `#${graphId}`
       $(target).empty()
       $(target).html(morpheusLoadingSpinner())
-      performance.mark(`perfTimeStart-${graphId}`)
-      log('heatmap:initialize')
-      setShowError(false)
-      morpheusHeatmap.current = renderHeatmap({
-        target,
-        dataset: morpheusData,
-        annotationCellValuesURL: '',
-        annotationName: annotation.name,
-        fit: heatmapFit,
-        rowCentering: heatmapRowCentering,
-        sortColumns: true,
-        setShowError,
-        setErrorContent,
-        genes
-      })
+
+      const urlParams = new URLSearchParams(window.location.search)
+      const currentGenes = urlParams.get('genes')
+      window.currentGenes = currentGenes
+      // check that the genes in the query match the genes in the url query params
+      // before rendering data (or is falsy if it's first page load with query params already there)
+      if (window.exploreGeneUpdatesLastCompletedQuery === currentGenes || window.exploreGeneUpdatesLastCompletedQuery) {
+        performance.mark(`perfTimeStart-${graphId}`)
+        log('heatmap:initialize')
+        setShowError(false)
+        morpheusHeatmap.current = renderHeatmap({
+          target,
+          dataset: morpheusData,
+          annotationCellValuesURL: '',
+          annotationName: annotation.name,
+          fit: heatmapFit,
+          rowCentering: heatmapRowCentering,
+          sortColumns: true,
+          setShowError,
+          setErrorContent,
+          genes
+        })
+      }
     }
   }, [
     studyAccession,
@@ -57,7 +64,8 @@ function RawHeatmap({
     cluster,
     annotation.name,
     annotation.scope,
-    heatmapRowCentering
+    heatmapRowCentering,
+    window.exploreGeneUpdatesLastCompletedQuery
   ])
 
   useUpdateEffect(() => {
