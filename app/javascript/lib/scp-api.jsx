@@ -147,10 +147,15 @@ export async function createUserAnnotation(
 }
 
 /**
- * Get annotation assignments (i.e facets) for specified cells from a cluster.
+ * Get annotation assignments (i.e. facets) for specified cells from a cluster.
  * Only applicable to full resolution data (i.e. all cells).
  *
  * Docs: https://singlecell.broadinstitute.org/single_cell/api/v1#/Visualization/study_annotation_facets_path
+ *
+ * @param {String} studyAccession Study accession, e.g. SCP1234
+ * @param {Array<String>} annotations Array of annotation identifiers,
+ *  e.g. ['cell_type__ontology_label--group--study', 'disease__ontology_label']
+ * @param {String} cluster Name of requested cluster
  */
 export async function fetchAnnotationFacets(studyAccession, annotations, cluster) {
   annotations = annotations.join(',')
