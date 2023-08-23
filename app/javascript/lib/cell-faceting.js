@@ -18,58 +18,41 @@ import crossfilter from 'crossfilter2'
  *
  *   0. Currently selected annotation -- this is set upstream, not here
  *   1. <= 2 annotations from metadata convention, for `cell type` and `disease`
- *   2. 2-4 other cluster-based annotations
- *   3. 2-4 other study-wide annotations
+ *   2. 0-2 cluster-based annotations
+ *   3. 0-4 study-wide annotations
  *
  * Annotations in above categories often don't exist, in which case we fall to the
  * the next prioritization rule.
  */
-function prioritizeAnnotations(selectedAnnot, annotList) {
+function prioritizeAnnotations(annotList) {
   let annotsToFacet = []
-  const seenAnnots = new Set()
 
-  // Add identifiers to incoming annotations
-  annotList = annotList.map(annot => {
-    annot.identifier = getIdentifierForAnnotation(annot)
-    return annot
-  })
-
-  /** Return if annotation is valid to add to accrueing list */
-  function isValid(annot) {
-    return (
-      !(selectedAnnot === annot.identifier) && // Doesn't match selected annot
-      !seenAnnots.has(annot.identifier) // Isn't yet in accrued list
-    )
+  /** Assess if annotation is already in annotsToFacet list */
+  function isUnique(annot) {
+    return !annotsToFacet.includes(annot)
   }
 
   const cellTypeAndDiseaseAnnots = annotList.filter(
     annot => ['cell_type__ontology_label', 'disease__ontology_label'].includes(annot.name)
   )
-  cellTypeAndDiseaseAnnots.forEach(annot => seenAnnots.add(annot.identifier))
   annotsToFacet = annotsToFacet.concat(cellTypeAndDiseaseAnnots)
 
   const otherConventionalAnnots = annotList.filter(
-    annot => annot.name.endsWith('__ontology_label') && isValid(annot)
+    annot => annot.name.endsWith('__ontology_label') && isUnique(annot)
   ).slice(0, 2)
-  otherConventionalAnnots.forEach(annot => seenAnnots.add(annot.identifiers))
   annotsToFacet = annotsToFacet.concat(otherConventionalAnnots)
 
   const clusterAnnots = annotList.filter(
-    annot => ('cluster_name' in annot) && isValid(annot)
+    annot => ('cluster_name' in annot) && isUnique(annot)
   )
-  clusterAnnots.forEach(annot => seenAnnots.add(annot.identifiers))
   annotsToFacet = annotsToFacet.concat(clusterAnnots)
 
   const studyAnnots = annotList.filter(
-    annot => !('cluster_name' in annot) && isValid(annot)
+    annot => !('cluster_name' in annot) && isUnique(annot)
   )
-  studyAnnots.forEach(annot => seenAnnots.add(annot.identifiers))
   annotsToFacet = annotsToFacet.concat(studyAnnots)
 
-  annotsToFacet =
-    annotsToFacet
-      .map(annot => annot.identifier)
-      .slice(0, 10)
+  annotsToFacet = annotsToFacet.map(annot => annot.identifier).slice(0, 5)
 
   return annotsToFacet
 }
@@ -161,12 +144,21 @@ export async function initCellFaceting(
   // Prioritize and fetch annotation facets for all cells
   const allAnnots = exploreInfo?.annotationList
   if (!allAnnots || allAnnots.annotations.length === 0) {return}
-  console.log('allAnnots', allAnnots)
-  const applicableAnnots = [selectedAnnot].concat(
+
+
+  const selectedAnnotId = getIdentifierForAnnotation(selectedAnnot)
+  const applicableAnnots =
     getGroupAnnotationsForClusterAndStudy(allAnnots, selectedCluster)
-      .filter(annotation => annotation.values.length > 1)
-  )
-  const annotsToFacet = prioritizeAnnotations(selectedAnnot, applicableAnnots)
+      .map(annot => { // Add identifiers to incoming annotations
+        annot.identifier = getIdentifierForAnnotation(annot)
+        return annot
+      })
+      .filter(
+        annot => annot.values.length > 1 && annot.identifier !== selectedAnnotId
+      )
+
+  console.log('applicableAnnots', applicableAnnots)
+  const annotsToFacet = prioritizeAnnotations(applicableAnnots)
   const facetData = await fetchAnnotationFacets(studyAccession, annotsToFacet, selectedCluster)
 
   const { filterableCells, cellsByFacet } = initCrossfilter(facetData)
