@@ -28,6 +28,7 @@ export default class ChunkedLineReader {
     this.startTime = Date.now() // start the CSFV timer
     this.updateHasMoreChunks()
     this.updateHasMoreLines()
+    this.textEncoder = new TextEncoder()
   }
 
   /**
@@ -115,7 +116,10 @@ export default class ChunkedLineReader {
       }
     }
     this.currentFragment = null
-    this.nextByteToRead = this.nextByteToRead + chunkString.length
+
+    // Check byte length, not string length, to account for non-ASCII Unicode
+    const chunkByteLength = this.textEncoder.encode(chunkString).length
+    this.nextByteToRead = this.nextByteToRead + chunkByteLength
     if (
       (isLastChunk && this.ignoreLastLine) ||
       (!isLastChunk || chunkString.slice(-1).match(newlineRegex))

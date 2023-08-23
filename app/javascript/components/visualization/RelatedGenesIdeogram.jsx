@@ -148,8 +148,8 @@ export default function RelatedGenesIdeogram({
 
   const verticalPad = 40 // Total top and bottom padding
 
-  // For Ideogram functionality only available for human
-  const showAdvanced = taxon === 'Homo sapiens'
+  // For Ideogram functionality only available for human and mouse
+  const showAdvanced = ['Homo sapiens', 'Mus musculus'].includes(taxon)
 
   useEffect(() => {
     const ideoConfig = {
