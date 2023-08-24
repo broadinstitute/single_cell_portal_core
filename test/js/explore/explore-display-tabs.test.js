@@ -17,6 +17,13 @@ jest.mock('components/visualization/InferCNVIdeogram', () => {
   }
 })
 
+// Mock cell faceting functionality, as it's tested in /test/js/lib/cell-faceting.test.js
+jest.mock('lib/cell-faceting', () => {
+  return {
+    initCellFaceting: jest.fn(() => {})
+  }
+})
+
 import React from 'react'
 import { render } from '@testing-library/react'
 import * as UserProvider from '~/providers/UserProvider'
