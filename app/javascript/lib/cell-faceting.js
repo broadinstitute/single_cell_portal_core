@@ -42,39 +42,32 @@ function prioritizeAnnotations(annotList) {
     return !annotsToFacet.includes(annot)
   }
 
-  console.log('0 annotsToFacet', annotsToFacet)
   const cellTypeAndDiseaseConventionalAnnots = annotList.filter(
     annot => ['cell_type__ontology_label', 'disease__ontology_label'].includes(annot.name)
   )
   annotsToFacet = annotsToFacet.concat(cellTypeAndDiseaseConventionalAnnots)
-  console.log('1 annotsToFacet', annotsToFacet)
 
   const cellTypeOrClinicalAnnots = annotList.filter(
     annot => (CELL_TYPE_RE.test(annot.name) || DISEASE_RE.test(annot.name)) && isUnique(annot)
   )
   annotsToFacet = annotsToFacet.concat(cellTypeOrClinicalAnnots)
-  console.log('2 annotsToFacet', annotsToFacet)
 
   const otherConventionalAnnots = annotList.filter(
     annot => annot.name.endsWith('__ontology_label') && isUnique(annot)
   ).slice(0, 2)
   annotsToFacet = annotsToFacet.concat(otherConventionalAnnots)
-  console.log('3 annotsToFacet', annotsToFacet)
 
   const clusterAnnots = annotList.filter(
     annot => ('cluster_name' in annot) && isUnique(annot)
   )
   annotsToFacet = annotsToFacet.concat(clusterAnnots)
-  console.log('4 annotsToFacet', annotsToFacet)
 
   const studyAnnots = annotList.filter(
     annot => !('cluster_name' in annot) && isUnique(annot)
   )
   annotsToFacet = annotsToFacet.concat(studyAnnots)
-  console.log('5 annotsToFacet', annotsToFacet)
 
   annotsToFacet = annotsToFacet.map(annot => annot.identifier).slice(0, 5)
-  console.log('6 annotsToFacet')
 
   return annotsToFacet
 }
@@ -94,10 +87,7 @@ export function filterCells(
     for (i = 0; i < facets.length; i++) {
       facet = facets[i]
       if (facet in selections) { // e.g. 'infant_sick_YN'
-        const friendlyFilters = selections[facet] // e.g. ['no', 'NA']
-        console.log('friendlyFilters', friendlyFilters)
-        console.log('filtersByFacet[facet]', filtersByFacet[facet])
-        // const filterValue = Object.keys(friendlyFilter)[0] // e.g.
+        const friendlyFilters = selections[facet] // e.g. ['yes', 'NA']
 
         const filter = {}
         friendlyFilters.forEach(friendlyFilter => {
@@ -105,8 +95,6 @@ export function filterCells(
           filter[filterIndex] = 1
         })
 
-        console.log('facet', facet)
-        console.log('filter', filter)
         if (Array.isArray(filter)) {
           fn = function(d) {
             // Filter is numeric range
@@ -186,7 +174,6 @@ export async function initCellFaceting(
   const allAnnots = exploreInfo?.annotationList
   if (!allAnnots || allAnnots.annotations.length === 0) {return}
 
-
   const selectedAnnotId = getIdentifierForAnnotation(selectedAnnot)
   const applicableAnnots =
     getGroupAnnotationsForClusterAndStudy(allAnnots, selectedCluster)
@@ -202,7 +189,6 @@ export async function initCellFaceting(
         )
       })
 
-  console.log('applicableAnnots', applicableAnnots)
   const annotsToFacet = prioritizeAnnotations(applicableAnnots)
   const facetData = await fetchAnnotationFacets(studyAccession, annotsToFacet, selectedCluster)
 
@@ -220,7 +206,7 @@ export async function initCellFaceting(
   }
 
   // Below line is worth keeping, but only uncomment to debug in development
-  window.SCP.cellFaceting = cellFaceting
+  // window.SCP.cellFaceting = cellFaceting
 
   setCellFaceting(cellFaceting)
 }

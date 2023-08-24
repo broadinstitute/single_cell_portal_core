@@ -301,8 +301,9 @@ export default function ExploreDisplayTabs({
     console.log('newFilteredCells', newFilteredCells)
     setFilteredCells(newFilteredCells)
   }
-  window.SCP.updateFilteredCells = updateFilteredCells
-  // Pass getFilteredResults
+
+  // Below line is worth keeping, but only uncomment to debug in development
+  // window.SCP.updateFilteredCells = updateFilteredCells
 
   /** in the event a component takes an action which updates the list of annotations available
     * e.g. by creating a user annotation, this updates the list */
