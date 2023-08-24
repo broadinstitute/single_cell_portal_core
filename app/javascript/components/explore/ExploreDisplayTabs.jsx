@@ -304,7 +304,6 @@ export default function ExploreDisplayTabs({
     const filtersByFacet = cellFaceting.filtersByFacet
     const filterableCells = cellFaceting.filterableCells
     const newFilteredCells = filterCells(selections, cellsByFacet, facets, filtersByFacet, filterableCells)[0]
-    console.log('newFilteredCells', newFilteredCells)
     setFilteredCells(newFilteredCells)
   }
 

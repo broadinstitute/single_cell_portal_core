@@ -1,7 +1,7 @@
 import { allAnnots, facetData } from './cell-faceting.test-data'
 import * as ScpApi from 'lib/scp-api'
 
-import { initCellFaceting } from 'lib/cell-faceting'
+import { initCellFaceting, filterCells } from 'lib/cell-faceting'
 
 // Test functionality to filter cells shown in plots across annotation facets
 describe('Cell faceting', () => {
@@ -16,6 +16,7 @@ describe('Cell faceting', () => {
       facetData
     ))
 
+    // Test client-side cell faceting setup functionality
     const selectedCluster = 'All Cells UMAP'
     const selectedAnnot = { name: 'donor_id', type: 'group', scope: 'study' }
     const studyAccession = 'SCP152'
@@ -24,12 +25,10 @@ describe('Cell faceting', () => {
       selectedCluster, selectedAnnot, studyAccession, allAnnots
     )
 
+    const cellsByFacet = cellFaceting.cellsByFacet
+    const facets = cellFaceting.facets
     const filtersByFacet = cellFaceting.filtersByFacet
     const filterableCells = cellFaceting.filterableCells
-
-    // console.log('facets', facets)
-    console.log('filtersByFacet', filtersByFacet)
-    // console.log('filterableCells', filterableCells)
 
     const expectedFilterableCells99 = {
       'allCellsIndex': 99,
@@ -44,5 +43,15 @@ describe('Cell faceting', () => {
 
     expect(filterableCells[99]).toMatchObject(expectedFilterableCells99)
     expect(filtersByFacet['infant_sick_YN--group--study']).toEqual(expectedInfantSickYN)
+
+    // Test actual cell faceting
+    const selections = {
+      'cell_type__ontology_label--group--study': ['epithelial cell'],
+      'General_Celltype--group--study': ['LC1', 'LC2']
+    }
+    const newFilteredCells = filterCells(
+      selections, cellsByFacet, facets, filtersByFacet, filterableCells
+    )[0]
+    expect(newFilteredCells).toHaveLength(40)
   })
 })

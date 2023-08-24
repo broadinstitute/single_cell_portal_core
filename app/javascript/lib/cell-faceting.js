@@ -1,8 +1,9 @@
+import crossfilter from 'crossfilter2'
+
 import {
-  getGroupAnnotationsForClusterAndStudy, getIdentifierForAnnotation, getAnnotationForIdentifier
+  getGroupAnnotationsForClusterAndStudy, getIdentifierForAnnotation
 } from '~/lib/cluster-utils'
 import { fetchAnnotationFacets } from '~/lib/scp-api'
-import crossfilter from 'crossfilter2'
 
 
 const CELL_TYPE_RE = new RegExp(/cell.*type/i)
@@ -169,11 +170,6 @@ function initCrossfilter(facetData) {
 export async function initCellFaceting(
   selectedCluster, selectedAnnot, studyAccession, allAnnots
 ) {
-  console.log('selectedCluster', selectedCluster),
-  console.log('selectedAnnot', selectedAnnot)
-  console.log('studyAccession', studyAccession)
-  console.log('allAnnots', allAnnots)
-
   // Prioritize and fetch annotation facets for all cells
   const selectedAnnotId = getIdentifierForAnnotation(selectedAnnot)
   const applicableAnnots =
@@ -189,10 +185,8 @@ export async function initCellFaceting(
           annot.identifier !== selectedAnnotId
         )
       })
-  console.log('applicableAnnots', applicableAnnots)
   const annotsToFacet = prioritizeAnnotations(applicableAnnots)
   const facetData = await fetchAnnotationFacets(studyAccession, annotsToFacet, selectedCluster)
-  console.log('facetData', facetData)
 
   const {
     filterableCells, cellsByFacet,
@@ -209,7 +203,6 @@ export async function initCellFaceting(
 
   // Below line is worth keeping, but only uncomment to debug in development
   // window.SCP.cellFaceting = cellFaceting
-  console.log('cellFaceting', cellFaceting)
   return cellFaceting
 }
 
