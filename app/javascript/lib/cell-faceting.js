@@ -6,7 +6,10 @@ import crossfilter from 'crossfilter2'
 
 
 const CELL_TYPE_RE = new RegExp(/cell.*type/i)
-const CLINICAL_RE = new RegExp(/(disease|sick|malignan|indicat|itis|osis|oma)/i)
+
+// Detect if a string mentions disease, sickness, malignant or malignancy,
+// indication, a frequent suffix of disease names, or a common suffix of cancer names
+const DISEASE_RE = new RegExp(/(disease|sick|malignan|indicat|itis|osis|oma)/i)
 
 /**
  * Prioritize unselected annotations to those worth showing by default as facets
@@ -24,9 +27,9 @@ const CLINICAL_RE = new RegExp(/(disease|sick|malignan|indicat|itis|osis|oma)/i)
  *
  *   0. Not currently selected annotation -- this is set upstream, not here
  *   1. <= 2 annotations from metadata convention, for `cell type` and `disease`
- *   2.
+ *   2. 0-5 annotations that are cell-type-like or disease-like
  *   2. 0-2 cluster-based annotations
- *   3. 0-4 study-wide annotations
+ *   3. 0-5 study-wide annotations
  *
  * Annotations in above categories often don't exist, in which case we fall to the
  * the next prioritization rule.
@@ -47,7 +50,7 @@ function prioritizeAnnotations(annotList) {
   console.log('1 annotsToFacet', annotsToFacet)
 
   const cellTypeOrClinicalAnnots = annotList.filter(
-    annot => (CELL_TYPE_RE.test(annot.name) || CLINICAL_RE.test(annot.name)) && isUnique(annot)
+    annot => (CELL_TYPE_RE.test(annot.name) || DISEASE_RE.test(annot.name)) && isUnique(annot)
   )
   annotsToFacet = annotsToFacet.concat(cellTypeOrClinicalAnnots)
   console.log('2 annotsToFacet', annotsToFacet)
@@ -216,8 +219,8 @@ export async function initCellFaceting(
     filtersByFacet
   }
 
-  // DEBUG, remove before PR
-  window.cellFaceting = cellFaceting
+  // Below line is worth keeping, but only uncomment to debug in development
+  window.SCP.cellFaceting = cellFaceting
 
   setCellFaceting(cellFaceting)
 }
