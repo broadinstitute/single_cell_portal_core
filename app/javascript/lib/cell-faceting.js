@@ -167,13 +167,14 @@ function initCrossfilter(facetData) {
 
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
 export async function initCellFaceting(
-  selectedCluster, selectedAnnot, studyAccession, exploreInfo,
-  setCellFaceting
+  selectedCluster, selectedAnnot, studyAccession, allAnnots
 ) {
-  // Prioritize and fetch annotation facets for all cells
-  const allAnnots = exploreInfo?.annotationList
-  if (!allAnnots || allAnnots.annotations.length === 0) {return}
+  console.log('selectedCluster', selectedCluster),
+  console.log('selectedAnnot', selectedAnnot)
+  console.log('studyAccession', studyAccession)
+  console.log('allAnnots', allAnnots)
 
+  // Prioritize and fetch annotation facets for all cells
   const selectedAnnotId = getIdentifierForAnnotation(selectedAnnot)
   const applicableAnnots =
     getGroupAnnotationsForClusterAndStudy(allAnnots, selectedCluster)
@@ -188,9 +189,10 @@ export async function initCellFaceting(
           annot.identifier !== selectedAnnotId
         )
       })
-
+  console.log('applicableAnnots', applicableAnnots)
   const annotsToFacet = prioritizeAnnotations(applicableAnnots)
   const facetData = await fetchAnnotationFacets(studyAccession, annotsToFacet, selectedCluster)
+  console.log('facetData', facetData)
 
   const {
     filterableCells, cellsByFacet,
@@ -207,7 +209,7 @@ export async function initCellFaceting(
 
   // Below line is worth keeping, but only uncomment to debug in development
   // window.SCP.cellFaceting = cellFaceting
-
-  setCellFaceting(cellFaceting)
+  console.log('cellFaceting', cellFaceting)
+  return cellFaceting
 }
 

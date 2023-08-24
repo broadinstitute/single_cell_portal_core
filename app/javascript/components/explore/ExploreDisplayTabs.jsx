@@ -286,9 +286,15 @@ export default function ExploreDisplayTabs({
   const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
 
   if (!cellFaceting) {
-    initCellFaceting(
-      selectedCluster, selectedAnnot, studyAccession, exploreInfo, setCellFaceting
-    )
+    const allAnnots = exploreInfo?.annotationList.annotations
+    if (allAnnots && allAnnots.length > 0) {
+      initCellFaceting(
+        selectedCluster, selectedAnnot, studyAccession, allAnnots
+      )
+        .then(newCellFaceting => {
+          setCellFaceting(newCellFaceting)
+        })
+    }
   }
 
   /** Update filtered cells to only those that match annotation group value filter selections */
@@ -303,7 +309,7 @@ export default function ExploreDisplayTabs({
   }
 
   // Below line is worth keeping, but only uncomment to debug in development
-  // window.SCP.updateFilteredCells = updateFilteredCells
+  window.SCP.updateFilteredCells = updateFilteredCells
 
   /** in the event a component takes an action which updates the list of annotations available
     * e.g. by creating a user annotation, this updates the list */

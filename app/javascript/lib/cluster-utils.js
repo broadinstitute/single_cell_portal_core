@@ -123,8 +123,8 @@ export function getDefaultAnnotationForCluster(annotationList, clusterName, curr
 }
 
 /** Get all group annotations for given cluster and this study */
-export function getGroupAnnotationsForClusterAndStudy(annotationList, clusterName) {
-  const annots = annotationList.annotations.filter(annot => {
+export function getGroupAnnotationsForClusterAndStudy(annotations, clusterName) {
+  const annots = annotations.filter(annot => {
     return (
       annot.type === 'group' && // is group-based, i.e. not numeric
       (
