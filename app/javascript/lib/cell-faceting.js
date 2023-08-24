@@ -5,10 +5,16 @@ import { fetchAnnotationFacets } from '~/lib/scp-api'
 import crossfilter from 'crossfilter2'
 
 
+const CELL_TYPE_RE = new RegExp(/cell.*type/i)
+const CLINICAL_RE = new RegExp(/(disease|sick|malignan|indicat|itis|osis|oma)/i)
+
 /**
  * Prioritize unselected annotations to those worth showing by default as facets
  *
- * To start, show <= 4 annotations (beyond the one current selected) facets by default.
+ * To start, show <= 5 annotations facets by default.
+ *
+ * Don't show current annotation as facet, as that's our "Color by", and
+ * filterable in each visualization.
  *
  * Preconditions -- annotations must be:
  *   - Group-based and have > 1 group
@@ -16,8 +22,9 @@ import crossfilter from 'crossfilter2'
  *
  * Prioritization logic applied here, after above preconditions are met:
  *
- *   0. Currently selected annotation -- this is set upstream, not here
+ *   0. Not currently selected annotation -- this is set upstream, not here
  *   1. <= 2 annotations from metadata convention, for `cell type` and `disease`
+ *   2.
  *   2. 0-2 cluster-based annotations
  *   3. 0-4 study-wide annotations
  *
@@ -32,35 +39,50 @@ function prioritizeAnnotations(annotList) {
     return !annotsToFacet.includes(annot)
   }
 
-  const cellTypeAndDiseaseAnnots = annotList.filter(
+  console.log('0 annotsToFacet', annotsToFacet)
+  const cellTypeAndDiseaseConventionalAnnots = annotList.filter(
     annot => ['cell_type__ontology_label', 'disease__ontology_label'].includes(annot.name)
   )
-  annotsToFacet = annotsToFacet.concat(cellTypeAndDiseaseAnnots)
+  annotsToFacet = annotsToFacet.concat(cellTypeAndDiseaseConventionalAnnots)
+  console.log('1 annotsToFacet', annotsToFacet)
+
+  const cellTypeOrClinicalAnnots = annotList.filter(
+    annot => (CELL_TYPE_RE.test(annot.name) || CLINICAL_RE.test(annot.name)) && isUnique(annot)
+  )
+  annotsToFacet = annotsToFacet.concat(cellTypeOrClinicalAnnots)
+  console.log('2 annotsToFacet', annotsToFacet)
 
   const otherConventionalAnnots = annotList.filter(
     annot => annot.name.endsWith('__ontology_label') && isUnique(annot)
   ).slice(0, 2)
   annotsToFacet = annotsToFacet.concat(otherConventionalAnnots)
+  console.log('3 annotsToFacet', annotsToFacet)
 
   const clusterAnnots = annotList.filter(
     annot => ('cluster_name' in annot) && isUnique(annot)
   )
   annotsToFacet = annotsToFacet.concat(clusterAnnots)
+  console.log('4 annotsToFacet', annotsToFacet)
 
   const studyAnnots = annotList.filter(
     annot => !('cluster_name' in annot) && isUnique(annot)
   )
   annotsToFacet = annotsToFacet.concat(studyAnnots)
+  console.log('5 annotsToFacet', annotsToFacet)
 
   annotsToFacet = annotsToFacet.map(annot => annot.identifier).slice(0, 5)
+  console.log('6 annotsToFacet')
 
   return annotsToFacet
 }
 
 /** Get filtered cell results */
-export function filterCells(selections, cellsByFacet, facets, filterableCells) {
+export function filterCells(
+  selections, cellsByFacet, facets, filtersByFacet, filterableCells
+) {
   facets = facets.map(facet => facet.annotation)
-  let fn; let i; let facet; let results; let filter
+
+  let fn; let i; let facet; let results
   const counts = {}
 
   if (Object.keys(selections).length === 0) {
@@ -68,8 +90,20 @@ export function filterCells(selections, cellsByFacet, facets, filterableCells) {
   } else {
     for (i = 0; i < facets.length; i++) {
       facet = facets[i]
-      if (facet in selections) {
-        filter = selections[facet]
+      if (facet in selections) { // e.g. 'infant_sick_YN'
+        const friendlyFilters = selections[facet] // e.g. ['no', 'NA']
+        console.log('friendlyFilters', friendlyFilters)
+        console.log('filtersByFacet[facet]', filtersByFacet[facet])
+        // const filterValue = Object.keys(friendlyFilter)[0] // e.g.
+
+        const filter = {}
+        friendlyFilters.forEach(friendlyFilter => {
+          const filterIndex = filtersByFacet[facet].indexOf(friendlyFilter)
+          filter[filterIndex] = 1
+        })
+
+        console.log('facet', facet)
+        console.log('filter', filter)
         if (Array.isArray(filter)) {
           fn = function(d) {
             // Filter is numeric range
@@ -131,9 +165,13 @@ function initCrossfilter(facetData) {
     const facet = annotationFacets[i]
     cellsByFacet[facet] = cellCrossfilter.dimension(d => d[facet])
   }
-  console.log('cellsByFacet', cellsByFacet)
 
-  return { filterableCells, cellsByFacet }
+  const filtersByFacet = {}
+  facets.forEach(facet => {
+    filtersByFacet[facet.annotation] = facet.groups
+  })
+
+  return { filterableCells, cellsByFacet, facets, filtersByFacet }
 }
 
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
@@ -153,21 +191,34 @@ export async function initCellFaceting(
         annot.identifier = getIdentifierForAnnotation(annot)
         return annot
       })
-      .filter(
-        annot => annot.values.length > 1 && annot.identifier !== selectedAnnotId
-      )
+      .filter(annot => {
+        return (
+          annot.values.length > 1 &&
+          !annot.identifier.endsWith('invalid') &&
+          annot.identifier !== selectedAnnotId
+        )
+      })
 
   console.log('applicableAnnots', applicableAnnots)
   const annotsToFacet = prioritizeAnnotations(applicableAnnots)
   const facetData = await fetchAnnotationFacets(studyAccession, annotsToFacet, selectedCluster)
 
-  const { filterableCells, cellsByFacet } = initCrossfilter(facetData)
+  const {
+    filterableCells, cellsByFacet,
+    facets, filtersByFacet
+  } = initCrossfilter(facetData)
 
-  setCellFaceting({
+  const cellFaceting = {
+    filterableCells,
     cellsByFacet,
-    annotFacetSelections: [],
-    facets: facetData.facets,
-    filterableCells
-  })
+    selections: [],
+    facets,
+    filtersByFacet
+  }
+
+  // DEBUG, remove before PR
+  window.cellFaceting = cellFaceting
+
+  setCellFaceting(cellFaceting)
 }
 
