@@ -1,3 +1,5 @@
+
+
 // mock various modules from genome tab as these aren't being used, and throw compilation errors from jest
 jest.mock('components/explore/GenomeView', () => {
   return {
@@ -20,7 +22,7 @@ jest.mock('components/visualization/InferCNVIdeogram', () => {
 // Mock cell faceting functionality, as it's tested in /test/js/lib/cell-faceting.test.js
 jest.mock('lib/cell-faceting', () => {
   return {
-    initCellFaceting: jest.fn(() => {})
+    initCellFaceting: jest.fn(() => new Promise(() => {}))
   }
 })
 
