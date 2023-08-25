@@ -42,6 +42,53 @@ function pxToNumber(pxStyleValue) {
   return parseFloat(pxStyleValue.slice(0, -2))
 }
 
+/** Add tooltip to header when study title, e.g. when it gets truncated */
+function addStudyTitleTooltip(studyHeader, titleText) {
+  // Show tooltip for especially long cases
+  studyHeader.setAttribute('data-toggle', 'tooltip')
+  studyHeader.setAttribute('data-original-title', titleText)
+
+  // Ensure tooltip doesn't get cut off from above
+  studyHeader.setAttribute('data-placement', 'bottom')
+}
+
+/** Determine if study title has x-overflow in study header container */
+function getIsTitleTruncated(studyHeader) {
+  const studyHeaderWidth = studyHeader.clientWidth
+  const titleText = studyHeader.innerText
+  const titleFont = getStyle(studyHeader, 'font')
+  const studyTitleWidth = getTextSize(titleText, titleFont).width
+
+  const isTitleTruncated = studyTitleWidth > studyHeaderWidth
+
+  return isTitleTruncated
+}
+
+/**
+ * Mitigate truncation edge case for very long titles
+ *
+ * If study title is smaller than its container, and user's screen is basically maximized,
+ * then slightly decrease font size of study title, and slightly enlarge container.
+ */
+function mitigateTruncation(studyHeader) {
+  const titleText = studyHeader.innerText
+  const isTruncated = getIsTitleTruncated(studyHeader)
+  if (isTruncated) {
+    // Decrease font size by 1px and padding at left by 1/2 original
+    const fontSize = pxToNumber(getStyle(studyHeader, 'font-size')) // e.g. '14px' -> 14
+    const smallerFontSize = `${fontSize - 1}px`
+    studyHeader.style.fontSize = smallerFontSize
+    const paddingLeft = pxToNumber(getStyle(studyHeader, 'padding-left'))
+    const smallerPaddingLeft = `${paddingLeft / 2}px`
+    studyHeader.style.paddingLeft = smallerPaddingLeft
+
+    const isStillTruncated = getIsTitleTruncated(studyHeader)
+    if (isStillTruncated) {
+      addStudyTitleTooltip(studyHeader, titleText)
+    }
+  }
+}
+
 /**
  * Set global header end width, and mitigate long study titles on narrow screens
  */
@@ -60,22 +107,5 @@ export function adjustGlobalHeader() {
   // If study title is smaller than its container, and user's screen is basically maximized,
   // then slightly decrease font size of study title, and slightly enlarge container.
   const studyHeader = document.querySelector('.study-header')
-  const studyHeaderWidth = studyHeader.clientWidth
-  const titleText = studyHeader.innerText
-  const titleFont = getStyle(studyHeader, 'font')
-  const studyTitleWidth = getTextSize(titleText, titleFont).width
-  const isMaxWidth = window.screen.availWidth - window.innerWidth < 50
-  if (studyTitleWidth > studyHeaderWidth && isMaxWidth) {
-    // Decrease font size by 1px and padding at left by 1/2 original
-    const fontSize = pxToNumber(getStyle(studyHeader, 'font-size')) // e.g. '14px' -> 14
-    const smallerFontSize = `${fontSize - 1}px`
-    studyHeader.style.fontSize = smallerFontSize
-    const paddingLeft = pxToNumber(getStyle(studyHeader, 'padding-left'))
-    const smallerPaddingLeft = `${paddingLeft / 2}px`
-    studyHeader.style.paddingLeft = smallerPaddingLeft
-
-    // Show tooltip for especially long cases
-    studyHeader.setAttribute('data-toggle', 'tooltip')
-    studyHeader.setAttribute('data-original-title', titleText)
-  }
+  mitigateTruncation(studyHeader)
 }
