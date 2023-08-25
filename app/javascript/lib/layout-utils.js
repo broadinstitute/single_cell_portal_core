@@ -42,14 +42,40 @@ function pxToNumber(pxStyleValue) {
   return parseFloat(pxStyleValue.slice(0, -2))
 }
 
-/** Add tooltip to header when study title, e.g. when it gets truncated */
+/** Add tooltip to header for study title, e.g. when it gets truncated */
 function addStudyTitleTooltip(studyHeader, titleText) {
+  if (studyHeader.hasAttribute('data-toggle')) {return}
+
   // Show tooltip for especially long cases
   studyHeader.setAttribute('data-toggle', 'tooltip')
   studyHeader.setAttribute('data-original-title', titleText)
 
   // Ensure tooltip doesn't get cut off from above
   studyHeader.setAttribute('data-placement', 'bottom')
+}
+
+/** Remove tooltip from header for study title, e.g. when it *not* truncated */
+function removeStudyTitleTooltip(studyHeader) {
+  if (!studyHeader.hasAttribute('data-toggle')) {return}
+  studyHeader.removeAttribute('data-toggle')
+  studyHeader.removeAttribute('data-original-title')
+  studyHeader.removeAttribute('data-placement')
+}
+
+/** Slightly decrease size of font and left padding */
+function shrinkStudyTitle(studyHeader) {
+  // Decrease font size by 1px and padding at left by 1/2 original
+  const fontSize = pxToNumber(getStyle(studyHeader, 'font-size')) // e.g. '14px' -> 14
+  const smallerFontSize = `${fontSize - 1}px`
+  studyHeader.style.fontSize = smallerFontSize
+  const paddingLeft = pxToNumber(getStyle(studyHeader, 'padding-left'))
+  const smallerPaddingLeft = `${paddingLeft / 2}px`
+  studyHeader.style.paddingLeft = smallerPaddingLeft
+}
+
+/** Undo `shrinkStudyTitle` */
+function unshrinkStudyTitle(studyHeader) {
+  studyHeader.removeAttribute('style')
 }
 
 /** Determine if study title has x-overflow in study header container */
@@ -70,23 +96,31 @@ function getIsTitleTruncated(studyHeader) {
  * If study title is smaller than its container, and user's screen is basically maximized,
  * then slightly decrease font size of study title, and slightly enlarge container.
  */
-function mitigateTruncation(studyHeader) {
+export function mitigateStudyOverviewTitleTruncation() {
+  if (window.SCP.analyticsPageName !== 'site-study') {return}
+
+  const studyHeader = document.querySelector('.study-header')
   const titleText = studyHeader.innerText
   const isTruncated = getIsTitleTruncated(studyHeader)
   if (isTruncated) {
-    // Decrease font size by 1px and padding at left by 1/2 original
-    const fontSize = pxToNumber(getStyle(studyHeader, 'font-size')) // e.g. '14px' -> 14
-    const smallerFontSize = `${fontSize - 1}px`
-    studyHeader.style.fontSize = smallerFontSize
-    const paddingLeft = pxToNumber(getStyle(studyHeader, 'padding-left'))
-    const smallerPaddingLeft = `${paddingLeft / 2}px`
-    studyHeader.style.paddingLeft = smallerPaddingLeft
-
+    if (!studyHeader.hasAttribute('style')) {shrinkStudyTitle(studyHeader)}
     const isStillTruncated = getIsTitleTruncated(studyHeader)
     if (isStillTruncated) {
       addStudyTitleTooltip(studyHeader, titleText)
     }
+  } else {
+    if (studyHeader.hasAttribute('style')) {
+      unshrinkStudyTitle(studyHeader)
+      const isNowTruncated = getIsTitleTruncated(studyHeader)
+      if (isNowTruncated) {
+        shrinkStudyTitle(studyHeader)
+      }
+    }
+    removeStudyTitleTooltip(studyHeader)
   }
+
+  const jqStudyHeader = $('.study-header')
+  if (jqStudyHeader.tooltip) {jqStudyHeader.tooltip('hide')}
 }
 
 /**
@@ -106,6 +140,5 @@ export function adjustGlobalHeader() {
   //
   // If study title is smaller than its container, and user's screen is basically maximized,
   // then slightly decrease font size of study title, and slightly enlarge container.
-  const studyHeader = document.querySelector('.study-header')
-  mitigateTruncation(studyHeader)
+  mitigateStudyOverviewTitleTruncation()
 }
