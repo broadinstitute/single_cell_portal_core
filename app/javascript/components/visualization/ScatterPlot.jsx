@@ -346,9 +346,7 @@ function RawScatterPlot({
     scatter = updateScatterLayout(scatter)
     const layout = scatter.layout
 
-    console.log('in processScatterPlot, filteredCells', filteredCells)
     if (filteredCells) {
-      console.log('in processScatterPlot, scatter', scatter)
       scatter = intersect(filteredCells, scatter)
     }
 

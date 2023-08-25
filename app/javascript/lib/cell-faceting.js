@@ -1,9 +1,16 @@
+/**
+ * @fileoverview Library to enable fast client-side filtering of plotted cells
+ *
+ * Explainer: https://github.com/broadinstitute/single_cell_portal_core/pull/1862
+ */
+
 import crossfilter from 'crossfilter2'
 
 import {
   getGroupAnnotationsForClusterAndStudy, getIdentifierForAnnotation
 } from '~/lib/cluster-utils'
 import { fetchAnnotationFacets } from '~/lib/scp-api'
+import { log } from '~/lib/metrics-api'
 
 
 const CELL_TYPE_RE = new RegExp(/cell.*type/i)
@@ -75,20 +82,21 @@ function prioritizeAnnotations(annotList) {
 
 /** Get filtered cell results */
 export function filterCells(
-  selections, cellsByFacet, facets, filtersByFacet, filterableCells
+  selection, cellsByFacet, facets, filtersByFacet, filterableCells
 ) {
+  const t0 = Date.now()
   facets = facets.map(facet => facet.annotation)
 
   let fn; let i; let facet; let results
   const counts = {}
 
-  if (Object.keys(selections).length === 0) {
+  if (Object.keys(selection).length === 0) {
     results = filterableCells
   } else {
     for (i = 0; i < facets.length; i++) {
       facet = facets[i]
-      if (facet in selections) { // e.g. 'infant_sick_YN'
-        const friendlyFilters = selections[facet] // e.g. ['yes', 'NA']
+      if (facet in selection) { // e.g. 'infant_sick_YN'
+        const friendlyFilters = selection[facet] // e.g. ['yes', 'NA']
 
         const filter = {}
         friendlyFilters.forEach(friendlyFilter => {
@@ -124,6 +132,25 @@ export function filterCells(
     }
     results = cellsByFacet[facet].top(Infinity)
   }
+
+  const t1 = Date.now()
+  // Assemble analytics
+  const filterPerfTime = t1 - t0
+  const numCellsBefore = filterableCells.length
+  const numCellsAfter = results.length
+  const numFacetsSelected = Object.keys(selection).length
+  const numFiltersSelected = Object.values(selection).length
+  const filterLogProps = {
+    perfTime: filterPerfTime,
+    numCellsBefore,
+    numCellsAfter,
+    numFacetsSelected,
+    numFiltersSelected,
+    selection
+  }
+
+  // Log to Mixpanel
+  log('filter-cells', filterLogProps)
 
   return [results, counts]
 }
@@ -185,6 +212,7 @@ export async function initCellFaceting(
           annot.identifier !== selectedAnnotId
         )
       })
+
   const annotsToFacet = prioritizeAnnotations(applicableAnnots)
   const facetData = await fetchAnnotationFacets(studyAccession, annotsToFacet, selectedCluster)
 

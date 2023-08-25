@@ -298,12 +298,16 @@ export default function ExploreDisplayTabs({
   }
 
   /** Update filtered cells to only those that match annotation group value filter selections */
-  function updateFilteredCells(selections) {
+  function updateFilteredCells(selection) {
     const cellsByFacet = cellFaceting.cellsByFacet
     const facets = cellFaceting.facets
     const filtersByFacet = cellFaceting.filtersByFacet
     const filterableCells = cellFaceting.filterableCells
-    const newFilteredCells = filterCells(selections, cellsByFacet, facets, filtersByFacet, filterableCells)[0]
+
+    // Filter cells by selection (i.e., selected facets and filters)
+    const newFilteredCells = filterCells(selection, cellsByFacet, facets, filtersByFacet, filterableCells)[0]
+
+    // Update UI
     setFilteredCells(newFilteredCells)
   }
 
