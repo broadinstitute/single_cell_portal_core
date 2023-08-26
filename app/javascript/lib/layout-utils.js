@@ -25,8 +25,8 @@ function getTextSize(text, font) {
 }
 
 /** Get min-width of container for menus on help, create study, and sign in / username */
-export function getGlobalHeaderEndWidth(text, font) {
-  const baseWidth = 252 // Width of "Help", "Create study", icons, padding, etc.
+export function getGlobalHeaderEndWidth(text, font, extraWidth) {
+  const baseWidth = 252 + extraWidth // Width of top-right "Help", "Create study", icons, padding, etc.
   const userOrSignInTextWidth = getTextSize(text, font).width
   const globalHeaderEndWidth = baseWidth + userOrSignInTextWidth
   return globalHeaderEndWidth
@@ -133,12 +133,14 @@ export function adjustGlobalHeader() {
   const globalHeaderEnd = document.getElementById('scp-navbar-dropdown-collapse')
   const userOrSignInText = Array.from(globalHeaderEnd.children).slice(-1)[0].innerText
   const font = getStyle(globalHeaderEnd, 'font')
-  const minWidth = getGlobalHeaderEndWidth(userOrSignInText, font)
+  const signInIcon = document.getElementById('#login-nav .fa-sign-in-alt')
+  const signInIconWidth = signInIcon?.clientWidth ?? 0
+  const minWidth = getGlobalHeaderEndWidth(userOrSignInText, font, signInIconWidth)
   globalHeaderEnd.style.minWidth = `${minWidth}px`
 
   // Mitigate truncation edge case for very long titles
   //
-  // If study title is smaller than its container, and user's screen is basically maximized,
+  // If study title is smaller than its container
   // then slightly decrease font size of study title, and slightly enlarge container.
   mitigateStudyOverviewTitleTruncation()
 }

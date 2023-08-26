@@ -108,7 +108,7 @@
         </li>
       <% else %>
 
-        <li><%= scp_link_to "Sign in".html_safe, user_google_oauth2_omniauth_authorize_path, method: :post, class: 'left-border-0-5', id: 'login-nav' %></li>
+        <li><%= scp_link_to "<span class='fas fa-sign-in-alt fa-fw'></span> Sign in".html_safe, user_google_oauth2_omniauth_authorize_path, method: :post, class: 'left-border-0-5', id: 'login-nav' %></li>
       <% end %>
     </ul>
   <% if controller_name == 'site' && !@study %>
