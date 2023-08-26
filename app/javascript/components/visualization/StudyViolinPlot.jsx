@@ -67,6 +67,7 @@ function RawStudyViolinPlot({
     setShowError(false)
     setIsLoading(false)
   }
+
   /** handles fetching the expression data (and menu option data) from the server */
   useEffect(() => {
     setIsLoading(true)
@@ -121,6 +122,7 @@ function RawStudyViolinPlot({
   return (
     <div className="plot">
       { ErrorComponent }
+      <h5 className="plot-title violin-title">{annotation.name}</h5>
       <div
         className="expression-graph"
         id={graphElementId}
@@ -148,7 +150,7 @@ export default StudyViolinPlot
 /** Formats expression data for Plotly, draws violin (or box) plot */
 function renderViolinPlot(target, results, { plotType, showPoints, dimensions }) {
   const traceData = getViolinTraces(results.values, showPoints, plotType)
-  const layout = getViolinLayout(results.rendered_cluster, results.y_axis_title, dimensions)
+  const layout = getViolinLayout(results.y_axis_title, dimensions)
   Plotly.newPlot(target, traceData, layout)
 }
 
@@ -235,12 +237,11 @@ function getViolinTraces(
 }
 
 /** Get Plotly layout for violin plot */
-function getViolinLayout(title, expressionLabel, dimensions) {
+function getViolinLayout(expressionLabel, dimensions) {
   const { width, height } = dimensions
   return {
     width,
-    height: height + 10,
-    title,
+    height,
     // Force axis labels, including number strings, to be treated as
     // categories.  See Python docs (same generic API as JavaScript):
     // https://plotly.com/python/axes/#forcing-an-axis-to-be-categorical
@@ -256,6 +257,7 @@ function getViolinLayout(title, expressionLabel, dimensions) {
     },
     margin: {
       pad: 10,
+      t: 20,
       b: 100
     },
     autosize: true
