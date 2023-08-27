@@ -380,12 +380,12 @@ export default function ExploreDisplayTabs({
       ) {
         // DE table is shown, or pairwise DE is available.  Least horizontal space for plots.
         main = 'col-md-9'
-        side = 'col-md-3'
+        side = 'col-md-3 right-panel'
       } else {
         // Default state, when side panel is "Options" and not collapsed
         main = 'col-md-10'
         // only set options-bg if we're outside the DE UX
-        side = isSelectingDE ? 'col-md-2' : 'col-md-2 options-bg'
+        side = isSelectingDE ? 'col-md-2' : 'col-md-2 options-bg right-panel'
       }
     } else {
       // When options panel is collapsed.  Maximize horizontal space for plots.
