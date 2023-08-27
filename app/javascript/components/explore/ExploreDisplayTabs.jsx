@@ -703,18 +703,20 @@ export default function ExploreDisplayTabs({
               exploreParams={exploreParamsWithDefaults}
               updateExploreParams={updateExploreParams}
               allGenes={exploreInfo ? exploreInfo.uniqueGenes : []}/>
-            <button className="action action-with-bg margin-extra-right"
-              onClick={clearExploreParams}
-              title="Reset all view options"
-              data-analytics-name="explore-view-options-reset">
-              <FontAwesomeIcon icon={faUndo}/> Reset view
-            </button>
-            <button onClick={() => copyLink(routerLocation)}
-              className="action action-with-bg"
-              data-toggle="tooltip"
-              title="Copy a link to this visualization to the clipboard">
-              <FontAwesomeIcon icon={faLink}/> Get link
-            </button>
+            <div className="options-panel-actions">
+              <button className="action action-with-bg margin-extra-right"
+                onClick={clearExploreParams}
+                title="Reset all view options"
+                data-analytics-name="explore-view-options-reset">
+                <FontAwesomeIcon icon={faUndo}/> Reset view
+              </button>
+              <button onClick={() => copyLink(routerLocation)}
+                className="action action-with-bg"
+                data-toggle="tooltip"
+                title="Copy a link to this visualization to the clipboard">
+                <FontAwesomeIcon icon={faLink}/> Get link
+              </button>
+            </div>
           </>
           }
           {showDifferentialExpressionPanel && countsByLabel && annotHasDe &&

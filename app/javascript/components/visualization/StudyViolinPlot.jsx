@@ -258,7 +258,7 @@ function getViolinLayout(expressionLabel, dimensions) {
     margin: {
       pad: 10,
       t: 20,
-      b: 100
+      b: 150
     },
     autosize: true
   }

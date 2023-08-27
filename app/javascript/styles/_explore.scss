@@ -136,7 +136,6 @@
 }
 
 .explore-plot-tab-content {
-  border-right: 1px solid #ccc;
   min-height: 70vh;
 }
 
@@ -256,7 +255,12 @@
 
 .options-bg {
   background: $options-color;
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid #ddd;
+  border-left: 1px solid #ccc;
+}
+
+.options-panel-actions {
+  padding-bottom: 20px;
 }
 
 .action-with-bg {
