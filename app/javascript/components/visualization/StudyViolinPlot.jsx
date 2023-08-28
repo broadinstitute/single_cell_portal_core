@@ -28,7 +28,7 @@ function ViolinPlotTitle({ annotation, genes, consensus }) {
   if (isCollapsedView && genes.length > 0) {
     title.push(<span key="c"> {consensus}</span>)
   }
-  title.push(<span key="e"> expression by {annotation.name}</span>)
+  title.push(<span key="e"> expression by {annotation}</span>)
 
 
   return (
@@ -57,6 +57,7 @@ function RawStudyViolinPlot({
   // array of gene names as they are listed in the study itself
   const [studyGeneNames, setStudyGeneNames] = useState([])
   const [graphElementId] = useState(_uniqueId('study-violin-'))
+  const [renderedAnnotation, setRenderedAnnotation] = useState('')
   const { ErrorComponent, setShowError, setError } = useErrorMessage()
 
   /** renders received expression data from the server */
@@ -81,6 +82,7 @@ function RawStudyViolinPlot({
       perfTimes
     )
     setStudyGeneNames(results.gene_names)
+    setRenderedAnnotation(results.rendered_annotation.split('--')[0])
     if (setAnnotationList) {
       setAnnotationList(results.annotation_list)
     }
@@ -138,15 +140,16 @@ function RawStudyViolinPlot({
     }
   }, [dimensions.width, dimensions.height])
 
-
   return (
     <div className="plot">
       { ErrorComponent }
-      <ViolinPlotTitle
-        annotation={annotation}
-        genes={studyGeneNames}
-        consensus={consensus}
-      />
+      {!isLoading &&
+        <ViolinPlotTitle
+          annotation={renderedAnnotation}
+          genes={studyGeneNames}
+          consensus={consensus}
+        />
+      }
       <div
         className="expression-graph"
         id={graphElementId}
