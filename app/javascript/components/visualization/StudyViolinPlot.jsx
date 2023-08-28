@@ -15,6 +15,26 @@ import useErrorMessage from '~/lib/error-message'
 import { logViolinPlot } from '~/lib/scp-api-metrics'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 
+/** Title for violin plot; also accounts for "Collapsed by" / consensus view */
+function ViolinPlotTitle({ annotation, genes, consensus }) {
+  const isCollapsedView = ['mean', 'median'].includes(consensus)
+
+  const title = genes.map(gene => {
+    return <span className="badge" key={gene}>{gene}</span>
+  })
+
+  // We need to explicitly test length > 0 below, just asserting .length would
+  // sometimes render a zero to the page
+  if (isCollapsedView && genes.length > 0) {
+    title.push(<span key="c"> {consensus}</span>)
+  }
+  title.push(<span key="e"> expression by {annotation.name}</span>)
+
+
+  return (
+    <h5 className="plot-title violin-title">{title}</h5>
+  )
+}
 
 /** displays a violin plot of expression data for the given gene and study
  * @param studyAccession {String} the study accession
@@ -118,11 +138,15 @@ function RawStudyViolinPlot({
     }
   }, [dimensions.width, dimensions.height])
 
-  const isCollapsedView = ['mean', 'median'].indexOf(consensus) >= 0
+
   return (
     <div className="plot">
       { ErrorComponent }
-      <h5 className="plot-title violin-title">{annotation.name}</h5>
+      <ViolinPlotTitle
+        annotation={annotation}
+        genes={studyGeneNames}
+        consensus={consensus}
+      />
       <div
         className="expression-graph"
         id={graphElementId}
@@ -131,13 +155,6 @@ function RawStudyViolinPlot({
       </div>
       {
         isLoading && <LoadingSpinner testId={`${graphElementId}-loading-icon`}/>
-      }
-      {/* we have to explicitly test length > 0 below, just asserting .length would
-       sometimes render a zero to the page*/}
-      { isCollapsedView && studyGeneNames.length > 0 &&
-        <div className="text-center">
-          <span>{_capitalize(consensus)} expression of {studyGeneNames.join(', ')}</span>
-        </div>
       }
     </div>
   )
@@ -258,7 +275,7 @@ function getViolinLayout(expressionLabel, dimensions) {
     margin: {
       pad: 10,
       t: 20,
-      b: 150
+      b: 140
     },
     autosize: true
   }

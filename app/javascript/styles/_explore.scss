@@ -68,6 +68,10 @@
     margin-left: 1em;
     margin-right: 1em;
   }
+
+  .violin-title {
+    margin-left: 110px;
+  }
 }
 
 
@@ -89,7 +93,6 @@
   display: inline;
   position: relative;
   top: -80px;
-  margin-bottom: -20px;
 
   .panel-collapse.in {
     border: 1px solid #bbb;
@@ -279,7 +282,3 @@
   z-index: 3;
 }
 
-.study-explore .violin-title {
-  font-size: 16px;
-  margin: 20px 50% 0px 50%;
-}
