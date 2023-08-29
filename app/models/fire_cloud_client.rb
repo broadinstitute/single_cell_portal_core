@@ -1155,7 +1155,7 @@ class FireCloudClient
   # * *return*
   #   - +Array+ of Hashes of billing projects
   def get_billing_projects
-    path = self.api_root + '/api/profile/billing'
+    path = self.api_root + '/api/billing/v2'
     process_firecloud_request(:get, path)
   end
 
@@ -1166,27 +1166,6 @@ class FireCloudClient
   def get_billing_accounts
     path = self.api_root + '/api/profile/billingAccounts'
     process_firecloud_request(:get, path)
-  end
-
-  # create a FireCloud billing project
-  #
-  # * *params*
-  #   - +project_name+ (String) => name of new billing project
-  #   - +billing_account+ (String) => ID of billing project (must start with billingAccounts/)
-  #
-  # * *return*
-  #   - +Array+ of FireCloud user accounts
-  def create_billing_project(project_name, billing_account)
-    if billing_account.start_with?('billingAccounts/')
-      path = self.api_root + '/api/billing'
-      project_payload = {
-          projectName: project_name,
-          billingAccount: billing_account
-      }.to_json
-      process_firecloud_request(:post, path, project_payload)
-    else
-      raise RuntimeError.new("Invalid billing account \"#{billing_account}\"; must begin with \"billingAccounts/\"")
-    end
   end
 
   # list all members of a FireCloud billing project
