@@ -3448,6 +3448,13 @@ crossfilter2@1.5.2:
   dependencies:
     "@ranfdev/deepobj" "1.0.2"
 
+crossfilter2@^1.5.4:
+  version "1.5.4"
+  resolved "https://registry.yarnpkg.com/crossfilter2/-/crossfilter2-1.5.4.tgz#855a11245d9dc18631cd49d88101dc31a2bcffce"
+  integrity sha512-oOGqOM0RocwQFOXJnEaUKqYV6Mc1TNCRv3LrNUa0QlofQTutGAXyQaLW1aGKLls2sfnbwBEtsa6tPD3jY+ycqQ==
+  dependencies:
+    "@ranfdev/deepobj" "1.0.2"
+
 css-blank-pseudo@^5.0.2:
   version "5.0.2"
   resolved "https://registry.yarnpkg.com/css-blank-pseudo/-/css-blank-pseudo-5.0.2.tgz#3df5cd950f64de960974da05e76954fd3d7442f9"
