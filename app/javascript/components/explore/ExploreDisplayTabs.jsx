@@ -25,9 +25,11 @@ import ExploreDisplayPanelManager from './ExploreDisplayPanelManager'
 import OverlayTrigger from 'react-bootstrap/lib/OverlayTrigger'
 import Tooltip from 'react-bootstrap/lib/Tooltip'
 import PlotTabs from './PlotTabs'
+import { initCellFaceting, filterCells } from '~/lib/cell-faceting'
 
 /** Get the selected clustering and annotation, or their defaults */
 function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
+  if (!exploreInfo) {return [null, null]}
   const annotList = exploreInfo.annotationList
   let selectedCluster
   let selectedAnnot
@@ -136,6 +138,9 @@ export default function ExploreDisplayTabs({
   const [showDifferentialExpressionPanel, setShowDifferentialExpressionPanel] = useState(deGenes !== null)
   const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(deGenes !== null)
 
+  const [cellFaceting, setCellFaceting] = useState(null)
+  const [filteredCells, setFilteredCells] = useState(null)
+
   // Hash of trace label names to the number of points in that trace
   const [countsByLabel, setCountsByLabel] = useState(null)
   const showDifferentialExpressionTable = (showViewOptionsControls && deGenes !== null)
@@ -183,6 +188,49 @@ export default function ExploreDisplayTabs({
   const annotationList = exploreInfo ? exploreInfo.annotationList : null
 
   const shownAnnotation = getShownAnnotation(exploreParamsWithDefaults.annotation, annotationList)
+
+  const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
+
+  if (!cellFaceting) {
+    const allAnnots = exploreInfo?.annotationList.annotations
+    if (allAnnots && allAnnots.length > 0) {
+      initCellFaceting(
+        selectedCluster, selectedAnnot, studyAccession, allAnnots
+      )
+        .then(newCellFaceting => {
+          setCellFaceting(newCellFaceting)
+        })
+    }
+  }
+
+  /** Update filtered cells to only those that match annotation group value filter selections */
+  function updateFilteredCells(selection) {
+    const cellsByFacet = cellFaceting.cellsByFacet
+    const facets = cellFaceting.facets
+    const filtersByFacet = cellFaceting.filtersByFacet
+    const filterableCells = cellFaceting.filterableCells
+
+    // Filter cells by selection (i.e., selected facets and filters)
+    const newFilteredCells = filterCells(selection, cellsByFacet, facets, filtersByFacet, filterableCells)[0]
+
+    // Update UI
+    setFilteredCells(newFilteredCells)
+  }
+
+  // Below line is worth keeping, but only uncomment to debug in development
+  // window.SCP.updateFilteredCells = updateFilteredCells
+
+  /** in the event a component takes an action which updates the list of annotations available
+    * e.g. by creating a user annotation, this updates the list */
+  function setAnnotationList(newAnnotationList) {
+    const newExploreInfo = Object.assign({}, exploreInfo, { annotationList: newAnnotationList })
+    setExploreInfo(newExploreInfo)
+  }
+
+  /** copies the url to the clipboard */
+  function copyLink(routerLocation) {
+    navigator.clipboard.writeText(routerLocation.href)
+  }
 
   /** handler for when the user selects points in a plotly scatter graph */
   function plotPointsSelected(points) {
@@ -357,7 +405,8 @@ export default function ExploreDisplayTabs({
                     scatterColor: exploreParamsWithDefaults.scatterColor,
                     countsByLabel,
                     setCountsByLabel,
-                    dataCache
+                    dataCache,
+                    filteredCells
                   }}/>
               </div>
             }
@@ -369,6 +418,7 @@ export default function ExploreDisplayTabs({
                   dimensions={getPlotDimensions({
                     showRelatedGenesIdeogram, showViewOptionsControls, showDifferentialExpressionTable
                   })}
+                  filteredCells={filteredCells}
                   {...exploreParams}/>
               </div>
             }

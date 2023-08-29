@@ -147,9 +147,28 @@ export async function createUserAnnotation(
 }
 
 /**
- * Returns list of all available search facets, including default filter values
+ * Get annotation assignments (i.e. facets) for specified cells from a cluster.
+ * Only applicable to full resolution data (i.e. all cells).
  *
- * Docs: https:///singlecell.broadinstitute.org/single_cell/api/swagger_docs/v1#!/Search/search_facets_path
+ * Docs: https://singlecell.broadinstitute.org/single_cell/api/v1#/Visualization/study_annotation_facets_path
+ *
+ * @param {String} studyAccession Study accession, e.g. SCP1234
+ * @param {Array<String>} annotations Array of annotation identifiers,
+ *  e.g. ['cell_type__ontology_label--group--study', 'disease__ontology_label']
+ * @param {String} cluster Name of requested cluster
+ */
+export async function fetchAnnotationFacets(studyAccession, annotations, cluster) {
+  annotations = annotations.join(',')
+  const params = `annotations=${annotations}&cluster=${cluster}`
+  const apiUrl = `/studies/${studyAccession}/annotations/facets?${params}`
+  const [annotationFacets] = await scpApi(apiUrl, defaultInit())
+  return annotationFacets
+}
+
+/**
+ * Returns list of all available global study search facets, including default filter values
+ *
+ * Docs: https:///singlecell.broadinstitute.org/single_cell/api/v1#/Search/search_facets_path
  *
  * @param {Boolean} mock If using mock data.  Helps development, tests.
  * @returns {Promise} Promise object containing camel-cased data from API

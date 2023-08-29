@@ -31,7 +31,7 @@ import LoadingSpinner from '~/lib/LoadingSpinner'
 */
 function RawStudyViolinPlot({
   studyAccession, genes, cluster, annotation, subsample, consensus, distributionPlot, distributionPoints,
-  updateDistributionPlot, setAnnotationList, dimensions={}
+  updateDistributionPlot, setAnnotationList, dimensions={}, filteredCells
 }) {
   const [isLoading, setIsLoading] = useState(false)
   // array of gene names as they are listed in the study itself
@@ -93,6 +93,7 @@ function RawStudyViolinPlot({
     annotation.scope,
     subsample,
     consensus
+    // filteredCells.join(',') // TODO (SCP-5275): Cell faceting for violin plots
   ])
 
   // useEffect for handling render param re-renders

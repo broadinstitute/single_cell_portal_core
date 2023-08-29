@@ -161,7 +161,7 @@ module Api
               'Visualization'
             ]
             key :summary, 'Get facet assignments for a cluster'
-            key :description, 'Get annotation assignments (i.e facets) for specified cells from a cluster. ' \
+            key :description, 'Get annotation assignments (i.e. facets) for specified cells from a cluster. ' \
                               'Only applicable to full resolution data (i.e. all cells)'
             key :operationId, 'study_annotation_facets_path'
             parameter do
