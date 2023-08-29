@@ -44,27 +44,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "@channel :x: Orchestration smoke test: ${{ job.status }}\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACKBOT_TOKEN }}
-      - name: Notify Slack success
-        id: notify-slack-on-success
-        uses: slackapi/slack-github-action@v1.24.0
-        if: success()
-        with:
-          channel-id: "C05JHJ0UA1M" #scp-alerts
-          payload: |
-            {
-              "blocks": [
-                { 
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":green_check: Orchestration smoke test: ${{ job.status }}\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    "text": ":x: Orchestration smoke test: ${{ job.status }}\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                   }
                 }
               ]
