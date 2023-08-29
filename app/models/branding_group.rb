@@ -65,6 +65,11 @@ class BrandingGroup
     users.map(&:email)
   end
 
+  # list of study accessions
+  def study_list
+    studies.map(&:accession)
+  end
+
   # determine if user can edit branding group (all portal admins & collection curators)
   def can_edit?(user)
     !!(user && (user.admin? || users.include?(user)))
