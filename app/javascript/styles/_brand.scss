@@ -37,6 +37,11 @@
   }
 }
 
+.nav.navbar-nav > li > a {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
 #main-banner-logo {
   float: left;
   margin-top: 81px;
@@ -82,6 +87,10 @@
   font-size: 14px;
   font-weight: 200;
   text-align: center;
+}
+
+.right-border-0-5 {
+  border-right: 0.5px solid #FFFFFF;
 }
 
 .left-border-0-5 {

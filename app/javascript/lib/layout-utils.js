@@ -26,7 +26,7 @@ function getTextSize(text, font) {
 
 /** Get min-width of container for menus on help, create study, and sign in / username */
 export function getGlobalHeaderEndWidth(text, font, extraWidth) {
-  const baseWidth = 252 + extraWidth // Width of top-right "Help", "Create study", icons, padding, etc.
+  const baseWidth = 233 + extraWidth // Width of top-right "Help", "Create study", icons, padding, etc.
   const userOrSignInTextWidth = getTextSize(text, font).width
   const globalHeaderEndWidth = baseWidth + userOrSignInTextWidth
   return globalHeaderEndWidth
@@ -107,6 +107,7 @@ export function mitigateStudyOverviewTitleTruncation() {
     const isStillTruncated = getIsTitleTruncated(studyHeader)
     if (isStillTruncated) {
       addStudyTitleTooltip(studyHeader, titleText)
+      studyHeader.classList.add('right-border-0-5')
     }
   } else {
     if (studyHeader.hasAttribute('style')) {
@@ -117,6 +118,7 @@ export function mitigateStudyOverviewTitleTruncation() {
       }
     }
     removeStudyTitleTooltip(studyHeader)
+    studyHeader.classList.remove('right-border-0-5')
   }
 
   const jqStudyHeader = $('.study-header')
