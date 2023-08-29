@@ -9,9 +9,9 @@ class UserTest < ActiveSupport::TestCase
     @existing_api_token = @user.api_access_token
     @user.update_last_access_at!
     @billing_projects = [
-        {'creationStatus'=>'Ready', 'projectName'=>'lab-billing-project', 'role'=>'User'},
-        {'creationStatus'=>'Ready', 'projectName'=>'my-billing-project', 'role'=>'Owner'},
-        {'creationStatus'=>'Ready', 'projectName'=>'my-other-billing-project', 'role'=>'Owner'}
+      { status: 'Ready', projectName: 'lab-billing-project', role: 'User' },
+      { status: 'Ready', projectName: 'my-billing-project', role: 'Owner' },
+      { status: 'Ready', projectName: 'my-other-billing-project', role: 'Owner' }
     ]
   end
 
