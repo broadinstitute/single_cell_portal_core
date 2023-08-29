@@ -652,7 +652,7 @@ export default function ExploreDisplayTabs({
                 }
                 {studyHasDe &&
                 <>
-                  <div className="row de-modal-row-wrapper">
+                  <div className={`row de-modal-row-wrapper ${shownTab === 'scatter' ? 'create-annotation-de' : ''}`}>
                     <div className="col-xs-12 de-modal-row">
                       <button
                         className=
