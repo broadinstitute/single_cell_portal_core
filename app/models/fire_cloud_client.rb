@@ -1159,15 +1159,6 @@ class FireCloudClient
     process_firecloud_request(:get, path)
   end
 
-  # list billing accounts for a given user
-  #
-  # * *return*
-  #   - +Array+ of Hashes of billing accounts
-  def get_billing_accounts
-    path = self.api_root + '/api/profile/billingAccounts'
-    process_firecloud_request(:get, path)
-  end
-
   # list all members of a FireCloud billing project
   #
   # * *params*
