@@ -71,7 +71,7 @@ export default function ClusteringFileForm({
         </div>
         <div className="col-md-6">
           <TextFormField label= {obsmKeyNameMessage()} fieldName="obsm_key_name" file={file}
-            updateFile={updateFile} placeholderText='E.g. "x_tsne"' isDisabled={file.parse_status !== 'unparsed'} />
+            updateFile={updateFile} placeholderText='For example, x_tsne' isDisabled={file.parse_status !== 'unparsed'} />
         </div>
       </div>
     } else {
