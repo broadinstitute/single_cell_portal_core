@@ -220,18 +220,6 @@ export default function ExploreDisplayTabs({
   // Below line is worth keeping, but only uncomment to debug in development
   // window.SCP.updateFilteredCells = updateFilteredCells
 
-  /** in the event a component takes an action which updates the list of annotations available
-    * e.g. by creating a user annotation, this updates the list */
-  function setAnnotationList(newAnnotationList) {
-    const newExploreInfo = Object.assign({}, exploreInfo, { annotationList: newAnnotationList })
-    setExploreInfo(newExploreInfo)
-  }
-
-  /** copies the url to the clipboard */
-  function copyLink(routerLocation) {
-    navigator.clipboard.writeText(routerLocation.href)
-  }
-
   /** handler for when the user selects points in a plotly scatter graph */
   function plotPointsSelected(points) {
     log('select:scatter:cells')
