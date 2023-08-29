@@ -9,7 +9,7 @@ function makeGeneBadges(genes) {
   })
 }
 
-// divide gene list into two parts, only showing first 3
+/** Divide gene list into two parts, only showing first 3 */
 export function formatGeneList(genes) {
   const shown = genes.slice(0, 3)
   const hidden = genes.slice(3, genes.length + 1)
