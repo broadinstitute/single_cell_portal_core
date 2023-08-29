@@ -13,11 +13,11 @@ import { fetchAnnotationFacets } from '~/lib/scp-api'
 import { log } from '~/lib/metrics-api'
 
 
-const CELL_TYPE_RE = new RegExp(/cell.*type/i)
+const CELL_TYPE_REGEX = new RegExp(/cell.*type/i)
 
 // Detect if a string mentions disease, sickness, malignant or malignancy,
 // indication, a frequent suffix of disease names, or a common suffix of cancer names
-const DISEASE_RE = new RegExp(/(disease|sick|malignan|indicat|itis|osis|oma)/i)
+const DISEASE_REGEX = new RegExp(/(disease|sick|malignan|indicat|itis|osis|oma)/i)
 
 /**
  * Prioritize unselected annotations to those worth showing by default as facets
@@ -56,7 +56,7 @@ function prioritizeAnnotations(annotList) {
   annotsToFacet = annotsToFacet.concat(cellTypeAndDiseaseConventionalAnnots)
 
   const cellTypeOrClinicalAnnots = annotList.filter(
-    annot => (CELL_TYPE_RE.test(annot.name) || DISEASE_RE.test(annot.name)) && isUnique(annot)
+    annot => (CELL_TYPE_REGEX.test(annot.name) || DISEASE_REGEX.test(annot.name)) && isUnique(annot)
   )
   annotsToFacet = annotsToFacet.concat(cellTypeOrClinicalAnnots)
 
