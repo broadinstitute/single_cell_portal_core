@@ -168,7 +168,7 @@ function initCrossfilter(facetData) {
     // for the annotation facet at that index.
     //
     //  So, for the first element, `6`, we look up the element at index 0 in annotationFacets,
-    //  and get its `groups`.  Then the group value assignment would be the 6th string in the
+    //  and get its `groups`.  Then the group value assignment would be the 7th string in the
     //  `groups` array for the 0th annotation.
     const cellGroupIndexes = cells[i]
     for (let j = 0; j < cellGroupIndexes.length; j++) {

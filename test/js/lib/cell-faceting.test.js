@@ -15,7 +15,7 @@ describe('Cell faceting', () => {
     // 6. Confirm LC1 cell count updates to 1090, LC2 to 10725.
     // 7. In Console, run `window.SCP.updateFilteredCells({}) // Clear filters`
     // 8. Confirm cluster scatter plots returns to its original state
-    // 9. In ExploreDisplayTabs.jsx, comment out the line `// window.SCP.updateFilteredCells = updateFilteredCells`
+    // 9. In ExploreDisplayTabs.jsx, comment out the line `window.SCP.updateFilteredCells = updateFilteredCells`
 
     const fetchAnnotationFacets = jest.spyOn(ScpApi, 'fetchAnnotationFacets')
     // pass in a clone of the response since it may get modified by the cache operations
