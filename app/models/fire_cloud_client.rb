@@ -1197,7 +1197,7 @@ class FireCloudClient
   # * *return*
   #   - +Array+ of FireCloud user accounts
   def get_billing_project_members(project_id)
-    path = self.api_root + "/api/billing/#{project_id}/members"
+    path = self.api_root + "/api/billing/v2/#{project_id}/members"
     process_firecloud_request(:get, path)
   end
 
@@ -1212,7 +1212,7 @@ class FireCloudClient
   #   - +Array+ of FireCloud user accounts
   def add_user_to_billing_project(project_id, role, email)
     if BILLING_PROJECT_ROLES.include?(role)
-      path = self.api_root + "/api/billing/#{project_id}/#{role}/#{email}"
+      path = self.api_root + "/api/billing/v2/#{project_id}/#{role}/#{email}"
       process_firecloud_request(:put, path)
     else
       raise RuntimeError.new("Invalid billing account role \"#{role}\"; must be a member of \"#{BILLING_PROJECT_ROLES.join(', ')}\"")
@@ -1230,7 +1230,7 @@ class FireCloudClient
   #   - +Array+ of FireCloud user accounts
   def delete_user_from_billing_project(project_id, role, email)
     if BILLING_PROJECT_ROLES.include?(role)
-      path = self.api_root + "/api/billing/#{project_id}/#{role}/#{email}"
+      path = self.api_root + "/api/billing/v2/#{project_id}/#{role}/#{email}"
       process_firecloud_request(:delete, path)
     else
       raise RuntimeError.new("Invalid billing account role \"#{role}\"; must be a member of \"#{BILLING_PROJECT_ROLES.join(', ')}\"")
