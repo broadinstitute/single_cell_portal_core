@@ -23,10 +23,10 @@
       <% @projects.each do |project_name, project_attributes| %>
         <tr id="<%= project_name %>" class="billing-project">
           <td class="project-name"><%= project_name %></td>
-          <td class="user-role"><%= project_attributes[:role] %></td>
+          <td class="user-role"><%= project_attributes[:roles].join(', ') %></td>
           <td><%= get_project_status_label(project_attributes[:status]) %></td>
           <td>
-            <% if project_attributes[:role] == 'Owner' %>
+            <% if project_attributes[:roles].include?('Owner') %>
               <% project_attributes[:members].each do |member| %>
                 <% email = member['email'] == @portal_service_account ? 'SCP Service Account' : member['email'] %>
                 <p><big><label class="label label-<%= get_billing_member_class(member['role']) %>" id="<%= project_name %>-<%= email_as_id(email) %>"><%= email %></label></big>

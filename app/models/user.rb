@@ -416,7 +416,8 @@ class User
       user_projects.each do |project|
         safe_project = project.with_indifferent_access
         if safe_project[:status] == 'Ready'
-          projects[safe_project[:role].to_sym] << safe_project[:projectName]
+          role = safe_project[:roles].include?('Owner') ? :Owner : :User
+          projects[role] << safe_project[:projectName]
         end
       end
     end
