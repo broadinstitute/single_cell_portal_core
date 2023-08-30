@@ -100,7 +100,7 @@ class IngestJobTest < ActiveSupport::TestCase
       pipeline: {
         resources: {
           virtualMachine: {
-            machineType: 'n1-highmem-4',
+            machineType: 'n2d-highmem-4',
             bootDiskSizeGb: 300
           }
         }
@@ -128,7 +128,7 @@ class IngestJobTest < ActiveSupport::TestCase
         numGenes: @basic_study.genes.count,
         is_raw_counts: false,
         numCells: num_cells,
-        machineType: 'n1-highmem-4',
+        machineType: 'n2d-highmem-4',
         bootDiskSizeGb: 300,
         exitStatus: 0
       }.with_indifferent_access
@@ -150,7 +150,7 @@ class IngestJobTest < ActiveSupport::TestCase
       pipeline: {
         resources: {
           virtualMachine: {
-            machineType: 'n1-highmem-4',
+            machineType: 'n2d-highmem-4',
             bootDiskSizeGb: 300
           }
         }
@@ -176,7 +176,7 @@ class IngestJobTest < ActiveSupport::TestCase
         numCells: 0,
         is_raw_counts: false,
         numGenes: 0,
-        machineType: 'n1-highmem-4',
+        machineType: 'n2d-highmem-4',
         bootDiskSizeGb: 300,
         exitStatus: 1
       }.with_indifferent_access

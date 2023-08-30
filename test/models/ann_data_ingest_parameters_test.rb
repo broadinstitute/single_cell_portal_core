@@ -5,17 +5,20 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
   before(:all) do
     @extract_params = {
       anndata_file: 'gs://bucket_id/test.h5ad',
+      file_size: 10.gigabytes
     }
 
     @file_id = BSON::ObjectId.new
     @accession = 'SCP1234'
+    @fragment_basepath = "gs://bucket_id/_scp_internal/anndata_ingest/#{@accession}_#{@file_id}"
+
     @cluster_filename = 'h5ad_frag.cluster.X_umap.tsv.gz'
     @ingest_cluster_params = {
       ingest_anndata: false,
       extract: nil,
       obsm_keys: nil,
       ingest_cluster: true,
-      cluster_file: "gs://bucket_id/_scp_internal/anndata_ingest/#{@accession}_#{@file_id}/#{@cluster_filename}",
+      cluster_file: "#{@fragment_basepath}/#{@cluster_filename}",
       name: 'X_umap',
       domain_ranges: '{}'
     }
@@ -25,22 +28,24 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
       ingest_anndata: false,
       extract: nil,
       obsm_keys: nil,
-      cell_metadata_file: "gs://bucket_id/_scp_internal/anndata_ingest/#{@accession}_#{@file_id}/#{@metadata_filename}",
+      cell_metadata_file: "#{@fragment_basepath}/#{@metadata_filename}",
       ingest_cell_metadata: true
     }
     @matrix_filename = 'h5ad_frag.matrix.processed.tsv.gz'
-    @features_filename = 'h5ad_frag.metadata.tsv.gz'
-    @barcodes_filename = 'h5ad_frag.metadata.tsv.gz'
+    @features_filename = 'h5ad_frag.features.processed.tsv.gz'
+    @barcodes_filename = 'h5ad_frag.barcodes.processed.tsv.gz'
     @ingest_expression_params = {
       ingest_anndata: false,
       extract: nil,
       obsm_keys: nil,
-      cell_metadata_file: "gs://bucket_id/_scp_internal/anndata_ingest/#{@accession}_#{@file_id}/#{@metadata_filename}",
-      ingest_cell_metadata: true
+      matrix_file: "#{@fragment_basepath}/#{@matrix_filename}",
+      matrix_file_type: 'mtx',
+      gene_file: "#{@fragment_basepath}/#{@features_filename}",
+      barcode_file: "#{@fragment_basepath}/#{@barcodes_filename}"
     }
   end
 
-  test 'should instantiate and validate params' do
+  test 'should validate extract params' do
     extraction = AnnDataIngestParameters.new(@extract_params)
     assert extraction.valid?
     %i[ingest_anndata].each do |attr|
@@ -53,26 +58,41 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     cmd = '--ingest-anndata --anndata-file gs://bucket_id/test.h5ad --obsm-keys ["X_umap", "X_tsne"] --extract ' \
           '["cluster", "metadata", "processed_expression"]'
     assert_equal cmd, extraction.to_options_array.join(' ')
+    assert_equal 'n2-highmem-16', extraction.machine_type
+  end
 
+  test 'should validate cluster params' do
     cluster_ingest = AnnDataIngestParameters.new(@ingest_cluster_params)
     assert cluster_ingest.valid?
     assert_equal true, cluster_ingest.ingest_cluster
     %i[ingest_anndata extract anndata_file obsm_keys].each do |attr|
       assert cluster_ingest.send(attr).blank?
     end
-    identifier = "#{@accession}_#{@file_id}"
-    cluster_cmd = '--ingest-cluster --cluster-file gs://bucket_id/_scp_internal/anndata_ingest/' \
-                  "#{identifier}/h5ad_frag.cluster.X_umap.tsv.gz --name X_umap --domain-ranges {}"
+    cluster_cmd = "--ingest-cluster --cluster-file #{@fragment_basepath}/" \
+                  'h5ad_frag.cluster.X_umap.tsv.gz --name X_umap --domain-ranges {}'
     assert_equal cluster_cmd, cluster_ingest.to_options_array.join(' ')
+  end
 
+  test 'should validate metadata params' do
     metadata_ingest = AnnDataIngestParameters.new(@ingest_metadata_params)
     assert metadata_ingest.valid?
     assert_equal true, metadata_ingest.ingest_cell_metadata
     %i[ingest_anndata extract anndata_file].each do |attr|
       assert metadata_ingest.send(attr).blank?
     end
-    md_cmd = "--cell-metadata-file gs://bucket_id/_scp_internal/anndata_ingest/#{identifier}/" \
-             'h5ad_frag.metadata.tsv.gz --ingest-cell-metadata'
+    md_cmd = "--cell-metadata-file #{@fragment_basepath}/h5ad_frag.metadata.tsv.gz --ingest-cell-metadata"
     assert_equal md_cmd, metadata_ingest.to_options_array.join(' ')
+  end
+
+  test 'should validate expression params' do
+    exp_ingest = AnnDataIngestParameters.new(@ingest_expression_params)
+    assert exp_ingest.valid?
+    %i[ingest_anndata extract anndata_file].each do |attr|
+      assert exp_ingest.send(attr).blank?
+    end
+    exp_cmd = "--matrix-file #{@fragment_basepath}/h5ad_frag.matrix.processed.tsv.gz --matrix-file-type mtx " \
+              "--gene-file #{@fragment_basepath}/h5ad_frag.features.processed.tsv.gz " \
+              "--barcode-file #{@fragment_basepath}/h5ad_frag.barcodes.processed.tsv.gz"
+    assert_equal exp_cmd, exp_ingest.to_options_array.join(' ')
   end
 end
