@@ -5,7 +5,7 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
   before(:all) do
     @extract_params = {
       anndata_file: 'gs://bucket_id/test.h5ad',
-      file_size: 10.gigabytes
+      file_size: 100.gigabytes
     }
 
     @file_id = BSON::ObjectId.new
