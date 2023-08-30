@@ -58,7 +58,7 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     cmd = '--ingest-anndata --anndata-file gs://bucket_id/test.h5ad --obsm-keys ["X_umap", "X_tsne"] --extract ' \
           '["cluster", "metadata", "processed_expression"]'
     assert_equal cmd, extraction.to_options_array.join(' ')
-    assert_equal 'n2-highmem-16', extraction.machine_type
+    assert_equal 'n2d-highmem-16', extraction.machine_type
   end
 
   test 'should validate cluster params' do
