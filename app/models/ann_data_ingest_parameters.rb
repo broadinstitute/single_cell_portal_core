@@ -49,7 +49,7 @@ class AnnDataIngestParameters
 
   # GCE machine types and file size ranges for handling fragment extraction
   # produces a hash with entries like { 'n2-highmem-4' => 0..4.gigabytes }
-  EXTRACT_MACHINE_TYPES = [4, 8, 16, 32, 64, 96].map.with_index do |memory, index|
+  EXTRACT_MACHINE_TYPES = [4, 8, 16, 32].map.with_index do |memory, index|
     floor = index == 0 ? 0 : (memory / 2).gigabytes
     # ranges that use '...' exclude the given end value.
     { "n2d-highmem-#{memory}" => floor...memory.gigabytes }
