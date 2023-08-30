@@ -16,6 +16,7 @@ jobs:
         id: build-image-setup-env
         uses: ./.github/actions/docker-build-env-setup
       - name: Load secrets and run tests
+        id: run-smoke-test
         env:
           VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -30,6 +31,26 @@ jobs:
                                   -s secret/kdux/scp/staging/scp_service_account.json \
                                   -e test -v $DOCKER_IMAGE_TAG -n single-cell-portal-test \
                                   -c bin/run_orch_smoke_test.sh
+      - name: Notify Slack failure
+        id: notify-slack-on-fail
+        uses: slackapi/slack-github-action@v1.24.0
+        if: failure()
+        with:
+          channel-id: "C05JHJ0UA1M" #scp-alerts
+          payload: |
+            {
+              "blocks": [
+                { 
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":x: Orchestration smoke test: ${{ job.status }}\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACKBOT_TOKEN }}
       - name: Preserve all test logs
         uses: actions/upload-artifact@v3
         if: always()

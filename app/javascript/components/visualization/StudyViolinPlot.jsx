@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import _uniqueId from 'lodash/uniqueId'
-import _capitalize from 'lodash/capitalize'
 import Plotly from 'plotly.js-dist'
 
 import { fetchExpressionViolin } from '~/lib/scp-api'
@@ -14,14 +13,13 @@ import { withErrorBoundary } from '~/lib/ErrorBoundary'
 import useErrorMessage from '~/lib/error-message'
 import { logViolinPlot } from '~/lib/scp-api-metrics'
 import LoadingSpinner from '~/lib/LoadingSpinner'
+import { formatGeneList } from '~/components/visualization/PlotTitle'
 
 /** Title for violin plot; also accounts for "Collapsed by" / consensus view */
 function ViolinPlotTitle({ annotation, genes, consensus }) {
   const isCollapsedView = ['mean', 'median'].includes(consensus)
 
-  const title = genes.map(gene => {
-    return <span className="badge" key={gene}>{gene}</span>
-  })
+  const title = formatGeneList(genes)
 
   // We need to explicitly test length > 0 below, just asserting .length would
   // sometimes render a zero to the page
@@ -36,7 +34,8 @@ function ViolinPlotTitle({ annotation, genes, consensus }) {
   )
 }
 
-/** displays a violin plot of expression data for the given gene and study
+/** Displays a violin plot of expression data for the given gene and study
+ *
  * @param studyAccession {String} the study accession
  * @param genes {Array[String]} array of gene names
  * @param cluster {string} the name of the cluster, or blank/null for the study's default
@@ -51,7 +50,7 @@ function ViolinPlotTitle({ annotation, genes, consensus }) {
 */
 function RawStudyViolinPlot({
   studyAccession, genes, cluster, annotation, subsample, consensus, distributionPlot, distributionPoints,
-  updateDistributionPlot, setAnnotationList, dimensions={}
+  updateDistributionPlot, setAnnotationList, dimensions={}, filteredCells
 }) {
   const [isLoading, setIsLoading] = useState(false)
   // array of gene names as they are listed in the study itself
@@ -116,6 +115,7 @@ function RawStudyViolinPlot({
     annotation.scope,
     subsample,
     consensus
+    // filteredCells.join(',') // TODO (SCP-5275): Cell faceting for violin plots
   ])
 
   // useEffect for handling render param re-renders

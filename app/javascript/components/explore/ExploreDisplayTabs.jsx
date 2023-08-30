@@ -1,18 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import _clone from 'lodash/clone'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faLink, faArrowLeft, faEye, faTimes, faUndo } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faEye } from '@fortawesome/free-solid-svg-icons'
 
 import StudyGeneField from './StudyGeneField'
-import ClusterSelector from '~/components/visualization/controls/ClusterSelector'
-import AnnotationSelector from '~/components/visualization/controls/AnnotationSelector'
-import SubsampleSelector from '~/components/visualization/controls/SubsampleSelector'
-import { ExploreConsensusSelector } from '~/components/visualization/controls/ConsensusSelector'
-import SpatialSelector from '~/components/visualization/controls/SpatialSelector'
-import CreateAnnotation from '~/components/visualization/controls/CreateAnnotation'
-import PlotDisplayControls from '~/components/visualization/PlotDisplayControls'
-import GeneListSelector from '~/components/visualization/controls/GeneListSelector'
-import InferCNVIdeogramSelector from '~/components/visualization/controls/InferCNVIdeogramSelector'
 import { createCache } from './plot-data-cache'
 import ScatterTab from './ScatterTab'
 import PlotUtils from '~/lib/plot'
@@ -23,21 +14,22 @@ import DotPlot from '~/components/visualization/DotPlot'
 import Heatmap from '~/components/visualization/Heatmap'
 import GeneListHeatmap from '~/components/visualization/GeneListHeatmap'
 import GenomeView from './GenomeView'
-import { getAnnotationValues, getShownAnnotation, getDefaultSpatialGroupsForCluster } from '~/lib/cluster-utils'
+import { getAnnotationValues, getShownAnnotation } from '~/lib/cluster-utils'
 import RelatedGenesIdeogram from '~/components/visualization/RelatedGenesIdeogram'
 import InferCNVIdeogram from '~/components/visualization/InferCNVIdeogram'
 import useResizeEffect from '~/hooks/useResizeEffect'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { log } from '~/lib/metrics-api'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
-import DifferentialExpressionPanel, { DifferentialExpressionPanelHeader } from './DifferentialExpressionPanel'
+import ExploreDisplayPanelManager from './ExploreDisplayPanelManager'
 import OverlayTrigger from 'react-bootstrap/lib/OverlayTrigger'
 import Tooltip from 'react-bootstrap/lib/Tooltip'
-import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
 import PlotTabs from './PlotTabs'
+import { initCellFaceting, filterCells } from '~/lib/cell-faceting'
 
 /** Get the selected clustering and annotation, or their defaults */
 function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
+  if (!exploreInfo) {return [null, null]}
   const annotList = exploreInfo.annotationList
   let selectedCluster
   let selectedAnnot
@@ -50,22 +42,6 @@ function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
   }
 
   return [selectedCluster, selectedAnnot]
-}
-
-/** Determine if currently selected cluster has differential expression outputs available */
-function getClusterHasDe(exploreInfo, exploreParams) {
-  const flags = getFeatureFlagsWithDefaults()
-  if (!flags?.differential_expression_frontend || !exploreInfo) {return false}
-  let clusterHasDe = false
-  const selectedCluster = getSelectedClusterAndAnnot(exploreInfo, exploreParams)[0]
-
-  clusterHasDe = exploreInfo.differentialExpression.some(deItem => {
-    return (
-      deItem.cluster_name === selectedCluster
-    )
-  })
-
-  return clusterHasDe
 }
 
 /** Determine if current annotation has one-vs-rest or pairwise DE */
@@ -87,56 +63,6 @@ function getHasComparisonDe(exploreInfo, exploreParams, comparison) {
   return hasComparisonDe
 }
 
-/** Return list of annotations that have differential expression enabled */
-function getAnnotationsWithDE(exploreInfo) {
-  if (!exploreInfo) {return false}
-
-  let annotsWithDe = []
-
-  annotsWithDe = exploreInfo.differentialExpression.filter(deItem => {
-    return deItem
-  }).map(annot => {
-    return {
-      cluster_name: annot.cluster_name,
-      name: annot.annotation_name,
-      scope: annot.annotation_scope,
-      type: 'group'
-    }
-  })
-
-  const clustersWithDe = Array.from(new Set(annotsWithDe.map(a => a.cluster_name)))
-
-  return {
-    clusters: clustersWithDe,
-    annotations: annotsWithDe,
-    subsample_thresholds: exploreInfo.annotationList.subsample_thresholds
-  }
-}
-
-/** Determine if current annotation has differential expression results available */
-function getAnnotHasDe(exploreInfo, exploreParams) {
-  const flags = getFeatureFlagsWithDefaults()
-  if (!flags?.differential_expression_frontend || !exploreInfo) {
-    // set isDifferentialExpressionEnabled to false as user cannot see DE results, even if present for annotation
-    if (window.SCP) {
-      window.SCP.isDifferentialExpressionEnabled = false
-    }
-    return false
-  }
-
-  let annotHasDe = false
-  const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
-
-  annotHasDe = exploreInfo.differentialExpression.some(deItem => {
-    return (
-      deItem.cluster_name === selectedCluster &&
-      deItem.annotation_name === selectedAnnot.name &&
-      deItem.annotation_scope === selectedAnnot.scope
-    )
-  })
-
-  return annotHasDe
-}
 
 /**
  * Determine if current annotation has differential expression results that are user-generated.
@@ -201,12 +127,7 @@ export default function ExploreDisplayTabs({
   // morpheus JSON data
   const [morpheusData, setMorpheusData] = useState(null)
   // Differential expression settings
-  const flags = getFeatureFlagsWithDefaults()
   // `differential_expression_frontend` enables exemptions if study owners don't want DE
-  const studyHasDe = flags?.differential_expression_frontend && exploreInfo?.differentialExpression.length > 0
-  const annotHasDe = getAnnotHasDe(exploreInfo, exploreParams)
-  const clusterHasDe = getClusterHasDe(exploreInfo, exploreParams)
-  const hasOneVsRestDe = getHasComparisonDe(exploreInfo, exploreParams, 'one_vs_rest')
   const hasPairwiseDe = getHasComparisonDe(exploreInfo, exploreParams, 'pairwise')
   const isAuthorDe = getIsAuthorDe(exploreInfo, exploreParams)
 
@@ -217,14 +138,12 @@ export default function ExploreDisplayTabs({
   const [showDifferentialExpressionPanel, setShowDifferentialExpressionPanel] = useState(deGenes !== null)
   const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(deGenes !== null)
 
+  const [cellFaceting, setCellFaceting] = useState(null)
+  const [filteredCells, setFilteredCells] = useState(null)
+
   // Hash of trace label names to the number of points in that trace
   const [countsByLabel, setCountsByLabel] = useState(null)
-
-  const showDifferentialExpressionTable = (
-    showViewOptionsControls &&
-    deGenes !== null
-  )
-
+  const showDifferentialExpressionTable = (showViewOptionsControls && deGenes !== null)
   const plotContainerClass = 'explore-plot-tab-content'
 
   const {
@@ -267,70 +186,48 @@ export default function ExploreDisplayTabs({
   const isCorrelatedScatter = enabledTabs.includes('correlatedScatter')
 
   const annotationList = exploreInfo ? exploreInfo.annotationList : null
-  // hide the cluster controls if we're on a genome tab, or if there aren't clusters to choose
-  const showClusterControls = !['genome', 'infercnv-genome', 'geneListHeatmap'].includes(shownTab) &&
-                                annotationList?.clusters?.length
-
-  let hasSpatialGroups = false
-  if (exploreInfo) {
-    hasSpatialGroups = exploreInfo.spatialGroups.length > 0
-  }
 
   const shownAnnotation = getShownAnnotation(exploreParamsWithDefaults.annotation, annotationList)
 
-  /** in the event a component takes an action which updates the list of annotations available
-    * e.g. by creating a user annotation, this updates the list */
-  function setAnnotationList(newAnnotationList) {
-    const newExploreInfo = Object.assign({}, exploreInfo, { annotationList: newAnnotationList })
-    setExploreInfo(newExploreInfo)
+  const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
+
+  if (!cellFaceting) {
+    const allAnnots = exploreInfo?.annotationList.annotations
+    if (allAnnots && allAnnots.length > 0) {
+      initCellFaceting(
+        selectedCluster, selectedAnnot, studyAccession, allAnnots
+      )
+        .then(newCellFaceting => {
+          setCellFaceting(newCellFaceting)
+        })
+    }
   }
 
-  /** copies the url to the clipboard */
-  function copyLink(routerLocation) {
-    navigator.clipboard.writeText(routerLocation.href)
+  /** Update filtered cells to only those that match annotation group value filter selections */
+  function updateFilteredCells(selection) {
+    const cellsByFacet = cellFaceting.cellsByFacet
+    const facets = cellFaceting.facets
+    const filtersByFacet = cellFaceting.filtersByFacet
+    const filterableCells = cellFaceting.filterableCells
+
+    // Filter cells by selection (i.e., selected facets and filters)
+    const newFilteredCells = filterCells(selection, cellsByFacet, facets, filtersByFacet, filterableCells)[0]
+
+    // Update UI
+    setFilteredCells(newFilteredCells)
   }
+
+  // Below line is worth keeping, but only uncomment to debug in development
+  // window.SCP.updateFilteredCells = updateFilteredCells
 
   /** handler for when the user selects points in a plotly scatter graph */
   function plotPointsSelected(points) {
     log('select:scatter:cells')
     setCurrentPointsSelected(points)
   }
-
   /** Handle clicks on "View Options" toggler element */
   function toggleViewOptions() {
     setShowViewOptionsControls(!showViewOptionsControls)
-  }
-
-  /** handles cluster selection to also populate the default spatial groups */
-  function updateClusterParams(newParams) {
-    if (newParams.cluster && !newParams.spatialGroups) {
-      newParams.spatialGroups = getDefaultSpatialGroupsForCluster(newParams.cluster, exploreInfo.spatialGroups)
-      dataCache.clear()
-    }
-
-    // if the user updates any cluster params, store all of them in the URL so we don't end up with
-    // broken urls in the event of a default cluster/annotation changes
-    // also, unset any gene lists as we're about to re-render the explore tab and having gene list selected will show
-    // the wrong tabs
-    const updateParams = { geneList: '', ideogramFileId: '' }
-
-    const clusterParamNames = ['cluster', 'annotation', 'subsample', 'spatialGroups']
-    clusterParamNames.forEach(param => {
-      updateParams[param] = param in newParams ? newParams[param] : exploreParamsWithDefaults[param]
-    })
-    // if a user switches to a numeric annotation, change the tab to annotated scatter (SCP-3833)
-    if (newParams.annotation?.type === 'numeric' &&
-      exploreParamsWithDefaults.genes.length &&
-      exploreParamsWithDefaults.annotation?.type !== 'numeric'
-    ) {
-      updateParams.tab = 'annotatedScatter'
-    }
-    // if the user changes annotation, unset hiddenTraces
-    if (newParams.annotation && newParams.annotation.name !== exploreParams.annotation.name) {
-      updateParams.hiddenTraces = []
-    }
-
-    updateExploreParams(updateParams)
   }
 
   /** handles gene list selection */
@@ -346,11 +243,6 @@ export default function ExploreDisplayTabs({
         genes: []
       })
     }
-  }
-
-  /** handles updating inferCNV/ideogram selection */
-  function updateInferCNVIdeogramFile(annotationFile) {
-    updateExploreParams({ ideogramFileId: annotationFile, tab: 'infercnv-genome' })
   }
 
   /** if the user hasn't selected anything, and there are genelists to view, but no clusters
@@ -370,12 +262,13 @@ export default function ExploreDisplayTabs({
 
   /** Get widths for main (plots) and side (options or DE) panels, for current Explore state */
   function getPanelWidths() {
+    console.log('showViewOptionsControls hi:', showViewOptionsControls)
     let main
     let side
     const isSelectingDE = showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel
     if (showViewOptionsControls) {
       if (
-        showDifferentialExpressionTable ||
+        (deGenes !== null) ||
         (hasPairwiseDe && (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel))
       ) {
         // DE table is shown, or pairwise DE is available.  Least horizontal space for plots.
@@ -442,16 +335,6 @@ export default function ExploreDisplayTabs({
                 speciesList={exploreInfo.taxonNames}
               />
             }
-            { !showViewOptionsControls &&
-              <button className={showDifferentialExpressionPanel ?
-                'action view-options-toggle view-options-toggle-on' :
-                'action view-options-toggle view-options-toggle-on minified-options'
-              }
-              onClick={toggleViewOptions}
-              data-analytics-name="view-options-show">
-                <FontAwesomeIcon className="fa-lg" icon={faEye}/>
-              </button>
-            }
             { enabledTabs.includes('annotatedScatter') &&
               <div className={shownTab === 'annotatedScatter' ? '' : 'hidden'}>
                 <ScatterPlot
@@ -510,7 +393,8 @@ export default function ExploreDisplayTabs({
                     scatterColor: exploreParamsWithDefaults.scatterColor,
                     countsByLabel,
                     setCountsByLabel,
-                    dataCache
+                    dataCache,
+                    filteredCells
                   }}/>
               </div>
             }
@@ -522,6 +406,7 @@ export default function ExploreDisplayTabs({
                   dimensions={getPlotDimensions({
                     showRelatedGenesIdeogram, showViewOptionsControls, showDifferentialExpressionTable
                   })}
+                  filteredCells={filteredCells}
                   {...exploreParams}/>
               </div>
             }
@@ -587,186 +472,50 @@ export default function ExploreDisplayTabs({
             }
           </div>
         </div>
-
-        {/* Render "Options" panel at right of page */}
+        { !showViewOptionsControls &&
+              <button className={showDifferentialExpressionPanel ?
+                'action view-options-toggle view-options-toggle-on' :
+                'action view-options-toggle view-options-toggle-on minified-options'
+              }
+              onClick={toggleViewOptions}
+              data-analytics-name="view-options-show">
+                <FontAwesomeIcon className="fa-lg" icon={faEye}/>
+              </button>
+        }
         <div className={getPanelWidths().side}>
-          <div className="view-options-toggle">
-            {!showDifferentialExpressionPanel && !showUpstreamDifferentialExpressionPanel &&
-              <>
-                <FontAwesomeIcon className="fa-lg" icon={faEye}/> <span className="options-label">OPTIONS</span>
-                <button className={`action ${showDifferentialExpressionPanel ? '' : 'action-with-bg'}`}
-                  onClick={toggleViewOptions}
-                  title="Hide options"
-                  data-analytics-name="view-options-hide">
-                  <FontAwesomeIcon className="fa-lg" icon={faTimes}/>
-                </button>
-              </>
-            }
-            {(showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel) &&
-              <DifferentialExpressionPanelHeader
-                setDeGenes={setDeGenes}
-                setDeGroup={setDeGroup}
-                setShowDifferentialExpressionPanel={setShowDifferentialExpressionPanel}
-                setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
-                isUpstream={showUpstreamDifferentialExpressionPanel}
-                cluster={exploreParamsWithDefaults.cluster}
-                annotation={shownAnnotation}
-                setDeGroupB={setDeGroupB}
-                isAuthorDe={isAuthorDe}
-                deGenes={deGenes}
-              />
-            }
-          </div>
-
-          {!showDifferentialExpressionPanel && !showUpstreamDifferentialExpressionPanel &&
-          <>
-            <div>
-              <div className={showClusterControls ? '' : 'hidden'}>
-                <ClusterSelector
-                  annotationList={annotationList}
-                  cluster={exploreParamsWithDefaults.cluster}
-                  annotation={exploreParamsWithDefaults.annotation}
-                  updateClusterParams={updateClusterParams}
-                  spatialGroups={exploreInfo ? exploreInfo.spatialGroups : []}/>
-                {hasSpatialGroups &&
-                <SpatialSelector allSpatialGroups={exploreInfo.spatialGroups}
-                  spatialGroups={exploreParamsWithDefaults.spatialGroups}
-                  updateSpatialGroups={spatialGroups => updateClusterParams({ spatialGroups })}/>
-                }
-                <AnnotationSelector
-                  annotationList={annotationList}
-                  cluster={exploreParamsWithDefaults.cluster}
-                  shownAnnotation={shownAnnotation}
-                  updateClusterParams={updateClusterParams}/>
-                { shownTab === 'scatter' && <CreateAnnotation
-                  isSelecting={isCellSelecting}
-                  setIsSelecting={setIsCellSelecting}
-                  annotationList={exploreInfo ? exploreInfo.annotationList : null}
-                  currentPointsSelected={currentPointsSelected}
-                  cluster={exploreParamsWithDefaults.cluster}
-                  annotation={exploreParamsWithDefaults.annotation}
-                  subsample={exploreParamsWithDefaults.subsample}
-                  updateClusterParams={updateClusterParams}
-                  setAnnotationList={setAnnotationList}
-                  studyAccession={studyAccession}/>
-                }
-                {studyHasDe &&
-                <>
-                  <div className={`row de-modal-row-wrapper ${shownTab === 'scatter' ? 'create-annotation-de' : ''}`}>
-                    <div className="col-xs-12 de-modal-row">
-                      <button
-                        className=
-                          {`btn btn-primary differential-expression${annotHasDe ? '' : '-nondefault'}`}
-                        onClick={() => {
-                          if (annotHasDe) {
-                            setShowDifferentialExpressionPanel(true)
-                            setShowDeGroupPicker(true)
-                          } else if (studyHasDe) {
-                            setShowUpstreamDifferentialExpressionPanel(true)
-                          }
-                        }}
-                      >Differential expression</button>
-                      <DifferentialExpressionModal />
-                    </div>
-
-                  </div>
-                </>
-                }
-                <SubsampleSelector
-                  annotationList={annotationList}
-                  cluster={exploreParamsWithDefaults.cluster}
-                  subsample={exploreParamsWithDefaults.subsample}
-                  updateClusterParams={updateClusterParams}/>
-              </div>
-              { exploreInfo?.geneLists?.length > 0 &&
-              <GeneListSelector
-                geneList={exploreParamsWithDefaults.geneList}
-                studyGeneLists={exploreInfo.geneLists}
-                selectLabel={exploreInfo.precomputedHeatmapLabel ?? undefined}
-                updateGeneList={updateGeneList}/>
-              }
-              { exploreParams.genes.length > 1 && !['genome', 'infercnv-genome'].includes(shownTab) &&
-              <ExploreConsensusSelector
-                consensus={exploreParamsWithDefaults.consensus}
-                updateConsensus={consensus => updateExploreParams({ consensus })}/>
-              }
-              { !!exploreInfo?.inferCNVIdeogramFiles &&
-                <InferCNVIdeogramSelector
-                  inferCNVIdeogramFile={exploreParamsWithDefaults.ideogramFileId}
-                  studyInferCNVIdeogramFiles={exploreInfo.inferCNVIdeogramFiles}
-                  updateInferCNVIdeogramFile={updateInferCNVIdeogramFile}
-                />
-              }
-            </div>
-            <PlotDisplayControls
-              shownTab={shownTab}
-              exploreParams={exploreParamsWithDefaults}
-              updateExploreParams={updateExploreParams}
-              allGenes={exploreInfo ? exploreInfo.uniqueGenes : []}/>
-            <div className="options-panel-actions">
-              <button className="action action-with-bg margin-extra-right"
-                onClick={clearExploreParams}
-                title="Reset all view options"
-                data-analytics-name="explore-view-options-reset">
-                <FontAwesomeIcon icon={faUndo}/> Reset view
-              </button>
-              <button onClick={() => copyLink(routerLocation)}
-                className="action action-with-bg"
-                data-toggle="tooltip"
-                title="Copy a link to this visualization to the clipboard">
-                <FontAwesomeIcon icon={faLink}/> Get link
-              </button>
-            </div>
-          </>
-          }
-          {showDifferentialExpressionPanel && countsByLabel && annotHasDe &&
-          <>
-            <DifferentialExpressionPanel
-              deGroup={deGroup}
-              deGenes={deGenes}
-              searchGenes={searchGenes}
-              exploreParamsWithDefaults={exploreParamsWithDefaults}
-              exploreInfo={exploreInfo}
-              clusterName={exploreParamsWithDefaults.cluster}
-              annotation={shownAnnotation}
-              setShowDeGroupPicker={setShowDeGroupPicker}
-              setDeGenes={setDeGenes}
-              setDeGroup={setDeGroup}
-              hasOneVsRestDe={hasOneVsRestDe}
-              hasPairwiseDe={hasPairwiseDe}
-              isAuthorDe={isAuthorDe}
-              deGroupB={deGroupB}
-              setDeGroupB={setDeGroupB}
-              countsByLabel={countsByLabel}
-            />
-          </>
-          }
-          {showUpstreamDifferentialExpressionPanel &&
-          <>
-            {!clusterHasDe &&
-            <>
-              <ClusterSelector
-                annotationList={getAnnotationsWithDE(exploreInfo)}
-                cluster={''}
-                annotation={''}
-                updateClusterParams={updateClusterParams}
-                hasSelection={false}
-                spatialGroups={exploreInfo ? exploreInfo.spatialGroups : []}/>
-            </>
-            }
-            {clusterHasDe &&
-              <AnnotationSelector
-                annotationList={getAnnotationsWithDE(exploreInfo)}
-                cluster={exploreParamsWithDefaults.cluster}
-                shownAnnotation={shownAnnotation}
-                updateClusterParams={updateClusterParams}
-                hasSelection={false}
-                setShowDifferentialExpressionPanel={setShowDifferentialExpressionPanel}
-                setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
-              />
-            }
-          </>
-          }
+          <ExploreDisplayPanelManager
+            deGroup={deGroup}
+            deGenes={deGenes}
+            searchGenes={searchGenes}
+            exploreParamsWithDefaults={exploreParamsWithDefaults}
+            exploreInfo={exploreInfo}
+            clusterName={exploreParamsWithDefaults.cluster}
+            annotation={shownAnnotation}
+            setShowDeGroupPicker={setShowDeGroupPicker}
+            setDeGenes={setDeGenes}
+            setDeGroup={setDeGroup}
+            isAuthorDe={isAuthorDe}
+            deGroupB={deGroupB}
+            setDeGroupB={setDeGroupB}
+            countsByLabel={countsByLabel}
+            showUpstreamDifferentialExpressionPanel = {showUpstreamDifferentialExpressionPanel}
+            showDifferentialExpressionPanel = {showDifferentialExpressionPanel}
+            shownTab = {shownTab}
+            exploreParams= {exploreParams}
+            studyAccession = {studyAccession}
+            setExploreInfo = {setExploreInfo}
+            updateExploreParams = {updateExploreParams}
+            clearExploreParams = {clearExploreParams}
+            routerLocation = {routerLocation}
+            setShowUpstreamDifferentialExpressionPanel = {setShowUpstreamDifferentialExpressionPanel}
+            setShowDifferentialExpressionPanel = {setShowDifferentialExpressionPanel}
+            setShowViewOptionsControls = {setShowViewOptionsControls}
+            setIsCellSelecting = {setIsCellSelecting}
+            currentPointsSelected = {currentPointsSelected}
+            showViewOptionsControls = {showViewOptionsControls}
+            isCellSelecting = {isCellSelecting}
+            getPanelWidths = {getPanelWidths}
+          />
         </div>
       </div>
     </>

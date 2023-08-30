@@ -53,16 +53,26 @@ class BrandingGroupControllerTest < ActionDispatch::IntegrationTest
       branding_group: {
         tag_line: updated_tag
       },
-      curator_emails: ''
+      curator_emails: '',
+      study_accessions: ''
     }
     patch branding_group_path(@collection), params: collection_params
     assert_redirected_to branding_group_path(@collection)
     @collection.reload
     assert_equal updated_tag, @collection.tag_line
-    # test adding/removing curators to collections
+    # test mass assignment of studies/curators
     new_user = FactoryBot.create(:user, test_array: @@users_to_clean)
+    studies = []
+    5.times do
+      studies << FactoryBot.create(:detached_study,
+                                   name_prefix: 'Collection Mass Assignment',
+                                   user: @user,
+                                   test_array: @@studies_to_clean)
+    end
+    accessions = studies.shuffle.take(3).map(&:accession)
     curator_params = {
       curator_emails: [@user.email, new_user.email].join(','),
+      study_accessions: accessions.join(','),
       branding_group: {
         name: @collection.name # need at least one parameter to avoid ActionController::ParameterMissing
       }
@@ -72,8 +82,13 @@ class BrandingGroupControllerTest < ActionDispatch::IntegrationTest
     @collection.reload
     assert @collection.can_edit?(@user)
     assert @collection.can_edit?(new_user)
+    assert_equal 3, @collection.study_list.size
+    assert_equal accessions.sort, @collection.study_list.sort
+    accessions = [studies.first.accession]
+    # test sanitizer logic by using blank space and extra commas
     curator_params = {
-      curator_emails: "#{@user.email}",
+      curator_emails: " #{@user.email}  , ,",
+      study_accessions: "      #{studies.first.accession},,, ",
       branding_group: {
         name: @collection.name
       }
@@ -83,6 +98,7 @@ class BrandingGroupControllerTest < ActionDispatch::IntegrationTest
     @collection.reload
     assert @collection.can_edit?(@user)
     assert_not @collection.can_edit?(new_user)
+    assert_equal accessions, @collection.study_list
   end
 
   test 'should enforce admin credentials for creating/deleting collections' do
@@ -96,7 +112,8 @@ class BrandingGroupControllerTest < ActionDispatch::IntegrationTest
         background_color: '#FFFFFF',
         public: true
       },
-      curator_emails: @user.email
+      curator_emails: @user.email,
+      study_accessions: ''
     }
     post branding_groups_path, params: collection_params
     assert_redirected_to site_path

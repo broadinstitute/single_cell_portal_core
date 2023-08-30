@@ -789,14 +789,14 @@ class Study
   end
 
   # return all studies either owned by or shared with a given user as a Mongoid criterion
-  def self.accessible(user)
+  def self.accessible(user, check_groups: true)
     if user.admin?
       self.where(queued_for_deletion: false)
     else
       owned = self.where(user_id: user._id, queued_for_deletion: false).map(&:_id)
       shares = StudyShare.where(email: /#{user.email}/i).map(&:study).select {|s| !s.queued_for_deletion }.map(&:_id)
       group_shares = []
-      if user.registered_for_firecloud
+      if user.registered_for_firecloud && check_groups
         user_client = FireCloudClient.new(user:, project: FireCloudClient::PORTAL_NAMESPACE)
         user_groups = user_client.get_user_groups.map {|g| g['groupEmail']}
         group_shares = StudyShare.where(:email.in => user_groups).map(&:study).select {|s| !s.queued_for_deletion }.map(&:id)
@@ -807,14 +807,17 @@ class Study
   end
 
   # check if a give use can edit study
-  def can_edit?(user)
+  # check_groups can be set to false to skip checking group shares (for performance)
+  def can_edit?(user, check_groups: true)
     if user.nil?
       false
     else
-      if self.admins.map(&:downcase).include?(user.email.downcase)
-        return true
+      if admins.map(&:downcase).include?(user.email.downcase)
+        true
+      elsif check_groups
+        user_in_group_share?(user, 'Edit')
       else
-        self.user_in_group_share?(user, 'Edit')
+        false
       end
     end
   end
@@ -828,19 +831,20 @@ class Study
   end
 
   # check if a given user can view study by share (does not take public into account - use Study.viewable(user) instead)
-  def can_view?(user)
+  # check_groups can be set to false to skip checking group shares (for performance)
+  def can_view?(user, check_groups: true)
     if user.nil?
       false
     else
       # use if/elsif with explicit returns to ensure skipping downstream calls
-      if self.study_shares.can_view.map do |email_address|
+      if study_shares.can_view.map do |email_address|
         remove_gmail_periods(email_address)
       end.include?(remove_gmail_periods(user.email))
         return true
-      elsif self.can_edit?(user)
+      elsif can_edit?(user, check_groups:)
         return true
-      else
-        return self.user_in_group_share?(user, 'View', 'Reviewer')
+      elsif check_groups
+        return user_in_group_share?(user, 'View', 'Reviewer')
       end
     end
     false

@@ -122,6 +122,20 @@ export function getDefaultAnnotationForCluster(annotationList, clusterName, curr
   }
 }
 
+/** Get all group annotations for given cluster and this study */
+export function getGroupAnnotationsForClusterAndStudy(annotations, clusterName) {
+  const annots = annotations.filter(annot => {
+    return (
+      annot.type === 'group' && // is group-based, i.e. not numeric
+      (
+        !('cluster_name' in annot) || // is study-wide
+        annot.cluster_name === clusterName // is cluster-based, and in this cluster
+      )
+    )
+  })
+  return annots
+}
+
 /** return an array of names of the spatial files associated with a given cluster */
 export function getDefaultSpatialGroupsForCluster(clusterName, spatialGroups) {
   const defaultGroups = []

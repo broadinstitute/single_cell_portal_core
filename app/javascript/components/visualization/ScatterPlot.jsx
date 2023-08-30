@@ -45,7 +45,8 @@ function RawScatterPlot({
   studyAccession, cluster, annotation, subsample, consensus, genes, scatterColor, dimensionProps,
   isAnnotatedScatter=false, isCorrelatedScatter=false, isCellSelecting=false, plotPointsSelected, dataCache,
   canEdit, bucketId, expressionFilter=[0, 1],
-  countsByLabel, setCountsByLabel, hiddenTraces=[], isSplitLabelArrays, updateExploreParams
+  countsByLabel, setCountsByLabel, hiddenTraces=[], isSplitLabelArrays, updateExploreParams,
+  filteredCells
 }) {
   const [isLoading, setIsLoading] = useState(false)
   const [bulkCorrelation, setBulkCorrelation] = useState(null)
@@ -317,12 +318,37 @@ function RawScatterPlot({
     concludeRender()
   }
 
+  /** Intersect filtered cells with dataArrays results */
+  function intersect(filteredCells, scatter) {
+    const intersectedData = {}
+    const dataArrays = scatter.data
+    const keys = Object.keys(dataArrays)
+    keys.forEach(key => intersectedData[key] = [])
+    window.dataArrays = dataArrays
+    for (let i = 0; i < filteredCells.length; i++) {
+      const filteredCell = filteredCells[i]
+      const allCellsIndex = filteredCell.allCellsIndex
+      for (let j = 0; j < keys.length; j++) {
+        const key = keys[j]
+        const dataArray = dataArrays[key]
+        const filteredElement = dataArray[allCellsIndex]
+        intersectedData[keys[j]].push(filteredElement)
+      }
+    }
+    scatter.data = intersectedData
+    return scatter
+  }
+
   /** Process scatter plot data fetched from server */
-  function processScatterPlot(clusterResponse=null) {
+  function processScatterPlot(clusterResponse=null, filteredCells) {
     let [scatter, perfTimes] =
       (clusterResponse ? clusterResponse : [scatterData, null])
     scatter = updateScatterLayout(scatter)
     const layout = scatter.layout
+
+    if (filteredCells) {
+      scatter = intersect(filteredCells, scatter)
+    }
 
     const plotlyTraces = updateCountsAndGetTraces(scatter)
 
@@ -434,7 +460,7 @@ function RawScatterPlot({
           })
           // check that the data contains annotations needed for processing scatterplot
           if (respData1[0]?.data?.annotations?.length) {
-            processScatterPlot(respData1)
+            processScatterPlot(respData1, filteredCells)
           } else {
             // if the data was missing the necessary info, make an api call
             const respData = await fetchCluster({
@@ -448,7 +474,7 @@ function RawScatterPlot({
               isCorrelatedScatter,
               expressionArray
             })
-            processScatterPlot(respData)
+            processScatterPlot(respData, filteredCells)
           }
         } catch (error) {
           setIsLoading(false)
@@ -458,7 +484,10 @@ function RawScatterPlot({
       }
     }
     fetchData()
-  }, [cluster, annotation.name, subsample, genes.join(','), isAnnotatedScatter, consensus])
+  }, [
+    cluster, annotation.name, subsample, genes.join(','), isAnnotatedScatter, consensus,
+    filteredCells?.join(',')
+  ])
 
   useUpdateEffect(() => {
     // Don't update if graph hasn't loaded
