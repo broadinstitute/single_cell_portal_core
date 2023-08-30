@@ -415,7 +415,7 @@ class User
       user_projects = client.get_billing_projects
       user_projects.each do |project|
         safe_project = project.with_indifferent_access
-        if safe_project[:status] == 'Ready'
+        if safe_project[:status] == 'Ready' && safe_project[:roles].any?
           role = safe_project[:roles].include?('Owner') ? :Owner : :User
           projects[role] << safe_project[:projectName]
         end

@@ -40,7 +40,7 @@
           </td>
           <td class="actions">
             <% unless project_attributes[:status] == 'Error' %>
-              <% if project_attributes[:role] == 'Owner' %>
+              <% if project_attributes[:roles].include?('Owner') %>
                 <%= scp_link_to "<i class='fas fa-fw fa-plus'></i> Add user".html_safe, new_billing_project_user_path(project_name), class: 'btn btn-xs btn-success add-billing-project-user' %>
               <% end %>
               <%= scp_link_to "<i class='fas fa-fw fa-briefcase'></i> Workspaces".html_safe, billing_project_workspaces_path(project_name), class: 'btn btn-xs btn-primary view-workspaces' %>

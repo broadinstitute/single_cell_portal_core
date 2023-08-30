@@ -382,6 +382,23 @@ class FireCloudClient
     process_firecloud_request(:get, path)
   end
 
+  # passthru to determine if a workspace exists
+  #
+  # * *params*
+  #   - +workspace_namespace+ (String) => namespace of workspace
+  #   - +workspace_name+ (String) => name of workspace
+  #
+  # * *return*
+  #   - +Boolean+
+  def workspace_exists?(workspace_namespace, workspace_name)
+    begin
+      get_workspace(workspace_namespace, workspace_name)
+      true
+    rescue RestClient::NotFound
+      false
+    end
+  end
+
   # delete a workspace
   #
   # * *params*
