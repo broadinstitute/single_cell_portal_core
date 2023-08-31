@@ -262,7 +262,6 @@ export default function ExploreDisplayTabs({
 
   /** Get widths for main (plots) and side (options or DE) panels, for current Explore state */
   function getPanelWidths() {
-    console.log('showViewOptionsControls hi:', showViewOptionsControls)
     let main
     let side
     const isSelectingDE = showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel

@@ -97,7 +97,6 @@ function getAnnotationsWithDE(exploreInfo) {
 }
 
 
-
 /** Determine if current annotation has differential expression results available */
 function getAnnotHasDe(exploreInfo, exploreParams) {
   const flags = getFeatureFlagsWithDefaults()
@@ -354,7 +353,7 @@ export default function ExploreDisplayPanelManager({
                 }
                 {studyHasDe &&
                 <>
-                  <div className="row de-modal-row-wrapper">
+                  <div className={`row de-modal-row-wrapper ${shownTab === 'scatter' ? 'create-annotation-de' : ''}`}>
                     <div className="col-xs-12 de-modal-row">
                       <button
                         className=
