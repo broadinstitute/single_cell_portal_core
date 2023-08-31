@@ -27,7 +27,7 @@ function getTextSize(text, font) {
 /** Get min-width of container for menus on help, create study, and sign in / username */
 export function getGlobalHeaderEndWidth(text, font, extraWidth) {
   // TODO: Compute this value.  234 works with devicePixelRatio 1 (e.g.
-  // external monitor) and devicePixelRatio1 (e.g. MacBook / Retina display).
+  // external monitor) and devicePixelRatio 2 (e.g. MacBook / Retina display).
   // baseWidth is unaffected by changes in viewport size, and is robust across
   // sign-in states and any username length.
   const measuredWidth = 234
