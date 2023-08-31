@@ -40,12 +40,31 @@ class AnnDataIngestParameters
     matrix_file_type: nil,
     gene_file: nil,
     barcode_file: nil,
-    subsample: false
+    subsample: false,
+    file_size: 0
   }.freeze
+
+  # values that are available as methods but not as attributes (and not passed to command line)
+  NON_ATTRIBUTE_PARAMS = %i[file_size].freeze
+
+  # GCE machine types and file size ranges for handling fragment extraction
+  # produces a hash with entries like { 'n2-highmem-4' => 0..4.gigabytes }
+  EXTRACT_MACHINE_TYPES = [4, 8, 16, 32].map.with_index do |cores, index|
+    floor = index == 0 ? 0 : (cores / 2).gigabytes
+    limit = (cores * 8).gigabytes
+    # ranges that use '...' exclude the given end value.
+    { "n2d-highmem-#{cores}" => floor...limit }
+  end.reduce({}, :merge)
 
   attr_accessor(*PARAM_DEFAULTS.keys)
 
   validates :anndata_file, :cluster_file, :cell_metadata_file, :matrix_file, :gene_file, :barcode_file,
             format: { with: Parameterizable::GS_URL_REGEXP, message: 'is not a valid GS url' },
             allow_blank: true
+
+  # determine which GCE machine type to use for fragment extraction based on file size
+  # see https://ruby-doc.org/core-3.1.0/Range.html#method-i-3D-3D-3D for range detection doc
+  def machine_type
+    EXTRACT_MACHINE_TYPES.detect { |_, mem_range| mem_range === file_size }&.first || 'n2d-highmem-4'
+  end
 end
