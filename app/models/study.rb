@@ -1948,8 +1948,12 @@ class Study
           errors.add(:name, ' - you must choose a different name for your study.')
           self.firecloud_workspace = nil
         else
-          ApplicationController.firecloud_client.delete_workspace(self.firecloud_project, self.firecloud_workspace)
-          errors.add(:firecloud_workspace, " creation failed: #{e.message}; Please try again.")
+          # ensure workspace exists before trying to delete
+          if ApplicationController.firecloud_client.workspace_exists?(firecloud_project, firecloud_workspace)
+            ApplicationController.firecloud_client.delete_workspace(firecloud_project, firecloud_workspace)
+          end
+          error_message = ApplicationController.firecloud_client.parse_error_message(e)
+          errors.add(:firecloud_workspace, " creation failed: #{error_message}")
         end
         return false
       end
@@ -2050,7 +2054,8 @@ class Study
         ErrorTracker.report_exception(e, self.user, self)
         # delete workspace on any fail as this amounts to a validation fail
         Rails.logger.info "#{Time.zone.now}: Error assigning workspace: #{e.message}"
-        errors.add(:firecloud_workspace, " assignment failed: #{e.message}; Please check the workspace in question and try again.")
+        error_message = ApplicationController.firecloud_client.parse_error_message(e)
+        errors.add(:firecloud_workspace, " assignment failed: #{error_message}; Please check the workspace in question and try again.")
         return false
       end
     end

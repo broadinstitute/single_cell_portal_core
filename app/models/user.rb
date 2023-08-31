@@ -409,13 +409,15 @@ class User
 
   # retrieve billing projects for a given user (if registered for firecloud)
   def get_billing_projects
-    projects = {User: [], Owner: []}
+    projects = { User: [], Owner: [] }
     if self.registered_for_firecloud
       client = FireCloudClient.new(user: self, project: FireCloudClient::PORTAL_NAMESPACE)
       user_projects = client.get_billing_projects
       user_projects.each do |project|
-        if project['creationStatus'] == 'Ready'
-          projects[project['role'].to_sym] << project['projectName']
+        safe_project = project.with_indifferent_access
+        if safe_project[:status] == 'Ready' && safe_project[:roles].any?
+          role = safe_project[:roles].include?('Owner') ? :Owner : :User
+          projects[role] << safe_project[:projectName]
         end
       end
     end
