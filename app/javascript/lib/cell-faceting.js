@@ -233,4 +233,3 @@ export async function initCellFaceting(
   // window.SCP.cellFaceting = cellFaceting
   return cellFaceting
 }
-

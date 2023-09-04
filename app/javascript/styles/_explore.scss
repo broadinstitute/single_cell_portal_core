@@ -73,7 +73,8 @@
 .explore-tab-content {
   background: #fff;
   display: flex;
-  flex-wrap: wrap;
+  // flex-wrap: wrap;
+  // margin-right: 0px;
 
   button.action {
     background: #fff;
@@ -135,7 +136,6 @@
 }
 
 .explore-plot-tab-content {
-  border-right: 1px solid #ccc;
   min-height: 70vh;
 }
 
@@ -269,4 +269,15 @@
 // to position content in the explore tab forward
 .position-forward {
   z-index: 3;
+}
+
+
+.flexible-plot-space{
+  flex-grow: 1;
+}
+
+.g{
+  flex-grow: 2;
+  display: flex;
+  justify-content: center;
 }
