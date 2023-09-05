@@ -69,6 +69,10 @@
   }
 }
 
+.popover-badge {
+  font-weight: normal;
+  margin-right: 0.2em;
+}
 
 .explore-tab-content {
   background: #fff;
@@ -153,7 +157,6 @@
 
 .view-options-toggle-on {
   position: absolute;
-  top: 0px;
   right: 1px;
   padding: 0.5em;
   background: #fff;

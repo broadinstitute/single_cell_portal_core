@@ -240,7 +240,7 @@ class LifeSciencesApiClientTest < ActiveSupport::TestCase
       cluster_name: 'cluster.txt',
       matrix_file_path: @expression_matrix.gs_url,
       matrix_file_type: 'dense',
-      machine_type: 'n1-highmem-16'
+      machine_type: 'n2d-highmem-16'
     }
     de_params = DifferentialExpressionParameters.new(de_opts)
     de_cmd = @client.get_command_line(study_file: @cluster_file, action: :differential_expression,

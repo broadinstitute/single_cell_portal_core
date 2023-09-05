@@ -1073,7 +1073,7 @@ class StudiesController < ApplicationController
       if current_user.registered_for_firecloud && client.registered?
         available_projects = client.get_billing_projects
         available_projects.each do |project|
-          if project['creationStatus'] == 'Ready'
+          if project['status'] == 'Ready' && project['roles'].any?
             @projects << [project['projectName'], project['projectName']]
           end
         end

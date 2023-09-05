@@ -14,6 +14,7 @@ import { withErrorBoundary } from '~/lib/ErrorBoundary'
 import useErrorMessage from '~/lib/error-message'
 import { logViolinPlot } from '~/lib/scp-api-metrics'
 import LoadingSpinner from '~/lib/LoadingSpinner'
+import { formatGeneList} from '~/components/visualization/PlotTitle'
 
 
 /** displays a violin plot of expression data for the given gene and study
@@ -31,7 +32,7 @@ import LoadingSpinner from '~/lib/LoadingSpinner'
 */
 function RawStudyViolinPlot({
   studyAccession, genes, cluster, annotation, subsample, consensus, distributionPlot, distributionPoints,
-  updateDistributionPlot, setAnnotationList, dimensions={}
+  updateDistributionPlot, setAnnotationList, dimensions={}, filteredCells
 }) {
   const [isLoading, setIsLoading] = useState(false)
   // array of gene names as they are listed in the study itself
@@ -93,6 +94,7 @@ function RawStudyViolinPlot({
     annotation.scope,
     subsample,
     consensus
+    // filteredCells.join(',') // TODO (SCP-5275): Cell faceting for violin plots
   ])
 
   // useEffect for handling render param re-renders
@@ -134,7 +136,7 @@ function RawStudyViolinPlot({
        sometimes render a zero to the page*/}
       { isCollapsedView && studyGeneNames.length > 0 &&
         <div className="text-center">
-          <span>{_capitalize(consensus)} expression of {studyGeneNames.join(', ')}</span>
+          <span>{_capitalize(consensus)} expression of {formatGeneList(studyGeneNames)}</span>
         </div>
       }
     </div>

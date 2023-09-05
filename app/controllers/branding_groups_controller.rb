@@ -36,16 +36,27 @@ class BrandingGroupsController < ApplicationController
   # POST /branding_groups.json
   def create
     clean_params = branding_group_params.to_h
-    clean_params[:users] = self.class.merge_curator_params(params[:curator_emails], nil, current_user)
-    clean_params.delete(:user_ids)
+    users = self.class.find_users_from_emails(params[:curator_emails], nil, current_user)
+    clean_params[:user_ids] = users.map(&:id)
+    studies = self.class.find_studies_from_accessions(params[:study_accessions], current_user)
+    clean_params[:study_ids] = studies.map(&:id)
+    missing_studies = self.class.get_missing_studies(
+      self.class.param_to_array(params[:study_accessions]), studies
+    )
     @branding_group = BrandingGroup.new(clean_params)
 
     respond_to do |format|
       if @branding_group.save
+        notice = "Successfully updated collection \"#{@branding_group.name}\""
+        if missing_studies.any?
+          notice += " #{missing_studies.join(', ')} could not be added to this collection."
+        end
         # push all branding assets to remote to ensure consistency
         UserAssetService.delay.push_assets_to_remote(asset_type: :branding_images)
-        format.html { redirect_to merge_default_redirect_params(branding_group_path(@branding_group), scpbr: params[:scpbr]),
-                                  notice: "Collection '#{@branding_group.name}' was successfully created." }
+        format.html do
+          redirect_to merge_default_redirect_params(branding_group_path(@branding_group), scpbr: params[:scpbr]),
+                      notice:
+        end
         format.json { render :show, status: :created, location: @branding_group }
       else
         format.html { render :new }
@@ -66,17 +77,31 @@ class BrandingGroupsController < ApplicationController
         end
         # delete the param since it is not a real model param
         clean_params.delete("reset_#{image_name}")
-
-        # merge in curator params
-        clean_params[:users] = self.class.merge_curator_params(
-          params[:curator_emails], @branding_group, current_user
-        )
-        clean_params.delete(:user_ids)
       end
 
+      # merge in curator and study params
+      users = self.class.find_users_from_emails(
+        params[:curator_emails], @branding_group, current_user
+      )
+      clean_params[:user_ids] = users.map(&:id)
+
+      studies = self.class.find_studies_from_accessions(
+        params[:study_accessions], current_user
+      )
+      clean_params[:study_ids] = studies.map(&:id)
+      missing_studies = self.class.get_missing_studies(
+        self.class.param_to_array(params[:study_accessions]), studies
+      )
+
       if @branding_group.update(clean_params)
-        format.html { redirect_to merge_default_redirect_params(branding_group_path(@branding_group), scpbr: params[:scpbr]),
-                                  notice: "Collection '#{@branding_group.name}' was successfully updated." }
+        notice = "Successfully updated collection \"#{@branding_group.name}\""
+        if missing_studies.any?
+          notice += " #{missing_studies.join(', ')} could not be added to this collection."
+        end
+        format.html do
+          redirect_to merge_default_redirect_params(branding_group_path(@branding_group), scpbr: params[:scpbr]),
+                      notice:
+        end
         format.json { render :show, status: :ok, location: @branding_group }
       else
         format.html { render :edit }
@@ -99,14 +124,31 @@ class BrandingGroupsController < ApplicationController
 
   # helper to merge in the list of curators into the :users parameter
   # will prevent curator from removing themselves from the collection
-  def self.merge_curator_params(curator_list, collection, user)
-    curators = curator_list.split(',').map(&:strip)
+  def self.find_users_from_emails(curator_list, collection, user)
+    curators = param_to_array(curator_list)
     users = curators.map { |email| User.find_by(email: email) }.compact
     return users if collection.nil?
 
     # ensure current user cannot accidentally remove themselves from the list if this is an update
     users << user if collection.users.include?(user) && !users.include?(user)
     users
+  end
+
+  # allow mass assignment of studies from collection edit view
+  def self.find_studies_from_accessions(study_list, user)
+    accessions = param_to_array(study_list)
+    # skip checking group shares for performance reasons
+    Study.where(:accession.in => accessions).select { |study| study.can_view?(user, check_groups: false) }
+  end
+
+  # convert a comma- or space-delimited string to an array of strings, removing empty values
+  def self.param_to_array(param)
+    param.split(/[,\s]/).map(&:strip).reject(&:blank?)
+  end
+
+  # detect which studies could not be saved (either don't exist or curator does't have permission)
+  def self.get_missing_studies(original_accessions, studies)
+    original_accessions - studies.map(&:accession)
   end
 
   private
@@ -120,8 +162,8 @@ class BrandingGroupsController < ApplicationController
   def branding_group_params
     params.require(:branding_group).permit(:name, :tag_line, :public, :background_color, :font_family, :font_color,
                                            :splash_image, :banner_image, :footer_image, :external_link_url, :external_link_description,
-                                           :reset_splash_image, :reset_footer_image, :reset_banner_image,
-                                           user_ids: [])
+                                           :reset_splash_image, :reset_footer_image, :reset_banner_image, :user_ids,
+                                           :study_ids)
   end
 
   def authenticate_curator

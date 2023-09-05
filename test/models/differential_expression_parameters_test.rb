@@ -74,7 +74,7 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
 
   test 'should set default machine type for DE jobs' do
     params = DifferentialExpressionParameters.new
-    assert_equal 'n1-highmem-8', params.machine_type
+    assert_equal 'n2d-highmem-8', params.machine_type
   end
 
   test 'should remove non-attribute values from attribute hash' do

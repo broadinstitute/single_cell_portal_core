@@ -17,7 +17,7 @@ class ImagePipelineParameters
     environment: Rails.env.to_s,
     cores: nil,
     docker_image: Rails.application.config.image_pipeline_docker_image,
-    machine_type: 'n1-standard-8',
+    machine_type: 'n2d-standard-8',
     data_cache_perftime: nil
   }.freeze
 
