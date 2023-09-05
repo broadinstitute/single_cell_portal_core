@@ -9,9 +9,32 @@ import CreatableSelect from 'react-select/creatable'
 
 const allowedFileExts = FileTypeExtensions.plainText
 const requiredFields = [
-  { label: 'Associated annotation', propertyName: 'differential_expression_file_info.annotation_name'},
-  { label: 'Associated clustering file', propertyName: 'differential_expression_file_info.clustering_association'},
+  { label: 'Associated annotation', propertyName: 'differential_expression_file_info.annotation_name' },
+  { label: 'Associated clustering file', propertyName: 'differential_expression_file_info.clustering_association' }
 ]
+
+/** Get Select option groups "Inferred options" and "Other options" */
+function inferOptions(metricType, notes, file) {
+  const inferredMetrics =
+    notes[metricType].map(opt => ({ label: opt, value: opt }))
+  const otherMetrics =
+    notes.metrics.filter(m => !notes[metricType].includes(m))
+      .map(opt => ({ label: opt, value: opt }))
+  const options = [
+    { 'label': 'Inferred options', 'options': inferredMetrics },
+    { 'label': 'Other options', 'options': otherMetrics }
+  ]
+
+  // E.g. significances -> significance_metric
+  const snakeCaseMetricType = `${metricType.slice(0, -1)}_metric`
+
+  // Determine default value for select
+  const metric = inferredMetrics.find(
+    opt => opt.value === file.differential_expression_file_info[snakeCaseMetricType]
+  ) || { label: notes[metricType][0], value: notes[metricType][0] }
+
+  return [options, metric]
+}
 
 /** renders a form for editing/uploading a differential expression file */
 export default function DifferentialExpressionFileForm({
@@ -55,6 +78,13 @@ export default function DifferentialExpressionFileForm({
     opt => opt.value === file.differential_expression_file_info.computational_method
   )
 
+  const notes = file.notes
+
+  const [sizeMetricOptions, sizeMetric] =
+    notes ? inferOptions('sizes', notes, file) : [[], null]
+  const [significanceMetricOptions, significanceMetric] =
+    notes ? inferOptions('significances', notes, file) : [[], null]
+
   /** extract annotation_name and annotation_scope and transform into URL-param like string */
   function annotationIdentifier(deInfoObject) {
     return `${deInfoObject.annotation_name}--group--${deInfoObject.annotation_scope}`
@@ -68,7 +98,7 @@ export default function DifferentialExpressionFileForm({
 
   /** format a label for the available annotations dropdown, noting annotation scope */
   function annotationLabel(annotation) {
-    if (annotation.scope === 'cluster' ) {
+    if (annotation.scope === 'cluster') {
       return `${annotation.name} (${annotation.cluster_name} only)`
     } else {
       return `${annotation.name}`
@@ -103,9 +133,27 @@ export default function DifferentialExpressionFileForm({
     updateFile(file._id, { differential_expression_file_info: { computational_method: newVal } })
   }
 
+  /** handle a change in the "Size metric" select */
+  function updateSizeMetric(file, option) {
+    let newVal = null
+    if (option) {
+      newVal = option.value
+    }
+    updateFile(file._id, { differential_expression_file_info: { size_metric: newVal } })
+  }
+
+  /** handle a change in the "Significance metric" select */
+  function updateSignificanceMetric(file, option) {
+    let newVal = null
+    if (option) {
+      newVal = option.value
+    }
+    updateFile(file._id, { differential_expression_file_info: { significance_metric: newVal } })
+  }
+
   /** set available annotations based off of selected cluster file */
   function setAnnotationOptions() {
-    return annotationsAvailOnStudy?.filter((annot) => {
+    return annotationsAvailOnStudy?.filter(annot => {
       return (
         (annot.type === 'group' && annot.scope !== 'invalid') &&
         (annot.cluster_name === associatedCluster?.label || annot.scope === 'study')
@@ -121,7 +169,7 @@ export default function DifferentialExpressionFileForm({
   }}>
     <TextFormField label="Description" fieldName="description" file={file} updateFile={updateFile}/>
     <div className="form-group">
-      <label className="labeled-select">Associated clustering file
+      <label className="labeled-select">Associated clustering
         <Select options={clusterFileOptions}
           data-analytics-name="differential-expression-associated-cluster-select"
           value={associatedCluster}
@@ -152,5 +200,35 @@ export default function DifferentialExpressionFileForm({
         />
       </label>
     </div>
+    {file.notes &&
+    <div className="row">
+      <div className="form-group col-md-3">
+        <label className="labeled-select">Size metric
+          <Select
+            data-analytics-name="differential-expression-size-metric-select"
+            options={sizeMetricOptions}
+            defaultValue={sizeMetric}
+            value={sizeMetric}
+            className="labeled-select"
+            onChange={val => updateSizeMetric(file, val)}
+            placeholder="Select metric for DE size"
+          />
+        </label>
+      </div>
+      <div className="form-group col-md-3">
+        <label className="labeled-select">Significance metric
+          <Select
+            data-analytics-name="differential-expression-significance-metric-select"
+            options={significanceMetricOptions}
+            defaultValue={significanceMetric}
+            value={significanceMetric}
+            className="labeled-select"
+            onChange={val => updateSignificanceMetric(file, val)}
+            placeholder="Select metric for DE significance"
+          />
+        </label>
+      </div>
+    </div>
+    }
   </ExpandableFileForm>
 }

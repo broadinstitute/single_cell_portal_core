@@ -984,7 +984,10 @@ class StudiesController < ApplicationController
                                        expression_file_info_attributes: [:id, :library_preparation_protocol, :units,
                                                                          :biosample_input_type, :modality, :is_raw_counts,
                                                                          raw_counts_associations: []],
-                                       differential_expression_file_info_attributes: [:_id, :clustering_association, :annotation_association, :computational_method]
+                                       differential_expression_file_info_attributes: [
+                                          :_id, :clustering_association, :annotation_association, :computational_method,
+                                          :size_metric, :significance_metric
+                                        ]
                                        )
   end
 

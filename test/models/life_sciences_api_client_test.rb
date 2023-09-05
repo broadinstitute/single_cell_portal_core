@@ -196,6 +196,8 @@ class LifeSciencesApiClientTest < ActiveSupport::TestCase
     assert de_cmd.include? '--study-accession'
     assert de_cmd.include? @study.accession
     assert de_cmd.include? '--method'
+    assert de_cmd.include? '--size_metric'
+    assert de_cmd.include? '--significance_metric'
     assert de_cmd.include? DifferentialExpressionResult::DEFAULT_COMP_METHOD
     assert de_cmd.include? '--ingest-differential-expression'
   end

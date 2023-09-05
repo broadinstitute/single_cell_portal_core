@@ -27,6 +27,7 @@ export default function FileUploadControl({
 
   /** handle user interaction with the file input */
   async function handleFileSelection(e) {
+    console.log('handlingFileSelection')
     const selectedFile = e.target.files[0]
 
     let newName = selectedFile.name
@@ -35,14 +36,23 @@ export default function FileUploadControl({
     if (FILE_TYPES_ALLOWING_SET_NAME.includes(file.file_type) && file.name && file.name !== file.upload_file_name) {
       newName = file.name
     }
+
+    // if (file.file_type === 'Differential Expression') {
+    //   return
+    // }
+
     setFileValidation({ validating: true, issues: {}, fileName: selectedFile.name })
-    const issues = await ValidateFile.validateLocalFile(selectedFile, file, allFiles, allowedFileExts)
-    setFileValidation({ validating: false, issues, fileName: selectedFile.name })
+    const [issues, notes] = await ValidateFile.validateLocalFile(selectedFile, file, allFiles, allowedFileExts)
+    console.log('issues', issues)
+    console.log('notes', notes)
+    // console.log('notesObj', notesObj)
+    setFileValidation({ validating: false, issues, fileName: selectedFile.name, notes })
     if (issues.errors.length === 0) {
       updateFile(file._id, {
         uploadSelection: selectedFile,
         upload_file_name: selectedFile.name,
-        name: newName
+        name: newName,
+        notes
       })
     }
   }

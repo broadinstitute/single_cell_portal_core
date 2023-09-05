@@ -192,6 +192,8 @@ FactoryBot.define do
         annotation_name {}
         annotation_scope {}
         computational_method {}
+        size_metric {}
+        significance_metric {}
       end
       after(:create) do |file, evaluator|
         file.build_differential_expression_file_info
@@ -199,6 +201,8 @@ FactoryBot.define do
         file.differential_expression_file_info.annotation_name = evaluator.annotation_name
         file.differential_expression_file_info.annotation_scope = evaluator.annotation_scope
         file.differential_expression_file_info.computational_method = evaluator.computational_method
+        file.differential_expression_file_info.size_metric = evaluator.size_metric
+        file.differential_expression_file_info.significance_metric = evaluator.significance_metric
         file.save
       end
     end

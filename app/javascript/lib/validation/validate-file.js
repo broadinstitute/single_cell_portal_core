@@ -50,30 +50,35 @@ function validateFileName(file, studyFile, allStudyFiles, allowedFileExts=['*'])
  * @param allowedFileExts { String[] } array of allowable extensions, ['*'] for all
  */
 async function validateLocalFile(file, studyFile, allStudyFiles=[], allowedFileExts=['*']) {
-
   // if clientside file validation feature flag is false skip validation
   const flags = getFeatureFlagsWithDefaults()
-  if (flags && flags.clientside_validation === false ) {
+  if (flags && flags.clientside_validation === false) {
     const issues = formatIssues([])
     return issues
   }
   const nameIssues = validateFileName(file, studyFile, allStudyFiles, allowedFileExts)
 
   let issuesObj
+  let notesObj
 
   const noContentValidationFileTypes = ['Seurat', 'AnnData', 'Other', 'Documentation']
 
   const studyFileType = studyFile.file_type
+  console.log('studyFileType', studyFileType)
 
   // Do not continue the validation if the file type is a non-viz type
   if (nameIssues.length === 0 && !noContentValidationFileTypes.includes(studyFileType)) {
     const fileOptions = {
       use_metadata_convention: studyFile.use_metadata_convention
     }
-    const { fileInfo, issues, perfTime } = await ValidateFileContent.parseFile(file, studyFileType, fileOptions)
+    const { fileInfo, issues, perfTime, notes } =
+      await ValidateFileContent.parseFile(file, studyFileType, fileOptions)
+
+    console.log('*** notes', notes)
 
     const allIssues = issues.concat(nameIssues)
     issuesObj = formatIssues(allIssues)
+    notesObj = notes
 
     const perfTimes = {
       perfTime,
@@ -89,7 +94,9 @@ async function validateLocalFile(file, studyFile, allStudyFiles=[], allowedFileE
     issuesObj.infos = [['info', 'size:large', '']]
   }
 
-  return issuesObj
+  console.log('notesObj', notesObj)
+
+  return [issuesObj, notesObj]
 }
 
 
