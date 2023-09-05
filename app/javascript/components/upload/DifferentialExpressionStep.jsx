@@ -52,7 +52,7 @@ export function DifferentialFileUploadForm({
       <div className="col-md-12">
         <p className="form-terra">
           <p>Upload differential expression (DE) files to enable comparing genes by DE in cells grouped by type, disease, treatment, and other experimental conditions.  Use long or wide format, one file per annotation.  Comparisons can be one-vs-rest or pairwise.</p>
-          In both formats, headers for <strong>size and significance are required</strong>.  The example below uses "logfoldchanges" and "pvals_adj" as example size and significance metrics, but once you choose your file, you can select which headers correspond to your metrics.
+          In both formats, headers for <strong>size and significance are required</strong>.  The example below uses "logfoldchanges" and "pvals_adj" as size and significance metrics, but once you choose your file, you can select which headers correspond to your metrics.
           Other metrics like "mean" are optional.  <strong>Parsed metadata and clustering files are also required before uploading</strong>.
           <div className="row">
             <div className="col-md-12">
