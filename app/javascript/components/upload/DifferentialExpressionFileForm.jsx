@@ -20,6 +20,7 @@ function inferOptions(metricType, notes, file) {
   const otherMetrics =
     notes.metrics.filter(m => !notes[metricType].includes(m))
       .map(opt => ({ label: opt, value: opt }))
+
   const options = [
     { 'label': 'Inferred options', 'options': inferredMetrics },
     { 'label': 'Other options', 'options': otherMetrics }
@@ -29,7 +30,8 @@ function inferOptions(metricType, notes, file) {
   const snakeCaseMetricType = `${metricType.slice(0, -1)}_metric`
 
   // Determine default value for select
-  const metric = inferredMetrics.find(
+  const allMetrics = inferredMetrics.concat(otherMetrics)
+  const metric = allMetrics.find(
     opt => opt.value === file.differential_expression_file_info[snakeCaseMetricType]
   ) || { label: notes[metricType][0], value: notes[metricType][0] }
 
