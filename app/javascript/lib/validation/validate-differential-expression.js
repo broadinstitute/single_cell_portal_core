@@ -105,22 +105,37 @@ function getSizesAndSignificances(metrics) {
  */
 function validateSizeAndSignificance(metrics) {
   const issues = []
-  let issue
   const [sizes, significances] = getSizesAndSignificances(metrics)
   const hasSize = sizes.length > 0
   const hasSignificance = significances.length > 0
-  const inHeaders = `in headers: ${metrics}`
-  const instruction = 'Column headers must include "logfoldchanges" and "qval".'
-  if (!hasSize && !hasSignificance) {
-    issue = `${instruction}  No size or significance metrics found ${inHeaders}`
-  } else if (!hasSize) {
-    issue = `${instruction}  No size metrics found ${inHeaders}`
-  } else if (!hasSignificance) {
-    issue = `${instruction}  No significance metrics found ${inHeaders}`
-  }
-
-  if (issue) {
-    issues.push(['error', issue])
+  if (!hasSize || !hasSignificance) {
+    let warningType = 'format:cap:'
+    const inHeaders = `in headers: ${metrics}`
+    const instruction = 'Column headers must include a size and significance metric.'
+    let issue = instruction
+    let missing
+    let menus
+    if (!hasSize && !hasSignificance) {
+      issue += '  No size or significance metrics found'
+      missing = 'headers with metrics for size and significance'
+      warningType += 'no-size-or-significance'
+      menus = '"Size metric" and "Significance metric" menus'
+    } else if (!hasSize) {
+      issue += '  No size metric found'
+      missing = 'a header with a metric for size'
+      warningType += 'no-size'
+      menus = '"Size metric" menu'
+    } else if (!hasSignificance) {
+      issue += '  No significance metric found'
+      missing = 'a header with a metric for significance'
+      warningType += 'no-significance'
+      menus = '"Significance metric" menu'
+    }
+    issue += (
+      ` ${inHeaders}.  Please update your file to add ${missing}, ` +
+      `or select from "Other options" in the ${menus} below.`
+    )
+    issues.push(['warn', warningType, issue])
   }
 
   return [issues, sizes, significances]
@@ -145,7 +160,6 @@ function parseDeFileFormat(headers) {
 */
 function parseMetrics(headers, format) {
   const firstLineHeaders = headers[0]
-
   const metricHeaders = firstLineHeaders.filter(
     header => !['gene', 'genes', 'group', 'comparison_group'].includes(header)
   )
