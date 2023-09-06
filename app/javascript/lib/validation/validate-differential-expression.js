@@ -100,8 +100,7 @@ function getSizesAndSignificances(metrics) {
  * Report whether size and/or significance are detected among metrics
  *
  * TODO:
- *  - When UI is more robust, convert to logger.warn and don't throw errors
- *  - Log to Sentry / Mixpanel
+ *  - Update or clear warning if user selects from "Other options" for a metric
  */
 function validateSizeAndSignificance(metrics) {
   const issues = []
