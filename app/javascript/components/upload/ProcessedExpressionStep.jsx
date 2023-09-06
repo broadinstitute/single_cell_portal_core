@@ -40,7 +40,7 @@ function ProcessedUploadForm({
 }) {
   const processedParentFiles = formState.files.filter(processedFileFilter)
   const fileMenuOptions = serverState.menu_options
-  const rawCountsFiles = formState.files.filter(rawCountsFileFilter).filter(
+  const rawCountsFiles = serverState.files.filter(rawCountsFileFilter).filter(
     f => f.status != 'new' && f.is_complete
   )
   const rawCountsOptions = rawCountsFiles.map(rf => ({ label: rf.name, value: rf._id }))
