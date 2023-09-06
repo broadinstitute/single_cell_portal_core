@@ -13,7 +13,13 @@ const requiredFields = [
   { label: 'Associated clustering file', propertyName: 'differential_expression_file_info.clustering_association' }
 ]
 
-/** Get Select option groups "Inferred options" and "Other options" */
+/**
+ * Get Select option groups "Inferred options" and "Other options"
+ *
+ * @param metricType {String} either "sizes" or "significances"
+ * @param notes {Object} arrays of inferred metrics from raw file, by metric type
+ * @param file {Object} study file object (not raw file)
+ */
 function inferOptions(metricType, notes, file) {
   const inferredMetrics =
     notes[metricType].map(opt => ({ label: opt, value: opt }))

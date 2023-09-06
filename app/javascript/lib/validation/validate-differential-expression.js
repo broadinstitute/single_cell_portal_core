@@ -3,6 +3,7 @@ import {
   validateUniqueCellNamesWithinFile, validateGroupColumnCounts, timeOutCSFV
 } from './shared-validation'
 
+/** Return a metric of differential expression size, if present in given metric */
 function getSize(metric) {
   // Scanpy: logfoldchanges; Seurat: avg_log2FC
   const SIZE_REGEX = new RegExp(/(logfoldchange|log2FC|log2foldchange|lfc)/i)
@@ -10,8 +11,8 @@ function getSize(metric) {
   return size
 }
 
-// Significance parsers ###
-// TODO (SCP-): Custom tooltips for custom metrics
+// Start of significance parsers
+
 /** Get "adjusted p-value"-like metric */
 function getPvalAdj(metric) {
   // Scanpy: pvals_adj; Seurat: p_val_adj
@@ -43,15 +44,15 @@ function getQval(metric) {
 function getSigKey(metric) {
   const pvalAdj = getPvalAdj(metric)
   if (pvalAdj) {
-    // Rank adjusted p-value 1st
+    // Rank "adjusted p-value" 1st
     return 0
   } else {
-    // Rank q-value 2nd
+    // Rank "q-value" 2nd
     const qval = getQval(metric)
     if (qval) {
       return 1
     } else {
-      // Rank p-value 3nd
+      // Rank "p-value" 3nd
       const pval = getPval(metric)
       if (pval) {
         return 2
@@ -65,9 +66,7 @@ function getSigKey(metric) {
 
 /** Return a significance string if present in given metric */
 function getSignificance(metric) {
-  console.log('ok 4')
   const pvalAdj = getPvalAdj(metric)
-  console.log('ok 5')
   if (pvalAdj) {
     return pvalAdj
   } else {
@@ -79,13 +78,12 @@ function getSignificance(metric) {
       if (qval) {
         return qval
       } else {
-        console.log('metric', metric)
         return null
       }
     }
   }
 }
-// // End significance parsers
+// End of significance parsers
 
 
 /** Return size and significance values, if present in given metrics */
@@ -108,11 +106,9 @@ function getSizesAndSignificances(metrics) {
 function validateSizeAndSignificance(metrics) {
   const issues = []
   let issue
-  console.log('ok')
   const [sizes, significances] = getSizesAndSignificances(metrics)
   const hasSize = sizes.length > 0
   const hasSignificance = significances.length > 0
-  console.log('*** sizes, significances', sizes, significances)
   const inHeaders = `in headers: ${metrics}`
   const instruction = 'Column headers must include "logfoldchanges" and "qval".'
   if (!hasSize && !hasSignificance) {
@@ -130,19 +126,54 @@ function validateSizeAndSignificance(metrics) {
   return [issues, sizes, significances]
 }
 
+/**
+ * Determine from headers whether DE file has "long" or "wide" format
+ *
+ * Notes:
+ * - Long format 1st headers e.g. ['genes', 'logfoldchanges']
+ * - Wide format 1st headers e.g. ['genes', 'A--rest--logfoldchanges']
+ * - Long format is default / likely more common
+ */
+function parseDeFileFormat(headers) {
+  const firstLineHeaders = headers[0]
+  const deFileFormat = !firstLineHeaders[1].includes('--') ? 'long' : 'wide'
+  return deFileFormat
+}
+
+/**
+ * Return metrics from headers of file; especially helpful for "wide" format
+*/
+function parseMetrics(headers, format) {
+  const firstLineHeaders = headers[0]
+
+  const metricHeaders = firstLineHeaders.filter(
+    header => !['gene', 'genes', 'group', 'comparison_group'].includes(header)
+  )
+
+  if (format === 'long') {
+    return metricHeaders
+  }
+
+  // Get a de-duplicated list of metrics from wide-format headers.
+  // First, get an initial array of metrics, which will contain many duplicates
+  const dupMetrics = metricHeaders.map(header => header.split('--').slice(-1)[0])
+  const metrics = [...new Set(dupMetrics)] // Then, uniquify that array
+  return metrics
+}
+
 /** Parse DE file, and return an array of issues, along with file parsing info */
 export async function parseDifferentialExpressionFile(chunker, mimeType) {
   const { headers, delimiter } = await getParsedHeaderLines(chunker, mimeType)
-  console.log('headers[0]', headers[0])
-  const metrics = headers[0].filter(
-    header => !['gene', 'genes', 'group', 'comparison_group'].includes(header)
-  )
+
+  const deFileFormat = parseDeFileFormat(headers)
+  const metrics = parseMetrics(headers, deFileFormat)
   const [issues, sizes, significances] = validateSizeAndSignificance(metrics)
-  console.log('sizes, significances', sizes, significances)
-  const notes = { sizes, significances, metrics }
+  const notes = { sizes, significances, metrics, deFileFormat }
 
   // add other header validations here
 
+  // Add any future body-content validations like so:
+  //
   // const dataObj = {} // object to track multi-line validation concerns
   // await chunker.iterateLines({
   //   func: (rawLine, lineNum, isLastLine) => {
