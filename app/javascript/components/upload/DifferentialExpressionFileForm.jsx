@@ -10,7 +10,9 @@ import CreatableSelect from 'react-select/creatable'
 const allowedFileExts = FileTypeExtensions.plainText
 const requiredFields = [
   { label: 'Associated annotation', propertyName: 'differential_expression_file_info.annotation_name' },
-  { label: 'Associated clustering file', propertyName: 'differential_expression_file_info.clustering_association' }
+  { label: 'Associated clustering', propertyName: 'differential_expression_file_info.clustering_association' },
+  { label: 'Size metric', propertyName: 'differential_expression_file_info.size_metric' },
+  { label: 'Significance metric', propertyName: 'differential_expression_file_info.significance_metric' }
 ]
 
 /**
