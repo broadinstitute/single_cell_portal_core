@@ -405,6 +405,7 @@ class IngestJob
       set_anndata_file_info if study_file.is_anndata?
       create_cell_name_indexes
     when :ingest_expression
+      set_anndata_file_info if study_file.is_anndata?
       study.delay.set_gene_count
       launch_differential_expression_jobs
     when :ingest_cluster

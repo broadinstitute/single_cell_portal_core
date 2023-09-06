@@ -8,6 +8,18 @@
       <span class="label label-primary"><%= email %></span>
     <% end %>
   </p>
+  <p class="lead">
+    Included studies:
+    <% @branding_group.studies.each do |study| %>
+      <span class="label label-primary"><%= link_to(
+                                              study.accession,
+                                              view_study_path(
+                                                accession: study.accession,
+                                                study_name: study.url_safe_name,
+                                                scpbr: @branding_group.name_as_id),
+                                              class: 'white') %></span>
+    <% end %>
+  </p>
   <div class="row">
     <div class="col-md-3">
       <p>Font Family: <span id="branding_group_font_family"><%= @branding_group.font_family %></span></p>

@@ -15,7 +15,7 @@ class DifferentialExpressionParameters
   # matrix_file_type: type of raw counts matrix (dense, sparse)
   # gene_file (optional): genes/features file for sparse matrix
   # barcode_file (optional): barcodes file for sparse matrix
-  # machine_type (optional): override for default ingest machine type (uses 'n1-highmem-8')
+  # machine_type (optional): override for default ingest machine type (uses 'n2d-highmem-8')
   PARAM_DEFAULTS = {
     annotation_name: nil,
     annotation_type: 'group',
@@ -27,7 +27,7 @@ class DifferentialExpressionParameters
     matrix_file_type: nil,
     gene_file: nil,
     barcode_file: nil,
-    machine_type: 'n1-highmem-8'
+    machine_type: 'n2d-highmem-8'
   }.freeze
 
   # values that are available as methods but not as attributes (and not passed to command line)
