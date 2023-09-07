@@ -69,25 +69,39 @@ class StudySyncService
 
   # main method to iterate list of remote files and create entries as needed
   #
+  #
   # * *params*
   #   - +study+ (Study) => study to process remote files for
+  #   - +token+ (String) => pointer to next page of files
   #
   # * *returns*
   #   - (Array<StudyFile>) => array of unsynced StudyFile documents
-  def self.process_all_remotes(study)
+  def self.process_remotes(study, token: nil)
     Rails.logger.info "processing all remotes for #{study.accession}"
-    workspace_files = ApplicationController.firecloud_client.execute_gcloud_method(
-      :get_workspace_files, 0, study.bucket_id, delimiter: '_scp_internal'
-    )
-    # we need to duplicate the workspace_files list so that we don't lose track of next?
+    workspace_files = get_file_batch(study, token:)
     file_extension_map = create_file_map(workspace_files.dup)
-    unsynced_files = process_file_batch(study, workspace_files, file_extension_map: file_extension_map)
-    while workspace_files.next?
-      Rails.logger.info "processing next batch of remotes for #{study.accession}"
-      workspace_files = workspace_files.next
-      unsynced_files += process_file_batch(study, workspace_files, file_extension_map: file_extension_map)
-    end
-    unsynced_files
+    submission_ids = get_submission_ids(study)
+    process_file_batch(study, workspace_files, submission_ids, file_extension_map:)
+  end
+
+  # get batch of 1000 files from workspace bucket
+  # can also paginate more files using page token
+  #
+  # * *params*
+  #   - +study+ (Study) => study to process remote files for
+  #   - +token+ (String) => pointer to next page of files
+  #
+  # * *returns*
+  #   - (Google::Cloud::Storage::File::List)
+  def self.get_file_batch(study, token: nil)
+    ApplicationController.firecloud_client.execute_gcloud_method(
+      :get_workspace_files, 0,
+      study.bucket_id, delimiter: '_scp_internal', token:
+    )
+  end
+
+  def self.count_remaining_files(study, token: nil)
+
   end
 
   # process a block of files from bucket
@@ -97,13 +111,14 @@ class StudySyncService
   # * *params*
   #   - +study+ (Study) => study to create new entities in
   #   - +files+ (Google::Cloud::Storage::File::List) => current batch of remote files in GCP bucket (up to 1K)
+  #   - +submission_ids+ (Array<String>) => array of submission UUIDs to ignore files in
   #   - +file_extension_map+ (Hash) => output from StudySyncService,create_file_map
   #
   # * *returns*
   #   - (Array<StudyFile>) => array of unsynced StudyFile documents from batch
-  def self.process_file_batch(study, files, file_extension_map:)
+  def self.process_file_batch(study, files, submission_ids, file_extension_map:)
     unsynced_study_files = []
-    valid_files = remove_submission_outputs(study, files)
+    valid_files = remove_submission_outputs(files, submission_ids)
     new_files = remove_synced_files(study, valid_files)
     dir_files = find_files_for_directories(new_files, file_extension_map)
     add_files_to_directories(study, dir_files)
@@ -130,12 +145,7 @@ class StudySyncService
   # * *returns*
   #   - (Hash) => map of remote directories and counts of files, by extension
   def self.create_file_map(files)
-    file_extension_map = DirectoryListing.create_extension_map(files, {})
-    while files.next?
-      files = files.next
-      file_extension_map = DirectoryListing.create_extension_map(files, file_extension_map)
-    end
-    file_extension_map
+    DirectoryListing.create_extension_map(files, {})
   end
 
   # detect candidate files for DirectoryListing entries
@@ -219,18 +229,28 @@ class StudySyncService
     synced_files.delete_if { |file| bundled_file_ids.include?(file.id) }
   end
 
+  # retrieve all Terra workspace submission ids to use in filtering bucket files
+  #
+  # * *params*
+  #   - +study+ (Study) => study to get submissions in
+  #
+  # * *returns*
+  #   - (Array<String>) => array of submission UUIDs
+  def self.get_submission_ids(study)
+    ApplicationController.firecloud_client.get_workspace_submissions(
+      study.firecloud_project, study.firecloud_workspace
+    ).map { |s| s['submissionId'] }
+  end
+
   # remove files from batch that are submission outputs from a Terra workflow
   #
   # * *params*
-  #   - +study+ (Study) => study to create new entities in
   #   - +files+ (Array<Google::Cloud::Storage::File>) => current batch of remote files in GCP bucket (up to 1K)
+  #   - +submission_ids+ (Array<String>) => array of submission UUIDs to ignore files in
   #
   # * *returns*
   #   - (Array<Google::Cloud::Storage::File>) => filtered list of remote files
-  def self.remove_submission_outputs(study, files)
-    submission_ids = ApplicationController.firecloud_client.get_workspace_submissions(study.firecloud_project,
-                                                                                      study.firecloud_workspace)
-                                          .map { |s| s['submissionId'] }
+  def self.remove_submission_outputs(files, submission_ids)
     submission_outputs = files.select { |f| submission_ids.include?(f.name.split('/').first) }.map(&:generation)
     files.delete_if { |f| submission_outputs.include?(f.generation) }
   end

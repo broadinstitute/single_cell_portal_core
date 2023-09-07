@@ -547,7 +547,7 @@ module Api
 
         # begin determining sync status with study_files and primary or other data
         begin
-          @unsynced_files = StudySyncService.process_all_remotes(@study)
+          @unsynced_files = StudySyncService.process_remotes(@study)
         rescue => e
           ErrorTracker.report_exception(e, current_user, @study, params)
           MetricsService.report_error(e, request, current_user, @study)

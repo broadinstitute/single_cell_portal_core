@@ -26,7 +26,7 @@ class StudySyncServiceTest < ActiveSupport::TestCase
   end
 
   test 'should process all remotes' do
-    unsynced_files = StudySyncService.process_all_remotes(@full_study)
+    unsynced_files = StudySyncService.process_remotes(@full_study)
     unsynced_metadata = unsynced_files.detect { |f| f.name == 'metadata_example.txt' }
     assert unsynced_metadata.present?
   end
