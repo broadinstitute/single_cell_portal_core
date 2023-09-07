@@ -37,7 +37,8 @@ const PROPERTIES_NOT_TO_SEND = [
   'upload',
   'parse_status',
   'requestCanceller',
-  'serverFile'
+  'serverFile',
+  'notes'
 ]
 
 const PROPERTIES_AS_JSON = ['custom_color_updates']

@@ -9,10 +9,14 @@ class DifferentialExpressionFileInfo
   field :annotation_name, type: String
   field :annotation_scope, type: String
   field :computational_method, type: String, default: DifferentialExpressionResult::DEFAULT_COMP_METHOD
+  field :significance_metric, type: String
+  field :size_metric, type: String
   field :clustering_association, type: String # associated clustering StudyFile, for upload UI
 
   validates :annotation_name, presence: true, uniqueness: { scope: %i[annotation_scope cluster_group] }
   validates :annotation_scope, presence: true
+  validates :significance_metric, presence: true
+  validates :size_metric, presence: true
   validate :annotation_exists?
 
   before_validation :set_cluster_from_association, on: :create
