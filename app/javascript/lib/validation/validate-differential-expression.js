@@ -23,7 +23,7 @@ function getPvalAdj(metric) {
 
 /** Return a "p-value"-like string if present in given metric , excluding "adjusted p-value"-like */
 function getPval(metric) {
-  // Scanpy: pvals; Seurat: p_val
+  // Conventions -- Scanpy: pvals; Seurat: p_val
   const P_VALUE_REGEX = new RegExp(/(pval|p_val|p-val)/i)
   const pval = metric.match(P_VALUE_REGEX)
   const pvalAdj = getPvalAdj(metric)
@@ -34,7 +34,7 @@ function getPval(metric) {
 
 /** Return a "q-value"-like string if present in given metric */
 function getQval(metric) {
-  // Scanpy: qvals (?); Seurat: q_val (?)
+  // Conventions -- Scanpy: qvals (?); Seurat: q_val (?)
   const Q_VALUE_REGEX = new RegExp(/(qval|q_val|q-val)/i)
   const qval = metric.match(Q_VALUE_REGEX)
   return qval
@@ -86,8 +86,8 @@ function getSignificance(metric) {
 // End of significance parsers
 
 
-/** Return size and significance values, if present in given metrics */
-function getSizesAndSignificances(metrics) {
+/** Return actual size and significance header, if present in given metrics */
+function inferSizesAndSignificances(metrics) {
   const sizes = metrics.filter(metric => getSize(metric))
   const rawSignificances = metrics.filter(metric => getSignificance(metric))
   const significances = rawSignificances.sort((a, b) => getSigKey(a) - getSigKey(b))
@@ -95,6 +95,87 @@ function getSizesAndSignificances(metrics) {
   return [sizes, significances]
 }
 
+
+/** Return a metric of differential expression size, if present in given metric */
+function getGeneHeader(header) {
+  // Conventions -- Scanpy: ?; Seurat: genes.  "gene" is SCP canonical.
+  const GENE_REGEX = new RegExp(/^(gene|genes)$/i)
+  const gene = header.match(GENE_REGEX)
+  return gene
+}
+
+/**
+ * Return 'comparison_group', if present.
+ *
+ * (We haven't seen any variants of this required header; we can refine this
+ * check if/when we encounter them in concrete examples.)
+ */
+function getComparisonGroupHeader(header) {
+  if (header === 'comparison_group') {
+    return header
+  }
+}
+
+/** Return a metric of differential expression size, if present in given metric */
+function getGroupHeader(header) {
+  // Conventions -- Scanpy: ?; Seurat: cluster.  "group" is SCP canonical.
+  const GROUP_REGEX = new RegExp(/(group|cluster)/i)
+  const group = header.match(GROUP_REGEX)
+  const comparisonGroup = getComparisonGroupHeader(header)
+  if (!comparisonGroup) {
+    return group
+  }
+}
+
+/** Return actual size and significance header, if present in given metrics */
+function inferOtherHeaders(headers) {
+  const geneHeaders = headers.filter(header => getGeneHeader(header))
+  const groupHeaders = headers.filter(header => getGroupHeader(header))
+  const comparisonGroupHeaders = headers.filter(header => getSignificance(header))
+
+  return [geneHeaders, groupHeaders, comparisonGroupHeaders]
+}
+
+/** Validates "gene", "group", and (if applicable) "comparison group" headers */
+function validateOtherHeaders(headers) {
+  const issues = []
+  const [geneHeaders, groupHeaders, comparisonGroupHeaders] = inferOtherHeaders(headers)
+  const hasGeneHeaders = geneHeaders.length > 1
+  const hasGroupHeaders = groupHeaders.length > 1
+  // const hasComparisonGroupHeaders = comparisonGroupHeaders.length > 1
+
+  if (!hasGeneHeaders || !hasGroupHeaders) {
+    let warningType = 'format:cap:'
+    const inHeaders = `in headers: ${headers}`
+    const instruction = 'Column headers must include headers for genes and groups.'
+    let issue = instruction
+    let missing
+    let menus
+    if (!hasGeneHeaders && !hasGroupHeaders) {
+      issue += '  No "gene" or "group" headers found'
+      missing = 'headers for gene and group'
+      warningType += 'no-gene-or-group'
+      menus = '"Gene header" and "Group header" menus'
+    } else if (!hasGeneHeaders) {
+      issue += '  No "gene" header found'
+      missing = 'a header for genes'
+      warningType += 'no-gene'
+      menus = '"Gene header" menu'
+    } else if (!hasGroupHeaders) {
+      issue += '  No "group" header found'
+      missing = 'a "group" header'
+      warningType += 'no-group'
+      menus = '"Group header" menu'
+    }
+    issue += (
+      ` ${inHeaders}.  Please update your file to add ${missing}, ` +
+      `or select from "Other options" in the ${menus} below.`
+    )
+    issues.push(['warn', warningType, issue])
+  }
+
+  return [issues, geneHeaders, groupHeaders, comparisonGroupHeaders]
+}
 
 /**
  * Report whether size and/or significance are detected among metrics
@@ -104,7 +185,7 @@ function getSizesAndSignificances(metrics) {
  */
 function validateSizeAndSignificance(metrics) {
   const issues = []
-  const [sizes, significances] = getSizesAndSignificances(metrics)
+  const [sizes, significances] = inferSizesAndSignificances(metrics)
   const hasSize = sizes.length > 0
   const hasSignificance = significances.length > 0
   if (!hasSize || !hasSignificance) {
@@ -178,12 +259,23 @@ function parseMetrics(headers, format) {
 export async function parseDifferentialExpressionFile(chunker, mimeType) {
   const { headers, delimiter } = await getParsedHeaderLines(chunker, mimeType)
 
+  let issues = []
+
+  // Validate header-content
   const deFileFormat = parseDeFileFormat(headers)
   const metrics = parseMetrics(headers, deFileFormat)
-  const [issues, sizes, significances] = validateSizeAndSignificance(metrics)
-  const notes = { sizes, significances, metrics, deFileFormat }
+  const [metricsIssues, sizes, significances] = validateSizeAndSignificance(metrics)
+  issues = issues.concat(metricsIssues)
+  const [
+    otherHeadersIssues, geneHeaders, groupHeaders, comparisonGroupHeaders
+  ] = validateOtherHeaders(headers[0])
+  issues = issues.concat(otherHeadersIssues)
 
-  // add other header validations here
+  const notes = {
+    metrics, deFileFormat,
+    geneHeaders, groupHeaders, comparisonGroupHeaders,
+    sizes, significances
+  }
 
   // Add any future body-content validations like so:
   //
