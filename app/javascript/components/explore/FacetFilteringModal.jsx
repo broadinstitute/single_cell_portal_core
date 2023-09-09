@@ -9,14 +9,13 @@ export default function FacetFilteringModal() {
   const [showCellFacetModal, setShowCellFacetModall] = useState(false)
   const cellFacetModalContent = (
     <div>
-      <p> Intersection cell filtering provides the ability to view cell annotations in the context of other annotations.
-        You can visualize the expression of particulr cells in a subset of the dataset through the facet filters. Up to five
-        annotations are available.
+      <p> Cell filtering provides the ability to view cell annotations within the context of other annotations.
+        You can visualize the expression of particular cells in a subset of the dataset through the facet filters.
       </p>
       <p>
         For example - You might be interested in the diseased cells of a dataset, but only in the males of the dataset. You can
-        choose disease for your annotation and then male from the subsequent facet and the plot would visualize the subset of
-        the dataset that is diseased cells from males.
+        choose any annotation to color your plot by and then chose facets Disease and Sex then filter for only diseased and male
+        cells utilizing the check boxes to filter.
       </p>
     </div>
   )

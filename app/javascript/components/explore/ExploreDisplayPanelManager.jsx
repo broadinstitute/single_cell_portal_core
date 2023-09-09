@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import _clone from 'lodash/clone'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faLink, faEye, faTimes, faUndo } from '@fortawesome/free-solid-svg-icons'
+import LoadingSpinner from '~/lib/LoadingSpinner'
 
 import ClusterSelector from '~/components/visualization/controls/ClusterSelector'
 import AnnotationSelector from '~/components/visualization/controls/AnnotationSelector'
@@ -20,7 +21,6 @@ import DifferentialExpressionPanel, { DifferentialExpressionPanelHeader } from '
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
 import FacetFilteringModal from '~/components/explore/FacetFilteringModal'
 import { FacetFilterPanel, FacetFilterPanelHeader } from './FacetFilterPanel'
-
 
 /** Get the selected clustering and annotation, or their defaults */
 function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
@@ -172,7 +172,7 @@ export default function ExploreDisplayPanelManager({
   annotation, searchGenes, clusterName, shownTab, countsByLabel, showUpstreamDifferentialExpressionPanel,
   setShowUpstreamDifferentialExpressionPanel, setShowDifferentialExpressionPanel, showDifferentialExpressionPanel,
   setShowViewOptionsControls, setIsCellSelecting, currentPointsSelected, showViewOptionsControls, isCellSelecting,
-  deGenes, setDeGenes, setShowDeGroupPicker, cellFaceting, updateFilteredCells
+  deGenes, setDeGenes, setShowDeGroupPicker, cellFaceting, updateFilteredCells, setCellFaceting
 }) {
   const [, setRenderForcer] = useState({})
   const [dataCache] = useState(createCache())
@@ -203,9 +203,8 @@ export default function ExploreDisplayPanelManager({
     setShowViewOptionsControls(!showViewOptionsControls)
   }
 
-  /** */
+  /** toggle between the panels for DE, Facet Filtering and Default */
   function togglePanel(panelOption) {
-    console.log('setting panelto:', panelToShow)
     setPanelToShow(panelOption)
   }
 
@@ -302,9 +301,7 @@ export default function ExploreDisplayPanelManager({
 
   return (
     <>
-      {/* Render plots for the given Explore view state */}
       <div >
-        {/* className='g' */}
         {/* Render "Options" panel at right of page */}
         <div className="view-options-toggle">
           {panelToShow === 'default' &&
@@ -318,7 +315,7 @@ export default function ExploreDisplayPanelManager({
                 </button>
               </>
           }
-          {panelToShow === 'CFF' && <FacetFilterPanelHeader
+          {getFeatureFlagsWithDefaults()?.show_cell_facet_filtering && panelToShow === 'CFF' && <FacetFilterPanelHeader
             togglePanel = {togglePanel}
             setShowDifferentialExpressionPanel={setShowDifferentialExpressionPanel}
             setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
@@ -399,18 +396,19 @@ export default function ExploreDisplayPanelManager({
                   </div>
                 </>
                 }
-                { cellFaceting &&
+                {
                   <>
                     <div className="row">
                       <div className="col-xs-12 cff-button_style">
                         <button
-                          className=
-                            {`btn btn-primary`}
+                          disabled={!cellFaceting}
+                          className={`btn btn-primary`}
                           onClick={() => {
                             togglePanel('CFF') // cell facet filtering
                           }}
                         >Cell facet filtering</button>
-                        <FacetFilteringModal />
+                        {!cellFaceting && <LoadingSpinner className="fa-lg"/>}
+                        {cellFaceting && <FacetFilteringModal />}
                       </div>
                     </div>
                   </>
@@ -460,13 +458,17 @@ export default function ExploreDisplayPanelManager({
             </button>
           </>
         }
-        {panelToShow === 'CFF' && <FacetFilterPanel
+        {getFeatureFlagsWithDefaults()?.show_cell_facet_filtering && panelToShow === 'CFF' && <FacetFilterPanel
           annotationList={annotationList}
           cluster={exploreParamsWithDefaults.cluster}
           shownAnnotation={shownAnnotation}
           updateClusterParams={updateClusterParams}
           cellFaceting={cellFaceting}
-          updateFilteredCells={updateFilteredCells}>
+          updateFilteredCells={updateFilteredCells}
+          exploreParams={exploreParams}
+          exploreInfo={exploreInfo}
+          studyAccession={studyAccession}
+          setCellFaceting={setCellFaceting}>
         </FacetFilterPanel>}
         {panelToShow === 'DE' && countsByLabel && annotHasDe &&
           <>

@@ -28,7 +28,7 @@ import PlotTabs from './PlotTabs'
 import { initCellFaceting, filterCells } from '~/lib/cell-faceting'
 
 /** Get the selected clustering and annotation, or their defaults */
-function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
+export function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
   if (!exploreInfo) {return [null, null]}
   const annotList = exploreInfo.annotationList
   let selectedCluster
@@ -225,33 +225,6 @@ export default function ExploreDisplayTabs({
     setRenderForcer({})
   }, 300)
 
-  /** Get widths for main (plots) and side (options or DE) panels, for current Explore state */
-  function getPanelWidths() {
-    let main
-    let side
-    const isSelectingDE = showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel
-    if (showViewOptionsControls) {
-      if (
-        (deGenes !== null) ||
-        (hasPairwiseDe && (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel))
-      ) {
-        // DE table is shown, or pairwise DE is available.  Least horizontal space for plots.
-        main = 'col-md-9'
-        side = 'col-md-3'
-      } else {
-        // Default state, when side panel is "Options" and not collapsed
-        main = 'col-md-10'
-        // only set options-bg if we're outside the DE UX
-        side = isSelectingDE ? 'col-md-2' : 'col-md-2 options-bg'
-      }
-    } else {
-      // When options panel is collapsed.  Maximize horizontal space for plots.
-      main = 'col-md-12'
-      side = 'hidden'
-    }
-    return { main, side }
-  }
-
   return (
     <>
       {/* Render top content for Explore view, i.e. gene search box and plot tabs */}
@@ -446,7 +419,7 @@ export default function ExploreDisplayTabs({
                 <FontAwesomeIcon className="fa-lg" icon={faEye}/>
               </button>
         }
-        <div className='flexible-plot-space cff-panel-specifics'>
+        {!enabledTabs.includes('loading') && <div className='flexible-plot-space cff-panel-specifics'>
           <ExploreDisplayPanelManager
             deGenes={deGenes}
             searchGenes={searchGenes}
@@ -474,9 +447,10 @@ export default function ExploreDisplayTabs({
             showViewOptionsControls = {showViewOptionsControls}
             isCellSelecting = {isCellSelecting}
             cellFaceting = {cellFaceting}
+            setCellFaceting = {setCellFaceting}
             updateFilteredCells = {updateFilteredCells}
           />
-        </div>
+        </div>}
       </div>
     </>
   )
