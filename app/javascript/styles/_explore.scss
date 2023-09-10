@@ -73,8 +73,6 @@
 .explore-tab-content {
   background: #fff;
   display: flex;
-  // flex-wrap: wrap;
-  // margin-right: 0px;
 
   button.action {
     background: #fff;
@@ -271,13 +269,6 @@
   z-index: 3;
 }
 
-
 .flexible-plot-space{
   flex-grow: 1;
-}
-
-.g{
-  flex-grow: 2;
-  display: flex;
-  justify-content: center;
 }
