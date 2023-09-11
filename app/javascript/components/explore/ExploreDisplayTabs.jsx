@@ -99,6 +99,7 @@ export default function ExploreDisplayTabs({
   const [deGenes, setDeGenes] = useState(null)
   const [showDifferentialExpressionPanel, setShowDifferentialExpressionPanel] = useState(deGenes !== null)
   const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(deGenes !== null)
+  const [panelToShow, setPanelToShow] = useState(showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel? 'DE' : 'default')
 
   const [cellFaceting, setCellFaceting] = useState(null)
   const [filteredCells, setFilteredCells] = useState(null)
@@ -165,11 +166,8 @@ export default function ExploreDisplayTabs({
     }
   }
 
-  console.log('in xplordisplaybtbs:', cellFaceting)
-
   /** Update filtered cells to only those that match annotation group value filter selections */
   function updateFilteredCells(selection) {
-    console.log('here:', selection)
     const cellsByFacet = cellFaceting.cellsByFacet
     const facets = cellFaceting.facets
     const filtersByFacet = cellFaceting.filtersByFacet
@@ -193,6 +191,13 @@ export default function ExploreDisplayTabs({
   /** Handle clicks on "View Options" toggler element */
   function toggleViewOptions() {
     setShowViewOptionsControls(!showViewOptionsControls)
+  }
+
+  /** toggle between the panels for DE, Facet Filtering and Default
+   * needed at this level for choosing style for panel
+  */
+  function togglePanel(panelOption) {
+    setPanelToShow(panelOption)
   }
 
   /** handles gene list selection */
@@ -259,7 +264,7 @@ export default function ExploreDisplayTabs({
       </div>
 
       {/* Render plots for the given Explore view state */}
-      <div className="explore-tab-content">
+      <div className="row explore-tab-content">
         <div className="flexible-plot-space">
           <div className="explore-plot-tab-content row">
             { showRelatedGenesIdeogram &&
@@ -419,36 +424,39 @@ export default function ExploreDisplayTabs({
                 <FontAwesomeIcon className="fa-lg" icon={faEye}/>
               </button>
         }
-        {!enabledTabs.includes('loading') && <div className='flexible-plot-space cff-panel-specifics'>
+        {!enabledTabs.includes('loading') && <div
+          className={showViewOptionsControls ?
+            `flexible-plot-space panel-specifics ${panelToShow}-options-bg` : 'hidden'
+          }
+        >
           <ExploreDisplayPanelManager
-            deGenes={deGenes}
-            searchGenes={searchGenes}
-            exploreParamsWithDefaults={exploreParamsWithDefaults}
-            exploreInfo={exploreInfo}
-            clusterName={exploreParamsWithDefaults.cluster}
-            annotation={shownAnnotation}
-            setShowDeGroupPicker={setShowDeGroupPicker}
-            setDeGenes={setDeGenes}
-            countsByLabel={countsByLabel}
-            showUpstreamDifferentialExpressionPanel = {showUpstreamDifferentialExpressionPanel}
-            setShowUpstreamDifferentialExpressionPanel = {setShowUpstreamDifferentialExpressionPanel}
-            showDifferentialExpressionPanel = {showDifferentialExpressionPanel}
-            shownTab = {shownTab}
-            exploreParams= {exploreParams}
             studyAccession = {studyAccession}
+            exploreInfo={exploreInfo}
             setExploreInfo = {setExploreInfo}
+            exploreParams= {exploreParams}
             updateExploreParams = {updateExploreParams}
             clearExploreParams = {clearExploreParams}
+            exploreParamsWithDefaults={exploreParamsWithDefaults}
             routerLocation = {routerLocation}
+            searchGenes={searchGenes}
+            countsByLabel={countsByLabel}
+            setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
+            showDifferentialExpressionPanel = {showDifferentialExpressionPanel}
             setShowDifferentialExpressionPanel = {setShowDifferentialExpressionPanel}
-            setShowViewOptionsControls = {setShowViewOptionsControls}
+            showUpstreamDifferentialExpressionPanel = {showUpstreamDifferentialExpressionPanel}
+            togglePanel={togglePanel}
+            shownTab = {shownTab}
             setIsCellSelecting = {setIsCellSelecting}
             currentPointsSelected = {currentPointsSelected}
-            showViewOptionsControls = {showViewOptionsControls}
             isCellSelecting = {isCellSelecting}
+            deGenes={deGenes}
+            setDeGenes={setDeGenes}
+            setShowDeGroupPicker={setShowDeGroupPicker}
             cellFaceting = {cellFaceting}
             setCellFaceting = {setCellFaceting}
             updateFilteredCells = {updateFilteredCells}
+            panelToShow ={panelToShow}
+            toggleViewOptions= {toggleViewOptions}
           />
         </div>}
       </div>

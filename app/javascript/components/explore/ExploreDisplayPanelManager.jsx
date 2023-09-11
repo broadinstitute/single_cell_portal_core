@@ -167,21 +167,17 @@ function getIsAuthorDe(exploreInfo, exploreParams) {
  *
  *  */
 export default function ExploreDisplayPanelManager({
-  studyAccession, exploreInfo, setExploreInfo, exploreParams, updateExploreParams,
-  clearExploreParams, exploreParamsWithDefaults, routerLocation,
-  annotation, searchGenes, clusterName, shownTab, countsByLabel, showUpstreamDifferentialExpressionPanel,
-  setShowUpstreamDifferentialExpressionPanel, setShowDifferentialExpressionPanel, showDifferentialExpressionPanel,
-  setShowViewOptionsControls, setIsCellSelecting, currentPointsSelected, showViewOptionsControls, isCellSelecting,
-  deGenes, setDeGenes, setShowDeGroupPicker, cellFaceting, updateFilteredCells, setCellFaceting
+  studyAccession, exploreInfo, setExploreInfo, exploreParams, updateExploreParams, clearExploreParams,
+  exploreParamsWithDefaults, routerLocation, searchGenes, countsByLabel, setShowUpstreamDifferentialExpressionPanel,
+  setShowDifferentialExpressionPanel, showUpstreamDifferentialExpressionPanel, togglePanel, shownTab,
+  showDifferentialExpressionPanel, setIsCellSelecting, currentPointsSelected, isCellSelecting, deGenes,
+  setDeGenes, setShowDeGroupPicker, cellFaceting, setCellFaceting, updateFilteredCells, panelToShow, toggleViewOptions
 }) {
   const [, setRenderForcer] = useState({})
   const [dataCache] = useState(createCache())
 
   const [deGroupB, setDeGroupB] = useState(null)
   const [deGroup, setDeGroup] = useState(null)
-
-
-  const [panelToShow, setPanelToShow] = useState(showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel? 'DE' : 'default')
 
   // Differential expression settings
   const flags = getFeatureFlagsWithDefaults()
@@ -197,16 +193,6 @@ export default function ExploreDisplayPanelManager({
   const referencePlotDataParams = _clone(exploreParams)
 
   referencePlotDataParams.genes = []
-
-  /** Handle clicks on "View Options" toggler element */
-  function toggleViewOptions() {
-    setShowViewOptionsControls(!showViewOptionsControls)
-  }
-
-  /** toggle between the panels for DE, Facet Filtering and Default */
-  function togglePanel(panelOption) {
-    setPanelToShow(panelOption)
-  }
 
   const annotationList = exploreInfo ? exploreInfo.annotationList : null
   // hide the cluster controls if we're on a genome tab, or if there aren't clusters to choose
@@ -301,7 +287,7 @@ export default function ExploreDisplayPanelManager({
 
   return (
     <>
-      <div >
+      <div>
         {/* Render "Options" panel at right of page */}
         <div className="view-options-toggle">
           {panelToShow === 'default' &&
@@ -388,6 +374,7 @@ export default function ExploreDisplayPanelManager({
                             togglePanel('DE')
                           } else if (studyHasDe) {
                             setShowUpstreamDifferentialExpressionPanel(true)
+                            togglePanel('DE')
                           }
                         }}
                       >Differential expression</button>

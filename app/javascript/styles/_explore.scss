@@ -251,10 +251,20 @@
   margin-right: 10px;
 }
 
+.default-options-bg {
+  background: $options-color;
+  border-bottom: 1px solid #ccc;
+}
+
+.DE-options-bg {
+  padding-right: 10px;
+}
+
 .options-bg {
   background: $options-color;
   border-bottom: 1px solid #ccc;
 }
+
 
 .action-with-bg {
   background: $options-color !important;
@@ -271,4 +281,11 @@
 
 .flexible-plot-space{
   flex-grow: 1;
+}
+
+.panel-specifics{
+  border-left: 1px solid #ccc;
+  margin-left: 16px;
+  padding-left: 17px;
+  max-width: 365px
 }
