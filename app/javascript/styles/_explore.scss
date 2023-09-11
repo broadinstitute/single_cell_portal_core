@@ -254,17 +254,25 @@
 .default-options-bg {
   background: $options-color;
   border-bottom: 1px solid #ccc;
+  max-width: 235px;
+  padding-left: 12px;
+  padding-right: 12px;
 }
 
 .DE-options-bg {
-  padding-right: 10px;
+  max-width: 345px;
+  padding-left: 17px;
+  padding-right: 14px;
+}
+
+.CFF-options-bg {
+  max-width: 235px;
 }
 
 .options-bg {
   background: $options-color;
   border-bottom: 1px solid #ccc;
 }
-
 
 .action-with-bg {
   background: $options-color !important;
@@ -286,6 +294,4 @@
 .panel-specifics{
   border-left: 1px solid #ccc;
   margin-left: 16px;
-  padding-left: 17px;
-  max-width: 365px
 }
