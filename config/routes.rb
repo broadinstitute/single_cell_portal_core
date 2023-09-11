@@ -198,6 +198,7 @@ Rails.application.routes.draw do
       member do
         get 'upload', to: 'studies#initialize_study', as: :initialize
         get 'sync', to: 'studies#sync_study', as: :sync
+        get 'sync_batch', to: 'studies#sync_next_file_batch', as: :sync_next_file_batch
         get 'sync/:submission_id', to: 'studies#sync_submission_outputs', as: :sync_submission_outputs
         patch 'upload', to: 'studies#do_upload'
         get 'resume_upload', to: 'studies#resume_upload'

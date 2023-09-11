@@ -111,12 +111,13 @@ class StudiesController < ApplicationController
       redirect_to merge_default_redirect_params(studies_path, scpbr: params[:scpbr]),
                   alert: "We were unable to sync with your workspace bucket due to an error: #{view_context.simple_format(e.message)}.  #{SCP_SUPPORT_EMAIL}" and return
     end
-     # sync batch of 1000 files
     sync_file_batch
   end
 
+  # paginate batch of files to sync (same as sync_study but does not alter workspace permissions)
   def sync_next_file_batch
     sync_file_batch
+    render action: :sync_study
   end
 
   # sync outputs from a specific submission
@@ -931,10 +932,14 @@ class StudiesController < ApplicationController
     end
   end
 
+  # sync a batch of up to 1000 remote files
   def sync_file_batch
     # begin determining sync status with study_files and primary or other data
     begin
-      @unsynced_files = StudySyncService.process_remotes(@study, token: params[:page_token])
+      remote_info = StudySyncService.process_remotes(@study, token: params[:page_token])
+      @unsynced_files = remote_info[:unsynced_study_files]
+      @next_page = remote_info[:page_token]
+      @remaining_files = remote_info[:remaining_files]
     rescue => e
       ErrorTracker.report_exception(e, current_user, @study, params)
       MetricsService.report_error(e, request, current_user, @study)

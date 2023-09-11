@@ -77,7 +77,7 @@ class StudySyncService
   # * *returns*
   #   - (Array<StudyFile>) => array of unsynced StudyFile documents
   def self.process_remotes(study, token: nil)
-    Rails.logger.info "processing all remotes for #{study.accession}"
+    Rails.logger.info "processing #{token || 'initial'} batch of remotes for #{study.accession}"
     workspace_files = get_file_batch(study, token:)
     file_extension_map = create_file_map(workspace_files.dup)
     submission_ids = get_submission_ids(study)
@@ -96,12 +96,27 @@ class StudySyncService
   def self.get_file_batch(study, token: nil)
     ApplicationController.firecloud_client.execute_gcloud_method(
       :get_workspace_files, 0,
-      study.bucket_id, delimiter: '_scp_internal', token:
+      study.bucket_id, delimiter: '_scp_internal', token:, max: 10
     )
   end
 
+  # determine amount of remaining remote objects to process in study bucket
+  #
+  # * *params*
+  #   - +study+ (Study) => study to process remote files for
+  #   - +token+ (String) => pointer to next page of files
+  #
+  # * *returns*
+  #   - (Integer)
   def self.count_remaining_files(study, token: nil)
-
+    count = 0
+    batch = get_file_batch(study, token:)
+    count += batch.count
+    while batch.next?
+      batch = batch.next
+      count += batch.count
+    end
+    count
   end
 
   # process a block of files from bucket
@@ -117,10 +132,10 @@ class StudySyncService
   # * *returns*
   #   - (Array<StudyFile>) => array of unsynced StudyFile documents from batch
   def self.process_file_batch(study, files, submission_ids, file_extension_map:)
-    unsynced_study_files = []
+    response = { page_token: files.token, unsynced_study_files: [], remaining_files: 0 }
     valid_files = remove_submission_outputs(files, submission_ids)
     new_files = remove_synced_files(study, valid_files)
-    dir_files = find_files_for_directories(new_files, file_extension_map)
+    dir_files = find_files_for_directories(new_files, file_extension_map, study)
     add_files_to_directories(study, dir_files)
     unsynced_files_in_batch = remove_directory_files(dir_files, new_files)
     Rails.logger.info "found #{unsynced_files_in_batch.count} remotes in batch to process for #{study.accession}"
@@ -131,9 +146,12 @@ class StudySyncService
                                     upload_content_type: file.content_type, upload_file_size: file.size,
                                     generation: file.generation, remote_location: file.name)
       unsynced_file.build_expression_file_info
-      unsynced_study_files << unsynced_file
+      response[:unsynced_study_files] << unsynced_file
     end
-    unsynced_study_files
+    if files.next?
+      response[:remaining_files] = count_remaining_files(study, token: files.token)
+    end
+    response
   end
 
   # create a map of remote paths to counts of files by extension
@@ -153,15 +171,17 @@ class StudySyncService
   # * *params*
   #   - +files+ (Google::Cloud::Storage::File::List) => current batch of remote files in GCP bucket (up to 1K)
   #   - +file_extension_map+ (Hash) => output from StudySyncService,create_file_map
+  #   - +study+ (Study) => study to create/update DirectoryListings in
   #
   # * *returns*
   #   - (Array<StudyFile>) => array of remote files to add to DirectoryListings
-  def self.find_files_for_directories(files, file_extension_map)
+  def self.find_files_for_directories(files, file_extension_map, study)
     files.select do |file|
       file_type = DirectoryListing.file_type_from_extension(file.name)
       directory_name = DirectoryListing.get_folder_name(file.name)
       file_extension_map.dig(directory_name, file_type).to_i >= DirectoryListing::MIN_SIZE && directory_name != '/' ||
-        (directory_name == '/' && DirectoryListing::PRIMARY_DATA_TYPES.include?(file_type))
+        (directory_name == '/' && DirectoryListing::PRIMARY_DATA_TYPES.include?(file_type)) ||
+        DirectoryListing.where(name: directory_name, file_type: file_type, study:).exists? # gotcha for partial results
     end
   end
 
