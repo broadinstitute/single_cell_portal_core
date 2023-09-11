@@ -1,4 +1,4 @@
-class AddFlagForUserDeUpload < Mongoid::Migration
+class AddFlagForCellFacetFiltering < Mongoid::Migration
   def self.up
     FeatureFlag.create!(name: 'show_cell_facet_filtering',
                         default_value: false,

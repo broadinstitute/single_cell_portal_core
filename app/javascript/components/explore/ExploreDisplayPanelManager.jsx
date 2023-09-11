@@ -396,13 +396,14 @@ export default function ExploreDisplayPanelManager({
                   </div>
                 </>
                 }
-                {
+                { getFeatureFlagsWithDefaults()?.show_cell_facet_filtering &&
                   <>
                     <div className="row">
                       <div className="col-xs-12 cff-button_style">
                         <button
                           disabled={!cellFaceting}
                           className={`btn btn-primary`}
+                          data-testid="cell facet filtering button"
                           onClick={() => {
                             togglePanel('CFF') // cell facet filtering
                           }}
