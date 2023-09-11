@@ -9,7 +9,7 @@ import Select from '~/lib/InstrumentedSelect'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
 import { initCellFaceting } from '~/lib/cell-faceting'
 import { getSelectedClusterAndAnnot } from '~/components/explore/ExploreDisplayTabs'
-
+import { v4 } from 'uuid'
 
 /** Top content for cell facet filtering panel shown at right in Explore tab */
 export function FacetFilterPanelHeader({
@@ -57,7 +57,7 @@ export function FacetFilterPanel({
     ) {
       // grab the show facet names to filter the select options so there won't be duplicates
       const facetNames = shownFacets.map(facet => {return facet.annotation.split('--')[0]})
-      return <div>
+      return <div key={singleCellFaceting.annotation}>
         <div>
           <Select
             name={singleCellFaceting.annotation}
@@ -71,6 +71,7 @@ export function FacetFilterPanel({
         </div>
         {singleCellFaceting.groups.map((item, index) => (
           <div key={index}>
+          <div style={{marginLeft: "5px"}} key={v4()}>
             <input checked={
               isChecked(singleCellFaceting.annotation, item)}
             value={item}
@@ -78,8 +79,10 @@ export function FacetFilterPanel({
             name={`${singleCellFaceting.annotation}:${item}`}
             onChange={event => {
               handleCheck(event)
-              // updateFilteredCells(checkedMap)
-            }}/>
+              updateFilteredCells(checkedMap)
+            }}
+            onClick={() => {console.log('clicked')}}
+            />
             <span style={{ marginLeft: '4px' }} >{item}</span>
           </div>
         ))}
