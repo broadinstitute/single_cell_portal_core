@@ -27,7 +27,7 @@ jest.mock('lib/cell-faceting', () => {
 })
 
 import React from 'react'
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import * as UserProvider from '~/providers/UserProvider'
 import ExploreDisplayTabs, { getEnabledTabs } from 'components/explore/ExploreDisplayTabs'
 import PlotTabs from 'components/explore/PlotTabs'
@@ -387,5 +387,25 @@ describe('explore tabs are activated based on study info and parameters', () => 
 
     const deButton = container.querySelector('.differential-expression-nondefault')
     expect(deButton).toHaveTextContent('Differential expression')
+  })
+
+
+  it('shows "Cell facet filtering" button when flag is enabled', async () => {
+    jest
+      .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
+      .mockReturnValue({
+        show_cell_facet_filtering: true
+      })
+
+    render((
+      <ExploreDisplayTabs
+        studyAccession={'SCP123'}
+        exploreParams={exploreParamsDe}
+        exploreParamsWithDefaults={exploreParamsDe}
+        exploreInfo={exploreInfoDe}
+      />
+    ))
+
+    expect(screen.getByTestId('cell facet filtering button')).toHaveTextContent('Cell facet filtering')
   })
 })
