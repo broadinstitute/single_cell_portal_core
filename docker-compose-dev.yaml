@@ -32,6 +32,7 @@ services:
       VITE_RUBY_HOST: 0.0.0.0
       VITE_FRONTEND_SERVICE_WORKER_CACHE: "${VITE_FRONTEND_SERVICE_WORKER_CACHE}"
       VITE_DEV_MODE: "\"docker-compose\"" # extra quotes are to encode as JSON string value
+      SENTRY_AUTH_TOKEN: "${SENTRY_AUTH_TOKEN}"
     ports:
       - 3036:3036
     volumes:
