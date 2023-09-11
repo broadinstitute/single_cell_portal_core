@@ -65,21 +65,4 @@ module StudiesHelper
       end
     end
   end
-
-  def sync_next_batch_link(study, remaining_files, page_token)
-    if remaining_files > 0
-      btn_class = 'btn-success'
-      disabled = false
-      original_title = 'Sync next batch of remote files'
-    else
-      btn_class = 'btn-default'
-      disabled = true
-      original_title = 'All remote files processed'
-    end
-    link_to "#{remaining_files} files remaining",
-            sync_next_file_batch_study_path(study, page_token:),
-            class: "btn #{btn_class} pull-right",
-            disabled:,
-            data: { toggle: 'tooltip', original_title:, placement: 'left' }
-  end
 end

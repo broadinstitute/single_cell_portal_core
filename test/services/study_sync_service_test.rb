@@ -26,8 +26,8 @@ class StudySyncServiceTest < ActiveSupport::TestCase
   end
 
   test 'should process all remotes' do
-    unsynced_files = StudySyncService.process_remotes(@full_study)
-    unsynced_metadata = unsynced_files.detect { |f| f.name == 'metadata_example.txt' }
+    remote_details = StudySyncService.process_remotes(@full_study)
+    unsynced_metadata = remote_details[:unsynced_study_files].detect { |f| f.name == 'metadata_example.txt' }
     assert unsynced_metadata.present?
   end
 
@@ -138,7 +138,7 @@ class StudySyncServiceTest < ActiveSupport::TestCase
     non_dir_mock.expect(:name, non_dir_name)
     non_dir_mock.expect(:name, non_dir_name)
     files << non_dir_mock
-    dir_files = StudySyncService.find_files_for_directories(files, file_map)
+    dir_files = StudySyncService.find_files_for_directories(files, file_map, @study)
     StudySyncService.add_files_to_directories(@study, dir_files)
     @study.reload
     new_dir = @study.directory_listings.find_by(name: 'raw_expression')
@@ -149,9 +149,6 @@ class StudySyncServiceTest < ActiveSupport::TestCase
 
   test 'should remove submission outputs from list' do
     submission_id = SecureRandom.uuid
-    submissions = [{ submissionId: submission_id }.with_indifferent_access]
-    api_mock = Minitest::Mock.new
-    api_mock.expect(:get_workspace_submissions, submissions, [@study.firecloud_project, @study.firecloud_workspace])
     files = []
     5.times do
       mock = Minitest::Mock.new
@@ -166,12 +163,9 @@ class StudySyncServiceTest < ActiveSupport::TestCase
     generation = '1234567890123456'
     study_file_mock.expect(:generation, generation) # study file will only check generation once
     files << study_file_mock
-    ApplicationController.stub :firecloud_client, api_mock do
-      expected_files = StudySyncService.remove_submission_outputs(@study, files)
-      api_mock.verify
-      assert_equal expected_files, [study_file_mock]
-      files.each(&:verify)
-    end
+    expected_files = StudySyncService.remove_submission_outputs(files, [submission_id])
+    assert_equal expected_files, [study_file_mock]
+    files.each(&:verify)
   end
 
   test 'should remove synced files from list' do

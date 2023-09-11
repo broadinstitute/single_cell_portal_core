@@ -1,5 +1,9 @@
 # collection of methods to be called during sync actions
 class StudySyncService
+  # batch size for remote file processing
+  # value is mostly used for messaging & tests when overriden
+  BATCH_SIZE = 1000
+
   # mirror local permissions to that of the workspace
   #
   # * *params*
@@ -84,7 +88,7 @@ class StudySyncService
     process_file_batch(study, workspace_files, submission_ids, file_extension_map:)
   end
 
-  # get batch of 1000 files from workspace bucket
+  # get batch of files from workspace bucket as defined by BATCH_SIZE + 1
   # can also paginate more files using page token
   #
   # * *params*
@@ -96,7 +100,7 @@ class StudySyncService
   def self.get_file_batch(study, token: nil)
     ApplicationController.firecloud_client.execute_gcloud_method(
       :get_workspace_files, 0,
-      study.bucket_id, delimiter: '_scp_internal', token:, max: 10
+      study.bucket_id, delimiter: '_scp_internal', token:, max: BATCH_SIZE + 1 # max is non-inclusive
     )
   end
 
@@ -109,14 +113,8 @@ class StudySyncService
   # * *returns*
   #   - (Integer)
   def self.count_remaining_files(study, token: nil)
-    count = 0
     batch = get_file_batch(study, token:)
-    count += batch.count
-    while batch.next?
-      batch = batch.next
-      count += batch.count
-    end
-    count
+    batch.all.count
   end
 
   # process a block of files from bucket
@@ -181,7 +179,7 @@ class StudySyncService
       directory_name = DirectoryListing.get_folder_name(file.name)
       file_extension_map.dig(directory_name, file_type).to_i >= DirectoryListing::MIN_SIZE && directory_name != '/' ||
         (directory_name == '/' && DirectoryListing::PRIMARY_DATA_TYPES.include?(file_type)) ||
-        DirectoryListing.where(name: directory_name, file_type: file_type, study:).exists? # gotcha for partial results
+        DirectoryListing.where(name: directory_name, file_type:, study:).exists? # gotcha for partial results
     end
   end
 
@@ -198,9 +196,9 @@ class StudySyncService
       file_type = DirectoryListing.file_type_from_extension(file.name)
       directory_name = DirectoryListing.get_folder_name(file.name)
       remote = { 'name' => file.name, 'size' => file.size, 'generation' => file.generation.to_s }
-      existing_dir = DirectoryListing.find_by(study_id: study.id, name: directory_name, file_type: file_type)
+      existing_dir = DirectoryListing.find_by(study_id: study.id, name: directory_name, file_type:)
       if existing_dir.nil?
-        study.directory_listings.create(name: directory_name, file_type: file_type, files: [remote], sync_status: false)
+        study.directory_listings.create(name: directory_name, file_type:, files: [remote], sync_status: false)
       elsif existing_dir.files.detect { |f| f['generation'].to_s == file.generation.to_s }.nil?
         existing_dir.files << remote
         existing_dir.sync_status = false
