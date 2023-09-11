@@ -31,6 +31,27 @@ class StudySyncServiceTest < ActiveSupport::TestCase
     assert unsynced_metadata.present?
   end
 
+  test 'should get files in batches' do
+    study = FactoryBot.create(:study,
+                              name_prefix: 'Sync Batch Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    bucket = ApplicationController.firecloud_client.get_workspace_bucket(study.bucket_id)
+    metadata_file = File.open(Rails.root.join('test/test_data/metadata_example.txt'))
+    bucket.create_file metadata_file, 'metadata_example.txt'
+    cluster_file = File.open(Rails.root.join('test/test_data/cluster_example.txt'))
+    bucket.create_file cluster_file, 'cluster_example.txt'
+    # NOTE: files are returned in order of last in, first out
+    first_batch = StudySyncService.get_file_batch(study, batch_size: 1)
+    assert first_batch.next?
+    assert_equal 1, first_batch.size
+    assert_equal File.basename(cluster_file), first_batch.first.name
+    second_batch = StudySyncService.get_file_batch(study, token: first_batch.token)
+    assert_not second_batch.next?
+    assert_equal 1, second_batch.size
+    assert_equal File.basename(metadata_file), second_batch.first.name
+  end
+
   test 'should update content headers based on file content' do
     gzipped_file = File.open(Rails.root.join('test/test_data/expression_matrix_example_gzipped.txt.gz'))
     study_file = StudyFile.create(name: 'expression_matrix_example_gzipped.txt.gz', file_type: 'Expression Matrix',
