@@ -1,7 +1,7 @@
 # collection of methods to be called during sync actions
 class StudySyncService
   # batch size for remote file processing
-  # value is mostly used for messaging & tests when overriden
+  # value is mostly used for messaging & tests when overridden
   BATCH_SIZE = 1000
 
   # mirror local permissions to that of the workspace
