@@ -31,7 +31,7 @@ class StudySyncServiceTest < ActiveSupport::TestCase
     assert unsynced_metadata.present?
   end
 
-  test 'should get files in batches' do
+  test 'should get files in batches and give counts' do
     study = FactoryBot.create(:study,
                               name_prefix: 'Sync Batch Test',
                               user: @user,
@@ -41,10 +41,12 @@ class StudySyncServiceTest < ActiveSupport::TestCase
     bucket.create_file metadata_file, 'metadata_example.txt'
     cluster_file = File.open(Rails.root.join('test/test_data/cluster_example.txt'))
     bucket.create_file cluster_file, 'cluster_example.txt'
+    assert_equal 2, StudySyncService.count_remaining_files(study)
     # NOTE: files are returned in order of last in, first out
     first_batch = StudySyncService.get_file_batch(study, batch_size: 1)
     assert first_batch.next?
     assert_equal 1, first_batch.size
+    assert_equal 1, StudySyncService.count_remaining_files(study, token: first_batch.token)
     assert_equal File.basename(cluster_file), first_batch.first.name
     second_batch = StudySyncService.get_file_batch(study, token: first_batch.token)
     assert_not second_batch.next?
