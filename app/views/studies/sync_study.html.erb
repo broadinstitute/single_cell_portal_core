@@ -60,6 +60,20 @@
   </div>
 <% end %>
 
+<% if @next_page.present? %>
+  <div class="bs-callout bs-callout-danger" id='files-remaining-notice'>
+    <h4>Unprocessed remote files: <%= @remaining_files %></h4>
+    <p>
+      For performance reasons, Single Cell Portal only reads remote files in batches of <%= StudySyncService::BATCH_SIZE %>.
+      We have detected that there are still <%= @remaining_files %> left to be processed in your study's bucket.  Please
+      use the link below to continue processing once you have completed syncing files in this batch.
+    </p>
+    <%= link_to "Process next batch <span class='fa fas fa-chevron-right'></span>".html_safe,
+                sync_next_file_batch_study_path(@study, page_token: @next_page),
+                class: "btn btn-default" %>
+  </div>
+<% end %>
+
 <div id="sync-files-target">
   <% if @orphaned_study_files.any? %>
     <div class="panel panel-danger">
@@ -144,20 +158,6 @@
       </div>
     </div>
 
-  <% end %>
-
-  <% if @next_page.present? %>
-    <div class="bs-callout bs-callout-danger" id='files-remaining-notice'>
-      <h4>Unprocessed remote files: <%= @remaining_files %></h4>
-      <p>
-        For performance reasons, Single Cell Portal only reads remote files in batches of <%= StudySyncService::BATCH_SIZE %>.
-        We have detected that there are still <%= @remaining_files %> left to be processed in your study's bucket.  Please
-        use the link below to continue processing once you have completed syncing files in this batch.
-      </p>
-      <%= link_to "Process next batch <span class='fa fas fa-chevron-right'></span>".html_safe,
-                  sync_next_file_batch_study_path(@study, page_token: @next_page),
-                  class: "btn btn-default" %>
-    </div>
   <% end %>
 
   <hr class="divider" />
