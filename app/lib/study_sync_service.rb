@@ -94,11 +94,11 @@ class StudySyncService
   # * *params*
   #   - +study+ (Study) => study to process remote files for
   #   - +token+ (String) => pointer to next page of files
-  #   - +batch_size+ (Integer) => amount of files to retrieve, defaulting to BATCH_SIZE + 1 (max param is non-inclusive)
+  #   - +batch_size+ (Integer) => amount of files to retrieve, defaulting to BATCH_SIZE
   #
   # * *returns*
   #   - (Google::Cloud::Storage::File::List)
-  def self.get_file_batch(study, token: nil, batch_size: BATCH_SIZE + 1)
+  def self.get_file_batch(study, token: nil, batch_size: BATCH_SIZE)
     ApplicationController.firecloud_client.execute_gcloud_method(
       :get_workspace_files, 0,
       study.bucket_id, delimiter: '_scp_internal', token:, max: batch_size
