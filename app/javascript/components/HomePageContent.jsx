@@ -10,7 +10,7 @@ import ResultsPanel from '~/components/search/results/ResultsPanel'
 import StudyDetails from '~/components/search/results/StudySearchResult'
 import StudySearchProvider, { StudySearchContext } from '~/providers/StudySearchProvider'
 import SearchFacetProvider from '~/providers/SearchFacetProvider'
-import UserProvider from '~/providers/UserProvider'
+import UserProvider, { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 import ErrorBoundary from '~/lib/ErrorBoundary'
 
 /** include search controls and results */
@@ -22,12 +22,17 @@ export function StudySearchView() {
   </>
 }
 
+
+
 const LinkableSearchTabs = function(props) {
   // we can't use the regular ReachRouter methods for link highlighting
   // since the Reach router doesn't own the home path
   const location = useLocation()
   const basePath = location.pathname.includes('covid19') ? '/single_cell/covid19' : '/single_cell'
   const showGenesTab = location.pathname.includes('/app/genes')
+  const featureFlags = getFeatureFlagsWithDefaults()
+  const showVizAppcue = featureFlags && featureFlags?.show_appcue_viz_tour
+
   // the queryParams object does not support the more typical hasOwnProperty test
   return (
     <div>
@@ -40,6 +45,9 @@ const LinkableSearchTabs = function(props) {
           className={showGenesTab ? 'active' : ''}>
           <span className="fas fa-dna"></span> Search genes
         </Link>
+        { showVizAppcue &&
+          <a className='appcue-pin' href='single_cell/study/SCP2221'>Take a tour of SCP's visualization tools</a>
+        }
       </nav>
       <div className="tab-content top-pad">
         <Router basepath={basePath}>

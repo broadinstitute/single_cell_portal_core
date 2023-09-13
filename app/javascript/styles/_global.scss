@@ -36,6 +36,23 @@ label {
   color: palegoldenrod;
 }
 
+.appcue-pin {
+  background-color: rgb(51, 122, 183);
+  border-radius: 6px;
+  color: rgb(255, 255, 255);
+  cursor: pointer;
+  display: inline-block;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  height: 16px;
+  line-height: normal;
+  padding-bottom: 8px;
+  padding-left: 18px;
+  padding-right: 18px;
+  padding-top: 8px;
+  text-align: center;
+}
+
 .red {
   color: #d9534f;
 }
