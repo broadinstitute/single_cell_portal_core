@@ -77,7 +77,6 @@
 .explore-tab-content {
   background: #fff;
   display: flex;
-  flex-wrap: wrap;
 
   button.action {
     background: #fff;
@@ -139,7 +138,6 @@
 }
 
 .explore-plot-tab-content {
-  border-right: 1px solid #ccc;
   min-height: 70vh;
 }
 
@@ -257,6 +255,24 @@
   margin-right: 10px;
 }
 
+.default-options-bg {
+  background: $options-color;
+  border-bottom: 1px solid #ccc;
+  max-width: 235px;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.DE-options-bg {
+  max-width: 345px;
+  padding-left: 17px;
+  padding-right: 14px;
+}
+
+.CFF-options-bg {
+  max-width: 235px;
+}
+
 .options-bg {
   background: $options-color;
   border-bottom: 1px solid #ccc;
@@ -273,4 +289,13 @@
 // to position content in the explore tab forward
 .position-forward {
   z-index: 3;
+}
+
+.flexible-plot-space{
+  flex-grow: 1;
+}
+
+.panel-specifics{
+  border-left: 1px solid #ccc;
+  margin-left: 26px;
 }
