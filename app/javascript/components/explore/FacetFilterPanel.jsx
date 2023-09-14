@@ -70,18 +70,15 @@ export function FacetFilterPanel({
           />
         </div>
         {singleCellFaceting.groups.map((item, index) => (
-          <div key={index}>
-          <div style={{marginLeft: "5px"}} key={v4()}>
-            <input checked={
-              isChecked(singleCellFaceting.annotation, item)}
-            value={item}
-            type="checkbox"
-            name={`${singleCellFaceting.annotation}:${item}`}
-            onChange={event => {
-              handleCheck(event)
-              updateFilteredCells(checkedMap)
-            }}
-            onClick={() => {console.log('clicked')}}
+          <div style={{ marginLeft: '5px' }} key={v4()}>
+            <input checked={isChecked(singleCellFaceting.annotation, item)}
+              value={item}
+              type="checkbox"
+              name={`${singleCellFaceting.annotation}:${item}`}
+              onChange={event => {
+                handleCheck(event)
+                updateFilteredCells(checkedMap)
+              }}
             />
             <span style={{ marginLeft: '4px' }} >{item}</span>
           </div>
