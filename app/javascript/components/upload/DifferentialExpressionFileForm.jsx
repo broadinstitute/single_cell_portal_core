@@ -1,4 +1,5 @@
 import React from 'react'
+import _snakeCase from 'lodash/snakeCase'
 
 import { FileTypeExtensions, matchingFormFiles, validateFile } from './upload-utils'
 import { TextFormField } from './form-components'
@@ -11,6 +12,9 @@ const allowedFileExts = FileTypeExtensions.plainText
 const requiredFields = [
   { label: 'Associated annotation', propertyName: 'differential_expression_file_info.annotation_name' },
   { label: 'Associated clustering', propertyName: 'differential_expression_file_info.clustering_association' },
+  { label: 'Gene header', propertyName: 'differential_expression_file_info.gene_header' },
+  { label: 'Group header', propertyName: 'differential_expression_file_info.group_header' },
+  { label: 'Comparison group header', propertyName: 'differential_expression_file_info.comparison_group_header' },
   { label: 'Size metric', propertyName: 'differential_expression_file_info.size_metric' },
   { label: 'Significance metric', propertyName: 'differential_expression_file_info.significance_metric' }
 ]
@@ -22,28 +26,60 @@ const requiredFields = [
  * @param notes {Object} arrays of inferred metrics from raw file, by metric type
  * @param file {Object} study file object (not raw file)
  */
-function inferOptions(metricType, notes, file) {
-  const inferredMetrics =
-    notes[metricType].map(opt => ({ label: opt, value: opt }))
-  const otherMetrics =
-    notes.metrics.filter(m => !notes[metricType].includes(m))
+function inferOptions(headerType, file) {
+  const notes = file.notes
+
+  if (!notes) {
+    return [[], null]
+  }
+
+  let key = 'deHeaders'
+  if (['sizes', 'significances'].includes(headerType)) {
+    key = 'metrics'
+  }
+
+  const inferredOptions =
+    notes[headerType].map(opt => ({ label: opt, value: opt }))
+  const otherOptions =
+    notes[key].filter(m => !notes[headerType].includes(m))
       .map(opt => ({ label: opt, value: opt }))
 
   const options = [
-    { 'label': 'Inferred options', 'options': inferredMetrics },
-    { 'label': 'Other options', 'options': otherMetrics }
+    { 'label': 'Inferred options', 'options': inferredOptions },
+    { 'label': 'Other options', 'options': otherOptions }
   ]
 
   // E.g. significances -> significance_metric
-  const snakeCaseMetricType = `${metricType.slice(0, -1)}_metric`
+  const singular = _snakeCase(headerType.slice(0, -1))
+  const suffix = key == 'deHeaders' ? '' : '_metric'
+  const snakeCaseMetricType = singular + suffix
 
   // Determine default value for select
-  const allMetrics = inferredMetrics.concat(otherMetrics)
-  const metric = allMetrics.find(
+  const allOptions = inferredOptions.concat(otherOptions)
+  const defaultOption = allOptions.find(
     opt => opt.value === file.differential_expression_file_info[snakeCaseMetricType]
-  ) || { label: notes[metricType][0], value: notes[metricType][0] }
+  ) || { label: notes[headerType][0], value: notes[headerType][0] }
 
-  return [options, metric]
+  return [options, defaultOption]
+}
+
+/** Get Select option groups for required headers in author DE file */
+function getAllHeaderOptions(file) {
+  const [geneHeaderOptions, geneHeader] = inferOptions('geneHeaders', file)
+  const [groupHeaderOptions, groupHeader] = inferOptions('groupHeaders', file)
+  const [comparisonGroupHeaderOptions, comparisonGroupHeader] = inferOptions('comparisonGroupHeaders', file)
+  const [sizeMetricOptions, sizeMetric] = inferOptions('sizes', file)
+  const [significanceMetricOptions, significanceMetric] = inferOptions('significances', file)
+
+  const allHeaderOptions = [
+    [geneHeaderOptions, geneHeader],
+    [groupHeaderOptions, groupHeader],
+    [comparisonGroupHeaderOptions, comparisonGroupHeader],
+    [sizeMetricOptions, sizeMetric],
+    [significanceMetricOptions, significanceMetric]
+  ]
+
+  return allHeaderOptions
 }
 
 /** renders a form for editing/uploading a differential expression file */
@@ -88,12 +124,13 @@ export default function DifferentialExpressionFileForm({
     opt => opt.value === file.differential_expression_file_info.computational_method
   )
 
-  const notes = file.notes
+  const headerOptions = getAllHeaderOptions(file)
 
-  const [sizeMetricOptions, sizeMetric] =
-    notes ? inferOptions('sizes', notes, file) : [[], null]
-  const [significanceMetricOptions, significanceMetric] =
-    notes ? inferOptions('significances', notes, file) : [[], null]
+  const [geneHeaderOptions, geneHeader] = headerOptions[0]
+  const [groupHeaderOptions, groupHeader] = headerOptions[1]
+  const [comparisonGroupHeaderOptions, comparisonGroupHeader] = headerOptions[2]
+  const [sizeMetricOptions, sizeMetric] = headerOptions[3]
+  const [significanceMetricOptions, significanceMetric] = headerOptions[4]
 
   /** extract annotation_name and annotation_scope and transform into URL-param like string */
   function annotationIdentifier(deInfoObject) {
@@ -143,22 +180,15 @@ export default function DifferentialExpressionFileForm({
     updateFile(file._id, { differential_expression_file_info: { computational_method: newVal } })
   }
 
-  /** handle a change in the "Size metric" select */
-  function updateSizeMetric(file, option) {
+  /** handle a change in any header or metric select */
+  function updateHeader(file, option, serverAttr) {
     let newVal = null
     if (option) {
       newVal = option.value
     }
-    updateFile(file._id, { differential_expression_file_info: { size_metric: newVal } })
-  }
-
-  /** handle a change in the "Significance metric" select */
-  function updateSignificanceMetric(file, option) {
-    let newVal = null
-    if (option) {
-      newVal = option.value
-    }
-    updateFile(file._id, { differential_expression_file_info: { significance_metric: newVal } })
+    const info = {}
+    info[serverAttr] = newVal
+    updateFile(file._id, { differential_expression_file_info: info })
   }
 
   /** set available annotations based off of selected cluster file */
@@ -211,34 +241,77 @@ export default function DifferentialExpressionFileForm({
       </label>
     </div>
     {file.notes &&
-    <div className="row">
-      <div className="form-group col-md-3">
-        <label className="labeled-select">Size metric
-          <Select
-            data-analytics-name="differential-expression-size-metric-select"
-            options={sizeMetricOptions}
-            defaultValue={sizeMetric}
-            value={sizeMetric}
-            className="labeled-select"
-            onChange={val => updateSizeMetric(file, val)}
-            placeholder="Select metric for DE size"
-          />
-        </label>
+    <>
+      <div className="row">
+        <div className="form-group col-md-2">
+          <label className="labeled-select">Gene header
+            <Select
+              data-analytics-name="differential-expression-gene-header-select"
+              options={geneHeaderOptions}
+              defaultValue={geneHeader}
+              value={geneHeader}
+              className="labeled-select"
+              onChange={val => updateHeader(file, val, 'gene_header')}
+              placeholder="Select header for gene names"
+            />
+          </label>
+        </div>
+        <div className="form-group col-md-3">
+          <label className="labeled-select">Group header
+            <Select
+              data-analytics-name="differential-expression-group-header-select"
+              options={groupHeaderOptions}
+              defaultValue={groupHeader}
+              value={groupHeader}
+              className="labeled-select"
+              onChange={val => updateHeader(file, val, 'group_header')}
+              placeholder="Select metric for DE group"
+            />
+          </label>
+        </div>
+        <div className="form-group col-md-3">
+          <label className="labeled-select">Comparison group header
+            <Select
+              data-analytics-name="differential-expression-comparison-group-header-select"
+              options={comparisonGroupHeaderOptions}
+              defaultValue={comparisonGroupHeader}
+              value={comparisonGroupHeader}
+              className="labeled-select"
+              onChange={val => updateHeader(file, val, 'comparison_group_header')}
+              placeholder="Select metric for DE comparison group"
+            />
+          </label>
+        </div>
       </div>
-      <div className="form-group col-md-3">
-        <label className="labeled-select">Significance metric
-          <Select
-            data-analytics-name="differential-expression-significance-metric-select"
-            options={significanceMetricOptions}
-            defaultValue={significanceMetric}
-            value={significanceMetric}
-            className="labeled-select"
-            onChange={val => updateSignificanceMetric(file, val)}
-            placeholder="Select metric for DE significance"
-          />
-        </label>
+      <div className="row">
+        <div className="form-group col-md-3">
+          <label className="labeled-select">Size metric
+            <Select
+              data-analytics-name="differential-expression-size-metric-select"
+              options={sizeMetricOptions}
+              defaultValue={sizeMetric}
+              value={sizeMetric}
+              className="labeled-select"
+              onChange={val => updateHeader(file, val, 'size_metric')}
+              placeholder="Select metric for DE size"
+            />
+          </label>
+        </div>
+        <div className="form-group col-md-3">
+          <label className="labeled-select">Significance metric
+            <Select
+              data-analytics-name="differential-expression-significance-metric-select"
+              options={significanceMetricOptions}
+              defaultValue={significanceMetric}
+              value={significanceMetric}
+              className="labeled-select"
+              onChange={val => updateHeader(file, val, 'significance_metric')}
+              placeholder="Select metric for DE significance"
+            />
+          </label>
+        </div>
       </div>
-    </div>
+    </>
     }
   </ExpandableFileForm>
 }

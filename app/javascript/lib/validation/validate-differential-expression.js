@@ -238,32 +238,33 @@ function parseDeFileFormat(headers) {
 /**
  * Return metrics from headers of file; especially helpful for "wide" format
 */
-function parseMetrics(headers, format) {
+function parseMetricsAndDeHeaders(headers, format) {
   const firstLineHeaders = headers[0]
   const metricHeaders = firstLineHeaders.filter(
-    header => !['gene', 'genes', 'group', 'comparison_group'].includes(header)
+    header => !['gene', 'genes', 'group', 'cluster', 'comparison_group'].includes(header)
   )
 
   if (format === 'long') {
-    return metricHeaders
+    return [metricHeaders, firstLineHeaders]
   }
 
   // Get a de-duplicated list of metrics from wide-format headers.
   // First, get an initial array of metrics, which will contain many duplicates
   const dupMetrics = metricHeaders.map(header => header.split('--').slice(-1)[0])
   const metrics = [...new Set(dupMetrics)] // Then, uniquify that array
-  return metrics
+  return [metrics, firstLineHeaders]
 }
 
 /** Parse DE file, and return an array of issues, along with file parsing info */
 export async function parseDifferentialExpressionFile(chunker, mimeType) {
+  console.log('atop parseDifferentialExpressionFile')
   const { headers, delimiter } = await getParsedHeaderLines(chunker, mimeType)
 
   let issues = []
 
   // Validate header-content
   const deFileFormat = parseDeFileFormat(headers)
-  const metrics = parseMetrics(headers, deFileFormat)
+  const [metrics, deHeaders] = parseMetricsAndDeHeaders(headers, deFileFormat)
   const [metricsIssues, sizes, significances] = validateSizeAndSignificance(metrics)
   issues = issues.concat(metricsIssues)
   const [
@@ -271,8 +272,9 @@ export async function parseDifferentialExpressionFile(chunker, mimeType) {
   ] = validateOtherHeaders(headers[0])
   issues = issues.concat(otherHeadersIssues)
 
+  console.log('deHeaders', deHeaders)
   const notes = {
-    metrics, deFileFormat,
+    metrics, deHeaders, deFileFormat,
     geneHeaders, groupHeaders, comparisonGroupHeaders,
     sizes, significances
   }
