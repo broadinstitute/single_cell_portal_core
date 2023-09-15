@@ -131,7 +131,7 @@ function getGroupHeader(header) {
 function inferOtherHeaders(headers) {
   const geneHeaders = headers.filter(header => getGeneHeader(header))
   const groupHeaders = headers.filter(header => getGroupHeader(header))
-  const comparisonGroupHeaders = headers.filter(header => getSignificance(header))
+  const comparisonGroupHeaders = headers.filter(header => getComparisonGroupHeader(header))
 
   return [geneHeaders, groupHeaders, comparisonGroupHeaders]
 }
@@ -257,7 +257,6 @@ function parseMetricsAndDeHeaders(headers, format) {
 
 /** Parse DE file, and return an array of issues, along with file parsing info */
 export async function parseDifferentialExpressionFile(chunker, mimeType) {
-  console.log('atop parseDifferentialExpressionFile')
   const { headers, delimiter } = await getParsedHeaderLines(chunker, mimeType)
 
   let issues = []

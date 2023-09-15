@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import _snakeCase from 'lodash/snakeCase'
 
 import { FileTypeExtensions, matchingFormFiles, validateFile } from './upload-utils'
@@ -95,6 +95,7 @@ export default function DifferentialExpressionFileForm({
   annotationsAvailOnStudy,
   menuOptions
 }) {
+  console.log('0 FF')
   // TODO (SCP-5154) Add DE specific clientside validation
   const validationMessages = validateFile({ file, allFiles, allowedFileExts, requiredFields })
 
@@ -124,13 +125,20 @@ export default function DifferentialExpressionFileForm({
     opt => opt.value === file.differential_expression_file_info.computational_method
   )
 
+  console.log('in FF, above getAllHeaderOptions')
+
   const headerOptions = getAllHeaderOptions(file)
 
   const [geneHeaderOptions, geneHeader] = headerOptions[0]
+  // updateHeader(file, geneHeader, 'gene_header')
   const [groupHeaderOptions, groupHeader] = headerOptions[1]
+  // updateHeader(file, groupHeader, 'group_header')
   const [comparisonGroupHeaderOptions, comparisonGroupHeader] = headerOptions[2]
+  // updateHeader(file, comparisonGroupHeader, 'comparison_group_header')
   const [sizeMetricOptions, sizeMetric] = headerOptions[3]
+  // updateHeader(file, sizeMetric, 'size_metric')
   const [significanceMetricOptions, significanceMetric] = headerOptions[4]
+  // updateHeader(file, significanceMetric, 'significance_metric')
 
   /** extract annotation_name and annotation_scope and transform into URL-param like string */
   function annotationIdentifier(deInfoObject) {
@@ -189,6 +197,8 @@ export default function DifferentialExpressionFileForm({
     const info = {}
     info[serverAttr] = newVal
     updateFile(file._id, { differential_expression_file_info: info })
+    console.log('updated file, info')
+    console.log(info)
   }
 
   /** set available annotations based off of selected cluster file */
@@ -202,6 +212,16 @@ export default function DifferentialExpressionFileForm({
       cf => ({ label: annotationLabel(cf), value: `${cf.name}--${cf.type}--${cf.scope}` })
     )
   }
+
+  console.log('file._id', file._id)
+
+  useEffect(() => {
+    updateHeader(file, geneHeader, 'gene_header')
+    updateHeader(file, groupHeader, 'group_header')
+    updateHeader(file, comparisonGroupHeader, 'comparison_group_header')
+    updateHeader(file, sizeMetric, 'size_metric')
+    updateHeader(file, significanceMetric, 'significance_metric')
+  }, [file?._id])
 
   return <ExpandableFileForm {...{
     file, allFiles, updateFile, saveFile,

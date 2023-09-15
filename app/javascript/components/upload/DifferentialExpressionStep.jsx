@@ -41,6 +41,7 @@ export function DifferentialFileUploadForm({
 
   console.log('deFiles', deFiles)
 
+
   useEffect(() => {
     if (deFiles.length === 0) {
       addNewFile(DEFAULT_NEW_DE_FILE)
