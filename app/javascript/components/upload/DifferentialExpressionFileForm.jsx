@@ -40,6 +40,14 @@ function inferOptions(headerType, file) {
 
   const inferredOptions =
     notes[headerType].map(opt => ({ label: opt, value: opt }))
+  if (headerType === 'comparisonGroupHeaders') {
+    console.log('headerType === \'comparisonGroupHeaders\'')
+  }
+  const notApplicableOption = { label: 'N/A', value: 'None' }
+  if (headerType === 'comparisonGroupHeaders' && inferredOptions.length === 0) {
+    inferredOptions.push(notApplicableOption)
+  }
+
   const otherOptions =
     notes[key].filter(m => !notes[headerType].includes(m))
       .map(opt => ({ label: opt, value: opt }))
@@ -56,9 +64,15 @@ function inferOptions(headerType, file) {
 
   // Determine default value for select
   const allOptions = inferredOptions.concat(otherOptions)
-  const defaultOption = allOptions.find(
+  let defaultOption = allOptions.find(
     opt => opt.value === file.differential_expression_file_info[snakeCaseMetricType]
   ) || { label: notes[headerType][0], value: notes[headerType][0] }
+  if (headerType === 'comparisonGroupHeaders') {
+    console.log('defaultOption', defaultOption)
+  }
+  if (headerType === 'comparisonGroupHeaders' && !defaultOption['label']) {
+    defaultOption = notApplicableOption
+  }
 
   return [options, defaultOption]
 }
@@ -95,7 +109,6 @@ export default function DifferentialExpressionFileForm({
   annotationsAvailOnStudy,
   menuOptions
 }) {
-  console.log('0 FF')
   // TODO (SCP-5154) Add DE specific clientside validation
   const validationMessages = validateFile({ file, allFiles, allowedFileExts, requiredFields })
 
@@ -130,15 +143,10 @@ export default function DifferentialExpressionFileForm({
   const headerOptions = getAllHeaderOptions(file)
 
   const [geneHeaderOptions, geneHeader] = headerOptions[0]
-  // updateHeader(file, geneHeader, 'gene_header')
   const [groupHeaderOptions, groupHeader] = headerOptions[1]
-  // updateHeader(file, groupHeader, 'group_header')
   const [comparisonGroupHeaderOptions, comparisonGroupHeader] = headerOptions[2]
-  // updateHeader(file, comparisonGroupHeader, 'comparison_group_header')
   const [sizeMetricOptions, sizeMetric] = headerOptions[3]
-  // updateHeader(file, sizeMetric, 'size_metric')
   const [significanceMetricOptions, significanceMetric] = headerOptions[4]
-  // updateHeader(file, significanceMetric, 'significance_metric')
 
   /** extract annotation_name and annotation_scope and transform into URL-param like string */
   function annotationIdentifier(deInfoObject) {
@@ -189,16 +197,16 @@ export default function DifferentialExpressionFileForm({
   }
 
   /** handle a change in any header or metric select */
-  function updateHeader(file, option, serverAttr) {
-    let newVal = null
-    if (option) {
-      newVal = option.value
-    }
+  function updateDeFileInfo(file, optionsByAttr) {
     const info = {}
-    info[serverAttr] = newVal
+    Object.entries(optionsByAttr).forEach(([serverAttr, option]) => {
+      let newVal = null
+      if (option) {
+        newVal = option.value
+      }
+      info[serverAttr] = newVal
+    })
     updateFile(file._id, { differential_expression_file_info: info })
-    console.log('updated file, info')
-    console.log(info)
   }
 
   /** set available annotations based off of selected cluster file */
@@ -213,14 +221,25 @@ export default function DifferentialExpressionFileForm({
     )
   }
 
-  console.log('file._id', file._id)
+  if (file && geneHeader && !file.differential_expression_file_info.gene_header) {
+    updateDeFileInfo(file, {
+      'gene_header': geneHeader,
+      'group_header': groupHeader,
+      'comparison_group_header': comparisonGroupHeader,
+      'size_metric': sizeMetric,
+      'significance_metric': significanceMetric
+    })
+  }
 
   useEffect(() => {
-    updateHeader(file, geneHeader, 'gene_header')
-    updateHeader(file, groupHeader, 'group_header')
-    updateHeader(file, comparisonGroupHeader, 'comparison_group_header')
-    updateHeader(file, sizeMetric, 'size_metric')
-    updateHeader(file, significanceMetric, 'significance_metric')
+    console.log('in useEffect')
+    updateDeFileInfo(file, {
+      'gene_header': geneHeader,
+      'group_header': groupHeader,
+      'comparison_group_header': comparisonGroupHeader,
+      'size_metric': sizeMetric,
+      'significance_metric': significanceMetric
+    })
   }, [file?._id])
 
   return <ExpandableFileForm {...{
@@ -228,37 +247,41 @@ export default function DifferentialExpressionFileForm({
     allowedFileExts, deleteFile, validationMessages, bucketName, isInitiallyExpanded, isAnnDataExperience
   }}>
     <TextFormField label="Description" fieldName="description" file={file} updateFile={updateFile}/>
-    <div className="form-group">
-      <label className="labeled-select">Associated clustering
-        <Select options={clusterFileOptions}
-          data-analytics-name="differential-expression-associated-cluster-select"
-          value={associatedCluster}
-          placeholder="Select one..."
-          onChange={val => updateAssociatedCluster(file, val)}/>
-      </label>
+    <div className="row">
+      <div className="form-group col-md-3">
+        <label className="labeled-select">Associated clustering
+          <Select options={clusterFileOptions}
+            data-analytics-name="differential-expression-associated-cluster-select"
+            value={associatedCluster}
+            placeholder="Select one..."
+            onChange={val => updateAssociatedCluster(file, val)}/>
+        </label>
+      </div>
+      <div className="form-group col-md-3">
+        <label className="labeled-select">Associated annotation
+          <Select options={annotationOptions}
+            data-analytics-name="differential-expression-associated-annotation-select"
+            value={associatedAnnotation}
+            placeholder="Select one..."
+            onChange={val => updateAssociatedAnnotation(file, val)}/>
+        </label>
+      </div>
     </div>
-    <div className="form-group">
-      <label className="labeled-select">Associated annotation
-        <Select options={annotationOptions}
-          data-analytics-name="differential-expression-associated-annotation-select"
-          value={associatedAnnotation}
-          placeholder="Select one..."
-          onChange={val => updateAssociatedAnnotation(file, val)}/>
-      </label>
-    </div>
-    <div className="form-group">
-      <label className="labeled-select">Computational method
-        {/* using CreateableSelect here so that users can add an option if their method isn't listed */}
-        <CreatableSelect
-          data-analytics-name="differential-expression-computational-method-select"
-          options={compMethodOptions}
-          value={associatedCompMethod}
-          className="labeled-select"
-          isClearable
-          onChange={val => updateAssociatedCompMethod(file, val)}
-          placeholder="Start typing to select or add your method or statistical test"
-        />
-      </label>
+    <div className="row">
+      <div className="form-group col-md-6">
+        <label className="labeled-select">Computational method
+          {/* using CreateableSelect here so that users can add an option if their method isn't listed */}
+          <CreatableSelect
+            data-analytics-name="differential-expression-computational-method-select"
+            options={compMethodOptions}
+            value={associatedCompMethod}
+            className="labeled-select"
+            isClearable
+            onChange={val => updateAssociatedCompMethod(file, val)}
+            placeholder="Start typing to select or add your method or statistical test"
+          />
+        </label>
+      </div>
     </div>
     {file.notes &&
     <>
@@ -271,12 +294,12 @@ export default function DifferentialExpressionFileForm({
               defaultValue={geneHeader}
               value={geneHeader}
               className="labeled-select"
-              onChange={val => updateHeader(file, val, 'gene_header')}
+              onChange={val => updateDeFileInfo(file, { 'gene_header': val })}
               placeholder="Select header for gene names"
             />
           </label>
         </div>
-        <div className="form-group col-md-3">
+        <div className="form-group col-md-2">
           <label className="labeled-select">Group header
             <Select
               data-analytics-name="differential-expression-group-header-select"
@@ -284,12 +307,12 @@ export default function DifferentialExpressionFileForm({
               defaultValue={groupHeader}
               value={groupHeader}
               className="labeled-select"
-              onChange={val => updateHeader(file, val, 'group_header')}
+              onChange={val => updateDeFileInfo(file, { 'group_header': val })}
               placeholder="Select metric for DE group"
             />
           </label>
         </div>
-        <div className="form-group col-md-3">
+        <div className="form-group col-md-2">
           <label className="labeled-select">Comparison group header
             <Select
               data-analytics-name="differential-expression-comparison-group-header-select"
@@ -297,7 +320,7 @@ export default function DifferentialExpressionFileForm({
               defaultValue={comparisonGroupHeader}
               value={comparisonGroupHeader}
               className="labeled-select"
-              onChange={val => updateHeader(file, val, 'comparison_group_header')}
+              onChange={val => updateDeFileInfo(file, { 'comparison_group_header': val })}
               placeholder="Select metric for DE comparison group"
             />
           </label>
@@ -312,7 +335,7 @@ export default function DifferentialExpressionFileForm({
               defaultValue={sizeMetric}
               value={sizeMetric}
               className="labeled-select"
-              onChange={val => updateHeader(file, val, 'size_metric')}
+              onChange={val => updateDeFileInfo(file, { 'size_metric': val })}
               placeholder="Select metric for DE size"
             />
           </label>
@@ -325,7 +348,7 @@ export default function DifferentialExpressionFileForm({
               defaultValue={significanceMetric}
               value={significanceMetric}
               className="labeled-select"
-              onChange={val => updateHeader(file, val, 'significance_metric')}
+              onChange={val => updateDeFileInfo(file, { 'significance_metric': val })}
               placeholder="Select metric for DE significance"
             />
           </label>
