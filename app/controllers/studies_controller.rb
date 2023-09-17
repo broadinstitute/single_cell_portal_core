@@ -986,6 +986,7 @@ class StudiesController < ApplicationController
                                                                          raw_counts_associations: []],
                                        differential_expression_file_info_attributes: [
                                           :_id, :clustering_association, :annotation_association, :computational_method,
+                                          :gene_header, :group_header, :comparison_group_header,
                                           :size_metric, :significance_metric
                                         ]
                                        )

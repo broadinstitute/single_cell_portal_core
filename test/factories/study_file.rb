@@ -192,6 +192,9 @@ FactoryBot.define do
         annotation_name {}
         annotation_scope {}
         computational_method {}
+        gene_header {}
+        group_header {}
+        comparison_group_header {}
         size_metric {}
         significance_metric {}
       end
@@ -201,7 +204,10 @@ FactoryBot.define do
         file.differential_expression_file_info.annotation_name = evaluator.annotation_name
         file.differential_expression_file_info.annotation_scope = evaluator.annotation_scope
         file.differential_expression_file_info.computational_method = evaluator.computational_method
+        file.differential_expression_file_info.gene_header = evaluator.gene_header
+        file.differential_expression_file_info.group_header = evaluator.group_header
         file.differential_expression_file_info.size_metric = evaluator.size_metric
+        file.differential_expression_file_info.comparison_group_header = evaluator.comparison_group_header
         file.differential_expression_file_info.significance_metric = evaluator.significance_metric
         file.save
       end

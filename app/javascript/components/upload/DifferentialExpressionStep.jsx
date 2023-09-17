@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import { AddFileButton } from './form-components'
 import DifferentialExpressionFileForm from './DifferentialExpressionFileForm'
@@ -24,6 +24,140 @@ export default {
   fileFilter: differentialExpressionFileFilter
 }
 
+/** A simple one-vs-rest only example for author DE file */
+function OneVsRestOnlyExample() {
+  return (
+    <>
+      <table className="table-terra de-example">
+        <thead>
+          <tr><td>genes</td><td>group</td><td className="orange">logfoldchanges</td><td className="pink">pvals_adj</td><td className="optional">mean</td><td>...</td></tr>
+        </thead>
+        <tbody>
+          <tr><td>It2ma</td><td className="blue">A</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td></tr>
+          <tr><td>Sergef</td><td className="blue">A</td><td>-0.00036</td><td>0.00239</td><td>4.20466</td><td>...</td></tr>
+          <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td>It2ma</td><td className="green">B</td><td>-3.00246</td><td>0.00000</td><td>0.51128</td><td>...</td></tr>
+          <tr><td>Sergef</td><td className="green">B</td><td>0.00036</td><td>0.074825</td><td>12.71389</td><td>...</td></tr>
+          <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </>
+  )
+}
+
+/** A one-vs-rest and pairwise example for author DE file */
+function OneVsRestAndPairwiseExample() {
+  return (
+    <>
+      <table className="table-terra de-example">
+        <thead>
+          <tr><td>genes</td><td>group</td><td>comparison_group</td><td className="orange">logfoldchanges</td><td className="pink">pvals_adj</td><td className="optional">mean</td><td>...</td></tr>
+        </thead>
+        <tbody>
+          <tr><td>It2ma</td><td className="blue">A</td><td className="red">rest</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td></tr>
+          <tr><td>Sergef</td><td className="blue">A</td><td className="red">rest</td><td>-0.00036</td><td>0.00239</td><td>4.20466</td><td>...</td></tr>
+          <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td>It2ma</td><td className="green">B</td><td className="red">rest</td><td>-3.00246</td><td>0.00000</td><td>0.51128</td><td>...</td></tr>
+          <tr><td>Sergef</td><td className="green">B</td><td className="red">rest</td><td>0.00036</td><td>0.074825</td><td>12.71389</td><td>...</td></tr>
+          <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td>It2ma</td><td className="blue">A</td><td className="green">B</td><td>-0.10246</td><td>0.40019</td><td>0.41357</td><td>...</td></tr>
+          <tr><td>Sergef</td><td className="blue">A</td><td className="green">B</td><td>0.00060</td><td>0.00005</td><td>1.82731</td><td>...</td></tr>
+          <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td>It2ma</td><td className="blue">A</td><td className="yellow">C</td><td>0.00249</td><td>0.00103</td><td>0.42130</td><td>...</td></tr>
+          <tr><td>Sergef</td><td className="blue">A</td><td className="yellow">C</td><td>-0.00049</td><td>0.02648</td><td>1.06551</td><td>...</td></tr>
+          <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        </tbody>
+      </table>
+        Long format repeats values in the first column.
+    </>
+  )
+}
+
+/** A wide one-vs-rest and pairwise example for author DE file */
+function OneVsRestAndPairwiseWideExample() {
+  return (
+    <>
+      <div className="de-example-wide-format">
+        <table className="table-terra de-example wide-format">
+          <colgroup>
+            <col className="col-genes" />
+            <col className="col-logfoldchanges" />
+            <col className="col-qval" />
+            <col className="col-mean" />
+            <col className="col-ellipsis" />
+            <col className="col-logfoldchanges" />
+            <col className="col-qval" />
+            <col className="col-mean" />
+            <col className="col-ellipsis" />
+            <col className="col-logfoldchanges" />
+            <col className="col-qval" />
+            <col className="col-mean" />
+            <col className="col-ellipsis" />
+            <col className="col-logfoldchanges" />
+            <col className="col-qval" />
+            <col className="col-mean" />
+            <col className="col-ellipsis" />
+          </colgroup>
+          <thead>
+            <tr><td>genes</td><td><span className="blue">A</span>--<span className="red">rest</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="red">rest</span>--pvals_adj</td><td><span className="blue">A</span>--<span className="red">rest</span>--<span className="optional">mean</span></td><td>...</td><td><span className="green">B</span>--<span className="red">rest</span>--logfoldchanges</td><td><span className="green">B</span>--<span className="red">rest</span>--pvals_adj</td><td><span className="green">B</span>--rest--<span className="optional">mean</span></td><td>...</td><td>A--<span className="green">B</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="green">B</span>--pvals_adj</td><td><span className="blue">A</span>--<span className="green">B</span>--<span className="optional">mean</span></td><td>...</td><td><span className="blue">A</span>--<span className="yellow">C</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="yellow">C</span>--pvals_adj</td><td><span className="blue">A</span>--<span className="yellow">C</span>--<span className="optional">mean</span></td><td>...</td></tr>
+          </thead>
+          <tbody>
+            <tr><td>It2ma</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td><td>-3.00246</td><td>0.00000</td><td>0.51128</td><td>...</td><td>-0.10246</td><td>0.40019</td><td>0.41357</td><td>...</td><td>0.00249</td><td>0.00103</td><td>0.42130</td><td>...</td></tr>
+            <tr><td>Sergef</td><td>-0.00036</td><td>0.00239</td><td>4.20466</td><td>...</td><td>0.00036</td><td>0.074825</td><td>12.71389</td><td>...</td><td>0.00060</td><td>0.00005</td><td>1.82731</td><td>...</td><td>-0.00049</td><td>0.02648</td><td>1.06551</td><td>...</td></tr>
+          </tbody>
+        </table>
+      </div>
+                Wide format <i>does not</i> repeat values in the first column.  Long format is the default.
+      <br/><br/>
+      <p>Wide headers have the form <span className="code">&lt;group&gt;--&lt;comparison_group&gt;--&lt;metric&gt;</span>.</p>
+    </>
+  )
+}
+
+/** Tables of hypothetical author DE file excerpts, of various formats */
+function ExampleTable() {
+  const [example, setExample] = useState('one-vs-rest-only')
+
+  /** Updates shown example */
+  function updateExample(newExample) {
+    setExample(newExample)
+  }
+
+  return (
+    <>
+      <div className="col-sm-6 padded">
+        <div style={{ 'marginBottom': '10px' }}>
+          <button
+            className={`btn ${example === 'one-vs-rest-only' ? 'btn-primary' : 'terra-secondary-btn'}`}
+            onClick={() => updateExample('one-vs-rest-only')}
+          >
+            One-vs-rest
+          </button>
+          <span style={{ 'marginLeft': '20px' }}>
+            <button
+              className={`btn ${example === 'one-vs-rest-and-pairwise' ? 'btn-primary' : 'terra-secondary-btn'}`}
+              onClick={() => updateExample('one-vs-rest-and-pairwise')}>
+                One-vs-rest and pairwise
+            </button>
+          </span>
+        </div>
+        {example === 'one-vs-rest-only' &&
+        <OneVsRestOnlyExample />
+        }
+        {example === 'one-vs-rest-and-pairwise' &&
+        <>
+          <OneVsRestAndPairwiseExample />
+          <span>You can also use <span onClick={() => setExample('one-vs-rest-and-pairwise-wide')}>wide format</span>.</span>
+        </>
+        }
+        {example === 'one-vs-rest-and-pairwise-wide' &&
+        <OneVsRestAndPairwiseWideExample />
+        }
+      </div>
+    </>
+  )
+}
+
 /** Renders a form for uploading differential expression files */
 export function DifferentialFileUploadForm({
   formState,
@@ -38,9 +172,6 @@ export function DifferentialFileUploadForm({
   const menuOptions = serverState.menu_options
 
   const deFiles = formState.files.filter(differentialExpressionFileFilter)
-
-  console.log('deFiles', deFiles)
-
 
   useEffect(() => {
     if (deFiles.length === 0) {
@@ -57,65 +188,7 @@ export function DifferentialFileUploadForm({
           Other metrics like "mean" are optional.  <strong>Parsed metadata and clustering files are also required before uploading</strong>.
           <div className="row">
             <div className="col-md-12">
-              <div className="col-sm-6 padded">
-                <b>Long format</b>
-                <table className="table-terra de-example">
-                  <thead>
-                    <tr><td>genes</td><td>group</td><td>comparison_group</td><td className="orange">logfoldchanges</td><td className="pink">pvals_adj</td><td className="optional">mean</td><td>...</td></tr>
-                  </thead>
-                  <tbody>
-                    <tr><td>It2ma</td><td className="blue">A</td><td className="red">rest</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td></tr>
-                    <tr><td>Sergef</td><td className="blue">A</td><td className="red">rest</td><td>-0.00036</td><td>0.00239</td><td>4.20466</td><td>...</td></tr>
-                    <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                    <tr><td>It2ma</td><td className="green">B</td><td className="red">rest</td><td>-3.00246</td><td>0.00000</td><td>0.51128</td><td>...</td></tr>
-                    <tr><td>Sergef</td><td className="green">B</td><td className="red">rest</td><td>0.00036</td><td>0.074825</td><td>12.71389</td><td>...</td></tr>
-                    <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                    <tr><td>It2ma</td><td className="blue">A</td><td className="green">B</td><td>-0.10246</td><td>0.40019</td><td>0.41357</td><td>...</td></tr>
-                    <tr><td>Sergef</td><td className="blue">A</td><td className="green">B</td><td>0.00060</td><td>0.00005</td><td>1.82731</td><td>...</td></tr>
-                    <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                    <tr><td>It2ma</td><td className="blue">A</td><td className="yellow">C</td><td>0.00249</td><td>0.00103</td><td>0.42130</td><td>...</td></tr>
-                    <tr><td>Sergef</td><td className="blue">A</td><td className="yellow">C</td><td>-0.00049</td><td>0.02648</td><td>1.06551</td><td>...</td></tr>
-                    <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                  </tbody>
-                </table>
-                Long format repeats values in the first column.
-              </div>
-              <div className="col-sm-6 padded">
-                <b>Wide format</b>
-                <div className="de-example-wide-format">
-                  <table className="table-terra de-example wide-format">
-                    <colgroup>
-                      <col className="col-genes" />
-                      <col className="col-logfoldchanges" />
-                      <col className="col-qval" />
-                      <col className="col-mean" />
-                      <col className="col-ellipsis" />
-                      <col className="col-logfoldchanges" />
-                      <col className="col-qval" />
-                      <col className="col-mean" />
-                      <col className="col-ellipsis" />
-                      <col className="col-logfoldchanges" />
-                      <col className="col-qval" />
-                      <col className="col-mean" />
-                      <col className="col-ellipsis" />
-                      <col className="col-logfoldchanges" />
-                      <col className="col-qval" />
-                      <col className="col-mean" />
-                      <col className="col-ellipsis" />
-                    </colgroup>
-                    <thead>
-                      <tr><td>genes</td><td><span className="blue">A</span>--<span className="red">rest</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="red">rest</span>--pvals_adj</td><td><span className="blue">A</span>--<span className="red">rest</span>--<span className="optional">mean</span></td><td>...</td><td><span className="green">B</span>--<span className="red">rest</span>--logfoldchanges</td><td><span className="green">B</span>--<span className="red">rest</span>--pvals_adj</td><td><span className="green">B</span>--rest--<span className="optional">mean</span></td><td>...</td><td>A--<span className="green">B</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="green">B</span>--pvals_adj</td><td><span className="blue">A</span>--<span className="green">B</span>--<span className="optional">mean</span></td><td>...</td><td><span className="blue">A</span>--<span className="yellow">C</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="yellow">C</span>--pvals_adj</td><td><span className="blue">A</span>--<span className="yellow">C</span>--<span className="optional">mean</span></td><td>...</td></tr>
-                    </thead>
-                    <tbody>
-                      <tr><td>It2ma</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td><td>-3.00246</td><td>0.00000</td><td>0.51128</td><td>...</td><td>-0.10246</td><td>0.40019</td><td>0.41357</td><td>...</td><td>0.00249</td><td>0.00103</td><td>0.42130</td><td>...</td></tr>
-                      <tr><td>Sergef</td><td>-0.00036</td><td>0.00239</td><td>4.20466</td><td>...</td><td>0.00036</td><td>0.074825</td><td>12.71389</td><td>...</td><td>0.00060</td><td>0.00005</td><td>1.82731</td><td>...</td><td>-0.00049</td><td>0.02648</td><td>1.06551</td><td>...</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                Wide format <i>does not</i> repeat values in the first column.
-                <br/><br/>
-                <p>Wide headers have the form <span className="code">&lt;group&gt;--&lt;comparison_group&gt;--&lt;metric&gt;</span>.</p>
-              </div>
+              <ExampleTable />
             </div>
           </div>
         </p>

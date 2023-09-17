@@ -1,7 +1,4 @@
-import {
-  getParsedHeaderLines, parseLine,
-  validateUniqueCellNamesWithinFile, validateGroupColumnCounts, timeOutCSFV
-} from './shared-validation'
+import { getParsedHeaderLines } from './shared-validation'
 
 /** Return a metric of differential expression size, if present in given metric */
 function getSize(metric) {
@@ -15,8 +12,8 @@ function getSize(metric) {
 
 /** Get "adjusted p-value"-like metric */
 function getPvalAdj(metric) {
-  // Scanpy: pvals_adj; Seurat: p_val_adj
-  const ADJUSTED_P_VALUE_REGEX = new RegExp(/(pvals_adj|p_val_adj|adj)/i)
+  // Scanpy: pvals_adj; Seurat: p_val_adj; edgeR: FDR
+  const ADJUSTED_P_VALUE_REGEX = new RegExp(/(pvals_adj|p_val_adj|adj|fdr)/i)
   const pvalAdj = metric.match(ADJUSTED_P_VALUE_REGEX)
   return pvalAdj
 }
@@ -98,8 +95,8 @@ function inferSizesAndSignificances(metrics) {
 
 /** Return a metric of differential expression size, if present in given metric */
 function getGeneHeader(header) {
-  // Conventions -- Scanpy: ?; Seurat: genes.  "gene" is SCP canonical.
-  const GENE_REGEX = new RegExp(/^(gene|genes)$/i)
+  // Conventions -- Scanpy: names; Seurat: genes.  "gene" is SCP canonical.
+  const GENE_REGEX = new RegExp(/^(gene|genes|names)$/i)
   const gene = header.match(GENE_REGEX)
   return gene
 }
@@ -140,8 +137,8 @@ function inferOtherHeaders(headers) {
 function validateOtherHeaders(headers) {
   const issues = []
   const [geneHeaders, groupHeaders, comparisonGroupHeaders] = inferOtherHeaders(headers)
-  const hasGeneHeaders = geneHeaders.length > 1
-  const hasGroupHeaders = groupHeaders.length > 1
+  const hasGeneHeaders = geneHeaders.length > 0
+  const hasGroupHeaders = groupHeaders.length > 0
   // const hasComparisonGroupHeaders = comparisonGroupHeaders.length > 1
 
   if (!hasGeneHeaders || !hasGroupHeaders) {

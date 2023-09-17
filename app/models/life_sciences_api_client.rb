@@ -369,6 +369,7 @@ class LifeSciencesApiClient
       command_line += [
         '--annotation-name', de_info.annotation_name, '--annotation-scope', de_info.annotation_scope,
         '--annotation-type', 'group', '--cluster-name', de_info.cluster_group.name,
+        '--gene-header', de_info.gene_header, '--group-header', de_info.group_header, '--comparison-group-header', de_info.comparison_group_header,
         '--size-metric', de_info.size_metric, '--significance-metric', de_info.significance_metric,
         '--differential-expression-file', study_file.gs_url, '--study-accession', study.accession,
         '--method', de_info.computational_method, action_cli_opt
