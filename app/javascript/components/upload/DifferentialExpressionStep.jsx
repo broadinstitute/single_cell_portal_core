@@ -25,12 +25,12 @@ export default {
 }
 
 /** A simple one-vs-rest only example for author DE file */
-function OneVsRestOnlyExample() {
+function OneVsRestOnlyExample({ headers }) {
   return (
     <>
       <table className="table-terra de-example">
         <thead>
-          <tr><td>genes</td><td>group</td><td className="orange">logfoldchanges</td><td className="pink">pvals_adj</td><td className="optional">mean</td><td>...</td></tr>
+          <tr><td>{headers['gene']}</td><td>{headers['group']}</td><td className="orange">{headers['size']}</td><td className="pink">{headers['significance']}</td><td className="optional">mean</td><td>...</td></tr>
         </thead>
         <tbody>
           <tr><td>It2ma</td><td className="blue">A</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td></tr>
@@ -46,12 +46,12 @@ function OneVsRestOnlyExample() {
 }
 
 /** A one-vs-rest and pairwise example for author DE file */
-function OneVsRestAndPairwiseExample() {
+function OneVsRestAndPairwiseExample({ headers }) {
   return (
     <>
       <table className="table-terra de-example">
         <thead>
-          <tr><td>genes</td><td>group</td><td>comparison_group</td><td className="orange">logfoldchanges</td><td className="pink">pvals_adj</td><td className="optional">mean</td><td>...</td></tr>
+          <tr><td>{headers['gene']}</td><td>{headers['group']}</td><td>comparison_group</td><td className="orange">{headers['size']}</td><td className="pink">{headers['significance']}</td><td className="optional">mean</td><td>...</td></tr>
         </thead>
         <tbody>
           <tr><td>It2ma</td><td className="blue">A</td><td className="red">rest</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td></tr>
@@ -74,7 +74,7 @@ function OneVsRestAndPairwiseExample() {
 }
 
 /** A wide one-vs-rest and pairwise example for author DE file */
-function OneVsRestAndPairwiseWideExample() {
+function OneVsRestAndPairwiseWideExample(dialect) {
   return (
     <>
       <div className="de-example-wide-format">
@@ -114,44 +114,104 @@ function OneVsRestAndPairwiseWideExample() {
   )
 }
 
+const scanpyHeaders = {
+  'gene': 'names',
+  'group': 'group',
+  'size': 'logfoldchanges',
+  'significance': 'pvals_adj'
+}
+
+// E.g. p_val, avg_log2FC, pct.1, pct.2, p_val_adj, cluster, gene
+const seuratHeaders = {
+  'gene': 'gene',
+  'group': 'cluster',
+  'size': 'avg_log2FC',
+  'significance': 'p_val_adj'
+}
+
+const customHeaders = {
+  'gene': 'gene',
+  'group': 'group',
+  'size': 'logfoldchange',
+  'significance': 'qval'
+}
+
+const headersByDialect = {
+  'scanpy': scanpyHeaders,
+  'seurat': seuratHeaders,
+  'custom': customHeaders
+}
+
 /** Tables of hypothetical author DE file excerpts, of various formats */
 function ExampleTable() {
-  const [example, setExample] = useState('one-vs-rest-only')
+  const [comparison, setComparison] = useState('one-vs-rest-only')
+  const [dialect, setDialect] = useState('scanpy')
 
-  /** Updates shown example */
-  function updateExample(newExample) {
-    setExample(newExample)
+  /** Updates shown example's comparison type */
+  function updateComparison(newComparison) {
+    setComparison(newComparison)
   }
+
+  /** Updates shown example's header dialect */
+  function updateDialect(newDialect) {
+    setDialect(newDialect)
+  }
+
+
+  const headers = headersByDialect[dialect]
 
   return (
     <>
       <div className="col-sm-6 padded">
-        <div style={{ 'marginBottom': '10px' }}>
-          <button
-            className={`btn ${example === 'one-vs-rest-only' ? 'btn-primary' : 'terra-secondary-btn'}`}
-            onClick={() => updateExample('one-vs-rest-only')}
-          >
+        <div style={{ 'marginBottom': '4px' }}>
+          <span style={{ 'marginRight': '12px' }}>Comparison:</span>
+          <label>
+            <input type="radio" name="comparison" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
+              onClick={() => updateComparison('one-vs-rest-only')}
+              checked
+            />
             One-vs-rest
-          </button>
-          <span style={{ 'marginLeft': '20px' }}>
-            <button
-              className={`btn ${example === 'one-vs-rest-and-pairwise' ? 'btn-primary' : 'terra-secondary-btn'}`}
-              onClick={() => updateExample('one-vs-rest-and-pairwise')}>
+          </label>
+          <label style={{ 'marginLeft': '20px' }}>
+            <input type="radio" name="comparison" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
+              onClick={() => updateComparison('one-vs-rest-and-pairwise')}
+            />
                 One-vs-rest and pairwise
-            </button>
-          </span>
+          </label>
         </div>
-        {example === 'one-vs-rest-only' &&
-        <OneVsRestOnlyExample />
+        <div style={{ 'marginBottom': '10px' }}>
+          <span style={{ 'marginRight': '12px' }}>Dialect:</span>
+          <label>
+            <input type="radio" name="dialect" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
+              onClick={() => updateDialect('scanpy')}
+              checked
+            />
+                Scanpy
+          </label>
+          <label style={{ 'marginLeft': '20px' }}>
+            <input type="radio" name="dialect" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
+              onClick={() => updateDialect('seurat')}
+            />
+            Seurat
+          </label>
+          <label style={{ 'marginLeft': '20px' }}>
+            <input type="radio" name="dialect" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
+              onClick={() => updateDialect('custom')}
+            />
+                Custom
+          </label>
+        </div>
+        {comparison === 'one-vs-rest-only' &&
+        <OneVsRestOnlyExample headers={headers} />
         }
-        {example === 'one-vs-rest-and-pairwise' &&
+        {comparison === 'one-vs-rest-and-pairwise' &&
         <>
-          <OneVsRestAndPairwiseExample />
-          <span>You can also use <span onClick={() => setExample('one-vs-rest-and-pairwise-wide')}>wide format</span>.</span>
+          <OneVsRestAndPairwiseExample headers={headers} />
+          <span>You can also use <span onClick={() => setComparison('one-vs-rest-and-pairwise-wide')}>wide format</span>.</span>
         </>
         }
-        {example === 'one-vs-rest-and-pairwise-wide' &&
-        <OneVsRestAndPairwiseWideExample />
+        {comparison === 'one-vs-rest-and-pairwise-wide' &&
+        <OneVsRestAndPairwiseWideExample headers={headers} />
         }
       </div>
     </>
@@ -183,9 +243,10 @@ export function DifferentialFileUploadForm({
     <div className="row">
       <div className="col-md-12">
         <p className="form-terra">
-          <p>Upload differential expression (DE) files to enable comparing genes by DE in cells grouped by type, disease, treatment, and other experimental conditions.  Use long or wide format, one file per annotation.  Comparisons can be one-vs-rest or pairwise.</p>
-          In both formats, headers for <strong>size and significance are required</strong>.  The example below uses "logfoldchanges" and "pvals_adj" as size and significance metrics, but once you choose your file, you can select which headers correspond to your metrics.
-          Other metrics like "mean" are optional.  <strong>Parsed metadata and clustering files are also required before uploading</strong>.
+          <p>Upload differential expression (DE) files to <b>enable researchers to explore DE genes</b> by cell type, disease, treatment, and other experimental conditions.</p>
+          <p>Simply <b>choose your DE file, adjust inferred headers if needed, and upload it</b>.  Or, select different "Comparison" and "Dialect" options below to see example formats for DE files that you can upload.
+          Beyond metrics for size and significance, you can also include arbitrary other metrics, like "mean".  Headers can be in any order.</p>
+          <p>Upload one DE file per annotation.  To upload results for mulitple comparisons in an annotation, append all DE gene rows for each comparison as shown below.</p>
           <div className="row">
             <div className="col-md-12">
               <ExampleTable />
