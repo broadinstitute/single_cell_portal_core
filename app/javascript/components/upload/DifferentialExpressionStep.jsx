@@ -65,9 +65,10 @@ function OneVsRestOnlyExample({ headers, dialect }) {
           </tbody>
         </table>
         { dialect === 'scanpy' &&
-        <p>
-        Scanpy can output one-vs-rest DE via <a href="https://scanpy-tutorials.readthedocs.io/en/latest/pbmc3k.html#Finding-marker-genes" target="_blank"><code>rank_gene_groups()</code></a>.
-        </p>
+        <p>Scanpy can output one-vs-rest DE via <a href="https://scanpy-tutorials.readthedocs.io/en/latest/pbmc3k.html#Finding-marker-genes" target="_blank"><code>rank_gene_groups()</code></a>.</p>
+        }
+        {dialect === 'custom' &&
+        <p>The format for uploaded DE files is flexible.  Just "Choose file" and refine headers below.</p>
         }
       </>
     )
@@ -100,8 +101,8 @@ function OneVsRestAndPairwiseExample({ headers, dialect }) {
           </tbody>
         </table>
         <p>
-          Seurat can output one-vs-rest DE via <a href="https://satijalab.org/seurat/reference/findallmarkers" target="_blank"><code>FindAllMarkers</code></a>.
-          You can combine that with pairwise DE output from <a href="https://satijalab.org/seurat/articles/de_vignette" target="_blank"><code>FindMarkers(..., ident.1="A", ident.2="B")</code></a>.
+          Seurat can output one-vs-rest DE via <a href="https://satijalab.org/seurat/reference/findallmarkers" target="_blank"><code>FindAllMarkers</code></a>,
+          which can be combined pairwise DE output from <a href="https://satijalab.org/seurat/articles/de_vignette" target="_blank"><code>FindMarkers(..., ident.1="A", ident.2="B")</code></a>.
         </p>
       </>
     )
@@ -128,9 +129,10 @@ function OneVsRestAndPairwiseExample({ headers, dialect }) {
           </tbody>
         </table>
         { dialect === 'scanpy' &&
-        <p>
-        Scanpy can output one-vs-rest DE via <a href="https://scanpy-tutorials.readthedocs.io/en/latest/pbmc3k.html#Finding-marker-genes" target="_blank"><code>rank_gene_groups()</code></a>.
-        </p>
+        <p>Scanpy can output one-vs-rest DE via <a href="https://scanpy-tutorials.readthedocs.io/en/latest/pbmc3k.html#Finding-marker-genes" target="_blank"><code>rank_gene_groups()</code></a>.</p>
+        }
+        {dialect === 'custom' &&
+        <p>The format for uploaded DE files is flexible.  Just "Choose file" and refine headers below.</p>
         }
       </>
     )
