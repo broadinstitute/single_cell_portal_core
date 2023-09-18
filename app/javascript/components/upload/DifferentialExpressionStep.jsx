@@ -143,10 +143,7 @@ const headersByDialect = {
 }
 
 /** Tables of hypothetical author DE file excerpts, of various formats */
-function ExampleTable() {
-  const [comparison, setComparison] = useState('one-vs-rest-only')
-  const [dialect, setDialect] = useState('scanpy')
-
+function ExampleTable({ comparison, dialect, setComparison, setDialect }) {
   /** Updates shown example's comparison type */
   function updateComparison(newComparison) {
     setComparison(newComparison)
@@ -156,7 +153,6 @@ function ExampleTable() {
   function updateDialect(newDialect) {
     setDialect(newDialect)
   }
-
 
   const headers = headersByDialect[dialect]
 
@@ -168,7 +164,7 @@ function ExampleTable() {
           <label>
             <input type="radio" name="comparison" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
               onClick={() => updateComparison('one-vs-rest-only')}
-              checked
+              checked={comparison === 'one-vs-rest-only'}
             />
             One-vs-rest
           </label>
@@ -184,7 +180,7 @@ function ExampleTable() {
           <label>
             <input type="radio" name="dialect" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
               onClick={() => updateDialect('scanpy')}
-              checked
+              checked={dialect === 'scanpy'}
             />
                 Scanpy
           </label>
@@ -229,6 +225,9 @@ export function DifferentialFileUploadForm({
   isAnnDataExperience,
   annotationsAvailOnStudy
 }) {
+  const [comparison, setComparison] = useState('one-vs-rest-only')
+  const [dialect, setDialect] = useState('scanpy')
+
   const menuOptions = serverState.menu_options
 
   const deFiles = formState.files.filter(differentialExpressionFileFilter)
@@ -249,7 +248,12 @@ export function DifferentialFileUploadForm({
           <p>Upload one DE file per annotation.  To upload results for mulitple comparisons in an annotation, append all DE gene rows for each comparison as shown below.</p>
           <div className="row">
             <div className="col-md-12">
-              <ExampleTable />
+              <ExampleTable
+                comparison={comparison}
+                dialect={dialect}
+                setComparison={setComparison}
+                setDialect={setDialect}
+              />
             </div>
           </div>
         </p>
