@@ -25,94 +25,160 @@ export default {
 }
 
 /** A simple one-vs-rest only example for author DE file */
-function OneVsRestOnlyExample({ headers }) {
-  return (
-    <>
-      <table className="table-terra de-example">
-        <thead>
-          <tr><td>{headers['gene']}</td><td>{headers['group']}</td><td className="orange">{headers['size']}</td><td className="pink">{headers['significance']}</td><td className="optional">mean</td><td>...</td></tr>
-        </thead>
-        <tbody>
-          <tr><td>It2ma</td><td className="blue">A</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td></tr>
-          <tr><td>Sergef</td><td className="blue">A</td><td>-0.00036</td><td>0.00239</td><td>4.20466</td><td>...</td></tr>
-          <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-          <tr><td>It2ma</td><td className="green">B</td><td>-3.00246</td><td>0.00000</td><td>0.51128</td><td>...</td></tr>
-          <tr><td>Sergef</td><td className="green">B</td><td>0.00036</td><td>0.074825</td><td>12.71389</td><td>...</td></tr>
-          <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-        </tbody>
-      </table>
-    </>
-  )
+function OneVsRestOnlyExample({ headers, dialect }) {
+  if (dialect === 'seurat') {
+    // E.g. p_val, avg_log2FC, pct.1, pct.2, p_val_adj, cluster, gene
+    return (
+      <>
+        <table className="table-terra de-example">
+          <thead>
+            <tr><td className="orange">{headers['size']}</td><td className="pink">{headers['significance']}</td><td className="optional">mean</td><td>{headers['group']}</td><td>{headers['gene']}</td><td>...</td></tr>
+          </thead>
+          <tbody>
+            <tr><td>0.00049</td><td>0.00009</td><td>6.00312</td><td className="blue">A</td><td>It2ma</td><td>...</td></tr>
+            <tr><td>-0.00036</td><td>0.00239</td><td>4.20466</td><td className="blue">A</td><td>Sergef</td><td>...</td></tr>
+            <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>-3.00246</td><td>0.00000</td><td>0.51128</td><td className="green">B</td><td>It2ma</td><td>...</td></tr>
+            <tr><td>0.00036</td><td>0.074825</td><td>12.71389</td><td className="green">B</td><td>Sergef</td><td>...</td></tr>
+            <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+        <p>
+        Seurat can output one-vs-rest DE via <a href="https://satijalab.org/seurat/reference/findallmarkers" target="_blank"><code>FindAllMarkers</code></a>.
+        </p>
+      </>
+    )
+  } else {
+    return (
+      <>
+        <table className="table-terra de-example">
+          <thead>
+            <tr><td>{headers['gene']}</td><td>{headers['group']}</td><td className="orange">{headers['size']}</td><td className="pink">{headers['significance']}</td><td className="optional">mean</td><td>...</td></tr>
+          </thead>
+          <tbody>
+            <tr><td>It2ma</td><td className="blue">A</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td></tr>
+            <tr><td>Sergef</td><td className="blue">A</td><td>-0.00036</td><td>0.00239</td><td>4.20466</td><td>...</td></tr>
+            <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>It2ma</td><td className="green">B</td><td>-3.00246</td><td>0.00000</td><td>0.51128</td><td>...</td></tr>
+            <tr><td>Sergef</td><td className="green">B</td><td>0.00036</td><td>0.074825</td><td>12.71389</td><td>...</td></tr>
+            <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+        { dialect === 'scanpy' &&
+        <p>
+        Scanpy can output one-vs-rest DE via <a href="https://scanpy-tutorials.readthedocs.io/en/latest/pbmc3k.html#Finding-marker-genes" target="_blank"><code>rank_gene_groups()</code></a>.
+        </p>
+        }
+      </>
+    )
+  }
 }
 
 /** A one-vs-rest and pairwise example for author DE file */
-function OneVsRestAndPairwiseExample({ headers }) {
-  return (
-    <>
-      <table className="table-terra de-example">
-        <thead>
-          <tr><td>{headers['gene']}</td><td>{headers['group']}</td><td>comparison_group</td><td className="orange">{headers['size']}</td><td className="pink">{headers['significance']}</td><td className="optional">mean</td><td>...</td></tr>
-        </thead>
-        <tbody>
-          <tr><td>It2ma</td><td className="blue">A</td><td className="red">rest</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td></tr>
-          <tr><td>Sergef</td><td className="blue">A</td><td className="red">rest</td><td>-0.00036</td><td>0.00239</td><td>4.20466</td><td>...</td></tr>
-          <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-          <tr><td>It2ma</td><td className="green">B</td><td className="red">rest</td><td>-3.00246</td><td>0.00000</td><td>0.51128</td><td>...</td></tr>
-          <tr><td>Sergef</td><td className="green">B</td><td className="red">rest</td><td>0.00036</td><td>0.074825</td><td>12.71389</td><td>...</td></tr>
-          <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-          <tr><td>It2ma</td><td className="blue">A</td><td className="green">B</td><td>-0.10246</td><td>0.40019</td><td>0.41357</td><td>...</td></tr>
-          <tr><td>Sergef</td><td className="blue">A</td><td className="green">B</td><td>0.00060</td><td>0.00005</td><td>1.82731</td><td>...</td></tr>
-          <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-          <tr><td>It2ma</td><td className="blue">A</td><td className="yellow">C</td><td>0.00249</td><td>0.00103</td><td>0.42130</td><td>...</td></tr>
-          <tr><td>Sergef</td><td className="blue">A</td><td className="yellow">C</td><td>-0.00049</td><td>0.02648</td><td>1.06551</td><td>...</td></tr>
-          <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-        </tbody>
-      </table>
-        Long format repeats values in the first column.
-    </>
-  )
-}
-
-/** A wide one-vs-rest and pairwise example for author DE file */
-function OneVsRestAndPairwiseWideExample(dialect) {
-  return (
-    <>
-      <div className="de-example-wide-format">
-        <table className="table-terra de-example wide-format">
-          <colgroup>
-            <col className="col-genes" />
-            <col className="col-logfoldchanges" />
-            <col className="col-qval" />
-            <col className="col-mean" />
-            <col className="col-ellipsis" />
-            <col className="col-logfoldchanges" />
-            <col className="col-qval" />
-            <col className="col-mean" />
-            <col className="col-ellipsis" />
-            <col className="col-logfoldchanges" />
-            <col className="col-qval" />
-            <col className="col-mean" />
-            <col className="col-ellipsis" />
-            <col className="col-logfoldchanges" />
-            <col className="col-qval" />
-            <col className="col-mean" />
-            <col className="col-ellipsis" />
-          </colgroup>
+function OneVsRestAndPairwiseExample({ headers, dialect }) {
+  if (dialect === 'seurat') {
+    // E.g. p_val, avg_log2FC, pct.1, pct.2, p_val_adj, cluster, gene
+    return (
+      <>
+        <table className="table-terra de-example">
           <thead>
-            <tr><td>genes</td><td><span className="blue">A</span>--<span className="red">rest</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="red">rest</span>--pvals_adj</td><td><span className="blue">A</span>--<span className="red">rest</span>--<span className="optional">mean</span></td><td>...</td><td><span className="green">B</span>--<span className="red">rest</span>--logfoldchanges</td><td><span className="green">B</span>--<span className="red">rest</span>--pvals_adj</td><td><span className="green">B</span>--rest--<span className="optional">mean</span></td><td>...</td><td>A--<span className="green">B</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="green">B</span>--pvals_adj</td><td><span className="blue">A</span>--<span className="green">B</span>--<span className="optional">mean</span></td><td>...</td><td><span className="blue">A</span>--<span className="yellow">C</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="yellow">C</span>--pvals_adj</td><td><span className="blue">A</span>--<span className="yellow">C</span>--<span className="optional">mean</span></td><td>...</td></tr>
+            <tr><td className="orange">{headers['size']}</td><td className="pink">{headers['significance']}</td><td className="optional">mean</td><td>{headers['group']}</td><td>comparison_group</td><td>{headers['gene']}</td><td>...</td></tr>
           </thead>
           <tbody>
-            <tr><td>It2ma</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td><td>-3.00246</td><td>0.00000</td><td>0.51128</td><td>...</td><td>-0.10246</td><td>0.40019</td><td>0.41357</td><td>...</td><td>0.00249</td><td>0.00103</td><td>0.42130</td><td>...</td></tr>
-            <tr><td>Sergef</td><td>-0.00036</td><td>0.00239</td><td>4.20466</td><td>...</td><td>0.00036</td><td>0.074825</td><td>12.71389</td><td>...</td><td>0.00060</td><td>0.00005</td><td>1.82731</td><td>...</td><td>-0.00049</td><td>0.02648</td><td>1.06551</td><td>...</td></tr>
+            <tr><td>0.00049</td><td>0.00009</td><td>6.00312</td><td className="blue">A</td><td className="red">rest</td><td>It2ma</td><td>...</td></tr>
+            <tr><td>-0.00036</td><td>0.00239</td><td>4.20466</td><td className="blue">A</td><td className="red">rest</td><td>Sergef</td><td>...</td></tr>
+            <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>-3.00246</td><td>0.00000</td><td>0.51128</td><td className="green">B</td><td className="red">rest</td><td>It2ma</td><td>...</td></tr>
+            <tr><td>0.00036</td><td>0.074825</td><td>12.71389</td><td className="green">B</td><td className="red">rest</td><td>Sergef</td><td>...</td></tr>
+            <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>-0.10246</td><td>0.40019</td><td>0.41357</td><td className="blue">A</td><td className="green">B</td><td>It2ma</td><td>...</td></tr>
+            <tr><td>0.00060</td><td>0.00005</td><td>1.82731</td><td className="blue">A</td><td className="green">B</td><td>Sergef</td><td>...</td></tr>
+            <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>0.00249</td><td>0.00103</td><td>0.42130</td><td className="blue">A</td><td className="yellow">C</td><td>It2ma</td><td>...</td></tr>
+            <tr><td>-0.00049</td><td>0.02648</td><td>1.06551</td><td className="blue">A</td><td className="yellow">C</td><td>Sergef</td><td>...</td></tr>
+            <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
           </tbody>
         </table>
-      </div>
-                Wide format <i>does not</i> repeat values in the first column.  Long format is the default.
-      <br/><br/>
-      <p>Wide headers have the form <span className="code">&lt;group&gt;--&lt;comparison_group&gt;--&lt;metric&gt;</span>.</p>
-    </>
-  )
+        <p>
+          Seurat can output one-vs-rest DE via <a href="https://satijalab.org/seurat/reference/findallmarkers" target="_blank"><code>FindAllMarkers</code></a>.
+          You can combine that with pairwise DE output from <a href="https://satijalab.org/seurat/articles/de_vignette" target="_blank"><code>FindMarkers(..., ident.1="A", ident.2="B")</code></a>.
+        </p>
+      </>
+    )
+  } else {
+    return (
+      <>
+        <table className="table-terra de-example">
+          <thead>
+            <tr><td>{headers['gene']}</td><td>{headers['group']}</td><td>comparison_group</td><td className="orange">{headers['size']}</td><td className="pink">{headers['significance']}</td><td className="optional">mean</td><td>...</td></tr>
+          </thead>
+          <tbody>
+            <tr><td>It2ma</td><td className="blue">A</td><td className="red">rest</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td></tr>
+            <tr><td>Sergef</td><td className="blue">A</td><td className="red">rest</td><td>-0.00036</td><td>0.00239</td><td>4.20466</td><td>...</td></tr>
+            <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>It2ma</td><td className="green">B</td><td className="red">rest</td><td>-3.00246</td><td>0.00000</td><td>0.51128</td><td>...</td></tr>
+            <tr><td>Sergef</td><td className="green">B</td><td className="red">rest</td><td>0.00036</td><td>0.074825</td><td>12.71389</td><td>...</td></tr>
+            <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>It2ma</td><td className="blue">A</td><td className="green">B</td><td>-0.10246</td><td>0.40019</td><td>0.41357</td><td>...</td></tr>
+            <tr><td>Sergef</td><td className="blue">A</td><td className="green">B</td><td>0.00060</td><td>0.00005</td><td>1.82731</td><td>...</td></tr>
+            <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>It2ma</td><td className="blue">A</td><td className="yellow">C</td><td>0.00249</td><td>0.00103</td><td>0.42130</td><td>...</td></tr>
+            <tr><td>Sergef</td><td className="blue">A</td><td className="yellow">C</td><td>-0.00049</td><td>0.02648</td><td>1.06551</td><td>...</td></tr>
+            <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+        { dialect === 'scanpy' &&
+        <p>
+        Scanpy can output one-vs-rest DE via <a href="https://scanpy-tutorials.readthedocs.io/en/latest/pbmc3k.html#Finding-marker-genes" target="_blank"><code>rank_gene_groups()</code></a>.
+        </p>
+        }
+      </>
+    )
+  }
 }
+
+// TODO: Restore if there is interest in wide format
+//
+// /** A wide one-vs-rest and pairwise example for author DE file */
+// function OneVsRestAndPairwiseWideExample({headers, dialect}) {
+//   return (
+//     <>
+//       <div className="de-example-wide-format">
+//         <table className="table-terra de-example wide-format">
+//           <colgroup>
+//             <col className="col-genes" />
+//             <col className="col-logfoldchanges" />
+//             <col className="col-qval" />
+//             <col className="col-mean" />
+//             <col className="col-ellipsis" />
+//             <col className="col-logfoldchanges" />
+//             <col className="col-qval" />
+//             <col className="col-mean" />
+//             <col className="col-ellipsis" />
+//             <col className="col-logfoldchanges" />
+//             <col className="col-qval" />
+//             <col className="col-mean" />
+//             <col className="col-ellipsis" />
+//             <col className="col-logfoldchanges" />
+//             <col className="col-qval" />
+//             <col className="col-mean" />
+//             <col className="col-ellipsis" />
+//           </colgroup>
+//           <thead>
+//             <tr><td>genes</td><td><span className="blue">A</span>--<span className="red">rest</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="red">rest</span>--pvals_adj</td><td><span className="blue">A</span>--<span className="red">rest</span>--<span className="optional">mean</span></td><td>...</td><td><span className="green">B</span>--<span className="red">rest</span>--logfoldchanges</td><td><span className="green">B</span>--<span className="red">rest</span>--pvals_adj</td><td><span className="green">B</span>--rest--<span className="optional">mean</span></td><td>...</td><td>A--<span className="green">B</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="green">B</span>--pvals_adj</td><td><span className="blue">A</span>--<span className="green">B</span>--<span className="optional">mean</span></td><td>...</td><td><span className="blue">A</span>--<span className="yellow">C</span>--logfoldchanges</td><td><span className="blue">A</span>--<span className="yellow">C</span>--pvals_adj</td><td><span className="blue">A</span>--<span className="yellow">C</span>--<span className="optional">mean</span></td><td>...</td></tr>
+//           </thead>
+//           <tbody>
+//             <tr><td>It2ma</td><td>0.00049</td><td>0.00009</td><td>6.00312</td><td>...</td><td>-3.00246</td><td>0.00000</td><td>0.51128</td><td>...</td><td>-0.10246</td><td>0.40019</td><td>0.41357</td><td>...</td><td>0.00249</td><td>0.00103</td><td>0.42130</td><td>...</td></tr>
+//             <tr><td>Sergef</td><td>-0.00036</td><td>0.00239</td><td>4.20466</td><td>...</td><td>0.00036</td><td>0.074825</td><td>12.71389</td><td>...</td><td>0.00060</td><td>0.00005</td><td>1.82731</td><td>...</td><td>-0.00049</td><td>0.02648</td><td>1.06551</td><td>...</td></tr>
+//           </tbody>
+//         </table>
+//       </div>
+//                 Wide format <i>does not</i> repeat values in the first column.  Long format is the default.
+//       <br/><br/>
+//       <p>Wide headers have the form <span className="code">&lt;group&gt;--&lt;comparison_group&gt;--&lt;metric&gt;</span>.</p>
+//     </>
+//   )
+// }
 
 const scanpyHeaders = {
   'gene': 'names',
@@ -158,7 +224,7 @@ function ExampleTable({ comparison, dialect, setComparison, setDialect }) {
 
   return (
     <>
-      <div className="col-sm-6 padded">
+      <div className="col-sm-7 padded">
         <div style={{ 'marginBottom': '4px' }}>
           <span style={{ 'marginRight': '12px' }}>Comparison:</span>
           <label>
@@ -198,12 +264,13 @@ function ExampleTable({ comparison, dialect, setComparison, setDialect }) {
           </label>
         </div>
         {comparison === 'one-vs-rest-only' &&
-        <OneVsRestOnlyExample headers={headers} />
+        <OneVsRestOnlyExample headers={headers} dialect={dialect} />
         }
         {comparison === 'one-vs-rest-and-pairwise' &&
         <>
-          <OneVsRestAndPairwiseExample headers={headers} />
-          <span>You can also use <span onClick={() => setComparison('one-vs-rest-and-pairwise-wide')}>wide format</span>.</span>
+          <OneVsRestAndPairwiseExample headers={headers} dialect={dialect} />
+          {/* TODO: Restore if there is interest in wide format */}
+          {/* <span>You can also use <span onClick={() => setComparison('one-vs-rest-and-pairwise-wide')}>wide format</span>.</span> */}
         </>
         }
         {comparison === 'one-vs-rest-and-pairwise-wide' &&

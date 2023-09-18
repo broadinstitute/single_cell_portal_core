@@ -227,6 +227,10 @@
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
+a > code {
+  color: $action-color;
+}
+
 /** Used in "Differential expression" tab */
 .de-example.wide-format {
   table-layout: fixed;
