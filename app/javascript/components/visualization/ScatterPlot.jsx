@@ -23,6 +23,7 @@ const { defaultScatterColor } = PlotOptions
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { formatFileForApi } from '~/components/upload/upload-utils'
 import { successNotification, failureNotification } from '~/lib/MessageModal'
+import { FILTERED_TRACE_NAME, FILTERED_TRACE_COLOR } from '~/lib/cluster-utils'
 
 window.Plotly = Plotly
 
@@ -325,9 +326,12 @@ function RawScatterPlot({
     const keys = Object.keys(dataArrays)
     keys.forEach(key => intersectedData[key] = [])
     window.dataArrays = dataArrays
+    // array of cell indexes that are being plotted
+    const plotted = []
     for (let i = 0; i < filteredCells.length; i++) {
       const filteredCell = filteredCells[i]
       const allCellsIndex = filteredCell.allCellsIndex
+      plotted.push(allCellsIndex)
       for (let j = 0; j < keys.length; j++) {
         const key = keys[j]
         const dataArray = dataArrays[key]
@@ -335,8 +339,47 @@ function RawScatterPlot({
         intersectedData[keys[j]].push(filteredElement)
       }
     }
-    scatter.data = intersectedData
-    return scatter
+    return [intersectedData, plotted]
+  }
+
+  /**
+   * Reassign plot data to change cells filtered by cell faceting to --Filtered-- trace (light grey, transparent)
+   * this keeps the shape of the original plot but clearly shows what cells are excluded
+   *
+   * @param plotted {Array} Indices of points that are to be plotted
+   * @param originalData {Object} original scatter data object
+   * @param filteredData {Object} filtered scatter data object from cell faceting
+   * @returns {Object} reorganized scatter data object with new --Filtered-- trace
+   */
+  function reassignFilteredCells(plotted, originalData, filteredData) {
+    const allIndexes = [...Array(originalData['x'].length).keys()]
+    const originalSet = new Set(allIndexes)
+    const plottedSet = new Set(plotted)
+    const reassignedIndices = [...originalSet].filter(i => !plottedSet.has(i))
+    const newPlotData = {}
+    const keys = Object.keys(originalData)
+    keys.forEach(key =>  {
+      newPlotData[key] = []
+    })
+    for (let idx = 0; idx < reassignedIndices.length; idx++) {
+      for (let k = 0; k < keys.length; k++) {
+        const key = keys[k]
+        if (key === 'annotations') {
+          newPlotData[key].push(FILTERED_TRACE_NAME)
+        } else if (key === 'expression') {
+          newPlotData[key].push(FILTERED_TRACE_COLOR)
+        } else {
+          const dataArray = originalData[key]
+          const replottedElement = dataArray[idx]
+          newPlotData[key].push(replottedElement)
+        }
+      }
+    }
+    for (let j = 0; j < keys.length; j++) {
+      const key = keys[j]
+      newPlotData[key].push(...filteredData[key])
+    }
+    return newPlotData
   }
 
   /** Process scatter plot data fetched from server */
@@ -347,7 +390,9 @@ function RawScatterPlot({
     const layout = scatter.layout
 
     if (filteredCells) {
-      scatter = intersect(filteredCells, scatter)
+      const originalData = scatter.data
+      const [intersected, plottedIndexes] = intersect(filteredCells, scatter)
+      scatter.data = reassignFilteredCells(plottedIndexes, originalData, intersected)
     }
 
     const plotlyTraces = updateCountsAndGetTraces(scatter)
