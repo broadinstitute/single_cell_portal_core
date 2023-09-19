@@ -230,6 +230,37 @@ export default function ExploreDisplayTabs({
     setRenderForcer({})
   }, 300)
 
+
+  /** Get widths for main (plots) and side (options, DE, or FF) panels, for current Explore state */
+  function getPanelWidths() {
+    let main
+    let side
+    const isSelectingDE = showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel
+    if (showViewOptionsControls) {
+      if (
+        (deGenes !== null) ||
+          (hasPairwiseDe && (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel))
+      ) {
+        // DE table is shown, or pairwise DE is available.  Least horizontal space for plots.
+        main = 'col-md-9'
+        side = 'col-md-3'
+      } else if (panelToShow === 'FF') {
+        main = 'col-md-10'
+        side = 'col-md-2'
+      } else {
+        // Default state, when side panel is "Options" and not collapsed
+        main = 'col-md-10'
+        // only set options-bg if we're outside the DE UX
+        side = isSelectingDE ? 'col-md-2' : 'col-md-2 options-bg'
+      }
+    } else {
+      // When options panel is collapsed.  Maximize horizontal space for plots.
+      main = 'col-md-12'
+      side = 'hidden'
+    }
+    return { main, side }
+  }
+
   return (
     <>
       {/* Render top content for Explore view, i.e. gene search box and plot tabs */}
@@ -265,7 +296,7 @@ export default function ExploreDisplayTabs({
 
       {/* Render plots for the given Explore view state */}
       <div className="row explore-tab-content">
-        <div className="flexible-plot-space">
+        <div className={getPanelWidths().main}>
           <div className="explore-plot-tab-content row">
             { showRelatedGenesIdeogram &&
               <RelatedGenesIdeogram
@@ -424,11 +455,7 @@ export default function ExploreDisplayTabs({
                 <FontAwesomeIcon className="fa-lg" icon={faEye}/>
               </button>
         }
-        {!enabledTabs.includes('loading') && <div
-          className={showViewOptionsControls ?
-            `flexible-plot-space panel-specifics ${panelToShow}-options-bg` : 'hidden'
-          }
-        >
+        <div className={getPanelWidths().side}>
           <ExploreDisplayPanelManager
             studyAccession = {studyAccession}
             exploreInfo={exploreInfo}
@@ -458,7 +485,7 @@ export default function ExploreDisplayTabs({
             panelToShow ={panelToShow}
             toggleViewOptions= {toggleViewOptions}
           />
-        </div>}
+        </div>
       </div>
     </>
   )
