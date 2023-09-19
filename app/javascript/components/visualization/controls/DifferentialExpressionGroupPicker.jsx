@@ -27,13 +27,13 @@ function round(num, places) {
 /**
  * Transform raw TSV text into array of differential expression gene objects
  */
-function parseDeFile(tsvText, fdrMetric, isAuthorDe=false) {
+function parseDeFile(tsvText, significanceMetric, isAuthorDe=false) {
   const deGenes = []
   const tsvLines = tsvText.split(newlineRegex)
   for (let i = 1; i < tsvLines.length; i++) {
     const tsvLine = tsvLines[i]
     if (tsvLine === '') {continue}
-    if (!isAuthorDe || fdrMetric === 'pvalAdj') {
+    if (!isAuthorDe || significanceMetric === 'pvalAdj') {
       // Each element in this array is DE data for the gene in this row
       const splitLines = tsvLines[i].split('\t')
       const name = splitLines[1]
@@ -105,10 +105,10 @@ function parseDeFile(tsvText, fdrMetric, isAuthorDe=false) {
  *   pctNzGroup: Percent non-zero, group.  % of cells with non-zero expression in selected group.
  *   pctNzReference: Percent non-zero, reference.  % of cells with non-zero expression in non-selected groups.
  **/
-async function fetchDeGenes(bucketId, deFilePath, fdrMetric, isAuthorDe=false) {
+async function fetchDeGenes(bucketId, deFilePath, significanceMetric, isAuthorDe=false) {
   const data = await fetchBucketFile(bucketId, deFilePath)
   const tsvText = await data.text()
-  const deGenes = parseDeFile(tsvText, fdrMetric, isAuthorDe)
+  const deGenes = parseDeFile(tsvText, significanceMetric, isAuthorDe)
   return deGenes
 }
 
@@ -145,7 +145,7 @@ function getMatchingDeOption(
 export function PairwiseDifferentialExpressionGroupPicker({
   bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup,
   setDeGenes, countsByLabel, deObjects, setDeFilePath,
-  deGroupB, setDeGroupB, hasOneVsRestDe, fdrMetric
+  deGroupB, setDeGroupB, hasOneVsRestDe, significanceMetric
 }) {
   const groups = getLegendSortedLabels(countsByLabel)
 
@@ -169,7 +169,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
     setDeFilePath(deFilePath)
 
     const isAuthorDe = true // SCP doesn't currently automatically compute pairwise DE
-    const deGenes = await fetchDeGenes(bucketId, deFilePath, fdrMetric, isAuthorDe)
+    const deGenes = await fetchDeGenes(bucketId, deFilePath, significanceMetric, isAuthorDe)
     setDeGenes(deGenes)
   }
 
@@ -248,7 +248,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
 /** Pick groups of cells for one-vs-rest-only differential expression (DE) */
 export function OneVsRestDifferentialExpressionGroupPicker({
   bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup, setDeGenes,
-  countsByLabel, deObjects, setDeFilePath, isAuthorDe, fdrMetric
+  countsByLabel, deObjects, setDeFilePath, isAuthorDe, significanceMetric
 }) {
   let groups = getLegendSortedLabels(countsByLabel)
   groups = groups.filter(group => {
@@ -267,7 +267,7 @@ export function OneVsRestDifferentialExpressionGroupPicker({
 
     setDeFilePath(deFilePath)
 
-    const deGenes = await fetchDeGenes(bucketId, deFilePath, fdrMetric)
+    const deGenes = await fetchDeGenes(bucketId, deFilePath, significanceMetric)
 
     setDeGroup(newGroup)
     setDeGenes(deGenes)

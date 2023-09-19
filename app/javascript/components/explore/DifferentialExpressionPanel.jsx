@@ -181,7 +181,7 @@ function searchGenesFromTable(selectedGenes, searchGenes, logProps) {
 /** Table of DE data for genes */
 function DifferentialExpressionTable({
   genesToShow, searchGenes, clusterName, annotation, species, numRows,
-  bucketId, deFilePath, handleClear, isAuthorDe, fdrMetric, deFacets,
+  bucketId, deFilePath, handleClear, isAuthorDe, significanceMetric, deFacets,
   unfoundGenes, searchedGenes, setSearchedGenes
 }) {
   const defaultPagination = {
@@ -189,7 +189,7 @@ function DifferentialExpressionTable({
     pageSize: numRows
   }
 
-  const defaultPrimaryKey = fdrMetric
+  const defaultPrimaryKey = significanceMetric
   const defaultSorting = [
     { id: defaultPrimaryKey, desc: false },
     { id: 'log2FoldChange', desc: true }
@@ -233,7 +233,7 @@ function DifferentialExpressionTable({
     }
   })
 
-  const significanceColumnHelper = fdrMetric === 'pvalAdj' ? pvalAdjColumnHelper : qvalColumnHelper
+  const significanceColumnHelper = significanceMetric === 'pvalAdj' ? pvalAdjColumnHelper : qvalColumnHelper
 
   const columns = React.useMemo(() => [
     columnHelper.accessor('name', {
@@ -605,14 +605,14 @@ export default function DifferentialExpressionPanel({
     'log2FoldChange': [{ min: -Infinity, max: 0.26 }, { min: 0.26, max: Infinity }]
   }
 
-  let fdrMetric = !isAuthorDe ? 'pvalAdj' : 'qval'
+  let significanceMetric = !isAuthorDe ? 'pvalAdj' : 'qval'
   if (getPvalAdj(deHeaders?.significance)) {
-    fdrMetric = 'pvalAdj'
+    significanceMetric = 'pvalAdj'
   }
-  console.log('fdrMetric', fdrMetric)
-  defaultDeFacets[fdrMetric] = [{ min: 0, max: 0.05 }]
+  console.log('significanceMetric', significanceMetric)
+  defaultDeFacets[significanceMetric] = [{ min: 0, max: 0.05 }]
   const defaultActiveFacets = { 'log2FoldChange': true }
-  defaultActiveFacets[fdrMetric] = true
+  defaultActiveFacets[significanceMetric] = true
   const [deFacets, setDeFacets] = useState(defaultDeFacets)
   const [activeFacets, setActiveFacets] = useState(defaultActiveFacets)
 
@@ -726,7 +726,7 @@ export default function DifferentialExpressionPanel({
           deObjects={deObjects}
           setDeFilePath={setDeFilePath}
           isAuthorDe={isAuthorDe}
-          fdrMetric={fdrMetric}
+          significanceMetric={significanceMetric}
         />
       }
       {hasPairwiseDe &&
@@ -745,7 +745,7 @@ export default function DifferentialExpressionPanel({
           deGroupB={deGroupB}
           setDeGroupB={setDeGroupB}
           hasOneVsRestDe={hasOneVsRestDe}
-          fdrMetric={fdrMetric}
+          significanceMetric={significanceMetric}
         />
       }
 
@@ -761,6 +761,7 @@ export default function DifferentialExpressionPanel({
           updateDeFacets={updateDeFacets}
           toggleDeFacet={toggleDeFacet}
           isAuthorDe={isAuthorDe}
+          significanceMetric={significanceMetric}
         />
         <div className="de-search-box">
           <span className="de-search-icon">
@@ -808,7 +809,7 @@ export default function DifferentialExpressionPanel({
           deFilePath={deFilePath}
           handleClear={handleClear}
           isAuthorDe={hasPairwiseDe}
-          fdrMetric={fdrMetric}
+          significanceMetric={significanceMetric}
           deFacets={deFacets}
           unfoundGenes={unfoundGenes}
           searchedGenes={searchedGenes}
