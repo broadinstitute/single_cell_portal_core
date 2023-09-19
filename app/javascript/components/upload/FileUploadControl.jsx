@@ -37,15 +37,8 @@ export default function FileUploadControl({
       newName = file.name
     }
 
-    // if (file.file_type === 'Differential Expression') {
-    //   return
-    // }
-
     setFileValidation({ validating: true, issues: {}, fileName: selectedFile.name })
     const [issues, notes] = await ValidateFile.validateLocalFile(selectedFile, file, allFiles, allowedFileExts)
-    console.log('issues', issues)
-    console.log('notes', notes)
-    // console.log('notesObj', notesObj)
     setFileValidation({ validating: false, issues, fileName: selectedFile.name, notes })
     if (issues.errors.length === 0) {
       updateFile(file._id, {

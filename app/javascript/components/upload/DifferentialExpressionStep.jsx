@@ -102,7 +102,7 @@ function OneVsRestAndPairwiseExample({ headers, dialect }) {
         </table>
         <p>
           Seurat can output one-vs-rest DE via <a href="https://satijalab.org/seurat/reference/findallmarkers" target="_blank"><code>FindAllMarkers</code></a>,
-          which can be combined pairwise DE output from <a href="https://satijalab.org/seurat/articles/de_vignette" target="_blank"><code>FindMarkers(..., ident.1="A", ident.2="B")</code></a>.
+          which can be combined with pairwise DE output from <a href="https://satijalab.org/seurat/articles/de_vignette" target="_blank"><code>FindMarkers(..., ident.1="A", ident.2="B")</code></a>.
         </p>
       </>
     )
@@ -227,6 +227,7 @@ function ExampleTable({ comparison, dialect, setComparison, setDialect }) {
   return (
     <>
       <div className="col-sm-7 padded">
+        <p><b>Example DE file formats you can upload</b></p>
         <div style={{ 'marginBottom': '4px' }}>
           <span style={{ 'marginRight': '12px' }}>Comparison:</span>
           <label>
@@ -275,9 +276,10 @@ function ExampleTable({ comparison, dialect, setComparison, setDialect }) {
           {/* <span>You can also use <span onClick={() => setComparison('one-vs-rest-and-pairwise-wide')}>wide format</span>.</span> */}
         </>
         }
-        {comparison === 'one-vs-rest-and-pairwise-wide' &&
-        <OneVsRestAndPairwiseWideExample headers={headers} />
-        }
+        {/* TODO: Restore if there is interest in wide format */}
+        {/* {comparison === 'one-vs-rest-and-pairwise-wide' &&
+          <OneVsRestAndPairwiseWideExample headers={headers} />
+        } */}
       </div>
     </>
   )

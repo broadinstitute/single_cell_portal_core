@@ -658,7 +658,9 @@ class IngestJob
                       "user-uploaded file #{study_file.upload_file_name}"
     de_result = DifferentialExpressionResult.new(
       study:, study_file:, cluster_group:, cluster_name: cluster_group.name, is_author_de: true,
-      annotation_name: de_info.annotation_name, annotation_scope: de_info.annotation_scope
+      annotation_name: de_info.annotation_name, annotation_scope: de_info.annotation_scope,
+      gene_header: de_info.gene_header, group_header: de_info.group_header, comparison_group_header: de_info.comparison_group_header,
+      size_metric: de_info.size_metric, significance_metric: de_info.significance_metric
     )
     all_observations = read_differential_expression_manifest(de_info, cluster_group)
     de_result.initialize_comparisons!(all_observations)
