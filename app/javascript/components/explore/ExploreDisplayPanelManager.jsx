@@ -70,6 +70,28 @@ function getHasComparisonDe(exploreInfo, exploreParams, comparison) {
   return hasComparisonDe
 }
 
+/** Determine if current annotation has one-vs-rest or pairwise DE */
+function getDeHeaders(exploreInfo, exploreParams) {
+  const flags = getFeatureFlagsWithDefaults()
+  if (!flags?.differential_expression_frontend || !exploreInfo) {return false}
+
+  const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
+
+  const deObject = exploreInfo.differentialExpression.find(deItem => {
+    return (
+      deItem.cluster_name === selectedCluster &&
+      deItem.annotation_name === selectedAnnot.name &&
+      deItem.annotation_scope === selectedAnnot.scope
+    )
+  })
+
+  if (deObject) {
+    return deObject.select_options.headers
+  } else {
+    return null
+  }
+}
+
 /** Return list of annotations that have differential expression enabled */
 function getAnnotationsWithDE(exploreInfo) {
   if (!exploreInfo) {return false}
@@ -95,7 +117,6 @@ function getAnnotationsWithDE(exploreInfo) {
     subsample_thresholds: exploreInfo.annotationList.subsample_thresholds
   }
 }
-
 
 
 /** Determine if current annotation has differential expression results available */
@@ -183,7 +204,11 @@ export default function ExploreDisplayPanelManager({
   const clusterHasDe = getClusterHasDe(exploreInfo, exploreParams)
   const hasOneVsRestDe = getHasComparisonDe(exploreInfo, exploreParams, 'one_vs_rest')
   const hasPairwiseDe = getHasComparisonDe(exploreInfo, exploreParams, 'pairwise')
+  const deHeaders = getDeHeaders(exploreInfo, exploreParams)
   const isAuthorDe = getIsAuthorDe(exploreInfo, exploreParams)
+
+  console.log('exploreInfo', exploreInfo)
+  console.log('deHeaders', deHeaders)
 
   // exploreParams object without genes specified, to pass to cluster comparison plots
   const referencePlotDataParams = _clone(exploreParams)
@@ -434,6 +459,7 @@ export default function ExploreDisplayPanelManager({
               hasOneVsRestDe={hasOneVsRestDe}
               hasPairwiseDe={hasPairwiseDe}
               isAuthorDe={isAuthorDe}
+              deHeaders={deHeaders}
               deGroupB={deGroupB}
               setDeGroupB={setDeGroupB}
               countsByLabel={countsByLabel}

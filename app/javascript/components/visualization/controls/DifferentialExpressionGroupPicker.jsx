@@ -27,20 +27,36 @@ function round(num, places) {
 /**
  * Transform raw TSV text into array of differential expression gene objects
  */
-function parseDeFile(tsvText, isAuthorDe=false) {
+function parseDeFile(tsvText, fdrMetric, isAuthorDe=false) {
   const deGenes = []
   const tsvLines = tsvText.split(newlineRegex)
   for (let i = 1; i < tsvLines.length; i++) {
     const tsvLine = tsvLines[i]
     if (tsvLine === '') {continue}
-    if (!isAuthorDe) {
+    if (!isAuthorDe || fdrMetric === 'pvalAdj') {
       // Each element in this array is DE data for the gene in this row
-      const [
+      const splitLines = tsvLines[i].split('\t')
+      const name = splitLines[1]
+      let deGene
+
+      if (isAuthorDe) {
+        // Each element in this array is DE data for the gene in this row
+        const [
         index, // eslint-disable-line
-        name, score, log2FoldChange, pval, pvalAdj, pctNzGroup, pctNzReference
-      ] = tsvLines[i].split('\t')
-      const deGene = {
-        score, log2FoldChange, pval, pvalAdj, pctNzGroup, pctNzReference
+          _, log2FoldChange, pvalAdj
+        ] = splitLines
+        deGene = {
+          score: 1, log2FoldChange, pval: 0, pvalAdj, pctNzGroup: 0, pctNzReference: 0
+        }
+      } else {
+        const [
+          index, // eslint-disable-line
+          _, score, log2FoldChange, pval, pvalAdj, pctNzGroup, pctNzReference
+        ] = splitLines
+
+        deGene = {
+          score, log2FoldChange, pval, pvalAdj, pctNzGroup, pctNzReference
+        }
       }
       Object.entries(deGene).forEach(([k, v]) => {
         // Cast numeric string values as floats
@@ -69,6 +85,7 @@ function parseDeFile(tsvText, isAuthorDe=false) {
     }
   }
 
+  window.deGenes = deGenes
   return deGenes
 }
 
@@ -88,10 +105,10 @@ function parseDeFile(tsvText, isAuthorDe=false) {
  *   pctNzGroup: Percent non-zero, group.  % of cells with non-zero expression in selected group.
  *   pctNzReference: Percent non-zero, reference.  % of cells with non-zero expression in non-selected groups.
  **/
-async function fetchDeGenes(bucketId, deFilePath, isAuthorDe=false) {
+async function fetchDeGenes(bucketId, deFilePath, fdrMetric, isAuthorDe=false) {
   const data = await fetchBucketFile(bucketId, deFilePath)
   const tsvText = await data.text()
-  const deGenes = parseDeFile(tsvText, isAuthorDe)
+  const deGenes = parseDeFile(tsvText, fdrMetric, isAuthorDe)
   return deGenes
 }
 
@@ -128,7 +145,7 @@ function getMatchingDeOption(
 export function PairwiseDifferentialExpressionGroupPicker({
   bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup,
   setDeGenes, countsByLabel, deObjects, setDeFilePath,
-  deGroupB, setDeGroupB, hasOneVsRestDe
+  deGroupB, setDeGroupB, hasOneVsRestDe, fdrMetric
 }) {
   const groups = getLegendSortedLabels(countsByLabel)
 
@@ -152,7 +169,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
     setDeFilePath(deFilePath)
 
     const isAuthorDe = true // SCP doesn't currently automatically compute pairwise DE
-    const deGenes = await fetchDeGenes(bucketId, deFilePath, isAuthorDe)
+    const deGenes = await fetchDeGenes(bucketId, deFilePath, fdrMetric, isAuthorDe)
     setDeGenes(deGenes)
   }
 
@@ -231,7 +248,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
 /** Pick groups of cells for one-vs-rest-only differential expression (DE) */
 export function OneVsRestDifferentialExpressionGroupPicker({
   bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup, setDeGenes,
-  countsByLabel, deObjects, setDeFilePath, isAuthorDe
+  countsByLabel, deObjects, setDeFilePath, isAuthorDe, fdrMetric
 }) {
   let groups = getLegendSortedLabels(countsByLabel)
   groups = groups.filter(group => {
@@ -250,7 +267,7 @@ export function OneVsRestDifferentialExpressionGroupPicker({
 
     setDeFilePath(deFilePath)
 
-    const deGenes = await fetchDeGenes(bucketId, deFilePath)
+    const deGenes = await fetchDeGenes(bucketId, deFilePath, fdrMetric)
 
     setDeGroup(newGroup)
     setDeGenes(deGenes)

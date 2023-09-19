@@ -11,7 +11,7 @@ function getSize(metric) {
 // Start of significance parsers
 
 /** Get "adjusted p-value"-like metric */
-function getPvalAdj(metric) {
+export function getPvalAdj(metric) {
   // Scanpy: pvals_adj; Seurat: p_val_adj; edgeR: FDR
   const ADJUSTED_P_VALUE_REGEX = new RegExp(/(pvals_adj|p_val_adj|adj|fdr)/i)
   const pvalAdj = metric.match(ADJUSTED_P_VALUE_REGEX)

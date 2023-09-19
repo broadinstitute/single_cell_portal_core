@@ -8,6 +8,7 @@ import Button from 'react-bootstrap/lib/Button'
 
 import PagingControl from '~/components/search/results/PagingControl'
 import DifferentialExpressionFilters from './DifferentialExpressionFilters'
+import { getPvalAdj } from '~/lib/validation/validate-differential-expression'
 import { contactUsLink } from '~/lib/error-utils'
 
 import {
@@ -180,7 +181,7 @@ function searchGenesFromTable(selectedGenes, searchGenes, logProps) {
 /** Table of DE data for genes */
 function DifferentialExpressionTable({
   genesToShow, searchGenes, clusterName, annotation, species, numRows,
-  bucketId, deFilePath, handleClear, isAuthorDe, deFacets,
+  bucketId, deFilePath, handleClear, isAuthorDe, fdrMetric, deFacets,
   unfoundGenes, searchedGenes, setSearchedGenes
 }) {
   const defaultPagination = {
@@ -188,7 +189,7 @@ function DifferentialExpressionTable({
     pageSize: numRows
   }
 
-  const defaultPrimaryKey = !isAuthorDe ? 'pvalAdj' : 'qval'
+  const defaultPrimaryKey = fdrMetric
   const defaultSorting = [
     { id: defaultPrimaryKey, desc: false },
     { id: 'log2FoldChange', desc: true }
@@ -232,7 +233,7 @@ function DifferentialExpressionTable({
     }
   })
 
-  const significanceColumnHelper = !isAuthorDe ? pvalAdjColumnHelper : qvalColumnHelper
+  const significanceColumnHelper = fdrMetric === 'pvalAdj' ? pvalAdjColumnHelper : qvalColumnHelper
 
   const columns = React.useMemo(() => [
     columnHelper.accessor('name', {
@@ -591,7 +592,7 @@ function UnfoundGenesContainer({ unfoundGenes, searchedGenes, setSearchedGenes }
 export default function DifferentialExpressionPanel({
   deGroup, deGenes, searchGenes,
   exploreInfo, exploreParamsWithDefaults, setShowDeGroupPicker, setDeGenes, setDeGroup,
-  countsByLabel, hasOneVsRestDe, hasPairwiseDe, isAuthorDe, deGroupB, setDeGroupB, numRows=50
+  countsByLabel, hasOneVsRestDe, hasPairwiseDe, isAuthorDe, deHeaders, deGroupB, setDeGroupB, numRows=50
 }) {
   const clusterName = exploreParamsWithDefaults?.cluster
   const bucketId = exploreInfo?.bucketId
@@ -603,7 +604,12 @@ export default function DifferentialExpressionPanel({
   const defaultDeFacets = {
     'log2FoldChange': [{ min: -Infinity, max: 0.26 }, { min: 0.26, max: Infinity }]
   }
-  const fdrMetric = !isAuthorDe ? 'pvalAdj' : 'qval'
+
+  let fdrMetric = !isAuthorDe ? 'pvalAdj' : 'qval'
+  if (getPvalAdj(deHeaders?.significance)) {
+    fdrMetric = 'pvalAdj'
+  }
+  console.log('fdrMetric', fdrMetric)
   defaultDeFacets[fdrMetric] = [{ min: 0, max: 0.05 }]
   const defaultActiveFacets = { 'log2FoldChange': true }
   defaultActiveFacets[fdrMetric] = true
@@ -720,6 +726,7 @@ export default function DifferentialExpressionPanel({
           deObjects={deObjects}
           setDeFilePath={setDeFilePath}
           isAuthorDe={isAuthorDe}
+          fdrMetric={fdrMetric}
         />
       }
       {hasPairwiseDe &&
@@ -738,6 +745,7 @@ export default function DifferentialExpressionPanel({
           deGroupB={deGroupB}
           setDeGroupB={setDeGroupB}
           hasOneVsRestDe={hasOneVsRestDe}
+          fdrMetric={fdrMetric}
         />
       }
 
@@ -800,6 +808,7 @@ export default function DifferentialExpressionPanel({
           deFilePath={deFilePath}
           handleClear={handleClear}
           isAuthorDe={hasPairwiseDe}
+          fdrMetric={fdrMetric}
           deFacets={deFacets}
           unfoundGenes={unfoundGenes}
           searchedGenes={searchedGenes}
