@@ -219,9 +219,8 @@ function DifferentialExpressionTable({
     pageSize: numRows
   }
 
-  const defaultPrimaryKey = significanceMetric
   const defaultSorting = [
-    { id: defaultPrimaryKey, desc: false },
+    { id: 'significance', desc: false },
     { id: 'log2FoldChange', desc: true }
   ]
 
@@ -238,7 +237,7 @@ function DifferentialExpressionTable({
     significanceTooltip
   ] = getSignificanceAttrs(significanceMetric, isAuthorDe)
 
-  const significanceColumnHelper = columnHelper.accessor(significanceMetric, {
+  const significanceColumnHelper = columnHelper.accessor('significance', {
     header: () => (
       <span
         id="significance-header"
@@ -285,7 +284,7 @@ function DifferentialExpressionTable({
     columnHelper.accessor('log2FoldChange', {
       header: () => (
         <span
-          id="log2-fold-change-header"
+          id="size-header"
           className="glossary"
           data-toggle="tooltip"
           data-original-title="Log (base 2) of fold change">
@@ -628,9 +627,8 @@ export default function DifferentialExpressionPanel({
     significanceMetric = 'pvalAdj'
   }
   console.log('significanceMetric', significanceMetric)
-  defaultDeFacets[significanceMetric] = [{ min: 0, max: 0.05 }]
-  const defaultActiveFacets = { 'log2FoldChange': true }
-  defaultActiveFacets[significanceMetric] = true
+  defaultDeFacets['significance'] = [{ min: 0, max: 0.05 }]
+  const defaultActiveFacets = { significance: true }
   const [deFacets, setDeFacets] = useState(defaultDeFacets)
   const [activeFacets, setActiveFacets] = useState(defaultActiveFacets)
 
