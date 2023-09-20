@@ -8,7 +8,7 @@ import Button from 'react-bootstrap/lib/Button'
 
 import PagingControl from '~/components/search/results/PagingControl'
 import DifferentialExpressionFilters from './DifferentialExpressionFilters'
-import { getPvalAdj } from '~/lib/validation/validate-differential-expression'
+import { getCanonicalSignificance } from '~/lib/validation/validate-differential-expression'
 import { contactUsLink } from '~/lib/error-utils'
 
 import {
@@ -622,15 +622,18 @@ export default function DifferentialExpressionPanel({
     'log2FoldChange': [{ min: -Infinity, max: 0.26 }, { min: 0.26, max: Infinity }]
   }
 
-  let significanceMetric = !isAuthorDe ? 'pvalAdj' : 'qval'
-  if (getPvalAdj(deHeaders?.significance)) {
-    significanceMetric = 'pvalAdj'
+  let significanceMetric = 'pvalAdj'
+  if (isAuthorDe) {
+    significanceMetric = getCanonicalSignificance(deHeaders.significance)
   }
   console.log('significanceMetric', significanceMetric)
   defaultDeFacets['significance'] = [{ min: 0, max: 0.05 }]
   const defaultActiveFacets = { significance: true }
   const [deFacets, setDeFacets] = useState(defaultDeFacets)
   const [activeFacets, setActiveFacets] = useState(defaultActiveFacets)
+
+  console.log('deFacets', deFacets)
+  console.log('activeFacets', activeFacets)
 
   // Whether to match on full string or partial string for each token in "Find genes"
   const [findMode, setFindMode] = useState('partial')
@@ -648,6 +651,7 @@ export default function DifferentialExpressionPanel({
 
   /** Change filter values for range slider facets */
   function updateDeFacets(newFacets, metric) {
+    console.log('newFacets', newFacets)
     setDeFacets(newFacets)
     const [filteredGenes, unfoundNames] = filterGenes(searchedGenes, deGenes, newFacets, activeFacets, findMode)
     setGenesToShow(filteredGenes)

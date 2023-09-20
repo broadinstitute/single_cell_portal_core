@@ -33,10 +33,11 @@ function parseDeFile(tsvText, significanceMetric, isAuthorDe=false) {
   for (let i = 1; i < tsvLines.length; i++) {
     const tsvLine = tsvLines[i]
     if (tsvLine === '') {continue}
+    const row = tsvLine.split('\t')
+
     if (!isAuthorDe || significanceMetric === 'pvalAdj') {
       // Each element in this array is DE data for the gene in this row
-      const splitLines = tsvLines[i].split('\t')
-      const name = splitLines[1]
+      const name = row[1]
       let deGene
 
       if (isAuthorDe) {
@@ -44,7 +45,7 @@ function parseDeFile(tsvText, significanceMetric, isAuthorDe=false) {
         const [
         index, // eslint-disable-line
           _, log2FoldChange, significance
-        ] = splitLines
+        ] = row
         deGene = {
           score: 1, log2FoldChange, pval: 0, significance, pctNzGroup: 0, pctNzReference: 0
         }
@@ -52,7 +53,7 @@ function parseDeFile(tsvText, significanceMetric, isAuthorDe=false) {
         const [
           index, // eslint-disable-line
           _, score, log2FoldChange, pval, significance, pctNzGroup, pctNzReference
-        ] = splitLines
+        ] = row
 
         deGene = {
           score, log2FoldChange, pval, significance, pctNzGroup, pctNzReference
@@ -69,7 +70,7 @@ function parseDeFile(tsvText, significanceMetric, isAuthorDe=false) {
       const [
         index, // eslint-disable-line
         name, log2FoldChange, significance, mean
-      ] = tsvLines[i].split('\t')
+      ] = row
       const deGene = {
         // TODO (SCP-5201): Show significant zeros, e.g. 0's to right of 9 in 0.900
         log2FoldChange: round(log2FoldChange, 3),

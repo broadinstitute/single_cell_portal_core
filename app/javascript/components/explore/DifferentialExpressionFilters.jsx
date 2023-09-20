@@ -10,6 +10,7 @@ function MetricDisplayValue({ metric }) {
     <>
       {metric === 'log2FoldChange' && <>log<sub>2</sub>(FC)</>}
       {metric === 'pvalAdj' && <>Adj. p-value</>}
+      {metric === 'pval' && <>p-value</>}
       {metric === 'qval' && <>q-value</>}
     </>
   )
@@ -32,7 +33,7 @@ function SliderContainer({ metricHeader, metric, toggleDeFacet, isActive }) {
           <MetricDisplayValue metric={metric} />
         </label>
       </div>
-      <div className={`de-slider de-slider-${metricHeader}`} data-metric={metricHeader}></div>
+      <div className={`de-slider de-slider-${metricHeader}`} data-metric-header={metricHeader}></div>
       <br/>
     </div>
   )
@@ -132,6 +133,8 @@ export default function DifferentialExpressionFilters({
     // eslint-disable-next-line no-invalid-this
     const slider = this
     const metricHeader = slider.target.dataset['metricHeader']
+    console.log('slider.target.dataset', slider.target.dataset)
+    console.log('metricHeader', metricHeader)
 
     range = range.map(d => parseFloat(d))
     if (metricHeader === 'log2FoldChange') {
@@ -152,7 +155,9 @@ export default function DifferentialExpressionFilters({
   useEffect(() => {
     metricHeaders.forEach(metricHeader => {
       const sliderSelector = `.de-slider-${metricHeader}`
+      console.log('sliderSelector', sliderSelector)
       const slider = document.querySelector(sliderSelector)
+      console.log('slider', slider)
 
       if (!slider.noUiSlider) {
         const config = getSliderConfig(metricHeader)

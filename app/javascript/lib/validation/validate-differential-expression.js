@@ -19,7 +19,7 @@ export function getPvalAdj(metric) {
 }
 
 /** Return a "p-value"-like string if present in given metric , excluding "adjusted p-value"-like */
-function getPval(metric) {
+export function getPval(metric) {
   // Conventions -- Scanpy: pvals; Seurat: p_val
   const P_VALUE_REGEX = new RegExp(/(pval|p_val|p-val)/i)
   const pval = metric.match(P_VALUE_REGEX)
@@ -30,7 +30,7 @@ function getPval(metric) {
 }
 
 /** Return a "q-value"-like string if present in given metric */
-function getQval(metric) {
+export function getQval(metric) {
   // Conventions -- Scanpy: qvals (?); Seurat: q_val (?)
   const Q_VALUE_REGEX = new RegExp(/(qval|q_val|q-val)/i)
   const qval = metric.match(Q_VALUE_REGEX)
@@ -76,6 +76,26 @@ function getSignificance(metric) {
         return qval
       } else {
         return null
+      }
+    }
+  }
+}
+
+/** Return a canonical significance string if present in given metric */
+export function getCanonicalSignificance(authorSignificanceMetric) {
+  const pvalAdj = getPvalAdj(authorSignificanceMetric)
+  if (pvalAdj) {
+    return 'pvalAdj'
+  } else {
+    const pval = getPval(authorSignificanceMetric)
+    if (pval) {
+      return 'pval'
+    } else {
+      const qval = getQval(authorSignificanceMetric)
+      if (qval) {
+        return 'qval'
+      } else {
+        return authorSignificanceMetric
       }
     }
   }
