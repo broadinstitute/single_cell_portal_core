@@ -930,7 +930,9 @@ export function intersect(filteredCells, scatter) {
   const dataArrays = scatter.data
   const keys = Object.keys(dataArrays)
   keys.forEach(key => intersectedData[key] = [])
-  window.dataArrays = dataArrays
+  // Uncomment for debugging, but be sure to comment out before PR
+  // window.dataArrays = dataArrays
+
   // array of cell indexes that are being plotted
   const plotted = []
   for (let i = 0; i < filteredCells.length; i++) {
@@ -941,7 +943,7 @@ export function intersect(filteredCells, scatter) {
       const key = keys[j]
       const dataArray = dataArrays[key]
       const filteredElement = dataArray[allCellsIndex]
-      intersectedData[keys[j]].push(filteredElement)
+      intersectedData[key].push(filteredElement)
     }
   }
   return [intersectedData, plotted]
@@ -960,9 +962,8 @@ ScatterPlot.intersect = intersect
  */
 export function reassignFilteredCells(plotted, originalData, filteredData) {
   const allIndexes = [...Array(originalData['x'].length).keys()]
-  const originalSet = new Set(allIndexes)
   const plottedSet = new Set(plotted)
-  const reassignedIndices = [...originalSet].filter(i => !plottedSet.has(i))
+  const reassignedIndices = allIndexes.filter(i => !plottedSet.has(i))
   const newPlotData = {}
   const keys = Object.keys(originalData)
   keys.forEach(key =>  {
@@ -982,8 +983,8 @@ export function reassignFilteredCells(plotted, originalData, filteredData) {
       }
     }
   }
-  for (let j = 0; j < keys.length; j++) {
-    const key = keys[j]
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i]
     newPlotData[key].push(...filteredData[key])
   }
   return newPlotData

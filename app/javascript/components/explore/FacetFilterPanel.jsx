@@ -215,7 +215,7 @@ export function FacetFilterPanel({
           <h5>Filter plotted points by:
             <a className="action help-icon"
                data-toggle="tooltip"
-               data-original-title="Use the checkboxes to filter points from the plot.  Unselected values are
+               data-original-title="Use the checkboxes to filter points from the plot.  Deselected values are
                 assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
 
           >
