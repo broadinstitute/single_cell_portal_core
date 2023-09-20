@@ -56,7 +56,15 @@
             Settings <i class="fas fa-fw fa-cogs"></i>
           </a>
         </li>
+
       <% end %>
     <% end %>
   <% end %>
+  <% if @show_appcue_pin %>
+    <%= link_to 'Demo of SCP visualization tools',
+                'https://singlecell.broadinstitute.org/single_cell/study/SCP2271',
+                class: 'btn btn-primary top-margin-5 appcue-pin',
+                data: { analytics_name: 'appcue-viz-demo' } %>
+  <% end %>
 </ul>
+

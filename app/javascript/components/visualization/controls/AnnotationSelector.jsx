@@ -3,8 +3,7 @@ import React from 'react'
 import Select from '~/lib/InstrumentedSelect'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faInfoCircle, faLink } from '@fortawesome/free-solid-svg-icons'
-import { OverlayTrigger, Popover } from 'react-bootstrap'
+import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 
 /** takes the server response and returns annotation options suitable for react-select */
 function getAnnotationOptions(annotationList, clusterName) {
@@ -58,8 +57,8 @@ export default function AnnotationControl({
     <div className="form-group">
       <label className="labeled-select">Annotation&nbsp;
         <a className="action help-icon"
-           data-toggle="tooltip"
-           data-original-title="Select how cells are colored">
+          data-toggle="tooltip"
+          data-original-title="Select how cells are colored">
           <FontAwesomeIcon icon={faInfoCircle}/>
         </a>
         {hasSelection &&

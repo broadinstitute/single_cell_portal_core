@@ -50,7 +50,7 @@
   }
 
   .plot-title {
-    margin-left: 1em;
+    margin-left: 1.5em;
     margin-top: 0.5em;
 
     .badge {
@@ -273,4 +273,9 @@
 // to position content in the explore tab forward
 .position-forward {
   z-index: 3;
+}
+
+.panel-specifics{
+  border-left: 1px solid #ccc;
+  margin-left: 28px;
 }

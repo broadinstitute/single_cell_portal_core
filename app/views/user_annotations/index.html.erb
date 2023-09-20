@@ -17,27 +17,29 @@
           </thead>
           <tbody>
             <% @user_annotations.each do |user_annotation| %>
-              <tr>
-                <td class="annotation-name"><%= user_annotation.name %></td>
-                <td><%= user_annotation.values.map{|x| "<span class='label label-#{ x == 'Undefined' ? 'warning' : 'default'} #{user_annotation.name_as_id}'>#{x}</span>"}.join(' ').html_safe %></td>
-                <td class="annotation-study <%= user_annotation.name_as_id %>_study"><%= link_to user_annotation.study.name,  view_study_path(accession: user_annotation.study.accession, study_name: user_annotation.study.url_safe_name) %></td>
-                <td class="annotation-cluster <%= user_annotation.name_as_id %>_cluster"><%= user_annotation.cluster_group.name %></td>
-                <td><%= user_annotation.source_resolution_label %></td>
-                <td><%= user_annotation.user.email %></td>
-                <td>
-                  <%= scp_link_to "<span class='fas fa-chart-bar'></span> Plot annotation".html_safe, view_study_path(accession: user_annotation.study.accession, study_name: user_annotation.study.url_safe_name, cluster: user_annotation.cluster_group.name, annotation: user_annotation.formatted_annotation_identifier) + '#study-visualize', class: "btn btn-xs btn-info #{user_annotation.name_as_id}-show"  %>
-                  <% if user_annotation.can_edit?(current_user) %>
-                    <%= scp_link_to "<span class='fas fa-edit'></span> Edit".html_safe, edit_user_annotation_path(user_annotation), class: "btn btn-xs btn-primary #{user_annotation.name_as_id}-edit" %>
-                  <% end %>
-                  <%= link_to "<span class='fas fa-download'></span> Download".html_safe, download_user_annotation_path(user_annotation), class: "btn btn-xs btn-success #{user_annotation.name_as_id}-download" %>
-                  <% if user_annotation.can_edit_study?(current_user) %>
-                      <%= scp_link_to "<span class='fas fa-book'></span> Publish to study".html_safe, publish_to_study_path(user_annotation), class: "btn btn-xs btn-warning publish-btn #{user_annotation.name_as_id}-publish", data: {toggle: 'tooltip', placement: 'top'}, title: 'Publish annotation to study (will this annotation remove from your list)' %>
-                  <% end %>
-                  <% if user_annotation.can_delete?(current_user) %>
-                      <%= scp_link_to "<span class='fas fa-trash'></span> Delete".html_safe, user_annotation_path(user_annotation), class: "btn btn-xs btn-danger delete-btn #{user_annotation.name_as_id}-delete", method: :delete %>
-                  <% end %>
-                </td>
-              </tr>
+              <% if user_annotation.cluster_group.present? %>
+                <tr>
+                  <td class="annotation-name"><%= user_annotation.name %></td>
+                  <td><%= user_annotation.values.map{|x| "<span class='label label-#{ x == 'Undefined' ? 'warning' : 'default'} #{user_annotation.name_as_id}'>#{x}</span>"}.join(' ').html_safe %></td>
+                  <td class="annotation-study <%= user_annotation.name_as_id %>_study"><%= link_to user_annotation.study.name,  view_study_path(accession: user_annotation.study.accession, study_name: user_annotation.study.url_safe_name) %></td>
+                  <td class="annotation-cluster <%= user_annotation.name_as_id %>_cluster"><%= user_annotation.cluster_group.name %></td>
+                  <td><%= user_annotation.source_resolution_label %></td>
+                  <td><%= user_annotation.user.email %></td>
+                  <td>
+                    <%= scp_link_to "<span class='fas fa-chart-bar'></span> Plot annotation".html_safe, view_study_path(accession: user_annotation.study.accession, study_name: user_annotation.study.url_safe_name, cluster: user_annotation.cluster_group.name, annotation: user_annotation.formatted_annotation_identifier) + '#study-visualize', class: "btn btn-xs btn-info #{user_annotation.name_as_id}-show"  %>
+                    <% if user_annotation.can_edit?(current_user) %>
+                      <%= scp_link_to "<span class='fas fa-edit'></span> Edit".html_safe, edit_user_annotation_path(user_annotation), class: "btn btn-xs btn-primary #{user_annotation.name_as_id}-edit" %>
+                    <% end %>
+                    <%= link_to "<span class='fas fa-download'></span> Download".html_safe, download_user_annotation_path(user_annotation), class: "btn btn-xs btn-success #{user_annotation.name_as_id}-download" %>
+                    <% if user_annotation.can_edit_study?(current_user) %>
+                        <%= scp_link_to "<span class='fas fa-book'></span> Publish to study".html_safe, publish_to_study_path(user_annotation), class: "btn btn-xs btn-warning publish-btn #{user_annotation.name_as_id}-publish", data: {toggle: 'tooltip', placement: 'top'}, title: 'Publish annotation to study (will this annotation remove from your list)' %>
+                    <% end %>
+                    <% if user_annotation.can_delete?(current_user) %>
+                        <%= scp_link_to "<span class='fas fa-trash'></span> Delete".html_safe, user_annotation_path(user_annotation), class: "btn btn-xs btn-danger delete-btn #{user_annotation.name_as_id}-delete", method: :delete %>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
             <% end %>
           </tbody>
         </table>
