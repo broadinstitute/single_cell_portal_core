@@ -181,7 +181,7 @@ function searchGenesFromTable(selectedGenes, searchGenes, logProps) {
 /** Table of DE data for genes */
 function DifferentialExpressionTable({
   genesToShow, searchGenes, clusterName, annotation, species, numRows,
-  bucketId, deFilePath, handleClear, isAuthorDe, significanceMetric, deFacets,
+  bucketId, deFilePath, handleClear, isAuthorDe, significanceMetric,
   unfoundGenes, searchedGenes, setSearchedGenes
 }) {
   const defaultPagination = {
@@ -203,37 +203,31 @@ function DifferentialExpressionTable({
     species, clusterName, annotation
   }
 
-  const pvalAdjColumnHelper = columnHelper.accessor('pvalAdj', {
+  const fdrCorrectionMethod = isAuthorDe ? '' : 'Benjamini-Hochberg '
+  const titlesBySignificance = {
+    'pvalAdj': `p-value adjusted with ${fdrCorrectionMethod}FDR correction`,
+    'qval': 'Expected positive false discovery rate'
+  }
+  const labelsBySignificance = {
+    'pvalAdj': `Adj. p-value`,
+    'qval': 'q-value'
+  }
+  const tooltipTitle = titlesBySignificance[significanceMetric]
+
+  const significanceColumnHelper = columnHelper.accessor(significanceMetric, {
     header: () => (
       <span
-        id="pval-adj-header"
+        id={`${significanceMetric.toLowerCase()}-header`}
         className="glossary"
         data-toggle="tooltip"
-        data-original-title="p-value adjusted with Benjamini-Hochberg FDR correction">
-        Adj. p-value
+        data-original-title={tooltipTitle}>
+        {labelsBySignificance[significanceMetric]}
       </span>
     ),
     cell: deGene => {
       return deGene.getValue()
     }
   })
-
-  const qvalColumnHelper = columnHelper.accessor('qval', {
-    header: () => (
-      <span
-        id="qval-header"
-        className="glossary"
-        data-toggle="tooltip"
-        data-original-title="Expected positive false discovery rate">
-        q-value
-      </span>
-    ),
-    cell: deGene => {
-      return deGene.getValue()
-    }
-  })
-
-  const significanceColumnHelper = significanceMetric === 'pvalAdj' ? pvalAdjColumnHelper : qvalColumnHelper
 
   const columns = React.useMemo(() => [
     columnHelper.accessor('name', {
