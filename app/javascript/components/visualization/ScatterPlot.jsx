@@ -961,9 +961,10 @@ ScatterPlot.intersect = intersect
  * @returns {Object} reorganized scatter data object with new --Filtered-- trace
  */
 export function reassignFilteredCells(plotted, originalData, filteredData) {
-  const allIndexes = [...Array(originalData['x'].length).keys()]
+  const reassignedIndices = []
   const plottedSet = new Set(plotted)
-  const reassignedIndices = allIndexes.filter(i => !plottedSet.has(i))
+  for (let i = 0;  i < 1e6; i++)
+    if (!plottedSet.has(i)) reassignedIndices.push(i)
   const newPlotData = {}
   const keys = Object.keys(originalData)
   keys.forEach(key =>  {
