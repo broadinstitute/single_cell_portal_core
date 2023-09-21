@@ -963,7 +963,7 @@ ScatterPlot.intersect = intersect
 export function reassignFilteredCells(plotted, originalData, filteredData) {
   const reassignedIndices = []
   const plottedSet = new Set(plotted)
-  for (let i = 0;  i < 1e6; i++)
+  for (let i = 0;  i < originalData['x'].length; i++)
     if (!plottedSet.has(i)) reassignedIndices.push(i)
   const newPlotData = {}
   const keys = Object.keys(originalData)
