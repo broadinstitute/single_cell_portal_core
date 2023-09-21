@@ -27,63 +27,47 @@ function round(num, places) {
 /**
  * Transform raw TSV text into array of differential expression gene objects
  */
-function parseDeFile(tsvText, significanceMetric, isAuthorDe=false) {
+function parseDeFile(tsvText, isAuthorDe=false) {
   const deGenes = []
   const tsvLines = tsvText.split(newlineRegex)
   for (let i = 1; i < tsvLines.length; i++) {
     const tsvLine = tsvLines[i]
+
     if (tsvLine === '') {continue}
     const row = tsvLine.split('\t')
 
-    if (!isAuthorDe || significanceMetric === 'pvalAdj') {
-      // Each element in this array is DE data for the gene in this row
-      const name = row[1]
-      let deGene
+    // Each element in this array is DE data for the gene in this row
+    //
+    // TODO: There are usually more columns than size (e.g. logfoldchanges)
+    // and significance (e.g. pvals_adj) that may well be of interest.
+    // However, we don't parse those here before there is no UI for them.
+    // If we opt to build a UI for further metrics (e.g. pctNzGroup in Scanpy
+    // / pct.1 in Seurat, etc.), we would need to order them canonically
+    // across SCP-computed DE results and (Ingest Pipeline-processed) author
+    // DE results.
+    let [
+      index, // eslint-disable-line
+      name, size, significance
+    ] = row
 
-      if (isAuthorDe) {
-        // Each element in this array is DE data for the gene in this row
-        const [
-        index, // eslint-disable-line
-          _, log2FoldChange, significance
-        ] = row
-        deGene = {
-          score: 1, log2FoldChange, pval: 0, significance, pctNzGroup: 0, pctNzReference: 0
-        }
-      } else {
-        const [
-          index, // eslint-disable-line
-          _, score, log2FoldChange, pval, significance, pctNzGroup, pctNzReference
-        ] = row
 
-        deGene = {
-          score, log2FoldChange, pval, significance, pctNzGroup, pctNzReference
-        }
-      }
-      Object.entries(deGene).forEach(([k, v]) => {
-        // Cast numeric string values as floats
-        deGene[k] = parseFloat(v)
-      })
-      deGene.name = name
-      deGenes.push(deGene)
-    } else {
-      // Each element in this array is DE data for the gene in this row
-      const [
-        index, // eslint-disable-line
-        name, log2FoldChange, significance, mean
-      ] = row
-      const deGene = {
-        // TODO (SCP-5201): Show significant zeros, e.g. 0's to right of 9 in 0.900
-        log2FoldChange: round(log2FoldChange, 3),
-        significance: round(significance, 3),
-        mean: round(mean, 3)
-      }
-      Object.entries(deGene).forEach(([k, v]) => {
-        // Cast numeric string values as floats
-        deGene[k] = parseFloat(v)
-      })
-      deGene.name = name
-      deGenes.push(deGene)
+    if (isAuthorDe) {
+      size = round(size, 3),
+      significance = round(significance, 3)
     }
+
+    const deGene = {
+      // TODO (SCP-5201): Show significant zeros, e.g. 0's to right of 9 in 0.900
+      size,
+      significance
+    }
+
+    Object.entries(deGene).forEach(([k, v]) => {
+      // Cast numeric string values as floats
+      deGene[k] = parseFloat(v)
+    })
+    deGene.name = name
+    deGenes.push(deGene)
   }
 
   window.deGenes = deGenes
@@ -106,10 +90,10 @@ function parseDeFile(tsvText, significanceMetric, isAuthorDe=false) {
  *   pctNzGroup: Percent non-zero, group.  % of cells with non-zero expression in selected group.
  *   pctNzReference: Percent non-zero, reference.  % of cells with non-zero expression in non-selected groups.
  **/
-async function fetchDeGenes(bucketId, deFilePath, significanceMetric, isAuthorDe=false) {
+async function fetchDeGenes(bucketId, deFilePath, isAuthorDe=false) {
   const data = await fetchBucketFile(bucketId, deFilePath)
   const tsvText = await data.text()
-  const deGenes = parseDeFile(tsvText, significanceMetric, isAuthorDe)
+  const deGenes = parseDeFile(tsvText, isAuthorDe)
   return deGenes
 }
 
@@ -170,7 +154,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
     setDeFilePath(deFilePath)
 
     const isAuthorDe = true // SCP doesn't currently automatically compute pairwise DE
-    const deGenes = await fetchDeGenes(bucketId, deFilePath, significanceMetric, isAuthorDe)
+    const deGenes = await fetchDeGenes(bucketId, deFilePath, isAuthorDe)
     setDeGenes(deGenes)
   }
 
@@ -249,7 +233,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
 /** Pick groups of cells for one-vs-rest-only differential expression (DE) */
 export function OneVsRestDifferentialExpressionGroupPicker({
   bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup, setDeGenes,
-  countsByLabel, deObjects, setDeFilePath, isAuthorDe, significanceMetric
+  countsByLabel, deObjects, setDeFilePath, isAuthorDe, sizeMetric, significanceMetric
 }) {
   let groups = getLegendSortedLabels(countsByLabel)
   groups = groups.filter(group => {
@@ -268,7 +252,7 @@ export function OneVsRestDifferentialExpressionGroupPicker({
 
     setDeFilePath(deFilePath)
 
-    const deGenes = await fetchDeGenes(bucketId, deFilePath, significanceMetric)
+    const deGenes = await fetchDeGenes(bucketId, deFilePath)
 
     setDeGroup(newGroup)
     setDeGenes(deGenes)

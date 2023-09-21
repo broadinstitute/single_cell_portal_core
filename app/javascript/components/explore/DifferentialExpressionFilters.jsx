@@ -53,7 +53,7 @@ const defaultSliderConfigProps = {
     values: [0, 25, 50, 73.5, 100],
     density: 4
   },
-  'log2FoldChange': {
+  'size': {
     range: {
       'min': [-1.5],
       'max': 1.5
@@ -123,21 +123,20 @@ function getSliderConfig(metricHeader) {
 
 /** Range filters for DE table */
 export default function DifferentialExpressionFilters({
-  deFacets, activeFacets, updateDeFacets, toggleDeFacet, isAuthorDe, significanceMetric
+  deFacets, activeFacets, updateDeFacets, toggleDeFacet,
+  isAuthorDe, sizeMetric, significanceMetric
 }) {
-  const metricHeaders = ['log2FoldChange', 'significance']
-  const metrics = ['log2FoldChange', significanceMetric]
+  const metricHeaders = ['size', 'significance']
+  const metrics = [sizeMetric, significanceMetric]
 
   /** Update DE facets upon changing range filter selection */
   function onUpdateDeFacets(range) {
     // eslint-disable-next-line no-invalid-this
     const slider = this
     const metricHeader = slider.target.dataset['metricHeader']
-    console.log('slider.target.dataset', slider.target.dataset)
-    console.log('metricHeader', metricHeader)
 
     range = range.map(d => parseFloat(d))
-    if (metricHeader === 'log2FoldChange') {
+    if (metricHeader === 'size') {
       range = range.map(v => {
         if (v === -1.5) {return -Infinity}
         if (v === 1.5) {return Infinity}
@@ -155,14 +154,12 @@ export default function DifferentialExpressionFilters({
   useEffect(() => {
     metricHeaders.forEach(metricHeader => {
       const sliderSelector = `.de-slider-${metricHeader}`
-      console.log('sliderSelector', sliderSelector)
       const slider = document.querySelector(sliderSelector)
-      console.log('slider', slider)
 
       if (!slider.noUiSlider) {
         const config = getSliderConfig(metricHeader)
         noUiSlider.create(slider, config)
-        if (metricHeader === 'log2FoldChange') {
+        if (metricHeader === 'size') {
           const val1 = document.querySelector(`${sliderSelector} .noUi-value:nth-child(2)`)
           val1.innerHTML = `≤ ${ val1.innerHTML}`
           const val2 = document.querySelector(`${sliderSelector} .noUi-value:last-child`)

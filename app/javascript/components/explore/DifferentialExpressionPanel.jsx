@@ -8,7 +8,9 @@ import Button from 'react-bootstrap/lib/Button'
 
 import PagingControl from '~/components/search/results/PagingControl'
 import DifferentialExpressionFilters from './DifferentialExpressionFilters'
-import { getCanonicalSignificance } from '~/lib/validation/validate-differential-expression'
+import {
+  getCanonicalSize, getCanonicalSignificance
+} from '~/lib/validation/validate-differential-expression'
 import { contactUsLink } from '~/lib/error-utils'
 
 import {
@@ -211,7 +213,8 @@ function getSignificanceAttrs(significanceMetric, isAuthorDe) {
 /** Table of DE data for genes */
 function DifferentialExpressionTable({
   genesToShow, searchGenes, clusterName, annotation, species, numRows,
-  bucketId, deFilePath, handleClear, isAuthorDe, significanceMetric,
+  bucketId, deFilePath, handleClear,
+  isAuthorDe, sizeMetric, significanceMetric,
   unfoundGenes, searchedGenes, setSearchedGenes
 }) {
   const defaultPagination = {
@@ -221,7 +224,7 @@ function DifferentialExpressionTable({
 
   const defaultSorting = [
     { id: 'significance', desc: false },
-    { id: 'log2FoldChange', desc: true }
+    { id: 'size', desc: true }
   ]
 
   const [rowSelection, setRowSelection] = useState({})
@@ -281,7 +284,7 @@ function DifferentialExpressionTable({
         )
       }
     }),
-    columnHelper.accessor('log2FoldChange', {
+    columnHelper.accessor('size', {
       header: () => (
         <span
           id="size-header"
@@ -619,21 +622,18 @@ export default function DifferentialExpressionPanel({
   const delayedDETableLogTimeout = useRef(null)
 
   const defaultDeFacets = {
-    'log2FoldChange': [{ min: -Infinity, max: 0.26 }, { min: 0.26, max: Infinity }]
+    'size': [{ min: -Infinity, max: 0.26 }, { min: 0.26, max: Infinity }]
   }
 
+  const sizeMetric = getCanonicalSize(deHeaders.size)
   let significanceMetric = 'pvalAdj'
   if (isAuthorDe) {
     significanceMetric = getCanonicalSignificance(deHeaders.significance)
   }
-  console.log('significanceMetric', significanceMetric)
   defaultDeFacets['significance'] = [{ min: 0, max: 0.05 }]
-  const defaultActiveFacets = { significance: true }
+  const defaultActiveFacets = { 'size': true, 'significance': true }
   const [deFacets, setDeFacets] = useState(defaultDeFacets)
   const [activeFacets, setActiveFacets] = useState(defaultActiveFacets)
-
-  console.log('deFacets', deFacets)
-  console.log('activeFacets', activeFacets)
 
   // Whether to match on full string or partial string for each token in "Find genes"
   const [findMode, setFindMode] = useState('partial')
@@ -746,6 +746,7 @@ export default function DifferentialExpressionPanel({
           deObjects={deObjects}
           setDeFilePath={setDeFilePath}
           isAuthorDe={isAuthorDe}
+          sizeMetric={sizeMetric}
           significanceMetric={significanceMetric}
         />
       }
@@ -765,6 +766,7 @@ export default function DifferentialExpressionPanel({
           deGroupB={deGroupB}
           setDeGroupB={setDeGroupB}
           hasOneVsRestDe={hasOneVsRestDe}
+          sizeMetric={sizeMetric}
           significanceMetric={significanceMetric}
         />
       }
@@ -781,6 +783,7 @@ export default function DifferentialExpressionPanel({
           updateDeFacets={updateDeFacets}
           toggleDeFacet={toggleDeFacet}
           isAuthorDe={isAuthorDe}
+          sizeMetric={sizeMetric}
           significanceMetric={significanceMetric}
         />
         <div className="de-search-box">
@@ -829,6 +832,7 @@ export default function DifferentialExpressionPanel({
           deFilePath={deFilePath}
           handleClear={handleClear}
           isAuthorDe={hasPairwiseDe}
+          sizeMetric={sizeMetric}
           significanceMetric={significanceMetric}
           deFacets={deFacets}
           unfoundGenes={unfoundGenes}
