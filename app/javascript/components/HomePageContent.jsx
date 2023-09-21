@@ -45,13 +45,6 @@ const LinkableSearchTabs = function(props) {
           className={showGenesTab ? 'active' : ''}>
           <span className="fas fa-dna"></span> Search genes
         </Link>
-        { showVizAppcue &&
-          <a className='btn btn-primary appcue-pin'
-             href='https://singlecell.broadinstitute.org/single_cell/study/SCP2271'
-             data-analytics-name='appcue-viz-demo'>
-            Demo of SCP visualization tools
-          </a>
-        }
       </nav>
       <div className="tab-content top-pad">
         <Router basepath={basePath}>
