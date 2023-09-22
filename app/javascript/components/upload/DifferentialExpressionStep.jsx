@@ -226,7 +226,7 @@ function ExampleTable({ comparison, dialect, setComparison, setDialect }) {
 
   return (
     <>
-      <div className="col-sm-7">
+      <div>
         <p><b>Example DE file formats you can upload</b></p>
         <div>
           <span style={{ 'marginRight': '12px' }}>Comparison:</span>
@@ -314,15 +314,15 @@ export function DifferentialFileUploadForm({
       <div className="col-md-5">
         <p className="form-terra">
           <p>Upload differential expression (DE) files to <b>enable researchers to explore DE genes</b> by cell type, disease, treatment, and other experimental conditions.</p>
-          <p>Simply <b>choose your DE file, adjust inferred column headers if needed, and upload it</b>.  Or, select different "Comparison" and "Dialect" options at right to see example formats for DE files that you can upload.
-          Beyond metrics for size and significance, you can also include arbitrary other metrics, like "mean".  <b>Column headers can be in any order</b>.</p>
-          <p>Upload one DE file per annotation.  To upload results for mulitple comparisons in an annotation, append all DE gene rows for each comparison as shown below.</p>
+          <p>Simply <b>choose your DE file, adjust inferred headers if needed, and upload it</b>.  Or, select different "Comparison" and "Dialect" options at right to see example formats for DE files that you can upload.
+          Beyond metrics for size and significance, you can also include arbitrary other metrics, like "mean".  <b>Column headers can have any order, and any name</b>.</p>
+          <p>Upload one DE file per annotation.  To upload results for mulitple comparisons in an annotation, append all DE gene rows for each comparison as shown at right.</p>
           <br/>
         </p>
       </div>
       <div className="col-md-7">
         <p className="form-terra">
-          <div className="row">
+          <div className="row" style={{ 'paddingLeft': '1em' }}>
             <ExampleTable
               comparison={comparison}
               dialect={dialect}
