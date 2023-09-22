@@ -323,8 +323,6 @@ export default function DifferentialExpressionFileForm({
             />
           </label>
         </div>
-      </div>
-      <div className="row">
         <div className="form-group col-md-3">
           <label className="labeled-select">Size metric
             <Select
