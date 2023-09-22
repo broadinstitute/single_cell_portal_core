@@ -313,11 +313,13 @@ export function DifferentialFileUploadForm({
     <div className="row">
       <div className="col-md-5">
         <p className="form-terra">
-          <p>Upload differential expression (DE) files to <b>enable researchers to explore DE genes</b> by cell type, disease, treatment, and other experimental conditions.</p>
+          <p>
+            Upload DE files to <b>enable <a href="https://singlecell.zendesk.com/hc/en-us/articles/6059411840027-Exploratory-differential-gene-expression-analysis" target="_blank">exploring differential gene expression</a></b> by cell type, disease, treatment, and other experimental conditions.
+            By adding your DE data here, you can enrich your study with tailored DE analysis that goes beyond the limited SCP-computed DE results available by default.
+          </p>
           <p>Simply <b>choose your DE file, adjust inferred headers if needed, and upload it</b>.  Or, select different "Comparison" and "Dialect" options at right to see example formats for DE files that you can upload.
           Beyond metrics for size and significance, you can also include arbitrary other metrics, like "mean".  <b>Column headers can have any order, and any name</b>.</p>
-          <p>Upload one DE file per annotation.  To upload results for mulitple comparisons in an annotation, append all DE gene rows for each comparison as shown at right.</p>
-          <br/>
+          <p>Upload one DE file per annotation.  Append all DE gene rows for each comparison as shown at right.</p>
         </p>
       </div>
       <div className="col-md-7">

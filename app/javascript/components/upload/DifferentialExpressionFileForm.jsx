@@ -266,8 +266,6 @@ export default function DifferentialExpressionFileForm({
             onChange={val => updateAssociatedAnnotation(file, val)}/>
         </label>
       </div>
-    </div>
-    <div className="row">
       <div className="form-group col-md-6">
         <label className="labeled-select">Computational method
           {/* using CreateableSelect here so that users can add an option if their method isn't listed */}
