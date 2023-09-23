@@ -268,26 +268,11 @@ export async function parseDifferentialExpressionFile(chunker, mimeType) {
   ] = validateOtherHeaders(headers[0])
   issues = issues.concat(otherHeadersIssues)
 
-  console.log('deHeaders', deHeaders)
   const notes = {
     metrics, deHeaders, deFileFormat,
     geneHeaders, groupHeaders, comparisonGroupHeaders,
     sizes, significances
   }
-
-  // Add any future body-content validations like so:
-  //
-  // const dataObj = {} // object to track multi-line validation concerns
-  // await chunker.iterateLines({
-  //   func: (rawLine, lineNum, isLastLine) => {
-  //     issues = issues.concat(timeOutCSFV(chunker))
-
-  //     const line = parseLine(rawLine, delimiter)
-  //     issues = issues.concat(validateUniqueCellNamesWithinFile(line, isLastLine, dataObj))
-  //     issues = issues.concat(validateGroupColumnCounts(headers, line, isLastLine, dataObj))
-  //   // add other line-by-line validations here
-  //   }
-  // })
 
   return { issues, delimiter, numColumns: headers[0].length, notes }
 }

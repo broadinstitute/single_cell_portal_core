@@ -42,9 +42,7 @@ function inferOptions(headerType, file) {
 
   const inferredOptions =
     notes[headerType].map(opt => ({ label: opt, value: opt }))
-  if (headerType === 'comparisonGroupHeaders') {
-    console.log('headerType === \'comparisonGroupHeaders\'')
-  }
+
   const notApplicableOption = { label: 'N/A', value: 'None' }
   if (headerType === 'comparisonGroupHeaders' && inferredOptions.length === 0) {
     inferredOptions.push(notApplicableOption)
@@ -69,9 +67,6 @@ function inferOptions(headerType, file) {
   let defaultOption = allOptions.find(
     opt => opt.value === file.differential_expression_file_info[snakeCaseMetricType]
   ) || { label: notes[headerType][0], value: notes[headerType][0] }
-  if (headerType === 'comparisonGroupHeaders') {
-    console.log('defaultOption', defaultOption)
-  }
   if (headerType === 'comparisonGroupHeaders' && !defaultOption['label']) {
     defaultOption = notApplicableOption
   }
@@ -139,8 +134,6 @@ export default function DifferentialExpressionFileForm({
   const associatedCompMethod = compMethodOptions?.find(
     opt => opt.value === file.differential_expression_file_info.computational_method
   )
-
-  console.log('in FF, above getAllHeaderOptions')
 
   const headerOptions = getAllHeaderOptions(file)
 
@@ -234,7 +227,6 @@ export default function DifferentialExpressionFileForm({
   }
 
   useEffect(() => {
-    console.log('in useEffect')
     updateDeFileInfo(file, {
       'gene_header': geneHeader,
       'group_header': groupHeader,

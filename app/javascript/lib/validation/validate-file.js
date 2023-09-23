@@ -54,7 +54,7 @@ async function validateLocalFile(file, studyFile, allStudyFiles=[], allowedFileE
   const flags = getFeatureFlagsWithDefaults()
   if (flags && flags.clientside_validation === false) {
     const issues = formatIssues([])
-    return issues
+    return [issues, {}]
   }
   const nameIssues = validateFileName(file, studyFile, allStudyFiles, allowedFileExts)
 
@@ -64,7 +64,6 @@ async function validateLocalFile(file, studyFile, allStudyFiles=[], allowedFileE
   const noContentValidationFileTypes = ['Seurat', 'AnnData', 'Other', 'Documentation']
 
   const studyFileType = studyFile.file_type
-  console.log('studyFileType', studyFileType)
 
   // Do not continue the validation if the file type is a non-viz type
   if (nameIssues.length === 0 && !noContentValidationFileTypes.includes(studyFileType)) {
@@ -73,8 +72,6 @@ async function validateLocalFile(file, studyFile, allStudyFiles=[], allowedFileE
     }
     const { fileInfo, issues, perfTime, notes } =
       await ValidateFileContent.parseFile(file, studyFileType, fileOptions)
-
-    console.log('*** notes', notes)
 
     const allIssues = issues.concat(nameIssues)
     issuesObj = formatIssues(allIssues)
@@ -93,8 +90,6 @@ async function validateLocalFile(file, studyFile, allStudyFiles=[], allowedFileE
   if (file.size >= oneGiB) {
     issuesObj.infos = [['info', 'size:large', '']]
   }
-
-  console.log('notesObj', notesObj)
 
   return [issuesObj, notesObj]
 }

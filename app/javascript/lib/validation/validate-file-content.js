@@ -421,9 +421,6 @@ async function parseFile(file, fileType, fileOptions={}, sizeProps={}) {
       parseResult.issues = parseResult.issues.concat(issues)
       parseResult.notes = notes
 
-      console.log('parseResult.notes', parseResult.notes)
-
-
       if (fileInfo.isGzipped && fileInfo.linesRead === GZIP_MAX_LINES + 1) {
         const msg =
         'Due to this file\'s size, it will be fully validated after upload, ' +
