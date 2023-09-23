@@ -1,4 +1,6 @@
 import React, { useEffect } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 import _snakeCase from 'lodash/snakeCase'
 
 import { FileTypeExtensions, matchingFormFiles, validateFile } from './upload-utils'
@@ -299,6 +301,14 @@ export default function DifferentialExpressionFileForm({
         </div>
         <div className="form-group col-md-2">
           <label className="labeled-select">Group header
+            <span
+              className="de-download-button"
+              data-analytics-name="differential-expression-download"
+              data-toggle="tooltip"
+              data-original-title='Column header that specifies the group of cells of interest for DE comparison.'
+            >
+              <FontAwesomeIcon icon={faInfoCircle}/>
+            </span>
             <Select
               data-analytics-name="differential-expression-group-header-select"
               options={groupHeaderOptions}
@@ -310,8 +320,16 @@ export default function DifferentialExpressionFileForm({
             />
           </label>
         </div>
-        <div className="form-group col-md-2">
+        <div className="form-group col-md-3" style={{ 'width': '18%' }}>
           <label className="labeled-select">Comparison group header
+            <span
+              className="de-download-button"
+              data-analytics-name="differential-expression-download"
+              data-toggle="tooltip"
+              data-original-title='Column header that specifies another group of cells to use in comparisons.  Leave as "N/A" if your DE file only has one-vs-rest comparisons.'
+            >
+              <FontAwesomeIcon icon={faInfoCircle}/>
+            </span>
             <Select
               data-analytics-name="differential-expression-comparison-group-header-select"
               options={comparisonGroupHeaderOptions}
@@ -323,7 +341,7 @@ export default function DifferentialExpressionFileForm({
             />
           </label>
         </div>
-        <div className="form-group col-md-3">
+        <div className="form-group col-md-2">
           <label className="labeled-select">Size metric
             <Select
               data-analytics-name="differential-expression-size-metric-select"
@@ -336,7 +354,7 @@ export default function DifferentialExpressionFileForm({
             />
           </label>
         </div>
-        <div className="form-group col-md-3">
+        <div className="form-group col-md-2">
           <label className="labeled-select">Significance metric
             <Select
               data-analytics-name="differential-expression-significance-metric-select"
