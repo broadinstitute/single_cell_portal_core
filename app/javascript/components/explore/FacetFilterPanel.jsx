@@ -212,9 +212,13 @@ export function FacetFilterPanel({
         </label>
         { Object.keys(checkedMap).length !== 0 &&
         <div style={{ 'marginTop': '5px' }}>
-          <h5>Filter plotted points by: <a className="action help-icon"
-            data-toggle="tooltip"
-            data-original-title="Use the checkboxes to add and remove points from the plot.">
+          <h5>Filter plotted points by:
+            <a className="action help-icon"
+               data-toggle="tooltip"
+               data-original-title="Use the checkboxes to filter points from the plot.  Deselected values are
+                assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
+
+          >
             <FontAwesomeIcon icon={faInfoCircle}/>
           </a></h5>
           <div style={{ border: '1px solid black', margin: '2px', padding: '2px' }}>

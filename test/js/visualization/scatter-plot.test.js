@@ -7,10 +7,11 @@ import Plotly from 'plotly.js-dist'
 
 import * as UserProvider from '~/providers/UserProvider'
 import * as ScpApi from 'lib/scp-api'
-import ScatterPlot from 'components/visualization/ScatterPlot'
+import ScatterPlot, { intersect, reassignFilteredCells } from 'components/visualization/ScatterPlot'
 import ScatterPlotLegend from 'components/visualization/controls/ScatterPlotLegend'
 import * as ScpApiMetrics from 'lib/scp-api-metrics'
 import * as MetricsApi from 'lib/metrics-api'
+import { FILTERED_TRACE_NAME } from 'lib/cluster-utils'
 
 import '@testing-library/jest-dom/extend-expect'
 
@@ -221,4 +222,22 @@ describe('getPlotlyTraces handles expression graphs', () => {
     traces = ScatterPlot.getPlotlyTraces(plotData)[0]
     expect(traces[0].marker.reversescale).toEqual(true)
   })
+})
+
+it('intersects and reassigns cells via cell faceting', async () => {
+  const plotData = _cloneDeep(BASIC_PLOT_DATA.scatter)
+  const filteredCells = [
+    { allCellsIndex: 0, 'Category--group--cluster': 0 },
+    { allCellsIndex: 1, 'Category--group--cluster': 0 },
+    { allCellsIndex: 2, 'Category--group--cluster': 0 },
+    { allCellsIndex: 3, 'Category--group--cluster': 0 },
+    { allCellsIndex: 6, 'Category--group--cluster': 0 }
+  ]
+  const [filteredPlotData, plottedIdx] = intersect(filteredCells, plotData)
+  expect(filteredPlotData.annotations.includes('s1')).toBeTruthy()
+  expect(!filteredPlotData.annotations.includes('s2')).toBeTruthy()
+
+  const reassignedData = reassignFilteredCells(plottedIdx, plotData.data, filteredPlotData)
+  const filteredCount = reassignedData.annotations.filter(x => x === FILTERED_TRACE_NAME).length
+  expect(filteredCount).toEqual(3)
 })
