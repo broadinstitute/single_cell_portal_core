@@ -301,7 +301,6 @@ export default function DifferentialExpressionFileForm({
           <label className="labeled-select">Group header
             <span
               className="info-icon"
-              data-analytics-name="differential-expression-download"
               data-toggle="tooltip"
               data-original-title='Column header that specifies the group of cells of interest for DE comparison.'
             >
@@ -322,7 +321,6 @@ export default function DifferentialExpressionFileForm({
           <label className="labeled-select">Comparison group header
             <span
               className="info-icon"
-              data-analytics-name="differential-expression-download"
               data-toggle="tooltip"
               data-original-title='Column header that specifies another group of cells to use in comparisons.  Leave as "N/A" if your DE file only has one-vs-rest comparisons.'
             >
