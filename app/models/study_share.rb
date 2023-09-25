@@ -28,9 +28,9 @@ class StudyShare
 	PERMISSION_TYPES = %w(Edit View Reviewer)
 	FIRECLOUD_ACLS = ['WRITER', 'READER', 'NO ACCESS']
 	PERMISSION_DESCRIPTIONS = [
-			'This user will have read/write access to both this study and FireCloud workspace',
-			'This user will have read access to both this study and FireCloud workspace (cannot edit)',
-			'This user will only have read access to this study (cannot download data or view FireCloud workspace)'
+			'This user will have read/write access to both this study and Terra workspace',
+			'This user will have read access to both this study and Terra workspace (cannot edit)',
+			'This user will only have read access to this study (cannot download data or view Terra workspace)'
 	]
 
 	# hashes that represent ACL mapping between the portal & firecloud and the inverse
