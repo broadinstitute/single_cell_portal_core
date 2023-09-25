@@ -66,12 +66,16 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
 
     @species_result = DifferentialExpressionResult.create(
       study: @study, cluster_group: @cluster_file.cluster_groups.first, annotation_name: 'species',
-      annotation_scope: 'study', matrix_file_id: @raw_matrix.id
+      annotation_scope: 'study', matrix_file_id: @raw_matrix.id,
+      gene_header: 'gene', group_header: 'group', comparison_group_header: 'comparison_group',
+      size_metric: 'logfoldchanges', significance_metric: 'pvals_adj'
     )
 
     @disease_result = DifferentialExpressionResult.create(
       study: @study, cluster_group: @cluster_file.cluster_groups.first, annotation_name: 'disease',
-      annotation_scope: 'cluster', matrix_file_id: @raw_matrix.id
+      annotation_scope: 'cluster', matrix_file_id: @raw_matrix.id,
+      gene_header: 'gene', group_header: 'group', comparison_group_header: 'comparison_group',
+      size_metric: 'logfoldchanges', significance_metric: 'pvals_adj'
     )
   end
 
@@ -194,6 +198,13 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
         ['dog', 'cluster_diffexp_txt--species--dog--study--wilcoxon.tsv'],
         ['cat', 'cluster_diffexp_txt--species--cat--study--wilcoxon.tsv']
       ],
+      headers: {
+        gene: 'gene',
+        group: 'group',
+        comparison_group: 'comparison_group',
+        size: 'logfoldchanges',
+        significance: 'pvals_adj'
+      },
       pairwise: [],
       is_author_de: false
     }.with_indifferent_access
