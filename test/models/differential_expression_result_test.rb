@@ -203,6 +203,13 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
         ['measles', 'cluster_diffexp_txt--disease--measles--cluster--wilcoxon.tsv'],
         ['none', 'cluster_diffexp_txt--disease--none--cluster--wilcoxon.tsv']
       ],
+      headers: {
+        gene: 'gene',
+        group: 'group',
+        comparison_group: 'comparison_group',
+        size: 'logfoldchanges',
+        significance: 'pvals_adj'
+      },
       pairwise: [],
       is_author_de: false
     }.with_indifferent_access
