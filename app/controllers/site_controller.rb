@@ -165,7 +165,6 @@ class SiteController < ApplicationController
     # normally we would do this in React but the tab display is in the Rails HTML view
     # we need to check server-side since we have to account for @study.can_visualize? as well
     @explore_tab_default = @study.can_visualize?
-    @show_appcue_pin = FeatureFlaggable.feature_flags_for_instances(current_user).[](:show_appcue_viz_tour)
   end
 
   def record_download_acceptance

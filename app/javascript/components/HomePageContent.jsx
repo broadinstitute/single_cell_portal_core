@@ -10,7 +10,7 @@ import ResultsPanel from '~/components/search/results/ResultsPanel'
 import StudyDetails from '~/components/search/results/StudySearchResult'
 import StudySearchProvider, { StudySearchContext } from '~/providers/StudySearchProvider'
 import SearchFacetProvider from '~/providers/SearchFacetProvider'
-import UserProvider, { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
+import UserProvider from '~/providers/UserProvider'
 import ErrorBoundary from '~/lib/ErrorBoundary'
 
 /** include search controls and results */
@@ -30,8 +30,6 @@ const LinkableSearchTabs = function(props) {
   const location = useLocation()
   const basePath = location.pathname.includes('covid19') ? '/single_cell/covid19' : '/single_cell'
   const showGenesTab = location.pathname.includes('/app/genes')
-  const featureFlags = getFeatureFlagsWithDefaults()
-  const showVizAppcue = featureFlags && featureFlags?.show_appcue_viz_tour
 
   // the queryParams object does not support the more typical hasOwnProperty test
   return (
@@ -45,13 +43,6 @@ const LinkableSearchTabs = function(props) {
           className={showGenesTab ? 'active' : ''}>
           <span className="fas fa-dna"></span> Search genes
         </Link>
-        { showVizAppcue &&
-          <a className='btn btn-primary appcue-pin'
-             href='https://singlecell.broadinstitute.org/single_cell/study/SCP2271'
-             data-analytics-name='appcue-viz-demo'>
-            Demo of SCP visualization tools
-          </a>
-        }
       </nav>
       <div className="tab-content top-pad">
         <Router basepath={basePath}>
