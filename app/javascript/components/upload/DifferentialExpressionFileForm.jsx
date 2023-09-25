@@ -24,8 +24,8 @@ const requiredFields = [
 /**
  * Get Select option groups "Inferred options" and "Other options"
  *
- * @param metricType {String} either "sizes" or "significances"
- * @param notes {Object} arrays of inferred metrics from raw file, by metric type
+ * @param headerType {String} e.g. "geneHeader", "sizes", or "significances"
+ * @param notes {Object} arrays of inferred headers from raw file, by header type
  * @param file {Object} study file object (not raw file)
  */
 function inferOptions(headerType, file) {
@@ -93,7 +93,7 @@ function getAllHeaderOptions(file) {
   return allHeaderOptions
 }
 
-/** renders a form for editing/uploading a differential expression file */
+/** Renders a form for editing/uploading a differential expression file */
 export default function DifferentialExpressionFileForm({
   file,
   allFiles,
@@ -163,7 +163,7 @@ export default function DifferentialExpressionFileForm({
     }
   }
 
-  /** handle a change in the associated cluster select */
+  /** Handle a change in the associated cluster select */
   function updateAssociatedCluster(file, option) {
     let newVal = null
     if (option) {
@@ -173,7 +173,7 @@ export default function DifferentialExpressionFileForm({
     annotationOptions = setAnnotationOptions()
   }
 
-  /** handle a change in the associated annotation select */
+  /** Handle a change in the associated annotation select */
   function updateAssociatedAnnotation(file, option) {
     let newVal = null
     if (option) {
@@ -191,7 +191,7 @@ export default function DifferentialExpressionFileForm({
     updateFile(file._id, { differential_expression_file_info: { computational_method: newVal } })
   }
 
-  /** handle a change in any header or metric select */
+  /** Handle a change in any header or metric select */
   function updateDeFileInfo(file, optionsByAttr) {
     const info = {}
     Object.entries(optionsByAttr).forEach(([serverAttr, option]) => {
