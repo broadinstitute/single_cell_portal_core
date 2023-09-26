@@ -208,7 +208,7 @@ export default function ExploreDisplayPanelManager({
 
   const shownAnnotation = getShownAnnotation(exploreParamsWithDefaults.annotation, annotationList)
 
-  const isSubsampled = exploreParamsWithDefaults.subsample !== 'All Cells'
+  const isSubsampled = exploreParamsWithDefaults.subsample !== 'all'
   let cellFilteringTooltipAttrs = {}
   if (isSubsampled) {
     cellFilteringTooltipAttrs = {
