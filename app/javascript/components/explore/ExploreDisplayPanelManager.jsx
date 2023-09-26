@@ -213,8 +213,19 @@ export default function ExploreDisplayPanelManager({
   if (exploreParamsWithDefaults.subsample !== 'All Cells') {
     cellFilteringTooltipAttrs = {
       'data-toggle': 'tooltip',
-      'title': 'Clicking will upsample plots, which might be noticeably slower.'
+      'data-original-title': 'Clicking will remove subsampling, which might be noticeably slower.'
     }
+  }
+
+  /** Toggle cell filtering panel, and remove subsampling if needed */
+  function toggleCellFilterPanel() {
+    if (exploreParamsWithDefaults.subsample !== 'All Cells') {
+      updateClusterParams({
+        subsample: 'All Cells'
+      })
+      document.querySelector('.tooltip.fade.top.in').remove()
+    }
+    togglePanel('CFF')
   }
 
   /** in the event a component takes an action which updates the list of annotations available
@@ -403,8 +414,8 @@ export default function ExploreDisplayPanelManager({
                           className={`btn btn-primary`}
                           data-testid="cell facet filtering button"
                           {...cellFilteringTooltipAttrs}
-                          onClick={() => togglePanel('CFF')} // cell facet filtering
-                        >Cell facet filtering</button>
+                          onClick={() => toggleCellFilterPanel()}
+                        >Cell filtering</button>
                         {!cellFaceting && <LoadingSpinner className="fa-lg"/>}
                         {cellFaceting && <FacetFilteringModal />}
                       </div>
