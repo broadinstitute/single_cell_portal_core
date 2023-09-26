@@ -6,7 +6,14 @@ import { readFileSync } from 'fs'
 
 // Match latest non-draft at https://github.com/broadinstitute/single_cell_portal_core/releases
 const version = readFileSync('version.txt', { encoding: 'utf8' })
-const disableSentry = !!process.env.DISABLE_SENTRY
+
+// sentryVitePlugin should be disabled in local development as it prevents using breakpoints
+// to turn off locally, run:
+//
+// DISABLE_SENTRY=true bin/vite dev
+//
+// otherwise, this evaluates to false and leaves plugin enabled in all other scenarios
+const disableSentry = typeof process.env.DISABLE_SENTRY !== 'undefined' && process.env.DISABLE_SENTRY === 'true'
 
 export default defineConfig({
   'define': {
