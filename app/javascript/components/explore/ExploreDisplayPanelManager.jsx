@@ -179,6 +179,8 @@ export default function ExploreDisplayPanelManager({
   const [deGroupB, setDeGroupB] = useState(null)
   const [deGroup, setDeGroup] = useState(null)
 
+  const showFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
+
   // Differential expression settings
   const flags = getFeatureFlagsWithDefaults()
   // `differential_expression_frontend` enables exemptions if study owners don't want DE
@@ -301,7 +303,7 @@ export default function ExploreDisplayPanelManager({
                 </button>
               </>
           }
-          {getFeatureFlagsWithDefaults()?.show_cell_facet_filtering && panelToShow === 'CFF' && <FacetFilterPanelHeader
+          {showFiltering && panelToShow === 'CFF' && <FacetFilterPanelHeader
             togglePanel = {togglePanel}
             setShowDifferentialExpressionPanel={setShowDifferentialExpressionPanel}
             setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
@@ -383,7 +385,7 @@ export default function ExploreDisplayPanelManager({
                   </div>
                 </>
                 }
-                { getFeatureFlagsWithDefaults()?.show_cell_facet_filtering &&
+                { showFiltering &&
                   <>
                     <div className="row">
                       <div className="col-xs-12 cff-button_style">
@@ -446,7 +448,7 @@ export default function ExploreDisplayPanelManager({
             </button>
           </>
         }
-        {getFeatureFlagsWithDefaults()?.show_cell_facet_filtering && panelToShow === 'CFF' && <FacetFilterPanel
+        {showFiltering && panelToShow === 'CFF' && <FacetFilterPanel
           annotationList={annotationList}
           cluster={exploreParamsWithDefaults.cluster}
           shownAnnotation={shownAnnotation}
