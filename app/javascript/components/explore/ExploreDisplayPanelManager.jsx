@@ -179,7 +179,7 @@ export default function ExploreDisplayPanelManager({
   const [deGroupB, setDeGroupB] = useState(null)
   const [deGroup, setDeGroup] = useState(null)
 
-  const showFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
+  const showFiltering = true // getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
 
   // Differential expression settings
   const flags = getFeatureFlagsWithDefaults()
@@ -207,6 +207,15 @@ export default function ExploreDisplayPanelManager({
   }
 
   const shownAnnotation = getShownAnnotation(exploreParamsWithDefaults.annotation, annotationList)
+
+
+  let cellFilteringTooltipAttrs = {}
+  if (exploreParamsWithDefaults.subsample !== 'All Cells') {
+    cellFilteringTooltipAttrs = {
+      'data-toggle': 'tooltip',
+      'title': 'Clicking will upsample plots, which might be noticeably slower.'
+    }
+  }
 
   /** in the event a component takes an action which updates the list of annotations available
     * e.g. by creating a user annotation, this updates the list */
@@ -304,7 +313,7 @@ export default function ExploreDisplayPanelManager({
               </>
           }
           {showFiltering && panelToShow === 'CFF' && <FacetFilterPanelHeader
-            togglePanel = {togglePanel}
+            togglePanel={togglePanel}
             setShowDifferentialExpressionPanel={setShowDifferentialExpressionPanel}
             setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
             isUpstream={showUpstreamDifferentialExpressionPanel}
@@ -326,7 +335,7 @@ export default function ExploreDisplayPanelManager({
                 setDeGroupB={setDeGroupB}
                 isAuthorDe={isAuthorDe}
                 deGenes={deGenes}
-                togglePanel = {togglePanel}
+                togglePanel={togglePanel}
               />
           }
         </div>
@@ -393,9 +402,8 @@ export default function ExploreDisplayPanelManager({
                           disabled={!cellFaceting}
                           className={`btn btn-primary`}
                           data-testid="cell facet filtering button"
-                          onClick={() => {
-                            togglePanel('CFF') // cell facet filtering
-                          }}
+                          {...cellFilteringTooltipAttrs}
+                          onClick={() => togglePanel('CFF')} // cell facet filtering
                         >Cell facet filtering</button>
                         {!cellFaceting && <LoadingSpinner className="fa-lg"/>}
                         {cellFaceting && <FacetFilteringModal />}
