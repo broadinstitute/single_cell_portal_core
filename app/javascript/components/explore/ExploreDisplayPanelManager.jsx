@@ -179,7 +179,7 @@ export default function ExploreDisplayPanelManager({
   const [deGroupB, setDeGroupB] = useState(null)
   const [deGroup, setDeGroup] = useState(null)
 
-  const showFiltering = true // getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
+  const showFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
 
   // Differential expression settings
   const flags = getFeatureFlagsWithDefaults()
