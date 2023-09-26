@@ -208,21 +208,19 @@ export default function ExploreDisplayPanelManager({
 
   const shownAnnotation = getShownAnnotation(exploreParamsWithDefaults.annotation, annotationList)
 
-
+  const isSubsampled = exploreParamsWithDefaults.subsample !== 'All Cells'
   let cellFilteringTooltipAttrs = {}
-  if (exploreParamsWithDefaults.subsample !== 'All Cells') {
+  if (isSubsampled) {
     cellFilteringTooltipAttrs = {
       'data-toggle': 'tooltip',
-      'data-original-title': 'Clicking will remove subsampling, which might be noticeably slower.'
+      'data-original-title': 'Clicking will remove subsampling; plots might be noticeably slower.'
     }
   }
 
   /** Toggle cell filtering panel, and remove subsampling if needed */
   function toggleCellFilterPanel() {
-    if (exploreParamsWithDefaults.subsample !== 'All Cells') {
-      updateClusterParams({
-        subsample: 'All Cells'
-      })
+    if (isSubsampled) {
+      updateClusterParams({ subsample: 'All Cells' })
       document.querySelector('.tooltip.fade.top.in').remove()
     }
     togglePanel('CFF')
