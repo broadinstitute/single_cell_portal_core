@@ -6,6 +6,7 @@ import { readFileSync } from 'fs'
 
 // Match latest non-draft at https://github.com/broadinstitute/single_cell_portal_core/releases
 const version = readFileSync('version.txt', { encoding: 'utf8' })
+const disableSentry = !!process.env.DISABLE_SENTRY
 
 export default defineConfig({
   'define': {
@@ -23,7 +24,8 @@ export default defineConfig({
       'org': 'broad-institute',
       'project': 'single-cell-portal',
       'authToken': process.env.SENTRY_AUTH_TOKEN,
-      'telemetry': false
+      'telemetry': false,
+      'disable': disableSentry
     })
   ],
   'build': {
