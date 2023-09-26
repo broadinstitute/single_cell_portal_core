@@ -25,7 +25,7 @@ export default function FacetFilteringModal() {
       onClick={() => setShowCellFacetModall(true)}
       data-analytics-name="cell-facet-filter-info"
       data-toggle="tooltip"
-      data-original-title="Click to learn about cell facet filtering in SCP"
+      data-original-title="Click to learn about cell filtering in SCP"
       className="cff-icon-style"
     >
       <FontAwesomeIcon className="action help-icon" icon={faInfoCircle} />
@@ -41,7 +41,7 @@ export default function FacetFilteringModal() {
         onHide={() => closeModal(setShowCellFacetModall)}
         animation={false}>
         <Modal.Header>
-          <h4 className="text-center">Cell Facet Filtering</h4>
+          <h4 className="text-center">Cell filtering</h4>
         </Modal.Header>
         <Modal.Body>
           { cellFacetModalContent }

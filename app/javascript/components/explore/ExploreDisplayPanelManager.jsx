@@ -410,7 +410,7 @@ export default function ExploreDisplayPanelManager({
                         <button
                           disabled={!cellFaceting}
                           className={`btn btn-primary`}
-                          data-testid="cell facet filtering button"
+                          data-testid="cell-filtering-button"
                           {...cellFilteringTooltipAttrs}
                           onClick={() => toggleCellFilterPanel()}
                         >Cell filtering</button>
