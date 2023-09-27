@@ -472,7 +472,6 @@ export default function ExploreDisplayPanelManager({
             updateFilteredCells={updateFilteredCells}
             exploreParams={exploreParams}
             exploreInfo={exploreInfo}
-            setCellFaceting={setCellFaceting}
             studyAccession={studyAccession}>
         </FacetFilterPanel>}
         {panelToShow === 'DE' && countsByLabel && annotHasDe &&
