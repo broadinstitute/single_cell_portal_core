@@ -197,12 +197,7 @@ export default function DifferentialExpressionFileForm({
     Object.entries(optionsByAttr).forEach(([serverAttr, option]) => {
       let newVal = null
       if (option) {
-        // TODO: Consider clearing any existing related warnings, e.g. if
-        // there was a warning about a missing "gene" header.
-        // The "Save & Upload" button becomes enabled even without clearing
-        // any warnings upon selecting a value in e.g. the "Gene header" field,
-        // so dynamically clearing warnings upon menu selection seems helpful
-        // but not critical.
+        // TODO (SCP-5325): Clear warnings upon selection in inferable menu
         newVal = option.value
       }
       info[serverAttr] = newVal
