@@ -38,11 +38,7 @@ export function FacetFilterPanel({
   shownAnnotation,
   updateClusterParams,
   cellFaceting,
-  updateFilteredCells,
-  exploreParams,
-  exploreInfo,
-  setCellFaceting,
-  studyAccession
+  updateFilteredCells
 }) {
   const [initialFivefacets, setInitialFiveFacets] = useState(cellFaceting?.facets)
   const [checkedMap, setCheckedMap] = useState({})
@@ -170,21 +166,6 @@ export function FacetFilterPanel({
       populateCheckedMap()
     }
   }, [cellFaceting])
-
-  // if the exploreParams update need to reset the initial cell facets
-  useEffect(() => {
-    const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
-    const allAnnots = exploreInfo?.annotationList.annotations
-    if (allAnnots && allAnnots.length > 0) {
-      initCellFaceting(
-        selectedCluster, selectedAnnot, studyAccession, allAnnots
-      )
-        .then(newCellFaceting => {
-          setCellFaceting(newCellFaceting)
-        })
-    }
-  }, [exploreParams])
-
 
   return (
     <>

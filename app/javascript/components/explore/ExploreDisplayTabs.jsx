@@ -109,6 +109,10 @@ export default function ExploreDisplayTabs({
   const showDifferentialExpressionTable = (showViewOptionsControls && deGenes !== null)
   const plotContainerClass = 'explore-plot-tab-content'
 
+  // flow/error handling for cell filtering
+  const [clusterCanFilter, setClusterCanFilter] = useState(true)
+  const [filterErrorText, setFilterErrorText] = useState(null)
+
   const {
     enabledTabs, disabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs
   } = getEnabledTabs(exploreInfo, exploreParamsWithDefaults)
@@ -154,17 +158,39 @@ export default function ExploreDisplayTabs({
 
   const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
 
-  if (!cellFaceting) {
-    const allAnnots = exploreInfo?.annotationList.annotations
-    if (allAnnots && allAnnots.length > 0) {
-      initCellFaceting(
-        selectedCluster, selectedAnnot, studyAccession, allAnnots
-      )
-        .then(newCellFaceting => {
+  // wrapper function with error handling/state setting for retrieving cell facet data
+  function getCellFacetingData(cluster, annotation) {
+    if (getFeatureFlagsWithDefaults()?.show_cell_facet_filtering) {
+      const allAnnots = exploreInfo?.annotationList.annotations
+      if (allAnnots && allAnnots.length > 0) {
+        initCellFaceting(
+          cluster, annotation, studyAccession, allAnnots
+        ).then(newCellFaceting => {
+          setClusterCanFilter(true)
           setCellFaceting(newCellFaceting)
+          setFilterErrorText('')
+        }).catch(error => {
+          // NOTE: these 'errors' are in fact handled corner cases where faceting data isn't present for various reasons
+          // as such, they don't need to be reported to Sentry/Mixpanel, only conveyed to the user
+          // example: 400 (Bad Request): Cluster is not indexed, Cannot use numeric annotations for facets, or
+          // 404 (Not Found) Cluster not found
+          // see app/controllers/api/v1/visualization/annotations_controller.rb#facets for more information
+          setClusterCanFilter(false)
+          setFilterErrorText(error.message)
         })
+      }
     }
   }
+
+  if (!cellFaceting) {
+    getCellFacetingData(selectedCluster, selectedAnnot)
+  }
+
+  // if the exploreParams update need to reset the initial cell facets
+  useEffect(() => {
+    const [newCluster, newAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
+    getCellFacetingData(newCluster, newAnnot)
+  }, [exploreParams?.cluster, exploreParams?.annotation])
 
   /** Update filtered cells to only those that match annotation group value filter selections */
   function updateFilteredCells(selection) {
@@ -481,6 +507,8 @@ export default function ExploreDisplayTabs({
             setShowDeGroupPicker={setShowDeGroupPicker}
             cellFaceting = {cellFaceting}
             setCellFaceting = {setCellFaceting}
+            clusterCanFilter = {clusterCanFilter}
+            filterErrorText = {filterErrorText}
             updateFilteredCells = {updateFilteredCells}
             panelToShow ={panelToShow}
             toggleViewOptions= {toggleViewOptions}

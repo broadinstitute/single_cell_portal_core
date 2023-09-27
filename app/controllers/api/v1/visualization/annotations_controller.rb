@@ -249,11 +249,16 @@ module Api
             render json: { error: 'Cluster is not indexed' }, status: :bad_request and return
           end
 
+          # annotation validation
           if params[:annotations].include?('--numeric--')
             render json: { error: 'Cannot use numeric annotations for facets' }, status: :bad_request and return
           end
 
           annotations = self.class.get_facet_annotations(@study, cluster, params[:annotations])
+          if annotations.empty? && params[:annotations].blank?
+            render json: { error: 'Must provide at least one annotation' }, status: :bad_request and return
+          end
+
           missing = self.class.find_missing_annotations(annotations, params[:annotations])
           if missing.any?
             render json: { error: "Cannot find annotations: #{missing.join(', ')}" }, status: :not_found and return
