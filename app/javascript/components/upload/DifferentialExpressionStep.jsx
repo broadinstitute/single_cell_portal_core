@@ -314,7 +314,7 @@ export function DifferentialFileUploadForm({
       <div className="col-md-5">
         <p className="form-terra">
           <p>
-            Upload DE files to <b>enable <a href="https://singlecell.zendesk.com/hc/en-us/articles/6059411840027-Exploratory-differential-gene-expression-analysis" target="_blank">exploring differential gene expression</a></b> by cell type, disease, treatment, and other annotations.
+            Upload DE files to <b>enable <a href="https://singlecell.zendesk.com/hc/en-us/articles/6059411840027-Exploratory-differential-gene-expression-analysis" target="_blank">exploring differential gene expression</a></b> by the study variables where you have calculated differential expression.
             By adding your DE data here, you can enrich your study with custom DE analysis that goes beyond the limited SCP-computed DE results available by default.
           </p>
           <p>Simply <b>choose your DE file, adjust inferred headers if needed, and upload it</b>.  Or, select different "Package" and "Comparisons" options at right to see example formats for DE files that you can upload.
