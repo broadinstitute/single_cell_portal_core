@@ -200,12 +200,12 @@ class AnnotationVizService
 
   # create a menu configuration for differential expression results for a given study
   def self.differential_expression_menu_opts(study)
-    study.differential_expression_results.map do |diff_exp_result|
+    study.differential_expression_results.map do |de_result|
       {
-        cluster_name: diff_exp_result.cluster_group&.name,
-        annotation_name: diff_exp_result.annotation_name,
-        annotation_scope: diff_exp_result.annotation_scope,
-        select_options: diff_exp_result.result_files
+        cluster_name: de_result.cluster_group&.name,
+        annotation_name: de_result.annotation_name,
+        annotation_scope: de_result.annotation_scope,
+        select_options: de_result.result_files
       }
     end
   end

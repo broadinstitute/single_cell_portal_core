@@ -227,6 +227,10 @@
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
+a > code {
+  color: $action-color;
+}
+
 /** Used in "Differential expression" tab */
 .de-example.wide-format {
   table-layout: fixed;
@@ -261,7 +265,7 @@
 
   col.col-genes { width: 60px; }
   col.col-logfoldchanges { width: 180px; }
-  col.col-qval { width: 110px; }
+  col.col-qval { width: 130px; }
   col.col-mean { width: 110px; }
   col.col-ellipsis { width: 40px; }
 }

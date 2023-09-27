@@ -420,7 +420,7 @@ class IngestJob
     when :differential_expression
       create_differential_expression_results
     when :ingest_differential_expression
-      create_user_differential_expression_results
+      create_author_differential_expression_results
     when :render_expression_arrays
       launch_image_pipeline_job
     when :image_pipeline
@@ -650,7 +650,7 @@ class IngestJob
 
   # read the DE manifest file generated during ingest_differential_expression to create DifferentialExpressionResult
   # entry for given annotation/cluster, and populate any one-vs-rest or pairwise_comparisons
-  def create_user_differential_expression_results
+  def create_author_differential_expression_results
     de_info = study_file.differential_expression_file_info
     cluster_group = de_info.cluster_group
     annotation_identifier = "#{de_info.annotation_name}--group--#{de_info.annotation_scope}"
@@ -658,7 +658,9 @@ class IngestJob
                       "user-uploaded file #{study_file.upload_file_name}"
     de_result = DifferentialExpressionResult.new(
       study:, study_file:, cluster_group:, cluster_name: cluster_group.name, is_author_de: true,
-      annotation_name: de_info.annotation_name, annotation_scope: de_info.annotation_scope
+      annotation_name: de_info.annotation_name, annotation_scope: de_info.annotation_scope, computational_method: de_info.computational_method,
+      gene_header: de_info.gene_header, group_header: de_info.group_header, comparison_group_header: de_info.comparison_group_header,
+      size_metric: de_info.size_metric, significance_metric: de_info.significance_metric
     )
     all_observations = read_differential_expression_manifest(de_info, cluster_group)
     de_result.initialize_comparisons!(all_observations)
