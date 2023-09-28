@@ -1,3 +1,5 @@
+/* eslint-disable max-len */
+
 import React, { useState, useEffect } from 'react'
 
 import { AddFileButton } from './form-components'
@@ -293,7 +295,6 @@ export function DifferentialFileUploadForm({
   updateFile,
   saveFile,
   deleteFile,
-  isAnnDataExperience,
   annotationsAvailOnStudy
 }) {
   const [comparison, setComparison] = useState('one-vs-rest-only')
