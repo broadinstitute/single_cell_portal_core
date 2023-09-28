@@ -22,12 +22,15 @@ export function StudySearchView() {
   </>
 }
 
+
+
 const LinkableSearchTabs = function(props) {
   // we can't use the regular ReachRouter methods for link highlighting
   // since the Reach router doesn't own the home path
   const location = useLocation()
   const basePath = location.pathname.includes('covid19') ? '/single_cell/covid19' : '/single_cell'
   const showGenesTab = location.pathname.includes('/app/genes')
+
   // the queryParams object does not support the more typical hasOwnProperty test
   return (
     <div>

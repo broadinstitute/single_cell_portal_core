@@ -57,7 +57,7 @@ function BroadenSearchMessage() {
 /** Top matter for differential expression panel shown at right in Explore tab */
 export function DifferentialExpressionPanelHeader({
   setDeGenes, setDeGroup, setShowDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel, isUpstream,
-  cluster, annotation, setDeGroupB, isAuthorDe, deGenes
+  cluster, annotation, setDeGroupB, isAuthorDe, deGenes, togglePanel
 }) {
   const deSource = `${isAuthorDe ? 'Author' : 'SCP'}-computed`
   return (
@@ -65,11 +65,13 @@ export function DifferentialExpressionPanelHeader({
       <span>Differential expression {deGenes && <span className="margin-left de-source badge badge-inverse">{deSource}</span>}</span>
       <button className="action fa-lg de-exit-panel"
         onClick={() => {
+          togglePanel('default')
           setDeGenes(null)
           setDeGroup(null)
           setDeGroupB(null)
           setShowDifferentialExpressionPanel(false)
           setShowUpstreamDifferentialExpressionPanel(false)
+
         }}
         title="Exit differential expression panel"
         data-analytics-name="differential-expression-panel-exit">

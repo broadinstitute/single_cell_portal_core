@@ -1,4 +1,6 @@
 import React, { useEffect } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 import _snakeCase from 'lodash/snakeCase'
 
 import { FileTypeExtensions, matchingFormFiles, validateFile } from './upload-utils'
@@ -22,8 +24,8 @@ const requiredFields = [
 /**
  * Get Select option groups "Inferred options" and "Other options"
  *
- * @param metricType {String} either "sizes" or "significances"
- * @param notes {Object} arrays of inferred metrics from raw file, by metric type
+ * @param headerType {String} e.g. "geneHeader", "sizes", or "significances"
+ * @param notes {Object} arrays of inferred headers from raw file, by header type
  * @param file {Object} study file object (not raw file)
  */
 function inferOptions(headerType, file) {
@@ -40,9 +42,7 @@ function inferOptions(headerType, file) {
 
   const inferredOptions =
     notes[headerType].map(opt => ({ label: opt, value: opt }))
-  if (headerType === 'comparisonGroupHeaders') {
-    console.log('headerType === \'comparisonGroupHeaders\'')
-  }
+
   const notApplicableOption = { label: 'N/A', value: 'None' }
   if (headerType === 'comparisonGroupHeaders' && inferredOptions.length === 0) {
     inferredOptions.push(notApplicableOption)
@@ -67,9 +67,6 @@ function inferOptions(headerType, file) {
   let defaultOption = allOptions.find(
     opt => opt.value === file.differential_expression_file_info[snakeCaseMetricType]
   ) || { label: notes[headerType][0], value: notes[headerType][0] }
-  if (headerType === 'comparisonGroupHeaders') {
-    console.log('defaultOption', defaultOption)
-  }
   if (headerType === 'comparisonGroupHeaders' && !defaultOption['label']) {
     defaultOption = notApplicableOption
   }
@@ -96,7 +93,7 @@ function getAllHeaderOptions(file) {
   return allHeaderOptions
 }
 
-/** renders a form for editing/uploading a differential expression file */
+/** Renders a form for editing/uploading a differential expression file */
 export default function DifferentialExpressionFileForm({
   file,
   allFiles,
@@ -138,8 +135,6 @@ export default function DifferentialExpressionFileForm({
     opt => opt.value === file.differential_expression_file_info.computational_method
   )
 
-  console.log('in FF, above getAllHeaderOptions')
-
   const headerOptions = getAllHeaderOptions(file)
 
   const [geneHeaderOptions, geneHeader] = headerOptions[0]
@@ -168,7 +163,7 @@ export default function DifferentialExpressionFileForm({
     }
   }
 
-  /** handle a change in the associated cluster select */
+  /** Handle a change in the associated cluster select */
   function updateAssociatedCluster(file, option) {
     let newVal = null
     if (option) {
@@ -178,7 +173,7 @@ export default function DifferentialExpressionFileForm({
     annotationOptions = setAnnotationOptions()
   }
 
-  /** handle a change in the associated annotation select */
+  /** Handle a change in the associated annotation select */
   function updateAssociatedAnnotation(file, option) {
     let newVal = null
     if (option) {
@@ -196,12 +191,13 @@ export default function DifferentialExpressionFileForm({
     updateFile(file._id, { differential_expression_file_info: { computational_method: newVal } })
   }
 
-  /** handle a change in any header or metric select */
+  /** Handle a change in any header or metric select */
   function updateDeFileInfo(file, optionsByAttr) {
     const info = {}
     Object.entries(optionsByAttr).forEach(([serverAttr, option]) => {
       let newVal = null
       if (option) {
+        // TODO (SCP-5325): Clear warnings upon selection in inferable menu
         newVal = option.value
       }
       info[serverAttr] = newVal
@@ -232,7 +228,6 @@ export default function DifferentialExpressionFileForm({
   }
 
   useEffect(() => {
-    console.log('in useEffect')
     updateDeFileInfo(file, {
       'gene_header': geneHeader,
       'group_header': groupHeader,
@@ -266,8 +261,6 @@ export default function DifferentialExpressionFileForm({
             onChange={val => updateAssociatedAnnotation(file, val)}/>
         </label>
       </div>
-    </div>
-    <div className="row">
       <div className="form-group col-md-6">
         <label className="labeled-select">Computational method
           {/* using CreateableSelect here so that users can add an option if their method isn't listed */}
@@ -301,6 +294,13 @@ export default function DifferentialExpressionFileForm({
         </div>
         <div className="form-group col-md-2">
           <label className="labeled-select">Group header
+            <span
+              className="info-icon"
+              data-toggle="tooltip"
+              data-original-title='Column header that specifies the group of cells of interest for DE comparison.'
+            >
+              <FontAwesomeIcon icon={faInfoCircle}/>
+            </span>
             <Select
               data-analytics-name="differential-expression-group-header-select"
               options={groupHeaderOptions}
@@ -312,8 +312,15 @@ export default function DifferentialExpressionFileForm({
             />
           </label>
         </div>
-        <div className="form-group col-md-2">
+        <div className="form-group col-md-3" style={{ 'width': '18%' }}>
           <label className="labeled-select">Comparison group header
+            <span
+              className="info-icon"
+              data-toggle="tooltip"
+              data-original-title='Column header that specifies another group of cells to use in comparisons.  Leave as "N/A" if your DE file only has one-vs-rest comparisons.'
+            >
+              <FontAwesomeIcon icon={faInfoCircle}/>
+            </span>
             <Select
               data-analytics-name="differential-expression-comparison-group-header-select"
               options={comparisonGroupHeaderOptions}
@@ -325,9 +332,7 @@ export default function DifferentialExpressionFileForm({
             />
           </label>
         </div>
-      </div>
-      <div className="row">
-        <div className="form-group col-md-3">
+        <div className="form-group col-md-2">
           <label className="labeled-select">Size metric
             <Select
               data-analytics-name="differential-expression-size-metric-select"
@@ -340,7 +345,7 @@ export default function DifferentialExpressionFileForm({
             />
           </label>
         </div>
-        <div className="form-group col-md-3">
+        <div className="form-group col-md-2">
           <label className="labeled-select">Significance metric
             <Select
               data-analytics-name="differential-expression-significance-metric-select"

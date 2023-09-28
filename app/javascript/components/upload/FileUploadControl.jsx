@@ -27,7 +27,6 @@ export default function FileUploadControl({
 
   /** handle user interaction with the file input */
   async function handleFileSelection(e) {
-    console.log('handlingFileSelection')
     const selectedFile = e.target.files[0]
 
     let newName = selectedFile.name

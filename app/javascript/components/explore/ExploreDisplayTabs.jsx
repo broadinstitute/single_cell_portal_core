@@ -28,7 +28,7 @@ import PlotTabs from './PlotTabs'
 import { initCellFaceting, filterCells } from '~/lib/cell-faceting'
 
 /** Get the selected clustering and annotation, or their defaults */
-function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
+export function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
   if (!exploreInfo) {return [null, null]}
   const annotList = exploreInfo.annotationList
   let selectedCluster
@@ -63,40 +63,6 @@ function getHasComparisonDe(exploreInfo, exploreParams, comparison) {
   return hasComparisonDe
 }
 
-
-/**
- * Determine if current annotation has differential expression results that are user-generated.
- *
- * DE results have two dimensions:
- * - Comparison type: either "one-vs-rest" or "pairwise"
- * - Source: "author-computed" "or SCP-computed"
- *
- * Author-computed DE is also often called "precomputed" or "user-uploaded" or "study-owner-generated"
- * or "custom".  Whereas SCP-generated DE is computed only for cell-type-like annotations and only as
- * one-vs-rest comparisons, user-generated DE can be more comprehensive -- it can be available for
- * any annotation, and as one-vs-rest and/or pairwise comparisons.
- */
-function getIsAuthorDe(exploreInfo, exploreParams) {
-  const flags = getFeatureFlagsWithDefaults()
-  if (!flags?.differential_expression_frontend || !exploreInfo) {
-    return false
-  }
-
-  const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
-
-  const deItem = exploreInfo.differentialExpression.find(deItem => {
-    return (
-      deItem.cluster_name === selectedCluster &&
-      deItem.annotation_name === selectedAnnot.name &&
-      deItem.annotation_scope === selectedAnnot.scope
-    )
-  })
-
-  const isAuthorDe = deItem?.select_options.is_author_de
-
-  return isAuthorDe
-}
-
 /**
  * Renders the gene search box and the tab selection
  * Responsible for determining which tabs are available for a given view of the study
@@ -127,16 +93,13 @@ export default function ExploreDisplayTabs({
   // morpheus JSON data
   const [morpheusData, setMorpheusData] = useState(null)
   // Differential expression settings
-  // `differential_expression_frontend` enables exemptions if study owners don't want DE
   const hasPairwiseDe = getHasComparisonDe(exploreInfo, exploreParams, 'pairwise')
-  const isAuthorDe = getIsAuthorDe(exploreInfo, exploreParams)
 
   const [, setShowDeGroupPicker] = useState(false)
   const [deGenes, setDeGenes] = useState(null)
-  const [deGroup, setDeGroup] = useState(null)
-  const [deGroupB, setDeGroupB] = useState(null)
   const [showDifferentialExpressionPanel, setShowDifferentialExpressionPanel] = useState(deGenes !== null)
   const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(deGenes !== null)
+  const [panelToShow, setPanelToShow] = useState(showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel? 'DE' : 'default')
 
   const [cellFaceting, setCellFaceting] = useState(null)
   const [filteredCells, setFilteredCells] = useState(null)
@@ -230,6 +193,13 @@ export default function ExploreDisplayTabs({
     setShowViewOptionsControls(!showViewOptionsControls)
   }
 
+  /** toggle between the panels for DE, Facet Filtering and Default
+   * needed at this level for choosing style for panel
+  */
+  function togglePanel(panelOption) {
+    setPanelToShow(panelOption)
+  }
+
   /** handles gene list selection */
   function updateGeneList(geneListName) {
     const geneListInfo = exploreInfo.geneLists.find(gl => gl.name === geneListName)
@@ -260,7 +230,8 @@ export default function ExploreDisplayTabs({
     setRenderForcer({})
   }, 300)
 
-  /** Get widths for main (plots) and side (options or DE) panels, for current Explore state */
+
+  /** Get widths for main (plots) and side (options, DE, or FF) panels, for current Explore state */
   function getPanelWidths() {
     let main
     let side
@@ -268,11 +239,14 @@ export default function ExploreDisplayTabs({
     if (showViewOptionsControls) {
       if (
         (deGenes !== null) ||
-        (hasPairwiseDe && (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel))
+          (hasPairwiseDe && (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel))
       ) {
         // DE table is shown, or pairwise DE is available.  Least horizontal space for plots.
         main = 'col-md-9'
         side = 'col-md-3'
+      } else if (panelToShow === 'FF') {
+        main = 'col-md-10'
+        side = 'col-md-2'
       } else {
         // Default state, when side panel is "Options" and not collapsed
         main = 'col-md-10'
@@ -483,37 +457,33 @@ export default function ExploreDisplayTabs({
         }
         <div className={getPanelWidths().side}>
           <ExploreDisplayPanelManager
-            deGroup={deGroup}
-            deGenes={deGenes}
-            searchGenes={searchGenes}
-            exploreParamsWithDefaults={exploreParamsWithDefaults}
-            exploreInfo={exploreInfo}
-            clusterName={exploreParamsWithDefaults.cluster}
-            annotation={shownAnnotation}
-            setShowDeGroupPicker={setShowDeGroupPicker}
-            setDeGenes={setDeGenes}
-            setDeGroup={setDeGroup}
-            isAuthorDe={isAuthorDe}
-            deGroupB={deGroupB}
-            setDeGroupB={setDeGroupB}
-            countsByLabel={countsByLabel}
-            showUpstreamDifferentialExpressionPanel = {showUpstreamDifferentialExpressionPanel}
-            showDifferentialExpressionPanel = {showDifferentialExpressionPanel}
-            shownTab = {shownTab}
-            exploreParams= {exploreParams}
             studyAccession = {studyAccession}
+            exploreInfo={exploreInfo}
             setExploreInfo = {setExploreInfo}
+            exploreParams= {exploreParams}
             updateExploreParams = {updateExploreParams}
             clearExploreParams = {clearExploreParams}
+            exploreParamsWithDefaults={exploreParamsWithDefaults}
             routerLocation = {routerLocation}
-            setShowUpstreamDifferentialExpressionPanel = {setShowUpstreamDifferentialExpressionPanel}
+            searchGenes={searchGenes}
+            countsByLabel={countsByLabel}
+            setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
+            showDifferentialExpressionPanel = {showDifferentialExpressionPanel}
             setShowDifferentialExpressionPanel = {setShowDifferentialExpressionPanel}
-            setShowViewOptionsControls = {setShowViewOptionsControls}
+            showUpstreamDifferentialExpressionPanel = {showUpstreamDifferentialExpressionPanel}
+            togglePanel={togglePanel}
+            shownTab = {shownTab}
             setIsCellSelecting = {setIsCellSelecting}
             currentPointsSelected = {currentPointsSelected}
-            showViewOptionsControls = {showViewOptionsControls}
             isCellSelecting = {isCellSelecting}
-            getPanelWidths = {getPanelWidths}
+            deGenes={deGenes}
+            setDeGenes={setDeGenes}
+            setShowDeGroupPicker={setShowDeGroupPicker}
+            cellFaceting = {cellFaceting}
+            setCellFaceting = {setCellFaceting}
+            updateFilteredCells = {updateFilteredCells}
+            panelToShow ={panelToShow}
+            toggleViewOptions= {toggleViewOptions}
           />
         </div>
       </div>

@@ -25,8 +25,8 @@ export default {
 }
 
 /** A simple one-vs-rest only example for author DE file */
-function OneVsRestOnlyExample({ headers, dialect }) {
-  if (dialect === 'seurat') {
+function OneVsRestOnlyExample({ headers, dePackage }) {
+  if (dePackage === 'seurat') {
     // E.g. p_val, avg_log2FC, pct.1, pct.2, p_val_adj, cluster, gene
     return (
       <>
@@ -64,10 +64,10 @@ function OneVsRestOnlyExample({ headers, dialect }) {
             <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
           </tbody>
         </table>
-        { dialect === 'scanpy' &&
+        { dePackage === 'scanpy' &&
         <p>Scanpy can output one-vs-rest DE via <a href="https://scanpy-tutorials.readthedocs.io/en/latest/pbmc3k.html#Finding-marker-genes" target="_blank"><code>rank_gene_groups()</code></a>.</p>
         }
-        {dialect === 'custom' &&
+        {dePackage === 'other' &&
         <p>The format for uploaded DE files is flexible.  Just "Choose file" and refine headers below.</p>
         }
       </>
@@ -76,8 +76,8 @@ function OneVsRestOnlyExample({ headers, dialect }) {
 }
 
 /** A one-vs-rest and pairwise example for author DE file */
-function OneVsRestAndPairwiseExample({ headers, dialect }) {
-  if (dialect === 'seurat') {
+function OneVsRestAndPairwiseExample({ headers, dePackage }) {
+  if (dePackage === 'seurat') {
     // E.g. p_val, avg_log2FC, pct.1, pct.2, p_val_adj, cluster, gene
     return (
       <>
@@ -128,10 +128,10 @@ function OneVsRestAndPairwiseExample({ headers, dialect }) {
             <tr><td>...</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
           </tbody>
         </table>
-        { dialect === 'scanpy' &&
+        { dePackage === 'scanpy' &&
         <p>Scanpy can output one-vs-rest DE via <a href="https://scanpy-tutorials.readthedocs.io/en/latest/pbmc3k.html#Finding-marker-genes" target="_blank"><code>rank_gene_groups()</code></a>.</p>
         }
-        {dialect === 'custom' &&
+        {dePackage === 'other' &&
         <p>The format for uploaded DE files is flexible.  Just "Choose file" and refine headers below.</p>
         }
       </>
@@ -142,7 +142,7 @@ function OneVsRestAndPairwiseExample({ headers, dialect }) {
 // TODO: Restore if there is interest in wide format
 //
 // /** A wide one-vs-rest and pairwise example for author DE file */
-// function OneVsRestAndPairwiseWideExample({headers, dialect}) {
+// function OneVsRestAndPairwiseWideExample({headers, dePackage}) {
 //   return (
 //     <>
 //       <div className="de-example-wide-format">
@@ -197,39 +197,61 @@ const seuratHeaders = {
   'significance': 'p_val_adj'
 }
 
-const customHeaders = {
+const otherHeaders = {
   'gene': 'gene',
   'group': 'group',
   'size': 'logfoldchange',
   'significance': 'qval'
 }
 
-const headersByDialect = {
+const headersByPackage = {
   'scanpy': scanpyHeaders,
   'seurat': seuratHeaders,
-  'custom': customHeaders
+  'other': otherHeaders
 }
 
 /** Tables of hypothetical author DE file excerpts, of various formats */
-function ExampleTable({ comparison, dialect, setComparison, setDialect }) {
+function ExampleTable({ comparison, dePackage, setComparison, setDePackage }) {
   /** Updates shown example's comparison type */
   function updateComparison(newComparison) {
     setComparison(newComparison)
   }
 
-  /** Updates shown example's header dialect */
-  function updateDialect(newDialect) {
-    setDialect(newDialect)
+  /** Updates shown example's header dePackage */
+  function updatePackage(newPackage) {
+    setDePackage(newPackage)
   }
 
-  const headers = headersByDialect[dialect]
+  const headers = headersByPackage[dePackage]
 
   return (
     <>
-      <div className="col-sm-7 padded">
+      <div>
         <p><b>Example DE file formats you can upload</b></p>
-        <div style={{ 'marginBottom': '4px' }}>
-          <span style={{ 'marginRight': '12px' }}>Comparison:</span>
+        <div>
+          <span style={{ 'marginRight': '12px' }}>Package:</span>
+          <label>
+            <input type="radio" name="dePackage" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
+              onClick={() => updatePackage('scanpy')}
+              checked={dePackage === 'scanpy'}
+            />
+                Scanpy
+          </label>
+          <label style={{ 'marginLeft': '20px' }}>
+            <input type="radio" name="dePackage" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
+              onClick={() => updatePackage('seurat')}
+            />
+            Seurat
+          </label>
+          <label style={{ 'marginLeft': '20px' }}>
+            <input type="radio" name="dePackage" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
+              onClick={() => updatePackage('other')}
+            />
+                Other
+          </label>
+        </div>
+        <div style={{ 'marginBottom': '10px' }}>
+          <span style={{ 'marginRight': '12px' }}>Comparisons:</span>
           <label>
             <input type="radio" name="comparison" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
               onClick={() => updateComparison('one-vs-rest-only')}
@@ -244,34 +266,12 @@ function ExampleTable({ comparison, dialect, setComparison, setDialect }) {
                 One-vs-rest and pairwise
           </label>
         </div>
-        <div style={{ 'marginBottom': '10px' }}>
-          <span style={{ 'marginRight': '12px' }}>Dialect:</span>
-          <label>
-            <input type="radio" name="dialect" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
-              onClick={() => updateDialect('scanpy')}
-              checked={dialect === 'scanpy'}
-            />
-                Scanpy
-          </label>
-          <label style={{ 'marginLeft': '20px' }}>
-            <input type="radio" name="dialect" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
-              onClick={() => updateDialect('seurat')}
-            />
-            Seurat
-          </label>
-          <label style={{ 'marginLeft': '20px' }}>
-            <input type="radio" name="dialect" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
-              onClick={() => updateDialect('custom')}
-            />
-                Custom
-          </label>
-        </div>
         {comparison === 'one-vs-rest-only' &&
-        <OneVsRestOnlyExample headers={headers} dialect={dialect} />
+        <OneVsRestOnlyExample headers={headers} dePackage={dePackage} />
         }
         {comparison === 'one-vs-rest-and-pairwise' &&
         <>
-          <OneVsRestAndPairwiseExample headers={headers} dialect={dialect} />
+          <OneVsRestAndPairwiseExample headers={headers} dePackage={dePackage} />
           {/* TODO: Restore if there is interest in wide format */}
           {/* <span>You can also use <span onClick={() => setComparison('one-vs-rest-and-pairwise-wide')}>wide format</span>.</span> */}
         </>
@@ -297,7 +297,7 @@ export function DifferentialFileUploadForm({
   annotationsAvailOnStudy
 }) {
   const [comparison, setComparison] = useState('one-vs-rest-only')
-  const [dialect, setDialect] = useState('scanpy')
+  const [dePackage, setDePackage] = useState('scanpy')
 
   const menuOptions = serverState.menu_options
 
@@ -311,21 +311,26 @@ export function DifferentialFileUploadForm({
 
   return <div>
     <div className="row">
-      <div className="col-md-12">
+      <div className="col-md-5">
         <p className="form-terra">
-          <p>Upload differential expression (DE) files to <b>enable researchers to explore DE genes</b> by cell type, disease, treatment, and other experimental conditions.</p>
-          <p>Simply <b>choose your DE file, adjust inferred headers if needed, and upload it</b>.  Or, select different "Comparison" and "Dialect" options below to see example formats for DE files that you can upload.
-          Beyond metrics for size and significance, you can also include arbitrary other metrics, like "mean".  Headers can be in any order.</p>
-          <p>Upload one DE file per annotation.  To upload results for mulitple comparisons in an annotation, append all DE gene rows for each comparison as shown below.</p>
-          <div className="row">
-            <div className="col-md-12">
-              <ExampleTable
-                comparison={comparison}
-                dialect={dialect}
-                setComparison={setComparison}
-                setDialect={setDialect}
-              />
-            </div>
+          <p>
+            Upload DE files to <b>enable <a href="https://singlecell.zendesk.com/hc/en-us/articles/6059411840027-Exploratory-differential-gene-expression-analysis" target="_blank">exploring differential gene expression</a></b> by the study variables where you have calculated differential expression.
+            By adding your DE data here, you can enrich your study with custom DE analysis that goes beyond the limited SCP-computed DE results available by default.
+          </p>
+          <p>Simply <b>choose your DE file, adjust inferred headers if needed, and upload it</b>.  Or, select different "Package" and "Comparisons" options at right to see example formats for DE files that you can upload.
+          Beyond metrics for size and significance, you can also include arbitrary other metrics, like "mean".  <b>Column headers can have any order, and any name</b>.</p>
+          <p>Upload one DE file per annotation.  Append all DE gene rows for each comparison as shown at right.</p>
+        </p>
+      </div>
+      <div className="col-md-7">
+        <p className="form-terra">
+          <div className="row" style={{ 'paddingLeft': '1em' }}>
+            <ExampleTable
+              dePackage={dePackage}
+              comparison={comparison}
+              setDePackage={setDePackage}
+              setComparison={setComparison}
+            />
           </div>
         </p>
       </div>

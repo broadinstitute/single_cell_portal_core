@@ -19,6 +19,8 @@ export const emptyDataParams = {
 }
 
 export const UNSPECIFIED_ANNOTATION_NAME = '--Unspecified--'
+export const FILTERED_TRACE_NAME = '--Filtered--'
+export const FILTERED_TRACE_COLOR = 'rgba(225, 225, 225, 0.1)'
 
 /** takes the server response and returns subsample default subsample for the cluster */
 export function getDefaultSubsampleForCluster(annotationList, clusterName) {
