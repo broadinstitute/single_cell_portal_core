@@ -234,20 +234,20 @@ function ExampleTable({ comparison, dePackage, setComparison, setDePackage }) {
           <span style={{ 'marginRight': '12px' }}>Package:</span>
           <label>
             <input type="radio" name="dePackage" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
-              onClick={() => updatePackage('scanpy')}
+              onChange={() => updatePackage('scanpy')}
               checked={dePackage === 'scanpy'}
             />
                 Scanpy
           </label>
           <label style={{ 'marginLeft': '20px' }}>
             <input type="radio" name="dePackage" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
-              onClick={() => updatePackage('seurat')}
+              onChange={() => updatePackage('seurat')}
             />
             Seurat
           </label>
           <label style={{ 'marginLeft': '20px' }}>
             <input type="radio" name="dePackage" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
-              onClick={() => updatePackage('other')}
+              onChange={() => updatePackage('other')}
             />
                 Other
           </label>
@@ -256,14 +256,14 @@ function ExampleTable({ comparison, dePackage, setComparison, setDePackage }) {
           <span style={{ 'marginRight': '12px' }}>Comparisons:</span>
           <label>
             <input type="radio" name="comparison" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
-              onClick={() => updateComparison('one-vs-rest-only')}
+              onChange={() => updateComparison('one-vs-rest-only')}
               checked={comparison === 'one-vs-rest-only'}
             />
             One-vs-rest
           </label>
           <label style={{ 'marginLeft': '20px' }}>
             <input type="radio" name="comparison" style={{ 'position': 'relative', 'top': '1px', 'marginRight': '3px' }}
-              onClick={() => updateComparison('one-vs-rest-and-pairwise')}
+              onChange={() => updateComparison('one-vs-rest-and-pairwise')}
             />
                 One-vs-rest and pairwise
           </label>
@@ -275,7 +275,7 @@ function ExampleTable({ comparison, dePackage, setComparison, setDePackage }) {
         <>
           <OneVsRestAndPairwiseExample headers={headers} dePackage={dePackage} />
           {/* TODO: Restore if there is interest in wide format */}
-          {/* <span>You can also use <span onClick={() => setComparison('one-vs-rest-and-pairwise-wide')}>wide format</span>.</span> */}
+          {/* <span>You can also use <span onChange={() => setComparison('one-vs-rest-and-pairwise-wide')}>wide format</span>.</span> */}
         </>
         }
         {/* TODO: Restore if there is interest in wide format */}
@@ -313,7 +313,7 @@ export function DifferentialFileUploadForm({
   return <div>
     <div className="row">
       <div className="col-md-5">
-        <p className="form-terra">
+        <div className="form-terra">
           <p>
             Upload DE files to <b>enable <a href="https://singlecell.zendesk.com/hc/en-us/articles/6059411840027-Exploratory-differential-gene-expression-analysis" target="_blank">exploring differential gene expression</a></b> by the study variables where you have calculated differential expression.
             By adding your DE data here, you can enrich your study with custom DE analysis that goes beyond the limited SCP-computed DE results available by default.
@@ -321,10 +321,10 @@ export function DifferentialFileUploadForm({
           <p>Simply <b>choose your DE file, adjust inferred headers if needed, and upload it</b>.  Or, select different "Package" and "Comparisons" options at right to see example formats for DE files that you can upload.
           Beyond metrics for size and significance, you can also include arbitrary other metrics, like "mean".  <b>Column headers can have any order, and any name</b>.</p>
           <p>Upload one DE file per annotation.  Append all DE gene rows for each comparison as shown at right.</p>
-        </p>
+        </div>
       </div>
       <div className="col-md-7">
-        <p className="form-terra">
+        <div className="form-terra">
           <div className="row" style={{ 'paddingLeft': '1em' }}>
             <ExampleTable
               dePackage={dePackage}
@@ -333,7 +333,7 @@ export function DifferentialFileUploadForm({
               setComparison={setComparison}
             />
           </div>
-        </p>
+        </div>
       </div>
     </div>
     { deFiles.map(file => {
