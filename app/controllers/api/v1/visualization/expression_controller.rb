@@ -202,8 +202,7 @@ module Api
                                                                      cluster: @cluster,
                                                                      annot_name: params[:annotation_name],
                                                                      annot_type: params[:annotation_type],
-                                                                     annot_scope: params[:annotation_scope],
-                                                                     fallback: false)
+                                                                     annot_scope: params[:annotation_scope])
         end
 
         def set_subsampling_threshold
