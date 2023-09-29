@@ -124,7 +124,7 @@ function getSliderConfig(metricHeader) {
 /** Range filters for DE table */
 export default function DifferentialExpressionFilters({
   deFacets, activeFacets, updateDeFacets, toggleDeFacet,
-  isAuthorDe, sizeMetric, significanceMetric
+  hasPairwiseDe, sizeMetric, significanceMetric
 }) {
   const metricHeaders = ['size', 'significance']
   const metrics = [sizeMetric, significanceMetric]
@@ -172,7 +172,7 @@ export default function DifferentialExpressionFilters({
 
   return (
     <div>
-      {!isAuthorDe && <br/>}
+      {!hasPairwiseDe && <br/>}
       {metricHeaders.map((metricHeader, i) =>
         <SliderContainer
           metricHeader={metricHeader}

@@ -71,7 +71,6 @@ export function DifferentialExpressionPanelHeader({
           setDeGroupB(null)
           setShowDifferentialExpressionPanel(false)
           setShowUpstreamDifferentialExpressionPanel(false)
-
         }}
         title="Exit differential expression panel"
         data-analytics-name="differential-expression-panel-exit">
@@ -286,6 +285,8 @@ function DifferentialExpressionTable({
         )
       }
     }),
+
+    // TODO (SCP-5352): Enable deeper customization for DE metric label, e.g. size
     columnHelper.accessor('size', {
       header: () => (
         <span
@@ -784,7 +785,7 @@ export default function DifferentialExpressionPanel({
           activeFacets={activeFacets}
           updateDeFacets={updateDeFacets}
           toggleDeFacet={toggleDeFacet}
-          isAuthorDe={isAuthorDe}
+          hasPairwiseDe={hasPairwiseDe}
           sizeMetric={sizeMetric}
           significanceMetric={significanceMetric}
         />
