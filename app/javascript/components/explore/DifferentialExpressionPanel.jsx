@@ -654,7 +654,6 @@ export default function DifferentialExpressionPanel({
 
   /** Change filter values for range slider facets */
   function updateDeFacets(newFacets, metric) {
-    console.log('newFacets', newFacets)
     setDeFacets(newFacets)
     const [filteredGenes, unfoundNames] = filterGenes(searchedGenes, deGenes, newFacets, activeFacets, findMode)
     setGenesToShow(filteredGenes)

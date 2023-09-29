@@ -212,9 +212,6 @@ export default function ExploreDisplayPanelManager({
   const deHeaders = getDeHeaders(exploreInfo, exploreParams)
   const isAuthorDe = getIsAuthorDe(exploreInfo, exploreParams)
 
-  console.log('exploreInfo', exploreInfo)
-  console.log('deHeaders', deHeaders)
-
   // exploreParams object without genes specified, to pass to cluster comparison plots
   const referencePlotDataParams = _clone(exploreParams)
 
