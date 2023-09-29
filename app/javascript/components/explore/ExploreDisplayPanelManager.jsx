@@ -89,7 +89,12 @@ function getDeHeaders(exploreInfo, exploreParams) {
   })
 
   if (deObject) {
-    return deObject.select_options.headers
+    const headers = deObject.select_options.headers
+    if (headers.size === null) {
+      headers.size = 'logfoldchanges'
+      headers.significance = 'pvals_adj'
+    }
+    return headers
   } else {
     return null
   }

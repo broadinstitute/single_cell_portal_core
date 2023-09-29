@@ -18,30 +18,18 @@ describe('Differential expression panel', () => {
     const deGroup = 'B cells'
     const deGenes = [
       {
-        'score': 11.55,
-        'log2FoldChange': 4.138,
-        'pval': 7.695e-31,
-        'pvalAdj': 1.547e-26,
-        'pctNzGroup': 1,
-        'pctNzReference': 0.7262,
+        'size': 4.138,
+        'significance': 1.547e-26,
         'name': 'CD74'
       },
       {
-        'score': 11.05,
-        'log2FoldChange': 3.753,
-        'pval': 2.291e-28,
-        'pvalAdj': 2.778e-24,
-        'pctNzGroup': 1,
-        'pctNzReference': 0.5595,
+        'size': 3.753,
+        'significance': 2.778e-24,
         'name': 'HLA-DPA1'
       },
       {
-        'score': 11.05,
-        'log2FoldChange': 3.753,
-        'pval': 2.291e-28,
-        'pvalAdj': 2.778e-24,
-        'pctNzGroup': 1,
-        'pctNzReference': 0.5595,
+        'size': 3.753,
+        'significance': 2.778e-24,
         'name': 'HLA-FOOBAR'
       }
     ]
@@ -84,6 +72,8 @@ describe('Differential expression panel', () => {
       'fibroblasts': 140
     }
 
+    const deHeaders = deObjects[0].select_options.headers
+
     const { container } = render((
       <DifferentialExpressionPanel
         deGroup={deGroup}
@@ -98,6 +88,7 @@ describe('Differential expression panel', () => {
         setDeGenes={setDeGenes}
         setDeGroup={setDeGroup}
         countsByLabel={countsByLabel}
+        deHeaders={deHeaders}
       />
     ))
 
@@ -105,7 +96,7 @@ describe('Differential expression panel', () => {
     expect(deTable).toHaveTextContent('HLA-DPA1')
 
     // Confirm sort
-    const pvalAdjHeader = container.querySelector('#pval-adj-header')
+    const pvalAdjHeader = container.querySelector('#significance-header')
     const firstGeneBeforeSort = container.querySelector('.de-gene-row td')
     expect(firstGeneBeforeSort).toHaveTextContent('CD74')
     fireEvent.click(pvalAdjHeader)
@@ -147,7 +138,7 @@ describe('Differential expression panel', () => {
     // Confirm range slider facets appear, and can toggle
     const rangeSliderFacets = container.querySelectorAll('.de-slider-container')
     expect(rangeSliderFacets).toHaveLength(2)
-    const log2FoldChangeCheckbox = container.querySelector('.slider-checkbox-log2FoldChange')
+    const log2FoldChangeCheckbox = container.querySelector('.slider-checkbox-significance')
     fireEvent.click(log2FoldChangeCheckbox)
     const inactiveFacets = container.querySelectorAll('.inactive.de-slider-container')
     expect(inactiveFacets).toHaveLength(1)
