@@ -20,7 +20,7 @@ export function FacetFilterPanelHeader({
       <button className="action fa-lg cell-filtering-exit-panel"
         onClick={() => {
           updateFilteredCells({})
-          togglePanel('default')
+          togglePanel('options')
         }}
         title="Back to Options panel"
         data-analytics-name="cell-filtering-panel-exit">

@@ -100,9 +100,9 @@ export default function ExploreDisplayTabs({
   const [showDifferentialExpressionPanel, setShowDifferentialExpressionPanel] = useState(deGenes !== null)
   const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(deGenes !== null)
 
-  let initialPanel = 'default'
+  let initialPanel = 'options'
   if (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel) {
-    initialPanel = 'DE'
+    initialPanel = 'differential-expression'
   }
   const [panelToShow, setPanelToShow] = useState(initialPanel)
 
@@ -274,14 +274,15 @@ export default function ExploreDisplayTabs({
         // DE table is shown, or pairwise DE is available.  Least horizontal space for plots.
         main = 'col-md-9'
         side = 'col-md-3'
-      } else if (panelToShow === 'CFF') {
+      } else if (panelToShow === 'cell-filtering') {
         main = 'col-md-10'
         side = 'col-md-2'
       } else {
         // Default state, when side panel is "Options" and not collapsed
         main = 'col-md-10'
         // only set options-bg if we're outside the DE UX
-        side = ['DE', 'CFF'].includes(panelToShow) ? 'col-md-2' : 'col-md-2 options-bg'
+
+        side = panelToShow === 'options' ? 'col-md-2 options-bg' : 'col-md-2'
       }
     } else {
       // When options panel is collapsed.  Maximize horizontal space for plots.

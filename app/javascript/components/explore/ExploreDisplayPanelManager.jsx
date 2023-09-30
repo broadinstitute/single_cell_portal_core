@@ -224,7 +224,7 @@ export default function ExploreDisplayPanelManager({
       updateClusterParams({ subsample: 'All Cells' })
       document.querySelector('.tooltip.fade.top.in').remove()
     }
-    togglePanel('CFF')
+    togglePanel('cell-filtering')
   }
 
   /** in the event a component takes an action which updates the list of annotations available
@@ -311,7 +311,7 @@ export default function ExploreDisplayPanelManager({
       <div>
         {/* Render "Options" panel at right of page */}
         <div className="view-options-toggle">
-          {panelToShow === 'default' &&
+          {panelToShow === 'options' &&
               <>
                 <FontAwesomeIcon className="fa-lg" icon={faEye}/> <span className="options-label">OPTIONS</span>
                 <button className={`action ${showDifferentialExpressionPanel ? '' : 'action-with-bg'}`}
@@ -322,7 +322,7 @@ export default function ExploreDisplayPanelManager({
                 </button>
               </>
           }
-          {showFiltering && panelToShow === 'CFF' && <FacetFilterPanelHeader
+          {showFiltering && panelToShow === 'cell-filtering' && <FacetFilterPanelHeader
             togglePanel={togglePanel}
             setShowDifferentialExpressionPanel={setShowDifferentialExpressionPanel}
             setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
@@ -333,7 +333,7 @@ export default function ExploreDisplayPanelManager({
             isAuthorDe={isAuthorDe}
             updateFilteredCells={updateFilteredCells}
             deGenes={deGenes}></FacetFilterPanelHeader>}
-          {panelToShow === 'DE' &&
+          {panelToShow === 'differential-expression' &&
               <DifferentialExpressionPanelHeader
                 setDeGenes={setDeGenes}
                 setDeGroup={setDeGroup}
@@ -349,7 +349,7 @@ export default function ExploreDisplayPanelManager({
               />
           }
         </div>
-        {panelToShow === 'default' &&
+        {panelToShow === 'options' &&
           <>
             <div>
               <div className={showClusterControls ? '' : 'hidden'}>
@@ -392,10 +392,10 @@ export default function ExploreDisplayPanelManager({
                           if (annotHasDe) {
                             setShowDifferentialExpressionPanel(true)
                             setShowDeGroupPicker(true)
-                            togglePanel('DE')
+                            togglePanel('differential-expression')
                           } else if (studyHasDe) {
                             setShowUpstreamDifferentialExpressionPanel(true)
-                            togglePanel('DE')
+                            togglePanel('differential-expression')
                           }
                         }}
                       >Differential expression</button>
@@ -407,7 +407,7 @@ export default function ExploreDisplayPanelManager({
                 { showFiltering && clusterCanFilter &&
                   <>
                     <div className="row">
-                      <div className="col-xs-12 cff-button_style">
+                      <div className="col-xs-12 cell-filtering-button">
                         <button
                           disabled={!cellFaceting}
                           className={`btn btn-primary`}
@@ -424,11 +424,11 @@ export default function ExploreDisplayPanelManager({
                 { showFiltering && !clusterCanFilter &&
                   <>
                     <div className="row">
-                      <div className="col-xs-12 cff-button_style">
+                      <div className="col-xs-12 cell-filtering-button">
                         <button
                           disabled="disabled"
                           className={`btn btn-primary`}
-                          data-testid="cell facet filtering button"
+                          data-testid="cell-filtering-button"
                           data-toggle="tooltip"
                           data-original-title={`Cell filtering cannot be displayed for this selection: ${filterErrorText}.`}
                         >Filtering unavailable</button>
@@ -481,7 +481,7 @@ export default function ExploreDisplayPanelManager({
             </button>
           </>
         }
-        {showFiltering && panelToShow === 'CFF' && <FacetFilterPanel
+        {showFiltering && panelToShow === 'cell-filtering' && <FacetFilterPanel
           annotationList={annotationList}
           cluster={exploreParamsWithDefaults.cluster}
           shownAnnotation={shownAnnotation}
@@ -493,7 +493,7 @@ export default function ExploreDisplayPanelManager({
           studyAccession={studyAccession}
           setCellFaceting={setCellFaceting}>
         </FacetFilterPanel>}
-        {panelToShow === 'DE' && countsByLabel && annotHasDe &&
+        {panelToShow === 'differential-expression' && countsByLabel && annotHasDe &&
           <>
             <DifferentialExpressionPanel
               deGroup={deGroup}

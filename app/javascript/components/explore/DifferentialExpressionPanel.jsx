@@ -62,7 +62,7 @@ export function DifferentialExpressionPanelHeader({
       <span>Differential expression {deGenes && <span className="margin-left de-source badge badge-inverse">{deSource}</span>}</span>
       <button className="action fa-lg de-exit-panel"
         onClick={() => {
-          togglePanel('default')
+          togglePanel('options')
           setDeGenes(null)
           setDeGroup(null)
           setDeGroupB(null)
