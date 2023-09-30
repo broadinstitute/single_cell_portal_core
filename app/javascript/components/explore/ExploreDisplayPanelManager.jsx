@@ -179,6 +179,8 @@ export default function ExploreDisplayPanelManager({
   const [deGroupB, setDeGroupB] = useState(null)
   const [deGroup, setDeGroup] = useState(null)
 
+  const showFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
+
   // Differential expression settings
   const flags = getFeatureFlagsWithDefaults()
   // `differential_expression_frontend` enables exemptions if study owners don't want DE
@@ -205,6 +207,24 @@ export default function ExploreDisplayPanelManager({
   }
 
   const shownAnnotation = getShownAnnotation(exploreParamsWithDefaults.annotation, annotationList)
+
+  const isSubsampled = exploreParamsWithDefaults.subsample !== 'all'
+  let cellFilteringTooltipAttrs = {}
+  if (isSubsampled) {
+    cellFilteringTooltipAttrs = {
+      'data-toggle': 'tooltip',
+      'data-original-title': 'Clicking will remove subsampling; plots might be noticeably slower.'
+    }
+  }
+
+  /** Toggle cell filtering panel, and remove subsampling if needed */
+  function toggleCellFilterPanel() {
+    if (isSubsampled) {
+      updateClusterParams({ subsample: 'All Cells' })
+      document.querySelector('.tooltip.fade.top.in').remove()
+    }
+    togglePanel('CFF')
+  }
 
   /** in the event a component takes an action which updates the list of annotations available
     * e.g. by creating a user annotation, this updates the list */
@@ -301,8 +321,8 @@ export default function ExploreDisplayPanelManager({
                 </button>
               </>
           }
-          {getFeatureFlagsWithDefaults()?.show_cell_facet_filtering && panelToShow === 'CFF' && <FacetFilterPanelHeader
-            togglePanel = {togglePanel}
+          {showFiltering && panelToShow === 'CFF' && <FacetFilterPanelHeader
+            togglePanel={togglePanel}
             setShowDifferentialExpressionPanel={setShowDifferentialExpressionPanel}
             setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
             isUpstream={showUpstreamDifferentialExpressionPanel}
@@ -324,7 +344,7 @@ export default function ExploreDisplayPanelManager({
                 setDeGroupB={setDeGroupB}
                 isAuthorDe={isAuthorDe}
                 deGenes={deGenes}
-                togglePanel = {togglePanel}
+                togglePanel={togglePanel}
               />
           }
         </div>
@@ -383,18 +403,17 @@ export default function ExploreDisplayPanelManager({
                   </div>
                 </>
                 }
-                { getFeatureFlagsWithDefaults()?.show_cell_facet_filtering &&
+                { showFiltering &&
                   <>
                     <div className="row">
                       <div className="col-xs-12 cff-button_style">
                         <button
                           disabled={!cellFaceting}
                           className={`btn btn-primary`}
-                          data-testid="cell facet filtering button"
-                          onClick={() => {
-                            togglePanel('CFF') // cell facet filtering
-                          }}
-                        >Cell facet filtering</button>
+                          data-testid="cell-filtering-button"
+                          {...cellFilteringTooltipAttrs}
+                          onClick={() => toggleCellFilterPanel()}
+                        >Cell filtering</button>
                         {!cellFaceting && <LoadingSpinner className="fa-lg"/>}
                         {cellFaceting && <FacetFilteringModal />}
                       </div>
@@ -446,7 +465,7 @@ export default function ExploreDisplayPanelManager({
             </button>
           </>
         }
-        {getFeatureFlagsWithDefaults()?.show_cell_facet_filtering && panelToShow === 'CFF' && <FacetFilterPanel
+        {showFiltering && panelToShow === 'CFF' && <FacetFilterPanel
           annotationList={annotationList}
           cluster={exploreParamsWithDefaults.cluster}
           shownAnnotation={shownAnnotation}
