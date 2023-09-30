@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import _clone from 'lodash/clone'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faLink, faEye, faTimes, faUndo } from '@fortawesome/free-solid-svg-icons'
-import LoadingSpinner from '~/lib/LoadingSpinner'
 
 import ClusterSelector from '~/components/visualization/controls/ClusterSelector'
 import AnnotationSelector from '~/components/visualization/controls/AnnotationSelector'
@@ -180,7 +179,7 @@ export default function ExploreDisplayPanelManager({
   const [deGroupB, setDeGroupB] = useState(null)
   const [deGroup, setDeGroup] = useState(null)
 
-  const showFiltering = true // getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
+  const showCellFiltering = true // getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
 
   // Differential expression settings
   const flags = getFeatureFlagsWithDefaults()
@@ -322,17 +321,20 @@ export default function ExploreDisplayPanelManager({
                 </button>
               </>
           }
-          {showFiltering && panelToShow === 'cell-filtering' && <FacetFilterPanelHeader
-            togglePanel={togglePanel}
-            setShowDifferentialExpressionPanel={setShowDifferentialExpressionPanel}
-            setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
-            isUpstream={showUpstreamDifferentialExpressionPanel}
-            cluster={exploreParamsWithDefaults.cluster}
-            annotation={shownAnnotation}
-            setDeGroupB={setDeGroupB}
-            isAuthorDe={isAuthorDe}
-            updateFilteredCells={updateFilteredCells}
-            deGenes={deGenes}></FacetFilterPanelHeader>}
+          {showCellFiltering && panelToShow === 'cell-filtering' &&
+            <FacetFilterPanelHeader
+              togglePanel={togglePanel}
+              setShowDifferentialExpressionPanel={setShowDifferentialExpressionPanel}
+              setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
+              isUpstream={showUpstreamDifferentialExpressionPanel}
+              cluster={exploreParamsWithDefaults.cluster}
+              annotation={shownAnnotation}
+              setDeGroupB={setDeGroupB}
+              isAuthorDe={isAuthorDe}
+              updateFilteredCells={updateFilteredCells}
+              deGenes={deGenes}
+            />
+          }
           {panelToShow === 'differential-expression' &&
               <DifferentialExpressionPanelHeader
                 setDeGenes={setDeGenes}
@@ -404,24 +406,22 @@ export default function ExploreDisplayPanelManager({
                   </div>
                 </>
                 }
-                { showFiltering && clusterCanFilter &&
+                { showCellFiltering && clusterCanFilter &&
                   <>
                     <div className="row">
                       <div className="col-xs-12 cell-filtering-button">
                         <button
-                          disabled={!cellFaceting}
                           className={`btn btn-primary`}
                           data-testid="cell-filtering-button"
                           {...cellFilteringTooltipAttrs}
                           onClick={() => toggleCellFilterPanel()}
                         >Cell filtering</button>
-                        {!cellFaceting && <LoadingSpinner className="fa-lg"/>}
-                        {cellFaceting && <FacetFilteringModal />}
+                        <FacetFilteringModal />
                       </div>
                     </div>
                   </>
                 }
-                { showFiltering && !clusterCanFilter &&
+                { showCellFiltering && !clusterCanFilter &&
                   <>
                     <div className="row">
                       <div className="col-xs-12 cell-filtering-button">
@@ -481,7 +481,7 @@ export default function ExploreDisplayPanelManager({
             </button>
           </>
         }
-        {showFiltering && panelToShow === 'cell-filtering' && <FacetFilterPanel
+        {showCellFiltering && panelToShow === 'cell-filtering' && <FacetFilterPanel
           annotationList={annotationList}
           cluster={exploreParamsWithDefaults.cluster}
           shownAnnotation={shownAnnotation}

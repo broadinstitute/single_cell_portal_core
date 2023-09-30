@@ -6,6 +6,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 
 import Select from '~/lib/InstrumentedSelect'
+import LoadingSpinner from '~/lib/LoadingSpinner'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
 import { initCellFaceting } from '~/lib/cell-faceting'
 import { getSelectedClusterAndAnnot } from '~/components/explore/ExploreDisplayTabs'
@@ -39,6 +40,16 @@ export function FacetFilterPanel({
   cellFaceting,
   updateFilteredCells
 }) {
+  if (!cellFaceting) {
+    const loadingTextStyle = { position: 'absolute', top: '50%', left: '30%' }
+    return (
+      <div>
+        <LoadingSpinner className="fa-lg"/>
+        <span style={loadingTextStyle}>Loading cell filters...</span>
+      </div>
+    )
+  }
+
   const [initialFiveFacets, setinitialFiveFacets] = useState(cellFaceting?.facets)
   const [checkedMap, setCheckedMap] = useState({})
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
