@@ -99,7 +99,12 @@ export default function ExploreDisplayTabs({
   const [deGenes, setDeGenes] = useState(null)
   const [showDifferentialExpressionPanel, setShowDifferentialExpressionPanel] = useState(deGenes !== null)
   const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(deGenes !== null)
-  const [panelToShow, setPanelToShow] = useState(showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel? 'DE' : 'default')
+
+  let initialPanel = 'default'
+  if (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel) {
+    initialPanel = 'DE'
+  }
+  const [panelToShow, setPanelToShow] = useState(initialPanel)
 
   const [cellFaceting, setCellFaceting] = useState(null)
   const [filteredCells, setFilteredCells] = useState(null)
@@ -257,12 +262,10 @@ export default function ExploreDisplayTabs({
     setRenderForcer({})
   }, 300)
 
-
   /** Get widths for main (plots) and side (options, DE, or FF) panels, for current Explore state */
   function getPanelWidths() {
     let main
     let side
-    const isSelectingDE = showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel
     if (showViewOptionsControls) {
       if (
         (deGenes !== null) ||
@@ -271,14 +274,14 @@ export default function ExploreDisplayTabs({
         // DE table is shown, or pairwise DE is available.  Least horizontal space for plots.
         main = 'col-md-9'
         side = 'col-md-3'
-      } else if (panelToShow === 'FF') {
+      } else if (panelToShow === 'CFF') {
         main = 'col-md-10'
         side = 'col-md-2'
       } else {
         // Default state, when side panel is "Options" and not collapsed
         main = 'col-md-10'
         // only set options-bg if we're outside the DE UX
-        side = isSelectingDE ? 'col-md-2' : 'col-md-2 options-bg'
+        side = ['DE', 'CFF'].includes(panelToShow) ? 'col-md-2' : 'col-md-2 options-bg'
       }
     } else {
       // When options panel is collapsed.  Maximize horizontal space for plots.
