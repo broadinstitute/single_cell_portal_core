@@ -18,10 +18,14 @@ function getSubsampleOptions(annotationList, clusterName) {
     if (!clusterSubsamples) {
       clusterSubsamples = []
     }
-    subsampleOptions = subsampleOptions.concat(clusterSubsamples.map(num => {
-      // convert everything to strings to make the comparisons easier
-      return { label: `${num}`, value: `${num}` }
-    }))
+    subsampleOptions = subsampleOptions.concat(
+      clusterSubsamples
+        .filter(num => num >= 100000)
+        .map(num => {
+        // convert everything to strings to make the comparisons easier
+          return { label: `${num}`, value: `${num}` }
+        })
+    )
   }
   subsampleOptions.push({ label: 'All Cells', value: 'all' })
   return subsampleOptions
@@ -46,6 +50,12 @@ export default function SubsampleSelector({
   }
 
   const subsampleOptions = getSubsampleOptions(annotationList, cluster)
+
+  const hasUsefulThreshold = subsampleOptions.find(option => option.value === '100000')
+
+  if (!hasUsefulThreshold) {
+    return <></>
+  }
 
   return (
     <div className="form-group">

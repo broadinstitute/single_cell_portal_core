@@ -21,7 +21,18 @@ class DifferentialExpressionFileInfoTest < ActiveSupport::TestCase
                                 name: 'de.txt')
     annotation_name = 'cell_type__ontology_label'
     annotation_scope = 'study'
-    de_info = de_file.build_differential_expression_file_info(annotation_name:, annotation_scope:)
+
+    gene_header = 'gene'
+    group_header = 'group'
+    comparison_group_header = 'comparison_group'
+    size_metric = 'logfoldchanges'
+    significance_metric = 'pvals_adj'
+
+    de_info = de_file.build_differential_expression_file_info(
+      annotation_name:, annotation_scope:,
+      gene_header:, group_header:, comparison_group_header:,
+      size_metric:, significance_metric:
+    )
     cluster = @study.cluster_groups.by_name('cluster.txt')
     de_info.cluster_group = cluster
     de_file.save

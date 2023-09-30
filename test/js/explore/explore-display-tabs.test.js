@@ -391,7 +391,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
   })
 
 
-  it('shows "Cell facet filtering" button when flag is enabled', async () => {
+  it('shows "Cell filtering" button when flag is enabled', async () => {
     jest
       .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
       .mockReturnValue({
@@ -407,7 +407,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
       />
     ))
 
-    expect(screen.getByTestId('cell facet filtering button')).toHaveTextContent('Cell facet filtering')
+    expect(screen.getByTestId('cell-filtering-button')).toHaveTextContent('Cell filtering')
   })
 
   it('disables cell filtering button', async () => {

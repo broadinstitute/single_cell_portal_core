@@ -2,7 +2,8 @@ import _get from 'lodash/get'
 import React from 'react'
 
 export const PARSEABLE_TYPES = ['Cluster', 'Coordinate Labels', 'Expression Matrix', 'MM Coordinate Matrix',
-  '10X Genes File', '10X Barcodes File', 'Gene List', 'Metadata', 'Analysis Output', 'AnnData']
+  '10X Genes File', '10X Barcodes File', 'Gene List', 'Metadata', 'Analysis Output', 'AnnData',
+  'Differential Expression']
 // file types to ignore in CSFV context (still validated server-side)
 export const UNVALIDATED_TYPES = ['AnnData']
 export const CSFV_VALIDATED_TYPES = PARSEABLE_TYPES.filter(ft => !UNVALIDATED_TYPES.includes(ft))
@@ -36,7 +37,8 @@ const PROPERTIES_NOT_TO_SEND = [
   'upload',
   'parse_status',
   'requestCanceller',
-  'serverFile'
+  'serverFile',
+  'notes'
 ]
 
 const PROPERTIES_AS_JSON = ['custom_color_updates']
