@@ -39,7 +39,7 @@ export function FacetFilterPanel({
   cellFaceting,
   updateFilteredCells
 }) {
-  const [initialFivefacets, setInitialFiveFacets] = useState(cellFaceting?.facets)
+  const [initialFiveFacets, setinitialFiveFacets] = useState(cellFaceting?.facets)
   const [checkedMap, setCheckedMap] = useState({})
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const [shownFacets, setShownFacets] = useState()
@@ -52,11 +52,12 @@ export function FacetFilterPanel({
     ) {
       // grab the show facet names to filter the select options so there won't be duplicates
       const facetNames = shownFacets.map(facet => {return facet.annotation.split('--')[0]})
+      const otherMenuOptions = options.filter(opt => !facetNames.includes(opt.label))
       return <div key={singleCellFaceting.annotation}>
         <div>
           <Select
             name={singleCellFaceting.annotation}
-            options={options.filter(opt => {return !facetNames.includes(opt.label)})}
+            options={otherMenuOptions}
             data-analytics-name="annotation-select"
             value={options.find(opt => opt.value.annotation === singleCellFaceting.annotation)}
             onChange={(newAnnotation, event) => {
@@ -91,19 +92,21 @@ export function FacetFilterPanel({
     const tempCheckedMap = {}
 
     // only initalize up to three facets for now
-    const numFacets = initialFivefacets.length > 2 ? 3 : initialFivefacets.length
+    const numFacets = initialFiveFacets.length > 2 ? 3 : initialFiveFacets.length
     for (let i = 0; i < numFacets; i++) {
-      tempCheckedMap[initialFivefacets[i].annotation] = initialFivefacets[i].groups
+      tempCheckedMap[initialFiveFacets[i].annotation] = initialFiveFacets[i].groups
     }
 
     setCheckedMap(tempCheckedMap)
 
-    setOptions(initialFivefacets.map(facet => {
+
+    setOptions(initialFiveFacets.map(facet => {
+      console.log('facet.annotation', facet.annotation)
       return { value: facet, label: facet.annotation.split('--')[0] }
     }))
 
     // set the shownFacets with the same facets as the checkedMap starts with
-    setShownFacets(initialFivefacets.slice(0, numFacets))
+    setShownFacets(initialFiveFacets.slice(0, numFacets))
   }
 
 
