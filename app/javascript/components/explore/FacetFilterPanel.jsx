@@ -17,13 +17,13 @@ export function FacetFilterPanelHeader({
   return (
     <>
       <span> Cell filtering </span>
-      <button className="action fa-lg de-exit-panel"
+      <button className="action fa-lg cell-filtering-exit-panel"
         onClick={() => {
           updateFilteredCells({})
           togglePanel('default')
         }}
-        title="Exit cell facet filter panel"
-        data-analytics-name="-facet-filter-panel-exit">
+        title="Back to Options panel"
+        data-analytics-name="cell-filtering-panel-exit">
         <FontAwesomeIcon icon={faArrowLeft}/>
       </button>
     </>
@@ -125,7 +125,10 @@ export function FacetFilterPanel({
     const indexToRep = tempShownFacets.findIndex(facet => facet.annotation === event.name)
 
     // replace the existing facet with the new facet at the index determined above
-    tempShownFacets[indexToRep] = { 'annotation': newSingleCellFaceting.value.annotation, 'groups': newSingleCellFaceting.value.groups }
+    tempShownFacets[indexToRep] = {
+      annotation: newSingleCellFaceting.value.annotation,
+      groups: newSingleCellFaceting.value.groups
+    }
 
     // set the facets that are shown in the UI
     setShownFacets(tempShownFacets)
@@ -161,7 +164,7 @@ export function FacetFilterPanel({
     return checkedMap[annotation]?.includes(item)
   }
 
-  const currentlyInUseAnnotations = { 'colorby:': '', 'facets': [] }
+  const currentlyInUseAnnotations = { colorBy: '', facets: [] }
   const annotationOptions = getAnnotationOptions(annotationList, cluster)
 
   /** populate the checkedMap state if it's empty
@@ -191,7 +194,7 @@ export function FacetFilterPanel({
             onChange={newColorByAnnotation => {
               setColorByFacet(newColorByAnnotation)
               updateClusterParams({ annotation: newColorByAnnotation })
-              currentlyInUseAnnotations.colorby = newColorByAnnotation
+              currentlyInUseAnnotations.colorBy = newColorByAnnotation
               updateFilteredCells({})
             }}
             styles={clusterSelectStyle}/>

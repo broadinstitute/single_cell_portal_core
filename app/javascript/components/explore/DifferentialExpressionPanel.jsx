@@ -68,9 +68,8 @@ export function DifferentialExpressionPanelHeader({
           setDeGroupB(null)
           setShowDifferentialExpressionPanel(false)
           setShowUpstreamDifferentialExpressionPanel(false)
-
         }}
-        title="Exit differential expression panel"
+        title="Back to Options panel"
         data-analytics-name="differential-expression-panel-exit">
         <FontAwesomeIcon icon={faArrowLeft}/>
       </button>
