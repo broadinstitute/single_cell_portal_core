@@ -158,9 +158,10 @@ export default function ExploreDisplayTabs({
 
   const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
 
-  // wrapper function with error handling/state setting for retrieving cell facet data
+  /** wrapper function with error handling/state setting for retrieving cell facet data */
   function getCellFacetingData(cluster, annotation) {
-    if (getFeatureFlagsWithDefaults()?.show_cell_facet_filtering) {
+    const showFiltering = true // getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
+    if (showFiltering) {
       const allAnnots = exploreInfo?.annotationList.annotations
       if (allAnnots && allAnnots.length > 0) {
         initCellFaceting(
