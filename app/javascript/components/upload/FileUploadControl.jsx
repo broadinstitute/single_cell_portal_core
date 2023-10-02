@@ -35,14 +35,16 @@ export default function FileUploadControl({
     if (FILE_TYPES_ALLOWING_SET_NAME.includes(file.file_type) && file.name && file.name !== file.upload_file_name) {
       newName = file.name
     }
+
     setFileValidation({ validating: true, issues: {}, fileName: selectedFile.name })
-    const issues = await ValidateFile.validateLocalFile(selectedFile, file, allFiles, allowedFileExts)
-    setFileValidation({ validating: false, issues, fileName: selectedFile.name })
+    const [issues, notes] = await ValidateFile.validateLocalFile(selectedFile, file, allFiles, allowedFileExts)
+    setFileValidation({ validating: false, issues, fileName: selectedFile.name, notes })
     if (issues.errors.length === 0) {
       updateFile(file._id, {
         uploadSelection: selectedFile,
         upload_file_name: selectedFile.name,
-        name: newName
+        name: newName,
+        notes
       })
     }
   }
