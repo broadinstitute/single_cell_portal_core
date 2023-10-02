@@ -190,7 +190,7 @@ export default function ScatterPlotLegend({
   updateHiddenTraces, customColors, editedCustomColors, setEditedCustomColors, setCustomColors,
   enableColorPicking=false, activeTraceLabel, setActiveTraceLabel,
   isSplitLabelArrays, updateIsSplitLabelArrays, hasArrayLabels,
-  externalLink, saveCustomColors
+  externalLink, saveCustomColors, originalLabels
 }) {
   // is the user currently in color-editing mode
   const [showColorControls, setShowColorControls] = useState(false)
@@ -244,7 +244,14 @@ export default function ScatterPlotLegend({
 
   /** create mapping of labels and colors of full label list (used for filtered legends) */
   const fullLabelsMappedToColor = labels.map((label, i) => {
-    const iconColor = getColorForLabel(label, customColors, editedCustomColors, i)
+    let colorIndex
+    if (originalLabels.length > 0) {
+      console.log(`original labels present`)
+      colorIndex = [...originalLabels].sort(PlotUtils.labelSort).indexOf(label)
+    } else {
+      colorIndex = i
+    }
+    const iconColor = getColorForLabel(label, customColors, editedCustomColors, colorIndex)
     return { label, iconColor }
   })
 
