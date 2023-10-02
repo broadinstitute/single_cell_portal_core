@@ -23,7 +23,7 @@ export function FacetFilterPanelHeader({
           updateFilteredCells({})
           togglePanel('options')
         }}
-        title="Back to Options panel"
+        title="Back to options panel"
         data-analytics-name="cell-filtering-panel-exit">
         <FontAwesomeIcon icon={faArrowLeft}/>
       </button>
