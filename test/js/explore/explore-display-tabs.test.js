@@ -425,10 +425,10 @@ describe('explore tabs are activated based on study info and parameters', () => 
         exploreInfo={exploreInfoDe}
         clusterCanFilter={false}
         filterErrorText={'Cluster is not indexed'}
-        panelToShow={'default'}
+        panelToShow={'options'}
       />
     )
 
-    expect(screen.getByTestId('cell facet filtering button')).toHaveTextContent('Filtering unavailable')
+    expect(screen.getByTestId('cell-filtering-button')).toHaveTextContent('Filtering unavailable')
   })
 })
