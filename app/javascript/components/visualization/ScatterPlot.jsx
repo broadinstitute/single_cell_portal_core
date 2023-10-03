@@ -333,7 +333,7 @@ function RawScatterPlot({
       const originalData = scatter.data
       const [intersected, plottedIndexes] = intersect(filteredCells, scatter)
       scatter.data = reassignFilteredCells(plottedIndexes, originalData, intersected, annotIsNumeric, setOriginalLabels)
-    } else {
+    } else if (!annotIsNumeric) {
       setOriginalLabels(getPlottedLabels(scatter.data))
     }
 
