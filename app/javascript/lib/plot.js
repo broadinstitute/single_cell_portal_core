@@ -69,7 +69,7 @@ function emptyTrace(expectedLength, hasZvalues, hasExpression) {
  */
 PlotUtils.filterTrace = function({
   trace, hiddenTraces=[], groupByAnnotation=false,
-  activeTraceLabel, expressionFilter, expressionData, isSplitLabelArrays
+  activeTraceLabel, expressionFilter, expressionData, isSplitLabelArrays, originalLabels
 }) {
   const isHidingByLabel = hiddenTraces && hiddenTraces.length
   const isFilteringByExpression = expressionFilter && expressionData &&
@@ -285,15 +285,16 @@ PlotUtils.getColorForLabel = function(label, customColors={}, editedCustomColors
   return editedCustomColors[label] ?? customColors[label] ?? PlotUtils.getColorBrewerColor(i)
 }
 
+/** Sort annotation labels lexicographically, but always put the unspecified annotations last */
+PlotUtils.labelSort = function(a, b) {
+  if (SPECIAL_LEGEND_ENTRIES.includes(a)) {return 1}
+  if (SPECIAL_LEGEND_ENTRIES.includes(b)) {return -1}
+  return a.localeCompare(b, 'en', { numeric: true, ignorePunctuation: true })
+}
+
 /** Returns an array of labels, sorted in the order in which they should be displayed in the legend */
 PlotUtils.getLegendSortedLabels = function(countsByLabel) {
-  /** Sort annotation labels lexicographically, but always put the unspecified annotations last */
-  function labelSort(a, b) {
-    if (SPECIAL_LEGEND_ENTRIES.includes(a)) {return 1}
-    if (SPECIAL_LEGEND_ENTRIES.includes(b)) {return -1}
-    return a.localeCompare(b, 'en', { numeric: true, ignorePunctuation: true })
-  }
-  return Object.keys(countsByLabel).sort(labelSort)
+  return Object.keys(countsByLabel).sort(PlotUtils.labelSort)
 }
 
 

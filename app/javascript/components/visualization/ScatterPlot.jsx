@@ -62,6 +62,7 @@ function RawScatterPlot({
   const [customColors, setCustomColors] = useState({})
 
   const isRefGroup = getIsRefGroup(scatterData?.annotParams?.type, genes, isCorrelatedScatter)
+  const [originalLabels, setOriginalLabels] = useState([])
 
   const flags = getFeatureFlagsWithDefaults()
 
@@ -181,7 +182,8 @@ function RawScatterPlot({
       activeTraceLabel,
       expressionFilter,
       isSplitLabelArrays: isSplitLabelArrays ?? scatter.isSplitLabelArrays,
-      isRefGroup: isRG
+      isRefGroup: isRG,
+      originalLabels
     })
     if (isRG) {
       setCountsByLabel(labelCounts)
@@ -324,12 +326,15 @@ function RawScatterPlot({
     let [scatter, perfTimes] =
       (clusterResponse ? clusterResponse : [scatterData, null])
     scatter = updateScatterLayout(scatter)
+    const annotIsNumeric = scatter.annotParams.type === 'numeric'
     const layout = scatter.layout
 
     if (filteredCells) {
       const originalData = scatter.data
       const [intersected, plottedIndexes] = intersect(filteredCells, scatter)
-      scatter.data = reassignFilteredCells(plottedIndexes, originalData, intersected)
+      scatter.data = reassignFilteredCells(plottedIndexes, originalData, intersected, annotIsNumeric, setOriginalLabels)
+    } else if (!annotIsNumeric) {
+      setOriginalLabels(getPlottedLabels(scatter.data))
     }
 
     const plotlyTraces = updateCountsAndGetTraces(scatter)
@@ -595,6 +600,7 @@ function RawScatterPlot({
             isSplitLabelArrays={isSplitLabelArrays}
             updateIsSplitLabelArrays={updateIsSplitLabelArrays}
             externalLink={scatterData.externalLink}
+            originalLabels={originalLabels}
           />
         }
       </div>
@@ -677,7 +683,8 @@ function getPlotlyTraces({
   activeTraceLabel,
   expressionFilter,
   isSplitLabelArrays,
-  isRefGroup
+  isRefGroup,
+  originalLabels
 }) {
   const unfilteredTrace = {
     type: is3D ? 'scatter3d' : 'scattergl',
@@ -704,10 +711,16 @@ function getPlotlyTraces({
   if (isRefGroup) {
     const labels = getLegendSortedLabels(countsByLabel)
     traces.forEach(groupTrace => {
+      let labelIndex
+      if (originalLabels.length > 0) {
+        labelIndex = [...originalLabels].sort(PlotUtils.labelSort).indexOf(groupTrace.name)
+      } else {
+        labelIndex = labels.indexOf(groupTrace.name)
+      }
       groupTrace.type = unfilteredTrace.type
       groupTrace.mode = unfilteredTrace.mode
       groupTrace.opacity = unfilteredTrace.opacity
-      const color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, labels.indexOf(groupTrace.name))
+      const color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, labelIndex)
       groupTrace.marker = {
         size: pointSize,
         color
@@ -958,9 +971,13 @@ ScatterPlot.intersect = intersect
  * @param plotted {Array} Indices of points that are to be plotted
  * @param originalData {Object} original scatter data object
  * @param filteredData {Object} filtered scatter data object from cell faceting
+ * @param annotIsNumeric {Boolean} T/F whether plotted annotation is numeric
+ * @param setOriginalLabels {function} function to store original annotation labels for color persistence
  * @returns {Object} reorganized scatter data object with new --Filtered-- trace
  */
-export function reassignFilteredCells(plotted, originalData, filteredData) {
+export function reassignFilteredCells(
+  plotted, originalData, filteredData, annotIsNumeric, setOriginalLabels
+) {
   const reassignedIndices = []
   const plottedSet = new Set(plotted)
   for (let i = 0;  i < originalData['x'].length; i++)
@@ -970,6 +987,10 @@ export function reassignFilteredCells(plotted, originalData, filteredData) {
   keys.forEach(key =>  {
     newPlotData[key] = []
   })
+  if (!annotIsNumeric) {
+    // store array of original labels for maintaining color assignments later
+    setOriginalLabels(getPlottedLabels(originalData))
+  }
   for (let idx = 0; idx < reassignedIndices.length; idx++) {
     for (let k = 0; k < keys.length; k++) {
       const key = keys[k]
@@ -992,3 +1013,10 @@ export function reassignFilteredCells(plotted, originalData, filteredData) {
 }
 
 ScatterPlot.reassignFilteredCells = reassignFilteredCells
+
+// store array of unique plotted labels for maintaining color assigments
+export function getPlottedLabels(scatterData) {
+  return scatterData?.annotations ? [...new Set(scatterData.annotations)] : []
+}
+
+ScatterPlot.getPlottedLabels = getPlottedLabels
