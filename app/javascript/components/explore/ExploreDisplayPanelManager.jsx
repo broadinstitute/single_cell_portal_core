@@ -198,7 +198,8 @@ export default function ExploreDisplayPanelManager({
   exploreParamsWithDefaults, routerLocation, searchGenes, countsByLabel, setShowUpstreamDifferentialExpressionPanel,
   setShowDifferentialExpressionPanel, showUpstreamDifferentialExpressionPanel, togglePanel, shownTab,
   showDifferentialExpressionPanel, setIsCellSelecting, currentPointsSelected, isCellSelecting, deGenes,
-  setDeGenes, setShowDeGroupPicker, cellFaceting, setCellFaceting, updateFilteredCells, panelToShow, toggleViewOptions
+  setDeGenes, setShowDeGroupPicker, cellFaceting, setCellFaceting, clusterCanFilter, filterErrorText,
+  updateFilteredCells, panelToShow, toggleViewOptions
 }) {
   const [, setRenderForcer] = useState({})
   const [dataCache] = useState(createCache())
@@ -431,7 +432,8 @@ export default function ExploreDisplayPanelManager({
                   </div>
                 </>
                 }
-                { showFiltering &&
+                { showFiltering && clusterCanFilter &&
+
                   <>
                     <div className="row">
                       <div className="col-xs-12 cff-button_style">
@@ -444,6 +446,21 @@ export default function ExploreDisplayPanelManager({
                         >Cell filtering</button>
                         {!cellFaceting && <LoadingSpinner className="fa-lg"/>}
                         {cellFaceting && <FacetFilteringModal />}
+                      </div>
+                    </div>
+                  </>
+                }
+                { getFeatureFlagsWithDefaults()?.show_cell_facet_filtering && !clusterCanFilter &&
+                  <>
+                    <div className="row">
+                      <div className="col-xs-12 cff-button_style">
+                        <button
+                          disabled="disabled"
+                          className={`btn btn-primary`}
+                          data-testid="cell facet filtering button"
+                          data-toggle="tooltip"
+                          data-original-title={`Cell filtering cannot be displayed for this selection: ${filterErrorText}.`}
+                        >Filtering unavailable</button>
                       </div>
                     </div>
                   </>
@@ -493,7 +510,7 @@ export default function ExploreDisplayPanelManager({
             </button>
           </>
         }
-        {showFiltering && panelToShow === 'CFF' && <FacetFilterPanel
+        {showFiltering && panelToShow === 'CFF' && clusterCanFilter && <FacetFilterPanel
           annotationList={annotationList}
           cluster={exploreParamsWithDefaults.cluster}
           shownAnnotation={shownAnnotation}

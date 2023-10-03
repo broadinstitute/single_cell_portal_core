@@ -12,12 +12,12 @@ class AnnotationVizService
   # - annot_name: string name of the annotation
   # - annot_type: string type (group or numeric)
   # - annot_scope: string scope (study, cluster, or user)
-  # - fallback: allow rescue to select first available annotation
+  # - fallback: allow rescue to select first available or default annotation
   # Returns:
   # - See populate_annotation_by_class for the object structure
   def self.get_selected_annotation(study, cluster: nil, annot_name: nil, annot_type: nil, annot_scope: nil, fallback: true)
     # construct object based on name, type & scope
-    if annot_name.blank?
+    if annot_name.blank? && fallback
       # get the default annotation
       default_annot = nil
       if annot_scope == 'study'

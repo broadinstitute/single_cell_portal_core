@@ -27,9 +27,10 @@ jest.mock('lib/cell-faceting', () => {
 })
 
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import * as UserProvider from '~/providers/UserProvider'
 import ExploreDisplayTabs, { getEnabledTabs } from 'components/explore/ExploreDisplayTabs'
+import ExploreDisplayPanelManager from '~/components/explore/ExploreDisplayPanelManager'
 import PlotTabs from 'components/explore/PlotTabs'
 import {
   exploreInfo as exploreInfoDe,
@@ -407,5 +408,27 @@ describe('explore tabs are activated based on study info and parameters', () => 
     ))
 
     expect(screen.getByTestId('cell-filtering-button')).toHaveTextContent('Cell filtering')
+  })
+
+  it('disables cell filtering button', async () => {
+    jest
+      .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
+      .mockReturnValue({
+        show_cell_facet_filtering: true
+      })
+
+    render(
+      <ExploreDisplayPanelManager
+        studyAccession={'SCP123'}
+        exploreParams={exploreParamsDe}
+        exploreParamsWithDefaults={exploreParamsDe}
+        exploreInfo={exploreInfoDe}
+        clusterCanFilter={false}
+        filterErrorText={'Cluster is not indexed'}
+        panelToShow={'default'}
+      />
+    )
+
+    expect(screen.getByTestId('cell facet filtering button')).toHaveTextContent('Filtering unavailable')
   })
 })

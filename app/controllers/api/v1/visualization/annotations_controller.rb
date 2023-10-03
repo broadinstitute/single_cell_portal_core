@@ -241,19 +241,24 @@ module Api
         def facets
           cluster = ClusterVizService.get_cluster_group(@study, params)
           if cluster.nil?
-            render json: { error: "Cannot find cluster: #{params[:cluster]}" }, status: :not_found and return
+            render json: { error: "Cannot find clustering: #{params[:cluster]}" }, status: :not_found and return
           end
 
           # need to check for presence as some clusters will not have them if cells were not found in all_cells_array
           unless cluster.indexed
-            render json: { error: 'Cluster is not indexed' }, status: :bad_request and return
+            render json: { error: 'Clustering is not indexed' }, status: :bad_request and return
           end
 
+          # annotation validation
           if params[:annotations].include?('--numeric--')
             render json: { error: 'Cannot use numeric annotations for facets' }, status: :bad_request and return
           end
 
           annotations = self.class.get_facet_annotations(@study, cluster, params[:annotations])
+          if annotations.empty? && params[:annotations].blank?
+            render json: { error: 'Must provide at least one annotation' }, status: :bad_request and return
+          end
+
           missing = self.class.find_missing_annotations(annotations, params[:annotations])
           if missing.any?
             render json: { error: "Cannot find annotations: #{missing.join(', ')}" }, status: :not_found and return
