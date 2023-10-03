@@ -241,12 +241,12 @@ module Api
         def facets
           cluster = ClusterVizService.get_cluster_group(@study, params)
           if cluster.nil?
-            render json: { error: "Cannot find cluster: #{params[:cluster]}" }, status: :not_found and return
+            render json: { error: "Cannot find clustering: #{params[:cluster]}" }, status: :not_found and return
           end
 
           # need to check for presence as some clusters will not have them if cells were not found in all_cells_array
           unless cluster.indexed
-            render json: { error: 'Cluster is not indexed' }, status: :bad_request and return
+            render json: { error: 'Clustering is not indexed' }, status: :bad_request and return
           end
 
           # annotation validation

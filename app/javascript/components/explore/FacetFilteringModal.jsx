@@ -24,7 +24,7 @@ export default function FacetFilteringModal() {
       onClick={() => setShowCellFacetModall(true)}
       data-analytics-name="cell-filtering-info-help-icon"
       data-toggle="tooltip"
-      data-original-title="Click to learn about cell filtering  "
+      data-original-title="Click to learn about cell filtering"
       className="cell-filtering-info-help-icon"
     >
       <FontAwesomeIcon className="action help-icon" icon={faInfoCircle} />

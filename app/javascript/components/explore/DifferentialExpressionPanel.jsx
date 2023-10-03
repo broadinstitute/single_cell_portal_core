@@ -8,6 +8,9 @@ import Button from 'react-bootstrap/lib/Button'
 
 import PagingControl from '~/components/search/results/PagingControl'
 import DifferentialExpressionFilters from './DifferentialExpressionFilters'
+import {
+  getCanonicalSize, getCanonicalSignificance
+} from '~/lib/validation/validate-differential-expression'
 import { contactUsLink } from '~/lib/error-utils'
 
 import {
@@ -178,10 +181,41 @@ function searchGenesFromTable(selectedGenes, searchGenes, logProps) {
   )
 }
 
+/** Get label and tooltip title for given significance metric */
+function getSignificanceAttrs(significanceMetric, isAuthorDe) {
+  // Get displayed label for DE table column header and filter slider
+  let label
+  const labelsBySignificance = {
+    'pvalAdj': `Adj. p-value`,
+    'qval': 'q-value'
+  }
+  if (significanceMetric in labelsBySignificance) {
+    label = labelsBySignificance[significanceMetric]
+  } else {
+    label = significanceMetric
+  }
+
+  // Get tooltip title shown upon hovering over significance DE column header
+  let tooltipTitle
+  const fdrCorrectionMethod = isAuthorDe ? '' : 'Benjamini-Hochberg '
+  const titlesBySignificance = {
+    'pvalAdj': `p-value adjusted with ${fdrCorrectionMethod}FDR correction`,
+    'qval': 'Expected positive false discovery rate'
+  }
+  if (significanceMetric in titlesBySignificance) {
+    tooltipTitle = titlesBySignificance[significanceMetric]
+  } else {
+    tooltipTitle = 'Significance metric provided by author'
+  }
+
+  return [label, tooltipTitle]
+}
+
 /** Table of DE data for genes */
 function DifferentialExpressionTable({
   genesToShow, searchGenes, clusterName, annotation, species, numRows,
-  bucketId, deFilePath, handleClear, isAuthorDe, deFacets,
+  bucketId, deFilePath, handleClear,
+  isAuthorDe, sizeMetric, significanceMetric,
   unfoundGenes, searchedGenes, setSearchedGenes
 }) {
   const defaultPagination = {
@@ -189,10 +223,9 @@ function DifferentialExpressionTable({
     pageSize: numRows
   }
 
-  const defaultPrimaryKey = !isAuthorDe ? 'pvalAdj' : 'qval'
   const defaultSorting = [
-    { id: defaultPrimaryKey, desc: false },
-    { id: 'log2FoldChange', desc: true }
+    { id: 'significance', desc: false },
+    { id: 'size', desc: true }
   ]
 
   const [rowSelection, setRowSelection] = useState({})
@@ -203,37 +236,25 @@ function DifferentialExpressionTable({
     species, clusterName, annotation
   }
 
-  const pvalAdjColumnHelper = columnHelper.accessor('pvalAdj', {
+  const [
+    significanceLabel,
+    significanceTooltip
+  ] = getSignificanceAttrs(significanceMetric, isAuthorDe)
+
+  const significanceColumnHelper = columnHelper.accessor('significance', {
     header: () => (
       <span
-        id="pval-adj-header"
+        id="significance-header"
         className="glossary"
         data-toggle="tooltip"
-        data-original-title="p-value adjusted with Benjamini-Hochberg FDR correction">
-        Adj. p-value
+        data-original-title={significanceTooltip}>
+        {significanceLabel}
       </span>
     ),
     cell: deGene => {
       return deGene.getValue()
     }
   })
-
-  const qvalColumnHelper = columnHelper.accessor('qval', {
-    header: () => (
-      <span
-        id="qval-header"
-        className="glossary"
-        data-toggle="tooltip"
-        data-original-title="Expected positive false discovery rate">
-        q-value
-      </span>
-    ),
-    cell: deGene => {
-      return deGene.getValue()
-    }
-  })
-
-  const significanceColumnHelper = !isAuthorDe ? pvalAdjColumnHelper : qvalColumnHelper
 
   const columns = React.useMemo(() => [
     columnHelper.accessor('name', {
@@ -264,10 +285,12 @@ function DifferentialExpressionTable({
         )
       }
     }),
-    columnHelper.accessor('log2FoldChange', {
+
+    // TODO (SCP-5352): Enable deeper customization for DE metric label, e.g. size
+    columnHelper.accessor('size', {
       header: () => (
         <span
-          id="log2-fold-change-header"
+          id="size-header"
           className="glossary"
           data-toggle="tooltip"
           data-original-title="Log (base 2) of fold change">
@@ -592,7 +615,7 @@ function UnfoundGenesContainer({ unfoundGenes, searchedGenes, setSearchedGenes }
 export default function DifferentialExpressionPanel({
   deGroup, deGenes, searchGenes,
   exploreInfo, exploreParamsWithDefaults, setShowDeGroupPicker, setDeGenes, setDeGroup,
-  countsByLabel, hasOneVsRestDe, hasPairwiseDe, isAuthorDe, deGroupB, setDeGroupB, numRows=50
+  countsByLabel, hasOneVsRestDe, hasPairwiseDe, isAuthorDe, deHeaders, deGroupB, setDeGroupB, numRows=50
 }) {
   const clusterName = exploreParamsWithDefaults?.cluster
   const bucketId = exploreInfo?.bucketId
@@ -602,12 +625,16 @@ export default function DifferentialExpressionPanel({
   const delayedDETableLogTimeout = useRef(null)
 
   const defaultDeFacets = {
-    'log2FoldChange': [{ min: -Infinity, max: 0.26 }, { min: 0.26, max: Infinity }]
+    'size': [{ min: -Infinity, max: 0.26 }, { min: 0.26, max: Infinity }]
   }
-  const fdrMetric = !isAuthorDe ? 'pvalAdj' : 'qval'
-  defaultDeFacets[fdrMetric] = [{ min: 0, max: 0.05 }]
-  const defaultActiveFacets = { 'log2FoldChange': true }
-  defaultActiveFacets[fdrMetric] = true
+
+  const sizeMetric = getCanonicalSize(deHeaders.size)
+  let significanceMetric = 'pvalAdj'
+  if (isAuthorDe) {
+    significanceMetric = getCanonicalSignificance(deHeaders.significance)
+  }
+  defaultDeFacets['significance'] = [{ min: 0, max: 0.05 }]
+  const defaultActiveFacets = { 'size': true, 'significance': true }
   const [deFacets, setDeFacets] = useState(defaultDeFacets)
   const [activeFacets, setActiveFacets] = useState(defaultActiveFacets)
 
@@ -721,6 +748,8 @@ export default function DifferentialExpressionPanel({
           deObjects={deObjects}
           setDeFilePath={setDeFilePath}
           isAuthorDe={isAuthorDe}
+          sizeMetric={sizeMetric}
+          significanceMetric={significanceMetric}
         />
       }
       {hasPairwiseDe &&
@@ -739,6 +768,8 @@ export default function DifferentialExpressionPanel({
           deGroupB={deGroupB}
           setDeGroupB={setDeGroupB}
           hasOneVsRestDe={hasOneVsRestDe}
+          sizeMetric={sizeMetric}
+          significanceMetric={significanceMetric}
         />
       }
 
@@ -753,7 +784,9 @@ export default function DifferentialExpressionPanel({
           activeFacets={activeFacets}
           updateDeFacets={updateDeFacets}
           toggleDeFacet={toggleDeFacet}
-          isAuthorDe={isAuthorDe}
+          hasPairwiseDe={hasPairwiseDe}
+          sizeMetric={sizeMetric}
+          significanceMetric={significanceMetric}
         />
         <div className="de-search-box">
           <span className="de-search-icon">
@@ -801,6 +834,8 @@ export default function DifferentialExpressionPanel({
           deFilePath={deFilePath}
           handleClear={handleClear}
           isAuthorDe={hasPairwiseDe}
+          sizeMetric={sizeMetric}
+          significanceMetric={significanceMetric}
           deFacets={deFacets}
           unfoundGenes={unfoundGenes}
           searchedGenes={searchedGenes}

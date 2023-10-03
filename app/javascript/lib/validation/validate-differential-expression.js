@@ -8,6 +8,18 @@ function getSize(metric) {
   return size
 }
 
+
+/** Try to canonicalize a raw size metric header from author DE file */
+export function getCanonicalSize(sizeMetric) {
+  // Scanpy: logfoldchanges; Seurat: avg_log2FC
+  const size = getSize(sizeMetric)
+  if (size) {
+    return 'log2FoldChange'
+  } else {
+    return sizeMetric
+  }
+}
+
 // Start of significance parsers
 
 /** Get "adjusted p-value"-like metric */
@@ -80,6 +92,27 @@ function getSignificance(metric) {
     }
   }
 }
+
+/** Try to canonicalize a raw significance metric header from author DE file */
+export function getCanonicalSignificance(significanceMetric) {
+  const pvalAdj = getPvalAdj(significanceMetric)
+  if (pvalAdj) {
+    return 'pvalAdj'
+  } else {
+    const pval = getPval(significanceMetric)
+    if (pval) {
+      return 'pval'
+    } else {
+      const qval = getQval(significanceMetric)
+      if (qval) {
+        return 'qval'
+      } else {
+        return significanceMetric
+      }
+    }
+  }
+}
+
 // End of significance parsers
 
 
