@@ -23,7 +23,8 @@ export default defineConfig({
       'org': 'broad-institute',
       'project': 'single-cell-portal',
       'authToken': process.env.SENTRY_AUTH_TOKEN,
-      'telemetry': false
+      'telemetry': false,
+      'disable': true
     })
   ],
   'build': {

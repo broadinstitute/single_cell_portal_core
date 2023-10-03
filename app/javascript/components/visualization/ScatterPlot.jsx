@@ -321,10 +321,16 @@ function RawScatterPlot({
 
   /** Process scatter plot data fetched from server */
   function processScatterPlot(clusterResponse=null, filteredCells) {
+    console.log('in processScatterPlot, 1')
+    console.log('in processScatterPlot, clusterResponse, filteredCells')
+    console.log(clusterResponse)
+    console.log(filteredCells)
     let [scatter, perfTimes] =
       (clusterResponse ? clusterResponse : [scatterData, null])
+    console.log('in processScatterPlot, 2')
     scatter = updateScatterLayout(scatter)
     const layout = scatter.layout
+    console.log('in processScatterPlot, 3')
 
     if (filteredCells) {
       const originalData = scatter.data
@@ -332,7 +338,11 @@ function RawScatterPlot({
       scatter.data = reassignFilteredCells(plottedIndexes, originalData, intersected)
     }
 
+    console.log('in processScatterPlot, 4')
+
     const plotlyTraces = updateCountsAndGetTraces(scatter)
+
+    console.log('in processScatterPlot, 5')
 
     const startTime = performance.now()
 
@@ -344,6 +354,8 @@ function RawScatterPlot({
     } else {
       Plotly.react(graphElementId, plotlyTraces, layout)
     }
+
+    console.log('in processScatterPlot, 6')
 
     if (perfTimes) {
       perfTimes.plot = performance.now() - startTime
@@ -366,18 +378,28 @@ function RawScatterPlot({
       })
     }
 
+    console.log('in processScatterPlot, 7')
+
     scatter.hasArrayLabels =
       scatter.annotParams.type === 'group' && scatter.data.annotations.some(annot => annot.includes('|'))
+
+
+    console.log('in processScatterPlot, 8')
 
     if (clusterResponse) {
       concludeRender(scatter)
     }
+
+    console.log('in processScatterPlot, 9')
   }
 
   // Fetches plot data then draws it, upon load or change of any data parameter
   useEffect(() => {
+    console.log('in processScatterPlot useEffect, A')
+
     /** retrieve and process data */
     async function fetchData() {
+      console.log('in processScatterPlot useEffect fetchData, !')
       setIsLoading(true)
 
       let expressionArray
@@ -427,6 +449,7 @@ function RawScatterPlot({
           // Add imageCacheHit boolean to perfTime object here
         })
       } else {
+        console.log('in processScatterPlot useEffect fetchData, else')
         try {
           // attempt to fetch the data, this will use the cache if available
           const respData1 = await fetchMethod({
@@ -440,10 +463,20 @@ function RawScatterPlot({
             isCorrelatedScatter,
             expressionArray
           })
+
+          console.log('respData1')
+          console.log(respData1)
+          console.log('respData1[0]?.data')
+          console.log(respData1[0]?.data)
+
+          console.log('in processScatterPlot useEffect fetchData, else after fetch')
           // check that the data contains annotations needed for processing scatterplot
           if (respData1[0]?.data?.annotations?.length) {
+            console.log('respData1[0]?.data?.annotations?.length, respData')
+            console.log(respData1)
             processScatterPlot(respData1, filteredCells)
           } else {
+            console.log('before fetchCluster, in else for respData1[0]?.data?.annotations?.length')
             // if the data was missing the necessary info, make an api call
             const respData = await fetchCluster({
               studyAccession,
@@ -926,6 +959,9 @@ ScatterPlot.getPlotlyTraces = getPlotlyTraces
 
 /** Intersect filtered cells with dataArrays results */
 export function intersect(filteredCells, scatter) {
+  console.log('in intersect, filteredCells, scatter')
+  console.log(filteredCells)
+  console.log(scatter)
   const intersectedData = {}
   const dataArrays = scatter.data
   const keys = Object.keys(dataArrays)
@@ -946,6 +982,7 @@ export function intersect(filteredCells, scatter) {
       intersectedData[key].push(filteredElement)
     }
   }
+  console.log('exiting intersect')
   return [intersectedData, plotted]
 }
 
@@ -963,11 +1000,10 @@ ScatterPlot.intersect = intersect
 export function reassignFilteredCells(plotted, originalData, filteredData) {
   const reassignedIndices = []
   const plottedSet = new Set(plotted)
-  for (let i = 0;  i < originalData['x'].length; i++)
-    if (!plottedSet.has(i)) reassignedIndices.push(i)
+  for (let i = 0; i < originalData['x'].length; i++) {if (!plottedSet.has(i)) {reassignedIndices.push(i)}}
   const newPlotData = {}
   const keys = Object.keys(originalData)
-  keys.forEach(key =>  {
+  keys.forEach(key => {
     newPlotData[key] = []
   })
   for (let idx = 0; idx < reassignedIndices.length; idx++) {
