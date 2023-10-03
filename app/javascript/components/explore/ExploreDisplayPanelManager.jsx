@@ -176,8 +176,6 @@ export default function ExploreDisplayPanelManager({
   const [, setRenderForcer] = useState({})
   const [dataCache] = useState(createCache())
 
-  window.dataCache = dataCache
-
   const [deGroupB, setDeGroupB] = useState(null)
   const [deGroup, setDeGroup] = useState(null)
 
@@ -244,7 +242,6 @@ export default function ExploreDisplayPanelManager({
   function updateClusterParams(newParams) {
     if (newParams.cluster && !newParams.spatialGroups) {
       newParams.spatialGroups = getDefaultSpatialGroupsForCluster(newParams.cluster, exploreInfo.spatialGroups)
-      console.log('in updateClusterParams, clearing data cache')
       dataCache.clear()
     }
 
