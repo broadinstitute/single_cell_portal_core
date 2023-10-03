@@ -78,20 +78,19 @@ const Fields = {
       const key = getAnnotationKey(annotationName, annotationScope)
       return entry.annotations[key]
     },
-    putInEntry: (entry, annotationName, annotationScope, annotations) => {
+    putInEntry: (entry, annotationName, annotationScope, annotations, annotParams) => {
       const key = getAnnotationKey(annotationName, annotationScope)
-      // we only cache one annotation at a time, so for now, delete any others
-      entry.annotations = {}
-      entry.annotations[key] = annotations
+      entry.annotations[key] = { annotations, annotParams }
     },
     addFieldsOrPromise: (entry, fields, promises, annotationName, annotationScope) => {
-      const cachedAnnotation = Fields.annotation.getFromEntry(entry, annotationName, annotationScope)
+      const annotsEntry = Fields.annotation.getFromEntry(entry, annotationName, annotationScope)
+      const cachedAnnotation = annotsEntry?.annotations
       if (!cachedAnnotation || annotationScope === 'user') {
         // because the requested name (the guid) for user annotations won't match the returned name
         // (the annotation's actual name), we don't cache user annotation values
         fields.push('annotation')
       } else if (cachedAnnotation.then && !promises.includes(cachedAnnotation)) {
-        promises.push(cachedAnnotation)
+        promises.push([cachedAnnotation, annotsEntry.annotParams])
       }
     },
     merge: (entry, scatter) => {
@@ -99,11 +98,14 @@ const Fields = {
         Fields.annotation.putInEntry(entry,
           scatter.annotParams.name,
           scatter.annotParams.scope,
-          scatter.data.annotations)
+          scatter.data.annotations,
+          scatter.annotParams)
       } else {
-        scatter.data.annotations = Fields.annotation.getFromEntry(entry,
+        const annotsEntry = Fields.annotation.getFromEntry(entry,
           scatter.annotParams.name,
           scatter.annotParams.scope)
+
+        scatter.data.annotations = annotsEntry.annotations
       }
     }
   },
@@ -201,7 +203,7 @@ export function createCache() {
           consensus,
           cluster,
           subsample,
-          annotParams: annotation,
+          // annotParams: annotation,
           data: { expression: expressionArray },
           allDataFromCache: true // set a flag indicating that no fresh request to the server was needed
         }, {
@@ -222,7 +224,7 @@ export function createCache() {
           consensus,
           cluster,
           subsample,
-          annotParams: annotation,
+          // annotParams: annotation,
           data: {},
           allDataFromCache: true // set a flag indicating that no fresh request to the server was needed
         }, {
@@ -269,13 +271,19 @@ export function createCache() {
       // got back the actual cluster name), also cache the response under the requested name
       cache._putEntry(accession, requestedCluster, requestedSubsample, cacheEntry)
     }
+
+
     if (scatter.allDataFromCache) {
       // we need the response cluster/subsample to mimic what actually came from the server for the graphs
       // to render correctly
-      scatter.annotParams = cacheEntry.clusterProps.annotParams
-      scatter.cluster = cacheEntry.clusterProps.cluster
-      scatter.subsample = cacheEntry.clusterProps.subsample
+      const clusterProps = cacheEntry.clusterProps
+      const annotCacheKey = getAnnotationKey(requestedAnnotation.name, requestedAnnotation.scope)
+      scatter.annotParams = cacheEntry.annotations[annotCacheKey].annotParams
+      scatter.cluster = clusterProps.cluster
+      scatter.subsample = clusterProps.subsample
     }
+
+
     Fields.clusterProps.merge(cacheEntry, scatter)
     Fields.cellsAndCoords.merge(cacheEntry, scatter)
     // only merge in annotation values if the annotation matches (or the default was requested, so
@@ -286,6 +294,7 @@ export function createCache() {
     if (scatter.genes.length && scatter.genes.join('') === requestedGenes.join('')) {
       Fields.expression.merge(cacheEntry, scatter)
     }
+
     return clusterResponse
   }
 
