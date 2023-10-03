@@ -112,7 +112,6 @@ export function FacetFilterPanel({
 
 
     setOptions(initialFiveFacets.map(facet => {
-      console.log('facet.annotation', facet.annotation)
       return { value: facet, label: facet.annotation.split('--')[0] }
     }))
 

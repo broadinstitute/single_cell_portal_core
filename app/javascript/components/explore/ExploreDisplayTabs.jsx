@@ -165,7 +165,7 @@ export default function ExploreDisplayTabs({
 
   /** wrapper function with error handling/state setting for retrieving cell facet data */
   function getCellFacetingData(cluster, annotation) {
-    const showCellFiltering = true // getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
+    const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
     if (showCellFiltering) {
       const allAnnots = exploreInfo?.annotationList.annotations
       if (allAnnots && allAnnots.length > 0) {
