@@ -190,7 +190,7 @@ export default function ScatterPlotLegend({
   updateHiddenTraces, customColors, editedCustomColors, setEditedCustomColors, setCustomColors,
   enableColorPicking=false, activeTraceLabel, setActiveTraceLabel,
   isSplitLabelArrays, updateIsSplitLabelArrays, hasArrayLabels,
-  externalLink, saveCustomColors, originalLabels, setOriginalLabels
+  externalLink, saveCustomColors, originalLabels
 }) {
   // is the user currently in color-editing mode
   const [showColorControls, setShowColorControls] = useState(false)
@@ -242,15 +242,19 @@ export default function ScatterPlotLegend({
     log('hover:scatterlegend', { numLabels })
   }
 
+  // defermine what position from colorBrewerList maps to a given label
+  // takes into account whether items have been filtered out via cell filtering
+  function getColorIndex(label, index) {
+    if (originalLabels.length > 0) {
+      return [...originalLabels].sort(PlotUtils.labelSort).indexOf(label)
+    } else {
+      return index
+    }
+  }
+
   /** create mapping of labels and colors of full label list (used for filtered legends) */
   const fullLabelsMappedToColor = labels.map((label, i) => {
-    let colorIndex
-    if (originalLabels.length > 0) {
-      console.log(`original labels present`)
-      colorIndex = [...originalLabels].sort(PlotUtils.labelSort).indexOf(label)
-    } else {
-      colorIndex = i
-    }
+    const colorIndex = getColorIndex(label, i)
     const iconColor = getColorForLabel(label, customColors, editedCustomColors, colorIndex)
     return { label, iconColor }
   })
@@ -405,9 +409,10 @@ export default function ScatterPlotLegend({
         </div>}
         {labelsToShow.map((label, i) => {
           const numPoints = countsByLabel[label]
+          const colorIndex = getColorIndex(label, i)
           const iconColor = showLegendSearch ?
             getColorForLabelIcon(label) :
-            getColorForLabel(label, customColors, editedCustomColors, i)
+            getColorForLabel(label, customColors, editedCustomColors, colorIndex)
           return (
             <LegendEntry
               key={label}

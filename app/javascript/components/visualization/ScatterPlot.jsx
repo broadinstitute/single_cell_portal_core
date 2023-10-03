@@ -47,7 +47,7 @@ function RawScatterPlot({
   isAnnotatedScatter=false, isCorrelatedScatter=false, isCellSelecting=false, plotPointsSelected, dataCache,
   canEdit, bucketId, expressionFilter=[0, 1],
   countsByLabel, setCountsByLabel, hiddenTraces=[], isSplitLabelArrays, updateExploreParams,
-  filteredCells, originalLabels, setOriginalLabels
+  filteredCells
 }) {
   const [isLoading, setIsLoading] = useState(false)
   const [bulkCorrelation, setBulkCorrelation] = useState(null)
@@ -62,6 +62,7 @@ function RawScatterPlot({
   const [customColors, setCustomColors] = useState({})
 
   const isRefGroup = getIsRefGroup(scatterData?.annotParams?.type, genes, isCorrelatedScatter)
+  const [originalLabels, setOriginalLabels] = useState([])
 
   const flags = getFeatureFlagsWithDefaults()
 
@@ -332,6 +333,8 @@ function RawScatterPlot({
       const originalData = scatter.data
       const [intersected, plottedIndexes] = intersect(filteredCells, scatter)
       scatter.data = reassignFilteredCells(plottedIndexes, originalData, intersected, annotIsNumeric, setOriginalLabels)
+    } else {
+      setOriginalLabels(getPlottedLabels(scatter.data))
     }
 
     const plotlyTraces = updateCountsAndGetTraces(scatter)
@@ -598,7 +601,6 @@ function RawScatterPlot({
             updateIsSplitLabelArrays={updateIsSplitLabelArrays}
             externalLink={scatterData.externalLink}
             originalLabels={originalLabels}
-            setOriginalLabels={setOriginalLabels}
           />
         }
       </div>
@@ -970,10 +972,12 @@ ScatterPlot.intersect = intersect
  * @param originalData {Object} original scatter data object
  * @param filteredData {Object} filtered scatter data object from cell faceting
  * @param annotIsNumeric {Boolean} T/F whether plotted annotation is numeric
- * @params setOriginalLabels {Function} function to set values for original labels to maintain color assignments
+ * @param setOriginalLabels {function} function to store original annotation labels for color persistence
  * @returns {Object} reorganized scatter data object with new --Filtered-- trace
  */
-export function reassignFilteredCells(plotted, originalData, filteredData, annotIsNumeric, setOriginalLabels) {
+export function reassignFilteredCells(
+  plotted, originalData, filteredData, annotIsNumeric, setOriginalLabels
+) {
   const reassignedIndices = []
   const plottedSet = new Set(plotted)
   for (let i = 0;  i < originalData['x'].length; i++)
@@ -985,7 +989,7 @@ export function reassignFilteredCells(plotted, originalData, filteredData, annot
   })
   if (!annotIsNumeric) {
     // store array of original labels for maintaining color assignments later
-    setOriginalLabels([...new Set(originalData.annotations)])
+    setOriginalLabels(getPlottedLabels(originalData))
   }
   for (let idx = 0; idx < reassignedIndices.length; idx++) {
     for (let k = 0; k < keys.length; k++) {
@@ -1009,3 +1013,10 @@ export function reassignFilteredCells(plotted, originalData, filteredData, annot
 }
 
 ScatterPlot.reassignFilteredCells = reassignFilteredCells
+
+// store array of unique plotted labels for maintaining color assigments
+export function getPlottedLabels(scatterData) {
+  return scatterData?.annotations ? [...new Set(scatterData.annotations)] : []
+}
+
+ScatterPlot.getPlottedLabels = getPlottedLabels

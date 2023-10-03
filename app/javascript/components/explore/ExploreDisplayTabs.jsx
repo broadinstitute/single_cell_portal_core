@@ -103,7 +103,6 @@ export default function ExploreDisplayTabs({
 
   const [cellFaceting, setCellFaceting] = useState(null)
   const [filteredCells, setFilteredCells] = useState(null)
-  const [originalLabels, setOriginalLabels] = useState([])
 
   // Hash of trace label names to the number of points in that trace
   const [countsByLabel, setCountsByLabel] = useState(null)
@@ -368,9 +367,7 @@ export default function ExploreDisplayTabs({
                     countsByLabel,
                     setCountsByLabel,
                     dataCache,
-                    filteredCells,
-                    originalLabels,
-                    setOriginalLabels
+                    filteredCells
                   }}/>
               </div>
             }
