@@ -72,6 +72,33 @@ function getHasComparisonDe(exploreInfo, exploreParams, comparison) {
   return hasComparisonDe
 }
 
+/** Determine if current annotation has one-vs-rest or pairwise DE */
+function getDeHeaders(exploreInfo, exploreParams) {
+  const flags = getFeatureFlagsWithDefaults()
+  if (!flags?.differential_expression_frontend || !exploreInfo) {return false}
+
+  const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
+
+  const deObject = exploreInfo.differentialExpression.find(deItem => {
+    return (
+      deItem.cluster_name === selectedCluster &&
+      deItem.annotation_name === selectedAnnot.name &&
+      deItem.annotation_scope === selectedAnnot.scope
+    )
+  })
+
+  if (deObject) {
+    const headers = deObject.select_options.headers
+    if (headers.size === null) {
+      headers.size = 'logfoldchanges'
+      headers.significance = 'pvals_adj'
+    }
+    return headers
+  } else {
+    return null
+  }
+}
+
 /** Return list of annotations that have differential expression enabled */
 function getAnnotationsWithDE(exploreInfo) {
   if (!exploreInfo) {return false}
@@ -181,6 +208,7 @@ export default function ExploreDisplayPanelManager({
 
   const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
 
+
   // Differential expression settings
   const flags = getFeatureFlagsWithDefaults()
   // `differential_expression_frontend` enables exemptions if study owners don't want DE
@@ -189,6 +217,7 @@ export default function ExploreDisplayPanelManager({
   const clusterHasDe = getClusterHasDe(exploreInfo, exploreParams)
   const hasOneVsRestDe = getHasComparisonDe(exploreInfo, exploreParams, 'one_vs_rest')
   const hasPairwiseDe = getHasComparisonDe(exploreInfo, exploreParams, 'pairwise')
+  const deHeaders = getDeHeaders(exploreInfo, exploreParams)
   const isAuthorDe = getIsAuthorDe(exploreInfo, exploreParams)
 
   // exploreParams object without genes specified, to pass to cluster comparison plots
@@ -510,6 +539,7 @@ export default function ExploreDisplayPanelManager({
               hasOneVsRestDe={hasOneVsRestDe}
               hasPairwiseDe={hasPairwiseDe}
               isAuthorDe={isAuthorDe}
+              deHeaders={deHeaders}
               deGroupB={deGroupB}
               setDeGroupB={setDeGroupB}
               countsByLabel={countsByLabel}

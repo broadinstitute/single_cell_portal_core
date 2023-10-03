@@ -5,6 +5,13 @@ export const deObjects = [
     'annotation_scope': 'study',
     'select_options': {
       'is_author_de': true,
+      'headers': {
+        'gene': 'name',
+        'group': 'group',
+        'comparison_group': 'comparison_group',
+        'size': 'log2FoldChange',
+        'significance': 'pvalAdj'
+      },
       'one_vs_rest': [
         [
           'B cells',
@@ -273,6 +280,13 @@ export const deObjects = [
     'annotation_scope': 'study',
     'select_options': {
       'is_author_de': false,
+      'headers': {
+        'gene': 'name',
+        'group': 'group',
+        'comparison_group': 'comparison_group',
+        'size': 'logfoldchange',
+        'significance': 'pval_adj'
+      },
       'one_vs_rest': [
         [
           'epithelial cell',
@@ -1004,6 +1018,13 @@ export const exploreInfo = {
       'annotation_scope': 'study',
       'select_options': {
         'is_author_de': true,
+        'headers': {
+          'gene': 'name',
+          'group': 'group',
+          'comparison_group': 'comparison_group',
+          'size': 'logfoldchange',
+          'significance': 'pval_adj'
+        },
         'one_vs_rest': [
           [
             'B cells',
@@ -1272,6 +1293,13 @@ export const exploreInfo = {
       'annotation_scope': 'study',
       'select_options': {
         'is_author_de': false,
+        'headers': {
+          'gene': 'name',
+          'group': 'group',
+          'comparison_group': 'comparison_group',
+          'size': 'logfoldchange',
+          'significance': 'pval_adj'
+        },
         'one_vs_rest': [
           [
             'epithelial cell',

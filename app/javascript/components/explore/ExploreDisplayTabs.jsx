@@ -178,7 +178,7 @@ export default function ExploreDisplayTabs({
         }).catch(error => {
           // NOTE: these 'errors' are in fact handled corner cases where faceting data isn't present for various reasons
           // as such, they don't need to be reported to Sentry/Mixpanel, only conveyed to the user
-          // example: 400 (Bad Request): Cluster is not indexed, Cannot use numeric annotations for facets, or
+          // example: 400 (Bad Request): Clustering is not indexed, Cannot use numeric annotations for facets, or
           // 404 (Not Found) Cluster not found
           // see app/controllers/api/v1/visualization/annotations_controller.rb#facets for more information
           setClusterCanFilter(false)
@@ -489,35 +489,35 @@ export default function ExploreDisplayTabs({
         }
         <div className={getPanelWidths().side}>
           <ExploreDisplayPanelManager
-            studyAccession = {studyAccession}
+            studyAccession={studyAccession}
             exploreInfo={exploreInfo}
-            setExploreInfo = {setExploreInfo}
-            exploreParams= {exploreParams}
-            updateExploreParams = {updateExploreParams}
-            clearExploreParams = {clearExploreParams}
+            setExploreInfo={setExploreInfo}
+            exploreParams={exploreParams}
+            updateExploreParams={updateExploreParams}
+            clearExploreParams={clearExploreParams}
             exploreParamsWithDefaults={exploreParamsWithDefaults}
-            routerLocation = {routerLocation}
+            routerLocation={routerLocation}
             searchGenes={searchGenes}
             countsByLabel={countsByLabel}
             setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
-            showDifferentialExpressionPanel = {showDifferentialExpressionPanel}
-            setShowDifferentialExpressionPanel = {setShowDifferentialExpressionPanel}
-            showUpstreamDifferentialExpressionPanel = {showUpstreamDifferentialExpressionPanel}
+            showDifferentialExpressionPanel={showDifferentialExpressionPanel}
+            setShowDifferentialExpressionPanel={setShowDifferentialExpressionPanel}
+            showUpstreamDifferentialExpressionPanel={showUpstreamDifferentialExpressionPanel}
             togglePanel={togglePanel}
-            shownTab = {shownTab}
-            setIsCellSelecting = {setIsCellSelecting}
-            currentPointsSelected = {currentPointsSelected}
-            isCellSelecting = {isCellSelecting}
+            shownTab={shownTab}
+            setIsCellSelecting={setIsCellSelecting}
+            currentPointsSelected={currentPointsSelected}
+            isCellSelecting={isCellSelecting}
             deGenes={deGenes}
             setDeGenes={setDeGenes}
             setShowDeGroupPicker={setShowDeGroupPicker}
-            cellFaceting = {cellFaceting}
-            setCellFaceting = {setCellFaceting}
-            clusterCanFilter = {clusterCanFilter}
-            filterErrorText = {filterErrorText}
-            updateFilteredCells = {updateFilteredCells}
-            panelToShow ={panelToShow}
-            toggleViewOptions= {toggleViewOptions}
+            cellFaceting={cellFaceting}
+            setCellFaceting={setCellFaceting}
+            clusterCanFilter={clusterCanFilter}
+            filterErrorText ={filterErrorText}
+            updateFilteredCells={updateFilteredCells}
+            panelToShow={panelToShow}
+            toggleViewOptions={toggleViewOptions}
           />
         </div>
       </div>
