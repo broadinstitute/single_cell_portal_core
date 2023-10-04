@@ -18,6 +18,7 @@ import {
   getParsedHeaderLines, parseLine, ParseException,
   validateUniqueCellNamesWithinFile, validateMetadataLabelMatches, validateGroupColumnCounts, timeOutCSFV
 } from './shared-validation'
+import { parseDifferentialExpressionFile } from './validate-differential-expression'
 
 // from lib/assets/metadata_schemas/alexandria_convention_schema.json
 // (which in turn is from scp-ingest-pipeline/schemas)
@@ -316,6 +317,7 @@ export async function parseClusterFile(chunker, mimeType) {
   return { issues, delimiter, numColumns: headers[0].length }
 }
 
+
 /** confirm that the presence/absence of a .gz suffix matches the lead byte of the file
  * Throws an exception if the gzip is conflicted, since we don't want to parse further in that case
 */
@@ -395,7 +397,8 @@ async function parseFile(file, fileType, fileOptions={}, sizeProps={}) {
       'Expression Matrix': parseDenseMatrixFile,
       '10X Genes File': parseFeaturesFile,
       '10X Barcodes File': parseBarcodesFile,
-      'MM Coordinate Matrix': parseSparseMatrixFile
+      'MM Coordinate Matrix': parseSparseMatrixFile,
+      'Differential Expression': parseDifferentialExpressionFile
     }
 
     if (parseFunctions[fileType]) {
@@ -410,12 +413,13 @@ async function parseFile(file, fileType, fileOptions={}, sizeProps={}) {
       }
       const chunker = new ChunkedLineReader(file, ignoreLastLine, fileInfo.isGzipped)
 
-      const { issues, delimiter, numColumns } =
+      const { issues, delimiter, numColumns, notes } =
         await parseFunctions[fileType](chunker, fileInfo.fileMimeType, fileOptions)
       fileInfo.linesRead = chunker.linesRead
       fileInfo.delimiter = delimiter
       fileInfo.numColumns = numColumns
       parseResult.issues = parseResult.issues.concat(issues)
+      parseResult.notes = notes
 
       if (fileInfo.isGzipped && fileInfo.linesRead === GZIP_MAX_LINES + 1) {
         const msg =
@@ -440,11 +444,13 @@ async function parseFile(file, fileType, fileOptions={}, sizeProps={}) {
   const perfTime = Math.round(performance.now() - startTime)
 
   const issues = parseResult.issues
+  const notes = parseResult.notes
 
   return {
     fileInfo,
     issues,
-    perfTime
+    perfTime,
+    notes
   }
 }
 

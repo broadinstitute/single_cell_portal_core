@@ -6,10 +6,10 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 
 import Select from '~/lib/InstrumentedSelect'
+import LoadingSpinner from '~/lib/LoadingSpinner'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
 import { initCellFaceting } from '~/lib/cell-faceting'
 import { getSelectedClusterAndAnnot } from '~/components/explore/ExploreDisplayTabs'
-import { v4 } from 'uuid'
 
 /** Top content for cell facet filtering panel shown at right in Explore tab */
 export function FacetFilterPanelHeader({
@@ -17,14 +17,14 @@ export function FacetFilterPanelHeader({
 }) {
   return (
     <>
-      <span> Cell facet filtering </span>
-      <button className="action fa-lg de-exit-panel"
+      <span> Cell filtering </span>
+      <button className="action fa-lg cell-filtering-exit-panel"
         onClick={() => {
           updateFilteredCells({})
-          togglePanel('default')
+          togglePanel('options')
         }}
-        title="Exit cell facet filter panel"
-        data-analytics-name="-facet-filter-panel-exit">
+        title="Back to options panel"
+        data-analytics-name="cell-filtering-panel-exit">
         <FontAwesomeIcon icon={faArrowLeft}/>
       </button>
     </>
@@ -38,30 +38,37 @@ export function FacetFilterPanel({
   shownAnnotation,
   updateClusterParams,
   cellFaceting,
-  updateFilteredCells,
-  exploreParams,
-  exploreInfo,
-  setCellFaceting,
-  studyAccession
+  updateFilteredCells
 }) {
-  const [initialFivefacets, setInitialFiveFacets] = useState(cellFaceting?.facets)
+  if (!cellFaceting) {
+    const loadingTextStyle = { position: 'absolute', top: '50%', left: '30%' }
+    return (
+      <div>
+        <LoadingSpinner className="fa-lg"/>
+        <span style={loadingTextStyle}>Loading cell filters...</span>
+      </div>
+    )
+  }
+
+  const [initialFiveFacets, setinitialFiveFacets] = useState(cellFaceting?.facets)
   const [checkedMap, setCheckedMap] = useState({})
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const [shownFacets, setShownFacets] = useState()
   const [options, setOptions] = useState()
 
   /** create the checklist for filtering the facet */
-  const createFacetFilterCheckList = singleCellFaceting => {
+  function createFacetFilterCheckList(singleCellFaceting) {
     // only create the checklist if the facet exists
     if (Object.keys(singleCellFaceting).length !== 0
     ) {
       // grab the show facet names to filter the select options so there won't be duplicates
       const facetNames = shownFacets.map(facet => {return facet.annotation.split('--')[0]})
+      const otherMenuOptions = options.filter(opt => !facetNames.includes(opt.label))
       return <div key={singleCellFaceting.annotation}>
         <div>
           <Select
             name={singleCellFaceting.annotation}
-            options={options.filter(opt => {return !facetNames.includes(opt.label)})}
+            options={otherMenuOptions}
             data-analytics-name="annotation-select"
             value={options.find(opt => opt.value.annotation === singleCellFaceting.annotation)}
             onChange={(newAnnotation, event) => {
@@ -70,17 +77,21 @@ export function FacetFilterPanel({
           />
         </div>
         {singleCellFaceting.groups.map((item, index) => (
-          <div style={{ marginLeft: '5px' }} key={v4()}>
-            <input checked={isChecked(singleCellFaceting.annotation, item)}
-              value={item}
-              type="checkbox"
-              name={`${singleCellFaceting.annotation}:${item}`}
-              onChange={event => {
-                handleCheck(event)
-                updateFilteredCells(checkedMap)
-              }}
-            />
-            <span style={{ marginLeft: '4px' }} >{item}</span>
+          <div style={{ marginLeft: '5px' }} key={index}>
+            <label style={{ fontWeight: 'normal' }}>
+              <input
+                type="checkbox"
+                checked={isChecked(singleCellFaceting.annotation, item)}
+                value={item}
+                name={`${singleCellFaceting.annotation}:${item}`}
+                onChange={event => {
+                  handleCheck(event)
+                  updateFilteredCells(checkedMap)
+                }}
+                style={{ marginRight: '5px' }}
+              />
+              {item}
+            </label>
           </div>
         ))}
       </div>
@@ -88,28 +99,29 @@ export function FacetFilterPanel({
   }
 
   /** used to populate the checkedMap for the initial facets shown */
-  const populateCheckedMap = () => {
+  function populateCheckedMap() {
     const tempCheckedMap = {}
 
     // only initalize up to three facets for now
-    const numFacets = initialFivefacets.length > 2 ? 3 : initialFivefacets.length
+    const numFacets = initialFiveFacets.length > 2 ? 3 : initialFiveFacets.length
     for (let i = 0; i < numFacets; i++) {
-      tempCheckedMap[initialFivefacets[i].annotation] = initialFivefacets[i].groups
+      tempCheckedMap[initialFiveFacets[i].annotation] = initialFiveFacets[i].groups
     }
 
     setCheckedMap(tempCheckedMap)
 
-    setOptions(initialFivefacets.map(facet => {
+
+    setOptions(initialFiveFacets.map(facet => {
       return { value: facet, label: facet.annotation.split('--')[0] }
     }))
 
     // set the shownFacets with the same facets as the checkedMap starts with
-    setShownFacets(initialFivefacets.slice(0, numFacets))
+    setShownFacets(initialFiveFacets.slice(0, numFacets))
   }
 
 
   /** Update the checkedMap state that is used for setting up the filtering checkboxes */
-  const updateCheckedMap = (newSingleCellFaceting, event) => {
+  function updateCheckedMap(newSingleCellFaceting, event) {
     const tempCheckedMap = { ...checkedMap }
     // add the new facet to the tempCheckedMap
     tempCheckedMap[newSingleCellFaceting.value.annotation] = newSingleCellFaceting.value.groups
@@ -123,15 +135,18 @@ export function FacetFilterPanel({
     const indexToRep = tempShownFacets.findIndex(facet => facet.annotation === event.name)
 
     // replace the existing facet with the new facet at the index determined above
-    tempShownFacets[indexToRep] = { 'annotation': newSingleCellFaceting.value.annotation, 'groups': newSingleCellFaceting.value.groups }
+    tempShownFacets[indexToRep] = {
+      annotation: newSingleCellFaceting.value.annotation,
+      groups: newSingleCellFaceting.value.groups
+    }
 
     // set the facets that are shown in the UI
     setShownFacets(tempShownFacets)
   }
 
 
-  // Add/Remove checked item from list
-  const handleCheck = event => {
+  /** Add/Remove checked item from list */
+  function handleCheck(event) {
     // grab the name of the facet from the check event
     const facetName = event.target.name.split(':')[0]
 
@@ -155,13 +170,12 @@ export function FacetFilterPanel({
   }
 
   /** determine if the filter is checked or not */
-  const isChecked = (annotation, item) => {
+  function isChecked(annotation, item) {
     return checkedMap[annotation]?.includes(item)
   }
 
-  const currentlyInUseAnnotations = { 'colorby:': '', 'facets': [] }
+  const currentlyInUseAnnotations = { colorBy: '', facets: [] }
   const annotationOptions = getAnnotationOptions(annotationList, cluster)
-
 
   /** populate the checkedMap state if it's empty
    * (this is for initial setting upon page loading and the cellFaceting prop initializing) */
@@ -171,25 +185,10 @@ export function FacetFilterPanel({
     }
   }, [cellFaceting])
 
-  // if the exploreParams update need to reset the initial cell facets
-  useEffect(() => {
-    const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
-    const allAnnots = exploreInfo?.annotationList.annotations
-    if (allAnnots && allAnnots.length > 0) {
-      initCellFaceting(
-        selectedCluster, selectedAnnot, studyAccession, allAnnots
-      )
-        .then(newCellFaceting => {
-          setCellFaceting(newCellFaceting)
-        })
-    }
-  }, [exploreParams])
-
-
   return (
     <>
       <div className="form-group">
-        <label className="labeled-select">Color plotted points by:&nbsp;
+        <label className="labeled-select">Color by&nbsp;
           <a className="action help-icon"
             data-toggle="tooltip"
             data-original-title="Select the facet that the plot is colored by.">
@@ -205,19 +204,22 @@ export function FacetFilterPanel({
             onChange={newColorByAnnotation => {
               setColorByFacet(newColorByAnnotation)
               updateClusterParams({ annotation: newColorByAnnotation })
-              currentlyInUseAnnotations.colorby = newColorByAnnotation
+              currentlyInUseAnnotations.colorBy = newColorByAnnotation
               updateFilteredCells({})
             }}
             styles={clusterSelectStyle}/>
         </label>
         { Object.keys(checkedMap).length !== 0 &&
         <div style={{ 'marginTop': '5px' }}>
-          <h5>Filter plotted points by: <a className="action help-icon"
-            data-toggle="tooltip"
-            data-original-title="Use the checkboxes to add and remove points from the plot.">
-            <FontAwesomeIcon icon={faInfoCircle}/>
-          </a></h5>
-          <div style={{ border: '1px solid black', margin: '2px', padding: '2px' }}>
+          <h5>Filter by&nbsp;
+            <a className="action help-icon"
+              data-toggle="tooltip"
+              data-original-title="Use the checkboxes to filter points from the plot.  Deselected values are
+                assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
+            >
+              <FontAwesomeIcon icon={faInfoCircle}/>
+            </a></h5>
+          <div style={{ margin: '2px', padding: '2px' }}>
             { shownFacets.map(singleFacet => {
               return createFacetFilterCheckList(singleFacet)
             })}

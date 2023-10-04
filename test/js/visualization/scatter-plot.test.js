@@ -7,10 +7,11 @@ import Plotly from 'plotly.js-dist'
 
 import * as UserProvider from '~/providers/UserProvider'
 import * as ScpApi from 'lib/scp-api'
-import ScatterPlot from 'components/visualization/ScatterPlot'
+import ScatterPlot, { intersect, reassignFilteredCells, getPlottedLabels } from 'components/visualization/ScatterPlot'
 import ScatterPlotLegend from 'components/visualization/controls/ScatterPlotLegend'
 import * as ScpApiMetrics from 'lib/scp-api-metrics'
 import * as MetricsApi from 'lib/metrics-api'
+import { FILTERED_TRACE_NAME } from 'lib/cluster-utils'
 
 import '@testing-library/jest-dom/extend-expect'
 
@@ -127,6 +128,7 @@ it('shows custom legend with default group scatter plot', async () => {
 it('shows cluster external link', async () => {
   const scatterData = BASIC_PLOT_DATA.scatter
   const countsByLabel = COUNTS_BY_LABEL
+  const originalLabels = Object.keys(countsByLabel)
 
   render((<ScatterPlotLegend
     name={scatterData.annotParams.name}
@@ -135,6 +137,7 @@ it('shows cluster external link', async () => {
     hiddenTraces={[]}
     hasArrayLabels={scatterData.hasArrayLabels}
     externalLink={BASIC_PLOT_DATA.externalLink}
+    originalLabels={originalLabels}
   />))
 
   const { container } = render(<ScatterPlot/>)
@@ -150,6 +153,8 @@ it('shows cluster external link', async () => {
 it('shows legend search', async () => {
   const scatterData = BASIC_PLOT_DATA.scatter
   const countsByLabel = COUNTS_BY_LABEL
+  const originalLabels = Object.keys(countsByLabel)
+
   jest
     .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
     .mockReturnValue({
@@ -164,6 +169,7 @@ it('shows legend search', async () => {
       hiddenTraces={[]}
       hasArrayLabels={scatterData.hasArrayLabels}
       externalLink={BASIC_PLOT_DATA.externalLink}
+      originalLabels={originalLabels}
     />))
 
   const labelSearchBox = await screen.findByPlaceholderText('Search')
@@ -221,4 +227,29 @@ describe('getPlotlyTraces handles expression graphs', () => {
     traces = ScatterPlot.getPlotlyTraces(plotData)[0]
     expect(traces[0].marker.reversescale).toEqual(true)
   })
+})
+
+it('intersects and reassigns cells via cell faceting', async () => {
+  const plotData = _cloneDeep(BASIC_PLOT_DATA.scatter)
+  const filteredCells = [
+    { allCellsIndex: 0, 'Category--group--cluster': 0 },
+    { allCellsIndex: 1, 'Category--group--cluster': 0 },
+    { allCellsIndex: 2, 'Category--group--cluster': 0 },
+    { allCellsIndex: 3, 'Category--group--cluster': 0 },
+    { allCellsIndex: 6, 'Category--group--cluster': 0 }
+  ]
+  const [filteredPlotData, plottedIdx] = intersect(filteredCells, plotData)
+  expect(filteredPlotData.annotations.includes('s1')).toBeTruthy()
+  expect(!filteredPlotData.annotations.includes('s2')).toBeTruthy()
+
+  const setOriginalLabels = jest.fn()
+  const reassignedData = reassignFilteredCells(plottedIdx, plotData.data, filteredPlotData, setOriginalLabels)
+  const filteredCount = reassignedData.annotations.filter(x => x === FILTERED_TRACE_NAME).length
+  expect(filteredCount).toEqual(3)
+})
+
+it('returns array of unique plotted annotation labels', async () => {
+  const plotData = _cloneDeep(BASIC_PLOT_DATA.scatter.data)
+  const plottedLabels = getPlottedLabels(plotData)
+  expect(plottedLabels).toEqual(['s1', 's2'])
 })

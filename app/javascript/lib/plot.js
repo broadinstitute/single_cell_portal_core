@@ -1,4 +1,4 @@
-import { UNSPECIFIED_ANNOTATION_NAME } from '~/lib/cluster-utils'
+import { UNSPECIFIED_ANNOTATION_NAME, FILTERED_TRACE_NAME, FILTERED_TRACE_COLOR } from '~/lib/cluster-utils'
 import { log, logError } from '~/lib/metrics-api'
 
 // Default plot colors, combining ColorBrewer sets 1-3 with tweaks to yellows.
@@ -14,6 +14,8 @@ const PlotUtils = function() {
   return 'placeholder component'
 }
 
+// special legend entries with custom sorting rules
+const SPECIAL_LEGEND_ENTRIES = [UNSPECIFIED_ANNOTATION_NAME, FILTERED_TRACE_NAME]
 
 /**
  * Used in both categorical scatter plots and violin plots, to ensure
@@ -67,7 +69,7 @@ function emptyTrace(expectedLength, hasZvalues, hasExpression) {
  */
 PlotUtils.filterTrace = function({
   trace, hiddenTraces=[], groupByAnnotation=false,
-  activeTraceLabel, expressionFilter, expressionData, isSplitLabelArrays
+  activeTraceLabel, expressionFilter, expressionData, isSplitLabelArrays, originalLabels
 }) {
   const isHidingByLabel = hiddenTraces && hiddenTraces.length
   const isFilteringByExpression = expressionFilter && expressionData &&
@@ -215,11 +217,11 @@ PlotUtils.updateTraceVisibility = function(traces, hiddenTraces) {
    * If the activeLabel *is* the unspecified cells, then put them last
   */
 PlotUtils.sortTraces = function(traces, activeTraceLabel) {
-  const unspecifiedIsActive = activeTraceLabel === UNSPECIFIED_ANNOTATION_NAME
+  const unspecifiedIsActive = SPECIAL_LEGEND_ENTRIES.includes(activeTraceLabel)
   /** sort function for implementing the logic described above */
   function traceCountsSort(a, b) {
-    if (activeTraceLabel === a.name || (UNSPECIFIED_ANNOTATION_NAME === b.name && !unspecifiedIsActive)) {return 1}
-    if (activeTraceLabel === b.name || (UNSPECIFIED_ANNOTATION_NAME === a.name && !unspecifiedIsActive)) {return -1}
+    if (activeTraceLabel === a.name || (SPECIAL_LEGEND_ENTRIES.includes(b.name) && !unspecifiedIsActive)) {return 1}
+    if (activeTraceLabel === b.name || (SPECIAL_LEGEND_ENTRIES.includes(a.name) && !unspecifiedIsActive)) {return -1}
     return b.x.length - a.x.length
   }
 
@@ -271,21 +273,28 @@ PlotUtils.sortTraceByExpression = function(trace) {
  * Get color for the label, which can be applied to e.g. the icon or the trace
  */
 PlotUtils.getColorForLabel = function(label, customColors={}, editedCustomColors={}, i) {
-  if (label === '--Unspecified--' && !editedCustomColors[label] && !customColors[label]) {
+  if ((label === UNSPECIFIED_ANNOTATION_NAME)
+    && !editedCustomColors[label] && !customColors[label]) {
     return 'rgba(80, 80, 80, 0.4)'
+  }
+  // special handling of --Filtered-- trace to mostly obscure points while retaining shape
+  if ((label === FILTERED_TRACE_NAME)
+    && !editedCustomColors[label] && !customColors[label]) {
+    return FILTERED_TRACE_COLOR
   }
   return editedCustomColors[label] ?? customColors[label] ?? PlotUtils.getColorBrewerColor(i)
 }
 
+/** Sort annotation labels lexicographically, but always put the unspecified annotations last */
+PlotUtils.labelSort = function(a, b) {
+  if (SPECIAL_LEGEND_ENTRIES.includes(a)) {return 1}
+  if (SPECIAL_LEGEND_ENTRIES.includes(b)) {return -1}
+  return a.localeCompare(b, 'en', { numeric: true, ignorePunctuation: true })
+}
+
 /** Returns an array of labels, sorted in the order in which they should be displayed in the legend */
 PlotUtils.getLegendSortedLabels = function(countsByLabel) {
-  /** Sort annotation labels lexicographically, but always put the unspecified annotations last */
-  function labelSort(a, b) {
-    if (UNSPECIFIED_ANNOTATION_NAME === a) {return 1}
-    if (UNSPECIFIED_ANNOTATION_NAME === b) {return -1}
-    return a.localeCompare(b, 'en', { numeric: true, ignorePunctuation: true })
-  }
-  return Object.keys(countsByLabel).sort(labelSort)
+  return Object.keys(countsByLabel).sort(PlotUtils.labelSort)
 }
 
 

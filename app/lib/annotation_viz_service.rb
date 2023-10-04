@@ -12,12 +12,12 @@ class AnnotationVizService
   # - annot_name: string name of the annotation
   # - annot_type: string type (group or numeric)
   # - annot_scope: string scope (study, cluster, or user)
-  # - fallback: allow rescue to select first available annotation
+  # - fallback: allow rescue to select first available or default annotation
   # Returns:
   # - See populate_annotation_by_class for the object structure
   def self.get_selected_annotation(study, cluster: nil, annot_name: nil, annot_type: nil, annot_scope: nil, fallback: true)
     # construct object based on name, type & scope
-    if annot_name.blank?
+    if annot_name.blank? && fallback
       # get the default annotation
       default_annot = nil
       if annot_scope == 'study'
@@ -200,12 +200,12 @@ class AnnotationVizService
 
   # create a menu configuration for differential expression results for a given study
   def self.differential_expression_menu_opts(study)
-    study.differential_expression_results.map do |diff_exp_result|
+    study.differential_expression_results.map do |de_result|
       {
-        cluster_name: diff_exp_result.cluster_group&.name,
-        annotation_name: diff_exp_result.annotation_name,
-        annotation_scope: diff_exp_result.annotation_scope,
-        select_options: diff_exp_result.result_files
+        cluster_name: de_result.cluster_group&.name,
+        annotation_name: de_result.annotation_name,
+        annotation_scope: de_result.annotation_scope,
+        select_options: de_result.result_files
       }
     end
   end
