@@ -9,13 +9,12 @@ export default function FacetFilteringModal() {
   const [showCellFacetModal, setShowCellFacetModall] = useState(false)
   const cellFacetModalContent = (
     <div>
-      <p> Cell filtering provides the ability to view cell annotations within the context of other annotations.
-        You can visualize the expression of particular cells in a subset of the dataset through the facet filters.
+      <p>
+        Cell filtering lets you easily plot cells that match criteria <i>across annotations</i>.
       </p>
       <p>
-        For example - You might be interested in the diseased cells of a dataset, but only in the males of the dataset. You can
-        choose any annotation to color your plot by and then chose facets Disease and Sex then filter for only diseased and male
-        cells utilizing the check boxes to filter.
+        As a hypothetical example, cell filtering can let you quickly subset a plot to show only cells annotated as from lymphoma <i>and</i> males.
+        You would click to update the filters so only "lymphoma" is checked in "Disease" and "male" is checked in "Sex".
       </p>
     </div>
   )
@@ -23,10 +22,10 @@ export default function FacetFilteringModal() {
   const cellFacetModalHelpLink = (
     <a
       onClick={() => setShowCellFacetModall(true)}
-      data-analytics-name="cell-facet-filter-info"
+      data-analytics-name="cell-filtering-info-help-icon"
       data-toggle="tooltip"
-      data-original-title="Click to learn about cell filtering in SCP"
-      className="cff-icon-style"
+      data-original-title="Click to learn about cell filtering"
+      className="cell-filtering-info-help-icon"
     >
       <FontAwesomeIcon className="action help-icon" icon={faInfoCircle} />
     </a>

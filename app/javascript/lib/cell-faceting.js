@@ -209,6 +209,7 @@ export async function initCellFaceting(
         return (
           annot.values.length > 1 &&
           !annot.identifier.endsWith('invalid') &&
+          !annot.identifier.endsWith('user') &&
           annot.identifier !== selectedAnnotId
         )
       })

@@ -8,6 +8,7 @@ function getSize(metric) {
   return size
 }
 
+
 /** Try to canonicalize a raw size metric header from author DE file */
 export function getCanonicalSize(sizeMetric) {
   // Scanpy: logfoldchanges; Seurat: avg_log2FC
@@ -111,6 +112,7 @@ export function getCanonicalSignificance(significanceMetric) {
     }
   }
 }
+
 // End of significance parsers
 
 
