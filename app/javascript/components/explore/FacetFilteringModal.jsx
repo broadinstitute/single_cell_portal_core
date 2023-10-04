@@ -13,8 +13,8 @@ export default function FacetFilteringModal() {
         Cell filtering lets you easily plot cells that match criteria <i>across annotations</i>.
       </p>
       <p>
-        For example, cell filtering can let you quickly subset a plot to show only cells that are diseased <i>and</i> from males.
-        You would click to update the filters so only "Yes" is checked under "Disease" and "Male" is checked under "Sex".
+        As a hypothetical example, cell filtering can let you quickly subset a plot to show only cells annotated as from lymphoma <i>and</i> males.
+        You would click to update the filters so only "lymphoma" is checked in "Disease" and "male" is checked in "Sex".
       </p>
     </div>
   )
