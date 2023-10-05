@@ -29,6 +29,14 @@ class DifferentialExpressionResult
   field :matrix_file_id, type: BSON::ObjectId # associated raw count matrix study file
   field :is_author_de, type: Boolean, default: false
 
+  # Fields for author DE
+  field :gene_header, type: String
+  field :group_header, type: String
+  field :comparison_group_header, type: String
+  field :size_metric, type: String
+  field :significance_metric, type: String
+
+
   validates :annotation_scope, inclusion: { in: %w[study cluster] }
   validates :cluster_name, presence: true
   validates :matrix_file_id, presence: true, unless: proc { study_file.present? }
@@ -134,6 +142,13 @@ class DifferentialExpressionResult
   def result_files
     {
       is_author_de:,
+      headers: {
+        gene: gene_header,
+        group: group_header,
+        comparison_group: comparison_group_header,
+        size: size_metric,
+        significance: significance_metric
+      },
       one_vs_rest: files_for(:one_vs_rest, include_labels: true),
       pairwise: files_for(:pairwise, include_labels: true)
     }.with_indifferent_access

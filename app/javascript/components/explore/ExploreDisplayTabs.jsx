@@ -28,7 +28,7 @@ import PlotTabs from './PlotTabs'
 import { initCellFaceting, filterCells } from '~/lib/cell-faceting'
 
 /** Get the selected clustering and annotation, or their defaults */
-function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
+export function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
   if (!exploreInfo) {return [null, null]}
   const annotList = exploreInfo.annotationList
   let selectedCluster
@@ -63,40 +63,6 @@ function getHasComparisonDe(exploreInfo, exploreParams, comparison) {
   return hasComparisonDe
 }
 
-
-/**
- * Determine if current annotation has differential expression results that are user-generated.
- *
- * DE results have two dimensions:
- * - Comparison type: either "one-vs-rest" or "pairwise"
- * - Source: "author-computed" "or SCP-computed"
- *
- * Author-computed DE is also often called "precomputed" or "user-uploaded" or "study-owner-generated"
- * or "custom".  Whereas SCP-generated DE is computed only for cell-type-like annotations and only as
- * one-vs-rest comparisons, user-generated DE can be more comprehensive -- it can be available for
- * any annotation, and as one-vs-rest and/or pairwise comparisons.
- */
-function getIsAuthorDe(exploreInfo, exploreParams) {
-  const flags = getFeatureFlagsWithDefaults()
-  if (!flags?.differential_expression_frontend || !exploreInfo) {
-    return false
-  }
-
-  const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
-
-  const deItem = exploreInfo.differentialExpression.find(deItem => {
-    return (
-      deItem.cluster_name === selectedCluster &&
-      deItem.annotation_name === selectedAnnot.name &&
-      deItem.annotation_scope === selectedAnnot.scope
-    )
-  })
-
-  const isAuthorDe = deItem?.select_options.is_author_de
-
-  return isAuthorDe
-}
-
 /**
  * Renders the gene search box and the tab selection
  * Responsible for determining which tabs are available for a given view of the study
@@ -127,16 +93,18 @@ export default function ExploreDisplayTabs({
   // morpheus JSON data
   const [morpheusData, setMorpheusData] = useState(null)
   // Differential expression settings
-  // `differential_expression_frontend` enables exemptions if study owners don't want DE
   const hasPairwiseDe = getHasComparisonDe(exploreInfo, exploreParams, 'pairwise')
-  const isAuthorDe = getIsAuthorDe(exploreInfo, exploreParams)
 
   const [, setShowDeGroupPicker] = useState(false)
   const [deGenes, setDeGenes] = useState(null)
-  const [deGroup, setDeGroup] = useState(null)
-  const [deGroupB, setDeGroupB] = useState(null)
   const [showDifferentialExpressionPanel, setShowDifferentialExpressionPanel] = useState(deGenes !== null)
   const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(deGenes !== null)
+
+  let initialPanel = 'options'
+  if (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel) {
+    initialPanel = 'differential-expression'
+  }
+  const [panelToShow, setPanelToShow] = useState(initialPanel)
 
   const [cellFaceting, setCellFaceting] = useState(null)
   const [filteredCells, setFilteredCells] = useState(null)
@@ -145,6 +113,10 @@ export default function ExploreDisplayTabs({
   const [countsByLabel, setCountsByLabel] = useState(null)
   const showDifferentialExpressionTable = (showViewOptionsControls && deGenes !== null)
   const plotContainerClass = 'explore-plot-tab-content'
+
+  // flow/error handling for cell filtering
+  const [clusterCanFilter, setClusterCanFilter] = useState(true)
+  const [filterErrorText, setFilterErrorText] = useState(null)
 
   const {
     enabledTabs, disabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs
@@ -191,20 +163,44 @@ export default function ExploreDisplayTabs({
 
   const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
 
-  if (!cellFaceting) {
-    const allAnnots = exploreInfo?.annotationList.annotations
-    if (allAnnots && allAnnots.length > 0) {
-      initCellFaceting(
-        selectedCluster, selectedAnnot, studyAccession, allAnnots
-      )
-        .then(newCellFaceting => {
+  /** wrapper function with error handling/state setting for retrieving cell facet data */
+  function getCellFacetingData(cluster, annotation) {
+    const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
+    if (showCellFiltering) {
+      const allAnnots = exploreInfo?.annotationList.annotations
+      if (allAnnots && allAnnots.length > 0) {
+        initCellFaceting(
+          cluster, annotation, studyAccession, allAnnots
+        ).then(newCellFaceting => {
+          setClusterCanFilter(true)
           setCellFaceting(newCellFaceting)
+          setFilterErrorText('')
+        }).catch(error => {
+          // NOTE: these 'errors' are in fact handled corner cases where faceting data isn't present for various reasons
+          // as such, they don't need to be reported to Sentry/Mixpanel, only conveyed to the user
+          // example: 400 (Bad Request): Clustering is not indexed, Cannot use numeric annotations for facets, or
+          // 404 (Not Found) Cluster not found
+          // see app/controllers/api/v1/visualization/annotations_controller.rb#facets for more information
+          setClusterCanFilter(false)
+          setFilterErrorText(error.message)
         })
+      }
     }
   }
 
+  if (!cellFaceting) {
+    getCellFacetingData(selectedCluster, selectedAnnot)
+  }
+
+  // if the exploreParams update need to reset the initial cell facets
+  useEffect(() => {
+    const [newCluster, newAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
+    getCellFacetingData(newCluster, newAnnot)
+  }, [exploreParams?.cluster, exploreParams?.annotation])
+
   /** Update filtered cells to only those that match annotation group value filter selections */
   function updateFilteredCells(selection) {
+    if (!cellFaceting) {return}
     const cellsByFacet = cellFaceting.cellsByFacet
     const facets = cellFaceting.facets
     const filtersByFacet = cellFaceting.filtersByFacet
@@ -228,6 +224,13 @@ export default function ExploreDisplayTabs({
   /** Handle clicks on "View Options" toggler element */
   function toggleViewOptions() {
     setShowViewOptionsControls(!showViewOptionsControls)
+  }
+
+  /** toggle between the panels for DE, Facet Filtering and Default
+   * needed at this level for choosing style for panel
+  */
+  function togglePanel(panelOption) {
+    setPanelToShow(panelOption)
   }
 
   /** handles gene list selection */
@@ -260,24 +263,27 @@ export default function ExploreDisplayTabs({
     setRenderForcer({})
   }, 300)
 
-  /** Get widths for main (plots) and side (options or DE) panels, for current Explore state */
+  /** Get widths for main (plots) and side (options, DE, or FF) panels, for current Explore state */
   function getPanelWidths() {
     let main
     let side
-    const isSelectingDE = showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel
     if (showViewOptionsControls) {
       if (
         (deGenes !== null) ||
-        (hasPairwiseDe && (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel))
+          (hasPairwiseDe && (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel))
       ) {
         // DE table is shown, or pairwise DE is available.  Least horizontal space for plots.
         main = 'col-md-9'
         side = 'col-md-3 right-panel'
+      } else if (panelToShow === 'cell-filtering') {
+        main = 'col-md-10'
+        side = 'col-md-2 right-panel'
       } else {
         // Default state, when side panel is "Options" and not collapsed
         main = 'col-md-10'
         // only set options-bg if we're outside the DE UX
-        side = isSelectingDE ? 'col-md-2 right-panel' : 'col-md-2 options-bg right-panel'
+
+        side = panelToShow === 'options' ? 'col-md-2 options-bg right-panel' : 'col-md-2 right-panel'
       }
     } else {
       // When options panel is collapsed.  Maximize horizontal space for plots.
@@ -483,37 +489,35 @@ export default function ExploreDisplayTabs({
         }
         <div className={getPanelWidths().side}>
           <ExploreDisplayPanelManager
-            deGroup={deGroup}
-            deGenes={deGenes}
-            searchGenes={searchGenes}
-            exploreParamsWithDefaults={exploreParamsWithDefaults}
+            studyAccession={studyAccession}
             exploreInfo={exploreInfo}
-            clusterName={exploreParamsWithDefaults.cluster}
-            annotation={shownAnnotation}
-            setShowDeGroupPicker={setShowDeGroupPicker}
-            setDeGenes={setDeGenes}
-            setDeGroup={setDeGroup}
-            isAuthorDe={isAuthorDe}
-            deGroupB={deGroupB}
-            setDeGroupB={setDeGroupB}
+            setExploreInfo={setExploreInfo}
+            exploreParams={exploreParams}
+            updateExploreParams={updateExploreParams}
+            clearExploreParams={clearExploreParams}
+            exploreParamsWithDefaults={exploreParamsWithDefaults}
+            routerLocation={routerLocation}
+            searchGenes={searchGenes}
             countsByLabel={countsByLabel}
-            showUpstreamDifferentialExpressionPanel = {showUpstreamDifferentialExpressionPanel}
-            showDifferentialExpressionPanel = {showDifferentialExpressionPanel}
-            shownTab = {shownTab}
-            exploreParams= {exploreParams}
-            studyAccession = {studyAccession}
-            setExploreInfo = {setExploreInfo}
-            updateExploreParams = {updateExploreParams}
-            clearExploreParams = {clearExploreParams}
-            routerLocation = {routerLocation}
-            setShowUpstreamDifferentialExpressionPanel = {setShowUpstreamDifferentialExpressionPanel}
-            setShowDifferentialExpressionPanel = {setShowDifferentialExpressionPanel}
-            setShowViewOptionsControls = {setShowViewOptionsControls}
-            setIsCellSelecting = {setIsCellSelecting}
-            currentPointsSelected = {currentPointsSelected}
-            showViewOptionsControls = {showViewOptionsControls}
-            isCellSelecting = {isCellSelecting}
-            getPanelWidths = {getPanelWidths}
+            setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
+            showDifferentialExpressionPanel={showDifferentialExpressionPanel}
+            setShowDifferentialExpressionPanel={setShowDifferentialExpressionPanel}
+            showUpstreamDifferentialExpressionPanel={showUpstreamDifferentialExpressionPanel}
+            togglePanel={togglePanel}
+            shownTab={shownTab}
+            setIsCellSelecting={setIsCellSelecting}
+            currentPointsSelected={currentPointsSelected}
+            isCellSelecting={isCellSelecting}
+            deGenes={deGenes}
+            setDeGenes={setDeGenes}
+            setShowDeGroupPicker={setShowDeGroupPicker}
+            cellFaceting={cellFaceting}
+            setCellFaceting={setCellFaceting}
+            clusterCanFilter={clusterCanFilter}
+            filterErrorText ={filterErrorText}
+            updateFilteredCells={updateFilteredCells}
+            panelToShow={panelToShow}
+            toggleViewOptions={toggleViewOptions}
           />
         </div>
       </div>

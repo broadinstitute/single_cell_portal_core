@@ -111,30 +111,13 @@ class StudiesController < ApplicationController
       redirect_to merge_default_redirect_params(studies_path, scpbr: params[:scpbr]),
                   alert: "We were unable to sync with your workspace bucket due to an error: #{view_context.simple_format(e.message)}.  #{SCP_SUPPORT_EMAIL}" and return
     end
+    sync_file_batch
+  end
 
-    # begin determining sync status with study_files and primary or other data
-    begin
-      @unsynced_files = StudySyncService.process_all_remotes(@study)
-    rescue => e
-      ErrorTracker.report_exception(e, current_user, @study, params)
-      MetricsService.report_error(e, request, current_user, @study)
-      logger.error "#{Time.zone.now}: error syncing files in workspace bucket #{@study.firecloud_workspace} due to error: #{e.message}"
-      redirect_to merge_default_redirect_params(studies_path, scpbr: params[:scpbr]),
-                  alert: "We were unable to sync with your workspace bucket due to an error: #{view_context.simple_format(e.message)}.  #{SCP_SUPPORT_EMAIL}" and return
-    end
-
-    # refresh study state before continuing as new records may have been inserted
-    @study.reload
-    @synced_directories = @study.directory_listings.are_synced
-    @unsynced_directories = @study.directory_listings.unsynced
-
-    # split directories into primary data types and 'others'
-    @unsynced_primary_data_dirs, @unsynced_other_dirs = StudySyncService.load_unsynced_directories(@study)
-
-    # now determine if we have study_files that have been 'orphaned' (cannot find a corresponding bucket file)
-    @orphaned_study_files = StudySyncService.find_orphaned_files(@study)
-    @available_files = StudySyncService.set_available_files(@unsynced_files)
-    @synced_study_files = StudySyncService.set_synced_files(@study, @orphaned_study_files)
+  # paginate batch of files to sync (same as sync_study but does not alter workspace permissions)
+  def sync_next_file_batch
+    sync_file_batch
+    render action: :sync_study
   end
 
   # sync outputs from a specific submission
@@ -949,6 +932,36 @@ class StudiesController < ApplicationController
     end
   end
 
+  # sync a batch of up to 1000 remote files
+  def sync_file_batch
+    # begin determining sync status with study_files and primary or other data
+    begin
+      remote_info = StudySyncService.process_remotes(@study, token: params[:page_token])
+      @unsynced_files = remote_info[:unsynced_study_files]
+      @next_page = remote_info[:page_token]
+      @remaining_files = remote_info[:remaining_files]
+    rescue => e
+      ErrorTracker.report_exception(e, current_user, @study, params)
+      MetricsService.report_error(e, request, current_user, @study)
+      logger.error "#{Time.zone.now}: error syncing files in workspace bucket #{@study.firecloud_workspace} due to error: #{e.message}"
+      redirect_to merge_default_redirect_params(studies_path, scpbr: params[:scpbr]),
+                  alert: "We were unable to sync with your workspace bucket due to an error: #{view_context.simple_format(e.message)}.  #{SCP_SUPPORT_EMAIL}" and return
+    end
+
+    # refresh study state before continuing as new records may have been inserted
+    @study.reload
+    @synced_directories = @study.directory_listings.are_synced
+    @unsynced_directories = @study.directory_listings.unsynced
+
+    # split directories into primary data types and 'others'
+    @unsynced_primary_data_dirs, @unsynced_other_dirs = StudySyncService.load_unsynced_directories(@study)
+
+    # now determine if we have study_files that have been 'orphaned' (cannot find a corresponding bucket file)
+    @orphaned_study_files = StudySyncService.find_orphaned_files(@study)
+    @available_files = StudySyncService.set_available_files(@unsynced_files)
+    @synced_study_files = StudySyncService.set_synced_files(@study, @orphaned_study_files)
+  end
+
   private
 
   ###
@@ -984,7 +997,11 @@ class StudiesController < ApplicationController
                                        expression_file_info_attributes: [:id, :library_preparation_protocol, :units,
                                                                          :biosample_input_type, :modality, :is_raw_counts,
                                                                          raw_counts_associations: []],
-                                       differential_expression_file_info_attributes: [:_id, :clustering_association, :annotation_association, :computational_method]
+                                       differential_expression_file_info_attributes: [
+                                          :_id, :clustering_association, :annotation_association, :computational_method,
+                                          :gene_header, :group_header, :comparison_group_header,
+                                          :size_metric, :significance_metric
+                                        ]
                                        )
   end
 
@@ -1070,7 +1087,7 @@ class StudiesController < ApplicationController
       if current_user.registered_for_firecloud && client.registered?
         available_projects = client.get_billing_projects
         available_projects.each do |project|
-          if project['creationStatus'] == 'Ready'
+          if project['status'] == 'Ready' && project['roles'].any?
             @projects << [project['projectName'], project['projectName']]
           end
         end

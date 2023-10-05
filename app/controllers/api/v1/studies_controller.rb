@@ -518,6 +518,19 @@ module Api
                   end
                 end
               end
+              key :title, 'JSON object of StudyShares, StudyFiles, and DirectoryListings'
+              property :page_token do
+                key :type, :string
+                key :description, 'Token to next batch of files (if present)'
+              end
+              property :remaining_files do
+                key :type, :integer
+                key :description, 'Number of remaining files yet to process for sync'
+              end
+              property :next_page do
+                key :type, :string
+                key :description, 'URL for next page of results, with token (if present)'
+              end
             end
           end
           response 403 do
@@ -545,29 +558,114 @@ module Api
                       alert: "We were unable to sync with your workspace bucket due to an error: #{view_context.simple_format(e.message)}.  #{SCP_SUPPORT_EMAIL}" and return
         end
 
-        # begin determining sync status with study_files and primary or other data
-        begin
-          @unsynced_files = StudySyncService.process_all_remotes(@study)
-        rescue => e
-          ErrorTracker.report_exception(e, current_user, @study, params)
-          MetricsService.report_error(e, request, current_user, @study)
-          logger.error "#{Time.zone.now}: error syncing files in workspace bucket #{@study.firecloud_workspace} due to error: #{e.message}"
-          redirect_to merge_default_redirect_params(studies_path, scpbr: params[:scpbr]),
-                      alert: "We were unable to sync with your workspace bucket due to an error: #{view_context.simple_format(e.message)}.  #{SCP_SUPPORT_EMAIL}" and return
+        sync_file_batch
+      end
+
+      swagger_path '/studies/{id}/sync_batch' do
+        operation :post do
+          key :tags, [
+            'Studies'
+          ]
+          key :summary, 'Sync a batch of files in a Study'
+          key :description, 'Synchronize a batch of remote files from GCS bucket for a study'
+          key :operationId, 'sync_batch_study_path'
+          parameter do
+            key :name, :id
+            key :in, :path
+            key :description, 'ID of Study to sync'
+            key :required, true
+            key :type, :string
+          end
+          parameter do
+            key :name, :page_token
+            key :in, :query
+            key :description, 'token for next batch of files'
+            key :required, true
+            key :type, :string
+          end
+          response 200 do
+            key :description, 'StudyShares, StudyFiles, and DirectoryListings'
+            schema do
+              key :title, 'JSON object of StudyShares, StudyFiles, and DirectoryListings'
+              property :study_shares do
+                key :type, :array
+                key :title, 'StudyShare array'
+                items do
+                  key :title, 'StudyShare'
+                  key :'$ref', :StudyShare
+                end
+              end
+              property :study_files do
+                key :type, :object
+                key :title, 'JSON object of synced, unsynced, and orphaned StudyFiles'
+                property :unsynced do
+                  key :title, 'Unsynced StudyFile array'
+                  key :type, :array
+                  items do
+                    key :title, 'StudyFile'
+                    key :'$ref', :StudyFile
+                  end
+                end
+                property :synced do
+                  key :title, 'Synced StudyFile array'
+                  key :type, :array
+                  items do
+                    key :title, 'StudyFile'
+                    key :'$ref', :StudyFile
+                  end
+                end
+                property :orphaned do
+                  key :title, 'Orphaned StudyFile array'
+                  key :type, :array
+                  items do
+                    key :title, 'StudyFile'
+                    key :'$ref', :StudyFile
+                  end
+                end
+              end
+              property :directory_listings do
+                key :type, :object
+                key :title, 'JSON object of synced and unsynced DirectoryListings'
+                property :unsynced do
+                  key :type, :array
+                  key :title, 'Unsynced DirectoryListing array'
+                  items do
+                    key :title, 'DirectoryListing'
+                    key :'$ref', :DirectoryListing
+                  end
+                end
+                property :synced do
+                  key :type, :array
+                  key :title, 'Synced DirectoryListing array'
+                  items do
+                    key :title, 'DirectoryListing'
+                    key :'$ref', :DirectoryListing
+                  end
+                end
+              end
+              property :page_token do
+                key :type, :string
+                key :description, 'Token to next batch of files (if present)'
+              end
+              property :remaining_files do
+                key :type, :integer
+                key :description, 'Number of remaining files yet to process for sync'
+              end
+            end
+          end
+          response 403 do
+            key :description, ApiBaseController.forbidden('edit Study')
+          end
+          extend SwaggerResponses::StudyControllerResponses
+          response 500 do
+            key :description, 'Server error when attempting to synchronize FireCloud workspace or access GCS objects'
+          end
         end
+      end
 
-        # refresh study state before continuing as new records may have been inserted
-        @study.reload
-        @synced_directories = @study.directory_listings.are_synced
-        @unsynced_directories = @study.directory_listings.unsynced
-
-        # split directories into primary data types and 'others'
-        @unsynced_primary_data_dirs, @unsynced_other_dirs = StudySyncService.load_unsynced_directories(@study)
-
-        # now determine if we have study_files that have been 'orphaned' (cannot find a corresponding bucket file)
-        @orphaned_study_files = StudySyncService.find_orphaned_files(@study)
-        @available_files = StudySyncService.set_available_files(@unsynced_files)
-        @synced_study_files = StudySyncService.set_synced_files(@study, @orphaned_study_files)
+      def sync_next_file_batch
+        sync_file_batch
+        render action: :sync_study
       end
 
       swagger_path '/studies/{id}/manifest' do
@@ -625,6 +723,36 @@ module Api
         manifest_obj = BulkDownloadService.generate_study_files_tsv(@study, include_dirs)
         response.headers['Content-Disposition'] = 'attachment; filename=file_supplemental_info.tsv'
         render plain: manifest_obj
+      end
+
+      # sync a batch of up to 1000 remote files
+      def sync_file_batch
+        # begin determining sync status with study_files and primary or other data
+        begin
+          remote_info = StudySyncService.process_remotes(@study, token: params[:page_token])
+          @unsynced_files = remote_info[:unsynced_study_files]
+          @next_page = remote_info[:page_token]
+          @remaining_files = remote_info[:remaining_files]
+        rescue => e
+          ErrorTracker.report_exception(e, current_user, @study, params)
+          MetricsService.report_error(e, request, current_user, @study)
+          logger.error "#{Time.zone.now}: error syncing files in workspace bucket #{@study.firecloud_workspace} due to error: #{e.message}"
+          redirect_to merge_default_redirect_params(studies_path, scpbr: params[:scpbr]),
+                      alert: "We were unable to sync with your workspace bucket due to an error: #{view_context.simple_format(e.message)}.  #{SCP_SUPPORT_EMAIL}" and return
+        end
+
+        # refresh study state before continuing as new records may have been inserted
+        @study.reload
+        @synced_directories = @study.directory_listings.are_synced
+        @unsynced_directories = @study.directory_listings.unsynced
+
+        # split directories into primary data types and 'others'
+        @unsynced_primary_data_dirs, @unsynced_other_dirs = StudySyncService.load_unsynced_directories(@study)
+
+        # now determine if we have study_files that have been 'orphaned' (cannot find a corresponding bucket file)
+        @orphaned_study_files = StudySyncService.find_orphaned_files(@study)
+        @available_files = StudySyncService.set_available_files(@unsynced_files)
+        @synced_study_files = StudySyncService.set_synced_files(@study, @orphaned_study_files)
       end
 
       private

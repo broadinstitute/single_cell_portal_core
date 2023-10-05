@@ -40,6 +40,12 @@ label {
   color: palegoldenrod;
 }
 
+.appcue-pin {
+  color: rgb(255, 255, 255) !important;
+  padding: 5px 10px !important;
+  font-size: 14px !important;
+}
+
 .red {
   color: #d9534f;
 }
@@ -929,4 +935,9 @@ figcaption.ck-editor__editable {
 
 .disabled-download {
   background-color: $danger-color;
+}
+
+.info-icon {
+  color: $action-color;
+  padding: 2px 5px;
 }

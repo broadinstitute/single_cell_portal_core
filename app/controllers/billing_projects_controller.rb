@@ -38,9 +38,9 @@ class BillingProjectsController < ApplicationController
     billing_projects.each do |project|
       project_name = project['projectName']
       @projects[project_name] = {
-          status: project['creationStatus'],
-          role: project['role'],
-          members: project['role'] == 'Owner' ? @fire_cloud_client.get_billing_project_members(project_name) : nil
+        status: project['status'],
+        roles: project['roles'],
+        members: project['roles'].include?('Owner') ? @fire_cloud_client.get_billing_project_members(project_name) : nil
       }
     end
   end

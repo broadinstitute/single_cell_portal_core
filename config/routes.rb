@@ -43,6 +43,7 @@ Rails.application.routes.draw do
             resources :external_resources, only: [:index, :show, :create, :update, :destroy]
             member do
               post 'sync', to: 'studies#sync_study'
+              get 'sync_batch', to: 'studies#sync_next_file_batch'
               get 'manifest', to: 'studies#generate_manifest'
               get 'file_info', to: 'studies#file_info'
               get 'usage_stats', to: 'studies#usage_stats'
@@ -198,6 +199,7 @@ Rails.application.routes.draw do
       member do
         get 'upload', to: 'studies#initialize_study', as: :initialize
         get 'sync', to: 'studies#sync_study', as: :sync
+        get 'sync_batch', to: 'studies#sync_next_file_batch', as: :sync_next_file_batch
         get 'sync/:submission_id', to: 'studies#sync_submission_outputs', as: :sync_submission_outputs
         patch 'upload', to: 'studies#do_upload'
         get 'resume_upload', to: 'studies#resume_upload'

@@ -8,7 +8,6 @@ import { OverlayTrigger, Popover } from 'react-bootstrap'
 import { clusterFileFilter } from './ClusteringStep'
 import { metadataFileFilter } from './MetadataStep'
 import { processedFileFilter } from './ProcessedExpressionStep'
-import { differentialExpressionFileFilter } from './DifferentialExpressionStep'
 
 import LoadingSpinner from '~/lib/LoadingSpinner'
 

@@ -28,7 +28,7 @@ import WizardNavPanel from './WizardNavPanel'
 import ClusteringStep from './ClusteringStep'
 import SpatialStep from './SpatialStep'
 import CoordinateLabelStep from './CoordinateLabelStep'
-import RawCountsStep from './RawCountsStep'
+import RawCountsStep, { rawCountsFileFilter } from './RawCountsStep'
 import ProcessedExpressionStep from './ProcessedExpressionStep'
 import MetadataStep from './MetadataStep'
 import MiscellaneousStep from './MiscellaneousStep'
@@ -438,7 +438,7 @@ export function RawUploadWizard({ studyAccession, name }) {
       let chunkEnd = Math.min(CHUNK_SIZE, fileSize)
       const studyFileData = formatFileForApi(annDataFile, chunkStart, chunkEnd)
 
-      // attempt to update the AnnData file to refelect the deleted clustering
+      // attempt to update the AnnData file to reflect the deleted clustering
       try {
         let response
         const requestCanceller = new RequestCanceller(studyFileId)

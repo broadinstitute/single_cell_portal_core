@@ -196,6 +196,11 @@ class LifeSciencesApiClientTest < ActiveSupport::TestCase
     assert de_cmd.include? '--study-accession'
     assert de_cmd.include? @study.accession
     assert de_cmd.include? '--method'
+    assert de_cmd.include? '--gene-header'
+    assert de_cmd.include? '--group-header'
+    assert de_cmd.include? '--comparison-group-header'
+    assert de_cmd.include? '--size-metric'
+    assert de_cmd.include? '--significance-metric'
     assert de_cmd.include? DifferentialExpressionResult::DEFAULT_COMP_METHOD
     assert de_cmd.include? '--ingest-differential-expression'
   end
@@ -238,7 +243,7 @@ class LifeSciencesApiClientTest < ActiveSupport::TestCase
       cluster_name: 'cluster.txt',
       matrix_file_path: @expression_matrix.gs_url,
       matrix_file_type: 'dense',
-      machine_type: 'n1-highmem-16'
+      machine_type: 'n2d-highmem-16'
     }
     de_params = DifferentialExpressionParameters.new(de_opts)
     de_cmd = @client.get_command_line(study_file: @cluster_file, action: :differential_expression,

@@ -3,9 +3,9 @@
 
 
 "@adobe/css-tools@^4.0.1":
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/@adobe/css-tools/-/css-tools-4.2.0.tgz#e1a84fca468f4b337816fcb7f0964beb620ba855"
-  integrity sha512-E09FiIft46CmH5Qnjb0wsW54/YQd69LsxeKUOWawmws1XWvyFGURnAChH0mlr7YPFR1ofwvUQfcL0J3lMxXqPA==
+  version "4.3.1"
+  resolved "https://registry.yarnpkg.com/@adobe/css-tools/-/css-tools-4.3.1.tgz#abfccb8ca78075a2b6187345c26243c1a0842f28"
+  integrity sha512-/62yikz7NLScCGAAST5SHdnjaDJQBDq0M2muyRTpf2VQhw6StBg2ALiu73zSJQ4fMVLA+0uBhBHAle7Wg+2kSg==
 
 "@ampproject/remapping@^2.2.0":
   version "2.2.1"
@@ -5263,10 +5263,10 @@ iconv-lite@0.4, iconv-lite@0.4.24, iconv-lite@^0.4.24:
   dependencies:
     safer-buffer ">= 2.1.2 < 3"
 
-ideogram@1.44.0:
-  version "1.44.0"
-  resolved "https://registry.yarnpkg.com/ideogram/-/ideogram-1.44.0.tgz#30af5fd22fe23c38260814d9a3836b4f70d6278c"
-  integrity sha512-OoNOR/LBtGNwrmLVDAafLMiQSRjZ2yd3JFqxavq9XtD4VeUrBHnN82XdXapTB8n6/JEL6m+7A4vFVHYEh79Uow==
+ideogram@1.44.1:
+  version "1.44.1"
+  resolved "https://registry.yarnpkg.com/ideogram/-/ideogram-1.44.1.tgz#f5db448a6018841fae5b5db4bb251ccf816f2fbe"
+  integrity sha512-6ywrx4sCK50qXHPkBpABcq3wa14l0tTWs2NAqSQaZ6LfT6xPKUahN7P7GiGjc4mNc00TXeum7EawrejhTa1uOQ==
   dependencies:
     crossfilter2 "1.5.2"
     d3-array "^2.8.0"

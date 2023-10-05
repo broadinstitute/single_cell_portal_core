@@ -31,10 +31,10 @@ class LifeSciencesApiClient
   }.freeze
 
   # jobs that require custom virtual machine types (e.g. more RAM, CPU)
-  CUSTOM_VM_ACTIONS = %i[differential_expression render_expression_arrays image_pipeline].freeze
+  CUSTOM_VM_ACTIONS = %i[differential_expression render_expression_arrays image_pipeline ingest_anndata].freeze
 
   # default GCE machine_type
-  DEFAULT_MACHINE_TYPE = 'n1-highmem-4'.freeze
+  DEFAULT_MACHINE_TYPE = 'n2d-highmem-4'.freeze
 
   # default compute region
   DEFAULT_COMPUTE_REGION = 'us-central1'
@@ -280,7 +280,7 @@ class LifeSciencesApiClient
   # assign the VM to the corresponding project network.  Otherwise, the VM uses the default network.
   #
   # * *params*
-  #   - +machine_type+ (String) => GCP VM machine type (defaults to 'n1-highmem-4': 4 CPU, 26GB RAM)
+  #   - +machine_type+ (String) => GCP VM machine type (defaults to 'n2d-highmem-4': 4 CPU, 32GB RAM)
   #   - +boot_disk_size_gb+ (Integer) => Size of boot disk for VM, in gigabytes (defaults to 100GB)
   #   - +preemptible+ (Boolean) => Indication of whether VM can be preempted (defaults to false)
   #   - +labels+ (Hash) => Key/value pairs of labels for VM
@@ -369,6 +369,8 @@ class LifeSciencesApiClient
       command_line += [
         '--annotation-name', de_info.annotation_name, '--annotation-scope', de_info.annotation_scope,
         '--annotation-type', 'group', '--cluster-name', de_info.cluster_group.name,
+        '--gene-header', de_info.gene_header, '--group-header', de_info.group_header, '--comparison-group-header', de_info.comparison_group_header,
+        '--size-metric', de_info.size_metric, '--significance-metric', de_info.significance_metric,
         '--differential-expression-file', study_file.gs_url, '--study-accession', study.accession,
         '--method', de_info.computational_method, action_cli_opt
       ]
