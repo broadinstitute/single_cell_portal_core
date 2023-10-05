@@ -521,8 +521,8 @@ export default function ExploreDisplayPanelManager({
           exploreParams={exploreParams}
           exploreInfo={exploreInfo}
           studyAccession={studyAccession}
-          setCellFaceting={setCellFaceting}>
-        </CellFilteringPanel>}
+          setCellFaceting={setCellFaceting}
+        />}
         {panelToShow === 'differential-expression' && countsByLabel && annotHasDe &&
           <>
             <DifferentialExpressionPanel
