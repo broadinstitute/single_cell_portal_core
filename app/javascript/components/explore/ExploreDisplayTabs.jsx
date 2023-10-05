@@ -201,6 +201,10 @@ export default function ExploreDisplayTabs({
   /** Update filtered cells to only those that match annotation group value filter selections */
   function updateFilteredCells(selection) {
     if (!cellFaceting) {return}
+    if (!selection) {
+      setFilteredCells(null)
+      return
+    }
     const cellsByFacet = cellFaceting.cellsByFacet
     const facets = cellFaceting.facets
     const filtersByFacet = cellFaceting.filtersByFacet

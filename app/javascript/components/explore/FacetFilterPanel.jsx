@@ -20,7 +20,7 @@ export function FacetFilterPanelHeader({
       <span> Cell filtering </span>
       <button className="action fa-lg cell-filtering-exit-panel"
         onClick={() => {
-          updateFilteredCells({})
+          updateFilteredCells(null)
           togglePanel('options')
         }}
         title="Back to options panel"
@@ -205,7 +205,7 @@ export function FacetFilterPanel({
               setColorByFacet(newColorByAnnotation)
               updateClusterParams({ annotation: newColorByAnnotation })
               currentlyInUseAnnotations.colorBy = newColorByAnnotation
-              updateFilteredCells({})
+              updateFilteredCells(null)
             }}
             styles={clusterSelectStyle}/>
         </label>
