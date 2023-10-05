@@ -12,7 +12,7 @@ import { initCellFaceting } from '~/lib/cell-faceting'
 import { getSelectedClusterAndAnnot } from '~/components/explore/ExploreDisplayTabs'
 
 /** Top content for cell facet filtering panel shown at right in Explore tab */
-export function FacetFilterPanelHeader({
+export function CellFilteringPanelHeader({
   togglePanel, updateFilteredCells
 }) {
   return (
@@ -32,7 +32,7 @@ export function FacetFilterPanelHeader({
 }
 
 /** Content for cell facet filter panel shown at right in Explore tab */
-export function FacetFilterPanel({
+export function CellFilteringPanel({
   annotationList,
   cluster,
   shownAnnotation,
@@ -57,7 +57,7 @@ export function FacetFilterPanel({
   const [options, setOptions] = useState()
 
   /** create the checklist for filtering the facet */
-  function createFacetFilterCheckList(singleCellFaceting) {
+  function createCellFilteringCheckList(singleCellFaceting) {
     // only create the checklist if the facet exists
     if (Object.keys(singleCellFaceting).length !== 0
     ) {
@@ -220,7 +220,7 @@ export function FacetFilterPanel({
             </a></h5>
           <div style={{ margin: '2px', padding: '2px' }}>
             { shownFacets.map(singleFacet => {
-              return createFacetFilterCheckList(singleFacet)
+              return createCellFilteringCheckList(singleFacet)
             })}
           </div>
         </div>}
