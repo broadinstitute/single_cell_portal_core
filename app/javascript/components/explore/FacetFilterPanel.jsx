@@ -205,7 +205,6 @@ export function FacetFilterPanel({
               setColorByFacet(newColorByAnnotation)
               updateClusterParams({ annotation: newColorByAnnotation })
               currentlyInUseAnnotations.colorBy = newColorByAnnotation
-              updateFilteredCells(null)
             }}
             styles={clusterSelectStyle}/>
         </label>
