@@ -81,7 +81,7 @@ function CollapseToggleChevron({ isCollapsed, setIsCollapsed, whatToToggle }) {
     toggleIconTooltipText = `Hide ${whatToToggle}`
   } else {
     toggleIcon = <FontAwesomeIcon icon={faChevronRight} />
-    toggleIconTooltipText = `Hide ${whatToToggle}`
+    toggleIconTooltipText = `Show ${whatToToggle}`
   }
 
   return (
@@ -190,22 +190,18 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
     display: 'inline-block',
     width: 'fit-content'
   }
-  if (isConventional) {
-    facetNameStyle.borderBottom = '1px #555 dashed'
-    facetNameStyle.marginBottom = '5px'
-  }
 
-  let tooltipAttrs = {}
+  let title = 'Author annotation'
+  const tooltipAttrs = { 'data-toggle': 'tooltip' }
   if (isConventional) {
-    tooltipAttrs = {
-      'data-toggle': 'tooltip',
-      'data-original-title': 'SCP metadata convention term'
-    }
+    title = 'SCP metadata convention annotation'
     const note = conventionalMetadataGlossary[rawFacetName]
     if (note) {
-      tooltipAttrs['data-original-title'] += `.  ${note}.`
+      title += `.  ${note}`
     }
   }
+  title += `.  Name in data: ${rawFacetName}`
+  tooltipAttrs['data-original-title'] = title
 
   return (
     <div>
@@ -288,25 +284,20 @@ export function CellFilteringPanel({
 
   /** Top header for the "Filter" section, including all-facet controls */
   function FilterSectionHeader({ isAllListsCollapsed, setIsAllListsCollapsed }) {
-    const helpIcon =
-    <a
-      className="action help-icon"
-      data-toggle="tooltip"
-      data-original-title="Use the checkboxes to filter points from the plot.  Deselected values are
-        assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
-    >
-      <FontAwesomeIcon icon={faInfoCircle}/>
-    </a>
-
     return (
       <>
-        <span>Filter</span>
+        <span
+          style={{ 'fontWeight': 'bold' }}
+          className="filter-section-header"
+          data-toggle="tooltip"
+          data-original-title="Use checkboxes to filter cells from scatter plots.  Deselected values are
+        assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
+        >Filter</span>
         <CollapseToggleChevron
           isCollapsed={isAllListsCollapsed}
           setIsCollapsed={setIsAllListsCollapsed}
           whatToToggle="all filter lists"
         />
-        {helpIcon}
       </>
     )
   }
@@ -349,12 +340,14 @@ export function CellFilteringPanel({
   return (
     <>
       <div className="form-group">
-        <label className="labeled-select">Color by&nbsp;
-          <a className="action help-icon"
+        <label className="labeled-select">
+          <span
+            className="cell-filtering-color-by"
             data-toggle="tooltip"
-            data-original-title="Select the facet that the plot is colored by.">
-            <FontAwesomeIcon icon={faInfoCircle}/>
-          </a>
+            data-original-title="Select the facet that the plot is colored by."
+          >
+          Color by
+          </span>
           <Select
             options={annotationOptions}
             data-analytics-name="annotation-select"
