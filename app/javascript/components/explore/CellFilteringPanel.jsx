@@ -31,14 +31,75 @@ export function CellFilteringPanelHeader({
   )
 }
 
+/**
+ * Very brief notes on terms in SCP metadata convention, derived from:
+ * https://singlecell.zendesk.com/hc/en-us/articles/360060609852-Required-Metadata
+ */
+const conventionalMetadataGlossary = {
+  'biosample_id': 'Unique identifier for each sample in the study',
+  'donor_id': 'Unique identifier for each biosample donor in the study',
+  'species__ontology_label': 'Taxon name, from NCBITaxon',
+  'disease__ontology_label': 'Disease name, from Mondo or PATO',
+  'organ__ontology_label': 'Organ name, from Uberon',
+  'library_preparation_protocol__ontology_label': 'From EFO',
+  'sex': 'One of "female", "male", "mixed", or "unknown"',
+  'cell_type__ontology_label': 'From Cell Ontology',
+  'ethnicity__ontology_label': 'From Human Ancestry Ontology'
+}
+
+/** Determine if annotation is conventional from its raw name */
+function getIsConventionalAnnotation(rawName) {
+  return (
+    rawName.includes('__ontology_label') ||
+    ['donor_id', 'biosample_id'].includes(rawName)
+  )
+}
+
 /** Convert e.g. "cell_type__ontology_label" to "Cell type" */
-function getAnnotationDisplayName(annotationIdentifier) {
+function parseAnnotationName(annotationIdentifier) {
   const rawName = annotationIdentifier.split('--')[0]
   const sansOntologyName = rawName.replace('__ontology_label', '')
   const sentenceCased = sansOntologyName[0].toUpperCase() + sansOntologyName.slice(1)
   const spaced = sentenceCased.replace(/_/g, ' ')
-  const displayName = spaced
-  return displayName
+  let upId = spaced
+  if (spaced.slice(-3) === ' id') {
+    // e.g. Donor id -> Donor ID
+    upId = upId.slice(0, -3) + upId.slice(-3).toUpperCase()
+  }
+  const displayName = upId
+  return [displayName, rawName]
+}
+
+/** Get stylized name of facet */
+function FacetNameHeader({ facet }) {
+  const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
+  const isConventional = getIsConventionalAnnotation(rawFacetName)
+
+  const facetNameStyle = {
+    fontWeight: 'bold',
+    marginTop: '10px', marginBottom: '5px', width: 'fit-content'
+  }
+  if (isConventional) {
+    facetNameStyle.borderBottom = '1px #555 dashed'
+  }
+
+  let tooltipAttrs = {}
+  if (isConventional) {
+    tooltipAttrs = {
+      'data-toggle': 'tooltip',
+      'data-original-title': `SCP metadata convention term.`
+    }
+    const note = conventionalMetadataGlossary[rawFacetName]
+    if (note) {
+      tooltipAttrs['data-original-title'] += `  ${note}`
+    }
+  }
+
+  return (
+    <div style={facetNameStyle} {...tooltipAttrs}>
+      {facetName}
+    </div>
+  )
 }
 
 /** Content for cell facet filter panel shown at right in Explore tab */
@@ -72,9 +133,8 @@ export function CellFilteringPanel({
     // only create the checklist if the facet exists
     if (Object.keys(facet).length !== 0
     ) {
-      const facetName = getAnnotationDisplayName(facet.annotation)
       // grab the show facet names to filter the select options so there won't be duplicates
-      const facetNames = shownFacets.map(facet => {return facet.annotation.split('--')[0]})
+      // const facetNames = shownFacets.map(facet => {return facet.annotation.split('--')[0]})
       // const otherMenuOptions = options.filter(opt => !facetNames.includes(opt.label))
 
       // Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
@@ -82,11 +142,10 @@ export function CellFilteringPanel({
         return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
       })
 
+
       return (
         <div key={facet.annotation}>
-          <div style={{ fontWeight: 'bold', marginTop: '10px' }}>
-            {facetName}
-          </div>
+          <FacetNameHeader facet={facet} />
           {sortedGroups.map((item, index) => (
             <div style={{ marginLeft: '5px', lineHeight: '18px' }} key={index}>
               <label className="cell-filter-label">
