@@ -103,20 +103,30 @@ function isChecked(annotation, item, checkedMap) {
 }
 
 /** Facet name and collapsible list of filter checkboxes */
-function CellFacet({ facet, checkedMap, handleCheck, updateFilteredCells }) {
+function CellFacet({
+  facet,
+  checkedMap, handleCheck, updateFilteredCells,
+  isAllListsCollapsed
+}) {
   if (Object.keys(facet).length === 0) {
     // Only create the list if the facet exists
     return <></>
   }
 
+  let defaultIsFullyCollapsed = false
+  if (isAllListsCollapsed) {
+    defaultIsFullyCollapsed = true
+  }
+
   const [isPartlyCollapsed, setIsPartlyCollapsed] = useState(true)
-  const [isFullyCollapsed, setIsFullyCollapsed] = useState(false)
+  const [isFullyCollapsed, setIsFullyCollapsed] = useState(defaultIsFullyCollapsed)
 
   // Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
   const sortedFilters = facet.groups.sort((a, b) => {
     return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
   })
 
+  // Handle truncating filter lists to account for any full or partial collapse
   let shownFilters = sortedFilters
   const numFiltersPartlyCollapsed = 5
   if (isPartlyCollapsed) {
@@ -125,6 +135,10 @@ function CellFacet({ facet, checkedMap, handleCheck, updateFilteredCells }) {
   if (isFullyCollapsed) {
     shownFilters = []
   }
+
+  useEffect(() => {
+    setIsFullyCollapsed(isAllListsCollapsed)
+  }, [isAllListsCollapsed])
 
   return (
     <div key={facet.annotation}>
@@ -230,8 +244,6 @@ export function CellFilteringPanel({
   const [checkedMap, setCheckedMap] = useState({})
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const [shownFacets, setShownFacets] = useState()
-  const [options, setOptions] = useState()
-
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
   /** used to populate the checkedMap for the initial facets shown */
@@ -244,11 +256,6 @@ export function CellFilteringPanel({
     }
 
     setCheckedMap(tempCheckedMap)
-
-
-    setOptions(initialFiveFacets.map(facet => {
-      return { value: facet, label: facet.annotation.split('--')[0] }
-    }))
 
     // set the shownFacets with the same facets as the checkedMap starts with
     setShownFacets(initialFiveFacets.slice(0, numFacets))
@@ -376,6 +383,7 @@ export function CellFilteringPanel({
                   checkedMap={checkedMap}
                   handleCheck={handleCheck}
                   updateFilteredCells={updateFilteredCells}
+                  isAllListsCollapsed={isAllListsCollapsed}
                 />
               )
             })}
