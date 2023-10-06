@@ -6,3 +6,17 @@
   margin-left: 10px;
   vertical-align: middle;
 }
+
+.cell-filter-label {
+  font-weight: normal;
+  cursor: pointer;
+
+  &:hover {
+    color: #007;
+    // background-color: #FAFAFF;
+  }
+
+  input[type="checkbox"] {
+    cursor: pointer;
+  }
+}
