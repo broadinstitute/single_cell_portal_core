@@ -70,17 +70,18 @@ function parseAnnotationName(annotationIdentifier) {
   return [displayName, rawName]
 }
 
-/** Get stylized name of facet */
+/** Get stylized name of facet, and optional tooltip */
 function FacetNameHeader({ facet }) {
   const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
   const isConventional = getIsConventionalAnnotation(rawFacetName)
 
   const facetNameStyle = {
     fontWeight: 'bold',
-    marginTop: '10px', marginBottom: '5px', width: 'fit-content'
+    marginTop: '12px', marginBottom: '1px', width: 'fit-content'
   }
   if (isConventional) {
     facetNameStyle.borderBottom = '1px #555 dashed'
+    facetNameStyle.marginBottom = '5px'
   }
 
   let tooltipAttrs = {}
@@ -91,7 +92,7 @@ function FacetNameHeader({ facet }) {
     }
     const note = conventionalMetadataGlossary[rawFacetName]
     if (note) {
-      tooltipAttrs['data-original-title'] += `  ${note}`
+      tooltipAttrs['data-original-title'] += `  ${note}.`
     }
   }
 
@@ -127,47 +128,57 @@ export function CellFilteringPanel({
   const [shownFacets, setShownFacets] = useState()
   const [options, setOptions] = useState()
 
-  /** create the checklist for filtering the facet */
-  function CellFilterList({ facet }) {
-    console.log('facet', facet)
-    // only create the checklist if the facet exists
-    if (Object.keys(facet).length !== 0
-    ) {
-      // grab the show facet names to filter the select options so there won't be duplicates
-      // const facetNames = shownFacets.map(facet => {return facet.annotation.split('--')[0]})
-      // const otherMenuOptions = options.filter(opt => !facetNames.includes(opt.label))
-
-      // Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
-      const sortedGroups = facet.groups.sort((a, b) => {
-        return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
-      })
-
-
-      return (
-        <div key={facet.annotation}>
-          <FacetNameHeader facet={facet} />
-          {sortedGroups.map((item, index) => (
-            <div style={{ marginLeft: '5px', lineHeight: '18px' }} key={index}>
-              <label className="cell-filter-label">
-                <input
-                  type="checkbox"
-                  checked={isChecked(facet.annotation, item)}
-                  value={item}
-                  data-analytics-name={`${facet.annotation}:${item}`}
-                  name={`${facet.annotation}:${item}`}
-                  onChange={event => {
-                    handleCheck(event)
-                    updateFilteredCells(checkedMap)
-                  }}
-                  style={{ marginRight: '5px' }}
-                />
-                {item}
-              </label>
-            </div>
-          ))}
-        </div>
-      )
+  /** Facet name and collapsible list of filter checkboxes */
+  function CellFacet({ facet }) {
+    if (Object.keys(facet).length === 0) {
+      // Only create the list if the facet exists
+      return <></>
     }
+
+    const [isCollapsed, setIsCollapsed] = useState(true)
+
+    // grab the show facet names to filter the select options so there won't be duplicates
+    // const facetNames = shownFacets.map(facet => {return facet.annotation.split('--')[0]})
+    // const otherMenuOptions = options.filter(opt => !facetNames.includes(opt.label))
+
+    // Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
+    const sortedFilters = facet.groups.sort((a, b) => {
+      return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
+    })
+
+    const numShownFiltersWhenCollapsed = 5
+    const shownFilters = sortedFilters.slice(0, numShownFiltersWhenCollapsed)
+
+
+    return (
+      <div key={facet.annotation}>
+        <FacetNameHeader facet={facet} />
+        {shownFilters.map((item, i) => (
+          <div style={{ marginLeft: '5px', lineHeight: '18px' }} key={i}>
+            <label className="cell-filter-label">
+              <input
+                type="checkbox"
+                checked={isChecked(facet.annotation, item)}
+                value={item}
+                data-analytics-name={`${facet.annotation}:${item}`}
+                name={`${facet.annotation}:${item}`}
+                onChange={event => {
+                  handleCheck(event)
+                  updateFilteredCells(checkedMap)
+                }}
+                style={{ marginRight: '5px' }}
+              />
+              {item}
+            </label>
+          </div>
+        ))}
+        {sortedFilters.length > numShownFiltersWhenCollapsed &&
+          <a className="facet-toggle" style={{ 'fontSize': '13px' }}>
+            {isCollapsed ? 'More...' : 'Less...'}
+          </a>
+        }
+      </div>
+    )
   }
 
   /** used to populate the checkedMap for the initial facets shown */
@@ -291,7 +302,7 @@ export function CellFilteringPanel({
           <div style={{ margin: '2px', padding: '2px' }}>
             { shownFacets.map(facet => {
               return (
-                <CellFilterList
+                <CellFacet
                   facet={facet}
                 />
               )
