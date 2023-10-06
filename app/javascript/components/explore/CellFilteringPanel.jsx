@@ -72,6 +72,31 @@ function parseAnnotationName(annotationIdentifier) {
   return [displayName, rawName]
 }
 
+/** Toggle control for collapsing a list; for each filter list, and all filter lists */
+function CollapseToggleChevron({ isCollapsed, setIsCollapsed, whatToToggle }) {
+  let toggleIcon
+  let toggleIconTooltipText
+  if (!isCollapsed) {
+    toggleIcon = <FontAwesomeIcon icon={faChevronDown} />
+    toggleIconTooltipText = `Hide ${whatToToggle}`
+  } else {
+    toggleIcon = <FontAwesomeIcon icon={faChevronRight} />
+    toggleIconTooltipText = `Hide ${whatToToggle}`
+  }
+
+  return (
+    <span
+      className="facet-toggle-chevron"
+      data-toggle="tooltip"
+      data-original-title={toggleIconTooltipText}
+      style={{ marginLeft: '20px', cursor: 'pointer' }}
+      onClick={() => setIsCollapsed(!isCollapsed)}
+    >
+      {toggleIcon}
+    </span>
+  )
+}
+
 /** Get stylized name of facet, optional tooltip, collapse controls */
 function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
   const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
@@ -100,33 +125,16 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
     }
   }
 
-  let toggleIcon
-  let toggleIconTooltipText
-  if (!isFullyCollapsed) {
-    toggleIcon = <FontAwesomeIcon icon={faChevronDown} />
-    toggleIconTooltipText = 'Hide filter list'
-  } else {
-    toggleIcon = <FontAwesomeIcon icon={faChevronRight} />
-    toggleIconTooltipText = 'Show filter list'
-  }
-
-  const facetToggle =
-    <span
-      className="facet-toggle"
-      data-toggle="tooltip"
-      data-original-title={toggleIconTooltipText}
-      style={{ marginLeft: '20px', cursor: 'pointer' }}
-      onClick={() => setIsFullyCollapsed(!isFullyCollapsed)}
-    >
-      {toggleIcon}
-    </span>
-
   return (
     <div>
       <span style={facetNameStyle} {...tooltipAttrs}>
         {facetName}
       </span>
-      {facetToggle}
+      <CollapseToggleChevron
+        isCollapsed={isFullyCollapsed}
+        setIsCollapsed={setIsFullyCollapsed}
+        whatToToggle="filter list"
+      />
     </div>
   )
 }
@@ -155,6 +163,8 @@ export function CellFilteringPanel({
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const [shownFacets, setShownFacets] = useState()
   const [options, setOptions] = useState()
+
+  const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
   /** Facet name and collapsible list of filter checkboxes */
   function CellFacet({ facet }) {
@@ -264,6 +274,30 @@ export function CellFilteringPanel({
     setShownFacets(tempShownFacets)
   }
 
+  /** Top header for the "Filter" section, including all-facet controls */
+  function FilterSectionHeader({ isAllListsCollapsed, setIsAllListsCollapsed }) {
+    const helpIcon =
+    <a className="action help-icon"
+      data-toggle="tooltip"
+      data-original-title="Use the checkboxes to filter points from the plot.  Deselected values are
+        assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
+    >
+      <FontAwesomeIcon icon={faInfoCircle}/>
+    </a>
+
+    return (
+      <>
+        <b>Filter &nbsp;</b>
+        <CollapseToggleChevron
+          isCollapsed={isAllListsCollapsed}
+          setIsCollapsed={setIsAllListsCollapsed}
+          whatToToggle="all filter lists"
+        />
+        {helpIcon}
+      </>
+    )
+  }
+
   /** Add/Remove checked item from list */
   function handleCheck(event) {
     // grab the name of the facet from the check event
@@ -329,14 +363,10 @@ export function CellFilteringPanel({
         </label>
         { Object.keys(checkedMap).length !== 0 &&
         <div style={{ marginTop: '10px', height: '450px', overflowY: 'scroll' }}>
-          <b>Filter &nbsp;
-            <a className="action help-icon"
-              data-toggle="tooltip"
-              data-original-title="Use the checkboxes to filter points from the plot.  Deselected values are
-                assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
-            >
-              <FontAwesomeIcon icon={faInfoCircle}/>
-            </a></b>
+          <FilterSectionHeader
+            isAllListsCollapsed={isAllListsCollapsed}
+            setIsAllListsCollapsed={setIsAllListsCollapsed}
+          />
           <div style={{ margin: '2px', padding: '2px' }}>
             { shownFacets.map(facet => {
               return (
