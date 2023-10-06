@@ -33,6 +33,11 @@ setupSentry()
 // On each page load, check for old SCP caches, delete any found
 clearOldServiceWorkerCaches()
 
+// Close tooltips; fixes edge case with Bootstrap-default Popper / Tippy tooltips
+document.addEventListener('click', () => {
+  document.querySelectorAll('.tooltip.fade.top.in').forEach(e => e.remove())
+})
+
 document.addEventListener('DOMContentLoaded', () => {
   // Logs only page views for faceted search UI
   logPageView()

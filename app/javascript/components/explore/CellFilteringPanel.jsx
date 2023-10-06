@@ -8,6 +8,8 @@ import {
 import Select from '~/lib/InstrumentedSelect'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
+import { faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons'
+
 import { initCellFaceting } from '~/lib/cell-faceting'
 import { getSelectedClusterAndAnnot } from '~/components/explore/ExploreDisplayTabs'
 
@@ -70,14 +72,16 @@ function parseAnnotationName(annotationIdentifier) {
   return [displayName, rawName]
 }
 
-/** Get stylized name of facet, and optional tooltip */
-function FacetNameHeader({ facet }) {
+/** Get stylized name of facet, optional tooltip, collapse controls */
+function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
   const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
   const isConventional = getIsConventionalAnnotation(rawFacetName)
 
   const facetNameStyle = {
     fontWeight: 'bold',
-    marginTop: '12px', marginBottom: '1px', width: 'fit-content'
+    marginTop: '12px', marginBottom: '1px',
+    display: 'inline-block',
+    width: 'fit-content'
   }
   if (isConventional) {
     facetNameStyle.borderBottom = '1px #555 dashed'
@@ -88,17 +92,41 @@ function FacetNameHeader({ facet }) {
   if (isConventional) {
     tooltipAttrs = {
       'data-toggle': 'tooltip',
-      'data-original-title': `SCP metadata convention term.`
+      'data-original-title': 'SCP metadata convention term'
     }
     const note = conventionalMetadataGlossary[rawFacetName]
     if (note) {
-      tooltipAttrs['data-original-title'] += `  ${note}.`
+      tooltipAttrs['data-original-title'] += `.  ${note}.`
     }
   }
 
+  let toggleIcon
+  let toggleIconTooltipText
+  if (!isFullyCollapsed) {
+    toggleIcon = <FontAwesomeIcon icon={faChevronDown} />
+    toggleIconTooltipText = 'Hide filter list'
+  } else {
+    toggleIcon = <FontAwesomeIcon icon={faChevronRight} />
+    toggleIconTooltipText = 'Show filter list'
+  }
+
+  const facetToggle =
+    <span
+      className="facet-toggle"
+      data-toggle="tooltip"
+      data-original-title={toggleIconTooltipText}
+      style={{ marginLeft: '20px', cursor: 'pointer' }}
+      onClick={() => setIsFullyCollapsed(!isFullyCollapsed)}
+    >
+      {toggleIcon}
+    </span>
+
   return (
-    <div style={facetNameStyle} {...tooltipAttrs}>
-      {facetName}
+    <div>
+      <span style={facetNameStyle} {...tooltipAttrs}>
+        {facetName}
+      </span>
+      {facetToggle}
     </div>
   )
 }
@@ -135,24 +163,30 @@ export function CellFilteringPanel({
       return <></>
     }
 
-    const [isCollapsed, setIsCollapsed] = useState(true)
-
-    // grab the show facet names to filter the select options so there won't be duplicates
-    // const facetNames = shownFacets.map(facet => {return facet.annotation.split('--')[0]})
-    // const otherMenuOptions = options.filter(opt => !facetNames.includes(opt.label))
+    const [isPartlyCollapsed, setIsPartlyCollapsed] = useState(true)
+    const [isFullyCollapsed, setIsFullyCollapsed] = useState(false)
 
     // Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
     const sortedFilters = facet.groups.sort((a, b) => {
       return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
     })
 
-    const numShownFiltersWhenCollapsed = 5
-    const shownFilters = sortedFilters.slice(0, numShownFiltersWhenCollapsed)
-
+    let shownFilters = sortedFilters
+    const numFiltersPartlyCollapsed = 5
+    if (isPartlyCollapsed) {
+      shownFilters = sortedFilters.slice(0, numFiltersPartlyCollapsed)
+    }
+    if (isFullyCollapsed) {
+      shownFilters = []
+    }
 
     return (
       <div key={facet.annotation}>
-        <FacetNameHeader facet={facet} />
+        <FacetHeader
+          facet={facet}
+          isFullyCollapsed={isFullyCollapsed}
+          setIsFullyCollapsed={setIsFullyCollapsed}
+        />
         {shownFilters.map((item, i) => (
           <div style={{ marginLeft: '5px', lineHeight: '18px' }} key={i}>
             <label className="cell-filter-label">
@@ -172,9 +206,13 @@ export function CellFilteringPanel({
             </label>
           </div>
         ))}
-        {sortedFilters.length > numShownFiltersWhenCollapsed &&
-          <a className="facet-toggle" style={{ 'fontSize': '13px' }}>
-            {isCollapsed ? 'More...' : 'Less...'}
+        {!isFullyCollapsed && sortedFilters.length > numFiltersPartlyCollapsed &&
+          <a
+            className="facet-toggle"
+            style={{ 'fontSize': '13px' }}
+            onClick={() => {setIsPartlyCollapsed(!isPartlyCollapsed)}}
+          >
+            {isPartlyCollapsed ? 'More...' : 'Less...'}
           </a>
         }
       </div>
@@ -302,9 +340,7 @@ export function CellFilteringPanel({
           <div style={{ margin: '2px', padding: '2px' }}>
             { shownFacets.map(facet => {
               return (
-                <CellFacet
-                  facet={facet}
-                />
+                <CellFacet facet={facet} />
               )
             })}
           </div>
