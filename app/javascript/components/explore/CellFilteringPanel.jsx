@@ -97,6 +97,74 @@ function CollapseToggleChevron({ isCollapsed, setIsCollapsed, whatToToggle }) {
   )
 }
 
+/** determine if the filter is checked or not */
+function isChecked(annotation, item, checkedMap) {
+  return checkedMap[annotation]?.includes(item)
+}
+
+/** Facet name and collapsible list of filter checkboxes */
+function CellFacet({ facet, checkedMap, handleCheck, updateFilteredCells }) {
+  if (Object.keys(facet).length === 0) {
+    // Only create the list if the facet exists
+    return <></>
+  }
+
+  const [isPartlyCollapsed, setIsPartlyCollapsed] = useState(true)
+  const [isFullyCollapsed, setIsFullyCollapsed] = useState(false)
+
+  // Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
+  const sortedFilters = facet.groups.sort((a, b) => {
+    return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
+  })
+
+  let shownFilters = sortedFilters
+  const numFiltersPartlyCollapsed = 5
+  if (isPartlyCollapsed) {
+    shownFilters = sortedFilters.slice(0, numFiltersPartlyCollapsed)
+  }
+  if (isFullyCollapsed) {
+    shownFilters = []
+  }
+
+  return (
+    <div key={facet.annotation}>
+      <FacetHeader
+        facet={facet}
+        isFullyCollapsed={isFullyCollapsed}
+        setIsFullyCollapsed={setIsFullyCollapsed}
+      />
+      {shownFilters.map((item, i) => (
+        <div style={{ marginLeft: '5px', lineHeight: '18px' }} key={i}>
+          <label className="cell-filter-label">
+            <input
+              type="checkbox"
+              checked={isChecked(facet.annotation, item, checkedMap)}
+              value={item}
+              data-analytics-name={`${facet.annotation}:${item}`}
+              name={`${facet.annotation}:${item}`}
+              onChange={event => {
+                handleCheck(event)
+                updateFilteredCells(checkedMap)
+              }}
+              style={{ marginRight: '5px' }}
+            />
+            {item}
+          </label>
+        </div>
+      ))}
+      {!isFullyCollapsed && sortedFilters.length > numFiltersPartlyCollapsed &&
+        <a
+          className="facet-toggle"
+          style={{ 'fontSize': '13px' }}
+          onClick={() => {setIsPartlyCollapsed(!isPartlyCollapsed)}}
+        >
+          {isPartlyCollapsed ? 'More...' : 'Less...'}
+        </a>
+      }
+    </div>
+  )
+}
+
 /** Get stylized name of facet, optional tooltip, collapse controls */
 function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
   const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
@@ -166,69 +234,6 @@ export function CellFilteringPanel({
 
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
-  /** Facet name and collapsible list of filter checkboxes */
-  function CellFacet({ facet }) {
-    if (Object.keys(facet).length === 0) {
-      // Only create the list if the facet exists
-      return <></>
-    }
-
-    const [isPartlyCollapsed, setIsPartlyCollapsed] = useState(true)
-    const [isFullyCollapsed, setIsFullyCollapsed] = useState(false)
-
-    // Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
-    const sortedFilters = facet.groups.sort((a, b) => {
-      return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
-    })
-
-    let shownFilters = sortedFilters
-    const numFiltersPartlyCollapsed = 5
-    if (isPartlyCollapsed) {
-      shownFilters = sortedFilters.slice(0, numFiltersPartlyCollapsed)
-    }
-    if (isFullyCollapsed) {
-      shownFilters = []
-    }
-
-    return (
-      <div key={facet.annotation}>
-        <FacetHeader
-          facet={facet}
-          isFullyCollapsed={isFullyCollapsed}
-          setIsFullyCollapsed={setIsFullyCollapsed}
-        />
-        {shownFilters.map((item, i) => (
-          <div style={{ marginLeft: '5px', lineHeight: '18px' }} key={i}>
-            <label className="cell-filter-label">
-              <input
-                type="checkbox"
-                checked={isChecked(facet.annotation, item)}
-                value={item}
-                data-analytics-name={`${facet.annotation}:${item}`}
-                name={`${facet.annotation}:${item}`}
-                onChange={event => {
-                  handleCheck(event)
-                  updateFilteredCells(checkedMap)
-                }}
-                style={{ marginRight: '5px' }}
-              />
-              {item}
-            </label>
-          </div>
-        ))}
-        {!isFullyCollapsed && sortedFilters.length > numFiltersPartlyCollapsed &&
-          <a
-            className="facet-toggle"
-            style={{ 'fontSize': '13px' }}
-            onClick={() => {setIsPartlyCollapsed(!isPartlyCollapsed)}}
-          >
-            {isPartlyCollapsed ? 'More...' : 'Less...'}
-          </a>
-        }
-      </div>
-    )
-  }
-
   /** used to populate the checkedMap for the initial facets shown */
   function populateCheckedMap() {
     const tempCheckedMap = {}
@@ -277,7 +282,8 @@ export function CellFilteringPanel({
   /** Top header for the "Filter" section, including all-facet controls */
   function FilterSectionHeader({ isAllListsCollapsed, setIsAllListsCollapsed }) {
     const helpIcon =
-    <a className="action help-icon"
+    <a
+      className="action help-icon"
       data-toggle="tooltip"
       data-original-title="Use the checkboxes to filter points from the plot.  Deselected values are
         assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
@@ -287,7 +293,7 @@ export function CellFilteringPanel({
 
     return (
       <>
-        <b>Filter &nbsp;</b>
+        <span>Filter</span>
         <CollapseToggleChevron
           isCollapsed={isAllListsCollapsed}
           setIsCollapsed={setIsAllListsCollapsed}
@@ -320,11 +326,6 @@ export function CellFilteringPanel({
 
     // update the filtered cells based on the checked condition of the filters
     updateFilteredCells(checkedMap)
-  }
-
-  /** determine if the filter is checked or not */
-  function isChecked(annotation, item) {
-    return checkedMap[annotation]?.includes(item)
   }
 
   const currentlyInUseAnnotations = { colorBy: '', facets: [] }
@@ -370,7 +371,12 @@ export function CellFilteringPanel({
           <div style={{ margin: '2px', padding: '2px' }}>
             { shownFacets.map(facet => {
               return (
-                <CellFacet facet={facet} />
+                <CellFacet
+                  facet={facet}
+                  checkedMap={checkedMap}
+                  handleCheck={handleCheck}
+                  updateFilteredCells={updateFilteredCells}
+                />
               )
             })}
           </div>
