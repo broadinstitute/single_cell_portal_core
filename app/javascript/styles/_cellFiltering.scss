@@ -2,11 +2,6 @@
   margin-bottom: 17px;
 }
 
-.cell-filtering-info-help-icon {
-  margin-left: 10px;
-  vertical-align: middle;
-}
-
 .cell-filter-label {
   font-weight: normal;
   cursor: pointer;
@@ -23,6 +18,20 @@
 
 .filter-section-header, .cell-facet-header {
   cursor: pointer;
+}
+
+.cell-facet {
+  margin-top: 12px;
+}
+
+.filter-section-header:hover,
+.cell-facet-header:hover {
+  color: #007;
+}
+
+.filter-section-header:hover .facet-toggle-chevron,
+.cell-facet-header:hover .facet-toggle-chevron {
+  color: #77D;
 }
 
 .cell-facet .cell-filters-shown .facet-toggle-chevron {

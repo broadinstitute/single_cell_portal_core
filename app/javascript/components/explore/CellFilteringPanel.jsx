@@ -89,7 +89,7 @@ function CollapseToggleChevron({ isCollapsed, whatToToggle }) {
       className="facet-toggle-chevron"
       data-toggle="tooltip"
       data-original-title={toggleIconTooltipText}
-      style={{ marginLeft: '20px', cursor: 'pointer' }}
+      style={{ float: 'right', marginRight: '10px', cursor: 'pointer' }}
     >
       {toggleIcon}
     </span>
@@ -140,14 +140,16 @@ function CellFacet({
   }, [isAllListsCollapsed])
 
   return (
-    <div className="cell-facet" key={facet.annotation}>
+    <div
+      className="cell-facet"
+      key={facet.annotation}>
       <FacetHeader
         facet={facet}
         isFullyCollapsed={isFullyCollapsed}
         setIsFullyCollapsed={setIsFullyCollapsed}
       />
       {shownFilters.map((item, i) => (
-        <div style={{ marginLeft: '5px', lineHeight: '18px' }} key={i}>
+        <div style={{ marginLeft: '2px', lineHeight: '18px' }} key={i}>
           <label className="cell-filter-label">
             <input
               type="checkbox"
@@ -185,7 +187,7 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
 
   const facetNameStyle = {
     fontWeight: 'bold',
-    marginTop: '12px', marginBottom: '1px',
+    marginBottom: '1px',
     display: 'inline-block',
     width: 'fit-content'
   }
@@ -373,7 +375,7 @@ export function CellFilteringPanel({
             isAllListsCollapsed={isAllListsCollapsed}
             setIsAllListsCollapsed={setIsAllListsCollapsed}
           />
-          <div style={{ margin: '2px', padding: '2px' }}>
+          <div>
             { shownFacets.map(facet => {
               return (
                 <CellFacet
