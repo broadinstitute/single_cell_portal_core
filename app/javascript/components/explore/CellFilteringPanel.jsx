@@ -72,8 +72,8 @@ function parseAnnotationName(annotationIdentifier) {
   return [displayName, rawName]
 }
 
-/** Toggle control for collapsing a list; for each filter list, and all filter lists */
-function CollapseToggleChevron({ isCollapsed, setIsCollapsed, whatToToggle }) {
+/** Toggle icon for collapsing a list; for each filter list, and all filter lists */
+function CollapseToggleChevron({ isCollapsed, whatToToggle }) {
   let toggleIcon
   let toggleIconTooltipText
   if (!isCollapsed) {
@@ -90,7 +90,6 @@ function CollapseToggleChevron({ isCollapsed, setIsCollapsed, whatToToggle }) {
       data-toggle="tooltip"
       data-original-title={toggleIconTooltipText}
       style={{ marginLeft: '20px', cursor: 'pointer' }}
-      onClick={() => setIsCollapsed(!isCollapsed)}
     >
       {toggleIcon}
     </span>
@@ -141,7 +140,7 @@ function CellFacet({
   }, [isAllListsCollapsed])
 
   return (
-    <div key={facet.annotation}>
+    <div className="cell-facet" key={facet.annotation}>
       <FacetHeader
         facet={facet}
         isFullyCollapsed={isFullyCollapsed}
@@ -203,14 +202,18 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
   title += `.  Name in data: ${rawFacetName}`
   tooltipAttrs['data-original-title'] = title
 
+  const toggleClass = `cell-filters-${isFullyCollapsed ? 'hidden' : 'shown'}`
+
   return (
-    <div>
+    <div
+      className={`cell-facet-header ${toggleClass}`}
+      onClick={() => {setIsFullyCollapsed(!isFullyCollapsed)}}
+    >
       <span style={facetNameStyle} {...tooltipAttrs}>
         {facetName}
       </span>
       <CollapseToggleChevron
         isCollapsed={isFullyCollapsed}
-        setIsCollapsed={setIsFullyCollapsed}
         whatToToggle="filter list"
       />
     </div>
@@ -285,20 +288,22 @@ export function CellFilteringPanel({
   /** Top header for the "Filter" section, including all-facet controls */
   function FilterSectionHeader({ isAllListsCollapsed, setIsAllListsCollapsed }) {
     return (
-      <>
+      <div
+        className="filter-section-header"
+        onClick={() => {setIsAllListsCollapsed(!isAllListsCollapsed)}}
+      >
         <span
           style={{ 'fontWeight': 'bold' }}
-          className="filter-section-header"
           data-toggle="tooltip"
-          data-original-title="Use checkboxes to filter cells from scatter plots.  Deselected values are
+          data-original-title="Use checkboxes to show or hide cells in plots.  Deselected values are
         assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
-        >Filter</span>
+        >Filters</span>
         <CollapseToggleChevron
           isCollapsed={isAllListsCollapsed}
           setIsCollapsed={setIsAllListsCollapsed}
           whatToToggle="all filter lists"
         />
-      </>
+      </div>
     )
   }
 
