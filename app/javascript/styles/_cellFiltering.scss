@@ -20,8 +20,17 @@
   cursor: pointer;
 }
 
+.filter-section-header {
+  padding-bottom: 5px;
+  border-bottom: 1px solid #DDD;
+}
+
 .cell-facet {
   margin-top: 12px;
+}
+
+.cell-facet:first-child {
+  margin-top: 6px;
 }
 
 .filter-section-header:hover,

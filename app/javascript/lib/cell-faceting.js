@@ -61,16 +61,15 @@ function sortAnnotationsByRelevance(annotList) {
   )
   annotsToFacet = annotsToFacet.concat(cellTypeOrClinicalAnnots)
 
-  const otherConventionalAnnots = annotList.filter(annot => {
-    return (
-      (
-        annot.name.endsWith('__ontology_label') ||
-        annot.name === 'donor_id' ||
-        annot.name === 'biosample_id'
-      ) && isUnique(annot)
-    )
+  const otherConventionalOntologyAnnots = annotList.filter(annot => {
+    return annot.name.endsWith('__ontology_label') && isUnique(annot)
   })
-  annotsToFacet = annotsToFacet.concat(otherConventionalAnnots)
+  annotsToFacet = annotsToFacet.concat(otherConventionalOntologyAnnots)
+
+  const otherConventionalIdAnnots = annotList.filter(
+    annot => ['donor_id', 'biosample_id'].includes(annot.name) && isUnique(annot)
+  )
+  annotsToFacet = annotsToFacet.concat(otherConventionalIdAnnots)
 
   const clusterAnnots = annotList.filter(
     annot => ('cluster_name' in annot) && isUnique(annot)

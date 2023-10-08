@@ -202,7 +202,7 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
   let title = 'Author annotation'
   const tooltipAttrs = { 'data-toggle': 'tooltip' }
   if (isConventional) {
-    title = 'SCP metadata convention annotation'
+    title = 'Conventional annotation'
     const note = conventionalMetadataGlossary[rawFacetName]
     if (note) {
       title += `.  ${note}`
@@ -343,11 +343,10 @@ export function CellFilteringPanel({
   const currentlyInUseAnnotations = { colorBy: '', facets: [] }
   const annotationOptions = getAnnotationOptions(annotationList, cluster)
 
-  const verticalPad = 335 // Accounts for all UI real estate above table header
+  const verticalPad = 356 // Accounts for all UI real estate above table header
 
   const filterSectionHeight = window.innerHeight - verticalPad
   const filterSectionHeightProp = `${filterSectionHeight}px`
-  console.log('filterSectionHeightProp', filterSectionHeightProp)
 
   /** populate the checkedMap state if it's empty
    * (this is for initial setting upon page loading and the cellFaceting prop initializing) */
@@ -384,12 +383,12 @@ export function CellFilteringPanel({
         </label>
         { Object.keys(checkedMap).length !== 0 &&
         <>
-          <div style={{ marginTop: '10px', height: filterSectionHeightProp, overflowY: 'scroll' }}>
+          <div style={{ marginTop: '10px' }}>
             <FilterSectionHeader
               isAllListsCollapsed={isAllListsCollapsed}
               setIsAllListsCollapsed={setIsAllListsCollapsed}
             />
-            <div className="cell-facet-list">
+            <div className="cell-facet-list" style={{ height: filterSectionHeightProp, overflowY: 'scroll' }}>
               { shownFacets.map(facet => {
                 return (
                   <CellFacet
