@@ -31,18 +31,19 @@ const DISEASE_REGEX = new RegExp(/(disease|sick|malignan|indicat|itis|osis|oma)/
  *   - Group-based and have > 1 group
  *   - Cluster-based _and for this cluster_ or study-wide
  *
- * Prioritization logic applied here, after above preconditions are met:
+ * Annotation prioritization logic applied here, after above preconditions are met:
  *
- *   0. Not currently selected annotation -- this is set upstream, not here
- *   1. <= 2 annotations from metadata convention, for `cell type` and `disease`
- *   2. 0-5 annotations that are cell-type-like or disease-like
- *   2. 0-2 cluster-based annotations
- *   3. 0-5 study-wide annotations
+ *   0. Not currently selected -- this is set upstream, not here
+ *   1. Conventional annotations for cell type or disease
+ *   2. Non-conventional annotations for cell type or disease
+ *   3. Other conventional annotations
+ *   4. Cluster-based annotations
+ *   5. Study-wide annotations
  *
  * Annotations in above categories often don't exist, in which case we fall to the
  * the next prioritization rule.
  */
-function prioritizeAnnotations(annotList) {
+function sortAnnotationsByRelevance(annotList) {
   let annotsToFacet = []
 
   /** Assess if annotation is already in annotsToFacet list */
@@ -60,9 +61,15 @@ function prioritizeAnnotations(annotList) {
   )
   annotsToFacet = annotsToFacet.concat(cellTypeOrClinicalAnnots)
 
-  const otherConventionalAnnots = annotList.filter(
-    annot => annot.name.endsWith('__ontology_label') && isUnique(annot)
-  ).slice(0, 2)
+  const otherConventionalAnnots = annotList.filter(annot => {
+    return (
+      (
+        annot.name.endsWith('__ontology_label') ||
+        annot.name === 'donor_id' ||
+        annot.name === 'biosample_id'
+      ) && isUnique(annot)
+    )
+  })
   annotsToFacet = annotsToFacet.concat(otherConventionalAnnots)
 
   const clusterAnnots = annotList.filter(
@@ -75,7 +82,7 @@ function prioritizeAnnotations(annotList) {
   )
   annotsToFacet = annotsToFacet.concat(studyAnnots)
 
-  annotsToFacet = annotsToFacet.map(annot => annot.identifier).slice(0, 5)
+  annotsToFacet = annotsToFacet.map(annot => annot.identifier)
 
   return annotsToFacet
 }
@@ -214,8 +221,9 @@ export async function initCellFaceting(
         )
       })
 
-  const annotsToFacet = prioritizeAnnotations(applicableAnnots)
-  const facetData = await fetchAnnotationFacets(studyAccession, annotsToFacet, selectedCluster)
+  const allRelevanceSortedFacets = sortAnnotationsByRelevance(applicableAnnots)
+  const annotFacetsToLoad = allRelevanceSortedFacets.slice(0, 5)
+  const facetData = await fetchAnnotationFacets(studyAccession, annotFacetsToLoad, selectedCluster)
 
   const {
     filterableCells, cellsByFacet,

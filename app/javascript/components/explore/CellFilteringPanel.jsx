@@ -120,16 +120,23 @@ function CellFacet({
   const [isPartlyCollapsed, setIsPartlyCollapsed] = useState(true)
   const [isFullyCollapsed, setIsFullyCollapsed] = useState(defaultIsFullyCollapsed)
 
+  const filters = facet.groups
+
+  // TODO: Uncommenting below and replacing `filters` with `sortedFilters` in
+  // this function makes the _filter list_ naturally sorted, but subtly
+  // (and severely) causes a mismatch between the selected filter label and the
+  // group of plotted cells that actually gets hidden in the plot.
+  //
   // Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
-  const sortedFilters = facet.groups.sort((a, b) => {
-    return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
-  })
+  // const sortedFilters = facet.groups.sort((a, b) => {
+  //   return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
+  // })
 
   // Handle truncating filter lists to account for any full or partial collapse
-  let shownFilters = sortedFilters
+  let shownFilters = filters
   const numFiltersPartlyCollapsed = 5
   if (isPartlyCollapsed) {
-    shownFilters = sortedFilters.slice(0, numFiltersPartlyCollapsed)
+    shownFilters = filters.slice(0, numFiltersPartlyCollapsed)
   }
   if (isFullyCollapsed) {
     shownFilters = []
@@ -167,7 +174,7 @@ function CellFacet({
           </label>
         </div>
       ))}
-      {!isFullyCollapsed && sortedFilters.length > numFiltersPartlyCollapsed &&
+      {!isFullyCollapsed && filters.length > numFiltersPartlyCollapsed &&
         <a
           className="facet-toggle"
           style={{ 'fontSize': '13px' }}
@@ -299,7 +306,7 @@ export function CellFilteringPanel({
           data-toggle="tooltip"
           data-original-title="Use checkboxes to show or hide cells in plots.  Deselected values are
         assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
-        >Filters</span>
+        >Filter by</span>
         <CollapseToggleChevron
           isCollapsed={isAllListsCollapsed}
           setIsCollapsed={setIsAllListsCollapsed}
@@ -336,6 +343,12 @@ export function CellFilteringPanel({
   const currentlyInUseAnnotations = { colorBy: '', facets: [] }
   const annotationOptions = getAnnotationOptions(annotationList, cluster)
 
+  const verticalPad = 335 // Accounts for all UI real estate above table header
+
+  const filterSectionHeight = window.innerHeight - verticalPad
+  const filterSectionHeightProp = `${filterSectionHeight}px`
+  console.log('filterSectionHeightProp', filterSectionHeightProp)
+
   /** populate the checkedMap state if it's empty
    * (this is for initial setting upon page loading and the cellFaceting prop initializing) */
   useEffect(() => {
@@ -370,25 +383,28 @@ export function CellFilteringPanel({
             styles={clusterSelectStyle}/>
         </label>
         { Object.keys(checkedMap).length !== 0 &&
-        <div style={{ marginTop: '10px', height: '450px', overflowY: 'scroll' }}>
-          <FilterSectionHeader
-            isAllListsCollapsed={isAllListsCollapsed}
-            setIsAllListsCollapsed={setIsAllListsCollapsed}
-          />
-          <div>
-            { shownFacets.map(facet => {
-              return (
-                <CellFacet
-                  facet={facet}
-                  checkedMap={checkedMap}
-                  handleCheck={handleCheck}
-                  updateFilteredCells={updateFilteredCells}
-                  isAllListsCollapsed={isAllListsCollapsed}
-                />
-              )
-            })}
+        <>
+          <div style={{ marginTop: '10px', height: filterSectionHeightProp, overflowY: 'scroll' }}>
+            <FilterSectionHeader
+              isAllListsCollapsed={isAllListsCollapsed}
+              setIsAllListsCollapsed={setIsAllListsCollapsed}
+            />
+            <div className="cell-facet-list">
+              { shownFacets.map(facet => {
+                return (
+                  <CellFacet
+                    facet={facet}
+                    checkedMap={checkedMap}
+                    handleCheck={handleCheck}
+                    updateFilteredCells={updateFilteredCells}
+                    isAllListsCollapsed={isAllListsCollapsed}
+                  />
+                )
+              })}
+            </div>
           </div>
-        </div>}
+        </>
+        }
       </div>
     </>
   )
