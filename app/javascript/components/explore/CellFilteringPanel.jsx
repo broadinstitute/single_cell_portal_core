@@ -74,7 +74,7 @@ function parseAnnotationName(annotationIdentifier) {
 }
 
 /** Toggle icon for collapsing a list; for each filter list, and all filter lists */
-function CollapseToggleChevron({ isCollapsed, whatToToggle }) {
+function CollapseToggleChevron({ isCollapsed, whatToToggle, isLoaded }) {
   let toggleIcon
   let toggleIconTooltipText
   if (!isCollapsed) {
@@ -86,13 +86,23 @@ function CollapseToggleChevron({ isCollapsed, whatToToggle }) {
   }
 
   return (
-    <span
-      className="facet-toggle-chevron"
-      data-toggle="tooltip"
-      data-original-title={toggleIconTooltipText}
-      style={{ float: 'right', marginRight: '10px', cursor: 'pointer' }}
-    >
-      {toggleIcon}
+    <span style={{ float: 'right', marginRight: '5px' }}>
+      {!isLoaded &&
+      <span
+        data-toggle="tooltip"
+        data-original-title="Loading data..."
+        style={{ position: 'relative', top: '-5px', left: '-20px', cursor: 'progress' }}
+      >
+        <LoadingSpinner height='14px'/>
+      </span>
+      }
+      <span
+        className="facet-toggle-chevron"
+        data-toggle="tooltip"
+        data-original-title={toggleIconTooltipText}
+      >
+        {toggleIcon}
+      </span>
     </span>
   )
 }
@@ -148,19 +158,26 @@ function CellFacet({
   }, [isAllListsCollapsed])
 
   let facetLabelStyle = {}
-  let tooltipAttrs = {}
   if (!facet.isLoaded) {
     facetLabelStyle = { color: '#777', cursor: 'wait' }
-    tooltipAttrs = {
-      'data-toggle': 'tooltip',
-      'data-original-title': 'Loading data...'
+  }
+
+  let facetStyle = {}
+  const inputStyle = { marginRight: '5px' }
+  if (!facet.isLoaded) {
+    facetStyle = {
+      color: '#777',
+      cursor: 'progress'
     }
+    inputStyle.cursor = 'progress'
   }
 
   return (
     <div
       className="cell-facet"
-      key={facet.annotation}>
+      key={facet.annotation}
+      style={facetStyle}
+    >
       <FacetHeader
         facet={facet}
         isFullyCollapsed={isFullyCollapsed}
@@ -168,7 +185,7 @@ function CellFacet({
       />
       {shownFilters.map((item, i) => (
         <div style={{ marginLeft: '2px', lineHeight: '14px' }} key={i}>
-          <label className="cell-filter-label" style={facetLabelStyle} {...tooltipAttrs}>
+          <label className="cell-filter-label" style={facetLabelStyle}>
             <input
               type="checkbox"
               checked={isChecked(facet.annotation, item, checkedMap)}
@@ -179,7 +196,7 @@ function CellFacet({
                 handleCheck(event)
                 updateFilteredCells(checkedMap)
               }}
-              style={{ marginRight: '5px' }}
+              style={inputStyle}
               disabled={!facet.isLoaded}
             />
             {item}
@@ -208,15 +225,14 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
     fontWeight: 'bold',
     marginBottom: '1px',
     display: 'inline-block',
-    width: 'fit-content'
+    width: 'calc(100% - 30px)'
   }
-
-  let facetHeaderStyle = {}
+  const tooltipableFacetNameStyle = {
+    width: 'content-fit'
+  }
   if (!facet.isLoaded) {
-    facetHeaderStyle = {
-      color: '#777',
-      cursor: 'progress'
-    }
+    facetNameStyle.color = '#777'
+    facetNameStyle.cursor = 'progress'
   }
 
   let title = 'Author annotation'
@@ -229,9 +245,6 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
     }
   }
   title += `.  Name in data: ${rawFacetName}`
-  if (!facet.isLoaded) {
-    title = `Loading... ${ title}`
-  }
   tooltipAttrs['data-original-title'] = title
 
   const toggleClass = `cell-filters-${isFullyCollapsed ? 'hidden' : 'shown'}`
@@ -239,20 +252,17 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
   return (
     <div
       className={`cell-facet-header ${toggleClass}`}
-      style={facetHeaderStyle}
       onClick={() => {setIsFullyCollapsed(!isFullyCollapsed)}}
     >
-      <span style={facetNameStyle} {...tooltipAttrs}>
-        {facetName}
+      <span style={facetNameStyle}>
+        <span style={tooltipableFacetNameStyle} {...tooltipAttrs}>
+          {facetName}
+        </span>
       </span>
-      {!facet.isLoaded &&
-      <span style={{ position: 'relative', top: '-5px', left: '5px' }}>
-        <LoadingSpinner height='14px'/>
-      </span>
-      }
       <CollapseToggleChevron
         isCollapsed={isFullyCollapsed}
         whatToToggle="filter list"
+        isLoaded={facet.isLoaded}
       />
     </div>
   )
@@ -340,6 +350,7 @@ export function CellFilteringPanel({
           isCollapsed={isAllListsCollapsed}
           setIsCollapsed={setIsAllListsCollapsed}
           whatToToggle="all filter lists"
+          isLoaded={true}
         />
       </div>
     )
@@ -372,7 +383,7 @@ export function CellFilteringPanel({
   const currentlyInUseAnnotations = { colorBy: '', facets: [] }
   const annotationOptions = getAnnotationOptions(annotationList, cluster)
 
-  const verticalPad = 356 // Accounts for all UI real estate above table header
+  const verticalPad = 344 // Accounts for all UI real estate above table header
 
   const filterSectionHeight = window.innerHeight - verticalPad
   const filterSectionHeightProp = `${filterSectionHeight}px`
@@ -387,7 +398,7 @@ export function CellFilteringPanel({
 
   return (
     <>
-      <div className="form-group">
+      <div>
         <label className="labeled-select">
           <span
             className="cell-filtering-color-by"

@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faDna, faSpinner } from '@fortawesome/free-solid-svg-icons'
+import { faDna } from '@fortawesome/free-solid-svg-icons'
 
 /** show dna spinning indicator.
  * If no arguments or children are passed in, the spinner is rendered
