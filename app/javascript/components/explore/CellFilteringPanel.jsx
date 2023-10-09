@@ -1,14 +1,11 @@
 
 import React, { useState, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faArrowLeft, faInfoCircle
-} from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons'
 
 import Select from '~/lib/InstrumentedSelect'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
-import { faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons'
 
 import { initCellFaceting } from '~/lib/cell-faceting'
 import { getSelectedClusterAndAnnot } from '~/components/explore/ExploreDisplayTabs'
@@ -150,6 +147,16 @@ function CellFacet({
     setIsFullyCollapsed(isAllListsCollapsed)
   }, [isAllListsCollapsed])
 
+  let facetLabelStyle = {}
+  let tooltipAttrs = {}
+  if (!facet.isLoaded) {
+    facetLabelStyle = { color: '#777', cursor: 'wait' }
+    tooltipAttrs = {
+      'data-toggle': 'tooltip',
+      'data-original-title': 'Loading data...'
+    }
+  }
+
   return (
     <div
       className="cell-facet"
@@ -161,7 +168,7 @@ function CellFacet({
       />
       {shownFilters.map((item, i) => (
         <div style={{ marginLeft: '2px', lineHeight: '14px' }} key={i}>
-          <label className="cell-filter-label">
+          <label className="cell-filter-label" style={facetLabelStyle} {...tooltipAttrs}>
             <input
               type="checkbox"
               checked={isChecked(facet.annotation, item, checkedMap)}
@@ -173,6 +180,7 @@ function CellFacet({
                 updateFilteredCells(checkedMap)
               }}
               style={{ marginRight: '5px' }}
+              disabled={!facet.isLoaded}
             />
             {item}
           </label>
@@ -203,6 +211,14 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
     width: 'fit-content'
   }
 
+  let facetHeaderStyle = {}
+  if (!facet.isLoaded) {
+    facetHeaderStyle = {
+      color: '#777',
+      cursor: 'progress'
+    }
+  }
+
   let title = 'Author annotation'
   const tooltipAttrs = { 'data-toggle': 'tooltip' }
   if (isConventional) {
@@ -213,6 +229,9 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
     }
   }
   title += `.  Name in data: ${rawFacetName}`
+  if (!facet.isLoaded) {
+    title = `Loading... ${ title}`
+  }
   tooltipAttrs['data-original-title'] = title
 
   const toggleClass = `cell-filters-${isFullyCollapsed ? 'hidden' : 'shown'}`
@@ -220,11 +239,17 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
   return (
     <div
       className={`cell-facet-header ${toggleClass}`}
+      style={facetHeaderStyle}
       onClick={() => {setIsFullyCollapsed(!isFullyCollapsed)}}
     >
       <span style={facetNameStyle} {...tooltipAttrs}>
         {facetName}
       </span>
+      {!facet.isLoaded &&
+      <span style={{ position: 'relative', top: '-5px', left: '5px' }}>
+        <LoadingSpinner height='14px'/>
+      </span>
+      }
       <CollapseToggleChevron
         isCollapsed={isFullyCollapsed}
         whatToToggle="filter list"
@@ -252,7 +277,7 @@ export function CellFilteringPanel({
     )
   }
 
-  const [initialFiveFacets, setinitialFiveFacets] = useState(cellFaceting?.facets)
+  const facets = cellFaceting.facets
   const [checkedMap, setCheckedMap] = useState({})
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const [shownFacets, setShownFacets] = useState()
@@ -262,15 +287,15 @@ export function CellFilteringPanel({
   function populateCheckedMap() {
     const tmpCheckedMap = {}
 
-    const numFacets = initialFiveFacets.length
+    const numFacets = facets.length
     for (let i = 0; i < numFacets; i++) {
-      tmpCheckedMap[initialFiveFacets[i].annotation] = initialFiveFacets[i].groups
+      tmpCheckedMap[facets[i].annotation] = facets[i].groups
     }
 
     setCheckedMap(tmpCheckedMap)
 
     // set the shownFacets with the same facets as the checkedMap starts with
-    setShownFacets(initialFiveFacets.slice(0, numFacets))
+    setShownFacets(facets.slice(0, numFacets))
   }
 
 

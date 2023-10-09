@@ -89,7 +89,10 @@ export function filterCells(
   selection, cellsByFacet, facets, filtersByFacet, filterableCells
 ) {
   const t0 = Date.now()
-  facets = facets.map(facet => facet.annotation)
+  facets =
+    facets
+      .filter(facet => facet.isLoaded)
+      .map(facet => facet.annotation)
 
   let fn; let i; let facet; let results
   const counts = {}
