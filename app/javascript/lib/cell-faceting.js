@@ -17,7 +17,7 @@ const CELL_TYPE_REGEX = new RegExp(/cell.*type/i)
 
 // Detect if a string mentions disease, sickness, malignant or malignancy,
 // indication, a frequent suffix of disease names, or a common suffix of cancer names
-const DISEASE_REGEX = new RegExp(/(disease|sick|malignan|indicat|itis|osis|oma)/i)
+const DISEASE_REGEX = new RegExp(/(disease|sick|malignan|indicat|itis|isis|osis|oma|medical\sevent)/i)
 
 /**
  * Prioritize unselected annotations to those worth showing by default as facets
@@ -80,8 +80,6 @@ function sortAnnotationsByRelevance(annotList) {
     annot => !('cluster_name' in annot) && isUnique(annot)
   )
   annotsToFacet = annotsToFacet.concat(studyAnnots)
-
-  annotsToFacet = annotsToFacet.map(annot => annot.identifier)
 
   return annotsToFacet
 }
@@ -196,7 +194,7 @@ function initCrossfilter(facetData) {
     filtersByFacet[facet.annotation] = facet.groups
   })
 
-  return { filterableCells, cellsByFacet, facets, filtersByFacet }
+  return { filterableCells, cellsByFacet, loadedFacets: facets, filtersByFacet }
 }
 
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
@@ -220,14 +218,27 @@ export async function initCellFaceting(
         )
       })
 
-  const allRelevanceSortedFacets = sortAnnotationsByRelevance(applicableAnnots)
-  const annotFacetsToLoad = allRelevanceSortedFacets.slice(0, 5)
+  const allRelevanceSortedFacets =
+    sortAnnotationsByRelevance(applicableAnnots)
+      .map(annot => {
+        return { annotation: annot.identifier, groups: annot.values }
+      })
+  const annotFacetsToLoad =
+    allRelevanceSortedFacets
+      .map(annot => annot.annotation)
+      .slice(0, 5)
   const facetData = await fetchAnnotationFacets(studyAccession, annotFacetsToLoad, selectedCluster)
 
   const {
     filterableCells, cellsByFacet,
-    facets, filtersByFacet
+    loadedFacets, filtersByFacet
   } = initCrossfilter(facetData)
+
+  const facets = allRelevanceSortedFacets.map(facet => {
+    const isLoaded = loadedFacets.find(loadedFacet => facet.annotation === loadedFacet.annotation)
+    facet.isLoaded = isLoaded
+    return facet
+  })
 
   const cellFaceting = {
     filterableCells,
@@ -238,7 +249,7 @@ export async function initCellFaceting(
   }
 
   // Below line is worth keeping, but only uncomment to debug in development
-  // window.SCP.cellFaceting = cellFaceting
+  window.SCP.cellFaceting = cellFaceting
   return cellFaceting
 }
 

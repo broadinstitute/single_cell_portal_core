@@ -256,14 +256,14 @@ export function CellFilteringPanel({
 
   /** used to populate the checkedMap for the initial facets shown */
   function populateCheckedMap() {
-    const tempCheckedMap = {}
+    const tmpCheckedMap = {}
 
     const numFacets = initialFiveFacets.length
     for (let i = 0; i < numFacets; i++) {
-      tempCheckedMap[initialFiveFacets[i].annotation] = initialFiveFacets[i].groups
+      tmpCheckedMap[initialFiveFacets[i].annotation] = initialFiveFacets[i].groups
     }
 
-    setCheckedMap(tempCheckedMap)
+    setCheckedMap(tmpCheckedMap)
 
     // set the shownFacets with the same facets as the checkedMap starts with
     setShownFacets(initialFiveFacets.slice(0, numFacets))
@@ -272,26 +272,26 @@ export function CellFilteringPanel({
 
   /** Update the checkedMap state that is used for setting up the filtering checkboxes */
   function updateCheckedMap(newSingleCellFaceting, event) {
-    const tempCheckedMap = { ...checkedMap }
-    // add the new facet to the tempCheckedMap
-    tempCheckedMap[newSingleCellFaceting.value.annotation] = newSingleCellFaceting.value.groups
+    const tmpCheckedMap = { ...checkedMap }
+    // add the new facet to the tmpCheckedMap
+    tmpCheckedMap[newSingleCellFaceting.value.annotation] = newSingleCellFaceting.value.groups
 
     // set the checkedMap state with the updated list
-    setCheckedMap(tempCheckedMap)
+    setCheckedMap(tmpCheckedMap)
 
-    const tempShownFacets = [...shownFacets]
+    const tmpShownFacets = [...shownFacets]
 
     // grab the index of the facet that is to be replaced
-    const indexToRep = tempShownFacets.findIndex(facet => facet.annotation === event.name)
+    const indexToRep = tmpShownFacets.findIndex(facet => facet.annotation === event.name)
 
     // replace the existing facet with the new facet at the index determined above
-    tempShownFacets[indexToRep] = {
+    tmpShownFacets[indexToRep] = {
       annotation: newSingleCellFaceting.value.annotation,
       groups: newSingleCellFaceting.value.groups
     }
 
     // set the facets that are shown in the UI
-    setShownFacets(tempShownFacets)
+    setShownFacets(tmpShownFacets)
   }
 
   /** Top header for the "Filter" section, including all-facet controls */
@@ -316,7 +316,7 @@ export function CellFilteringPanel({
     )
   }
 
-  /** Add/Remove checked item from list */
+  /** Add or remove checked item from list */
   function handleCheck(event) {
     // grab the name of the facet from the check event
     const facetName = event.target.name.split(':')[0]
@@ -363,7 +363,7 @@ export function CellFilteringPanel({
           <span
             className="cell-filtering-color-by"
             data-toggle="tooltip"
-            data-original-title="Select the facet that the plot is colored by."
+            data-original-title="Color the plot by an annotation"
           >
           Color by
           </span>
