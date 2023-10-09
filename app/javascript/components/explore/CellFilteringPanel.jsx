@@ -68,7 +68,11 @@ function parseAnnotationName(annotationIdentifier) {
     // e.g. Donor id -> Donor ID
     upId = upId.slice(0, -3) + upId.slice(-3).toUpperCase()
   }
-  const displayName = upId
+  let ynLess = upId
+  if (upId.slice('-3').toUpperCase() === ' YN') {
+    ynLess = ynLess.slice(0, -3)
+  }
+  const displayName = ynLess
   return [displayName, rawName]
 }
 
@@ -156,7 +160,7 @@ function CellFacet({
         setIsFullyCollapsed={setIsFullyCollapsed}
       />
       {shownFilters.map((item, i) => (
-        <div style={{ marginLeft: '2px', lineHeight: '18px' }} key={i}>
+        <div style={{ marginLeft: '2px', lineHeight: '14px' }} key={i}>
           <label className="cell-filter-label">
             <input
               type="checkbox"

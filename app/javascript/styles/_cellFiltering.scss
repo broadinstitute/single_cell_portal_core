@@ -26,7 +26,12 @@
 }
 
 .cell-facet {
-  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.cell-facet:has(.cell-filters-hidden) {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .cell-facet:first-child {
