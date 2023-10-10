@@ -237,11 +237,12 @@ export async function initCellFaceting(
     loadedFacets, filtersByFacet
   } = initCrossfilter(facetData)
 
-  const facets = allRelevanceSortedFacets.map(facet => {
+  const allFacets = allRelevanceSortedFacets.map(facet => {
     const isLoaded = loadedFacets.find(loadedFacet => facet.annotation === loadedFacet.annotation)
     facet.isLoaded = isLoaded
     return facet
   })
+  const facets = allFacets.filter(facet => facet.isLoaded)
 
   const cellFaceting = {
     filterableCells,
@@ -252,7 +253,7 @@ export async function initCellFaceting(
   }
 
   // Below line is worth keeping, but only uncomment to debug in development
-  window.SCP.cellFaceting = cellFaceting
+  // window.SCP.cellFaceting = cellFaceting
   return cellFaceting
 }
 
