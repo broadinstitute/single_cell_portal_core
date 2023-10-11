@@ -429,7 +429,7 @@ export function CellFilteringPanel({
               setIsAllListsCollapsed={setIsAllListsCollapsed}
             />
             <div className="cell-facet-list" style={{ height: filterSectionHeightProp, overflowY: 'scroll' }}>
-              { shownFacets.map(facet => {
+              { shownFacets.map((facet, i) => {
                 return (
                   <CellFacet
                     facet={facet}
@@ -437,6 +437,7 @@ export function CellFilteringPanel({
                     handleCheck={handleCheck}
                     updateFilteredCells={updateFilteredCells}
                     isAllListsCollapsed={isAllListsCollapsed}
+                    key={i}
                   />
                 )
               })}
