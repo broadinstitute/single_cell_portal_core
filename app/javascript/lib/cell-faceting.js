@@ -95,8 +95,6 @@ export function filterCells(
       .filter(facet => facet.isLoaded)
       .map(facet => facet.annotation)
 
-  console.log('in filterCells, selection, facets', selection, facets)
-
   let fn; let i; let facet; let results
   const counts = {}
 
@@ -114,10 +112,6 @@ export function filterCells(
           filter[filterIndex] = 1
         })
 
-        if (facet === 'cell_type__ontology_label--group--study') {
-          console.log('in filterCells, facet === "cell_type__ontology_label--group--study", filter', filter)
-        }
-
         if (Array.isArray(filter)) {
           fn = function(d) {
             // Filter is numeric range
@@ -133,14 +127,7 @@ export function filterCells(
             }
           }
         } else {
-          let numCalls = 0
           fn = function(d) {
-            if (facet === 'cell_type__ontology_label--group--study' && numCalls < 5) {
-              console.log('d', d)
-              console.log('filter', filter)
-              console.log('d in filter', d in filter)
-              numCalls++
-            }
             // Filter is set of categories
             return (d in filter)
           }
@@ -148,13 +135,10 @@ export function filterCells(
       } else {
         fn = null
       }
-      if (facet === 'cell_type__ontology_label--group--study') {
-        console.log('in filterCells, cellsByFacet["cell_type__ontology_label--group--study"].filter', cellsByFacet['cell_type__ontology_label--group--study'].filter)
-      }
       cellsByFacet[facet].filter(fn)
       // counts[facet] = cellsByFacet[facet].group().top(Infinity)
     }
-    results = cellsByFacet[facet].top(Infinity).slice()
+    results = cellsByFacet[facet].top(Infinity)
   }
 
   const t1 = Date.now()
@@ -176,64 +160,25 @@ export function filterCells(
   // Log to Mixpanel
   log('filter-cells', filterLogProps)
 
-  console.log('in filterCells, results', results)
-
   return [results, counts]
 }
 
-/** Merge new and previous cell facetings, effectively appending new data */
-function mergeFaceting(newCellFaceting, rawPrevCellFaceting) {
-  if (!rawPrevCellFaceting) {return newCellFaceting}
-  console.log('in mergeFaceting 1A, newCellFaceting', newCellFaceting)
-  console.log('in mergeFaceting 1B, rawPrevCellFaceting', rawPrevCellFaceting)
-
-  // const prevCellFaceting = _cloneDeep(rawPrevCellFaceting)
-  const prevCellFaceting = rawPrevCellFaceting
-
-  const cells = newCellFaceting.filterableCells
-  console.log('in mergeFaceting 2')
-  const mergedFilterableCells = []
-
-  for (let i = 0; i < cells.length; i++) {
-    // Merge each raw filterable cell (with new 5 facets worth of data)
-    // previous filterable cell (with all prior facet data for the cell)
-    const mergedFilterableCell = Object.assign(
-      cells[i],
-      prevCellFaceting.filterableCells[i]
-    )
-    mergedFilterableCells.push(mergedFilterableCell)
+/** Merge /facets responses from new and all prior batches */
+function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
+  if (!prevCellFaceting) {
+    return newRawFacets
   }
 
-  console.log('in mergeFaceting 3')
+  const prevRawFacets = prevCellFaceting.rawFacets
 
-  const mergedCellsByFacet = Object.assign(
-    prevCellFaceting.cellsByFacet,
-    newCellFaceting.cellsByFacet
-  )
+  const facets = prevRawFacets.facets.concat(newRawFacets.facets)
 
-  console.log('in mergeFaceting 4A, newCellFaceting.loadedFacets', newCellFaceting.loadedFacets)
-  console.log('in mergeFaceting 4B, prevCellFaceting.loadedFacets', prevCellFaceting.facets)
+  const cells = prevRawFacets.cells.map((cell, i) => {
+    return cell.concat(newRawFacets.cells[i])
+  })
 
-  const prevLoadedFacets = prevCellFaceting.facets.filter(facet => facet.isLoaded)
-  const mergedLoadedFacets = newCellFaceting.loadedFacets.concat(prevLoadedFacets)
-  console.log('in mergeFaceting 5')
-
-  const mergedFiltersByFacet = Object.assign(
-    newCellFaceting.filtersByFacet,
-    prevCellFaceting.filtersByFacet
-  )
-  console.log('in mergeFaceting 6')
-
-  const mergedCellFaceting = {
-    filterableCells: mergedFilterableCells,
-    cellsByFacet: mergedCellsByFacet,
-    loadedFacets: mergedLoadedFacets,
-    filtersByFacet: mergedFiltersByFacet
-  }
-
-  console.log('in mergeFaceting 7, mergedCellFaceting', mergedCellFaceting)
-
-  return mergedCellFaceting
+  const mergedRawFacets = { cells, facets }
+  return mergedRawFacets
 }
 
 /** Initialize crossfilter, return cells by facet */
@@ -277,7 +222,6 @@ function initCrossfilter(facetData) {
 
 /** Determine which facets to fetch data for; helps load 1 batch at a time */
 function getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting) {
-  console.log('in getFacetsToFetch, prevCellFaceting', prevCellFaceting)
   if (!prevCellFaceting) {
     return allRelevanceSortedFacets
       .map(annot => annot.annotation)
@@ -287,36 +231,30 @@ function getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting) {
   // Get index of first facet that hasn't been loaded yet
   let fetchOffset = 0
   prevCellFaceting.facets.find((facet, i) => {
-    console.log('in getFacetsToFetch, facet, i', facet, i)
     if (!facet.isLoaded) {
       fetchOffset = i
       return true
     }
   })
 
-  console.log('in getFacetsToFetch, fetchOffset', fetchOffset)
-
   return allRelevanceSortedFacets
     .map(annot => annot.annotation)
     .slice(fetchOffset, fetchOffset + 5)
 }
 
-function timeout(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
-async function sleep(fn, ...args) {
-  await timeout(3000)
-  return fn(...args)
-}
+/**
+ * Useful for local development, to simulate waiting on server.
+ *
+ * Below line is worth keeping, but only uncomment to debug in development.
+ */
+// function timeout(ms) {
+//   return new Promise(resolve => setTimeout(resolve, ms))
+// }
 
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
 export async function initCellFaceting(
   selectedCluster, selectedAnnot, studyAccession, allAnnots, prevCellFaceting
 ) {
-  console.log('***')
-  console.log('***')
-  console.log('***')
-  console.log('in initCellFaceting 1')
   // Prioritize and fetch annotation facets for all cells
   const selectedAnnotId = getIdentifierForAnnotation(selectedAnnot)
   const applicableAnnots =
@@ -334,30 +272,27 @@ export async function initCellFaceting(
         )
       })
 
-  console.log('in initCellFaceting 2')
-
   const allRelevanceSortedFacets =
     sortAnnotationsByRelevance(applicableAnnots)
       .map(annot => {
         return { annotation: annot.identifier, groups: annot.values }
       })
   const facetsToFetch = getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting)
-  console.log('in initCellFaceting 3, facetsToFetch', facetsToFetch)
 
-  const facetData = await fetchAnnotationFacets(studyAccession, facetsToFetch, selectedCluster)
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  console.log('in initCellFaceting 4')
+  const newRawFacets = await fetchAnnotationFacets(studyAccession, facetsToFetch, selectedCluster)
 
-  const newCellFaceting = initCrossfilter(facetData)
-  console.log('in initCellFaceting 5, newCellFaceting', newCellFaceting)
+  // Below line is worth keeping, but only uncomment to debug in developmen.t
+  // This helps simulate waiting on server response, even when using local
+  // service worker caching.
+  //
+  // await new Promise(resolve => setTimeout(resolve, 5000))
+
+  const rawFacets = mergeFacetsResponses(newRawFacets, prevCellFaceting)
 
   const {
     filterableCells, cellsByFacet,
     loadedFacets, filtersByFacet
-  } = mergeFaceting(newCellFaceting, prevCellFaceting)
-
-  console.log('in initCellFaceting 6A, loadedFacets', loadedFacets)
-  console.log('in initCellFaceting 6B, allRelevanceSortedFacets', allRelevanceSortedFacets)
+  } = initCrossfilter(rawFacets)
 
   const facets = allRelevanceSortedFacets.map(facet => {
     const isLoaded = loadedFacets.some(loadedFacet => facet.annotation === loadedFacet.annotation)
@@ -365,13 +300,8 @@ export async function initCellFaceting(
     return facet
   })
 
-  console.log('in initCellFaceting 7')
-
   // Have all applicable annotations been loaded with faceting data?
   const isFullyLoaded = loadedFacets.length >= allRelevanceSortedFacets.length
-  // const isFullyLoaded = loadedFacets.length === 5
-
-  console.log('in initCellFaceting 8, loadedFacets.length, allRelevanceSortedFacets.length', loadedFacets.length, allRelevanceSortedFacets.length)
 
   const cellFaceting = {
     filterableCells,
@@ -379,10 +309,9 @@ export async function initCellFaceting(
     selections: [],
     facets,
     filtersByFacet,
-    isFullyLoaded
+    isFullyLoaded,
+    rawFacets
   }
-
-  console.log('in initCellFaceting 9')
 
   // Below line is worth keeping, but only uncomment to debug in development
   window.SCP.cellFaceting = cellFaceting
