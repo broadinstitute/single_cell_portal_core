@@ -41,7 +41,7 @@
     "nouislider": "^15.7.1",
     "plotly.js-dist": "2.2.0",
     "pluralize": "^8.0.0",
-    "postcss": "^8.2.10",
+    "postcss": "^8.4.31",
     "postcss-import": "^14.0.2",
     "postcss-loader": "^4.0.3",
     "prop-types": "^15.7.2",
