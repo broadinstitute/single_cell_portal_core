@@ -17,7 +17,7 @@ const CELL_TYPE_REGEX = new RegExp(/cell.*type/i)
 
 // Detect if a string mentions disease, sickness, malignant or malignancy,
 // indication, a frequent suffix of disease names, or a common suffix of cancer names
-const DISEASE_REGEX = new RegExp(/(disease|disease|syndrom|sick|malignan|indicat|itis|isis|osis|oma|medical)/i)
+const DISEASE_REGEX = new RegExp(/(disease|disease|medical|sick|malignan|syndrom|indicat|itis|isis|osis|oma)/i)
 
 /**
  * Prioritize unselected annotations to those worth showing by default as facets
@@ -315,7 +315,7 @@ export async function initCellFaceting(
   }
 
   // Below line is worth keeping, but only uncomment to debug in development
-  window.SCP.cellFaceting = cellFaceting
+  // window.SCP.cellFaceting = cellFaceting
   return cellFaceting
 }
 
