@@ -1,13 +1,12 @@
 
 import React, { useState, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faArrowLeft, faInfoCircle
-} from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons'
 
 import Select from '~/lib/InstrumentedSelect'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
+
 import { initCellFaceting } from '~/lib/cell-faceting'
 import { getSelectedClusterAndAnnot } from '~/components/explore/ExploreDisplayTabs'
 
@@ -31,6 +30,244 @@ export function CellFilteringPanelHeader({
   )
 }
 
+/**
+ * Very brief notes on terms in SCP metadata convention, derived from:
+ * https://singlecell.zendesk.com/hc/en-us/articles/360060609852-Required-Metadata
+ */
+const conventionalMetadataGlossary = {
+  'biosample_id': 'Unique identifier for each sample in the study',
+  'donor_id': 'Unique identifier for each biosample donor in the study',
+  'species__ontology_label': 'Taxon name, from NCBITaxon',
+  'disease__ontology_label': 'Disease name, from Mondo or PATO',
+  'organ__ontology_label': 'Organ name, from Uberon',
+  'library_preparation_protocol__ontology_label': 'From EFO',
+  'sex': 'One of "female", "male", "mixed", or "unknown"',
+  'cell_type__ontology_label': 'From Cell Ontology',
+  'ethnicity__ontology_label': 'From Human Ancestry Ontology'
+}
+
+/** Determine if annotation is conventional from its raw name */
+function getIsConventionalAnnotation(rawName) {
+  return (
+    rawName.includes('__ontology_label') ||
+    ['donor_id', 'biosample_id'].includes(rawName)
+  )
+}
+
+/** Convert e.g. "cell_type__ontology_label" to "Cell type" */
+function parseAnnotationName(annotationIdentifier) {
+  const rawName = annotationIdentifier.split('--')[0]
+  const sansOntologyName = rawName.replace('__ontology_label', '')
+  const sentenceCased = sansOntologyName[0].toUpperCase() + sansOntologyName.slice(1)
+  const spaced = sentenceCased.replace(/_/g, ' ')
+  let upId = spaced
+  if (spaced.slice(-3) === ' id') {
+    // e.g. Donor id -> Donor ID
+    upId = upId.slice(0, -3) + upId.slice(-3).toUpperCase()
+  }
+  let ynLess = upId
+  if (upId.slice('-3').toUpperCase() === ' YN') {
+    ynLess = ynLess.slice(0, -3)
+  }
+  const displayName = ynLess
+  return [displayName, rawName]
+}
+
+/** Toggle icon for collapsing a list; for each filter list, and all filter lists */
+function CollapseToggleChevron({ isCollapsed, whatToToggle, isLoaded }) {
+  let toggleIcon
+  let toggleIconTooltipText
+  if (!isCollapsed) {
+    toggleIcon = <FontAwesomeIcon icon={faChevronDown} />
+    toggleIconTooltipText = `Hide ${whatToToggle}`
+  } else {
+    toggleIcon = <FontAwesomeIcon icon={faChevronRight} />
+    toggleIconTooltipText = `Show ${whatToToggle}`
+  }
+
+  return (
+    <span style={{ float: 'right', marginRight: '5px' }}>
+      {!isLoaded &&
+      <span
+        data-toggle="tooltip"
+        data-original-title="Loading data..."
+        style={{ position: 'relative', top: '-5px', left: '-20px', cursor: 'progress' }}
+      >
+        <LoadingSpinner height='14px'/>
+      </span>
+      }
+      <span
+        className="facet-toggle-chevron"
+        data-toggle="tooltip"
+        data-original-title={toggleIconTooltipText}
+      >
+        {toggleIcon}
+      </span>
+    </span>
+  )
+}
+
+/** determine if the filter is checked or not */
+function isChecked(annotation, item, checkedMap) {
+  return checkedMap[annotation]?.includes(item)
+}
+
+/** Facet name and collapsible list of filter checkboxes */
+function CellFacet({
+  facet,
+  checkedMap, handleCheck, updateFilteredCells,
+  isAllListsCollapsed
+}) {
+  if (Object.keys(facet).length === 0) {
+    // Only create the list if the facet exists
+    return <></>
+  }
+
+  let defaultIsFullyCollapsed = false
+  if (isAllListsCollapsed) {
+    defaultIsFullyCollapsed = true
+  }
+
+  const [isPartlyCollapsed, setIsPartlyCollapsed] = useState(true)
+  const [isFullyCollapsed, setIsFullyCollapsed] = useState(defaultIsFullyCollapsed)
+
+  const filters = facet.groups
+
+  // TODO: Uncommenting below and replacing `filters` with `sortedFilters` in
+  // this function makes the _filter list_ naturally sorted, but subtly
+  // (and severely) causes a mismatch between the selected filter label and the
+  // group of plotted cells that actually gets hidden in the plot.
+  //
+  // Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
+  // const sortedFilters = facet.groups.sort((a, b) => {
+  //   return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
+  // })
+
+  // Handle truncating filter lists to account for any full or partial collapse
+  let shownFilters = filters
+  const numFiltersPartlyCollapsed = 5
+  if (isPartlyCollapsed) {
+    shownFilters = filters.slice(0, numFiltersPartlyCollapsed)
+  }
+  if (isFullyCollapsed) {
+    shownFilters = []
+  }
+
+  useEffect(() => {
+    setIsFullyCollapsed(isAllListsCollapsed)
+  }, [isAllListsCollapsed])
+
+  let facetLabelStyle = {}
+  if (!facet.isLoaded) {
+    facetLabelStyle = { color: '#777', cursor: 'wait' }
+  }
+
+  let facetStyle = {}
+  const inputStyle = { marginRight: '5px' }
+  if (!facet.isLoaded) {
+    facetStyle = {
+      color: '#777',
+      cursor: 'progress'
+    }
+    inputStyle.cursor = 'progress'
+  }
+
+  return (
+    <div
+      className="cell-facet"
+      key={facet.annotation}
+      style={facetStyle}
+    >
+      <FacetHeader
+        facet={facet}
+        isFullyCollapsed={isFullyCollapsed}
+        setIsFullyCollapsed={setIsFullyCollapsed}
+      />
+      {shownFilters.map((item, i) => (
+        <div style={{ marginLeft: '2px', lineHeight: '14px' }} key={i}>
+          <label className="cell-filter-label" style={facetLabelStyle}>
+            <input
+              type="checkbox"
+              checked={isChecked(facet.annotation, item, checkedMap)}
+              value={item}
+              data-analytics-name={`${facet.annotation}:${item}`}
+              name={`${facet.annotation}:${item}`}
+              onChange={event => {
+                handleCheck(event)
+                updateFilteredCells(checkedMap)
+              }}
+              style={inputStyle}
+              disabled={!facet.isLoaded}
+            />
+            {item}
+          </label>
+        </div>
+      ))}
+      {!isFullyCollapsed && filters.length > numFiltersPartlyCollapsed &&
+        <a
+          className="facet-toggle"
+          style={{ 'fontSize': '13px' }}
+          onClick={() => {setIsPartlyCollapsed(!isPartlyCollapsed)}}
+        >
+          {isPartlyCollapsed ? 'More...' : 'Less...'}
+        </a>
+      }
+    </div>
+  )
+}
+
+/** Get stylized name of facet, optional tooltip, collapse controls */
+function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
+  const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
+  const isConventional = getIsConventionalAnnotation(rawFacetName)
+
+  const facetNameStyle = {
+    fontWeight: 'bold',
+    marginBottom: '1px',
+    display: 'inline-block',
+    width: 'calc(100% - 30px)'
+  }
+  const tooltipableFacetNameStyle = {
+    width: 'content-fit'
+  }
+  if (!facet.isLoaded) {
+    facetNameStyle.color = '#777'
+    facetNameStyle.cursor = 'progress'
+  }
+
+  let title = 'Author annotation'
+  const tooltipAttrs = { 'data-toggle': 'tooltip' }
+  if (isConventional) {
+    title = 'Conventional annotation'
+    const note = conventionalMetadataGlossary[rawFacetName]
+    if (note) {
+      title += `.  ${note}`
+    }
+  }
+  title += `.  Name in data: ${rawFacetName}`
+  tooltipAttrs['data-original-title'] = title
+
+  const toggleClass = `cell-filters-${isFullyCollapsed ? 'hidden' : 'shown'}`
+
+  return (
+    <div
+      className={`cell-facet-header ${toggleClass}`}
+      onClick={() => {setIsFullyCollapsed(!isFullyCollapsed)}}
+    >
+      <span style={facetNameStyle}>
+        <span style={tooltipableFacetNameStyle} {...tooltipAttrs}>
+          {facetName}
+        </span>
+      </span>
+      <CollapseToggleChevron
+        isCollapsed={isFullyCollapsed}
+        whatToToggle="filter list"
+        isLoaded={facet.isLoaded}
+      />
+    </div>
+  )
+}
+
 /** Content for cell facet filter panel shown at right in Explore tab */
 export function CellFilteringPanel({
   annotationList,
@@ -50,102 +287,76 @@ export function CellFilteringPanel({
     )
   }
 
-  const [initialFiveFacets, setinitialFiveFacets] = useState(cellFaceting?.facets)
+  const facets = cellFaceting.facets
   const [checkedMap, setCheckedMap] = useState({})
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const [shownFacets, setShownFacets] = useState()
-  const [options, setOptions] = useState()
-
-  /** create the checklist for filtering the facet */
-  function createCellFilteringCheckList(singleCellFaceting) {
-    // only create the checklist if the facet exists
-    if (Object.keys(singleCellFaceting).length !== 0
-    ) {
-      // grab the show facet names to filter the select options so there won't be duplicates
-      const facetNames = shownFacets.map(facet => {return facet.annotation.split('--')[0]})
-      const otherMenuOptions = options.filter(opt => !facetNames.includes(opt.label))
-      return <div key={singleCellFaceting.annotation}>
-        <div>
-          <Select
-            name={singleCellFaceting.annotation}
-            options={otherMenuOptions}
-            data-analytics-name="annotation-select"
-            value={options.find(opt => opt.value.annotation === singleCellFaceting.annotation)}
-            onChange={(newAnnotation, event) => {
-              updateCheckedMap(newAnnotation, event)
-            }}
-          />
-        </div>
-        {singleCellFaceting.groups.map((item, index) => (
-          <div style={{ marginLeft: '5px' }} key={index}>
-            <label style={{ fontWeight: 'normal' }}>
-              <input
-                type="checkbox"
-                checked={isChecked(singleCellFaceting.annotation, item)}
-                value={item}
-                name={`${singleCellFaceting.annotation}:${item}`}
-                onChange={event => {
-                  handleCheck(event)
-                  updateFilteredCells(checkedMap)
-                }}
-                style={{ marginRight: '5px' }}
-              />
-              {item}
-            </label>
-          </div>
-        ))}
-      </div>
-    }
-  }
+  const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
   /** used to populate the checkedMap for the initial facets shown */
   function populateCheckedMap() {
-    const tempCheckedMap = {}
+    const tmpCheckedMap = {}
 
-    // only initalize up to three facets for now
-    const numFacets = initialFiveFacets.length > 2 ? 3 : initialFiveFacets.length
+    const numFacets = facets.length
     for (let i = 0; i < numFacets; i++) {
-      tempCheckedMap[initialFiveFacets[i].annotation] = initialFiveFacets[i].groups
+      tmpCheckedMap[facets[i].annotation] = facets[i].groups
     }
 
-    setCheckedMap(tempCheckedMap)
-
-
-    setOptions(initialFiveFacets.map(facet => {
-      return { value: facet, label: facet.annotation.split('--')[0] }
-    }))
+    setCheckedMap(tmpCheckedMap)
 
     // set the shownFacets with the same facets as the checkedMap starts with
-    setShownFacets(initialFiveFacets.slice(0, numFacets))
+    setShownFacets(facets.slice(0, numFacets))
   }
 
 
   /** Update the checkedMap state that is used for setting up the filtering checkboxes */
   function updateCheckedMap(newSingleCellFaceting, event) {
-    const tempCheckedMap = { ...checkedMap }
-    // add the new facet to the tempCheckedMap
-    tempCheckedMap[newSingleCellFaceting.value.annotation] = newSingleCellFaceting.value.groups
+    const tmpCheckedMap = { ...checkedMap }
+    // add the new facet to the tmpCheckedMap
+    tmpCheckedMap[newSingleCellFaceting.value.annotation] = newSingleCellFaceting.value.groups
 
     // set the checkedMap state with the updated list
-    setCheckedMap(tempCheckedMap)
+    setCheckedMap(tmpCheckedMap)
 
-    const tempShownFacets = [...shownFacets]
+    const tmpShownFacets = [...shownFacets]
 
     // grab the index of the facet that is to be replaced
-    const indexToRep = tempShownFacets.findIndex(facet => facet.annotation === event.name)
+    const indexToRep = tmpShownFacets.findIndex(facet => facet.annotation === event.name)
 
     // replace the existing facet with the new facet at the index determined above
-    tempShownFacets[indexToRep] = {
+    tmpShownFacets[indexToRep] = {
       annotation: newSingleCellFaceting.value.annotation,
       groups: newSingleCellFaceting.value.groups
     }
 
     // set the facets that are shown in the UI
-    setShownFacets(tempShownFacets)
+    setShownFacets(tmpShownFacets)
   }
 
+  /** Top header for the "Filter" section, including all-facet controls */
+  function FilterSectionHeader({ isAllListsCollapsed, setIsAllListsCollapsed }) {
+    return (
+      <div
+        className="filter-section-header"
+        onClick={() => {setIsAllListsCollapsed(!isAllListsCollapsed)}}
+      >
+        <span
+          style={{ 'fontWeight': 'bold' }}
+          data-toggle="tooltip"
+          data-original-title="Use checkboxes to show or hide cells in plots.  Deselected values are
+        assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
+        >Filter by</span>
+        <CollapseToggleChevron
+          isCollapsed={isAllListsCollapsed}
+          setIsCollapsed={setIsAllListsCollapsed}
+          whatToToggle="all filter lists"
+          isLoaded={true}
+        />
+      </div>
+    )
+  }
 
-  /** Add/Remove checked item from list */
+  /** Add or remove checked item from list */
   function handleCheck(event) {
     // grab the name of the facet from the check event
     const facetName = event.target.name.split(':')[0]
@@ -169,13 +380,13 @@ export function CellFilteringPanel({
     updateFilteredCells(checkedMap)
   }
 
-  /** determine if the filter is checked or not */
-  function isChecked(annotation, item) {
-    return checkedMap[annotation]?.includes(item)
-  }
-
   const currentlyInUseAnnotations = { colorBy: '', facets: [] }
   const annotationOptions = getAnnotationOptions(annotationList, cluster)
+
+  const verticalPad = 344 // Accounts for all UI real estate above table header
+
+  const filterSectionHeight = window.innerHeight - verticalPad
+  const filterSectionHeightProp = `${filterSectionHeight}px`
 
   /** populate the checkedMap state if it's empty
    * (this is for initial setting upon page loading and the cellFaceting prop initializing) */
@@ -187,13 +398,15 @@ export function CellFilteringPanel({
 
   return (
     <>
-      <div className="form-group">
-        <label className="labeled-select">Color by&nbsp;
-          <a className="action help-icon"
+      <div>
+        <label className="labeled-select">
+          <span
+            className="cell-filtering-color-by"
             data-toggle="tooltip"
-            data-original-title="Select the facet that the plot is colored by.">
-            <FontAwesomeIcon icon={faInfoCircle}/>
-          </a>
+            data-original-title="Color the plot by an annotation"
+          >
+          Color by
+          </span>
           <Select
             options={annotationOptions}
             data-analytics-name="annotation-select"
@@ -209,21 +422,29 @@ export function CellFilteringPanel({
             styles={clusterSelectStyle}/>
         </label>
         { Object.keys(checkedMap).length !== 0 &&
-        <div style={{ 'marginTop': '5px' }}>
-          <h5>Filter by&nbsp;
-            <a className="action help-icon"
-              data-toggle="tooltip"
-              data-original-title="Use the checkboxes to filter points from the plot.  Deselected values are
-                assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
-            >
-              <FontAwesomeIcon icon={faInfoCircle}/>
-            </a></h5>
-          <div style={{ margin: '2px', padding: '2px' }}>
-            { shownFacets.map(singleFacet => {
-              return createCellFilteringCheckList(singleFacet)
-            })}
+        <>
+          <div style={{ marginTop: '10px' }}>
+            <FilterSectionHeader
+              isAllListsCollapsed={isAllListsCollapsed}
+              setIsAllListsCollapsed={setIsAllListsCollapsed}
+            />
+            <div className="cell-facet-list" style={{ height: filterSectionHeightProp, overflowY: 'scroll' }}>
+              { shownFacets.map((facet, i) => {
+                return (
+                  <CellFacet
+                    facet={facet}
+                    checkedMap={checkedMap}
+                    handleCheck={handleCheck}
+                    updateFilteredCells={updateFilteredCells}
+                    isAllListsCollapsed={isAllListsCollapsed}
+                    key={i}
+                  />
+                )
+              })}
+            </div>
           </div>
-        </div>}
+        </>
+        }
       </div>
     </>
   )
