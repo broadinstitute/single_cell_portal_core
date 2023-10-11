@@ -176,7 +176,47 @@ export default function ExploreDisplayTabs({
           setCellFaceting(newCellFaceting)
           setFilterErrorText('')
 
-          console.log('in then, starting recursive call to getCellFacetingData')
+          // console.log('in then, starting recursive call to getCellFacetingData')
+
+          // Working:
+          //   {
+          //     "allCellsIndex": 1,
+          //     "cell_type__ontology_label--group--study": 1,
+          //     "infant_sick_YN--group--study": 0,
+          //     "mastisis_YN--group--study": 0,
+          //     "maternal_medical_event_YN--group--study": 0,
+          //     "reported_infant_medical_events_YN--group--study": 0
+          // }
+
+          // Not working:
+          //   {
+          //     "allCellsIndex": 1,
+          //     "solid_foods_YN--group--study": 0,
+          //     "Age--group--study": 0,
+          //     "labor_induced_YN--group--study": 0,
+          //     "antibiotics_during_delivery--group--study": 0,
+          //     "delivery_mode--group--study": 0,
+          //     "reported_menstruating_YN--group--study": 0,
+          //     "hormonal_birthcontrol_YN--group--study": 0,
+          //     "daycare_YN--group--study": 0,
+          //     "vaccines_reported_YN--group--study": 0,
+          //     "vaccines_list--group--study": 0,
+          //     "weaning_YN--group--study": 0,
+          //     "breast_soreness_YN--group--study": 0,
+          //     "directly_breastfeeding_YN--group--study": 0,
+          //     "any_formula_YN--group--study": 0,
+          //     "mother_medications_YN--group--study": 0,
+          //     "reported_infant_medical_events_description--group--study": 0,
+          //     "ethnicity__ontology_label--group--study": 0,
+          //     "biosample_id--group--study": 0,
+          //     "donor_id--group--study": 0,
+          //     "milk_stage--group--study": 0,
+          //     "cell_type__ontology_label--group--study": 1,
+          //     "infant_sick_YN--group--study": 0,
+          //     "mastisis_YN--group--study": 0,
+          //     "maternal_medical_event_YN--group--study": 0,
+          //     "reported_infant_medical_events_YN--group--study": 0
+          // }
 
           getCellFacetingData(cluster, annotation, newCellFaceting)
         }).catch(error => {
@@ -204,6 +244,7 @@ export default function ExploreDisplayTabs({
 
   /** Update filtered cells to only those that match annotation group value filter selections */
   function updateFilteredCells(selection) {
+    console.log('in updateFilteredCells, selection', selection)
     if (!cellFaceting) {return}
     if (!selection) {
       setFilteredCells(null)
@@ -217,6 +258,8 @@ export default function ExploreDisplayTabs({
     // Filter cells by selection (i.e., selected facets and filters)
     const newFilteredCells = filterCells(selection, cellsByFacet, facets, filtersByFacet, filterableCells)[0]
 
+
+    console.log('in updateFilteredCells, newFilteredCells', newFilteredCells)
     // Update UI
     setFilteredCells(newFilteredCells)
   }

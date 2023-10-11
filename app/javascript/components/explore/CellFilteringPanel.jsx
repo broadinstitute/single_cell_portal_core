@@ -287,6 +287,8 @@ export function CellFilteringPanel({
     )
   }
 
+  console.log('in CellFilteringPanel, cellFaceting', cellFaceting)
+
   const facets = cellFaceting.facets
   const [checkedMap, setCheckedMap] = useState({})
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)

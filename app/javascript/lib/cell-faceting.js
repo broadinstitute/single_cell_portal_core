@@ -5,6 +5,7 @@
  */
 
 import crossfilter from 'crossfilter2'
+import _cloneDeep from 'lodash/clone'
 
 import {
   getGroupAnnotationsForClusterAndStudy, getIdentifierForAnnotation
@@ -17,7 +18,7 @@ const CELL_TYPE_REGEX = new RegExp(/cell.*type/i)
 
 // Detect if a string mentions disease, sickness, malignant or malignancy,
 // indication, a frequent suffix of disease names, or a common suffix of cancer names
-const DISEASE_REGEX = new RegExp(/(disease|sick|malignan|indicat|itis|isis|osis|oma|medical)/i)
+const DISEASE_REGEX = new RegExp(/(disease|disease|syndrom|sick|malignan|indicat|itis|isis|osis|oma|medical)/i)
 
 /**
  * Prioritize unselected annotations to those worth showing by default as facets
@@ -94,6 +95,8 @@ export function filterCells(
       .filter(facet => facet.isLoaded)
       .map(facet => facet.annotation)
 
+  console.log('in filterCells, selection, facets', selection, facets)
+
   let fn; let i; let facet; let results
   const counts = {}
 
@@ -111,6 +114,10 @@ export function filterCells(
           filter[filterIndex] = 1
         })
 
+        if (facet === 'cell_type__ontology_label--group--study') {
+          console.log('in filterCells, facet === "cell_type__ontology_label--group--study", filter', filter)
+        }
+
         if (Array.isArray(filter)) {
           fn = function(d) {
             // Filter is numeric range
@@ -126,7 +133,14 @@ export function filterCells(
             }
           }
         } else {
+          let numCalls = 0
           fn = function(d) {
+            if (facet === 'cell_type__ontology_label--group--study' && numCalls < 5) {
+              console.log('d', d)
+              console.log('filter', filter)
+              console.log('d in filter', d in filter)
+              numCalls++
+            }
             // Filter is set of categories
             return (d in filter)
           }
@@ -134,10 +148,13 @@ export function filterCells(
       } else {
         fn = null
       }
+      if (facet === 'cell_type__ontology_label--group--study') {
+        console.log('in filterCells, cellsByFacet["cell_type__ontology_label--group--study"].filter', cellsByFacet['cell_type__ontology_label--group--study'].filter)
+      }
       cellsByFacet[facet].filter(fn)
-      counts[facet] = cellsByFacet[facet].group().top(Infinity)
+      // counts[facet] = cellsByFacet[facet].group().top(Infinity)
     }
-    results = cellsByFacet[facet].top(Infinity)
+    results = cellsByFacet[facet].top(Infinity).slice()
   }
 
   const t1 = Date.now()
@@ -159,14 +176,20 @@ export function filterCells(
   // Log to Mixpanel
   log('filter-cells', filterLogProps)
 
+  console.log('in filterCells, results', results)
+
   return [results, counts]
 }
 
 /** Merge new and previous cell facetings, effectively appending new data */
-function mergeFaceting(newCellFaceting, prevCellFaceting) {
-  if (!prevCellFaceting) {return newCellFaceting}
+function mergeFaceting(newCellFaceting, rawPrevCellFaceting) {
+  if (!rawPrevCellFaceting) {return newCellFaceting}
   console.log('in mergeFaceting 1A, newCellFaceting', newCellFaceting)
-  console.log('in mergeFaceting 1B, prevCellFaceting', prevCellFaceting)
+  console.log('in mergeFaceting 1B, rawPrevCellFaceting', rawPrevCellFaceting)
+
+  // const prevCellFaceting = _cloneDeep(rawPrevCellFaceting)
+  const prevCellFaceting = rawPrevCellFaceting
+
   const cells = newCellFaceting.filterableCells
   console.log('in mergeFaceting 2')
   const mergedFilterableCells = []
@@ -191,7 +214,8 @@ function mergeFaceting(newCellFaceting, prevCellFaceting) {
   console.log('in mergeFaceting 4A, newCellFaceting.loadedFacets', newCellFaceting.loadedFacets)
   console.log('in mergeFaceting 4B, prevCellFaceting.loadedFacets', prevCellFaceting.facets)
 
-  const mergedLoadedFacets = newCellFaceting.loadedFacets.concat(prevCellFaceting.facets)
+  const prevLoadedFacets = prevCellFaceting.facets.filter(facet => facet.isLoaded)
+  const mergedLoadedFacets = newCellFaceting.loadedFacets.concat(prevLoadedFacets)
   console.log('in mergeFaceting 5')
 
   const mergedFiltersByFacet = Object.assign(
@@ -274,13 +298,24 @@ function getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting) {
 
   return allRelevanceSortedFacets
     .map(annot => annot.annotation)
-    .slice(fetchOffset, fetchOffset+5)
+    .slice(fetchOffset, fetchOffset + 5)
+}
+
+function timeout(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+async function sleep(fn, ...args) {
+  await timeout(3000)
+  return fn(...args)
 }
 
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
 export async function initCellFaceting(
   selectedCluster, selectedAnnot, studyAccession, allAnnots, prevCellFaceting
 ) {
+  console.log('***')
+  console.log('***')
+  console.log('***')
   console.log('in initCellFaceting 1')
   // Prioritize and fetch annotation facets for all cells
   const selectedAnnotId = getIdentifierForAnnotation(selectedAnnot)
@@ -308,7 +343,9 @@ export async function initCellFaceting(
       })
   const facetsToFetch = getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting)
   console.log('in initCellFaceting 3, facetsToFetch', facetsToFetch)
+
   const facetData = await fetchAnnotationFacets(studyAccession, facetsToFetch, selectedCluster)
+  await new Promise(resolve => setTimeout(resolve, 1000))
   console.log('in initCellFaceting 4')
 
   const newCellFaceting = initCrossfilter(facetData)
@@ -332,6 +369,7 @@ export async function initCellFaceting(
 
   // Have all applicable annotations been loaded with faceting data?
   const isFullyLoaded = loadedFacets.length >= allRelevanceSortedFacets.length
+  // const isFullyLoaded = loadedFacets.length === 5
 
   console.log('in initCellFaceting 8, loadedFacets.length, allRelevanceSortedFacets.length', loadedFacets.length, allRelevanceSortedFacets.length)
 
