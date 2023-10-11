@@ -5,7 +5,6 @@
  */
 
 import crossfilter from 'crossfilter2'
-import _cloneDeep from 'lodash/clone'
 
 import {
   getGroupAnnotationsForClusterAndStudy, getIdentifierForAnnotation
@@ -136,6 +135,8 @@ export function filterCells(
         fn = null
       }
       cellsByFacet[facet].filter(fn)
+
+      // TODO: Consider existing this stub to show filter counts
       // counts[facet] = cellsByFacet[facet].group().top(Infinity)
     }
     results = cellsByFacet[facet].top(Infinity)

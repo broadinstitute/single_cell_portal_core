@@ -7,9 +7,6 @@ import Select from '~/lib/InstrumentedSelect'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
 
-import { initCellFaceting } from '~/lib/cell-faceting'
-import { getSelectedClusterAndAnnot } from '~/components/explore/ExploreDisplayTabs'
-
 /** Top content for cell facet filtering panel shown at right in Explore tab */
 export function CellFilteringPanelHeader({
   togglePanel, updateFilteredCells
