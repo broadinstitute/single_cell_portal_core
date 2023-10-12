@@ -280,6 +280,7 @@ export async function initCellFaceting(
       })
   const facetsToFetch = getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting)
 
+  console.log('before fetchAnnotationFacets, facetsToFetch', facetsToFetch)
   const newRawFacets = await fetchAnnotationFacets(studyAccession, facetsToFetch, selectedCluster)
 
   // Below line is worth keeping, but only uncomment to debug in developmen.t

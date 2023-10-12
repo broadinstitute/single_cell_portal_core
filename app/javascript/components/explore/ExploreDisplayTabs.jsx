@@ -199,6 +199,7 @@ export default function ExploreDisplayTabs({
 
   // if the exploreParams update need to reset the initial cell facets
   useEffect(() => {
+    if (!cellFaceting) {return}
     const [newCluster, newAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
     getCellFacetingData(newCluster, newAnnot)
   }, [exploreParams?.cluster, exploreParams?.annotation])
