@@ -17,7 +17,7 @@ const CELL_TYPE_REGEX = new RegExp(/cell.*type/i)
 
 // Detect if a string mentions disease, sickness, malignant or malignancy,
 // indication, a frequent suffix of disease names, or a common suffix of cancer names
-const DISEASE_REGEX = new RegExp(/(disease|sick|malignan|indicat|itis|osis|oma)/i)
+const DISEASE_REGEX = new RegExp(/(disease|disease|medical|sick|malignan|syndrom|indicat|itis|isis|osis|oma)/i)
 
 /**
  * Prioritize unselected annotations to those worth showing by default as facets
@@ -31,18 +31,19 @@ const DISEASE_REGEX = new RegExp(/(disease|sick|malignan|indicat|itis|osis|oma)/
  *   - Group-based and have > 1 group
  *   - Cluster-based _and for this cluster_ or study-wide
  *
- * Prioritization logic applied here, after above preconditions are met:
+ * Annotation prioritization logic applied here, after above preconditions are met:
  *
- *   0. Not currently selected annotation -- this is set upstream, not here
- *   1. <= 2 annotations from metadata convention, for `cell type` and `disease`
- *   2. 0-5 annotations that are cell-type-like or disease-like
- *   2. 0-2 cluster-based annotations
- *   3. 0-5 study-wide annotations
+ *   0. Not currently selected -- this is set upstream, not here
+ *   1. Conventional annotations for cell type or disease
+ *   2. Non-conventional annotations for cell type or disease
+ *   3. Other conventional annotations
+ *   4. Cluster-based annotations
+ *   5. Study-wide annotations
  *
  * Annotations in above categories often don't exist, in which case we fall to the
  * the next prioritization rule.
  */
-function prioritizeAnnotations(annotList) {
+function sortAnnotationsByRelevance(annotList) {
   let annotsToFacet = []
 
   /** Assess if annotation is already in annotsToFacet list */
@@ -60,10 +61,15 @@ function prioritizeAnnotations(annotList) {
   )
   annotsToFacet = annotsToFacet.concat(cellTypeOrClinicalAnnots)
 
-  const otherConventionalAnnots = annotList.filter(
-    annot => annot.name.endsWith('__ontology_label') && isUnique(annot)
-  ).slice(0, 2)
-  annotsToFacet = annotsToFacet.concat(otherConventionalAnnots)
+  const otherConventionalOntologyAnnots = annotList.filter(annot => {
+    return annot.name.endsWith('__ontology_label') && isUnique(annot)
+  })
+  annotsToFacet = annotsToFacet.concat(otherConventionalOntologyAnnots)
+
+  const otherConventionalIdAnnots = annotList.filter(
+    annot => ['donor_id', 'biosample_id'].includes(annot.name) && isUnique(annot)
+  )
+  annotsToFacet = annotsToFacet.concat(otherConventionalIdAnnots)
 
   const clusterAnnots = annotList.filter(
     annot => ('cluster_name' in annot) && isUnique(annot)
@@ -75,8 +81,6 @@ function prioritizeAnnotations(annotList) {
   )
   annotsToFacet = annotsToFacet.concat(studyAnnots)
 
-  annotsToFacet = annotsToFacet.map(annot => annot.identifier).slice(0, 5)
-
   return annotsToFacet
 }
 
@@ -85,7 +89,10 @@ export function filterCells(
   selection, cellsByFacet, facets, filtersByFacet, filterableCells
 ) {
   const t0 = Date.now()
-  facets = facets.map(facet => facet.annotation)
+  facets =
+    facets
+      .filter(facet => facet.isLoaded)
+      .map(facet => facet.annotation)
 
   let fn; let i; let facet; let results
   const counts = {}
@@ -128,7 +135,9 @@ export function filterCells(
         fn = null
       }
       cellsByFacet[facet].filter(fn)
-      counts[facet] = cellsByFacet[facet].group().top(Infinity)
+
+      // TODO: Consider existing this stub to show filter counts
+      // counts[facet] = cellsByFacet[facet].group().top(Infinity)
     }
     results = cellsByFacet[facet].top(Infinity)
   }
@@ -155,11 +164,30 @@ export function filterCells(
   return [results, counts]
 }
 
+/** Merge /facets responses from new and all prior batches */
+function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
+  if (!prevCellFaceting) {
+    return newRawFacets
+  }
+
+  const prevRawFacets = prevCellFaceting.rawFacets
+
+  const facets = prevRawFacets.facets.concat(newRawFacets.facets)
+
+  const cells = prevRawFacets.cells.map((cell, i) => {
+    return cell.concat(newRawFacets.cells[i])
+  })
+
+  const mergedRawFacets = { cells, facets }
+  return mergedRawFacets
+}
+
 /** Initialize crossfilter, return cells by facet */
 function initCrossfilter(facetData) {
   const { cells, facets } = facetData
   const annotationFacets = facets.map(facet => facet.annotation)
   const filterableCells = []
+
   for (let i = 0; i < cells.length; i++) {
     const filterableCell = { 'allCellsIndex': i }
 
@@ -190,12 +218,43 @@ function initCrossfilter(facetData) {
     filtersByFacet[facet.annotation] = facet.groups
   })
 
-  return { filterableCells, cellsByFacet, facets, filtersByFacet }
+  return { filterableCells, cellsByFacet, loadedFacets: facets, filtersByFacet }
 }
+
+/** Determine which facets to fetch data for; helps load 1 batch at a time */
+function getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting) {
+  if (!prevCellFaceting) {
+    return allRelevanceSortedFacets
+      .map(annot => annot.annotation)
+      .slice(0, 5)
+  }
+
+  // Get index of first facet that hasn't been loaded yet
+  let fetchOffset = 0
+  prevCellFaceting.facets.find((facet, i) => {
+    if (!facet.isLoaded) {
+      fetchOffset = i
+      return true
+    }
+  })
+
+  return allRelevanceSortedFacets
+    .map(annot => annot.annotation)
+    .slice(fetchOffset, fetchOffset + 5)
+}
+
+/**
+ * Useful for local development, to simulate waiting on server.
+ *
+ * Below line is worth keeping, but only uncomment to debug in development.
+ */
+// function timeout(ms) {
+//   return new Promise(resolve => setTimeout(resolve, ms))
+// }
 
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
 export async function initCellFaceting(
-  selectedCluster, selectedAnnot, studyAccession, allAnnots
+  selectedCluster, selectedAnnot, studyAccession, allAnnots, prevCellFaceting
 ) {
   // Prioritize and fetch annotation facets for all cells
   const selectedAnnotId = getIdentifierForAnnotation(selectedAnnot)
@@ -214,20 +273,45 @@ export async function initCellFaceting(
         )
       })
 
-  const annotsToFacet = prioritizeAnnotations(applicableAnnots)
-  const facetData = await fetchAnnotationFacets(studyAccession, annotsToFacet, selectedCluster)
+  const allRelevanceSortedFacets =
+    sortAnnotationsByRelevance(applicableAnnots)
+      .map(annot => {
+        return { annotation: annot.identifier, groups: annot.values }
+      })
+  const facetsToFetch = getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting)
+
+  const newRawFacets = await fetchAnnotationFacets(studyAccession, facetsToFetch, selectedCluster)
+
+  // Below line is worth keeping, but only uncomment to debug in developmen.t
+  // This helps simulate waiting on server response, even when using local
+  // service worker caching.
+  //
+  // await new Promise(resolve => setTimeout(resolve, 5000))
+
+  const rawFacets = mergeFacetsResponses(newRawFacets, prevCellFaceting)
 
   const {
     filterableCells, cellsByFacet,
-    facets, filtersByFacet
-  } = initCrossfilter(facetData)
+    loadedFacets, filtersByFacet
+  } = initCrossfilter(rawFacets)
+
+  const facets = allRelevanceSortedFacets.map(facet => {
+    const isLoaded = loadedFacets.some(loadedFacet => facet.annotation === loadedFacet.annotation)
+    facet.isLoaded = isLoaded
+    return facet
+  })
+
+  // Have all applicable annotations been loaded with faceting data?
+  const isFullyLoaded = loadedFacets.length >= allRelevanceSortedFacets.length
 
   const cellFaceting = {
     filterableCells,
     cellsByFacet,
     selections: [],
     facets,
-    filtersByFacet
+    filtersByFacet,
+    isFullyLoaded,
+    rawFacets
   }
 
   // Below line is worth keeping, but only uncomment to debug in development
