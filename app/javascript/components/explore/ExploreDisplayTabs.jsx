@@ -202,7 +202,7 @@ export default function ExploreDisplayTabs({
     if (!cellFaceting) {return}
     const [newCluster, newAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
     getCellFacetingData(newCluster, newAnnot)
-  }, [exploreParams?.cluster, exploreParams?.annotation])
+  }, [exploreInfo?.cluster, exploreInfo?.annotation])
 
   /** Update filtered cells to only those that match annotation group value filter selections */
   function updateFilteredCells(selection) {
