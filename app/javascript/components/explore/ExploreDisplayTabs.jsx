@@ -164,17 +164,22 @@ export default function ExploreDisplayTabs({
   const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
 
   /** wrapper function with error handling/state setting for retrieving cell facet data */
-  function getCellFacetingData(cluster, annotation) {
+  function getCellFacetingData(cluster, annotation, prevCellFaceting) {
     const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
     if (showCellFiltering) {
       const allAnnots = exploreInfo?.annotationList.annotations
-      if (allAnnots && allAnnots.length > 0) {
+      if (allAnnots && allAnnots.length > 0 && !prevCellFaceting?.isFullyLoaded) {
         initCellFaceting(
-          cluster, annotation, studyAccession, allAnnots
+          cluster, annotation, studyAccession, allAnnots, prevCellFaceting
         ).then(newCellFaceting => {
           setClusterCanFilter(true)
           setCellFaceting(newCellFaceting)
           setFilterErrorText('')
+
+          // Now that the cell faceting UI is initialized with the first
+          // facets (e.g. top 5), go ahead and initialize the remaining
+          // facets, in batches of 5
+          getCellFacetingData(cluster, annotation, newCellFaceting)
         }).catch(error => {
           // NOTE: these 'errors' are in fact handled corner cases where faceting data isn't present for various reasons
           // as such, they don't need to be reported to Sentry/Mixpanel, only conveyed to the user

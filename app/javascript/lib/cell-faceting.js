@@ -135,7 +135,9 @@ export function filterCells(
         fn = null
       }
       cellsByFacet[facet].filter(fn)
-      counts[facet] = cellsByFacet[facet].group().top(Infinity)
+
+      // TODO: Consider existing this stub to show filter counts
+      // counts[facet] = cellsByFacet[facet].group().top(Infinity)
     }
     results = cellsByFacet[facet].top(Infinity)
   }
@@ -162,11 +164,30 @@ export function filterCells(
   return [results, counts]
 }
 
+/** Merge /facets responses from new and all prior batches */
+function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
+  if (!prevCellFaceting) {
+    return newRawFacets
+  }
+
+  const prevRawFacets = prevCellFaceting.rawFacets
+
+  const facets = prevRawFacets.facets.concat(newRawFacets.facets)
+
+  const cells = prevRawFacets.cells.map((cell, i) => {
+    return cell.concat(newRawFacets.cells[i])
+  })
+
+  const mergedRawFacets = { cells, facets }
+  return mergedRawFacets
+}
+
 /** Initialize crossfilter, return cells by facet */
 function initCrossfilter(facetData) {
   const { cells, facets } = facetData
   const annotationFacets = facets.map(facet => facet.annotation)
   const filterableCells = []
+
   for (let i = 0; i < cells.length; i++) {
     const filterableCell = { 'allCellsIndex': i }
 
@@ -200,9 +221,40 @@ function initCrossfilter(facetData) {
   return { filterableCells, cellsByFacet, loadedFacets: facets, filtersByFacet }
 }
 
+/** Determine which facets to fetch data for; helps load 1 batch at a time */
+function getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting) {
+  if (!prevCellFaceting) {
+    return allRelevanceSortedFacets
+      .map(annot => annot.annotation)
+      .slice(0, 5)
+  }
+
+  // Get index of first facet that hasn't been loaded yet
+  let fetchOffset = 0
+  prevCellFaceting.facets.find((facet, i) => {
+    if (!facet.isLoaded) {
+      fetchOffset = i
+      return true
+    }
+  })
+
+  return allRelevanceSortedFacets
+    .map(annot => annot.annotation)
+    .slice(fetchOffset, fetchOffset + 5)
+}
+
+/**
+ * Useful for local development, to simulate waiting on server.
+ *
+ * Below line is worth keeping, but only uncomment to debug in development.
+ */
+// function timeout(ms) {
+//   return new Promise(resolve => setTimeout(resolve, ms))
+// }
+
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
 export async function initCellFaceting(
-  selectedCluster, selectedAnnot, studyAccession, allAnnots
+  selectedCluster, selectedAnnot, studyAccession, allAnnots, prevCellFaceting
 ) {
   // Prioritize and fetch annotation facets for all cells
   const selectedAnnotId = getIdentifierForAnnotation(selectedAnnot)
@@ -226,30 +278,40 @@ export async function initCellFaceting(
       .map(annot => {
         return { annotation: annot.identifier, groups: annot.values }
       })
-  const annotFacetsToLoad =
-    allRelevanceSortedFacets
-      .map(annot => annot.annotation)
-      .slice(0, 5)
-  const facetData = await fetchAnnotationFacets(studyAccession, annotFacetsToLoad, selectedCluster)
+  const facetsToFetch = getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting)
+
+  const newRawFacets = await fetchAnnotationFacets(studyAccession, facetsToFetch, selectedCluster)
+
+  // Below line is worth keeping, but only uncomment to debug in developmen.t
+  // This helps simulate waiting on server response, even when using local
+  // service worker caching.
+  //
+  // await new Promise(resolve => setTimeout(resolve, 5000))
+
+  const rawFacets = mergeFacetsResponses(newRawFacets, prevCellFaceting)
 
   const {
     filterableCells, cellsByFacet,
     loadedFacets, filtersByFacet
-  } = initCrossfilter(facetData)
+  } = initCrossfilter(rawFacets)
 
-  const allFacets = allRelevanceSortedFacets.map(facet => {
-    const isLoaded = loadedFacets.find(loadedFacet => facet.annotation === loadedFacet.annotation)
+  const facets = allRelevanceSortedFacets.map(facet => {
+    const isLoaded = loadedFacets.some(loadedFacet => facet.annotation === loadedFacet.annotation)
     facet.isLoaded = isLoaded
     return facet
   })
-  const facets = allFacets.filter(facet => facet.isLoaded)
+
+  // Have all applicable annotations been loaded with faceting data?
+  const isFullyLoaded = loadedFacets.length >= allRelevanceSortedFacets.length
 
   const cellFaceting = {
     filterableCells,
     cellsByFacet,
     selections: [],
     facets,
-    filtersByFacet
+    filtersByFacet,
+    isFullyLoaded,
+    rawFacets
   }
 
   // Below line is worth keeping, but only uncomment to debug in development
