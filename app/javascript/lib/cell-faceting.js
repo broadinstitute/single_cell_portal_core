@@ -137,7 +137,7 @@ export function filterCells(
       cellsByFacet[facet].filter(fn)
 
       // TODO: Consider existing this stub to show filter counts
-      // counts[facet] = cellsByFacet[facet].group().top(Infinity)
+      counts[facet] = cellsByFacet[facet].group().top(Infinity)
     }
     results = cellsByFacet[facet].top(Infinity)
   }
@@ -208,9 +208,25 @@ function initCrossfilter(facetData) {
 
   const cellCrossfilter = crossfilter(filterableCells)
   const cellsByFacet = {}
+  const filterCounts = {}
   for (let i = 0; i < annotationFacets.length; i++) {
     const facet = annotationFacets[i]
-    cellsByFacet[facet] = cellCrossfilter.dimension(d => d[facet])
+    const facetCrossfilter = cellCrossfilter.dimension(d => d[facet])
+    cellsByFacet[facet] = facetCrossfilter
+
+    // Set counts for each filter in facet
+    const rawFilterCounts = facetCrossfilter.group().top(Infinity)
+    const countsByFilter = {}
+    // console.log('facets[i].groups', facets[i].groups)
+    facets[i].groups.forEach((group, j) => {
+      let count = null
+      if (rawFilterCounts[j]) {
+        count = rawFilterCounts[j].value
+      }
+      // console.log('count', count)
+      countsByFilter[group] = count
+    })
+    filterCounts[facet] = countsByFilter
   }
 
   const filtersByFacet = {}
@@ -218,7 +234,12 @@ function initCrossfilter(facetData) {
     filtersByFacet[facet.annotation] = facet.groups
   })
 
-  return { filterableCells, cellsByFacet, loadedFacets: facets, filtersByFacet }
+
+  console.log('filterCounts', filterCounts)
+  return {
+    filterableCells, cellsByFacet, loadedFacets: facets, filtersByFacet,
+    filterCounts
+  }
 }
 
 /** Determine which facets to fetch data for; helps load 1 batch at a time */
@@ -283,7 +304,7 @@ export async function initCellFaceting(
 
   const {
     filterableCells, cellsByFacet,
-    loadedFacets, filtersByFacet
+    loadedFacets, filtersByFacet, filterCounts
   } = initCrossfilter(rawFacets)
 
   const facets = allRelevanceSortedFacets.map(facet => {
@@ -301,7 +322,8 @@ export async function initCellFaceting(
     facets,
     filtersByFacet,
     isFullyLoaded,
-    rawFacets
+    rawFacets,
+    filterCounts
   }
 
   // Below line is worth keeping, but only uncomment to debug in development

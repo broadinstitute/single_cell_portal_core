@@ -113,6 +113,7 @@ export default function ExploreDisplayTabs({
 
   const [cellFaceting, setCellFaceting] = useState(null)
   const [filteredCells, setFilteredCells] = useState(null)
+  const [cellFilterCounts, setCellFilterCounts] = useState(null)
   const [cellFilteringSelection, setCellFilteringSelection] = useState(null)
 
   // flow/error handling for cell filtering
@@ -181,8 +182,11 @@ export default function ExploreDisplayTabs({
             setCellFilteringSelection(initSelection)
           }
           setClusterCanFilter(true)
-          setCellFaceting(newCellFaceting)
           setFilterErrorText('')
+
+          console.log('newCellFaceting.filterCounts', newCellFaceting.filterCounts)
+          setCellFilterCounts(newCellFaceting.filterCounts)
+          setCellFaceting(newCellFaceting)
 
           // Now that the cell faceting UI is initialized with the first
           // facets (e.g. top 5), go ahead and initialize the remaining
@@ -220,9 +224,12 @@ export default function ExploreDisplayTabs({
     const filterableCells = cellFaceting.filterableCells
 
     // Filter cells by selection (i.e., selected facets and filters)
-    const newFilteredCells = filterCells(selection, cellsByFacet, facets, filtersByFacet, filterableCells)[0]
+    const [newFilteredCells, newFilterCounts] = filterCells(
+      selection, cellsByFacet, facets, filtersByFacet, filterableCells
+    )
 
     // Update UI
+    setFilterCounts(newFilterCounts)
     setFilteredCells(newFilteredCells)
     setCellFilteringSelection(selection)
   }
@@ -528,6 +535,7 @@ export default function ExploreDisplayTabs({
             setShowDeGroupPicker={setShowDeGroupPicker}
             cellFaceting={cellFaceting}
             cellFilteringSelection={cellFilteringSelection}
+            cellFilterCounts={cellFilterCounts}
             clusterCanFilter={clusterCanFilter}
             filterErrorText ={filterErrorText}
             updateFilteredCells={updateFilteredCells}

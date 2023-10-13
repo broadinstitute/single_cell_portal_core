@@ -109,6 +109,38 @@ function isChecked(annotation, item, checkedMap) {
   return checkedMap[annotation]?.includes(item)
 }
 
+
+/** Cell filter component */
+function CellFilter({
+  facet, filter, isChecked, checkedMap, facetLabelStyle, handleCheck, updateFilteredCells,
+  inputStyle
+}) {
+  // console.log('facet.filterCounts', facet.filterCounts)
+  return (
+    <div style={{ marginLeft: '2px', lineHeight: '14px' }}>
+      <label className="cell-filter-label" style={facetLabelStyle}>
+        <input
+          type="checkbox"
+          checked={isChecked(facet.annotation, filter, checkedMap)}
+          value={filter}
+          data-analytics-name={`${facet.annotation}:${filter}`}
+          name={`${facet.annotation}:${filter}`}
+          onChange={event => {
+            handleCheck(event)
+            updateFilteredCells(checkedMap)
+          }}
+          style={inputStyle}
+          disabled={!facet.isLoaded}
+        />
+        {filter}
+      </label>
+      <span style={{ 'float': 'right' }}>
+        {facet.filterCounts && facet.filterCounts[filter]}
+      </span>
+    </div>
+  )
+}
+
 /** Facet name and collapsible list of filter checkboxes */
 function CellFacet({
   facet,
@@ -169,6 +201,8 @@ function CellFacet({
     inputStyle.cursor = 'default'
   }
 
+  console.log('facet', facet)
+
   return (
     <div
       className="cell-facet"
@@ -180,26 +214,22 @@ function CellFacet({
         isFullyCollapsed={isFullyCollapsed}
         setIsFullyCollapsed={setIsFullyCollapsed}
       />
-      {shownFilters.map((item, i) => (
-        <div style={{ marginLeft: '2px', lineHeight: '14px' }} key={i}>
-          <label className="cell-filter-label" style={facetLabelStyle}>
-            <input
-              type="checkbox"
-              checked={isChecked(facet.annotation, item, checkedMap)}
-              value={item}
-              data-analytics-name={`${facet.annotation}:${item}`}
-              name={`${facet.annotation}:${item}`}
-              onChange={event => {
-                handleCheck(event)
-                updateFilteredCells(checkedMap)
-              }}
-              style={inputStyle}
-              disabled={!facet.isLoaded}
-            />
-            {item}
-          </label>
-        </div>
-      ))}
+      {shownFilters.map((filter, i) => {
+        return (
+          <CellFilter
+            facet={facet}
+            filter={filter}
+            isChecked={isChecked}
+            checkedMap={checkedMap}
+            facetLabelStyle={facetLabelStyle}
+            handleCheck={handleCheck}
+            updateFilteredCells={updateFilteredCells}
+            inputStyle={inputStyle}
+            key={i}
+          />
+        )
+      })
+      }
       {!isFullyCollapsed && filters.length > numFiltersPartlyCollapsed &&
         <a
           className="facet-toggle"
@@ -273,8 +303,10 @@ export function CellFilteringPanel({
   updateClusterParams,
   cellFaceting,
   cellFilteringSelection,
+  cellFilterCounts,
   updateFilteredCells
 }) {
+  console.log('cellFaceting', cellFaceting)
   if (!cellFaceting) {
     const loadingTextStyle = { position: 'absolute', top: '50%', left: '30%' }
     return (
@@ -285,7 +317,13 @@ export function CellFilteringPanel({
     )
   }
 
-  const facets = cellFaceting.facets
+  console.log('cellFilterCounts', cellFilterCounts)
+
+  const facets = cellFaceting.facets.map(facet => {
+    facet.filterCounts = cellFilterCounts[facet.annotation]
+    return facet
+  })
+  console.log('facets', facets)
   const [checkedMap, setCheckedMap] = useState(cellFilteringSelection)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const shownFacets = facets
