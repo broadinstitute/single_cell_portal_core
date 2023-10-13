@@ -277,7 +277,7 @@ export async function initCellFaceting(
   // This helps simulate waiting on server response, even when using local
   // service worker caching.
   //
-  // await new Promise(resolve => setTimeout(resolve, 5000))
+  // await new Promise(resolve => setTimeout(resolve, 3000))
 
   const rawFacets = mergeFacetsResponses(newRawFacets, prevCellFaceting)
 

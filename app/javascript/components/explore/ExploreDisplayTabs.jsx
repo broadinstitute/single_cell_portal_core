@@ -106,14 +106,14 @@ export default function ExploreDisplayTabs({
   }
   const [panelToShow, setPanelToShow] = useState(initialPanel)
 
-  const [cellFaceting, setCellFaceting] = useState(null)
-  const [filteredCells, setFilteredCells] = useState(null)
-  const [cellFilteringSelection, setCellFilteringSelection] = useState(null)
-
   // Hash of trace label names to the number of points in that trace
   const [countsByLabel, setCountsByLabel] = useState(null)
   const showDifferentialExpressionTable = (showViewOptionsControls && deGenes !== null)
   const plotContainerClass = 'explore-plot-tab-content'
+
+  const [cellFaceting, setCellFaceting] = useState(null)
+  const [filteredCells, setFilteredCells] = useState(null)
+  const [cellFilteringSelection, setCellFilteringSelection] = useState(null)
 
   // flow/error handling for cell filtering
   const [clusterCanFilter, setClusterCanFilter] = useState(true)
@@ -201,13 +201,8 @@ export default function ExploreDisplayTabs({
     }
   }
 
-  if (!cellFaceting) {
-    getCellFacetingData(selectedCluster, selectedAnnot)
-  }
-
   // if the exploreParams update need to reset the initial cell facets
   useEffect(() => {
-    if (!cellFaceting) {return}
     const [newCluster, newAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
     getCellFacetingData(newCluster, newAnnot)
   }, [exploreInfo?.cluster, exploreInfo?.annotation])
