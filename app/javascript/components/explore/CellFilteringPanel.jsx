@@ -112,13 +112,18 @@ function isChecked(annotation, item, checkedMap) {
 
 /** Cell filter component */
 function CellFilter({
-  facet, filter, isChecked, checkedMap, facetLabelStyle, handleCheck, updateFilteredCells,
-  inputStyle
+  facet, filter, isChecked, checkedMap, handleCheck, updateFilteredCells
 }) {
-  // console.log('facet.filterCounts', facet.filterCounts)
+  let facetLabelStyle = {}
+  const inputStyle = { 'margin': '1px 5px 0 0', 'vertical-align': 'top' }
+  if (!facet.isLoaded) {
+    inputStyle.cursor = 'default'
+    facetLabelStyle = { color: '#777', cursor: 'default' }
+  }
+
   return (
-    <div style={{ marginLeft: '2px', lineHeight: '14px' }}>
-      <label className="cell-filter-label" style={facetLabelStyle}>
+    <label className="cell-filter-label">
+      <div style={{ marginLeft: '2px', lineHeight: '14px', ...facetLabelStyle }}>
         <input
           type="checkbox"
           checked={isChecked(facet.annotation, filter, checkedMap)}
@@ -132,12 +137,12 @@ function CellFilter({
           style={inputStyle}
           disabled={!facet.isLoaded}
         />
-        {filter}
-      </label>
-      <span style={{ 'float': 'right' }}>
-        {facet.filterCounts && facet.filterCounts[filter]}
-      </span>
-    </div>
+        <span className="cell-filter-label-text">{filter}</span>
+        <span className="cell-filter-count">
+          {facet.filterCounts && facet.filterCounts[filter]}
+        </span>
+      </div>
+    </label>
   )
 }
 
@@ -186,22 +191,13 @@ function CellFacet({
     setIsFullyCollapsed(isAllListsCollapsed)
   }, [isAllListsCollapsed])
 
-  let facetLabelStyle = {}
-  if (!facet.isLoaded) {
-    facetLabelStyle = { color: '#777', cursor: 'default' }
-  }
-
   let facetStyle = {}
-  const inputStyle = { marginRight: '5px' }
   if (!facet.isLoaded) {
     facetStyle = {
       color: '#777',
       cursor: 'default'
     }
-    inputStyle.cursor = 'default'
   }
-
-  console.log('facet', facet)
 
   return (
     <div
@@ -221,10 +217,8 @@ function CellFacet({
             filter={filter}
             isChecked={isChecked}
             checkedMap={checkedMap}
-            facetLabelStyle={facetLabelStyle}
             handleCheck={handleCheck}
             updateFilteredCells={updateFilteredCells}
-            inputStyle={inputStyle}
             key={i}
           />
         )
@@ -306,7 +300,6 @@ export function CellFilteringPanel({
   cellFilterCounts,
   updateFilteredCells
 }) {
-  console.log('cellFaceting', cellFaceting)
   if (!cellFaceting) {
     const loadingTextStyle = { position: 'absolute', top: '50%', left: '30%' }
     return (
@@ -317,13 +310,10 @@ export function CellFilteringPanel({
     )
   }
 
-  console.log('cellFilterCounts', cellFilterCounts)
-
   const facets = cellFaceting.facets.map(facet => {
     facet.filterCounts = cellFilterCounts[facet.annotation]
     return facet
   })
-  console.log('facets', facets)
   const [checkedMap, setCheckedMap] = useState(cellFilteringSelection)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const shownFacets = facets

@@ -224,12 +224,11 @@ export default function ExploreDisplayTabs({
     const filterableCells = cellFaceting.filterableCells
 
     // Filter cells by selection (i.e., selected facets and filters)
-    const [newFilteredCells, newFilterCounts] = filterCells(
+    const newFilteredCells = filterCells(
       selection, cellsByFacet, facets, filtersByFacet, filterableCells
-    )
+    )[0]
 
     // Update UI
-    setFilterCounts(newFilterCounts)
     setFilteredCells(newFilteredCells)
     setCellFilteringSelection(selection)
   }

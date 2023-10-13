@@ -137,7 +137,7 @@ export function filterCells(
       cellsByFacet[facet].filter(fn)
 
       // TODO: Consider existing this stub to show filter counts
-      counts[facet] = cellsByFacet[facet].group().top(Infinity)
+      // counts[facet] = cellsByFacet[facet].group().top(Infinity)
     }
     results = cellsByFacet[facet].top(Infinity)
   }
