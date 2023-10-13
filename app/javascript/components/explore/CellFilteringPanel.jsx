@@ -346,17 +346,6 @@ export function CellFilteringPanel({
   const filterSectionHeight = window.innerHeight - verticalPad
   const filterSectionHeightProp = `${filterSectionHeight}px`
 
-  const loadedFacets = cellFaceting.facets.filter(facet => facet.isLoaded).map(lf => parseAnnotationName(lf.annotation)[0])
-
-  // /** populate the checkedMap state if it's empty
-  //  * (this is for initial setting upon page loading and the cellFaceting prop initializing) */
-  // useEffect(() => {
-  //   // if (Object.keys(checkedMap).length === 0) {
-  //   populateCheckedMap()
-  //   // }
-  // }, [loadedFacets.join(',')])
-
-
   return (
     <>
       <div>
