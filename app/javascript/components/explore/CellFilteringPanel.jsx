@@ -88,7 +88,7 @@ function CollapseToggleChevron({ isCollapsed, whatToToggle, isLoaded }) {
       <span
         data-toggle="tooltip"
         data-original-title="Loading data..."
-        style={{ position: 'relative', top: '-5px', left: '-20px', cursor: 'progress' }}
+        style={{ position: 'relative', top: '-5px', left: '-20px', cursor: 'default' }}
       >
         <LoadingSpinner height='14px'/>
       </span>
@@ -156,7 +156,7 @@ function CellFacet({
 
   let facetLabelStyle = {}
   if (!facet.isLoaded) {
-    facetLabelStyle = { color: '#777', cursor: 'wait' }
+    facetLabelStyle = { color: '#777', cursor: 'default' }
   }
 
   let facetStyle = {}
@@ -164,9 +164,9 @@ function CellFacet({
   if (!facet.isLoaded) {
     facetStyle = {
       color: '#777',
-      cursor: 'progress'
+      cursor: 'default'
     }
-    inputStyle.cursor = 'progress'
+    inputStyle.cursor = 'default'
   }
 
   return (
@@ -229,7 +229,7 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
   }
   if (!facet.isLoaded) {
     facetNameStyle.color = '#777'
-    facetNameStyle.cursor = 'progress'
+    facetNameStyle.cursor = 'default'
   }
 
   let title = 'Author annotation'
