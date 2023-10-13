@@ -271,14 +271,13 @@ export async function initCellFaceting(
       })
   const facetsToFetch = getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting)
 
-  console.log('before fetchAnnotationFacets, facetsToFetch', facetsToFetch)
   const newRawFacets = await fetchAnnotationFacets(studyAccession, facetsToFetch, selectedCluster)
 
   // Below line is worth keeping, but only uncomment to debug in developmen.t
   // This helps simulate waiting on server response, even when using local
   // service worker caching.
   //
-  await new Promise(resolve => setTimeout(resolve, 5000))
+  // await new Promise(resolve => setTimeout(resolve, 5000))
 
   const rawFacets = mergeFacetsResponses(newRawFacets, prevCellFaceting)
 
@@ -299,7 +298,6 @@ export async function initCellFaceting(
   const cellFaceting = {
     filterableCells,
     cellsByFacet,
-    selections: [],
     facets,
     filtersByFacet,
     isFullyLoaded,

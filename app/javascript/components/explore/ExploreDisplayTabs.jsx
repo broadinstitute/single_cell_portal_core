@@ -108,6 +108,7 @@ export default function ExploreDisplayTabs({
 
   const [cellFaceting, setCellFaceting] = useState(null)
   const [filteredCells, setFilteredCells] = useState(null)
+  const [cellFilteringSelection, setCellFilteringSelection] = useState(null)
 
   // Hash of trace label names to the number of points in that trace
   const [countsByLabel, setCountsByLabel] = useState(null)
@@ -172,6 +173,13 @@ export default function ExploreDisplayTabs({
         initCellFaceting(
           cluster, annotation, studyAccession, allAnnots, prevCellFaceting
         ).then(newCellFaceting => {
+          if (!cellFilteringSelection) {
+            const initSelection = {}
+            newCellFaceting.facets.forEach(facet => {
+              initSelection[facet.annotation] = facet.groups
+            })
+            setCellFilteringSelection(initSelection)
+          }
           setClusterCanFilter(true)
           setCellFaceting(newCellFaceting)
           setFilterErrorText('')
@@ -221,6 +229,7 @@ export default function ExploreDisplayTabs({
 
     // Update UI
     setFilteredCells(newFilteredCells)
+    setCellFilteringSelection(selection)
   }
 
   // Below line is worth keeping, but only uncomment to debug in development
@@ -409,7 +418,8 @@ export default function ExploreDisplayTabs({
                     countsByLabel,
                     setCountsByLabel,
                     dataCache,
-                    filteredCells
+                    filteredCells,
+                    cellFilteringSelection
                   }}/>
               </div>
             }
@@ -522,7 +532,7 @@ export default function ExploreDisplayTabs({
             setDeGenes={setDeGenes}
             setShowDeGroupPicker={setShowDeGroupPicker}
             cellFaceting={cellFaceting}
-            setCellFaceting={setCellFaceting}
+            cellFilteringSelection={cellFilteringSelection}
             clusterCanFilter={clusterCanFilter}
             filterErrorText ={filterErrorText}
             updateFilteredCells={updateFilteredCells}

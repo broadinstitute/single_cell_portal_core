@@ -272,6 +272,7 @@ export function CellFilteringPanel({
   shownAnnotation,
   updateClusterParams,
   cellFaceting,
+  cellFilteringSelection,
   updateFilteredCells
 }) {
   if (!cellFaceting) {
@@ -285,47 +286,10 @@ export function CellFilteringPanel({
   }
 
   const facets = cellFaceting.facets
-  const [checkedMap, setCheckedMap] = useState({})
+  const [checkedMap, setCheckedMap] = useState(cellFilteringSelection)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const shownFacets = facets
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
-
-  /** used to populate the checkedMap for the initial facets shown */
-  function populateCheckedMap() {
-    const tmpCheckedMap = {}
-
-    const numFacets = facets.length
-    for (let i = 0; i < numFacets; i++) {
-      tmpCheckedMap[facets[i].annotation] = facets[i].groups
-    }
-
-    setCheckedMap(tmpCheckedMap)
-  }
-
-
-  /** Update the checkedMap state that is used for setting up the filtering checkboxes */
-  function updateCheckedMap(newSingleCellFaceting, event) {
-    const tmpCheckedMap = { ...checkedMap }
-    // add the new facet to the tmpCheckedMap
-    tmpCheckedMap[newSingleCellFaceting.value.annotation] = newSingleCellFaceting.value.groups
-
-    // set the checkedMap state with the updated list
-    setCheckedMap(tmpCheckedMap)
-
-    const tmpShownFacets = [...shownFacets]
-
-    // grab the index of the facet that is to be replaced
-    const indexToRep = tmpShownFacets.findIndex(facet => facet.annotation === event.name)
-
-    // replace the existing facet with the new facet at the index determined above
-    tmpShownFacets[indexToRep] = {
-      annotation: newSingleCellFaceting.value.annotation,
-      groups: newSingleCellFaceting.value.groups
-    }
-
-    // set the facets that are shown in the UI
-    // setShownFacets(tmpShownFacets)
-  }
 
   /** Top header for the "Filter" section, including all-facet controls */
   function FilterSectionHeader({ isAllListsCollapsed, setIsAllListsCollapsed }) {
@@ -384,13 +348,13 @@ export function CellFilteringPanel({
 
   const loadedFacets = cellFaceting.facets.filter(facet => facet.isLoaded).map(lf => parseAnnotationName(lf.annotation)[0])
 
-  /** populate the checkedMap state if it's empty
-   * (this is for initial setting upon page loading and the cellFaceting prop initializing) */
-  useEffect(() => {
-    // if (Object.keys(checkedMap).length === 0) {
-    populateCheckedMap()
-    // }
-  }, [loadedFacets.join(',')])
+  // /** populate the checkedMap state if it's empty
+  //  * (this is for initial setting upon page loading and the cellFaceting prop initializing) */
+  // useEffect(() => {
+  //   // if (Object.keys(checkedMap).length === 0) {
+  //   populateCheckedMap()
+  //   // }
+  // }, [loadedFacets.join(',')])
 
 
   return (

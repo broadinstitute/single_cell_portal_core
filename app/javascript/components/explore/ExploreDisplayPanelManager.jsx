@@ -197,7 +197,7 @@ export default function ExploreDisplayPanelManager({
   exploreParamsWithDefaults, routerLocation, searchGenes, countsByLabel, setShowUpstreamDifferentialExpressionPanel,
   setShowDifferentialExpressionPanel, showUpstreamDifferentialExpressionPanel, togglePanel, shownTab,
   showDifferentialExpressionPanel, setIsCellSelecting, currentPointsSelected, isCellSelecting, deGenes,
-  setDeGenes, setShowDeGroupPicker, cellFaceting, setCellFaceting, clusterCanFilter, filterErrorText,
+  setDeGenes, setShowDeGroupPicker, cellFaceting, cellFilteringSelection, clusterCanFilter, filterErrorText,
   updateFilteredCells, panelToShow, toggleViewOptions
 }) {
   const [, setRenderForcer] = useState({})
@@ -517,6 +517,7 @@ export default function ExploreDisplayPanelManager({
           shownAnnotation={shownAnnotation}
           updateClusterParams={updateClusterParams}
           cellFaceting={cellFaceting}
+          cellFilteringSelection={cellFilteringSelection}
           updateFilteredCells={updateFilteredCells}
           exploreParams={exploreParams}
           exploreInfo={exploreInfo}
