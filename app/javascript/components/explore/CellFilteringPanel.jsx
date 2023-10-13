@@ -287,7 +287,7 @@ export function CellFilteringPanel({
   const facets = cellFaceting.facets
   const [checkedMap, setCheckedMap] = useState({})
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
-  const [shownFacets, setShownFacets] = useState()
+  const shownFacets = facets
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
   /** used to populate the checkedMap for the initial facets shown */
@@ -300,9 +300,6 @@ export function CellFilteringPanel({
     }
 
     setCheckedMap(tmpCheckedMap)
-
-    // set the shownFacets with the same facets as the checkedMap starts with
-    setShownFacets(facets.slice(0, numFacets))
   }
 
 
@@ -327,7 +324,7 @@ export function CellFilteringPanel({
     }
 
     // set the facets that are shown in the UI
-    setShownFacets(tmpShownFacets)
+    // setShownFacets(tmpShownFacets)
   }
 
   /** Top header for the "Filter" section, including all-facet controls */
@@ -385,13 +382,16 @@ export function CellFilteringPanel({
   const filterSectionHeight = window.innerHeight - verticalPad
   const filterSectionHeightProp = `${filterSectionHeight}px`
 
+  const loadedFacets = cellFaceting.facets.filter(facet => facet.isLoaded).map(lf => parseAnnotationName(lf.annotation)[0])
+
   /** populate the checkedMap state if it's empty
    * (this is for initial setting upon page loading and the cellFaceting prop initializing) */
   useEffect(() => {
-    if (Object.keys(checkedMap).length === 0) {
-      populateCheckedMap()
-    }
-  }, [cellFaceting])
+    // if (Object.keys(checkedMap).length === 0) {
+    populateCheckedMap()
+    // }
+  }, [loadedFacets.join(',')])
+
 
   return (
     <>
