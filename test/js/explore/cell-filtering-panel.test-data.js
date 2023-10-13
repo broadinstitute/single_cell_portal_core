@@ -1122,3 +1122,236 @@ export const cellFaceting = {
     ]
   }
 }
+
+export const cellFilteringSelection = {
+  'cell_type__ontology_label--group--study': [
+    'epithelial cell',
+    'macrophage',
+    'neutrophil',
+    'B cell',
+    'T cell',
+    'animal cell',
+    'dendritic cell',
+    'eosinophil',
+    'fibroblast'
+  ],
+  'infant_sick_YN--group--study': [
+    'no',
+    'NA',
+    'yes'
+  ],
+  'mastisis_YN--group--study': [
+    'no',
+    'yes',
+    'NA'
+  ],
+  'maternal_medical_event_YN--group--study': [
+    'no',
+    'yes',
+    'NA'
+  ],
+  'reported_infant_medical_events_YN--group--study': [
+    'no',
+    'yes',
+    'NA'
+  ],
+  'reported_infant_medical_events_description--group--study': [
+    'NA',
+    'no',
+    'maybe a stomache bug ',
+    'hot and sleepy',
+    'jaundice',
+    'lounge tie removal mid july, vaccinations a few weeks prior ',
+    'runny nose',
+    'runny nose, diarrhea, vomitting, no fever',
+    'maybe still jaundice',
+    'stomach bug (August), runny nose (October/ currently)',
+    'influenza vaccine received on 4/8/19'
+  ],
+  'ethnicity__ontology_label--group--study': [
+    'European',
+    'Asian',
+    'Hispanic or Latin American',
+    'ancestry category'
+  ],
+  'biosample_id--group--study': [
+    'BM02_6wkpp_r1',
+    'BM12_6wk',
+    'BM03_6wkpp_r1',
+    'BM05_6wkpp',
+    'BM08_6wk_r1',
+    'BM08_6wkpp_r2',
+    'BM13_6wk_r1',
+    'BM13_6wk_r3',
+    'BM07_7wkpp_r1',
+    'BM11_6wk_r1',
+    'BM01_7wkpp_r1',
+    'BM02_13wkpp_t1',
+    'BM08_13wk_r1',
+    'BM05_12wk_r2',
+    'BM03_13wk_r1',
+    'BM03_13wkpp_r2',
+    'BM01_13wkpp_r2',
+    'BM13_12wk',
+    'BM03_15dpp_r1',
+    'BM08_15dpp_r1',
+    'BM01_16dpp_r3',
+    'BM07_17dpp_r2',
+    'BM19_4dpp_r1',
+    'BM02_5dpp_r1',
+    'BM02_5dpp_r2',
+    'BM03_5dpp_r1',
+    'BM07_5dpp_r1',
+    'BM01_5dpp_r1',
+    'BM05_6dpp_r1',
+    'BM11_5dpp_r1',
+    'BM13_6dpp_r1',
+    'BM07_13wk_r1',
+    'BM01_23wk_r1',
+    'BM03_24wk_r1',
+    'BM03_24wk_r2',
+    'BM08_24wk',
+    'BM02_24wk_r2',
+    'BM02_10dpp_r1',
+    'BM03_10dpp_r1',
+    'BM03_10dpp_r2',
+    'BM01_12dpp_r1',
+    'BM07_10dpp_r1',
+    'BM13_13dpp_r1',
+    'BM02_14dpp_r1',
+    'BM04_t1_r2',
+    'BM10_t1_r1',
+    'BM06_t3',
+    'BM04_t3_r1',
+    'BT_t3_lot1',
+    'BT_t3_old',
+    'K1',
+    'K2',
+    'Kfresh',
+    'BM07_25wk_lot711',
+    'B2',
+    'BM5',
+    'BM06_t1_r1',
+    'BM05_26wk_r1',
+    'Bfresh'
+  ],
+  'donor_id--group--study': [
+    'BM02',
+    'BM12',
+    'BM03',
+    'BM05',
+    'BM08',
+    'BM13',
+    'BM07',
+    'BM11',
+    'BM01',
+    'BM19',
+    'BM04',
+    'BM10',
+    'BM06',
+    'NA'
+  ],
+  'milk_stage--group--study': [
+    'late_1',
+    'mature',
+    'early',
+    'late_2',
+    'transitional ',
+    'transitional',
+    'late_4',
+    'NA',
+    'late_3'
+  ],
+  'weaning_YN--group--study': [
+    'NA',
+    'no',
+    'yes'
+  ],
+  'breast_soreness_YN--group--study': [
+    'no',
+    'yes',
+    'NA'
+  ],
+  'directly_breastfeeding_YN--group--study': [
+    'yes',
+    'NA'
+  ],
+  'any_formula_YN--group--study': [
+    'no',
+    'yes',
+    'NA'
+  ],
+  'mother_medications_YN--group--study': [
+    'no',
+    'yes',
+    'sunflower lecithin ',
+    'NA'
+  ],
+  'reported_menstruating_YN--group--study': [
+    'no',
+    'N',
+    'NA'
+  ],
+  'hormonal_birthcontrol_YN--group--study': [
+    'no',
+    'yes',
+    'yes ',
+    'NA'
+  ],
+  'daycare_YN--group--study': [
+    'no',
+    'yes',
+    'NA'
+  ],
+  'vaccines_reported_YN--group--study': [
+    'no',
+    'yes',
+    'NA'
+  ],
+  'vaccines_list--group--study': [
+    'NA',
+    '9/3 and 9/10 – a hep B booster in the hospital',
+    'no',
+    '5/9/19 hepatitis B',
+    'hepB ',
+    'vaccines on 5/15',
+    '(6/11) Dtap-hep, BIPV, rotavirus, pentavalent, big (PRP-T)',
+    'HepB',
+    'hepB (says 4/22 but probably 5/22?)',
+    '4/3/19 Hepatitis B (at birth) ',
+    '2 month vaccines',
+    'Dtap, Gib, IPV, PCU13, Rotavirus (8/16/19)',
+    'vaccines on 7/15',
+    'influenza (day prior to sample)'
+  ],
+  'solid_foods_YN--group--study': [
+    'no',
+    'NA',
+    'yes'
+  ],
+  'Age--group--study': [
+    '31.0',
+    '34.0',
+    '33.0',
+    '29.0',
+    '35.0',
+    '32.0',
+    'NA'
+  ],
+  'labor_induced_YN--group--study': [
+    'Y',
+    'N',
+    'NA'
+  ],
+  'antibiotics_during_delivery--group--study': [
+    'N',
+    'Y',
+    'NA'
+  ],
+  'delivery_mode--group--study': [
+    'vaginal',
+    'C section',
+    'vaginal ',
+    'NA'
+  ]
+}
