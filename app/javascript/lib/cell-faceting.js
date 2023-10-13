@@ -86,16 +86,15 @@ function sortAnnotationsByRelevance(annotList) {
 
 /** Get filtered cell results */
 export function filterCells(
-  selection, cellsByFacet, facets, filtersByFacet, filterableCells
+  selection, cellsByFacet, rawFacets, filtersByFacet, filterableCells
 ) {
   const t0 = Date.now()
-  facets =
-    facets
+  const facets =
+    rawFacets
       .filter(facet => facet.isLoaded)
       .map(facet => facet.annotation)
 
   let fn; let i; let facet; let results
-  const counts = {}
 
   if (Object.keys(selection).length === 0) {
     results = filterableCells
@@ -137,10 +136,12 @@ export function filterCells(
       cellsByFacet[facet].filter(fn)
 
       // TODO: Consider existing this stub to show filter counts
-      // counts[facet] = cellsByFacet[facet].group().top(Infinity)
     }
     results = cellsByFacet[facet].top(Infinity)
   }
+
+  const annotationFacets = rawFacets.map(facet => facet.annotation)
+  const counts = getFilterCounts(annotationFacets, cellsByFacet, rawFacets)
 
   const t1 = Date.now()
   // Assemble analytics
@@ -182,6 +183,32 @@ function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
   return mergedRawFacets
 }
 
+/** Get counts for each filter, in each facet */
+function getFilterCounts(annotationFacets, cellsByFacet, facets) {
+  const filterCounts = {}
+
+  for (let i = 0; i < annotationFacets.length; i++) {
+    const facet = annotationFacets[i]
+    const facetCrossfilter = cellsByFacet[facet]
+
+    // Set counts for each filter in facet
+    const rawFilterCounts = facetCrossfilter.group().top(Infinity)
+    const countsByFilter = {}
+    // console.log('facets[i].groups', facets[i].groups)
+    facets[i].groups.forEach((group, j) => {
+      let count = null
+      if (rawFilterCounts[j]) {
+        count = rawFilterCounts[j].value
+      }
+      // console.log('count', count)
+      countsByFilter[group] = count
+    })
+    filterCounts[facet] = countsByFilter
+  }
+
+  return filterCounts
+}
+
 /** Initialize crossfilter, return cells by facet */
 function initCrossfilter(facetData) {
   const { cells, facets } = facetData
@@ -208,34 +235,19 @@ function initCrossfilter(facetData) {
 
   const cellCrossfilter = crossfilter(filterableCells)
   const cellsByFacet = {}
-  const filterCounts = {}
   for (let i = 0; i < annotationFacets.length; i++) {
     const facet = annotationFacets[i]
     const facetCrossfilter = cellCrossfilter.dimension(d => d[facet])
     cellsByFacet[facet] = facetCrossfilter
-
-    // Set counts for each filter in facet
-    const rawFilterCounts = facetCrossfilter.group().top(Infinity)
-    const countsByFilter = {}
-    // console.log('facets[i].groups', facets[i].groups)
-    facets[i].groups.forEach((group, j) => {
-      let count = null
-      if (rawFilterCounts[j]) {
-        count = rawFilterCounts[j].value
-      }
-      // console.log('count', count)
-      countsByFilter[group] = count
-    })
-    filterCounts[facet] = countsByFilter
   }
+
+  const filterCounts = getFilterCounts(annotationFacets, cellsByFacet, facets)
 
   const filtersByFacet = {}
   facets.forEach(facet => {
     filtersByFacet[facet.annotation] = facet.groups
   })
 
-
-  console.log('filterCounts', filterCounts)
   return {
     filterableCells, cellsByFacet, loadedFacets: facets, filtersByFacet,
     filterCounts
