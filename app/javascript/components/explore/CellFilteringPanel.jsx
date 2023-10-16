@@ -310,8 +310,6 @@ export function CellFilteringPanel({
     )
   }
 
-  console.log('in CellFilteringPanel')
-
   const facets = cellFaceting.facets.map(facet => {
     facet.filterCounts = cellFilterCounts[facet.annotation]
     return facet

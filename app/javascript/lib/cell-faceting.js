@@ -86,13 +86,13 @@ function sortAnnotationsByRelevance(annotList) {
 
 /** Get filtered cell results */
 export function filterCells(
-  selection, cellsByFacet, rawFacets, filtersByFacet, filterableCells
+  selection, cellsByFacet, initFacets, filtersByFacet, filterableCells
 ) {
   const t0 = Date.now()
   const facets =
-    rawFacets
-      .filter(facet => facet.isLoaded)
-      .map(facet => facet.annotation)
+  initFacets
+    .filter(facet => facet.isLoaded)
+    .map(facet => facet.annotation)
 
   let fn; let i; let facet; let results
 
@@ -138,8 +138,8 @@ export function filterCells(
     results = cellsByFacet[facet].top(Infinity)
   }
 
-  const annotationFacets = rawFacets.map(facet => facet.annotation)
-  const counts = getFilterCounts(annotationFacets, cellsByFacet, rawFacets)
+  const annotationFacets = initFacets.map(facet => facet.annotation)
+  const counts = getFilterCounts(annotationFacets, cellsByFacet, initFacets)
 
   const t1 = Date.now()
   // Assemble analytics
@@ -164,17 +164,6 @@ export function filterCells(
   return [results, counts]
 }
 
-// function removeFiltersWithNoMatches() {
-//   let groupsToOmitByAnnot = {} // filters to remove, as they match no cells
-
-//   const annotation = facets[i].annotation
-//   if (annotation in groupsToOmitByAnnot) {
-//     groupsToOmitByAnnot[annotation] = [group]
-//   } else {
-//     groupsToOmitByAnnot[annotation].push(group)
-//   }
-// }
-
 /** Merge /facets responses from new and all prior batches */
 function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
   if (!prevCellFaceting) {
@@ -191,6 +180,59 @@ function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
 
   const mergedRawFacets = { cells, facets }
   return mergedRawFacets
+}
+
+/** Omit any filters that match 0 cells in the current clustering */
+function trimNullFilters(cellFaceting) {
+  const filterCountsByFacet = cellFaceting.filterCounts
+  const annotationFacets = cellFaceting.facets.map(facet => facet.annotation)
+  const nonzeroFiltersByFacet = {} // filters to remove, as they match no cells
+  const nonzeroFilterCountsByFacet = {}
+
+  const filterableCells = cellFaceting.filterableCells
+
+  for (let i = 0; i < annotationFacets.length; i++) {
+    const facet = annotationFacets[i]
+    let facetHasNullFilter = false
+    let nullFilterIndex
+
+    const countsByFilter = filterCountsByFacet[facet]
+    const nonzeroFilters = []
+    const nonzeroFilterCounts = {}
+    if (!countsByFilter) {
+      continue
+    }
+
+    Object.entries(countsByFilter).forEach(([filter, count], filterIndex) => {
+      if (count !== null) {
+        nonzeroFilters.push(filter)
+        nonzeroFilterCounts[filter] = countsByFilter[filter]
+      } else {
+        facetHasNullFilter = true
+        nullFilterIndex = filterIndex
+      }
+    })
+
+    if (facetHasNullFilter) {
+      for (let j = 0; j < cellFaceting.filterableCells.length; j++) {
+        const cell = cellFaceting.filterableCells[j]
+        if (cell[facet] > nullFilterIndex) {
+          filterableCells[j][facet] -= 1 // Shift facet filter index to account for removal
+        }
+      }
+    }
+
+    nonzeroFilterCountsByFacet[facet] = nonzeroFilterCounts
+    nonzeroFiltersByFacet[facet] = nonzeroFilters
+    cellFaceting.facets[i].groups = nonzeroFilters
+  }
+
+  cellFaceting.cellsByFacet = getCellsByFacet(filterableCells, annotationFacets)
+  cellFaceting.filterableCells = filterableCells
+  cellFaceting.filterCounts = nonzeroFilterCountsByFacet
+  cellFaceting.filtersByFacet = nonzeroFiltersByFacet
+
+  return cellFaceting
 }
 
 /** Get counts for each filter, in each facet */
@@ -219,6 +261,17 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets) {
   return filterCounts
 }
 
+function getCellsByFacet(filterableCells, annotationFacets) {
+  const cellCrossfilter = crossfilter(filterableCells)
+  const cellsByFacet = {}
+  for (let i = 0; i < annotationFacets.length; i++) {
+    const facet = annotationFacets[i]
+    const facetCrossfilter = cellCrossfilter.dimension(d => d[facet])
+    cellsByFacet[facet] = facetCrossfilter
+  }
+  return cellsByFacet
+}
+
 /** Initialize crossfilter, return cells by facet */
 function initCrossfilter(facetData) {
   const { cells, facets } = facetData
@@ -243,13 +296,7 @@ function initCrossfilter(facetData) {
     filterableCells.push(filterableCell)
   }
 
-  const cellCrossfilter = crossfilter(filterableCells)
-  const cellsByFacet = {}
-  for (let i = 0; i < annotationFacets.length; i++) {
-    const facet = annotationFacets[i]
-    const facetCrossfilter = cellCrossfilter.dimension(d => d[facet])
-    cellsByFacet[facet] = facetCrossfilter
-  }
+  const cellsByFacet = getCellsByFacet(filterableCells, annotationFacets)
 
   const filterCounts = getFilterCounts(annotationFacets, cellsByFacet, facets)
 
@@ -342,7 +389,7 @@ export async function initCellFaceting(
   // Have all applicable annotations been loaded with faceting data?
   const isFullyLoaded = loadedFacets.length >= allRelevanceSortedFacets.length
 
-  const cellFaceting = {
+  const rawCellFaceting = {
     filterableCells,
     cellsByFacet,
     facets,
@@ -351,6 +398,8 @@ export async function initCellFaceting(
     rawFacets,
     filterCounts
   }
+
+  const cellFaceting = trimNullFilters(rawCellFaceting)
 
   // Below line is worth keeping, but only uncomment to debug in development
   window.SCP.cellFaceting = cellFaceting
