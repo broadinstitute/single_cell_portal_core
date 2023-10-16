@@ -184,7 +184,6 @@ export default function ExploreDisplayTabs({
           setClusterCanFilter(true)
           setFilterErrorText('')
 
-          console.log('newCellFaceting.filterCounts', newCellFaceting.filterCounts)
           setCellFilterCounts(newCellFaceting.filterCounts)
           setCellFaceting(newCellFaceting)
 

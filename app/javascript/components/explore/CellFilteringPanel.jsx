@@ -115,7 +115,7 @@ function CellFilter({
   facet, filter, isChecked, checkedMap, handleCheck, updateFilteredCells
 }) {
   let facetLabelStyle = {}
-  const inputStyle = { 'margin': '1px 5px 0 0', 'vertical-align': 'top' }
+  const inputStyle = { 'margin': '1px 5px 0 0', 'verticalAlign': 'top' }
   if (!facet.isLoaded) {
     inputStyle.cursor = 'default'
     facetLabelStyle = { color: '#777', cursor: 'default' }
@@ -309,6 +309,8 @@ export function CellFilteringPanel({
       </div>
     )
   }
+
+  console.log('in CellFilteringPanel')
 
   const facets = cellFaceting.facets.map(facet => {
     facet.filterCounts = cellFilterCounts[facet.annotation]

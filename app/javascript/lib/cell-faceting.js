@@ -134,8 +134,6 @@ export function filterCells(
         fn = null
       }
       cellsByFacet[facet].filter(fn)
-
-      // TODO: Consider existing this stub to show filter counts
     }
     results = cellsByFacet[facet].top(Infinity)
   }
@@ -146,6 +144,7 @@ export function filterCells(
   const t1 = Date.now()
   // Assemble analytics
   const filterPerfTime = t1 - t0
+  console.log('filterPerfTime', filterPerfTime)
   const numCellsBefore = filterableCells.length
   const numCellsAfter = results.length
   const numFacetsSelected = Object.keys(selection).length
@@ -164,6 +163,17 @@ export function filterCells(
 
   return [results, counts]
 }
+
+// function removeFiltersWithNoMatches() {
+//   let groupsToOmitByAnnot = {} // filters to remove, as they match no cells
+
+//   const annotation = facets[i].annotation
+//   if (annotation in groupsToOmitByAnnot) {
+//     groupsToOmitByAnnot[annotation] = [group]
+//   } else {
+//     groupsToOmitByAnnot[annotation].push(group)
+//   }
+// }
 
 /** Merge /facets responses from new and all prior batches */
 function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
@@ -194,13 +204,13 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets) {
     // Set counts for each filter in facet
     const rawFilterCounts = facetCrossfilter.group().top(Infinity)
     const countsByFilter = {}
-    // console.log('facets[i].groups', facets[i].groups)
+
     facets[i].groups.forEach((group, j) => {
       let count = null
-      if (rawFilterCounts[j]) {
-        count = rawFilterCounts[j].value
+      const rawFilterKeyAndValue = rawFilterCounts.find(rfc => rfc.key === j)
+      if (rawFilterKeyAndValue) {
+        count = rawFilterKeyAndValue.value
       }
-      // console.log('count', count)
       countsByFilter[group] = count
     })
     filterCounts[facet] = countsByFilter
@@ -306,7 +316,11 @@ export async function initCellFaceting(
 
   const newRawFacets = await fetchAnnotationFacets(studyAccession, facetsToFetch, selectedCluster)
 
-  // Below line is worth keeping, but only uncomment to debug in developmen.t
+  if (!window.SCP.newRawFacets) {
+    window.SCP.newRawFacets = newRawFacets
+  }
+
+  // Below line is worth keeping, but only uncomment to debug in development.
   // This helps simulate waiting on server response, even when using local
   // service worker caching.
   //
@@ -339,7 +353,7 @@ export async function initCellFaceting(
   }
 
   // Below line is worth keeping, but only uncomment to debug in development
-  // window.SCP.cellFaceting = cellFaceting
+  window.SCP.cellFaceting = cellFaceting
   return cellFaceting
 }
 
