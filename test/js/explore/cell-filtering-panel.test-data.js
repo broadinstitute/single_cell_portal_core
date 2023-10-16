@@ -1355,3 +1355,236 @@ export const cellFilteringSelection = {
     'NA'
   ]
 }
+
+
+export const cellFilterCounts = {
+  'cell_type__ontology_label--group--study': {
+    'epithelial cell': 39825,
+    'macrophage': 6384,
+    'neutrophil': 835,
+    'B cell': 52,
+    'T cell': 792,
+    'dendritic cell': 425,
+    'eosinophil': 25,
+    'fibroblast': 140
+  },
+  'infant_sick_YN--group--study': {
+    'no': 33672,
+    'NA': 8504,
+    'yes': 6302
+  },
+  'mastisis_YN--group--study': {
+    'no': 39895,
+    'yes': 275,
+    'NA': 8308
+  },
+  'maternal_medical_event_YN--group--study': {
+    'no': 34005,
+    'yes': 6828,
+    'NA': 7645
+  },
+  'reported_infant_medical_events_YN--group--study': {
+    'no': 29699,
+    'yes': 11134,
+    'NA': 7645
+  },
+  'reported_infant_medical_events_description--group--study': {
+    'NA': 34578,
+    'no': 2766,
+    'maybe a stomache bug ': 290,
+    'hot and sleepy': 771,
+    'jaundice': 3739,
+    'lounge tie removal mid july, vaccinations a few weeks prior ': 475,
+    'runny nose': 2181,
+    'runny nose, diarrhea, vomitting, no fever': 239,
+    'maybe still jaundice': 1208,
+    'stomach bug (August), runny nose (October/ currently)': 1179,
+    'influenza vaccine received on 4/8/19': 1052
+  },
+  'ethnicity__ontology_label--group--study': {
+    'European': 33776,
+    'Asian': 3772,
+    'Hispanic or Latin American': 4480,
+    'ancestry category': 6450
+  },
+  'biosample_id--group--study': {
+    'BM02_6wkpp_r1': 754,
+    'BM12_6wk': 977,
+    'BM03_6wkpp_r1': 1235,
+    'BM05_6wkpp': 1250,
+    'BM08_6wk_r1': 257,
+    'BM08_6wkpp_r2': 342,
+    'BM13_6wk_r1': 1189,
+    'BM13_6wk_r3': 633,
+    'BM07_7wkpp_r1': 290,
+    'BM11_6wk_r1': 275,
+    'BM01_7wkpp_r1': 1199,
+    'BM02_13wkpp_t1': 989,
+    'BM08_13wk_r1': 885,
+    'BM05_12wk_r2': 859,
+    'BM03_13wk_r1': 171,
+    'BM03_13wkpp_r2': 192,
+    'BM01_13wkpp_r2': 569,
+    'BM13_12wk': 604,
+    'BM03_15dpp_r1': 771,
+    'BM08_15dpp_r1': 862,
+    'BM01_16dpp_r3': 1353,
+    'BM07_17dpp_r2': 1369,
+    'BM19_4dpp_r1': 1389,
+    'BM02_5dpp_r1': 192,
+    'BM02_5dpp_r2': 894,
+    'BM03_5dpp_r1': 959,
+    'BM07_5dpp_r1': 1075,
+    'BM01_5dpp_r1': 672,
+    'BM05_6dpp_r1': 1663,
+    'BM11_5dpp_r1': 1001,
+    'BM13_6dpp_r1': 1007,
+    'BM07_13wk_r1': 420,
+    'BM01_23wk_r1': 475,
+    'BM03_24wk_r1': 1214,
+    'BM03_24wk_r2': 967,
+    'BM08_24wk': 942,
+    'BM02_24wk_r2': 239,
+    'BM02_10dpp_r1': 1070,
+    'BM03_10dpp_r1': 613,
+    'BM03_10dpp_r2': 706,
+    'BM01_12dpp_r1': 737,
+    'BM07_10dpp_r1': 1208,
+    'BM13_13dpp_r1': 1047,
+    'BM02_14dpp_r1': 1501,
+    'BM04_t1_r2': 289,
+    'BM10_t1_r1': 1195,
+    'BM06_t3': 634,
+    'BM04_t3_r1': 663,
+    'BT_t3_lot1': 511,
+    'BT_t3_old': 753,
+    'K1': 334,
+    'K2': 351,
+    'Kfresh': 1324,
+    'BM07_25wk_lot711': 1179,
+    'B2': 360,
+    'BM5': 957,
+    'BM06_t1_r1': 1052,
+    'BM05_26wk_r1': 1057,
+    'Bfresh': 803
+  },
+  'donor_id--group--study': {
+    'BM02': 5639,
+    'BM12': 977,
+    'BM03': 6828,
+    'BM05': 3772,
+    'BM08': 3288,
+    'BM13': 4480,
+    'BM07': 5541,
+    'BM11': 1276,
+    'BM01': 5005,
+    'BM19': 1389,
+    'BM04': 952,
+    'BM10': 1195,
+    'BM06': 1686,
+    'NA': 6450
+  },
+  'milk_stage--group--study': {
+    'late_1': 12670,
+    'mature': 4355,
+    'early': 8852,
+    'late_2': 4257,
+    'transitional ': 5835,
+    'transitional': 1047,
+    'late_4': 2781,
+    'NA': 6450,
+    'late_3': 2231
+  },
+  'weaning_YN--group--study': {
+    'NA': 33291,
+    'no': 14553,
+    'yes': 634
+  },
+  'breast_soreness_YN--group--study': {
+    'no': 31982,
+    'yes': 8562,
+    'NA': 7934
+  },
+  'directly_breastfeeding_YN--group--study': {
+    'yes': 41424,
+    'NA': 7054
+  },
+  'any_formula_YN--group--study': {
+    'no': 36443,
+    'yes': 5585,
+    'NA': 6450
+  },
+  'mother_medications_YN--group--study': {
+    'no': 20829,
+    'yes': 19729,
+    'sunflower lecithin ': 275,
+    'NA': 7645
+  },
+  'reported_menstruating_YN--group--study': {
+    'no': 35672,
+    'N': 3772,
+    'NA': 9034
+  },
+  'hormonal_birthcontrol_YN--group--study': {
+    'no': 29998,
+    'yes': 8941,
+    'yes ': 942,
+    'NA': 8597
+  },
+  'daycare_YN--group--study': {
+    'no': 36292,
+    'yes': 4541,
+    'NA': 7645
+  },
+  'vaccines_reported_YN--group--study': {
+    'no': 22347,
+    'yes': 13054,
+    'NA': 13077
+  },
+  'vaccines_list--group--study': {
+    'NA': 27080,
+    '9/3 and 9/10 – a hep B booster in the hospital': 977,
+    'no': 9998,
+    '5/9/19 hepatitis B': 1250,
+    'hepB ': 275,
+    'vaccines on 5/15': 989,
+    '(6/11) Dtap-hep, BIPV, rotavirus, pentavalent, big (PRP-T)': 885,
+    'HepB': 1846,
+    'hepB (says 4/22 but probably 5/22?)': 862,
+    '4/3/19 Hepatitis B (at birth) ': 1663,
+    '2 month vaccines': 420,
+    'Dtap, Gib, IPV, PCU13, Rotavirus (8/16/19)': 942,
+    'vaccines on 7/15': 239,
+    'influenza (day prior to sample)': 1052
+  },
+  'solid_foods_YN--group--study': {
+    'no': 31594,
+    'NA': 12125,
+    'yes': 4759
+  },
+  'Age--group--study': {
+    '31.0': 25727,
+    '34.0': 6518,
+    '33.0': 5756,
+    '29.0': 1389,
+    '35.0': 952,
+    '32.0': 1686,
+    'NA': 6450
+  },
+  'labor_induced_YN--group--study': {
+    'Y': 16063,
+    'N': 25965,
+    'NA': 6450
+  },
+  'antibiotics_during_delivery--group--study': {
+    'N': 18769,
+    'Y': 23259,
+    'NA': 6450
+  },
+  'delivery_mode--group--study': {
+    'vaginal': 24859,
+    'C section': 14504,
+    'vaginal ': 2665,
+    'NA': 6450
+  }
+}
