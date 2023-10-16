@@ -343,7 +343,6 @@ export function CellFilteringPanel({
 
   /** Add or remove checked item from list */
   function handleCheck(event) {
-    console.log('in handleCheck')
     // grab the name of the facet from the check event
     const facetName = event.target.name.split(':')[0]
 

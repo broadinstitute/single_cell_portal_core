@@ -123,20 +123,20 @@ export function filterCells(
 
   const annotationFacets = initFacets.map(facet => facet.annotation)
   const t0Counts = Date.now()
-  const counts = getFilterCounts(annotationFacets, cellsByFacet, initFacets)
+  const counts = getFilterCounts(annotationFacets, cellsByFacet, initFacets, selection)
   const t1Counts = Date.now()
+  const perfTimeCounts = t1Counts - t0Counts
 
   const t1 = Date.now()
   // Assemble analytics
   const filterPerfTime = t1 - t0
-  console.log('filterPerfTime', filterPerfTime)
-  console.log('filterCountPerfTime', t1Counts - t0Counts)
   const numCellsBefore = filterableCells.length
   const numCellsAfter = results.length
   const numFacetsSelected = Object.keys(selection).length
   const numFiltersSelected = Object.values(selection).length
   const filterLogProps = {
-    perfTime: filterPerfTime,
+    'perfTime': filterPerfTime,
+    'perfTime:counts': perfTimeCounts,
     numCellsBefore,
     numCellsAfter,
     numFacetsSelected,
@@ -222,7 +222,7 @@ function trimNullFilters(cellFaceting) {
 }
 
 /** Get counts for each filter, in each facet */
-function getFilterCounts(annotationFacets, cellsByFacet, facets) {
+function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
   const filterCounts = {}
 
   for (let i = 0; i < annotationFacets.length; i++) {
@@ -242,6 +242,19 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets) {
       countsByFilter[group] = count
     })
     filterCounts[facet] = countsByFilter
+  }
+
+  // If a filter has been deselected, set its count to 0
+  if (selection) {
+    Object.entries(filterCounts).forEach(([facet, countsByFilter]) => {
+      Object.entries(countsByFilter).forEach(([filter, count]) => {
+        let newCount = count
+        if (!(facet in selection && selection[facet].includes(filter))) {
+          newCount = 0
+        }
+        filterCounts[facet][filter] = newCount
+      })
+    })
   }
 
   return filterCounts
@@ -285,7 +298,7 @@ function initCrossfilter(facetData) {
 
   const cellsByFacet = getCellsByFacet(filterableCells, annotationFacets)
 
-  const filterCounts = getFilterCounts(annotationFacets, cellsByFacet, facets)
+  const filterCounts = getFilterCounts(annotationFacets, cellsByFacet, facets, null)
 
   const filtersByFacet = {}
   facets.forEach(facet => {
