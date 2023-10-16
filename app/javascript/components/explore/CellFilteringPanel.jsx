@@ -112,7 +112,7 @@ function isChecked(annotation, item, checkedMap) {
 
 /** Cell filter component */
 function CellFilter({
-  facet, filter, isChecked, checkedMap, handleCheck, updateFilteredCells
+  facet, filter, isChecked, checkedMap, handleCheck
 }) {
   let facetLabelStyle = {}
   const inputStyle = { 'margin': '1px 5px 0 0', 'verticalAlign': 'top' }
@@ -132,7 +132,6 @@ function CellFilter({
           name={`${facet.annotation}:${filter}`}
           onChange={event => {
             handleCheck(event)
-            updateFilteredCells(checkedMap)
           }}
           style={inputStyle}
           disabled={!facet.isLoaded}
@@ -344,6 +343,7 @@ export function CellFilteringPanel({
 
   /** Add or remove checked item from list */
   function handleCheck(event) {
+    console.log('in handleCheck')
     // grab the name of the facet from the check event
     const facetName = event.target.name.split(':')[0]
 

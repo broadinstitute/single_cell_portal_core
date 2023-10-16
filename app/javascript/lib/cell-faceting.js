@@ -94,41 +94,24 @@ export function filterCells(
     .filter(facet => facet.isLoaded)
     .map(facet => facet.annotation)
 
-  let fn; let i; let facet; let results
+  let fn; let facet; let results
 
   if (Object.keys(selection).length === 0) {
     results = filterableCells
   } else {
-    for (i = 0; i < facets.length; i++) {
+    for (let i = 0; i < facets.length; i++) {
       facet = facets[i]
       if (facet in selection) { // e.g. 'infant_sick_YN'
         const friendlyFilters = selection[facet] // e.g. ['yes', 'NA']
 
-        const filter = {}
+        const filter = new Set()
         friendlyFilters.forEach(friendlyFilter => {
           const filterIndex = filtersByFacet[facet].indexOf(friendlyFilter)
-          filter[filterIndex] = 1
+          filter.add(filterIndex)
         })
 
-        if (Array.isArray(filter)) {
-          fn = function(d) {
-            // Filter is numeric range
-            if (filter.length === 2) {
-              // [min, max]
-              return filter[0] <= d && d < filter[1]
-            } else if (filter.length === 4) {
-              // [min1, max1, min2, max2]
-              return (
-                filter[0] <= d && d < filter[1] ||
-                filter[2] <= d && d < filter[3]
-              )
-            }
-          }
-        } else {
-          fn = function(d) {
-            // Filter is set of categories
-            return (d in filter)
-          }
+        fn = function(d) {
+          return filter.has(d)
         }
       } else {
         fn = null
@@ -139,12 +122,15 @@ export function filterCells(
   }
 
   const annotationFacets = initFacets.map(facet => facet.annotation)
+  const t0Counts = Date.now()
   const counts = getFilterCounts(annotationFacets, cellsByFacet, initFacets)
+  const t1Counts = Date.now()
 
   const t1 = Date.now()
   // Assemble analytics
   const filterPerfTime = t1 - t0
   console.log('filterPerfTime', filterPerfTime)
+  console.log('filterCountPerfTime', t1Counts - t0Counts)
   const numCellsBefore = filterableCells.length
   const numCellsAfter = results.length
   const numFacetsSelected = Object.keys(selection).length
@@ -261,6 +247,7 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets) {
   return filterCounts
 }
 
+/** Get crossfilter-initialized cells by facet */
 function getCellsByFacet(filterableCells, annotationFacets) {
   const cellCrossfilter = crossfilter(filterableCells)
   const cellsByFacet = {}
