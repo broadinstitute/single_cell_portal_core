@@ -363,10 +363,6 @@ export async function initCellFaceting(
 
   const newRawFacets = await fetchAnnotationFacets(studyAccession, facetsToFetch, selectedCluster)
 
-  if (!window.SCP.newRawFacets) {
-    window.SCP.newRawFacets = newRawFacets
-  }
-
   // Below line is worth keeping, but only uncomment to debug in development.
   // This helps simulate waiting on server response, even when using local
   // service worker caching.
@@ -402,7 +398,7 @@ export async function initCellFaceting(
   const cellFaceting = trimNullFilters(rawCellFaceting)
 
   // Below line is worth keeping, but only uncomment to debug in development
-  window.SCP.cellFaceting = cellFaceting
+  // window.SCP.cellFaceting = cellFaceting
   return cellFaceting
 }
 
