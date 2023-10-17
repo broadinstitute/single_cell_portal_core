@@ -243,15 +243,6 @@ function getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting) {
     .slice(fetchOffset, fetchOffset + 5)
 }
 
-/**
- * Useful for local development, to simulate waiting on server.
- *
- * Below line is worth keeping, but only uncomment to debug in development.
- */
-// function timeout(ms) {
-//   return new Promise(resolve => setTimeout(resolve, ms))
-// }
-
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
 export async function initCellFaceting(
   selectedCluster, selectedAnnot, studyAccession, allAnnots, prevCellFaceting
@@ -286,7 +277,7 @@ export async function initCellFaceting(
   // This helps simulate waiting on server response, even when using local
   // service worker caching.
   //
-  // await new Promise(resolve => setTimeout(resolve, 5000))
+  // await new Promise(resolve => setTimeout(resolve, 3000))
 
   const rawFacets = mergeFacetsResponses(newRawFacets, prevCellFaceting)
 
@@ -307,7 +298,6 @@ export async function initCellFaceting(
   const cellFaceting = {
     filterableCells,
     cellsByFacet,
-    selections: [],
     facets,
     filtersByFacet,
     isFullyLoaded,

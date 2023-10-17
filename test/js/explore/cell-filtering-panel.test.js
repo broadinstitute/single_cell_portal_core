@@ -2,8 +2,7 @@ import React from 'react'
 import { render, fireEvent, screen, waitFor } from '@testing-library/react'
 import { CellFilteringPanel } from '~/components/explore/CellFilteringPanel'
 import {
-  annotationList,
-  cellFaceting
+  annotationList, cellFaceting, cellFilteringSelection
 } from './cell-filtering-panel.test-data'
 import '@testing-library/jest-dom/extend-expect'
 
@@ -28,6 +27,7 @@ describe('"Cell filtering" panel', () => {
         shownAnnotation={shownAnnotation}
         updateClusterParams={updateClusterParams}
         cellFaceting={cellFaceting}
+        cellFilteringSelection={cellFilteringSelection}
         updateFilteredCells={updateFilteredCells}
       />
     )
@@ -59,6 +59,7 @@ describe('"Cell filtering" panel', () => {
         shownAnnotation={shownAnnotation}
         updateClusterParams={updateClusterParams}
         cellFaceting={cellFaceting}
+        cellFilteringSelection={cellFilteringSelection}
         updateFilteredCells={updateFilteredCells}
       />
     )

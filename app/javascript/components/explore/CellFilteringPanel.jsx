@@ -88,7 +88,7 @@ function CollapseToggleChevron({ isCollapsed, whatToToggle, isLoaded }) {
       <span
         data-toggle="tooltip"
         data-original-title="Loading data..."
-        style={{ position: 'relative', top: '-5px', left: '-20px', cursor: 'progress' }}
+        style={{ position: 'relative', top: '-5px', left: '-20px', cursor: 'default' }}
       >
         <LoadingSpinner height='14px'/>
       </span>
@@ -156,7 +156,7 @@ function CellFacet({
 
   let facetLabelStyle = {}
   if (!facet.isLoaded) {
-    facetLabelStyle = { color: '#777', cursor: 'wait' }
+    facetLabelStyle = { color: '#777', cursor: 'default' }
   }
 
   let facetStyle = {}
@@ -164,9 +164,9 @@ function CellFacet({
   if (!facet.isLoaded) {
     facetStyle = {
       color: '#777',
-      cursor: 'progress'
+      cursor: 'default'
     }
-    inputStyle.cursor = 'progress'
+    inputStyle.cursor = 'default'
   }
 
   return (
@@ -229,7 +229,7 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
   }
   if (!facet.isLoaded) {
     facetNameStyle.color = '#777'
-    facetNameStyle.cursor = 'progress'
+    facetNameStyle.cursor = 'default'
   }
 
   let title = 'Author annotation'
@@ -272,6 +272,7 @@ export function CellFilteringPanel({
   shownAnnotation,
   updateClusterParams,
   cellFaceting,
+  cellFilteringSelection,
   updateFilteredCells
 }) {
   if (!cellFaceting) {
@@ -285,50 +286,10 @@ export function CellFilteringPanel({
   }
 
   const facets = cellFaceting.facets
-  const [checkedMap, setCheckedMap] = useState({})
+  const [checkedMap, setCheckedMap] = useState(cellFilteringSelection)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
-  const [shownFacets, setShownFacets] = useState()
+  const shownFacets = facets
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
-
-  /** used to populate the checkedMap for the initial facets shown */
-  function populateCheckedMap() {
-    const tmpCheckedMap = {}
-
-    const numFacets = facets.length
-    for (let i = 0; i < numFacets; i++) {
-      tmpCheckedMap[facets[i].annotation] = facets[i].groups
-    }
-
-    setCheckedMap(tmpCheckedMap)
-
-    // set the shownFacets with the same facets as the checkedMap starts with
-    setShownFacets(facets.slice(0, numFacets))
-  }
-
-
-  /** Update the checkedMap state that is used for setting up the filtering checkboxes */
-  function updateCheckedMap(newSingleCellFaceting, event) {
-    const tmpCheckedMap = { ...checkedMap }
-    // add the new facet to the tmpCheckedMap
-    tmpCheckedMap[newSingleCellFaceting.value.annotation] = newSingleCellFaceting.value.groups
-
-    // set the checkedMap state with the updated list
-    setCheckedMap(tmpCheckedMap)
-
-    const tmpShownFacets = [...shownFacets]
-
-    // grab the index of the facet that is to be replaced
-    const indexToRep = tmpShownFacets.findIndex(facet => facet.annotation === event.name)
-
-    // replace the existing facet with the new facet at the index determined above
-    tmpShownFacets[indexToRep] = {
-      annotation: newSingleCellFaceting.value.annotation,
-      groups: newSingleCellFaceting.value.groups
-    }
-
-    // set the facets that are shown in the UI
-    setShownFacets(tmpShownFacets)
-  }
 
   /** Top header for the "Filter" section, including all-facet controls */
   function FilterSectionHeader({ isAllListsCollapsed, setIsAllListsCollapsed }) {
@@ -384,14 +345,6 @@ export function CellFilteringPanel({
 
   const filterSectionHeight = window.innerHeight - verticalPad
   const filterSectionHeightProp = `${filterSectionHeight}px`
-
-  /** populate the checkedMap state if it's empty
-   * (this is for initial setting upon page loading and the cellFaceting prop initializing) */
-  useEffect(() => {
-    if (Object.keys(checkedMap).length === 0) {
-      populateCheckedMap()
-    }
-  }, [cellFaceting])
 
   return (
     <>

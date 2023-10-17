@@ -106,13 +106,14 @@ export default function ExploreDisplayTabs({
   }
   const [panelToShow, setPanelToShow] = useState(initialPanel)
 
-  const [cellFaceting, setCellFaceting] = useState(null)
-  const [filteredCells, setFilteredCells] = useState(null)
-
   // Hash of trace label names to the number of points in that trace
   const [countsByLabel, setCountsByLabel] = useState(null)
   const showDifferentialExpressionTable = (showViewOptionsControls && deGenes !== null)
   const plotContainerClass = 'explore-plot-tab-content'
+
+  const [cellFaceting, setCellFaceting] = useState(null)
+  const [filteredCells, setFilteredCells] = useState(null)
+  const [cellFilteringSelection, setCellFilteringSelection] = useState(null)
 
   // flow/error handling for cell filtering
   const [clusterCanFilter, setClusterCanFilter] = useState(true)
@@ -157,12 +158,6 @@ export default function ExploreDisplayTabs({
 
   const isCorrelatedScatter = enabledTabs.includes('correlatedScatter')
 
-  const annotationList = exploreInfo ? exploreInfo.annotationList : null
-
-  const shownAnnotation = getShownAnnotation(exploreParamsWithDefaults.annotation, annotationList)
-
-  const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
-
   /** wrapper function with error handling/state setting for retrieving cell facet data */
   function getCellFacetingData(cluster, annotation, prevCellFaceting) {
     const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
@@ -172,6 +167,13 @@ export default function ExploreDisplayTabs({
         initCellFaceting(
           cluster, annotation, studyAccession, allAnnots, prevCellFaceting
         ).then(newCellFaceting => {
+          if (!cellFilteringSelection) {
+            const initSelection = {}
+            newCellFaceting.facets.forEach(facet => {
+              initSelection[facet.annotation] = facet.groups
+            })
+            setCellFilteringSelection(initSelection)
+          }
           setClusterCanFilter(true)
           setCellFaceting(newCellFaceting)
           setFilterErrorText('')
@@ -191,10 +193,6 @@ export default function ExploreDisplayTabs({
         })
       }
     }
-  }
-
-  if (!cellFaceting) {
-    getCellFacetingData(selectedCluster, selectedAnnot)
   }
 
   // if the exploreParams update need to reset the initial cell facets
@@ -220,6 +218,7 @@ export default function ExploreDisplayTabs({
 
     // Update UI
     setFilteredCells(newFilteredCells)
+    setCellFilteringSelection(selection)
   }
 
   // Below line is worth keeping, but only uncomment to debug in development
@@ -408,7 +407,8 @@ export default function ExploreDisplayTabs({
                     countsByLabel,
                     setCountsByLabel,
                     dataCache,
-                    filteredCells
+                    filteredCells,
+                    cellFilteringSelection
                   }}/>
               </div>
             }
@@ -521,7 +521,7 @@ export default function ExploreDisplayTabs({
             setDeGenes={setDeGenes}
             setShowDeGroupPicker={setShowDeGroupPicker}
             cellFaceting={cellFaceting}
-            setCellFaceting={setCellFaceting}
+            cellFilteringSelection={cellFilteringSelection}
             clusterCanFilter={clusterCanFilter}
             filterErrorText ={filterErrorText}
             updateFilteredCells={updateFilteredCells}
