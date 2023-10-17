@@ -56,7 +56,7 @@ class SearchFacetPopulator
       urls.zip(browser_urls).each do |url, browser_url|
         ontology = fetch_json_from_url(url)
         # check if response has expected keys; if not, default to URL for name value
-        ontology_name = ontology.dig('config', 'title') ? ontology['config']['title'] : url
+        ontology_name = ontology.dig('config', 'title') || ontology.dig('config', 'localizedTitles', 'en') || url
         ontology_obj = {name: ontology_name, url: url, browser_url: browser_url}
         updated_facet.ontology_urls.push(ontology_obj)
       end

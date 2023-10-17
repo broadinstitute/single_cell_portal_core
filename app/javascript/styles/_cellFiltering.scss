@@ -1,0 +1,80 @@
+.cell-filtering-button {
+  margin-bottom: 17px;
+}
+
+.cell-filtering-info-help-icon {
+  margin-left: 10px;
+}
+
+.cell-filter-label {
+  font-weight: normal;
+  cursor: pointer;
+  width: 100%;
+  vertical-align: top;
+
+  &:hover {
+    color: #007;
+    // background-color: #FAFAFF;
+  }
+
+  input[type="checkbox"] {
+    cursor: pointer;
+  }
+}
+
+.cell-filter-label-text {
+  display: inline-block;
+  width: 150px;
+}
+
+.cell-filter-count {
+  float: right;
+  font-size: 13px;
+}
+
+.filter-section-header,
+.cell-facet-header,
+.facet-toggle-chevron {
+  cursor: pointer;
+}
+
+.cell-facet-header {
+  padding-bottom: 5px;
+}
+
+.filter-section-header {
+  padding-bottom: 5px;
+  border-bottom: 1px solid #DDD;
+}
+
+.cell-facet {
+  margin-bottom: 12px;
+}
+
+.cell-facet:has(.cell-filters-hidden) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.cell-facet:first-child {
+  margin-top: 6px;
+}
+
+.filter-section-header:hover,
+.cell-facet-header:hover {
+  color: #007;
+}
+
+.filter-section-header:hover .facet-toggle-chevron,
+.cell-facet-header:hover .facet-toggle-chevron {
+  color: #77D;
+}
+
+.cell-facet .cell-filters-shown .facet-toggle-chevron {
+  visibility: hidden;
+}
+
+.cell-facet:hover .cell-filters-shown .facet-toggle-chevron {
+  visibility: visible;
+}
+

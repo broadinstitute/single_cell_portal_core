@@ -18,8 +18,8 @@ import useResizeEffect from '~/hooks/useResizeEffect'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 import DifferentialExpressionPanel, { DifferentialExpressionPanelHeader } from './DifferentialExpressionPanel'
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
-import FacetFilteringModal from '~/components/explore/FacetFilteringModal'
-import { FacetFilterPanel, FacetFilterPanelHeader } from './FacetFilterPanel'
+import CellFilteringModal from '~/components/explore/CellFilteringModal'
+import { CellFilteringPanel, CellFilteringPanelHeader } from './CellFilteringPanel'
 
 /** Get the selected clustering and annotation, or their defaults */
 function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
@@ -197,7 +197,8 @@ export default function ExploreDisplayPanelManager({
   exploreParamsWithDefaults, routerLocation, searchGenes, countsByLabel, setShowUpstreamDifferentialExpressionPanel,
   setShowDifferentialExpressionPanel, showUpstreamDifferentialExpressionPanel, togglePanel, shownTab,
   showDifferentialExpressionPanel, setIsCellSelecting, currentPointsSelected, isCellSelecting, deGenes,
-  setDeGenes, setShowDeGroupPicker, cellFaceting, setCellFaceting, clusterCanFilter, filterErrorText,
+  setDeGenes, setShowDeGroupPicker,
+  cellFaceting, cellFilteringSelection, cellFilterCounts, clusterCanFilter, filterErrorText,
   updateFilteredCells, panelToShow, toggleViewOptions
 }) {
   const [, setRenderForcer] = useState({})
@@ -351,7 +352,7 @@ export default function ExploreDisplayPanelManager({
               </>
           }
           {showCellFiltering && panelToShow === 'cell-filtering' &&
-            <FacetFilterPanelHeader
+            <CellFilteringPanelHeader
               togglePanel={togglePanel}
               setShowDifferentialExpressionPanel={setShowDifferentialExpressionPanel}
               setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
@@ -445,7 +446,7 @@ export default function ExploreDisplayPanelManager({
                           {...cellFilteringTooltipAttrs}
                           onClick={() => toggleCellFilterPanel()}
                         >Cell filtering</button>
-                        <FacetFilteringModal />
+                        <CellFilteringModal />
                       </div>
                     </div>
                   </>
@@ -511,18 +512,19 @@ export default function ExploreDisplayPanelManager({
           </>
         }
         {showCellFiltering && panelToShow === 'cell-filtering' && clusterCanFilter &&
-        <FacetFilterPanel
+        <CellFilteringPanel
           annotationList={annotationList}
           cluster={exploreParamsWithDefaults.cluster}
           shownAnnotation={shownAnnotation}
           updateClusterParams={updateClusterParams}
           cellFaceting={cellFaceting}
+          cellFilteringSelection={cellFilteringSelection}
+          cellFilterCounts={cellFilterCounts}
           updateFilteredCells={updateFilteredCells}
           exploreParams={exploreParams}
           exploreInfo={exploreInfo}
           studyAccession={studyAccession}
-          setCellFaceting={setCellFaceting}>
-        </FacetFilterPanel>}
+        />}
         {panelToShow === 'differential-expression' && countsByLabel && annotHasDe &&
           <>
             <DifferentialExpressionPanel

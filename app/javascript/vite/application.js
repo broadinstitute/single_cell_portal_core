@@ -34,6 +34,11 @@ setupSentry()
 // On each page load, check for old SCP caches, delete any found
 clearOldServiceWorkerCaches()
 
+// Close tooltips; fixes edge case with Bootstrap-default Popper / Tippy tooltips
+document.addEventListener('click', () => {
+  document.querySelectorAll('.tooltip.fade.top.in').forEach(e => e.remove())
+})
+
 document.addEventListener('DOMContentLoaded', () => {
   // For Study Overview page,
   // Set global header end width, and mitigate long study titles on narrow screens

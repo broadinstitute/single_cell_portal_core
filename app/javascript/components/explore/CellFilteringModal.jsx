@@ -5,7 +5,7 @@ import Modal from 'react-bootstrap/lib/Modal'
 import { closeModal } from '~/components/search/controls/SearchPanel'
 
 /** Show modal box with information on differential expression in SCP */
-export default function FacetFilteringModal() {
+export default function CellFilteringModal() {
   const [showCellFacetModal, setShowCellFacetModall] = useState(false)
   const cellFacetModalContent = (
     <div>
