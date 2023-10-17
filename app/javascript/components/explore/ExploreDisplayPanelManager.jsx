@@ -437,7 +437,7 @@ export default function ExploreDisplayPanelManager({
                 { showCellFiltering && clusterCanFilter &&
                   <>
                     <div className="row">
-                      <div className="col-xs-12 cell-filtering-button">
+                      <div className={`col-xs-12 cell-filtering-button ${shownTab === 'scatter' && !studyHasDe ? 'create-annotation-cell-filtering' : ''}`}>
                         <button
                           className={`btn btn-primary`}
                           data-testid="cell-filtering-button"
@@ -452,7 +452,7 @@ export default function ExploreDisplayPanelManager({
                 { showCellFiltering && !clusterCanFilter &&
                   <>
                     <div className="row">
-                      <div className="col-xs-12 cell-filtering-button">
+                      <div className={`col-xs-12 cell-filtering-button ${shownTab === 'scatter' && !studyHasDe ? 'create-annotation-cell-filtering' : ''}`}>
                         <button
                           disabled="disabled"
                           className={`btn btn-primary`}
