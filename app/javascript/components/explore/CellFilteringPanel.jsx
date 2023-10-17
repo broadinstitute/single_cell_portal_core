@@ -368,7 +368,7 @@ export function CellFilteringPanel({
   const currentlyInUseAnnotations = { colorBy: '', facets: [] }
   const annotationOptions = getAnnotationOptions(annotationList, cluster)
 
-  const verticalPad = 344 // Accounts for all UI real estate above table header
+  const verticalPad = 295 // Accounts for all UI real estate above table header
 
   const filterSectionHeight = window.innerHeight - verticalPad
   const filterSectionHeightProp = `${filterSectionHeight}px`
