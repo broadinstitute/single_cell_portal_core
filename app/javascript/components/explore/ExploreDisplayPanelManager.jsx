@@ -250,7 +250,6 @@ export default function ExploreDisplayPanelManager({
   function toggleCellFilterPanel() {
     if (isSubsampled) {
       updateClusterParams({ subsample: 'All Cells' })
-      document.querySelector('.tooltip.fade.top.in').remove()
     }
     togglePanel('cell-filtering')
   }
