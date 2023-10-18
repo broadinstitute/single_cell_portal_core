@@ -4,7 +4,7 @@ class NemoClient
 
   attr_accessor :api_root
 
-  BASE_URL = 'https://api.nemoarchive.org'.freeze
+  BASE_URL = 'https://portal.nemoarchive.org/api'.freeze
 
   DEFAULT_HEADERS = {
     'Accept' => 'application/json',
@@ -15,8 +15,8 @@ class NemoClient
   #
   # * *return*
   #   - +NemoClient+ object
-  def initialize
-    self.api_root = BASE_URL
+  def initialize(api_root: BASE_URL)
+    self.api_root = api_root.chomp('/')
   end
 
   # submit a request to NeMO API
@@ -81,6 +81,8 @@ class NemoClient
     handle_response(response)
   end
 
+  # API endpoints
+
   # basic health check
   #
   # * *returns*
@@ -95,5 +97,29 @@ class NemoClient
       ErrorTracker.report_exception(e, nil, { method: :get, url: path, code: e.http_code })
       false
     end
+  end
+
+  # get information about a file
+  #
+  # * *params*
+  #   - +identifier+ (String) => file identifier, usually a UUID or nemo:[a-z]{3}-[a-z0-9]{7}$
+  #
+  # * *returns*
+  #   - (Hash) => File metadata, including associations and access URLs
+  def file(identifier)
+    path = "#{api_root}/files/#{uri_encode(identifier)}"
+    process_api_request(:get, path)
+  end
+
+  # get information about a sample
+  #
+  # * *params*
+  #   - +identifier+ (String) => sample identifier, usually a UUID or nemo:[a-z]{3}-[a-z0-9]{7}$
+  #
+  # * *returns*
+  #   - (Hash) => Sample metadata, including associations and access URLs
+  def sample(identifier)
+    path = "#{api_root}/samples/#{uri_encode(identifier)}"
+    process_api_request(:get, path)
   end
 end
