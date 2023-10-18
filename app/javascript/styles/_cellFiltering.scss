@@ -27,6 +27,30 @@
   width: 150px;
 }
 
+@media screen and (max-width: 1425px) {
+  .cell-filter-label-text {
+    width: 130px;
+  }
+}
+
+@media screen and (max-width: 1300px) {
+  .cell-filter-label-text {
+    width: 110px;
+  }
+}
+
+@media screen and (max-width: 1175px) {
+  .cell-filter-label-text {
+    width: 90px;
+  }
+}
+
+@media screen and (max-width: 1075px) {
+  .cell-filter-label-text {
+    width: 70px;
+  }
+}
+
 .cell-filter-count {
   float: right;
   font-size: 13px;
