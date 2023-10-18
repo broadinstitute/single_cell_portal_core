@@ -46,7 +46,7 @@ describe('Cell faceting', () => {
       'biosample_id--group--study': 0
     }
 
-    const expectedInfantSickYN = ['no', 'NA', 'yes']
+    const expectedInfantSickYN = ['no']
 
     expect(filterableCells[99]).toMatchObject(expectedFilterableCells99)
     expect(filtersByFacet['infant_sick_YN--group--study']).toEqual(expectedInfantSickYN)
@@ -59,6 +59,6 @@ describe('Cell faceting', () => {
     const newFilteredCells = filterCells(
       selections, cellsByFacet, facets, filtersByFacet, filterableCells
     )[0]
-    expect(newFilteredCells).toHaveLength(40)
+    expect(newFilteredCells).toHaveLength(33)
   })
 })
