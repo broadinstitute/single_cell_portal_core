@@ -207,7 +207,12 @@ export default function ExploreDisplayPanelManager({
   const [deGroupB, setDeGroupB] = useState(null)
   const [deGroup, setDeGroup] = useState(null)
 
-  const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
+  let hasSpatialGroups = false
+  if (exploreInfo) {
+    hasSpatialGroups = exploreInfo.spatialGroups.length > 0
+  }
+
+  const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering && !hasSpatialGroups
 
 
   // Differential expression settings
@@ -230,11 +235,6 @@ export default function ExploreDisplayPanelManager({
   // hide the cluster controls if we're on a genome tab, or if there aren't clusters to choose
   const showClusterControls = !['genome', 'infercnv-genome', 'geneListHeatmap'].includes(shownTab) &&
                                 annotationList?.clusters?.length
-
-  let hasSpatialGroups = false
-  if (exploreInfo) {
-    hasSpatialGroups = exploreInfo.spatialGroups.length > 0
-  }
 
   const shownAnnotation = getShownAnnotation(exploreParamsWithDefaults.annotation, annotationList)
 

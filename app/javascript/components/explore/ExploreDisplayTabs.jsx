@@ -159,12 +159,6 @@ export default function ExploreDisplayTabs({
 
   const isCorrelatedScatter = enabledTabs.includes('correlatedScatter')
 
-  const annotationList = exploreInfo ? exploreInfo.annotationList : null
-
-  const shownAnnotation = getShownAnnotation(exploreParamsWithDefaults.annotation, annotationList)
-
-  const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
-
   /** wrapper function with error handling/state setting for retrieving cell facet data */
   function getCellFacetingData(cluster, annotation, prevCellFaceting) {
     const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
@@ -208,7 +202,7 @@ export default function ExploreDisplayTabs({
   useEffect(() => {
     const [newCluster, newAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
     getCellFacetingData(newCluster, newAnnot)
-  }, [exploreInfo?.cluster, exploreInfo?.annotation])
+  }, [exploreParams?.cluster, exploreParams?.annotation])
 
   /** Update filtered cells to only those that match annotation group value filter selections */
   function updateFilteredCells(selection) {
