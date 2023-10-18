@@ -24,31 +24,7 @@
 
 .cell-filter-label-text {
   display: inline-block;
-  width: 150px;
-}
-
-@media screen and (max-width: 1425px) {
-  .cell-filter-label-text {
-    width: 130px;
-  }
-}
-
-@media screen and (max-width: 1300px) {
-  .cell-filter-label-text {
-    width: 110px;
-  }
-}
-
-@media screen and (max-width: 1175px) {
-  .cell-filter-label-text {
-    width: 90px;
-  }
-}
-
-@media screen and (max-width: 1075px) {
-  .cell-filter-label-text {
-    width: 70px;
-  }
+  width: calc(100% - 70px);
 }
 
 .cell-filter-count {
