@@ -175,15 +175,24 @@ export default function ExploreDisplayTabs({
             })
             setCellFilteringSelection(initSelection)
           }
+
+          const existingSelectionFacets = Object.keys(cellFilteringSelection)
+          const updatedSelectionFacets = newCellFaceting.facets.filter(nf => !existingSelectionFacets.includes(nf.annotation))
+
+          // Handles switching to a new clustering that has annotations (i.e., facets) not in previous clustering
+          if (updatedSelectionFacets.length > 0) {
+            updatedSelectionFacets.forEach(uf => cellFilteringSelection[uf.annotation] = uf.groups)
+            setCellFilteringSelection(cellFilteringSelection)
+          }
+
           setClusterCanFilter(true)
           setFilterErrorText('')
 
           setCellFilterCounts(newCellFaceting.filterCounts)
           setCellFaceting(newCellFaceting)
 
-          // Now that the cell faceting UI is initialized with the first
-          // facets (e.g. top 5), go ahead and initialize the remaining
-          // facets, in batches of 5
+          // The cell filtering UI is initialized in batches of 5 facets
+          // This recursively loads the next 5 facets until faceting is fully loaded.
           getCellFacetingData(cluster, annotation, newCellFaceting)
         }).catch(error => {
           // NOTE: these 'errors' are in fact handled corner cases where faceting data isn't present for various reasons
