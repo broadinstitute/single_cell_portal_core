@@ -444,7 +444,7 @@ export default function ExploreDisplayPanelManager({
                           data-testid="cell-filtering-button"
                           {...cellFilteringTooltipAttrs}
                           onClick={() => toggleCellFilterPanel()}
-                        >Cell filtering</button>
+                        >Filter plotted cells</button>
                         <CellFilteringModal />
                       </div>
                     </div>
