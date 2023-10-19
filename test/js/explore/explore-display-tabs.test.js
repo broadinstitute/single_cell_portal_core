@@ -407,7 +407,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
       />
     ))
 
-    expect(screen.getByTestId('cell-filtering-button')).toHaveTextContent('Cell filtering')
+    expect(screen.getByTestId('cell-filtering-button')).toHaveTextContent('Filter plotted cells')
   })
 
   it('disables cell filtering button', async () => {
