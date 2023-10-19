@@ -2,6 +2,12 @@
   margin-bottom: 17px;
 }
 
+.cell-filtering-button.create-annotation-cell-filtering {
+  position: relative;
+  top: -22px;
+  margin-bottom: 0px;
+}
+
 .cell-filtering-info-help-icon {
   margin-left: 10px;
 }
@@ -9,6 +15,8 @@
 .cell-filter-label {
   font-weight: normal;
   cursor: pointer;
+  width: 100%;
+  vertical-align: top;
 
   &:hover {
     color: #007;
@@ -20,10 +28,28 @@
   }
 }
 
+.cell-filter-label-text {
+  display: inline-block;
+  width: calc(100% - 70px);
+}
+
+.cell-filter-count {
+  float: right;
+  font-size: 13px;
+}
+
 .filter-section-header,
 .cell-facet-header,
 .facet-toggle-chevron {
   cursor: pointer;
+}
+
+.cell-facet-header {
+  padding-bottom: 5px;
+}
+
+.cell-facet-header.cell-filters-hidden {
+  padding-bottom: 0px;
 }
 
 .filter-section-header {
