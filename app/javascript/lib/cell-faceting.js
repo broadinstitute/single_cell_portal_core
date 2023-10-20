@@ -339,7 +339,7 @@ export async function initCellFaceting(
 ) {
   // Prioritize and fetch annotation facets for all cells
   const selectedAnnotId = getIdentifierForAnnotation(selectedAnnot)
-  const applicableAnnots =
+  const eligibleAnnots =
     getGroupAnnotationsForClusterAndStudy(allAnnots, selectedCluster)
       .map(annot => { // Add identifiers to incoming annotations
         annot.identifier = getIdentifierForAnnotation(annot)
@@ -355,10 +355,15 @@ export async function initCellFaceting(
       })
 
   const allRelevanceSortedFacets =
-    sortAnnotationsByRelevance(applicableAnnots)
+    sortAnnotationsByRelevance(eligibleAnnots)
       .map(annot => {
         return { annotation: annot.identifier, groups: annot.values }
       })
+
+  if (allRelevanceSortedFacets.length === 0) {
+    throw Error('Only 1 eligible annotation is in this clustering; filtering needs > 1')
+  }
+
   const facetsToFetch = getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting)
 
   const newRawFacets = await fetchAnnotationFacets(studyAccession, facetsToFetch, selectedCluster)
@@ -382,7 +387,7 @@ export async function initCellFaceting(
     return facet
   })
 
-  // Have all applicable annotations been loaded with faceting data?
+  // Have all eligible annotations been loaded with faceting data?
   const isFullyLoaded = loadedFacets.length >= allRelevanceSortedFacets.length
 
   const rawCellFaceting = {

@@ -207,7 +207,12 @@ export default function ExploreDisplayPanelManager({
   const [deGroupB, setDeGroupB] = useState(null)
   const [deGroup, setDeGroup] = useState(null)
 
-  const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
+  let hasSpatialGroups = false
+  if (exploreInfo) {
+    hasSpatialGroups = exploreInfo.spatialGroups.length > 0
+  }
+
+  const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering && !hasSpatialGroups
 
 
   // Differential expression settings
@@ -231,11 +236,6 @@ export default function ExploreDisplayPanelManager({
   const showClusterControls = !['genome', 'infercnv-genome', 'geneListHeatmap'].includes(shownTab) &&
                                 annotationList?.clusters?.length
 
-  let hasSpatialGroups = false
-  if (exploreInfo) {
-    hasSpatialGroups = exploreInfo.spatialGroups.length > 0
-  }
-
   const shownAnnotation = getShownAnnotation(exploreParamsWithDefaults.annotation, annotationList)
 
   const isSubsampled = exploreParamsWithDefaults.subsample !== 'all'
@@ -251,7 +251,6 @@ export default function ExploreDisplayPanelManager({
   function toggleCellFilterPanel() {
     if (isSubsampled) {
       updateClusterParams({ subsample: 'All Cells' })
-      document.querySelector('.tooltip.fade.top.in').remove()
     }
     togglePanel('cell-filtering')
   }
@@ -439,13 +438,13 @@ export default function ExploreDisplayPanelManager({
                 { showCellFiltering && clusterCanFilter &&
                   <>
                     <div className="row">
-                      <div className="col-xs-12 cell-filtering-button">
+                      <div className={`col-xs-12 cell-filtering-button ${shownTab === 'scatter' && !studyHasDe ? 'create-annotation-cell-filtering' : ''}`}>
                         <button
                           className={`btn btn-primary`}
                           data-testid="cell-filtering-button"
                           {...cellFilteringTooltipAttrs}
                           onClick={() => toggleCellFilterPanel()}
-                        >Cell filtering</button>
+                        >Filter plotted cells</button>
                         <CellFilteringModal />
                       </div>
                     </div>
@@ -454,7 +453,7 @@ export default function ExploreDisplayPanelManager({
                 { showCellFiltering && !clusterCanFilter &&
                   <>
                     <div className="row">
-                      <div className="col-xs-12 cell-filtering-button">
+                      <div className={`col-xs-12 cell-filtering-button ${shownTab === 'scatter' && !studyHasDe ? 'create-annotation-cell-filtering' : ''}`}>
                         <button
                           disabled="disabled"
                           className={`btn btn-primary`}

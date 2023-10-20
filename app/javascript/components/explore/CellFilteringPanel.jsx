@@ -13,7 +13,7 @@ export function CellFilteringPanelHeader({
 }) {
   return (
     <>
-      <span> Cell filtering </span>
+      <span> Filter plotted cells </span>
       <button className="action fa-lg cell-filtering-exit-panel"
         onClick={() => {
           updateFilteredCells(null)

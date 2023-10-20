@@ -2,6 +2,12 @@
   margin-bottom: 17px;
 }
 
+.cell-filtering-button.create-annotation-cell-filtering {
+  position: relative;
+  top: -22px;
+  margin-bottom: 0px;
+}
+
 .cell-filtering-info-help-icon {
   margin-left: 10px;
 }
@@ -24,7 +30,7 @@
 
 .cell-filter-label-text {
   display: inline-block;
-  width: 150px;
+  width: calc(100% - 70px);
 }
 
 .cell-filter-count {

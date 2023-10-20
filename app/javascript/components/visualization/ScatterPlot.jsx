@@ -91,7 +91,7 @@ function RawScatterPlot({
       const label = labels
       newHiddenTraces = [...hiddenTraces]
 
-      if (value && !newHiddenTraces.includes(label)) {
+      if (value && !newHiddenTraces?.includes(label)) {
         newHiddenTraces.push(label)
       }
       if (!value) {
