@@ -315,7 +315,7 @@ export function CellFilteringPanel({
   })
   const [checkedMap, setCheckedMap] = useState(cellFilteringSelection)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
-  const shownFacets = facets
+  const shownFacets = facets.filter(facet => facet.groups.length > 1)
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
   /** Top header for the "Filter" section, including all-facet controls */
