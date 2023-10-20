@@ -202,6 +202,7 @@ export default function ExploreDisplayTabs({
           // see app/controllers/api/v1/visualization/annotations_controller.rb#facets for more information
           setClusterCanFilter(false)
           setFilterErrorText(error.message)
+          console.error(error) // Show trace in console; retains debuggability if actual error
         })
       }
     }
