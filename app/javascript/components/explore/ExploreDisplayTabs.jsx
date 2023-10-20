@@ -176,12 +176,14 @@ export default function ExploreDisplayTabs({
             setCellFilteringSelection(initSelection)
           }
 
-          const existingSelectionFacets = Object.keys(cellFilteringSelection)
-          const updatedSelectionFacets = newCellFaceting.facets.filter(nf => !existingSelectionFacets.includes(nf.annotation))
+          // Handle switching to a new clustering that has annotations (i.e., facets) not in previous clustering
+          if (cellFilteringSelection) {
+            const existingSelectionFacets = Object.keys(cellFilteringSelection)
+            const updatedSelectionFacets = newCellFaceting.facets.filter(nf => !existingSelectionFacets.includes(nf.annotation))
+            if (updatedSelectionFacets.length > 0) {
+              updatedSelectionFacets.forEach(uf => cellFilteringSelection[uf.annotation] = uf.groups)
+            }
 
-          // Handles switching to a new clustering that has annotations (i.e., facets) not in previous clustering
-          if (updatedSelectionFacets.length > 0) {
-            updatedSelectionFacets.forEach(uf => cellFilteringSelection[uf.annotation] = uf.groups)
             setCellFilteringSelection(cellFilteringSelection)
           }
 
