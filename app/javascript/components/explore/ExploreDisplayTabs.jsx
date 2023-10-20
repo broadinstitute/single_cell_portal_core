@@ -63,6 +63,71 @@ function getHasComparisonDe(exploreInfo, exploreParams, comparison) {
   return hasComparisonDe
 }
 
+/** wrapper function with error handling/state setting for retrieving cell facet data */
+function getCellFacetingData(cluster, annotation, setterFunctions, context, prevCellFaceting) {
+  const [
+    setCellFilteringSelection,
+    setClusterCanFilter,
+    setFilterErrorText,
+    setCellFilterCounts,
+    setCellFaceting
+  ] = setterFunctions
+
+  const {
+    exploreInfo,
+    studyAccession,
+    cellFilteringSelection
+  } = context
+
+  const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
+  if (showCellFiltering) {
+    const allAnnots = exploreInfo?.annotationList.annotations
+    if (allAnnots && allAnnots.length > 0 && !prevCellFaceting?.isFullyLoaded) {
+      initCellFaceting(
+        cluster, annotation, studyAccession, allAnnots, prevCellFaceting
+      ).then(newCellFaceting => {
+        if (!cellFilteringSelection) {
+          const initSelection = {}
+          newCellFaceting.facets.forEach(facet => {
+            initSelection[facet.annotation] = facet.groups
+          })
+          setCellFilteringSelection(initSelection)
+        }
+
+        // Handle switching to a new clustering that has annotations (i.e., facets) not in previous clustering
+        if (cellFilteringSelection) {
+          const existingSelectionFacets = Object.keys(cellFilteringSelection)
+          const updatedSelectionFacets = newCellFaceting.facets.filter(nf => !existingSelectionFacets.includes(nf.annotation))
+          if (updatedSelectionFacets.length > 0) {
+            updatedSelectionFacets.forEach(uf => cellFilteringSelection[uf.annotation] = uf.groups)
+          }
+
+          setCellFilteringSelection(cellFilteringSelection)
+        }
+
+        setClusterCanFilter(true)
+        setFilterErrorText('')
+
+        setCellFilterCounts(newCellFaceting.filterCounts)
+        setCellFaceting(newCellFaceting)
+
+        // The cell filtering UI is initialized in batches of 5 facets
+        // This recursively loads the next 5 facets until faceting is fully loaded.
+        getCellFacetingData(cluster, annotation, setterFunctions, context, newCellFaceting)
+      }).catch(error => {
+        // NOTE: these 'errors' are in fact handled corner cases where faceting data isn't present for various reasons
+        // as such, they don't need to be reported to Sentry/Mixpanel, only conveyed to the user
+        // example: 400 (Bad Request): Clustering is not indexed, Cannot use numeric annotations for facets, or
+        // 404 (Not Found) Cluster not found
+        // see app/controllers/api/v1/visualization/annotations_controller.rb#facets for more information
+        setClusterCanFilter(false)
+        setFilterErrorText(error.message)
+        console.error(error) // Show trace in console; retains debuggability if actual error
+      })
+    }
+  }
+}
+
 /**
  * Renders the gene search box and the tab selection
  * Responsible for determining which tabs are available for a given view of the study
@@ -159,61 +224,23 @@ export default function ExploreDisplayTabs({
 
   const isCorrelatedScatter = enabledTabs.includes('correlatedScatter')
 
-  /** wrapper function with error handling/state setting for retrieving cell facet data */
-  function getCellFacetingData(cluster, annotation, prevCellFaceting) {
-    const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
-    if (showCellFiltering) {
-      const allAnnots = exploreInfo?.annotationList.annotations
-      if (allAnnots && allAnnots.length > 0 && !prevCellFaceting?.isFullyLoaded) {
-        initCellFaceting(
-          cluster, annotation, studyAccession, allAnnots, prevCellFaceting
-        ).then(newCellFaceting => {
-          if (!cellFilteringSelection) {
-            const initSelection = {}
-            newCellFaceting.facets.forEach(facet => {
-              initSelection[facet.annotation] = facet.groups
-            })
-            setCellFilteringSelection(initSelection)
-          }
-
-          // Handle switching to a new clustering that has annotations (i.e., facets) not in previous clustering
-          if (cellFilteringSelection) {
-            const existingSelectionFacets = Object.keys(cellFilteringSelection)
-            const updatedSelectionFacets = newCellFaceting.facets.filter(nf => !existingSelectionFacets.includes(nf.annotation))
-            if (updatedSelectionFacets.length > 0) {
-              updatedSelectionFacets.forEach(uf => cellFilteringSelection[uf.annotation] = uf.groups)
-            }
-
-            setCellFilteringSelection(cellFilteringSelection)
-          }
-
-          setClusterCanFilter(true)
-          setFilterErrorText('')
-
-          setCellFilterCounts(newCellFaceting.filterCounts)
-          setCellFaceting(newCellFaceting)
-
-          // The cell filtering UI is initialized in batches of 5 facets
-          // This recursively loads the next 5 facets until faceting is fully loaded.
-          getCellFacetingData(cluster, annotation, newCellFaceting)
-        }).catch(error => {
-          // NOTE: these 'errors' are in fact handled corner cases where faceting data isn't present for various reasons
-          // as such, they don't need to be reported to Sentry/Mixpanel, only conveyed to the user
-          // example: 400 (Bad Request): Clustering is not indexed, Cannot use numeric annotations for facets, or
-          // 404 (Not Found) Cluster not found
-          // see app/controllers/api/v1/visualization/annotations_controller.rb#facets for more information
-          setClusterCanFilter(false)
-          setFilterErrorText(error.message)
-          console.error(error) // Show trace in console; retains debuggability if actual error
-        })
-      }
-    }
-  }
 
   // if the exploreParams update need to reset the initial cell facets
   useEffect(() => {
     const [newCluster, newAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
-    getCellFacetingData(newCluster, newAnnot)
+    const setterFunctions = [
+      setCellFilteringSelection,
+      setClusterCanFilter,
+      setFilterErrorText,
+      setCellFilterCounts,
+      setCellFaceting
+    ]
+    const context = {
+      exploreInfo,
+      studyAccession,
+      cellFilteringSelection
+    }
+    getCellFacetingData(newCluster, newAnnot, setterFunctions, context)
   }, [exploreParams?.cluster, exploreParams?.annotation])
 
   /** Update filtered cells to only those that match annotation group value filter selections */
