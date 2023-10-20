@@ -381,7 +381,7 @@ export function CellFilteringPanel({
   const filterSectionHeightProp = `${filterSectionHeight}px`
 
   // Apply custom delay to tooltips added after initial pageload
-  window.$('[data-toggle="tooltip"]').tooltip()
+  if (window.$) {window.$('[data-toggle="tooltip"]').tooltip()}
 
   return (
     <>
