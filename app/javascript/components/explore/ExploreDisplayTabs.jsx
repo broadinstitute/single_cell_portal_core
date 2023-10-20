@@ -63,6 +63,22 @@ function getHasComparisonDe(exploreInfo, exploreParams, comparison) {
   return hasComparisonDe
 }
 
+/** Handle switching to a new clustering that has annotations (i.e., facets) not in previous clustering */
+export function handleClusterSwitchForFiltering(cellFilteringSelection, newCellFaceting, setCellFilteringSelection) {
+  console.log('cellFilteringSelection', cellFilteringSelection)
+  console.log('newCellFaceting', newCellFaceting)
+  console.log('setCellFilteringSelection', setCellFilteringSelection)
+  if (cellFilteringSelection) {
+    const existingSelectionFacets = Object.keys(cellFilteringSelection)
+    const updatedSelectionFacets = newCellFaceting.facets.filter(nf => !existingSelectionFacets.includes(nf.annotation))
+    if (updatedSelectionFacets.length > 0) {
+      updatedSelectionFacets.forEach(uf => cellFilteringSelection[uf.annotation] = uf.groups)
+    }
+
+    setCellFilteringSelection(cellFilteringSelection)
+  }
+}
+
 /** wrapper function with error handling/state setting for retrieving cell facet data */
 function getCellFacetingData(cluster, annotation, setterFunctions, context, prevCellFaceting) {
   const [
@@ -95,15 +111,7 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
         }
 
         // Handle switching to a new clustering that has annotations (i.e., facets) not in previous clustering
-        if (cellFilteringSelection) {
-          const existingSelectionFacets = Object.keys(cellFilteringSelection)
-          const updatedSelectionFacets = newCellFaceting.facets.filter(nf => !existingSelectionFacets.includes(nf.annotation))
-          if (updatedSelectionFacets.length > 0) {
-            updatedSelectionFacets.forEach(uf => cellFilteringSelection[uf.annotation] = uf.groups)
-          }
-
-          setCellFilteringSelection(cellFilteringSelection)
-        }
+        handleClusterSwitchForFiltering(cellFilteringSelection, newCellFaceting, setCellFilteringSelection)
 
         setClusterCanFilter(true)
         setFilterErrorText('')
