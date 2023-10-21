@@ -27,16 +27,10 @@ export function formatGeneList(genes) {
   return formattedGenes
 }
 
-/** Renders a plot title for scatter plots */
-export default function PlotTitle({
-  cluster, annotation, genes, consensus, subsample, isCorrelatedScatter, correlation
-}) {
-  let content = cluster
-  let detailContent = ''
-
-  const tooltipText =
-    `If this value looks different than what you expect given the plot,
-    the data may not be suited for correlation analysis and you should trust the plot`
+/** Get text for scatter plot title and optional detail */
+export function getTitleTexts(cluster, genes, consensus, subsample, isCorrelatedScatter) {
+  let titleText = cluster
+  let detailText = ''
 
   if (genes.length) {
     const geneList = formatGeneList(genes)
@@ -44,19 +38,33 @@ export default function PlotTitle({
       geneList.splice(1, 0, <span key="vs"> vs. </span>)
     }
 
-    detailContent = cluster
+    detailText = cluster
     if (consensus) {
       geneList.push(<span key="c">{consensus}</span>)
     }
     geneList.push(<span key="e"> expression</span>)
-    content = geneList
+    titleText = geneList
   }
   if (subsample && subsample !== 'all' && !isCorrelatedScatter) {
-    detailContent = `subsample[${subsample}]`
+    detailText = `subsample[${subsample}]`
   }
+
+  return [titleText, detailText]
+}
+
+/** Renders a plot title for scatter plots */
+export default function PlotTitle({
+  titleTexts, isCorrelatedScatter, correlation
+}) {
+  const tooltipText =
+    `If this value looks different than what you expect given the plot,
+    the data may not be suited for correlation analysis and you should trust the plot`
+
+  const [titleText, detailText] = titleTexts
+
   return <h5 className="plot-title">
-    <span className="cluster-title">{content} </span>
-    <span className="detail"> {detailContent} </span>
+    <span className="cluster-title">{titleText} </span>
+    <span className="detail"> {detailText} </span>
     { isCorrelatedScatter && !!correlation &&
     <>
       <span className="correlation icon-left">

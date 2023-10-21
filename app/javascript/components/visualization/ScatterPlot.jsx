@@ -9,7 +9,7 @@ import { fetchCluster, updateStudyFile, fetchBucketFile } from '~/lib/scp-api'
 import { logScatterPlot } from '~/lib/scp-api-metrics'
 import { log } from '~/lib/metrics-api'
 import { useUpdateEffect } from '~/hooks/useUpdate'
-import PlotTitle from './PlotTitle'
+import PlotTitle, { getTitleTexts } from './PlotTitle'
 
 import ScatterPlotLegend from './controls/ScatterPlotLegend'
 import useErrorMessage from '~/lib/error-message'
@@ -73,6 +73,8 @@ function RawScatterPlot({
 
   const imageClassName = 'scp-canvas-image'
   const imageSelector = `#${ graphElementId } .${imageClassName}`
+
+  const titleTexts = getTitleTexts(cluster, genes, consensus, subsample, isCorrelatedScatter)
 
   /**
    * Handle user interaction with one or more labels in legend.
@@ -574,11 +576,7 @@ function RawScatterPlot({
     <div className="plot">
       { ErrorComponent }
       <PlotTitle
-        cluster={cluster}
-        annotation={annotation.name}
-        subsample={subsample}
-        genes={genes}
-        consensus={consensus}
+        titleTexts={titleTexts}
         isCorrelatedScatter={isCorrelatedScatter}
         correlation={bulkCorrelation}/>
       <div
@@ -986,11 +984,10 @@ export function reassignFilteredCells(
 ) {
   const reassignedIndices = []
   const plottedSet = new Set(plotted)
-  for (let i = 0;  i < originalData['x'].length; i++)
-    if (!plottedSet.has(i)) reassignedIndices.push(i)
+  for (let i = 0; i < originalData['x'].length; i++) {if (!plottedSet.has(i)) {reassignedIndices.push(i)}}
   const newPlotData = {}
   const keys = Object.keys(originalData)
-  keys.forEach(key =>  {
+  keys.forEach(key => {
     newPlotData[key] = []
   })
   if (!annotIsNumeric) {
