@@ -605,6 +605,8 @@ function RawScatterPlot({
             updateIsSplitLabelArrays={updateIsSplitLabelArrays}
             externalLink={scatterData.externalLink}
             originalLabels={originalLabels}
+            titleTexts={titleTexts}
+            plotWidth={widthAndHeight.width}
           />
         }
       </div>

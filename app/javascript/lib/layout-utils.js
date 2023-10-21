@@ -3,7 +3,7 @@
  *
  * Background: https://erikonarheim.com/posts/canvas-text-metrics/
  */
-function getTextSize(text, font) {
+export function getTextSize(text, font) {
   // re-use canvas object for better performance
   const canvas =
     getTextSize.canvas ||
