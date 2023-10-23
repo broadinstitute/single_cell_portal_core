@@ -158,7 +158,7 @@ export async function createUserAnnotation(
  * @param {String} cluster Name of requested cluster
  */
 export async function fetchAnnotationFacets(studyAccession, annotations, cluster) {
-  annotations = annotations.join(',')
+  annotations = encodeURIComponent(annotations.join(','))
   const params = `annotations=${annotations}&cluster=${cluster}`
   const apiUrl = `/studies/${studyAccession}/annotations/facets?${params}`
   const [annotationFacets] = await scpApi(apiUrl, defaultInit())
