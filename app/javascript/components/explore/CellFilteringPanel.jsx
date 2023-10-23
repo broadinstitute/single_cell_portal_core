@@ -9,7 +9,7 @@ import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils
 
 const tooltipAttrs = {
   'data-toggle': 'tooltip',
-  'data-delay': '{"show": 200}' // Avoid flurry of tooltips on passing hover
+  'data-delay': '{"show": 150}' // Avoid flurry of tooltips on passing hover
 }
 
 /** Top content for cell facet filtering panel shown at right in Explore tab */
