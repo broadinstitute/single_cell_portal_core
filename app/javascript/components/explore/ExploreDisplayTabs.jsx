@@ -65,9 +65,6 @@ function getHasComparisonDe(exploreInfo, exploreParams, comparison) {
 
 /** Handle switching to a new clustering that has annotations (i.e., facets) not in previous clustering */
 export function handleClusterSwitchForFiltering(cellFilteringSelection, newCellFaceting, setCellFilteringSelection) {
-  console.log('cellFilteringSelection', cellFilteringSelection)
-  console.log('newCellFaceting', newCellFaceting)
-  console.log('setCellFilteringSelection', setCellFilteringSelection)
   if (cellFilteringSelection) {
     const existingSelectionFacets = Object.keys(cellFilteringSelection)
     const updatedSelectionFacets = newCellFaceting.facets.filter(nf => !existingSelectionFacets.includes(nf.annotation))
