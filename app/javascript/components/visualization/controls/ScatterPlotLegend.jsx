@@ -262,7 +262,7 @@ export default function ScatterPlotLegend({
   /** retrieve the color for the label specified (used for filtered legends) */
   function getColorForLabelIcon(specifiedLabel) {
     const labelAndColor = fullLabelsMappedToColor.find(legendItem => legendItem.label === specifiedLabel)
-    return labelAndColor.iconColor
+    return labelAndColor?.iconColor
   }
 
   /** Update the labels to be shown in the legend based on the user filtering (used for filtered legends) */

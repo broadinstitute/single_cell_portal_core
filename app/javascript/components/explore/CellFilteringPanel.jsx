@@ -7,13 +7,18 @@ import Select from '~/lib/InstrumentedSelect'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
 
+const tooltipAttrs = {
+  'data-toggle': 'tooltip',
+  'data-delay': '{"show": 150}' // Avoid flurry of tooltips on passing hover
+}
+
 /** Top content for cell facet filtering panel shown at right in Explore tab */
 export function CellFilteringPanelHeader({
   togglePanel, updateFilteredCells
 }) {
   return (
     <>
-      <span> Filter plotted cells </span>
+      <span>Filter plotted cells</span>
       <button className="action fa-lg cell-filtering-exit-panel"
         onClick={() => {
           updateFilteredCells(null)
@@ -86,7 +91,7 @@ function CollapseToggleChevron({ isCollapsed, whatToToggle, isLoaded }) {
     <span style={{ float: 'right', marginRight: '5px' }}>
       {!isLoaded &&
       <span
-        data-toggle="tooltip"
+        {...tooltipAttrs}
         data-original-title="Loading data..."
         style={{ position: 'relative', top: '-5px', left: '-20px', cursor: 'default' }}
       >
@@ -95,8 +100,8 @@ function CollapseToggleChevron({ isCollapsed, whatToToggle, isLoaded }) {
       }
       <span
         className="facet-toggle-chevron"
-        data-toggle="tooltip"
         data-original-title={toggleIconTooltipText}
+        {...tooltipAttrs}
       >
         {toggleIcon}
       </span>
@@ -256,7 +261,6 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
   }
 
   let title = 'Author annotation'
-  const tooltipAttrs = { 'data-toggle': 'tooltip' }
   if (isConventional) {
     title = 'Conventional annotation'
     const note = conventionalMetadataGlossary[rawFacetName]
@@ -265,7 +269,6 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
     }
   }
   title += `.  Name in data: ${rawFacetName}`
-  tooltipAttrs['data-original-title'] = title
 
   const toggleClass = `cell-filters-${isFullyCollapsed ? 'hidden' : 'shown'}`
 
@@ -275,7 +278,11 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
       onClick={() => {setIsFullyCollapsed(!isFullyCollapsed)}}
     >
       <span style={facetNameStyle}>
-        <span style={tooltipableFacetNameStyle} {...tooltipAttrs}>
+        <span
+          style={tooltipableFacetNameStyle}
+          data-original-title={title}
+          {...tooltipAttrs}
+        >
           {facetName}
         </span>
       </span>
@@ -315,7 +322,7 @@ export function CellFilteringPanel({
   })
   const [checkedMap, setCheckedMap] = useState(cellFilteringSelection)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
-  const shownFacets = facets
+  const shownFacets = facets.filter(facet => facet.groups.length > 1)
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
   /** Top header for the "Filter" section, including all-facet controls */
@@ -327,7 +334,7 @@ export function CellFilteringPanel({
       >
         <span
           style={{ 'fontWeight': 'bold' }}
-          data-toggle="tooltip"
+          {...tooltipAttrs}
           data-original-title="Use checkboxes to show or hide cells in plots.  Deselected values are
         assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
         >Filter by</span>
@@ -373,13 +380,16 @@ export function CellFilteringPanel({
   const filterSectionHeight = window.innerHeight - verticalPad
   const filterSectionHeightProp = `${filterSectionHeight}px`
 
+  // Apply custom delay to tooltips added after initial pageload
+  if (window.$) {window.$('[data-toggle="tooltip"]').tooltip()}
+
   return (
     <>
       <div>
         <label className="labeled-select">
           <span
             className="cell-filtering-color-by"
-            data-toggle="tooltip"
+            {...tooltipAttrs}
             data-original-title="Color the plot by an annotation"
           >
           Color by
