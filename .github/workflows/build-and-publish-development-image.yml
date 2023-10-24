@@ -36,7 +36,7 @@ jobs:
           # this will create a Docker volume called 'gcloud-config' that contains credentials for use with gcloud
           export VAULT_TOKEN=$( vault write -field=token auth/approle/login role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID )
           vault read -format=json $VAULT_SECRET_PATH | jq .data > $SERVICE_ACCOUNT_PATH
-          docker run -v "$SERVICE_ACCOUNT_PATH:$SERVICE_ACCOUNT_PATH" -it --name gcloud-config $GCLOUD_DOCKER_IMAGE gcloud \
+          docker run -v "$SERVICE_ACCOUNT_PATH:$SERVICE_ACCOUNT_PATH" --name gcloud-config $GCLOUD_DOCKER_IMAGE gcloud \
                  auth activate-service-account --key-file=$SERVICE_ACCOUNT_PATH
       - name: Build development image
         env:
