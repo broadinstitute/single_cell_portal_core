@@ -1,0 +1,20 @@
+name: Build and publish development Docker image
+on:
+  push:
+    branches:
+      - jb-github-actions-cd
+env:
+  DOCKER_IMAGE_NAME: "gcr.io/broad-singlecellportal-staging/single-cell-portal"
+
+jobs:
+  Build-And-Publish-Development-Image:
+    runs-on: self-hosted
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Build development image
+        env:
+          VERSION_TAG: github-action-test
+        run: |
+          bin/build_image.sh -v $VERSION_TAG
+          
