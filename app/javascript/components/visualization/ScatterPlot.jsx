@@ -49,8 +49,6 @@ function RawScatterPlot({
   countsByLabel, setCountsByLabel, hiddenTraces=[], isSplitLabelArrays, updateExploreParams,
   filteredCells
 }) {
-  console.log('')
-  console.log('start RawScatterPlot')
   const [isLoading, setIsLoading] = useState(false)
   const [bulkCorrelation, setBulkCorrelation] = useState(null)
   const [labelCorrelations, setLabelCorrelations] = useState(null)
@@ -63,12 +61,8 @@ function RawScatterPlot({
   const [editedCustomColors, setEditedCustomColors] = useState({})
   const [customColors, setCustomColors] = useState({})
 
-  console.log('in RawScatterPlot, 1')
-
   const isRefGroup = getIsRefGroup(scatterData?.annotParams?.type, genes, isCorrelatedScatter)
   const [originalLabels, setOriginalLabels] = useState([])
-
-  console.log('in RawScatterPlot, 2')
 
   const flags = getFeatureFlagsWithDefaults()
 
@@ -125,8 +119,6 @@ function RawScatterPlot({
 
     return scatter
   }
-
-  console.log('in RawScatterPlot, 3')
 
   /** redraw the plot when editedCustomColors changes */
   useEffect(() => {
@@ -329,8 +321,6 @@ function RawScatterPlot({
     concludeRender()
   }
 
-  console.log('in RawScatterPlot, 4')
-
   /** Process scatter plot data fetched from server */
   function processScatterPlot(clusterResponse=null, filteredCells) {
     let [scatter, perfTimes] =
@@ -389,11 +379,8 @@ function RawScatterPlot({
     }
   }
 
-  console.log('in RawScatterPlot, 5')
-
   // Fetches plot data then draws it, upon load or change of any data parameter
   useEffect(() => {
-    console.log('start fetchData useEffect')
     /** retrieve and process data */
     async function fetchData() {
       setIsLoading(true)
@@ -490,7 +477,6 @@ function RawScatterPlot({
   ])
 
   useUpdateEffect(() => {
-    console.log('in first useUpdateEffect')
     // Don't update if graph hasn't loaded
     if (scatterData && !isLoading) {
       scatterData.customColors = customColors
@@ -503,7 +489,6 @@ function RawScatterPlot({
     Object.values(customColors).join(','), expressionFilter.join(','), isSplitLabelArrays])
 
   useUpdateEffect(() => {
-    console.log('in hiddenTraces useUpdateEffect')
     // Don't update if graph hasn't loaded
     if (scatterData && !isLoading) {
       const plotlyTraces = document.getElementById(graphElementId).data
@@ -528,7 +513,6 @@ function RawScatterPlot({
   }, [hiddenTraces.join(',')])
 
   useUpdateEffect(() => {
-    console.log('in activeTraceLabel useUpdateEffect')
     // Don't update if graph hasn't loaded
     if (scatterData && !isLoading) {
       setIsLoading(true)
@@ -579,8 +563,6 @@ function RawScatterPlot({
       Plotly.purge(graphElementId)
     }
   }, [])
-
-  console.log('in RawScatter plot, before return')
 
   return (
     <div className="plot">
@@ -977,6 +959,7 @@ export function intersect(filteredCells, scatter) {
       intersectedData[key].push(filteredElement)
     }
   }
+
   return [intersectedData, plotted]
 }
 
@@ -998,7 +981,9 @@ export function reassignFilteredCells(
 ) {
   const reassignedIndices = []
   const plottedSet = new Set(plotted)
-  for (let i = 0; i < originalData['x'].length; i++) {if (!plottedSet.has(i)) {reassignedIndices.push(i)}}
+  for (let i = 0; i < originalData['x'].length; i++) {
+    if (!plottedSet.has(i)) {reassignedIndices.push(i)}
+  }
   const newPlotData = {}
   const keys = Object.keys(originalData)
   keys.forEach(key => {
@@ -1024,8 +1009,9 @@ export function reassignFilteredCells(
   }
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i]
-    newPlotData[key].push(...filteredData[key])
+    newPlotData[key] = newPlotData[key].concat(filteredData[key])
   }
+
   return newPlotData
 }
 
