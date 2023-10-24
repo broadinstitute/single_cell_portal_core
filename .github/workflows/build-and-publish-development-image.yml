@@ -11,7 +11,7 @@ env:
 
 jobs:
   Build-And-Publish-Development-Image:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
