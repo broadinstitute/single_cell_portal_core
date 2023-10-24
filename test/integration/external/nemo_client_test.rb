@@ -2,7 +2,9 @@ require 'test_helper'
 
 class NemoClientTest < ActiveSupport::TestCase
   before(:all) do
-    @nemo_client = NemoClient.new
+    @username = ENV['NEMO_API_USERNAME']
+    @password = ENV['NEMO_API_PASSWORD']
+    @nemo_client = NemoClient.new(username: @username, password: @password)
     @nemo_is_ok = @nemo_client.api_available?
     @skip_message = '-- skipping due to NeMO API being unavailable --'
     @file_id = 'c6c0fcfa-52d9-45ff-82b5-0864951878ce'
@@ -17,8 +19,10 @@ class NemoClientTest < ActiveSupport::TestCase
   end
 
   test 'should instantiate client' do
-    client = NemoClient.new
+    client = NemoClient.new(username: @username, password: @password)
     assert_equal NemoClient::BASE_URL, client.api_root
+    assert_equal @username, client.username
+    assert_equal @password, client.password
   end
 
   test 'should check if NeMO is up' do

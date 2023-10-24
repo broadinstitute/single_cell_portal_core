@@ -2,7 +2,7 @@
 class NemoClient
   include ApiHelpers
 
-  attr_accessor :api_root
+  attr_accessor :api_root, :username, :password
 
   BASE_URL = 'https://portal.nemoarchive.org/api'.freeze
 
@@ -15,8 +15,10 @@ class NemoClient
   #
   # * *return*
   #   - +NemoClient+ object
-  def initialize(api_root: BASE_URL)
+  def initialize(api_root: BASE_URL, username: nil, password: nil)
     self.api_root = api_root.chomp('/')
+    self.username = username
+    self.password = password
   end
 
   # submit a request to NeMO API
@@ -76,7 +78,11 @@ class NemoClient
   # * *raises*
   #   - (RestClient::Exception) => if HTTP request fails for any reason
   def execute_http_request(http_method, path, payload = nil)
-    response = RestClient::Request.execute(method: http_method, url: path, payload: payload, headers: DEFAULT_HEADERS)
+    headers = {
+      'user' => username,
+      'password' => password
+    }.merge(DEFAULT_HEADERS)
+    response = RestClient::Request.execute(method: http_method, url: path, payload:, headers:)
     # handle response using helper
     handle_response(response)
   end
