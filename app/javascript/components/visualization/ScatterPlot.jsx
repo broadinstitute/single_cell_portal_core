@@ -372,7 +372,7 @@ function RawScatterPlot({
     }
 
     scatter.hasArrayLabels =
-      scatter.annotParams.type === 'group' && scatter.data.annotations.some(annot => annot.includes('|'))
+      scatter.annotParams.type === 'group' && scatter.data.annotations.some(annot => annot?.includes('|'))
 
     if (clusterResponse) {
       concludeRender(scatter)
