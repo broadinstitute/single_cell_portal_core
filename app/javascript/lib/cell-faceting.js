@@ -118,7 +118,7 @@ export function filterCells(
       }
 
       // Apply the actual crossfilter method
-      cellsByFacet[facet].filter(fn)
+      cellsByFacet[facet].filterFunction(fn)
     }
     results = cellsByFacet[facet].top(Infinity)
   }
