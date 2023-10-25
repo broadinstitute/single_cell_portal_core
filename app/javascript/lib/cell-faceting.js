@@ -162,9 +162,10 @@ function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
 
   const facets = prevRawFacets.facets.concat(newRawFacets.facets)
 
-  const cells = prevRawFacets.cells.map((cell, i) => {
-    return cell.concat(newRawFacets.cells[i])
-  })
+  const cells = []
+  for (let i = 0; i < prevRawFacets.cells.length; i++) {
+    cells.push(prevRawFacets.cells[i].concat(newRawFacets.cells[i]))
+  }
 
   const mergedRawFacets = { cells, facets }
   return mergedRawFacets
@@ -176,6 +177,8 @@ function trimNullFilters(cellFaceting) {
   const annotationFacets = cellFaceting.facets.map(facet => facet.annotation)
   const nonzeroFiltersByFacet = {} // filters to remove, as they match no cells
   const nonzeroFilterCountsByFacet = {}
+
+  let hasAnyNullFilters = false
 
   const filterableCells = cellFaceting.filterableCells
 
@@ -197,6 +200,8 @@ function trimNullFilters(cellFaceting) {
         nonzeroFilterCounts[filter] = countsByFilter[filter]
       } else {
         facetHasNullFilter = true
+
+        hasAnyNullFilters = true
         nullFilterIndex = filterIndex
       }
     })
@@ -214,6 +219,8 @@ function trimNullFilters(cellFaceting) {
     nonzeroFiltersByFacet[facet] = nonzeroFilters
     cellFaceting.facets[i].groups = nonzeroFilters
   }
+
+  if (!hasAnyNullFilters) {return cellFaceting}
 
   cellFaceting.cellsByFacet = getCellsByFacet(filterableCells, annotationFacets)
   cellFaceting.filterableCells = filterableCells
