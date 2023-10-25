@@ -111,7 +111,6 @@ export function filterCells(
         })
 
         fn = function(d) {
-          // console.log('d', d)
           return filter.has(d)
         }
       } else {
@@ -231,8 +230,6 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
   for (let i = 0; i < annotationFacets.length; i++) {
     const facet = annotationFacets[i]
     const facetCrossfilter = cellsByFacet[facet]
-    // const facetCrossfilter = cellsByFacet[i]
-    console.log('facetCrossfilter', facetCrossfilter)
     // Set counts for each filter in facet
     const rawFilterCounts = facetCrossfilter.group().top(Infinity)
     const countsByFilter = {}
@@ -288,7 +285,7 @@ function initCrossfilter(facetData) {
     // An array of integers, e.g. [6, 0, 7, 0, 0]
     // Each element in the array is the index-offset of the cell's group value assignment
     // for the annotation facet at that index.
-    const facetIndex = cells[i]
+    const facetIndex = new Uint8Array(cells[i])
     filterableCell.facetIndex = facetIndex
     filterableCells.push(filterableCell)
   }
@@ -400,7 +397,7 @@ export async function initCellFaceting(
   const cellFaceting = trimNullFilters(rawCellFaceting)
 
   // Below line is worth keeping, but only uncomment to debug in development
-  window.SCP.cellFaceting = cellFaceting
+  // window.SCP.cellFaceting = cellFaceting
   return cellFaceting
 }
 
