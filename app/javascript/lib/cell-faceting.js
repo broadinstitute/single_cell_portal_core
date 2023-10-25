@@ -334,10 +334,43 @@ function getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting) {
     .slice(fetchOffset, fetchOffset + 5)
 }
 
+/** Log metrics to Mixpanel if fully loaded, return next perfTime object to pass in chain */
+function logInitCellFaceting(timeStart, perfTimes, cellFaceting, prevCellFaceting) {
+  const timeEnd = Date.now()
+  perfTimes.perfTime = timeEnd - timeStart
+  if (prevCellFaceting) {
+    perfTimes.perfTime += prevCellFaceting.perfTimes.perfTime
+    perfTimes.fetch += prevCellFaceting.perfTimes.fetch
+    perfTimes.initCrossfilter += prevCellFaceting.perfTimes.initCrossfilter
+    perfTimes.trimNullFilters += prevCellFaceting.perfTimes.trimNullFilters
+    perfTimes.numInits = prevCellFaceting.perfTimes.numInits + 1
+  } else {
+    perfTimes.numInits = 0
+  }
+
+  if (cellFaceting.isFullyLoaded) {
+    const logProps = {
+      'numCells': cellFaceting.filterableCells.length,
+      'numFacets': cellFaceting.facets.length,
+      'numInits': perfTimes.numInits,
+      'perfTime': perfTimes.perfTime,
+      'perfTime:fetch': perfTimes.fetch,
+      'perfTime:initCrossfilter': perfTimes.initCrossfilter,
+      'perfTime:trimNullFilters': perfTimes.trimNullFilters
+    }
+    log('init-cell-faceting', logProps)
+  }
+
+  return perfTimes
+}
+
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
 export async function initCellFaceting(
   selectedCluster, selectedAnnot, studyAccession, allAnnots, prevCellFaceting
 ) {
+  let perfTimes = {}
+  const timeStart = Date.now()
+
   // Prioritize and fetch annotation facets for all cells
   const selectedAnnotId = getIdentifierForAnnotation(selectedAnnot)
   const eligibleAnnots =
@@ -367,7 +400,9 @@ export async function initCellFaceting(
 
   const facetsToFetch = getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting)
 
+  const timeFetchStart = Date.now()
   const newRawFacets = await fetchAnnotationFacets(studyAccession, facetsToFetch, selectedCluster)
+  perfTimes.fetch = Date.now() - timeFetchStart
 
   // Below line is worth keeping, but only uncomment to debug in development.
   // This helps simulate waiting on server response, even when using local
@@ -377,10 +412,12 @@ export async function initCellFaceting(
 
   const rawFacets = mergeFacetsResponses(newRawFacets, prevCellFaceting)
 
+  const timeInitCrossfilterStart = Date.now()
   const {
     filterableCells, cellsByFacet,
     loadedFacets, filtersByFacet, filterCounts
   } = initCrossfilter(rawFacets)
+  perfTimes.initCrossfilter = Date.now() - timeInitCrossfilterStart
 
   const facets = allRelevanceSortedFacets.map(facet => {
     const isLoaded = loadedFacets.some(loadedFacet => facet.annotation === loadedFacet.annotation)
@@ -401,7 +438,12 @@ export async function initCellFaceting(
     filterCounts
   }
 
+  const timeTrimNullFiltersStart = Date.now()
   const cellFaceting = trimNullFilters(rawCellFaceting)
+  perfTimes.trimNullFilters = Date.now() - timeTrimNullFiltersStart
+
+  perfTimes = logInitCellFaceting(timeStart, perfTimes, cellFaceting, prevCellFaceting)
+  cellFaceting.perfTimes = perfTimes
 
   // Below line is worth keeping, but only uncomment to debug in development
   // window.SCP.cellFaceting = cellFaceting
