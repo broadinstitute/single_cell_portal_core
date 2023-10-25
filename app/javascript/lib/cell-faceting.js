@@ -173,8 +173,6 @@ function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
 
 /** Omit any filters that match 0 cells in the current clustering */
 function trimNullFilters(cellFaceting) {
-  return cellFaceting
-
   const filterCountsByFacet = cellFaceting.filterCounts
   const annotationFacets = cellFaceting.facets.map(facet => facet.annotation)
   const nonzeroFiltersByFacet = {} // filters to remove, as they match no cells
@@ -207,8 +205,8 @@ function trimNullFilters(cellFaceting) {
     if (facetHasNullFilter) {
       for (let j = 0; j < cellFaceting.filterableCells.length; j++) {
         const cell = cellFaceting.filterableCells[j]
-        if (cell[facet] > nullFilterIndex) {
-          filterableCells[j][facet] -= 1 // Shift facet filter index to account for removal
+        if (cell[i] > nullFilterIndex) {
+          filterableCells[j][i] -= 1 // Shift facet filter index to account for removal
         }
       }
     }
