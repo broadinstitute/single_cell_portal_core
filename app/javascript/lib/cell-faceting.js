@@ -141,12 +141,14 @@ export function filterCells(
         fn = function(d) {
           return filter.has(d)
         }
+
+        // Apply the actual crossfilter method
+        cellsByFacet[facet].filterFunction(fn)
       } else {
         fn = null
+        // Apply the actual crossfilter method
+        cellsByFacet[facet].filter(fn)
       }
-
-      // Apply the actual crossfilter method
-      cellsByFacet[facet].filterFunction(fn)
     }
     results = cellsByFacet[facet].top(Infinity)
   }

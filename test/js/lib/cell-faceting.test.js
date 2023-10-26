@@ -39,11 +39,7 @@ describe('Cell faceting', () => {
 
     const expectedFilterableCells99 = {
       'allCellsIndex': 99,
-      'cell_type__ontology_label--group--study': 1,
-      'General_Celltype--group--study': 1,
-      'infant_sick_YN--group--study': 0,
-      'ethnicity__ontology_label--group--study': 0,
-      'biosample_id--group--study': 0
+      'facetIndex': [1, 1, 0, 0, 0]
     }
 
     const expectedInfantSickYN = ['no']
