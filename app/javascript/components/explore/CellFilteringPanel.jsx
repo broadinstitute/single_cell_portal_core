@@ -210,6 +210,7 @@ function CellFacet({
     >
       <FacetHeader
         facet={facet}
+        checkedMap={checkedMap}
         handleCheckAllFilters={handleCheckAllFilters}
         isFullyCollapsed={isFullyCollapsed}
         setIsFullyCollapsed={setIsFullyCollapsed}
@@ -242,7 +243,9 @@ function CellFacet({
 }
 
 /** Get stylized name of facet, optional tooltip, collapse controls */
-function FacetHeader({ facet, handleCheckAllFilters, isFullyCollapsed, setIsFullyCollapsed }) {
+function FacetHeader({
+  facet, checkedMap, handleCheckAllFilters, isFullyCollapsed, setIsFullyCollapsed
+}) {
   const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
   const isConventional = getIsConventionalAnnotation(rawFacetName)
 
@@ -272,11 +275,33 @@ function FacetHeader({ facet, handleCheckAllFilters, isFullyCollapsed, setIsFull
 
   const toggleClass = `cell-filters-${isFullyCollapsed ? 'hidden' : 'shown'}`
 
+  // Assess if facet-level checkbox should be indeterminate, i.e. "-",
+  // which is a common state in hierarchical checkboxes to indicate that
+  // some lower checkboxes are checked, and some are not.
+  const allFiltersInFacet = facet.groups
+  const allCheckedFiltersInFacet = checkedMap[facet.annotation]
+  const isFacetCheckboxSelected = allFiltersInFacet.length === allCheckedFiltersInFacet.length
+  const isIndeterminate = !(
+    allCheckedFiltersInFacet.length === 0 ||
+    isFacetCheckboxSelected
+  )
+
   return (
     <div>
       <input
         type="checkbox"
+        data-analytics-name={`facet-${facet.annotation}`}
+        name={`facet-${facet.annotation}`}
         style={{ display: 'inline', marginRight: '5px' }}
+        onChange={event => {
+          handleCheckAllFilters(event)
+        }}
+        checked={isFacetCheckboxSelected}
+        ref={input => {
+          if (input) {
+            input.indeterminate = isIndeterminate
+          }
+        }}
       />
       <span
         className={`cell-facet-header ${toggleClass}`}
@@ -356,9 +381,10 @@ export function CellFilteringPanel({
 
   /** Add or remove all checked item from list */
   function handleCheckAllFilters(event) {
-    const facetName = event.target.name.split(':')[0]
+    const facetName = event.target.name.split(':')[0].replace('facet-', '')
     const isCheck = event.target.checked
-    const updatedList = isCheck ? facets[facetName] : []
+    const allFiltersInFacet = facets.find(f => f.annotation === facetName).groups
+    const updatedList = isCheck ? allFiltersInFacet : []
     checkedMap[facetName] = updatedList
     setCheckedMap(checkedMap)
     updateFilteredCells(checkedMap)

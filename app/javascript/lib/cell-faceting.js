@@ -97,7 +97,7 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
   const numFacetsSelected = Object.keys(selection).length
   const numFiltersSelected = Object.values(selection).reduce((numFilters, selectedFiltersForThisFacet) => {
     // return accumulator (an integer) + current value (an array, specifically its length)
-    return numFilters + selectedFiltersForThisFacet.length
+    return numFilters + selectedFiltersForThisFacet?.length
   }, 0)
   const filterLogProps = {
     'perfTime': filterPerfTime,
