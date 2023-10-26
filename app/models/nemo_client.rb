@@ -21,7 +21,7 @@ class NemoClient
   #
   # * *return*
   #   - +NemoClient+ object
-  def initialize(api_root: BASE_URL, username: nil, password: nil)
+  def initialize(api_root: BASE_URL, username: ENV['NEMO_API_USERNAME'], password: ENV['NEMO_API_PASSWORD'])
     self.api_root = api_root.chomp('/')
     self.username = username
     self.password = password
