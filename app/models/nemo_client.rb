@@ -1,4 +1,4 @@
-# API client for interacting with Neurpscience Multi-Omic Data Portal (NeMO)
+# API client for interacting with Neuroscience Multi-Omic Data Portal (NeMO)
 class NemoClient
   include ApiHelpers
 
@@ -113,7 +113,7 @@ class NemoClient
     end
   end
 
-  # generic handler to get an entity from the NeMO identifier API
+  # generic handler to get an entity from the NeMO Identifier API
   #
   # * *params*
   #   - +entity_type+ (String, Symbol) => type of entity, from ENTITY_TYPES
