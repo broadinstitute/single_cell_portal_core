@@ -135,15 +135,17 @@ export function filterCells(
   const numCellsBefore = filterableCells.length
   const numCellsAfter = results.length
   const numFacetsSelected = Object.keys(selection).length
-  const numFiltersSelected = Object.values(selection).length
+  const numFiltersSelected = Object.values(selection).reduce((numFilters, selectedFiltersForThisFacet) => {
+    // return accumulator (an integer) + current value (an array, specifically its length)
+    return numFilters + selectedFiltersForThisFacet.length
+  }, 0)
   const filterLogProps = {
     'perfTime': filterPerfTime,
     'perfTime:counts': perfTimeCounts,
     numCellsBefore,
     numCellsAfter,
     numFacetsSelected,
-    numFiltersSelected,
-    selection
+    numFiltersSelected
   }
 
   // Log to Mixpanel
