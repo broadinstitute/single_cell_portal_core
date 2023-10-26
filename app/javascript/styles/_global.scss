@@ -528,7 +528,23 @@ h6,
 	padding: 3em;
 }
 
+.col-md-10-5 {
+  position: relative;
+  min-height: 1px;
+  padding-right: 15px;
+  padding-left: 15px;
+  float: left;
+  width: 80%;
+}
 
+.col-md-2-5 {
+  position: relative;
+  min-height: 1px;
+  padding-right: 15px;
+  padding-left: 15px;
+  float: left;
+  width: 20%;
+}
 
 @media (min-width: 768px) {
   #view-options .col-sm-4,

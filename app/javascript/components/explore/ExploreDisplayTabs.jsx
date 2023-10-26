@@ -345,8 +345,8 @@ export default function ExploreDisplayTabs({
         main = 'col-md-9'
         side = 'col-md-3'
       } else if (panelToShow === 'cell-filtering') {
-        main = 'col-md-10'
-        side = 'col-md-2'
+        main = 'col-md-10-5'
+        side = 'col-md-2-5'
       } else {
         // Default state, when side panel is "Options" and not collapsed
         main = 'col-md-10'

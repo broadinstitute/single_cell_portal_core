@@ -15,7 +15,7 @@
 .cell-filter-label {
   font-weight: normal;
   cursor: pointer;
-  width: 100%;
+  width: calc(100% - 18px);
   vertical-align: top;
 
   &:hover {
@@ -30,7 +30,7 @@
 
 .cell-filter-label-text {
   display: inline-block;
-  width: calc(100% - 70px);
+  width: calc(100% - 90px);
 }
 
 .cell-filter-count {

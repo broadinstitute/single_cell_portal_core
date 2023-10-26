@@ -114,7 +114,6 @@ function isChecked(annotation, item, checkedMap) {
   return checkedMap[annotation]?.includes(item)
 }
 
-
 /** Cell filter component */
 function CellFilter({
   facet, filter, isChecked, checkedMap, handleCheck
@@ -127,7 +126,7 @@ function CellFilter({
   }
 
   return (
-    <label className="cell-filter-label">
+    <label className="cell-filter-label" style={{ marginLeft: '18px' }}>
       <div style={{ marginLeft: '2px', lineHeight: '14px', ...facetLabelStyle }}>
         <input
           type="checkbox"
@@ -153,7 +152,7 @@ function CellFilter({
 /** Facet name and collapsible list of filter checkboxes */
 function CellFacet({
   facet,
-  checkedMap, handleCheck, updateFilteredCells,
+  checkedMap, handleCheck, handleCheckAllFilters, updateFilteredCells,
   isAllListsCollapsed
 }) {
   if (Object.keys(facet).length === 0) {
@@ -211,6 +210,7 @@ function CellFacet({
     >
       <FacetHeader
         facet={facet}
+        handleCheckAllFilters={handleCheckAllFilters}
         isFullyCollapsed={isFullyCollapsed}
         setIsFullyCollapsed={setIsFullyCollapsed}
       />
@@ -231,7 +231,7 @@ function CellFacet({
       {!isFullyCollapsed && filters.length > numFiltersPartlyCollapsed &&
         <a
           className="facet-toggle"
-          style={{ 'fontSize': '13px' }}
+          style={{ 'fontSize': '13px', 'marginLeft': '18px' }}
           onClick={() => {setIsPartlyCollapsed(!isPartlyCollapsed)}}
         >
           {isPartlyCollapsed ? 'More...' : 'Less...'}
@@ -242,7 +242,7 @@ function CellFacet({
 }
 
 /** Get stylized name of facet, optional tooltip, collapse controls */
-function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
+function FacetHeader({ facet, handleCheckAllFilters, isFullyCollapsed, setIsFullyCollapsed }) {
   const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
   const isConventional = getIsConventionalAnnotation(rawFacetName)
 
@@ -250,7 +250,7 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
     fontWeight: 'bold',
     marginBottom: '1px',
     display: 'inline-block',
-    width: 'calc(100% - 30px)'
+    width: 'calc(100% - 40px)'
   }
   const tooltipableFacetNameStyle = {
     width: 'content-fit'
@@ -273,24 +273,30 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
   const toggleClass = `cell-filters-${isFullyCollapsed ? 'hidden' : 'shown'}`
 
   return (
-    <div
-      className={`cell-facet-header ${toggleClass}`}
-      onClick={() => {setIsFullyCollapsed(!isFullyCollapsed)}}
-    >
-      <span style={facetNameStyle}>
-        <span
-          style={tooltipableFacetNameStyle}
-          data-original-title={title}
-          {...tooltipAttrs}
-        >
-          {facetName}
-        </span>
-      </span>
-      <CollapseToggleChevron
-        isCollapsed={isFullyCollapsed}
-        whatToToggle="filter list"
-        isLoaded={facet.isLoaded}
+    <div>
+      <input
+        type="checkbox"
+        style={{ display: 'inline', marginRight: '5px' }}
       />
+      <span
+        className={`cell-facet-header ${toggleClass}`}
+        onClick={() => {setIsFullyCollapsed(!isFullyCollapsed)}}
+      >
+        <span style={facetNameStyle}>
+          <span
+            style={tooltipableFacetNameStyle}
+            data-original-title={title}
+            {...tooltipAttrs}
+          >
+            {facetName}
+          </span>
+        </span>
+        <CollapseToggleChevron
+          isCollapsed={isFullyCollapsed}
+          whatToToggle="filter list"
+          isLoaded={facet.isLoaded}
+        />
+      </span>
     </div>
   )
 }
@@ -346,6 +352,16 @@ export function CellFilteringPanel({
         />
       </div>
     )
+  }
+
+  /** Add or remove all checked item from list */
+  function handleCheckAllFilters(event) {
+    const facetName = event.target.name.split(':')[0]
+    const isCheck = event.target.checked
+    const updatedList = isCheck ? facets[facetName] : []
+    checkedMap[facetName] = updatedList
+    setCheckedMap(checkedMap)
+    updateFilteredCells(checkedMap)
   }
 
   /** Add or remove checked item from list */
@@ -410,7 +426,8 @@ export function CellFilteringPanel({
         </label>
         { Object.keys(checkedMap).length !== 0 &&
         <>
-          <div style={{ marginTop: '10px' }}>
+          <div style={{ marginTop: '10px', marginLeft: '-10px' }}>
+            {/* <div style={{ marginTop: '10px' }}> */}
             <FilterSectionHeader
               isAllListsCollapsed={isAllListsCollapsed}
               setIsAllListsCollapsed={setIsAllListsCollapsed}
@@ -422,6 +439,7 @@ export function CellFilteringPanel({
                     facet={facet}
                     checkedMap={checkedMap}
                     handleCheck={handleCheck}
+                    handleCheckAllFilters={handleCheckAllFilters}
                     updateFilteredCells={updateFilteredCells}
                     isAllListsCollapsed={isAllListsCollapsed}
                     key={i}
