@@ -292,7 +292,7 @@ function initCrossfilter(facetData) {
     // An array of integers, e.g. [6, 0, 7, 0, 0]
     // Each element in the array is the index-offset of the cell's group value assignment
     // for the annotation facet at that index.
-    const facetIndex = new Uint8Array(cells[i])
+    const facetIndex = cells[i]
     filterableCell.facetIndex = facetIndex
     filterableCells.push(filterableCell)
   }
