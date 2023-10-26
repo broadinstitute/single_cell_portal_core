@@ -230,8 +230,19 @@ export default function ExploreDisplayTabs({
   const isCorrelatedScatter = enabledTabs.includes('correlatedScatter')
 
 
-  // if the exploreParams update need to reset the initial cell facets
+  // If clustering or annotation changes, then update facets shown for cell filtering
   useEffect(() => {
+    if (!exploreInfo) {return}
+    if (exploreInfo.skipFetchFacets) {
+      // The loadStudyData in ExploreView updates exploreParams _twice_ upon
+      // loading the page.  To avoid doubling requests to the `/facets` API
+      // endpoint, this special `skipFetchFacets` prop is set to true in the
+      // 2nd upstream update.  This block _skips_ that 2nd volley of /facets
+      // requests triggered by that pageload-time double state update
+      // in loadStudyData.
+      exploreInfo.skipFetchFacets = false
+      return
+    }
     const [newCluster, newAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
     const setterFunctions = [
       setCellFilteringSelection,

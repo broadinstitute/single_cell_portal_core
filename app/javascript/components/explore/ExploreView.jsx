@@ -40,6 +40,10 @@ function RoutableExploreTab({ studyAccession }) {
         const newInfo = _cloneDeep(oldExploreInfo)
         newInfo.annotationList.annotations = userSpecificInfo.annotations
         newInfo.canEdit = userSpecificInfo.canEdit
+
+        // Avoid double requests when initializing cell faceting
+        newInfo.skipFetchFacets = true
+
         return newInfo
       })
     }, 500)
