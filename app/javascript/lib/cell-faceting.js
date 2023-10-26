@@ -84,6 +84,34 @@ function sortAnnotationsByRelevance(annotList) {
   return annotsToFacet
 }
 
+/** Log metrics for filterCells to Mixpanel */
+function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
+  const t1Counts = Date.now()
+  const perfTimeCounts = t1Counts - t0Counts
+
+  const t1 = Date.now()
+  // Assemble analytics
+  const filterPerfTime = t1 - t0
+  const numCellsBefore = filterableCells.length
+  const numCellsAfter = results.length
+  const numFacetsSelected = Object.keys(selection).length
+  const numFiltersSelected = Object.values(selection).reduce((numFilters, selectedFiltersForThisFacet) => {
+    // return accumulator (an integer) + current value (an array, specifically its length)
+    return numFilters + selectedFiltersForThisFacet.length
+  }, 0)
+  const filterLogProps = {
+    'perfTime': filterPerfTime,
+    'perfTime:counts': perfTimeCounts,
+    numCellsBefore,
+    numCellsAfter,
+    numFacetsSelected,
+    numFiltersSelected
+  }
+
+  // Log to Mixpanel
+  log('filter-cells', filterLogProps)
+}
+
 /** Get filtered cell results */
 export function filterCells(
   selection, cellsByFacet, initFacets, filtersByFacet, filterableCells
@@ -126,30 +154,8 @@ export function filterCells(
   const annotationFacets = initFacets.map(facet => facet.annotation)
   const t0Counts = Date.now()
   const counts = getFilterCounts(annotationFacets, cellsByFacet, initFacets, selection)
-  const t1Counts = Date.now()
-  const perfTimeCounts = t1Counts - t0Counts
 
-  const t1 = Date.now()
-  // Assemble analytics
-  const filterPerfTime = t1 - t0
-  const numCellsBefore = filterableCells.length
-  const numCellsAfter = results.length
-  const numFacetsSelected = Object.keys(selection).length
-  const numFiltersSelected = Object.values(selection).reduce((numFilters, selectedFiltersForThisFacet) => {
-    // return accumulator (an integer) + current value (an array, specifically its length)
-    return numFilters + selectedFiltersForThisFacet.length
-  }, 0)
-  const filterLogProps = {
-    'perfTime': filterPerfTime,
-    'perfTime:counts': perfTimeCounts,
-    numCellsBefore,
-    numCellsAfter,
-    numFacetsSelected,
-    numFiltersSelected
-  }
-
-  // Log to Mixpanel
-  log('filter-cells', filterLogProps)
+  logFilterCells(t0Counts, t0, filterableCells, results, selection)
 
   return [results, counts]
 }
@@ -347,7 +353,7 @@ function logInitCellFaceting(timeStart, perfTimes, cellFaceting, prevCellFacetin
     perfTimes.trimNullFilters += prevCellFaceting.perfTimes.trimNullFilters
     perfTimes.numInits = prevCellFaceting.perfTimes.numInits + 1
   } else {
-    perfTimes.numInits = 0
+    perfTimes.numInits = 1
   }
 
   if (cellFaceting.isFullyLoaded) {
