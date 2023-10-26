@@ -4,12 +4,18 @@ class NemoClient
 
   attr_accessor :api_root, :username, :password
 
-  BASE_URL = 'https://portal.nemoarchive.org/api'.freeze
+  BASE_URL = 'https://beta-assets.nemoarchive.org/api'.freeze
 
   DEFAULT_HEADERS = {
     'Accept' => 'application/json',
     'Content-Type' => 'application/json'
   }.freeze
+
+  # types of available entities
+  ENTITY_TYPES = %w[collection file grant project publication sample subject].freeze
+
+  # identifier format validator
+  IDENTIFIER_FORMAT = /nemo:[a-z]{3}-[a-z0-9]{7}$/
 
   # base constructor
   #
@@ -53,14 +59,19 @@ class NemoClient
         process_api_request(http_method, path, payload:, retry_count: current_retry)
       else
         # we have reached our retry limit or the response code indicates we should not retry
-        ErrorTracker.report_exception(e, nil, {
-          method: http_method, url: path, payload:, retry_count:
-        })
+        ErrorTracker.report_exception(e, nil,
+                                      { method: http_method, url: path, payload:, retry_count: })
         error_message = parse_response_body(e.message)
         Rails.logger.error "Retry count exceeded when requesting '#{path}' - #{error_message}"
         raise e
       end
     end
+  end
+
+  # add basic HTTP auth header
+  # TODO: remove after public release of API
+  def authorization_header
+    { Authorization: "Basic #{Base64.encode64("#{username}:#{password}")}" }
   end
 
   # sub-handler for making external HTTP request
@@ -78,10 +89,7 @@ class NemoClient
   # * *raises*
   #   - (RestClient::Exception) => if HTTP request fails for any reason
   def execute_http_request(http_method, path, payload = nil)
-    headers = {
-      'user' => username,
-      'password' => password
-    }.merge(DEFAULT_HEADERS)
+    headers = authorization_header.merge(DEFAULT_HEADERS)
     response = RestClient::Request.execute(method: http_method, url: path, payload:, headers:)
     # handle response using helper
     handle_response(response)
@@ -96,8 +104,8 @@ class NemoClient
   def api_available?
     path = "#{api_root}/status"
     begin
-      # since this is a no-body response, ApiHelpers#handle_response will return true
-      execute_http_request(:get, path)
+      status = execute_http_request(:get, path)&.with_indifferent_access
+      status && status[:status] == 'OK'
     rescue RestClient::ExceptionWithResponse => e
       Rails.logger.error "NeMO service unavailable: #{e.message}"
       ErrorTracker.report_exception(e, nil, { method: :get, url: path, code: e.http_code })
@@ -105,27 +113,109 @@ class NemoClient
     end
   end
 
-  # get information about a file
+  # generic handler to get an entity from the NeMO identifier API
   #
   # * *params*
+  #   - +entity_type+ (String, Symbol) => type of entity, from ENTITY_TYPES
   #   - +identifier+ (String) => file identifier, usually a UUID or nemo:[a-z]{3}-[a-z0-9]{7}$
   #
   # * *returns*
-  #   - (Hash) => File metadata, including associations and access URLs
-  def file(identifier)
-    path = "#{api_root}/files/#{uri_encode(identifier)}"
+  #   - (Hash) => entity metadata, including associations and access URLs
+  def fetch_entity(entity_type, identifier)
+    validate_entity_type(entity_type)
+    validate_identifier_format(identifier)
+    path = "#{api_root}/#{entity_type}/#{uri_encode(identifier)}"
     process_api_request(:get, path)
+  end
+
+  ##
+  # Convenience methods
+  ##
+
+  # get information about a collection
+  #
+  # * *params*
+  #   - +identifier+ (String) => collection identifier
+  #
+  # * *returns*
+  #   - (Hash) => collection metadata
+  def collection(identifier)
+    fetch_entity(:collection, identifier)
+  end
+
+  # get information about a file
+  #
+  # * *params*
+  #   - +identifier+ (String) => file identifier
+  #
+  # * *returns*
+  #   - (Hash) => File metadata
+  def file(identifier)
+    fetch_entity(:file, identifier)
+  end
+
+  # get information about a grant
+  #
+  # * *params*
+  #   - +identifier+ (String) => grant identifier
+  #
+  # * *returns*
+  #   - (Hash) => grant metadata
+  def grant(identifier)
+    fetch_entity(:grant, identifier)
+  end
+
+  # get information about a project
+  #
+  # * *params*
+  #   - +identifier+ (String) => project identifier
+  #
+  # * *returns*
+  #   - (Hash) => File metadata
+  def project(identifier)
+    fetch_entity(:project, identifier)
+  end
+
+  # get information about a publication
+  #
+  # * *params*
+  #   - +identifier+ (String) => sample identifier
+  #
+  # * *returns*
+  #   - (Hash) => publication metadata
+  def publication(identifier)
+    fetch_entity(:publication, identifier)
   end
 
   # get information about a sample
   #
   # * *params*
-  #   - +identifier+ (String) => sample identifier, usually a UUID or nemo:[a-z]{3}-[a-z0-9]{7}$
+  #   - +identifier+ (String) => sample identifier
   #
   # * *returns*
-  #   - (Hash) => Sample metadata, including associations and access URLs
+  #   - (Hash) => Sample metadata
   def sample(identifier)
-    path = "#{api_root}/samples/#{uri_encode(identifier)}"
-    process_api_request(:get, path)
+    fetch_entity(:sample, identifier)
+  end
+
+  # get information about a subject
+  #
+  # * *params*
+  #   - +identifier+ (String) => sample identifier
+  #
+  # * *returns*
+  #   - (Hash) => subject metadata
+  def subject(identifier)
+    fetch_entity(:subject, identifier)
+  end
+
+  private
+
+  def validate_entity_type(entity_type)
+    raise ArgumentError, "#{entity_type} not in #{ENTITY_TYPES}" unless ENTITY_TYPES.include?(entity_type.to_s)
+  end
+
+  def validate_identifier_format(identifier)
+    raise ArgumentError, "#{identifier} does not match #{IDENTIFIER_FORMAT}" unless identifier.match(IDENTIFIER_FORMAT)
   end
 end
