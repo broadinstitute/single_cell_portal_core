@@ -76,17 +76,11 @@ function parseAnnotationName(annotationIdentifier) {
 }
 
 /** Toggle icon for collapsing a list; for each filter list, and all filter lists */
-function CollapseToggleChevron({ isCollapsed, whatToToggle, isLoaded }) {
-  let toggleIcon
-  let toggleIconTooltipText
-  if (!isCollapsed) {
-    toggleIcon = <FontAwesomeIcon icon={faChevronDown} />
-    toggleIconTooltipText = `Hide ${whatToToggle}`
-  } else {
-    toggleIcon = <FontAwesomeIcon icon={faChevronRight} />
-    toggleIconTooltipText = `Show ${whatToToggle}`
-  }
-
+function FacetTools({
+  isCollapsed, whatToToggle,
+  isLoaded,
+  isRoot=false, facets, checkedMap, handleResetFilters
+}) {
   return (
     <span className="facet-tools">
       {!isLoaded &&
@@ -98,13 +92,70 @@ function CollapseToggleChevron({ isCollapsed, whatToToggle, isLoaded }) {
         <LoadingSpinner height='14px'/>
       </span>
       }
-      <span
-        className="facet-toggle-chevron"
-        data-original-title={toggleIconTooltipText}
-        {...tooltipAttrs}
-      >
-        {toggleIcon}
-      </span>
+      {isRoot &&
+        <ResetFiltersButton
+          facets={facets}
+          checkedMap={checkedMap}
+          handleResetFilters={handleResetFilters}
+        />
+      }
+      <CollapseToggleChevron
+        isCollapsed={isCollapsed}
+        whatToToggle={whatToToggle}
+      />
+    </span>
+  )
+}
+
+/** Button to reset all filters to their default, initial state */
+function ResetFiltersButton({ facets, checkedMap, handleResetFilters }) {
+  // Assess if filter-section-level checkbox should be indeterminate, i.e. "-",
+  // which is a common state in hierarchical checkboxes to indicate that
+  // some lower checkboxes are checked, and some are not.
+  let numTotalFilters = 0
+  facets.forEach(facet => numTotalFilters += facet.groups.length)
+  let numCheckedFilters = 0
+  Object.entries(checkedMap).forEach(([facet, filters]) => {
+    numCheckedFilters += filters.length
+  })
+  console.log('numTotalFilters', numTotalFilters)
+  console.log('numCheckedFilters', numCheckedFilters)
+  const isResetEligible = numTotalFilters !== numCheckedFilters
+  console.log('isResetEligible', isResetEligible)
+  const resetDisplayClass = isResetEligible ? '' : 'hide-reset'
+
+  return (
+    <a
+      onClick={() => handleResetFilters()}
+      className={`reset-cell-filters ${resetDisplayClass}`}
+      data-analytics-name="reset-cell-filters"
+      data-toggle="tooltip"
+      data-original-title="Reset filters"
+    >
+      <FontAwesomeIcon icon={faUndo}/>
+    </a>
+  )
+}
+
+/** Toggle icon for collapsing a list; for each filter list, and all filter lists */
+function CollapseToggleChevron({ isCollapsed, whatToToggle }) {
+  let toggleIcon
+  let toggleIconTooltipText
+  if (!isCollapsed) {
+    toggleIcon = <FontAwesomeIcon icon={faChevronDown} />
+    toggleIconTooltipText = `Hide ${whatToToggle}`
+  } else {
+    toggleIcon = <FontAwesomeIcon icon={faChevronRight} />
+    toggleIconTooltipText = `Show ${whatToToggle}`
+  }
+
+  return (
+    <span
+      className="facet-toggle-chevron"
+      data-original-title={toggleIconTooltipText}
+      {...tooltipAttrs}
+    >
+      {toggleIcon}
     </span>
   )
 }
@@ -311,7 +362,7 @@ function FacetHeader({
             {facetName}
           </span>
         </span>
-        <CollapseToggleChevron
+        <FacetTools
           isCollapsed={isFullyCollapsed}
           whatToToggle="filter list"
           isLoaded={facet.isLoaded}
@@ -364,20 +415,12 @@ export function CellFilteringPanel({
     })
     console.log('numTotalFilters', numTotalFilters)
     console.log('numCheckedFilters', numCheckedFilters)
-    const isResetFiltersAvailable = numTotalFilters !== numCheckedFilters
-    const resetDisplayClass = isResetFiltersAvailable ? '' : 'hide-reset'
+    const isResetEligible = numTotalFilters !== numCheckedFilters
+    console.log('isResetEligible', isResetEligible)
+    const resetDisplayClass = isResetEligible ? '' : 'hide-reset'
 
     return (
       <div className="filter-section-header">
-        <a
-          onClick={() => handleResetFilters()}
-          className={`reset-cell-filters ${resetDisplayClass}`}
-          data-analytics-name="reset-cell-filters"
-          data-toggle="tooltip"
-          data-original-title="Reset filters"
-        >
-          <FontAwesomeIcon icon={faUndo}/>
-        </a>
         <span
           onClick={() => {setIsAllListsCollapsed(!isAllListsCollapsed)}}
         >
@@ -388,11 +431,15 @@ export function CellFilteringPanel({
             data-original-title="Use checkboxes to show or hide cells in plots.  Deselected values are
         assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
           >Filter by</span>
-          <CollapseToggleChevron
+          <FacetTools
             isCollapsed={isAllListsCollapsed}
             setIsCollapsed={setIsAllListsCollapsed}
             whatToToggle="all filter lists"
             isLoaded={true}
+            isRoot={true}
+            facets={facets}
+            checkedMap={checkedMap}
+            handleResetFilters={handleResetFilters}
           />
         </span>
       </div>

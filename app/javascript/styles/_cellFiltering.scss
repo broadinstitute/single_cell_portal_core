@@ -49,13 +49,17 @@
   top: 2px;
 }
 
-input.cell-facet-header-checkbox,
-input.reset-cell-filters {
+input.cell-facet-header-checkbox {
   display: inline;
   margin-right: 5px;
   position: relative;
   top: -1px;
   cursor: pointer;
+}
+
+.reset-cell-filters {
+  margin-right: 8px;
+  top: 0px;
 }
 
 .cell-facet-name,
@@ -65,6 +69,12 @@ input.reset-cell-filters {
   vertical-align: top;
   display: inline-block;
   width: calc(100% - 40px);
+}
+
+.filter-section-name {
+  margin-bottom: 0px;
+  margin-left: 18px;
+  width: calc(100% - 60px);
 }
 
 .cell-facet:has(.cell-filters-hidden) {
@@ -123,6 +133,13 @@ input.reset-cell-filters {
   visibility: visible;
 }
 
+.reset-cell-filters {
+  color: #777;
+}
+
+.reset-cell-filters:hover {
+  color: #77D;
+}
 
 .facet-tools {
   float: right;
