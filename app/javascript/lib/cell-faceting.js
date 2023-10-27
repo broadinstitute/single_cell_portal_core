@@ -114,7 +114,7 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
 
 /** Get filtered cell results */
 export function filterCells(
-  selection, cellsByFacet, initFacets, filtersByFacet, filterableCells
+  selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, rawFacets
 ) {
   const t0 = Date.now()
   const facets =
@@ -134,7 +134,9 @@ export function filterCells(
 
         const filter = new Set()
         friendlyFilters.forEach(friendlyFilter => {
-          const filterIndex = filtersByFacet[facet].indexOf(friendlyFilter)
+          // find the original index of the filter in the source annotation as the list here may be trimmed already
+          const sourceFacet = rawFacets.find(f => f.annotation === facet)
+          const filterIndex = sourceFacet.groups.indexOf(friendlyFilter)
           filter.add(filterIndex)
         })
 
@@ -187,6 +189,7 @@ function trimNullFilters(cellFaceting) {
   const annotationFacets = cellFaceting.facets.map(facet => facet.annotation)
   const nonzeroFiltersByFacet = {} // filters to remove, as they match no cells
   const nonzeroFilterCountsByFacet = {}
+  const originalFacets = cellFaceting.rawFacets.facets
 
   let hasAnyNullFilters = false
 
@@ -194,6 +197,7 @@ function trimNullFilters(cellFaceting) {
 
   for (let i = 0; i < annotationFacets.length; i++) {
     const facet = annotationFacets[i]
+    const sourceFacet = originalFacets.find(f => f.annotation === facet)
     let facetHasNullFilter = false
     let nullFilterIndex
 
@@ -228,6 +232,9 @@ function trimNullFilters(cellFaceting) {
     nonzeroFilterCountsByFacet[facet] = nonzeroFilterCounts
     nonzeroFiltersByFacet[facet] = nonzeroFilters
     cellFaceting.facets[i].groups = nonzeroFilters
+    if (typeof sourceFacet !== 'undefined') {
+      cellFaceting.facets[i].originalGroups = sourceFacet.groups
+    }
   }
 
   if (!hasAnyNullFilters) {return cellFaceting}
@@ -253,7 +260,10 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
 
     facets[i].groups.forEach((group, j) => {
       let count = null
-      const rawFilterKeyAndValue = rawFilterCounts.find(rfc => rfc.key === j)
+      // check for originalGroups array first, if present
+      const originalGroups = facets[i].originalGroups || facets[i].groups
+      const groupIdx = originalGroups.indexOf(group)
+      const rawFilterKeyAndValue = rawFilterCounts.find(rfc => rfc.key === groupIdx)
       if (rawFilterKeyAndValue) {
         count = rawFilterKeyAndValue.value
       }
