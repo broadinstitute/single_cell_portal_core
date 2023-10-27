@@ -358,7 +358,12 @@ export function CellFilteringPanel({
         className="filter-section-header"
         onClick={() => {setIsAllListsCollapsed(!isAllListsCollapsed)}}
       >
+        <input
+          type="checkbox"
+          className="root-checkbox"
+        />
         <span
+          className="filter-section-name"
           style={{ 'fontWeight': 'bold' }}
           {...tooltipAttrs}
           data-original-title="Use checkboxes to show or hide cells in plots.  Deselected values are
@@ -447,7 +452,7 @@ export function CellFilteringPanel({
         </label>
         { Object.keys(checkedMap).length !== 0 &&
         <>
-          <div style={{ marginTop: '10px', marginLeft: '-10px' }}>
+          <div className="filter-section" style={{ marginTop: '10px', marginLeft: '-10px' }}>
             {/* <div style={{ marginTop: '10px' }}> */}
             <FilterSectionHeader
               isAllListsCollapsed={isAllListsCollapsed}

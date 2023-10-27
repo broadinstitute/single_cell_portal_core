@@ -49,7 +49,8 @@
   top: 2px;
 }
 
-input.cell-facet-header-checkbox {
+input.cell-facet-header-checkbox,
+input.root-checkbox {
   display: inline;
   margin-right: 5px;
   position: relative;
@@ -57,7 +58,8 @@ input.cell-facet-header-checkbox {
   cursor: pointer;
 }
 
-.cell-facet-name {
+.cell-facet-name,
+.filter-section-name {
   font-weight: bold;
   margin-bottom: 5px;
   vertical-align: top;
@@ -108,13 +110,15 @@ input.cell-facet-header-checkbox {
 }
 
 .cell-facet .cell-filters-shown .facet-toggle-chevron,
-.cell-facet .cell-facet-header-checkbox {
+.cell-facet .cell-facet-header-checkbox,
+.filter-section .root-checkbox {
   visibility: hidden;
 }
 
 .cell-facet:hover .cell-filters-shown .facet-toggle-chevron,
 .cell-facet:hover .cell-facet-header-checkbox,
-.cell-facet:has(.cell-filters-hidden) .cell-facet-header-checkbox {
+.cell-facet:has(.cell-filters-hidden) .cell-facet-header-checkbox,
+.filter-section:hover .root-checkbox {
   visibility: visible;
 }
 
