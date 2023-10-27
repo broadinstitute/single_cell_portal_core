@@ -107,11 +107,14 @@ input.cell-facet-header-checkbox {
   color: #77D;
 }
 
-.cell-facet .cell-filters-shown .facet-toggle-chevron {
+.cell-facet .cell-filters-shown .facet-toggle-chevron,
+.cell-facet .cell-facet-header-checkbox {
   visibility: hidden;
 }
 
-.cell-facet:hover .cell-filters-shown .facet-toggle-chevron {
+.cell-facet:hover .cell-filters-shown .facet-toggle-chevron,
+.cell-facet:hover .cell-facet-header-checkbox,
+.cell-facet:has(.cell-filters-hidden) .cell-facet-header-checkbox {
   visibility: visible;
 }
 
