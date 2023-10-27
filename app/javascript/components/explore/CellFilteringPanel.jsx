@@ -118,10 +118,7 @@ function ResetFiltersButton({ facets, checkedMap, handleResetFilters }) {
   Object.entries(checkedMap).forEach(([facet, filters]) => {
     numCheckedFilters += filters.length
   })
-  console.log('numTotalFilters', numTotalFilters)
-  console.log('numCheckedFilters', numCheckedFilters)
   const isResetEligible = numTotalFilters !== numCheckedFilters
-  console.log('isResetEligible', isResetEligible)
   const resetDisplayClass = isResetEligible ? '' : 'hide-reset'
 
   return (
@@ -351,7 +348,7 @@ function FacetHeader({
       />
       <span
         className={`cell-facet-header ${toggleClass}`}
-        onClick={() => {setIsFullyCollapsed(!isFullyCollapsed)}}
+        onClick={() => setIsFullyCollapsed(!isFullyCollapsed)}
       >
         <span className="cell-facet-name">
           <span
@@ -404,25 +401,16 @@ export function CellFilteringPanel({
 
   /** Top header for the "Filter" section, including all-facet controls */
   function FilterSectionHeader({ facets, checkedMap, handleResetFilters, isAllListsCollapsed, setIsAllListsCollapsed }) {
-    // Assess if filter-section-level checkbox should be indeterminate, i.e. "-",
-    // which is a common state in hierarchical checkboxes to indicate that
-    // some lower checkboxes are checked, and some are not.
-    let numTotalFilters = 0
-    facets.forEach(facet => numTotalFilters += facet.groups.length)
-    let numCheckedFilters = 0
-    Object.entries(checkedMap).forEach(([facet, filters]) => {
-      numCheckedFilters += filters.length
-    })
-    console.log('numTotalFilters', numTotalFilters)
-    console.log('numCheckedFilters', numCheckedFilters)
-    const isResetEligible = numTotalFilters !== numCheckedFilters
-    console.log('isResetEligible', isResetEligible)
-    const resetDisplayClass = isResetEligible ? '' : 'hide-reset'
-
     return (
       <div className="filter-section-header">
         <span
-          onClick={() => {setIsAllListsCollapsed(!isAllListsCollapsed)}}
+          onClick={event => {
+            if (Array.from(event.target.classList).includes('fa-undo')) {
+              // Don't toggle facet collapse on "Reset filters" button click
+              return
+            }
+            setIsAllListsCollapsed(!isAllListsCollapsed)
+          }}
         >
           <span
             className="filter-section-name"
