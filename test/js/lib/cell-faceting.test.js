@@ -57,7 +57,7 @@ describe('Cell faceting', () => {
       'General_Celltype--group--study': ['LC1', 'LC2']
     }
     const newFilteredCells = filterCells(
-      selections, cellsByFacet, facets, filtersByFacet, filterableCells
+      selections, cellsByFacet, facets, filtersByFacet, filterableCells, facets
     )[0]
     expect(newFilteredCells).toHaveLength(33)
   })
