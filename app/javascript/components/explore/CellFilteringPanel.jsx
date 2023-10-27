@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faChevronDown, faChevronRight, faUndo } from '@fortawesome/free-solid-svg-icons'
 
 import Select from '~/lib/InstrumentedSelect'
 import LoadingSpinner from '~/lib/LoadingSpinner'
@@ -152,7 +152,7 @@ function CellFilter({
 /** Facet name and collapsible list of filter checkboxes */
 function CellFacet({
   facet,
-  checkedMap, handleCheck, handleCheckAllFilters, updateFilteredCells,
+  checkedMap, handleCheck, handleCheckAllFiltersInFacet, updateFilteredCells,
   isAllListsCollapsed
 }) {
   if (Object.keys(facet).length === 0) {
@@ -211,7 +211,7 @@ function CellFacet({
       <FacetHeader
         facet={facet}
         checkedMap={checkedMap}
-        handleCheckAllFilters={handleCheckAllFilters}
+        handleCheckAllFiltersInFacet={handleCheckAllFiltersInFacet}
         isFullyCollapsed={isFullyCollapsed}
         setIsFullyCollapsed={setIsFullyCollapsed}
       />
@@ -244,7 +244,7 @@ function CellFacet({
 
 /** Get stylized name of facet, optional tooltip, collapse controls */
 function FacetHeader({
-  facet, checkedMap, handleCheckAllFilters, isFullyCollapsed, setIsFullyCollapsed
+  facet, checkedMap, handleCheckAllFiltersInFacet, isFullyCollapsed, setIsFullyCollapsed
 }) {
   const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
   const isConventional = getIsConventionalAnnotation(rawFacetName)
@@ -289,7 +289,7 @@ function FacetHeader({
         data-analytics-name={`facet-${facet.annotation}`}
         name={`facet-${facet.annotation}`}
         onChange={event => {
-          handleCheckAllFilters(event)
+          handleCheckAllFiltersInFacet(event)
         }}
         checked={isFacetCheckboxSelected}
         ref={input => {
@@ -352,35 +352,55 @@ export function CellFilteringPanel({
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
   /** Top header for the "Filter" section, including all-facet controls */
-  function FilterSectionHeader({ isAllListsCollapsed, setIsAllListsCollapsed }) {
+  function FilterSectionHeader({ facets, checkedMap, handleResetFilters, isAllListsCollapsed, setIsAllListsCollapsed }) {
+    // Assess if filter-section-level checkbox should be indeterminate, i.e. "-",
+    // which is a common state in hierarchical checkboxes to indicate that
+    // some lower checkboxes are checked, and some are not.
+    let numTotalFilters = 0
+    facets.forEach(facet => numTotalFilters += facet.groups.length)
+    let numCheckedFilters = 0
+    Object.entries(checkedMap).forEach(([facet, filters]) => {
+      numCheckedFilters += filters.length
+    })
+    console.log('numTotalFilters', numTotalFilters)
+    console.log('numCheckedFilters', numCheckedFilters)
+    const isResetFiltersAvailable = numTotalFilters !== numCheckedFilters
+    const resetDisplayClass = isResetFiltersAvailable ? '' : 'hide-reset'
+
     return (
-      <div
-        className="filter-section-header"
-        onClick={() => {setIsAllListsCollapsed(!isAllListsCollapsed)}}
-      >
-        <input
-          type="checkbox"
-          className="root-checkbox"
-        />
+      <div className="filter-section-header">
+        <a
+          onClick={() => handleResetFilters()}
+          className={`reset-cell-filters ${resetDisplayClass}`}
+          data-analytics-name="reset-cell-filters"
+          data-toggle="tooltip"
+          data-original-title="Reset filters"
+        >
+          <FontAwesomeIcon icon={faUndo}/>
+        </a>
         <span
-          className="filter-section-name"
-          style={{ 'fontWeight': 'bold' }}
-          {...tooltipAttrs}
-          data-original-title="Use checkboxes to show or hide cells in plots.  Deselected values are
+          onClick={() => {setIsAllListsCollapsed(!isAllListsCollapsed)}}
+        >
+          <span
+            className="filter-section-name"
+            style={{ 'fontWeight': 'bold' }}
+            {...tooltipAttrs}
+            data-original-title="Use checkboxes to show or hide cells in plots.  Deselected values are
         assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
-        >Filter by</span>
-        <CollapseToggleChevron
-          isCollapsed={isAllListsCollapsed}
-          setIsCollapsed={setIsAllListsCollapsed}
-          whatToToggle="all filter lists"
-          isLoaded={true}
-        />
+          >Filter by</span>
+          <CollapseToggleChevron
+            isCollapsed={isAllListsCollapsed}
+            setIsCollapsed={setIsAllListsCollapsed}
+            whatToToggle="all filter lists"
+            isLoaded={true}
+          />
+        </span>
       </div>
     )
   }
 
   /** Add or remove all checked item from list */
-  function handleCheckAllFilters(event) {
+  function handleCheckAllFiltersInFacet(event) {
     const facetName = event.target.name.split(':')[0].replace('facet-', '')
     const isCheck = event.target.checked
     const allFiltersInFacet = facets.find(f => f.annotation === facetName).groups
@@ -388,6 +408,17 @@ export function CellFilteringPanel({
     checkedMap[facetName] = updatedList
     setCheckedMap(checkedMap)
     updateFilteredCells(checkedMap)
+  }
+
+  /** Reset all filters to initial, selected state */
+  function handleResetFilters() {
+    const initSelection = {}
+    facets.forEach(facet => {
+      initSelection[facet.annotation] = facet.groups
+    })
+
+    setCheckedMap(initSelection)
+    updateFilteredCells(initSelection)
   }
 
   /** Add or remove checked item from list */
@@ -453,8 +484,10 @@ export function CellFilteringPanel({
         { Object.keys(checkedMap).length !== 0 &&
         <>
           <div className="filter-section" style={{ marginTop: '10px', marginLeft: '-10px' }}>
-            {/* <div style={{ marginTop: '10px' }}> */}
             <FilterSectionHeader
+              facets={facets}
+              checkedMap={checkedMap}
+              handleResetFilters={handleResetFilters}
               isAllListsCollapsed={isAllListsCollapsed}
               setIsAllListsCollapsed={setIsAllListsCollapsed}
             />
@@ -465,7 +498,7 @@ export function CellFilteringPanel({
                     facet={facet}
                     checkedMap={checkedMap}
                     handleCheck={handleCheck}
-                    handleCheckAllFilters={handleCheckAllFilters}
+                    handleCheckAllFiltersInFacet={handleCheckAllFiltersInFacet}
                     updateFilteredCells={updateFilteredCells}
                     isAllListsCollapsed={isAllListsCollapsed}
                     key={i}

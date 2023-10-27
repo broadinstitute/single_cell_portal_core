@@ -50,7 +50,7 @@
 }
 
 input.cell-facet-header-checkbox,
-input.root-checkbox {
+input.reset-cell-filters {
   display: inline;
   margin-right: 5px;
   position: relative;
@@ -111,16 +111,18 @@ input.root-checkbox {
 
 .cell-facet .cell-filters-shown .facet-toggle-chevron,
 .cell-facet .cell-facet-header-checkbox,
-.filter-section .root-checkbox {
+.filter-section .reset-cell-filters,
+.filter-section:hover .reset-cell-filters.hide-reset {
   visibility: hidden;
 }
 
 .cell-facet:hover .cell-filters-shown .facet-toggle-chevron,
 .cell-facet:hover .cell-facet-header-checkbox,
 .cell-facet:has(.cell-filters-hidden) .cell-facet-header-checkbox,
-.filter-section:hover .root-checkbox {
+.filter-section:hover .reset-cell-filters {
   visibility: visible;
 }
+
 
 .facet-tools {
   float: right;
