@@ -44,17 +44,44 @@
   cursor: pointer;
 }
 
-.cell-facet-header {
-  padding-bottom: 5px;
+.facet-toggle-chevron {
+  position: relative;
+  top: 2px;
 }
 
-.cell-facet-header.cell-filters-hidden {
-  padding-bottom: 0px;
+input.cell-facet-header-checkbox {
+  display: inline;
+  margin-right: 5px;
+  position: relative;
+  top: -1px;
+  cursor: pointer;
+}
+
+.cell-facet-name {
+  font-weight: bold;
+  margin-bottom: 5px;
+  vertical-align: top;
+  display: inline-block;
+  width: calc(100% - 40px);
+}
+
+.cell-facet:has(.cell-filters-hidden) {
+  .cell-facet-name {
+    margin-bottom: 0px;
+  }
+}
+
+.cell-facet-name {
+  font-weight: bold;
+  vertical-align: top;
+  display: inline-block;
+  width: calc(100% - 40px);
 }
 
 .filter-section-header {
   padding-bottom: 5px;
   border-bottom: 1px solid #DDD;
+  margin-bottom: 3px;
 }
 
 .cell-facet {
@@ -88,3 +115,8 @@
   visibility: visible;
 }
 
+.facet-tools {
+  float: right;
+  margin-right: 5px;
+  margin-top: -1px;
+}

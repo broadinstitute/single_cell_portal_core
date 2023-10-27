@@ -88,7 +88,7 @@ function CollapseToggleChevron({ isCollapsed, whatToToggle, isLoaded }) {
   }
 
   return (
-    <span style={{ float: 'right', marginRight: '5px' }}>
+    <span className="facet-tools">
       {!isLoaded &&
       <span
         {...tooltipAttrs}
@@ -249,12 +249,7 @@ function FacetHeader({
   const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
   const isConventional = getIsConventionalAnnotation(rawFacetName)
 
-  const facetNameStyle = {
-    fontWeight: 'bold',
-    marginBottom: '1px',
-    display: 'inline-block',
-    width: 'calc(100% - 40px)'
-  }
+  const facetNameStyle = {}
   const tooltipableFacetNameStyle = {
     width: 'content-fit'
   }
@@ -290,9 +285,9 @@ function FacetHeader({
     <div>
       <input
         type="checkbox"
+        className="cell-facet-header-checkbox"
         data-analytics-name={`facet-${facet.annotation}`}
         name={`facet-${facet.annotation}`}
-        style={{ display: 'inline', marginRight: '5px' }}
         onChange={event => {
           handleCheckAllFilters(event)
         }}
@@ -307,7 +302,7 @@ function FacetHeader({
         className={`cell-facet-header ${toggleClass}`}
         onClick={() => {setIsFullyCollapsed(!isFullyCollapsed)}}
       >
-        <span style={facetNameStyle}>
+        <span className="cell-facet-name">
           <span
             style={tooltipableFacetNameStyle}
             data-original-title={title}
