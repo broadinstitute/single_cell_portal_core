@@ -47,6 +47,7 @@
 .facet-toggle-chevron {
   position: relative;
   top: 2px;
+  left: 4px;
 }
 
 input.cell-facet-header-checkbox {
@@ -74,7 +75,7 @@ input.cell-facet-header-checkbox {
 .filter-section-name {
   margin-bottom: 0px;
   margin-left: 18px;
-  width: calc(100% - 60px);
+  width: fit-content;
 }
 
 .cell-facet:has(.cell-filters-hidden) {
@@ -87,7 +88,10 @@ input.cell-facet-header-checkbox {
   font-weight: bold;
   vertical-align: top;
   display: inline-block;
-  width: calc(100% - 40px);
+}
+
+.cell-facet-name.loading {
+  width: calc(100% - 60px);
 }
 
 .filter-section-header {

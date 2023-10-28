@@ -425,8 +425,8 @@ export async function initCellFaceting(
   perfTimes.fetch = Date.now() - timeFetchStart
 
   // Below line is worth keeping, but only uncomment to debug in development.
-  // This helps simulate waiting on server response, even when using local
-  // service worker caching.
+  // This helps simulate waiting on server response, to slow data load even
+  // when using local service worker caching.
   //
   // await new Promise(resolve => setTimeout(resolve, 3000))
 

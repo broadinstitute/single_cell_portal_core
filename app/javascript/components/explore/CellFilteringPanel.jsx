@@ -301,6 +301,8 @@ function FacetHeader({
   const tooltipableFacetNameStyle = {
     width: 'content-fit'
   }
+
+  const loadingClass = !facet.isLoaded ? 'loading' : ''
   if (!facet.isLoaded) {
     facetNameStyle.color = '#777'
     facetNameStyle.cursor = 'default'
@@ -350,7 +352,7 @@ function FacetHeader({
         className={`cell-facet-header ${toggleClass}`}
         onClick={() => setIsFullyCollapsed(!isFullyCollapsed)}
       >
-        <span className="cell-facet-name">
+        <span className={`cell-facet-name ${loadingClass}`}>
           <span
             style={tooltipableFacetNameStyle}
             data-original-title={title}
@@ -402,34 +404,33 @@ export function CellFilteringPanel({
   /** Top header for the "Filter" section, including all-facet controls */
   function FilterSectionHeader({ facets, checkedMap, handleResetFilters, isAllListsCollapsed, setIsAllListsCollapsed }) {
     return (
-      <div className="filter-section-header">
+      <div
+        className="filter-section-header"
+        onClick={event => {
+          if (Array.from(event.target.classList).includes('fa-undo')) {
+            // Don't toggle facet collapse on "Reset filters" button click
+            return
+          }
+          setIsAllListsCollapsed(!isAllListsCollapsed)
+        }}
+      >
         <span
-          onClick={event => {
-            if (Array.from(event.target.classList).includes('fa-undo')) {
-              // Don't toggle facet collapse on "Reset filters" button click
-              return
-            }
-            setIsAllListsCollapsed(!isAllListsCollapsed)
-          }}
-        >
-          <span
-            className="filter-section-name"
-            style={{ 'fontWeight': 'bold' }}
-            {...tooltipAttrs}
-            data-original-title="Use checkboxes to show or hide cells in plots.  Deselected values are
+          className="filter-section-name"
+          style={{ 'fontWeight': 'bold' }}
+          {...tooltipAttrs}
+          data-original-title="Use checkboxes to show or hide cells in plots.  Deselected values are
         assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
-          >Filter by</span>
-          <FacetTools
-            isCollapsed={isAllListsCollapsed}
-            setIsCollapsed={setIsAllListsCollapsed}
-            whatToToggle="all filter lists"
-            isLoaded={true}
-            isRoot={true}
-            facets={facets}
-            checkedMap={checkedMap}
-            handleResetFilters={handleResetFilters}
-          />
-        </span>
+        >Filter by</span>
+        <FacetTools
+          isCollapsed={isAllListsCollapsed}
+          setIsCollapsed={setIsAllListsCollapsed}
+          whatToToggle="all filter lists"
+          isLoaded={true}
+          isRoot={true}
+          facets={facets}
+          checkedMap={checkedMap}
+          handleResetFilters={handleResetFilters}
+        />
       </div>
     )
   }
