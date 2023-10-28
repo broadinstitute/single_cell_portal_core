@@ -218,16 +218,6 @@ function CellFacet({
 
   const filters = facet.groups
 
-  // TODO: Uncommenting below and replacing `filters` with `sortedFilters` in
-  // this function makes the _filter list_ naturally sorted, but subtly
-  // (and severely) causes a mismatch between the selected filter label and the
-  // group of plotted cells that actually gets hidden in the plot.
-  //
-  // Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
-  // const sortedFilters = facet.groups.sort((a, b) => {
-  //   return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
-  // })
-
   // Handle truncating filter lists to account for any full or partial collapse
   let shownFilters = filters
   const numFiltersPartlyCollapsed = 5
@@ -392,10 +382,35 @@ export function CellFilteringPanel({
     )
   }
 
+
+  // TODO: Uncommenting below and replacing `filters` with `sortedFilters` in
+  // this function makes the _filter list_ naturally sorted, but subtly
+  // (and severely) causes a mismatch between the selected filter label and the
+  // group of plotted cells that actually gets hidden in the plot.
+
+  // Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
+  // const sortedFilters = facet.groups.sort((a, b) => {
+  //   return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
+  // })
+
   const facets = cellFaceting.facets.map(facet => {
+    // Add counts of matching cells for each filter to its containing facet object
     facet.filterCounts = cellFilterCounts[facet.annotation]
+
+    // Sort categorical filters (i.e., groups)
+    const initCounts = cellFaceting.filterCounts[facet.annotation]
+    if (initCounts) {
+      if (!facet.unsortedGroups) {facet.unsortedGroups = facet.groups}
+      const sortedGroups = facet.groups.sort((a, b) => {
+        if (initCounts[a] && initCounts[b]) {
+          return initCounts[b] - initCounts[a]
+        }
+      })
+      facet.groups = sortedGroups
+    }
     return facet
   })
+
   const [checkedMap, setCheckedMap] = useState(cellFilteringSelection)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const shownFacets = facets.filter(facet => facet.groups.length > 1)
