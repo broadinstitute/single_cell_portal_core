@@ -407,7 +407,9 @@ export function CellFilteringPanel({
       <div
         className="filter-section-header"
         onClick={event => {
-          if (Array.from(event.target.classList).includes('fa-undo')) {
+          console.log('event.target.classList', event.target.classList)
+          const domClasses = Array.from(event.target.classList)
+          if (domClasses.includes('fa-undo') || domClasses.length === 0) {
             // Don't toggle facet collapse on "Reset filters" button click
             return
           }
