@@ -97,7 +97,7 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
   const numFacetsSelected = Object.keys(selection).length
   const numFiltersSelected = Object.values(selection).reduce((numFilters, selectedFiltersForThisFacet) => {
     // return accumulator (an integer) + current value (an array, specifically its length)
-    return numFilters + selectedFiltersForThisFacet.length
+    return numFilters + selectedFiltersForThisFacet?.length
   }, 0)
   const filterLogProps = {
     'perfTime': filterPerfTime,
@@ -425,8 +425,8 @@ export async function initCellFaceting(
   perfTimes.fetch = Date.now() - timeFetchStart
 
   // Below line is worth keeping, but only uncomment to debug in development.
-  // This helps simulate waiting on server response, even when using local
-  // service worker caching.
+  // This helps simulate waiting on server response, to slow data load even
+  // when using local service worker caching.
   //
   // await new Promise(resolve => setTimeout(resolve, 3000))
 
