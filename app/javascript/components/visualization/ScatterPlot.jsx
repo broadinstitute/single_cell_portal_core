@@ -984,7 +984,6 @@ export function reassignFilteredCells(
   for (let i = 0; i < originalData['x'].length; i++) {
     if (!plottedSet.has(i)) {reassignedIndices.push(i)}
   }
-  console.log(`reassignedIndices: ${JSON.stringify(reassignedIndices)} `)
   const newPlotData = {}
   const keys = Object.keys(originalData)
   keys.forEach(key => {
