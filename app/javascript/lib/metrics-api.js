@@ -335,8 +335,10 @@ export function logMenuChange(event) {
 /**
  * Log JS error (e.g. uncaught ReferenceError) to console, Sentry, and Mixpanel
  */
-export function logError(text, error = {}) {
-  console.error(error.message)
+export function logError(text, error) {
+  const message = error ? error.message : text
+
+  console.error(message)
 
   const props = { text, error }
   log('error', props) // Log to Mixpanel
