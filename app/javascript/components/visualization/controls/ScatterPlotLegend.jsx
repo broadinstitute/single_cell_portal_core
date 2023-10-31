@@ -242,11 +242,18 @@ export default function ScatterPlotLegend({
     log('hover:scatterlegend', { numLabels })
   }
 
-  // defermine what position from colorBrewerList maps to a given label
-  // takes into account whether items have been filtered out via cell filtering
+  let sortedOriginalLabels
+  if (originalLabels.length > 0) {
+    sortedOriginalLabels = [...originalLabels].sort(PlotUtils.labelSort)
+  }
+
+  /**
+   * Determine what position from colorBrewerList maps to a given label
+   * takes into account whether items have been filtered out via cell filtering
+   */
   function getColorIndex(label, index) {
     if (originalLabels.length > 0) {
-      return [...originalLabels].sort(PlotUtils.labelSort).indexOf(label)
+      return sortedOriginalLabels.indexOf(label)
     } else {
       return index
     }
@@ -262,7 +269,7 @@ export default function ScatterPlotLegend({
   /** retrieve the color for the label specified (used for filtered legends) */
   function getColorForLabelIcon(specifiedLabel) {
     const labelAndColor = fullLabelsMappedToColor.find(legendItem => legendItem.label === specifiedLabel)
-    return labelAndColor.iconColor
+    return labelAndColor?.iconColor
   }
 
   /** Update the labels to be shown in the legend based on the user filtering (used for filtered legends) */

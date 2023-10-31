@@ -29,7 +29,9 @@ jest.mock('lib/cell-faceting', () => {
 import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import * as UserProvider from '~/providers/UserProvider'
-import ExploreDisplayTabs, { getEnabledTabs } from 'components/explore/ExploreDisplayTabs'
+import ExploreDisplayTabs, {
+  getEnabledTabs, handleClusterSwitchForFiltering
+} from 'components/explore/ExploreDisplayTabs'
 import ExploreDisplayPanelManager from '~/components/explore/ExploreDisplayPanelManager'
 import PlotTabs from 'components/explore/PlotTabs'
 import {
@@ -430,5 +432,53 @@ describe('explore tabs are activated based on study info and parameters', () => 
     )
 
     expect(screen.getByTestId('cell-filtering-button')).toHaveTextContent('Filtering unavailable')
+  })
+
+  it('Cell faceting handles new cluster that has annotations not in previous cluster', async () => {
+    // Old set of selections, for previous clustering
+    const cellFilteringSelection = {
+      'cell_type__ontology_label--group--study': [
+        'epithelial cell', 'macrophage', 'neutrophil', 'B cell',
+        'T cell', 'dendritic cell', 'eosinophil', 'fibroblast'
+      ],
+      'infant_sick_YN--group--study': ['no', 'NA', 'yes']
+    }
+
+
+    // Raw material of selections for new clustering, which has an annotation not in previous clustering
+    const newCellFaceting = {
+      facets: [
+        {
+          'annotation': 'cell_type__ontology_label--group--study',
+          'groups': ['epithelial cell']
+        },
+        {
+          'annotation': 'infant_sick_YN--group--study',
+          'groups': ['no', 'NA', 'yes']
+        },
+        {
+          'annotation': 'Epithelial Cell Subclusters--group--cluster',
+          'groups': [
+            'Secretory Lactocytes', 'LC1', 'KRT high lactocytes 1', 'Cycling Lactocytes',
+            'MT High Secretory Lactocytes', 'KRT high lactocytes 2'
+          ]
+        }
+      ]
+    }
+
+    // Mock function for React setter
+    const setCellFilteringSelection = jest.fn()
+
+    handleClusterSwitchForFiltering(cellFilteringSelection, newCellFaceting, setCellFilteringSelection)
+
+    // Confirm React setter for selection includes new facet
+    expect(setCellFilteringSelection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        'Epithelial Cell Subclusters--group--cluster': [
+          'Secretory Lactocytes', 'LC1', 'KRT high lactocytes 1', 'Cycling Lactocytes',
+          'MT High Secretory Lactocytes', 'KRT high lactocytes 2'
+        ]
+      })
+    )
   })
 })
