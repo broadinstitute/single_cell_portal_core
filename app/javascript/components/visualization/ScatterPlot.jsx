@@ -984,6 +984,7 @@ export function reassignFilteredCells(
   for (let i = 0; i < originalData['x'].length; i++) {
     if (!plottedSet.has(i)) {reassignedIndices.push(i)}
   }
+  console.log(`reassignedIndices: ${JSON.stringify(reassignedIndices)} `)
   const newPlotData = {}
   const keys = Object.keys(originalData)
   keys.forEach(key => {
@@ -1002,7 +1003,8 @@ export function reassignFilteredCells(
         newPlotData[key].push(FILTERED_TRACE_COLOR)
       } else {
         const dataArray = originalData[key]
-        const replottedElement = dataArray[idx]
+        const sourceIndex = reassignedIndices[idx]
+        const replottedElement = dataArray[sourceIndex]
         newPlotData[key].push(replottedElement)
       }
     }
