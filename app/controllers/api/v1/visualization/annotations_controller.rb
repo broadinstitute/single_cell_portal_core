@@ -277,7 +277,8 @@ module Api
             study_file_id = scope == 'study' ? @study.metadata_file.id : cluster.study_file_id
             array_query = {
               name: annotation[:name], array_type: 'annotations', linear_data_type: data_obj.class.name,
-              linear_data_id: data_obj.id, study_id: @study.id, study_file_id:
+              linear_data_id: data_obj.id, study_id: @study.id, study_file_id:, subsample_annotation: nil,
+              subsample_threshold: nil
             }
             annotation_arrays[identifier] = DataArray.concatenate_arrays(array_query)
             facets << { annotation: identifier, groups: annotation[:values] }
