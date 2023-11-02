@@ -256,7 +256,7 @@ function CellFacet({
   //  Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
   if (sortKey === 'label') {
     filters = unsortedFilters.sort((a, b) => {
-      return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
+      return a.localeCompare(b, 'en', { numeric: true, ignorePunctuation: true })
     })
   } else {
     // Sort categorical filters (i.e., groups)
