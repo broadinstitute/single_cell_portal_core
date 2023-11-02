@@ -1002,7 +1002,8 @@ export function reassignFilteredCells(
         newPlotData[key].push(FILTERED_TRACE_COLOR)
       } else {
         const dataArray = originalData[key]
-        const replottedElement = dataArray[idx]
+        const sourceIndex = reassignedIndices[idx]
+        const replottedElement = dataArray[sourceIndex]
         newPlotData[key].push(replottedElement)
       }
     }
