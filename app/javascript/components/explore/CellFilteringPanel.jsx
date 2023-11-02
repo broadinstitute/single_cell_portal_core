@@ -79,20 +79,14 @@ function parseAnnotationName(annotationIdentifier) {
 }
 
 /** UI control to update how filters are sorted */
-function SortFiltersIcon({ facet, sortKeysByFacet, setSortKeysByFacet }) {
-  const sortKey = sortKeysByFacet[facet.annotation]
-
-  console.log('sortKey', sortKey)
+function SortFiltersIcon({ facet, sortKey, setSortKey }) {
   const icon = sortKey === 'count' ? faSortAlphaDown : faSortAmountDown
   const nextSortKey = sortKey === 'count' ? 'label' : 'count'
 
   return (
     <span
       onClick={() => {
-        console.log('in SortFiltersIcon onClick')
-        const newSortKeys = sortKeysByFacet
-        newSortKeys[facet.annotation] = nextSortKey
-        setSortKeysByFacet(newSortKeys)
+        setSortKey(nextSortKey)
       }}
       className={`sort-filters sort-filters-${sortKey}"`}
       data-analytics-name={`sort-filters sort-filters-${sortKey}"`}
@@ -108,8 +102,8 @@ function SortFiltersIcon({ facet, sortKeysByFacet, setSortKeysByFacet }) {
 function FacetTools({
   isCollapsed, whatToToggle,
   isLoaded,
-  sortKeysByFacet,
-  setSortKeysByFacet,
+  sortKey,
+  setSortKey,
   facet=null,
   isRoot=false, facets, checkedMap, handleResetFilters
 }) {
@@ -127,8 +121,8 @@ function FacetTools({
       {isLoaded && !isRoot && !isCollapsed &&
       <SortFiltersIcon
         facet={facet}
-        sortKeysByFacet={sortKeysByFacet}
-        setSortKeysByFacet={setSortKeysByFacet}
+        sortKey={sortKey}
+        setSortKey={setSortKey}
       />
       }
       {isRoot &&
@@ -178,10 +172,10 @@ function CollapseToggleChevron({ isCollapsed, whatToToggle }) {
   let toggleIcon
   let toggleIconTooltipText
   if (!isCollapsed) {
-    toggleIcon = <FontAwesomeIcon icon={faChevronDown} />
+    toggleIcon = <FontAwesomeIcon className="chevron-down" icon={faChevronDown} />
     toggleIconTooltipText = `Hide ${whatToToggle}`
   } else {
-    toggleIcon = <FontAwesomeIcon icon={faChevronRight} />
+    toggleIcon = <FontAwesomeIcon className="chevron-right" icon={faChevronRight} />
     toggleIconTooltipText = `Show ${whatToToggle}`
   }
 
@@ -240,8 +234,7 @@ function CellFilter({
 function CellFacet({
   facet,
   checkedMap, handleCheck, handleCheckAllFiltersInFacet, updateFilteredCells,
-  isAllListsCollapsed,
-  sortKeysByFacet, setSortKeysByFacet
+  isAllListsCollapsed
 }) {
   if (Object.keys(facet).length === 0) {
     // Only create the list if the facet exists
@@ -255,8 +248,26 @@ function CellFacet({
 
   const [isPartlyCollapsed, setIsPartlyCollapsed] = useState(true)
   const [isFullyCollapsed, setIsFullyCollapsed] = useState(defaultIsFullyCollapsed)
+  const [sortKey, setSortKey] = useState('count')
 
-  const filters = facet.groups
+  const unsortedFilters = facet.unsortedGroups
+  let filters
+
+  //  Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
+  if (sortKey === 'label') {
+    filters = unsortedFilters.sort((a, b) => {
+      return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
+    })
+  } else {
+    // Sort categorical filters (i.e., groups)
+    const filterCounts = facet.filterCounts
+    const sortedGroups = facet.unsortedGroups.sort((a, b) => {
+      if (filterCounts[a] && filterCounts[b]) {
+        return filterCounts[b] - filterCounts[a]
+      }
+    })
+    filters = sortedGroups
+  }
 
   // Handle truncating filter lists to account for any full or partial collapse
   let shownFilters = filters
@@ -271,6 +282,7 @@ function CellFacet({
   useEffect(() => {
     setIsFullyCollapsed(isAllListsCollapsed)
   }, [isAllListsCollapsed])
+
 
   let facetStyle = {}
   if (!facet.isLoaded) {
@@ -292,8 +304,8 @@ function CellFacet({
         handleCheckAllFiltersInFacet={handleCheckAllFiltersInFacet}
         isFullyCollapsed={isFullyCollapsed}
         setIsFullyCollapsed={setIsFullyCollapsed}
-        sortKeysByFacet={sortKeysByFacet}
-        setSortKeysByFacet={setSortKeysByFacet}
+        sortKey={sortKey}
+        setSortKey={setSortKey}
       />
       {shownFilters.map((filter, i) => {
         return (
@@ -325,7 +337,7 @@ function CellFacet({
 /** Get stylized name of facet, optional tooltip, collapse controls */
 function FacetHeader({
   facet, checkedMap, handleCheckAllFiltersInFacet, isFullyCollapsed, setIsFullyCollapsed,
-  sortKeysByFacet, setSortKeysByFacet
+  sortKey, setSortKey
 }) {
   const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
   const isConventional = getIsConventionalAnnotation(rawFacetName)
@@ -365,7 +377,7 @@ function FacetHeader({
   )
 
   return (
-    <div>
+    <>
       <input
         type="checkbox"
         className="cell-facet-header-checkbox"
@@ -385,11 +397,17 @@ function FacetHeader({
         className={`cell-facet-header ${toggleClass}`}
         onClick={event => {
           const domClasses = Array.from(event.target.classList)
+          const parentDomClasses = Array.from(event.target.parentNode.classList)
           if (
             domClasses.includes('fa-sort-alpha-down') ||
-            domClasses.includes('fa-sort-amount-down')
+            domClasses.includes('fa-sort-amount-down') ||
+            domClasses.length === 0 && (
+              // Accounts for click on the sort icon SVG `path` element itself
+              parentDomClasses.includes('fa-sort-alpha-down') ||
+              parentDomClasses.includes('fa-sort-amount-down')
+            )
           ) {
-            // Don't toggle facet collapse on "Reset filters" button click
+            // Don't toggle facet collapse on sort icon click
             return
           }
           setIsFullyCollapsed(!isFullyCollapsed)
@@ -405,15 +423,15 @@ function FacetHeader({
           </span>
         </span>
         <FacetTools
-          sortKeysByFacet={sortKeysByFacet}
-          setSortKeysByFacet={setSortKeysByFacet}
+          sortKey={sortKey}
+          setSortKey={setSortKey}
           isCollapsed={isFullyCollapsed}
           whatToToggle="filter list"
           facet={facet}
           isLoaded={facet.isLoaded}
         />
       </span>
-    </div>
+    </>
   )
 }
 
@@ -438,21 +456,7 @@ export function CellFilteringPanel({
     )
   }
 
-  // TODO: Uncommenting below and replacing `filters` with `sortedFilters` in
-  // this function makes the _filter list_ naturally sorted, but subtly
-  // (and severely) causes a mismatch between the selected filter label and the
-  // group of plotted cells that actually gets hidden in the plot.
-
-  // Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
-  // const sortedFilters = facet.groups.sort((a, b) => {
-  //   return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
-  // })
-
-  const defaultSortKeysByFacet = {}
-  cellFaceting.facets.forEach(facet => {
-    defaultSortKeysByFacet[facet.annotation] = 'count'
-  })
-  const [sortKeysByFacet, setSortKeysByFacet] = useState(defaultSortKeysByFacet)
+  const [sortKeysByFacet, setSortKeysByFacet] = useState(null)
 
   const facets = cellFaceting.facets.map(facet => {
     // Add counts of matching cells for each filter to its containing facet object
@@ -484,11 +488,10 @@ export function CellFilteringPanel({
         className="filter-section-header"
         onClick={event => {
           const domClasses = Array.from(event.target.classList)
-          console.log('domClasses', domClasses)
           if (
             domClasses.includes('fa-undo') ||
-            domClasses.includes('sort-filters') ||
-            domClasses.length === 0) {
+            domClasses.length === 0
+          ) {
             // Don't toggle facet collapse on "Reset filters" button click
             return
           }
