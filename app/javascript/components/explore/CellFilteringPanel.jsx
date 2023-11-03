@@ -79,7 +79,7 @@ function parseAnnotationName(annotationIdentifier) {
 }
 
 /** UI control to update how filters are sorted */
-function SortFiltersIcon({ facet, sortKey, setSortKey }) {
+function SortFiltersIcon({ sortKey, setSortKey }) {
   const icon = sortKey === 'count' ? faSortAlphaDown : faSortAmountDown
   const nextSortKey = sortKey === 'count' ? 'label' : 'count'
 
@@ -90,7 +90,7 @@ function SortFiltersIcon({ facet, sortKey, setSortKey }) {
       }}
       className={`sort-filters sort-filters-${sortKey}`}
       data-analytics-name={`sort-filters sort-filters-${sortKey}`}
-      data-toggle="tooltip"
+      {...tooltipAttrs}
       data-original-title={`Sort filters by ${nextSortKey}`}
     >
       <FontAwesomeIcon icon={icon}/>
@@ -260,7 +260,7 @@ function CellFacet({
     })
   } else {
     // Sort categorical filters (i.e., groups)
-    const filterCounts = facet.filterCounts
+    const filterCounts = facet.originalFilterCounts
     const sortedGroups = facet.unsortedGroups.sort((a, b) => {
       if (filterCounts[a] && filterCounts[b]) {
         return filterCounts[b] - filterCounts[a]
@@ -473,6 +473,7 @@ export function CellFilteringPanel({
     const initCounts = cellFaceting.filterCounts[facet.annotation]
     if (initCounts) {
       if (!facet.unsortedGroups) {facet.unsortedGroups = facet.groups}
+      if (!facet.originalFilterCounts) {facet.originalFilterCounts = initCounts}
       const sortedGroups = facet.groups.sort((a, b) => {
         if (initCounts[a] && initCounts[b]) {
           return initCounts[b] - initCounts[a]
