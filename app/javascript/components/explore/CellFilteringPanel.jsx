@@ -88,8 +88,8 @@ function SortFiltersIcon({ facet, sortKey, setSortKey }) {
       onClick={() => {
         setSortKey(nextSortKey)
       }}
-      className={`sort-filters sort-filters-${sortKey}"`}
-      data-analytics-name={`sort-filters sort-filters-${sortKey}"`}
+      className={`sort-filters sort-filters-${sortKey}`}
+      data-analytics-name={`sort-filters sort-filters-${sortKey}`}
       data-toggle="tooltip"
       data-original-title={`Sort filters by ${nextSortKey}`}
     >
@@ -334,6 +334,15 @@ function CellFacet({
   )
 }
 
+/** Determine if a list of DOM classes includes one used for the sort-icon */
+function includesSortIconClass(domClasses) {
+  return (
+    domClasses.includes('fa-sort-alpha-down') ||
+    domClasses.includes('fa-sort-amount-down') ||
+    domClasses.includes('sort-filters')
+  )
+}
+
 /** Get stylized name of facet, optional tooltip, collapse controls */
 function FacetHeader({
   facet, checkedMap, handleCheckAllFiltersInFacet, isFullyCollapsed, setIsFullyCollapsed,
@@ -399,12 +408,10 @@ function FacetHeader({
           const domClasses = Array.from(event.target.classList)
           const parentDomClasses = Array.from(event.target.parentNode.classList)
           if (
-            domClasses.includes('fa-sort-alpha-down') ||
-            domClasses.includes('fa-sort-amount-down') ||
+            includesSortIconClass(domClasses) ||
             domClasses.length === 0 && (
               // Accounts for click on the sort icon SVG `path` element itself
-              parentDomClasses.includes('fa-sort-alpha-down') ||
-              parentDomClasses.includes('fa-sort-amount-down')
+              includesSortIconClass(parentDomClasses)
             )
           ) {
             // Don't toggle facet collapse on sort icon click
