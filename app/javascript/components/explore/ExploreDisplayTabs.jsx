@@ -80,7 +80,6 @@ export function handleClusterSwitchForFiltering(cellFilteringSelection, newCellF
 function getCellFacetingData(cluster, annotation, setterFunctions, context, prevCellFaceting) {
   const [
     setCellFilteringSelection,
-    setCellFilteringSortKeys,
     setClusterCanFilter,
     setFilterErrorText,
     setCellFilterCounts,
@@ -102,13 +101,10 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
       ).then(newCellFaceting => {
         if (!cellFilteringSelection) {
           const initSelection = {}
-          const initSortKeys = {}
           newCellFaceting.facets.forEach(facet => {
             initSelection[facet.annotation] = facet.groups
-            initSortKeys[facet.annotation] = 'count'
           })
           setCellFilteringSelection(initSelection)
-          setCellFilteringSortKeys(initSortKeys)
         }
 
         // Handle switching to a new clustering that has annotations (i.e., facets) not in previous clustering
@@ -189,7 +185,6 @@ export default function ExploreDisplayTabs({
   const [filteredCells, setFilteredCells] = useState(null)
   const [cellFilterCounts, setCellFilterCounts] = useState(null)
   const [cellFilteringSelection, setCellFilteringSelection] = useState(null)
-  const [cellFilteringSortKeys, setCellFilteringSortKeys] = useState(null)
 
   // flow/error handling for cell filtering
   const [clusterCanFilter, setClusterCanFilter] = useState(true)
@@ -251,7 +246,6 @@ export default function ExploreDisplayTabs({
     const [newCluster, newAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
     const setterFunctions = [
       setCellFilteringSelection,
-      setCellFilteringSortKeys,
       setClusterCanFilter,
       setFilterErrorText,
       setCellFilterCounts,
@@ -260,8 +254,7 @@ export default function ExploreDisplayTabs({
     const context = {
       exploreInfo,
       studyAccession,
-      cellFilteringSelection,
-      cellFilteringSortKeys
+      cellFilteringSelection
     }
     getCellFacetingData(newCluster, newAnnot, setterFunctions, context)
   }, [exploreParams?.cluster, exploreParams?.annotation])
@@ -287,11 +280,6 @@ export default function ExploreDisplayTabs({
     setFilteredCells(newFilteredCells)
     setCellFilterCounts(newFilterCounts)
     setCellFilteringSelection(selection)
-  }
-
-  /** Update sorts keys by facet */
-  function updateCellFilteringSortKeysByFacet(sortKeys) {
-    setCellFilteringSelection(sortKeys)
   }
 
   // Below line is worth keeping, but only uncomment to debug in development
@@ -595,8 +583,6 @@ export default function ExploreDisplayTabs({
             setShowDeGroupPicker={setShowDeGroupPicker}
             cellFaceting={cellFaceting}
             cellFilteringSelection={cellFilteringSelection}
-            cellFilteringSortKeys={cellFilteringSortKeys}
-            updateCellFilteringSortKeysByFacet={updateCellFilteringSortKeysByFacet}
             cellFilterCounts={cellFilterCounts}
             clusterCanFilter={clusterCanFilter}
             filterErrorText ={filterErrorText}

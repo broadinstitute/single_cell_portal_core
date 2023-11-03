@@ -461,30 +461,11 @@ export async function initCellFaceting(
   const timeTrimNullFiltersStart = Date.now()
   const cellFaceting = trimNullFilters(rawCellFaceting)
   perfTimes.trimNullFilters = Date.now() - timeTrimNullFiltersStart
-
-  cellFaceting.facets = cellFaceting.facets.map(facet => {
-    // Sort categorical filters (i.e., groups) by count by default
-    const initCounts = cellFaceting.filterCounts[facet.annotation]
-    if (initCounts) {
-      if (!facet.unsortedGroups) {facet.unsortedGroups = facet.groups}
-      if (!facet.originalFilterCounts) {facet.originalFilterCounts = initCounts}
-      const sortedGroups = facet.groups.sort((a, b) => {
-        if (initCounts[a] && initCounts[b]) {
-          return initCounts[b] - initCounts[a]
-        }
-      })
-      facet.groups = sortedGroups
-    }
-    return facet
-  })
-
-  console.log('0 cellFaceting.facets', cellFaceting.facets)
-
   perfTimes = logInitCellFaceting(timeStart, perfTimes, cellFaceting, prevCellFaceting)
   cellFaceting.perfTimes = perfTimes
 
   // Below line is worth keeping, but only uncomment to debug in development
-  window.SCP.cellFaceting = cellFaceting
+  // window.SCP.cellFaceting = cellFaceting
   return cellFaceting
 }
 

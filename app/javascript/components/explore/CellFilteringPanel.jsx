@@ -80,15 +80,14 @@ function parseAnnotationName(annotationIdentifier) {
 }
 
 /** UI control to update how filters are sorted */
-function SortFiltersIcon({ facet, handleSort, sortKey }) {
-  console.log('in SortFiltersIcon, sortKey', sortKey)
+function SortFiltersIcon({ sortKey, setSortKey }) {
   const icon = sortKey === 'count' ? faSortAlphaDown : faSortAmountDown
   const nextSortKey = sortKey === 'count' ? 'label' : 'count'
 
   return (
     <span
       onClick={() => {
-        handleSort(facet)
+        setSortKey(nextSortKey)
         log('sort-filters', { sortKey })
       }}
       className={`sort-filters sort-filters-${sortKey}`}
@@ -106,7 +105,7 @@ function FacetTools({
   isCollapsed, whatToToggle,
   isLoaded,
   sortKey,
-  handleSort,
+  setSortKey,
   facet=null,
   isRoot=false, facets, checkedMap, handleResetFilters
 }) {
@@ -125,7 +124,7 @@ function FacetTools({
       <SortFiltersIcon
         facet={facet}
         sortKey={sortKey}
-        handleSort={handleSort}
+        setSortKey={setSortKey}
       />
       }
       {isRoot &&
@@ -237,8 +236,7 @@ function CellFilter({
 function CellFacet({
   facet,
   checkedMap, handleCheck, handleCheckAllFiltersInFacet, updateFilteredCells,
-  isAllListsCollapsed,
-  sortKeysByFacet, handleSort
+  isAllListsCollapsed
 }) {
   if (Object.keys(facet).length === 0) {
     // Only create the list if the facet exists
@@ -252,8 +250,7 @@ function CellFacet({
 
   const [isPartlyCollapsed, setIsPartlyCollapsed] = useState(true)
   const [isFullyCollapsed, setIsFullyCollapsed] = useState(defaultIsFullyCollapsed)
-
-  const sortKey = sortKeysByFacet[facet.annotation]
+  const [sortKey, setSortKey] = useState('count')
 
   const unsortedFilters = facet.unsortedGroups
   let filters
@@ -310,7 +307,7 @@ function CellFacet({
         isFullyCollapsed={isFullyCollapsed}
         setIsFullyCollapsed={setIsFullyCollapsed}
         sortKey={sortKey}
-        handleSort={handleSort}
+        setSortKey={setSortKey}
       />
       {shownFilters.map((filter, i) => {
         return (
@@ -351,7 +348,7 @@ function includesSortIconClass(domClasses) {
 /** Get stylized name of facet, optional tooltip, collapse controls */
 function FacetHeader({
   facet, checkedMap, handleCheckAllFiltersInFacet, isFullyCollapsed, setIsFullyCollapsed,
-  sortKey, handleSort
+  sortKey, setSortKey
 }) {
   const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
   const isConventional = getIsConventionalAnnotation(rawFacetName)
@@ -436,7 +433,7 @@ function FacetHeader({
         </span>
         <FacetTools
           sortKey={sortKey}
-          handleSort={handleSort}
+          setSortKey={setSortKey}
           isCollapsed={isFullyCollapsed}
           whatToToggle="filter list"
           facet={facet}
@@ -455,8 +452,6 @@ export function CellFilteringPanel({
   updateClusterParams,
   cellFaceting,
   cellFilteringSelection,
-  cellFilteringSortKeys,
-  updateCellFilteringSortKeysByFacet,
   cellFilterCounts,
   updateFilteredCells
 }) {
@@ -473,12 +468,22 @@ export function CellFilteringPanel({
   const facets = cellFaceting.facets.map(facet => {
     // Add counts of matching cells for each filter to its containing facet object
     facet.filterCounts = cellFilterCounts[facet.annotation]
+
+    // Sort categorical filters (i.e., groups)
+    const initCounts = cellFaceting.filterCounts[facet.annotation]
+    if (initCounts) {
+      if (!facet.unsortedGroups) {facet.unsortedGroups = facet.groups}
+      if (!facet.originalFilterCounts) {facet.originalFilterCounts = initCounts}
+      const sortedGroups = facet.groups.sort((a, b) => {
+        if (initCounts[a] && initCounts[b]) {
+          return initCounts[b] - initCounts[a]
+        }
+      })
+      facet.groups = sortedGroups
+    }
     return facet
   })
 
-  console.log('facets', facets)
-
-  const [sortKeysByFacet, setSortKeysByFacet] = useState(cellFilteringSortKeys)
   const [checkedMap, setCheckedMap] = useState(cellFilteringSelection)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const shownFacets = facets.filter(facet => facet.groups.length > 1)
@@ -537,15 +542,12 @@ export function CellFilteringPanel({
   /** Reset all filters to initial, selected state */
   function handleResetFilters() {
     const initSelection = {}
-    const initSortKeysByFacet = {}
     facets.forEach(facet => {
       initSelection[facet.annotation] = facet.groups
-      initSortKeysByFacet[facet.annotation] = 'count'
     })
 
     setCheckedMap(initSelection)
     updateFilteredCells(initSelection)
-    updateCellFilteringSortKeysByFacet(initSortKeysByFacet)
   }
 
   /** Add or remove checked item from list */
@@ -564,26 +566,13 @@ export function CellFilteringPanel({
         return item !== event.target.value
       })
     }
-    // update the checkedMap state with the filter in its updated condition
+    // update the checkedMap state with the filter in it's updated condition
     checkedMap[facetName] = updatedList
     setCheckedMap(checkedMap)
 
     // update the filtered cells based on the checked condition of the filters
     updateFilteredCells(checkedMap)
   }
-
-  /** Handle updating sort key for facet upon clicking the sort icon */
-  function handleSort(facet) {
-    const sortKey = sortKeysByFacet[facet.annotation]
-    const nextSortKey = sortKey === 'count' ? 'label' : 'count'
-    sortKeysByFacet[facet.annotation] = nextSortKey
-    console.log('sortKeysByFacet', sortKeysByFacet)
-    console.log('nextSortKey', nextSortKey)
-    setSortKeysByFacet(sortKeysByFacet)
-    // updateCellFilteringSortKeysByFacet(sortKeysByFacet)
-  }
-
-  console.log('at top, sortKeysByFacet', sortKeysByFacet)
 
   const currentlyInUseAnnotations = { colorBy: '', facets: [] }
   const annotationOptions = getAnnotationOptions(annotationList, cluster)
@@ -641,8 +630,6 @@ export function CellFilteringPanel({
                     handleCheckAllFiltersInFacet={handleCheckAllFiltersInFacet}
                     updateFilteredCells={updateFilteredCells}
                     isAllListsCollapsed={isAllListsCollapsed}
-                    sortKeysByFacet={sortKeysByFacet}
-                    handleSort={handleSort}
                     key={i}
                   />
                 )

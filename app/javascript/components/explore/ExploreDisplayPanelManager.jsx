@@ -198,9 +198,8 @@ export default function ExploreDisplayPanelManager({
   setShowDifferentialExpressionPanel, showUpstreamDifferentialExpressionPanel, togglePanel, shownTab,
   showDifferentialExpressionPanel, setIsCellSelecting, currentPointsSelected, isCellSelecting, deGenes,
   setDeGenes, setShowDeGroupPicker,
-  cellFaceting, cellFilteringSelection, cellFilteringSortKeys, updateCellFilteringSortKeysByFacet, cellFilterCounts,
-  clusterCanFilter, filterErrorText, updateFilteredCells,
-  panelToShow, toggleViewOptions
+  cellFaceting, cellFilteringSelection, cellFilterCounts, clusterCanFilter, filterErrorText,
+  updateFilteredCells, panelToShow, toggleViewOptions
 }) {
   const [, setRenderForcer] = useState({})
   const [dataCache] = useState(createCache())
@@ -519,8 +518,6 @@ export default function ExploreDisplayPanelManager({
           updateClusterParams={updateClusterParams}
           cellFaceting={cellFaceting}
           cellFilteringSelection={cellFilteringSelection}
-          cellFilteringSortKeys={cellFilteringSortKeys}
-          updateCellFilteringSortKeysByFacet={updateCellFilteringSortKeysByFacet}
           cellFilterCounts={cellFilterCounts}
           updateFilteredCells={updateFilteredCells}
           exploreParams={exploreParams}
