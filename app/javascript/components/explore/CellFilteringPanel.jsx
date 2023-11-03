@@ -9,6 +9,7 @@ import {
 import Select from '~/lib/InstrumentedSelect'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
+import { log } from '~/lib/metrics-api'
 
 const tooltipAttrs = {
   'data-toggle': 'tooltip',
@@ -79,14 +80,16 @@ function parseAnnotationName(annotationIdentifier) {
 }
 
 /** UI control to update how filters are sorted */
-function SortFiltersIcon({ sortKey, setSortKey }) {
+function SortFiltersIcon({ facet, handleSort, sortKey }) {
+  console.log('in SortFiltersIcon, sortKey', sortKey)
   const icon = sortKey === 'count' ? faSortAlphaDown : faSortAmountDown
   const nextSortKey = sortKey === 'count' ? 'label' : 'count'
 
   return (
     <span
       onClick={() => {
-        setSortKey(nextSortKey)
+        handleSort(facet)
+        log('sort-filters', { sortKey })
       }}
       className={`sort-filters sort-filters-${sortKey}`}
       data-analytics-name={`sort-filters sort-filters-${sortKey}`}
@@ -103,7 +106,7 @@ function FacetTools({
   isCollapsed, whatToToggle,
   isLoaded,
   sortKey,
-  setSortKey,
+  handleSort,
   facet=null,
   isRoot=false, facets, checkedMap, handleResetFilters
 }) {
@@ -122,7 +125,7 @@ function FacetTools({
       <SortFiltersIcon
         facet={facet}
         sortKey={sortKey}
-        setSortKey={setSortKey}
+        handleSort={handleSort}
       />
       }
       {isRoot &&
@@ -160,7 +163,7 @@ function ResetFiltersButton({ facets, checkedMap, handleResetFilters }) {
       className={`reset-cell-filters ${resetDisplayClass}`}
       data-analytics-name="reset-cell-filters"
       data-toggle="tooltip"
-      data-original-title="Reset filters"
+      data-original-title="Reset filter selections"
     >
       <FontAwesomeIcon icon={faUndo}/>
     </a>
@@ -234,7 +237,8 @@ function CellFilter({
 function CellFacet({
   facet,
   checkedMap, handleCheck, handleCheckAllFiltersInFacet, updateFilteredCells,
-  isAllListsCollapsed
+  isAllListsCollapsed,
+  sortKeysByFacet, handleSort
 }) {
   if (Object.keys(facet).length === 0) {
     // Only create the list if the facet exists
@@ -248,7 +252,8 @@ function CellFacet({
 
   const [isPartlyCollapsed, setIsPartlyCollapsed] = useState(true)
   const [isFullyCollapsed, setIsFullyCollapsed] = useState(defaultIsFullyCollapsed)
-  const [sortKey, setSortKey] = useState('count')
+
+  const sortKey = sortKeysByFacet[facet.annotation]
 
   const unsortedFilters = facet.unsortedGroups
   let filters
@@ -305,7 +310,7 @@ function CellFacet({
         isFullyCollapsed={isFullyCollapsed}
         setIsFullyCollapsed={setIsFullyCollapsed}
         sortKey={sortKey}
-        setSortKey={setSortKey}
+        handleSort={handleSort}
       />
       {shownFilters.map((filter, i) => {
         return (
@@ -346,7 +351,7 @@ function includesSortIconClass(domClasses) {
 /** Get stylized name of facet, optional tooltip, collapse controls */
 function FacetHeader({
   facet, checkedMap, handleCheckAllFiltersInFacet, isFullyCollapsed, setIsFullyCollapsed,
-  sortKey, setSortKey
+  sortKey, handleSort
 }) {
   const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
   const isConventional = getIsConventionalAnnotation(rawFacetName)
@@ -431,7 +436,7 @@ function FacetHeader({
         </span>
         <FacetTools
           sortKey={sortKey}
-          setSortKey={setSortKey}
+          handleSort={handleSort}
           isCollapsed={isFullyCollapsed}
           whatToToggle="filter list"
           facet={facet}
@@ -450,6 +455,8 @@ export function CellFilteringPanel({
   updateClusterParams,
   cellFaceting,
   cellFilteringSelection,
+  cellFilteringSortKeys,
+  updateCellFilteringSortKeysByFacet,
   cellFilterCounts,
   updateFilteredCells
 }) {
@@ -463,27 +470,15 @@ export function CellFilteringPanel({
     )
   }
 
-  const [sortKeysByFacet, setSortKeysByFacet] = useState(null)
-
   const facets = cellFaceting.facets.map(facet => {
     // Add counts of matching cells for each filter to its containing facet object
     facet.filterCounts = cellFilterCounts[facet.annotation]
-
-    // Sort categorical filters (i.e., groups)
-    const initCounts = cellFaceting.filterCounts[facet.annotation]
-    if (initCounts) {
-      if (!facet.unsortedGroups) {facet.unsortedGroups = facet.groups}
-      if (!facet.originalFilterCounts) {facet.originalFilterCounts = initCounts}
-      const sortedGroups = facet.groups.sort((a, b) => {
-        if (initCounts[a] && initCounts[b]) {
-          return initCounts[b] - initCounts[a]
-        }
-      })
-      facet.groups = sortedGroups
-    }
     return facet
   })
 
+  console.log('facets', facets)
+
+  const [sortKeysByFacet, setSortKeysByFacet] = useState(cellFilteringSortKeys)
   const [checkedMap, setCheckedMap] = useState(cellFilteringSelection)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const shownFacets = facets.filter(facet => facet.groups.length > 1)
@@ -523,8 +518,6 @@ export function CellFilteringPanel({
           facets={facets}
           checkedMap={checkedMap}
           handleResetFilters={handleResetFilters}
-          sortKeysByFacet={null}
-          setSortKeysByFacet={null}
         />
       </div>
     )
@@ -544,12 +537,15 @@ export function CellFilteringPanel({
   /** Reset all filters to initial, selected state */
   function handleResetFilters() {
     const initSelection = {}
+    const initSortKeysByFacet = {}
     facets.forEach(facet => {
       initSelection[facet.annotation] = facet.groups
+      initSortKeysByFacet[facet.annotation] = 'count'
     })
 
     setCheckedMap(initSelection)
     updateFilteredCells(initSelection)
+    updateCellFilteringSortKeysByFacet(initSortKeysByFacet)
   }
 
   /** Add or remove checked item from list */
@@ -568,13 +564,26 @@ export function CellFilteringPanel({
         return item !== event.target.value
       })
     }
-    // update the checkedMap state with the filter in it's updated condition
+    // update the checkedMap state with the filter in its updated condition
     checkedMap[facetName] = updatedList
     setCheckedMap(checkedMap)
 
     // update the filtered cells based on the checked condition of the filters
     updateFilteredCells(checkedMap)
   }
+
+  /** Handle updating sort key for facet upon clicking the sort icon */
+  function handleSort(facet) {
+    const sortKey = sortKeysByFacet[facet.annotation]
+    const nextSortKey = sortKey === 'count' ? 'label' : 'count'
+    sortKeysByFacet[facet.annotation] = nextSortKey
+    console.log('sortKeysByFacet', sortKeysByFacet)
+    console.log('nextSortKey', nextSortKey)
+    setSortKeysByFacet(sortKeysByFacet)
+    // updateCellFilteringSortKeysByFacet(sortKeysByFacet)
+  }
+
+  console.log('at top, sortKeysByFacet', sortKeysByFacet)
 
   const currentlyInUseAnnotations = { colorBy: '', facets: [] }
   const annotationOptions = getAnnotationOptions(annotationList, cluster)
@@ -633,7 +642,7 @@ export function CellFilteringPanel({
                     updateFilteredCells={updateFilteredCells}
                     isAllListsCollapsed={isAllListsCollapsed}
                     sortKeysByFacet={sortKeysByFacet}
-                    setSortKeysByFacet={setSortKeysByFacet}
+                    handleSort={handleSort}
                     key={i}
                   />
                 )
