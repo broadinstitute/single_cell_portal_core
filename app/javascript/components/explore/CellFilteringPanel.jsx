@@ -81,7 +81,7 @@ function parseAnnotationName(annotationIdentifier) {
 
 /** UI control to update how filters are sorted */
 function SortFiltersIcon({ sortKey, setSortKey }) {
-  const icon = sortKey === 'count' ? faSortAlphaDown : faSortAmountDown
+  const icon = sortKey === 'count' ? faSortAmountDown : faSortAlphaDown
   const nextSortKey = sortKey === 'count' ? 'label' : 'count'
 
   return (
@@ -93,7 +93,7 @@ function SortFiltersIcon({ sortKey, setSortKey }) {
       className={`sort-filters sort-filters-${sortKey}`}
       data-analytics-name={`sort-filters sort-filters-${sortKey}`}
       {...tooltipAttrs}
-      data-original-title={`Sort filters by ${nextSortKey}`}
+      data-original-title={`Sorted by ${sortKey}; click to sort by ${nextSortKey}`}
     >
       <FontAwesomeIcon icon={icon}/>
     </span>
@@ -250,6 +250,7 @@ function CellFacet({
 
   const [isPartlyCollapsed, setIsPartlyCollapsed] = useState(true)
   const [isFullyCollapsed, setIsFullyCollapsed] = useState(defaultIsFullyCollapsed)
+
   const [sortKey, setSortKey] = useState('count')
 
   const unsortedFilters = facet.unsortedGroups
