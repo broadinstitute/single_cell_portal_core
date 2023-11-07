@@ -5,6 +5,9 @@ class ImportService
   # API clients that can use ImportService
   ALLOWED_CLIENTS = [NemoClient, HcaAzulClient].freeze
 
+  # allowed configuration classes
+  ALLOWED_CONFIGS = [ImportServiceConfig::Nemo]
+
   # generic handler to call an underlying client method and forward all positional/keyword params
   #
   # * *params*
@@ -20,6 +23,18 @@ class ImportService
     end
 
     client.send(client_method, ...)
+  end
+
+  def self.import_from(config_class, ...)
+    raise "unsupported config: #{config_class}" unless defined?(config_class) && ALLOWED_CONFIGS.include?(config_class)
+
+    configuration = config_class.new(...)
+    begin
+      study, study_file = configuration.create_models_and_copy_files
+    rescue => e
+      puts "Error importing from #{config_class}; #{e.class} -- #{e.message}"
+      ErrorTracker.report_exception(e, config.user)
+    end
   end
 
   # GCP storage client for accessing files in public GCP buckets
@@ -57,14 +72,25 @@ class ImportService
   end
 
   # move a file from a remote source to a workspace bucket for parsing
-  def self.move_file_to_bucket(remote_url, bucket_id)
+  #
+  # * *params*
+  #   - +remote_url+ (String) => URL for accessing remote file
+  #   - +bucket_id+ (String) => workspace GCP bucket ID
+  #
+  # * *returns*
+  #   - (Google::Cloud::Storage::File)
+  #
+  # * *raises*
+  #   - (ArgumentError) => invalid remote protocol for file (must be http, https, or gs)
+  #   - (Google::Apis::ClientError, RestClient::NotFound) cannot find remote file
+  def self.copy_file_to_bucket(remote_url, bucket_id)
     protocol = remote_url.split('://').first
     case protocol
     when 'https', 'http'
       tmp_file = RestClient::Request.execute(method: :get, url: remote_url, raw_response: true)
       bucket = storage.bucket bucket_id
       filename = remote_url.split('/').last
-      bucket.create_file tmp_file
+      bucket.create_file tmp_file.file, filename
     when 'gs'
       bucket, filepath, filename = parse_gs_url(remote_url)
       public_bucket = load_public_bucket(bucket)

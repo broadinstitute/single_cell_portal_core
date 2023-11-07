@@ -4,6 +4,9 @@ module ImportServiceConfig
     extend ActiveSupport::Concern
     include ActiveModel::Model
 
+    # allow word and space characters, plus the following: - . / ( ) , :
+    ATTRIBUTE_SANITIZER = %r{[^\w\s\-./()+,:]}
+
     CONTENT_TYPES_BY_EXT = {
       'tar' => 'application/x-gtar',
       'h5' => 'application/x-hdf',
@@ -14,12 +17,25 @@ module ImportServiceConfig
 
     attr_accessor :client, :user_id, :file_id, :study_id, :branding_group_id
 
+    # return hash of instance values, except for associated client
+    def attributes
+      instance_values.reject { |k, _| k == 'client' }
+    end
+
     def load_study
       ImportService.call_api_client(client, study_method, study_id)
     end
 
     def load_file
       ImportService.call_api_client(client, study_file_method, file_id)
+    end
+
+    def user
+      User.find_by(id: user_id)
+    end
+
+    def branding_group
+      BrandingGroup.find_by(id: branding_group_id)
     end
 
     # extract an ID from an association
@@ -31,15 +47,18 @@ module ImportServiceConfig
       Taxon.find_by(common_name:)
     end
 
-    # empty method, will be overwritten in derived class
+    # empty hash, will be overwritten in derived class
     def study_mappings
       {}
     end
 
-    # empty method, will be overwritten in derived class
+    # empty hash, will be overwritten in derived class
     def study_file_mappings
       {}
     end
+
+    # empty method for getting file access info; overwrite in derived class
+    def file_access_info(...); end
 
     # create a new SCP model instance from remote data
     def to_scp_model(model, defaults, mappings, remote_data)
@@ -62,7 +81,6 @@ module ImportServiceConfig
     def to_study
       study_info = load_study.with_indifferent_access
       study = to_scp_model(Study, study_default_settings, study_mappings, study_info)
-      puts study.attributes
       study.name = sanitize_attribute(study.name)
       study.description = sanitize_attribute(study.description)
       study
@@ -79,9 +97,18 @@ module ImportServiceConfig
       study_file
     end
 
+    # empty methods to be overwritten in derived classes
+    # these will contain service-specific logic for sourcing data and assigning attributes to save, as well as file IO
+    # this will cover cases not dealt with in default mappings and :to_study or :to_study_file
+    def populate_study(...); end
+
+    def populate_study_file(...); end
+
+    def create_models_and_copy_files(...); end
+
     # remove illegal characters from an attribute value like :name or :description
     def sanitize_attribute(value)
-      value.gsub(/"/, '')
+      value.gsub(ATTRIBUTE_SANITIZER, '')
     end
 
     def get_file_content_type(extension)
@@ -100,9 +127,10 @@ module ImportServiceConfig
         study_file: {
           use_metadata_convention: false,
           file_type: 'AnnData',
+          status: 'uploaded',
           upload_content_type: 'application/x-hdf',
-          ann_data_file_info_attributes: {
-            reference_file: true
+          ann_data_file_info: {
+            reference_file: false
           }
         }
       }
