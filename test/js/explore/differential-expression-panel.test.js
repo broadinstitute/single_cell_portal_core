@@ -1,3 +1,4 @@
+/* eslint-disable no-tabs */
 /**
  * @fileoverview Tests for differential expression (DE) functionality
  */
@@ -8,7 +9,7 @@ import '@testing-library/jest-dom/extend-expect'
 
 import DifferentialExpressionPanel from 'components/explore/DifferentialExpressionPanel'
 import {
-  PairwiseDifferentialExpressionGroupPicker
+  PairwiseDifferentialExpressionGroupPicker, parseDeFile
 } from 'components/visualization/controls/DifferentialExpressionGroupPicker'
 import { exploreInfo, deObjects } from './differential-expression-panel.test-data'
 
@@ -211,5 +212,32 @@ describe('Differential expression panel', () => {
     // Ensure options in menu A display by default
     const pairwiseSelectA = container.querySelector('.pairwise-select')
     expect(pairwiseSelectA).toHaveTextContent('CSN1S1 macrophages')
+  })
+})
+
+describe('DE gene parsing', () => {
+  it('correctly transforms SCP-computed DE file', () => {
+    const tsvText =
+      `names	scores	logfoldchanges	pvals	pvals_adj	pct_nz_group	pct_nz_reference
+      0	CD74	11.55	4.138	7.695e-31	1.547e-26	1	0.7262
+      1	HLA-DPA1	11.05	3.753	2.291e-28	2.778e-24	1	0.5595
+      2	TCF4	10.92	7.512	9.554e-28	6.952e-24	0.8846	0.04085
+      3	HLA-DPB1	10.79	3.461	3.818e-27	2.221e-23	1	0.6034`
+    const deGenes = parseDeFile(tsvText)
+    expect(deGenes[0].size).toEqual(4.138)
+    expect(deGenes[0].significance).toEqual(1.547e-26)
+  })
+
+  it('correctly transforms ingest-processed author DE file', () => {
+    const tsvText =
+      `gene	avg_log2FC	p_val_adj	pct.2	pct.1	p_val
+      0	ACE2	1.47710477	0.0	0.63504	0.8154	0.0
+      1	CD274	1.171502945	0.0	0.5616	0.76314	0.0
+      2	TP53	1.513586574	0.0	0.37492	0.68441	0.0`
+
+    const isAuthorDe = true
+    const deGenes = parseDeFile(tsvText, isAuthorDe)
+    expect(deGenes[0].size).toEqual(1.477)
+    expect(deGenes[0].significance).toEqual(0)
   })
 })
