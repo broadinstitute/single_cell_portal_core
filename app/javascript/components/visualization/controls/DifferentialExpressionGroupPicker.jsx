@@ -68,7 +68,7 @@ export function parseDeFile(tsvText, isAuthorDe=false) {
       // names  scores  logfoldchanges  pvals pvals_adj pct_nz_group  pct_nz_reference
       const [
         index, // eslint-disable-line
-        name, score, size, altSignificance,	significance
+        name, score, size, altSignificance, significance
       ] = row
 
       deGene = {

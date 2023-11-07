@@ -230,10 +230,10 @@ describe('DE gene parsing', () => {
 
   it('correctly transforms ingest-processed author DE file', () => {
     const tsvText =
-    `gene	avg_log2FC	p_val_adj	pct.2	pct.1	p_val
-    0	ACE2	1.47710477	0.0	0.63504	0.8154	0.0
-    1	CD274	1.171502945	0.0	0.5616	0.76314	0.0
-    2	TP53	1.513586574	0.0	0.37492	0.68441	0.0`
+      `gene	avg_log2FC	p_val_adj	pct.2	pct.1	p_val
+      0	ACE2	1.47710477	0.0	0.63504	0.8154	0.0
+      1	CD274	1.171502945	0.0	0.5616	0.76314	0.0
+      2	TP53	1.513586574	0.0	0.37492	0.68441	0.0`
 
     const isAuthorDe = true
     const deGenes = parseDeFile(tsvText, isAuthorDe)
