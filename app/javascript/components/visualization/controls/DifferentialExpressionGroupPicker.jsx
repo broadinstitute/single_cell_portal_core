@@ -35,8 +35,6 @@ export function parseDeFile(tsvText, isAuthorDe=false) {
 
     if (tsvLine === '') {continue}
     const row = tsvLine.split('\t')
-    console.log('row')
-    console.log(row)
 
     let deGene
 
@@ -253,7 +251,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
 /** Pick groups of cells for one-vs-rest-only differential expression (DE) */
 export function OneVsRestDifferentialExpressionGroupPicker({
   bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup, setDeGenes,
-  countsByLabel, deObjects, setDeFilePath, isAuthorDe, sizeMetric, significanceMetric
+  countsByLabel, deObjects, setDeFilePath, isAuthorDe
 }) {
   let groups = getLegendSortedLabels(countsByLabel)
   groups = groups.filter(group => {
@@ -272,7 +270,7 @@ export function OneVsRestDifferentialExpressionGroupPicker({
 
     setDeFilePath(deFilePath)
 
-    const deGenes = await fetchDeGenes(bucketId, deFilePath)
+    const deGenes = await fetchDeGenes(bucketId, deFilePath, isAuthorDe)
 
     setDeGroup(newGroup)
     setDeGenes(deGenes)

@@ -227,4 +227,17 @@ describe('DE gene parsing', () => {
     expect(deGenes[0].size).toEqual(4.138)
     expect(deGenes[0].significance).toEqual(1.547e-26)
   })
+
+  it('correctly transforms ingest-processed author DE file', () => {
+    const tsvText =
+    `gene	avg_log2FC	p_val_adj	pct.2	pct.1	p_val
+    0	ACE2	1.47710477	0.0	0.63504	0.8154	0.0
+    1	CD274	1.171502945	0.0	0.5616	0.76314	0.0
+    2	TP53	1.513586574	0.0	0.37492	0.68441	0.0`
+
+    const isAuthorDe = true
+    const deGenes = parseDeFile(tsvText, isAuthorDe)
+    expect(deGenes[0].size).toEqual(1.477)
+    expect(deGenes[0].significance).toEqual(0)
+  })
 })
