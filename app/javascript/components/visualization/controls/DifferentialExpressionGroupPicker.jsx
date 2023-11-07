@@ -27,7 +27,7 @@ function round(num, places) {
 /**
  * Transform raw TSV text into array of differential expression gene objects
  */
-function parseDeFile(tsvText, isAuthorDe=false) {
+export function parseDeFile(tsvText, isAuthorDe=false) {
   const deGenes = []
   const tsvLines = tsvText.split(newlineRegex)
   for (let i = 1; i < tsvLines.length; i++) {
@@ -35,6 +35,8 @@ function parseDeFile(tsvText, isAuthorDe=false) {
 
     if (tsvLine === '') {continue}
     const row = tsvLine.split('\t')
+    console.log('row')
+    console.log(row)
 
     let deGene
 
