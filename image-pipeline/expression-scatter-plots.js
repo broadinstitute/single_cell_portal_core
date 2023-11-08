@@ -5,7 +5,9 @@
  *
  * To use, ensure you're on VPN, `cd image-pipeline`, then:
  *
- * node expression-scatter-plots.js --accession="SCP24" # Staging, 1.3M cell study
+ * yarn install
+ * IS_LOCAL=1 NODE_TLS_REJECT_UNAUTHORIZED=0 node expression-scatter-plots.js --accession="SCP24" --environment="staging" --bucket="$BUCKET_ID_FOR_STUDY" --cluster="orig.ident" --cores="1" --debug; tput bel # 1.3M cell study
+ *
  */
 import { mkdir, writeFile, readFile, access } from 'node:fs/promises'
 import { createWriteStream } from 'node:fs'
