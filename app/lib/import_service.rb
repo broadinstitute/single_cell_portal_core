@@ -78,12 +78,13 @@ class ImportService
   # load a public GCP file for copying
   #
   # * *params*
-  #   - +bucket+ (Google::Cloud::Storage::Bucket) => public bucket instance from :load_bucket
+  #   - +bucket_id+ (String) => name of public bucket
   #   - +filepath+ (String) => path to file in public bucket
   #
   # * *returns*
   #   - (Google::Cloud::Storage::File)
-  def self.load_public_gcp_file(bucket, filepath)
+  def self.load_public_gcp_file(bucket_id, filepath)
+    bucket = load_public_bucket(bucket_id)
     bucket.file filepath, skip_lookup: true
   end
 
@@ -109,8 +110,7 @@ class ImportService
       bucket.create_file tmp_file.file, filename
     when 'gs'
       bucket, filepath, filename = parse_gs_url(remote_url)
-      public_bucket = load_public_bucket(bucket)
-      public_file = load_public_gcp_file(public_bucket, filepath)
+      public_file = load_public_gcp_file(bucket, filepath)
       public_file.copy bucket_id, filename
     else
       raise ArgumentError, "cannot retrieve file from #{remote_url}: unknown protocol #{protocol}"

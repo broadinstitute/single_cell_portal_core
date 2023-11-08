@@ -129,8 +129,8 @@ module ImportServiceConfig
       assert study_file.persisted?
       assert study_file.uploaded?
       assert ApplicationController.firecloud_client.workspace_file_exists?(study.bucket_id, study_file.bucket_location)
-      assert_equal study.external_identifier, @attributes[:study_id]
-      assert_equal study_file.external_identifier, @attributes[:file_id]
+      assert_equal study.external_identifier, attributes[:study_id]
+      assert_equal study_file.external_identifier, attributes[:file_id]
     end
   end
 end

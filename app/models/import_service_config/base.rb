@@ -95,6 +95,7 @@ module ImportServiceConfig
       study_file.taxon_id = taxon_from(taxon_common_name)&.id
       ext = file_info['file_format']
       study_file.upload_content_type = get_file_content_type(ext)
+      study_file.external_identifier = file_id
       study_file
     end
 
