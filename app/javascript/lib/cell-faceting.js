@@ -191,7 +191,7 @@ function trimNullFilters(cellFaceting) {
   const nonzeroFilterCountsByFacet = {}
   const originalFacets = cellFaceting.rawFacets.facets
 
-  let hasAnyNullFilters = false
+  const facetsWithNullFilters = []
 
   const filterableCells = cellFaceting.filterableCells
 
@@ -215,7 +215,7 @@ function trimNullFilters(cellFaceting) {
       } else {
         facetHasNullFilter = true
 
-        hasAnyNullFilters = true
+        facetsWithNullFilters.push(facet)
         nullFilterIndex = filterIndex
       }
     })
@@ -237,9 +237,12 @@ function trimNullFilters(cellFaceting) {
     }
   }
 
-  if (!hasAnyNullFilters) {return cellFaceting}
+  if (facetsWithNullFilters.length === 0) {return cellFaceting}
 
-  cellFaceting.cellsByFacet = getCellsByFacet(filterableCells, annotationFacets)
+  const trimmedCellsByFacet = getCellsByFacet(filterableCells, facetsWithNullFilters)
+  Object.keys(trimmedCellsByFacet).entries(([facet, cellCrossfilter]) => {
+    cellFaceting.cellsByFacet[facet] = cellCrossfilter
+  })
   cellFaceting.filterableCells = filterableCells
   cellFaceting.filterCounts = nonzeroFilterCountsByFacet
   cellFaceting.filtersByFacet = nonzeroFiltersByFacet
