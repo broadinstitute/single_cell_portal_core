@@ -1,5 +1,6 @@
 # handle launching differential expression ingest jobs
 class DifferentialExpressionService
+  extend Loggable
 
   # regex for matching annotation names for possible cell type analogs
   CELL_TYPE_MATCHER = /cell.*type/i
@@ -316,12 +317,6 @@ class DifferentialExpressionService
   #   - (Boolean)
   def self.study_has_author_de?(study)
     study.study_files.by_type('Differential Expression').any?
-  end
-
-  # shortcut to log to STDOUT and Rails log simultaneously
-  def self.log_message(message)
-    puts message
-    Rails.logger.info message
   end
 
   # construct a filename for a differential expression output file/manifest given a set of values
