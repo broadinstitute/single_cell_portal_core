@@ -17,6 +17,11 @@ module ImportServiceConfig
       @configuration = ImportServiceConfig::Nemo.new(**@attributes)
     end
 
+    after(:all) do
+      StudyFile.find_by(external_identifier: @attributes[:file_id])&.destroy
+      Study.find_by(external_identifier: @attributes[:study_id])&.destroy_and_remove_workspace
+    end
+
     test 'should instantiate config' do
       config = ImportServiceConfig::Nemo.new(**@attributes)
       assert config.client.is_a?(NemoClient)
@@ -112,14 +117,20 @@ module ImportServiceConfig
       assert_not scp_study_file.ann_data_file_info.reference_file
     end
 
-    # note: this is a true external integration test which will create Terra workspaces and push files to bucket
-    #
+    # note: this is a true external integration test that creates a Terra workspace & GCP bucket
+    # this is mostly to ensure that we can pull files from NeMO and push them to buckets
     test 'should create study and push files to bucket' do
       attributes = @attributes.dup
-      # this is a bam.bai file that is in a GCP bucket which allows for instant bucket->bucket copies
+      # this is a bam.bai file that is in a public GCP bucket which allows for instant bucket->bucket copies
       attributes[:file_id] = 'nemo:alc-t6a5pxv'
       config = ImportServiceConfig::Nemo.new(**attributes)
       study, study_file = config.create_models_and_copy_files
+      assert study.persisted?
+      assert study_file.persisted?
+      assert study_file.uploaded?
+      assert ApplicationController.firecloud_client.workspace_file_exists?(study.bucket_id, study_file.bucket_location)
+      assert_equal study.external_identifier, @attributes[:study_id]
+      assert_equal study_file.external_identifier, @attributes[:file_id]
     end
   end
 end

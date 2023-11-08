@@ -273,7 +273,7 @@ class Study
   field :view_order, type: Float, default: 100.0
   field :use_existing_workspace, type: Boolean, default: false
   field :default_options, type: Hash, default: {} # extensible hash where we can put arbitrary values as 'defaults'
-
+  field :external_identifier, type: String # ID from external service, used for tracking via ImportService
   ##
   #
   # SWAGGER DEFINITIONS

@@ -2,6 +2,7 @@ module ImportServiceConfig
   # methods/configurations for importing data from NeMO Identifiers API
   class Nemo
     include ImportServiceConfig::Base
+    include Loggable
 
     attr_accessor :project_id
 
@@ -86,6 +87,8 @@ module ImportServiceConfig
         library_prep = raw_library_prep.gsub(/(\schromium|\ssequencing)/, '')
         study_file.expression_file_info.library_preparation_protocol = library_prep
       end
+      # gotcha for some values like Drop-seq showing up as drop-seq
+      study_file.expression_file_info.library_preparation_protocol.capitalize!
       study_file
     end
 
@@ -99,6 +102,7 @@ module ImportServiceConfig
     #   - (RuntimeError) => if either study or study_file fail to save correctly
     def create_models_and_copy_files
       study = populate_study
+      log_message "Importing study: #{study.name} from #{study_id}"
       if study.save
         study_file = populate_study_file(study.id)
         nemo_gs_url = file_access_info(protocol: :gs)&.[]('url')
@@ -114,18 +118,19 @@ module ImportServiceConfig
         study_file.external_link_title = 'NeMO Download'
         file_in_bucket = ImportService.copy_file_to_bucket(access_url, study.bucket_id)
         study_file.generation = file_in_bucket.generation
+        log_message "Importing #{study_file.upload_file_name} from #{file_id}"
         if study_file.save
           [study, study_file]
         else
           errors = study_file.errors.full_messages.dup
           # clean up study to allow retries with different file
-          ApplicationController.firecloud_client.delete_workspace(study.firecloud_project, study.firecloud_workspace)
+          ImportService.remove_study_workspace(study)
           file_in_bucket.delete
           DeleteQueueJob.new(study).perform
-          DeleteQueueJob.new(study_file).perform
           raise "could create study_file: #{errors.join('; ')}"
         end
       else
+        ImportService.remove_study_workspace(study)
         errors = study.errors.full_messages.dup
         DeleteQueueJob.new(study).perform
         raise "could not create study: #{errors.join('; ')}"

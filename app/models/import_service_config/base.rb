@@ -83,6 +83,7 @@ module ImportServiceConfig
       study = to_scp_model(Study, study_default_settings, study_mappings, study_info)
       study.name = sanitize_attribute(study.name)
       study.description = sanitize_attribute(study.description)
+      study.external_identifier = study_id
       study
     end
 
