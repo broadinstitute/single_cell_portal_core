@@ -102,6 +102,9 @@ module ImportServiceConfig
       if study.save
         study_file = populate_study_file(study.id)
         nemo_gs_url = file_access_info(protocol: :gs)&.[]('url')
+        # gotcha for some GS urls having an incorrect root folder, this likely is something that will be fixed with
+        # the public release but for now leaving this hack in place
+        nemo_gs_url&.gsub!(/biccn_unbundled/, 'biccn-unbundled')
         nemo_http_url = file_access_info(protocol: :http)&.[]('url')
         access_url = nemo_gs_url || nemo_http_url
         raise "could not obtain file access info for #{file_id}" if access_url.blank?
