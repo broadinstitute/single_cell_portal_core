@@ -18,9 +18,17 @@ module ImportServiceConfig
       :file
     end
 
+    def load_file
+      super(file_id)
+    end
+
     # name of entity/method to call for loading analog of Study
     def study_method
       :collection
+    end
+
+    def load_study
+      super(study_id)
     end
 
     # name of entity/method to call for loading analog of a BrandingGroup/Collection
@@ -28,9 +36,8 @@ module ImportServiceConfig
       :project
     end
 
-    # load a NeMO project, which is an analog for BrandingGroups/Collections
     def load_collection
-      ImportService.call_api_client(client, collection_method, project_id)
+      super(project_id)
     end
 
     def id_from_method
@@ -91,10 +98,10 @@ module ImportServiceConfig
       to_study
     end
 
-    def populate_study_file(study_id)
+    def populate_study_file(scp_study_id)
       taxon_names = taxon_common_names
       preferred_name = taxon_names.detect { |name| PREFERRED_TAXONS.include?(name) } || taxon_names.first
-      study_file = to_study_file(study_id, preferred_name)
+      study_file = to_study_file(scp_study_id, preferred_name)
       if study_file.expression_file_info.library_preparation_protocol.blank?
         raw_library_prep = load_study&.[]('technique')
         library_prep = raw_library_prep.gsub(/(\schromium|\ssequencing)/, '')

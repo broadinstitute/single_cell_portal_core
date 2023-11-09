@@ -21,12 +21,19 @@ module ImportServiceConfig
     instance_values.reject { |k, _| k == 'client' }
   end
 
-  def load_study
-    ImportService.call_api_client(client, study_method, study_id)
+  # call underlying client to load Study analog with arbitrary parameters
+  def load_study(...)
+    ImportService.call_api_client(client, study_method, ...)
   end
 
-  def load_file
-    ImportService.call_api_client(client, study_file_method, file_id)
+  # call underlying client to load StudyFile analog with arbitrary parameters
+  def load_file(...)
+    ImportService.call_api_client(client, study_file_method, ...)
+  end
+
+  # call underlying client to load BrandingGroup/Collection analog with arbitrary parameters
+  def load_collection(...)
+    ImportService.call_api_client(client, collection_method, ...)
   end
 
   def user
@@ -126,7 +133,8 @@ module ImportServiceConfig
 
   # remove illegal characters from an attribute value like :name or :description
   def sanitize_attribute(value)
-    value.gsub(ATTRIBUTE_SANITIZER, '')
+    stripped = ActionController::Base.helpers.strip_tags(value)
+    stripped.gsub(ATTRIBUTE_SANITIZER, '')
   end
 
   def get_file_content_type(extension)
