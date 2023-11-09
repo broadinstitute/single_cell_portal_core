@@ -115,7 +115,11 @@ module ImportServiceConfig
     #
     # * *raises*
     #   - (RuntimeError) => if either study or study_file fail to save correctly
+    #   - (ArgumentError) => if no file_id is provided
     def import_from_service
+      raise ArgumentError, 'must provide file_id' if file_id.blank?
+
+      traverse_associations! unless study_id
       study = populate_study
       study_file = populate_study_file(study.id)
       nemo_gs_url = file_access_info(protocol: :gs)&.[]('url')

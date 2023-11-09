@@ -101,7 +101,10 @@ module ImportServiceConfig
     #
     # * *raises*
     #   - (RuntimeError) => if either study or study_file fail to save correctly
+    #   - (ArgumentError) => if no file_id & study_id are not provided
     def import_from_service
+      raise ArgumentError, 'must provide study_id and file_id' unless study_id && file_id
+
       study = populate_study
       study_file = populate_study_file(study.id)
       access_url = file_access_info
