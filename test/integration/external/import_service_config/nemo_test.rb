@@ -41,6 +41,13 @@ module ImportServiceConfig
       assert_equal @branding_group, @configuration.branding_group
     end
 
+    test 'should traverse associations to set ids' do
+      config = ImportServiceConfig::Nemo.new(file_id: @attributes[:file_id])
+      config.traverse_associations!
+      assert_equal @attributes[:study_id], config.study_id
+      assert_equal @attributes[:project_id], config.project_id
+    end
+
     test 'should load defaults' do
       study_defaults = {
         public: false, user_id: @user_id, branding_group_ids: [@branding_group_id]
@@ -90,6 +97,11 @@ module ImportServiceConfig
       assert_equal 'human_var_scVI_VLMC.h5ad.tar', file['file_name']
       assert_equal 'h5ad', file['file_format']
       assert_equal 'counts', file['data_type']
+    end
+
+    test 'should load collection analog' do
+      collection = @configuration.load_collection
+      assert_equal 'AIBS Internal', collection['short_name']
     end
 
     test 'should extract association ids' do

@@ -23,13 +23,26 @@ module ImportServiceConfig
       :collection
     end
 
+    # name of entity/method to call for loading analog of a BrandingGroup/Collection
+    def collection_method
+      :project
+    end
+
     # load a NeMO project, which is an analog for BrandingGroups/Collections
-    def load_project
-      ImportService.call_api_client(client, :project, project_id)
+    def load_collection
+      ImportService.call_api_client(client, collection_method, project_id)
     end
 
     def id_from_method
       :extract_associated_id
+    end
+
+    # recursively fetch associations to get other identifiers
+    def association_order
+      [
+        { method: study_file_method, association: :collections, id: :file_id, assoc_id: :study_id },
+        { method: study_method, association: :projects, id: :study_id, assoc_id: :project_id }
+      ]
     end
 
     # return hash of file access info, like url, sizes, etc

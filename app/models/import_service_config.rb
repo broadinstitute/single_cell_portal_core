@@ -37,6 +37,23 @@ module ImportServiceConfig
     BrandingGroup.find_by(id: branding_group_id)
   end
 
+  # order of associations to walk for sourcing attributes
+  # should be overwritten in included class
+  def association_order
+    []
+  end
+
+  # walk association_order to populate associated IDs from a starting point
+  def traverse_associations!
+    association_order.each do |config|
+      entity_id = send(config[:id])
+      entity = ImportService.call_api_client(client, config[:method], entity_id)
+      associated_id = id_from(entity, config[:association])
+      setter = "#{config[:assoc_id]}=" # e.g. self.study_id = 'foo'
+      send(setter, associated_id)
+    end
+  end
+
   # extract an ID from an association
   def id_from(entity, ...)
     client.send(id_from_method, entity, ...)
@@ -46,17 +63,17 @@ module ImportServiceConfig
     Taxon.find_by(common_name:)
   end
 
-  # empty hash, will be overwritten in derived class
+  # empty hash, will be overwritten in included class
   def study_mappings
     {}
   end
 
-  # empty hash, will be overwritten in derived class
+  # empty hash, will be overwritten in included class
   def study_file_mappings
     {}
   end
 
-  # empty method for getting file access info; overwrite in derived class
+  # empty method for getting file access info; overwrite in included class
   def file_access_info(...); end
 
   # create a new SCP model instance from remote data
@@ -98,7 +115,7 @@ module ImportServiceConfig
     study_file
   end
 
-  # empty methods to be overwritten in derived classes
+  # empty methods to be overwritten in included classes
   # these will contain service-specific logic for sourcing data and assigning attributes to save, as well as file IO
   # this will cover cases not dealt with in default mappings and :to_study or :to_study_file
   def populate_study(...); end
