@@ -93,6 +93,7 @@ class ImportService
   # * *params*
   #   - +remote_url+ (String) => URL for accessing remote file
   #   - +bucket_id+ (String) => workspace GCP bucket ID
+  #   - +filename+ (String) => name of file to create in workspace bucket
   #
   # * *returns*
   #   - (Google::Cloud::Storage::File)
@@ -100,16 +101,15 @@ class ImportService
   # * *raises*
   #   - (ArgumentError) => invalid remote protocol for file (must be http, https, or gs)
   #   - (Google::Apis::ClientError, RestClient::NotFound) cannot find remote file
-  def self.copy_file_to_bucket(remote_url, bucket_id)
+  def self.copy_file_to_bucket(remote_url, bucket_id, filename)
     protocol = remote_url.split('://').first
     case protocol
     when 'https', 'http'
       tmp_file = RestClient::Request.execute(method: :get, url: remote_url, raw_response: true)
       bucket = storage.bucket bucket_id
-      filename = remote_url.split('/').last
       bucket.create_file tmp_file.file, filename
     when 'gs'
-      bucket, filepath, filename = parse_gs_url(remote_url)
+      bucket, filepath = parse_gs_url(remote_url)
       public_file = load_public_gcp_file(bucket, filepath)
       public_file.copy bucket_id, filename
     else
@@ -117,19 +117,18 @@ class ImportService
     end
   end
 
-  # get a bucket, path and filename from a gs:// url
+  # get a bucket and path from a gs:// url
   #
   # * *params*
   #   - +gs_url+ (String) => url in gs:// format
   #
   # * *returns*
-  #   - (Array<String, String, String>) => bucket, filepath, and filename as array
+  #   - (Array<String, String>) => bucket, filepath as array
   def self.parse_gs_url(gs_url)
     parts = gs_url.delete_prefix('gs://').split('/')
     bucket = parts.shift
     filepath = parts.join('/')
-    filename = parts.last
-    [bucket, filepath, filename]
+    [bucket, filepath]
   end
 
   # wrapper to remove workspaces if imports fail

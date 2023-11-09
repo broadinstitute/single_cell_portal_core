@@ -208,14 +208,14 @@ class HcaAzulClient
     all_results
   end
 
-  # get a list of all available catalogs
+  # get a specific project
   #
   # * *params*
-  #   - +catalog+ (String) => HCA catalog name (optional)
   #   - +project_id+ (String) => UUID of HCA project
+  #   - +catalog+ (String) => HCA catalog name (optional)
   #
   # * *returns*
-  #   - (Hash) => Available catalogs, including :default_catalog
+  #   - (Hash) => specific project
   #
   # * *raises*
   #   - (ArgumentError) => if catalog is not in self.all_catalogs

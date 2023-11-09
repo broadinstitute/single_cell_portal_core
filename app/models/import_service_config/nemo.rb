@@ -6,7 +6,7 @@ module ImportServiceConfig
 
     attr_accessor :project_id
 
-    PREFERRED_TAXONS = %w[human mouse]
+    PREFERRED_TAXONS = %w[human mouse].freeze
 
     def initialize(attributes = {})
       super
@@ -67,7 +67,7 @@ module ImportServiceConfig
     end
 
     # retrieve common species names from associated collection
-    def taxon_common_names
+    def taxon_names
       load_study&.[]('taxonomies') || []
     end
 
@@ -99,62 +99,38 @@ module ImportServiceConfig
     end
 
     def populate_study_file(scp_study_id)
-      taxon_names = taxon_common_names
-      preferred_name = taxon_names.detect { |name| PREFERRED_TAXONS.include?(name) } || taxon_names.first
+      taxons = taxon_names
+      preferred_name = taxons.detect { |name| PREFERRED_TAXONS.include?(name) } || taxons.first
       study_file = to_study_file(scp_study_id, preferred_name)
       if study_file.expression_file_info.library_preparation_protocol.blank?
-        raw_library_prep = load_study&.[]('technique')
-        library_prep = raw_library_prep.gsub(/(\schromium|\ssequencing)/, '')
-        study_file.expression_file_info.library_preparation_protocol = library_prep
+        technique = load_study&.[]('technique')
+        study_file.expression_file_info.library_preparation_protocol = find_library_prep(technique)
       end
-      # gotcha for some values like Drop-seq showing up as drop-seq
-      study_file.expression_file_info.library_preparation_protocol.capitalize!
       study_file
     end
 
-    # main business logic of creating SCP models, saving to database and moving file to workspace bucket for ingest
-    # will also set external_link_url such that file can be downloaded directly from NeMO
+    # main business logic of populating SCP models for NeMO data
     #
     # * *returns*
-    #   - (Array<Study, StudyFile) => newly created study & study_file to pass to ingest process
+    #   - (Array<Study, StudyFile) => newly created study & study_file
     #
     # * *raises*
     #   - (RuntimeError) => if either study or study_file fail to save correctly
-    def create_models_and_copy_files
+    def import_from_service
       study = populate_study
-      log_message "Importing study: #{study.name} from #{study_id}"
-      if study.save
-        study_file = populate_study_file(study.id)
-        nemo_gs_url = file_access_info(protocol: :gs)&.[]('url')
-        # gotcha for some GS urls having an incorrect root folder, this likely is something that will be fixed with
-        # the public release but for now leaving this hack in place
-        nemo_gs_url&.gsub!(/biccn_unbundled/, 'biccn-unbundled')
-        nemo_http_url = file_access_info(protocol: :http)&.[]('url')
-        access_url = nemo_gs_url || nemo_http_url
-        raise "could not obtain file access info for #{file_id}" if access_url.blank?
+      study_file = populate_study_file(study.id)
+      nemo_gs_url = file_access_info(protocol: :gs)&.[]('url')
+      # gotcha for some GS urls having an incorrect root folder, this likely is something that will be fixed with
+      # the public release but for now leaving this hack in place
+      nemo_gs_url&.gsub!(/biccn_unbundled/, 'biccn-unbundled')
+      nemo_http_url = file_access_info(protocol: :http)&.[]('url')
+      access_url = nemo_gs_url || nemo_http_url
+      raise "could not obtain file access info for #{file_id}" if access_url.blank?
 
-        download_url = nemo_http_url || nemo_gs_url
-        study_file.external_link_url = download_url
-        study_file.external_link_title = 'NeMO Download'
-        file_in_bucket = ImportService.copy_file_to_bucket(access_url, study.bucket_id)
-        study_file.generation = file_in_bucket.generation
-        log_message "Importing #{study_file.upload_file_name} from #{file_id}"
-        if study_file.save
-          [study, study_file]
-        else
-          errors = study_file.errors.full_messages.dup
-          # clean up study to allow retries with different file
-          ImportService.remove_study_workspace(study)
-          file_in_bucket.delete
-          DeleteQueueJob.new(study).perform
-          raise "could create study_file: #{errors.join('; ')}"
-        end
-      else
-        ImportService.remove_study_workspace(study)
-        errors = study.errors.full_messages.dup
-        DeleteQueueJob.new(study).perform
-        raise "could not create study: #{errors.join('; ')}"
-      end
+      download_url = nemo_http_url || nemo_gs_url
+      study_file.external_link_url = download_url
+      study_file.external_link_title = 'NeMO Download'
+      save_models_and_push_files(study, study_file, access_url)
     end
   end
 end

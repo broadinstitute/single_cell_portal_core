@@ -21,7 +21,7 @@ class ImportServiceTest < ActiveSupport::TestCase
 
   test 'should call import from external service' do
     mock = Minitest::Mock.new
-    mock.expect :create_models_and_copy_files, [Study.new, StudyFile.new]
+    mock.expect :import_from_service, [Study.new, StudyFile.new]
     ImportServiceConfig::Nemo.stub :new, mock do
       ImportService.import_from(ImportServiceConfig::Nemo, **@nemo_attributes)
       mock.verify
@@ -34,7 +34,7 @@ class ImportServiceTest < ActiveSupport::TestCase
   end
 
   test 'should get public bucket' do
-    bucket_id = 'nemo-public'
+    bucket_id = 'broad-singlecellportal-public'
     bucket = ImportService.load_public_bucket bucket_id
     assert bucket.present?
     bucket.is_a?(Google::Cloud::Storage::Bucket)
@@ -42,9 +42,8 @@ class ImportServiceTest < ActiveSupport::TestCase
   end
 
   test 'should get public file from bucket' do
-    bucket_id = 'nemo-public'
-    filepath = 'biccn-unbundled/grant/u01_feng/mccarroll/transcriptome/sncell/10x_v3/marmoset/processed/align/' \
-              'BI006_marm028_Munchkin_M1_rxn1.4.bam.bai'
+    bucket_id = 'broad-singlecellportal-public'
+    filepath = 'test/studies/SCP1671/MIT_milk_study_metadata.csv.gz'
     file = ImportService.load_public_gcp_file(bucket_id, filepath)
     assert file.present?
     assert file.is_a?(Google::Cloud::Storage::File)
@@ -55,10 +54,9 @@ class ImportServiceTest < ActiveSupport::TestCase
 
   test 'should parse gs URL' do
     url = 'gs://bucket-name/path/to/dataset.h5ad'
-    bucket, path, name = ImportService.parse_gs_url(url)
+    bucket, path = ImportService.parse_gs_url(url)
     assert_equal 'bucket-name', bucket
     assert_equal 'path/to/dataset.h5ad', path
-    assert_equal 'dataset.h5ad', name
   end
 
   test 'should copy file to bucket' do
@@ -70,18 +68,19 @@ class ImportServiceTest < ActiveSupport::TestCase
                               test_array: @@studies_to_clean)
     bucket = 'broad-singlecellportal-public'
     filepath = 'test/studies/SCP1671/MIT_milk_study_metadata.csv.gz'
+    filename = 'MIT_milk_study_metadata.csv.gz'
     workspace_bucket = ImportService.storage.bucket study.bucket_id
     gs_url = ['gs:/', bucket, filepath].join('/')
     public_url = ['https://storage.googleapis.com', bucket, filepath].join('/')
     # test copy via https
-    https_copy = ImportService.copy_file_to_bucket(public_url, study.bucket_id)
+    https_copy = ImportService.copy_file_to_bucket(public_url, study.bucket_id, filename)
     assert https_copy.present?
     assert https_copy.is_a?(Google::Cloud::Storage::File)
     # delete file
     https_copy.delete
     assert_nil workspace_bucket.file filepath
     # test copy via gs
-    gs_copy = ImportService.copy_file_to_bucket(gs_url, study.bucket_id)
+    gs_copy = ImportService.copy_file_to_bucket(gs_url, study.bucket_id, filename)
     assert gs_copy.present?
     assert gs_copy.is_a?(Google::Cloud::Storage::File)
   end

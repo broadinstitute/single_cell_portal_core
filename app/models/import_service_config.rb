@@ -16,6 +16,11 @@ module ImportServiceConfig
 
   attr_accessor :client, :user_id, :file_id, :study_id, :branding_group_id
 
+  # name of importing service (e.g. NeMO, Hca)
+  def service_name
+    self.class.name.split('::').last
+  end
+
   # return hash of instance values, except for associated client
   def attributes
     instance_values.reject { |k, _| k == 'client' }
@@ -66,8 +71,12 @@ module ImportServiceConfig
     client.send(id_from_method, entity, ...)
   end
 
-  def taxon_from(common_name)
-    Taxon.find_by(common_name:)
+  def taxon_from(value, attribute: :common_name)
+    Taxon.find_by(attribute.to_sym => value)
+  end
+
+  def taxon_names
+    defined?(self.class::PREFERRED_TAXONS) ? self.class::PREFERRED_TAXONS : []
   end
 
   # empty hash, will be overwritten in included class
@@ -110,16 +119,24 @@ module ImportServiceConfig
     study
   end
 
-  def to_study_file(study_id, taxon_common_name)
+  def to_study_file(study_id, taxon_common_name, taxon_attribute: :common_name, format_attribute: :file_format)
     file_info = load_file.with_indifferent_access
     study_file = to_scp_model(StudyFile, study_file_default_settings, study_file_mappings, file_info)
     # assign study, taxon, and content_type
     study_file.study_id = study_id
-    study_file.taxon_id = taxon_from(taxon_common_name)&.id
-    ext = file_info['file_format']
+    study_file.taxon_id = taxon_from(taxon_common_name, attribute: taxon_attribute)&.id
+    ext = file_info[format_attribute].gsub(/^\./, '') # trim leading period, if present
     study_file.upload_content_type = get_file_content_type(ext)
     study_file.external_identifier = file_id
     study_file
+  end
+
+  # get a value for library_preparation_protocol
+  def find_library_prep(lib)
+    sanitized_lib = lib.gsub(/(\schromium|\ssequencing)/, '')
+    ExpressionFileInfo::LIBRARY_PREPARATION_VALUES.detect do |lib_prep|
+      lib_prep.casecmp(sanitized_lib) == 0
+    end
   end
 
   # empty methods to be overwritten in included classes
@@ -129,7 +146,43 @@ module ImportServiceConfig
 
   def populate_study_file(...); end
 
-  def create_models_and_copy_files(...); end
+  def import_from_service(...); end
+
+  # Main handler for saving models and pushing file to workspace bucket
+  #
+  # * *params*
+  #   - +study+ (Study) => newly initialized Study to save
+  #   - +study_file+ (StudyFile) => newly initialized StudyFile to save
+  #   - +access_url+ (String) => URL to access remote file with
+  #
+  # * *returns*
+  #   - (Array<Study, StudyFile) => newly created study & study_file to pass to ingest process
+  #
+  # * *raises*
+  #   - (RuntimeError) => if either study or study_file fail to save correctly
+  def save_models_and_push_files(study, study_file, access_url)
+    log_message "Importing #{service_name} study: #{study.name} from #{study_id}"
+    if study.save
+      file_in_bucket = ImportService.copy_file_to_bucket(access_url, study.bucket_id, study_file.upload_file_name)
+      study_file.generation = file_in_bucket.generation
+      log_message "Importing #{service_name} file: #{study_file.upload_file_name} from #{file_id}"
+      if study_file.save
+        [study, study_file]
+      else
+        errors = study_file.errors.full_messages.dup
+        # clean up study to allow retries with different file
+        ImportService.remove_study_workspace(study)
+        file_in_bucket.delete
+        DeleteQueueJob.new(study).perform
+        raise "could create study_file: #{errors.join('; ')}"
+      end
+    else
+      ImportService.remove_study_workspace(study)
+      errors = study.errors.full_messages.dup
+      DeleteQueueJob.new(study).perform
+      raise "could not create study: #{errors.join('; ')}"
+    end
+  end
 
   # remove illegal characters from an attribute value like :name or :description
   def sanitize_attribute(value)
