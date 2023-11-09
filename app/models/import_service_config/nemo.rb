@@ -101,10 +101,11 @@ module ImportServiceConfig
       taxons = taxon_names
       preferred_name = taxons.detect { |name| PREFERRED_TAXONS.include?(name) } || taxons.first
       study_file = to_study_file(scp_study_id, preferred_name)
-      if study_file.expression_file_info.library_preparation_protocol.blank?
-        technique = load_study&.[]('technique')
-        study_file.expression_file_info.library_preparation_protocol = find_library_prep(technique)
+      library = study_file.expression_file_info.library_preparation_protocol
+      if library.blank?
+        library = load_study&.[]('technique')
       end
+      study_file.expression_file_info.library_preparation_protocol = find_library_prep(library)
       study_file
     end
 
