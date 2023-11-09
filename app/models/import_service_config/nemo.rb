@@ -2,7 +2,6 @@ module ImportServiceConfig
   # methods/configurations for importing data from NeMO Identifiers API
   class Nemo
     include ImportServiceConfig
-    include Loggable
 
     attr_accessor :project_id
 

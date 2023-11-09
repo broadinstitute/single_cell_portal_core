@@ -2,7 +2,6 @@ module ImportServiceConfig
   # stub configurations for importing atlas datasets from HCA Azul service
   class Hca
     include ImportServiceConfig
-    include Loggable
 
     PREFERRED_TAXONS = ['Homo sapiens', 'Mus musculus'].freeze
 

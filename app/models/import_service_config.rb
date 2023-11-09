@@ -2,6 +2,7 @@
 module ImportServiceConfig
   extend ActiveSupport::Concern
   include ActiveModel::Model
+  include Loggable
 
   # allow word and space characters, plus the following: - . / ( ) , :
   ATTRIBUTE_SANITIZER = %r{[^\w\s\-./()+,:]}
