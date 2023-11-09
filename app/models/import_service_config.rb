@@ -65,6 +65,7 @@ module ImportServiceConfig
       setter = "#{config[:assoc_id]}=" # e.g. self.study_id = 'foo'
       send(setter, associated_id)
     end
+    attributes
   end
 
   # extract an ID from an association
