@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'detached_helper'
 
 module ImportServiceConfig
   class HcaTest < ActiveSupport::TestCase
@@ -111,20 +112,30 @@ module ImportServiceConfig
       assert_not scp_study_file.ann_data_file_info.reference_file
     end
 
-    # note: this is a true external integration test that creates a Terra workspace & GCP bucket
-    # this is mostly to ensure that we can pull files from Azul and push them to buckets
-    test 'should create study and push files to bucket' do
-      attributes = @attributes.dup
-      # this is a small tsv file that will copy faster
-      attributes[:file_id] = 'e595263a-8f3c-452e-b00d-d87c05558102'
-      config = ImportServiceConfig::Hca.new(**attributes)
-      study, study_file = config.import_from_service
-      assert study.persisted?
-      assert study_file.persisted?
-      assert study_file.uploaded?
-      assert ApplicationController.firecloud_client.workspace_file_exists?(study.bucket_id, study_file.bucket_location)
-      assert_equal study.external_identifier, attributes[:study_id]
-      assert_equal study_file.external_identifier, attributes[:file_id]
+    test 'should import from service' do
+      study_name = 'spatial-and-single-cell-transcriptional-landscape-of-human-cerebellar-development'
+      access_url = 'https://service.azul.data.humancellatlas.org/repository/files/' \
+                   'b0517500-b39e-4c7a-b2f0-794ddc725433?catalog=dcp32&version=2021-11-15T11%3A23%3A19.351000Z'
+      file_mock = MiniTest::Mock.new
+      file_mock.expect :generation, '123456789'
+      # for study to save, we need to mock all Terra orchestration API calls for creating workspace & setting acls
+      fc_client_mock = Minitest::Mock.new
+      owner_group = { groupEmail: 'sa-owner-group@firecloud.org' }.with_indifferent_access
+      assign_workspace_mock!(fc_client_mock, owner_group, study_name)
+      AdminConfiguration.stub :find_or_create_ws_user_group!, owner_group do
+        ImportService.stub :copy_file_to_bucket, file_mock do
+          ApplicationController.stub :firecloud_client, fc_client_mock do
+            study, study_file = @configuration.import_from_service
+            file_mock.verify
+            fc_client_mock.verify
+            assert study.persisted?
+            assert study_file.persisted?
+            assert_equal study.external_identifier, @attributes[:study_id]
+            assert_equal study_file.external_identifier, @attributes[:file_id]
+            assert_equal study_file.external_link_url, access_url
+          end
+        end
+      end
     end
   end
 end

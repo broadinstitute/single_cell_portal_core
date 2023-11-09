@@ -39,7 +39,7 @@ class ImportService
 
     configuration = config_class.new(...)
     begin
-      study, study_file = configuration.create_models_and_copy_files
+      study, study_file = configuration.import_from_service
       # TODO: uncomment this block after file parsing is enabled for NeMO and SCP-5400 is complete
       # extra work will be required but is unknown until we have the dataset (e.g. populating AnnData data_fragments)
       # identifier = "#{study.accession} (#{study.external_identifier})"

@@ -59,6 +59,7 @@ class ImportServiceTest < ActiveSupport::TestCase
     assert_equal 'path/to/dataset.h5ad', path
   end
 
+  # this is a true integration test that will create a GCP bucket, then pull file from remote location and push
   test 'should copy file to bucket' do
     user = FactoryBot.create(:user, test_array: @@users_to_clean)
     study = FactoryBot.create(:study,
