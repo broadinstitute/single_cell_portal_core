@@ -1,11 +1,20 @@
 
 import React, { useState, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import {
+  faArrowLeft, faChevronDown, faChevronRight, faUndo,
+  faSortAlphaDown, faSortAmountDown
+} from '@fortawesome/free-solid-svg-icons'
 
 import Select from '~/lib/InstrumentedSelect'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
+import { log } from '~/lib/metrics-api'
+
+const tooltipAttrs = {
+  'data-toggle': 'tooltip',
+  'data-delay': '{"show": 150}' // Avoid flurry of tooltips on passing hover
+}
 
 /** Top content for cell facet filtering panel shown at right in Explore tab */
 export function CellFilteringPanelHeader({
@@ -13,7 +22,7 @@ export function CellFilteringPanelHeader({
 }) {
   return (
     <>
-      <span> Filter plotted cells </span>
+      <span>Filter plotted cells</span>
       <button className="action fa-lg cell-filtering-exit-panel"
         onClick={() => {
           updateFilteredCells(null)
@@ -70,36 +79,115 @@ function parseAnnotationName(annotationIdentifier) {
   return [displayName, rawName]
 }
 
-/** Toggle icon for collapsing a list; for each filter list, and all filter lists */
-function CollapseToggleChevron({ isCollapsed, whatToToggle, isLoaded }) {
-  let toggleIcon
-  let toggleIconTooltipText
-  if (!isCollapsed) {
-    toggleIcon = <FontAwesomeIcon icon={faChevronDown} />
-    toggleIconTooltipText = `Hide ${whatToToggle}`
-  } else {
-    toggleIcon = <FontAwesomeIcon icon={faChevronRight} />
-    toggleIconTooltipText = `Show ${whatToToggle}`
-  }
+/** UI control to update how filters are sorted */
+function SortFiltersIcon({ sortKey, setSortKey }) {
+  const icon = sortKey === 'count' ? faSortAmountDown : faSortAlphaDown
+  const nextSortKey = sortKey === 'count' ? 'label' : 'count'
 
   return (
-    <span style={{ float: 'right', marginRight: '5px' }}>
+    <span
+      onClick={() => {
+        setSortKey(nextSortKey)
+        log('sort-filters', { sortKey })
+      }}
+      className={`sort-filters sort-filters-${sortKey}`}
+      data-analytics-name={`sort-filters sort-filters-${sortKey}`}
+      {...tooltipAttrs}
+      data-original-title={`Sorted by ${sortKey}; click to sort by ${nextSortKey}`}
+    >
+      <FontAwesomeIcon icon={icon}/>
+    </span>
+  )
+}
+
+/** Toggle icon for collapsing a list; for each filter list, and all filter lists */
+function FacetTools({
+  isCollapsed, whatToToggle,
+  isLoaded,
+  sortKey,
+  setSortKey,
+  facet=null,
+  isRoot=false, facets, checkedMap, handleResetFilters
+}) {
+  return (
+    <span className="facet-tools">
       {!isLoaded &&
       <span
-        data-toggle="tooltip"
+        {...tooltipAttrs}
         data-original-title="Loading data..."
         style={{ position: 'relative', top: '-5px', left: '-20px', cursor: 'default' }}
       >
         <LoadingSpinner height='14px'/>
       </span>
       }
-      <span
-        className="facet-toggle-chevron"
-        data-toggle="tooltip"
-        data-original-title={toggleIconTooltipText}
-      >
-        {toggleIcon}
-      </span>
+      {isLoaded && !isRoot && !isCollapsed &&
+      <SortFiltersIcon
+        facet={facet}
+        sortKey={sortKey}
+        setSortKey={setSortKey}
+      />
+      }
+      {isRoot &&
+        <ResetFiltersButton
+          facets={facets}
+          checkedMap={checkedMap}
+          handleResetFilters={handleResetFilters}
+        />
+      }
+      <CollapseToggleChevron
+        isCollapsed={isCollapsed}
+        whatToToggle={whatToToggle}
+      />
+    </span>
+  )
+}
+
+/** Button to reset all filters to their default, initial state */
+function ResetFiltersButton({ facets, checkedMap, handleResetFilters }) {
+  // Assess if filter-section-level checkbox should be indeterminate, i.e. "-",
+  // which is a common state in hierarchical checkboxes to indicate that
+  // some lower checkboxes are checked, and some are not.
+  let numTotalFilters = 0
+  facets.forEach(facet => numTotalFilters += facet.groups.length)
+  let numCheckedFilters = 0
+  Object.entries(checkedMap).forEach(([facet, filters]) => {
+    numCheckedFilters += filters.length
+  })
+  const isResetEligible = numTotalFilters !== numCheckedFilters
+  const resetDisplayClass = isResetEligible ? '' : 'hide-reset'
+
+  return (
+    <a
+      onClick={() => handleResetFilters()}
+      className={`reset-cell-filters ${resetDisplayClass}`}
+      data-analytics-name="reset-cell-filters"
+      data-toggle="tooltip"
+      data-original-title="Reset filter selections"
+    >
+      <FontAwesomeIcon icon={faUndo}/>
+    </a>
+  )
+}
+
+/** Toggle icon for collapsing a list; for each filter list, and all filter lists */
+function CollapseToggleChevron({ isCollapsed, whatToToggle }) {
+  let toggleIcon
+  let toggleIconTooltipText
+  if (!isCollapsed) {
+    toggleIcon = <FontAwesomeIcon className="chevron-down" icon={faChevronDown} />
+    toggleIconTooltipText = `Hide ${whatToToggle}`
+  } else {
+    toggleIcon = <FontAwesomeIcon className="chevron-right" icon={faChevronRight} />
+    toggleIconTooltipText = `Show ${whatToToggle}`
+  }
+
+  return (
+    <span
+      className="facet-toggle-chevron"
+      data-original-title={toggleIconTooltipText}
+      {...tooltipAttrs}
+    >
+      {toggleIcon}
     </span>
   )
 }
@@ -108,7 +196,6 @@ function CollapseToggleChevron({ isCollapsed, whatToToggle, isLoaded }) {
 function isChecked(annotation, item, checkedMap) {
   return checkedMap[annotation]?.includes(item)
 }
-
 
 /** Cell filter component */
 function CellFilter({
@@ -122,7 +209,7 @@ function CellFilter({
   }
 
   return (
-    <label className="cell-filter-label">
+    <label className="cell-filter-label" style={{ marginLeft: '18px' }}>
       <div style={{ marginLeft: '2px', lineHeight: '14px', ...facetLabelStyle }}>
         <input
           type="checkbox"
@@ -148,7 +235,7 @@ function CellFilter({
 /** Facet name and collapsible list of filter checkboxes */
 function CellFacet({
   facet,
-  checkedMap, handleCheck, updateFilteredCells,
+  checkedMap, handleCheck, handleCheckAllFiltersInFacet, updateFilteredCells,
   isAllListsCollapsed
 }) {
   if (Object.keys(facet).length === 0) {
@@ -164,17 +251,26 @@ function CellFacet({
   const [isPartlyCollapsed, setIsPartlyCollapsed] = useState(true)
   const [isFullyCollapsed, setIsFullyCollapsed] = useState(defaultIsFullyCollapsed)
 
-  const filters = facet.groups
+  const [sortKey, setSortKey] = useState('count')
 
-  // TODO: Uncommenting below and replacing `filters` with `sortedFilters` in
-  // this function makes the _filter list_ naturally sorted, but subtly
-  // (and severely) causes a mismatch between the selected filter label and the
-  // group of plotted cells that actually gets hidden in the plot.
-  //
-  // Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
-  // const sortedFilters = facet.groups.sort((a, b) => {
-  //   return a[0].localeCompare(b[0], 'en', { numeric: true, ignorePunctuation: true })
-  // })
+  const unsortedFilters = facet.unsortedGroups
+  let filters
+
+  //  Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
+  if (sortKey === 'label') {
+    filters = unsortedFilters.sort((a, b) => {
+      return a.localeCompare(b, 'en', { numeric: true, ignorePunctuation: true })
+    })
+  } else {
+    // Sort categorical filters (i.e., groups)
+    const filterCounts = facet.originalFilterCounts
+    const sortedGroups = facet.unsortedGroups.sort((a, b) => {
+      if (filterCounts[a] && filterCounts[b]) {
+        return filterCounts[b] - filterCounts[a]
+      }
+    })
+    filters = sortedGroups
+  }
 
   // Handle truncating filter lists to account for any full or partial collapse
   let shownFilters = filters
@@ -189,6 +285,7 @@ function CellFacet({
   useEffect(() => {
     setIsFullyCollapsed(isAllListsCollapsed)
   }, [isAllListsCollapsed])
+
 
   let facetStyle = {}
   if (!facet.isLoaded) {
@@ -206,8 +303,12 @@ function CellFacet({
     >
       <FacetHeader
         facet={facet}
+        checkedMap={checkedMap}
+        handleCheckAllFiltersInFacet={handleCheckAllFiltersInFacet}
         isFullyCollapsed={isFullyCollapsed}
         setIsFullyCollapsed={setIsFullyCollapsed}
+        sortKey={sortKey}
+        setSortKey={setSortKey}
       />
       {shownFilters.map((filter, i) => {
         return (
@@ -226,7 +327,7 @@ function CellFacet({
       {!isFullyCollapsed && filters.length > numFiltersPartlyCollapsed &&
         <a
           className="facet-toggle"
-          style={{ 'fontSize': '13px' }}
+          style={{ 'fontSize': '13px', 'marginLeft': '18px' }}
           onClick={() => {setIsPartlyCollapsed(!isPartlyCollapsed)}}
         >
           {isPartlyCollapsed ? 'More...' : 'Less...'}
@@ -236,27 +337,35 @@ function CellFacet({
   )
 }
 
+/** Determine if a list of DOM classes includes one used for the sort-icon */
+function includesSortIconClass(domClasses) {
+  return (
+    domClasses.includes('fa-sort-alpha-down') ||
+    domClasses.includes('fa-sort-amount-down') ||
+    domClasses.includes('sort-filters')
+  )
+}
+
 /** Get stylized name of facet, optional tooltip, collapse controls */
-function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
+function FacetHeader({
+  facet, checkedMap, handleCheckAllFiltersInFacet, isFullyCollapsed, setIsFullyCollapsed,
+  sortKey, setSortKey
+}) {
   const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
   const isConventional = getIsConventionalAnnotation(rawFacetName)
 
-  const facetNameStyle = {
-    fontWeight: 'bold',
-    marginBottom: '1px',
-    display: 'inline-block',
-    width: 'calc(100% - 30px)'
-  }
+  const facetNameStyle = {}
   const tooltipableFacetNameStyle = {
     width: 'content-fit'
   }
+
+  const loadingClass = !facet.isLoaded ? 'loading' : ''
   if (!facet.isLoaded) {
     facetNameStyle.color = '#777'
     facetNameStyle.cursor = 'default'
   }
 
   let title = 'Author annotation'
-  const tooltipAttrs = { 'data-toggle': 'tooltip' }
   if (isConventional) {
     title = 'Conventional annotation'
     const note = conventionalMetadataGlossary[rawFacetName]
@@ -265,26 +374,74 @@ function FacetHeader({ facet, isFullyCollapsed, setIsFullyCollapsed }) {
     }
   }
   title += `.  Name in data: ${rawFacetName}`
-  tooltipAttrs['data-original-title'] = title
 
   const toggleClass = `cell-filters-${isFullyCollapsed ? 'hidden' : 'shown'}`
 
+  // Assess if facet-level checkbox should be indeterminate, i.e. "-",
+  // which is a common state in hierarchical checkboxes to indicate that
+  // some lower checkboxes are checked, and some are not.
+  const allFiltersInFacet = facet.groups
+  const allCheckedFiltersInFacet = checkedMap[facet.annotation]
+  const isFacetCheckboxSelected = allFiltersInFacet.length === allCheckedFiltersInFacet.length
+  const isIndeterminate = !(
+    allCheckedFiltersInFacet.length === 0 ||
+    isFacetCheckboxSelected
+  )
+
   return (
-    <div
-      className={`cell-facet-header ${toggleClass}`}
-      onClick={() => {setIsFullyCollapsed(!isFullyCollapsed)}}
-    >
-      <span style={facetNameStyle}>
-        <span style={tooltipableFacetNameStyle} {...tooltipAttrs}>
-          {facetName}
-        </span>
-      </span>
-      <CollapseToggleChevron
-        isCollapsed={isFullyCollapsed}
-        whatToToggle="filter list"
-        isLoaded={facet.isLoaded}
+    <>
+      <input
+        type="checkbox"
+        className="cell-facet-header-checkbox"
+        data-analytics-name={`facet-${facet.annotation}`}
+        name={`facet-${facet.annotation}`}
+        onChange={event => {
+          handleCheckAllFiltersInFacet(event)
+        }}
+        checked={isFacetCheckboxSelected}
+        ref={input => {
+          if (input) {
+            input.indeterminate = isIndeterminate
+          }
+        }}
       />
-    </div>
+      <span
+        className={`cell-facet-header ${toggleClass}`}
+        onClick={event => {
+          const domClasses = Array.from(event.target.classList)
+          const parentDomClasses = Array.from(event.target.parentNode.classList)
+          if (
+            includesSortIconClass(domClasses) ||
+            domClasses.length === 0 && (
+              // Accounts for click on the sort icon SVG `path` element itself
+              includesSortIconClass(parentDomClasses)
+            )
+          ) {
+            // Don't toggle facet collapse on sort icon click
+            return
+          }
+          setIsFullyCollapsed(!isFullyCollapsed)
+        }}
+      >
+        <span className={`cell-facet-name ${loadingClass}`}>
+          <span
+            style={tooltipableFacetNameStyle}
+            data-original-title={title}
+            {...tooltipAttrs}
+          >
+            {facetName}
+          </span>
+        </span>
+        <FacetTools
+          sortKey={sortKey}
+          setSortKey={setSortKey}
+          isCollapsed={isFullyCollapsed}
+          whatToToggle="filter list"
+          facet={facet}
+          isLoaded={facet.isLoaded}
+        />
+      </span>
+    </>
   )
 }
 
@@ -310,35 +467,88 @@ export function CellFilteringPanel({
   }
 
   const facets = cellFaceting.facets.map(facet => {
+    // Add counts of matching cells for each filter to its containing facet object
     facet.filterCounts = cellFilterCounts[facet.annotation]
+
+    // Sort categorical filters (i.e., groups)
+    const initCounts = cellFaceting.filterCounts[facet.annotation]
+    if (initCounts) {
+      if (!facet.unsortedGroups) {facet.unsortedGroups = facet.groups}
+      if (!facet.originalFilterCounts) {facet.originalFilterCounts = initCounts}
+      const sortedGroups = facet.groups.sort((a, b) => {
+        if (initCounts[a] && initCounts[b]) {
+          return initCounts[b] - initCounts[a]
+        }
+      })
+      facet.groups = sortedGroups
+    }
     return facet
   })
+
   const [checkedMap, setCheckedMap] = useState(cellFilteringSelection)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
-  const shownFacets = facets
+  const shownFacets = facets.filter(facet => facet.groups.length > 1)
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
   /** Top header for the "Filter" section, including all-facet controls */
-  function FilterSectionHeader({ isAllListsCollapsed, setIsAllListsCollapsed }) {
+  function FilterSectionHeader({ facets, checkedMap, handleResetFilters, isAllListsCollapsed, setIsAllListsCollapsed }) {
     return (
       <div
         className="filter-section-header"
-        onClick={() => {setIsAllListsCollapsed(!isAllListsCollapsed)}}
+        onClick={event => {
+          const domClasses = Array.from(event.target.classList)
+          if (
+            domClasses.includes('fa-undo') ||
+            domClasses.length === 0
+          ) {
+            // Don't toggle facet collapse on "Reset filters" button click
+            return
+          }
+          setIsAllListsCollapsed(!isAllListsCollapsed)
+        }}
       >
         <span
+          className="filter-section-name"
           style={{ 'fontWeight': 'bold' }}
-          data-toggle="tooltip"
+          {...tooltipAttrs}
           data-original-title="Use checkboxes to show or hide cells in plots.  Deselected values are
         assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
         >Filter by</span>
-        <CollapseToggleChevron
+        <FacetTools
           isCollapsed={isAllListsCollapsed}
           setIsCollapsed={setIsAllListsCollapsed}
           whatToToggle="all filter lists"
+          facet={null}
           isLoaded={true}
+          isRoot={true}
+          facets={facets}
+          checkedMap={checkedMap}
+          handleResetFilters={handleResetFilters}
         />
       </div>
     )
+  }
+
+  /** Add or remove all checked item from list */
+  function handleCheckAllFiltersInFacet(event) {
+    const facetName = event.target.name.split(':')[0].replace('facet-', '')
+    const isCheck = event.target.checked
+    const allFiltersInFacet = facets.find(f => f.annotation === facetName).groups
+    const updatedList = isCheck ? allFiltersInFacet : []
+    checkedMap[facetName] = updatedList
+    setCheckedMap(checkedMap)
+    updateFilteredCells(checkedMap)
+  }
+
+  /** Reset all filters to initial, selected state */
+  function handleResetFilters() {
+    const initSelection = {}
+    facets.forEach(facet => {
+      initSelection[facet.annotation] = facet.groups
+    })
+
+    setCheckedMap(initSelection)
+    updateFilteredCells(initSelection)
   }
 
   /** Add or remove checked item from list */
@@ -373,13 +583,16 @@ export function CellFilteringPanel({
   const filterSectionHeight = window.innerHeight - verticalPad
   const filterSectionHeightProp = `${filterSectionHeight}px`
 
+  // Apply custom delay to tooltips added after initial pageload
+  if (window.$) {window.$('[data-toggle="tooltip"]').tooltip()}
+
   return (
     <>
       <div>
         <label className="labeled-select">
           <span
             className="cell-filtering-color-by"
-            data-toggle="tooltip"
+            {...tooltipAttrs}
             data-original-title="Color the plot by an annotation"
           >
           Color by
@@ -400,8 +613,11 @@ export function CellFilteringPanel({
         </label>
         { Object.keys(checkedMap).length !== 0 &&
         <>
-          <div style={{ marginTop: '10px' }}>
+          <div className="filter-section" style={{ marginTop: '10px', marginLeft: '-10px' }}>
             <FilterSectionHeader
+              facets={facets}
+              checkedMap={checkedMap}
+              handleResetFilters={handleResetFilters}
               isAllListsCollapsed={isAllListsCollapsed}
               setIsAllListsCollapsed={setIsAllListsCollapsed}
             />
@@ -412,6 +628,7 @@ export function CellFilteringPanel({
                     facet={facet}
                     checkedMap={checkedMap}
                     handleCheck={handleCheck}
+                    handleCheckAllFiltersInFacet={handleCheckAllFiltersInFacet}
                     updateFilteredCells={updateFilteredCells}
                     isAllListsCollapsed={isAllListsCollapsed}
                     key={i}

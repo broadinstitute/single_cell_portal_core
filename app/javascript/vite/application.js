@@ -72,7 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (window.SCP.userSignedIn) {
     if (window.SCP.userAccessToken === '') {
-      logError('User access token is empty string')
+      const tokenErrorMessage = 'User access token is empty string'
+      const tokenError = new Error(tokenErrorMessage)
+      logError(tokenErrorMessage, tokenError)
     }
     ScpApi.setUpRenewalForUserAccessToken()
   }

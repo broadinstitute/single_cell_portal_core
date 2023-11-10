@@ -374,7 +374,7 @@ function RawScatterPlot({
     }
 
     scatter.hasArrayLabels =
-      scatter.annotParams.type === 'group' && scatter.data.annotations.some(annot => annot.includes('|'))
+      scatter.annotParams.type === 'group' && scatter.data.annotations.some(annot => annot?.includes('|'))
 
     if (clusterResponse) {
       concludeRender(scatter)
@@ -965,6 +965,7 @@ export function intersect(filteredCells, scatter) {
       intersectedData[key].push(filteredElement)
     }
   }
+
   return [intersectedData, plotted]
 }
 
@@ -986,7 +987,9 @@ export function reassignFilteredCells(
 ) {
   const reassignedIndices = []
   const plottedSet = new Set(plotted)
-  for (let i = 0; i < originalData['x'].length; i++) {if (!plottedSet.has(i)) {reassignedIndices.push(i)}}
+  for (let i = 0; i < originalData['x'].length; i++) {
+    if (!plottedSet.has(i)) {reassignedIndices.push(i)}
+  }
   const newPlotData = {}
   const keys = Object.keys(originalData)
   keys.forEach(key => {
@@ -1005,15 +1008,17 @@ export function reassignFilteredCells(
         newPlotData[key].push(FILTERED_TRACE_COLOR)
       } else {
         const dataArray = originalData[key]
-        const replottedElement = dataArray[idx]
+        const sourceIndex = reassignedIndices[idx]
+        const replottedElement = dataArray[sourceIndex]
         newPlotData[key].push(replottedElement)
       }
     }
   }
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i]
-    newPlotData[key].push(...filteredData[key])
+    newPlotData[key] = newPlotData[key].concat(filteredData[key])
   }
+
   return newPlotData
 }
 

@@ -84,9 +84,37 @@ function sortAnnotationsByRelevance(annotList) {
   return annotsToFacet
 }
 
+/** Log metrics for filterCells to Mixpanel */
+function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
+  const t1Counts = Date.now()
+  const perfTimeCounts = t1Counts - t0Counts
+
+  const t1 = Date.now()
+  // Assemble analytics
+  const filterPerfTime = t1 - t0
+  const numCellsBefore = filterableCells.length
+  const numCellsAfter = results.length
+  const numFacetsSelected = Object.keys(selection).length
+  const numFiltersSelected = Object.values(selection).reduce((numFilters, selectedFiltersForThisFacet) => {
+    // return accumulator (an integer) + current value (an array, specifically its length)
+    return numFilters + selectedFiltersForThisFacet?.length
+  }, 0)
+  const filterLogProps = {
+    'perfTime': filterPerfTime,
+    'perfTime:counts': perfTimeCounts,
+    numCellsBefore,
+    numCellsAfter,
+    numFacetsSelected,
+    numFiltersSelected
+  }
+
+  // Log to Mixpanel
+  log('filter-cells', filterLogProps)
+}
+
 /** Get filtered cell results */
 export function filterCells(
-  selection, cellsByFacet, initFacets, filtersByFacet, filterableCells
+  selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, rawFacets
 ) {
   const t0 = Date.now()
   const facets =
@@ -106,17 +134,23 @@ export function filterCells(
 
         const filter = new Set()
         friendlyFilters.forEach(friendlyFilter => {
-          const filterIndex = filtersByFacet[facet].indexOf(friendlyFilter)
+          // find the original index of the filter in the source annotation as the list here may be trimmed already
+          const sourceFacet = rawFacets.find(f => f.annotation === facet)
+          const filterIndex = sourceFacet.groups.indexOf(friendlyFilter)
           filter.add(filterIndex)
         })
 
         fn = function(d) {
           return filter.has(d)
         }
+
+        // Apply the actual crossfilter method
+        cellsByFacet[facet].filterFunction(fn)
       } else {
         fn = null
+        // Apply the actual crossfilter method
+        cellsByFacet[facet].filter(fn)
       }
-      cellsByFacet[facet].filter(fn)
     }
     results = cellsByFacet[facet].top(Infinity)
   }
@@ -124,28 +158,8 @@ export function filterCells(
   const annotationFacets = initFacets.map(facet => facet.annotation)
   const t0Counts = Date.now()
   const counts = getFilterCounts(annotationFacets, cellsByFacet, initFacets, selection)
-  const t1Counts = Date.now()
-  const perfTimeCounts = t1Counts - t0Counts
 
-  const t1 = Date.now()
-  // Assemble analytics
-  const filterPerfTime = t1 - t0
-  const numCellsBefore = filterableCells.length
-  const numCellsAfter = results.length
-  const numFacetsSelected = Object.keys(selection).length
-  const numFiltersSelected = Object.values(selection).length
-  const filterLogProps = {
-    'perfTime': filterPerfTime,
-    'perfTime:counts': perfTimeCounts,
-    numCellsBefore,
-    numCellsAfter,
-    numFacetsSelected,
-    numFiltersSelected,
-    selection
-  }
-
-  // Log to Mixpanel
-  log('filter-cells', filterLogProps)
+  logFilterCells(t0Counts, t0, filterableCells, results, selection)
 
   return [results, counts]
 }
@@ -160,9 +174,10 @@ function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
 
   const facets = prevRawFacets.facets.concat(newRawFacets.facets)
 
-  const cells = prevRawFacets.cells.map((cell, i) => {
-    return cell.concat(newRawFacets.cells[i])
-  })
+  const cells = []
+  for (let i = 0; i < prevRawFacets.cells.length; i++) {
+    cells.push(prevRawFacets.cells[i].concat(newRawFacets.cells[i]))
+  }
 
   const mergedRawFacets = { cells, facets }
   return mergedRawFacets
@@ -174,11 +189,15 @@ function trimNullFilters(cellFaceting) {
   const annotationFacets = cellFaceting.facets.map(facet => facet.annotation)
   const nonzeroFiltersByFacet = {} // filters to remove, as they match no cells
   const nonzeroFilterCountsByFacet = {}
+  const originalFacets = cellFaceting.rawFacets.facets
+
+  let hasAnyNullFilters = false
 
   const filterableCells = cellFaceting.filterableCells
 
   for (let i = 0; i < annotationFacets.length; i++) {
     const facet = annotationFacets[i]
+    const sourceFacet = originalFacets.find(f => f.annotation === facet)
     let facetHasNullFilter = false
     let nullFilterIndex
 
@@ -195,6 +214,8 @@ function trimNullFilters(cellFaceting) {
         nonzeroFilterCounts[filter] = countsByFilter[filter]
       } else {
         facetHasNullFilter = true
+
+        hasAnyNullFilters = true
         nullFilterIndex = filterIndex
       }
     })
@@ -202,8 +223,8 @@ function trimNullFilters(cellFaceting) {
     if (facetHasNullFilter) {
       for (let j = 0; j < cellFaceting.filterableCells.length; j++) {
         const cell = cellFaceting.filterableCells[j]
-        if (cell[facet] > nullFilterIndex) {
-          filterableCells[j][facet] -= 1 // Shift facet filter index to account for removal
+        if (cell[i] > nullFilterIndex) {
+          filterableCells[j][i] -= 1 // Shift facet filter index to account for removal
         }
       }
     }
@@ -211,7 +232,12 @@ function trimNullFilters(cellFaceting) {
     nonzeroFilterCountsByFacet[facet] = nonzeroFilterCounts
     nonzeroFiltersByFacet[facet] = nonzeroFilters
     cellFaceting.facets[i].groups = nonzeroFilters
+    if (typeof sourceFacet !== 'undefined') {
+      cellFaceting.facets[i].originalGroups = sourceFacet.groups
+    }
   }
+
+  if (!hasAnyNullFilters) {return cellFaceting}
 
   cellFaceting.cellsByFacet = getCellsByFacet(filterableCells, annotationFacets)
   cellFaceting.filterableCells = filterableCells
@@ -228,14 +254,16 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
   for (let i = 0; i < annotationFacets.length; i++) {
     const facet = annotationFacets[i]
     const facetCrossfilter = cellsByFacet[facet]
-
     // Set counts for each filter in facet
     const rawFilterCounts = facetCrossfilter.group().top(Infinity)
     const countsByFilter = {}
 
     facets[i].groups.forEach((group, j) => {
       let count = null
-      const rawFilterKeyAndValue = rawFilterCounts.find(rfc => rfc.key === j)
+      // check for originalGroups array first, if present
+      const originalGroups = facets[i].originalGroups || facets[i].groups
+      const groupIdx = originalGroups.indexOf(group)
+      const rawFilterKeyAndValue = rawFilterCounts.find(rfc => rfc.key === groupIdx)
       if (rawFilterKeyAndValue) {
         count = rawFilterKeyAndValue.value
       }
@@ -266,7 +294,7 @@ function getCellsByFacet(filterableCells, annotationFacets) {
   const cellsByFacet = {}
   for (let i = 0; i < annotationFacets.length; i++) {
     const facet = annotationFacets[i]
-    const facetCrossfilter = cellCrossfilter.dimension(d => d[facet])
+    const facetCrossfilter = cellCrossfilter.dimension(d => d.facetIndex[i])
     cellsByFacet[facet] = facetCrossfilter
   }
   return cellsByFacet
@@ -284,15 +312,8 @@ function initCrossfilter(facetData) {
     // An array of integers, e.g. [6, 0, 7, 0, 0]
     // Each element in the array is the index-offset of the cell's group value assignment
     // for the annotation facet at that index.
-    //
-    //  So, for the first element, `6`, we look up the element at index 0 in annotationFacets,
-    //  and get its `groups`.  Then the group value assignment would be the 7th string in the
-    //  `groups` array for the 0th annotation.
-    const cellGroupIndexes = cells[i]
-    for (let j = 0; j < cellGroupIndexes.length; j++) {
-      const annotationIdentifier = annotationFacets[j]
-      filterableCell[annotationIdentifier] = cellGroupIndexes[j]
-    }
+    const facetIndex = cells[i]
+    filterableCell.facetIndex = facetIndex
     filterableCells.push(filterableCell)
   }
 
@@ -333,10 +354,43 @@ function getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting) {
     .slice(fetchOffset, fetchOffset + 5)
 }
 
+/** Log metrics to Mixpanel if fully loaded, return next perfTime object to pass in chain */
+function logInitCellFaceting(timeStart, perfTimes, cellFaceting, prevCellFaceting) {
+  const timeEnd = Date.now()
+  perfTimes.perfTime = timeEnd - timeStart
+  if (prevCellFaceting) {
+    perfTimes.perfTime += prevCellFaceting.perfTimes.perfTime
+    perfTimes.fetch += prevCellFaceting.perfTimes.fetch
+    perfTimes.initCrossfilter += prevCellFaceting.perfTimes.initCrossfilter
+    perfTimes.trimNullFilters += prevCellFaceting.perfTimes.trimNullFilters
+    perfTimes.numInits = prevCellFaceting.perfTimes.numInits + 1
+  } else {
+    perfTimes.numInits = 1
+  }
+
+  if (cellFaceting.isFullyLoaded) {
+    const logProps = {
+      'numCells': cellFaceting.filterableCells.length,
+      'numFacets': cellFaceting.facets.length,
+      'numInits': perfTimes.numInits,
+      'perfTime': perfTimes.perfTime,
+      'perfTime:fetch': perfTimes.fetch,
+      'perfTime:initCrossfilter': perfTimes.initCrossfilter,
+      'perfTime:trimNullFilters': perfTimes.trimNullFilters
+    }
+    log('init-cell-faceting', logProps)
+  }
+
+  return perfTimes
+}
+
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
 export async function initCellFaceting(
   selectedCluster, selectedAnnot, studyAccession, allAnnots, prevCellFaceting
 ) {
+  let perfTimes = {}
+  const timeStart = Date.now()
+
   // Prioritize and fetch annotation facets for all cells
   const selectedAnnotId = getIdentifierForAnnotation(selectedAnnot)
   const eligibleAnnots =
@@ -366,20 +420,24 @@ export async function initCellFaceting(
 
   const facetsToFetch = getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting)
 
+  const timeFetchStart = Date.now()
   const newRawFacets = await fetchAnnotationFacets(studyAccession, facetsToFetch, selectedCluster)
+  perfTimes.fetch = Date.now() - timeFetchStart
 
   // Below line is worth keeping, but only uncomment to debug in development.
-  // This helps simulate waiting on server response, even when using local
-  // service worker caching.
+  // This helps simulate waiting on server response, to slow data load even
+  // when using local service worker caching.
   //
   // await new Promise(resolve => setTimeout(resolve, 3000))
 
   const rawFacets = mergeFacetsResponses(newRawFacets, prevCellFaceting)
 
+  const timeInitCrossfilterStart = Date.now()
   const {
     filterableCells, cellsByFacet,
     loadedFacets, filtersByFacet, filterCounts
   } = initCrossfilter(rawFacets)
+  perfTimes.initCrossfilter = Date.now() - timeInitCrossfilterStart
 
   const facets = allRelevanceSortedFacets.map(facet => {
     const isLoaded = loadedFacets.some(loadedFacet => facet.annotation === loadedFacet.annotation)
@@ -400,7 +458,11 @@ export async function initCellFaceting(
     filterCounts
   }
 
+  const timeTrimNullFiltersStart = Date.now()
   const cellFaceting = trimNullFilters(rawCellFaceting)
+  perfTimes.trimNullFilters = Date.now() - timeTrimNullFiltersStart
+  perfTimes = logInitCellFaceting(timeStart, perfTimes, cellFaceting, prevCellFaceting)
+  cellFaceting.perfTimes = perfTimes
 
   // Below line is worth keeping, but only uncomment to debug in development
   // window.SCP.cellFaceting = cellFaceting
