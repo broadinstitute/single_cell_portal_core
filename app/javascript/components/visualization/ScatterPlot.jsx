@@ -657,7 +657,8 @@ function getScatterDimensions(scatter, dimensionProps, genes) {
 
   dimensionProps = Object.assign({
     hasLabelLegend: isRefGroup,
-    hasTitle: true
+    hasTitle: true,
+    hasDescription: scatter?.description && scatter.description !== ''
   }, dimensionProps)
 
   return getPlotDimensions(dimensionProps)
