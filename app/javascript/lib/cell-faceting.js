@@ -114,7 +114,7 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
 
 /** Get filtered cell results */
 export function filterCells(
-  selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, rawFacets
+  selection, cellsByFacet, initFacets, filterableCells, rawFacets
 ) {
   const t0 = Date.now()
   const facets =
@@ -187,7 +187,6 @@ function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
 function trimNullFilters(cellFaceting) {
   const filterCountsByFacet = cellFaceting.filterCounts
   const annotationFacets = cellFaceting.facets.map(facet => facet.annotation)
-  const nonzeroFiltersByFacet = {} // filters to remove, as they match no cells
   const nonzeroFilterCountsByFacet = {}
   const originalFacets = cellFaceting.rawFacets.facets
 
@@ -230,7 +229,6 @@ function trimNullFilters(cellFaceting) {
     }
 
     nonzeroFilterCountsByFacet[facet] = nonzeroFilterCounts
-    nonzeroFiltersByFacet[facet] = nonzeroFilters
     cellFaceting.facets[i].groups = nonzeroFilters
     if (typeof sourceFacet !== 'undefined') {
       cellFaceting.facets[i].originalGroups = sourceFacet.groups
@@ -245,7 +243,6 @@ function trimNullFilters(cellFaceting) {
   })
   cellFaceting.filterableCells = filterableCells
   cellFaceting.filterCounts = nonzeroFilterCountsByFacet
-  cellFaceting.filtersByFacet = nonzeroFiltersByFacet
 
   return cellFaceting
 }
@@ -324,13 +321,8 @@ function initCrossfilter(facetData) {
 
   const filterCounts = getFilterCounts(annotationFacets, cellsByFacet, facets, null)
 
-  const filtersByFacet = {}
-  facets.forEach(facet => {
-    filtersByFacet[facet.annotation] = facet.groups
-  })
-
   return {
-    filterableCells, cellsByFacet, loadedFacets: facets, filtersByFacet,
+    filterableCells, cellsByFacet, loadedFacets: facets,
     filterCounts
   }
 }
@@ -438,7 +430,7 @@ export async function initCellFaceting(
   const timeInitCrossfilterStart = Date.now()
   const {
     filterableCells, cellsByFacet,
-    loadedFacets, filtersByFacet, filterCounts
+    loadedFacets, filterCounts
   } = initCrossfilter(rawFacets)
   perfTimes.initCrossfilter = Date.now() - timeInitCrossfilterStart
 
@@ -455,7 +447,6 @@ export async function initCellFaceting(
     filterableCells,
     cellsByFacet,
     facets,
-    filtersByFacet,
     isFullyLoaded,
     rawFacets,
     filterCounts

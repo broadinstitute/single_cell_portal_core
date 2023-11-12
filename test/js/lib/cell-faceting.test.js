@@ -34,7 +34,6 @@ describe('Cell faceting', () => {
 
     const cellsByFacet = cellFaceting.cellsByFacet
     const facets = cellFaceting.facets
-    const filtersByFacet = cellFaceting.filtersByFacet
     const filterableCells = cellFaceting.filterableCells
 
     const expectedFilterableCells99 = {
@@ -42,10 +41,7 @@ describe('Cell faceting', () => {
       'facetIndex': [1, 1, 0, 0, 0]
     }
 
-    const expectedInfantSickYN = ['no']
-
     expect(filterableCells[99]).toMatchObject(expectedFilterableCells99)
-    expect(filtersByFacet['infant_sick_YN--group--study']).toEqual(expectedInfantSickYN)
 
     // Test actual cell faceting
     const selections = {
@@ -53,7 +49,7 @@ describe('Cell faceting', () => {
       'General_Celltype--group--study': ['LC1', 'LC2']
     }
     const newFilteredCells = filterCells(
-      selections, cellsByFacet, facets, filtersByFacet, filterableCells, facets
+      selections, cellsByFacet, facets, filterableCells, facets
     )[0]
     expect(newFilteredCells).toHaveLength(33)
   })
