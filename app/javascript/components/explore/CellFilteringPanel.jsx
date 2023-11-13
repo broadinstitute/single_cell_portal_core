@@ -197,6 +197,24 @@ function isChecked(annotation, item, checkedMap) {
   return checkedMap[annotation]?.includes(item)
 }
 
+/** Tiny bar chart to compare baseline to filtered proportion */
+function BaselineSparkbar({ facet, filter }) {
+  const maxWidth = 70
+
+  const baselineCount = facet.originalFilterCounts[filter]
+  const filteredCount = facet.filterCounts[filter]
+  const filteredWidth = Math.round(maxWidth * (filteredCount / baselineCount))
+
+  return (
+    <>
+      <span className="baseline-sparkbar" style={{ display: 'inline-block', height: '3px', position: 'relative', top: '1px', float: 'right' }}>
+        <span className={'filtered-proportion'} style={{ float: 'right', display: 'inline-block', backgroundColor: '#3AF', height: '1.5px', width: `${filteredWidth}px`, zIndex: '100', position: 'relative' }}> </span>
+        <span className={'baseline'} style={{ float: 'right', display: 'inline-block', backgroundColor: '#DDD', height: '1.5px', width: `${maxWidth}px`, position: 'relative', left: `${filteredWidth}px` }}></span>
+      </span>
+    </>
+  )
+}
+
 /** Cell filter component */
 function CellFilter({
   facet, filter, isChecked, checkedMap, handleCheck
@@ -227,6 +245,10 @@ function CellFilter({
         <span className="cell-filter-count">
           {facet.filterCounts && facet.filterCounts[filter]}
         </span>
+        <BaselineSparkbar
+          facet={facet}
+          filter={filter}
+        />
       </div>
     </label>
   )
