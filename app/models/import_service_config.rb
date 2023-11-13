@@ -116,7 +116,8 @@ module ImportServiceConfig
     study_info = load_study.with_indifferent_access
     study = to_scp_model(Study, study_default_settings, study_mappings, study_info)
     study.name = sanitize_attribute(study.name)
-    study.description = sanitize_attribute(study.description)
+    study.build_study_detail
+    study.study_detail.full_description = sanitize_attribute(study.description)
     study.external_identifier = study_id
     study
   end

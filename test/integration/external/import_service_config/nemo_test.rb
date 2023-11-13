@@ -129,6 +129,7 @@ module ImportServiceConfig
       scp_study = @configuration.populate_study
       assert_equal 'Human variation study (10x), GRU', scp_study.name
       assert_not scp_study.public
+      assert scp_study.full_description.present?
       assert_equal @user_id, scp_study.user_id
       assert_equal @branding_group_id, scp_study.branding_group_ids.first
       # populate StudyFile, using above study
