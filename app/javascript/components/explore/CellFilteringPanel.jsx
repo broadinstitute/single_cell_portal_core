@@ -207,9 +207,9 @@ function BaselineSparkbar({ facet, filter }) {
 
   return (
     <>
-      <span className="baseline-sparkbar" style={{ display: 'inline-block', height: '3px', position: 'relative', top: '1px', float: 'right' }}>
-        <span className={'filtered-proportion'} style={{ float: 'right', display: 'inline-block', backgroundColor: '#3AF', height: '1.5px', width: `${filteredWidth}px`, zIndex: '100', position: 'relative' }}> </span>
-        <span className={'baseline'} style={{ float: 'right', display: 'inline-block', backgroundColor: '#DDD', height: '1.5px', width: `${maxWidth}px`, position: 'relative', left: `${filteredWidth}px` }}></span>
+      <span className="sparkbar">
+        <span className="sparkbar-filtered" style={{ width: `${filteredWidth}px` }}> </span>
+        <span className="sparkbar-baseline" style={{ width: `${maxWidth}px`, left: `${filteredWidth}px` }}></span>
       </span>
     </>
   )

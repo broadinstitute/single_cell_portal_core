@@ -156,3 +156,23 @@ input.cell-facet-header-checkbox {
   margin-right: 5px;
   margin-top: -1px;
 }
+
+.sparkbar {
+  float: right;
+}
+
+.sparkbar-filtered,
+.sparkbar-baseline {
+  float: right;
+  height: 1.5px;
+  position: relative;
+}
+
+.sparkbar-filtered {
+  background-color: #3AF;
+  z-index: 100;
+}
+
+.sparkbar-baseline {
+  background-color: #DDD;
+}
