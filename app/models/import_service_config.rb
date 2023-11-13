@@ -17,9 +17,9 @@ module ImportServiceConfig
 
   attr_accessor :client, :user_id, :file_id, :study_id, :branding_group_id
 
-  # name of importing service (e.g. NeMO, Hca)
+  # name of importing service (e.g. NeMO, HCA)
   def service_name
-    self.class.name.split('::').last
+    defined?(self.class::SERVICE_NAME) ? self.class::SERVICE_NAME : self.class.name.split('::').last
   end
 
   # return hash of instance values, except for associated client

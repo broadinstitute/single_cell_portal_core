@@ -37,6 +37,10 @@ module ImportServiceConfig
       assert_equal :extract_associated_id, @configuration.id_from_method
     end
 
+    test 'should return correct service name' do
+      assert_equal 'NeMO', @configuration.service_name
+    end
+
     test 'should load associated user/collection' do
       assert_equal @user, @configuration.user
       assert_equal @branding_group, @configuration.branding_group

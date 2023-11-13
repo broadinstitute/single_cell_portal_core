@@ -36,6 +36,10 @@ module ImportServiceConfig
       assert_equal :project, @configuration.study_method
     end
 
+    test 'should return correct service name' do
+      assert_equal 'HCA', @configuration.service_name
+    end
+
     test 'should load defaults' do
       study_defaults = {
         public: false, user_id: @user_id, branding_group_ids: [@branding_group_id]

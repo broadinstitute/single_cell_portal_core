@@ -7,6 +7,9 @@ module ImportServiceConfig
 
     PREFERRED_TAXONS = %w[human mouse].freeze
 
+    # name for logging when calling ImportService.import_from
+    SERVICE_NAME = 'NeMO'.freeze
+
     def initialize(attributes = {})
       super
       @client ||= ::NemoClient.new
