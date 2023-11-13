@@ -88,7 +88,7 @@ class AnnotationsControllerTest < ActionDispatch::IntegrationTest
                                     test_array: @@studies_to_clean)
     sign_in_and_update @user
     execute_http_request(:get, api_v1_study_annotations_path(@basic_study))
-    assert_equal 3, json.length
+    assert_equal 4, json.length
     assert_equal(%w[species disease cell_type foo], json.map { |annot| annot['name'] })
     expected_annotation = {
       name: 'species', type: 'group', values: %w[dog cat], scope: 'study', is_differential_expression_enabled: false
@@ -167,18 +167,19 @@ class AnnotationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'should load requested facet annotations' do
-    annotation_param = 'species--group--study,disease--group--study'
+    annotation_param = 'species--group--study,disease--group--study,cell_type--group--study'
     cluster = @basic_study.cluster_groups.by_name('clusterA.txt')
     annotations = Api::V1::Visualization::AnnotationsController.get_facet_annotations(
       @basic_study, cluster, annotation_param
     )
-    assert_equal 2, annotations.size
+    assert_equal 3, annotations.size
     expected_annotations = @basic_study.cell_metadata.map do |meta|
       {
         name: meta.name, type: meta.annotation_type, scope: 'study', values: meta.values,
         identifier: meta.annotation_select_value
       }
     end
+    expected_annotations[2][:values][1] = '--Unspecified--'
     assert_equal expected_annotations, annotations
     assert_empty Api::V1::Visualization::AnnotationsController.get_facet_annotations(
       @basic_study, cluster, 'does-not-exist--group--study'
