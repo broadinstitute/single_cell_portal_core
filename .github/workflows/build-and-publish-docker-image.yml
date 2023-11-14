@@ -43,13 +43,11 @@ jobs:
           echo $AUTH_TOKEN | docker login -u oauth2accesstoken --password-stdin https://gcr.io
       - name: Build requested Docker image
         run: |
-          # substitutes 'docker run ARGS gcloud' for regular gcloud command
-          GCLOUD_ALIAS="docker run --rm --volumes-from gcloud-config $GCLOUD_DOCKER_IMAGE gcloud"
-          # determine if VERSION_TAG should be set
+          # substitute 'docker run ARGS gcloud' for regular gcloud command and determine if VERSION_TAG should be set
           if [[ ${{ github.ref_name }} == 'master' ]]; then
-            bin/build_image.sh -g $GCLOUD_ALIAS
+            bin/build_image.sh -g "docker run --rm --volumes-from gcloud-config $GCLOUD_DOCKER_IMAGE gcloud"
           else
-            bin/build_image.sh -v ${{ github.ref_name }} -g $GCLOUD_ALIAS
+            bin/build_image.sh -v ${{ github.ref_name }} -g "docker run --rm --volumes-from gcloud-config $GCLOUD_DOCKER_IMAGE gcloud"
           fi
           
           
