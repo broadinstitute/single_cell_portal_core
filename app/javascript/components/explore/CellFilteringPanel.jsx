@@ -215,6 +215,9 @@ function BaselineSparkbar({ facet, filter }) {
   return (
     <>
       <span className="sparkbar">
+        {baselineCount === filteredCount &&
+          <span className="sparkbar-bulb sparkbar-filtered" style={{ height: '4px', width: '1.25px', right: maxWidthPx, top: '-1px', backgroundColor: '#7CF' }}></span>
+        }
         <span className="sparkbar-filtered" style={{ width: filteredWidthPx }}> </span>
         <span className="sparkbar-baseline" style={{ width: maxWidthPx, left: filteredWidthPx }}></span>
       </span>
