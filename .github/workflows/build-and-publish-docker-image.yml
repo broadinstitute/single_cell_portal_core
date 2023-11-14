@@ -1,4 +1,4 @@
-name: Build and publish development Docker image
+name: Build and publish single-cell-portal Docker image
 on:
   push:
     branches:
@@ -26,7 +26,7 @@ jobs:
         shell: bash
         run: |
           docker pull $GCLOUD_DOCKER_IMAGE
-      - name: Authenticate to gcloud
+      - name: Authenticate to gcloud and docker
         env:
           VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
           VAULT_ROLE_ID: ${{ secrets.VAULT_ROLE_ID }}
@@ -38,12 +38,18 @@ jobs:
           vault read -format=json $VAULT_SECRET_PATH | jq .data > $SERVICE_ACCOUNT_PATH
           docker run -v "$SERVICE_ACCOUNT_PATH:$SERVICE_ACCOUNT_PATH" --name gcloud-config $GCLOUD_DOCKER_IMAGE gcloud \
                          auth activate-service-account --key-file=$SERVICE_ACCOUNT_PATH
-      - name: Build requested Docker image
-        run: |
           # auth into GCR via Docker with token
           AUTH_TOKEN=$(docker run --rm --volumes-from gcloud-config $GCLOUD_DOCKER_IMAGE gcloud auth print-access-token)
-          docker login -u oauth2accesstoken --password $AUTH_TOKEN https://gcr.io
-          # determine version tag (currently testing)
-          BUILD_ARGS=${{ github.ref_name == 'jb-github-actions-cd' && '-v github-action-test' || '-v build-name-diff' }}
+          echo $AUTH_TOKEN | docker login -u oauth2accesstoken --password-stdin https://gcr.io
+      - name: Build requested Docker image
+        run: |
           # substitutes 'docker run ARGS gcloud' for regular gcloud command
-          bin/build_image.sh $BUILD_ARGS -g "docker run --rm --volumes-from gcloud-config $GCLOUD_DOCKER_IMAGE gcloud"
+          GCLOUD_ALIAS="docker run --rm --volumes-from gcloud-config $GCLOUD_DOCKER_IMAGE gcloud"
+          # determine if VERSION_TAG should be set
+          if [[ ${{ github.ref_name }} == 'master' ]]; then
+            bin/build_image.sh -g $GCLOUD_ALIAS
+          else
+            bin/build_image.sh -v ${{ github.ref_name }} -g $GCLOUD_ALIAS
+          fi
+          
+          
