@@ -107,7 +107,7 @@ function FacetTools({
   sortKey,
   setSortKey,
   facet=null,
-  isRoot=false, facets, checkedMap, handleResetFilters
+  isRoot=false, hasNondefaultSelection, handleResetFilters
 }) {
   return (
     <span className="facet-tools">
@@ -129,8 +129,7 @@ function FacetTools({
       }
       {isRoot &&
         <ResetFiltersButton
-          facets={facets}
-          checkedMap={checkedMap}
+          hasNondefaultSelection={hasNondefaultSelection}
           handleResetFilters={handleResetFilters}
         />
       }
@@ -142,18 +141,23 @@ function FacetTools({
   )
 }
 
-/** Button to reset all filters to their default, initial state */
-function ResetFiltersButton({ facets, checkedMap, handleResetFilters }) {
-  // Assess if filter-section-level checkbox should be indeterminate, i.e. "-",
-  // which is a common state in hierarchical checkboxes to indicate that
-  // some lower checkboxes are checked, and some are not.
+/** Determine if user has deselected any filters */
+function getHasNondefaultSelection(checkedMap, facets) {
   let numTotalFilters = 0
   facets.forEach(facet => numTotalFilters += facet.groups.length)
   let numCheckedFilters = 0
-  Object.entries(checkedMap).forEach(([facet, filters]) => {
+  Object.entries(checkedMap).forEach(([_, filters]) => {
     numCheckedFilters += filters.length
   })
-  const isResetEligible = numTotalFilters !== numCheckedFilters
+
+  const hasNondefaultSelection = numTotalFilters !== numCheckedFilters
+
+  return hasNondefaultSelection
+}
+
+/** Button to reset all filters to their default, initial state */
+function ResetFiltersButton({ hasNondefaultSelection, handleResetFilters }) {
+  const isResetEligible = hasNondefaultSelection
   const resetDisplayClass = isResetEligible ? '' : 'hide-reset'
 
   return (
@@ -205,11 +209,14 @@ function BaselineSparkbar({ facet, filter }) {
   const filteredCount = facet.filterCounts[filter]
   const filteredWidth = Math.round(maxWidth * (filteredCount / baselineCount))
 
+  const maxWidthPx = `${maxWidth}px`
+  const filteredWidthPx = `${filteredWidth}px`
+
   return (
     <>
       <span className="sparkbar">
-        <span className="sparkbar-filtered" style={{ width: `${filteredWidth}px` }}> </span>
-        <span className="sparkbar-baseline" style={{ width: `${maxWidth}px`, left: `${filteredWidth}px` }}></span>
+        <span className="sparkbar-filtered" style={{ width: filteredWidthPx }}> </span>
+        <span className="sparkbar-baseline" style={{ width: maxWidthPx, left: filteredWidthPx }}></span>
       </span>
     </>
   )
@@ -217,7 +224,8 @@ function BaselineSparkbar({ facet, filter }) {
 
 /** Cell filter component */
 function CellFilter({
-  facet, filter, isChecked, checkedMap, handleCheck
+  facet, filter, isChecked, checkedMap, handleCheck,
+  hasNondefaultSelection
 }) {
   let facetLabelStyle = {}
   const inputStyle = { 'margin': '1px 5px 0 0', 'verticalAlign': 'top' }
@@ -245,10 +253,12 @@ function CellFilter({
         <span className="cell-filter-count">
           {facet.filterCounts && facet.filterCounts[filter]}
         </span>
+        {hasNondefaultSelection &&
         <BaselineSparkbar
           facet={facet}
           filter={filter}
         />
+        }
       </div>
     </label>
   )
@@ -258,7 +268,7 @@ function CellFilter({
 function CellFacet({
   facet,
   checkedMap, handleCheck, handleCheckAllFiltersInFacet, updateFilteredCells,
-  isAllListsCollapsed
+  isAllListsCollapsed, hasNondefaultSelection
 }) {
   if (Object.keys(facet).length === 0) {
     // Only create the list if the facet exists
@@ -341,6 +351,7 @@ function CellFacet({
             checkedMap={checkedMap}
             handleCheck={handleCheck}
             updateFilteredCells={updateFilteredCells}
+            hasNondefaultSelection={hasNondefaultSelection}
             key={i}
           />
         )
@@ -513,7 +524,7 @@ export function CellFilteringPanel({
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
   /** Top header for the "Filter" section, including all-facet controls */
-  function FilterSectionHeader({ facets, checkedMap, handleResetFilters, isAllListsCollapsed, setIsAllListsCollapsed }) {
+  function FilterSectionHeader({ hasNondefaultSelection, handleResetFilters, isAllListsCollapsed, setIsAllListsCollapsed }) {
     return (
       <div
         className="filter-section-header"
@@ -543,8 +554,7 @@ export function CellFilteringPanel({
           facet={null}
           isLoaded={true}
           isRoot={true}
-          facets={facets}
-          checkedMap={checkedMap}
+          hasNondefaultSelection={hasNondefaultSelection}
           handleResetFilters={handleResetFilters}
         />
       </div>
@@ -608,6 +618,8 @@ export function CellFilteringPanel({
   // Apply custom delay to tooltips added after initial pageload
   if (window.$) {window.$('[data-toggle="tooltip"]').tooltip()}
 
+  const hasNondefaultSelection = getHasNondefaultSelection(checkedMap, facets)
+
   return (
     <>
       <div>
@@ -637,8 +649,7 @@ export function CellFilteringPanel({
         <>
           <div className="filter-section" style={{ marginTop: '10px', marginLeft: '-10px' }}>
             <FilterSectionHeader
-              facets={facets}
-              checkedMap={checkedMap}
+              hasNondefaultSelection={hasNondefaultSelection}
               handleResetFilters={handleResetFilters}
               isAllListsCollapsed={isAllListsCollapsed}
               setIsAllListsCollapsed={setIsAllListsCollapsed}
@@ -653,6 +664,7 @@ export function CellFilteringPanel({
                     handleCheckAllFiltersInFacet={handleCheckAllFiltersInFacet}
                     updateFilteredCells={updateFilteredCells}
                     isAllListsCollapsed={isAllListsCollapsed}
+                    hasNondefaultSelection={hasNondefaultSelection}
                     key={i}
                   />
                 )
