@@ -63,7 +63,7 @@ function main {
   echo "*** PUSH COMPLETE ***"
   # pushing an image with the same tag as an existing one (which will happen each time with 'development') can leave
   # behind an untagged image that needs to be deleted - these can be found with --filter='-tags:*'
-  UNTAGGED=$($GCLOUD_ALIAS container images list-tags $IMAGE_NAME --filter='-tags:*' --format='get(digest)')
+  UNTAGGED=$($GCLOUD_ALIAS container images list-tags $IMAGE_NAME --filter="-tags:*" --format="get(digest)")
   if [[ -n "$UNTAGGED" ]]; then
     echo "*** DELETING UNTAGGED IMAGE DIGEST $UNTAGGED ***"
     $GCLOUD_ALIAS container images delete $IMAGE_NAME@$UNTAGGED --quiet || exit_with_error_message "could not delete image $UNTAGGED"
