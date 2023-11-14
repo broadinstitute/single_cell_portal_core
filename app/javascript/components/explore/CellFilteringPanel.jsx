@@ -203,7 +203,7 @@ function isChecked(annotation, item, checkedMap) {
 
 /** Tiny bar chart to compare baseline to filtered proportion */
 function BaselineSparkbar({ facet, filter }) {
-  const maxWidth = 70
+  const maxWidth = 65
 
   const baselineCount = facet.originalFilterCounts[filter]
   const filteredCount = facet.filterCounts[filter]
@@ -234,6 +234,8 @@ function CellFilter({
     facetLabelStyle = { color: '#777', cursor: 'default' }
   }
 
+  const filterDisplayName = filter.replace(/_/g, ' ')
+
   return (
     <label className="cell-filter-label" style={{ marginLeft: '18px' }}>
       <div style={{ marginLeft: '2px', lineHeight: '14px', ...facetLabelStyle }}>
@@ -249,7 +251,7 @@ function CellFilter({
           style={inputStyle}
           disabled={!facet.isLoaded}
         />
-        <span className="cell-filter-label-text">{filter}</span>
+        <span className="cell-filter-label-text">{filterDisplayName}</span>
         <span className="cell-filter-count">
           {facet.filterCounts && facet.filterCounts[filter]}
         </span>
