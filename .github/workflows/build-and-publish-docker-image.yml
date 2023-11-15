@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - jb-github-actions-cd
+      - development
+      - master
+  workflow_dispatch:
 env:
   DOCKER_IMAGE_NAME: "gcr.io/broad-singlecellportal-staging/single-cell-portal"
   GCLOUD_DOCKER_IMAGE: "gcr.io/google.com/cloudsdktool/google-cloud-cli:latest"
