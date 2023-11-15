@@ -161,13 +161,17 @@ input.cell-facet-header-checkbox {
   float: right;
 }
 
+.cell-filter-quantities {
+  float: right;
+  width: 65px;
+}
+
 .sparkbar-filtered,
 .sparkbar-baseline {
   float: right;
   height: 1.75px;
   position: relative;
 }
-
 
 .sparkbar .sparkbar-filtered {
   background-color: #3AF;

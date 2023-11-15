@@ -201,16 +201,14 @@ function isChecked(annotation, item, checkedMap) {
   return checkedMap[annotation]?.includes(item)
 }
 
-/** Tiny bar chart to compare baseline to filtered proportion */
-function BaselineSparkbar({ facet, filter }) {
+/** Tiny bar chart to compare baseline to selected proportion */
+function BaselineSparkbar({ baselineCount, filteredCount }) {
   const maxWidth = 65
 
-  const baselineCount = facet.originalFilterCounts[filter]
-  const filteredCount = facet.filterCounts[filter]
-  const filteredWidth = Math.round(maxWidth * (filteredCount / baselineCount))
+  const selectedWidth = Math.round(maxWidth * (filteredCount / baselineCount))
 
   const maxWidthPx = `${maxWidth}px`
-  const filteredWidthPx = `${filteredWidth}px`
+  const filteredWidthPx = `${selectedWidth}px`
 
   const fullClass = baselineCount === filteredCount ? ' full' : ''
 
@@ -223,6 +221,13 @@ function BaselineSparkbar({ facet, filter }) {
     </>
   )
 }
+
+/** to round to n decimal places */
+function round(num, places) {
+  const multiplier = Math.pow(10, places)
+  return Math.round(num * multiplier) / multiplier
+}
+
 
 /** Cell filter component */
 function CellFilter({
@@ -237,6 +242,34 @@ function CellFilter({
   }
 
   const filterDisplayName = filter.replace(/_/g, ' ')
+
+  const baselineCount = facet.originalFilterCounts[filter]
+  const filteredCount = facet.filterCounts[filter]
+  let quantitiesTooltip = {}
+  if (hasNondefaultSelection) {
+    let tooltipContent
+    if (filteredCount !== baselineCount) {
+      const percentFiltered = round(100 * filteredCount / baselineCount, 1)
+      const residualCount = baselineCount - filteredCount
+      const percentResidual = 100 - percentFiltered
+      tooltipContent =
+        `
+        <div>
+        Baseline:&nbsp;${baselineCount}<br/>
+        Filtered:&nbsp;${filteredCount}&nbsp;(${percentFiltered}%)<br/>
+        Residual:&nbsp;${residualCount}&nbsp;(${percentResidual}%)
+        </div>
+        `
+    } else {
+      tooltipContent = 'All&nbsp;cells&nbsp;filtered'
+    }
+    quantitiesTooltip = {
+      'data-original-title': tooltipContent,
+      'data-html': 'true',
+      ...tooltipAttrs
+    }
+    quantitiesTooltip['data-delay'] = '{"show": 300}'
+  }
 
   return (
     <label className="cell-filter-label" style={{ marginLeft: '18px' }}>
@@ -254,15 +287,20 @@ function CellFilter({
           disabled={!facet.isLoaded}
         />
         <span className="cell-filter-label-text">{filterDisplayName}</span>
-        <span className="cell-filter-count">
-          {facet.filterCounts && facet.filterCounts[filter]}
+        <span
+          className="cell-filter-quantities"
+          {...quantitiesTooltip}
+        >
+          <span className="cell-filter-count">
+            {facet.filterCounts && facet.filterCounts[filter]}
+          </span>
+          {hasNondefaultSelection &&
+          <BaselineSparkbar
+            baselineCount={baselineCount}
+            filteredCount={filteredCount}
+          />
+          }
         </span>
-        {hasNondefaultSelection &&
-        <BaselineSparkbar
-          facet={facet}
-          filter={filter}
-        />
-        }
       </div>
     </label>
   )
