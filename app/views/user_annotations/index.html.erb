@@ -3,6 +3,19 @@
   <div class="col-md-12">
     <div class="table-responsive">
       <div class="well">
+        <%= form_tag find_user_annotation_path, class: 'form' do %>
+          <div class="row form-group">
+            <div class="col-xs-offset-8 col-xs-2">
+              <%= text_field_tag :annotation_name, params[:annotation_name],
+                                 placeholder: 'Find annotation by name...', class: 'form-control'
+              %>
+            </div>
+            <div class="col-xs-2">
+              <%= submit_tag 'Search', class: 'btn btn-success' %>
+              <%= link_to 'Reset', user_annotations_path, class: 'btn btn-default' %>
+            </div>
+          </div>
+        <% end %>
         <table class="table table-striped" id="annotations">
           <thead>
             <tr>
@@ -43,19 +56,22 @@
             <% end %>
           </tbody>
         </table>
+        <div class="row pagination-controls">
+          <%= will_paginate @user_annotations, renderer: WillPaginate::ActionView::BootstrapLinkRenderer %>
+        </div>
       </div>
     </div>
   </div>
+
 </div>
 
 <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
 
     $('#annotations').dataTable({
-        pagingType: "full_numbers",
-        order: [[2, 'desc'], [0, 'desc']],
-        language: {
-            search: "Filter results by: "
-        }
+      paging: false,
+      order: [[2, 'desc'], [0, 'desc']],
+      searching: false,
+      info: false
     });
     // ask user to confirm delete, then show modal
     // use event delegation to attach to all delete-btn regardless
