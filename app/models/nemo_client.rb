@@ -128,6 +128,24 @@ class NemoClient
     process_api_request(:get, path)
   end
 
+  # using a source entity, extract an association id from an array of associated entities
+  # e.g. { name: 'foo', programs: [ {name: 'bar', url: 'https://nemoarchive.org/programs/nemo:1234'}] }
+  # would yield 'nemo:1234'
+  #
+  # * *params*
+  #   - +entity+ (Hash) => entity retrieved from API
+  #   - +association+ (String, Symbol) => type of associated entities (e.g. programs, files, etc.)
+  #   - +index+ (Integer) => Array position of associated entity to retrieve (defaults to 0)
+  #   - +attribute+ (String, Symbol) => attribute name to extract ID from (e.g. :url)
+  #
+  # * *returns*
+  #   - (String) NeMO API identifier in nemo:[a-z]{3}-[a-z0-9]{7}$ form
+  def extract_associated_id(entity, association, index: 0, attribute: nil)
+    associated_entity = entity[association.to_s]&.[](index)
+    reference = attribute ? associated_entity&.[](attribute.to_s) : associated_entity
+    reference&.split('/')&.last
+  end
+
   ##
   # Convenience methods
   ##

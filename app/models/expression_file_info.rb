@@ -71,6 +71,7 @@ class ExpressionFileInfo
                                 'Smart-seq2/Fluidigm C1', # scRNAseq
                                 'Smart-seq2/plate-based', # scRNAseq
                                 'smFISH', # spatial transcriptomic
+                                'SPLiT-seq', # Split Pool Ligation-based transcriptomic
                                 'snATAC-seq', # scATAC-seq
                                 'STARmap',  # spatial transcriptomic
                               ].freeze
