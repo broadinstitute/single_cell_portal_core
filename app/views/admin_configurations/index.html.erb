@@ -198,16 +198,12 @@
     <div class="tab-pane" id="users">
       <div class="table-responsive">
         <div class="well">
-          <%= form_tag admin_find_user_path, class: 'form' do %>
-            <div class="row form-group">
-              <div class="col-xs-offset-9 col-xs-2">
-                <%= text_field_tag :user_email, nil,
-                                   placeholder: 'Find user by email...', class: 'form-control'
-                %>
-              </div>
-              <div class="col-xs-1">
-                <%= submit_tag 'Find', class: 'btn btn-success' %>
-              </div>
+          <%= form_tag admin_find_user_path, class: 'form-inline' do %>
+            <div class="form-group pull-right navigation-form">
+              <%= text_field_tag :user_email, nil,
+                                 placeholder: 'Find user by email...', class: 'form-control'
+              %>
+              <%= submit_tag 'Find', class: 'btn btn-success' %>
             </div>
           <% end %>
           <table class="table table-striped" id="user-table">
