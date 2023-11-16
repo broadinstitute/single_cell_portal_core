@@ -211,12 +211,13 @@ function BaselineSparkbar({ baselineCount, filteredCount }) {
   const filteredWidthPx = `${selectedWidth}px`
 
   const fullClass = baselineCount === filteredCount ? ' full' : ''
+  const baseTop = filteredCount === 0 ? '0' : '-1.75px'
 
   return (
     <>
       <span className="sparkbar">
         <span className={`sparkbar-filtered ${fullClass}`} style={{ width: filteredWidthPx }}> </span>
-        <span className="sparkbar-baseline" style={{ width: maxWidthPx, left: -1.5 * filteredWidthPx, top: '-1.5px' }}></span>
+        <span className="sparkbar-baseline" style={{ width: maxWidthPx, left: -1 * filteredWidthPx, top: baseTop }}></span>
       </span>
     </>
   )
