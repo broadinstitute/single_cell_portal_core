@@ -8,7 +8,7 @@ class UserAnnotationsController < ApplicationController
 
   before_action :set_user_annotation, only: [:edit, :update, :destroy]
   before_action :authenticate_user!
-  before_action :check_permission, except: :index
+  before_action :check_permission, except: [:index, :find_annotation]
 
   ###
   #
@@ -21,7 +21,15 @@ class UserAnnotationsController < ApplicationController
   # GET /user_annotations.json
   def index
     # get all this user's annotations
-    @user_annotations = UserAnnotation.viewable(current_user)
+    @user_annotations = UserAnnotation.viewable(current_user).paginate(page: params[:page], per_page: 25)
+  end
+
+  def find_annotation
+    @user_annotations = UserAnnotation.viewable(current_user).select do |annotation|
+      annotation.name =~ /#{params[:annotation_name]}/i
+    end.paginate(page: params[:page], per_page: 25)
+
+    render action: :index
   end
 
   # GET /user_annotations/1/edit
