@@ -201,7 +201,7 @@ function isChecked(annotation, item, checkedMap) {
   return checkedMap[annotation]?.includes(item)
 }
 
-/** Tiny bar chart showing what proportion of cells passed filter vs. not */
+/** Tiny bar chart showing proportions of passed vs. filtered cells */
 function BaselineSparkbar({ baselineCount, passedCount }) {
   const maxWidth = 65
 
@@ -213,14 +213,60 @@ function BaselineSparkbar({ baselineCount, passedCount }) {
   const fullClass = baselineCount === passedCount ? ' full' : ''
   const baseTop = passedCount === 0 ? '0' : '-2px'
 
+  const passedStyle = { width: passedWidthPx }
+  const filteredStyle = { width: maxWidthPx, left: -1 * passedWidthPx, top: baseTop }
+
   return (
     <>
       <span className="sparkbar">
-        <span className={`sparkbar-passed ${fullClass}`} style={{ width: passedWidthPx }}> </span>
-        <span className="sparkbar-baseline" style={{ width: maxWidthPx, left: -1 * passedWidthPx, top: baseTop }}></span>
+        <span className={`sparkbar-passed ${fullClass}`} style={passedStyle}> </span>
+        <span className="sparkbar-filtered" style={filteredStyle}></span>
       </span>
     </>
   )
+}
+
+/** Get tooltip for quantities shown upon hovering when a filter has been applied */
+function getQuantitiesTooltip(baselineCount, passedCount, hasNondefaultSelection) {
+  if (!hasNondefaultSelection) {
+    return {}
+  }
+
+  let tooltipContent
+  if (passedCount !== baselineCount) {
+    // "Baseline": # cells highlighted _before_ any filtering
+    // "Passed": # cells highlighted after filtering
+    // "Filtered": # cells _not_ highlighted after filtering
+    //
+    // These "not highlighted after filtering" cells are the group-specific
+    // component of the broader "--Filtered--" group we show in the cluster
+    // scatter plot legend, for cells that are plotted in a faint grey.  It's
+    // important that this tooltip term for "not highlighted after filtering"
+    // matches that other term in the plot legend.
+
+    const percentPassed = Math.round(100 * passedCount / baselineCount)
+    const filteredCount = baselineCount - passedCount
+    const percentFiltered = Math.round(100 - percentPassed)
+
+    const passedText = `Passed: ${passedCount} (${percentPassed}%)`.replace(/ /g, '&nbsp;')
+    const filteredText = `Filtered: ${filteredCount} (${percentFiltered}%)`.replace(/ /g, '&nbsp;')
+
+    tooltipContent =
+      `<div>` +
+      `Baseline:&nbsp;${baselineCount}<br/>` +
+      `<span class="sparkbar-tooltip-passed">${passedText}</span><br/>` +
+      `<span class="sparkbar-tooltip-filtered">${filteredText}</span>` +
+      `</div>`
+  } else {
+    tooltipContent = 'All cells passed'.replace(/ /g, '&nbsp;')
+  }
+  const quantitiesTooltip = {
+    'data-original-title': tooltipContent,
+    'data-html': true,
+    ...tooltipAttrs
+  }
+
+  return quantitiesTooltip
 }
 
 /** Cell filter component */
@@ -239,31 +285,7 @@ function CellFilter({
 
   const baselineCount = facet.originalFilterCounts[filter]
   const passedCount = facet.filterCounts[filter]
-  let quantitiesTooltip = {}
-  if (hasNondefaultSelection) {
-    let tooltipContent
-    if (passedCount !== baselineCount) {
-      const percentPassed = Math.round(100 * passedCount / baselineCount, 1)
-      const filteredCount = baselineCount - passedCount
-      const percentFiltered = Math.round(100 - percentPassed, 1)
-      tooltipContent =
-        `<div>` +
-        `Baseline:&nbsp;${baselineCount}<br/>` +
-        `<span class="sparkbar-tooltip-passed">Passed:&nbsp;${passedCount}&nbsp;(${percentPassed}%)</span><br/>` +
-        `<span class="sparkbar-tooltip-filtered">Filtered:&nbsp;${filteredCount}&nbsp;(${percentFiltered}%)</span>` +
-        `</div>`
-    } else {
-      tooltipContent = 'All&nbsp;cells&nbsp;passed'
-    }
-    quantitiesTooltip = {
-      'data-original-title': tooltipContent,
-      // 'data-placement': 'left',
-      'data-html': true,
-      ...tooltipAttrs
-    }
-  }
-
-  console.log('quantitiesTooltip', quantitiesTooltip)
+  const quantitiesTooltip = getQuantitiesTooltip(baselineCount, passedCount, hasNondefaultSelection)
 
   return (
     <label className="cell-filter-label" style={{ marginLeft: '18px' }}>
