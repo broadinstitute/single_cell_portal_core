@@ -216,7 +216,7 @@ function BaselineSparkbar({ baselineCount, filteredCount }) {
     <>
       <span className="sparkbar">
         <span className={`sparkbar-filtered ${fullClass}`} style={{ width: filteredWidthPx }}> </span>
-        <span className="sparkbar-baseline" style={{ width: maxWidthPx, left: filteredWidthPx }}></span>
+        <span className="sparkbar-baseline" style={{ width: maxWidthPx, left: -1.5 * filteredWidthPx, top: '-1.5px' }}></span>
       </span>
     </>
   )
@@ -227,7 +227,6 @@ function round(num, places) {
   const multiplier = Math.pow(10, places)
   return Math.round(num * multiplier) / multiplier
 }
-
 
 /** Cell filter component */
 function CellFilter({
@@ -253,23 +252,23 @@ function CellFilter({
       const residualCount = baselineCount - filteredCount
       const percentResidual = 100 - percentFiltered
       tooltipContent =
-        `
-        <div>
-        Baseline:&nbsp;${baselineCount}<br/>
-        Filtered:&nbsp;${filteredCount}&nbsp;(${percentFiltered}%)<br/>
-        Residual:&nbsp;${residualCount}&nbsp;(${percentResidual}%)
-        </div>
-        `
+        `<div>` +
+        `Baseline:&nbsp;${baselineCount}<br/>` +
+        `<span class="sparkbar-tooltip-filtered">Filtered:&nbsp;${filteredCount}&nbsp;(${percentFiltered}%)</span><br/>` +
+        `<span class="sparkbar-tooltip-residual">Residual:&nbsp;${residualCount}&nbsp;(${percentResidual}%)</span>` +
+        `</div>`
     } else {
       tooltipContent = 'All&nbsp;cells&nbsp;filtered'
     }
     quantitiesTooltip = {
       'data-original-title': tooltipContent,
-      'data-html': 'true',
+      // 'data-placement': 'left',
+      'data-html': true,
       ...tooltipAttrs
     }
-    quantitiesTooltip['data-delay'] = '{"show": 300}'
   }
+
+  console.log('quantitiesTooltip', quantitiesTooltip)
 
   return (
     <label className="cell-filter-label" style={{ marginLeft: '18px' }}>
@@ -587,7 +586,7 @@ export function CellFilteringPanel({
           style={{ 'fontWeight': 'bold' }}
           {...tooltipAttrs}
           data-original-title="Use checkboxes to show or hide cells in plots.  Deselected values are
-        assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
+        assigned to the '--Residual--' group. Hover over this legend entry to highlight."
         >Filter by</span>
         <FacetTools
           isCollapsed={isAllListsCollapsed}

@@ -162,8 +162,9 @@ input.cell-facet-header-checkbox {
 }
 
 .cell-filter-quantities {
+  display: block;
+  width: 60px;
   float: right;
-  width: 65px;
 }
 
 .sparkbar-filtered,
@@ -181,6 +182,14 @@ input.cell-facet-header-checkbox {
 .sparkbar .sparkbar-filtered.full {
   background-color: #4ED;
   z-index: 100;
+}
+
+.sparkbar-tooltip-filtered {
+  color: #4BF;
+}
+
+.sparkbar-tooltip-residual {
+  color: #DDD;
 }
 
 .sparkbar-baseline {
