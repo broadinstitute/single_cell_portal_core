@@ -170,7 +170,7 @@ input.cell-facet-header-checkbox {
 .sparkbar-passed,
 .sparkbar-baseline {
   float: right;
-  height: 1.75px;
+  height: 2px;
   position: relative;
 }
 
@@ -188,14 +188,10 @@ input.cell-facet-header-checkbox {
   color: #48B8FF;
 }
 
-.sparkbar-tooltip-filtered {
-  color: #D8D8D8;
-}
-
 .sparkbar-baseline {
-  background-color: #DDD;
+  background-color: #D8D8D8;
 }
 
-.cell-facet:hover .sparkbar .sparkbar-passed {
-  height: 2.25px;
+.sparkbar-tooltip-filtered {
+  color: #CCC;
 }

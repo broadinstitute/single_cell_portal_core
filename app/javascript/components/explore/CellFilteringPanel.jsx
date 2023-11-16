@@ -211,7 +211,7 @@ function BaselineSparkbar({ baselineCount, passedCount }) {
   const passedWidthPx = `${selectedWidth}px`
 
   const fullClass = baselineCount === passedCount ? ' full' : ''
-  const baseTop = passedCount === 0 ? '0' : '-1.75px'
+  const baseTop = passedCount === 0 ? '0' : '-2px'
 
   return (
     <>
