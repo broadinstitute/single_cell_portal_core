@@ -167,35 +167,35 @@ input.cell-facet-header-checkbox {
   float: right;
 }
 
-.sparkbar-filtered,
+.sparkbar-passed,
 .sparkbar-baseline {
   float: right;
   height: 1.75px;
   position: relative;
 }
 
-.sparkbar .sparkbar-filtered {
+.sparkbar .sparkbar-passed {
   background-color: #3AF;
   z-index: 100;
 }
 
-.sparkbar .sparkbar-filtered.full {
+.sparkbar .sparkbar-passed.full {
   background-color: #4ED;
   z-index: 100;
 }
 
-.sparkbar-tooltip-filtered {
-  color: #4BF;
+.sparkbar-tooltip-passed {
+  color: #48B8FF;
 }
 
-.sparkbar-tooltip-residual {
-  color: #DDD;
+.sparkbar-tooltip-filtered {
+  color: #D8D8D8;
 }
 
 .sparkbar-baseline {
   background-color: #DDD;
 }
 
-.cell-facet:hover .sparkbar .sparkbar-filtered {
+.cell-facet:hover .sparkbar .sparkbar-passed {
   height: 2.25px;
 }

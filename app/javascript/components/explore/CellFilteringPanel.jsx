@@ -201,32 +201,26 @@ function isChecked(annotation, item, checkedMap) {
   return checkedMap[annotation]?.includes(item)
 }
 
-/** Tiny bar chart to compare baseline to selected proportion */
-function BaselineSparkbar({ baselineCount, filteredCount }) {
+/** Tiny bar chart showing what proportion of cells passed filter vs. not */
+function BaselineSparkbar({ baselineCount, passedCount }) {
   const maxWidth = 65
 
-  const selectedWidth = Math.round(maxWidth * (filteredCount / baselineCount))
+  const selectedWidth = Math.round(maxWidth * (passedCount / baselineCount))
 
   const maxWidthPx = `${maxWidth}px`
-  const filteredWidthPx = `${selectedWidth}px`
+  const passedWidthPx = `${selectedWidth}px`
 
-  const fullClass = baselineCount === filteredCount ? ' full' : ''
-  const baseTop = filteredCount === 0 ? '0' : '-1.75px'
+  const fullClass = baselineCount === passedCount ? ' full' : ''
+  const baseTop = passedCount === 0 ? '0' : '-1.75px'
 
   return (
     <>
       <span className="sparkbar">
-        <span className={`sparkbar-filtered ${fullClass}`} style={{ width: filteredWidthPx }}> </span>
-        <span className="sparkbar-baseline" style={{ width: maxWidthPx, left: -1 * filteredWidthPx, top: baseTop }}></span>
+        <span className={`sparkbar-passed ${fullClass}`} style={{ width: passedWidthPx }}> </span>
+        <span className="sparkbar-baseline" style={{ width: maxWidthPx, left: -1 * passedWidthPx, top: baseTop }}></span>
       </span>
     </>
   )
-}
-
-/** to round to n decimal places */
-function round(num, places) {
-  const multiplier = Math.pow(10, places)
-  return Math.round(num * multiplier) / multiplier
 }
 
 /** Cell filter component */
@@ -244,22 +238,22 @@ function CellFilter({
   const filterDisplayName = filter.replace(/_/g, ' ')
 
   const baselineCount = facet.originalFilterCounts[filter]
-  const filteredCount = facet.filterCounts[filter]
+  const passedCount = facet.filterCounts[filter]
   let quantitiesTooltip = {}
   if (hasNondefaultSelection) {
     let tooltipContent
-    if (filteredCount !== baselineCount) {
-      const percentFiltered = round(100 * filteredCount / baselineCount, 1)
-      const residualCount = baselineCount - filteredCount
-      const percentResidual = 100 - percentFiltered
+    if (passedCount !== baselineCount) {
+      const percentPassed = Math.round(100 * passedCount / baselineCount, 1)
+      const filteredCount = baselineCount - passedCount
+      const percentFiltered = Math.round(100 - percentPassed, 1)
       tooltipContent =
         `<div>` +
         `Baseline:&nbsp;${baselineCount}<br/>` +
-        `<span class="sparkbar-tooltip-filtered">Filtered:&nbsp;${filteredCount}&nbsp;(${percentFiltered}%)</span><br/>` +
-        `<span class="sparkbar-tooltip-residual">Residual:&nbsp;${residualCount}&nbsp;(${percentResidual}%)</span>` +
+        `<span class="sparkbar-tooltip-passed">Passed:&nbsp;${passedCount}&nbsp;(${percentPassed}%)</span><br/>` +
+        `<span class="sparkbar-tooltip-filtered">Filtered:&nbsp;${filteredCount}&nbsp;(${percentFiltered}%)</span>` +
         `</div>`
     } else {
-      tooltipContent = 'All&nbsp;cells&nbsp;filtered'
+      tooltipContent = 'All&nbsp;cells&nbsp;passed'
     }
     quantitiesTooltip = {
       'data-original-title': tooltipContent,
@@ -297,7 +291,7 @@ function CellFilter({
           {hasNondefaultSelection &&
           <BaselineSparkbar
             baselineCount={baselineCount}
-            filteredCount={filteredCount}
+            passedCount={passedCount}
           />
           }
         </span>
@@ -587,7 +581,7 @@ export function CellFilteringPanel({
           style={{ 'fontWeight': 'bold' }}
           {...tooltipAttrs}
           data-original-title="Use checkboxes to show or hide cells in plots.  Deselected values are
-        assigned to the '--Residual--' group. Hover over this legend entry to highlight."
+        assigned to the '--Filtered--' group. Hover over this legend entry to highlight."
         >Filter by</span>
         <FacetTools
           isCollapsed={isAllListsCollapsed}

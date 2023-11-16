@@ -23,7 +23,7 @@ const { defaultScatterColor } = PlotOptions
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { formatFileForApi } from '~/components/upload/upload-utils'
 import { successNotification, failureNotification } from '~/lib/MessageModal'
-import { RESIDUAL_TRACE_NAME, RESIDUAL_TRACE_COLOR } from '~/lib/cluster-utils'
+import { FILTERED_TRACE_NAME, FILTERED_TRACE_COLOR } from '~/lib/cluster-utils'
 
 window.Plotly = Plotly
 
@@ -966,7 +966,7 @@ export function intersect(filteredCells, scatter) {
 ScatterPlot.intersect = intersect
 
 /**
- * Reassign plot data to change cells filtered by cell faceting to --Residual-- trace (light grey, transparent)
+ * Reassign plot data to change cells filtered by cell faceting to --Filtered-- trace (light grey, transparent)
  * this keeps the shape of the original plot but clearly shows what cells are excluded
  *
  * @param plotted {Array} Indices of points that are to be plotted
@@ -974,7 +974,7 @@ ScatterPlot.intersect = intersect
  * @param filteredData {Object} filtered scatter data object from cell faceting
  * @param annotIsNumeric {Boolean} T/F whether plotted annotation is numeric
  * @param setOriginalLabels {function} function to store original annotation labels for color persistence
- * @returns {Object} reorganized scatter data object with new --Residual-- trace
+ * @returns {Object} reorganized scatter data object with new --Filtered-- trace
  */
 export function reassignFilteredCells(
   plotted, originalData, filteredData, annotIsNumeric, setOriginalLabels
@@ -997,9 +997,9 @@ export function reassignFilteredCells(
     for (let k = 0; k < keys.length; k++) {
       const key = keys[k]
       if (key === 'annotations') {
-        newPlotData[key].push(RESIDUAL_TRACE_NAME)
+        newPlotData[key].push(FILTERED_TRACE_NAME)
       } else if (key === 'expression') {
-        newPlotData[key].push(RESIDUAL_TRACE_COLOR)
+        newPlotData[key].push(FILTERED_TRACE_COLOR)
       } else {
         const dataArray = originalData[key]
         const sourceIndex = reassignedIndices[idx]

@@ -11,7 +11,7 @@ import ScatterPlot, { intersect, reassignFilteredCells, getPlottedLabels } from 
 import ScatterPlotLegend from 'components/visualization/controls/ScatterPlotLegend'
 import * as ScpApiMetrics from 'lib/scp-api-metrics'
 import * as MetricsApi from 'lib/metrics-api'
-import { RESIDUAL_TRACE_NAME } from 'lib/cluster-utils'
+import { FILTERED_TRACE_NAME } from 'lib/cluster-utils'
 
 import '@testing-library/jest-dom/extend-expect'
 
@@ -244,7 +244,7 @@ it('intersects and reassigns cells via cell faceting', async () => {
 
   const setOriginalLabels = jest.fn()
   const reassignedData = reassignFilteredCells(plottedIdx, plotData.data, filteredPlotData, setOriginalLabels)
-  const filteredCount = reassignedData.annotations.filter(x => x === RESIDUAL_TRACE_NAME).length
+  const filteredCount = reassignedData.annotations.filter(x => x === FILTERED_TRACE_NAME).length
   expect(filteredCount).toEqual(3)
 })
 
