@@ -156,3 +156,42 @@ input.cell-facet-header-checkbox {
   margin-right: 5px;
   margin-top: -1px;
 }
+
+.sparkbar {
+  float: right;
+}
+
+.cell-filter-quantities {
+  display: block;
+  width: 60px;
+  float: right;
+}
+
+.sparkbar-passed,
+.sparkbar-filtered {
+  float: right;
+  height: 2px;
+  position: relative;
+}
+
+.sparkbar .sparkbar-passed {
+  background-color: #3AF;
+  z-index: 100;
+}
+
+.sparkbar .sparkbar-passed.full {
+  background-color: #4ED;
+  z-index: 100;
+}
+
+.sparkbar-tooltip-passed {
+  color: #48B8FF;
+}
+
+.sparkbar-filtered {
+  background-color: #D8D8D8;
+}
+
+.sparkbar-tooltip-filtered {
+  color: #CCC;
+}
