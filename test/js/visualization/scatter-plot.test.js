@@ -12,6 +12,7 @@ import ScatterPlotLegend from 'components/visualization/controls/ScatterPlotLege
 import * as ScpApiMetrics from 'lib/scp-api-metrics'
 import * as MetricsApi from 'lib/metrics-api'
 import { FILTERED_TRACE_NAME } from 'lib/cluster-utils'
+import * as LayoutUtils from 'lib/layout-utils'
 
 import '@testing-library/jest-dom/extend-expect'
 
@@ -62,6 +63,9 @@ it('shows custom legend with default group scatter plot', async () => {
   fakeLog.mockImplementation(() => {})
 
   const countsByLabel = COUNTS_BY_LABEL
+
+  const getTextSizeSpy = jest.spyOn(LayoutUtils, 'getTextSize')
+  getTextSizeSpy.mockImplementation(() => [10, 10])
 
   /** shim for the explore view component that only handles passing hiddenTraces */
   function ExploreShim() {
@@ -130,6 +134,10 @@ it('shows cluster external link', async () => {
   const countsByLabel = COUNTS_BY_LABEL
   const originalLabels = Object.keys(countsByLabel)
 
+  const getTextSizeSpy = jest.spyOn(LayoutUtils, 'getTextSize')
+  getTextSizeSpy.mockImplementation(() => [10, 10])
+  const titleTexts = ['foo', 'bar']
+
   render((<ScatterPlotLegend
     name={scatterData.annotParams.name}
     height={scatterData.height}
@@ -138,6 +146,7 @@ it('shows cluster external link', async () => {
     hasArrayLabels={scatterData.hasArrayLabels}
     externalLink={BASIC_PLOT_DATA.externalLink}
     originalLabels={originalLabels}
+    titleTexts={titleTexts}
   />))
 
   const { container } = render(<ScatterPlot/>)
@@ -161,6 +170,10 @@ it('shows legend search', async () => {
       legend_search: true
     })
 
+  const getTextSizeSpy = jest.spyOn(LayoutUtils, 'getTextSize')
+  getTextSizeSpy.mockImplementation(() => [10, 10])
+  const titleTexts = ['foo', 'bar']
+
   render((
     <ScatterPlotLegend
       name={scatterData.annotParams.name}
@@ -170,6 +183,7 @@ it('shows legend search', async () => {
       hasArrayLabels={scatterData.hasArrayLabels}
       externalLink={BASIC_PLOT_DATA.externalLink}
       originalLabels={originalLabels}
+      titleTexts={titleTexts}
     />))
 
   const labelSearchBox = await screen.findByPlaceholderText('Search')
@@ -232,11 +246,11 @@ describe('getPlotlyTraces handles expression graphs', () => {
 it('intersects and reassigns cells via cell faceting', async () => {
   const plotData = _cloneDeep(BASIC_PLOT_DATA.scatter)
   const filteredCells = [
-    { allCellsIndex: 0, 'Category--group--cluster': 0 },
-    { allCellsIndex: 1, 'Category--group--cluster': 0 },
-    { allCellsIndex: 2, 'Category--group--cluster': 0 },
-    { allCellsIndex: 3, 'Category--group--cluster': 0 },
-    { allCellsIndex: 6, 'Category--group--cluster': 0 }
+    { 'allCellsIndex': 0, 'Category--group--cluster': 0 },
+    { 'allCellsIndex': 1, 'Category--group--cluster': 0 },
+    { 'allCellsIndex': 2, 'Category--group--cluster': 0 },
+    { 'allCellsIndex': 3, 'Category--group--cluster': 0 },
+    { 'allCellsIndex': 6, 'Category--group--cluster': 0 }
   ]
   const [filteredPlotData, plottedIdx] = intersect(filteredCells, plotData)
   expect(filteredPlotData.annotations.includes('s1')).toBeTruthy()
