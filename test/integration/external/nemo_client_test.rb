@@ -4,7 +4,7 @@ class NemoClientTest < ActiveSupport::TestCase
   before(:all) do
     @username = ENV['NEMO_API_USERNAME']
     @password = ENV['NEMO_API_PASSWORD']
-    @nemo_client = NemoClient.new(username: @username, password: @password)
+    @nemo_client = NemoClient.new
     @nemo_is_ok = @nemo_client.api_available?
     @skip_message = '-- skipping due to NeMO API being unavailable --'
     @identifiers = {
@@ -26,7 +26,7 @@ class NemoClientTest < ActiveSupport::TestCase
   end
 
   test 'should instantiate client' do
-    client = NemoClient.new(username: @username, password: @password)
+    client = NemoClient.new
     assert_equal NemoClient::BASE_URL, client.api_root
     assert_equal @username, client.username
     assert_equal @password, client.password
@@ -97,7 +97,8 @@ class NemoClientTest < ActiveSupport::TestCase
     identifier = @identifiers[:project]
     project = @nemo_client.project(identifier)
     assert project.present?
-    assert_equal 'study', project['project_type']
+    assert_equal 'Single-nucleus analysis of preoptic area development from late embryonic to adult stages',
+                 project['title']
     assert_equal 'biccn', project['program']
     assert_equal 'dulac_poa_dev_sn_10x_proj', project['short_name']
   end
@@ -107,7 +108,7 @@ class NemoClientTest < ActiveSupport::TestCase
     identifier = @identifiers[:publication]
     publication = @nemo_client.publication(identifier)
     assert publication.present?
-    assert_equal 'Bakken_2021_dLGN_CrossSpecies_Rseq', publication['short_name']
+    assert_equal 'eLife', publication['journal']
     assert_equal 'https://doi.org/10.7554/eLife.64875', publication['doi']
     assert_equal ["human", "macaques", "house mouse"].sort, publication['taxonomies'].sort
   end

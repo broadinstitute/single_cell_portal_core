@@ -253,7 +253,7 @@ function CellFacet({
 
   const [sortKey, setSortKey] = useState('count')
 
-  const unsortedFilters = facet.unsortedGroups
+  const unsortedFilters = facet.unsortedGroups ?? []
   let filters
 
   //  Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
@@ -264,7 +264,7 @@ function CellFacet({
   } else {
     // Sort categorical filters (i.e., groups)
     const filterCounts = facet.originalFilterCounts
-    const sortedGroups = facet.unsortedGroups.sort((a, b) => {
+    const sortedGroups = unsortedFilters.sort((a, b) => {
       if (filterCounts[a] && filterCounts[b]) {
         return filterCounts[b] - filterCounts[a]
       }

@@ -524,6 +524,8 @@ GEM
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
     will_paginate (3.3.0)
+    will_paginate-bootstrap-style (0.2.4)
+      will_paginate (~> 3.0, >= 3.0.0)
     will_paginate_mongoid (2.0.1)
       mongoid
       will_paginate (~> 3.0)
@@ -608,6 +610,7 @@ DEPENDENCIES
   uuid
   vite_rails
   will_paginate
+  will_paginate-bootstrap-style
   will_paginate_mongoid
 
 RUBY VERSION

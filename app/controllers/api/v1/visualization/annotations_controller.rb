@@ -296,6 +296,9 @@ module Api
               else
                 label = annotation_arrays[annotation][index] || '--Unspecified--'
               end
+              if label == ''
+                label = '--Unspecified--'
+              end
               facet[:groups].index(label)
             end
           end

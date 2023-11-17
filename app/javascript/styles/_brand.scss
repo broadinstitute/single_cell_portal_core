@@ -269,3 +269,10 @@
 .margin-extra-right {
   margin-right: 10px;
 }
+
+.pagination-controls {
+  text-align: center;
+  ul.pagination {
+    display: inline-block;
+  }
+}
