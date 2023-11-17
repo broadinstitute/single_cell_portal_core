@@ -200,7 +200,7 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
       get view_study_path(accession: study.accession, study_name: study.url_safe_name)
       assert controller.current_user == @sharing_user,
              "Did not successfully authenticate as sharing user, current_user is #{controller.current_user.email}"
-      assert_select "h1.study-lead", true, "Did not successfully load study page for #{study.name}"
+      assert_select "h1.study-header", true, "Did not successfully load study page for #{study.name}"
       assert_select 'li#study-download-nav' do |element|
         assert element.attr('class').to_str.include?('disabled'),
                "Did not disable downloads tab for reviewer: '#{element.attr('class')}'"

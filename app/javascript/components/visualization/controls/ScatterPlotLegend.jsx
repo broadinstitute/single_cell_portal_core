@@ -7,10 +7,10 @@ import Button from 'react-bootstrap/lib/Button'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 import debounce from 'lodash.debounce'
 
-
 import { log } from '~/lib/metrics-api'
 import PlotUtils from '~/lib/plot'
 const { scatterLabelLegendWidth, getColorForLabel, getLegendSortedLabels } = PlotUtils
+import { getTextSize } from '~/lib/layout-utils'
 
 /** Convert state Boolean to attribute string */
 function getActivity(isActive) {
@@ -184,13 +184,28 @@ function getShowHideEnabled(hiddenTraces, countsByLabel) {
   return enabled
 }
 
+/** Get legend size and position */
+function getLegendStyle(scatterLabelLegendWidth, height, titleTexts, plotWidth) {
+  // If plot title is narrower than plot (as is typical), then move legend up
+  const font = '14px'
+  const titleWidth = getTextSize(titleTexts[0], font).width
+  const detailWidth = getTextSize(titleTexts[1], font).width
+  const fullPlotTitleWidth = titleWidth + detailWidth
+  const isPlotNarrowerThanItsTitle = plotWidth > fullPlotTitleWidth
+  const top = isPlotNarrowerThanItsTitle ? '-35px' : '0'
+  const posAttrs = { position: 'relative', top }
+
+  const style = { width: scatterLabelLegendWidth, height, ...posAttrs }
+  return style
+}
+
 /** Component for custom legend for scatter plots */
 export default function ScatterPlotLegend({
   name, height, countsByLabel, correlations, hiddenTraces,
   updateHiddenTraces, customColors, editedCustomColors, setEditedCustomColors, setCustomColors,
   enableColorPicking=false, activeTraceLabel, setActiveTraceLabel,
   isSplitLabelArrays, updateIsSplitLabelArrays, hasArrayLabels,
-  externalLink, saveCustomColors, originalLabels
+  externalLink, saveCustomColors, originalLabels, titleTexts, plotWidth
 }) {
   // is the user currently in color-editing mode
   const [showColorControls, setShowColorControls] = useState(false)
@@ -200,7 +215,7 @@ export default function ScatterPlotLegend({
 
   const [labelsToShow, setLabelsToShow] = useState(labels)
 
-  const style = { width: scatterLabelLegendWidth, height }
+  const style = getLegendStyle(scatterLabelLegendWidth, height, titleTexts, plotWidth)
   const filteredClass = (hiddenTraces.length === 0) ? 'unfiltered' : ''
   const [showIsEnabled, hideIsEnabled] =
     getShowHideEnabled(hiddenTraces, countsByLabel)

@@ -15,6 +15,13 @@
   }
 }
 
+.study-rectangle {
+  height: fit-content;
+  box-shadow: none;
+  position: relative;
+  margin-bottom: 0;
+}
+
 .dropdown-scroll {
   overflow: auto;
   max-height: 80vh;
@@ -30,9 +37,14 @@
   }
 }
 
+.nav.navbar-nav > li > a {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
 #main-banner-logo {
   float: left;
-  margin-top: 66px;
+  margin-top: 81px;
   margin-left: 35px;
   img {
     max-height: 100px;
@@ -75,6 +87,10 @@
   font-size: 14px;
   font-weight: 200;
   text-align: center;
+}
+
+.right-border-0-5 {
+  border-right: 0.5px solid #FFFFFF;
 }
 
 .left-border-0-5 {
@@ -238,13 +254,13 @@
 
 #whitepaper-btn {
   position: absolute;
-  top: 245px;
+  top: 220px;
   right: 15px;
   z-index: 500;
 }
 
 #latest-features-btn {
-  top: 200px;
+  top: 175px;
   position: absolute;
   right: 15px;
   z-index: 500;
