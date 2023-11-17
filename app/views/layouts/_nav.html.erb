@@ -114,7 +114,7 @@
   <% if controller_name == 'site' && !@study %>
   </div>
   <% end %>
-  <% if @deployment_notification.present? %>
+  <% if @deployment_notification.present? && get_page_name != 'site-study' %>
     <% if Time.zone.now >= @deployment_notification.display_time %>
       <% if cookies[:hide_deployment_notification].nil? || cookies[:hide_deployment_notification] != @deployment_notification.id.to_s %>
         <%= render partial: '/layouts/deployment_notification_banner', locals: {deployment_notification: @deployment_notification} %>
@@ -122,6 +122,13 @@
     <% end %>
   <% end %>
 </nav>
+  <% if @deployment_notification.present? && get_page_name == 'site-study' %>
+    <% if Time.zone.now >= @deployment_notification.display_time %>
+      <% if cookies[:hide_deployment_notification].nil? || cookies[:hide_deployment_notification] != @deployment_notification.id.to_s %>
+        <%= render partial: '/layouts/deployment_notification_banner', locals: {deployment_notification: @deployment_notification} %>
+      <% end %>
+    <% end %>
+  <% end %>
 
 <script type='text/javascript' nonce="<%= content_security_policy_script_nonce %>">
   $('#open-contact-modal').on('click', function() {
