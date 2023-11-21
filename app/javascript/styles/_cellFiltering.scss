@@ -167,6 +167,13 @@ input.cell-facet-header-checkbox {
   float: right;
 }
 
+
+@media (max-width: 1250px) {
+  .sparkbar {
+    display: none;
+  }
+}
+
 .sparkbar-passed,
 .sparkbar-filtered {
   float: right;
