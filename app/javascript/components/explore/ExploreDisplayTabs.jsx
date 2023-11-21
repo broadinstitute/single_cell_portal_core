@@ -343,16 +343,16 @@ export default function ExploreDisplayTabs({
       ) {
         // DE table is shown, or pairwise DE is available.  Least horizontal space for plots.
         main = 'col-md-9'
-        side = 'col-md-3'
+        side = 'col-md-3 right-panel'
       } else if (panelToShow === 'cell-filtering') {
         main = 'col-md-10-5'
-        side = 'col-md-2-5'
+        side = 'col-md-2-5 right-panel'
       } else {
         // Default state, when side panel is "Options" and not collapsed
         main = 'col-md-10'
         // only set options-bg if we're outside the DE UX
 
-        side = panelToShow === 'options' ? 'col-md-2 options-bg' : 'col-md-2'
+        side = panelToShow === 'options' ? 'col-md-2 options-bg right-panel' : 'col-md-2 right-panel'
       }
     } else {
       // When options panel is collapsed.  Maximize horizontal space for plots.

@@ -107,7 +107,7 @@ function FacetTools({
   sortKey,
   setSortKey,
   facet=null,
-  isRoot=false, facets, checkedMap, handleResetFilters
+  isRoot=false, hasNondefaultSelection, handleResetFilters
 }) {
   return (
     <span className="facet-tools">
@@ -129,8 +129,7 @@ function FacetTools({
       }
       {isRoot &&
         <ResetFiltersButton
-          facets={facets}
-          checkedMap={checkedMap}
+          hasNondefaultSelection={hasNondefaultSelection}
           handleResetFilters={handleResetFilters}
         />
       }
@@ -142,18 +141,23 @@ function FacetTools({
   )
 }
 
-/** Button to reset all filters to their default, initial state */
-function ResetFiltersButton({ facets, checkedMap, handleResetFilters }) {
-  // Assess if filter-section-level checkbox should be indeterminate, i.e. "-",
-  // which is a common state in hierarchical checkboxes to indicate that
-  // some lower checkboxes are checked, and some are not.
+/** Determine if user has deselected any filters */
+function getHasNondefaultSelection(checkedMap, facets) {
   let numTotalFilters = 0
   facets.forEach(facet => numTotalFilters += facet.groups.length)
   let numCheckedFilters = 0
-  Object.entries(checkedMap).forEach(([facet, filters]) => {
+  Object.entries(checkedMap).forEach(([_, filters]) => {
     numCheckedFilters += filters.length
   })
-  const isResetEligible = numTotalFilters !== numCheckedFilters
+
+  const hasNondefaultSelection = numTotalFilters !== numCheckedFilters
+
+  return hasNondefaultSelection
+}
+
+/** Button to reset all filters to their default, initial state */
+function ResetFiltersButton({ hasNondefaultSelection, handleResetFilters }) {
+  const isResetEligible = hasNondefaultSelection
   const resetDisplayClass = isResetEligible ? '' : 'hide-reset'
 
   return (
@@ -197,9 +201,79 @@ function isChecked(annotation, item, checkedMap) {
   return checkedMap[annotation]?.includes(item)
 }
 
+/** Tiny bar chart showing proportions of passed vs. filtered cells */
+function BaselineSparkbar({ baselineCount, passedCount }) {
+  const maxWidth = 65
+
+  const selectedWidth = Math.round(maxWidth * (passedCount / baselineCount))
+
+  const maxWidthPx = `${maxWidth}px`
+  const passedWidthPx = `${selectedWidth}px`
+  const leftPx = -1 * `${passedWidthPx}px`
+
+  const fullClass = baselineCount === passedCount ? ' full' : ''
+  const baseTop = passedCount === 0 ? '0' : '-2px'
+
+  const passedStyle = { width: passedWidthPx }
+  const filteredStyle = { width: maxWidthPx, left: leftPx, top: baseTop }
+
+  return (
+    <>
+      <span className="sparkbar">
+        <span className={`sparkbar-passed ${fullClass}`} style={passedStyle}> </span>
+        <span className="sparkbar-filtered" style={filteredStyle}></span>
+      </span>
+    </>
+  )
+}
+
+/** Get tooltip for quantities shown upon hovering when a filter has been applied */
+function getQuantitiesTooltip(baselineCount, passedCount, hasNondefaultSelection) {
+  if (!hasNondefaultSelection) {
+    return {}
+  }
+
+  let tooltipContent
+  if (passedCount !== baselineCount) {
+    // "Baseline": # cells highlighted _before_ any filtering
+    // "Passed": # cells highlighted after filtering
+    // "Filtered": # cells _not_ highlighted after filtering
+    //
+    // These "not highlighted after filtering" cells are the group-specific
+    // component of the broader "--Filtered--" group we show in the cluster
+    // scatter plot legend, for cells that are plotted in a faint grey.  It's
+    // important that this tooltip term for "not highlighted after filtering"
+    // matches that other term in the plot legend.
+
+    const percentPassed = Math.round(100 * passedCount / baselineCount)
+    const filteredCount = baselineCount - passedCount
+    const percentFiltered = Math.round(100 - percentPassed)
+
+    const passedText = `Passed: ${passedCount} (${percentPassed}%)`.replace(/ /g, '&nbsp;')
+    const filteredText = `Filtered: ${filteredCount} (${percentFiltered}%)`.replace(/ /g, '&nbsp;')
+
+    tooltipContent =
+      `<div>` +
+      `Baseline:&nbsp;${baselineCount}<br/>` +
+      `<span class="sparkbar-tooltip-passed">${passedText}</span><br/>` +
+      `<span class="sparkbar-tooltip-filtered">${filteredText}</span>` +
+      `</div>`
+  } else {
+    tooltipContent = 'All cells passed'.replace(/ /g, '&nbsp;')
+  }
+  const quantitiesTooltip = {
+    'data-original-title': tooltipContent,
+    'data-html': true,
+    ...tooltipAttrs
+  }
+
+  return quantitiesTooltip
+}
+
 /** Cell filter component */
 function CellFilter({
-  facet, filter, isChecked, checkedMap, handleCheck
+  facet, filter, isChecked, checkedMap, handleCheck,
+  hasNondefaultSelection
 }) {
   let facetLabelStyle = {}
   const inputStyle = { 'margin': '1px 5px 0 0', 'verticalAlign': 'top' }
@@ -207,6 +281,12 @@ function CellFilter({
     inputStyle.cursor = 'default'
     facetLabelStyle = { color: '#777', cursor: 'default' }
   }
+
+  const filterDisplayName = filter.replace(/_/g, ' ')
+
+  const baselineCount = facet.originalFilterCounts[filter]
+  const passedCount = (facet.filterCounts && facet.filterCounts[filter]) ?? 0
+  const quantitiesTooltip = getQuantitiesTooltip(baselineCount, passedCount, hasNondefaultSelection)
 
   return (
     <label className="cell-filter-label" style={{ marginLeft: '18px' }}>
@@ -223,9 +303,20 @@ function CellFilter({
           style={inputStyle}
           disabled={!facet.isLoaded}
         />
-        <span className="cell-filter-label-text">{filter}</span>
-        <span className="cell-filter-count">
-          {facet.filterCounts && facet.filterCounts[filter]}
+        <span className="cell-filter-label-text">{filterDisplayName}</span>
+        <span
+          className="cell-filter-quantities"
+          {...quantitiesTooltip}
+        >
+          <span className="cell-filter-count">
+            {facet.filterCounts && facet.filterCounts[filter]}
+          </span>
+          {hasNondefaultSelection &&
+          <BaselineSparkbar
+            baselineCount={baselineCount}
+            passedCount={passedCount}
+          />
+          }
         </span>
       </div>
     </label>
@@ -236,7 +327,7 @@ function CellFilter({
 function CellFacet({
   facet,
   checkedMap, handleCheck, handleCheckAllFiltersInFacet, updateFilteredCells,
-  isAllListsCollapsed
+  isAllListsCollapsed, hasNondefaultSelection
 }) {
   if (Object.keys(facet).length === 0) {
     // Only create the list if the facet exists
@@ -319,6 +410,7 @@ function CellFacet({
             checkedMap={checkedMap}
             handleCheck={handleCheck}
             updateFilteredCells={updateFilteredCells}
+            hasNondefaultSelection={hasNondefaultSelection}
             key={i}
           />
         )
@@ -491,7 +583,7 @@ export function CellFilteringPanel({
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
   /** Top header for the "Filter" section, including all-facet controls */
-  function FilterSectionHeader({ facets, checkedMap, handleResetFilters, isAllListsCollapsed, setIsAllListsCollapsed }) {
+  function FilterSectionHeader({ hasNondefaultSelection, handleResetFilters, isAllListsCollapsed, setIsAllListsCollapsed }) {
     return (
       <div
         className="filter-section-header"
@@ -521,8 +613,7 @@ export function CellFilteringPanel({
           facet={null}
           isLoaded={true}
           isRoot={true}
-          facets={facets}
-          checkedMap={checkedMap}
+          hasNondefaultSelection={hasNondefaultSelection}
           handleResetFilters={handleResetFilters}
         />
       </div>
@@ -578,13 +669,15 @@ export function CellFilteringPanel({
   const currentlyInUseAnnotations = { colorBy: '', facets: [] }
   const annotationOptions = getAnnotationOptions(annotationList, cluster)
 
-  const verticalPad = 344 // Accounts for all UI real estate above table header
+  const verticalPad = 295 // Accounts for all UI real estate above table header
 
   const filterSectionHeight = window.innerHeight - verticalPad
   const filterSectionHeightProp = `${filterSectionHeight}px`
 
   // Apply custom delay to tooltips added after initial pageload
   if (window.$) {window.$('[data-toggle="tooltip"]').tooltip()}
+
+  const hasNondefaultSelection = getHasNondefaultSelection(checkedMap, facets)
 
   return (
     <>
@@ -615,8 +708,7 @@ export function CellFilteringPanel({
         <>
           <div className="filter-section" style={{ marginTop: '10px', marginLeft: '-10px' }}>
             <FilterSectionHeader
-              facets={facets}
-              checkedMap={checkedMap}
+              hasNondefaultSelection={hasNondefaultSelection}
               handleResetFilters={handleResetFilters}
               isAllListsCollapsed={isAllListsCollapsed}
               setIsAllListsCollapsed={setIsAllListsCollapsed}
@@ -631,6 +723,7 @@ export function CellFilteringPanel({
                     handleCheckAllFiltersInFacet={handleCheckAllFiltersInFacet}
                     updateFilteredCells={updateFilteredCells}
                     isAllListsCollapsed={isAllListsCollapsed}
+                    hasNondefaultSelection={hasNondefaultSelection}
                     key={i}
                   />
                 )

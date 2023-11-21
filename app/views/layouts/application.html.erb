@@ -24,7 +24,7 @@
 
       window.SCP.gaTrackingId = '<%= ENV['GA_TRACKING_ID'] %>';
       window.SCP.analyticsPageName = '<%= get_page_name %>';
-      window.SCP.currentStudyAccession = '<%= @study&.accession %>'
+      window.SCP.currentStudyAccession = '<%= @study&.accession %>';
 
       // if we had search forms to preserve, recall and resubmit
       if ( localStorage.getItem('previous-search-url') ) {
@@ -98,8 +98,6 @@
 
 </head>
 <body <%= @selected_branding_group.present? ? "data-branding-id=#{@selected_branding_group.name_as_id}" : nil %>>
-# <h1><%= yield(:title) %></h1>
-
   <%#
     TODO: In SCP-2121, move these includes back into HEAD element now that
     https://github.com/react-bootstrap/react-bootstrap/issues/3645
@@ -136,7 +134,12 @@
   <%= yield %>
 <% else %>
   <div class="container-fluid" id="wrap">
+    <% if controller_name == 'site' && @study %>
+    <%# Only use section-pad outside Study Overview %>
+    <div class="row" id="main-body">
+    <% else %>
     <div class="row section-pad" id="main-body">
+    <% end %>
       <div class="col-md-12">
         <%= yield %>
       </div>
@@ -236,12 +239,16 @@
 
     // adjusting margins on page when notification banner is present
     $(document).ready(function() {
-        var notification_banner = document.getElementsByClassName('notification-banner');
-        var home_page = document.getElementsByClassName('home-page-fix')
-        if (notification_banner.length >0 && !home_page.length >0 ){
-            $('#main-body').css(
-             "margin-top", "100px"
-            )
+        const hasNotificationBanner = document.querySelector('.notification-banner') !== null
+        const isHomePage = document.querySelector('.home-page-fix') !== null
+        if (hasNotificationBanner && !isHomePage) {
+          const isStudyPage = window.SCP.analyticsPageName === 'site-study'
+          const marginTop = isStudyPage ? '5px' : '100px'
+          $('#main-body').css('margin-top', marginTop)
+          if (!isStudyPage) {
+            // E.g. upload wizard page, study details page
+            $('.notification-banner').css('margin-top', '50px')
+          }
         }
     });
 </script>

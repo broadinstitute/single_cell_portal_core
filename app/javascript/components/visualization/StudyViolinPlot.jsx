@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import _uniqueId from 'lodash/uniqueId'
-import _capitalize from 'lodash/capitalize'
 import Plotly from 'plotly.js-dist'
 
 import { fetchExpressionViolin } from '~/lib/scp-api'
@@ -14,10 +13,29 @@ import { withErrorBoundary } from '~/lib/ErrorBoundary'
 import useErrorMessage from '~/lib/error-message'
 import { logViolinPlot } from '~/lib/scp-api-metrics'
 import LoadingSpinner from '~/lib/LoadingSpinner'
-import { formatGeneList} from '~/components/visualization/PlotTitle'
+import { formatGeneList } from '~/components/visualization/PlotTitle'
+
+/** Title for violin plot; also accounts for "Collapsed by" / consensus view */
+function ViolinPlotTitle({ cluster, annotation, genes, consensus }) {
+  const isCollapsedView = ['mean', 'median'].includes(consensus)
+
+  const title = formatGeneList(genes)
+
+  // We need to explicitly test length > 0 below, just asserting .length would
+  // sometimes render a zero to the page
+  if (isCollapsedView && genes.length > 0) {
+    title.push(<span key="c"> {consensus}</span>)
+  }
+  title.push(<span key="e"> expression in <i>{cluster}</i> by <b>{annotation}</b></span>)
 
 
-/** displays a violin plot of expression data for the given gene and study
+  return (
+    <h5 className="plot-title violin-title">{title}</h5>
+  )
+}
+
+/** Displays a violin plot of expression data for the given gene and study
+ *
  * @param studyAccession {String} the study accession
  * @param genes {Array[String]} array of gene names
  * @param cluster {string} the name of the cluster, or blank/null for the study's default
@@ -38,7 +56,10 @@ function RawStudyViolinPlot({
   // array of gene names as they are listed in the study itself
   const [studyGeneNames, setStudyGeneNames] = useState([])
   const [graphElementId] = useState(_uniqueId('study-violin-'))
+  const [renderedCluster, setRenderedCluster] = useState('')
+  const [renderedAnnotation, setRenderedAnnotation] = useState('')
   const { ErrorComponent, setShowError, setError } = useErrorMessage()
+
 
   /** renders received expression data from the server */
   function renderData([results, perfTimes]) {
@@ -62,12 +83,15 @@ function RawStudyViolinPlot({
       perfTimes
     )
     setStudyGeneNames(results.gene_names)
+    setRenderedCluster(results.rendered_cluster)
+    setRenderedAnnotation(results.rendered_annotation.split('--')[0])
     if (setAnnotationList) {
       setAnnotationList(results.annotation_list)
     }
     setShowError(false)
     setIsLoading(false)
   }
+
   /** handles fetching the expression data (and menu option data) from the server */
   useEffect(() => {
     setIsLoading(true)
@@ -119,10 +143,17 @@ function RawStudyViolinPlot({
     }
   }, [dimensions.width, dimensions.height])
 
-  const isCollapsedView = ['mean', 'median'].indexOf(consensus) >= 0
   return (
     <div className="plot">
       { ErrorComponent }
+      {!isLoading &&
+        <ViolinPlotTitle
+          cluster={renderedCluster}
+          annotation={renderedAnnotation}
+          genes={studyGeneNames}
+          consensus={consensus}
+        />
+      }
       <div
         className="expression-graph"
         id={graphElementId}
@@ -131,13 +162,6 @@ function RawStudyViolinPlot({
       </div>
       {
         isLoading && <LoadingSpinner testId={`${graphElementId}-loading-icon`}/>
-      }
-      {/* we have to explicitly test length > 0 below, just asserting .length would
-       sometimes render a zero to the page*/}
-      { isCollapsedView && studyGeneNames.length > 0 &&
-        <div className="text-center">
-          <span>{_capitalize(consensus)} expression of {formatGeneList(studyGeneNames)}</span>
-        </div>
       }
     </div>
   )
@@ -150,7 +174,7 @@ export default StudyViolinPlot
 /** Formats expression data for Plotly, draws violin (or box) plot */
 function renderViolinPlot(target, results, { plotType, showPoints, dimensions }) {
   const traceData = getViolinTraces(results.values, showPoints, plotType)
-  const layout = getViolinLayout(results.rendered_cluster, results.y_axis_title, dimensions)
+  const layout = getViolinLayout(results.y_axis_title, dimensions)
   Plotly.newPlot(target, traceData, layout)
 }
 
@@ -237,12 +261,11 @@ function getViolinTraces(
 }
 
 /** Get Plotly layout for violin plot */
-function getViolinLayout(title, expressionLabel, dimensions) {
+function getViolinLayout(expressionLabel, dimensions) {
   const { width, height } = dimensions
   return {
     width,
-    height: height + 10,
-    title,
+    height,
     // Force axis labels, including number strings, to be treated as
     // categories.  See Python docs (same generic API as JavaScript):
     // https://plotly.com/python/axes/#forcing-an-axis-to-be-categorical
@@ -258,7 +281,8 @@ function getViolinLayout(title, expressionLabel, dimensions) {
     },
     margin: {
       pad: 10,
-      b: 100
+      t: 20,
+      b: 140
     },
     autosize: true
   }

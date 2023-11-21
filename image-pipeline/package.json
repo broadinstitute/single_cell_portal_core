@@ -18,7 +18,7 @@
     "exifreader": "4.5.1",
     "fflate": "^0.7.3",
     "puppeteer": "^15.4.0",
-    "sharp": "0.30.7"
+    "sharp": "0.32.6"
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.16.0",

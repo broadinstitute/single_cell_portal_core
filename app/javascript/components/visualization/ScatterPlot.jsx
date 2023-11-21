@@ -9,7 +9,7 @@ import { fetchCluster, updateStudyFile, fetchBucketFile } from '~/lib/scp-api'
 import { logScatterPlot } from '~/lib/scp-api-metrics'
 import { log } from '~/lib/metrics-api'
 import { useUpdateEffect } from '~/hooks/useUpdate'
-import PlotTitle from './PlotTitle'
+import PlotTitle, { getTitleTexts } from './PlotTitle'
 
 import ScatterPlotLegend from './controls/ScatterPlotLegend'
 import useErrorMessage from '~/lib/error-message'
@@ -73,6 +73,8 @@ function RawScatterPlot({
 
   const imageClassName = 'scp-canvas-image'
   const imageSelector = `#${ graphElementId } .${imageClassName}`
+
+  const titleTexts = getTitleTexts(cluster, genes, consensus, subsample, isCorrelatedScatter)
 
   /**
    * Handle user interaction with one or more labels in legend.
@@ -564,15 +566,17 @@ function RawScatterPlot({
     }
   }, [])
 
+  const hasLegend = scatterData && countsByLabel && isRefGroup
+  let descriptionStyle = {}
+  if (hasLegend) {
+    descriptionStyle = { 'position': 'relative', 'top': '-10px' }
+  }
+
   return (
     <div className="plot">
       { ErrorComponent }
       <PlotTitle
-        cluster={cluster}
-        annotation={annotation.name}
-        subsample={subsample}
-        genes={genes}
-        consensus={consensus}
+        titleTexts={titleTexts}
         isCorrelatedScatter={isCorrelatedScatter}
         correlation={bulkCorrelation}/>
       <div
@@ -580,7 +584,7 @@ function RawScatterPlot({
         id={graphElementId}
         data-testid={graphElementId}
       >
-        { scatterData && countsByLabel && isRefGroup &&
+        { hasLegend &&
           <ScatterPlotLegend
             name={scatterData.annotParams.name}
             height={scatterData.height}
@@ -601,12 +605,14 @@ function RawScatterPlot({
             updateIsSplitLabelArrays={updateIsSplitLabelArrays}
             externalLink={scatterData.externalLink}
             originalLabels={originalLabels}
+            titleTexts={titleTexts}
+            plotWidth={widthAndHeight.width}
           />
         }
       </div>
       <p className="help-block">
         { scatterData && scatterData.description &&
-          <span>{scatterData.description}</span>
+          <span style={descriptionStyle}>{scatterData.description}</span>
         }
       </p>
       {
@@ -651,7 +657,8 @@ function getScatterDimensions(scatter, dimensionProps, genes) {
 
   dimensionProps = Object.assign({
     hasLabelLegend: isRefGroup,
-    hasTitle: true
+    hasTitle: true,
+    hasDescription: scatter?.description && scatter.description !== ''
   }, dimensionProps)
 
   return getPlotDimensions(dimensionProps)

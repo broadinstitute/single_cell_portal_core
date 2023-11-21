@@ -38,7 +38,7 @@ class AdminConfigurationsController < ApplicationController
         @download_status = false
         @download_status_label = "<span class='label label-danger'><i class='fas fa-times'></i> Disabled Locally</span>".html_safe
     end
-    @users = User.all.to_a
+    @users = User.all.paginate(page: params[:page], per_page: 25)
 
     # load actions for UI
     @administrative_tasks = []
@@ -295,6 +295,16 @@ class AdminConfigurationsController < ApplicationController
   # USER ROLES METHODS
   #
   ###
+
+  # find a user from the index page
+  def find_user
+    @user = User.find_by(email: params[:user_email])
+    if @user
+      redirect_to edit_user_path(@user)
+    else
+      redirect_to admin_configurations_path, alert: "No user with email '#{params[:user_email]}' found"
+    end
+  end
 
   # edit a user account (to grant permissions)
   def edit_user
