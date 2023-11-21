@@ -1,0 +1,34 @@
+name: Deploy to staging SCP instance
+on:
+  push:
+    branches:
+      - jb-github-actions-cd
+  workflow_dispatch:
+env:
+  DOCKER_IMAGE_NAME: 'gcr.io/broad-singlecellportal-staging/single-cell-portal'
+  GCLOUD_DOCKER_IMAGE: "gcr.io/google.com/cloudsdktool/google-cloud-cli:latest"
+  CONTAINER_NAME: 'staging-gcloud-config'
+  VAULT_SECRET_PATH: 'secret/kdux/scp/staging/scp_service_account.json'
+  GOOGLE_PROJECT: 'broad-singlecellportal-staging'
+  COMPUTE_ZONE: 'us-central1-a'
+
+jobs:
+  Depoy-To-Staging:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Install vault and other utilities
+        uses: ./.github/actions/install-vault-and-utils
+      - name: Configure gcloud container and activate service account
+        uses: ./.github/actions/configure-gcloud-container
+        with:
+          gcloud_docker_image: ${{ env.GCLOUD_DOCKER_IMAGE }}
+          container_name: ${{ env.CONTAINER_NAME }}
+      - name: Test SSH access to host
+        shell: bash
+        run: |
+          # test ssh access
+          docker run --rm --volumes-from gcloud-config $GCLOUD_DOCKER_IMAGE gcloud compute ssh runner@singlecell-01 \
+                     --tunnel-through-iap --project $GOOGLE_PROJECT --zone $COMPUTE_ZONE --quiet \
+                     --command 'whoami ; ls -la'

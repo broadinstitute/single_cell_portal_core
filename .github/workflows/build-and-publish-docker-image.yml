@@ -7,10 +7,10 @@ on:
       - master
   workflow_dispatch:
 env:
-  DOCKER_IMAGE_NAME: "gcr.io/broad-singlecellportal-staging/single-cell-portal"
-  GCLOUD_DOCKER_IMAGE: "gcr.io/google.com/cloudsdktool/google-cloud-cli:latest"
-  VAULT_SECRET_PATH: "secret/kdux/scp/staging/scp_service_account.json"
-  SERVICE_ACCOUNT_PATH: "/tmp/scp_service_account.json"
+  DOCKER_IMAGE_NAME: 'gcr.io/broad-singlecellportal-staging/single-cell-portal'
+  GCLOUD_DOCKER_IMAGE: 'gcr.io/google.com/cloudsdktool/google-cloud-cli:latest'
+  VAULT_SECRET_PATH: 'secret/kdux/scp/staging/scp_service_account.json'
+  CONTAINER_NAME: 'gcloud-config'
 
 jobs:
   Build-And-Publish-Docker-Image:
@@ -18,31 +18,17 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
-      - name: Install vault
+      - name: Configure gcloud container and activate service account
+        uses: ./.github/actions/configure-gcloud-container
+        with:
+          gcloud_docker_image: ${{ env.GCLOUD_DOCKER_IMAGE }}
+          container_name: ${{ env.CONTAINER_NAME }}
+          service_account_vault_path: ${{ env.VAULT_SECRET_PATH }}
+      - name: Authenticate to docker
         shell: bash
         run: |
-          sudo apt-get update && sudo apt-get -y install curl unzip jq
-          sudo curl -O https://releases.hashicorp.com/vault/1.9.0/vault_1.9.0_linux_amd64.zip
-          sudo unzip vault_1.9.0_linux_amd64.zip
-          sudo mv vault /usr/local/bin
-      - name: Download gcloud Docker image
-        shell: bash
-        run: |
-          docker pull $GCLOUD_DOCKER_IMAGE
-      - name: Authenticate to gcloud and docker
-        env:
-          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
-          VAULT_ROLE_ID: ${{ secrets.VAULT_ROLE_ID }}
-          VAULT_SECRET_ID: ${{ secrets.VAULT_SECRET_ID }}
-        shell: bash
-        run: |
-          # this will create a Docker volume called 'gcloud-config' that contains credentials for use with gcloud
-          export VAULT_TOKEN=$( vault write -field=token auth/approle/login role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID )
-          vault read -format=json $VAULT_SECRET_PATH | jq .data > $SERVICE_ACCOUNT_PATH
-          docker run -v "$SERVICE_ACCOUNT_PATH:$SERVICE_ACCOUNT_PATH" --name gcloud-config $GCLOUD_DOCKER_IMAGE gcloud \
-                         auth activate-service-account --key-file=$SERVICE_ACCOUNT_PATH
-          # auth into GCR via Docker with token
-          AUTH_TOKEN=$(docker run --rm --volumes-from gcloud-config $GCLOUD_DOCKER_IMAGE gcloud auth print-access-token)
+          # auth into GCR via Docker with token from service account
+          AUTH_TOKEN=$(docker run --rm --volumes-from ${{ env.CONTAINER_NAME }} ${{ env.DOCKER_IMAGE_NAME }} gcloud auth print-access-token)
           echo $AUTH_TOKEN | docker login -u oauth2accesstoken --password-stdin https://gcr.io
       - name: Build requested Docker image
         run: |
