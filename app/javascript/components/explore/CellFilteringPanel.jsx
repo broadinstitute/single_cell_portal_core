@@ -212,7 +212,7 @@ function BaselineSparkbar({ baselineCount, passedCount }) {
   const leftPx = -1 * `${passedWidthPx}px`
 
   const fullClass = baselineCount === passedCount ? ' full' : ''
-  const baseTop = passedCount === 0 ? '0' : '-2px'
+  const baseTop = passedCount === 0 ? '0' : '2px'
 
   const passedStyle = { width: passedWidthPx }
   const filteredStyle = { width: maxWidthPx, left: leftPx, top: baseTop }
@@ -220,8 +220,8 @@ function BaselineSparkbar({ baselineCount, passedCount }) {
   return (
     <>
       <span className="sparkbar">
-        <span className={`sparkbar-passed ${fullClass}`} style={passedStyle}> </span>
         <span className="sparkbar-filtered" style={filteredStyle}></span>
+        <span className={`sparkbar-passed ${fullClass}`} style={passedStyle}> </span>
       </span>
     </>
   )
