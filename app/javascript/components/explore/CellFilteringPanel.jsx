@@ -209,12 +209,13 @@ function BaselineSparkbar({ baselineCount, passedCount }) {
 
   const maxWidthPx = `${maxWidth}px`
   const passedWidthPx = `${selectedWidth}px`
+  const leftPx = -1 * `${passedWidthPx}px`
 
   const fullClass = baselineCount === passedCount ? ' full' : ''
   const baseTop = passedCount === 0 ? '0' : '-2px'
 
   const passedStyle = { width: passedWidthPx }
-  const filteredStyle = { width: maxWidthPx, left: -1 * passedWidthPx, top: baseTop }
+  const filteredStyle = { width: maxWidthPx, left: leftPx, top: baseTop }
 
   return (
     <>
@@ -284,7 +285,7 @@ function CellFilter({
   const filterDisplayName = filter.replace(/_/g, ' ')
 
   const baselineCount = facet.originalFilterCounts[filter]
-  const passedCount = facet.filterCounts[filter]
+  const passedCount = (facet.filterCounts && facet.filterCounts[filter]) ?? 0
   const quantitiesTooltip = getQuantitiesTooltip(baselineCount, passedCount, hasNondefaultSelection)
 
   return (
