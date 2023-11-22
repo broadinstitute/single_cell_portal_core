@@ -37,7 +37,7 @@ runs:
         SERVICE_ACCOUNT_PATH: '/tmp/scp_service_account.json'
         VAULT_ROLE_ID: ${{ inputs.vault_role_id }}
         VAULT_SECRET_ID: ${{ inputs.vault_secret_id }}
-        VAULT_SECRET_PATH: ${ inputs.vault_secret_path }}
+        VAULT_SECRET_PATH: ${{ inputs.vault_secret_path }}
         CONTAINER_NAME: ${{ inputs.container_name }}
         GCLOUD_DOCKER_IMAGE: ${{ inputs.gcloud_docker_image }}
       shell: bash
