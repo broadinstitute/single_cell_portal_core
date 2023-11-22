@@ -33,6 +33,6 @@ jobs:
         shell: bash
         run: |
           # test ssh access
-          docker run --rm --volumes-from gcloud-config $GCLOUD_DOCKER_IMAGE gcloud compute ssh runner@singlecell-01 \
+          docker run --rm --volumes-from $CONTAINER_NAME $GCLOUD_DOCKER_IMAGE gcloud compute ssh runner@singlecell-01 \
                      --tunnel-through-iap --project $GOOGLE_PROJECT --zone $COMPUTE_ZONE --quiet \
                      --command 'whoami ; ls -la'
