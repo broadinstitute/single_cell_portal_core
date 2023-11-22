@@ -29,10 +29,10 @@ jobs:
           vault_addr: ${{ secrets.VAULT_ADDR }}
           vault_role_id: ${{ secrets.VAULT_ROLE_ID }}
           vault_secret_id: ${{ secrets.VAULT_SECRET_ID }}
-      - name: Test SSH access to host
+      - name: Run deploy script
         shell: bash
         run: |
-          # test ssh access
-          docker run --rm --volumes-from $CONTAINER_NAME $GCLOUD_DOCKER_IMAGE gcloud compute ssh runner@singlecell-01 \
-                     --tunnel-through-iap --project $GOOGLE_PROJECT --zone $COMPUTE_ZONE --quiet \
-                     --command 'whoami ; ls -la'
+          bin/deploy-github.sh -b development -e staging -g $GOOGLE_PROJECT -c $CONTAINER_NAME \
+                               -p secret/kdux/scp/staging/scp_config.json \
+                               -s secret/kdux/scp/staging/scp_service_account.json \
+                               -r secret/kdux/scp/staging/read_only_service_account.json 
