@@ -40,4 +40,4 @@ case $OPTION in
     esac
 done
 
-gcloud compute ssh $USER@$VM_NAME --project $PROJECT --zone us-central1-a
+gcloud compute ssh $USER@$VM_NAME --project $PROJECT --zone us-central1-a --tunnel-through-iap
