@@ -102,16 +102,21 @@ function LegendEntry({
   }, delayTimeForHover) // ms to delay the call to setActiveTraceLabel()
 
 
-  // clicking the label will either hide the trace, or pop up a color picker
-  const entryClickFunction = showColorControls ? () => setShowColorPicker(true) : toggleSelection
+  /** Clicking the label will either hide the trace, or pop up a color picker */
+  function handleEntryClick() {
+    if (showColorControls) {
+      setShowColorPicker(true)
+    } else {
+      toggleSelection()
+    }
+  }
 
   return (
     <>
       <div
         className={`scatter-legend-row ${shownClass}`}
         role="button"
-        onClick={entryClickFunction}
-
+        onClick={handleEntryClick}
         onMouseEnter={handleOnMouseEnter}
         onMouseLeave={handleOnMouseLeave}
       >

@@ -133,6 +133,17 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
   }
 }
 
+/** Get `facets` parameter value, for cell filtering */
+function getFacetsParam(selection) {
+  const innerParams = []
+  Object.entries(selection).forEach(([facet, filters]) => {
+    const innerParam = facet + filters.join('|')
+    innerParams.push(innerParam)
+  })
+  const facetParams = innerParams.join(';')
+  return facetParams
+}
+
 /**
  * Renders the gene search box and the tab selection
  * Responsible for determining which tabs are available for a given view of the study
@@ -259,6 +270,7 @@ export default function ExploreDisplayTabs({
     getCellFacetingData(newCluster, newAnnot, setterFunctions, context)
   }, [exploreParams?.cluster, exploreParams?.annotation])
 
+
   /** Update filtered cells to only those that match annotation group value filter selections */
   function updateFilteredCells(selection) {
     if (!cellFaceting) {return}
@@ -280,6 +292,11 @@ export default function ExploreDisplayTabs({
     setFilteredCells(newFilteredCells)
     setCellFilterCounts(newFilterCounts)
     setCellFilteringSelection(selection)
+
+    const facetsParam = getFacetsParam(selection)
+    console.log('facetsParam', facetsParam)
+
+    updateExploreParams({ facets: facetsParam })
   }
 
   // Below line is worth keeping, but only uncomment to debug in development
