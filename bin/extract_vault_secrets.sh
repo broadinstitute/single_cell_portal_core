@@ -4,9 +4,9 @@
 
 # defaults
 THIS_DIR="$(cd "$(dirname -- "$0")"; pwd)"
-DOCKER_IMAGE_FOR_VAULT_CLIENT='vault:1.1.3'
-export VAULT_ADDR
-export JENKINS_VAULT_TOKEN_PATH
+export VAULT_ROLE_ID
+export VAULT_ROLE_SECRET
+export VAULT_TOKEN=$( vault write -field=token auth/approle/login role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID )
 
 # load common utils
 . $THIS_DIR/bash_utils.sh
@@ -54,23 +54,9 @@ function extract_vault_secrets_as_env_file {
     done
 }
 
-function get_authentication_method {
-    if [[ -f $JENKINS_VAULT_TOKEN_PATH ]]; then
-        echo "-method=token -no-print=true token=$(cat $JENKINS_VAULT_TOKEN_PATH)"
-    else
-        echo "-method=github -no-print=true token=$(cat ~/.github-token)"
-    fi
-}
-
 # load secrets out of vault using Docker image defined in $DOCKER_IMAGE_FOR_VAULT_CLIENT
 # will auto-detect correct vault authentication method based on presence of $JENKINS_VAULT_TOKEN_PATH
 function load_secrets_from_vault {
     SECRET_PATH_IN_VAULT="$1"
-
-    docker run --rm \
-        -e VAULT_AUTH_GITHUB_TOKEN \
-        -e VAULT_AUTH_NATIVE_TOKEN \
-        -e VAULT_ADDR \
-        $DOCKER_IMAGE_FOR_VAULT_CLIENT \
-        sh -lc "vault login $(get_authentication_method) && vault read -format json $SECRET_PATH_IN_VAULT" || exit_with_error_message "could not read $SECRET_PATH_IN_VAULT"
+    vault read -format json $SECRET_PATH_IN_VAULT || exit_with_error_message "could not read $SECRET_PATH_IN_VAULT"
 }

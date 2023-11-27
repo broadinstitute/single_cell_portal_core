@@ -13,11 +13,11 @@ env:
   COMPUTE_ZONE: 'us-central1-a'
 
 jobs:
-  Depoy-To-Staging:
+  Deploy-To-Staging:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Install vault and other utilities
         uses: ./.github/actions/install-vault-and-utils
       - name: Configure gcloud container and activate service account
@@ -31,8 +31,11 @@ jobs:
           vault_secret_id: ${{ secrets.VAULT_SECRET_ID }}
       - name: Run deploy script
         shell: bash
+        env:
+          VAULT_ROLE_ID: ${{ secrets.VAULT_ROLE_ID }}
+          VAULT_SECRET_ID: ${{ secrets.VAULT_SECRET_ID }}
         run: |
-          bin/deploy-github.sh -b development -e staging -g $GOOGLE_PROJECT -c $CONTAINER_NAME \
+          bin/deploy-github.sh -b development -e staging -g $GOOGLE_PROJECT -c $CONTAINER_NAME -h singlecell-01 \
                                -p secret/kdux/scp/staging/scp_config.json \
                                -s secret/kdux/scp/staging/scp_service_account.json \
                                -r secret/kdux/scp/staging/read_only_service_account.json 
