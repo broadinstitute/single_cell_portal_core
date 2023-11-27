@@ -134,12 +134,32 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
 }
 
 /** Get `facets` parameter value, for cell filtering */
-function getFacetsParam(selection) {
+function getFacetsParam(initFacets, selection) {
+  const minimalSelection = {}
+
+  const initSelection = {}
+  initFacets.forEach(facet => {
+    initSelection[facet.annotation] = facet.groups
+  })
+
   const innerParams = []
-  Object.entries(selection).forEach(([facet, filters]) => {
-    const innerParam = facet + filters.join('|')
+  Object.entries(initSelection).forEach(([facet, filters]) => {
+    filters.forEach(filter => {
+      if (!selection[facet].includes(filter)) {
+        if (facet in minimalSelection) {
+          minimalSelection[facet].push(filter)
+        } else {
+          minimalSelection[facet] = [filter]
+        }
+      }
+    })
+  })
+
+  Object.entries(minimalSelection).forEach(([facet, filters]) => {
+    const innerParam = `${facet}:${filters.join('|')}`
     innerParams.push(innerParam)
   })
+
   const facetParams = innerParams.join(';')
   return facetParams
 }
@@ -293,7 +313,7 @@ export default function ExploreDisplayTabs({
     setCellFilterCounts(newFilterCounts)
     setCellFilteringSelection(selection)
 
-    const facetsParam = getFacetsParam(selection)
+    const facetsParam = getFacetsParam(initFacets, selection)
     console.log('facetsParam', facetsParam)
 
     updateExploreParams({ facets: facetsParam })
