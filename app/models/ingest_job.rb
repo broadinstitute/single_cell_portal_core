@@ -487,7 +487,7 @@ class IngestJob
       study.default_options[:annotation] = cluster.annotation_select_value(annotation_object)
       is_numeric = annotation_object[:type] == 'numeric'
     end
-    study.default_options[:color_profile] = 'Reds' if is_numeric
+    study.default_options[:color_profile] = ApplicationHelper::DEFAULT_COLOR_PROFILE if is_numeric
   end
 
   # set the default cluster for the study, if not already set
