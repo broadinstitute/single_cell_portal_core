@@ -209,13 +209,12 @@ function BaselineSparkbar({ baselineCount, passedCount }) {
 
   const maxWidthPx = `${maxWidth}px`
   const passedWidthPx = `${selectedWidth}px`
-  const leftPx = -1 * `${passedWidthPx}px`
 
   const fullClass = baselineCount === passedCount ? ' full' : ''
   const baseTop = passedCount === 0 ? '0' : '2px'
 
   const passedStyle = { width: passedWidthPx }
-  const filteredStyle = { width: maxWidthPx, left: leftPx, top: baseTop }
+  const filteredStyle = { width: maxWidthPx, top: baseTop }
 
   return (
     <>
@@ -474,9 +473,9 @@ function FacetHeader({
   // some lower checkboxes are checked, and some are not.
   const allFiltersInFacet = facet.groups
   const allCheckedFiltersInFacet = checkedMap[facet.annotation]
-  const isFacetCheckboxSelected = allFiltersInFacet.length === allCheckedFiltersInFacet.length
+  const isFacetCheckboxSelected = allFiltersInFacet?.length === allCheckedFiltersInFacet?.length
   const isIndeterminate = !(
-    allCheckedFiltersInFacet.length === 0 ||
+    allCheckedFiltersInFacet?.length === 0 ||
     isFacetCheckboxSelected
   )
 
