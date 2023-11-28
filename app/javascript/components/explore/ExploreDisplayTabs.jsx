@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import _clone from 'lodash/clone'
+import _isEqual from 'lodash/isEqual'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faEye } from '@fortawesome/free-solid-svg-icons'
 
@@ -98,35 +99,12 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
   if (showCellFiltering) {
     const allAnnots = exploreInfo?.annotationList.annotations
     if (allAnnots && allAnnots.length > 0) {
-      if (prevCellFaceting?.isFullyLoaded) {
-        if (exploreParams?.facets && exploreParams.facets !== undefined) {
-          console.log('cellFilteringSelection', cellFilteringSelection)
-          console.log('exploreParams.facets', exploreParams.facets)
-
-          let selection = {}
-          if (!cellFilteringSelection) {
-            prevCellFaceting.facets.forEach(facet => {
-              selection[facet.annotation] = facet.groups
-            })
-          } else {
-            selection = cellFilteringSelection
-          }
-          console.log('selection', selection)
-
-          const selectionFromUrl = parseFacetsParam(
-            selection, exploreParams.facets
-          )
-          console.log('selectionFromUrl', selectionFromUrl)
-          console.log('prevCellFaceting', prevCellFaceting)
-
-          updateFilteredCells(selectionFromUrl, prevCellFaceting)
-        }
-      } else {
+      if (!prevCellFaceting?.isFullyLoaded) {
         initCellFaceting(
           cluster, annotation, studyAccession, allAnnots, prevCellFaceting
         ).then(newCellFaceting => {
+          const initSelection = {}
           if (!cellFilteringSelection) {
-            const initSelection = {}
             newCellFaceting.facets.forEach(facet => {
               initSelection[facet.annotation] = facet.groups
             })
@@ -140,8 +118,18 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
           setClusterCanFilter(true)
           setFilterErrorText('')
 
-          setCellFilterCounts(newCellFaceting.filterCounts)
-          setCellFaceting(newCellFaceting)
+          let selectionFromUrl = {}
+          if (exploreParams?.facets && exploreParams.facets !== undefined) {
+            const thisSelection = cellFilteringSelection ?? initSelection
+            selectionFromUrl = parseFacetsParam(
+              thisSelection, exploreParams.facets
+            )
+          }
+          if (!_isEqual(cellFilteringSelection, selectionFromUrl)) {
+            setCellFilterCounts(newCellFaceting.filterCounts)
+            setCellFaceting(newCellFaceting)
+          }
+
 
           // The cell filtering UI is initialized in batches of 5 facets
           // This recursively loads the next 5 facets until faceting is fully loaded.
@@ -156,6 +144,24 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
           setFilterErrorText(error.message)
           console.error(error) // Show trace in console; retains debuggability if actual error
         })
+      } else {
+        if (exploreParams?.facets && exploreParams.facets !== undefined) {
+          let selection = {}
+          if (!cellFilteringSelection) {
+            prevCellFaceting.facets.forEach(facet => {
+              selection[facet.annotation] = facet.groups
+            })
+          } else {
+            selection = cellFilteringSelection
+          }
+
+          const selectionFromUrl = parseFacetsParam(
+            selection, exploreParams.facets
+          )
+          if (!_isEqual(selection, selectionFromUrl)) {
+            updateFilteredCells(selectionFromUrl, prevCellFaceting)
+          }
+        }
       }
     }
   }
@@ -362,8 +368,6 @@ export default function ExploreDisplayTabs({
   /** Update filtered cells to only those that match annotation group value filter selections */
   function updateFilteredCells(selection, overrideCellFaceting) {
     const thisCellFaceting = overrideCellFaceting ?? cellFaceting
-    console.log('in updateFilteredCells, cellFaceting', cellFaceting)
-    console.log('in updateFilteredCells, selection', selection)
     if (!thisCellFaceting) {return}
     if (!selection) {
       setFilteredCells(null)
@@ -373,10 +377,11 @@ export default function ExploreDisplayTabs({
     const initFacets = thisCellFaceting.facets
     const filtersByFacet = thisCellFaceting.filtersByFacet
     const filterableCells = thisCellFaceting.filterableCells
+    const rawFacets = thisCellFaceting.rawFacets.facets
 
     // Filter cells by selection (i.e., selected facets and filters)
     const [newFilteredCells, newFilterCounts] = filterCells(
-      selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, thisCellFaceting.rawFacets.facets
+      selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, rawFacets
     )
 
     // Update UI
@@ -384,10 +389,8 @@ export default function ExploreDisplayTabs({
     setCellFilterCounts(newFilterCounts)
     setCellFilteringSelection(selection)
 
-    const facetsParam = getFacetsParam(initFacets, selection)
-
-    console.log('overrideCellFaceting', overrideCellFaceting)
     if (!overrideCellFaceting) {
+      const facetsParam = getFacetsParam(initFacets, selection)
       updateExploreParams({ facets: facetsParam })
     }
   }
