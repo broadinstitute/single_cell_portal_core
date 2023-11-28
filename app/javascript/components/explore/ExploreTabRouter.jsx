@@ -121,7 +121,7 @@ function buildExploreParamsFromQuery(query) {
   exploreParams.hiddenTraces = queryParams.hiddenTraces ? queryParams.hiddenTraces.split(',') : []
   exploreParams.isSplitLabelArrays = queryParams.isSplitLabelArrays === 'true' ? true : null
 
-  exploreParams.facets = queryParams.facets ? queryParams.facets.split(',') : []
+  exploreParams.facets = queryParams.facets ? queryParams.facets : ''
 
   return exploreParams
 }

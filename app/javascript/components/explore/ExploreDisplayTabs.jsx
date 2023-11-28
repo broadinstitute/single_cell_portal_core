@@ -87,6 +87,7 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
   ] = setterFunctions
 
   const {
+    exploreParams,
     exploreInfo,
     studyAccession,
     cellFilteringSelection
@@ -104,7 +105,13 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
           newCellFaceting.facets.forEach(facet => {
             initSelection[facet.annotation] = facet.groups
           })
-          setCellFilteringSelection(initSelection)
+
+          let defaultCellFilteringSelection = null
+          if (exploreParams?.facets && exploreParams.facets !== undefined) {
+            defaultCellFilteringSelection = parseFacetsParam(initSelection, exploreParams.facets)
+          }
+
+          setCellFilteringSelection(defaultCellFilteringSelection)
         }
 
         // Handle switching to a new clustering that has annotations (i.e., facets) not in previous clustering
@@ -145,6 +152,11 @@ function getFacetsParam(initFacets, selection) {
   const innerParams = []
   Object.entries(initSelection).forEach(([facet, filters]) => {
     filters.forEach(filter => {
+      // Unlike `selection`, which specifies all filters that are selected
+      // (i.e., checked and not applied), the `facets` parameter species only
+      // filters that are _not_ selected, i.e. they're unchecked and applied.
+      //
+      // This makes the `facets` parameter much clearer.
       if (!selection[facet].includes(filter)) {
         if (facet in minimalSelection) {
           minimalSelection[facet].push(filter)
@@ -162,6 +174,38 @@ function getFacetsParam(initFacets, selection) {
 
   const facetParams = innerParams.join(';')
   return facetParams
+}
+
+/** Parse `facets` URL parameter into cell filtering selection object */
+function parseFacetsParam(initFacets, facetsParam) {
+  const selection = {}
+
+  // Convert the `facets` parameter value, which is a string,
+  // into an object that has the same shape as `selections`
+  const facets = {}
+  const innerParams = facetsParam.split(';')
+  innerParams.forEach(innerParam => {
+    const [facet, rawFilters] = innerParam.split(':')
+    const filters = rawFilters.split('|')
+    facets[facet] = filters
+  })
+
+  // Take the complement of the minimal `facets` object, transforming
+  // it into the more verbose `selection` object which specifies filters
+  // that are _not_ applied.
+  Object.entries(initFacets).forEach(([facet, filters]) => {
+    filters.forEach(filter => {
+      if (!facets[facet]?.includes(filter)) {
+        if (facet in selection) {
+          selection[facet].push(filter)
+        } else {
+          selection[facet] = [filter]
+        }
+      }
+    })
+  })
+
+  return selection
 }
 
 /**
@@ -215,6 +259,7 @@ export default function ExploreDisplayTabs({
   const [cellFaceting, setCellFaceting] = useState(null)
   const [filteredCells, setFilteredCells] = useState(null)
   const [cellFilterCounts, setCellFilterCounts] = useState(null)
+
   const [cellFilteringSelection, setCellFilteringSelection] = useState(null)
 
   // flow/error handling for cell filtering
@@ -283,6 +328,7 @@ export default function ExploreDisplayTabs({
       setCellFaceting
     ]
     const context = {
+      exploreParams,
       exploreInfo,
       studyAccession,
       cellFilteringSelection
@@ -314,7 +360,6 @@ export default function ExploreDisplayTabs({
     setCellFilteringSelection(selection)
 
     const facetsParam = getFacetsParam(initFacets, selection)
-    console.log('facetsParam', facetsParam)
 
     updateExploreParams({ facets: facetsParam })
   }
