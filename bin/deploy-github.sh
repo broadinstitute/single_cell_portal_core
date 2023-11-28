@@ -108,9 +108,7 @@ function main {
   CONFIG_FILENAME="$(set_export_filename $PORTAL_SECRETS_VAULT_PATH env)"
   SERVICE_ACCOUNT_FILENAME="$(set_export_filename $SERVICE_ACCOUNT_VAULT_PATH)"
   READ_ONLY_SERVICE_ACCOUNT_FILENAME="$(set_export_filename $READ_ONLY_SERVICE_ACCOUNT_VAULT_PATH)"
-  extract_vault_secrets_as_env_file "$PORTAL_SECRETS_VAULT_PATH"
-  extract_service_account_credentials "$SERVICE_ACCOUNT_VAULT_PATH"
-  extract_service_account_credentials "$READ_ONLY_SERVICE_ACCOUNT_VAULT_PATH"
+  # secrets will have already been extracted via extract-vault-secret-to-file
   PORTAL_SECRETS_PATH="$DESTINATION_BASE_DIR/config/$CONFIG_FILENAME"
   SERVICE_ACCOUNT_JSON_PATH="$DESTINATION_BASE_DIR/config/$SERVICE_ACCOUNT_FILENAME"
   READ_ONLY_SERVICE_ACCOUNT_JSON_PATH="$DESTINATION_BASE_DIR/config/$READ_ONLY_SERVICE_ACCOUNT_FILENAME"

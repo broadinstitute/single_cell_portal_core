@@ -8,7 +8,9 @@ env:
   DOCKER_IMAGE_NAME: 'gcr.io/broad-singlecellportal-staging/single-cell-portal'
   GCLOUD_DOCKER_IMAGE: "gcr.io/google.com/cloudsdktool/google-cloud-cli:latest"
   CONTAINER_NAME: 'staging-gcloud-config'
-  VAULT_SECRET_PATH: 'secret/kdux/scp/staging/scp_service_account.json'
+  PORTAL_SECRETS_PATH: 'secret/kdux/scp/staging/scp_config.json'
+  MAIN_SERVICE_ACCOUNT: 'secret/kdux/scp/staging/scp_service_account.json'
+  READ_ONLY_SERVICE_ACCOUNT: 'secret/kdux/scp/staging/read_only_service_account.json'
   GOOGLE_PROJECT: 'broad-singlecellportal-staging'
   COMPUTE_ZONE: 'us-central1-a'
 
@@ -25,17 +27,41 @@ jobs:
         with:
           gcloud_docker_image: ${{ env.GCLOUD_DOCKER_IMAGE }}
           container_name: ${{ env.CONTAINER_NAME }}
-          vault_secret_path: ${{ env.VAULT_SECRET_PATH }}
+          vault_secret_path:  ${{ secrets.MAIN_SERVICE_ACCOUNT }}
           vault_addr: ${{ secrets.VAULT_ADDR }}
           vault_role_id: ${{ secrets.VAULT_ROLE_ID }}
           vault_secret_id: ${{ secrets.VAULT_SECRET_ID }}
+      - name: Extract secrets to env file
+        uses: ./.github/actions/extract-vault-secret-to-file
+        with:
+          vault_secret_path: ${{ env.PORTAL_SECRETS_PATH }}
+          vault_addr: ${{ secrets.VAULT_ADDR }}
+          vault_role_id: ${{ secrets.VAULT_ROLE_ID }}
+          vault_secret_id: ${{ secrets.VAULT_SECRET_ID }}
+          output_filename: 'scp_config.env'
+          output_format: 'env'
+      - name: Extract main service account json
+        uses: ./.github/actions/extract-vault-secret-to-file
+        with:
+          vault_secret_path: ${{ env.MAIN_SERVICE_ACCOUNT }}
+          vault_addr: ${{ secrets.VAULT_ADDR }}
+          vault_role_id: ${{ secrets.VAULT_ROLE_ID }}
+          vault_secret_id: ${{ secrets.VAULT_SECRET_ID }}
+          output_filename: 'scp_service_account.json'
+          output_format: 'json'
+      - name: Extract readonly service account json
+        uses: ./.github/actions/extract-vault-secret-to-file
+        with:
+          vault_secret_path: ${{ env.READ_ONLY_SERVICE_ACCOUNT }}
+          vault_addr: ${{ secrets.VAULT_ADDR }}
+          vault_role_id: ${{ secrets.VAULT_ROLE_ID }}
+          vault_secret_id: ${{ secrets.VAULT_SECRET_ID }}
+          output_filename: 'read_only_service_account.json'
+          output_format: 'json'
       - name: Run deploy script
         shell: bash
-        env:
-          VAULT_ROLE_ID: ${{ secrets.VAULT_ROLE_ID }}
-          VAULT_SECRET_ID: ${{ secrets.VAULT_SECRET_ID }}
         run: |
           bin/deploy-github.sh -b development -e staging -g $GOOGLE_PROJECT -c $CONTAINER_NAME -h singlecell-01 \
-                               -p secret/kdux/scp/staging/scp_config.json \
-                               -s secret/kdux/scp/staging/scp_service_account.json \
-                               -r secret/kdux/scp/staging/read_only_service_account.json 
+                               -p ${{ env.PORTAL_SECRETS_PATH }} \
+                               -s ${{ env.MAIN_SERVICE_ACCOUNT }} \
+                               -r ${{ env.READ_ONLY_SERVICE_ACCOUNT }} 
