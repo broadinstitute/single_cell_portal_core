@@ -660,6 +660,7 @@ class StudyFile
   validates_format_of :generation, with: /\A\d+\z/, if: proc { |f| f.generation.present? }
 
   validates_inclusion_of :file_type, in: STUDY_FILE_TYPES, unless: proc { |f| f.file_type == 'DELETE' }
+  validates_uniqueness_of :external_identifier, allow_blank: true
 
   validate :check_taxon, on: :create
   validate :check_assembly, on: :create
