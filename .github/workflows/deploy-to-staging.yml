@@ -28,7 +28,7 @@ jobs:
         with:
           gcloud_docker_image: ${{ env.GCLOUD_DOCKER_IMAGE }}
           container_name: ${{ env.CONTAINER_NAME }}
-          vault_secret_path:  ${{ secrets.MAIN_SERVICE_ACCOUNT }}
+          vault_secret_path:  ${{ env.MAIN_SERVICE_ACCOUNT }}
           vault_addr: ${{ secrets.VAULT_ADDR }}
           vault_role_id: ${{ secrets.VAULT_ROLE_ID }}
           vault_secret_id: ${{ secrets.VAULT_SECRET_ID }}
