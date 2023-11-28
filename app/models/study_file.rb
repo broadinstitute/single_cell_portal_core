@@ -674,15 +674,18 @@ class StudyFile
 
   # return correct path to file based on visibility & type
   def download_path
-    if self.upload_file_name.nil?
-      self.human_fastq_url
+    if hosted_externally?
+      external_link_url || human_fastq_url
     else
-      if self.study.public?
-        download_file_path(accession: self.study.accession, study_name: self.study.url_safe_name, filename: self.bucket_location)
-      else
-        download_private_file_path(accession: self.study.accession, study_name: self.study.url_safe_name, filename: self.bucket_location)
-      end
+      download_method = study.public? ? :download_file_path : :download_private_file_path
+      download_args = { accession: study.accession, study_name: study.url_safe_name, filename: bucket_location }
+      send(download_method, **download_args)
     end
+  end
+
+  # determine if file is hosted on an external server for downloads
+  def hosted_externally?
+    (external_identifier.present? && external_link_url.present?) || (upload_file_name.nil? && human_fastq_url.present?)
   end
 
   # JSON response for jQuery uploader

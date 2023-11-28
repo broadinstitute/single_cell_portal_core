@@ -111,6 +111,9 @@ module ImportServiceConfig
         library = load_study&.[]('technique')
       end
       study_file.expression_file_info.library_preparation_protocol = find_library_prep(library)
+      http_url = file_access_info(protocol: :http)&.[]('url')
+      study_file.external_link_url = http_url if http_url
+
       study_file
     end
 
