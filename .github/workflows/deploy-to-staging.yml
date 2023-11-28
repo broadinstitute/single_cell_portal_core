@@ -13,6 +13,7 @@ env:
   READ_ONLY_SERVICE_ACCOUNT: 'secret/kdux/scp/staging/read_only_service_account.json'
   GOOGLE_PROJECT: 'broad-singlecellportal-staging'
   COMPUTE_ZONE: 'us-central1-a'
+  REMOTE_HOST: 'singlecell-01'
 
 jobs:
   Deploy-To-Staging:
@@ -61,7 +62,5 @@ jobs:
       - name: Run deploy script
         shell: bash
         run: |
-          bin/deploy-github.sh -b development -e staging -g $GOOGLE_PROJECT -c $CONTAINER_NAME -h singlecell-01 \
-                               -p ${{ env.PORTAL_SECRETS_PATH }} \
-                               -s ${{ env.MAIN_SERVICE_ACCOUNT }} \
-                               -r ${{ env.READ_ONLY_SERVICE_ACCOUNT }} 
+          bin/deploy-github.sh -b development -e staging -g $GOOGLE_PROJECT -c $CONTAINER_NAME -h $REMOTE_HOST \
+                               -p $PORTAL_SECRETS_PATH -s $MAIN_SERVICE_ACCOUNT -r $READ_ONLY_SERVICE_ACCOUNT
