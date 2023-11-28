@@ -83,7 +83,8 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
     setClusterCanFilter,
     setFilterErrorText,
     setCellFilterCounts,
-    setCellFaceting
+    setCellFaceting,
+    updateFilteredCells
   ] = setterFunctions
 
   const {
@@ -96,46 +97,66 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
   const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
   if (showCellFiltering) {
     const allAnnots = exploreInfo?.annotationList.annotations
-    if (allAnnots && allAnnots.length > 0 && !prevCellFaceting?.isFullyLoaded) {
-      initCellFaceting(
-        cluster, annotation, studyAccession, allAnnots, prevCellFaceting
-      ).then(newCellFaceting => {
-        if (!cellFilteringSelection) {
-          const initSelection = {}
-          newCellFaceting.facets.forEach(facet => {
-            initSelection[facet.annotation] = facet.groups
-          })
+    if (allAnnots && allAnnots.length > 0) {
+      if (prevCellFaceting?.isFullyLoaded) {
+        if (exploreParams?.facets && exploreParams.facets !== undefined) {
+          console.log('cellFilteringSelection', cellFilteringSelection)
+          console.log('exploreParams.facets', exploreParams.facets)
 
-          let defaultCellFilteringSelection = null
-          if (exploreParams?.facets && exploreParams.facets !== undefined) {
-            defaultCellFilteringSelection = parseFacetsParam(initSelection, exploreParams.facets)
+          let selection = {}
+          if (!cellFilteringSelection) {
+            prevCellFaceting.facets.forEach(facet => {
+              selection[facet.annotation] = facet.groups
+            })
+          } else {
+            selection = cellFilteringSelection
+          }
+          console.log('selection', selection)
+
+          const selectionFromUrl = parseFacetsParam(
+            selection, exploreParams.facets
+          )
+          console.log('selectionFromUrl', selectionFromUrl)
+          console.log('prevCellFaceting', prevCellFaceting)
+
+          updateFilteredCells(selectionFromUrl, prevCellFaceting)
+        }
+      } else {
+        initCellFaceting(
+          cluster, annotation, studyAccession, allAnnots, prevCellFaceting
+        ).then(newCellFaceting => {
+          if (!cellFilteringSelection) {
+            const initSelection = {}
+            newCellFaceting.facets.forEach(facet => {
+              initSelection[facet.annotation] = facet.groups
+            })
+
+            setCellFilteringSelection(initSelection)
           }
 
-          setCellFilteringSelection(defaultCellFilteringSelection)
-        }
+          // Handle switching to a new clustering that has annotations (i.e., facets) not in previous clustering
+          handleClusterSwitchForFiltering(cellFilteringSelection, newCellFaceting, setCellFilteringSelection)
 
-        // Handle switching to a new clustering that has annotations (i.e., facets) not in previous clustering
-        handleClusterSwitchForFiltering(cellFilteringSelection, newCellFaceting, setCellFilteringSelection)
+          setClusterCanFilter(true)
+          setFilterErrorText('')
 
-        setClusterCanFilter(true)
-        setFilterErrorText('')
+          setCellFilterCounts(newCellFaceting.filterCounts)
+          setCellFaceting(newCellFaceting)
 
-        setCellFilterCounts(newCellFaceting.filterCounts)
-        setCellFaceting(newCellFaceting)
-
-        // The cell filtering UI is initialized in batches of 5 facets
-        // This recursively loads the next 5 facets until faceting is fully loaded.
-        getCellFacetingData(cluster, annotation, setterFunctions, context, newCellFaceting)
-      }).catch(error => {
+          // The cell filtering UI is initialized in batches of 5 facets
+          // This recursively loads the next 5 facets until faceting is fully loaded.
+          getCellFacetingData(cluster, annotation, setterFunctions, context, newCellFaceting)
+        }).catch(error => {
         // NOTE: these 'errors' are in fact handled corner cases where faceting data isn't present for various reasons
         // as such, they don't need to be reported to Sentry/Mixpanel, only conveyed to the user
         // example: 400 (Bad Request): Clustering is not indexed, Cannot use numeric annotations for facets, or
         // 404 (Not Found) Cluster not found
         // see app/controllers/api/v1/visualization/annotations_controller.rb#facets for more information
-        setClusterCanFilter(false)
-        setFilterErrorText(error.message)
-        console.error(error) // Show trace in console; retains debuggability if actual error
-      })
+          setClusterCanFilter(false)
+          setFilterErrorText(error.message)
+          console.error(error) // Show trace in console; retains debuggability if actual error
+        })
+      }
     }
   }
 }
@@ -325,7 +346,8 @@ export default function ExploreDisplayTabs({
       setClusterCanFilter,
       setFilterErrorText,
       setCellFilterCounts,
-      setCellFaceting
+      setCellFaceting,
+      updateFilteredCells
     ]
     const context = {
       exploreParams,
@@ -338,20 +360,23 @@ export default function ExploreDisplayTabs({
 
 
   /** Update filtered cells to only those that match annotation group value filter selections */
-  function updateFilteredCells(selection) {
-    if (!cellFaceting) {return}
+  function updateFilteredCells(selection, overrideCellFaceting) {
+    const thisCellFaceting = overrideCellFaceting ?? cellFaceting
+    console.log('in updateFilteredCells, cellFaceting', cellFaceting)
+    console.log('in updateFilteredCells, selection', selection)
+    if (!thisCellFaceting) {return}
     if (!selection) {
       setFilteredCells(null)
       return
     }
-    const cellsByFacet = cellFaceting.cellsByFacet
-    const initFacets = cellFaceting.facets
-    const filtersByFacet = cellFaceting.filtersByFacet
-    const filterableCells = cellFaceting.filterableCells
+    const cellsByFacet = thisCellFaceting.cellsByFacet
+    const initFacets = thisCellFaceting.facets
+    const filtersByFacet = thisCellFaceting.filtersByFacet
+    const filterableCells = thisCellFaceting.filterableCells
 
     // Filter cells by selection (i.e., selected facets and filters)
     const [newFilteredCells, newFilterCounts] = filterCells(
-      selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, cellFaceting.rawFacets.facets
+      selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, thisCellFaceting.rawFacets.facets
     )
 
     // Update UI
@@ -361,11 +386,15 @@ export default function ExploreDisplayTabs({
 
     const facetsParam = getFacetsParam(initFacets, selection)
 
-    updateExploreParams({ facets: facetsParam })
+    console.log('overrideCellFaceting', overrideCellFaceting)
+    if (!overrideCellFaceting) {
+      updateExploreParams({ facets: facetsParam })
+    }
   }
 
   // Below line is worth keeping, but only uncomment to debug in development
   // window.SCP.updateFilteredCells = updateFilteredCells
+
 
   /** handler for when the user selects points in a plotly scatter graph */
   function plotPointsSelected(points) {
