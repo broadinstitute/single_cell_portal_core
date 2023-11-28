@@ -94,9 +94,9 @@ function main {
   done
 
   # construct SSH command using gcloud and Identity Aware Proxy to access VM via authenticated Docker container
-  SSH_COMMAND="docker run --rm --volumes-from $GCLOUD_CONTAINER $GCLOUD_DOCKER_IMAGE gcloud compute ssh " \
-              "$SSH_USER@$DESTINATION_HOST --tunnel-through-iap --project $GOOGLE_PROJECT --zone $COMPUTE_ZONE " \
-              "--quiet --command "
+  BASE_SSH="docker run --rm --volumes-from $GCLOUD_CONTAINER $GCLOUD_DOCKER_IMAGE gcloud compute ssh"
+  SSH_ARGS="$SSH_USER@$DESTINATION_HOST --tunnel-through-iap --project $GOOGLE_PROJECT --zone $COMPUTE_ZONE --quiet"
+  SSH_COMMAND="$BASE_SSH  $SSH_ARGS --command "
 
   # exit if all config is not present
   if [[ -z "$PORTAL_SECRETS_VAULT_PATH" ]] || [[ -z "$SERVICE_ACCOUNT_VAULT_PATH" ]] || [[ -z "$READ_ONLY_SERVICE_ACCOUNT_VAULT_PATH" ]]; then
