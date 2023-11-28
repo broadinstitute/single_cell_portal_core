@@ -28,7 +28,7 @@ PlotOptions.SCATTER_COLOR_OPTIONS = [
   'Rainbow', 'Portland', 'Jet', 'Hot', 'Blackbody', 'Earth', 'Electric', 'Viridis', 'Cividis'
 ]
 
-PlotOptions.defaultScatterColor = 'Reds'
+PlotOptions.defaultScatterColor = 'Viridis'
 
 PlotOptions.dotPlotColorScheme = {
   // Blue, purple, red.  These red and blue hues are accessible, per WCAG.

@@ -754,7 +754,7 @@ function getPlotlyTraces({
 
       Object.assign(workingTrace.marker, {
         showscale: true,
-        colorscale: scatterColor,
+        colorscale: scatterColor || defaultScatterColor,
         reversescale: shouldReverseScale(scatterColor),
         color: colors,
         colorbar: { title, titleside: 'right' }
