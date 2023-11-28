@@ -2,6 +2,7 @@
 module ImportServiceConfig
   extend ActiveSupport::Concern
   include ActiveModel::Model
+  include ActiveModel::Validations
   include Loggable
 
   # allow word and space characters, plus the following: - . / ( ) , :
@@ -180,10 +181,11 @@ module ImportServiceConfig
         raise "could create study_file: #{errors.join('; ')}"
       end
     else
+      error_msg = "could not create study: #{study.errors.full_messages.join('; ')}"
+      log_message error_msg
       ImportService.remove_study_workspace(study)
-      errors = study.errors.full_messages.dup
-      DeleteQueueJob.new(study).perform
-      raise "could not create study: #{errors.join('; ')}"
+      DeleteQueueJob.new(study).delay.perform
+      raise error_msg
     end
   end
 

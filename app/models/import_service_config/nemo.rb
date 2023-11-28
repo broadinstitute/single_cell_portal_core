@@ -5,6 +5,8 @@ module ImportServiceConfig
 
     attr_accessor :project_id
 
+    validates :user_id, :branding_group_id, presence: true
+
     PREFERRED_TAXONS = %w[human mouse].freeze
 
     # name for logging when calling ImportService.import_from

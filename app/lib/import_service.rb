@@ -1,7 +1,7 @@
 # service for loading data into SCP from external APIs, such as the NeMO Identifiers API or HCA Azul service
 class ImportService
   extend ServiceAccountManager
-  include Loggable
+  extend Loggable
 
   # API clients that can use ImportService
   ALLOWED_CLIENTS = [NemoClient, HcaAzulClient].freeze
@@ -38,6 +38,10 @@ class ImportService
     raise "unsupported config: #{config_class}" unless defined?(config_class) && ALLOWED_CONFIGS.include?(config_class)
 
     configuration = config_class.new(...)
+    unless configuration.valid?
+      raise configuration.errors.full_messages.join(', ')
+    end
+
     begin
       study, study_file = configuration.import_from_service
       # TODO: uncomment this block after file parsing is enabled for NeMO and SCP-5400 is complete
@@ -48,7 +52,7 @@ class ImportService
       [study, study_file]
     rescue RuntimeError, RestClient::NotFound, Google::Apis::ClientError => e
       log_message("Error importing from #{config_class}: #{e.class} - #{e.message}", level: :error)
-      ErrorTracker.report_exception(e, config.user)
+      ErrorTracker.report_exception(e, configuration.user)
       nil
     end
   end
