@@ -347,6 +347,25 @@ export default function ExploreDisplayTabs({
       return
     }
     const [newCluster, newAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
+
+    const paramCluster = exploreParams.cluster
+    const paramAnnot = exploreParams.annotation
+
+    if (
+      filteredCells &&
+      (
+        (paramCluster === '' && paramAnnot.name === '') ||
+        (paramCluster === newCluster && _isEqual(paramAnnot, newAnnot))
+      )
+    ) {
+      // We've fully loaded facets,
+      // and cluster and annotation are the default or not actually changed,
+      // but another parameter has changed.
+      // We only need to get cell faceting data when either clustering or
+      // annotation has changed, so skip unless we detect a change.
+      return
+    }
+
     const setterFunctions = [
       setCellFilteringSelection,
       setClusterCanFilter,
