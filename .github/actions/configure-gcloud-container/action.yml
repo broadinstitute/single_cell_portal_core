@@ -48,7 +48,8 @@ runs:
         # manually construct a Dockerfile using supplied image, and pre-authenticate the service account via gcloud
         # will also run ssh-keygen so that this doesn't execute every time we make a gcloud compute ssh call
         SERVICE_ACCOUNT_PATH="/tmp/$SERVICE_ACCOUNT_FILE"
-        echo "FROM ${{ inputs.gcloud_docker_image }}\n" |> Dockerfile-gcloud
+        touch Dockerfile-gcloud
+        echo "FROM ${{ inputs.gcloud_docker_image }}\n" >> Dockerfile-gcloud
         echo "COPY $SERVICE_ACCOUNT_FILE $SERVICE_ACCOUNT_PATH" >> Dockerfile-gcloud
         echo "RUN gcloud auth activate-service-account --key-file=$SERVICE_ACCOUNT_PATH" >> Dockerfile-gcloud
         echo "RUN ssh-keygen -t rsa -f /root/.ssh/google_compute_engine -C root -b 2048 -q -N \"\"" >> Dockerfile-gcloud
