@@ -54,8 +54,9 @@ runs:
         echo "COPY $SERVICE_ACCOUNT_FILE $SERVICE_ACCOUNT_PATH" >> Dockerfile-gcloud
         echo "RUN gcloud auth activate-service-account --key-file=$SERVICE_ACCOUNT_PATH" >> Dockerfile-gcloud
         echo "RUN ssh-keygen -t rsa -f /root/.ssh/google_compute_engine -C root -b 2048 -q -N \"\"" >> Dockerfile-gcloud
-        # install NumPy for faster tunnelling and to suppress warning
+        # install NumPy for faster tunnelling and to suppress warnings
         echo "RUN \$(gcloud info --format=\"value(basic.python_location)\") -m pip install numpy" >> Dockerfile-gcloud 
-        # silence setlocale warning
+        # silence various ssh warnings
+        echo "RUN echo \"LogLevel ERROR\" > /root/.ssh/config" >> Dockerfile-gcloud
         echo "ENV LC_ALL=C" >> Dockerfile-gcloud
         docker build -t ${{ inputs.image_name }} -f Dockerfile-gcloud .
