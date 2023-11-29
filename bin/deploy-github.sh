@@ -26,9 +26,9 @@ function main {
   GCLOUD_DOCKER_IMAGE="gcr.io/google.com/cloudsdktool/google-cloud-cli:latest"
   GOOGLE_PROJECT="broad-singlecellportal"
   COMPUTE_ZONE="us-central1-a"
-  GCLOUD_CONTAINER="gcloud-config"
+  GCLOUD_CONFIG_IMAGE="gcloud-config"
 
-  while getopts "p:s:r:e:b:d:h:S:u:H:t:Rfv:g:z:G:c:" OPTION; do
+  while getopts "p:s:r:e:b:d:h:S:u:H:t:Rfv:g:z:G:" OPTION; do
     case $OPTION in
       p)
         PORTAL_SECRETS_VAULT_PATH="$OPTARG"
@@ -76,10 +76,7 @@ function main {
         COMPUTE_ZONE="$OPTARG"
         ;;
       G)
-        GCLOUD_DOCKER_IMAGE="$OPTARG"
-        ;;
-      c)
-        GCLOUD_CONTAINER="$OPTARG"
+        GCLOUD_CONFIG_IMAGE="$OPTARG"
         ;;
       H)
         echo "$usage"
@@ -94,7 +91,7 @@ function main {
   done
 
   # construct SSH command using gcloud and Identity Aware Proxy to access VM via authenticated Docker container
-  BASE_SSH="docker run --rm --volumes-from $GCLOUD_CONTAINER $GCLOUD_DOCKER_IMAGE gcloud compute ssh"
+  BASE_SSH="docker run --rm $GCLOUD_CONFIG_IMAGE gcloud compute ssh"
   SSH_ARGS="$SSH_USER@$DESTINATION_HOST --tunnel-through-iap --project $GOOGLE_PROJECT --zone $COMPUTE_ZONE --quiet"
   SSH_COMMAND="$BASE_SSH  $SSH_ARGS --command "
 
@@ -188,8 +185,7 @@ USAGE:
 -v VALUE    set the VERSION_TAG value to control which Docker tag to pull (defaults to development)
 -g VALUE    set the GOOGLE_PROJECT value to control which project to access (defaults to production project)
 -z VALUE    set the COMPUTE_ZONE value (for accessing VMs, defaults to us-central1)
--G VALUE    set the GCLOUD_DOCKER_IMAGE value (defaults to $GCLOUD_DOCKER_IMAGE)
--c VALUE    set the GCLOUD_CONTAINER value (defaults to $GCLOUD_CONTAINER)
+-G VALUE    set the GCLOUD_CONFIG_IMAGE value (defaults to $GCLOUD_DOCKER_IMAGE)
 -H COMMAND  print this text
 EOF
 )

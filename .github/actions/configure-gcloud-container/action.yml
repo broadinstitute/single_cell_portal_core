@@ -8,8 +8,8 @@ inputs:
     description: 'gcloud Docker image name/vesion tag'
     required: false
     default: 'gcr.io/google.com/cloudsdktool/google-cloud-cli:latest'
-  container_name:
-    description: 'name of container to create and access volumes from'
+  image_name:
+    description: 'name of image to create and access credentials from'
     required: false
     default: 'gcloud-config'
   vault_addr:
@@ -31,14 +31,26 @@ runs:
       shell: bash
       run: |
         docker pull ${{ inputs.gcloud_docker_image }}
+    - name: Extract main service account json
+      uses: ./.github/actions/extract-vault-secret-to-file
+      with:
+        vault_secret_path: ${{ inputs.vault_secret_path }}
+        vault_addr: ${{ inputs.VAULT_ADDR }}
+        vault_role_id: ${{ inputs.VAULT_ROLE_ID }}
+        vault_secret_id: ${{ inputs.VAULT_SECRET_ID }}
+        output_filename: 'scp_service_account.json'
+        output_format: 'json'
     - name: Authenticate to gcloud and docker
       env:
-        VAULT_ADDR: ${{ inputs.VAULT_ADDR }}
-        SERVICE_ACCOUNT_PATH: '/tmp/scp_service_account.json'
+        SERVICE_ACCOUNT_FILE: 'scp_service_account.json'
       shell: bash
       run: |
-        # this will create a Docker volume called 'gcloud-config' that contains credentials for use with gcloud
-        export VAULT_TOKEN=$( vault write -field=token auth/approle/login role_id=${{ inputs.vault_role_id }} secret_id=${{ inputs.vault_secret_id }})
-        vault read -format=json ${{ inputs.vault_secret_path }} | jq .data > $SERVICE_ACCOUNT_PATH
-        docker run -v "$SERVICE_ACCOUNT_PATH:$SERVICE_ACCOUNT_PATH" --name ${{ inputs.container_name }} ${{ inputs.gcloud_docker_image }} gcloud \
-               auth activate-service-account --key-file=$SERVICE_ACCOUNT_PATH
+        # manually construct a Dockerfile using supplied image, and pre-authenticate the service account via gcloud
+        # will also run ssh-keygen so that this doesn't execute every time we make a gcloud compute ssh call
+        SERVICE_ACCOUNT_PATH="/tmp/$SERVICE_ACCOUNT_FILE"
+        echo "FROM ${{ inputs.gcloud_docker_image }}\n" |> Dockerfile
+        echo "COPY $SERVICE_ACCOUNT_FILE $SERVICE_ACCOUNT_PATH" >> Dockerfile
+        echo "RUN gcloud auth activate-service-account --key-file=$SERVICE_ACCOUNT_PATH" >> Dockerfile
+        echo "RUN ssh-keygen -t rsa -f /root/.ssh/google_compute_engine -C root -b 2048 -q -N \"\"" >> Dockerfile
+        echo "ENV LC_ALL=C" >> Dockerfile # silence setlocale warning
+        docker build -t ${{ inputs.image_name }} -f Dockerfile .
