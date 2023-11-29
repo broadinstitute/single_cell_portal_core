@@ -226,10 +226,8 @@ describe('getPlotlyTraces handles expression graphs', () => {
     plotData.genes = ['foo']
 
     let [traces] = ScatterPlot.getPlotlyTraces(plotData)
-    // check that it doesn't reverse Reds when Reds is applied as the default
-    // Note that if the defaultScatterColor is ever changed to a non-Reds colorscale,
-    // this test will need to be updated
-    expect(traces[0].marker.reversescale).toEqual(false)
+    // since Viridis is now the default color profile, this should return true
+    expect(traces[0].marker.reversescale).toEqual(true)
 
     // check that does not reverse Reds when that is the explicitly specified colorscale
     plotData.scatterColor = 'Reds'

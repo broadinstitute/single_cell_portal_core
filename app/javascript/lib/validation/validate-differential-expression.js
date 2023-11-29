@@ -129,7 +129,7 @@ function inferSizesAndSignificances(metrics) {
 /** Return a metric of differential expression size, if present in given metric */
 function getGeneHeader(header) {
   // Conventions -- Scanpy: names; Seurat: genes.  "gene" is SCP canonical.
-  const GENE_REGEX = new RegExp(/^(gene|genes|names)$/i)
+  const GENE_REGEX = new RegExp(/^(gene|genes|name|names)$/i)
   const gene = header.match(GENE_REGEX)
   return gene
 }
