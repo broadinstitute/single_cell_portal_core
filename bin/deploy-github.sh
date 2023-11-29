@@ -1,20 +1,19 @@
 #!/usr/bin/env bash
 
-# extract secrets from vault, copy to remote host, and launch boot script for deployment
-# can also roll back a broken deployment by calling with -R, and optionally -t OFFSET
-# to increase the amount of releases to roll back to
+# script that can run deployments to GCE via Github Action runner
+# uses gcloud Docker image for authentication & ssh access via service accounts
+# vault secrets are extracted using extract-vault-secret-to-file action
 
 THIS_DIR="$(cd "$(dirname -- "$0")"; pwd)"
 
 # common libraries
 . $THIS_DIR/bash_utils.sh
 . $THIS_DIR/github_releases.sh
-. $THIS_DIR/extract_vault_secrets.sh
 
 function main {
   # defaults
-  SSH_USER="runner"
-  DESTINATION_BASE_DIR='/home/runner/deployments/single_cell_portal_core'
+  SSH_USER="jenkins"
+  DESTINATION_BASE_DIR='/home/jenkins/deployments/single_cell_portal_core'
   GIT_BRANCH="master"
   PASSENGER_APP_ENV="production"
   BOOT_COMMAND="bin/remote_deploy.sh"
@@ -157,7 +156,7 @@ function main {
 
   echo "### running remote deploy script ###"
   echo "BOOT_COMMAND: $(set_remote_environment_vars) $BOOT_COMMAND"
-  # run_remote_command "$(set_remote_environment_vars) $BOOT_COMMAND" || exit_with_error_message "could not run $(set_remote_environment_vars) $BOOT_COMMAND on $DESTINATION_HOST:$DESTINATION_BASE_DIR"
+  run_remote_command "$(set_remote_environment_vars) $BOOT_COMMAND" || exit_with_error_message "could not run $(set_remote_environment_vars) $BOOT_COMMAND on $DESTINATION_HOST:$DESTINATION_BASE_DIR"
   echo "### COMPLETED ###"
 }
 

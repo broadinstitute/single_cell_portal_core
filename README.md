@@ -473,13 +473,13 @@ The official production Single Cell Portal is deployed in Google Cloud Platform.
 team members have administrative access to this instance.  If you are a collaborator and require access, please email
 [scp-support@broadinstitute.zendesk.com](mailto:scp-support@broadinstitute.zendesk.com).
 
-For Single Cell Portal staff: please refer to the SCP playbook and Jenkins server on how to deploy to production.
+For Single Cell Portal staff: please refer to the SCP playbook and associated Github actions on how to deploy to production.
 
 ### NON-BROAD PRODUCTION DEPLOYMENTS
 
 If you are deploying your own production instance in a different project, the following VM/OS configurations are recommended:
-* VM: n1-highmem-4 (4 vCPUs, 26 GB memory)
-* OS: Ubuntu 18.04 (Bionic Beaver) or later
+* VM: n1-highmem-8 (8 vCPUs, 52 GB memory) or n2-highmem-8 (8 vCPUs, 64 GB memory)
+* OS: Ubuntu 20.04 (Bionic Beaver) or later
 * Disks: Two standard persistent disks, one for the operating system (boot disk), and a second "data" disk for checking out
 the portal  source code. It is recommended to provision at least 100GB for the "data" disk to allow enough temp space for
 multiple concurrent file uploads.
