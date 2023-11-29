@@ -49,10 +49,10 @@ runs:
         # will also run ssh-keygen so that this doesn't execute every time we make a gcloud compute ssh call
         SERVICE_ACCOUNT_PATH="/tmp/$SERVICE_ACCOUNT_FILE"
         touch Dockerfile-gcloud
-        echo "FROM ${{ inputs.gcloud_docker_image }}\n" >> Dockerfile-gcloud
+        echo "FROM ${{ inputs.gcloud_docker_image }}" >> Dockerfile-gcloud
+        echo >> Dockerfile-gcloud
         echo "COPY $SERVICE_ACCOUNT_FILE $SERVICE_ACCOUNT_PATH" >> Dockerfile-gcloud
         echo "RUN gcloud auth activate-service-account --key-file=$SERVICE_ACCOUNT_PATH" >> Dockerfile-gcloud
         echo "RUN ssh-keygen -t rsa -f /root/.ssh/google_compute_engine -C root -b 2048 -q -N \"\"" >> Dockerfile-gcloud
         echo "ENV LC_ALL=C" >> Dockerfile # silence setlocale warning
-        cat Dockerfile-gcloud
         docker build -t ${{ inputs.image_name }} -f Dockerfile-gcloud .
