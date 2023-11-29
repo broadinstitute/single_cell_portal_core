@@ -35,7 +35,7 @@
                   </thead>
                 </table>
               <% end %>
-              Then <%= link_to "click here".html_safe, "#{generate_manifest_study_url(@study)}" %> for the file_supplemental_info.tsv containing file supplementary information (units, protocols, etc...)
+              Then <%= link_to "click here", "#{generate_manifest_study_url(@study)}", target: :_blank %> for the file_supplemental_info.tsv containing file supplementary information (units, protocols, etc...)
             <% elsif @study.public? && !@user_embargoed || current_user.admin? %>
               <p class="lead">To download all files using <code>curl</code>, click the button below to get the download command:</p>
               <p class="lead command-container text-center" id="command-container-all">

@@ -2,7 +2,7 @@
     <span class="label label-warning embargoed-file"><i class="fas fa-ban"></i> Data release date: <%= @study.embargo.to_s(:long) %></span>
 <% else %>
   <% if study_file.hosted_externally? %>
-      <%= link_to "<span class='fas fa-cloud-download'></span> External".html_safe, study_file.download_path, class: 'btn btn-primary',
+      <%= link_to "<span class='fas fa-cloud-download-alt'></span> External".html_safe, study_file.download_path, class: 'btn btn-primary',
                   target: :_blank, rel: 'noopener noreferrer', data: {"analytics-name": 'file-download:study-single:external'} %>
   <% else %>
       <% if study_file.generation && DownloadQuotaService.download_exceeds_quota?(current_user, study_file.upload_file_size) %>
