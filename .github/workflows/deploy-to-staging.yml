@@ -1,5 +1,8 @@
 name: Deploy to staging SCP instance
 on:
+  push:
+    branches:
+      - jb-github-actions-cd
   workflow_dispatch:
 env:
   DOCKER_IMAGE_NAME: 'gcr.io/broad-singlecellportal-staging/single-cell-portal'
