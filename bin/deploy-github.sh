@@ -89,7 +89,7 @@ function main {
     esac
   done
 
-  echo "DEBUG: ${ls -la}"
+  echo "DEBUG: $(ls -la)"
 
   # construct SSH command using gcloud and Identity Aware Proxy to access VM via authenticated Docker container
   BASE_SSH="docker run --rm $GCLOUD_CONFIG_IMAGE gcloud compute ssh"

@@ -2,7 +2,6 @@ name: Build and publish single-cell-portal Docker image
 on:
   push:
     branches:
-      - jb-github-actions-cd
       - development
       - master
   workflow_dispatch:
