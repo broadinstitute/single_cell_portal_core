@@ -1,6 +1,14 @@
 name: Deploy to production SCP instance
 on:
   workflow_dispatch:
+    inputs:
+      rollback:
+        type: choice
+        description: 'Y/N to rollback to previous release tag'
+        options:
+          - Y
+          - N
+        default: 'N'
 env:
   DOCKER_IMAGE_NAME: 'gcr.io/broad-singlecellportal-staging/single-cell-portal'
   GCLOUD_DOCKER_IMAGE: "gcr.io/google.com/cloudsdktool/google-cloud-cli:latest"
@@ -11,6 +19,7 @@ env:
   GOOGLE_PROJECT: 'broad-singlecellportal'
   COMPUTE_ZONE: 'us-central1-a'
   REMOTE_HOST: 'singlecell-01'
+  ROLLBACK: ''
 
 jobs:
   Deploy-To-Staging:
@@ -59,5 +68,9 @@ jobs:
       - name: Run deploy script
         shell: bash
         run: |
+          # set rollback flag, if requested
+          if [[ "${{ github.event.inputs.rollback }}" = "Y" ]]; then
+            ROLLBACK="-R"
+          fi
           bin/deploy-github.sh -b master -e production -g $GOOGLE_PROJECT -G $IMAGE_NAME -h $REMOTE_HOST \
-                               -p $PORTAL_SECRETS_PATH -s $MAIN_SERVICE_ACCOUNT -r $READ_ONLY_SERVICE_ACCOUNT
+                               -p $PORTAL_SECRETS_PATH -s $MAIN_SERVICE_ACCOUNT -r $READ_ONLY_SERVICE_ACCOUNT $ROLLBACK

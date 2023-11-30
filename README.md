@@ -479,7 +479,7 @@ For Single Cell Portal staff: please refer to the SCP playbook and associated Gi
 
 If you are deploying your own production instance in a different project, the following VM/OS configurations are recommended:
 * VM: n1-highmem-8 (8 vCPUs, 52 GB memory) or n2-highmem-8 (8 vCPUs, 64 GB memory)
-* OS: Ubuntu 20.04 (Bionic Beaver) or later
+* OS: Ubuntu 20.04 (Focal Fossa) or later
 * Disks: Two standard persistent disks, one for the operating system (boot disk), and a second "data" disk for checking out
 the portal  source code. It is recommended to provision at least 100GB for the "data" disk to allow enough temp space for
 multiple concurrent file uploads.
