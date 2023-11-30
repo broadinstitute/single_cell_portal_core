@@ -21,8 +21,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-      - name: Install vault and other utilities
-        uses: ./.github/actions/install-vault-and-utils
       - name: Configure gcloud container and activate service account
         uses: ./.github/actions/configure-gcloud-container
         with:

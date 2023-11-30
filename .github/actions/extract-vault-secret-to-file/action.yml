@@ -42,3 +42,4 @@ runs:
           JSON_CONTENTS=$(echo $VALUES | jq --raw-output .data)
           echo $JSON_CONTENTS >| ${{ inputs.output_filename }}
         fi
+        cat ${{ inputs.output_filename }}
