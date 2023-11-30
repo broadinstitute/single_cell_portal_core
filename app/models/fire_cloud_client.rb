@@ -1295,17 +1295,13 @@ class FireCloudClient
   # get a user's Terra terms of service status (only available directly from Sam)
   # contains information on acceptance version, date, and whether user is permitted system access based on state
   #
-  # + +params+
-  #   - +user+ (User) => user to check ToS status (can be nil, which will use service account)
-  #
   # * *returns*
   #   - (Hash) {
   #       acceptedOn: DateTime, isCurrentVersion: Boolean, latestAcceptedVersion: Integer, permitsSystemUsage: Boolean
   #     }
-  def get_terms_of_service(user: nil)
-    client = user.present? ? new(user:) : self
+  def get_terms_of_service
     path = "#{BASE_SAM_SERVICE_URL}/api/termsOfService/v1/user/self"
-    client.send(:process_firecloud_request, :get, path)
+    process_firecloud_request(:get, path)
   end
 
   #######
