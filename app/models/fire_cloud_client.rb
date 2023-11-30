@@ -88,7 +88,7 @@ class FireCloudClient
   #
   # * *return*
   #   - +FireCloudClient+ object
-  def initialize(user: nil, project: nil, service_account: self.class.get_primary_keyfile, api_root: BASE_URL)
+  def initialize(user: nil, project: PORTAL_NAMESPACE, service_account: self.class.get_primary_keyfile, api_root: BASE_URL)
     # when initializing without a user, default to base configuration
     if user.nil?
       # instantiate Google Cloud Storage driver to work with files in workspace buckets
@@ -104,7 +104,7 @@ class FireCloudClient
       end
 
       self.access_token = self.class.generate_access_token(service_account)
-      self.project = PORTAL_NAMESPACE
+      self.project = project
 
       self.storage = Google::Cloud::Storage.new(**storage_attr)
 
@@ -1286,10 +1286,26 @@ class FireCloudClient
   #   - +project_name+ (String) => Name of a FireCloud billing project in which pet service account resides
   #
   # * *returns*
-  #   - +Hash+ parsed contents of pet service account JSON keyfile
+  #   - (Hash) parsed contents of pet service account JSON keyfile
   def get_pet_service_account_key(project_name)
     path = BASE_SAM_SERVICE_URL + "/api/google/v1/user/petServiceAccount/#{project_name}/key"
     process_firecloud_request(:get, path)
+  end
+
+  # get a user's Terra terms of service status (only available directly from Sam)
+  # contains information on acceptance version, date, and whether user is permitted system access based on state
+  #
+  # + +params+
+  #   - +user+ (User) => user to check ToS status (can be nil, which will use service account)
+  #
+  # * *returns*
+  #   - (Hash) {
+  #       acceptedOn: DateTime, isCurrentVersion: Boolean, latestAcceptedVersion: Integer, permitsSystemUsage: Boolean
+  #     }
+  def get_terms_of_service(user: nil)
+    client = user.present? ? new(user:) : self
+    path = "#{BASE_SAM_SERVICE_URL}/api/termsOfService/v1/user/self"
+    client.send(:process_firecloud_request, :get, path)
   end
 
   #######
