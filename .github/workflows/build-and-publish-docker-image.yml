@@ -3,7 +3,8 @@ on:
   push:
     branches:
       - development
-      - master
+  release:
+    types: [published]
   workflow_dispatch:
 env:
   DOCKER_IMAGE_NAME: 'gcr.io/broad-singlecellportal-staging/single-cell-portal'
