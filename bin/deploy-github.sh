@@ -204,7 +204,7 @@ function copy_file_to_remote {
   LOCAL_FILEPATH="$1"
   REMOTE_FILEPATH="$2"
   $SSH_COMMAND "mkdir -p \$(dirname $REMOTE_FILEPATH)"
-  BASE_COPY="docker run --rm -v $LOCAL_FILEPATH:$LOCAL_FILEPATH:r $GCLOUD_CONFIG_IMAGE gcloud compute scp "
+  BASE_COPY="docker run --rm -v $LOCAL_FILEPATH:$LOCAL_FILEPATH:rw $GCLOUD_CONFIG_IMAGE gcloud compute scp "
   COPY_ARGS="$LOCAL_FILEPATH $SSH_USER@$DESTINATION_HOST:$REMOTE_FILEPATH --tunnel-through-iap --project $GOOGLE_PROJECT --zone $COMPUTE_ZONE"
   COPY_CMD="$BASE_COPY $COPY_ARGS"
   $COPY_CMD
