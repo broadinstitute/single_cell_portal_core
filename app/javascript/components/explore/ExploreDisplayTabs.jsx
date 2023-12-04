@@ -275,6 +275,8 @@ export default function ExploreDisplayTabs({
   let initialPanel = 'options'
   if (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel) {
     initialPanel = 'differential-expression'
+  } else if (exploreParams.facets !== '') {
+    initialPanel = 'cell-filtering'
   }
   const [panelToShow, setPanelToShow] = useState(initialPanel)
 
@@ -295,7 +297,7 @@ export default function ExploreDisplayTabs({
 
   const {
     enabledTabs, disabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs
-  } = getEnabledTabs(exploreInfo, exploreParamsWithDefaults)
+  } = getEnabledTabs(exploreInfo, exploreParamsWithDefaults, cellFaceting)
 
   // exploreParams object without genes specified, to pass to cluster comparison plots
   const referencePlotDataParams = _clone(exploreParams)
@@ -733,7 +735,7 @@ export default function ExploreDisplayTabs({
   * return an array of the tab names that should be shown, given the exploreParams and exploreInfo
   * (note that the export is for test availability -- this funtion is not intended to be used elsewhere
   */
-export function getEnabledTabs(exploreInfo, exploreParams) {
+export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
   const isGeneList = !!exploreParams.geneList
   const numGenes = exploreParams?.genes?.length
   const isMultiGene = numGenes > 1
@@ -795,7 +797,10 @@ export function getEnabledTabs(exploreInfo, exploreParams) {
     )
   })
 
-  if (!exploreInfo) {
+  if (
+    !exploreInfo ||
+    (exploreParams.facets !== '' && !cellFaceting?.isFullyLoaded)
+  ) {
     enabledTabs = ['loading']
     disabledTabs = []
   }
