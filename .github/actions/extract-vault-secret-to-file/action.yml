@@ -1,0 +1,44 @@
+name: 'Extract vault secret to file'
+description: 'read a secret from a path in vault and export as a file'
+inputs:
+  vault_secret_path:
+    description: 'Path to secret in vault'
+    required: true
+  vault_addr:
+    description: 'vault API endpoint'
+    required: true
+  vault_role_id:
+    description: 'vault role for accessing secrets'
+    required: true
+  vault_secret_id:
+    description: 'credential to authenticate into vault'
+    required: true
+  output_filename:
+    description: 'name of exported secrets file'
+    required: true
+  output_format:
+    description: 'form to write secrets to: env or json'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Extract vault secret to file
+      shell: bash
+      run: |
+        export VAULT_ADDR=${{ inputs.vault_addr }}
+        export VAULT_TOKEN=$( vault write -field=token auth/approle/login \
+                                    role_id=${{ inputs.vault_role_id}} secret_id=${{ inputs.vault_secret_id}} )
+        VALUES=$(vault read -format json ${{ inputs.vault_secret_path }})
+        if [[ "${{ inputs.output_format }}" = 'env' ]]; then
+          echo "### env secrets from ${{ inputs.vault_secret_path }} ###" >| ${{ inputs.output_filename }}
+          for key in $(echo $VALUES | jq .data | jq --raw-output 'keys[]')
+          do
+            echo "setting value for: $key"
+            curr_val=$(echo $VALUES | jq .data | jq --raw-output .$key)
+            echo "export $key='$curr_val'" >> ${{ inputs.output_filename }}
+          done
+        elif [[ "${{ inputs.output_format }}" = 'json' ]]; then
+          JSON_CONTENTS=$(echo $VALUES | jq --raw-output .data)
+          echo $JSON_CONTENTS >| ${{ inputs.output_filename }}
+        fi
