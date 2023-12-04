@@ -22,7 +22,7 @@ env:
   ROLLBACK: ''
 
 jobs:
-  Deploy-To-Staging:
+  Deploy-To-Production:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository code
