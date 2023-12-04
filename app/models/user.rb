@@ -385,9 +385,8 @@ class User
   def check_terra_tos_status
     begin
       client = FireCloudClient.new(user: self, project: FireCloudClient::PORTAL_NAMESPACE)
-      user_registration = client.get_registration&.with_indifferent_access
-      tos_accepted = user_registration.dig('enabled', 'tosAccepted')
-      tos_accepted = true if tos_accepted.nil? # failover protection if status isn't found
+      user_registration = client.get_terms_of_service&.with_indifferent_access
+      tos_accepted = user_registration['permitsSystemUsage']
 
       # return inverse as value of 'false' here means the user must accept the updated Terra ToS
       { must_accept: !tos_accepted, http_code: 200 }
