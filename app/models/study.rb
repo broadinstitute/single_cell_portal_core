@@ -1379,10 +1379,10 @@ class Study
   # return an array of all single cell names in study, will check for main list of cells or concatenate all
   # cell lists from individual expression matrices
   def all_cells_array
-    if self.metadata_file&.parsed? # nil-safed via &
+    if has_cell_metadata? # any cell metadata being present will have necessary 'All Cells' data
       query = {
-        name: 'All Cells', array_type: 'cells', linear_data_type: 'Study', linear_data_id: self.id,
-        study_id: self.id, study_file_id: self.metadata_file.id, cluster_group_id: nil, subsample_annotation: nil,
+        name: 'All Cells', array_type: 'cells', linear_data_type: 'Study', linear_data_id: id,
+        study_id: id, study_file_id: metadata_file.id, cluster_group_id: nil, subsample_annotation: nil,
         subsample_threshold: nil
       }
       DataArray.concatenate_arrays(query)
