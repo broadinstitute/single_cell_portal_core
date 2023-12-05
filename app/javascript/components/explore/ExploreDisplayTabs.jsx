@@ -158,6 +158,7 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
           const selectionFromUrl = parseFacetsParam(
             selection, exploreParams.facets
           )
+
           if (!_isEqual(selection, selectionFromUrl)) {
             updateFilteredCells(selectionFromUrl, prevCellFaceting)
           }

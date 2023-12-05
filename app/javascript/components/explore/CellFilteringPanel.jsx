@@ -376,7 +376,6 @@ function CellFacet({
     setIsFullyCollapsed(isAllListsCollapsed)
   }, [isAllListsCollapsed])
 
-
   let facetStyle = {}
   if (!facet.isLoaded) {
     facetStyle = {
@@ -580,6 +579,11 @@ export function CellFilteringPanel({
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const shownFacets = facets.filter(facet => facet.groups.length > 1)
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
+
+  // Needed to propagate facets from URL to initial checkbox states
+  useEffect(() => {
+    setCheckedMap(cellFilteringSelection)
+  }, Object.values(cellFilteringSelection))
 
   /** Top header for the "Filter" section, including all-facet controls */
   function FilterSectionHeader({ hasNondefaultSelection, handleResetFilters, isAllListsCollapsed, setIsAllListsCollapsed }) {
