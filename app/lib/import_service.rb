@@ -7,7 +7,7 @@ class ImportService
   ALLOWED_CLIENTS = [NemoClient, HcaAzulClient].freeze
 
   # allowed configuration classes
-  ALLOWED_CONFIGS = [ImportServiceConfig::Nemo].freeze
+  ALLOWED_CONFIGS = [ImportServiceConfig::Nemo, ImportServiceConfig::Hca].freeze
 
   # generic handler to call an underlying client method and forward all positional/keyword params
   #
@@ -46,9 +46,9 @@ class ImportService
       study, study_file = configuration.import_from_service
       # TODO: uncomment this block after file parsing is enabled for NeMO and SCP-5400 is complete
       # extra work will be required but is unknown until we have the dataset (e.g. populating AnnData data_fragments)
-      # identifier = "#{study.accession} (#{study.external_identifier})"
-      # log_message "Ingesting file: #{study_file.upload_file_name} from imported study #{identifier}"
-      # FileParseService.run_parse_job(study_file, study, study.user)
+      identifier = "#{study.accession} (#{study.external_identifier})"
+      log_message "Ingesting file: #{study_file.upload_file_name} from imported study #{identifier}"
+      FileParseService.run_parse_job(study_file, study, study.user)
       [study, study_file]
     rescue RuntimeError, RestClient::NotFound, Google::Apis::ClientError => e
       log_message("Error importing from #{config_class}: #{e.class} - #{e.message}", level: :error)
