@@ -1018,7 +1018,19 @@ export default async function scpApi(
     }
   }
   if (toJson) {
+    const isJson = response.headers.get('content-type').includes('json')
+
+    if (!isJson) {
+      const text = await response.text()
+      const message =
+        `Error, response is not JSON as expected.  ` +
+        `Response text: ${text}.  ` +
+        `Requested URL: ${url}`
+      throw Error(message)
+    }
+
     const json = await response.json()
+
     // special handling for Terra terms of service checks
     // don't throw error so we can pass back JSON response
     if (typeof json.must_accept !== 'undefined') {
@@ -1045,6 +1057,7 @@ export default async function scpApi(
       throw new Error(json.error || json.errors)
     }
   }
+
   throw new Error(response)
 }
 

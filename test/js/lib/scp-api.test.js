@@ -84,7 +84,10 @@ describe('JavaScript client for SCP REST API', () => {
     expect.assertions(1)
     const mockErrorResponse = {
       json: () => Promise.resolve({
-        error: 'Internal Server Error'
+        error: 'Internal Server Error',
+      }),
+      headers: new Headers({
+        'content-type': 'application/json; charset=utf-8'
       })
     }
     jest
@@ -95,6 +98,29 @@ describe('JavaScript client for SCP REST API', () => {
       .then(() => {})
       .catch(error => {
         expect(error.message).toEqual('Internal Server Error')
+      })
+  })
+
+  it('catches non-JSON errors', async () => {
+    expect.assertions(1)
+    const mockErrorResponse = {
+      text: () => Promise.resolve(
+        'Response that is not JSON, i.e. crudely handled in server'
+      ),
+      headers: new Headers({
+        'content-type': 'text/html; charset=utf-8'
+      })
+    }
+    jest
+      .spyOn(global, 'fetch')
+      .mockReturnValue(Promise.resolve(mockErrorResponse))
+
+    return scpApi('/test/path', {}, false)
+      .then(() => {})
+      .catch(error => {
+        expect(error.message.includes(
+          'Response that is not JSON, i.e. crudely handled in server'
+        )).toEqual(true)
       })
   })
 
