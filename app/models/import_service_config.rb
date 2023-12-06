@@ -132,6 +132,7 @@ module ImportServiceConfig
     ext = file_info[format_attribute].gsub(/^\./, '') # trim leading period, if present
     study_file.upload_content_type = get_file_content_type(ext)
     study_file.external_identifier = file_id
+    study_file.ann_data_file_info&.data_fragments = default_data_fragments
     study_file
   end
 
@@ -141,6 +142,19 @@ module ImportServiceConfig
     ExpressionFileInfo::LIBRARY_PREPARATION_VALUES.detect do |lib_prep|
       lib_prep.casecmp(sanitized_lib) == 0
     end
+  end
+
+  # default cluster embedding data fragments, assuming X_umap slot
+  def default_data_fragments
+    [
+      {
+        _id: BSON::ObjectId.new.to_s,
+        name: 'umap',
+        description: '',
+        obsm_key_name: 'X_umap',
+        spatial_cluster_associations: []
+      }.with_indifferent_access
+    ]
   end
 
   # empty methods to be overwritten in included classes
