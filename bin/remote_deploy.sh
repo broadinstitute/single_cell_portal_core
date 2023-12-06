@@ -86,7 +86,7 @@ function main {
           HTTP_STATUS=$(get_http_status_code $PORTAL_HOMEPAGE)
         fi
     done
-    if [[ "$HTTP_STATUS" = "200" ]] ; then
+    if [[ "$HTTP_STATUS" != "200" ]] ; then
       exit_with_error_message "Portal unavailable at $PORTAL_HOMEPAGE after 6 minutes with HTTP status: $HTTP_STATUS"
     fi
     echo "### CLEANING UP SECRETS/OLD IMAGES ###"
