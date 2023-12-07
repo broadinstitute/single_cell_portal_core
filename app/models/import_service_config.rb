@@ -16,7 +16,9 @@ module ImportServiceConfig
 
   ALLOWED_SCP_MODELS = [Study, StudyFile].freeze
 
-  attr_accessor :client, :user_id, :file_id, :study_id, :branding_group_id
+  DEFAULT_OBSM_KEYS = %w[X_umap].freeze
+
+  attr_accessor :client, :user_id, :file_id, :study_id, :branding_group_id, :obsm_key_names
 
   # name of importing service (e.g. NeMO, HCA)
   def service_name
@@ -49,6 +51,12 @@ module ImportServiceConfig
 
   def branding_group
     BrandingGroup.find_by(id: branding_group_id)
+  end
+
+  # load names of cluster embeddings for ingest
+  # will default to ['X_umap'] unless overridden
+  def obsm_keys
+    obsm_key_names || DEFAULT_OBSM_KEYS
   end
 
   # order of associations to walk for sourcing attributes
@@ -123,7 +131,11 @@ module ImportServiceConfig
     study
   end
 
-  def to_study_file(study_id, taxon_common_name, taxon_attribute: :common_name, format_attribute: :file_format)
+  def to_study_file(study_id,
+                    taxon_common_name,
+                    taxon_attribute: :common_name,
+                    format_attribute: :file_format,
+                    obsm_key_names: nil)
     file_info = load_file.with_indifferent_access
     study_file = to_scp_model(StudyFile, study_file_default_settings, study_file_mappings, file_info)
     # assign study, taxon, and content_type
@@ -132,7 +144,7 @@ module ImportServiceConfig
     ext = file_info[format_attribute].gsub(/^\./, '') # trim leading period, if present
     study_file.upload_content_type = get_file_content_type(ext)
     study_file.external_identifier = file_id
-    study_file.ann_data_file_info&.data_fragments = default_data_fragments
+    study_file.ann_data_file_info&.data_fragments = default_data_fragments(obsm_key_names)
     study_file
   end
 
@@ -146,16 +158,17 @@ module ImportServiceConfig
 
   # default cluster embedding data fragments, assuming X_umap slot
   def default_data_fragments
-    [
+    obsm_keys.map do |obsm_key_name|
+      name = obsm_key_name.gsub(/X_/, '')
       {
         _id: BSON::ObjectId.new.to_s,
         data_type: :cluster,
-        name: 'umap',
+        name:,
         description: '',
-        obsm_key_name: 'X_umap',
+        obsm_key_name:,
         spatial_cluster_associations: []
       }.with_indifferent_access
-    ]
+    end
   end
 
   # empty methods to be overwritten in included classes
