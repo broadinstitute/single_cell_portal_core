@@ -149,6 +149,7 @@ module ImportServiceConfig
     [
       {
         _id: BSON::ObjectId.new.to_s,
+        data_type: :cluster,
         name: 'umap',
         description: '',
         obsm_key_name: 'X_umap',

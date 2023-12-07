@@ -5,7 +5,7 @@ module ImportServiceConfig
 
     attr_accessor :project_id
 
-    validates :user_id, :branding_group_id, presence: true
+    validates :file_id, :user_id, :branding_group_id, presence: true
 
     PREFERRED_TAXONS = %w[human mouse].freeze
 
@@ -126,7 +126,7 @@ module ImportServiceConfig
     #   - (RuntimeError) => if either study or study_file fail to save correctly
     #   - (ArgumentError) => if no file_id is provided
     def import_from_service
-      raise ArgumentError, 'must provide file_id' if file_id.blank?
+      raise configuration.errors.full_messages.join(', ') unless valid?
 
       traverse_associations! unless study_id
       study = populate_study

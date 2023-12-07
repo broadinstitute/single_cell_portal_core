@@ -50,9 +50,14 @@ class ImportService
       log_message "Ingesting file: #{study_file.upload_file_name} from imported study #{identifier}"
       FileParseService.run_parse_job(study_file, study, study.user)
       [study, study_file]
-    rescue RuntimeError, RestClient::NotFound, Google::Apis::ClientError => e
+    rescue RuntimeError, RestClient::Exception, Google::Apis::ClientError => e
       log_message("Error importing from #{config_class}: #{e.class} - #{e.message}", level: :error)
       ErrorTracker.report_exception(e, configuration.user)
+      study = Study.find_by(external_identifier: configuration.study_id)
+      study_file = StudyFile.find_by(external_identifier: configuration.file_id)
+      [study, study_file].compact.each do |instance|
+        DeleteQueueJob.new(instance).delay.perform
+      end
       nil
     end
   end

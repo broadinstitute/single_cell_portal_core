@@ -5,6 +5,8 @@ module ImportServiceConfig
 
     PREFERRED_TAXONS = ['Homo sapiens', 'Mus musculus'].freeze
 
+    validates :file_id, :study_id, :user_id, :branding_group_id, presence: true
+
     # name for logging when calling ImportService.import_from
     SERVICE_NAME = 'HCA'.freeze
 
@@ -106,7 +108,7 @@ module ImportServiceConfig
     #   - (RuntimeError) => if either study or study_file fail to save correctly
     #   - (ArgumentError) => if no file_id & study_id are not provided
     def import_from_service
-      raise ArgumentError, 'must provide study_id and file_id' unless study_id && file_id
+      raise configuration.errors.full_messages.join(', ') unless valid?
 
       study = populate_study
       study_file = populate_study_file(study.id)
