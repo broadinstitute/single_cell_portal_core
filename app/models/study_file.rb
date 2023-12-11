@@ -115,6 +115,7 @@ class StudyFile
   field :external_link_title, type: String # Link text
   field :external_link_description, type: String # Link tooltip
   field :external_identifier, type: String # for tracking external files from ImportService
+  field :imported_from, type: String # Human-readable tag for external service that study was imported from, e.g. HCA
 
   # for spatial files, the ids of cluster files that correspond to this file for default display
   field :spatial_cluster_associations, type: Array, default: []

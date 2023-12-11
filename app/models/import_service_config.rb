@@ -128,6 +128,7 @@ module ImportServiceConfig
     study.build_study_detail
     study.study_detail.full_description = sanitize_attribute(study.description)
     study.external_identifier = study_id
+    study.imported_from = service_name
     study
   end
 
@@ -140,6 +141,7 @@ module ImportServiceConfig
     ext = file_info[format_attribute].gsub(/^\./, '') # trim leading period, if present
     study_file.upload_content_type = get_file_content_type(ext)
     study_file.external_identifier = file_id
+    study_file.imported_from = service_name
     study_file.ann_data_file_info&.data_fragments = default_data_fragments
     study_file
   end

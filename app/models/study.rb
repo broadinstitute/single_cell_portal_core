@@ -274,6 +274,7 @@ class Study
   field :use_existing_workspace, type: Boolean, default: false
   field :default_options, type: Hash, default: {} # extensible hash where we can put arbitrary values as 'defaults'
   field :external_identifier, type: String # ID from external service, used for tracking via ImportService
+  field :imported_from, type: String # Human-readable tag for external service that study was imported from, e.g. HCA
   ##
   #
   # SWAGGER DEFINITIONS
