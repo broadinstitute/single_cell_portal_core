@@ -105,7 +105,7 @@ module ImportServiceConfig
     def populate_study_file(scp_study_id)
       taxons = taxon_names
       preferred_name = taxons.detect { |name| PREFERRED_TAXONS.include?(name) } || taxons.first
-      study_file = to_study_file(scp_study_id, preferred_name, obsm_key_names:)
+      study_file = to_study_file(scp_study_id, preferred_name)
       library = study_file.expression_file_info.library_preparation_protocol
       if library.blank?
         library = load_study&.[]('technique')
@@ -130,7 +130,7 @@ module ImportServiceConfig
 
       traverse_associations! unless study_id
       study = populate_study
-      study_file = populate_study_file(study.id, obsm_key_names: default_obsm_key_names)
+      study_file = populate_study_file(study.id)
       nemo_gs_url = file_access_info(protocol: :gs)&.[]('url')
       # gotcha for some GS urls having an incorrect root folder, this likely is something that will be fixed with
       # the public release but for now leaving this hack in place

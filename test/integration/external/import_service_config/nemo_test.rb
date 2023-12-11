@@ -12,6 +12,7 @@ module ImportServiceConfig
         file_id: 'nemo:der-ah1o5qb',
         project_id: 'nemo:grn-gyy3k8j',
         study_id: 'nemo:col-hwmwd2x',
+        obsm_key_names: %w[X_tsne X_umap],
         user_id: @user.id,
         branding_group_id: @branding_group.id
       }
@@ -29,6 +30,7 @@ module ImportServiceConfig
       @attributes.each do |name, value|
         assert_equal value, config.send(name)
       end
+      assert_equal @attributes[:obsm_key_names], config.obsm_keys
     end
 
     test 'should reference correct methods' do
@@ -138,6 +140,9 @@ module ImportServiceConfig
       assert_equal 'human_var_scVI_VLMC.h5ad.tar', scp_study_file.upload_file_name
       assert_equal "10x 3' v3", scp_study_file.expression_file_info.library_preparation_protocol
       assert_not scp_study_file.ann_data_file_info.reference_file
+      @configuration.obsm_keys.each do |obsm_key_name|
+        assert scp_study_file.ann_data_file_info.find_fragment(data_type: :cluster, obsm_key_name:).present?
+      end
     end
 
     test 'should import from service' do

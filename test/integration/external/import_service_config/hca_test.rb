@@ -11,6 +11,7 @@ module ImportServiceConfig
       @attributes = {
         file_id: 'b0517500-b39e-4c7a-b2f0-794ddc725433',
         study_id: '85a9263b-0887-48ed-ab1a-ddfa773727b6',
+        obsm_key_names: %w[X_tsne X_umap],
         user_id: @user.id,
         branding_group_id: @branding_group.id
       }
@@ -29,6 +30,7 @@ module ImportServiceConfig
       @attributes.each do |name, value|
         assert_equal value, config.send(name)
       end
+      assert_equal @attributes[:obsm_key_names], config.obsm_keys
     end
 
     test 'should reference correct methods' do
@@ -115,6 +117,9 @@ module ImportServiceConfig
       assert_equal 'aldinger20.processed.h5ad', scp_study_file.upload_file_name
       assert_equal 'SPLiT-seq', scp_study_file.expression_file_info.library_preparation_protocol
       assert_not scp_study_file.ann_data_file_info.reference_file
+      @configuration.obsm_keys.each do |obsm_key_name|
+        assert scp_study_file.ann_data_file_info.find_fragment(data_type: :cluster, obsm_key_name:).present?
+      end
     end
 
     test 'should import from service' do
@@ -137,7 +142,10 @@ module ImportServiceConfig
             assert study_file.persisted?
             assert_equal study.external_identifier, @attributes[:study_id]
             assert_equal study_file.external_identifier, @attributes[:file_id]
-            assert_equal study_file.external_link_url, access_url
+            # trim off query params to prevent test failures when catalog/version updates
+            trimmed_access_url = access_url.split('?').first
+            trimmed_external_url = study_file.external_link_url.split('?').first
+            assert_equal trimmed_external_url, trimmed_access_url
           end
         end
       end

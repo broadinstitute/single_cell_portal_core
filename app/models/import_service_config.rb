@@ -131,11 +131,7 @@ module ImportServiceConfig
     study
   end
 
-  def to_study_file(study_id,
-                    taxon_common_name,
-                    taxon_attribute: :common_name,
-                    format_attribute: :file_format,
-                    obsm_key_names: nil)
+  def to_study_file(study_id, taxon_common_name, taxon_attribute: :common_name, format_attribute: :file_format)
     file_info = load_file.with_indifferent_access
     study_file = to_scp_model(StudyFile, study_file_default_settings, study_file_mappings, file_info)
     # assign study, taxon, and content_type
