@@ -47,7 +47,7 @@ class ImportService
       # TODO: uncomment this block after file parsing is enabled for NeMO and SCP-5400 is complete
       # extra work will be required but is unknown until we have the dataset (e.g. populating AnnData data_fragments)
       identifier = "#{study.accession} (#{study.external_identifier})"
-      log_message "Ingesting file: #{study_file.upload_file_name} from imported study #{identifier}"
+      log_message "Ingesting file: #{study_file.upload_file_name} (#{study_file.external_identifier}) from imported study #{identifier}"
       FileParseService.run_parse_job(study_file, study, study.user)
       [study, study_file]
     rescue RuntimeError, RestClient::Exception, Google::Apis::ClientError => e
