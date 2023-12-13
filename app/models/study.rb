@@ -776,12 +776,7 @@ class Study
       public = self.where(public: true, queued_for_deletion: false).map(&:id)
       owned = self.where(user_id: user._id, public: false, queued_for_deletion: false).map(&:id)
       shares = StudyShare.where(email: /#{user.email}/i).map(&:study).select {|s| !s.queued_for_deletion }.map(&:id)
-      group_shares = []
-      if user.registered_for_firecloud && (user.refresh_token.present? || user.api_access_token.present?)
-        user_client = FireCloudClient.new(user:, project: FireCloudClient::PORTAL_NAMESPACE)
-        user_groups = user_client.get_user_groups.map {|g| g['groupEmail']}
-        group_shares = StudyShare.where(:email.in => user_groups).map(&:study).select {|s| !s.queued_for_deletion }.map(&:id)
-      end
+      group_shares = user.user_groups
       intersection = public + owned + shares + group_shares
       # return Mongoid criterion object to use with pagination
       Study.in(:_id => intersection)
@@ -795,12 +790,7 @@ class Study
     else
       owned = self.where(user_id: user._id, queued_for_deletion: false).map(&:_id)
       shares = StudyShare.where(email: /#{user.email}/i).map(&:study).select {|s| !s.queued_for_deletion }.map(&:_id)
-      group_shares = []
-      if user.registered_for_firecloud && check_groups
-        user_client = FireCloudClient.new(user:, project: FireCloudClient::PORTAL_NAMESPACE)
-        user_groups = user_client.get_user_groups.map {|g| g['groupEmail']}
-        group_shares = StudyShare.where(:email.in => user_groups).map(&:study).select {|s| !s.queued_for_deletion }.map(&:id)
-      end
+      group_shares = check_groups ? user.user_groups : []
       intersection = owned + shares + group_shares
       Study.in(:_id => intersection)
     end
@@ -912,24 +902,10 @@ class Study
     # check if api status is ok, otherwise exit without checking to prevent UI hanging on repeated calls
     if user.registered_for_firecloud && ApplicationController.firecloud_client.services_available?(FireCloudClient::SAM_SERVICE, FireCloudClient::RAWLS_SERVICE, FireCloudClient::THURLOE_SERVICE)
       group_shares = self.study_shares.keep_if {|share| share.is_group_share?}.select {|share| permissions.include?(share.permission)}.map(&:email)
-      # get user's FC groups
-      if user.access_token.present?
-        client = FireCloudClient.new(user:, project: FireCloudClient::PORTAL_NAMESPACE)
-      elsif user.api_access_token.present?
-        client = FireCloudClient.new
-        client.access_token[:access_token] = user.api_access_token
-      else
-        false
-      end
-      begin
-        user_groups = client.get_user_groups.map {|g| g['groupEmail']}
-        # use native array intersection to determine if any of the user's groups have been shared with this study at the correct permission
-        (user_groups & group_shares).any?
-      rescue => e
-        ErrorTracker.report_exception(e, user, { user_groups: user_groups, study: self.attributes.to_h})
-        Rails.logger.error "Unable to retrieve user groups for #{user.email}: #{e.class.name} -- #{e.message}"
-        false
-      end
+      # get user's groups via user.user_groups which includes token setting & error handling
+      user_groups = user.user_groups
+      # use native array intersection to determine if any of the user's groups have been shared with this study at the correct permission
+      (user_groups & group_shares).any?
     else
       false # if user is not registered for firecloud, default to false
     end
