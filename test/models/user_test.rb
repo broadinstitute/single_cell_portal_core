@@ -143,4 +143,24 @@ class UserTest < ActiveSupport::TestCase
       assert_equal 500, user_status[:http_code]
     end
   end
+
+  test 'should get user groups' do
+    mock = Minitest::Mock.new
+    group_emails = %w[my-group@firecloud.org my-other-group@firecloud.org]
+    groups = group_emails.map { |group| { groupEmail: group }.with_indifferent_access  }
+    mock.expect :get_user_groups, groups
+    FireCloudClient.stub :new, mock do
+      assert_equal group_emails, @user.user_groups
+      mock.verify
+    end
+    # test error handling for various states that aren't automatically retried
+    [
+      RestClient::BadRequest, RestClient::Unauthorized, RestClient::Forbidden, RestClient::NotFound,
+      RestClient::InternalServerError
+    ].each do |error_type|
+      RestClient::Request.stub :execute, proc { raise error_type } do
+        assert_empty @user.user_groups
+      end
+    end
+  end
 end
