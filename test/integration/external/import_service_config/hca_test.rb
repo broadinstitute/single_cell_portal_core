@@ -122,6 +122,7 @@ module ImportServiceConfig
       @configuration.obsm_keys.each do |obsm_key_name|
         assert scp_study_file.ann_data_file_info.find_fragment(data_type: :cluster, obsm_key_name:).present?
       end
+      assert scp_study_file.ann_data_file_info.find_fragment(data_type: :expression).present?
     end
 
     test 'should import from service' do

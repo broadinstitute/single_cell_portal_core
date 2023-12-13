@@ -96,6 +96,8 @@ module ImportServiceConfig
         found_libs = libraries.map { |lib| find_library_prep(lib) }.compact
         study_file.expression_file_info.library_preparation_protocol = found_libs.first
       end
+      exp_fragment = expression_data_fragment(study_file)
+      study_file.ann_data_file_info.data_fragments << exp_fragment
       study_file
     end
 

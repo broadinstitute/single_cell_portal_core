@@ -169,6 +169,16 @@ module ImportServiceConfig
     end
   end
 
+  # populate the expression-based data_fragment (needed for form values in upload wizard)
+  def expression_data_fragment(scp_study_file)
+    {
+      _id: BSON::ObjectId.new.to_s,
+      data_type: :expression,
+      taxon_id: scp_study_file.taxon_id.to_s,
+      expression_file_info: scp_study_file.expression_file_info.attributes.reject { |k, _| %w[_id units].include? k }
+    }.with_indifferent_access
+  end
+
   # empty methods to be overwritten in included classes
   # these will contain service-specific logic for sourcing data and assigning attributes to save, as well as file IO
   # this will cover cases not dealt with in default mappings and :to_study or :to_study_file
