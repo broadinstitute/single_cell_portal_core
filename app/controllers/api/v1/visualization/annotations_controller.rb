@@ -249,11 +249,6 @@ module Api
             render json: { error: 'Clustering is not indexed' }, status: :bad_request and return
           end
 
-          # annotation validation
-          if params[:annotations].include?('--numeric--')
-            render json: { error: 'Cannot use numeric annotations for facets' }, status: :bad_request and return
-          end
-
           annotations = self.class.get_facet_annotations(@study, cluster, params[:annotations])
           if annotations.empty? && params[:annotations].blank?
             render json: { error: 'Must provide at least one annotation' }, status: :bad_request and return
@@ -270,11 +265,12 @@ module Api
           facets = []
           # build arrays of annotation values, and populate facets response array
           annotations.each do |annotation|
-            scope = annotation[:scope]
+            annot_scope = annotation[:scope]
+            annot_type = annotation[:type]
             identifier = annotation[:identifier]
 
-            data_obj = scope == 'study' ? @study.cell_metadata.by_name_and_type(annotation[:name], 'group') : cluster
-            study_file_id = scope == 'study' ? @study.metadata_file.id : cluster.study_file_id
+            data_obj = annot_scope == 'study' ? @study.cell_metadata.by_name_and_type(annotation[:name], annot_type) : cluster
+            study_file_id = annot_scope == 'study' ? @study.metadata_file.id : cluster.study_file_id
             array_query = {
               name: annotation[:name], array_type: 'annotations', linear_data_type: data_obj.class.name,
               linear_data_id: data_obj.id, study_id: @study.id, study_file_id:, subsample_annotation: nil,
@@ -290,16 +286,19 @@ module Api
           cells = indexed_cluster_cells.map.with_index do |value, index|
             facets.map do |facet|
               annotation = facet[:annotation]
-              scope = annotation.split('--').last
-              if scope == 'study'
+              _, annotation_type, annotation_scope = annotation.split('--')
+              if annotation_scope == 'study'
                 label = annotation_arrays[annotation][value] || '--Unspecified--'
               else
                 label = annotation_arrays[annotation][index] || '--Unspecified--'
               end
-              if label == ''
-                label = '--Unspecified--'
+              if annotation_type == 'group'
+                label = '--Unspecified--' if label.blank?
+
+                facet[:groups].index(label)
+              else
+                label.presence || Float::NaN
               end
-              facet[:groups].index(label)
             end
           end
 
