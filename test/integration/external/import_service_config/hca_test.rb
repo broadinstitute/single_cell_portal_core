@@ -137,7 +137,10 @@ module ImportServiceConfig
             assert study_file.persisted?
             assert_equal study.external_identifier, @attributes[:study_id]
             assert_equal study_file.external_identifier, @attributes[:file_id]
-            assert_equal study_file.external_link_url, access_url
+            # trim off query params to prevent test failures when catalog/version updates
+            trimmed_access_url = access_url.split('?').first
+            trimmed_external_url = study_file.external_link_url.split('?').first
+            assert_equal trimmed_external_url, trimmed_access_url
           end
         end
       end

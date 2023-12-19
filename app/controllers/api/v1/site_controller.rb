@@ -76,7 +76,7 @@ module Api
       end
 
       def check_terra_tos_acceptance
-        if api_user_signed_in?
+        if api_user_signed_in? && current_api_user.registered_for_firecloud
           user_status = current_api_user.check_terra_tos_status
           render json: { must_accept: user_status[:must_accept] }, status: user_status[:http_code]
         else
@@ -231,7 +231,7 @@ module Api
         end
       end
 
-      def renew_user_access_token      
+      def renew_user_access_token
         if current_api_user
           Rails.logger.info "Renewing user access token via SCP API for #{current_api_user.id}"
           render json: RequestUtils.get_user_access_token(current_api_user)
