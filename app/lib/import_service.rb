@@ -52,12 +52,9 @@ class ImportService
       [study, study_file]
     rescue RuntimeError, RestClient::Exception, Google::Apis::ClientError => e
       log_message("Error importing from #{config_class}: #{e.class} - #{e.message}", level: :error)
-      ErrorTracker.report_exception(e, configuration.user)
-      study = Study.find_by(external_identifier: configuration.study_id)
-      study_file = StudyFile.find_by(external_identifier: configuration.file_id)
-      [study, study_file].compact.each do |instance|
-        DeleteQueueJob.new(instance).delay.perform
-      end
+      ErrorTracker.report_exception(e, configuration.user, configuration)
+      # don't run cleanup as it potentially could delete an existing study/file
+      # this is handled in ImportServiceConfig
       nil
     end
   end
@@ -145,6 +142,9 @@ class ImportService
   # * *params*
   #   - +study+ (Study) => study from which to remove Terra workspace
   def self.remove_study_workspace(study)
+    # first check if a study already exists using this external_identifer to prevent accidental workspace deletion
+    return false if Study.where(external_identifier: study.external_identifier, :id.ne => study.id).exists?
+
     if ApplicationController.firecloud_client.workspace_exists?(study.firecloud_project, study.firecloud_workspace)
       ApplicationController.firecloud_client.delete_workspace(study.firecloud_project, study.firecloud_workspace)
     end

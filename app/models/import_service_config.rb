@@ -213,14 +213,13 @@ module ImportServiceConfig
         # clean up study to allow retries with different file
         ImportService.remove_study_workspace(study)
         file_in_bucket.delete
-        DeleteQueueJob.new(study).perform
+        DeleteQueueJob.new(study).delay.perform
         raise "could create study_file: #{errors.join('; ')}"
       end
     else
       error_msg = "could not create study: #{study.errors.full_messages.join('; ')}"
       log_message error_msg
       ImportService.remove_study_workspace(study)
-      DeleteQueueJob.new(study).delay.perform
       raise error_msg
     end
   end
