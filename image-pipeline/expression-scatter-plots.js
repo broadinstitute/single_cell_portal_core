@@ -147,8 +147,8 @@ async function makeExpressionScatterPlotImage(gene, page, context) {
 async function prefetchExpressionData(gene, context) {
   const { accession, preamble, origin, fetchOrigin, cluster } = context
 
-  const extension = values['json-dir'] && initExpressionResponse ? '.gz' : ''
-  const jsonPath = `${jsonFpStem}${gene}.json${extension}`
+  // const extension = values['json-dir'] && initExpressionResponse ? '.gz' : ''
+  // const jsonPath = `${jsonFpStem}${gene}.json${extension}`
 
   print(`Prefetching JSON for ${gene}`, context)
 
@@ -189,13 +189,31 @@ async function prefetchExpressionData(gene, context) {
     }
   }
 
-  const fromFilePath = `_scp_internal/cache/expression_scatter/data/${cluster}/${gene}.json`
-  const buffer = await downloadFromBucket(fromFilePath, context)
-  const expressionArrayString = buffer.toString()
+  let expressionArrayString
 
-  if (values['json-dir']) {
-    print('Populated initExpressionResponse for development run', context)
-    return
+  const useDataCache = false
+  if (useDataCache) {
+    const fromFilePath = `_scp_internal/cache/expression_scatter/data/${cluster}/${gene}.json`
+    expressionArrayString = await downloadFromBucket(fromFilePath, context)
+
+    if (values['json-dir']) {
+      print('Populated initExpressionResponse for development run', context)
+      return
+    }
+  } else {
+    // Enable bypassing JSON data cache, e.g. for development or special production runs
+    const apiStem = `${fetchOrigin}/single_cell/api/v1`
+    const allFields = 'expression'
+    const params = `fields=${allFields}&gene=${gene}&subsample=all&isImagePipeline=true`
+    const url = `${apiStem}/studies/${accession}/clusters/_default?${params}`
+
+    // Fetch data
+    const response = await fetch(url)
+    const json = await response.json()
+
+    expressionArrayString = `[${ json.data.expression.toString() }]`
+    print(`fetched url: ${ url}`, context)
+    print(`expressionArrayString: ${ expressionArrayString}`, context)
   }
 
   expressionByGene[gene] = expressionArrayString
@@ -469,7 +487,8 @@ async function run() {
     console.log(exploreApiUrl)
     throw error
   }
-  const uniqueGenes = json.uniqueGenes
+  // const uniqueGenes = json.uniqueGenes
+  const uniqueGenes = await fetchRankedGenes({ bucket })
   console.log(`Total number of genes: ${uniqueGenes.length}`)
 
   const processPromises = []
@@ -502,15 +521,36 @@ async function run() {
   await Promise.all(processPromises)
 }
 
+/** Return list of relevance-ranked genes, for which images will be cached */
+async function fetchRankedGenes(context) {
+  const rankedGenes = []
+
+  const fromFilePath = `_scp_internal/ranked_genes/ranked_genes.tsv`
+  const content = await downloadFromBucket(fromFilePath, context)
+
+  const lines = content.split('\n')
+  lines.forEach(line => {
+    if (line[0] === '#') {return}
+    const columns = line.split('\t')
+    const gene = columns[0]
+    rankedGenes.push(gene)
+  })
+
+  console.log('rankedGenes', rankedGenes)
+
+  return rankedGenes
+}
+
 /** Fetch a file from a bucket to PAPI VM, return contents */
 async function downloadFromBucket(fromFilePath, context) {
-  const bucket = context.bucket // 'broad-singlecellportal-staging-testing-data'
-  const content = await storage.bucket(bucket).file(fromFilePath).download()
+  const bucketName = context.bucket // 'broad-singlecellportal-staging-testing-data'
+  const bucket = await storage.bucket(bucketName)
+  const content = await bucket.file(fromFilePath).download()
   print(
     `File "${fromFilePath}" downloaded from bucket "${bucket}"`,
     context
   )
-  return content
+  return content.toString()
 }
 
 /** Upload a file from a local path to a destination path in a Google bucket */
