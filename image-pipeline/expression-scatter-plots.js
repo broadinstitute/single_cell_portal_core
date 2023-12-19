@@ -45,11 +45,15 @@ function isBardPost(request) {
 }
 
 /** Returns boolean for if request is relevant Bard / Mixpanel log */
-function isExpressionScatterPlotLog(request) {
+function isDownstreamExpressionScatterPlotRequest(request) {
+  print(`request url ${ request.url()}`)
   if (isBardPost(request)) {
     const payload = JSON.parse(request.postData())
     const props = payload.properties
-    return (payload.event === 'plot:scatter' && props.genes.length === 1)
+    return (
+      payload.event === 'plot:scatter' && props.genes.length === 1 ||
+      payload.event === 'init-cell-faceting'
+    )
   }
   return false
 }
@@ -66,7 +70,7 @@ async function makeExpressionScatterPlotImage(gene, page, context) {
   // Wait for reliable signal that expression plot has finished rendering.
   // A Mixpanel / Bard log request always fires immediately upon render.
   await page.waitForRequest(request => {
-    return isExpressionScatterPlotLog(request, gene)
+    return isDownstreamExpressionScatterPlotRequest(request, gene)
   })
 
   page.waitForTimeout(250) // Wait for janky layout to settle
@@ -89,7 +93,7 @@ async function makeExpressionScatterPlotImage(gene, page, context) {
   })
 
   // Height and width of plot, x- and y-offset from viewport origin
-  const clipDimensions = { height: 595, width: 660, x: 5, y: 310 }
+  const clipDimensions = { height: 595, width: 595, x: 5, y: 200 }
 
   const webpFileName = `${gene}.webp`
   // Take a screenshot, save it locally
@@ -212,8 +216,7 @@ async function prefetchExpressionData(gene, context) {
     const json = await response.json()
 
     expressionArrayString = `[${ json.data.expression.toString() }]`
-    print(`fetched url: ${ url}`, context)
-    print(`expressionArrayString: ${ expressionArrayString}`, context)
+    print(`Fetched expression data from URL: ${ url}`, context)
   }
 
   expressionByGene[gene] = expressionArrayString
@@ -228,7 +231,7 @@ function isAlwaysIgnorable(request) {
   const url = request.url()
   const isGA = url.includes('google-analytics')
   const isSentry = url.includes('ingest.sentry.io')
-  const isNonExpPlotBardPost = isBardPost(request) && !isExpressionScatterPlotLog(request)
+  const isNonExpPlotBardPost = isBardPost(request) && !isDownstreamExpressionScatterPlotRequest(request)
   const isIgnorableLog = isGA || isSentry || isNonExpPlotBardPost
   const isViolinPlot = url.includes('/expression/violin')
   const isIdeogram = url.includes('/ideogram@')
