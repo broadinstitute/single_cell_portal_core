@@ -33,6 +33,7 @@
                   edit_feature_flag_option_path(class_name: 'user', id: @user.id), class: 'btn btn-primary',
                   data: { toggle: 'tooltip', placement: 'right' }, title: "Edit feature flags for #{@user.email}"
       %>
+      <%= link_to quota_exemption_button(@user, size: nil) %>
     </div>
   </div>
   <div class="form-group row">

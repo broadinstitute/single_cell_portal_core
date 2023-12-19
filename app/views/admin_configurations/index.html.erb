@@ -198,6 +198,14 @@
     <div class="tab-pane" id="users">
       <div class="table-responsive">
         <div class="well">
+          <%= form_tag admin_find_user_path, class: 'form-inline' do %>
+            <div class="form-group pull-right navigation-form">
+              <%= text_field_tag :user_email, nil,
+                                 placeholder: 'Find user by email...', class: 'form-control'
+              %>
+              <%= submit_tag 'Find', class: 'btn btn-success' %>
+            </div>
+          <% end %>
           <table class="table table-striped" id="user-table">
             <thead>
               <tr>
@@ -223,16 +231,18 @@
               <% end %>
             </tbody>
           </table>
+          <div class="row pagination-controls">
+            <%= will_paginate @users, renderer: WillPaginate::ActionView::BootstrapLinkRenderer %>
+          </div>
         </div>
       </div>
       <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
-          $('#user-table').dataTable({
-              pagingType: "full_numbers",
-              order: [[0, 'asc']],
-              language: {
-                  search: "Filter results by: "
-              }
-          });
+        $('#user-table').dataTable({
+          paging: false,
+          order: [[0, 'asc']],
+          searching: false,
+          info: false
+        });
       </script>
     </div>
   <div class="tab-pane" id="deployment">

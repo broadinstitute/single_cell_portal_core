@@ -339,7 +339,7 @@ function DifferentialExpressionTable({
 
   const isShowingUnfoundGenes = unfoundGenes.length > 0 && numGenesToShow > 0
 
-  let verticalPad = 540 // Accounts for all UI real estate above table header
+  let verticalPad = 485 // Accounts for all UI real estate above table header
 
   // Retain layout to paginate w/o scrolling
   if (isShowingUnfoundGenes) {verticalPad += 38}
@@ -438,9 +438,6 @@ function DifferentialExpressionTable({
           canNextPage={table.getCanNextPage()}
           zeroIndexed={true}
         />
-        <a href="https://forms.gle/qPGH5J9oFkurpbD76" target="_blank" title="Take a 1 minute survey">
-          Help improve this feature
-        </a>
       </>
       }
 

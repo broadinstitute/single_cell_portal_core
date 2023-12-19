@@ -16,6 +16,7 @@ import RawAssociationSelect from '~/components/upload/RawAssociationSelect'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 import ValidateFile from '~/lib/validation/validate-file'
 import { setupSentry } from '~/lib/sentry-logging'
+import { adjustGlobalHeader, mitigateStudyOverviewTitleTruncation } from '~/lib/layout-utils'
 import { clearOldServiceWorkerCaches } from '~/lib/service-worker-cache'
 
 const { validateRemoteFile } = ValidateFile
@@ -39,6 +40,10 @@ document.addEventListener('click', () => {
 })
 
 document.addEventListener('DOMContentLoaded', () => {
+  // For Study Overview page,
+  // Set global header end width, and mitigate long study titles on narrow screens
+  adjustGlobalHeader()
+
   // Logs only page views for faceted search UI
   logPageView()
 
@@ -94,6 +99,18 @@ function renderComponent(target, componentName, props) {
   ReactDOM.render(React.createElement(componentsToExport[componentName], props),
     targetEl)
 }
+
+
+window.addEventListener('resize', () => {
+  if (window.resizeTimeout) {clearTimeout(window.resizeTimeout)}
+  window.resizeTimeout = setTimeout(() => {
+    window.dispatchEvent(new Event('resizeEnd'))
+  }, 100)
+})
+
+window.addEventListener('resizeEnd', () => {
+  mitigateStudyOverviewTitleTruncation()
+})
 
 // SCP expects these variables to be global.
 //

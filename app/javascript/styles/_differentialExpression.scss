@@ -1,12 +1,20 @@
 .de-modal-row-wrapper {
-  position: relative;
-  top: -15px;
-    .de-modal-row {
+  height: 32px;
+  margin-bottom: 16px;
+
+  .de-modal-row {
     a.de-info-help-icon {
       margin-left: 10px;
       vertical-align: middle;
     }
   }
+}
+
+.de-modal-row-wrapper.create-annotation-de {
+  height: inherit;
+  margin-bottom: inherit;
+  position: relative;
+  top: -18px;
 }
 
 .de-source {
@@ -25,7 +33,7 @@
 }
 
 .pagination {
-  margin: -10px 0 4px 0;
+  margin: -10px 0 12px 0;
 }
 
 .de-download-button {

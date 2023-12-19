@@ -323,6 +323,21 @@ class User
   #
   ###
 
+  # get Terra user groups for a specified user, with error handling
+  # this prevents issues when user is not in compliance with Terra terms of service, or ToS status cannot be found
+  def user_groups
+    if registered_for_firecloud && (refresh_token.present? || api_access_token.present?)
+      user_client = FireCloudClient.new(user: self, project: FireCloudClient::PORTAL_NAMESPACE)
+      begin
+        user_client.get_user_groups.map { |group| group['groupEmail'] }
+      rescue RestClient::Exception
+        []
+      end
+    else
+      []
+    end
+  end
+
   # check if user currently has a download exemption (daily_download_quota: nil)
   def quota_exemption?
     daily_download_quota.nil?
@@ -385,9 +400,8 @@ class User
   def check_terra_tos_status
     begin
       client = FireCloudClient.new(user: self, project: FireCloudClient::PORTAL_NAMESPACE)
-      user_registration = client.get_registration&.with_indifferent_access
-      tos_accepted = user_registration.dig('enabled', 'tosAccepted')
-      tos_accepted = true if tos_accepted.nil? # failover protection if status isn't found
+      user_registration = client.get_terms_of_service&.with_indifferent_access
+      tos_accepted = user_registration['permitsSystemUsage']
 
       # return inverse as value of 'false' here means the user must accept the updated Terra ToS
       { must_accept: !tos_accepted, http_code: 200 }

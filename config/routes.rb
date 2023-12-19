@@ -112,6 +112,7 @@ Rails.application.routes.draw do
     post 'admin/refresh_api_connections', to: 'admin_configurations#refresh_api_connections', as: :refresh_api_connections
     get 'admin/service_account', to: 'admin_configurations#get_service_account_profile', as: :get_service_account_profile
     post 'admin/service_account', to: 'admin_configurations#update_service_account_profile', as: :update_service_account_profile
+    post 'admin/users/find_user', to: 'admin_configurations#find_user', as: :admin_find_user
     get 'admin/users/:id/edit', to: 'admin_configurations#edit_user', as: :edit_user
     post 'admin/users/:id/download_exemption', to: 'admin_configurations#grant_download_exemption', as: :grant_download_exemption
     match 'admin/users/:id', to: 'admin_configurations#update_user', via: [:post, :patch], as: :update_user
@@ -230,6 +231,7 @@ Rails.application.routes.draw do
 
     # user annotation actions
     resources :user_annotations, only: [:index, :edit, :update, :destroy]
+    post 'user_annotations/find_annotation', to: 'user_annotations#find_annotation', as: :find_user_annotation
     get 'download_user_annotation/:id', to: 'user_annotations#download_user_annotation', as: :download_user_annotation
     get 'publish_to_study/:id', to: 'user_annotations#publish_to_study', as: :publish_to_study
 

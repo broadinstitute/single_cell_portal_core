@@ -9,6 +9,7 @@ import * as ScpApi from 'lib/scp-api'
 import { createCache } from 'components/explore/plot-data-cache'
 import ScatterTab, { getNewContextMap } from 'components/explore/ScatterTab'
 import * as ScpApiMetrics from 'lib/scp-api-metrics'
+import * as LayoutUtils from 'lib/layout-utils'
 
 
 // models a real response from api/v1/visualization/clusters
@@ -156,8 +157,14 @@ describe('getNewContextMap correctly assigns contexts', () => {
     const fakeLogScatter = jest.spyOn(ScpApiMetrics, 'logScatterPlot')
     fakeLogScatter.mockImplementation(() => {})
 
+    const getTextSizeSpy = jest.spyOn(LayoutUtils, 'getTextSize')
+    getTextSizeSpy.mockImplementation(() => {
+      return [10, 10]
+    })
+
     render((
-      <ScatterTab studyAccession='SCP101'
+      <ScatterTab
+        studyAccession='SCP101'
         exploreParamsWithDefaults={{
           cluster: 'clusterA',
           spatialGroups: ['spatialClusterA'],

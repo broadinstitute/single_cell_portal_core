@@ -217,7 +217,7 @@ export default function DifferentialExpressionFileForm({
     )
   }
 
-  if (file && geneHeader && !file.differential_expression_file_info.gene_header) {
+  if (file && geneHeader && geneHeader?.label !== undefined && !file.differential_expression_file_info.gene_header) {
     updateDeFileInfo(file, {
       'gene_header': geneHeader,
       'group_header': groupHeader,

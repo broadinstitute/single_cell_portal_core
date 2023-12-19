@@ -52,7 +52,8 @@ const defaultExploreInfo = {
   clusterGroupNames: ['foo', 'bar'],
   spatialGroupNames: [],
   spatialGroups: [],
-  clusterPointAlpha: 1.0
+  clusterPointAlpha: 1.0,
+  facets: ''
 }
 
 describe('explore tabs are activated based on study info and parameters', () => {
@@ -64,7 +65,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
       userSpecified: {
         annotation: true,
         cluster: true
-      }
+      },
+      facets: ''
     }
     const expectedResults = {
       enabledTabs: ['loading'],
@@ -86,7 +88,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
       userSpecified: {
         annotation: true,
         cluster: true
-      }
+      },
+      facets: ''
     }
     const expectedResults = {
       enabledTabs: ['scatter'],
@@ -108,7 +111,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
       userSpecified: {
         annotation: true,
         cluster: true
-      }
+      },
+      facets: ''
     }
     const expectedResults = {
       enabledTabs: ['scatter'],
@@ -146,7 +150,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
       userSpecified: {
         annotation: true,
         cluster: true
-      }
+      },
+      facets: ''
     }
     const expectedResults = {
       enabledTabs: ['annotatedScatter', 'scatter'],
@@ -178,7 +183,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
         annotation: true,
         cluster: true,
         bamFileName: true
-      }
+      },
+      facets: ''
     }
     const expectedResults = {
       enabledTabs: ['scatter', 'genome'],
@@ -203,7 +209,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
       geneList: 'Gene List 1',
       userSpecified: {
         geneList: true
-      }
+      },
+      facets: ''
     }
     const expectedResults = {
       enabledTabs: ['geneListHeatmap'],
@@ -228,7 +235,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
         annotation: true,
         cluster: true,
         genes: true
-      }
+      },
+      facets: ''
     }
 
     const expectedResults = {
@@ -256,7 +264,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
         annotation: true,
         cluster: true,
         genes: true
-      }
+      },
+      facets: ''
     }
 
     const expectedResults = {
@@ -291,7 +300,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
         cluster: true,
         genes: true,
         spatialGroups: true
-      }
+      },
+      facets: ''
     }
 
     const expectedResults = {
@@ -319,7 +329,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
         cluster: true,
         genes: true,
         consensus: true
-      }
+      },
+      facets: ''
     }
 
     const expectedResults = {
@@ -357,7 +368,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
       ideogramFileId: Object.keys(ideogramOpts)[0],
       userSpecified: {
         ideogramFileId: true
-      }
+      },
+      facets: ''
     }
 
     const expectedResults = {

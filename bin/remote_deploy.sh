@@ -14,7 +14,7 @@ function main {
     VERSION_TAG="development"
     echo "### USER: $(whoami) ###"
 
-    while getopts "v:h" OPTION; do
+    while getopts "v:" OPTION; do
       case $OPTION in
         v)
           VERSION_TAG="$OPTARG"
@@ -63,10 +63,10 @@ function main {
     echo "### Ensuring boot ###"
     COUNTER=0
     while [[ $COUNTER -lt 12 ]]; do
-		    COUNTER=$[$COUNTER + 1]
-		    echo "portal not running on attempt $COUNTER, waiting 5 seconds..."
-		    sleep 5
-		    if [[ $(ensure_container_running $PORTAL_CONTAINER) = "0" ]]; then break 2; fi
+        COUNTER=$[$COUNTER + 1]
+        echo "portal not running on attempt $COUNTER, waiting 5 seconds..."
+        sleep 5
+        if [[ $(ensure_container_running $PORTAL_CONTAINER) = "0" ]]; then break 2; fi
     done
     if [[ $(ensure_container_running $PORTAL_CONTAINER) = "1" ]] ; then exit_with_error_message "Portal still not running after 1 minute, deployment failed" ; fi
     echo "### COMPLETED ###"
@@ -74,13 +74,21 @@ function main {
     PORTAL_HOMEPAGE="https://$PROD_HOSTNAME/single_cell"
     echo "### ENSURING PORTAL IS AVAILABLE AT $PORTAL_HOMEPAGE ###"
     HOMEPAGE_COUNTER=0
+    HTTP_STATUS=$(get_http_status_code $PORTAL_HOMEPAGE)
     while [[ $HOMEPAGE_COUNTER -lt 24 ]]; do
-		    HOMEPAGE_COUNTER=$[$HOMEPAGE_COUNTER + 1]
-		    echo "home page not available on attempt $HOMEPAGE_COUNTER, waiting 15 seconds..."
-		    sleep 15
-		    if [[ $(get_http_status_code $PORTAL_HOMEPAGE) = "200" ]]; then echo "DEBUG: hooray, got a 200 back from $PORTAL_HOMEPAGE";break 2; fi
+        if [[ "$HTTP_STATUS" = "200" ]]; then
+          echo "DEBUG: hooray, got a 200 back from $PORTAL_HOMEPAGE"
+          break 2;
+        else
+          HOMEPAGE_COUNTER=$[$HOMEPAGE_COUNTER + 1]
+          echo "home page not available on attempt $HOMEPAGE_COUNTER, waiting 15 seconds..."
+          sleep 15
+          HTTP_STATUS=$(get_http_status_code $PORTAL_HOMEPAGE)
+        fi
     done
-    if [[ $(get_http_status_code $PORTAL_HOMEPAGE) != "200" ]] ; then exit_with_error_message "Portal still not available at $PORTAL_HOMEPAGE after 6 minutes, deployment failed" ; fi
+    if [[ "$HTTP_STATUS" != "200" ]] ; then
+      exit_with_error_message "Portal unavailable at $PORTAL_HOMEPAGE after 6 minutes with HTTP status: $HTTP_STATUS"
+    fi
     echo "### CLEANING UP SECRETS/OLD IMAGES ###"
     rm $PORTAL_SECRETS_PATH
     prune_docker_artifacts "$DOCKER_IMAGE_NAME" "$VERSION_TAG"

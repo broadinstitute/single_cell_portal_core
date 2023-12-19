@@ -461,7 +461,6 @@ export async function initCellFaceting(
   const timeTrimNullFiltersStart = Date.now()
   const cellFaceting = trimNullFilters(rawCellFaceting)
   perfTimes.trimNullFilters = Date.now() - timeTrimNullFiltersStart
-
   perfTimes = logInitCellFaceting(timeStart, perfTimes, cellFaceting, prevCellFaceting)
   cellFaceting.perfTimes = perfTimes
 

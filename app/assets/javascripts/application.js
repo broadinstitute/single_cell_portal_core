@@ -417,14 +417,6 @@ function setErrorOnBlank(selector) {
     });
 }
 
-// custom event to trigger resize event only after user has stopped resizing the window
-$(window).resize(function() {
-    if(this.resizeTO) clearTimeout(this.resizeTO);
-    this.resizeTO = setTimeout(function() {
-        $(this).trigger('resizeEnd');
-    }, 100);
-});
-
 // toggles visibility and disabled status of file upload and fastq url fields
 function toggleFastqFields(target, state) {
     var selector = $("#" + target);

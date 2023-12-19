@@ -487,7 +487,7 @@ class IngestJob
       study.default_options[:annotation] = cluster.annotation_select_value(annotation_object)
       is_numeric = annotation_object[:type] == 'numeric'
     end
-    study.default_options[:color_profile] = 'Reds' if is_numeric
+    study.default_options[:color_profile] = ApplicationHelper::DEFAULT_COLOR_PROFILE if is_numeric
   end
 
   # set the default cluster for the study, if not already set
@@ -1029,7 +1029,7 @@ class IngestJob
   def generate_error_email_body(email_type: :user)
     case email_type
     when :user
-      error_contents = read_parse_logfile(user_error_filepath)
+      error_contents = read_parse_logfile(user_error_filepath, range: 0..1.megabyte)
       message_body = "<p>'#{study_file.upload_file_name}' has failed during parsing.</p>"
     when :dev
       # only read first megabyte of error log to avoid email delivery failure
@@ -1038,7 +1038,7 @@ class IngestJob
       message_body += "<p>A copy of this file can be found at #{generate_bucket_browser_tag}</p>"
       message_body += "<p>Detailed logs and PAPI events as follows:"
     else
-      error_contents = read_parse_logfile(user_error_filepath)
+      error_contents = read_parse_logfile(user_error_filepath, range: 0..1.megabyte)
       message_body = "<p>'#{study_file.upload_file_name}' has failed during parsing.</p>"
     end
 

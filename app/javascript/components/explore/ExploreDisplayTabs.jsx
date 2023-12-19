@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import _clone from 'lodash/clone'
+import _isEqual from 'lodash/isEqual'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faEye } from '@fortawesome/free-solid-svg-icons'
 
@@ -83,10 +84,12 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
     setClusterCanFilter,
     setFilterErrorText,
     setCellFilterCounts,
-    setCellFaceting
+    setCellFaceting,
+    updateFilteredCells
   ] = setterFunctions
 
   const {
+    exploreParams,
     exploreInfo,
     studyAccession,
     cellFilteringSelection
@@ -95,42 +98,142 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
   const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
   if (showCellFiltering) {
     const allAnnots = exploreInfo?.annotationList.annotations
-    if (allAnnots && allAnnots.length > 0 && !prevCellFaceting?.isFullyLoaded) {
-      initCellFaceting(
-        cluster, annotation, studyAccession, allAnnots, prevCellFaceting
-      ).then(newCellFaceting => {
-        if (!cellFilteringSelection) {
+    if (allAnnots && allAnnots.length > 0) {
+      if (!prevCellFaceting?.isFullyLoaded) {
+        initCellFaceting(
+          cluster, annotation, studyAccession, allAnnots, prevCellFaceting
+        ).then(newCellFaceting => {
           const initSelection = {}
-          newCellFaceting.facets.forEach(facet => {
-            initSelection[facet.annotation] = facet.groups
-          })
-          setCellFilteringSelection(initSelection)
-        }
+          if (!cellFilteringSelection) {
+            newCellFaceting.facets.forEach(facet => {
+              initSelection[facet.annotation] = facet.groups
+            })
 
-        // Handle switching to a new clustering that has annotations (i.e., facets) not in previous clustering
-        handleClusterSwitchForFiltering(cellFilteringSelection, newCellFaceting, setCellFilteringSelection)
+            setCellFilteringSelection(initSelection)
+          }
 
-        setClusterCanFilter(true)
-        setFilterErrorText('')
+          // Handle switching to a new clustering that has annotations (i.e., facets) not in previous clustering
+          handleClusterSwitchForFiltering(cellFilteringSelection, newCellFaceting, setCellFilteringSelection)
 
-        setCellFilterCounts(newCellFaceting.filterCounts)
-        setCellFaceting(newCellFaceting)
+          setClusterCanFilter(true)
+          setFilterErrorText('')
 
-        // The cell filtering UI is initialized in batches of 5 facets
-        // This recursively loads the next 5 facets until faceting is fully loaded.
-        getCellFacetingData(cluster, annotation, setterFunctions, context, newCellFaceting)
-      }).catch(error => {
+          let selectionFromUrl = {}
+          if (exploreParams?.facets && exploreParams.facets !== undefined) {
+            const thisSelection = cellFilteringSelection ?? initSelection
+            selectionFromUrl = parseFacetsParam(
+              thisSelection, exploreParams.facets
+            )
+          }
+          if (!_isEqual(cellFilteringSelection, selectionFromUrl)) {
+            setCellFilterCounts(newCellFaceting.filterCounts)
+            setCellFaceting(newCellFaceting)
+          }
+
+
+          // The cell filtering UI is initialized in batches of 5 facets
+          // This recursively loads the next 5 facets until faceting is fully loaded.
+          getCellFacetingData(cluster, annotation, setterFunctions, context, newCellFaceting)
+        }).catch(error => {
         // NOTE: these 'errors' are in fact handled corner cases where faceting data isn't present for various reasons
         // as such, they don't need to be reported to Sentry/Mixpanel, only conveyed to the user
         // example: 400 (Bad Request): Clustering is not indexed, Cannot use numeric annotations for facets, or
         // 404 (Not Found) Cluster not found
         // see app/controllers/api/v1/visualization/annotations_controller.rb#facets for more information
-        setClusterCanFilter(false)
-        setFilterErrorText(error.message)
-        console.error(error) // Show trace in console; retains debuggability if actual error
-      })
+          setClusterCanFilter(false)
+          setFilterErrorText(error.message)
+          console.error(error) // Show trace in console; retains debuggability if actual error
+        })
+      } else {
+        if (exploreParams?.facets && exploreParams.facets !== undefined) {
+          let selection = {}
+          if (!cellFilteringSelection) {
+            prevCellFaceting.facets.forEach(facet => {
+              selection[facet.annotation] = facet.groups
+            })
+          } else {
+            selection = cellFilteringSelection
+          }
+
+          const selectionFromUrl = parseFacetsParam(
+            selection, exploreParams.facets
+          )
+
+          if (!_isEqual(selection, selectionFromUrl)) {
+            updateFilteredCells(selectionFromUrl, prevCellFaceting)
+          }
+        }
+      }
     }
   }
+}
+
+/** Get `facets` parameter value, for cell filtering */
+function getFacetsParam(initFacets, selection) {
+  const minimalSelection = {}
+
+  const initSelection = {}
+  initFacets.forEach(facet => {
+    initSelection[facet.annotation] = facet.groups
+  })
+
+  const innerParams = []
+  Object.entries(initSelection).forEach(([facet, filters]) => {
+    filters.forEach(filter => {
+      // Unlike `selection`, which specifies all filters that are selected
+      // (i.e., checked and not applied), the `facets` parameter species only
+      // filters that are _not_ selected, i.e. they're unchecked and applied.
+      //
+      // This makes the `facets` parameter much clearer.
+      if (!selection[facet].includes(filter)) {
+        if (facet in minimalSelection) {
+          minimalSelection[facet].push(filter)
+        } else {
+          minimalSelection[facet] = [filter]
+        }
+      }
+    })
+  })
+
+  Object.entries(minimalSelection).forEach(([facet, filters]) => {
+    const innerParam = `${facet}:${filters.join('|')}`
+    innerParams.push(innerParam)
+  })
+
+  const facetParams = innerParams.join(';')
+  return facetParams
+}
+
+/** Parse `facets` URL parameter into cell filtering selection object */
+function parseFacetsParam(initFacets, facetsParam) {
+  const selection = {}
+
+  // Convert the `facets` parameter value, which is a string,
+  // into an object that has the same shape as `selections`
+  const facets = {}
+  const innerParams = facetsParam.split(';')
+  innerParams.forEach(innerParam => {
+    const [facet, rawFilters] = innerParam.split(':')
+    const filters = rawFilters.split('|')
+    facets[facet] = filters
+  })
+
+  // Take the complement of the minimal `facets` object, transforming
+  // it into the more verbose `selection` object which specifies filters
+  // that are _not_ applied.
+  Object.entries(initFacets).forEach(([facet, filters]) => {
+    filters.forEach(filter => {
+      if (!facets[facet]?.includes(filter)) {
+        if (facet in selection) {
+          selection[facet].push(filter)
+        } else {
+          selection[facet] = [filter]
+        }
+      }
+    })
+  })
+
+  return selection
 }
 
 /**
@@ -173,6 +276,8 @@ export default function ExploreDisplayTabs({
   let initialPanel = 'options'
   if (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel) {
     initialPanel = 'differential-expression'
+  } else if (exploreParams.facets !== '') {
+    initialPanel = 'cell-filtering'
   }
   const [panelToShow, setPanelToShow] = useState(initialPanel)
 
@@ -184,6 +289,7 @@ export default function ExploreDisplayTabs({
   const [cellFaceting, setCellFaceting] = useState(null)
   const [filteredCells, setFilteredCells] = useState(null)
   const [cellFilterCounts, setCellFilterCounts] = useState(null)
+
   const [cellFilteringSelection, setCellFilteringSelection] = useState(null)
 
   // flow/error handling for cell filtering
@@ -192,7 +298,7 @@ export default function ExploreDisplayTabs({
 
   const {
     enabledTabs, disabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs
-  } = getEnabledTabs(exploreInfo, exploreParamsWithDefaults)
+  } = getEnabledTabs(exploreInfo, exploreParamsWithDefaults, cellFaceting)
 
   // exploreParams object without genes specified, to pass to cluster comparison plots
   const referencePlotDataParams = _clone(exploreParams)
@@ -244,14 +350,35 @@ export default function ExploreDisplayTabs({
       return
     }
     const [newCluster, newAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
+
+    const paramCluster = exploreParams.cluster
+    const paramAnnot = exploreParams.annotation
+
+    if (
+      filteredCells &&
+      (
+        (paramCluster === '' && paramAnnot.name === '') ||
+        (paramCluster === newCluster && _isEqual(paramAnnot, newAnnot))
+      )
+    ) {
+      // We've fully loaded facets,
+      // and cluster and annotation are the default or not actually changed,
+      // but another parameter has changed.
+      // We only need to get cell faceting data when either clustering or
+      // annotation has changed, so skip unless we detect a change.
+      return
+    }
+
     const setterFunctions = [
       setCellFilteringSelection,
       setClusterCanFilter,
       setFilterErrorText,
       setCellFilterCounts,
-      setCellFaceting
+      setCellFaceting,
+      updateFilteredCells
     ]
     const context = {
+      exploreParams,
       exploreInfo,
       studyAccession,
       cellFilteringSelection
@@ -259,31 +386,40 @@ export default function ExploreDisplayTabs({
     getCellFacetingData(newCluster, newAnnot, setterFunctions, context)
   }, [exploreParams?.cluster, exploreParams?.annotation])
 
+
   /** Update filtered cells to only those that match annotation group value filter selections */
-  function updateFilteredCells(selection) {
-    if (!cellFaceting) {return}
+  function updateFilteredCells(selection, overrideCellFaceting) {
+    const thisCellFaceting = overrideCellFaceting ?? cellFaceting
+    if (!thisCellFaceting) {return}
     if (!selection) {
       setFilteredCells(null)
       return
     }
-    const cellsByFacet = cellFaceting.cellsByFacet
-    const initFacets = cellFaceting.facets
-    const filtersByFacet = cellFaceting.filtersByFacet
-    const filterableCells = cellFaceting.filterableCells
+    const cellsByFacet = thisCellFaceting.cellsByFacet
+    const initFacets = thisCellFaceting.facets
+    const filtersByFacet = thisCellFaceting.filtersByFacet
+    const filterableCells = thisCellFaceting.filterableCells
+    const rawFacets = thisCellFaceting.rawFacets.facets
 
     // Filter cells by selection (i.e., selected facets and filters)
     const [newFilteredCells, newFilterCounts] = filterCells(
-      selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, cellFaceting.rawFacets.facets
+      selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, rawFacets
     )
 
     // Update UI
     setFilteredCells(newFilteredCells)
     setCellFilterCounts(newFilterCounts)
     setCellFilteringSelection(selection)
+
+    if (!overrideCellFaceting) {
+      const facetsParam = getFacetsParam(initFacets, selection)
+      updateExploreParams({ facets: facetsParam })
+    }
   }
 
   // Below line is worth keeping, but only uncomment to debug in development
   // window.SCP.updateFilteredCells = updateFilteredCells
+
 
   /** handler for when the user selects points in a plotly scatter graph */
   function plotPointsSelected(points) {
@@ -343,16 +479,16 @@ export default function ExploreDisplayTabs({
       ) {
         // DE table is shown, or pairwise DE is available.  Least horizontal space for plots.
         main = 'col-md-9'
-        side = 'col-md-3'
+        side = 'col-md-3 right-panel'
       } else if (panelToShow === 'cell-filtering') {
         main = 'col-md-10-5'
-        side = 'col-md-2-5'
+        side = 'col-md-2-5 right-panel'
       } else {
         // Default state, when side panel is "Options" and not collapsed
         main = 'col-md-10'
         // only set options-bg if we're outside the DE UX
 
-        side = panelToShow === 'options' ? 'col-md-2 options-bg' : 'col-md-2'
+        side = panelToShow === 'options' ? 'col-md-2 options-bg right-panel' : 'col-md-2 right-panel'
       }
     } else {
       // When options panel is collapsed.  Maximize horizontal space for plots.
@@ -600,7 +736,7 @@ export default function ExploreDisplayTabs({
   * return an array of the tab names that should be shown, given the exploreParams and exploreInfo
   * (note that the export is for test availability -- this funtion is not intended to be used elsewhere
   */
-export function getEnabledTabs(exploreInfo, exploreParams) {
+export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
   const isGeneList = !!exploreParams.geneList
   const numGenes = exploreParams?.genes?.length
   const isMultiGene = numGenes > 1
@@ -662,7 +798,10 @@ export function getEnabledTabs(exploreInfo, exploreParams) {
     )
   })
 
-  if (!exploreInfo) {
+  if (
+    !exploreInfo ||
+    (exploreParams.facets !== '' && !cellFaceting?.isFullyLoaded)
+  ) {
     enabledTabs = ['loading']
     disabledTabs = []
   }

@@ -24,8 +24,12 @@ label {
 }
 
 .section-pad {
-  margin-top: 20px;
+  margin-top: 50px;
   margin-bottom: 20px;
+}
+
+.home-page-fix .section-pad {
+  margin-top: 25px;
 }
 
 .white {
@@ -216,10 +220,6 @@ label {
   min-height: 200px;
   position: relative;
   margin: 20px 0;
-}
-
-.study-lead {
-  font-weight: 200;
 }
 
 .navigation-form {

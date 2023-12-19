@@ -262,6 +262,7 @@ class FireCloudClientTest < ActiveSupport::TestCase
 
   # get available workflows
   def test_get_methods
+    skip if @smoke_test
     # get all available methods
     workflow_methods = @fire_cloud_client.get_methods(entityType: 'workflow')
     assert workflow_methods.any?, 'Did not find any workflow methods'
@@ -325,7 +326,8 @@ class FireCloudClientTest < ActiveSupport::TestCase
   ##
 
   # main groups test - CRUD group & members
-  def test_create_and_mange_user_groups
+  def test_create_and_manage_user_groups
+    skip if @smoke_test
     # set group name
     group_name = "test-group-#{@random_test_seed}"
     puts 'creating group...'
@@ -380,6 +382,7 @@ class FireCloudClientTest < ActiveSupport::TestCase
 
   # update a billing project's member list
   def test_update_billing_project_members
+    skip if @smoke_test
     # get all projects
     puts 'selecting project...'
     projects = @fire_cloud_client.get_billing_projects
