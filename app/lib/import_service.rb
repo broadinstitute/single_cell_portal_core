@@ -44,7 +44,6 @@ class ImportService
 
     begin
       study, study_file = configuration.import_from_service
-      # TODO: uncomment this block after file parsing is enabled for NeMO and SCP-5400 is complete
       # extra work will be required but is unknown until we have the dataset (e.g. populating AnnData data_fragments)
       identifier = "#{study.accession} (#{study.external_identifier})"
       log_message "Ingesting file: #{study_file.upload_file_name} (#{study_file.external_identifier}) from imported study #{identifier}"
