@@ -227,8 +227,6 @@ function RawScatterPlot({
     // Parse gene-specific plot configuration from image Exif metadata
     const config = JSON.parse(exifTags.ImageDescription.description)
 
-    console.log('config', config)
-
     const ranges = config.ranges
 
     // For colorbar labels, and gridlines
@@ -238,9 +236,6 @@ function RawScatterPlot({
       y: ranges.y,
       z: ranges.z
     }
-
-    console.log('expressionRange', expressionRange)
-    console.log('ranges', ranges)
 
     // TODO: Move this data from per-gene fetch to cluster fetch
     const titles = config.titles
@@ -319,8 +314,8 @@ function RawScatterPlot({
     /** Image onload handler.  (Drawing before load renders no image.) */
     function renderToCanvas() {
       // TODO (SCP-4600): Scale and transform scatter plot image on client
-      ctx.scale(0.63, 0.63)
-      ctx.drawImage(image, 100, 9)
+      ctx.scale(0.67, 0.67)
+      ctx.drawImage(image, 85, 10)
     }
 
     concludeRender()
