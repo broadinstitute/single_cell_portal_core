@@ -232,7 +232,8 @@ async function prefetchExpressionData(gene, context) {
 
   let expressionArrayString
 
-  const useDataCache = false
+  // Setting `useDataCache=false` can help when developing image pipeline in a non-canonical study
+  const useDataCache = true
   if (useDataCache) {
     const fromFilePath = `_scp_internal/cache/expression_scatter/data/${cluster}/${gene}.json`
     expressionArrayString = await downloadFromBucket(fromFilePath, context)
@@ -579,7 +580,10 @@ async function fetchRankedGenes(context) {
     rankedGenes.push(gene)
   })
 
-  console.log('rankedGenes', rankedGenes)
+  console.log('')
+  console.log(`Limiting image pipeline to top ${rankedGenes.length} genes for this study:`)
+  console.log(rankedGenes)
+  console.log('')
 
   return rankedGenes
 }
