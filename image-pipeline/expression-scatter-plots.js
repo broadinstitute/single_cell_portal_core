@@ -46,7 +46,6 @@ function isBardPost(request) {
 
 /** Returns boolean for if request is relevant Bard / Mixpanel log */
 function isDownstreamExpressionScatterPlotRequest(request) {
-  print(`request url ${ request.url()}`)
   if (isBardPost(request)) {
     const payload = JSON.parse(request.postData())
     const props = payload.properties
@@ -57,6 +56,36 @@ function isDownstreamExpressionScatterPlotRequest(request) {
   }
   return false
 }
+
+/**
+ * More memory- and time-efficient analog of Math.max
+ * From https://stackoverflow.com/a/13440842/10564415.
+*/
+function arrayMax(arr) {
+  let len = arr.length
+  let max = -Infinity
+  while (len--) {
+    if (arr[len] > max) {
+      max = arr[len]
+    }
+  }
+  return max
+}
+
+/**
+ * More memory- and time-efficient analog of Math.min
+ * From https://stackoverflow.com/a/13440842/10564415.
+*/
+function arrayMin(arr) {
+  let len = arr.length
+  let min = Infinity
+  while (len--) {
+    if (arr[len] < min) {
+      min = arr[len]
+    }
+  }
+  return min
+};
 
 /** In Explore view, search gene, await plot, save plot image locally */
 async function makeExpressionScatterPlotImage(gene, page, context) {
@@ -113,9 +142,13 @@ async function makeExpressionScatterPlotImage(gene, page, context) {
   // console.log(Math.max(...plotlyTraces[0].y))
   // These ought to be parseable via the `coordinates` array
 
+  const expressionArray = JSON.parse(expressionByGene[gene])
+  const expressionMin = arrayMin(expressionArray)
+  const expressionMax = arrayMax(expressionArray)
+
   // Generalize if this moves beyond prototype
   const imageDescription = JSON.stringify({
-    expression: [0, 2.433], // min, max of expression array
+    expression: [expressionMin, expressionMax],
     x: [-12.568, 8.749], // min, max of x coordinates array
     y: [-15.174, 10.761], // min, max of y coordinates array
     z: []

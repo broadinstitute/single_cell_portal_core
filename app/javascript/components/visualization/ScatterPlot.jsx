@@ -276,8 +276,8 @@ function RawScatterPlot({
           'line': { 'color': 'rgb(40,40,40)', 'width': 0 },
           'size': 3,
           'showscale': true,
-          'colorscale': '',
-          'reversescale': false,
+          'colorscale': 'Viridis',
+          'reversescale': true,
           color,
           'colorbar': { 'title': { 'text': titles.magnitude, 'side': 'right' } }
         },
