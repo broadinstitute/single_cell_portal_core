@@ -145,10 +145,14 @@ async function makeExpressionScatterPlotImage(gene, page, context) {
 
   // Generalize if this moves beyond prototype
   const imageDescription = JSON.stringify({
-    expression: [expressionMin, expressionMax],
-    x: [xMin, xMax],
-    y: [yMin, yMax],
-    z: []
+    ranges: {
+      expression: [expressionMin, expressionMax],
+      x: [xMin, xMax],
+      y: [yMin, yMax],
+      z: []
+    },
+    description,
+    titles
   })
 
   // Embed Plotly.js settings directly into image file's Exif data
@@ -219,6 +223,9 @@ async function prefetchExpressionData(gene, context) {
       if ('z' in json.data) {
         coordinates.z = json.data.z
       }
+      description = json.description
+      titles = json.axes.titles
+
       initExpressionResponse = json
     }
   }
@@ -494,6 +501,9 @@ async function run() {
   // Cache for X, Y, and possibly Z coordinates
   coordinates = {}
 
+  // Expression plot axis titles
+  titles = {}
+
   const accession = values.accession
   print(`Accession: ${accession}`, { bucket })
 
@@ -668,6 +678,8 @@ if (values['debug'] || values['debug-headless']) {
 let imagesDir
 let jsonFpStem
 let coordinates
+let titles
+let description
 let initExpressionResponse
 const expressionByGene = {}
 

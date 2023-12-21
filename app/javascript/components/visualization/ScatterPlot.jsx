@@ -225,7 +225,11 @@ function RawScatterPlot({
     const imageObjectUrl = URL.createObjectURL(imageBlob)
 
     // Parse gene-specific plot configuration from image Exif metadata
-    const ranges = JSON.parse(exifTags.ImageDescription.description)
+    const config = JSON.parse(exifTags.ImageDescription.description)
+
+    console.log('config', config)
+
+    const ranges = config.ranges
 
     // For colorbar labels, and gridlines
     const expressionRange = ranges.expression
@@ -235,13 +239,11 @@ function RawScatterPlot({
       z: ranges.z
     }
 
+    console.log('expressionRange', expressionRange)
+    console.log('ranges', ranges)
+
     // TODO: Move this data from per-gene fetch to cluster fetch
-    const titles = {
-      x: 'X',
-      y: 'Y',
-      z: 'Z',
-      magnitude: 'Expression'
-    }
+    const titles = config.titles
 
     const tmpScatterData = Object.assign({}, {
       genes,
@@ -252,7 +254,8 @@ function RawScatterPlot({
         aspects: null
       },
       data: {
-        expression: expressionRange // Only range needed here, not full array
+        expression: expressionRange, // Only range needed here, not full array
+        description: config.description
       },
       annotParams: {
         'name': 'General_Celltype',
@@ -316,8 +319,8 @@ function RawScatterPlot({
     /** Image onload handler.  (Drawing before load renders no image.) */
     function renderToCanvas() {
       // TODO (SCP-4600): Scale and transform scatter plot image on client
-      ctx.scale(0.73, 0.73)
-      ctx.drawImage(image, 92, 9)
+      ctx.scale(0.63, 0.63)
+      ctx.drawImage(image, 100, 9)
     }
 
     concludeRender()
