@@ -135,22 +135,19 @@ async function makeExpressionScatterPlotImage(gene, page, context) {
     omitBackground: true
   })
 
-  // Hardcoded x, y placeholders below derived in processScatterPlots via:
-  // console.log(Math.min(...plotlyTraces[0].x))
-  // console.log(Math.max(...plotlyTraces[0].x))
-  // console.log(Math.min(...plotlyTraces[0].y))
-  // console.log(Math.max(...plotlyTraces[0].y))
-  // These ought to be parseable via the `coordinates` array
-
   const expressionArray = JSON.parse(expressionByGene[gene])
   const expressionMin = arrayMin(expressionArray)
   const expressionMax = arrayMax(expressionArray)
+  const xMin = arrayMin(coordinates.x)
+  const xMax = arrayMax(coordinates.x)
+  const yMin = arrayMin(coordinates.y)
+  const yMax = arrayMax(coordinates.y)
 
   // Generalize if this moves beyond prototype
   const imageDescription = JSON.stringify({
     expression: [expressionMin, expressionMax],
-    x: [-12.568, 8.749], // min, max of x coordinates array
-    y: [-15.174, 10.761], // min, max of y coordinates array
+    x: [xMin, xMax],
+    y: [yMin, yMax],
     z: []
   })
 
