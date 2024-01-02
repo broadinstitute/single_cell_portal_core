@@ -20,8 +20,6 @@ import puppeteer from 'puppeteer'
 import sharp from 'sharp'
 import { Storage } from '@google-cloud/storage'
 
-let numLogEntries = 0
-
 /** Print message with browser-tag preamble to local console and log file */
 function print(message, context={}) {
   let preamble = ('preamble' in context === false) ? '' : context.preamble
@@ -601,7 +599,7 @@ async function downloadFromBucket(fromFilePath, context) {
   const bucket = await storage.bucket(bucketName)
   const content = await bucket.file(fromFilePath).download()
   print(
-    `File "${fromFilePath}" downloaded from bucket "${bucket}"`,
+    `File "${fromFilePath}" downloaded from bucket "${bucketName}"`,
     context
   )
   return content.toString()
@@ -665,6 +663,10 @@ async function complete(error=null) {
   await uploadLog(bucket)
 }
 
+const logFileWriteStream = createWriteStream('log.txt')
+
+let numLogEntries = 0
+
 const startTime = Date.now()
 // Adds a unique signature to output; helpful when debugging
 
@@ -673,11 +675,8 @@ const timestamp = new Date().toISOString().split('.')[0].replace(/\:/g, '')
 const nonceName = '' // e.g. "eweitz_"
 const nonce = `_${nonceName}${timestamp}`
 
-const storage = new Storage()
-
 const timeoutMinutes = 2
-
-const logFileWriteStream = createWriteStream('log.txt')
+const storage = new Storage()
 
 const { values, numCPUs, origin, stagingHost, fetchOrigin } = await parseCliArgs()
 
