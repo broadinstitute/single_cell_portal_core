@@ -97,7 +97,6 @@ const Fields = {
       }
     },
     merge: (entry, scatter) => {
-      console.log('in merge, scatter.annotParams', scatter.annotParams)
       if (scatter.data.annotations) {
         Fields.annotation.putInEntry(entry,
           scatter.annotParams.name,
@@ -186,11 +185,8 @@ export function createCache() {
       studyAccession, cluster, annotation, subsample, consensus, genes, isAnnotatedScatter,
       expressionArray
     })
-    console.log('in cache.fetchCluster, annotation', annotation)
 
     if (fields.length) {
-      console.log('in cache.fetchCluster 1, in if fields.length, fields')
-      console.log(fields)
       apiCallPromise = fetchCluster({
         studyAccession, cluster, annotation, subsample, consensus,
         genes, isAnnotatedScatter, isCorrelatedScatter, fields
@@ -205,9 +201,7 @@ export function createCache() {
       if (fields.includes('expression')) {
         Fields.expression.putInEntry(cacheEntry, genes, consensus, apiCallPromise)
       }
-      console.log('cache.fetchCluster 1, in if fields.length, apiCallPromise', apiCallPromise)
     } else if (expressionArray) {
-      console.log('cache.fetchCluster 2, in if/else, expressionArray')
       apiCallPromise = Promise.resolve([
         {
           genes,
@@ -228,9 +222,7 @@ export function createCache() {
           requestStart: performance.now()
         }
       ])
-      console.log('cache.fetchCluster, 2 in if/else, apiCallPromise', apiCallPromise)
     } else {
-      console.log('cache.fetchCluster, 3 in else')
       apiCallPromise = Promise.resolve([
         {
           genes,
@@ -251,29 +243,19 @@ export function createCache() {
           requestStart: performance.now()
         }
       ])
-      console.log('cache.fetchCluster, 3 in else, apiCallPromise', apiCallPromise)
     }
 
-    console.log('in cache.fetchCluster, before promises.push, apiCallPromise', apiCallPromise)
     promises.push(apiCallPromise)
-
-    console.log('in cache.fetchCluster, promises', promises)
 
     // Wait for completion of all promises for fetchCluster API calls, then merge them
     return Promise.all(promises).then(resultArray => {
-      console.log('in cache.fetchCluster, resultArray')
-      console.log(resultArray)
       let mergedResult = null
       resultArray.forEach(result => {
         mergedResult = cache._mergeClusterResponse(studyAccession, result, cluster, annotation, subsample, genes)
       })
-      console.log('in cache.fetchCluster, mergedResult')
-      console.log(mergedResult)
       return mergedResult
     }).catch(error => {
       // rather than try to reconstruct partial responses, clear the entire cache if an error occurs
-      console.log('clearing data cache due to error.  error')
-      console.log(error)
       cache.clear()
       throw error
     })
@@ -289,21 +271,15 @@ export function createCache() {
   cache._mergeClusterResponse = (
     accession, clusterResponse, requestedCluster, requestedAnnotation, requestedSubsample, requestedGenes
   ) => {
-    console.log('in mergeClusterResponse')
     const scatter = clusterResponse[0]
     const cacheEntry = cache._findOrCreateEntry(accession, scatter.cluster, scatter.subsample)
     window.dataCacheEntry = cacheEntry
-    console.log('in mergeClusterResponse, cacheEntry', cacheEntry)
 
     if (scatter.cluster !== requestedCluster || scatter.subsample !== requestedSubsample) {
       // if the returned cluster name is different (likely because we requested '_default' and then
       // got back the actual cluster name), also cache the response under the requested name
       cache._putEntry(accession, requestedCluster, requestedSubsample, cacheEntry)
     }
-
-    console.log('in mergeClusterResponse, scatter', scatter)
-    console.log('in mergeClusterResponse, scatter.annotParams before', scatter.annotParams)
-    console.log('in mergeClusterResponse, cacheEntry.scatter', cacheEntry.scatter)
 
     if (scatter.allDataFromCache) {
       // we need the response cluster/subsample to mimic what actually came from the server for the graphs
@@ -315,24 +291,17 @@ export function createCache() {
       scatter.subsample = clusterProps.subsample
     }
 
-    console.log('in mergeClusterResponse, scatter.annotParams after', scatter.annotParams)
-
     Fields.clusterProps.merge(cacheEntry, scatter)
     Fields.cellsAndCoords.merge(cacheEntry, scatter)
     // only merge in annotation values if the annotation matches (or the default was requested, so
     // we can then assume the response matches)
-    console.log('in _mergeClusterResponse requestedAnnotation', requestedAnnotation)
-    console.log('in _mergeClusterResponse scatter.annotParams', scatter.annotParams)
     if (!requestedAnnotation.name || scatter.annotParams.name === requestedAnnotation.name) {
-      console.log('in _mergeClusterResponse, !requestedAnnotation.name || scatter.annotParams.name === requestedAnnotation.name')
-      console.log('in _mergeClusterResponse, Fields.annotation.merge')
       Fields.annotation.merge(cacheEntry, scatter)
     }
     if (scatter.genes.length && scatter.genes.join('') === requestedGenes.join('')) {
       Fields.expression.merge(cacheEntry, scatter)
     }
 
-    console.log('in mergeClusterResponse, clusterResponse', clusterResponse)
     return clusterResponse
   }
 
@@ -377,12 +346,8 @@ export function createCache() {
         }
       } else {
         const cacheEntry = cache._findOrCreateEntry(studyAccession, cluster, subsample)
-        console.log('in cache._getFieldsToRequest, cacheEntry', cacheEntry)
-        console.log('in cache._getFieldsToRequest, annotation', annotation)
         Fields.cellsAndCoords.addFieldsOrPromise(cacheEntry, fields, promises)
         Fields.annotation.addFieldsOrPromise(cacheEntry, fields, promises, annotation.name, annotation.scope)
-        console.log('in cache._getFieldsToRequest, Fields.annotation', Fields.annotation)
-        console.log('in cache._getFieldsToRequest, annotation', annotation)
         if (genes.length) {
           Fields.expression.addFieldsOrPromise(cacheEntry, fields, promises, genes, consensus, expressionArray)
         }

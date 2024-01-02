@@ -20,8 +20,6 @@ export function logScatterPlot(
   { scatter, genes },
   perfTimes
 ) {
-  console.log('scatter.data.cells.length', scatter.data.cells.length)
-  console.log('scatter.annotParams.values.length', scatter.annotParams.values.length)
   numScatterPlotsSincePageLoad += 1
   const props = {
     'numPoints': scatter.numPoints, // How many cells are we plotting?
