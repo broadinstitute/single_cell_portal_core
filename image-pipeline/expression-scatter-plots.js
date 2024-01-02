@@ -205,9 +205,11 @@ async function prefetchExpressionData(gene, context) {
   // }
 
   let jsonString
+
+  const apiStem = `${fetchOrigin}/single_cell/api/v1`
+
   if (!initExpressionResponse) {
     // Configure URLs
-    const apiStem = `${fetchOrigin}/single_cell/api/v1`
     const allFields = 'coordinates%2Ccells%2Cannotation%2Cexpression'
     const params = `fields=${allFields}&gene=${gene}&subsample=all&isImagePipeline=true`
     const url = `${apiStem}/studies/${accession}/clusters/_default?${params}`
@@ -244,9 +246,7 @@ async function prefetchExpressionData(gene, context) {
     }
   } else {
     // Enable bypassing JSON data cache, e.g. for development or special production runs
-    const apiStem = `${fetchOrigin}/single_cell/api/v1`
-    const allFields = 'expression'
-    const params = `fields=${allFields}&gene=${gene}&subsample=all&isImagePipeline=true`
+    const params = `fields=expression&gene=${gene}&subsample=all&isImagePipeline=true`
     const url = `${apiStem}/studies/${accession}/clusters/_default?${params}`
 
     // Fetch data
@@ -527,9 +527,16 @@ async function run() {
     // json = JSON.parse(text) // Helpful to debug errors
     json = await response.json()
   } catch (error) {
+    console.log('')
     console.log('Failed to fetch:')
     console.log(exploreApiUrl)
-    throw error
+
+    if (fetchOrigin.includes('staging')) {
+      console.log('Tip: ensure you are connected to the VPN.')
+    }
+
+    console.log('')
+    exit(1)
   }
   // const uniqueGenes = json.uniqueGenes
   const uniqueGenes = await fetchRankedGenes({ bucket })
