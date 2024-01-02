@@ -179,7 +179,7 @@ export function validateFile({ file, allFiles, allowedFileExts=[], requiredField
 
   const validationMessages = {}
   if (file.status === 'new') {
-    if (!file.uploadSelection && !isAnnDataExperience) {
+    if ((!file.uploadSelection && !file.remote_location) && !isAnnDataExperience) {
       validationMessages.uploadSelection = 'You must select a file to upload'
     }
   }

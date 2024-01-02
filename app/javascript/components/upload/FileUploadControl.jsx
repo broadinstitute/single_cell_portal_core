@@ -6,6 +6,7 @@ import LoadingSpinner from '~/lib/LoadingSpinner'
 import { StudyContext } from '~/components/upload/upload-utils'
 import ValidateFile from '~/lib/validation/validate-file'
 import ValidationMessage from '~/components/validation/ValidationMessage'
+import { TextFormField } from './form-components'
 
 // File types which let the user set a custom name for the file in the UX
 const FILE_TYPES_ALLOWING_SET_NAME = ['Cluster', 'Gene List']
@@ -22,8 +23,24 @@ export default function FileUploadControl({
     validating: false, issues: {}, fileName: null
   })
   const inputId = `file-input-${file._id}`
-
+  const [showUploadButton, setShowUploadButton] = useState(true)
+  const [showBucketPath, setShowBucketPath] = useState(false)
+  const ToggleUploadButton = () => {
+    setShowUploadButton(!showUploadButton)
+    setShowBucketPath(!showBucketPath)
+  }
   const study = useContext(StudyContext)
+
+  const toggleText = showUploadButton ? 'Use bucket path' : 'Upload local file'
+  const toggleTooltip = showBucketPath ?
+    'Upload a file from your computer' :
+    'Input a path to a file that is already in the GCP bucket'
+  const uploadToggle = <span
+    className='btn btn-default'
+    onClick={ToggleUploadButton}
+    data-toggle="tooltip"
+    data-original-title={toggleTooltip}>{toggleText}
+  </span>
 
   /** handle user interaction with the file input */
   async function handleFileSelection(e) {
@@ -52,7 +69,7 @@ export default function FileUploadControl({
   const isFileOnServer = file.status !== 'new'
 
   let buttonText = isFileChosen ? 'Replace' : 'Choose file'
-  let buttonClass = 'fileinput-button btn terra-tertiary-btn'
+  let buttonClass = `fileinput-button btn terra-tertiary-btn`
   if (!isFileChosen && !file.uploadSelection) {
     buttonClass = 'fileinput-button btn btn-primary'
   }
@@ -90,7 +107,7 @@ export default function FileUploadControl({
     </div>
   }
 
-  return <div>
+  return <div className="form-inline">
     <label>
       { !file.uploadSelection && <h5 data-testid="file-uploaded-name">{file.upload_file_name}</h5> }
       { file.uploadSelection && <h5 data-testid="file-selection-name">
@@ -101,17 +118,30 @@ export default function FileUploadControl({
       file={file}
     />
     &nbsp;
-    { !isFileOnServer &&
-      <button className={buttonClass} id={`fileButton-${file._id}`} data-testid="file-input-btn">
-        { buttonText }
+    {!isFileOnServer && showUploadButton &&
+      <button className={buttonClass} id={`fileButton-${file._id}`}
+              data-testid="file-input-btn">
+        {buttonText}
         <input className="file-upload-input" data-testid="file-input"
-          type="file"
-          id={inputId}
-          onChange={handleFileSelection}
-          accept={inputAcceptExts}
+               type="file"
+               id={inputId}
+               onChange={handleFileSelection}
+               accept={inputAcceptExts}
         />
       </button>
     }
+    {!isFileOnServer && showBucketPath &&
+      <TextFormField isInline={true}
+                     label="Bucket path"
+                     fieldName="remote_location"
+                     placeholderText="Path to file in GCP bucket"
+                     inlineLength={60}
+                     file={file}
+                     updateFile={updateFile}/>
+    }
+
+    &nbsp;&nbsp;
+    { !isFileOnServer && uploadToggle }
 
     <ValidationMessage
       studyAccession={study.accession}

@@ -18,7 +18,9 @@ export function AddFileButton({ newFileTemplate, addNewFile, text='Add file' }) 
 }
 
 /** renders a basic label->value text field in a bootstrap form control */
-export function TextFormField({ label, fieldName, file, updateFile, placeholderText='', isDisabled=false }) {
+export function TextFormField({ label, fieldName, file, updateFile, placeholderText='',
+  isDisabled=false, isInline=false, inlineLength=null
+}) {
   const fieldId = `${fieldName}-input-${file._id}`
   let value = file[fieldName] ?? ''
   const [objName, nestedPropName] = fieldName.split('.')
@@ -26,14 +28,20 @@ export function TextFormField({ label, fieldName, file, updateFile, placeholderT
     // handle a nested property like 'heatmap_file_info.custom_scaling'
     value = file[objName][nestedPropName] ?? ''
   }
-  return <div className="form-group">
-    <label htmlFor={fieldId}>{label}</label><br/>
+  return <div className={isInline ? 'form-inline' : 'form-group'} style={{ display : isInline ? 'inline-block' : 'block'}}>
+    { !isInline &&
+      <label htmlFor={fieldId}>{label}</label>
+    }
+    { !isInline &&
+      <br />
+    }
     <input className="form-control"
       type="text"
       disabled={isDisabled}
       id={fieldId}
       value={value}
       placeholder={placeholderText}
+      size={inlineLength || null }
       onChange={event => {
         const update = {}
         if (nestedPropName) {
