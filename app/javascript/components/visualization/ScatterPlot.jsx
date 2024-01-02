@@ -9,7 +9,7 @@ import { fetchCluster, updateStudyFile, fetchBucketFile } from '~/lib/scp-api'
 import { logScatterPlot } from '~/lib/scp-api-metrics'
 import { log } from '~/lib/metrics-api'
 import { useUpdateEffect } from '~/hooks/useUpdate'
-import PlotTitle from './PlotTitle'
+import PlotTitle, { getTitleTexts } from './PlotTitle'
 
 import ScatterPlotLegend from './controls/ScatterPlotLegend'
 import useErrorMessage from '~/lib/error-message'
@@ -62,6 +62,7 @@ function RawScatterPlot({
   const [customColors, setCustomColors] = useState({})
 
   const isRefGroup = getIsRefGroup(scatterData?.annotParams?.type, genes, isCorrelatedScatter)
+  const [originalLabels, setOriginalLabels] = useState([])
 
   const flags = getFeatureFlagsWithDefaults()
 
@@ -72,6 +73,8 @@ function RawScatterPlot({
 
   const imageClassName = 'scp-canvas-image'
   const imageSelector = `#${ graphElementId } .${imageClassName}`
+
+  const titleTexts = getTitleTexts(cluster, genes, consensus, subsample, isCorrelatedScatter)
 
   /**
    * Handle user interaction with one or more labels in legend.
@@ -90,7 +93,7 @@ function RawScatterPlot({
       const label = labels
       newHiddenTraces = [...hiddenTraces]
 
-      if (value && !newHiddenTraces.includes(label)) {
+      if (value && !newHiddenTraces?.includes(label)) {
         newHiddenTraces.push(label)
       }
       if (!value) {
@@ -181,7 +184,8 @@ function RawScatterPlot({
       activeTraceLabel,
       expressionFilter,
       isSplitLabelArrays: isSplitLabelArrays ?? scatter.isSplitLabelArrays,
-      isRefGroup: isRG
+      isRefGroup: isRG,
+      originalLabels
     })
     if (isRG) {
       setCountsByLabel(labelCounts)
@@ -329,13 +333,16 @@ function RawScatterPlot({
       (clusterResponse ? clusterResponse : [scatterData, null])
     console.log('in processScatterPlot, 2')
     scatter = updateScatterLayout(scatter)
+    const annotIsNumeric = scatter.annotParams.type === 'numeric'
     const layout = scatter.layout
     console.log('in processScatterPlot, 3')
 
     if (filteredCells) {
       const originalData = scatter.data
       const [intersected, plottedIndexes] = intersect(filteredCells, scatter)
-      scatter.data = reassignFilteredCells(plottedIndexes, originalData, intersected)
+      scatter.data = reassignFilteredCells(plottedIndexes, originalData, intersected, annotIsNumeric, setOriginalLabels)
+    } else if (!annotIsNumeric) {
+      setOriginalLabels(getPlottedLabels(scatter.data))
     }
 
     console.log('in processScatterPlot, 4')
@@ -381,7 +388,7 @@ function RawScatterPlot({
     console.log('in processScatterPlot, 7')
 
     scatter.hasArrayLabels =
-      scatter.annotParams.type === 'group' && scatter.data.annotations.some(annot => annot.includes('|'))
+      scatter.annotParams.type === 'group' && scatter.data.annotations.some(annot => annot?.includes('|'))
 
 
     console.log('in processScatterPlot, 8')
@@ -592,15 +599,17 @@ function RawScatterPlot({
     }
   }, [])
 
+  const hasLegend = scatterData && countsByLabel && isRefGroup
+  let descriptionStyle = {}
+  if (hasLegend) {
+    descriptionStyle = { 'position': 'relative', 'top': '-10px' }
+  }
+
   return (
     <div className="plot">
       { ErrorComponent }
       <PlotTitle
-        cluster={cluster}
-        annotation={annotation.name}
-        subsample={subsample}
-        genes={genes}
-        consensus={consensus}
+        titleTexts={titleTexts}
         isCorrelatedScatter={isCorrelatedScatter}
         correlation={bulkCorrelation}/>
       <div
@@ -608,7 +617,7 @@ function RawScatterPlot({
         id={graphElementId}
         data-testid={graphElementId}
       >
-        { scatterData && countsByLabel && isRefGroup &&
+        { hasLegend &&
           <ScatterPlotLegend
             name={scatterData.annotParams.name}
             height={scatterData.height}
@@ -628,12 +637,15 @@ function RawScatterPlot({
             isSplitLabelArrays={isSplitLabelArrays}
             updateIsSplitLabelArrays={updateIsSplitLabelArrays}
             externalLink={scatterData.externalLink}
+            originalLabels={originalLabels}
+            titleTexts={titleTexts}
+            plotWidth={widthAndHeight.width}
           />
         }
       </div>
       <p className="help-block">
         { scatterData && scatterData.description &&
-          <span>{scatterData.description}</span>
+          <span style={descriptionStyle}>{scatterData.description}</span>
         }
       </p>
       {
@@ -678,7 +690,8 @@ function getScatterDimensions(scatter, dimensionProps, genes) {
 
   dimensionProps = Object.assign({
     hasLabelLegend: isRefGroup,
-    hasTitle: true
+    hasTitle: true,
+    hasDescription: scatter?.description && scatter.description !== ''
   }, dimensionProps)
 
   return getPlotDimensions(dimensionProps)
@@ -710,7 +723,8 @@ function getPlotlyTraces({
   activeTraceLabel,
   expressionFilter,
   isSplitLabelArrays,
-  isRefGroup
+  isRefGroup,
+  originalLabels
 }) {
   const unfilteredTrace = {
     type: is3D ? 'scatter3d' : 'scattergl',
@@ -737,10 +751,16 @@ function getPlotlyTraces({
   if (isRefGroup) {
     const labels = getLegendSortedLabels(countsByLabel)
     traces.forEach(groupTrace => {
+      let labelIndex
+      if (originalLabels.length > 0) {
+        labelIndex = [...originalLabels].sort(PlotUtils.labelSort).indexOf(groupTrace.name)
+      } else {
+        labelIndex = labels.indexOf(groupTrace.name)
+      }
       groupTrace.type = unfilteredTrace.type
       groupTrace.mode = unfilteredTrace.mode
       groupTrace.opacity = unfilteredTrace.opacity
-      const color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, labels.indexOf(groupTrace.name))
+      const color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, labelIndex)
       groupTrace.marker = {
         size: pointSize,
         color
@@ -767,7 +787,7 @@ function getPlotlyTraces({
 
       Object.assign(workingTrace.marker, {
         showscale: true,
-        colorscale: scatterColor,
+        colorscale: scatterColor || defaultScatterColor,
         reversescale: shouldReverseScale(scatterColor),
         color: colors,
         colorbar: { title, titleside: 'right' }
@@ -995,17 +1015,27 @@ ScatterPlot.intersect = intersect
  * @param plotted {Array} Indices of points that are to be plotted
  * @param originalData {Object} original scatter data object
  * @param filteredData {Object} filtered scatter data object from cell faceting
+ * @param annotIsNumeric {Boolean} T/F whether plotted annotation is numeric
+ * @param setOriginalLabels {function} function to store original annotation labels for color persistence
  * @returns {Object} reorganized scatter data object with new --Filtered-- trace
  */
-export function reassignFilteredCells(plotted, originalData, filteredData) {
+export function reassignFilteredCells(
+  plotted, originalData, filteredData, annotIsNumeric, setOriginalLabels
+) {
   const reassignedIndices = []
   const plottedSet = new Set(plotted)
-  for (let i = 0; i < originalData['x'].length; i++) {if (!plottedSet.has(i)) {reassignedIndices.push(i)}}
+  for (let i = 0; i < originalData['x'].length; i++) {
+    if (!plottedSet.has(i)) {reassignedIndices.push(i)}
+  }
   const newPlotData = {}
   const keys = Object.keys(originalData)
   keys.forEach(key => {
     newPlotData[key] = []
   })
+  if (!annotIsNumeric) {
+    // store array of original labels for maintaining color assignments later
+    setOriginalLabels(getPlottedLabels(originalData))
+  }
   for (let idx = 0; idx < reassignedIndices.length; idx++) {
     for (let k = 0; k < keys.length; k++) {
       const key = keys[k]
@@ -1015,16 +1045,25 @@ export function reassignFilteredCells(plotted, originalData, filteredData) {
         newPlotData[key].push(FILTERED_TRACE_COLOR)
       } else {
         const dataArray = originalData[key]
-        const replottedElement = dataArray[idx]
+        const sourceIndex = reassignedIndices[idx]
+        const replottedElement = dataArray[sourceIndex]
         newPlotData[key].push(replottedElement)
       }
     }
   }
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i]
-    newPlotData[key].push(...filteredData[key])
+    newPlotData[key] = newPlotData[key].concat(filteredData[key])
   }
+
   return newPlotData
 }
 
 ScatterPlot.reassignFilteredCells = reassignFilteredCells
+
+// store array of unique plotted labels for maintaining color assigments
+export function getPlottedLabels(scatterData) {
+  return scatterData?.annotations ? [...new Set(scatterData.annotations)] : []
+}
+
+ScatterPlot.getPlottedLabels = getPlottedLabels

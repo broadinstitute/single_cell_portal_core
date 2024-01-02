@@ -1,4 +1,9 @@
+<% if controller_name == 'site' && @study %>
+<%# Apply special styles to maximize vertical real estate in Study Overview %>
+<nav class="navbar fluid navbar-inverse navbar-fixed-top sc-navbar rectangle study-rectangle study-navbar" role="navigation" id="single-cell-navbar">
+<% else %>
 <nav class="navbar fluid navbar-inverse navbar-fixed-top sc-navbar rectangle" role="navigation" id="single-cell-navbar">
+<% end %>
   <div class="navbar-header">
     <button type="button" class="navbar-toggle" aria-label='Toggle navbar' data-toggle="collapse" data-target="#scp-navbar-dropdown-collapse">
       <span class="sr-only">Toggle navigation</span>
@@ -15,10 +20,16 @@
       <% end %>
     </div>
   </div>
+  <% if controller_name == 'site' && !@study %>
   <div class="collapse navbar-collapse" id="scp-navbar-dropdown-collapse">
+  <% end %>
     <%= render partial: '/layouts/breadcrumbs' %>
+    <% if controller_name == 'site' && !@study %>
     <ul class="nav navbar-nav pull-right">
-      <li class='dropdown'><%= scp_link_to "<span class='fas fa-question-circle'></span> Help & resources <span class='caret'></span>".html_safe,
+    <% else %>
+    <ul id="scp-navbar-dropdown-collapse" class="nav navbar-nav pull-right collapse navbar-collapse">
+    <% end %>
+      <li class='dropdown'><%= scp_link_to "Help <span class='caret'></span>".html_safe,
                                            "#", class: "dropdown-toggle", "data-toggle" => "dropdown" %>
         <ul class="dropdown-menu dropdown-menu-right">
           <% if @selected_branding_group.present? && @selected_branding_group.external_link_url %>
@@ -40,11 +51,11 @@
         </ul>
       </li>
       <li class="left-border-0-5">
-        <%= scp_link_to "<span class='fas fa-plus fa-fw'></span> Create a study".html_safe, new_study_path,
+        <%= scp_link_to "<span class='fas fa-plus fa-fw'></span> Create study".html_safe, new_study_path,
                         class: 'check-upload', 'data-analytics-name' => 'prominent-create-study-button' %>
       </li>
       <% if user_signed_in? %>
-        <li class="dropdown"><%= scp_link_to "<span class='fas fa-user'></span> #{current_user.email.split('@').first} <span class='caret'></span>".html_safe,
+        <li class="dropdown"><%= scp_link_to "#{current_user.email.split('@').first} <span class='caret'></span>".html_safe,
                                              "#", class: "dropdown-toggle left-border-0-5", "data-toggle" => "dropdown",
                                              id: 'profile-nav' %>
           <ul class="dropdown-menu dropdown-menu-right dropdown-scroll">
@@ -75,7 +86,7 @@
                                 id: 'my-studies' %>
             <li><%= scp_link_to "<span class='fas fa-dollar-sign fa-fw'></span> My billing projects".html_safe, billing_projects_path,
                                 class: 'check-upload', id: 'my-firecloud-projects' %>
-            <li><%= scp_link_to "<span class='fas fa-plus fa-fw'></span> Create a study".html_safe, new_study_path,
+            <li><%= scp_link_to "<span class='fas fa-plus fa-fw'></span> Create study".html_safe, new_study_path,
                                 class: 'check-upload' %></li>
             <% if current_user.available_branding_groups.any? %>
               <li role="separator" class="divider"></li>
@@ -100,8 +111,10 @@
         <li><%= scp_link_to "<span class='fas fa-sign-in-alt fa-fw'></span> Sign in".html_safe, user_google_oauth2_omniauth_authorize_path, method: :post, class: 'left-border-0-5', id: 'login-nav' %></li>
       <% end %>
     </ul>
+  <% if controller_name == 'site' && !@study %>
   </div>
-  <% if @deployment_notification.present? %>
+  <% end %>
+  <% if @deployment_notification.present? && get_page_name != 'site-study' %>
     <% if Time.zone.now >= @deployment_notification.display_time %>
       <% if cookies[:hide_deployment_notification].nil? || cookies[:hide_deployment_notification] != @deployment_notification.id.to_s %>
         <%= render partial: '/layouts/deployment_notification_banner', locals: {deployment_notification: @deployment_notification} %>
@@ -109,6 +122,13 @@
     <% end %>
   <% end %>
 </nav>
+  <% if @deployment_notification.present? && get_page_name == 'site-study' %>
+    <% if Time.zone.now >= @deployment_notification.display_time %>
+      <% if cookies[:hide_deployment_notification].nil? || cookies[:hide_deployment_notification] != @deployment_notification.id.to_s %>
+        <%= render partial: '/layouts/deployment_notification_banner', locals: {deployment_notification: @deployment_notification} %>
+      <% end %>
+    <% end %>
+  <% end %>
 
 <script type='text/javascript' nonce="<%= content_security_policy_script_nonce %>">
   $('#open-contact-modal').on('click', function() {

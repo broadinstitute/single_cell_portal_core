@@ -50,7 +50,8 @@
   }
 
   .plot-title {
-    margin-left: 1.5em;
+    height: 1.2em;
+    margin-left: 1em;
     margin-top: 0.5em;
 
     .badge {
@@ -66,6 +67,10 @@
   .icon-button {
     margin-left: 1em;
     margin-right: 1em;
+  }
+
+  .violin-title {
+    margin-left: 110px;
   }
 }
 
@@ -92,7 +97,6 @@
   display: inline;
   position: relative;
   top: -80px;
-  margin-bottom: -20px;
 
   .panel-collapse.in {
     border: 1px solid #bbb;
@@ -139,7 +143,6 @@
 }
 
 .explore-plot-tab-content {
-  border-right: 1px solid #ccc;
   min-height: 70vh;
 }
 
@@ -223,7 +226,6 @@
 .study-plot-tabs {
   li  {
     a {
-      font-size: larger;
       color: #fff;
       background: $action-color;
       align-self: baseline;
@@ -259,7 +261,15 @@
 
 .options-bg {
   background: $options-color;
-  border-bottom: 1px solid #ccc;
+}
+
+.right-panel {
+  border-bottom: 1px solid #ddd;
+  border-left: 1px solid #ccc;
+}
+
+.options-panel-actions {
+  padding-bottom: 20px;
 }
 
 .action-with-bg {
@@ -275,7 +285,3 @@
   z-index: 3;
 }
 
-.panel-specifics{
-  border-left: 1px solid #ccc;
-  margin-left: 28px;
-}

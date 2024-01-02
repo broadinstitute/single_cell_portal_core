@@ -1,5 +1,7 @@
 module ApplicationHelper
 
+  DEFAULT_COLOR_PROFILE = 'Viridis'.freeze
+
   # overriding link_to to preserve branding_group params
   def scp_link_to(name, url, html_options={}, &block)
     if url.start_with?('https') || url.start_with?('/')
@@ -217,7 +219,7 @@ module ApplicationHelper
     elsif params[:cluster].blank? && !selected_study.default_color_profile.blank? # no cluster requested, so go to defaults
       selected_study.default_color_profile
     else
-      'Reds'
+      DEFAULT_COLOR_PROFILE
     end
   end
 
@@ -350,7 +352,7 @@ module ApplicationHelper
   end
 
   # Return the user's access token hash which includes the token and expiration info
-  # used at minimum for bulk download of faceted search results 
+  # used at minimum for bulk download of faceted search results
   def get_user_access_token_hash(user)
     if user.present?
       user.valid_access_token

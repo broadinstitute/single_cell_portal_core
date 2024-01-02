@@ -10,6 +10,7 @@ function MetricDisplayValue({ metric }) {
     <>
       {metric === 'log2FoldChange' && <>log<sub>2</sub>(FC)</>}
       {metric === 'pvalAdj' && <>Adj. p-value</>}
+      {metric === 'pval' && <>p-value</>}
       {metric === 'qval' && <>q-value</>}
     </>
   )
@@ -18,28 +19,28 @@ function MetricDisplayValue({ metric }) {
 /**
   * Adds slider widget for a numerical metric
   **/
-function SliderContainer({ metric, toggleDeFacet, isActive }) {
+function SliderContainer({ metricHeader, metric, toggleDeFacet, isActive }) {
   return (
     <div className={`de-slider-container ${isActive ? '' : 'inactive'}`}>
       <div className="de-slider-checkbox-container">
         <input
           type="checkbox"
           checked={isActive}
-          className={`slider-checkbox slider-checkbox-${metric}`}
-          onChange={() => {toggleDeFacet(metric)}}
+          className={`slider-checkbox slider-checkbox-${metricHeader}`}
+          onChange={() => {toggleDeFacet(metricHeader)}}
         />
-        <label htmlFor={`slider-checkbox-${metric}`} >
+        <label htmlFor={`slider-checkbox-${metricHeader}`} >
           <MetricDisplayValue metric={metric} />
         </label>
       </div>
-      <div className={`de-slider de-slider-${metric}`} data-metric={metric}></div>
+      <div className={`de-slider de-slider-${metricHeader}`} data-metric-header={metricHeader}></div>
       <br/>
     </div>
   )
 }
 
 const defaultSliderConfigProps = {
-  'pvalAdj': {
+  'significance': {
     range: {
       'min': [0, 0.001],
       '50%': [0.05, 0.01],
@@ -52,20 +53,7 @@ const defaultSliderConfigProps = {
     values: [0, 25, 50, 73.5, 100],
     density: 4
   },
-  'qval': {
-    range: {
-      'min': [0, 0.001],
-      '50%': [0.05, 0.01],
-      'max': 1
-    },
-    start: [0, 0.05],
-    sliderDecimals: 3,
-    pipDecimals: 3,
-    connect: true,
-    values: [0, 25, 50, 73.5, 100],
-    density: 4
-  },
-  'log2FoldChange': {
+  'size': {
     range: {
       'min': [-1.5],
       'max': 1.5
@@ -83,12 +71,12 @@ const defaultSliderConfigProps = {
 *
 * noUiSlider docs: https://refreshless.com/nouislider/
 **/
-function getSliderConfig(metric) {
-  const defaultProps = defaultSliderConfigProps[metric]
+function getSliderConfig(metricHeader) {
+  const defaultProps = defaultSliderConfigProps[metricHeader]
 
   let configRange
   let configStart
-  if (['pvalAdj', 'qval'].includes(metric)) {
+  if (metricHeader === 'significance') {
     configRange = {
       'min': [0, 0.001],
       '50%': [0.05, 0.01],
@@ -135,19 +123,20 @@ function getSliderConfig(metric) {
 
 /** Range filters for DE table */
 export default function DifferentialExpressionFilters({
-  deFacets, activeFacets, updateDeFacets, toggleDeFacet, isAuthorDe
+  deFacets, activeFacets, updateDeFacets, toggleDeFacet,
+  hasPairwiseDe, sizeMetric, significanceMetric
 }) {
-  const fdrMetric = isAuthorDe ? 'qval' : 'pvalAdj'
-  const metrics = ['log2FoldChange', fdrMetric]
+  const metricHeaders = ['size', 'significance']
+  const metrics = [sizeMetric, significanceMetric]
 
   /** Update DE facets upon changing range filter selection */
   function onUpdateDeFacets(range) {
     // eslint-disable-next-line no-invalid-this
     const slider = this
-    const metric = slider.target.dataset['metric']
+    const metricHeader = slider.target.dataset['metricHeader']
 
     range = range.map(d => parseFloat(d))
-    if (metric === 'log2FoldChange') {
+    if (metricHeader === 'size') {
       range = range.map(v => {
         if (v === -1.5) {return -Infinity}
         if (v === 1.5) {return Infinity}
@@ -157,20 +146,20 @@ export default function DifferentialExpressionFilters({
     } else {
       range = [{ min: range[0], max: range[1] }]
     }
-    deFacets[metric] = range
+    deFacets[metricHeader] = range
 
-    updateDeFacets(deFacets, metric)
+    updateDeFacets(deFacets, metricHeader)
   }
 
   useEffect(() => {
-    metrics.forEach(metric => {
-      const sliderSelector = `.de-slider-${metric}`
+    metricHeaders.forEach(metricHeader => {
+      const sliderSelector = `.de-slider-${metricHeader}`
       const slider = document.querySelector(sliderSelector)
 
       if (!slider.noUiSlider) {
-        const config = getSliderConfig(metric)
+        const config = getSliderConfig(metricHeader)
         noUiSlider.create(slider, config)
-        if (metric === 'log2FoldChange') {
+        if (metricHeader === 'size') {
           const val1 = document.querySelector(`${sliderSelector} .noUi-value:nth-child(2)`)
           val1.innerHTML = `≤ ${ val1.innerHTML}`
           const val2 = document.querySelector(`${sliderSelector} .noUi-value:last-child`)
@@ -183,13 +172,14 @@ export default function DifferentialExpressionFilters({
 
   return (
     <div>
-      {!isAuthorDe && <br/>}
-      {metrics.map(metric =>
+      {!hasPairwiseDe && <br/>}
+      {metricHeaders.map((metricHeader, i) =>
         <SliderContainer
-          metric={metric}
-          key={metric}
+          metricHeader={metricHeader}
+          metric={metrics[i]}
+          key={metricHeader}
           toggleDeFacet={toggleDeFacet}
-          isActive={activeFacets[metric]}
+          isActive={activeFacets[metricHeader]}
         />
       )}
     </div>

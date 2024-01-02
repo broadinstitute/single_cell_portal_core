@@ -69,7 +69,7 @@ function emptyTrace(expectedLength, hasZvalues, hasExpression) {
  */
 PlotUtils.filterTrace = function({
   trace, hiddenTraces=[], groupByAnnotation=false,
-  activeTraceLabel, expressionFilter, expressionData, isSplitLabelArrays
+  activeTraceLabel, expressionFilter, expressionData, isSplitLabelArrays, originalLabels
 }) {
   const isHidingByLabel = hiddenTraces && hiddenTraces.length
   const isFilteringByExpression = expressionFilter && expressionData &&
@@ -273,27 +273,28 @@ PlotUtils.sortTraceByExpression = function(trace) {
  * Get color for the label, which can be applied to e.g. the icon or the trace
  */
 PlotUtils.getColorForLabel = function(label, customColors={}, editedCustomColors={}, i) {
-  if ((label === UNSPECIFIED_ANNOTATION_NAME)
-    && !editedCustomColors[label] && !customColors[label]) {
+  if ((label === UNSPECIFIED_ANNOTATION_NAME) &&
+    !editedCustomColors[label] && !customColors[label]) {
     return 'rgba(80, 80, 80, 0.4)'
   }
   // special handling of --Filtered-- trace to mostly obscure points while retaining shape
-  if ((label === FILTERED_TRACE_NAME)
-    && !editedCustomColors[label] && !customColors[label]) {
+  if ((label === FILTERED_TRACE_NAME) &&
+    !editedCustomColors[label] && !customColors[label]) {
     return FILTERED_TRACE_COLOR
   }
   return editedCustomColors[label] ?? customColors[label] ?? PlotUtils.getColorBrewerColor(i)
 }
 
+/** Sort annotation labels lexicographically, but always put the unspecified annotations last */
+PlotUtils.labelSort = function(a, b) {
+  if (SPECIAL_LEGEND_ENTRIES.includes(a)) {return 1}
+  if (SPECIAL_LEGEND_ENTRIES.includes(b)) {return -1}
+  return a.localeCompare(b, 'en', { numeric: true, ignorePunctuation: true })
+}
+
 /** Returns an array of labels, sorted in the order in which they should be displayed in the legend */
 PlotUtils.getLegendSortedLabels = function(countsByLabel) {
-  /** Sort annotation labels lexicographically, but always put the unspecified annotations last */
-  function labelSort(a, b) {
-    if (SPECIAL_LEGEND_ENTRIES.includes(a)) {return 1}
-    if (SPECIAL_LEGEND_ENTRIES.includes(b)) {return -1}
-    return a.localeCompare(b, 'en', { numeric: true, ignorePunctuation: true })
-  }
-  return Object.keys(countsByLabel).sort(labelSort)
+  return Object.keys(countsByLabel).sort(PlotUtils.labelSort)
 }
 
 
@@ -350,10 +351,11 @@ PlotUtils.scatterLabelLegendWidth = 260
 PlotUtils.getPlotDimensions = function({
   isTwoColumn=false,
   isMultiRow=false,
-  verticalPad=250,
+  verticalPad=190,
   horizontalPad=80,
   hasLabelLegend=false,
   hasTitle=false,
+  hasDescription=false,
   showRelatedGenesIdeogram=false,
   showViewOptionsControls=true,
   showDifferentialExpressionTable=false
@@ -381,6 +383,10 @@ PlotUtils.getPlotDimensions = function({
   if (hasTitle) {
     galleryHeight -= 20
   }
+  if (!hasDescription) {
+    galleryHeight += 25
+  }
+
   let height = galleryHeight
   if (isMultiRow) {
     // Fill as much gallery height as possible, but show tip of next row

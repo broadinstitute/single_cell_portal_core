@@ -158,7 +158,7 @@ export async function createUserAnnotation(
  * @param {String} cluster Name of requested cluster
  */
 export async function fetchAnnotationFacets(studyAccession, annotations, cluster) {
-  annotations = annotations.join(',')
+  annotations = encodeURIComponent(annotations.join(','))
   const params = `annotations=${annotations}&cluster=${cluster}`
   const apiUrl = `/studies/${studyAccession}/annotations/facets?${params}`
   const [annotationFacets] = await scpApi(apiUrl, defaultInit())
@@ -1020,7 +1020,19 @@ export default async function scpApi(
     }
   }
   if (toJson) {
+    const isJson = response.headers.get('content-type').includes('json')
+
+    if (!isJson) {
+      const text = await response.text()
+      const message =
+        `Error, response is not JSON as expected.  ` +
+        `Response text: ${text}.  ` +
+        `Requested URL: ${url}`
+      throw Error(message)
+    }
+
     const json = await response.json()
+
     // special handling for Terra terms of service checks
     // don't throw error so we can pass back JSON response
     if (typeof json.must_accept !== 'undefined') {
@@ -1047,6 +1059,7 @@ export default async function scpApi(
       throw new Error(json.error || json.errors)
     }
   }
+
   throw new Error(response)
 }
 

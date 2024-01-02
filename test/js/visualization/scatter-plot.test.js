@@ -7,11 +7,12 @@ import Plotly from 'plotly.js-dist'
 
 import * as UserProvider from '~/providers/UserProvider'
 import * as ScpApi from 'lib/scp-api'
-import ScatterPlot, { intersect, reassignFilteredCells } from 'components/visualization/ScatterPlot'
+import ScatterPlot, { intersect, reassignFilteredCells, getPlottedLabels } from 'components/visualization/ScatterPlot'
 import ScatterPlotLegend from 'components/visualization/controls/ScatterPlotLegend'
 import * as ScpApiMetrics from 'lib/scp-api-metrics'
 import * as MetricsApi from 'lib/metrics-api'
 import { FILTERED_TRACE_NAME } from 'lib/cluster-utils'
+import * as LayoutUtils from 'lib/layout-utils'
 
 import '@testing-library/jest-dom/extend-expect'
 
@@ -62,6 +63,9 @@ it('shows custom legend with default group scatter plot', async () => {
   fakeLog.mockImplementation(() => {})
 
   const countsByLabel = COUNTS_BY_LABEL
+
+  const getTextSizeSpy = jest.spyOn(LayoutUtils, 'getTextSize')
+  getTextSizeSpy.mockImplementation(() => [10, 10])
 
   /** shim for the explore view component that only handles passing hiddenTraces */
   function ExploreShim() {
@@ -128,6 +132,11 @@ it('shows custom legend with default group scatter plot', async () => {
 it('shows cluster external link', async () => {
   const scatterData = BASIC_PLOT_DATA.scatter
   const countsByLabel = COUNTS_BY_LABEL
+  const originalLabels = Object.keys(countsByLabel)
+
+  const getTextSizeSpy = jest.spyOn(LayoutUtils, 'getTextSize')
+  getTextSizeSpy.mockImplementation(() => [10, 10])
+  const titleTexts = ['foo', 'bar']
 
   render((<ScatterPlotLegend
     name={scatterData.annotParams.name}
@@ -136,6 +145,8 @@ it('shows cluster external link', async () => {
     hiddenTraces={[]}
     hasArrayLabels={scatterData.hasArrayLabels}
     externalLink={BASIC_PLOT_DATA.externalLink}
+    originalLabels={originalLabels}
+    titleTexts={titleTexts}
   />))
 
   const { container } = render(<ScatterPlot/>)
@@ -151,11 +162,17 @@ it('shows cluster external link', async () => {
 it('shows legend search', async () => {
   const scatterData = BASIC_PLOT_DATA.scatter
   const countsByLabel = COUNTS_BY_LABEL
+  const originalLabels = Object.keys(countsByLabel)
+
   jest
     .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
     .mockReturnValue({
       legend_search: true
     })
+
+  const getTextSizeSpy = jest.spyOn(LayoutUtils, 'getTextSize')
+  getTextSizeSpy.mockImplementation(() => [10, 10])
+  const titleTexts = ['foo', 'bar']
 
   render((
     <ScatterPlotLegend
@@ -165,6 +182,8 @@ it('shows legend search', async () => {
       hiddenTraces={[]}
       hasArrayLabels={scatterData.hasArrayLabels}
       externalLink={BASIC_PLOT_DATA.externalLink}
+      originalLabels={originalLabels}
+      titleTexts={titleTexts}
     />))
 
   const labelSearchBox = await screen.findByPlaceholderText('Search')
@@ -207,10 +226,8 @@ describe('getPlotlyTraces handles expression graphs', () => {
     plotData.genes = ['foo']
 
     let [traces] = ScatterPlot.getPlotlyTraces(plotData)
-    // check that it doesn't reverse Reds when Reds is applied as the default
-    // Note that if the defaultScatterColor is ever changed to a non-Reds colorscale,
-    // this test will need to be updated
-    expect(traces[0].marker.reversescale).toEqual(false)
+    // since Viridis is now the default color profile, this should return true
+    expect(traces[0].marker.reversescale).toEqual(true)
 
     // check that does not reverse Reds when that is the explicitly specified colorscale
     plotData.scatterColor = 'Reds'
@@ -227,17 +244,24 @@ describe('getPlotlyTraces handles expression graphs', () => {
 it('intersects and reassigns cells via cell faceting', async () => {
   const plotData = _cloneDeep(BASIC_PLOT_DATA.scatter)
   const filteredCells = [
-    { allCellsIndex: 0, 'Category--group--cluster': 0 },
-    { allCellsIndex: 1, 'Category--group--cluster': 0 },
-    { allCellsIndex: 2, 'Category--group--cluster': 0 },
-    { allCellsIndex: 3, 'Category--group--cluster': 0 },
-    { allCellsIndex: 6, 'Category--group--cluster': 0 }
+    { 'allCellsIndex': 0, 'Category--group--cluster': 0 },
+    { 'allCellsIndex': 1, 'Category--group--cluster': 0 },
+    { 'allCellsIndex': 2, 'Category--group--cluster': 0 },
+    { 'allCellsIndex': 3, 'Category--group--cluster': 0 },
+    { 'allCellsIndex': 6, 'Category--group--cluster': 0 }
   ]
   const [filteredPlotData, plottedIdx] = intersect(filteredCells, plotData)
   expect(filteredPlotData.annotations.includes('s1')).toBeTruthy()
   expect(!filteredPlotData.annotations.includes('s2')).toBeTruthy()
 
-  const reassignedData = reassignFilteredCells(plottedIdx, plotData.data, filteredPlotData)
+  const setOriginalLabels = jest.fn()
+  const reassignedData = reassignFilteredCells(plottedIdx, plotData.data, filteredPlotData, setOriginalLabels)
   const filteredCount = reassignedData.annotations.filter(x => x === FILTERED_TRACE_NAME).length
   expect(filteredCount).toEqual(3)
+})
+
+it('returns array of unique plotted annotation labels', async () => {
+  const plotData = _cloneDeep(BASIC_PLOT_DATA.scatter.data)
+  const plottedLabels = getPlottedLabels(plotData)
+  expect(plottedLabels).toEqual(['s1', 's2'])
 })

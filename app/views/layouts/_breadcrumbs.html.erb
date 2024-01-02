@@ -1,5 +1,11 @@
+<% if controller_name == 'site' && @study %>
+<h1 class="study-header">
+<%= @study.name %>
+</h1>
+<% else %>
 <ul class="nav navbar-nav" id="breadcrumbs">
   <% set_breadcrumbs.each do |breadcrumb| %>
     <li><%= scp_link_to "<span class='fas fa-chevron-right'></span> 	#{breadcrumb[:title]}".html_safe, breadcrumb[:link], class: 'check-upload' %></li>
   <% end %>
 </ul>
+<% end %>

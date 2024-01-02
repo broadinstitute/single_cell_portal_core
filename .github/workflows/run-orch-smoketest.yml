@@ -2,6 +2,7 @@ name: Terra Orchestration API Smoke Test
 on:
   schedule:
     - cron: "0 8 * * 1,3,5"
+  workflow_dispatch:
 env:
   DOCKER_IMAGE_NAME: "gcr.io/broad-singlecellportal-staging/single-cell-portal"
 
@@ -11,7 +12,7 @@ jobs:
 
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Build image and setup env
         id: build-image-setup-env
         uses: ./.github/actions/docker-build-env-setup

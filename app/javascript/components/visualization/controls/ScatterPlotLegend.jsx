@@ -7,10 +7,10 @@ import Button from 'react-bootstrap/lib/Button'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 import debounce from 'lodash.debounce'
 
-
 import { log } from '~/lib/metrics-api'
 import PlotUtils from '~/lib/plot'
 const { scatterLabelLegendWidth, getColorForLabel, getLegendSortedLabels } = PlotUtils
+import { getTextSize } from '~/lib/layout-utils'
 
 /** Convert state Boolean to attribute string */
 function getActivity(isActive) {
@@ -102,16 +102,21 @@ function LegendEntry({
   }, delayTimeForHover) // ms to delay the call to setActiveTraceLabel()
 
 
-  // clicking the label will either hide the trace, or pop up a color picker
-  const entryClickFunction = showColorControls ? () => setShowColorPicker(true) : toggleSelection
+  /** Clicking the label will either hide the trace, or pop up a color picker */
+  function handleEntryClick() {
+    if (showColorControls) {
+      setShowColorPicker(true)
+    } else {
+      toggleSelection()
+    }
+  }
 
   return (
     <>
       <div
         className={`scatter-legend-row ${shownClass}`}
         role="button"
-        onClick={entryClickFunction}
-
+        onClick={handleEntryClick}
         onMouseEnter={handleOnMouseEnter}
         onMouseLeave={handleOnMouseLeave}
       >
@@ -184,13 +189,28 @@ function getShowHideEnabled(hiddenTraces, countsByLabel) {
   return enabled
 }
 
+/** Get legend size and position */
+function getLegendStyle(scatterLabelLegendWidth, height, titleTexts, plotWidth) {
+  // If plot title is narrower than plot (as is typical), then move legend up
+  const font = '14px'
+  const titleWidth = getTextSize(titleTexts[0], font).width
+  const detailWidth = getTextSize(titleTexts[1], font).width
+  const fullPlotTitleWidth = titleWidth + detailWidth
+  const isPlotNarrowerThanItsTitle = plotWidth > fullPlotTitleWidth
+  const top = isPlotNarrowerThanItsTitle ? '-35px' : '0'
+  const posAttrs = { position: 'relative', top }
+
+  const style = { width: scatterLabelLegendWidth, height, ...posAttrs }
+  return style
+}
+
 /** Component for custom legend for scatter plots */
 export default function ScatterPlotLegend({
   name, height, countsByLabel, correlations, hiddenTraces,
   updateHiddenTraces, customColors, editedCustomColors, setEditedCustomColors, setCustomColors,
   enableColorPicking=false, activeTraceLabel, setActiveTraceLabel,
   isSplitLabelArrays, updateIsSplitLabelArrays, hasArrayLabels,
-  externalLink, saveCustomColors
+  externalLink, saveCustomColors, originalLabels, titleTexts, plotWidth
 }) {
   // is the user currently in color-editing mode
   const [showColorControls, setShowColorControls] = useState(false)
@@ -200,7 +220,7 @@ export default function ScatterPlotLegend({
 
   const [labelsToShow, setLabelsToShow] = useState(labels)
 
-  const style = { width: scatterLabelLegendWidth, height }
+  const style = getLegendStyle(scatterLabelLegendWidth, height, titleTexts, plotWidth)
   const filteredClass = (hiddenTraces.length === 0) ? 'unfiltered' : ''
   const [showIsEnabled, hideIsEnabled] =
     getShowHideEnabled(hiddenTraces, countsByLabel)
@@ -242,16 +262,34 @@ export default function ScatterPlotLegend({
     log('hover:scatterlegend', { numLabels })
   }
 
+  let sortedOriginalLabels
+  if (originalLabels.length > 0) {
+    sortedOriginalLabels = [...originalLabels].sort(PlotUtils.labelSort)
+  }
+
+  /**
+   * Determine what position from colorBrewerList maps to a given label
+   * takes into account whether items have been filtered out via cell filtering
+   */
+  function getColorIndex(label, index) {
+    if (originalLabels.length > 0) {
+      return sortedOriginalLabels.indexOf(label)
+    } else {
+      return index
+    }
+  }
+
   /** create mapping of labels and colors of full label list (used for filtered legends) */
   const fullLabelsMappedToColor = labels.map((label, i) => {
-    const iconColor = getColorForLabel(label, customColors, editedCustomColors, i)
+    const colorIndex = getColorIndex(label, i)
+    const iconColor = getColorForLabel(label, customColors, editedCustomColors, colorIndex)
     return { label, iconColor }
   })
 
   /** retrieve the color for the label specified (used for filtered legends) */
   function getColorForLabelIcon(specifiedLabel) {
     const labelAndColor = fullLabelsMappedToColor.find(legendItem => legendItem.label === specifiedLabel)
-    return labelAndColor.iconColor
+    return labelAndColor?.iconColor
   }
 
   /** Update the labels to be shown in the legend based on the user filtering (used for filtered legends) */
@@ -398,9 +436,10 @@ export default function ScatterPlotLegend({
         </div>}
         {labelsToShow.map((label, i) => {
           const numPoints = countsByLabel[label]
+          const colorIndex = getColorIndex(label, i)
           const iconColor = showLegendSearch ?
             getColorForLabelIcon(label) :
-            getColorForLabel(label, customColors, editedCustomColors, i)
+            getColorForLabel(label, customColors, editedCustomColors, colorIndex)
           return (
             <LegendEntry
               key={label}

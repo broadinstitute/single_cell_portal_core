@@ -71,6 +71,7 @@ class ExpressionFileInfo
                                 'Smart-seq2/Fluidigm C1', # scRNAseq
                                 'Smart-seq2/plate-based', # scRNAseq
                                 'smFISH', # spatial transcriptomic
+                                'SPLiT-seq', # Split Pool Ligation-based transcriptomic
                                 'snATAC-seq', # scATAC-seq
                                 'STARmap',  # spatial transcriptomic
                               ].freeze
@@ -83,8 +84,8 @@ class ExpressionFileInfo
 
   # remove invalid StudyFile ids, as well as nil/empty string values
   def sanitize_raw_counts_associations
-    invalid_ids = raw_counts_associations.select { |study_file_id| StudyFile.find(study_file_id).nil? }
-    raw_counts_associations.reject! { |study_file_id| study_file_id.blank? || invalid_ids.include?(study_file_id) }
+    invalid_ids = raw_counts_associations&.select { |study_file_id| StudyFile.find(study_file_id).nil? }
+    raw_counts_associations&.reject! { |study_file_id| study_file_id.blank? || invalid_ids.include?(study_file_id) }
   end
 
   # unset the value for :units unless :is_raw_counts is true

@@ -14,6 +14,7 @@ usage=$(
 cat <<EOF
 $0 [OPTION]
 -v VALUE  specify version tag for docker image
+-g VALUE  provide an alias for the gcloud command (if running via gcloud Docker image, for instance)
 -h        print this text
 EOF
 )
@@ -26,7 +27,8 @@ function main {
   # TODO: (SCP-4496): Move production-related GCR images out of staging project
   VERSION_TAG=$(extract_release_tag "0")
   IMAGE_NAME='gcr.io/broad-singlecellportal-staging/single-cell-portal'
-  while getopts "v:h" OPTION; do
+  GCLOUD_ALIAS='gcloud'
+  while getopts "v:g:h" OPTION; do
     case $OPTION in
       v)
         VERSION_TAG="$OPTARG"
@@ -34,6 +36,10 @@ function main {
       h)
         echo "$usage"
         exit 0
+        ;;
+      g)
+        echo "### SUBSTITUTING '$OPTARG' FOR $GCLOUD_ALIAS ###"
+        GCLOUD_ALIAS=("$OPTARG")
         ;;
       *)
         echo "unrecognized option"
@@ -44,7 +50,7 @@ function main {
   done
 
   # skip building a tagged release if it already exists, unless this is the development branch
-  EXISTING_DIGEST=$(gcloud container images list-tags $IMAGE_NAME --filter="tags:$VERSION_TAG" --format='get(digest)')
+  EXISTING_DIGEST=$($GCLOUD_ALIAS container images list-tags $IMAGE_NAME --filter="tags:$VERSION_TAG" --format='get(digest)')
   if [[ "$VERSION_TAG" != 'development' ]] && [[ -n "$EXISTING_DIGEST" ]]; then
     exit_with_error_message "unable to build $VERSION_TAG as it already exists with digest $EXISTING_DIGEST"
   fi
@@ -57,10 +63,10 @@ function main {
   echo "*** PUSH COMPLETE ***"
   # pushing an image with the same tag as an existing one (which will happen each time with 'development') can leave
   # behind an untagged image that needs to be deleted - these can be found with --filter='-tags:*'
-  UNTAGGED=$(gcloud container images list-tags $IMAGE_NAME --filter='-tags:*' --format='get(digest)')
+  UNTAGGED=$($GCLOUD_ALIAS container images list-tags $IMAGE_NAME --filter="-tags:*" --format="get(digest)")
   if [[ -n "$UNTAGGED" ]]; then
     echo "*** DELETING UNTAGGED IMAGE DIGEST $UNTAGGED ***"
-    gcloud container images delete $IMAGE_NAME@$UNTAGGED --quiet || exit_with_error_message "could not delete image $UNTAGGED"
+    $GCLOUD_ALIAS container images delete $IMAGE_NAME@$UNTAGGED --quiet || exit_with_error_message "could not delete image $UNTAGGED"
     echo "*** UNTAGGED IMAGE $UNTAGGED SUCCESSFULLY DELETED ***"
   fi
 }

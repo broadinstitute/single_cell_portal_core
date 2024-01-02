@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 
-# extract secrets from vault, copy to remote host, and launch boot script for deployment
-# can also roll back a broken deployment by calling with -R, and optionally -t OFFSET
-# to increase the amount of releases to roll back to
+# script that can run deployments to GCE via Github Action runner
+# uses gcloud Docker image for authentication & ssh access via service accounts
+# vault secrets are extracted using extract-vault-secret-to-file action
 
 THIS_DIR="$(cd "$(dirname -- "$0")"; pwd)"
 
 # common libraries
 . $THIS_DIR/bash_utils.sh
 . $THIS_DIR/github_releases.sh
-. $THIS_DIR/extract_vault_secrets.sh
 
 function main {
   # defaults
@@ -23,8 +22,12 @@ function main {
   HOTFIX="false"
   TAG_OFFSET=1
   VERSION_TAG="development"
+  GCLOUD_DOCKER_IMAGE="gcr.io/google.com/cloudsdktool/google-cloud-cli:latest"
+  GOOGLE_PROJECT="broad-singlecellportal"
+  COMPUTE_ZONE="us-central1-a"
+  GCLOUD_CONFIG_IMAGE="gcloud-config"
 
-  while getopts "p:s:r:e:b:d:h:S:u:H:t:Rfv:" OPTION; do
+  while getopts "p:s:r:e:b:d:h:S:u:H:t:Rfv:g:z:G:" OPTION; do
     case $OPTION in
       p)
         PORTAL_SECRETS_VAULT_PATH="$OPTARG"
@@ -65,6 +68,15 @@ function main {
       v)
         VERSION_TAG="$OPTARG"
         ;;
+      g)
+        GOOGLE_PROJECT="$OPTARG"
+        ;;
+      z)
+        COMPUTE_ZONE="$OPTARG"
+        ;;
+      G)
+        GCLOUD_CONFIG_IMAGE="$OPTARG"
+        ;;
       H)
         echo "$usage"
         exit 0
@@ -77,12 +89,14 @@ function main {
     esac
   done
 
-  # construct SSH command
-  SSH_OPTS="-o CheckHostIP=no -o StrictHostKeyChecking=no"
-  if [[ -n $SSH_KEYFILE ]]; then
-    SSH_OPTS=$SSH_OPTS" -i $SSH_KEYFILE"
-  fi
-  SSH_COMMAND="ssh $SSH_OPTS $SSH_USER@$DESTINATION_HOST"
+  # construct SSH command using gcloud and Identity Aware Proxy to access VM via authenticated Docker container
+  BASE_SSH="docker run --rm $GCLOUD_CONFIG_IMAGE gcloud compute ssh"
+  SSH_ARGS="$SSH_USER@$DESTINATION_HOST --tunnel-through-iap --project $GOOGLE_PROJECT --zone $COMPUTE_ZONE"
+  SSH_COMMAND="$BASE_SSH  $SSH_ARGS --verbosity error --command "
+
+  # copy command using gcloud compute scp
+  BASE_COPY="docker run --rm $GCLOUD_CONFIG_IMAGE gcloud compute scp"
+  COPY_ARGS=
 
   # exit if all config is not present
   if [[ -z "$PORTAL_SECRETS_VAULT_PATH" ]] || [[ -z "$SERVICE_ACCOUNT_VAULT_PATH" ]] || [[ -z "$READ_ONLY_SERVICE_ACCOUNT_VAULT_PATH" ]]; then
@@ -94,9 +108,7 @@ function main {
   CONFIG_FILENAME="$(set_export_filename $PORTAL_SECRETS_VAULT_PATH env)"
   SERVICE_ACCOUNT_FILENAME="$(set_export_filename $SERVICE_ACCOUNT_VAULT_PATH)"
   READ_ONLY_SERVICE_ACCOUNT_FILENAME="$(set_export_filename $READ_ONLY_SERVICE_ACCOUNT_VAULT_PATH)"
-  extract_vault_secrets_as_env_file "$PORTAL_SECRETS_VAULT_PATH"
-  extract_service_account_credentials "$SERVICE_ACCOUNT_VAULT_PATH"
-  extract_service_account_credentials "$READ_ONLY_SERVICE_ACCOUNT_VAULT_PATH"
+  # secrets will have already been extracted via extract-vault-secret-to-file
   PORTAL_SECRETS_PATH="$DESTINATION_BASE_DIR/config/$CONFIG_FILENAME"
   SERVICE_ACCOUNT_JSON_PATH="$DESTINATION_BASE_DIR/config/$SERVICE_ACCOUNT_FILENAME"
   READ_ONLY_SERVICE_ACCOUNT_JSON_PATH="$DESTINATION_BASE_DIR/config/$READ_ONLY_SERVICE_ACCOUNT_FILENAME"
@@ -147,6 +159,7 @@ function main {
   BOOT_COMMAND="$BOOT_COMMAND -v $VERSION_TAG"
 
   echo "### running remote deploy script ###"
+  echo "BOOT_COMMAND: $(set_remote_environment_vars) $BOOT_COMMAND"
   run_remote_command "$(set_remote_environment_vars) $BOOT_COMMAND" || exit_with_error_message "could not run $(set_remote_environment_vars) $BOOT_COMMAND on $DESTINATION_HOST:$DESTINATION_BASE_DIR"
   echo "### COMPLETED ###"
 }
@@ -173,6 +186,9 @@ USAGE:
 -f          set HOTFIX to true to deploy the latest release tag to a non-production host
 -t VALUE    set the TAG_OFFSET value for rolling back a release (defaults to 1, meaning release previous to the current)
 -v VALUE    set the VERSION_TAG value to control which Docker tag to pull (defaults to development)
+-g VALUE    set the GOOGLE_PROJECT value to control which project to access (defaults to production project)
+-z VALUE    set the COMPUTE_ZONE value (for accessing VMs, defaults to us-central1)
+-G VALUE    set the GCLOUD_CONFIG_IMAGE value (defaults to $GCLOUD_DOCKER_IMAGE)
 -H COMMAND  print this text
 EOF
 )
@@ -185,8 +201,12 @@ function run_remote_command {
 function copy_file_to_remote {
   LOCAL_FILEPATH="$1"
   REMOTE_FILEPATH="$2"
+  CONTAINER_PATH="/tmp/$(basename $LOCAL_FILEPATH)"
   $SSH_COMMAND "mkdir -p \$(dirname $REMOTE_FILEPATH)"
-  cat $LOCAL_FILEPATH | $SSH_COMMAND "cat > $REMOTE_FILEPATH"
+  BASE_COPY="docker run --rm -v $LOCAL_FILEPATH:$CONTAINER_PATH:rw $GCLOUD_CONFIG_IMAGE gcloud compute scp "
+  COPY_ARGS="$CONTAINER_PATH $SSH_USER@$DESTINATION_HOST:$REMOTE_FILEPATH --tunnel-through-iap --project $GOOGLE_PROJECT --zone $COMPUTE_ZONE"
+  COPY_CMD="$BASE_COPY $COPY_ARGS"
+  $COPY_CMD
 }
 
 function set_remote_environment_vars {

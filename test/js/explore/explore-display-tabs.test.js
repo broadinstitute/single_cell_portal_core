@@ -29,7 +29,9 @@ jest.mock('lib/cell-faceting', () => {
 import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import * as UserProvider from '~/providers/UserProvider'
-import ExploreDisplayTabs, { getEnabledTabs } from 'components/explore/ExploreDisplayTabs'
+import ExploreDisplayTabs, {
+  getEnabledTabs, handleClusterSwitchForFiltering
+} from 'components/explore/ExploreDisplayTabs'
 import ExploreDisplayPanelManager from '~/components/explore/ExploreDisplayPanelManager'
 import PlotTabs from 'components/explore/PlotTabs'
 import {
@@ -50,7 +52,8 @@ const defaultExploreInfo = {
   clusterGroupNames: ['foo', 'bar'],
   spatialGroupNames: [],
   spatialGroups: [],
-  clusterPointAlpha: 1.0
+  clusterPointAlpha: 1.0,
+  facets: ''
 }
 
 describe('explore tabs are activated based on study info and parameters', () => {
@@ -62,7 +65,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
       userSpecified: {
         annotation: true,
         cluster: true
-      }
+      },
+      facets: ''
     }
     const expectedResults = {
       enabledTabs: ['loading'],
@@ -84,7 +88,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
       userSpecified: {
         annotation: true,
         cluster: true
-      }
+      },
+      facets: ''
     }
     const expectedResults = {
       enabledTabs: ['scatter'],
@@ -106,7 +111,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
       userSpecified: {
         annotation: true,
         cluster: true
-      }
+      },
+      facets: ''
     }
     const expectedResults = {
       enabledTabs: ['scatter'],
@@ -144,7 +150,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
       userSpecified: {
         annotation: true,
         cluster: true
-      }
+      },
+      facets: ''
     }
     const expectedResults = {
       enabledTabs: ['annotatedScatter', 'scatter'],
@@ -176,7 +183,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
         annotation: true,
         cluster: true,
         bamFileName: true
-      }
+      },
+      facets: ''
     }
     const expectedResults = {
       enabledTabs: ['scatter', 'genome'],
@@ -201,7 +209,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
       geneList: 'Gene List 1',
       userSpecified: {
         geneList: true
-      }
+      },
+      facets: ''
     }
     const expectedResults = {
       enabledTabs: ['geneListHeatmap'],
@@ -226,7 +235,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
         annotation: true,
         cluster: true,
         genes: true
-      }
+      },
+      facets: ''
     }
 
     const expectedResults = {
@@ -254,7 +264,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
         annotation: true,
         cluster: true,
         genes: true
-      }
+      },
+      facets: ''
     }
 
     const expectedResults = {
@@ -289,7 +300,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
         cluster: true,
         genes: true,
         spatialGroups: true
-      }
+      },
+      facets: ''
     }
 
     const expectedResults = {
@@ -317,7 +329,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
         cluster: true,
         genes: true,
         consensus: true
-      }
+      },
+      facets: ''
     }
 
     const expectedResults = {
@@ -355,7 +368,8 @@ describe('explore tabs are activated based on study info and parameters', () => 
       ideogramFileId: Object.keys(ideogramOpts)[0],
       userSpecified: {
         ideogramFileId: true
-      }
+      },
+      facets: ''
     }
 
     const expectedResults = {
@@ -407,7 +421,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
       />
     ))
 
-    expect(screen.getByTestId('cell-filtering-button')).toHaveTextContent('Cell filtering')
+    expect(screen.getByTestId('cell-filtering-button')).toHaveTextContent('Filter plotted cells')
   })
 
   it('disables cell filtering button', async () => {
@@ -425,10 +439,58 @@ describe('explore tabs are activated based on study info and parameters', () => 
         exploreInfo={exploreInfoDe}
         clusterCanFilter={false}
         filterErrorText={'Cluster is not indexed'}
-        panelToShow={'default'}
+        panelToShow={'options'}
       />
     )
 
-    expect(screen.getByTestId('cell facet filtering button')).toHaveTextContent('Filtering unavailable')
+    expect(screen.getByTestId('cell-filtering-button')).toHaveTextContent('Filtering unavailable')
+  })
+
+  it('Cell faceting handles new cluster that has annotations not in previous cluster', async () => {
+    // Old set of selections, for previous clustering
+    const cellFilteringSelection = {
+      'cell_type__ontology_label--group--study': [
+        'epithelial cell', 'macrophage', 'neutrophil', 'B cell',
+        'T cell', 'dendritic cell', 'eosinophil', 'fibroblast'
+      ],
+      'infant_sick_YN--group--study': ['no', 'NA', 'yes']
+    }
+
+
+    // Raw material of selections for new clustering, which has an annotation not in previous clustering
+    const newCellFaceting = {
+      facets: [
+        {
+          'annotation': 'cell_type__ontology_label--group--study',
+          'groups': ['epithelial cell']
+        },
+        {
+          'annotation': 'infant_sick_YN--group--study',
+          'groups': ['no', 'NA', 'yes']
+        },
+        {
+          'annotation': 'Epithelial Cell Subclusters--group--cluster',
+          'groups': [
+            'Secretory Lactocytes', 'LC1', 'KRT high lactocytes 1', 'Cycling Lactocytes',
+            'MT High Secretory Lactocytes', 'KRT high lactocytes 2'
+          ]
+        }
+      ]
+    }
+
+    // Mock function for React setter
+    const setCellFilteringSelection = jest.fn()
+
+    handleClusterSwitchForFiltering(cellFilteringSelection, newCellFaceting, setCellFilteringSelection)
+
+    // Confirm React setter for selection includes new facet
+    expect(setCellFilteringSelection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        'Epithelial Cell Subclusters--group--cluster': [
+          'Secretory Lactocytes', 'LC1', 'KRT high lactocytes 1', 'Cycling Lactocytes',
+          'MT High Secretory Lactocytes', 'KRT high lactocytes 2'
+        ]
+      })
+    )
   })
 })

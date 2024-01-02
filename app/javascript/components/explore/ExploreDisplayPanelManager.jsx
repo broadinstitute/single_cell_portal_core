@@ -18,8 +18,8 @@ import useResizeEffect from '~/hooks/useResizeEffect'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 import DifferentialExpressionPanel, { DifferentialExpressionPanelHeader } from './DifferentialExpressionPanel'
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
-import FacetFilteringModal from '~/components/explore/FacetFilteringModal'
-import { FacetFilterPanel, FacetFilterPanelHeader } from './FacetFilterPanel'
+import CellFilteringModal from '~/components/explore/CellFilteringModal'
+import { CellFilteringPanel, CellFilteringPanelHeader } from './CellFilteringPanel'
 
 /** Get the selected clustering and annotation, or their defaults */
 function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
@@ -70,6 +70,33 @@ function getHasComparisonDe(exploreInfo, exploreParams, comparison) {
   })
 
   return hasComparisonDe
+}
+
+/** Determine if current annotation has one-vs-rest or pairwise DE */
+function getDeHeaders(exploreInfo, exploreParams) {
+  const flags = getFeatureFlagsWithDefaults()
+  if (!flags?.differential_expression_frontend || !exploreInfo) {return false}
+
+  const [selectedCluster, selectedAnnot] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
+
+  const deObject = exploreInfo.differentialExpression.find(deItem => {
+    return (
+      deItem.cluster_name === selectedCluster &&
+      deItem.annotation_name === selectedAnnot.name &&
+      deItem.annotation_scope === selectedAnnot.scope
+    )
+  })
+
+  if (deObject) {
+    const headers = deObject.select_options.headers
+    if (headers.size === null) {
+      headers.size = 'logfoldchanges'
+      headers.significance = 'pvals_adj'
+    }
+    return headers
+  } else {
+    return null
+  }
 }
 
 /** Return list of annotations that have differential expression enabled */
@@ -170,18 +197,23 @@ export default function ExploreDisplayPanelManager({
   exploreParamsWithDefaults, routerLocation, searchGenes, countsByLabel, setShowUpstreamDifferentialExpressionPanel,
   setShowDifferentialExpressionPanel, showUpstreamDifferentialExpressionPanel, togglePanel, shownTab,
   showDifferentialExpressionPanel, setIsCellSelecting, currentPointsSelected, isCellSelecting, deGenes,
-  setDeGenes, setShowDeGroupPicker, cellFaceting, setCellFaceting, clusterCanFilter, filterErrorText,
+  setDeGenes, setShowDeGroupPicker,
+  cellFaceting, cellFilteringSelection, cellFilterCounts, clusterCanFilter, filterErrorText,
   updateFilteredCells, panelToShow, toggleViewOptions
 }) {
   const [, setRenderForcer] = useState({})
   const [dataCache] = useState(createCache())
 
-  window.dataCache = dataCache
-
   const [deGroupB, setDeGroupB] = useState(null)
   const [deGroup, setDeGroup] = useState(null)
 
-  const showCellFiltering = true // getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
+  let hasSpatialGroups = false
+  if (exploreInfo) {
+    hasSpatialGroups = exploreInfo.spatialGroups.length > 0
+  }
+
+  const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering && !hasSpatialGroups
+
 
   // Differential expression settings
   const flags = getFeatureFlagsWithDefaults()
@@ -191,6 +223,7 @@ export default function ExploreDisplayPanelManager({
   const clusterHasDe = getClusterHasDe(exploreInfo, exploreParams)
   const hasOneVsRestDe = getHasComparisonDe(exploreInfo, exploreParams, 'one_vs_rest')
   const hasPairwiseDe = getHasComparisonDe(exploreInfo, exploreParams, 'pairwise')
+  const deHeaders = getDeHeaders(exploreInfo, exploreParams)
   const isAuthorDe = getIsAuthorDe(exploreInfo, exploreParams)
 
   // exploreParams object without genes specified, to pass to cluster comparison plots
@@ -202,11 +235,6 @@ export default function ExploreDisplayPanelManager({
   // hide the cluster controls if we're on a genome tab, or if there aren't clusters to choose
   const showClusterControls = !['genome', 'infercnv-genome', 'geneListHeatmap'].includes(shownTab) &&
                                 annotationList?.clusters?.length
-
-  let hasSpatialGroups = false
-  if (exploreInfo) {
-    hasSpatialGroups = exploreInfo.spatialGroups.length > 0
-  }
 
   const shownAnnotation = getShownAnnotation(exploreParamsWithDefaults.annotation, annotationList)
 
@@ -223,7 +251,6 @@ export default function ExploreDisplayPanelManager({
   function toggleCellFilterPanel() {
     if (isSubsampled) {
       updateClusterParams({ subsample: 'All Cells' })
-      document.querySelector('.tooltip.fade.top.in').remove()
     }
     togglePanel('cell-filtering')
   }
@@ -244,7 +271,6 @@ export default function ExploreDisplayPanelManager({
   function updateClusterParams(newParams) {
     if (newParams.cluster && !newParams.spatialGroups) {
       newParams.spatialGroups = getDefaultSpatialGroupsForCluster(newParams.cluster, exploreInfo.spatialGroups)
-      console.log('in updateClusterParams, clearing data cache')
       dataCache.clear()
     }
 
@@ -325,7 +351,7 @@ export default function ExploreDisplayPanelManager({
               </>
           }
           {showCellFiltering && panelToShow === 'cell-filtering' &&
-            <FacetFilterPanelHeader
+            <CellFilteringPanelHeader
               togglePanel={togglePanel}
               setShowDifferentialExpressionPanel={setShowDifferentialExpressionPanel}
               setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
@@ -388,7 +414,7 @@ export default function ExploreDisplayPanelManager({
                 }
                 {studyHasDe &&
                 <>
-                  <div className="row de-modal-row-wrapper">
+                  <div className={`row de-modal-row-wrapper ${shownTab === 'scatter' ? 'create-annotation-de' : ''}`}>
                     <div className="col-xs-12 de-modal-row">
                       <button
                         className=
@@ -412,14 +438,14 @@ export default function ExploreDisplayPanelManager({
                 { showCellFiltering && clusterCanFilter &&
                   <>
                     <div className="row">
-                      <div className="col-xs-12 cell-filtering-button">
+                      <div className={`col-xs-12 cell-filtering-button ${shownTab === 'scatter' && !studyHasDe ? 'create-annotation-cell-filtering' : ''}`}>
                         <button
                           className={`btn btn-primary`}
                           data-testid="cell-filtering-button"
                           {...cellFilteringTooltipAttrs}
                           onClick={() => toggleCellFilterPanel()}
-                        >Cell filtering</button>
-                        <FacetFilteringModal />
+                        >Filter plotted cells</button>
+                        <CellFilteringModal />
                       </div>
                     </div>
                   </>
@@ -427,7 +453,7 @@ export default function ExploreDisplayPanelManager({
                 { showCellFiltering && !clusterCanFilter &&
                   <>
                     <div className="row">
-                      <div className="col-xs-12 cell-filtering-button">
+                      <div className={`col-xs-12 cell-filtering-button ${shownTab === 'scatter' && !studyHasDe ? 'create-annotation-cell-filtering' : ''}`}>
                         <button
                           disabled="disabled"
                           className={`btn btn-primary`}
@@ -485,18 +511,19 @@ export default function ExploreDisplayPanelManager({
           </>
         }
         {showCellFiltering && panelToShow === 'cell-filtering' && clusterCanFilter &&
-        <FacetFilterPanel
+        <CellFilteringPanel
           annotationList={annotationList}
           cluster={exploreParamsWithDefaults.cluster}
           shownAnnotation={shownAnnotation}
           updateClusterParams={updateClusterParams}
           cellFaceting={cellFaceting}
+          cellFilteringSelection={cellFilteringSelection}
+          cellFilterCounts={cellFilterCounts}
           updateFilteredCells={updateFilteredCells}
           exploreParams={exploreParams}
           exploreInfo={exploreInfo}
           studyAccession={studyAccession}
-          setCellFaceting={setCellFaceting}>
-        </FacetFilterPanel>}
+        />}
         {panelToShow === 'differential-expression' && countsByLabel && annotHasDe &&
           <>
             <DifferentialExpressionPanel
@@ -513,6 +540,7 @@ export default function ExploreDisplayPanelManager({
               hasOneVsRestDe={hasOneVsRestDe}
               hasPairwiseDe={hasPairwiseDe}
               isAuthorDe={isAuthorDe}
+              deHeaders={deHeaders}
               deGroupB={deGroupB}
               setDeGroupB={setDeGroupB}
               countsByLabel={countsByLabel}

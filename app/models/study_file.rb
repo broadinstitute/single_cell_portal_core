@@ -109,11 +109,13 @@ class StudyFile
   field :z_axis_max, type: Integer
   field :is_spatial, type: Boolean, default: false
 
-  # Hyperlink to an external web resource for a cluster
-  # Set in upload / sync UI.  Shown in Study Overview page.
+  # Hyperlink to an external web resource for a cluster or externally hosted file
+  # Set in upload / sync UI.  Shown in Study Overview page. Also used in ImportService
   field :external_link_url, type: String
   field :external_link_title, type: String # Link text
   field :external_link_description, type: String # Link tooltip
+  field :external_identifier, type: String # for tracking external files from ImportService
+  field :imported_from, type: String # Human-readable tag for external service that study was imported from, e.g. HCA
 
   # for spatial files, the ids of cluster files that correspond to this file for default display
   field :spatial_cluster_associations, type: Array, default: []
@@ -659,6 +661,7 @@ class StudyFile
   validates_format_of :generation, with: /\A\d+\z/, if: proc { |f| f.generation.present? }
 
   validates_inclusion_of :file_type, in: STUDY_FILE_TYPES, unless: proc { |f| f.file_type == 'DELETE' }
+  validates_uniqueness_of :external_identifier, allow_blank: true
 
   validate :check_taxon, on: :create
   validate :check_assembly, on: :create
@@ -673,15 +676,18 @@ class StudyFile
 
   # return correct path to file based on visibility & type
   def download_path
-    if self.upload_file_name.nil?
-      self.human_fastq_url
+    if hosted_externally?
+      external_link_url || human_fastq_url
     else
-      if self.study.public?
-        download_file_path(accession: self.study.accession, study_name: self.study.url_safe_name, filename: self.bucket_location)
-      else
-        download_private_file_path(accession: self.study.accession, study_name: self.study.url_safe_name, filename: self.bucket_location)
-      end
+      download_method = study.public? ? :download_file_path : :download_private_file_path
+      download_args = { accession: study.accession, study_name: study.url_safe_name, filename: bucket_location }
+      send(download_method, **download_args)
     end
+  end
+
+  # determine if file is hosted on an external server for downloads
+  def hosted_externally?
+    (external_identifier.present? && external_link_url.present?) || (upload_file_name.nil? && human_fastq_url.present?)
   end
 
   # JSON response for jQuery uploader

@@ -104,40 +104,21 @@ class UserTest < ActiveSupport::TestCase
 
   test 'should determine if user needs to accept updated Terra Terms of Service' do
     mock = Minitest::Mock.new
-    user_registration = {
-      enabled: {
-        ldap: true,
-        allUsersGroup: true,
-        google: true,
-        tosAccepted: true,
-        adminEnabled: false
-      },
-      userInfo: {
-        userEmail: @user.email,
-        userSubjectId: @user.uid
-      }
+    user_terms = {
+      acceptedOn: DateTime.now - 1.day, isCurrentVersion: true, latestAcceptedVersion: '1', permitsSystemUsage: true
     }.with_indifferent_access
-    mock.expect :get_registration, user_registration
+    mock.expect :get_terms_of_service, user_terms
     FireCloudClient.stub :new, mock do
       assert_not @user.must_accept_terra_tos?
       mock.verify
     end
 
     # negative test
-    user_registration[:enabled][:tosAccepted] = false
+    user_terms[:permitsSystemUsage] = false
     mock = Minitest::Mock.new
-    mock.expect :get_registration, user_registration
+    mock.expect :get_terms_of_service, user_terms
     FireCloudClient.stub :new, mock do
       assert @user.must_accept_terra_tos?
-      mock.verify
-    end
-
-    # failover test
-    user_registration[:enabled].delete(:tosAccepted)
-    mock = Minitest::Mock.new
-    mock.expect :get_registration, user_registration
-    FireCloudClient.stub :new, mock do
-      assert_not @user.must_accept_terra_tos?
       mock.verify
     end
   end
@@ -160,6 +141,26 @@ class UserTest < ActiveSupport::TestCase
       user_status = @user.check_terra_tos_status
       assert_not user_status[:must_accept]
       assert_equal 500, user_status[:http_code]
+    end
+  end
+
+  test 'should get user groups' do
+    mock = Minitest::Mock.new
+    group_emails = %w[my-group@firecloud.org my-other-group@firecloud.org]
+    groups = group_emails.map { |group| { groupEmail: group }.with_indifferent_access  }
+    mock.expect :get_user_groups, groups
+    FireCloudClient.stub :new, mock do
+      assert_equal group_emails, @user.user_groups
+      mock.verify
+    end
+    # test error handling for various states that aren't automatically retried
+    [
+      RestClient::BadRequest, RestClient::Unauthorized, RestClient::Forbidden, RestClient::NotFound,
+      RestClient::InternalServerError
+    ].each do |error_type|
+      RestClient::Request.stub :execute, proc { raise error_type } do
+        assert_empty @user.user_groups
+      end
     end
   end
 end

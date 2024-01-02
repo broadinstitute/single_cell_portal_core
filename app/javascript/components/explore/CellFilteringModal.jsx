@@ -5,7 +5,7 @@ import Modal from 'react-bootstrap/lib/Modal'
 import { closeModal } from '~/components/search/controls/SearchPanel'
 
 /** Show modal box with information on differential expression in SCP */
-export default function FacetFilteringModal() {
+export default function CellFilteringModal() {
   const [showCellFacetModal, setShowCellFacetModall] = useState(false)
   const cellFacetModalContent = (
     <div>
@@ -13,8 +13,8 @@ export default function FacetFilteringModal() {
         Cell filtering lets you easily plot cells that match criteria <i>across annotations</i>.
       </p>
       <p>
-        For example, cell filtering can let you quickly subset a plot to show only cells that are diseased <i>and</i> from males.
-        You would click to update the filters so only "Yes" is checked under "Disease" and "Male" is checked under "Sex".
+        As a hypothetical example, cell filtering can let you quickly subset a plot to show only cells annotated as from lymphoma <i>and</i> males.
+        You would click to update the filters so only "lymphoma" is checked in "Disease" and "male" is checked in "Sex".
       </p>
     </div>
   )
@@ -24,7 +24,7 @@ export default function FacetFilteringModal() {
       onClick={() => setShowCellFacetModall(true)}
       data-analytics-name="cell-filtering-info-help-icon"
       data-toggle="tooltip"
-      data-original-title="Click to learn about cell filtering  "
+      data-original-title="Click to learn about cell filtering"
       className="cell-filtering-info-help-icon"
     >
       <FontAwesomeIcon className="action help-icon" icon={faInfoCircle} />

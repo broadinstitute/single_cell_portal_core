@@ -16,6 +16,7 @@ import RawAssociationSelect from '~/components/upload/RawAssociationSelect'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 import ValidateFile from '~/lib/validation/validate-file'
 import { setupSentry } from '~/lib/sentry-logging'
+import { adjustGlobalHeader, mitigateStudyOverviewTitleTruncation } from '~/lib/layout-utils'
 import { clearOldServiceWorkerCaches } from '~/lib/service-worker-cache'
 
 const { validateRemoteFile } = ValidateFile
@@ -33,7 +34,16 @@ setupSentry()
 // On each page load, check for old SCP caches, delete any found
 clearOldServiceWorkerCaches()
 
+// Close tooltips; fixes edge case with Bootstrap-default Popper / Tippy tooltips
+document.addEventListener('click', () => {
+  document.querySelectorAll('.tooltip.fade.top.in').forEach(e => e.remove())
+})
+
 document.addEventListener('DOMContentLoaded', () => {
+  // For Study Overview page,
+  // Set global header end width, and mitigate long study titles on narrow screens
+  adjustGlobalHeader()
+
   // Logs only page views for faceted search UI
   logPageView()
 
@@ -62,7 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (window.SCP.userSignedIn) {
     if (window.SCP.userAccessToken === '') {
-      logError('User access token is empty string')
+      const tokenErrorMessage = 'User access token is empty string'
+      const tokenError = new Error(tokenErrorMessage)
+      logError(tokenErrorMessage, tokenError)
     }
     ScpApi.setUpRenewalForUserAccessToken()
   }
@@ -87,6 +99,18 @@ function renderComponent(target, componentName, props) {
   ReactDOM.render(React.createElement(componentsToExport[componentName], props),
     targetEl)
 }
+
+
+window.addEventListener('resize', () => {
+  if (window.resizeTimeout) {clearTimeout(window.resizeTimeout)}
+  window.resizeTimeout = setTimeout(() => {
+    window.dispatchEvent(new Event('resizeEnd'))
+  }, 100)
+})
+
+window.addEventListener('resizeEnd', () => {
+  mitigateStudyOverviewTitleTruncation()
+})
 
 // SCP expects these variables to be global.
 //
