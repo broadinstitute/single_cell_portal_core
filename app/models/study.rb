@@ -274,6 +274,7 @@ class Study
   field :use_existing_workspace, type: Boolean, default: false
   field :default_options, type: Hash, default: {} # extensible hash where we can put arbitrary values as 'defaults'
   field :external_identifier, type: String # ID from external service, used for tracking via ImportService
+  field :imported_from, type: String # Human-readable tag for external service that study was imported from, e.g. HCA
   ##
   #
   # SWAGGER DEFINITIONS
@@ -736,6 +737,8 @@ class Study
   validates_uniqueness_of :url_safe_name, on: :update, message: ": The name you provided tried to create a public URL (%{value}) that is already assigned.  Please rename your study to a different value."
   validate :prevent_firecloud_attribute_changes, on: :update
   validates_presence_of :firecloud_project, :firecloud_workspace
+  validates_uniqueness_of :external_identifier, allow_blank: true
+
   # callbacks
   before_validation :set_url_safe_name
   before_validation :set_data_dir, :set_firecloud_workspace_name, on: :create

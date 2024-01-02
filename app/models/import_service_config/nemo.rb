@@ -5,6 +5,8 @@ module ImportServiceConfig
 
     attr_accessor :project_id
 
+    validates :file_id, :user_id, :branding_group_id, presence: true
+
     PREFERRED_TAXONS = %w[human mouse].freeze
 
     # name for logging when calling ImportService.import_from
@@ -109,6 +111,10 @@ module ImportServiceConfig
         library = load_study&.[]('technique')
       end
       study_file.expression_file_info.library_preparation_protocol = find_library_prep(library)
+      exp_fragment = expression_data_fragment(study_file)
+      study_file.ann_data_file_info.data_fragments << exp_fragment
+      http_url = file_access_info(protocol: :http)&.[]('url')
+      study_file.external_link_url = http_url if http_url
       study_file
     end
 
@@ -121,7 +127,7 @@ module ImportServiceConfig
     #   - (RuntimeError) => if either study or study_file fail to save correctly
     #   - (ArgumentError) => if no file_id is provided
     def import_from_service
-      raise ArgumentError, 'must provide file_id' if file_id.blank?
+      raise configuration.errors.full_messages.join(', ') unless valid?
 
       traverse_associations! unless study_id
       study = populate_study

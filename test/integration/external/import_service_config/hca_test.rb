@@ -11,6 +11,7 @@ module ImportServiceConfig
       @attributes = {
         file_id: 'b0517500-b39e-4c7a-b2f0-794ddc725433',
         study_id: '85a9263b-0887-48ed-ab1a-ddfa773727b6',
+        obsm_key_names: %w[X_tsne X_umap],
         user_id: @user.id,
         branding_group_id: @branding_group.id
       }
@@ -29,6 +30,7 @@ module ImportServiceConfig
       @attributes.each do |name, value|
         assert_equal value, config.send(name)
       end
+      assert_equal @attributes[:obsm_key_names], config.obsm_keys
     end
 
     test 'should reference correct methods' do
@@ -109,12 +111,18 @@ module ImportServiceConfig
       assert scp_study.full_description.present?
       assert_equal @user_id, scp_study.user_id
       assert_equal @branding_group_id, scp_study.branding_group_ids.first
+      assert_equal @configuration.service_name, scp_study.imported_from
       # populate StudyFile, using above study
       scp_study_file = @configuration.populate_study_file(scp_study.id)
       assert_not scp_study_file.use_metadata_convention
       assert_equal 'aldinger20.processed.h5ad', scp_study_file.upload_file_name
       assert_equal 'SPLiT-seq', scp_study_file.expression_file_info.library_preparation_protocol
+      assert_equal @configuration.service_name, scp_study_file.imported_from
       assert_not scp_study_file.ann_data_file_info.reference_file
+      @configuration.obsm_keys.each do |obsm_key_name|
+        assert scp_study_file.ann_data_file_info.find_fragment(data_type: :cluster, obsm_key_name:).present?
+      end
+      assert scp_study_file.ann_data_file_info.find_fragment(data_type: :expression).present?
     end
 
     test 'should import from service' do

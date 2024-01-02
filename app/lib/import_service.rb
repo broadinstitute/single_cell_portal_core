@@ -1,13 +1,13 @@
 # service for loading data into SCP from external APIs, such as the NeMO Identifiers API or HCA Azul service
 class ImportService
   extend ServiceAccountManager
-  include Loggable
+  extend Loggable
 
   # API clients that can use ImportService
   ALLOWED_CLIENTS = [NemoClient, HcaAzulClient].freeze
 
   # allowed configuration classes
-  ALLOWED_CONFIGS = [ImportServiceConfig::Nemo].freeze
+  ALLOWED_CONFIGS = [ImportServiceConfig::Nemo, ImportServiceConfig::Hca].freeze
 
   # generic handler to call an underlying client method and forward all positional/keyword params
   #
@@ -38,17 +38,22 @@ class ImportService
     raise "unsupported config: #{config_class}" unless defined?(config_class) && ALLOWED_CONFIGS.include?(config_class)
 
     configuration = config_class.new(...)
+    unless configuration.valid?
+      raise configuration.errors.full_messages.join(', ')
+    end
+
     begin
       study, study_file = configuration.import_from_service
-      # TODO: uncomment this block after file parsing is enabled for NeMO and SCP-5400 is complete
       # extra work will be required but is unknown until we have the dataset (e.g. populating AnnData data_fragments)
-      # identifier = "#{study.accession} (#{study.external_identifier})"
-      # log_message "Ingesting file: #{study_file.upload_file_name} from imported study #{identifier}"
-      # FileParseService.run_parse_job(study_file, study, study.user)
+      identifier = "#{study.accession} (#{study.external_identifier})"
+      log_message "Ingesting file: #{study_file.upload_file_name} (#{study_file.external_identifier}) from imported study #{identifier}"
+      FileParseService.run_parse_job(study_file, study, study.user)
       [study, study_file]
-    rescue RuntimeError, RestClient::NotFound, Google::Apis::ClientError => e
+    rescue RuntimeError, RestClient::Exception, Google::Apis::ClientError => e
       log_message("Error importing from #{config_class}: #{e.class} - #{e.message}", level: :error)
-      ErrorTracker.report_exception(e, config.user)
+      ErrorTracker.report_exception(e, configuration.user, configuration)
+      # don't run cleanup as it potentially could delete an existing study/file
+      # this is handled in ImportServiceConfig
       nil
     end
   end
@@ -136,6 +141,9 @@ class ImportService
   # * *params*
   #   - +study+ (Study) => study from which to remove Terra workspace
   def self.remove_study_workspace(study)
+    # first check if a study already exists using this external_identifer to prevent accidental workspace deletion
+    return false if Study.where(external_identifier: study.external_identifier, :id.ne => study.id).exists?
+
     if ApplicationController.firecloud_client.workspace_exists?(study.firecloud_project, study.firecloud_workspace)
       ApplicationController.firecloud_client.delete_workspace(study.firecloud_project, study.firecloud_workspace)
     end
