@@ -92,7 +92,8 @@ const Fields = {
         // (the annotation's actual name), we don't cache user annotation values
         fields.push('annotation')
       } else if (cachedAnnotation.then && !promises.includes(cachedAnnotation)) {
-        promises.push([cachedAnnotation, annotsEntry.annotParams])
+        // promises.push([cachedAnnotation, annotsEntry.annotParams])
+        promises.push(cachedAnnotation)
       }
     },
     merge: (entry, scatter) => {
@@ -204,6 +205,7 @@ export function createCache() {
       if (fields.includes('expression')) {
         Fields.expression.putInEntry(cacheEntry, genes, consensus, apiCallPromise)
       }
+      console.log('cache.fetchCluster 1, in if fields.length, apiCallPromise', apiCallPromise)
     } else if (expressionArray) {
       console.log('cache.fetchCluster 2, in if/else, expressionArray')
       apiCallPromise = Promise.resolve([
@@ -226,6 +228,7 @@ export function createCache() {
           requestStart: performance.now()
         }
       ])
+      console.log('cache.fetchCluster, 2 in if/else, apiCallPromise', apiCallPromise)
     } else {
       console.log('cache.fetchCluster, 3 in else')
       apiCallPromise = Promise.resolve([
@@ -248,8 +251,13 @@ export function createCache() {
           requestStart: performance.now()
         }
       ])
+      console.log('cache.fetchCluster, 3 in else, apiCallPromise', apiCallPromise)
     }
+
+    console.log('in cache.fetchCluster, before promises.push, apiCallPromise', apiCallPromise)
     promises.push(apiCallPromise)
+
+    console.log('in cache.fetchCluster, promises', promises)
 
     // Wait for completion of all promises for fetchCluster API calls, then merge them
     return Promise.all(promises).then(resultArray => {
@@ -278,7 +286,9 @@ export function createCache() {
 
 
   /** adds the data for a given study/clusterName, overwriting any previous entry */
-  cache._mergeClusterResponse = (accession, clusterResponse, requestedCluster, requestedAnnotation, requestedSubsample, requestedGenes) => {
+  cache._mergeClusterResponse = (
+    accession, clusterResponse, requestedCluster, requestedAnnotation, requestedSubsample, requestedGenes
+  ) => {
     console.log('in mergeClusterResponse')
     const scatter = clusterResponse[0]
     const cacheEntry = cache._findOrCreateEntry(accession, scatter.cluster, scatter.subsample)
@@ -291,6 +301,7 @@ export function createCache() {
       cache._putEntry(accession, requestedCluster, requestedSubsample, cacheEntry)
     }
 
+    console.log('in mergeClusterResponse, scatter', scatter)
     console.log('in mergeClusterResponse, scatter.annotParams before', scatter.annotParams)
     console.log('in mergeClusterResponse, cacheEntry.scatter', cacheEntry.scatter)
 
