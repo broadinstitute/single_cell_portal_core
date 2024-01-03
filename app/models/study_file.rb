@@ -764,6 +764,18 @@ class StudyFile
     end
   end
 
+  # determine how this file was sent to SCP
+  # upload: directly through upload wizard UI
+  # bucket: through upload wizard, but specifying bucket path (no file upload)
+  # sync: via study sync method
+  def upload_trigger
+    if options[:upload_trigger]
+      options[:upload_trigger]
+    else
+      remote_location.present? ? 'sync' : 'upload'
+    end
+  end
+
   # convert all domain ranges from floats to integers
   def convert_all_ranges
     if self.file_type == 'Cluster'
@@ -797,12 +809,12 @@ class StudyFile
 
   # end path for a file when localizing during a parse
   def download_location
-    self.remote_location.blank? ? File.join(self.id, 'original', self.upload_file_name) : self.remote_location
+    remote_location.presence || File.join(id, 'original', upload_file_name)
   end
 
   # for constructing a path to a file in a Google bucket
   def bucket_location
-    self.remote_location.blank? ? self.upload_file_name : self.remote_location
+    remote_location.presence || upload_file_name
   end
 
   def local_location
@@ -1468,6 +1480,9 @@ class StudyFile
   # get upload information from remote_location, if specified
   # can happen during normal upload when using bucket path option
   def upload_from_remote_location
+    # first sanitize remote_location to remove gs:// or bucket_id
+    trimmed_path = self.remote_location.gsub(%r{(gs://)?#{study.bucket_id}/?}, '')
+    self.remote_location = trimmed_path
     remote = ApplicationController.firecloud_client.execute_gcloud_method(
       :get_workspace_file, 0, study.bucket_id, self.remote_location
     )
@@ -1479,6 +1494,8 @@ class StudyFile
       self.upload_content_type = remote.content_type
       self.upload_file_size = remote.size
       self.generation = remote.generation
+      # special trigger setting for Mixpanel reporting
+      self.options.merge!(upload_trigger: 'bucket')
     end
   end
 

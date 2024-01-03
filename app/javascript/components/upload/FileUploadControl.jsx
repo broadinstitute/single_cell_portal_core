@@ -7,6 +7,9 @@ import { StudyContext } from '~/components/upload/upload-utils'
 import ValidateFile from '~/lib/validation/validate-file'
 import ValidationMessage from '~/components/validation/ValidationMessage'
 import { TextFormField } from './form-components'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faExternalLinkSquareAlt } from '@fortawesome/free-solid-svg-icons'
+import { Popover, OverlayTrigger } from 'react-bootstrap'
 
 // File types which let the user set a custom name for the file in the UX
 const FILE_TYPES_ALLOWING_SET_NAME = ['Cluster', 'Gene List']
@@ -34,13 +37,25 @@ export default function FileUploadControl({
   const toggleText = showUploadButton ? 'Use bucket path' : 'Upload local file'
   const toggleTooltip = showBucketPath ?
     'Upload a file from your computer' :
-    'Input a path to a file that is already in the GCP bucket'
+    "Input a path to a file that is already in this study's bucket"
   const uploadToggle = <span
     className='btn btn-default'
     onClick={ToggleUploadButton}
     data-toggle="tooltip"
     data-original-title={toggleTooltip}>{toggleText}
   </span>
+
+  const bucketPopover = <Popover id={`bucket-upload-help-${file._id}`}>
+    <a href='https://singlecell.zendesk.com/hc/en-us/articles/360061006011' target='_blank'>
+      Learn how to upload large files
+    </a>
+  </Popover>
+  const googleBucketLink =
+    <OverlayTrigger trigger={['hover', 'focus']} rootClose placement="top" overlay={bucketPopover} delayHide={1500}>
+      <a className='btn btn-default'
+         href={`https://accounts.google.com/AccountChooser?continue=https://console.cloud.google.com/storage/browser/${study.bucket_id}`}
+         target='_blank'><FontAwesomeIcon icon={faExternalLinkSquareAlt} /> Browse bucket</a>
+    </OverlayTrigger>
 
   /** handle user interaction with the file input */
   async function handleFileSelection(e) {
@@ -134,11 +149,13 @@ export default function FileUploadControl({
       <TextFormField isInline={true}
                      label="Bucket path"
                      fieldName="remote_location"
-                     placeholderText="Path to file in GCP bucket"
+                     placeholderText="Path to file in GCP bucket or "
                      inlineLength={60}
                      file={file}
                      updateFile={updateFile}/>
     }
+    &nbsp;&nbsp;
+    { !isFileOnServer && showBucketPath && googleBucketLink }
 
     &nbsp;&nbsp;
     { !isFileOnServer && uploadToggle }
