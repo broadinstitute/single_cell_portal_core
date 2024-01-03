@@ -588,8 +588,6 @@ export async function fetchCluster({
   isAnnotatedScatter=null, isCorrelatedScatter=null, expressionArray=null,
   fields=[], mock=false
 }) {
-  console.log('in fetchCluster')
-
   const apiUrl = fetchClusterUrl({
     studyAccession, cluster, annotation, subsample,
     consensus, genes, isAnnotatedScatter, isCorrelatedScatter, fields

@@ -273,7 +273,6 @@ export function createCache() {
   ) => {
     const scatter = clusterResponse[0]
     const cacheEntry = cache._findOrCreateEntry(accession, scatter.cluster, scatter.subsample)
-    window.dataCacheEntry = cacheEntry
 
     if (scatter.cluster !== requestedCluster || scatter.subsample !== requestedSubsample) {
       // if the returned cluster name is different (likely because we requested '_default' and then

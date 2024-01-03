@@ -239,14 +239,18 @@ describe('cache handles simultaneous gene/cluster plots', () => {
       cluster: '_default',
       genes: ['Apoe'],
       annotation: {
-        name: 'species',
+        name: 'buzzwords',
+        scope: 'study'
+      },
+      annotParams: {
+        name: 'buzzwords',
         scope: 'study'
       },
       subsample: 'all'
     })
     const expectedApiParams = {
       annotation: {
-        name: 'species',
+        name: 'buzzwords',
         scope: 'study'
       },
       cluster: '_default',
@@ -264,7 +268,11 @@ describe('cache handles simultaneous gene/cluster plots', () => {
       studyAccession: 'SCP1',
       cluster: '_default',
       annotation: {
-        name: 'species',
+        name: 'buzzwords',
+        scope: 'study'
+      },
+      annotParams: {
+        name: 'buzzwords',
         scope: 'study'
       },
       subsample: 'all'
