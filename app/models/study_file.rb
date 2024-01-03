@@ -633,12 +633,16 @@ class StudyFile
   ###
 
   # callbacks
-  before_validation   :set_file_name_and_data_dir, on: :create
+  before_validation :set_file_name_and_data_dir, on: :create
+  before_validation :upload_from_remote_location,
+                    on: :create,
+                    if: proc { |f| f.remote_location.present? && f.upload_file_name.blank? }
   before_save         :sanitize_name
   after_save          :set_cluster_group_ranges, :set_options_by_file_type
   after_update        :handle_clustering_fragment_updates
 
-  validates_uniqueness_of :upload_file_name, scope: :study_id, unless: Proc.new { |f| f.human_data? }
+  validates_presence_of :upload_file_name, unless: proc { |f| f.human_data? }
+  validates_uniqueness_of :upload_file_name, scope: :study_id, unless: proc { |f| f.human_data? }
   validates_presence_of :name
   validates_presence_of :human_fastq_url, if: proc { |f| f.human_data }
   validates_format_of :human_fastq_url, with: URI.regexp,
@@ -1117,7 +1121,7 @@ class StudyFile
         !self.study.cluster_groups.where(is_subsampling: true).any?
       when 'Cluster'
         cluster = ClusterGroup.find_by(study_file_id: self.id)
-        cluster.present? && !cluster.is_subsampling?
+        cluster.nil? || !cluster.is_subsampling?
       else
         true
       end
@@ -1458,6 +1462,23 @@ class StudyFile
       'convention_required', false, *user_accounts, study
     )
       errors.add(:use_metadata_convention, 'must be "true" to ensure data complies with the SCP metadata convention')
+    end
+  end
+
+  # get upload information from remote_location, if specified
+  # can happen during normal upload when using bucket path option
+  def upload_from_remote_location
+    remote = ApplicationController.firecloud_client.execute_gcloud_method(
+      :get_workspace_file, 0, study.bucket_id, self.remote_location
+    )
+    if remote.nil?
+      errors.add(:remote_location, "is invalid - no file found at #{self.remote_location}")
+    else
+      self.status = 'uploaded'
+      self.upload_file_name = remote.name.split('/').last
+      self.upload_content_type = remote.content_type
+      self.upload_file_size = remote.size
+      self.generation = remote.generation
     end
   end
 

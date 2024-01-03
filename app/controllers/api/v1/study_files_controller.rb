@@ -388,7 +388,7 @@ module Api
           study.update(default_options: options)
         end
 
-        if safe_file_params[:upload].present? && !is_chunked
+        if safe_file_params[:upload].present? && !is_chunked || safe_file_params[:remote_location].present?
           complete_upload_process(study_file, parse_on_upload)
         end
       end

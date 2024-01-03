@@ -127,6 +127,8 @@ export function formatFileForApi(file, chunkStart, chunkEnd) {
     } else {
       data.append('study_file[upload]', file.uploadSelection)
     }
+  }
+  if (file.uploadSelection || file.remote_location) {
     data.append('study_file[parse_on_upload]', true)
   }
   if (file.options) {
