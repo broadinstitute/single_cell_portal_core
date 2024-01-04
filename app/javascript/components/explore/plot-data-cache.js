@@ -81,7 +81,6 @@ const Fields = {
     putInEntry: (entry, annotationName, annotationScope, annotations, annotParams) => {
       const key = getAnnotationKey(annotationName, annotationScope)
       // we only cache one annotation at a time, so for now, delete any others
-      // entry.annotations = {}
       entry.annotations[key] = { annotations, annotParams }
     },
     addFieldsOrPromise: (entry, fields, promises, annotationName, annotationScope) => {
@@ -92,7 +91,6 @@ const Fields = {
         // (the annotation's actual name), we don't cache user annotation values
         fields.push('annotation')
       } else if (cachedAnnotation.then && !promises.includes(cachedAnnotation)) {
-        // promises.push([cachedAnnotation, annotsEntry.annotParams])
         promises.push(cachedAnnotation)
       }
     },
@@ -162,8 +160,6 @@ const Fields = {
   }
 }
 
-window.PlotDataCacheFields = Fields
-
 /**
  * Get a fresh, empty cache.
  */
@@ -208,7 +204,7 @@ export function createCache() {
           consensus,
           cluster,
           subsample,
-          // annotParams: annotation,
+          annotParams: annotation,
           data: { expression: expressionArray },
           allDataFromCache: true // set a flag indicating that no fresh request to the server was needed
         }, {
@@ -229,7 +225,7 @@ export function createCache() {
           consensus,
           cluster,
           subsample,
-          // annotParams: annotation,
+          annotParams: annotation,
           data: {},
           allDataFromCache: true // set a flag indicating that no fresh request to the server was needed
         }, {
@@ -244,7 +240,6 @@ export function createCache() {
         }
       ])
     }
-
     promises.push(apiCallPromise)
 
     // Wait for completion of all promises for fetchCluster API calls, then merge them
@@ -300,7 +295,6 @@ export function createCache() {
     if (scatter.genes.length && scatter.genes.join('') === requestedGenes.join('')) {
       Fields.expression.merge(cacheEntry, scatter)
     }
-
     return clusterResponse
   }
 

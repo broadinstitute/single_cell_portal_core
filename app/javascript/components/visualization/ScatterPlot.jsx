@@ -447,7 +447,6 @@ function RawScatterPlot({
             isCorrelatedScatter,
             expressionArray
           })
-
           // check that the data contains annotations needed for processing scatterplot
           if (respData1[0]?.data?.annotations?.length) {
             processScatterPlot(respData1, filteredCells)
