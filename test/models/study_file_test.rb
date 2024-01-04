@@ -83,11 +83,12 @@ class StudyFileTest < ActiveSupport::TestCase
   test 'expression file data validates' do
     # note that we don't (and shouldn't) actually *save* anything in this test,
     # so we use throwaway objects and ids.
-
+    blank_study = Study.new(data_dir: 'tmp')
     invalid_study_file = StudyFile.new(
-      study: Study.new,
+      study: blank_study,
       file_type: 'Expression Matrix',
       name: 'test_exp_validate',
+      upload_file_name: 'matrix.txt',
       taxon_id: Taxon.new.id,
       expression_file_info: ExpressionFileInfo.new(
         units: 'bad_value',
@@ -106,9 +107,10 @@ class StudyFileTest < ActiveSupport::TestCase
     assert_equal(expected_errors, invalid_study_file.errors.messages)
 
     valid_study_file = StudyFile.new(
-      study: Study.new,
+      study: blank_study,
       file_type: 'Expression Matrix',
       name: 'test_exp_validate',
+      upload_file_name: 'matrix.txt',
       taxon_id: Taxon.new.id,
       expression_file_info: ExpressionFileInfo.new(
         units: 'raw counts',
@@ -213,5 +215,26 @@ class StudyFileTest < ActiveSupport::TestCase
     )
     assert_not cluster_file.gzipped?
     assert cluster_file.can_gzip?
+  end
+
+  test 'should set upload via remote_location' do
+    mock = Minitest::Mock.new
+    mock.expect :nil?, false
+    mock.expect :name, 'cluster_example.tsv'
+    mock.expect :content_type, 'text/tab-separated-values'
+    mock.expect :size, 1.megabyte
+    mock.expect :generation, '1234567890'
+    ApplicationController.firecloud_client.stub :execute_gcloud_method, mock do
+      study_file = StudyFile.create!(
+        study: @study, file_type: 'Cluster', name: 'Testing Cluster', remote_location: 'cluster_example.tsv'
+      )
+      assert study_file.valid?
+      assert_equal 'cluster_example.tsv', study_file.upload_file_name
+      assert_equal 1.megabyte, study_file.upload_file_size
+      assert_equal 'text/tab-separated-values', study_file.upload_content_type
+      assert_equal '1234567890', study_file.generation
+      assert_equal 'bucket', study_file.upload_trigger
+      mock.verify
+    end
   end
 end

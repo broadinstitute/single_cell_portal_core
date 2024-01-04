@@ -641,7 +641,6 @@ class StudyFile
   after_save          :set_cluster_group_ranges, :set_options_by_file_type
   after_update        :handle_clustering_fragment_updates
 
-  validates_presence_of :upload_file_name, unless: proc { |f| f.human_data? }
   validates_uniqueness_of :upload_file_name, scope: :study_id, unless: proc { |f| f.human_data? }
   validates_presence_of :name
   validates_presence_of :human_fastq_url, if: proc { |f| f.human_data }
@@ -1328,7 +1327,7 @@ class StudyFile
     if self.name.blank?
       if self.upload_file_name.present?
         self.name = self.upload_file_name
-      elsif self.upload.present?
+      elsif self.upload.file.present?
         self.name = self.upload.file.filename
       end
     end

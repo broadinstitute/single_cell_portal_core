@@ -149,7 +149,7 @@ export default function FileUploadControl({
       <TextFormField isInline={true}
                      label="Bucket path"
                      fieldName="remote_location"
-                     placeholderText="Path to file in GCP bucket or "
+                     placeholderText="GS URL or path to file in GCP bucket"
                      inlineLength={60}
                      file={file}
                      updateFile={updateFile}/>
