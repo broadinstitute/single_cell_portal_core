@@ -502,7 +502,7 @@ module Api
         begin
           # make sure file is in FireCloud first
           unless human_data || @study_file.generation.blank? || @study_file.remote_location.present?
-            if ApplicationController.firecloud_client.execute_gcloud_method(:workspace_file_exists, 0, @study.bucket_id, @study_file.bucket_location)
+            if ApplicationController.firecloud_client.execute_gcloud_method(:workspace_file_exists?, 0, @study.bucket_id, @study_file.bucket_location)
               ApplicationController.firecloud_client.execute_gcloud_method(:delete_workspace_file, 0, @study.bucket_id, @study_file.bucket_location)
             end
           end
