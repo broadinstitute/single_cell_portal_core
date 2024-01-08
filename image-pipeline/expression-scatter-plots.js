@@ -5,7 +5,9 @@
  *
  * To use, ensure you're on VPN, `cd image-pipeline`, then:
  *
- * node expression-scatter-plots.js --accession="SCP24" # Staging, 1.3M cell study
+ * yarn install
+ * IS_LOCAL=1 NODE_TLS_REJECT_UNAUTHORIZED=0 node expression-scatter-plots.js --accession="SCP24" --environment="staging" --bucket="$BUCKET_ID_FOR_STUDY" --cluster="orig.ident" --cores="1" --debug; tput bel # 1.3M cell study
+ *
  */
 import { mkdir, writeFile, readFile, access } from 'node:fs/promises'
 import { createWriteStream } from 'node:fs'
@@ -17,8 +19,6 @@ import { gunzipSync, strFromU8 } from 'fflate'
 import puppeteer from 'puppeteer'
 import sharp from 'sharp'
 import { Storage } from '@google-cloud/storage'
-
-let numLogEntries = 0
 
 /** Print message with browser-tag preamble to local console and log file */
 function print(message, context={}) {
@@ -43,14 +43,47 @@ function isBardPost(request) {
 }
 
 /** Returns boolean for if request is relevant Bard / Mixpanel log */
-function isExpressionScatterPlotLog(request) {
+function isDownstreamExpressionScatterPlotRequest(request) {
   if (isBardPost(request)) {
     const payload = JSON.parse(request.postData())
     const props = payload.properties
-    return (payload.event === 'plot:scatter' && props.genes.length === 1)
+    return (
+      payload.event === 'plot:scatter' && props.genes.length === 1 ||
+      payload.event === 'init-cell-faceting'
+    )
   }
   return false
 }
+
+/**
+ * More memory- and time-efficient analog of Math.max
+ * From https://stackoverflow.com/a/13440842/10564415.
+*/
+function arrayMax(arr) {
+  let len = arr.length
+  let max = -Infinity
+  while (len--) {
+    if (arr[len] > max) {
+      max = arr[len]
+    }
+  }
+  return max
+}
+
+/**
+ * More memory- and time-efficient analog of Math.min
+ * From https://stackoverflow.com/a/13440842/10564415.
+*/
+function arrayMin(arr) {
+  let len = arr.length
+  let min = Infinity
+  while (len--) {
+    if (arr[len] < min) {
+      min = arr[len]
+    }
+  }
+  return min
+};
 
 /** In Explore view, search gene, await plot, save plot image locally */
 async function makeExpressionScatterPlotImage(gene, page, context) {
@@ -64,7 +97,7 @@ async function makeExpressionScatterPlotImage(gene, page, context) {
   // Wait for reliable signal that expression plot has finished rendering.
   // A Mixpanel / Bard log request always fires immediately upon render.
   await page.waitForRequest(request => {
-    return isExpressionScatterPlotLog(request, gene)
+    return isDownstreamExpressionScatterPlotRequest(request, gene)
   })
 
   page.waitForTimeout(250) // Wait for janky layout to settle
@@ -87,7 +120,7 @@ async function makeExpressionScatterPlotImage(gene, page, context) {
   })
 
   // Height and width of plot, x- and y-offset from viewport origin
-  const clipDimensions = { height: 595, width: 660, x: 5, y: 310 }
+  const clipDimensions = { height: 595, width: 595, x: 5, y: 200 }
 
   const webpFileName = `${gene}.webp`
   // Take a screenshot, save it locally
@@ -100,19 +133,24 @@ async function makeExpressionScatterPlotImage(gene, page, context) {
     omitBackground: true
   })
 
-  // Hardcoded x, y placeholders below derived in processScatterPlots via:
-  // console.log(Math.min(...plotlyTraces[0].x))
-  // console.log(Math.max(...plotlyTraces[0].x))
-  // console.log(Math.min(...plotlyTraces[0].y))
-  // console.log(Math.max(...plotlyTraces[0].y))
-  // These ought to be parseable via the `coordinates` array
+  const expressionArray = JSON.parse(expressionByGene[gene])
+  const expressionMin = arrayMin(expressionArray)
+  const expressionMax = arrayMax(expressionArray)
+  const xMin = arrayMin(coordinates.x)
+  const xMax = arrayMax(coordinates.x)
+  const yMin = arrayMin(coordinates.y)
+  const yMax = arrayMax(coordinates.y)
 
   // Generalize if this moves beyond prototype
   const imageDescription = JSON.stringify({
-    expression: [0, 2.433], // min, max of expression array
-    x: [-12.568, 8.749], // min, max of x coordinates array
-    y: [-15.174, 10.761], // min, max of y coordinates array
-    z: []
+    ranges: {
+      expression: [expressionMin, expressionMax],
+      x: [xMin, xMax],
+      y: [yMin, yMax],
+      z: []
+    },
+    description,
+    titles
   })
 
   // Embed Plotly.js settings directly into image file's Exif data
@@ -145,8 +183,8 @@ async function makeExpressionScatterPlotImage(gene, page, context) {
 async function prefetchExpressionData(gene, context) {
   const { accession, preamble, origin, fetchOrigin, cluster } = context
 
-  const extension = values['json-dir'] && initExpressionResponse ? '.gz' : ''
-  const jsonPath = `${jsonFpStem}${gene}.json${extension}`
+  // const extension = values['json-dir'] && initExpressionResponse ? '.gz' : ''
+  // const jsonPath = `${jsonFpStem}${gene}.json${extension}`
 
   print(`Prefetching JSON for ${gene}`, context)
 
@@ -165,9 +203,11 @@ async function prefetchExpressionData(gene, context) {
   // }
 
   let jsonString
+
+  const apiStem = `${fetchOrigin}/single_cell/api/v1`
+
   if (!initExpressionResponse) {
     // Configure URLs
-    const apiStem = `${fetchOrigin}/single_cell/api/v1`
     const allFields = 'coordinates%2Ccells%2Cannotation%2Cexpression'
     const params = `fields=${allFields}&gene=${gene}&subsample=all&isImagePipeline=true`
     const url = `${apiStem}/studies/${accession}/clusters/_default?${params}`
@@ -183,17 +223,36 @@ async function prefetchExpressionData(gene, context) {
       if ('z' in json.data) {
         coordinates.z = json.data.z
       }
+      description = json.description
+      titles = json.axes.titles
+
       initExpressionResponse = json
     }
   }
 
-  const fromFilePath = `_scp_internal/cache/expression_scatter/data/${cluster}/${gene}.json`
-  const buffer = await downloadFromBucket(fromFilePath, context)
-  const expressionArrayString = buffer.toString()
+  let expressionArrayString
 
-  if (values['json-dir']) {
-    print('Populated initExpressionResponse for development run', context)
-    return
+  // Setting `useDataCache=false` can help when developing image pipeline in a non-canonical study
+  const useDataCache = true
+  if (useDataCache) {
+    const fromFilePath = `_scp_internal/cache/expression_scatter/data/${cluster}/${gene}.json`
+    expressionArrayString = await downloadFromBucket(fromFilePath, context)
+
+    if (values['json-dir']) {
+      print('Populated initExpressionResponse for development run', context)
+      return
+    }
+  } else {
+    // Enable bypassing JSON data cache, e.g. for development or special production runs
+    const params = `fields=expression&gene=${gene}&subsample=all&isImagePipeline=true`
+    const url = `${apiStem}/studies/${accession}/clusters/_default?${params}`
+
+    // Fetch data
+    const response = await fetch(url)
+    const json = await response.json()
+
+    expressionArrayString = `[${ json.data.expression.toString() }]`
+    print(`Fetched expression data from URL: ${ url}`, context)
   }
 
   expressionByGene[gene] = expressionArrayString
@@ -208,7 +267,7 @@ function isAlwaysIgnorable(request) {
   const url = request.url()
   const isGA = url.includes('google-analytics')
   const isSentry = url.includes('ingest.sentry.io')
-  const isNonExpPlotBardPost = isBardPost(request) && !isExpressionScatterPlotLog(request)
+  const isNonExpPlotBardPost = isBardPost(request) && !isDownstreamExpressionScatterPlotRequest(request)
   const isIgnorableLog = isGA || isSentry || isNonExpPlotBardPost
   const isViolinPlot = url.includes('/expression/violin')
   const isIdeogram = url.includes('/ideogram@')
@@ -441,6 +500,9 @@ async function run() {
   // Cache for X, Y, and possibly Z coordinates
   coordinates = {}
 
+  // Expression plot axis titles
+  titles = {}
+
   const accession = values.accession
   print(`Accession: ${accession}`, { bucket })
 
@@ -463,11 +525,19 @@ async function run() {
     // json = JSON.parse(text) // Helpful to debug errors
     json = await response.json()
   } catch (error) {
+    console.log('')
     console.log('Failed to fetch:')
     console.log(exploreApiUrl)
-    throw error
+
+    if (fetchOrigin.includes('staging')) {
+      console.log('Tip: ensure you are connected to the VPN.')
+    }
+
+    console.log('')
+    exit(1)
   }
-  const uniqueGenes = json.uniqueGenes
+  // const uniqueGenes = json.uniqueGenes
+  const uniqueGenes = await fetchRankedGenes({ bucket })
   console.log(`Total number of genes: ${uniqueGenes.length}`)
 
   const processPromises = []
@@ -500,15 +570,39 @@ async function run() {
   await Promise.all(processPromises)
 }
 
+/** Return list of relevance-ranked genes, for which images will be cached */
+async function fetchRankedGenes(context) {
+  const rankedGenes = []
+
+  const fromFilePath = `_scp_internal/ranked_genes/ranked_genes.tsv`
+  const content = await downloadFromBucket(fromFilePath, context)
+
+  const lines = content.split('\n')
+  lines.forEach(line => {
+    if (line[0] === '#') {return}
+    const columns = line.split('\t')
+    const gene = columns[0]
+    rankedGenes.push(gene)
+  })
+
+  console.log('')
+  console.log(`Limiting image pipeline to top ${rankedGenes.length} genes for this study:`)
+  console.log(rankedGenes)
+  console.log('')
+
+  return rankedGenes
+}
+
 /** Fetch a file from a bucket to PAPI VM, return contents */
 async function downloadFromBucket(fromFilePath, context) {
-  const bucket = context.bucket // 'broad-singlecellportal-staging-testing-data'
-  const content = await storage.bucket(bucket).file(fromFilePath).download()
+  const bucketName = context.bucket // 'broad-singlecellportal-staging-testing-data'
+  const bucket = await storage.bucket(bucketName)
+  const content = await bucket.file(fromFilePath).download()
   print(
-    `File "${fromFilePath}" downloaded from bucket "${bucket}"`,
+    `File "${fromFilePath}" downloaded from bucket "${bucketName}"`,
     context
   )
-  return content
+  return content.toString()
 }
 
 /** Upload a file from a local path to a destination path in a Google bucket */
@@ -569,6 +663,10 @@ async function complete(error=null) {
   await uploadLog(bucket)
 }
 
+const logFileWriteStream = createWriteStream('log.txt')
+
+let numLogEntries = 0
+
 const startTime = Date.now()
 // Adds a unique signature to output; helpful when debugging
 
@@ -577,11 +675,8 @@ const timestamp = new Date().toISOString().split('.')[0].replace(/\:/g, '')
 const nonceName = '' // e.g. "eweitz_"
 const nonce = `_${nonceName}${timestamp}`
 
-const storage = new Storage()
-
 const timeoutMinutes = 2
-
-const logFileWriteStream = createWriteStream('log.txt')
+const storage = new Storage()
 
 const { values, numCPUs, origin, stagingHost, fetchOrigin } = await parseCliArgs()
 
@@ -593,6 +688,8 @@ if (values['debug'] || values['debug-headless']) {
 let imagesDir
 let jsonFpStem
 let coordinates
+let titles
+let description
 let initExpressionResponse
 const expressionByGene = {}
 
