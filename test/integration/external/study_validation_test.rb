@@ -244,11 +244,9 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
 
       mock = Minitest::Mock.new
       mock.expect :services_available?, true, [String, String]
-      mock.expect :execute_gcloud_method,
-                  Google::Cloud::Storage::File.new,
-                  [:get_workspace_file, Integer, String, String]
       mock.expect :execute_gcloud_method, true, [:workspace_file_exists?, Integer, String, String]
       mock.expect :execute_gcloud_method, true, [:delete_workspace_file, Integer, String, String]
+
       ApplicationController.stub :firecloud_client, mock do
         # request delete
         puts 'Requesting delete for metadata file'

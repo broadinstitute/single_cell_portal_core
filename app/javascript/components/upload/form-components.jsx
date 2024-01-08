@@ -17,6 +17,14 @@ export function AddFileButton({ newFileTemplate, addNewFile, text='Add file' }) 
   </div>
 }
 
+export function FormatDeleteConfirmation({file}) {
+  if (file?.remote_location) {
+    return 'will remain in the bucket because you provided a remote path to an existing file.'
+  } else {
+    return 'will be removed from the bucket.'
+  }
+}
+
 /** renders a basic label->value text field in a bootstrap form control */
 export function TextFormField({ label, fieldName, file, updateFile, placeholderText='',
   isDisabled=false, isInline=false, inlineLength=null
@@ -98,12 +106,7 @@ export function SaveDeleteButtons({ file, updateFile, saveFile, deleteFile, vali
     </button>
   }
 
-  let deleteText
-  if (file.remote_location) {
-    deleteText = ' will remain in the bucket because you provided a remote path to an existing file.'
-  } else {
-    deleteText = ' will be removed from the bucket.'
-  }
+  const deleteText = FormatDeleteConfirmation(file)
 
   return <div className="flexbox button-panel">
     { saveButton }

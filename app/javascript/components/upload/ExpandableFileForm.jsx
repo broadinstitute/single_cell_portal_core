@@ -6,6 +6,7 @@ import { Popover, OverlayTrigger } from 'react-bootstrap'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import FileUploadControl from './FileUploadControl'
 import Button from 'react-bootstrap/lib/Button'
+import { FormatDeleteConfirmation } from '~/components/upload/form-components'
 
 /** renders its children inside an expandable form with a header for file selection */
 export default function ExpandableFileForm({
@@ -135,12 +136,7 @@ export function SaveDeleteButtons({
     </Button>
   }
 
-  let deleteText
-  if (file.remote_location) {
-    deleteText = ' remain in the bucket because you provided a remote path to an existing file.'
-  } else {
-    deleteText = ' be removed from the bucket.'
-  }
+  const deleteText = FormatDeleteConfirmation(file)
 
   return <div className="flexbox-align-center button-panel">
     <SaveButton
