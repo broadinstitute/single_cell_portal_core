@@ -131,6 +131,11 @@ export function formatFileForApi(file, chunkStart, chunkEnd) {
   if (file.uploadSelection || file.remote_location) {
     data.append('study_file[parse_on_upload]', true)
   }
+  // set name attribute if using remote_location
+  if (file.remote_location && !file.name) {
+    const newName = file.remote_location.split('/').slice(-1)[0]
+    data.append('study_file[name]', newName)
+  }
   if (file.options) {
     Object.keys(file.options).forEach(key => {
       data.append(`study_file[options][${key}]`, file.options[key])
