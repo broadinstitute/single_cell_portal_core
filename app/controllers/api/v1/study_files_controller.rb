@@ -436,7 +436,8 @@ module Api
           else
             # make sure we bundle non-parseable files if appropriate
             FileParseService.create_bundle_from_file_options(study_file, @study)
-            @study.delay.send_to_firecloud(study_file) # send data to FireCloud if upload was performed
+            # send data to FireCloud only if upload was performed
+            @study.delay.send_to_firecloud(study_file) unless study_file.remote_location.present?
           end
         end
       end
