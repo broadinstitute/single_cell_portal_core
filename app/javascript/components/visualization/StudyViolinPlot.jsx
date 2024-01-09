@@ -34,6 +34,10 @@ function ViolinPlotTitle({ cluster, annotation, genes, consensus }) {
   )
 }
 
+function filterResults(results, filteredCells) {
+  const filteredResults = []
+}
+
 /** Displays a violin plot of expression data for the given gene and study
  *
  * @param studyAccession {String} the study accession
@@ -60,21 +64,28 @@ function RawStudyViolinPlot({
   const [renderedAnnotation, setRenderedAnnotation] = useState('')
   const { ErrorComponent, setShowError, setError } = useErrorMessage()
 
-
   /** renders received expression data from the server */
-  function renderData([results, perfTimes]) {
+  function renderData([results, perfTimes], filteredCells) {
     let distributionPlotToUse = distributionPlot
     if (!distributionPlotToUse) {
       distributionPlotToUse = defaultDistributionPlot
     }
 
+    console.log('in renderData, results', results)
+    console.log('in renderData, filteredCells', filteredCells)
+    const filteredResults = filterResults(results, filteredCells)
+
     const startTime = performance.now()
 
-    renderViolinPlot(graphElementId, results, {
-      plotType: distributionPlotToUse,
-      showPoints: distributionPoints,
-      dimensions
-    })
+    renderViolinPlot(
+      graphElementId,
+      results,
+      {
+        plotType: distributionPlotToUse,
+        showPoints: distributionPoints,
+        dimensions
+      }
+    )
 
     perfTimes.plot = performance.now() - startTime
 
@@ -104,12 +115,15 @@ function RawStudyViolinPlot({
       annotation.scope,
       subsample,
       consensus
-    ).then(renderData).catch(error => {
-      Plotly.purge(graphElementId)
-      setError(error)
-      setShowError(true)
-      setIsLoading(false)
-    })
+    )
+      .then(([results, perfTimes]) => {
+        renderData([results, perfTimes], filteredCells)
+      }).catch(error => {
+        Plotly.purge(graphElementId)
+        setError(error)
+        setShowError(true)
+        setIsLoading(false)
+      })
   }, [ // do a load from the server if any of the paramenters passed to fetchExpressionViolin have changed
     studyAccession,
     genes[0],
@@ -117,8 +131,8 @@ function RawStudyViolinPlot({
     annotation.name,
     annotation.scope,
     subsample,
-    consensus
-    // filteredCells.join(',') // TODO (SCP-5275): Cell faceting for violin plots
+    consensus,
+    filteredCells?.join(',')
   ])
 
   // useEffect for handling render param re-renders
@@ -173,6 +187,7 @@ export default StudyViolinPlot
 
 /** Formats expression data for Plotly, draws violin (or box) plot */
 function renderViolinPlot(target, results, { plotType, showPoints, dimensions }) {
+  console.log('results.values', results.values)
   const traceData = getViolinTraces(results.values, showPoints, plotType)
   const layout = getViolinLayout(results.y_axis_title, dimensions)
   Plotly.newPlot(target, traceData, layout)

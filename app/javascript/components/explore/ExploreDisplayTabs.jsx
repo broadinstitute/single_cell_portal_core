@@ -405,6 +405,7 @@ export default function ExploreDisplayTabs({
     const [newFilteredCells, newFilterCounts] = filterCells(
       selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, rawFacets
     )
+    console.log('newFilteredCells', newFilteredCells)
 
     // Update UI
     setFilteredCells(newFilteredCells)

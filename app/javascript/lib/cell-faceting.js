@@ -393,6 +393,8 @@ export async function initCellFaceting(
 
   // Prioritize and fetch annotation facets for all cells
   const selectedAnnotId = getIdentifierForAnnotation(selectedAnnot)
+  console.log('in initCellFaceting, selectedAnnot', selectedAnnot)
+  console.log('in initCellFaceting, selectedAnnotId', selectedAnnotId)
   const eligibleAnnots =
     getGroupAnnotationsForClusterAndStudy(allAnnots, selectedCluster)
       .map(annot => { // Add identifiers to incoming annotations
@@ -403,8 +405,8 @@ export async function initCellFaceting(
         return (
           annot.values.length > 1 &&
           !annot.identifier.endsWith('invalid') &&
-          !annot.identifier.endsWith('user') &&
-          annot.identifier !== selectedAnnotId
+          !annot.identifier.endsWith('user')
+          // && annot.identifier !== selectedAnnotId
         )
       })
 
@@ -442,6 +444,7 @@ export async function initCellFaceting(
   const facets = allRelevanceSortedFacets.map(facet => {
     const isLoaded = loadedFacets.some(loadedFacet => facet.annotation === loadedFacet.annotation)
     facet.isLoaded = isLoaded
+    facet.isSelectedAnnotation = facet.annotation === selectedAnnotId
     return facet
   })
 
@@ -465,7 +468,7 @@ export async function initCellFaceting(
   cellFaceting.perfTimes = perfTimes
 
   // Below line is worth keeping, but only uncomment to debug in development
-  // window.SCP.cellFaceting = cellFaceting
+  window.SCP.cellFaceting = cellFaceting
   return cellFaceting
 }
 
