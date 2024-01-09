@@ -393,8 +393,6 @@ export async function initCellFaceting(
 
   // Prioritize and fetch annotation facets for all cells
   const selectedAnnotId = getIdentifierForAnnotation(selectedAnnot)
-  console.log('in initCellFaceting, selectedAnnot', selectedAnnot)
-  console.log('in initCellFaceting, selectedAnnotId', selectedAnnotId)
   const eligibleAnnots =
     getGroupAnnotationsForClusterAndStudy(allAnnots, selectedCluster)
       .map(annot => { // Add identifiers to incoming annotations

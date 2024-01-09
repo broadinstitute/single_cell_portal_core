@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import _uniqueId from 'lodash/uniqueId'
 import Plotly from 'plotly.js-dist'
+import { fetchCluster } from '~/lib/scp-api'
 
 import { fetchExpressionViolin } from '~/lib/scp-api'
 import PlotUtils from '~/lib/plot'
@@ -34,27 +35,109 @@ function ViolinPlotTitle({ cluster, annotation, genes, consensus }) {
   )
 }
 
-function filterResults(results, filteredCells) {
-  const filteredResults = []
+window.SCP.violinCellIndexes = {}
+
+/** Set indexes for each cell in violin plot */
+function setViolinCellIndexes(gene, results, allCellNames) {
+  const violinCellIndexes = {}
+  Object.keys(results.values).forEach(group => {
+    violinCellIndexes[group] = []
+    const cellNames = results.values[group].cells
+    // console.log('results.values[group]', results.values[group])
+    // console.log('group, cellNames.length', group, cellNames.length)
+    for (let i = 0; i < cellNames.length; i++) {
+      const cellName = cellNames[i]
+      const cellIndex = allCellNames.indexOf(cellName)
+      violinCellIndexes[group].push(cellIndex)
+    }
+  })
+  window.SCP.violinCellIndexes[gene] = violinCellIndexes
 }
 
-/** Displays a violin plot of expression data for the given gene and study
+/** Get array of names for all cells in clustering */
+async function getAllCellNames(studyAccession, cluster, annotation) {
+  const clusterData = await fetchCluster({ studyAccession, cluster, annotation, subsample: 'All' })
+  const allCellNames = clusterData[0].data.cells
+  return allCellNames
+}
+
+/** Filter cells in violin plot */
+async function filterResults(
+  studyAccession, cluster, annotation, gene,
+  results, cellFaceting, filteredCells
+) {
+  const t0 = Date.now()
+
+  if (gene in window.SCP.violinCellIndexes === false) {
+    const allCellNames = await getAllCellNames(studyAccession, cluster, annotation)
+    setViolinCellIndexes(gene, results, allCellNames)
+  }
+  const allCellsIndex = window.SCP.violinCellIndexes[gene]
+
+  if (!cellFaceting) {return results}
+  const filteredValues = {}
+
+  // console.log('results', results)
+  // console.log('filteredCells', filteredCells)
+  // console.log('clusterData', clusterData)
+  const allCellNames = await getAllCellNames(studyAccession, cluster, annotation)
+  // console.log('allCellNames', allCellNames)
+
+  // console.log('filteredCells.length')
+  const filteredCellIndexes = new Set()
+  for (let i = 0; i < filteredCells.length; i++) {
+    filteredCellIndexes.add(filteredCells[i].allCellsIndex)
+  }
+
+  const t0a = Date.now()
+  Object.keys(results.values).forEach(group => {
+    filteredValues[group] = {
+      annotations: [],
+      cells: [],
+      name: group,
+      y: []
+    }
+    const cellNames = results.values[group].cells
+    // console.log('results.values[group]', results.values[group])
+    // console.log('group, cellNames.length', group, cellNames.length)
+    for (let i = 0; i < cellNames.length; i++) {
+      const cellName = cellNames[i]
+      const cellIndex = allCellsIndex[group][i]
+      if (filteredCellIndexes.has(cellIndex)) {
+        filteredValues[group].cells.push(cellName)
+        filteredValues[group].y.push(results.values[group].y[i])
+      }
+    }
+  })
+  const perfTimeA = Date.now() - t0a
+  console.log('filterResults perfTime loop', perfTimeA)
+
+  // console.log('exit filterResults, filteredValues', filteredValues)
+  results.values = filteredValues
+
+  const perfTime = Date.now() - t0
+  console.log('filterResults perfTime', perfTime)
+  return results
+}
+
+/**
+ * Displays a violin plot of expression data for the given gene and study
  *
  * @param studyAccession {String} the study accession
  * @param genes {Array[String]} array of gene names
- * @param cluster {string} the name of the cluster, or blank/null for the study's default
- * @param annotation {obj} an object with name, type, and scope attributes
- * @param subsample {string} a string for the subsampel to be retrieved.
- * @param consensus {string} for multi-gene expression plots
- * @param distributionPlot {string} 'box' or 'violin' for the plot type (default is violin)
- * @param distributionPoints {string} 'none' 'all' 'suspectedoutliers' or 'outliers'
- * @param setAnnotationList {function} for global gene search and other places where a single call is used to
+ * @param cluster {String} the name of the cluster, or blank/null for the study's default
+ * @param annotation {Object} an object with name, type, and scope attributes
+ * @param subsample {String} a string for the subsampel to be retrieved.
+ * @param consensus {String} for multi-gene expression plots
+ * @param distributionPlot {String} 'box' or 'violin' for the plot type (default is violin)
+ * @param distributionPoints {String} 'none' 'all' 'suspectedoutliers' or 'outliers'
+ * @param setAnnotationList {Function} for global gene search and other places where a single call is used to
  *   fetch both the default expression data and the cluster menu options, a function that will be
  *   called with the annotationList returned by that call.
 */
 function RawStudyViolinPlot({
   studyAccession, genes, cluster, annotation, subsample, consensus, distributionPlot, distributionPoints,
-  updateDistributionPlot, setAnnotationList, dimensions={}, filteredCells
+  updateDistributionPlot, setAnnotationList, dimensions={}, cellFaceting, filteredCells
 }) {
   const [isLoading, setIsLoading] = useState(false)
   // array of gene names as they are listed in the study itself
@@ -65,15 +148,16 @@ function RawStudyViolinPlot({
   const { ErrorComponent, setShowError, setError } = useErrorMessage()
 
   /** renders received expression data from the server */
-  function renderData([results, perfTimes], filteredCells) {
+  async function renderData([results, perfTimes], cellFaceting) {
     let distributionPlotToUse = distributionPlot
     if (!distributionPlotToUse) {
       distributionPlotToUse = defaultDistributionPlot
     }
 
-    console.log('in renderData, results', results)
-    console.log('in renderData, filteredCells', filteredCells)
-    const filteredResults = filterResults(results, filteredCells)
+    const filteredResults = await filterResults(
+      studyAccession, cluster, annotation, genes[0],
+      results, cellFaceting, filteredCells
+    )
 
     const startTime = performance.now()
 
@@ -117,7 +201,7 @@ function RawStudyViolinPlot({
       consensus
     )
       .then(([results, perfTimes]) => {
-        renderData([results, perfTimes], filteredCells)
+        renderData([results, perfTimes], cellFaceting, filteredCells)
       }).catch(error => {
         Plotly.purge(graphElementId)
         setError(error)

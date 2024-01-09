@@ -559,7 +559,7 @@ export function CellFilteringPanel({
   const facets = cellFaceting.facets
     .filter(facet => facet.isSelectedAnnotation === false)
     .map(facet => {
-    // Add counts of matching cells for each filter to its containing facet object
+      // Add counts of matching cells for each filter to its containing facet object
       facet.filterCounts = cellFilterCounts[facet.annotation]
 
       // Sort categorical filters (i.e., groups)
