@@ -17,17 +17,9 @@ export function AddFileButton({ newFileTemplate, addNewFile, text='Add file' }) 
   </div>
 }
 
-export function FormatDeleteConfirmation({file}) {
-  if (file?.remote_location) {
-    return 'will remain in the bucket because you provided a remote path to an existing file.'
-  } else {
-    return 'will be removed from the bucket.'
-  }
-}
-
 /** renders a basic label->value text field in a bootstrap form control */
 export function TextFormField({ label, fieldName, file, updateFile, placeholderText='',
-  isDisabled=false, isInline=false, inlineLength=null
+  isDisabled=false
 }) {
   const fieldId = `${fieldName}-input-${file._id}`
   let value = file[fieldName] ?? ''
@@ -36,20 +28,15 @@ export function TextFormField({ label, fieldName, file, updateFile, placeholderT
     // handle a nested property like 'heatmap_file_info.custom_scaling'
     value = file[objName][nestedPropName] ?? ''
   }
-  return <div className={isInline ? 'form-inline' : 'form-group'} style={{ display : isInline ? 'inline-block' : 'block'}}>
-    { !isInline &&
-      <label htmlFor={fieldId}>{label}</label>
-    }
-    { !isInline &&
-      <br />
-    }
+  return <div className='form-group'>
+    <label htmlFor={fieldId}>{label}</label>
+    <br />
     <input className="form-control"
       type="text"
       disabled={isDisabled}
       id={fieldId}
       value={value}
       placeholder={placeholderText}
-      size={inlineLength || null }
       onChange={event => {
         const update = {}
         if (nestedPropName) {
@@ -106,7 +93,12 @@ export function SaveDeleteButtons({ file, updateFile, saveFile, deleteFile, vali
     </button>
   }
 
-  const deleteText = FormatDeleteConfirmation(file)
+  let deleteText
+  if (file?.remote_location) {
+    deleteText = 'will remain in the bucket because you provided a remote path to an existing file.'
+  } else {
+    deleteText = 'will be removed from the bucket.'
+  }
 
   return <div className="flexbox button-panel">
     { saveButton }

@@ -80,6 +80,36 @@ export default function FileUploadControl({
       })
     }
   }
+
+  // perform CSFV on remote file when specifying a GS URL or bucket path
+  // will sanitize GS URL before calling validateRemoteFile
+  async function handleBucketLocationEntry(e) {
+    const path = e.target.value
+    const matcher = new RegExp(`(gs:\/\/)?${study.bucket_id}\/?`)
+    const trimmedPath = path.replace(matcher, '')
+    if (!trimmedPath) {
+      return false
+    }
+
+    const fileType = file.file_type
+    const fileOptions = fileType === 'Metadata' ? { use_metadata_convention: file?.use_metadata_convention } : {}
+
+    setFileValidation({ validating: true, issues: {}, fileName: trimmedPath })
+    await ValidateFile.validateRemoteFile(
+      study.bucket_id, trimmedPath, fileType, fileOptions
+    ).then(response => {
+      const issues = response
+      window.SCP.validationIssues = issues
+      setFileValidation({ validating: false, issues, fileName: trimmedPath })
+      if (issues.errors.length === 0) {
+        updateFile(file._id, trimmedPath)
+      }
+    }).catch(error => {
+      console.log(`unable to fetch remote file: ${error.message}`)
+      setFileValidation({ validating: false, issues: {}, fileName: trimmedPath })
+    })
+  }
+
   const isFileChosen = !!file.upload_file_name
   const isFileOnServer = file.status !== 'new'
 
@@ -146,13 +176,14 @@ export default function FileUploadControl({
       </button>
     }
     {!isFileOnServer && showBucketPath &&
-      <TextFormField isInline={true}
-                     label="Bucket path"
-                     fieldName="remote_location"
-                     placeholderText="GS URL or path to file in GCP bucket"
-                     inlineLength={60}
-                     file={file}
-                     updateFile={updateFile}/>
+      // we can't use TextFormField since we need a custom onChange event
+      <input className="form-control"
+             type="text"
+             size={60}
+             id={`remote_location-input-${file._id}\``}
+             value={file?.remote_location}
+             placeholder='GS URL or path to file in GCP bucket'
+             onChange={handleBucketLocationEntry}/>
     }
     &nbsp;&nbsp;
     { !isFileOnServer && showBucketPath && googleBucketLink }

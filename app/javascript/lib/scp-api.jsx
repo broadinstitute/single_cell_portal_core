@@ -236,6 +236,20 @@ export async function fetchStudyFileInfo(studyAccession, includeOptions=true, mo
 }
 
 /**
+ * Returns read-only service account access token value & object and places in window.SCP object
+ * for use in fetching data from GCS buckets client-side
+ *
+ * @param studyAccession Study accession, e.g. SCP123
+ */
+export async function fetchReadOnlyToken(studyAccession) {
+  const apiUrl = `/site/studies/${studyAccession}/renew_read_only_access_token`
+  const [response] = await scpApi(apiUrl, defaultInit())
+  const readOnlyTokenObject = response
+  window.SCP.readOnlyToken = readOnlyTokenObject.accessToken
+  window.SCP.readOnlyTokenObject = readOnlyTokenObject
+}
+
+/**
  * Set up the renewal for read-only access tokens.  Read-only tokens expire in
  * 1 hour, much sooner than the default SCP authentication session duration of
  * 24 hours.
@@ -252,11 +266,7 @@ export function setupRenewalForReadOnlyToken(studyAccession) {
   const renewalTime = readOnlyTokenObject.expiresIn * 1000 - FIVE_MINUTES
 
   setTimeout(async () => {
-    const apiUrl = `/site/studies/${studyAccession}/renew_read_only_access_token`
-    const [response] = await scpApi(apiUrl, defaultInit())
-    const readOnlyTokenObject = response
-    window.SCP.readOnlyToken = readOnlyTokenObject.accessToken
-    window.SCP.readOnlyTokenObject = readOnlyTokenObject
+    await fetchReadOnlyToken(studyAccession)
     setupRenewalForReadOnlyToken(studyAccession)
   }, renewalTime)
 }
@@ -434,10 +444,11 @@ export async function deleteAnnDataFragment(studyAccession, fileId, fragId, mock
  * @param {String} filePath path to file in bucket
 */
 export async function fetchBucketFile(bucketName, filePath, maxBytes=null, mock=false) {
+  const token = window.SCP.readOnlyToken
   const init = {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${window.SCP.readOnlyToken}`
+      Authorization: `Bearer ${token}`
     }
   }
 

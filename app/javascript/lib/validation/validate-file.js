@@ -151,20 +151,34 @@ async function validateRemoteFile(
 
   const requestStart = performance.now()
   const response = await fetchBucketFile(bucketName, fileName, MAX_SYNC_CSFV_BYTES)
-  const content = await response.text()
-  const readRemoteTime = Math.round(performance.now() - requestStart)
+  let fileInfo, issues, perfTime, readRemoteTime
+  let readFile = false
+  if (response.ok) {
+    readFile = true
+    const content = await response.text()
+    readRemoteTime = Math.round(performance.now() - requestStart)
 
-  const contentRange = response.headers.get('content-range')
-  const contentLength = response.headers.get('content-length')
-  const contentType = response.headers.get('content-type')
+    const contentRange = response.headers.get('content-range')
+    const contentLength = response.headers.get('content-length')
+    const contentType = response.headers.get('content-type')
 
-  const file = new File([content], fileName, { type: contentType })
+    const file = new File([content], fileName, { type: contentType })
 
-  const sizeProps = getSizeProps(contentRange, contentLength, file)
+    const sizeProps = getSizeProps(contentRange, contentLength, file)
 
-  // Equivalent block exists in validateFileContent
-  const { fileInfo, issues, perfTime } = await ValidateFileContent.parseFile(file, fileType, fileOptions, sizeProps)
-
+    // Equivalent block exists in validateFileContent
+    const parseResults = await ValidateFileContent.parseFile(file, fileType, fileOptions, sizeProps)
+    fileInfo = parseResults['fileInfo']
+    issues = parseResults['issues']
+    perfTime = parseResults['perfTime']
+  } else {
+    issues = [
+      [
+        'warn', 'file:access-failure', 'Unable to access the requested file. It will be fully validated after saving, ' +
+        'and any errors will be emailed to you.'
+      ]
+    ]
+  }
   const issuesObj = formatIssues(issues)
 
   const totalTime = Math.round(performance.now() - startTime)
@@ -175,7 +189,10 @@ async function validateRemoteFile(
     'perfTime:other': totalTime - readRemoteTime - perfTime
   }
 
-  logFileValidation(fileInfo, issuesObj, perfTimes)
+  // only log file validation event if file was read
+  if (readFile) {
+    logFileValidation(fileInfo, issuesObj, perfTimes)
+  }
 
   return issuesObj
 }
