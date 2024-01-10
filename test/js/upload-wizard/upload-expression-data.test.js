@@ -89,7 +89,7 @@ describe('it allows uploading of expression matrices', () => {
 
     fireEvent.mouseOver(subForms[1].querySelector('button[data-testid="file-save"]'))
     expect(screen.getByRole('tooltip')).not.toHaveTextContent('Parent file must be saved first')
-    expect(screen.getByRole('tooltip')).toHaveTextContent('You must select a file to upload')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('You must select a file to upload or specify a remote file')
 
     fireFileSelectionEvent(subForms[1].querySelector('input[data-testid="file-input"]'), {
       fileName: 'barcodes.txt',
@@ -106,7 +106,7 @@ describe('it allows uploading of expression matrices', () => {
     mockCreateStudyFile(FEATURES_FILE, createFileSpy)
 
     fireEvent.mouseOver(subForms[0].querySelector('button[data-testid="file-save"]'))
-    expect(screen.getByRole('tooltip')).toHaveTextContent('You must select a file to upload')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('You must select a file to upload or specify a remote file')
 
     fireFileSelectionEvent(subForms[0].querySelector('input[data-testid="file-input"]'), {
       fileName: 'features.txt',

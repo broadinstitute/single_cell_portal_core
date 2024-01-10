@@ -6,7 +6,6 @@ import LoadingSpinner from '~/lib/LoadingSpinner'
 import { StudyContext } from '~/components/upload/upload-utils'
 import ValidateFile from '~/lib/validation/validate-file'
 import ValidationMessage from '~/components/validation/ValidationMessage'
-import { TextFormField } from './form-components'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faExternalLinkSquareAlt } from '@fortawesome/free-solid-svg-icons'
 import { Popover, OverlayTrigger } from 'react-bootstrap'
@@ -53,7 +52,7 @@ export default function FileUploadControl({
   const googleBucketLink =
     <OverlayTrigger trigger={['hover', 'focus']} rootClose placement="top" overlay={bucketPopover} delayHide={1500}>
       <a className='btn btn-default'
-         href={`https://accounts.google.com/AccountChooser?continue=https://console.cloud.google.com/storage/browser/${study.bucket_id}`}
+         href={`https://accounts.google.com/AccountChooser?continue=https://console.cloud.google.com/storage/browser/${bucketName}`}
          target='_blank'><FontAwesomeIcon icon={faExternalLinkSquareAlt} /> Browse bucket</a>
     </OverlayTrigger>
 
@@ -85,7 +84,7 @@ export default function FileUploadControl({
   // will sanitize GS URL before calling validateRemoteFile
   async function handleBucketLocationEntry(e) {
     const path = e.target.value
-    const matcher = new RegExp(`(gs:\/\/)?${study.bucket_id}\/?`)
+    const matcher = new RegExp(`(gs:\/\/)?${bucketName}\/?`)
     const trimmedPath = path.replace(matcher, '')
     if (!trimmedPath) {
       return false
@@ -96,16 +95,18 @@ export default function FileUploadControl({
 
     setFileValidation({ validating: true, issues: {}, fileName: trimmedPath })
     await ValidateFile.validateRemoteFile(
-      study.bucket_id, trimmedPath, fileType, fileOptions
+      bucketName, trimmedPath, fileType, fileOptions
     ).then(response => {
       const issues = response
-      window.SCP.validationIssues = issues
       setFileValidation({ validating: false, issues, fileName: trimmedPath })
       if (issues.errors.length === 0) {
-        updateFile(file._id, trimmedPath)
+        updateFile(file._id, {remote_location: trimmedPath})
+      } else {
+        // prevent saving if there are errors
+        updateFile(file._id, {remote_location: ''})
       }
-    }).catch(error => {
-      console.log(`unable to fetch remote file: ${error.message}`)
+    }).catch( () => {
+      // just catch error and allow user to proceed - validation will be handled server-side or in ingest
       setFileValidation({ validating: false, issues: {}, fileName: trimmedPath })
     })
   }
@@ -176,14 +177,14 @@ export default function FileUploadControl({
       </button>
     }
     {!isFileOnServer && showBucketPath &&
-      // we can't use TextFormField since we need a custom onChange event
+      // we can't use TextFormField since we need a custom onBlur event
+      // onBlur is the React equivalent of onfocusout, which will fire after the user is done updating the input
       <input className="form-control"
              type="text"
              size={60}
-             id={`remote_location-input-${file._id}\``}
-             value={file?.remote_location}
+             id={`remote_location-input-${file._id}`}
              placeholder='GS URL or path to file in GCP bucket'
-             onChange={handleBucketLocationEntry}/>
+             onBlur={handleBucketLocationEntry}/>
     }
     &nbsp;&nbsp;
     { !isFileOnServer && showBucketPath && googleBucketLink }

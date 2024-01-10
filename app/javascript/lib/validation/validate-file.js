@@ -152,9 +152,7 @@ async function validateRemoteFile(
   const requestStart = performance.now()
   const response = await fetchBucketFile(bucketName, fileName, MAX_SYNC_CSFV_BYTES)
   let fileInfo, issues, perfTime, readRemoteTime
-  let readFile = false
   if (response.ok) {
-    readFile = true
     const content = await response.text()
     readRemoteTime = Math.round(performance.now() - requestStart)
 
@@ -172,6 +170,8 @@ async function validateRemoteFile(
     issues = parseResults['issues']
     perfTime = parseResults['perfTime']
   } else {
+    readRemoteTime = Math.round(performance.now() - requestStart)
+    fileInfo = { fileName, linesRead: 0}
     issues = [
       [
         'warn', 'file:access-failure', 'Unable to access the requested file. It will be fully validated after saving, ' +
@@ -179,6 +179,7 @@ async function validateRemoteFile(
       ]
     ]
   }
+
   const issuesObj = formatIssues(issues)
 
   const totalTime = Math.round(performance.now() - startTime)
@@ -189,10 +190,7 @@ async function validateRemoteFile(
     'perfTime:other': totalTime - readRemoteTime - perfTime
   }
 
-  // only log file validation event if file was read
-  if (readFile) {
-    logFileValidation(fileInfo, issuesObj, perfTimes)
-  }
+  logFileValidation(fileInfo, issuesObj, perfTimes)
 
   return issuesObj
 }
