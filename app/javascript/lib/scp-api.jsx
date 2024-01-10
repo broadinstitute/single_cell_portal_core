@@ -444,11 +444,10 @@ export async function deleteAnnDataFragment(studyAccession, fileId, fragId, mock
  * @param {String} filePath path to file in bucket
 */
 export async function fetchBucketFile(bucketName, filePath, maxBytes=null, mock=false) {
-  const token = window.SCP.readOnlyToken
   const init = {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${window.SCP.readOnlyToken}`
     }
   }
 
