@@ -5,8 +5,17 @@ import '@testing-library/jest-dom/extend-expect'
 import { StudyContext } from 'components/upload/upload-utils'
 import FileUploadControl from 'components/upload/FileUploadControl'
 import { fireFileSelectionEvent } from '../lib/file-mock-utils'
+import fetch from 'node-fetch'
+import { setMetricsApiMockFlag } from 'lib/metrics-api'
 
 describe('file upload control defaults the name of the file', () => {
+  beforeAll(() => {
+    global.fetch = fetch
+    setMetricsApiMockFlag(true)
+    window.SCP = {
+      readOnlyToken: 'test'
+    }
+  })
   afterEach(() => {
     // Restores all mocks back to their original value
     jest.restoreAllMocks()

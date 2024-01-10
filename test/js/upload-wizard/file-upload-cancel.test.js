@@ -9,8 +9,17 @@ import MockRouter from '../lib/MockRouter'
 import { fireFileSelectionEvent } from '../lib/file-mock-utils'
 import * as ScpApi from 'lib/scp-api'
 import { EMPTY_STUDY, GENERIC_EXPLORE_INFO} from './file-info-responses'
+import fetch from 'node-fetch'
+import { setMetricsApiMockFlag } from 'lib/metrics-api'
 
 describe('cancels a study file upload', () => {
+  beforeAll(() => {
+    global.fetch = fetch
+    setMetricsApiMockFlag(true)
+    window.SCP = {
+      readOnlyToken: 'test'
+    }
+  })
   afterEach(() => {
     // Restores all mocks back to their original value
     jest.restoreAllMocks()

@@ -1,4 +1,6 @@
+const fetch = require('node-fetch')
 import { screen, fireEvent, waitForElementToBeRemoved } from '@testing-library/react'
+import { setMetricsApiMockFlag } from 'lib/metrics-api'
 import '@testing-library/jest-dom/extend-expect'
 import selectEvent from 'react-select-event'
 
@@ -14,6 +16,11 @@ describe('it allows uploading of expression matrices', () => {
   beforeAll(() => {
     jest.restoreAllMocks()
     jest.setTimeout(10000)
+    global.fetch = fetch
+    setMetricsApiMockFlag(true)
+    window.SCP = {
+      readOnlyToken: 'test'
+    }
   })
 
   it('uploads a raw counts mtx file', async () => {

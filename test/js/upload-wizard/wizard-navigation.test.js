@@ -4,9 +4,18 @@ import '@testing-library/jest-dom/extend-expect'
 import { renderWizardWithStudy } from './upload-wizard-test-utils'
 import * as ScpApi from 'lib/scp-api'
 import { ANNDATA_FILE_STUDY, METADATA_AND_EXPRESSION_FILE_STUDY } from './file-info-responses'
+import fetch from 'node-fetch'
+import { setMetricsApiMockFlag } from 'lib/metrics-api'
 
 
 describe('it allows navigating between steps', () => {
+  beforeAll(() => {
+    global.fetch = fetch
+    setMetricsApiMockFlag(true)
+    window.SCP = {
+      readOnlyToken: 'test'
+    }
+  })
   afterEach(() => {
     // Restores all mocks back to their original value
     jest.restoreAllMocks()
