@@ -20,9 +20,7 @@ class DataRepoClientTest < ActiveSupport::TestCase
   def skip_if_api_down
     # due to ongoing upstream issues, and the fact that this client is not used anywhere, removing the 'unless'
     # here will short-circuit any tests without having to remove/change code
-    #unless @data_repo_client.api_available?
-      puts '-- skipping due to TDR API being unavailable --' ; skip
-    #end
+    puts '-- skipping due to TDR API being unavailable --' ; skip
   end
 
   test 'should instantiate client' do
