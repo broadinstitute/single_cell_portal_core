@@ -38,21 +38,60 @@ function ViolinPlotTitle({ cluster, annotation, genes, consensus }) {
 window.SCP.violinCellIndexes = {}
 
 /** Set indexes for each cell in violin plot */
-function setViolinCellIndexes(gene, results, allCellNames) {
-  const violinCellIndexes = {}
-  Object.keys(results.values).forEach(group => {
-    violinCellIndexes[group] = []
-    const cellNames = results.values[group].cells
-    // console.log('results.values[group]', results.values[group])
-    // console.log('group, cellNames.length', group, cellNames.length)
-    for (let i = 0; i < cellNames.length; i++) {
-      const cellName = cellNames[i]
-      const cellIndex = allCellNames.indexOf(cellName)
-      violinCellIndexes[group].push(cellIndex)
-    }
-  })
+
+
+/** test */
+function swfoo() {
+  function setViolinCellIndexes(gene, results, allCellNames) {
+    const violinCellIndexes = {}
+    Object.keys(results.values).forEach(group => {
+      violinCellIndexes[group] = []
+      const cellNames = results.values[group].cells
+      // console.log('results.values[group]', results.values[group])
+      // console.log('group, cellNames.length', group, cellNames.length)
+      for (let i = 0; i < cellNames.length; i++) {
+        const cellName = cellNames[i]
+        const cellIndex = allCellNames.indexOf(cellName)
+        violinCellIndexes[group].push(cellIndex)
+      }
+    })
+    return violinCellIndexes
+  }
+
+  self.onmessage = function(event) {
+    const [gene, results, allCellNames] = event.data
+
+    // self.postMessage(
+    //   'msg from worker, gene, results, allCellNames',
+    //   gene, results, allCellNames
+    // )
+    const violinCellIndexes = setViolinCellIndexes(gene, results, allCellNames)
+
+    self.postMessage(
+      [gene, violinCellIndexes]
+    )
+  }
+}
+
+// Build a worker from an anonymous function body
+const blobURL = URL.createObjectURL(new Blob(['(',
+
+  // setViolinCellIndexes.toString(),
+  swfoo.toString(),
+
+  ')()'], { type: 'application/javascript' }))
+
+window.SCP.worker = new Worker(blobURL)
+
+window.SCP.worker.onmessage = function(event) {
+  const [gene, violinCellIndexes] = event.data
   window.SCP.violinCellIndexes[gene] = violinCellIndexes
 }
+// window.SCP.worker.postMessage(['gapdh', 'asdf', 'foo'])
+// window.SCP.worker.postMessage('foo')
+
+// Won't be needing this anymore
+// URL.revokeObjectURL(blobURL)
 
 /** Get array of names for all cells in clustering */
 async function getAllCellNames(studyAccession, cluster, annotation) {
@@ -70,20 +109,13 @@ async function filterResults(
 
   if (gene in window.SCP.violinCellIndexes === false) {
     const allCellNames = await getAllCellNames(studyAccession, cluster, annotation)
-    setViolinCellIndexes(gene, results, allCellNames)
+    window.SCP.worker.postMessage([gene, results, allCellNames])
   }
   const allCellsIndex = window.SCP.violinCellIndexes[gene]
 
   if (!cellFaceting) {return results}
   const filteredValues = {}
 
-  // console.log('results', results)
-  // console.log('filteredCells', filteredCells)
-  // console.log('clusterData', clusterData)
-  const allCellNames = await getAllCellNames(studyAccession, cluster, annotation)
-  // console.log('allCellNames', allCellNames)
-
-  // console.log('filteredCells.length')
   const filteredCellIndexes = new Set()
   for (let i = 0; i < filteredCells.length; i++) {
     filteredCellIndexes.add(filteredCells[i].allCellsIndex)
@@ -98,12 +130,10 @@ async function filterResults(
       y: []
     }
     const cellNames = results.values[group].cells
-    // console.log('results.values[group]', results.values[group])
-    // console.log('group, cellNames.length', group, cellNames.length)
     for (let i = 0; i < cellNames.length; i++) {
-      const cellName = cellNames[i]
       const cellIndex = allCellsIndex[group][i]
       if (filteredCellIndexes.has(cellIndex)) {
+        const cellName = cellNames[i]
         filteredValues[group].cells.push(cellName)
         filteredValues[group].y.push(results.values[group].y[i])
       }
@@ -112,7 +142,6 @@ async function filterResults(
   const perfTimeA = Date.now() - t0a
   console.log('filterResults perfTime loop', perfTimeA)
 
-  // console.log('exit filterResults, filteredValues', filteredValues)
   results.values = filteredValues
 
   const perfTime = Date.now() - t0
