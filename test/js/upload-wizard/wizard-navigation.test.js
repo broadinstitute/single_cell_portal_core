@@ -13,6 +13,11 @@ describe('it allows navigating between steps', () => {
     global.fetch = fetch
     setMetricsApiMockFlag(true)
     window.SCP = {
+      readOnlyTokenObject: {
+        'access_token': 'test',
+        'expires_in': 3600, // 1 hour in seconds
+        'expires_at': '2023-01-11T15:00:00-04:00'
+      },
       readOnlyToken: 'test'
     }
   })

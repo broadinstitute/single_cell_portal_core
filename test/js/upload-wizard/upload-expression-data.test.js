@@ -10,7 +10,7 @@ import {
 
 import { fireFileSelectionEvent } from '../lib/file-mock-utils'
 
-import { renderWizardWithStudy, getSelectByLabelText, mockCreateStudyFile } from './upload-wizard-test-utils'
+import { renderWizardWithStudy, getSelectByLabelText, mockCreateStudyFile, getTokenExpiry } from './upload-wizard-test-utils'
 
 describe('it allows uploading of expression matrices', () => {
   beforeAll(() => {
@@ -19,6 +19,11 @@ describe('it allows uploading of expression matrices', () => {
     global.fetch = fetch
     setMetricsApiMockFlag(true)
     window.SCP = {
+      readOnlyTokenObject: {
+        'access_token': 'test',
+        'expires_in': 3600, // 1 hour in seconds
+        'expires_at': getTokenExpiry()
+      },
       readOnlyToken: 'test'
     }
   })

@@ -5,12 +5,18 @@ import { renderWizardWithStudyOnClusteringStep } from './upload-wizard-test-util
 import { ANNDATA_FILE_STUDY } from './file-info-responses'
 import fetch from 'node-fetch'
 import { setMetricsApiMockFlag } from 'lib/metrics-api'
+import { getTokenExpiry } from './upload-wizard-test-utils'
 
 describe('it allows clustering updates on AnnData file', () => {
   beforeAll(() => {
     global.fetch = fetch
     setMetricsApiMockFlag(true)
     window.SCP = {
+      readOnlyTokenObject: {
+        'access_token': 'test',
+        'expires_in': 3600, // 1 hour in seconds
+        'expires_at': getTokenExpiry()
+      },
       readOnlyToken: 'test'
     }
   })

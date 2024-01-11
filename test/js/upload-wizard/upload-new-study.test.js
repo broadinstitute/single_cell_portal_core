@@ -14,6 +14,7 @@ import {
 } from './upload-wizard-test-utils'
 import fetch from 'node-fetch'
 import { setMetricsApiMockFlag } from 'lib/metrics-api'
+import { getTokenExpiry } from './upload-wizard-test-utils'
 
 const processedFileName = 'example_processed_dense.txt'
 const rawCountsFileName = 'example_raw_counts.txt'
@@ -26,6 +27,11 @@ describe('creation of study files', () => {
     global.fetch = fetch
     setMetricsApiMockFlag(true)
     window.SCP = {
+      readOnlyTokenObject: {
+        'access_token': 'test',
+        'expires_in': 3600, // 1 hour in seconds
+        'expires_at': getTokenExpiry()
+      },
       readOnlyToken: 'test'
     }
   })
