@@ -241,7 +241,7 @@ export async function fetchStudyFileInfo(studyAccession, includeOptions=true, mo
  *
  * @param studyAccession Study accession, e.g. SCP123
  */
-export async function fetchReadOnlyToken(studyAccession) {
+export async function setReadOnlyToken(studyAccession) {
   const apiUrl = `/site/studies/${studyAccession}/renew_read_only_access_token`
   const [response] = await scpApi(apiUrl, defaultInit())
   const readOnlyTokenObject = response
@@ -266,7 +266,7 @@ export function setupRenewalForReadOnlyToken(studyAccession) {
   const renewalTime = readOnlyTokenObject.expiresIn * 1000 - FIVE_MINUTES
 
   setTimeout(async () => {
-    await fetchReadOnlyToken(studyAccession)
+    await setReadOnlyToken(studyAccession)
     setupRenewalForReadOnlyToken(studyAccession)
   }, renewalTime)
 }

@@ -94,21 +94,19 @@ export default function FileUploadControl({
     const fileOptions = fileType === 'Metadata' ? { use_metadata_convention: file?.use_metadata_convention } : {}
 
     setFileValidation({ validating: true, issues: {}, fileName: trimmedPath })
-    await ValidateFile.validateRemoteFile(
-      bucketName, trimmedPath, fileType, fileOptions
-    ).then(response => {
-      const issues = response
+    try {
+      const issues = await ValidateFile.validateRemoteFile(
+        bucketName, trimmedPath, fileType, fileOptions
+      )
       setFileValidation({ validating: false, issues, fileName: trimmedPath })
-      if (issues.errors.length === 0) {
-        updateFile(file._id, {remote_location: trimmedPath})
-      } else {
-        // prevent saving if there are errors
-        updateFile(file._id, {remote_location: ''})
-      }
-    }).catch( () => {
-      // just catch error and allow user to proceed - validation will be handled server-side or in ingest
+
+      // Prevent saving via '', if validation errors were detected
+      const remoteLocation = issues.errors.length === 0 ? trimmedPath : ''
+      updateFile(file._id, {remote_location: remoteLocation})
+    } catch (error) {
+      // Catch file access error and allow user to proceed - validation will be handled server-side or in ingest
       setFileValidation({ validating: false, issues: {}, fileName: trimmedPath })
-    })
+    }
   }
 
   const isFileChosen = !!file.upload_file_name

@@ -19,7 +19,7 @@ import { formatFileFromServer, formatFileForApi, newStudyFileObj, StudyContext }
 import {
   createStudyFile, updateStudyFile, deleteStudyFile,
   fetchStudyFileInfo, sendStudyFileChunk, RequestCanceller, deleteAnnDataFragment, fetchExplore,
-  fetchReadOnlyToken
+  setReadOnlyToken, setupRenewalForReadOnlyToken
 } from '~/lib/scp-api'
 import MessageModal, { successNotification, failureNotification } from '~/lib/MessageModal'
 import UserProvider from '~/providers/UserProvider'
@@ -136,9 +136,12 @@ export function RawUploadWizard({ studyAccession, name }) {
     })
   }
 
-  if (!window.SCP.readOnlyToken) {
-    fetchReadOnlyToken(studyAccession)
+  if (!window.SCP.readOnlyTokenObject) {
+    setReadOnlyToken(studyAccession).then( () => {
+      setupRenewalForReadOnlyToken(studyAccession)
+    })
   }
+
 
   /** move the wizard to the given step tab */
   function setCurrentStep(newStep) {
