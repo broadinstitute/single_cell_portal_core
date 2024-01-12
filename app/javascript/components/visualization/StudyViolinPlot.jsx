@@ -131,11 +131,9 @@ async function filterResults(
     await workSetViolinCellIndexes(gene, results, allCellNames)
   }
 
-  if (!filteredCells) {return results}
+  if (!filteredCells || !cellFaceting) {return results}
 
   const allCellsIndex = window.SCP.violinCellIndexes[gene]
-
-  if (!cellFaceting) {return results}
   const filteredValues = {}
 
   const filteredCellIndexes = new Set()
@@ -200,7 +198,7 @@ function RawStudyViolinPlot({
       distributionPlotToUse = defaultDistributionPlot
     }
 
-    const filteredResults = await filterResults(
+    results = await filterResults(
       studyAccession, cluster, annotation, genes[0],
       results, cellFaceting, filteredCells
     )
@@ -263,6 +261,18 @@ function RawStudyViolinPlot({
     subsample,
     consensus,
     filteredCells?.join(',')
+  ])
+
+  // Clear violin cell index upon changing violin results
+  useEffect(() => {
+    delete window.SCP.violinCellIndexes[genes[0]]
+  }, [
+    studyAccession,
+    cluster,
+    annotation.name,
+    annotation.scope,
+    subsample,
+    consensus
   ])
 
   // useEffect for handling render param re-renders
