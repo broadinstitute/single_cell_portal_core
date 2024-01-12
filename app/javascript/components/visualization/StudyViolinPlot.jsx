@@ -126,14 +126,13 @@ async function filterResults(
   studyAccession, cluster, annotation, gene,
   results, cellFaceting, filteredCells
 ) {
-  if (!filteredCells) {return results}
-
-  const t0 = Date.now()
-
   if (gene in window.SCP.violinCellIndexes === false) {
     const allCellNames = await getAllCellNames(studyAccession, cluster, annotation)
     await workSetViolinCellIndexes(gene, results, allCellNames)
   }
+
+  if (!filteredCells) {return results}
+
   const allCellsIndex = window.SCP.violinCellIndexes[gene]
 
   if (!cellFaceting) {return results}
@@ -164,8 +163,6 @@ async function filterResults(
 
   results.values = filteredValues
 
-  const perfTime = Date.now() - t0
-  console.debug('filterResults perfTime', perfTime)
   return results
 }
 
