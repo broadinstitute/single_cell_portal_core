@@ -37,18 +37,19 @@ function ViolinPlotTitle({ cluster, annotation, genes, consensus }) {
 
 window.SCP.violinCellIndexes = {}
 
-/** Set indexes for each cell in violin plot */
-
-
-/** test */
-function swfoo() {
-  function setViolinCellIndexes(gene, results, allCellNames) {
+/** Web worker that wraps a CPU-intensive function */
+function setViolinCellIndexesWorker() {
+  /**
+   * Set an index to apply cell filtering for this gene in violin plots.
+   *
+   * This is done 1 time per gene. It is a CPU-intensive function, so it
+   * is processed in a non-main thread.
+   */
+  function setViolinCellIndexes(results, allCellNames) {
     const violinCellIndexes = {}
     Object.keys(results.values).forEach(group => {
       violinCellIndexes[group] = []
       const cellNames = results.values[group].cells
-      // console.log('results.values[group]', results.values[group])
-      // console.log('group, cellNames.length', group, cellNames.length)
       for (let i = 0; i < cellNames.length; i++) {
         const cellName = cellNames[i]
         const cellIndex = allCellNames.indexOf(cellName)
@@ -58,14 +59,11 @@ function swfoo() {
     return violinCellIndexes
   }
 
+  // Set up message handling for web worker
   self.onmessage = function(event) {
     const [gene, results, allCellNames] = event.data
 
-    // self.postMessage(
-    //   'msg from worker, gene, results, allCellNames',
-    //   gene, results, allCellNames
-    // )
-    const violinCellIndexes = setViolinCellIndexes(gene, results, allCellNames)
+    const violinCellIndexes = setViolinCellIndexes(results, allCellNames)
 
     self.postMessage(
       [gene, violinCellIndexes]
@@ -73,29 +71,52 @@ function swfoo() {
   }
 }
 
-// Build a worker from an anonymous function body
+/** Compute violin cell indexes, and wait for that to finish */
+async function workSetViolinCellIndexes(gene, results, allCellNames) {
+  window.SCP.workers.violin.postMessage([gene, results, allCellNames])
+
+  await new Promise(resolve => {
+    /** Poll for gene in violinCellIndexes */
+    function pollForIndex() {
+      setTimeout(() => {
+        if (gene in window.SCP.violinCellIndexes === false) {
+          return pollForIndex()
+        } else {
+          resolve()
+        }
+      }, 50)
+    }
+    pollForIndex()
+  })
+}
+
+// Build a worker from an anonymous function body, and enable worker to be
+// initialized without a network request.
+//
+// Web workers like this enable CPU-intensive tasks to be done off the main
+// (i.e., UI) thread, which keeps the UX responsive while non-trivial work is
+// done in the browser.
 const blobURL = URL.createObjectURL(new Blob(['(',
-
-  // setViolinCellIndexes.toString(),
-  swfoo.toString(),
-
+  setViolinCellIndexesWorker.toString(),
   ')()'], { type: 'application/javascript' }))
 
-window.SCP.worker = new Worker(blobURL)
+window.SCP.workers = {}
 
-window.SCP.worker.onmessage = function(event) {
+window.SCP.workers.violin = new Worker(blobURL)
+
+window.SCP.workers.violin.onmessage = function(event) {
   const [gene, violinCellIndexes] = event.data
   window.SCP.violinCellIndexes[gene] = violinCellIndexes
 }
-// window.SCP.worker.postMessage(['gapdh', 'asdf', 'foo'])
-// window.SCP.worker.postMessage('foo')
 
-// Won't be needing this anymore
-// URL.revokeObjectURL(blobURL)
+// We don't need this after creating the worker
+URL.revokeObjectURL(blobURL)
 
 /** Get array of names for all cells in clustering */
 async function getAllCellNames(studyAccession, cluster, annotation) {
-  const clusterData = await fetchCluster({ studyAccession, cluster, annotation, subsample: 'All' })
+  const clusterData = await fetchCluster({
+    studyAccession, cluster, annotation, subsample: 'All'
+  })
   const allCellNames = clusterData[0].data.cells
   return allCellNames
 }
@@ -105,11 +126,13 @@ async function filterResults(
   studyAccession, cluster, annotation, gene,
   results, cellFaceting, filteredCells
 ) {
+  if (!filteredCells) {return results}
+
   const t0 = Date.now()
 
   if (gene in window.SCP.violinCellIndexes === false) {
     const allCellNames = await getAllCellNames(studyAccession, cluster, annotation)
-    window.SCP.worker.postMessage([gene, results, allCellNames])
+    await workSetViolinCellIndexes(gene, results, allCellNames)
   }
   const allCellsIndex = window.SCP.violinCellIndexes[gene]
 
@@ -121,7 +144,6 @@ async function filterResults(
     filteredCellIndexes.add(filteredCells[i].allCellsIndex)
   }
 
-  const t0a = Date.now()
   Object.keys(results.values).forEach(group => {
     filteredValues[group] = {
       annotations: [],
@@ -139,13 +161,11 @@ async function filterResults(
       }
     }
   })
-  const perfTimeA = Date.now() - t0a
-  console.log('filterResults perfTime loop', perfTimeA)
 
   results.values = filteredValues
 
   const perfTime = Date.now() - t0
-  console.log('filterResults perfTime', perfTime)
+  console.debug('filterResults perfTime', perfTime)
   return results
 }
 
@@ -300,7 +320,6 @@ export default StudyViolinPlot
 
 /** Formats expression data for Plotly, draws violin (or box) plot */
 function renderViolinPlot(target, results, { plotType, showPoints, dimensions }) {
-  console.log('results.values', results.values)
   const traceData = getViolinTraces(results.values, showPoints, plotType)
   const layout = getViolinLayout(results.y_axis_title, dimensions)
   Plotly.newPlot(target, traceData, layout)
