@@ -35,8 +35,6 @@ function ViolinPlotTitle({ cluster, annotation, genes, consensus }) {
   )
 }
 
-window.SCP.violinCellIndexes = {}
-
 /** Web worker that wraps a CPU-intensive function */
 function setViolinCellIndexesWorker() {
   /**
@@ -90,27 +88,37 @@ async function workSetViolinCellIndexes(gene, results, allCellNames) {
   })
 }
 
-// Build a worker from an anonymous function body, and enable worker to be
-// initialized without a network request.
-//
-// Web workers like this enable CPU-intensive tasks to be done off the main
-// (i.e., UI) thread, which keeps the UX responsive while non-trivial work is
-// done in the browser.
-const blobURL = URL.createObjectURL(new Blob(['(',
-  setViolinCellIndexesWorker.toString(),
-  ')()'], { type: 'application/javascript' }))
+/** Initialize web worker for violin plot cell indexing */
+function initViolinWorker() {
+  console.log('initViolinWorker 1')
+  // Build a worker from an anonymous function body, and enable worker to be
+  // initialized without a network request.
+  //
+  // Web workers like this enable CPU-intensive tasks to be done off the main
+  // (i.e., UI) thread, which keeps the UX responsive while non-trivial work is
+  // done in the browser.
+  const blobURL = URL.createObjectURL(new Blob(['(',
+    setViolinCellIndexesWorker.toString(),
+    ')()'], { type: 'application/javascript' }))
 
-window.SCP.workers = {}
+  console.log('initViolinWorker 2')
+  window.SCP.workers = {}
+  console.log('initViolinWorker 3')
+  window.SCP.workers.violin = new Worker(blobURL)
+  console.log('initViolinWorker 4')
 
-window.SCP.workers.violin = new Worker(blobURL)
+  window.SCP.workers.violin.onmessage = function(event) {
+    console.log('initViolinWorker onmessage 1')
+    const [gene, violinCellIndexes] = event.data
+    window.SCP.violinCellIndexes[gene] = violinCellIndexes
+  }
 
-window.SCP.workers.violin.onmessage = function(event) {
-  const [gene, violinCellIndexes] = event.data
-  window.SCP.violinCellIndexes[gene] = violinCellIndexes
+  console.log('initViolinWorker 5')
+
+  // We don't need this after creating the worker
+  URL.revokeObjectURL(blobURL)
+  console.log('initViolinWorker 6')
 }
-
-// We don't need this after creating the worker
-URL.revokeObjectURL(blobURL)
 
 /** Get array of names for all cells in clustering */
 async function getAllCellNames(studyAccession, cluster, annotation) {
@@ -190,6 +198,14 @@ function RawStudyViolinPlot({
   const [renderedCluster, setRenderedCluster] = useState('')
   const [renderedAnnotation, setRenderedAnnotation] = useState('')
   const { ErrorComponent, setShowError, setError } = useErrorMessage()
+
+  if (!window.SCP.violinCellIndexes) {
+    console.log('! 1')
+    window.SCP.violinCellIndexes = {}
+    console.log('! 2')
+    initViolinWorker()
+    console.log('! 3')
+  }
 
   /** renders received expression data from the server */
   async function renderData([results, perfTimes], cellFaceting) {

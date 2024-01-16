@@ -16,6 +16,8 @@ const fs = require('fs')
 
 enableFetchMocks()
 
+global.URL.revokeObjectURL = jest.fn()
+
 const mockStudyPath = 'public/mock_data/search/violin_plot/study_small_intestinal_epithelium.json'
 const study = JSON.parse(fs.readFileSync(mockStudyPath), 'utf8')
 
