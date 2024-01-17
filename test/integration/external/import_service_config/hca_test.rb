@@ -9,14 +9,14 @@ module ImportServiceConfig
       @user_id = @user.id
       @branding_group_id = @branding_group.id
       @attributes = {
-        file_id: 'b0517500-b39e-4c7a-b2f0-794ddc725433',
-        study_id: '85a9263b-0887-48ed-ab1a-ddfa773727b6',
+        file_id: '9f43771e-588c-4cd8-b8f3-3ce81fdea00d',
+        study_id: 'fcaa53cd-ba57-4bfe-af9c-eaa958f95c1a',
         obsm_key_names: %w[X_tsne X_umap],
         user_id: @user.id,
         branding_group_id: @branding_group.id
       }
       @configuration = ImportServiceConfig::Hca.new(**@attributes)
-      @project_name = 'Spatial and single-cell transcriptional landscape of human cerebellar development'
+      @project_name = "Mapping the developing human immune system across organs"
     end
 
     after(:all) do
@@ -84,19 +84,19 @@ module ImportServiceConfig
     test 'should load study analog' do
       study = @configuration.load_study
       assert_equal @project_name, study['projectTitle']
-      assert_equal 'CerebellarDevLandscape', study['projectShortname']
-      assert_equal 70_000, study['estimatedCellCount']
+      assert_equal 'DevelopingImmuneSystem', study['projectShortname']
+      assert_equal 922_332, study['estimatedCellCount']
     end
 
     test 'should load file analog' do
       file = @configuration.load_file
-      assert_equal 'aldinger20.processed.h5ad', file['name']
-      assert_equal '.h5ad', file['format']
-      assert_equal 'CerebellarDevLandscape', file['projectShortname']
+      assert_equal 'PAN.A01.v01.raw_count.20210429.NKT.embedding.gdTCR.h5ad', file['name']
+      assert_equal 'h5ad', file['format']
+      assert_equal 'DevelopingImmuneSystem', file['projectShortname']
     end
 
     test 'should load taxon common names' do
-      assert_equal ['Homo sapiens'], @configuration.taxon_names
+      assert_equal ["Homo sapiens", "Mus musculus"], @configuration.taxon_names
     end
 
     test 'should find library preparation protocol' do
@@ -115,8 +115,8 @@ module ImportServiceConfig
       # populate StudyFile, using above study
       scp_study_file = @configuration.populate_study_file(scp_study.id)
       assert_not scp_study_file.use_metadata_convention
-      assert_equal 'aldinger20.processed.h5ad', scp_study_file.upload_file_name
-      assert_equal 'SPLiT-seq', scp_study_file.expression_file_info.library_preparation_protocol
+      assert_equal 'PAN.A01.v01.raw_count.20210429.NKT.embedding.gdTCR.h5ad', scp_study_file.upload_file_name
+      assert_equal "10x 3' v2", scp_study_file.expression_file_info.library_preparation_protocol
       assert_equal @configuration.service_name, scp_study_file.imported_from
       assert_not scp_study_file.ann_data_file_info.reference_file
       @configuration.obsm_keys.each do |obsm_key_name|
@@ -126,9 +126,8 @@ module ImportServiceConfig
     end
 
     test 'should import from service' do
-      study_name = 'spatial-and-single-cell-transcriptional-landscape-of-human-cerebellar-development'
-      access_url = 'https://service.azul.data.humancellatlas.org/repository/files/' \
-                   'b0517500-b39e-4c7a-b2f0-794ddc725433?catalog=dcp32&version=2021-11-15T11%3A23%3A19.351000Z'
+      study_name = @project_name.split.map(&:downcase).join('-')
+      access_url = @configuration.file_access_info
       file_mock = MiniTest::Mock.new
       file_mock.expect :generation, '123456789'
       # for study to save, we need to mock all Terra orchestration API calls for creating workspace & setting acls
