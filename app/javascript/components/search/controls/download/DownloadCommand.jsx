@@ -50,7 +50,7 @@ export default function DownloadCommand({ fileIds=[], azulFiles }) {
       !isLoading && !!authCodeError &&
       <div className="text-center text-danger">
         <h4>There was a problem authorizing your request</h4>
-        <p dangerouslySetInnerHTML={{__html: authCodeError }} />
+        <p dangerouslySetInnerHTML={{ __html: authCodeError }} />
       </div>
     }
     {
@@ -114,7 +114,7 @@ function getDownloadCommand(authCode, downloadId) {
 
   // "-k" === "--insecure"
   let curlSecureFlag = ''
-  if (('SCP' in window) && window.location.hostname === 'localhost') {
+  if (('SCP' in window && !window.SCP.isTest) && window.location.hostname === 'localhost') {
     curlSecureFlag = 'k'
   }
 
