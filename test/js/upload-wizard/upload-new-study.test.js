@@ -12,6 +12,9 @@ import {
 import {
   renderWizardWithStudy, getSelectByLabelText, saveButton, mockCreateStudyFile
 } from './upload-wizard-test-utils'
+import fetch from 'node-fetch'
+import { setMetricsApiMockFlag } from 'lib/metrics-api'
+import { getTokenExpiry } from './upload-wizard-test-utils'
 
 const processedFileName = 'example_processed_dense.txt'
 const rawCountsFileName = 'example_raw_counts.txt'
@@ -21,6 +24,16 @@ describe('creation of study files', () => {
     jest.restoreAllMocks()
     // This test is long--running all steps in series as if it was a user uploading a new study from scratch--so allow extra time
     jest.setTimeout(10000)
+    global.fetch = fetch
+    setMetricsApiMockFlag(true)
+    window.SCP = {
+      readOnlyTokenObject: {
+        'access_token': 'test',
+        'expires_in': 3600, // 1 hour in seconds
+        'expires_at': getTokenExpiry()
+      },
+      readOnlyToken: 'test'
+    }
   })
 
   afterEach(() => {

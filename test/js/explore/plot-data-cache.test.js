@@ -226,7 +226,7 @@ describe('Plot data cache', () => {
 })
 
 describe('cache handles simultaneous gene/cluster plots', () => {
-  // this test corresponds to the case wehre a user lands directly on the explore gene search page
+  // this test corresponds to the case where a user lands directly on the explore gene search page
   // either from a link, or by reloading the page while a gene search is displayed
   it('does not fetch any data for cluster if expression plot is made first', async () => {
     const cache = createCache()
@@ -238,11 +238,21 @@ describe('cache handles simultaneous gene/cluster plots', () => {
       studyAccession: 'SCP1',
       cluster: '_default',
       genes: ['Apoe'],
-      annotation: {},
+      annotation: {
+        name: 'buzzwords',
+        scope: 'study'
+      },
+      annotParams: {
+        name: 'buzzwords',
+        scope: 'study'
+      },
       subsample: 'all'
     })
     const expectedApiParams = {
-      annotation: {},
+      annotation: {
+        name: 'buzzwords',
+        scope: 'study'
+      },
       cluster: '_default',
       consensus: undefined,
       fields: ['coordinates', 'cells', 'annotation', 'expression'],
@@ -257,7 +267,14 @@ describe('cache handles simultaneous gene/cluster plots', () => {
     const clusterFetchResult = cache.fetchCluster({
       studyAccession: 'SCP1',
       cluster: '_default',
-      annotation: {},
+      annotation: {
+        name: 'buzzwords',
+        scope: 'study'
+      },
+      annotParams: {
+        name: 'buzzwords',
+        scope: 'study'
+      },
       subsample: 'all'
     })
     // make sure no new request is sent to the server

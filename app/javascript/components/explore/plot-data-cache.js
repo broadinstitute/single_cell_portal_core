@@ -63,7 +63,7 @@ const Fields = {
     merge: (entry, scatter) => {
       const clusterFields = ['x', 'y', 'z', 'cells']
       clusterFields.forEach(field => {
-        if (scatter.data[field]) {
+        if (scatter?.data[field]) {
           entry.cellsAndCoords[field] = scatter.data[field]
         }
         if (entry.cellsAndCoords[field]) {
@@ -78,14 +78,14 @@ const Fields = {
       const key = getAnnotationKey(annotationName, annotationScope)
       return entry.annotations[key]
     },
-    putInEntry: (entry, annotationName, annotationScope, annotations) => {
+    putInEntry: (entry, annotationName, annotationScope, annotations, annotParams) => {
       const key = getAnnotationKey(annotationName, annotationScope)
       // we only cache one annotation at a time, so for now, delete any others
-      entry.annotations = {}
-      entry.annotations[key] = annotations
+      entry.annotations[key] = { annotations, annotParams }
     },
     addFieldsOrPromise: (entry, fields, promises, annotationName, annotationScope) => {
-      const cachedAnnotation = Fields.annotation.getFromEntry(entry, annotationName, annotationScope)
+      const annotsEntry = Fields.annotation.getFromEntry(entry, annotationName, annotationScope)
+      const cachedAnnotation = annotsEntry?.annotations
       if (!cachedAnnotation || annotationScope === 'user') {
         // because the requested name (the guid) for user annotations won't match the returned name
         // (the annotation's actual name), we don't cache user annotation values
@@ -99,11 +99,14 @@ const Fields = {
         Fields.annotation.putInEntry(entry,
           scatter.annotParams.name,
           scatter.annotParams.scope,
-          scatter.data.annotations)
+          scatter.data.annotations,
+          scatter.annotParams)
       } else {
-        scatter.data.annotations = Fields.annotation.getFromEntry(entry,
+        const annotsEntry = Fields.annotation.getFromEntry(entry,
           scatter.annotParams.name,
           scatter.annotParams.scope)
+
+        scatter.data.annotations = annotsEntry.annotations
       }
     }
   },
@@ -260,7 +263,9 @@ export function createCache() {
 
 
   /** adds the data for a given study/clusterName, overwriting any previous entry */
-  cache._mergeClusterResponse = (accession, clusterResponse, requestedCluster, requestedAnnotation, requestedSubsample, requestedGenes) => {
+  cache._mergeClusterResponse = (
+    accession, clusterResponse, requestedCluster, requestedAnnotation, requestedSubsample, requestedGenes
+  ) => {
     const scatter = clusterResponse[0]
     const cacheEntry = cache._findOrCreateEntry(accession, scatter.cluster, scatter.subsample)
 
@@ -269,13 +274,17 @@ export function createCache() {
       // got back the actual cluster name), also cache the response under the requested name
       cache._putEntry(accession, requestedCluster, requestedSubsample, cacheEntry)
     }
+
     if (scatter.allDataFromCache) {
       // we need the response cluster/subsample to mimic what actually came from the server for the graphs
       // to render correctly
-      scatter.annotParams = cacheEntry.clusterProps.annotParams
-      scatter.cluster = cacheEntry.clusterProps.cluster
-      scatter.subsample = cacheEntry.clusterProps.subsample
+      const clusterProps = cacheEntry.clusterProps
+      const annotCacheKey = getAnnotationKey(requestedAnnotation.name, requestedAnnotation.scope)
+      scatter.annotParams = cacheEntry.annotations[annotCacheKey].annotParams
+      scatter.cluster = clusterProps.cluster
+      scatter.subsample = clusterProps.subsample
     }
+
     Fields.clusterProps.merge(cacheEntry, scatter)
     Fields.cellsAndCoords.merge(cacheEntry, scatter)
     // only merge in annotation values if the annotation matches (or the default was requested, so

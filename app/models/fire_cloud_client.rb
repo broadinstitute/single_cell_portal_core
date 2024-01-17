@@ -20,33 +20,35 @@ class FireCloudClient
   #
 
   # base url for all API calls
-  BASE_URL = 'https://api.firecloud.org'
-  BASE_SAM_SERVICE_URL = 'https://sam.dsde-prod.broadinstitute.org'
+  BASE_URL = 'https://api.firecloud.org'.freeze
+  BASE_SAM_SERVICE_URL = 'https://sam.dsde-prod.broadinstitute.org'.freeze
   # default auth scopes for client tokens
-  GOOGLE_SCOPES = %w(
+  GOOGLE_SCOPES = %w[
     https://www.googleapis.com/auth/userinfo.profile
     https://www.googleapis.com/auth/userinfo.email
     https://www.googleapis.com/auth/devstorage.read_only
-  )
+  ].freeze
   # List of URLs/Method names to never retry on or report error, regardless of error state
-  ERROR_IGNORE_LIST = ["#{BASE_URL}/register"]
+  ERROR_IGNORE_LIST = [
+    "#{BASE_URL}/register", "#{BASE_URL}/api/groups", "#{BASE_SAM_SERVICE_URL}/api/termsOfService/v1/user/self"
+  ].freeze
   # List of URLs/Method names to ignore incremental backoffs on (in cases of UI blocking)
-  RETRY_BACKOFF_DENYLIST = ["#{BASE_URL}/register", :generate_signed_url, :generate_api_url]
+  RETRY_BACKOFF_DENYLIST = ["#{BASE_URL}/register", :generate_signed_url, :generate_api_url].freeze
   # default namespace used for all FireCloud workspaces owned by the 'portal'
   PORTAL_NAMESPACE = ENV['PORTAL_NAMESPACE'].present? ? ENV['PORTAL_NAMESPACE'] : 'single-cell-portal'
   # Permission values allowed for FireCloud workspace ACLs
-  WORKSPACE_PERMISSIONS = ['OWNER', 'READER', 'WRITER', 'NO ACCESS']
+  WORKSPACE_PERMISSIONS = ['OWNER', 'READER', 'WRITER', 'NO ACCESS'].freeze
   # List of FireCloud user group roles
-  USER_GROUP_ROLES = %w(admin member)
+  USER_GROUP_ROLES = %w[admin member].freeze
   # List of FireCloud billing project roles
-  BILLING_PROJECT_ROLES = %w(user owner)
+  BILLING_PROJECT_ROLES = %w[user owner].freeze
   # List of projects where computes are not permitted (sets canCompute to false for all users by default, can only be overridden
   # by PROJECT_OWNER)
-  COMPUTE_DENYLIST = %w(single-cell-portal)
+  COMPUTE_DENYLIST = %w[single-cell-portal].freeze
   # Name of user group to set as workspace owner for user-controlled billing projects.  Reduces the amount of
   # groups the portal service account needs to be a member of
   # defaults to the Terra billing project this instance is configured against, plus "-sa-owner-group"
-  WS_OWNER_GROUP_NAME = "#{PORTAL_NAMESPACE}-sa-owner-group"
+  WS_OWNER_GROUP_NAME = "#{PORTAL_NAMESPACE}-sa-owner-group".freeze
 
   ##
   # SERVICE NAMES AND DESCRIPTIONS
@@ -58,20 +60,20 @@ class FireCloudClient
 
   # Rawls is the largest service that pertains to workspaces and pipeline submissions via the managed Cromwell instance
   # SCP uses Rawls for updating studies, uploading/parsing files, launching workflows
-  RAWLS_SERVICE = 'Rawls'
+  RAWLS_SERVICE = 'Rawls'.freeze
   # SAM holds most of the workspace permissions and other features
   # SCP uses Sam for updating studies, uploading/parsing files
-  SAM_SERVICE = 'Sam'
+  SAM_SERVICE = 'Sam'.freeze
   # Agora covers the Methods repository and other analysis-oriented features
   # SCP uses Agora for configuring new analyses, submitting workflows
-  AGORA_SERVICE = 'Agora'
+  AGORA_SERVICE = 'Agora'.freeze
   # Thurloe covers Terra profiles and billing projects
   # SCP uses Thurloe for managing user's Terra profiles and billing projects
-  THURLOE_SERVICE = 'Thurloe'
+  THURLOE_SERVICE = 'Thurloe'.freeze
   # Workspaces come with GCP buckets, and the GoogleBuckets service helps manage permissions
   # SCP requires GoogleBuckets to be up for uploading/downloading files, even though SCP uses the GCS JSON API directly
   # via the google-cloud-storage gem.
-  BUCKETS_SERVICE = 'GoogleBuckets'
+  BUCKETS_SERVICE = 'GoogleBuckets'.freeze
 
   ##
   # METHODS

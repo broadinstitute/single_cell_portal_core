@@ -21,6 +21,7 @@ class ImportServiceTest < ActiveSupport::TestCase
 
   test 'should call import from external service' do
     mock = Minitest::Mock.new
+    mock.expect :valid?, true
     mock.expect :import_from_service, [Study.new, StudyFile.new]
     ImportServiceConfig::Nemo.stub :new, mock do
       ImportService.import_from(ImportServiceConfig::Nemo, **@nemo_attributes)

@@ -122,3 +122,28 @@ export function mockCreateStudyFile(returnFileObj, createFileSpy) {
 export function saveButton() {
   return screen.getByTestId('file-save')
 }
+
+// get a current timestamp in ISO format, + 1 hour, with timezone offset
+// from https://www.30secondsofcode.org/js/s/iso-format-date-with-timezone/
+// this isn't strictly necessary, but having expired dates hard-coded in tests seems wrong...
+export function getTokenExpiry() {
+  // Pad a number to 2 digits
+  const pad = n => `${Math.floor(Math.abs(n))}`.padStart(2, '0')
+  // Get timezone offset in ISO format (+hh:mm or -hh:mm)
+  const getTimezoneOffset = date => {
+    const tzOffset = -date.getTimezoneOffset()
+    const diff = tzOffset >= 0 ? '+' : '-'
+    return diff + pad(tzOffset / 60) + ':' + pad(tzOffset % 60)
+  }
+
+  const toISOStringWithTimezone = date => {
+    return date.getFullYear() +
+      '-' + pad(date.getMonth() + 1) +
+      '-' + pad(date.getDate()) +
+      'T' + pad(date.getHours()) +
+      ':' + pad(date.getMinutes()) +
+      ':' + pad(date.getSeconds()) +
+      getTimezoneOffset(date);
+  }
+  return toISOStringWithTimezone(new Date())
+}

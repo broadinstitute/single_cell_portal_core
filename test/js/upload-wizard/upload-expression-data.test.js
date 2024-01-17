@@ -1,4 +1,6 @@
+const fetch = require('node-fetch')
 import { screen, fireEvent, waitForElementToBeRemoved } from '@testing-library/react'
+import { setMetricsApiMockFlag } from 'lib/metrics-api'
 import '@testing-library/jest-dom/extend-expect'
 import selectEvent from 'react-select-event'
 
@@ -8,12 +10,22 @@ import {
 
 import { fireFileSelectionEvent } from '../lib/file-mock-utils'
 
-import { renderWizardWithStudy, getSelectByLabelText, mockCreateStudyFile } from './upload-wizard-test-utils'
+import { renderWizardWithStudy, getSelectByLabelText, mockCreateStudyFile, getTokenExpiry } from './upload-wizard-test-utils'
 
 describe('it allows uploading of expression matrices', () => {
   beforeAll(() => {
     jest.restoreAllMocks()
     jest.setTimeout(10000)
+    global.fetch = fetch
+    setMetricsApiMockFlag(true)
+    window.SCP = {
+      readOnlyTokenObject: {
+        'access_token': 'test',
+        'expires_in': 3600, // 1 hour in seconds
+        'expires_at': getTokenExpiry()
+      },
+      readOnlyToken: 'test'
+    }
   })
 
   it('uploads a raw counts mtx file', async () => {
@@ -82,7 +94,7 @@ describe('it allows uploading of expression matrices', () => {
 
     fireEvent.mouseOver(subForms[1].querySelector('button[data-testid="file-save"]'))
     expect(screen.getByRole('tooltip')).not.toHaveTextContent('Parent file must be saved first')
-    expect(screen.getByRole('tooltip')).toHaveTextContent('You must select a file to upload')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('You must select a file to upload or specify a remote file')
 
     fireFileSelectionEvent(subForms[1].querySelector('input[data-testid="file-input"]'), {
       fileName: 'barcodes.txt',
@@ -99,7 +111,7 @@ describe('it allows uploading of expression matrices', () => {
     mockCreateStudyFile(FEATURES_FILE, createFileSpy)
 
     fireEvent.mouseOver(subForms[0].querySelector('button[data-testid="file-save"]'))
-    expect(screen.getByRole('tooltip')).toHaveTextContent('You must select a file to upload')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('You must select a file to upload or specify a remote file')
 
     fireFileSelectionEvent(subForms[0].querySelector('input[data-testid="file-input"]'), {
       fileName: 'features.txt',

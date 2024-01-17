@@ -12,7 +12,7 @@ FactoryBot.define do
       annotation_input { {} }
     end
     values {
-      annotation_input[:values].uniq
+      annotation_input[:type] == 'group' ? annotation_input[:values].uniq : []
     }
     name { annotation_input[:name] }
     annotation_type { annotation_input[:type] }

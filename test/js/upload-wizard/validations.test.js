@@ -52,7 +52,7 @@ describe('upload file validation new file checks', () => {
       _id: '11'
     }, file]
     const msgs = validateFile({ file, allFiles, allowedFileExts: ['.txt'] })
-    expect(msgs.uploadSelection).toEqual('You must select a file to upload')
+    expect(msgs.uploadSelection).toEqual('You must select a file to upload or specify a remote file')
   })
 
   it('checks required file extensions', async () => {

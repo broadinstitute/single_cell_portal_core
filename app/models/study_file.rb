@@ -115,6 +115,7 @@ class StudyFile
   field :external_link_title, type: String # Link text
   field :external_link_description, type: String # Link tooltip
   field :external_identifier, type: String # for tracking external files from ImportService
+  field :imported_from, type: String # Human-readable tag for external service that study was imported from, e.g. HCA
 
   # for spatial files, the ids of cluster files that correspond to this file for default display
   field :spatial_cluster_associations, type: Array, default: []
@@ -632,12 +633,17 @@ class StudyFile
   ###
 
   # callbacks
-  before_validation   :set_file_name_and_data_dir, on: :create
+  before_validation :set_file_name_and_data_dir, on: :create
+  before_validation :upload_from_remote_location,
+                    on: :create,
+                    if: proc { |f| f.remote_location.present? && f.upload_file_name.blank? }
   before_save         :sanitize_name
   after_save          :set_cluster_group_ranges, :set_options_by_file_type
   after_update        :handle_clustering_fragment_updates
 
-  validates_uniqueness_of :upload_file_name, scope: :study_id, unless: Proc.new { |f| f.human_data? }
+  validates_uniqueness_of :upload_file_name, scope: :study_id, unless: proc { |f| f.human_data? }
+  validates_uniqueness_of :remote_location, scope: :study_id,
+                          unless: proc { |f| f.human_data? || f.remote_location.blank? }
   validates_presence_of :name
   validates_presence_of :human_fastq_url, if: proc { |f| f.human_data }
   validates_format_of :human_fastq_url, with: URI.regexp,
@@ -660,6 +666,7 @@ class StudyFile
   validates_format_of :generation, with: /\A\d+\z/, if: proc { |f| f.generation.present? }
 
   validates_inclusion_of :file_type, in: STUDY_FILE_TYPES, unless: proc { |f| f.file_type == 'DELETE' }
+  validates_uniqueness_of :external_identifier, allow_blank: true
 
   validate :check_taxon, on: :create
   validate :check_assembly, on: :create
@@ -674,15 +681,18 @@ class StudyFile
 
   # return correct path to file based on visibility & type
   def download_path
-    if self.upload_file_name.nil?
-      self.human_fastq_url
+    if hosted_externally?
+      external_link_url || human_fastq_url
     else
-      if self.study.public?
-        download_file_path(accession: self.study.accession, study_name: self.study.url_safe_name, filename: self.bucket_location)
-      else
-        download_private_file_path(accession: self.study.accession, study_name: self.study.url_safe_name, filename: self.bucket_location)
-      end
+      download_method = study.public? ? :download_file_path : :download_private_file_path
+      download_args = { accession: study.accession, study_name: study.url_safe_name, filename: bucket_location }
+      send(download_method, **download_args)
     end
+  end
+
+  # determine if file is hosted on an external server for downloads
+  def hosted_externally?
+    (external_identifier.present? && external_link_url.present?) || (upload_file_name.nil? && human_fastq_url.present?)
   end
 
   # JSON response for jQuery uploader
@@ -755,6 +765,18 @@ class StudyFile
     end
   end
 
+  # determine how this file was sent to SCP
+  # upload: directly through upload wizard UI
+  # bucket: through upload wizard, but specifying bucket path (no file upload)
+  # sync: via study sync method
+  def upload_trigger
+    if options[:upload_trigger]
+      options[:upload_trigger]
+    else
+      remote_location.present? ? 'sync' : 'upload'
+    end
+  end
+
   # convert all domain ranges from floats to integers
   def convert_all_ranges
     if self.file_type == 'Cluster'
@@ -788,12 +810,12 @@ class StudyFile
 
   # end path for a file when localizing during a parse
   def download_location
-    self.remote_location.blank? ? File.join(self.id, 'original', self.upload_file_name) : self.remote_location
+    remote_location.presence || File.join(id, 'original', upload_file_name)
   end
 
   # for constructing a path to a file in a Google bucket
   def bucket_location
-    self.remote_location.blank? ? self.upload_file_name : self.remote_location
+    remote_location.presence || upload_file_name
   end
 
   def local_location
@@ -1112,7 +1134,7 @@ class StudyFile
         !self.study.cluster_groups.where(is_subsampling: true).any?
       when 'Cluster'
         cluster = ClusterGroup.find_by(study_file_id: self.id)
-        cluster.present? && !cluster.is_subsampling?
+        cluster.nil? || !cluster.is_subsampling?
       else
         true
       end
@@ -1307,7 +1329,7 @@ class StudyFile
     if self.name.blank?
       if self.upload_file_name.present?
         self.name = self.upload_file_name
-      elsif self.upload.present?
+      elsif self.upload.file.present?
         self.name = self.upload.file.filename
       end
     end
@@ -1453,6 +1475,28 @@ class StudyFile
       'convention_required', false, *user_accounts, study
     )
       errors.add(:use_metadata_convention, 'must be "true" to ensure data complies with the SCP metadata convention')
+    end
+  end
+
+  # get upload information from remote_location, if specified
+  # can happen during normal upload when using bucket path option
+  def upload_from_remote_location
+    # first sanitize remote_location to remove gs:// or bucket_id
+    trimmed_path = self.remote_location.gsub(%r{(gs://)?#{study.bucket_id}/?}, '')
+    self.remote_location = trimmed_path
+    remote = ApplicationController.firecloud_client.execute_gcloud_method(
+      :get_workspace_file, 0, study.bucket_id, self.remote_location
+    )
+    if remote.nil?
+      errors.add(:remote_location, "is invalid - no file found at #{self.remote_location}")
+    else
+      self.status = 'uploaded'
+      self.upload_file_name = remote.name.split('/').last
+      self.upload_content_type = remote.content_type
+      self.upload_file_size = remote.size
+      self.generation = remote.generation
+      # special trigger setting for Mixpanel reporting
+      self.options.merge!(upload_trigger: 'bucket')
     end
   end
 

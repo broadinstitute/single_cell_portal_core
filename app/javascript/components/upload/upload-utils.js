@@ -127,7 +127,14 @@ export function formatFileForApi(file, chunkStart, chunkEnd) {
     } else {
       data.append('study_file[upload]', file.uploadSelection)
     }
+  }
+  if (file.uploadSelection || file.remote_location) {
     data.append('study_file[parse_on_upload]', true)
+  }
+  // set name attribute if using remote_location
+  if (file.remote_location && !file.name) {
+    const newName = file.remote_location.split('/').slice(-1)[0]
+    data.append('study_file[name]', newName)
   }
   if (file.options) {
     Object.keys(file.options).forEach(key => {
@@ -179,8 +186,8 @@ export function validateFile({ file, allFiles, allowedFileExts=[], requiredField
 
   const validationMessages = {}
   if (file.status === 'new') {
-    if (!file.uploadSelection && !isAnnDataExperience) {
-      validationMessages.uploadSelection = 'You must select a file to upload'
+    if ((!file.uploadSelection && !file.remote_location) && !isAnnDataExperience) {
+      validationMessages.uploadSelection = 'You must select a file to upload or specify a remote file'
     }
   }
 

@@ -2,6 +2,7 @@
 module ImportServiceConfig
   extend ActiveSupport::Concern
   include ActiveModel::Model
+  include ActiveModel::Validations
   include Loggable
 
   # allow word and space characters, plus the following: - . / ( ) , :
@@ -15,7 +16,9 @@ module ImportServiceConfig
 
   ALLOWED_SCP_MODELS = [Study, StudyFile].freeze
 
-  attr_accessor :client, :user_id, :file_id, :study_id, :branding_group_id
+  DEFAULT_OBSM_KEYS = %w[X_umap].freeze
+
+  attr_accessor :client, :user_id, :file_id, :study_id, :branding_group_id, :obsm_key_names
 
   # name of importing service (e.g. NeMO, HCA)
   def service_name
@@ -48,6 +51,12 @@ module ImportServiceConfig
 
   def branding_group
     BrandingGroup.find_by(id: branding_group_id)
+  end
+
+  # load names of cluster embeddings for ingest
+  # will default to ['X_umap'] unless overridden
+  def obsm_keys
+    obsm_key_names || DEFAULT_OBSM_KEYS
   end
 
   # order of associations to walk for sourcing attributes
@@ -119,6 +128,7 @@ module ImportServiceConfig
     study.build_study_detail
     study.study_detail.full_description = sanitize_attribute(study.description)
     study.external_identifier = study_id
+    study.imported_from = service_name
     study
   end
 
@@ -131,6 +141,8 @@ module ImportServiceConfig
     ext = file_info[format_attribute].gsub(/^\./, '') # trim leading period, if present
     study_file.upload_content_type = get_file_content_type(ext)
     study_file.external_identifier = file_id
+    study_file.imported_from = service_name
+    study_file.ann_data_file_info&.data_fragments = default_data_fragments
     study_file
   end
 
@@ -140,6 +152,31 @@ module ImportServiceConfig
     ExpressionFileInfo::LIBRARY_PREPARATION_VALUES.detect do |lib_prep|
       lib_prep.casecmp(sanitized_lib) == 0
     end
+  end
+
+  # default cluster embedding data fragments, assuming X_umap slot
+  def default_data_fragments
+    obsm_keys.map do |obsm_key_name|
+      name = obsm_key_name.gsub(/X_/, '')
+      {
+        _id: BSON::ObjectId.new.to_s,
+        data_type: :cluster,
+        name:,
+        description: '',
+        obsm_key_name:,
+        spatial_cluster_associations: []
+      }.with_indifferent_access
+    end
+  end
+
+  # populate the expression-based data_fragment (needed for form values in upload wizard)
+  def expression_data_fragment(scp_study_file)
+    {
+      _id: BSON::ObjectId.new.to_s,
+      data_type: :expression,
+      taxon_id: scp_study_file.taxon_id.to_s,
+      expression_file_info: scp_study_file.expression_file_info.attributes.reject { |k, _| %w[_id units].include? k }
+    }.with_indifferent_access
   end
 
   # empty methods to be overwritten in included classes
@@ -176,14 +213,14 @@ module ImportServiceConfig
         # clean up study to allow retries with different file
         ImportService.remove_study_workspace(study)
         file_in_bucket.delete
-        DeleteQueueJob.new(study).perform
+        DeleteQueueJob.new(study).delay.perform
         raise "could create study_file: #{errors.join('; ')}"
       end
     else
+      error_msg = "could not create study: #{study.errors.full_messages.join('; ')}"
+      log_message error_msg
       ImportService.remove_study_workspace(study)
-      errors = study.errors.full_messages.dup
-      DeleteQueueJob.new(study).perform
-      raise "could not create study: #{errors.join('; ')}"
+      raise error_msg
     end
   end
 

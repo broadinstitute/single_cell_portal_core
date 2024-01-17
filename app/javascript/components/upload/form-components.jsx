@@ -90,6 +90,13 @@ export function SaveDeleteButtons({ file, updateFile, saveFile, deleteFile, vali
     </button>
   }
 
+  let deleteText
+  if (file?.remote_location) {
+    deleteText = 'will remain in the bucket because you provided a remote path to an existing file.'
+  } else {
+    deleteText = 'will be removed from the bucket.'
+  }
+
   return <div className="flexbox button-panel">
     { saveButton }
     <button type="button" className="btn terra-secondary-btn" onClick={handleDeletePress} data-testid="file-delete">
@@ -100,8 +107,8 @@ export function SaveDeleteButtons({ file, updateFile, saveFile, deleteFile, vali
       onHide={() => setShowConfirmDeleteModal(false)}
       animation={false}>
       <Modal.Body className="">
-        Are you sure you want to delete { file.name }?<br/>
-        <span>The file will be removed from the workspace and all corresponding database records deleted.</span>
+        Are you sure you want to delete {file.name}?<br /><br />
+        <span>All corresponding database records will be deleted. The file <strong>{deleteText}</strong></span>
       </Modal.Body>
       <Modal.Footer>
         <button className="btn btn-md btn-primary" onClick={() => {

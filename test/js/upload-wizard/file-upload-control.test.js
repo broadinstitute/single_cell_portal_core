@@ -1,12 +1,27 @@
 import React from 'react'
-import { render, screen, cleanup, waitForElementToBeRemoved } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent, waitForElementToBeRemoved } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 
 import { StudyContext } from 'components/upload/upload-utils'
 import FileUploadControl from 'components/upload/FileUploadControl'
 import { fireFileSelectionEvent } from '../lib/file-mock-utils'
+import fetch from 'node-fetch'
+import { setMetricsApiMockFlag } from 'lib/metrics-api'
+import { getTokenExpiry } from './upload-wizard-test-utils'
 
 describe('file upload control defaults the name of the file', () => {
+  beforeAll(() => {
+    global.fetch = fetch
+    setMetricsApiMockFlag(true)
+    window.SCP = {
+      readOnlyTokenObject: {
+        'access_token': 'test',
+        'expires_in': 3600, // 1 hour in seconds
+        'expires_at': getTokenExpiry()
+      },
+      readOnlyToken: 'test'
+    }
+  })
   afterEach(() => {
     // Restores all mocks back to their original value
     jest.restoreAllMocks()
@@ -318,5 +333,27 @@ describe('file upload control validates the selected file', () => {
     ))
     expect(screen.queryAllByText('Choose file')).toHaveLength(0)
     expect(screen.queryAllByText('Replace')).toHaveLength(0)
+  })
+
+  it('shows the bucket path field when selected', async () => {
+    const file = {
+      _id: '123',
+      name: '',
+      status: 'new',
+      file_type: 'Cluster'
+    }
+    const { container } = render((
+      <StudyContext.Provider value={{ accession: 'SCP123' }}>
+        <FileUploadControl
+          file={file}
+          allFiles={[file]}
+          allowedFileExts={['.txt']}
+          validationMessages={{}}/>
+      </StudyContext.Provider>
+    ))
+    expect(screen.queryAllByText('Use bucket path')).toHaveLength(1)
+    const bucketToggle = screen.getByText('Use bucket path')
+    fireEvent.click(bucketToggle)
+    expect(container.querySelector('#remote_location-input-123')).toBeVisible();
   })
 })
