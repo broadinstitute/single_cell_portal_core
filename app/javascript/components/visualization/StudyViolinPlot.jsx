@@ -117,10 +117,7 @@ function RawStudyViolinPlot({
   const { ErrorComponent, setShowError, setError } = useErrorMessage()
 
   if (!window.SCP.violinCellIndexes) {
-    console.log('! 1')
-    console.log('! 2')
     initViolinWorker()
-    console.log('! 3')
   }
 
   /** renders received expression data from the server */

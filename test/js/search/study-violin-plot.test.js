@@ -43,18 +43,11 @@ describe('Violin plot in global gene search', () => {
 
     const mockInitViolinWorker = jest.spyOn(WebWorker, 'initViolinWorker')
     mockInitViolinWorker.mockImplementation(() => {
-      console.log('in mockInitViolinWorker 1')
       global.SCP.violinCellIndexes = {}
-      // global.SCP.violinCellIndexes = {}
-      // global.SCP.violinCellIndexes[gene] = [1,2,3,4]
-      console.log('in mockInitViolinWorker 2')
     })
     const mockWorkSetViolinCellIndexes = jest.spyOn(WebWorker, 'workSetViolinCellIndexes')
     mockWorkSetViolinCellIndexes.mockImplementation(() => {
-      console.log('in mockWorkSetViolinCellIndexes 1')
-
       global.SCP.violinCellIndexes[gene] = [1,2,3,4]
-      console.log('in mockWorkSetViolinCellIndexes 2')
     })
 
     render(<StudyViolinPlot studyAccession={study.accession}

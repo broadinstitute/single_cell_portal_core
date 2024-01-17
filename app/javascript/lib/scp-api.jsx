@@ -1004,10 +1004,7 @@ export default async function scpApi(
   if (response.ok) {
     if (toJson && response.status !== 204) {
       const jsonPerfTimeStart = performance.now()
-      console.log('url', url)
-      console.log('response', response)
       const json = await response.json()
-      console.log('json', json)
       perfTimes.parse = performance.now() - jsonPerfTimeStart
       // Converts API's snake_case to JS-preferrable camelCase,
       // for easy destructuring assignment.
