@@ -404,7 +404,6 @@ export async function initCellFaceting(
           annot.values.length > 1 &&
           !annot.identifier.endsWith('invalid') &&
           !annot.identifier.endsWith('user')
-          // && annot.identifier !== selectedAnnotId
         )
       })
 
@@ -466,7 +465,7 @@ export async function initCellFaceting(
   cellFaceting.perfTimes = perfTimes
 
   // Below line is worth keeping, but only uncomment to debug in development
-  window.SCP.cellFaceting = cellFaceting
+  // window.SCP.cellFaceting = cellFaceting
   return cellFaceting
 }
 
