@@ -18,7 +18,8 @@ import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons
 import { formatFileFromServer, formatFileForApi, newStudyFileObj, StudyContext } from './upload-utils'
 import {
   createStudyFile, updateStudyFile, deleteStudyFile,
-  fetchStudyFileInfo, sendStudyFileChunk, RequestCanceller, deleteAnnDataFragment, fetchExplore
+  fetchStudyFileInfo, sendStudyFileChunk, RequestCanceller, deleteAnnDataFragment, fetchExplore,
+  setReadOnlyToken, setupRenewalForReadOnlyToken
 } from '~/lib/scp-api'
 import MessageModal, { successNotification, failureNotification } from '~/lib/MessageModal'
 import UserProvider from '~/providers/UserProvider'
@@ -134,6 +135,13 @@ export function RawUploadWizard({ studyAccession, name }) {
       }
     })
   }
+
+  if (!window.SCP.readOnlyTokenObject) {
+    setReadOnlyToken(studyAccession).then( () => {
+      setupRenewalForReadOnlyToken(studyAccession)
+    })
+  }
+
 
   /** move the wizard to the given step tab */
   function setCurrentStep(newStep) {

@@ -6,6 +6,7 @@ import 'isomorphic-fetch';
 import scpApi, { fetchSearch, fetchFacetFilters, setupRenewalForReadOnlyToken, setUpRenewalForUserAccessToken } from 'lib/scp-api'
 import * as ServiceWorkerCache from 'lib/service-worker-cache'
 import * as SCPContextProvider from '~/providers/SCPContextProvider'
+import { getTokenExpiry } from '../upload-wizard/upload-wizard-test-utils'
 
 const oldWindowLocation = window.location
 
@@ -184,7 +185,7 @@ describe('JavaScript client for SCP REST API', () => {
       readOnlyTokenObject: {
           'access_token': 'ya11.b.foo_bar-baz',
           'expires_in': 3600, // 1 hour in seconds
-          'expires_at': '2023-03-28T11:12:02.044-04:00'
+          'expires_at': getTokenExpiry()
       }
     }
 
@@ -204,7 +205,7 @@ describe('JavaScript client for SCP REST API', () => {
       userAccessTokenObject: {
           'access_token': 'ya11.b.foo_bar-baz',
           'expires_in': 3600, // 1 hour in seconds
-          'expires_at': '2023-03-28T11:12:02.044-04:00'
+          'expires_at': getTokenExpiry()
       }
     }
 
