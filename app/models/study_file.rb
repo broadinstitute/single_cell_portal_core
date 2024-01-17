@@ -642,6 +642,8 @@ class StudyFile
   after_update        :handle_clustering_fragment_updates
 
   validates_uniqueness_of :upload_file_name, scope: :study_id, unless: proc { |f| f.human_data? }
+  validates_uniqueness_of :remote_location, scope: :study_id,
+                          unless: proc { |f| f.human_data? || f.remote_location.blank? }
   validates_presence_of :name
   validates_presence_of :human_fastq_url, if: proc { |f| f.human_data }
   validates_format_of :human_fastq_url, with: URI.regexp,

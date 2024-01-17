@@ -432,7 +432,8 @@ module Api
         study_file.update!(status: 'uploaded', parse_status: 'unparsed') # set status to uploaded on full create
         if parse_on_upload
           if study_file.parseable?
-            FileParseService.run_parse_job(@study_file, @study, current_api_user)
+            persist_on_fail = study_file.remote_location.present?
+            FileParseService.run_parse_job(@study_file, @study, current_api_user, persist_on_fail:)
           else
             # make sure we bundle non-parseable files if appropriate
             FileParseService.create_bundle_from_file_options(study_file, @study)
