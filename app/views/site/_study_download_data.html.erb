@@ -16,20 +16,20 @@
           </div>
           <div class="modal-body">
             <% if @study.has_bucket_access?(current_user) %>
-            <p class="lead">To download all files using <code>gsutil</code>, run the following command:</p>
-            <pre>gsutil -m cp -r gs://<%= @study.bucket_id %> [target path]</pre>
+            <p class="lead">To download all files using gcloud CLI tools, run the following command:</p>
+            <pre>gcloud storage cp -r gs://<%= @study.bucket_id %> [target path]</pre>
               <% if @directories.any? %>
                 <p class="lead">To download all data files in a specific folder, use the following commands:</p>
                 <table class="table table-condensed table-striped">
                   <thead>
                   <tr>
                     <th>Folder</th>
-                    <th>gsutil command</th>
+                    <th>gcloud CLI command</th>
                   </tr>
                   <% @directories.each do |directory| %>
                       <tr>
                         <td><%= directory.name %></td>
-                        <td><pre>gsutil -m cp gs://<%= @study.bucket_id %><%= directory.download_display_name %>*.<%= directory.file_type %>*<%= %> [target path]</pre></td>
+                        <td><pre>gcloud storage cp gs://<%= @study.bucket_id %><%= directory.download_display_name %>*.<%= directory.file_type %>*<%= %> [target path]</pre></td>
                       </tr>
                   <% end %>
                   </thead>

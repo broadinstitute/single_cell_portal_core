@@ -1,7 +1,6 @@
 require 'test_helper'
 
 class StudySyncServiceTest < ActiveSupport::TestCase
-
   before(:all) do
     @user = FactoryBot.create(:user, test_array: @@users_to_clean)
     @study = FactoryBot.create(:detached_study,
@@ -58,16 +57,17 @@ class StudySyncServiceTest < ActiveSupport::TestCase
     gzipped_file = File.open(Rails.root.join('test/test_data/expression_matrix_example_gzipped.txt.gz'))
     filename = File.basename(gzipped_file)
     client = ApplicationController.firecloud_client
-    # push directly to bucket, and override content_type & content_encoding to simulate problems from gsutil/user error
+    # push directly to bucket, and override content_type & content_encoding to
+    # simulate problems from gcloud storage cp/user error
     remote = client.create_workspace_file(@full_study.bucket_id,
                                           gzipped_file.path,
                                           filename,
                                           content_type: 'text/plain',
                                           content_encoding: 'gzip')
     study_file = StudyFile.create!(name: filename, file_type: 'Expression Matrix',
-                                 upload: gzipped_file, remote_location: filename,
-                                 study: @full_study)
-    # override upload_content_type to simulate a gsutil upload
+                                   upload: gzipped_file, remote_location: filename,
+                                   study: @full_study)
+    # override upload_content_type to simulate a gcloud CLI upload
     study_file.update(upload_content_type: 'text/plain')
     assert remote.present?
     assert_equal 'text/plain', remote.content_type
@@ -233,7 +233,7 @@ class StudySyncServiceTest < ActiveSupport::TestCase
 
   test 'should find orphaned files' do
     mock = Minitest::Mock.new
-    mock.expect(:workspace_file_exists?, false,[@study.bucket_id, @study_file.bucket_location])
+    mock.expect(:workspace_file_exists?, false, [@study.bucket_id, @study_file.bucket_location])
     ApplicationController.stub :firecloud_client, mock do
       orphaned = StudySyncService.find_orphaned_files(@study)
       assert_equal [@study_file], orphaned
@@ -266,7 +266,8 @@ class StudySyncServiceTest < ActiveSupport::TestCase
     fastq_file = { name: 'sample.fastq', size: 1.megabyte, generation: SecureRandom.uuid }
     matrix_file = { name: 'matrix.mtx', size: 1.megabyte, generation: SecureRandom.uuid }
     @full_study.directory_listings.create(name: 'fastqs', file_type: 'fastq', files: [fastq_file], sync_status: false)
-    @full_study.directory_listings.create(name: 'matrix_files', file_type: 'mtx', files: [matrix_file], sync_status: false)
+    @full_study.directory_listings.create(name: 'matrix_files', file_type: 'mtx', files: [matrix_file],
+                                          sync_status: false)
     primary_data, other = StudySyncService.load_unsynced_directories(@full_study)
     assert_equal 1, primary_data.size
     assert_equal 'fastqs', primary_data.first.name
@@ -292,5 +293,4 @@ class StudySyncServiceTest < ActiveSupport::TestCase
     synced_files = StudySyncService.set_synced_files(@study, [])
     assert_not_includes synced_files, coord_labels
   end
-
 end
