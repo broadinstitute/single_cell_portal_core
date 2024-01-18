@@ -112,7 +112,6 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
               initSelection[facet.annotation] = facet.groups
             })
 
-            console.log('in getCellFacetingData, initSelection', initSelection)
             setCellFilteringSelection(initSelection)
           }
 
@@ -399,7 +398,6 @@ export default function ExploreDisplayTabs({
       setFilteredCells(null)
       return
     }
-    console.log('in updateFilteredCells, selection', selection)
 
     const cellsByFacet = thisCellFaceting.cellsByFacet
     const initFacets = thisCellFaceting.facets
@@ -418,10 +416,7 @@ export default function ExploreDisplayTabs({
     setCellFilteringSelection(selection)
 
     if (!overrideCellFaceting) {
-      console.log('in updateFilteredCells if, initFacets', initFacets)
-      console.log('in updateFilteredCells if, selection', selection)
       const facetsParam = getFacetsParam(initFacets, selection)
-      console.log('in updateFilteredCells if, updateExploreParams, facetsParam', facetsParam)
       updateExploreParams({ facets: facetsParam })
     }
   }
