@@ -8,9 +8,7 @@ import {
 
 import Select from '~/lib/InstrumentedSelect'
 import LoadingSpinner from '~/lib/LoadingSpinner'
-import {
-  annotationKeyProperties, clusterSelectStyle, getIdentifierForAnnotation
-} from '~/lib/cluster-utils'
+import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
 import { log } from '~/lib/metrics-api'
 
 
