@@ -24,25 +24,9 @@ global.scrollTo = jest.fn()
 global.TextEncoder = TextEncoder
 global.TextDecoder = TextDecoder
 
-global.SCP = {}
-
-/**
- * Mock web worker API, which is sometimes used in SCP for background compute
- *
- * https://github.com/jestjs/jest/issues/3449#issuecomment-347337666
- */
-class Worker {
-  constructor(stringUrl) {
-    this.url = stringUrl
-    this.onmessage = () => {}
-  }
-
-  postMessage(msg) {
-    this.onmessage(msg)
-  }
+global.SCP = {
+  isTest: true
 }
-
-global.Worker = Worker
 
 // Needed for tests that import Plotly
 window.URL.createObjectURL = function() {}

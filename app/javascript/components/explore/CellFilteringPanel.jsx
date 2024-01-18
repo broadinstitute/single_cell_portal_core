@@ -11,6 +11,7 @@ import LoadingSpinner from '~/lib/LoadingSpinner'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
 import { log } from '~/lib/metrics-api'
 
+
 const tooltipAttrs = {
   'data-toggle': 'tooltip',
   'data-delay': '{"show": 150}' // Avoid flurry of tooltips on passing hover

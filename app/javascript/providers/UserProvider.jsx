@@ -9,7 +9,7 @@ import { updateCurrentUser } from '~/lib/scp-api'
   * so default such cases to a string "test"
   */
 export function getAccessToken() {
-  return ('SCP' in window) ? window.SCP.userAccessToken : 'test'
+  return ('SCP' in window && !window.SCP.isTest) ? window.SCP.userAccessToken : 'test'
 }
 
 /**
