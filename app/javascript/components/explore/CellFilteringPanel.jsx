@@ -8,8 +8,11 @@ import {
 
 import Select from '~/lib/InstrumentedSelect'
 import LoadingSpinner from '~/lib/LoadingSpinner'
-import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
+import {
+  annotationKeyProperties, clusterSelectStyle, getIdentifierForAnnotation
+} from '~/lib/cluster-utils'
 import { log } from '~/lib/metrics-api'
+
 
 const tooltipAttrs = {
   'data-toggle': 'tooltip',
@@ -143,6 +146,8 @@ function FacetTools({
 
 /** Determine if user has deselected any filters */
 function getHasNondefaultSelection(checkedMap, facets) {
+  console.log('checkedMap', checkedMap)
+  console.log('facets', facets)
   let numTotalFilters = 0
   facets.forEach(facet => numTotalFilters += facet.groups.length)
   let numCheckedFilters = 0
@@ -577,6 +582,16 @@ export function CellFilteringPanel({
       return facet
     })
 
+  const shownAnnotationIdentifier = getIdentifierForAnnotation(shownAnnotation)
+  const defaultCheckedMap = {}
+  Object.entries(cellFilteringSelection).forEach(([facet, filters]) => {
+    if (facet !== shownAnnotationIdentifier) {
+      defaultCheckedMap[facet] = filters
+    }
+  })
+  console.log('defaultCheckedMap', defaultCheckedMap)
+  // delete defaultCheckedMap[shownAnnotationIdentifier]
+
   const [checkedMap, setCheckedMap] = useState(cellFilteringSelection)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const shownFacets = facets.filter(facet => facet.groups.length > 1)
@@ -631,6 +646,7 @@ export function CellFilteringPanel({
     const isCheck = event.target.checked
     const allFiltersInFacet = facets.find(f => f.annotation === facetName).groups
     const updatedList = isCheck ? allFiltersInFacet : []
+    console.log('facetName', facetName)
     checkedMap[facetName] = updatedList
     setCheckedMap(checkedMap)
     updateFilteredCells(checkedMap)
@@ -667,6 +683,7 @@ export function CellFilteringPanel({
     checkedMap[facetName] = updatedList
     setCheckedMap(checkedMap)
 
+    console.log('in handleCheck, checkedMap', checkedMap)
     // update the filtered cells based on the checked condition of the filters
     updateFilteredCells(checkedMap)
   }
