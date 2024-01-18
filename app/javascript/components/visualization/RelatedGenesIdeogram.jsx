@@ -126,6 +126,7 @@ function addTissueToggleClickHandler(newTitle) {
 /** Make updates (e.g. to the tooltip) after showing tooltip */
 function onDidShowAnnotTooltip() {
   const ideoTissuePlotTitle = document.querySelector('._ideoTissuePlotTitle')
+  if (!ideoTissuePlotTitle) {return}
   const hoveredGene = document.querySelector('#ideo-related-gene').innerText
   const gtexUrl = `https://www.gtexportal.org/home/gene/${hoveredGene}`
   const gtexLink = `<a href="${gtexUrl}" class="_ideoTitleGtexLink" target="blank">GTEx</a>`
