@@ -20,7 +20,7 @@ module ImportServiceConfig
 
       @azul_is_ok = false
       begin
-        project = @configuration.load_project
+        project = @configuration.load_study
         file = @configuration.load_file
         if project && file
           @azul_is_ok = true
