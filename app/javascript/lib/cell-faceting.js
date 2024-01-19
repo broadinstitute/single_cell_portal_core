@@ -116,6 +116,7 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
 export function filterCells(
   selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, rawFacets
 ) {
+  console.log('in filterCells')
   const t0 = Date.now()
   const facets =
   initFacets
@@ -123,29 +124,38 @@ export function filterCells(
     .map(facet => facet.annotation)
 
   let fn; let facet; let results
+  console.log('selection', selection)
 
   if (Object.keys(selection).length === 0) {
     results = filterableCells
   } else {
     for (let i = 0; i < facets.length; i++) {
       facet = facets[i]
-      if (facet in selection) { // e.g. 'infant_sick_YN'
-        const friendlyFilters = selection[facet] // e.g. ['yes', 'NA']
+      if (facet in selection) {
+        console.log('in filterCells, facet', facet)
+        if (facet.type === 'group') {
+          // e.g. 'infant_sick_YN'
+          const friendlyFilters = selection[facet] // e.g. ['yes', 'NA']
 
-        const filter = new Set()
-        friendlyFilters.forEach(friendlyFilter => {
-          // find the original index of the filter in the source annotation as the list here may be trimmed already
-          const sourceFacet = rawFacets.find(f => f.annotation === facet)
-          const filterIndex = sourceFacet.groups.indexOf(friendlyFilter)
-          filter.add(filterIndex)
-        })
+          const filter = new Set()
+          friendlyFilters.forEach(friendlyFilter => {
+            // find the original index of the filter in the source annotation as the list here may be trimmed already
+            const sourceFacet = rawFacets.find(f => f.annotation === facet)
+            const filterIndex = sourceFacet.groups.indexOf(friendlyFilter)
+            filter.add(filterIndex)
+          })
 
-        fn = function(d) {
-          return filter.has(d)
+          fn = function(d) {
+            return filter.has(d)
+          }
+
+          // Apply the actual crossfilter method
+          cellsByFacet[facet].filterFunction(fn)
+        } else {
+          // Numeric facet, e.g. time_post_partum_days
+          const range = selection[facet] // e.g. [0, 20]
+          cellsByFacet[facet].filterRange(range)
         }
-
-        // Apply the actual crossfilter method
-        cellsByFacet[facet].filterFunction(fn)
       } else {
         fn = null
         // Apply the actual crossfilter method
@@ -160,6 +170,8 @@ export function filterCells(
   const counts = getFilterCounts(annotationFacets, cellsByFacet, initFacets, selection)
 
   logFilterCells(t0Counts, t0, filterableCells, results, selection)
+
+  console.log('in filterCells, results', results)
 
   return [results, counts]
 }
@@ -253,6 +265,8 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
 
   for (let i = 0; i < annotationFacets.length; i++) {
     const facet = annotationFacets[i]
+    // console.log('in getFilterCounts, facet', facet)
+    if (!facet.includes('--group--')) {continue}
     const facetCrossfilter = cellsByFacet[facet]
     // Set counts for each filter in facet
     const rawFilterCounts = facetCrossfilter.group().top(Infinity)
@@ -440,6 +454,7 @@ export async function initCellFaceting(
   const timeFetchStart = Date.now()
   const newRawFacets = await fetchAnnotationFacets(studyAccession, facetsToFetch, selectedCluster)
   perfTimes.fetch = Date.now() - timeFetchStart
+  console.log('newRawFacets', newRawFacets)
 
   // Below line is worth keeping, but only uncomment to debug in development.
   // This helps simulate waiting on server response, to slow data load even
@@ -448,6 +463,7 @@ export async function initCellFaceting(
   // await new Promise(resolve => setTimeout(resolve, 3000))
 
   const rawFacets = mergeFacetsResponses(newRawFacets, prevCellFaceting)
+
 
   const timeInitCrossfilterStart = Date.now()
   const {

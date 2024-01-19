@@ -144,6 +144,8 @@ function FacetTools({
 /** Determine if user has deselected any filters */
 function getHasNondefaultSelection(checkedMap, facets) {
   let numTotalFilters = 0
+  console.log('in getHasNondefaultSelection, facets', facets)
+  console.log('in getHasNondefaultSelection, checkedMap', checkedMap)
   facets.forEach(facet => numTotalFilters += facet.groups.length)
   let numCheckedFilters = 0
   Object.entries(checkedMap).forEach(([_, filters]) => {
@@ -556,11 +558,11 @@ export function CellFilteringPanel({
     )
   }
 
+  console.log('cellFaceting.facets', cellFaceting.facets)
   const facets = cellFaceting.facets
-    .filter(facet => facet.isSelectedAnnotation === false)
+    // .filter(facet => facet.type === 'group' && facet.isSelectedAnnotation === false)
+    .filter(facet => facet.type === 'group')
     .map(facet => {
-      if (facet.type === 'numeric') {return facet}
-
       // Add counts of matching cells for each filter to its containing facet object
       facet.filterCounts = cellFilterCounts[facet.annotation]
 
@@ -579,15 +581,25 @@ export function CellFilteringPanel({
       return facet
     })
 
-  const [checkedMap, setCheckedMap] = useState(cellFilteringSelection)
+  console.log('in CellFilteringPanel, facets', facets)
+
+  const defaultCheckedMap = {}
+  Object.entries(cellFilteringSelection).forEach(([key, value]) => {
+    if (key.includes('--group--')) {
+      defaultCheckedMap[key] = value
+    }
+  })
+  console.log('defaultCheckedMap', defaultCheckedMap)
+
+  const [checkedMap, setCheckedMap] = useState(defaultCheckedMap)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const shownFacets = facets.filter(facet => facet.groups.length > 1)
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
   // Needed to propagate facets from URL to initial checkbox states
   useEffect(() => {
-    setCheckedMap(cellFilteringSelection)
-  }, Object.values(cellFilteringSelection))
+    setCheckedMap(defaultCheckedMap)
+  }, Object.values(defaultCheckedMap))
 
   /** Top header for the "Filter" section, including all-facet controls */
   function FilterSectionHeader({ hasNondefaultSelection, handleResetFilters, isAllListsCollapsed, setIsAllListsCollapsed }) {

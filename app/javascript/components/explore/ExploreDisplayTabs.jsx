@@ -172,10 +172,15 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
 function getFacetsParam(initFacets, selection) {
   const minimalSelection = {}
 
+  console.log('initFacets', initFacets)
+
   const initSelection = {}
   initFacets.forEach(facet => {
-    initSelection[facet.annotation] = facet.groups
+    if (facet.type === 'group') {
+      initSelection[facet.annotation] = facet.groups
+    }
   })
+  console.log('initSelection', initSelection)
 
   const innerParams = []
   Object.entries(initSelection).forEach(([facet, filters]) => {
@@ -185,7 +190,7 @@ function getFacetsParam(initFacets, selection) {
       // filters that are _not_ selected, i.e. they're unchecked and applied.
       //
       // This makes the `facets` parameter much clearer.
-      if (!selection[facet].includes(filter)) {
+      if (facet.type === 'group' && !selection[facet].includes(filter)) {
         if (facet in minimalSelection) {
           minimalSelection[facet].push(filter)
         } else {
@@ -418,7 +423,7 @@ export default function ExploreDisplayTabs({
   }
 
   // Below line is worth keeping, but only uncomment to debug in development
-  // window.SCP.updateFilteredCells = updateFilteredCells
+  window.SCP.updateFilteredCells = updateFilteredCells
 
 
   /** handler for when the user selects points in a plotly scatter graph */
