@@ -309,7 +309,7 @@ function initCrossfilter(facetData) {
   for (let i = 0; i < cells.length; i++) {
     const filterableCell = { 'allCellsIndex': i }
 
-    // An array of integers, e.g. [6, 0, 7, 0, 0]
+    // For group-baesd annotations, we have an array of integers, e.g. [6, 0, 7, 0, 0].
     // Each element in the array is the index-offset of the cell's group value assignment
     // for the annotation facet at that index.
     const facetIndex = cells[i]
@@ -384,6 +384,19 @@ function logInitCellFaceting(timeStart, perfTimes, cellFaceting, prevCellFacetin
   return perfTimes
 }
 
+/** Get annotations that can be filtered */
+function getFilterableAnnotationsForClusterAndStudy(annotations, clusterName) {
+  const annots = annotations.filter(annot => {
+    return (
+      (
+        !('cluster_name' in annot) || // is study-wide
+        annot.cluster_name === clusterName // is cluster-based, and in this cluster
+      )
+    )
+  })
+  return annots
+}
+
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
 export async function initCellFaceting(
   selectedCluster, selectedAnnot, studyAccession, allAnnots, prevCellFaceting
@@ -394,14 +407,14 @@ export async function initCellFaceting(
   // Prioritize and fetch annotation facets for all cells
   const selectedAnnotId = getIdentifierForAnnotation(selectedAnnot)
   const eligibleAnnots =
-    getGroupAnnotationsForClusterAndStudy(allAnnots, selectedCluster)
+    getFilterableAnnotationsForClusterAndStudy(allAnnots, selectedCluster)
       .map(annot => { // Add identifiers to incoming annotations
         annot.identifier = getIdentifierForAnnotation(annot)
         return annot
       })
       .filter(annot => {
         return (
-          annot.values.length > 1 &&
+          !(annot.type === 'group' && annot.values.length <= 1) &&
           !annot.identifier.endsWith('invalid') &&
           !annot.identifier.endsWith('user') &&
           annot.identifier !== selectedAnnotId
@@ -411,7 +424,11 @@ export async function initCellFaceting(
   const allRelevanceSortedFacets =
     sortAnnotationsByRelevance(eligibleAnnots)
       .map(annot => {
-        return { annotation: annot.identifier, groups: annot.values }
+        const facet = { annotation: annot.identifier, type: annot.type }
+        if (annot.type) {
+          annot.group = annot.values
+        }
+        return facet
       })
 
   if (allRelevanceSortedFacets.length === 0) {
@@ -465,7 +482,7 @@ export async function initCellFaceting(
   cellFaceting.perfTimes = perfTimes
 
   // Below line is worth keeping, but only uncomment to debug in development
-  // window.SCP.cellFaceting = cellFaceting
+  window.SCP.cellFaceting = cellFaceting
   return cellFaceting
 }
 

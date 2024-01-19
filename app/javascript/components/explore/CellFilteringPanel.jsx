@@ -556,24 +556,28 @@ export function CellFilteringPanel({
     )
   }
 
-  const facets = cellFaceting.facets.map(facet => {
-    // Add counts of matching cells for each filter to its containing facet object
-    facet.filterCounts = cellFilterCounts[facet.annotation]
+  const facets = cellFaceting.facets
+    .filter(facet => facet.isSelectedAnnotation === false)
+    .map(facet => {
+      if (facet.type === 'numeric') {return facet}
 
-    // Sort categorical filters (i.e., groups)
-    const initCounts = cellFaceting.filterCounts[facet.annotation]
-    if (initCounts) {
-      if (!facet.unsortedGroups) {facet.unsortedGroups = facet.groups}
-      if (!facet.originalFilterCounts) {facet.originalFilterCounts = initCounts}
-      const sortedGroups = facet.groups.sort((a, b) => {
-        if (initCounts[a] && initCounts[b]) {
-          return initCounts[b] - initCounts[a]
-        }
-      })
-      facet.groups = sortedGroups
-    }
-    return facet
-  })
+      // Add counts of matching cells for each filter to its containing facet object
+      facet.filterCounts = cellFilterCounts[facet.annotation]
+
+      // Sort categorical filters (i.e., groups)
+      const initCounts = cellFaceting.filterCounts[facet.annotation]
+      if (initCounts) {
+        if (!facet.unsortedGroups) {facet.unsortedGroups = facet.groups}
+        if (!facet.originalFilterCounts) {facet.originalFilterCounts = initCounts}
+        const sortedGroups = facet.groups.sort((a, b) => {
+          if (initCounts[a] && initCounts[b]) {
+            return initCounts[b] - initCounts[a]
+          }
+        })
+        facet.groups = sortedGroups
+      }
+      return facet
+    })
 
   const [checkedMap, setCheckedMap] = useState(cellFilteringSelection)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
