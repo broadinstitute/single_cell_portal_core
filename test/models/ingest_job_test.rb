@@ -187,6 +187,66 @@ class IngestJobTest < ActiveSupport::TestCase
     end
   end
 
+  test 'should identify AnnData parses with extraction in mixpanel' do
+    ann_data_file = FactoryBot.create(:ann_data_file, name: 'test.h5ad', study: @basic_study)
+    ann_data_file.ann_data_file_info.reference_file = false
+    ann_data_file.ann_data_file_info.data_fragments = [
+      { _id: BSON::ObjectId.new.to_s, data_type: :cluster, obsm_key_name: 'X_umap', name: 'UMAP' }
+    ]
+    ann_data_file.upload_file_size = 1.megabyte
+    ann_data_file.save
+    params_object = AnnDataIngestParameters.new(
+      anndata_file: ann_data_file.gs_url, obsm_keys: ann_data_file.ann_data_file_info.obsm_key_names,
+      file_size: ann_data_file.upload_file_size
+    )
+    job = IngestJob.new(
+      study: @basic_study, study_file: ann_data_file, user: @user, action: :ingest_anndata, params_object:
+    )
+    mock = Minitest::Mock.new
+    now = DateTime.now.in_time_zone
+    mock_metadata = {
+      events: [
+        { timestamp: now.to_s }.with_indifferent_access,
+        { timestamp: (now + 1.minute).to_s, containerStopped: { exitStatus: 0 } }.with_indifferent_access
+      ],
+      pipeline: {
+        resources: {
+          virtualMachine: {
+            machineType: 'n2d-highmem-4',
+            bootDiskSizeGb: 300
+          }
+        }
+      }
+    }.with_indifferent_access
+    mock.expect :metadata, mock_metadata
+    mock.expect :metadata, mock_metadata
+    mock.expect :metadata, mock_metadata
+    mock.expect :error, nil
+    mock.expect :done?, true
+
+    ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
+      expected_outputs = {
+        perfTime: 60000,
+        fileType: ann_data_file.file_type,
+        fileSize: ann_data_file.upload_file_size,
+        fileName: ann_data_file.name,
+        trigger: 'upload',
+        action: :ingest_anndata,
+        studyAccession: @basic_study.accession,
+        jobStatus: 'success',
+        referenceAnnDataFile: false,
+        extractedFileTypes: %w[cluster metadata processed_expression],
+        machineType: 'n2d-highmem-4',
+        bootDiskSizeGb: 300,
+        exitStatus: 0
+      }.with_indifferent_access
+
+      job_analytics = job.get_job_analytics
+      mock.verify
+      assert_equal expected_outputs, job_analytics
+    end
+  end
+
   test 'should limit size when reading error logfile for email' do
     job = IngestJob.new(study: @basic_study, study_file: @basic_study_exp_file, user: @user, action: :ingest_expression)
     file_location = @basic_study_exp_file.bucket_location

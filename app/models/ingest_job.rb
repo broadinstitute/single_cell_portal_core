@@ -907,7 +907,12 @@ class IngestJob
         }
       )
     when :ingest_anndata
-      # AnnData file analytics TODO
+      job_props.merge!(
+        {
+          referenceAnnDataFile: study_file.is_reference_anndata?,
+          extractedFileTypes: params_object.extract
+        }
+      )
     end
     job_props.with_indifferent_access
   end
