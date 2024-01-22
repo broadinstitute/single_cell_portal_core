@@ -403,8 +403,7 @@ export async function initCellFaceting(
         return (
           annot.values.length > 1 &&
           !annot.identifier.endsWith('invalid') &&
-          !annot.identifier.endsWith('user') &&
-          annot.identifier !== selectedAnnotId
+          !annot.identifier.endsWith('user')
         )
       })
 
@@ -442,6 +441,7 @@ export async function initCellFaceting(
   const facets = allRelevanceSortedFacets.map(facet => {
     const isLoaded = loadedFacets.some(loadedFacet => facet.annotation === loadedFacet.annotation)
     facet.isLoaded = isLoaded
+    facet.isSelectedAnnotation = facet.annotation === selectedAnnotId
     return facet
   })
 

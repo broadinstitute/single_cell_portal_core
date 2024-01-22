@@ -24,6 +24,15 @@ global.scrollTo = jest.fn()
 global.TextEncoder = TextEncoder
 global.TextDecoder = TextDecoder
 
+// Many frontend codepaths use something in "window.SCP", a global
+// object that stores high-level information about environment, auth state,
+// etc.  Previously, we had many branches that merely inspected if `SCP`
+// was in the `window` to _implicitly_ detect if the app was in a testing
+// state.  Now, we make that state explicit, which is clearer.
+global.SCP = {
+  isTest: true
+}
+
 // Needed for tests that import Plotly
 window.URL.createObjectURL = function() {}
 window.HTMLCanvasElement.prototype.getContext = () => {}

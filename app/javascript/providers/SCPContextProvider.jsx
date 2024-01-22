@@ -8,7 +8,7 @@ export const isServiceWorkerCacheEnabled = (typeof __FRONTEND_SERVICE_WORKER_CAC
 
 /**  wrapper around window.SCP to enumerate properties the React frontend expects from the server */
 export function getSCPContext() {
-  if (window.SCP) {
+  if (window.SCP && !window.SCP.isTest) {
     window.SCP.version = version
     window.SCP.isServiceWorkerCacheEnabled = isServiceWorkerCacheEnabled
     window.SCP.devMode = devMode
