@@ -153,8 +153,28 @@ export function filterCells(
           cellsByFacet[facet].filterFunction(fn)
         } else {
           // Numeric facet, e.g. time_post_partum_days
-          const range = selection[facet] // e.g. [0, 20]
-          cellsByFacet[facet].filterRange(range)
+          // Example via console interface:
+          // window.SCP.updateFilteredCells({'time_post_partum_days--numeric--study': [[0.5, 9]]})
+          const numericFilters = selection[facet] // e.g. [0, 20]
+
+          fn = function(d) {
+            for (let i = 0; i < numericFilters.length; i++) {
+              const numericFilter = numericFilters[i]
+              if (numericFilter.length === 2) {
+                const [lowerBound, upperBound] = numericFilter
+                if ((!d >= lowerBound && d < upperBound)) {
+                  // TODO: Crossfilter uses "d < upperBound".
+                  // Should we use that, or "d <= upperBound"?
+                  return false
+                }
+              } else {
+                // Filter is only 1 number, so test exact match
+                if (numericFilter[0] !== d) {return false}
+              }
+            }
+            return true
+          }
+          cellsByFacet[facet].filterFunction(fn)
         }
       } else {
         fn = null
