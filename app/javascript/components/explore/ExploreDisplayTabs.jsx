@@ -172,7 +172,7 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
 function getFacetsParam(initFacets, selection) {
   const minimalSelection = {}
 
-  console.log('initFacets', initFacets)
+  // console.log('initFacets', initFacets)
 
   const initSelection = {}
   initFacets.forEach(facet => {
@@ -180,7 +180,7 @@ function getFacetsParam(initFacets, selection) {
       initSelection[facet.annotation] = facet.groups
     }
   })
-  console.log('initSelection', initSelection)
+  // console.log('initSelection', initSelection)
 
   const innerParams = []
   Object.entries(initSelection).forEach(([facet, filters]) => {

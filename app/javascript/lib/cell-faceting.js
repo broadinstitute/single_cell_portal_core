@@ -133,7 +133,7 @@ export function filterCells(
       facet = facets[i]
       if (facet in selection) {
         console.log('in filterCells, facet', facet)
-        if (facet.type === 'group') {
+        if (facet.includes('--group--')) {
           // e.g. 'infant_sick_YN'
           const friendlyFilters = selection[facet] // e.g. ['yes', 'NA']
 

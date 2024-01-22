@@ -144,8 +144,8 @@ function FacetTools({
 /** Determine if user has deselected any filters */
 function getHasNondefaultSelection(checkedMap, facets) {
   let numTotalFilters = 0
-  console.log('in getHasNondefaultSelection, facets', facets)
-  console.log('in getHasNondefaultSelection, checkedMap', checkedMap)
+  // console.log('in getHasNondefaultSelection, facets', facets)
+  // console.log('in getHasNondefaultSelection, checkedMap', checkedMap)
   facets.forEach(facet => numTotalFilters += facet.groups.length)
   let numCheckedFilters = 0
   Object.entries(checkedMap).forEach(([_, filters]) => {
@@ -558,7 +558,7 @@ export function CellFilteringPanel({
     )
   }
 
-  console.log('cellFaceting.facets', cellFaceting.facets)
+  // console.log('cellFaceting.facets', cellFaceting.facets)
   const facets = cellFaceting.facets
     // .filter(facet => facet.type === 'group' && facet.isSelectedAnnotation === false)
     .filter(facet => facet.type === 'group')
@@ -581,7 +581,7 @@ export function CellFilteringPanel({
       return facet
     })
 
-  console.log('in CellFilteringPanel, facets', facets)
+  // console.log('in CellFilteringPanel, facets', facets)
 
   const defaultCheckedMap = {}
   Object.entries(cellFilteringSelection).forEach(([key, value]) => {
@@ -589,7 +589,7 @@ export function CellFilteringPanel({
       defaultCheckedMap[key] = value
     }
   })
-  console.log('defaultCheckedMap', defaultCheckedMap)
+  // console.log('defaultCheckedMap', defaultCheckedMap)
 
   const [checkedMap, setCheckedMap] = useState(defaultCheckedMap)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
