@@ -51,7 +51,7 @@ function SequenceForm({
             our <a href="https://singlecell.zendesk.com/hc/en-us/articles/360061006011" target="_blank" rel="noopener noreferrer">documentation</a>.
           </p>
           <p>
-            If you already have the gcloud CLI installed (Sept 2022 or later) you can upload files directly using the following command:
+            If you already have the gcloud CLI installed (Sept 2022 release or later) you can upload files directly using the following command:
           </p>
           <pre>
             gcloud storage cp /path/to/files gs://{formState.study.bucket_id}
