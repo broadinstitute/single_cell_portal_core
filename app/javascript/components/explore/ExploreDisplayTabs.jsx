@@ -68,7 +68,10 @@ function getHasComparisonDe(exploreInfo, exploreParams, comparison) {
 export function handleClusterSwitchForFiltering(cellFilteringSelection, newCellFaceting, setCellFilteringSelection) {
   if (cellFilteringSelection) {
     const existingSelectionFacets = Object.keys(cellFilteringSelection)
-    const updatedSelectionFacets = newCellFaceting.facets.filter(nf => !existingSelectionFacets.includes(nf.annotation))
+    const updatedSelectionFacets =
+      newCellFaceting.facets.filter(
+        nf => !nf.isSelectedAnnotation && !existingSelectionFacets.includes(nf.annotation)
+      )
     if (updatedSelectionFacets.length > 0) {
       updatedSelectionFacets.forEach(uf => cellFilteringSelection[uf.annotation] = uf.groups)
     }
@@ -105,7 +108,7 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
         ).then(newCellFaceting => {
           const initSelection = {}
           if (!cellFilteringSelection) {
-            newCellFaceting.facets.forEach(facet => {
+            newCellFaceting.facets.filter(f => !f.isSelectedAnnotation).forEach(facet => {
               initSelection[facet.annotation] = facet.groups
             })
 
@@ -175,7 +178,7 @@ function getFacetsParam(initFacets, selection) {
   // console.log('initFacets', initFacets)
 
   const initSelection = {}
-  initFacets.forEach(facet => {
+  initFacets.filter(f => !f.isSelectedAnnotation).forEach(facet => {
     if (facet.type === 'group') {
       initSelection[facet.annotation] = facet.groups
     }
@@ -400,6 +403,7 @@ export default function ExploreDisplayTabs({
       setFilteredCells(null)
       return
     }
+
     const cellsByFacet = thisCellFaceting.cellsByFacet
     const initFacets = thisCellFaceting.facets
     const filtersByFacet = thisCellFaceting.filtersByFacet
@@ -622,6 +626,7 @@ export default function ExploreDisplayTabs({
                   dimensions={getPlotDimensions({
                     showRelatedGenesIdeogram, showViewOptionsControls, showDifferentialExpressionTable
                   })}
+                  cellFaceting={cellFaceting}
                   filteredCells={filteredCells}
                   {...exploreParams}/>
               </div>

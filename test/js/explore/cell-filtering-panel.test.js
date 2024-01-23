@@ -136,7 +136,6 @@ describe('"Cell filtering" panel', () => {
         .map(facet => {
           facet.isLoaded = true
 
-
           // Mimic result of null filter trimming
           facet.groups = facet.groups.filter(group => {
             return group !== 'animal cell'

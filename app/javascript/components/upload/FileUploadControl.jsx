@@ -6,6 +6,9 @@ import LoadingSpinner from '~/lib/LoadingSpinner'
 import { StudyContext } from '~/components/upload/upload-utils'
 import ValidateFile from '~/lib/validation/validate-file'
 import ValidationMessage from '~/components/validation/ValidationMessage'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faExternalLinkSquareAlt } from '@fortawesome/free-solid-svg-icons'
+import { Popover, OverlayTrigger } from 'react-bootstrap'
 
 // File types which let the user set a custom name for the file in the UX
 const FILE_TYPES_ALLOWING_SET_NAME = ['Cluster', 'Gene List']
@@ -22,8 +25,36 @@ export default function FileUploadControl({
     validating: false, issues: {}, fileName: null
   })
   const inputId = `file-input-${file._id}`
-
+  const [showUploadButton, setShowUploadButton] = useState(true)
+  const [showBucketPath, setShowBucketPath] = useState(false)
+  const ToggleUploadButton = () => {
+    setShowUploadButton(!showUploadButton)
+    setShowBucketPath(!showBucketPath)
+  }
   const study = useContext(StudyContext)
+
+  const toggleText = showUploadButton ? 'Use bucket path' : 'Upload local file'
+  const toggleTooltip = showBucketPath ?
+    'Upload a file from your computer' :
+    "Input a path to a file that is already in this study's bucket"
+  const uploadToggle = <span
+    className='btn btn-default'
+    onClick={ToggleUploadButton}
+    data-toggle="tooltip"
+    data-original-title={toggleTooltip}>{toggleText}
+  </span>
+
+  const bucketPopover = <Popover id={`bucket-upload-help-${file._id}`}>
+    <a href='https://singlecell.zendesk.com/hc/en-us/articles/360061006011' target='_blank'>
+      Learn how to upload large files
+    </a>
+  </Popover>
+  const googleBucketLink =
+    <OverlayTrigger trigger={['hover', 'focus']} rootClose placement="top" overlay={bucketPopover} delayHide={1500}>
+      <a className='btn btn-default'
+         href={`https://accounts.google.com/AccountChooser?continue=https://console.cloud.google.com/storage/browser/${bucketName}`}
+         target='_blank'><FontAwesomeIcon icon={faExternalLinkSquareAlt} /> Browse bucket</a>
+    </OverlayTrigger>
 
   /** handle user interaction with the file input */
   async function handleFileSelection(e) {
@@ -48,11 +79,41 @@ export default function FileUploadControl({
       })
     }
   }
+
+  // perform CSFV on remote file when specifying a GS URL or bucket path
+  // will sanitize GS URL before calling validateRemoteFile
+  async function handleBucketLocationEntry(e) {
+    const path = e.target.value
+    const matcher = new RegExp(`(gs:\/\/)?${bucketName}\/?`)
+    const trimmedPath = path.replace(matcher, '')
+    if (!trimmedPath) {
+      return false
+    }
+
+    const fileType = file.file_type
+    const fileOptions = fileType === 'Metadata' ? { use_metadata_convention: file?.use_metadata_convention } : {}
+
+    setFileValidation({ validating: true, issues: {}, fileName: trimmedPath })
+    try {
+      const issues = await ValidateFile.validateRemoteFile(
+        bucketName, trimmedPath, fileType, fileOptions
+      )
+      setFileValidation({ validating: false, issues, fileName: trimmedPath })
+
+      // Prevent saving via '', if validation errors were detected
+      const remoteLocation = issues.errors.length === 0 ? trimmedPath : ''
+      updateFile(file._id, {remote_location: remoteLocation})
+    } catch (error) {
+      // Catch file access error and allow user to proceed - validation will be handled server-side or in ingest
+      setFileValidation({ validating: false, issues: {}, fileName: trimmedPath })
+    }
+  }
+
   const isFileChosen = !!file.upload_file_name
   const isFileOnServer = file.status !== 'new'
 
   let buttonText = isFileChosen ? 'Replace' : 'Choose file'
-  let buttonClass = 'fileinput-button btn terra-tertiary-btn'
+  let buttonClass = `fileinput-button btn terra-tertiary-btn`
   if (!isFileChosen && !file.uploadSelection) {
     buttonClass = 'fileinput-button btn btn-primary'
   }
@@ -90,7 +151,7 @@ export default function FileUploadControl({
     </div>
   }
 
-  return <div>
+  return <div className="form-inline">
     <label>
       { !file.uploadSelection && <h5 data-testid="file-uploaded-name">{file.upload_file_name}</h5> }
       { file.uploadSelection && <h5 data-testid="file-selection-name">
@@ -101,17 +162,33 @@ export default function FileUploadControl({
       file={file}
     />
     &nbsp;
-    { !isFileOnServer &&
-      <button className={buttonClass} id={`fileButton-${file._id}`} data-testid="file-input-btn">
-        { buttonText }
+    {!isFileOnServer && showUploadButton &&
+      <button className={buttonClass} id={`fileButton-${file._id}`}
+              data-testid="file-input-btn">
+        {buttonText}
         <input className="file-upload-input" data-testid="file-input"
-          type="file"
-          id={inputId}
-          onChange={handleFileSelection}
-          accept={inputAcceptExts}
+               type="file"
+               id={inputId}
+               onChange={handleFileSelection}
+               accept={inputAcceptExts}
         />
       </button>
     }
+    {!isFileOnServer && showBucketPath &&
+      // we can't use TextFormField since we need a custom onBlur event
+      // onBlur is the React equivalent of onfocusout, which will fire after the user is done updating the input
+      <input className="form-control"
+             type="text"
+             size={60}
+             id={`remote_location-input-${file._id}`}
+             placeholder='GS URL or path to file in GCP bucket'
+             onBlur={handleBucketLocationEntry}/>
+    }
+    &nbsp;&nbsp;
+    { !isFileOnServer && showBucketPath && googleBucketLink }
+
+    &nbsp;&nbsp;
+    { !isFileOnServer && uploadToggle }
 
     <ValidationMessage
       studyAccession={study.accession}

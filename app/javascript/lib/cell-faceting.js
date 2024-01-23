@@ -146,9 +146,9 @@ function applyNumericFilters(numericFilters, d) {
     } else if (operator === 'less than or equal to') {
       return d <= value
     } else if (operator === 'between') {
-      return d <= value[0] && d <= value[1]
+      return value[0] <= d && d <= value[1]
     } else if (operator === 'not between') {
-      return !(d <= value[0] && d <= value[1])
+      return !(value[0] <= d && d <= value[1])
     }
   }
 }
@@ -157,7 +157,7 @@ function applyNumericFilters(numericFilters, d) {
 export function filterCells(
   selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, rawFacets
 ) {
-  console.log('in filterCells')
+  // console.log('in filterCells')
   const t0 = Date.now()
   const facets =
   initFacets
@@ -165,7 +165,7 @@ export function filterCells(
     .map(facet => facet.annotation)
 
   let fn; let facet; let results
-  console.log('selection', selection)
+  // console.log('selection', selection)
 
   if (Object.keys(selection).length === 0) {
     results = filterableCells
@@ -173,7 +173,7 @@ export function filterCells(
     for (let i = 0; i < facets.length; i++) {
       facet = facets[i]
       if (facet in selection) {
-        console.log('in filterCells, facet', facet)
+        // console.log('in filterCells, facet', facet)
         if (facet.includes('--group--')) {
           // e.g. 'infant_sick_YN'
           const friendlyFilters = selection[facet] // e.g. ['yes', 'NA']
@@ -218,7 +218,7 @@ export function filterCells(
 
   logFilterCells(t0Counts, t0, filterableCells, results, selection)
 
-  console.log('in filterCells, results', results)
+  console.log('# filtered results', results.length)
 
   return [results, counts]
 }
@@ -477,8 +477,7 @@ export async function initCellFaceting(
         return (
           !(annot.type === 'group' && annot.values.length <= 1) &&
           !annot.identifier.endsWith('invalid') &&
-          !annot.identifier.endsWith('user') &&
-          annot.identifier !== selectedAnnotId
+          !annot.identifier.endsWith('user')
         )
       })
 
@@ -501,7 +500,7 @@ export async function initCellFaceting(
   const timeFetchStart = Date.now()
   const newRawFacets = await fetchAnnotationFacets(studyAccession, facetsToFetch, selectedCluster)
   perfTimes.fetch = Date.now() - timeFetchStart
-  console.log('newRawFacets', newRawFacets)
+  // console.log('newRawFacets', newRawFacets)
 
   // Below line is worth keeping, but only uncomment to debug in development.
   // This helps simulate waiting on server response, to slow data load even
@@ -522,6 +521,7 @@ export async function initCellFaceting(
   const facets = allRelevanceSortedFacets.map(facet => {
     const isLoaded = loadedFacets.some(loadedFacet => facet.annotation === loadedFacet.annotation)
     facet.isLoaded = isLoaded
+    facet.isSelectedAnnotation = facet.annotation === selectedAnnotId
     return facet
   })
 

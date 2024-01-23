@@ -11,6 +11,7 @@ import LoadingSpinner from '~/lib/LoadingSpinner'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
 import { log } from '~/lib/metrics-api'
 
+
 const tooltipAttrs = {
   'data-toggle': 'tooltip',
   'data-delay': '{"show": 150}' // Avoid flurry of tooltips on passing hover
@@ -558,10 +559,8 @@ export function CellFilteringPanel({
     )
   }
 
-  // console.log('cellFaceting.facets', cellFaceting.facets)
   const facets = cellFaceting.facets
-    // .filter(facet => facet.type === 'group' && facet.isSelectedAnnotation === false)
-    .filter(facet => facet.type === 'group')
+    .filter(facet => facet.isSelectedAnnotation === false && facet.type === 'group')
     .map(facet => {
       // Add counts of matching cells for each filter to its containing facet object
       facet.filterCounts = cellFilterCounts[facet.annotation]

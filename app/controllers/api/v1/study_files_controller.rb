@@ -388,7 +388,7 @@ module Api
           study.update(default_options: options)
         end
 
-        if safe_file_params[:upload].present? && !is_chunked
+        if safe_file_params[:upload].present? && !is_chunked || safe_file_params[:remote_location].present?
           complete_upload_process(study_file, parse_on_upload)
         end
       end
@@ -432,11 +432,13 @@ module Api
         study_file.update!(status: 'uploaded', parse_status: 'unparsed') # set status to uploaded on full create
         if parse_on_upload
           if study_file.parseable?
-            FileParseService.run_parse_job(@study_file, @study, current_api_user)
+            persist_on_fail = study_file.remote_location.present?
+            FileParseService.run_parse_job(@study_file, @study, current_api_user, persist_on_fail:)
           else
             # make sure we bundle non-parseable files if appropriate
             FileParseService.create_bundle_from_file_options(study_file, @study)
-            @study.delay.send_to_firecloud(study_file) # send data to FireCloud if upload was performed
+            # send data to FireCloud only if upload was performed
+            @study.delay.send_to_firecloud(study_file) unless study_file.remote_location.present?
           end
         end
       end
@@ -501,10 +503,9 @@ module Api
         DeleteQueueJob.new(@study_file).delay.perform
         begin
           # make sure file is in FireCloud first
-          unless human_data || @study_file.generation.blank?
-            present = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, @study.bucket_id, @study_file.upload_file_name)
-            if present
-              ApplicationController.firecloud_client.execute_gcloud_method(:delete_workspace_file, 0, @study.bucket_id, @study_file.upload_file_name)
+          unless human_data || @study_file.generation.blank? || @study_file.remote_location.present?
+            if ApplicationController.firecloud_client.execute_gcloud_method(:workspace_file_exists?, 0, @study.bucket_id, @study_file.bucket_location)
+              ApplicationController.firecloud_client.execute_gcloud_method(:delete_workspace_file, 0, @study.bucket_id, @study_file.bucket_location)
             end
           end
           head 204

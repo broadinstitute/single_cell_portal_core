@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import _uniqueId from 'lodash/uniqueId'
 import Plotly from 'plotly.js-dist'
+import { fetchCluster } from '~/lib/scp-api'
 
 import { fetchExpressionViolin } from '~/lib/scp-api'
 import PlotUtils from '~/lib/plot'
+import { workSetViolinCellIndexes, initViolinWorker } from '~/lib/web-worker'
 const {
   getColorBrewerColor, arrayMin, arrayMax, plotlyDefaultLineColor,
   DISTRIBUTION_PLOT_OPTIONS, defaultDistributionPlot, DISTRIBUTION_POINTS_OPTIONS, defaultDistributionPoints
@@ -34,23 +36,77 @@ function ViolinPlotTitle({ cluster, annotation, genes, consensus }) {
   )
 }
 
-/** Displays a violin plot of expression data for the given gene and study
+
+/** Get array of names for all cells in clustering */
+async function getAllCellNames(studyAccession, cluster, annotation) {
+  const clusterData = await fetchCluster({
+    studyAccession, cluster, annotation, subsample: 'All'
+  })
+  const allCellNames = clusterData[0].data.cells
+  return allCellNames
+}
+
+/** Filter cells in violin plot */
+async function filterResults(
+  studyAccession, cluster, annotation, gene,
+  results, cellFaceting, filteredCells
+) {
+  if (gene in window.SCP.violinCellIndexes === false) {
+    const allCellNames = await getAllCellNames(studyAccession, cluster, annotation)
+    await workSetViolinCellIndexes(gene, results, allCellNames)
+  }
+
+  if (!filteredCells || !cellFaceting) {return results}
+
+  const allCellsIndex = window.SCP.violinCellIndexes[gene]
+  const filteredValues = {}
+
+  const filteredCellIndexes = new Set()
+  for (let i = 0; i < filteredCells.length; i++) {
+    filteredCellIndexes.add(filteredCells[i].allCellsIndex)
+  }
+
+  Object.keys(results.values).forEach(group => {
+    filteredValues[group] = {
+      annotations: [],
+      cells: [],
+      name: group,
+      y: []
+    }
+    const cellNames = results.values[group].cells
+    for (let i = 0; i < cellNames.length; i++) {
+      const cellIndex = allCellsIndex[group][i]
+      if (filteredCellIndexes.has(cellIndex)) {
+        const cellName = cellNames[i]
+        filteredValues[group].cells.push(cellName)
+        filteredValues[group].y.push(results.values[group].y[i])
+      }
+    }
+  })
+
+  results.values = filteredValues
+
+  return results
+}
+
+/**
+ * Displays a violin plot of expression data for the given gene and study
  *
  * @param studyAccession {String} the study accession
  * @param genes {Array[String]} array of gene names
- * @param cluster {string} the name of the cluster, or blank/null for the study's default
- * @param annotation {obj} an object with name, type, and scope attributes
- * @param subsample {string} a string for the subsampel to be retrieved.
- * @param consensus {string} for multi-gene expression plots
- * @param distributionPlot {string} 'box' or 'violin' for the plot type (default is violin)
- * @param distributionPoints {string} 'none' 'all' 'suspectedoutliers' or 'outliers'
- * @param setAnnotationList {function} for global gene search and other places where a single call is used to
+ * @param cluster {String} the name of the cluster, or blank/null for the study's default
+ * @param annotation {Object} an object with name, type, and scope attributes
+ * @param subsample {String} a string for the subsampel to be retrieved.
+ * @param consensus {String} for multi-gene expression plots
+ * @param distributionPlot {String} 'box' or 'violin' for the plot type (default is violin)
+ * @param distributionPoints {String} 'none' 'all' 'suspectedoutliers' or 'outliers'
+ * @param setAnnotationList {Function} for global gene search and other places where a single call is used to
  *   fetch both the default expression data and the cluster menu options, a function that will be
  *   called with the annotationList returned by that call.
 */
 function RawStudyViolinPlot({
   studyAccession, genes, cluster, annotation, subsample, consensus, distributionPlot, distributionPoints,
-  updateDistributionPlot, setAnnotationList, dimensions={}, filteredCells
+  updateDistributionPlot, setAnnotationList, dimensions={}, cellFaceting, filteredCells
 }) {
   const [isLoading, setIsLoading] = useState(false)
   // array of gene names as they are listed in the study itself
@@ -60,21 +116,33 @@ function RawStudyViolinPlot({
   const [renderedAnnotation, setRenderedAnnotation] = useState('')
   const { ErrorComponent, setShowError, setError } = useErrorMessage()
 
+  if (!window.SCP.violinCellIndexes) {
+    initViolinWorker()
+  }
 
   /** renders received expression data from the server */
-  function renderData([results, perfTimes]) {
+  async function renderData([results, perfTimes], cellFaceting) {
     let distributionPlotToUse = distributionPlot
     if (!distributionPlotToUse) {
       distributionPlotToUse = defaultDistributionPlot
     }
 
+    results = await filterResults(
+      studyAccession, cluster, annotation, genes[0],
+      results, cellFaceting, filteredCells
+    )
+
     const startTime = performance.now()
 
-    renderViolinPlot(graphElementId, results, {
-      plotType: distributionPlotToUse,
-      showPoints: distributionPoints,
-      dimensions
-    })
+    renderViolinPlot(
+      graphElementId,
+      results,
+      {
+        plotType: distributionPlotToUse,
+        showPoints: distributionPoints,
+        dimensions
+      }
+    )
 
     perfTimes.plot = performance.now() - startTime
 
@@ -104,12 +172,15 @@ function RawStudyViolinPlot({
       annotation.scope,
       subsample,
       consensus
-    ).then(renderData).catch(error => {
-      Plotly.purge(graphElementId)
-      setError(error)
-      setShowError(true)
-      setIsLoading(false)
-    })
+    )
+      .then(([results, perfTimes]) => {
+        renderData([results, perfTimes], cellFaceting, filteredCells)
+      }).catch(error => {
+        Plotly.purge(graphElementId)
+        setError(error)
+        setShowError(true)
+        setIsLoading(false)
+      })
   }, [ // do a load from the server if any of the paramenters passed to fetchExpressionViolin have changed
     studyAccession,
     genes[0],
@@ -117,8 +188,20 @@ function RawStudyViolinPlot({
     annotation.name,
     annotation.scope,
     subsample,
+    consensus,
+    filteredCells?.join(',')
+  ])
+
+  // Clear violin cell index upon changing violin results
+  useEffect(() => {
+    delete window.SCP.violinCellIndexes[genes[0]]
+  }, [
+    studyAccession,
+    cluster,
+    annotation.name,
+    annotation.scope,
+    subsample,
     consensus
-    // filteredCells.join(',') // TODO (SCP-5275): Cell faceting for violin plots
   ])
 
   // useEffect for handling render param re-renders

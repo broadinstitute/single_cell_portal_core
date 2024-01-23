@@ -29,7 +29,7 @@ function RoutableExploreTab({ studyAccession }) {
     const exploreResponse = await fetchExplore(studyAccession)
     setExploreInfo(exploreResponse)
     // set window.SCP.isDifferentialExpressionEnabled so that we can track differential expression visibility globally
-    if (window.SCP) {
+    if (window.SCP && !window.SCP.isTest) {
       window.SCP.isDifferentialExpressionEnabled = exploreResponse.differentialExpression.length > 0
     }
     // after the explore info is received, fetch the user-specific study data, but do it

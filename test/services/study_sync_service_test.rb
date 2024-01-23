@@ -56,18 +56,19 @@ class StudySyncServiceTest < ActiveSupport::TestCase
 
   test 'should update content headers based on file content' do
     gzipped_file = File.open(Rails.root.join('test/test_data/expression_matrix_example_gzipped.txt.gz'))
-    study_file = StudyFile.create(name: 'expression_matrix_example_gzipped.txt.gz', file_type: 'Expression Matrix',
-                                 upload: gzipped_file, remote_location: 'expression_matrix_example_gzipped.txt.gz',
-                                 study: @full_study)
-    # override upload_content_type to simulate a gsutil upload
-    study_file.update(upload_content_type: 'text/plain')
+    filename = File.basename(gzipped_file)
     client = ApplicationController.firecloud_client
     # push directly to bucket, and override content_type & content_encoding to simulate problems from gsutil/user error
     remote = client.create_workspace_file(@full_study.bucket_id,
                                           gzipped_file.path,
-                                          study_file.upload_file_name,
+                                          filename,
                                           content_type: 'text/plain',
                                           content_encoding: 'gzip')
+    study_file = StudyFile.create!(name: filename, file_type: 'Expression Matrix',
+                                 upload: gzipped_file, remote_location: filename,
+                                 study: @full_study)
+    # override upload_content_type to simulate a gsutil upload
+    study_file.update(upload_content_type: 'text/plain')
     assert remote.present?
     assert_equal 'text/plain', remote.content_type
     assert_equal 'gzip', remote.content_encoding

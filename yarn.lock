@@ -3629,7 +3629,7 @@ d3-brush@^3.0.0:
     d3-selection "3"
     d3-transition "3"
 
-"d3-color@1 - 3":
+"d3-color@1 - 3", d3-color@^3.0.1:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/d3-color/-/d3-color-3.1.0.tgz#395b2833dfac71507f12ac2f7af23bf819de24e2"
   integrity sha512-zg/chbXyeBtMQ1LbD/WSoW2DpC3I0mpmPdW+ynRTj/x2DAWYrIY7qeZIHidozwV24m4iavr15lNwIwLxRmOxhA==
@@ -4784,6 +4784,13 @@ fast-json-stable-stringify@^2.0.0:
   resolved "https://registry.yarnpkg.com/fast-json-stable-stringify/-/fast-json-stable-stringify-2.1.0.tgz#874bf69c6f404c2b5d99c481341399fd55892633"
   integrity sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==
 
+fast-kde@0.2.1:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/fast-kde/-/fast-kde-0.2.1.tgz#1096e881ec57e3e8d5361aa7946e3e2e3264dbad"
+  integrity sha512-GI10NtHU6nxu6dd0CD89ZbPm8H42msjgyFOj20VV4hokkP4ycCTUP5HJvObYo0nTPdCOsgxPVpoVYVkPiMBMfQ==
+  dependencies:
+    d3-color "^3.0.1"
+
 fast-levenshtein@~2.0.6:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz#3d8a5c66883a16a30ca8643e851f19baa7797917"
@@ -5331,10 +5338,10 @@ iconv-lite@0.4, iconv-lite@0.4.24, iconv-lite@^0.4.24:
   dependencies:
     safer-buffer ">= 2.1.2 < 3"
 
-ideogram@1.44.1:
-  version "1.44.1"
-  resolved "https://registry.yarnpkg.com/ideogram/-/ideogram-1.44.1.tgz#f5db448a6018841fae5b5db4bb251ccf816f2fbe"
-  integrity sha512-6ywrx4sCK50qXHPkBpABcq3wa14l0tTWs2NAqSQaZ6LfT6xPKUahN7P7GiGjc4mNc00TXeum7EawrejhTa1uOQ==
+ideogram@1.45.1:
+  version "1.45.1"
+  resolved "https://registry.yarnpkg.com/ideogram/-/ideogram-1.45.1.tgz#e45f3534320d06e7384e7af7f6f3940bc656bf98"
+  integrity sha512-WKYiFpfxNUsdpcy8uazZHvaMw3wzS70OQDlA83EBbV3ADKbt+tbPFiuJfgS+guDORtBnjhLR9YlCUxLHkKwTdw==
   dependencies:
     crossfilter2 "1.5.2"
     d3-array "^2.8.0"
@@ -5343,8 +5350,10 @@ ideogram@1.44.1:
     d3-fetch "^2.0.0"
     d3-format "^2.0.0"
     d3-scale "^4.0.2"
+    fast-kde "0.2.1"
     fflate "^0.7.3"
     tippy.js "6.3.7"
+    workbox-range-requests "7.0.0"
 
 ignore@^4.0.6:
   version "4.0.6"
@@ -9571,10 +9580,10 @@ vite-plugin-ruby@^3.0.5:
     debug "^4.3.4"
     fast-glob "^3.2.12"
 
-vite@^2.9.16:
-  version "2.9.16"
-  resolved "https://registry.yarnpkg.com/vite/-/vite-2.9.16.tgz#daf7ba50f5cc37a7bf51b118ba06bc36e97898e9"
-  integrity sha512-X+6q8KPyeuBvTQV8AVSnKDvXoBMnTx8zxh54sOwmmuOdxkjMmEJXH2UEchA+vTMps1xw9vL64uwJOWryULg7nA==
+vite@^2.9.17:
+  version "2.9.17"
+  resolved "https://registry.yarnpkg.com/vite/-/vite-2.9.17.tgz#6b770525e12fa2a2e3a0fa0d028d304f4f7dc7d4"
+  integrity sha512-XxcRzra6d7xrKXH66jZUgb+srThoPu+TLJc06GifUyKq9JmjHkc1Numc8ra0h56rju2jfVWw3B3fs5l3OFMvUw==
   dependencies:
     esbuild "^0.14.27"
     postcss "^8.4.13"
@@ -9782,6 +9791,18 @@ word-wrap@~1.2.3:
   version "1.2.5"
   resolved "https://registry.yarnpkg.com/word-wrap/-/word-wrap-1.2.5.tgz#d2c45c6dd4fbce621a66f136cbe328afd0410b34"
   integrity sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==
+
+workbox-core@7.0.0:
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/workbox-core/-/workbox-core-7.0.0.tgz#dec114ec923cc2adc967dd9be1b8a0bed50a3545"
+  integrity sha512-81JkAAZtfVP8darBpfRTovHg8DGAVrKFgHpOArZbdFd78VqHr5Iw65f2guwjE2NlCFbPFDoez3D3/6ZvhI/rwQ==
+
+workbox-range-requests@7.0.0:
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/workbox-range-requests/-/workbox-range-requests-7.0.0.tgz#97511901e043df27c1aa422adcc999a7751f52ed"
+  integrity sha512-SxAzoVl9j/zRU9OT5+IQs7pbJBOUOlriB8Gn9YMvi38BNZRbM+RvkujHMo8FOe9IWrqqwYgDFBfv6sk76I1yaQ==
+  dependencies:
+    workbox-core "7.0.0"
 
 wrap-ansi@^6.2.0:
   version "6.2.0"
