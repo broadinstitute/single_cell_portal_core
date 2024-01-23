@@ -112,6 +112,27 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
   log('filter-cells', filterLogProps)
 }
 
+/**
+ * Determine if a datum satisfies numeric filters
+ */
+function applyNumericFilters(numericFilters, d) {
+  for (let i = 0; i < numericFilters.length; i++) {
+    const numericFilter = numericFilters[i]
+    if (numericFilter.length === 2) {
+      const [lowerBound, upperBound] = numericFilter
+      if ((!d >= lowerBound && d < upperBound)) {
+        // TODO: Crossfilter uses "d < upperBound".
+        // Should we use that, or "d <= upperBound"?
+        return false
+      }
+    } else {
+      // Filter is only 1 number, so test exact match
+      if (numericFilter[0] !== d) {return false}
+    }
+  }
+  return true
+}
+
 /** Get filtered cell results */
 export function filterCells(
   selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, rawFacets
@@ -158,21 +179,7 @@ export function filterCells(
           const numericFilters = selection[facet] // e.g. [0, 20]
 
           fn = function(d) {
-            for (let i = 0; i < numericFilters.length; i++) {
-              const numericFilter = numericFilters[i]
-              if (numericFilter.length === 2) {
-                const [lowerBound, upperBound] = numericFilter
-                if ((!d >= lowerBound && d < upperBound)) {
-                  // TODO: Crossfilter uses "d < upperBound".
-                  // Should we use that, or "d <= upperBound"?
-                  return false
-                }
-              } else {
-                // Filter is only 1 number, so test exact match
-                if (numericFilter[0] !== d) {return false}
-              }
-            }
-            return true
+            return applyNumericFilters(numericFilters, d)
           }
           cellsByFacet[facet].filterFunction(fn)
         }
