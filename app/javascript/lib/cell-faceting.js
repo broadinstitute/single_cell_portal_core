@@ -114,23 +114,43 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
 
 /**
  * Determine if a datum satisfies numeric filters
+ *
+ * @param {Array<Array<String, *>>} numericFilters Filters for a numeric
+ *   facet. Each filter has an operator and a value.  Values can be a number
+ *   or an array of two numbers.
+ *
+ *   Example numeric filters:
+ *   - ["equals", 1.3]
+ *   - ["not equals", 1.3]
+ *   - ["greater than", 6]
+ *   - ["greater than or equal to", 6]
+ *   - ["less than", 6]
+ *   - ["less than or equal to", 6]
+ *   - ["between", [5, 42]] -- inclusive, i.e. 5 <= d && d <= 42
+ *   - ["not between", [5, 42]] -- inclusive, i.e. !(5 <= d && d <= 42)
+ * @param {Number} d - A numeric datum
  */
 function applyNumericFilters(numericFilters, d) {
   for (let i = 0; i < numericFilters.length; i++) {
-    const numericFilter = numericFilters[i]
-    if (numericFilter.length === 2) {
-      const [lowerBound, upperBound] = numericFilter
-      if ((!d >= lowerBound && d < upperBound)) {
-        // TODO: Crossfilter uses "d < upperBound".
-        // Should we use that, or "d <= upperBound"?
-        return false
-      }
-    } else {
-      // Filter is only 1 number, so test exact match
-      if (numericFilter[0] !== d) {return false}
+    const [operator, value] = numericFilters[i]
+    if (operator === 'equals') {
+      return d === value
+    } else if (operator === 'not equals') {
+      return d !== value
+    } else if (operator === 'greater than') {
+      return d > value
+    } else if (operator === 'greater than or equal to') {
+      return d >= value
+    } else if (operator === 'less than') {
+      return d < value
+    } else if (operator === 'less than or equal to') {
+      return d <= value
+    } else if (operator === 'between') {
+      return d <= value[0] && d <= value[1]
+    } else if (operator === 'not between') {
+      return !(d <= value[0] && d <= value[1])
     }
   }
-  return true
 }
 
 /** Get filtered cell results */
