@@ -113,7 +113,7 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
 }
 
 /**
- * Determine if a datum satisfies numeric filters
+ * Determine if a datum satisfies any numeric filters
  *
  * @param {Array<Array<String, *>>} numericFilters Filters for a numeric
  *   facet. Each filter has an operator and a value.  Values can be a number
@@ -134,23 +134,26 @@ function applyNumericFilters(numericFilters, d) {
   for (let i = 0; i < numericFilters.length; i++) {
     const [operator, value] = numericFilters[i]
     if (operator === 'equals') {
-      return d === value
+      // for fastest querying, exit function immediately upon _any_ condition
+      // evaluating to true
+      if (d === value) {return true}
     } else if (operator === 'not equals') {
-      return d !== value
+      if (d !== value) {return true}
     } else if (operator === 'greater than') {
-      return d > value
+      if (d > value) {return true}
     } else if (operator === 'greater than or equal to') {
-      return d >= value
+      if (d >= value) {return true}
     } else if (operator === 'less than') {
-      return d < value
+      if (d < value) {return true}
     } else if (operator === 'less than or equal to') {
-      return d <= value
+      if (d <= value) {return true}
     } else if (operator === 'between') {
-      return value[0] <= d && d <= value[1]
+      if (value[0] <= d && d <= value[1]) {return true}
     } else if (operator === 'not between') {
-      return !(value[0] <= d && d <= value[1])
+      if (!(value[0] <= d && d <= value[1])) {return true}
     }
   }
+  return false
 }
 
 /** Get filtered cell results */
