@@ -188,6 +188,7 @@ class IngestJobTest < ActiveSupport::TestCase
   end
 
   test 'should identify AnnData parses with extraction in mixpanel' do
+    # parsed AnnData
     ann_data_file = FactoryBot.create(:ann_data_file, name: 'test.h5ad', study: @basic_study)
     ann_data_file.ann_data_file_info.reference_file = false
     ann_data_file.ann_data_file_info.data_fragments = [
@@ -236,6 +237,60 @@ class IngestJobTest < ActiveSupport::TestCase
         jobStatus: 'success',
         referenceAnnDataFile: false,
         extractedFileTypes: %w[cluster metadata processed_expression],
+        machineType: 'n2d-highmem-4',
+        bootDiskSizeGb: 300,
+        exitStatus: 0
+      }.with_indifferent_access
+
+      job_analytics = job.get_job_analytics
+      mock.verify
+      assert_equal expected_outputs, job_analytics
+    end
+
+    # reference AnnData
+    reference_file = FactoryBot.create(:ann_data_file, name: 'reference.h5ad', study: @basic_study)
+    reference_file.upload_file_size = 1.megabyte
+    reference_file.save
+    params_object = AnnDataIngestParameters.new(
+      anndata_file: reference_file.gs_url, extract: nil, obsm_keys: nil, file_size: reference_file.upload_file_size
+    )
+    job = IngestJob.new(
+      study: @basic_study, study_file: reference_file, user: @user, action: :ingest_anndata, params_object:
+    )
+    mock = Minitest::Mock.new
+    now = DateTime.now.in_time_zone
+    mock_metadata = {
+      events: [
+        { timestamp: now.to_s }.with_indifferent_access,
+        { timestamp: (now + 1.minute).to_s, containerStopped: { exitStatus: 0 } }.with_indifferent_access
+      ],
+      pipeline: {
+        resources: {
+          virtualMachine: {
+            machineType: 'n2d-highmem-4',
+            bootDiskSizeGb: 300
+          }
+        }
+      }
+    }.with_indifferent_access
+    mock.expect :metadata, mock_metadata
+    mock.expect :metadata, mock_metadata
+    mock.expect :metadata, mock_metadata
+    mock.expect :error, nil
+    mock.expect :done?, true
+
+    ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
+      expected_outputs = {
+        perfTime: 60000,
+        fileType: reference_file.file_type,
+        fileSize: reference_file.upload_file_size,
+        fileName: reference_file.name,
+        trigger: 'upload',
+        action: :ingest_anndata,
+        studyAccession: @basic_study.accession,
+        jobStatus: 'success',
+        referenceAnnDataFile: true,
+        extractedFileTypes: nil,
         machineType: 'n2d-highmem-4',
         bootDiskSizeGb: 300,
         exitStatus: 0
