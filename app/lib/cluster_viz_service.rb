@@ -185,10 +185,10 @@ class ClusterVizService
     end
 
     if include_coords
-      viz_data[:x] = x_array
-      viz_data[:y] = y_array
+      viz_data[:x] = ArrayUtils.typed_array(x_array)
+      viz_data[:y] = ArrayUtils.typed_array(y_array)
       if cluster.is_3d?
-        viz_data[:z] = z_array
+        viz_data[:z] = ArrayUtils.typed_array(z_array)
       end
     end
 
@@ -225,7 +225,8 @@ class ClusterVizService
         annotation_array = index.map { |idx| annotations[idx] }
       end
     end
-    AnnotationVizService.sanitize_values_array(annotation_array, annotation[:type])
+    annot_array = AnnotationVizService.sanitize_values_array(annotation_array, annotation[:type])
+    annotation[:type] == 'numeric' ? ArrayUtils.typed_array(annot_array) : annot_array
   end
 
   # validate study has raw counts, and that all cells from the cluster file exist in a single raw counts matrix

@@ -39,7 +39,7 @@
     "jquery-ui": "1.13.2",
     "morpheus-app": "1.0.18",
     "nouislider": "^15.7.1",
-    "plotly.js-dist": "2.2.0",
+    "plotly.js-dist": "2.28.0",
     "pluralize": "^8.0.0",
     "postcss": "^8.4.31",
     "postcss-import": "^14.0.2",
