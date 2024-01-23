@@ -102,7 +102,7 @@ export default function FileUploadControl({
 
       // Prevent saving via '', if validation errors were detected
       const remoteLocation = issues.errors.length === 0 ? trimmedPath : ''
-      updateFile(file._id, {remote_location: remoteLocation})
+      updateFile(file._id, {remote_location: remoteLocation, hasRemoteFile: true})
     } catch (error) {
       // Catch file access error and allow user to proceed - validation will be handled server-side or in ingest
       setFileValidation({ validating: false, issues: {}, fileName: trimmedPath })

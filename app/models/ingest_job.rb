@@ -721,7 +721,7 @@ class IngestJob
             ingest_cluster: true, name:, cluster_file: cluster_gs_url, domain_ranges:, ingest_anndata: false,
             extract: nil, obsm_keys: nil
           )
-          job = IngestJob.new(study:, study_file:, user:, action:, params_object: cluster_params)
+          job = IngestJob.new(study:, study_file:, user:, action:, persist_on_fail:, params_object: cluster_params)
           job.delay.push_remote_and_launch_ingest
         end
       when 'metadata'
@@ -732,7 +732,7 @@ class IngestJob
           ingest_cell_metadata: true, cell_metadata_file: metadata_gs_url,
           ingest_anndata: false, extract: nil, obsm_keys: nil, study_accession: study.accession
         )
-        job = IngestJob.new(study:, study_file:, user:, action:, params_object: metadata_params)
+        job = IngestJob.new(study:, study_file:, user:, action:, persist_on_fail:, params_object: metadata_params)
         job.delay.push_remote_and_launch_ingest
       when 'processed_expression'
         Rails.logger.info "Launching AnnData processed expression ingest for #{study_file.upload_file_name}"
@@ -745,7 +745,7 @@ class IngestJob
           matrix_file: matrix_gs_url, matrix_file_type: 'mtx', gene_file: features_gs_url, barcode_file: barcodes_gs_url,
           ingest_anndata: false, extract: nil, obsm_keys: nil
         )
-        job = IngestJob.new(study:, study_file:, user:, action:, params_object: exp_params)
+        job = IngestJob.new(study:, study_file:, user:, action:, persist_on_fail:, params_object: exp_params)
         job.delay.push_remote_and_launch_ingest
       end
     end

@@ -122,7 +122,11 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
       # this must be done with a fresh StudyFile reference, otherwise upload_file_name may not overwrite
       new_name = "DELETE-#{SecureRandom.uuid}"
       file_reference = StudyFile.find(object.id)
-      file_reference.update!(queued_for_deletion: true, upload_file_name: new_name, name: new_name, file_type: 'DELETE')
+      file_reference.update!(queued_for_deletion: true,
+                             upload_file_name: new_name,
+                             remote_location: new_name,
+                             name: new_name,
+                             file_type: 'DELETE')
 
       # reset initialized if needed
       if study.cluster_groups.empty? || study.genes.empty? || study.cell_metadata.empty?

@@ -119,6 +119,16 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
       assert message.include?('are not unique')
     end
     ann_data_info.data_fragments = [
+      { _id: generate_id, data_type: :cluster, name: '', obsm_key_name: 'X_umap' },
+      { _id: generate_id, data_type: :cluster, name: nil, obsm_key_name: 'X_tsne' }
+    ]
+    assert_not ann_data_info.valid?
+    error_messages = ann_data_info.errors.messages_for(:data_fragments)
+    assert_equal 2, error_messages.count
+    error_messages.each do |message|
+      assert message.match(/cluster fragment missing name in form for (X_umap|X_tsne)/)
+    end
+    ann_data_info.data_fragments = [
       { _id: generate_id, data_type: :cluster, name: 'UMAP', obsm_key_name: 'X_umap' },
       { _id: generate_id, data_type: :cluster, name: 'tSNE', obsm_key_name: 'X_tsne' },
       { _id: generate_id, data_type: :expression, y_axis_title: 'log(TPM) expression' }

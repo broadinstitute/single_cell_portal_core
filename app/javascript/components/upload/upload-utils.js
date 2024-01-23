@@ -128,7 +128,7 @@ export function formatFileForApi(file, chunkStart, chunkEnd) {
       data.append('study_file[upload]', file.uploadSelection)
     }
   }
-  if (file.uploadSelection || file.remote_location) {
+  if (file.uploadSelection || (file.remote_location && file.hasRemoteFile)) {
     data.append('study_file[parse_on_upload]', true)
   }
   // set name attribute if using remote_location
