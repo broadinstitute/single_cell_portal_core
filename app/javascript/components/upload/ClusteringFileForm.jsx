@@ -11,7 +11,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 
 const allowedFileExts = FileTypeExtensions.plainText
-const requiredFields = [{ label: 'Name', propertyName: 'name' }]
+let requiredFields = [{ label: 'Name', propertyName: 'name' }]
 
 /** renders a form for editing/uploading a single cluster file */
 export default function ClusteringFileForm({
@@ -29,8 +29,11 @@ export default function ClusteringFileForm({
   const spatialClusterAssocs = file.spatial_cluster_associations
     .map(id => associatedClusterFileOptions.find(opt => opt.value === id))
 
+  if (isAnnDataExperience) {
+    requiredFields.push({ label: '.obsm key name', propertyName: 'obsm_key_name'})
+  }
   const validationMessages = validateFile({
-    file, allFiles, allowedFileExts, requiredFields
+    file, allFiles, allowedFileExts, requiredFields, isAnnDataExperience
   })
 
   const isLastClustering = (allFiles
