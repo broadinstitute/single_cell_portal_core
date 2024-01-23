@@ -115,6 +115,7 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
 /**
  * Determine if a cell satisfies any numeric filters
  *
+ * @param {Number} d - A numeric datum; a numeric annotation value for a cell
  * @param {Array<Array<String, *>>} numericFilters Filters for a numeric
  *   facet. Each filter has an operator and a value.  Values can be a number
  *   or an array of two numbers.
@@ -126,11 +127,11 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
  *   - ["greater than or equal to", 6]
  *   - ["less than", 6]
  *   - ["less than or equal to", 6]
- *   - ["between", [5, 42]] -- inclusive, i.e. 5 <= d && d <= 42
- *   - ["not between", [5, 42]] -- inclusive, i.e. !(5 <= d && d <= 42)
+ *   - ["between", [5, 42]] -- inclusive, i.e. 5 <= d <= 42
+ *   - ["not between", [5, 42]] -- inclusive, i.e. !(5 <= d <= 42)
  *
  *   Example compound numeric filters:
- *   - [["between", [95, 100]], ["between", [1200, 1300]] -- (95 <= d && d <= 100) || (1200 <= d && d <= 1300)
+ *   - [["between", [95, 100]], ["between", [1200, 1300]] -- (95 <= d <= 100) or (1200 <= d <= 1300)
  *
  *   Compound numeric filters could be used to e.g.:
  *     - isolate the peaks of multimodal distributions (as in above concrete example)
@@ -139,10 +140,9 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
  *   TODO:
  *   - Enable percentile filtering, i.e. beyond raw values.  Requires 1-time full sort, then trivial.
  *
- * @param {Number} d - A numeric datum; a numeric value of a cell in a numeric annotation
  * @returns {Boolean} Whether cell datum passed any filters
  */
-function applyNumericFilters(numericFilters, d) {
+export function applyNumericFilters(d, numericFilters) {
   for (let i = 0; i < numericFilters.length; i++) {
     const [operator, value] = numericFilters[i]
     if (operator === 'equals') {
@@ -214,7 +214,7 @@ export function filterCells(
           const numericFilters = selection[facet] // e.g. [0, 20]
 
           fn = function(d) {
-            return applyNumericFilters(numericFilters, d)
+            return applyNumericFilters(d, numericFilters)
           }
           cellsByFacet[facet].filterFunction(fn)
         }

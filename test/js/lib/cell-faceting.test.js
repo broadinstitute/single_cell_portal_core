@@ -1,7 +1,9 @@
 import { allAnnots, facetData } from './cell-faceting.test-data'
 import * as ScpApi from 'lib/scp-api'
 
-import { initCellFaceting, filterCells } from 'lib/cell-faceting'
+import {
+  initCellFaceting, filterCells, applyNumericFilters
+} from 'lib/cell-faceting'
 
 // Test functionality to filter cells shown in plots across annotation facets
 describe('Cell faceting', () => {
@@ -56,5 +58,16 @@ describe('Cell faceting', () => {
       selections, cellsByFacet, facets, filtersByFacet, filterableCells, facets
     )[0]
     expect(newFilteredCells).toHaveLength(33)
+  })
+
+  it('filters cells by numeric filters', async () => {
+    expect(applyNumericFilters(2, [['equals', 2]])).toStrictEqual(true)
+    expect(applyNumericFilters(2, [['equals', 1.3]])).toStrictEqual(false)
+    expect(applyNumericFilters(20, [['greater than or equal to', 6]])).toStrictEqual(true)
+    expect(applyNumericFilters(20, [['between', [5, 42]]])).toStrictEqual(true)
+    expect(applyNumericFilters(2, [['between', [0, 2]]])).toStrictEqual(true) // test inclusiveness
+    expect(applyNumericFilters(2, [['between', [0, 2.1]]], 2)).toStrictEqual(true) // test inclusiveness
+    expect(applyNumericFilters(10, [['between', [0, 2]], ['between', [8, 20]]])).toStrictEqual(true)
+    expect(applyNumericFilters(5, [['between', [0, 2]], ['between', [8, 20]]])).toStrictEqual(false)
   })
 })
