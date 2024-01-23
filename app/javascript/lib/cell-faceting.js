@@ -113,13 +113,13 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
 }
 
 /**
- * Determine if a datum satisfies any numeric filters
+ * Determine if a cell satisfies any numeric filters
  *
  * @param {Array<Array<String, *>>} numericFilters Filters for a numeric
  *   facet. Each filter has an operator and a value.  Values can be a number
  *   or an array of two numbers.
  *
- *   Example numeric filters:
+ *   Example simple numeric filters:
  *   - ["equals", 1.3]
  *   - ["not equals", 1.3]
  *   - ["greater than", 6]
@@ -128,7 +128,19 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
  *   - ["less than or equal to", 6]
  *   - ["between", [5, 42]] -- inclusive, i.e. 5 <= d && d <= 42
  *   - ["not between", [5, 42]] -- inclusive, i.e. !(5 <= d && d <= 42)
- * @param {Number} d - A numeric datum
+ *
+ *   Example compound numeric filters:
+ *   - [["between", [95, 100]], ["between", [1200, 1300]] -- (95 <= d && d <= 100) || (1200 <= d && d <= 1300)
+ *
+ *   Compound numeric filters could be used to e.g.:
+ *     - isolate the peaks of multimodal distributions (as in above concrete example)
+ *     - isolate the tails of distributions
+ *
+ *   TODO:
+ *   - Enable percentile filtering, i.e. beyond raw values.  Requires 1-time full sort, then trivial.
+ *
+ * @param {Number} d - A numeric datum; a numeric value of a cell in a numeric annotation
+ * @returns {Boolean} Whether cell datum passed any filters
  */
 function applyNumericFilters(numericFilters, d) {
   for (let i = 0; i < numericFilters.length; i++) {
