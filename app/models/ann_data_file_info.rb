@@ -100,8 +100,12 @@ class AnnDataFileInfo
       keys = %i[_id data_type]
       matcher = hash_from_keys(fragment, *keys)
       existing_frag = find_fragment(**matcher)
-      idx = existing_frag ? data_fragments.index(existing_frag) : data_fragments.size
-      form_data[:data_fragments].insert(idx, fragment)
+      if existing_frag
+        idx = data_fragments.index(existing_frag)
+        form_data[:data_fragments][idx] = fragment
+      else
+        form_data[:data_fragments] << fragment
+      end
     end
     form_data
   end
