@@ -427,7 +427,7 @@ export default function ExploreDisplayTabs({
   }
 
   // Below line is worth keeping, but only uncomment to debug in development
-  window.SCP.updateFilteredCells = updateFilteredCells
+  // window.SCP.updateFilteredCells = updateFilteredCells
 
 
   /** handler for when the user selects points in a plotly scatter graph */

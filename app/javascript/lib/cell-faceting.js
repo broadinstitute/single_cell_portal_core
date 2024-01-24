@@ -222,6 +222,10 @@ export function filterCells(
       }
     }
     results = cellsByFacet[facet].top(Infinity)
+
+    // Uncomment log below for observability into prototype numeric filters
+    // TODO: Remove this when numeric filter UI is ready
+    console.log('# filtered results', results.length)
   }
 
   const annotationFacets = initFacets.map(facet => facet.annotation)

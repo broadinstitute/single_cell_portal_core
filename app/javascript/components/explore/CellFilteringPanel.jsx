@@ -595,7 +595,7 @@ export function CellFilteringPanel({
   // Needed to propagate facets from URL to initial checkbox states
   useEffect(() => {
     setCheckedMap(defaultCheckedMap)
-  }, Object.values(defaultCheckedMap))
+  }, Object.values(defaultCheckedMap).join(','))
 
   /** Top header for the "Filter" section, including all-facet controls */
   function FilterSectionHeader({ hasNondefaultSelection, handleResetFilters, isAllListsCollapsed, setIsAllListsCollapsed }) {
