@@ -172,7 +172,6 @@ export function applyNumericFilters(d, numericFilters) {
 export function filterCells(
   selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, rawFacets
 ) {
-  // console.log('in filterCells')
   const t0 = Date.now()
   const facets =
   initFacets
@@ -180,7 +179,6 @@ export function filterCells(
     .map(facet => facet.annotation)
 
   let fn; let facet; let results
-  // console.log('selection', selection)
 
   if (Object.keys(selection).length === 0) {
     results = filterableCells
@@ -188,7 +186,6 @@ export function filterCells(
     for (let i = 0; i < facets.length; i++) {
       facet = facets[i]
       if (facet in selection) {
-        // console.log('in filterCells, facet', facet)
         if (facet.includes('--group--')) {
           // e.g. 'infant_sick_YN'
           const friendlyFilters = selection[facet] // e.g. ['yes', 'NA']
@@ -232,8 +229,6 @@ export function filterCells(
   const counts = getFilterCounts(annotationFacets, cellsByFacet, initFacets, selection)
 
   logFilterCells(t0Counts, t0, filterableCells, results, selection)
-
-  console.log('# filtered results', results.length)
 
   return [results, counts]
 }
@@ -327,8 +322,7 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
 
   for (let i = 0; i < annotationFacets.length; i++) {
     const facet = annotationFacets[i]
-    // console.log('in getFilterCounts, facet', facet)
-    if (!facet.includes('--group--')) {continue}
+    if (!facet.includes('--group--') || !facets[i].groups) {continue}
     const facetCrossfilter = cellsByFacet[facet]
     // Set counts for each filter in facet
     const rawFilterCounts = facetCrossfilter.group().top(Infinity)
@@ -515,7 +509,6 @@ export async function initCellFaceting(
   const timeFetchStart = Date.now()
   const newRawFacets = await fetchAnnotationFacets(studyAccession, facetsToFetch, selectedCluster)
   perfTimes.fetch = Date.now() - timeFetchStart
-  // console.log('newRawFacets', newRawFacets)
 
   // Below line is worth keeping, but only uncomment to debug in development.
   // This helps simulate waiting on server response, to slow data load even

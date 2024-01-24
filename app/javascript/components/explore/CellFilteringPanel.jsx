@@ -145,8 +145,6 @@ function FacetTools({
 /** Determine if user has deselected any filters */
 function getHasNondefaultSelection(checkedMap, facets) {
   let numTotalFilters = 0
-  // console.log('in getHasNondefaultSelection, facets', facets)
-  // console.log('in getHasNondefaultSelection, checkedMap', checkedMap)
   facets.forEach(facet => numTotalFilters += facet.groups.length)
   let numCheckedFilters = 0
   Object.entries(checkedMap).forEach(([_, filters]) => {
@@ -560,7 +558,9 @@ export function CellFilteringPanel({
   }
 
   const facets = cellFaceting.facets
-    .filter(facet => facet.isSelectedAnnotation === false && facet.type === 'group')
+    .filter(
+      facet => facet.isSelectedAnnotation === false && facet.annotation.includes('--group--')
+    )
     .map(facet => {
       // Add counts of matching cells for each filter to its containing facet object
       facet.filterCounts = cellFilterCounts[facet.annotation]
@@ -580,15 +580,12 @@ export function CellFilteringPanel({
       return facet
     })
 
-  // console.log('in CellFilteringPanel, facets', facets)
-
   const defaultCheckedMap = {}
   Object.entries(cellFilteringSelection).forEach(([key, value]) => {
     if (key.includes('--group--')) {
       defaultCheckedMap[key] = value
     }
   })
-  // console.log('defaultCheckedMap', defaultCheckedMap)
 
   const [checkedMap, setCheckedMap] = useState(defaultCheckedMap)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
