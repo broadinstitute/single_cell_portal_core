@@ -300,14 +300,25 @@ class IngestJob
     command_line.chomp("\n")
   end
 
+  # Get a timestamp from a metadata event
+  #
+  # * *params*
+  #   - +event+ (Hash) metadata event
+  #
+  # * *returns*
+  #   - (DateTime)
+  def event_timestamp(event)
+    DateTime.parse(event['timestamp'])
+  end
+
   # Get the first & last event timestamps to compute runtime
   #
   # * *returns*
   #   - (Array<DateTime>) => Array of initial and terminal timestamps from PAPI events
   def get_runtime_timestamps
     all_events = events.to_a
-    start_time = DateTime.parse(all_events.first['timestamp'])
-    completion_time = DateTime.parse(all_events.last['timestamp'])
+    start_time = event_timestamp(all_events.first)
+    completion_time = event_timestamp(all_events.last)
     [start_time, completion_time]
   end
 
@@ -426,7 +437,7 @@ class IngestJob
     when :image_pipeline
       set_has_image_cache
     when :ingest_anndata
-      launch_anndata_subparse_jobs unless study_file.is_reference_anndata?
+      launch_anndata_subparse_jobs if study_file.is_viz_anndata?
       set_anndata_file_info
     end
     set_study_initialized
@@ -925,12 +936,58 @@ class IngestJob
     mixpanel_log_props = get_job_analytics
     # log job properties to Mixpanel
     MetricsService.log(mixpanel_event_name, mixpanel_log_props, user)
+    report_anndata_summary if study_file.is_viz_anndata?
   end
 
   # set a mixpanel event name based on action
   # will either be 'ingest', or '{special-action-name}-ingest'
   def mixpanel_event_name
     special_action? ? "#{action.to_s.gsub(/_/, '-')}-ingest" : 'ingest'
+  end
+
+  # report a summary of all AnnData extraction for this file to Mixpanel, if this is the last job
+  def report_anndata_summary
+    remaining_jobs = DelayedJobAccessor.find_jobs_by_handler_type(IngestJob, study_file)
+    fragment = params_object.anndata_file # fragment file from this job
+    # discard the job that corresponds with this ingest process
+    still_processing = remaining_jobs.reject do |job|
+      ingest_job = DelayedJobAccessor.dump_job_handler(job).object
+      ingest_job.params_object.anndata_file == fragment
+    end.any?
+    return false if still_processing
+
+    pipelines = ApplicationController.life_sciences_api_client.list_pipelines
+    previous_jobs = pipelines.operations.select do |op|
+      op.metadata.dig('pipeline', 'actions').first['commands'].detect { |c| c == study_file.id.to_s }
+    end
+    # get total runtime from initial extract to final parse
+    initial_extract = previous_jobs.last
+    final_parse = previous_jobs.first
+    start_time = event_timestamp(initial_extract.metadata['events'].last)
+    end_time = event_timestamp(final_parse.metadata['events'].first)
+    job_perftime = (TimeDifference.between(start_time, end_time).in_seconds * 1000).to_i
+
+    file_type = study_file.file_type
+    trigger = study_file.upload_trigger
+    job_status = previous_jobs.map(&:error).compact.any? ? 'failed' : 'success'
+    # count total number of files extracted
+    num_files_extracted = previous_jobs.reject do |op|
+      op.metadata.dig('pipeline', 'actions').first['commands'].detect { |c| c == '--extract' } &&
+        op.error.nil?
+    end.count
+    # event properties for Mixpanel summary event
+    job_props = {
+      perfTime: job_perftime,
+      fileName: study_file.name,
+      fileType: file_type,
+      fileSize: study_file.upload_file_size,
+      studyAccession: study.accession,
+      trigger:,
+      jobStatus: job_status,
+      numFilesExtracted: num_files_extracted
+    }
+
+    MetricsService.log('ingestSummary', job_props, user)
   end
 
   # generates parse completion email body
