@@ -300,15 +300,16 @@ class IngestJob
     command_line.chomp("\n")
   end
 
-  # Get a timestamp from a metadata event
+  # Get a timestamp from a metadata event or datetime string
   #
   # * *params*
-  #   - +event+ (Hash) metadata event
+  #   - +entry+ (Hash) metadata event, or datetime string
   #
   # * *returns*
   #   - (DateTime)
-  def event_timestamp(event)
-    DateTime.parse(event['timestamp'])
+  def event_timestamp(entry)
+    date = entry['timestamp'] || entry
+    DateTime.parse(date)
   end
 
   # Get the first & last event timestamps to compute runtime
@@ -759,6 +760,9 @@ class IngestJob
         job = IngestJob.new(study:, study_file:, user:, action:, params_object: exp_params)
         job.delay.push_remote_and_launch_ingest
       end
+
+      # unset anndata_summary flag to allow reporting summary later
+      study_file.unset_anndata_summary!
     end
   end
 
@@ -945,17 +949,7 @@ class IngestJob
     special_action? ? "#{action.to_s.gsub(/_/, '-')}-ingest" : 'ingest'
   end
 
-  # report a summary of all AnnData extraction for this file to Mixpanel, if this is the last job
-  def report_anndata_summary
-    remaining_jobs = DelayedJobAccessor.find_jobs_by_handler_type(IngestJob, study_file)
-    fragment = params_object.anndata_file # fragment file from this job
-    # discard the job that corresponds with this ingest process
-    still_processing = remaining_jobs.reject do |job|
-      ingest_job = DelayedJobAccessor.dump_job_handler(job).object
-      ingest_job.params_object.anndata_file == fragment
-    end.any?
-    return false if still_processing
-
+  def anndata_summary_props
     pipelines = ApplicationController.life_sciences_api_client.list_pipelines
     previous_jobs = pipelines.operations.select do |op|
       op.metadata.dig('pipeline', 'actions').first['commands'].detect { |c| c == study_file.id.to_s }
@@ -963,8 +957,8 @@ class IngestJob
     # get total runtime from initial extract to final parse
     initial_extract = previous_jobs.last
     final_parse = previous_jobs.first
-    start_time = event_timestamp(initial_extract.metadata['events'].last)
-    end_time = event_timestamp(final_parse.metadata['events'].first)
+    start_time = event_timestamp(initial_extract.metadata['startTime'])
+    end_time = event_timestamp(final_parse.metadata['endTime'])
     job_perftime = (TimeDifference.between(start_time, end_time).in_seconds * 1000).to_i
 
     file_type = study_file.file_type
@@ -976,7 +970,7 @@ class IngestJob
         op.error.nil?
     end.count
     # event properties for Mixpanel summary event
-    job_props = {
+    {
       perfTime: job_perftime,
       fileName: study_file.name,
       fileType: file_type,
@@ -986,8 +980,24 @@ class IngestJob
       jobStatus: job_status,
       numFilesExtracted: num_files_extracted
     }
+  end
 
-    MetricsService.log('ingestSummary', job_props, user)
+  # report a summary of all AnnData extraction for this file to Mixpanel, if this is the last job
+  def report_anndata_summary
+    remaining_jobs = DelayedJobAccessor.find_jobs_by_handler_type(IngestJob, study_file)
+    fragment = params_object.associated_file # fragment file from this job
+    # discard the job that corresponds with this ingest process
+    still_processing = remaining_jobs.reject do |job|
+      ingest_job = DelayedJobAccessor.dump_job_handler(job).object
+      ingest_job.params_object.associated_file == fragment
+    end.any?
+
+    # only continue if there are no more jobs and a summary has not been sent yet
+    study_file.reload
+    return false if still_processing || study_file.has_anndata_summary?
+
+    study_file.set_anndata_summary! # prevent race condition leading to duplicate summaries
+    MetricsService.log('ingestSummary', anndata_summary_props, user)
   end
 
   # generates parse completion email body
