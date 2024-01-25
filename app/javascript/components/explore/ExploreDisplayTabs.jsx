@@ -175,15 +175,12 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
 function getFacetsParam(initFacets, selection) {
   const minimalSelection = {}
 
-  // console.log('initFacets', initFacets)
-
   const initSelection = {}
   initFacets.filter(f => !f.isSelectedAnnotation).forEach(facet => {
     if (facet.type === 'group') {
       initSelection[facet.annotation] = facet.groups
     }
   })
-  // console.log('initSelection', initSelection)
 
   const innerParams = []
   Object.entries(initSelection).forEach(([facet, filters]) => {
