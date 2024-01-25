@@ -225,7 +225,7 @@ export function filterCells(
 
     // Uncomment log below for observability into prototype numeric filters
     // TODO: Remove this when numeric filter UI is ready
-    console.log('# filtered results', results.length)
+    // console.log('# filtered results', results.length)
   }
 
   const annotationFacets = initFacets.map(facet => facet.annotation)
@@ -557,7 +557,7 @@ export async function initCellFaceting(
   cellFaceting.perfTimes = perfTimes
 
   // Below line is worth keeping, but only uncomment to debug in development
-  window.SCP.cellFaceting = cellFaceting
+  // window.SCP.cellFaceting = cellFaceting
   return cellFaceting
 }
 
