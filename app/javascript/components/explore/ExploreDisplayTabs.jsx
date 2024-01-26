@@ -177,7 +177,9 @@ function getFacetsParam(initFacets, selection) {
 
   const initSelection = {}
   initFacets.filter(f => !f.isSelectedAnnotation).forEach(facet => {
-    initSelection[facet.annotation] = facet.groups
+    if (facet.type === 'group') {
+      initSelection[facet.annotation] = facet.groups
+    }
   })
 
   const innerParams = []
@@ -188,7 +190,7 @@ function getFacetsParam(initFacets, selection) {
       // filters that are _not_ selected, i.e. they're unchecked and applied.
       //
       // This makes the `facets` parameter much clearer.
-      if (!selection[facet].includes(filter)) {
+      if (facet.type === 'group' && !selection[facet].includes(filter)) {
         if (facet in minimalSelection) {
           minimalSelection[facet].push(filter)
         } else {

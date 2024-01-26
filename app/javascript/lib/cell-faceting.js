@@ -112,6 +112,62 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
   log('filter-cells', filterLogProps)
 }
 
+/**
+ * Determine if a cell satisfies any numeric filters
+ *
+ * @param {Number} d - A numeric datum; a numeric annotation value for a cell
+ * @param {Array<Array<String, *>>} numericFilters Filters for a numeric
+ *   facet. Each filter has an operator and a value.  Values can be a number
+ *   or an array of two numbers.
+ *
+ *   Example simple numeric filters:
+ *   - ["equals", 1.3]
+ *   - ["not equals", 1.3]
+ *   - ["greater than", 6]
+ *   - ["greater than or equal to", 6]
+ *   - ["less than", 6]
+ *   - ["less than or equal to", 6]
+ *   - ["between", [5, 42]] -- inclusive, i.e. 5 <= d <= 42
+ *   - ["not between", [5, 42]] -- inclusive, i.e. !(5 <= d <= 42)
+ *
+ *   Example compound numeric filters:
+ *   - [["between", [95, 100]], ["between", [1200, 1300]] -- (95 <= d <= 100) or (1200 <= d <= 1300)
+ *
+ *   Compound numeric filters could be used to e.g.:
+ *     - isolate the peaks of multimodal distributions (as in above concrete example)
+ *     - isolate the tails of distributions
+ *
+ *   TODO:
+ *   - Enable percentile filtering, i.e. beyond raw values.  Requires 1-time full sort, then trivial.
+ *
+ * @returns {Boolean} Whether cell datum passed any filters
+ */
+export function applyNumericFilters(d, numericFilters) {
+  for (let i = 0; i < numericFilters.length; i++) {
+    const [operator, value] = numericFilters[i]
+    if (operator === 'equals') {
+      // for fastest querying, exit function immediately upon _any_ condition
+      // evaluating to true
+      if (d === value) {return true}
+    } else if (operator === 'not equals') {
+      if (d !== value) {return true}
+    } else if (operator === 'greater than') {
+      if (d > value) {return true}
+    } else if (operator === 'greater than or equal to') {
+      if (d >= value) {return true}
+    } else if (operator === 'less than') {
+      if (d < value) {return true}
+    } else if (operator === 'less than or equal to') {
+      if (d <= value) {return true}
+    } else if (operator === 'between') {
+      if (value[0] <= d && d <= value[1]) {return true}
+    } else if (operator === 'not between') {
+      if (!(value[0] <= d && d <= value[1])) {return true}
+    }
+  }
+  return false
+}
+
 /** Get filtered cell results */
 export function filterCells(
   selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, rawFacets
@@ -129,23 +185,36 @@ export function filterCells(
   } else {
     for (let i = 0; i < facets.length; i++) {
       facet = facets[i]
-      if (facet in selection) { // e.g. 'infant_sick_YN'
-        const friendlyFilters = selection[facet] // e.g. ['yes', 'NA']
+      if (facet in selection) {
+        if (facet.includes('--group--')) {
+          // e.g. 'infant_sick_YN'
+          const friendlyFilters = selection[facet] // e.g. ['yes', 'NA']
 
-        const filter = new Set()
-        friendlyFilters.forEach(friendlyFilter => {
-          // find the original index of the filter in the source annotation as the list here may be trimmed already
-          const sourceFacet = rawFacets.find(f => f.annotation === facet)
-          const filterIndex = sourceFacet.groups.indexOf(friendlyFilter)
-          filter.add(filterIndex)
-        })
+          const filter = new Set()
+          friendlyFilters.forEach(friendlyFilter => {
+            // find the original index of the filter in the source annotation as the list here may be trimmed already
+            const sourceFacet = rawFacets.find(f => f.annotation === facet)
+            const filterIndex = sourceFacet.groups.indexOf(friendlyFilter)
+            filter.add(filterIndex)
+          })
 
-        fn = function(d) {
-          return filter.has(d)
+          fn = function(d) {
+            return filter.has(d)
+          }
+
+          // Apply the actual crossfilter method
+          cellsByFacet[facet].filterFunction(fn)
+        } else {
+          // Numeric facet, e.g. time_post_partum_days
+          // Example via console interface:
+          // window.SCP.updateFilteredCells({'time_post_partum_days--numeric--study': [[0.5, 9]]})
+          const numericFilters = selection[facet] // e.g. [0, 20]
+
+          fn = function(d) {
+            return applyNumericFilters(d, numericFilters)
+          }
+          cellsByFacet[facet].filterFunction(fn)
         }
-
-        // Apply the actual crossfilter method
-        cellsByFacet[facet].filterFunction(fn)
       } else {
         fn = null
         // Apply the actual crossfilter method
@@ -153,6 +222,10 @@ export function filterCells(
       }
     }
     results = cellsByFacet[facet].top(Infinity)
+
+    // Uncomment log below for observability into prototype numeric filters
+    // TODO: Remove this when numeric filter UI is ready
+    // console.log('# filtered results', results.length)
   }
 
   const annotationFacets = initFacets.map(facet => facet.annotation)
@@ -253,6 +326,7 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
 
   for (let i = 0; i < annotationFacets.length; i++) {
     const facet = annotationFacets[i]
+    if (!facet.includes('--group--') || !facets[i].groups) {continue}
     const facetCrossfilter = cellsByFacet[facet]
     // Set counts for each filter in facet
     const rawFilterCounts = facetCrossfilter.group().top(Infinity)
@@ -309,7 +383,7 @@ function initCrossfilter(facetData) {
   for (let i = 0; i < cells.length; i++) {
     const filterableCell = { 'allCellsIndex': i }
 
-    // An array of integers, e.g. [6, 0, 7, 0, 0]
+    // For group-baesd annotations, we have an array of integers, e.g. [6, 0, 7, 0, 0].
     // Each element in the array is the index-offset of the cell's group value assignment
     // for the annotation facet at that index.
     const facetIndex = cells[i]
@@ -384,6 +458,19 @@ function logInitCellFaceting(timeStart, perfTimes, cellFaceting, prevCellFacetin
   return perfTimes
 }
 
+/** Get annotations that can be filtered */
+function getFilterableAnnotationsForClusterAndStudy(annotations, clusterName) {
+  const annots = annotations.filter(annot => {
+    return (
+      (
+        !('cluster_name' in annot) || // is study-wide
+        annot.cluster_name === clusterName // is cluster-based, and in this cluster
+      )
+    )
+  })
+  return annots
+}
+
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
 export async function initCellFaceting(
   selectedCluster, selectedAnnot, studyAccession, allAnnots, prevCellFaceting
@@ -394,14 +481,14 @@ export async function initCellFaceting(
   // Prioritize and fetch annotation facets for all cells
   const selectedAnnotId = getIdentifierForAnnotation(selectedAnnot)
   const eligibleAnnots =
-    getGroupAnnotationsForClusterAndStudy(allAnnots, selectedCluster)
+    getFilterableAnnotationsForClusterAndStudy(allAnnots, selectedCluster)
       .map(annot => { // Add identifiers to incoming annotations
         annot.identifier = getIdentifierForAnnotation(annot)
         return annot
       })
       .filter(annot => {
         return (
-          annot.values.length > 1 &&
+          !(annot.type === 'group' && annot.values.length <= 1) &&
           !annot.identifier.endsWith('invalid') &&
           !annot.identifier.endsWith('user')
         )
@@ -410,7 +497,11 @@ export async function initCellFaceting(
   const allRelevanceSortedFacets =
     sortAnnotationsByRelevance(eligibleAnnots)
       .map(annot => {
-        return { annotation: annot.identifier, groups: annot.values }
+        const facet = { annotation: annot.identifier, type: annot.type }
+        if (annot.type) {
+          annot.group = annot.values
+        }
+        return facet
       })
 
   if (allRelevanceSortedFacets.length === 0) {
@@ -430,6 +521,7 @@ export async function initCellFaceting(
   // await new Promise(resolve => setTimeout(resolve, 3000))
 
   const rawFacets = mergeFacetsResponses(newRawFacets, prevCellFaceting)
+
 
   const timeInitCrossfilterStart = Date.now()
   const {

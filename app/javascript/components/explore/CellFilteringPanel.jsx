@@ -558,7 +558,9 @@ export function CellFilteringPanel({
   }
 
   const facets = cellFaceting.facets
-    .filter(facet => facet.isSelectedAnnotation === false)
+    .filter(
+      facet => facet.isSelectedAnnotation === false && facet.annotation.includes('--group--')
+    )
     .map(facet => {
       // Add counts of matching cells for each filter to its containing facet object
       facet.filterCounts = cellFilterCounts[facet.annotation]
@@ -578,15 +580,22 @@ export function CellFilteringPanel({
       return facet
     })
 
-  const [checkedMap, setCheckedMap] = useState(cellFilteringSelection)
+  const defaultCheckedMap = {}
+  Object.entries(cellFilteringSelection).forEach(([key, value]) => {
+    if (key.includes('--group--')) {
+      defaultCheckedMap[key] = value
+    }
+  })
+
+  const [checkedMap, setCheckedMap] = useState(defaultCheckedMap)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const shownFacets = facets.filter(facet => facet.groups.length > 1)
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
   // Needed to propagate facets from URL to initial checkbox states
   useEffect(() => {
-    setCheckedMap(cellFilteringSelection)
-  }, Object.values(cellFilteringSelection))
+    setCheckedMap(defaultCheckedMap)
+  }, Object.values(defaultCheckedMap).join(','))
 
   /** Top header for the "Filter" section, including all-facet controls */
   function FilterSectionHeader({ hasNondefaultSelection, handleResetFilters, isAllListsCollapsed, setIsAllListsCollapsed }) {
