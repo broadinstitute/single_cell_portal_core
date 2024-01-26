@@ -119,9 +119,9 @@ class SyntheticStudyPopulator
           study_file_params[:upload] = local_file
         end
 
-        study_file_params.merge!(process_genomic_file_params(study, finfo))
+        study_file_params.merge!(process_genomic_file_params(finfo))
         study_file_params.merge!(process_coordinate_file_params(study, finfo))
-        study_file_params.merge!(process_expression_file_params(study, finfo))
+        study_file_params.merge!(process_expression_file_params(finfo))
         study_file_params.merge!(process_label_file_params(study, finfo))
         study_file_params.merge!(process_mtx_file_params(study, finfo))
         study_file_params.merge!(process_sequence_file_params(study, finfo))
@@ -147,7 +147,7 @@ class SyntheticStudyPopulator
     end
   end
 
-  def self.process_expression_file_params(_study, file_info)
+  def self.process_expression_file_params(file_info)
     exp_params = {}
     if file_info['type'] == 'Expression Matrix' || file_info['type'] == 'MM Coordinate Matrix'
       exp_finfo_params = file_info['expression_file_info']
@@ -228,7 +228,7 @@ class SyntheticStudyPopulator
   end
 
   # process species/annotation arguments, return a hash of params suitable for passing to a StudyFile constructor
-  def self.process_genomic_file_params(_study, file_info)
+  def self.process_genomic_file_params(file_info)
     params = {}
     taxon_id = nil
     if file_info['species_scientific_name'].present?

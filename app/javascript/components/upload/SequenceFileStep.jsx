@@ -45,7 +45,7 @@ function SequenceForm({
         <div className="form-terra">
           Primary sequence information, such as BAM, BAM Index, and FASTQ files<br />
           <p>
-            <b>Non-human Data</b><br />
+            <b>Non-human data</b><br />
             If you have a few, small (under 2 GB) non-human sequence files, they can be uploaded here.
             For uploading many or larger files, please refer to the instructions in
             our <a href="https://singlecell.zendesk.com/hc/en-us/articles/360061006011" target="_blank" rel="noopener noreferrer">documentation</a>.
@@ -57,7 +57,7 @@ function SequenceForm({
             gcloud storage cp /path/to/files gs://{formState.study.bucket_id}
           </pre>
           <p>
-            <b>Primary Human Data</b><br />
+            <b>Primary human data</b><br />
             Primary sequence data derived from humans should be stored in other biological databases and can be linked here
             by selecting &apos;Yes&apos; for &apos;Primary Human Data&apos; and then providing a link in the text field.
           </p>
