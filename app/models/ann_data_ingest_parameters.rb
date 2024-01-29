@@ -67,4 +67,9 @@ class AnnDataIngestParameters
   def machine_type
     EXTRACT_MACHINE_TYPES.detect { |_, mem_range| mem_range === file_size }&.first || 'n2d-highmem-4'
   end
+
+  # get the particular file (either source AnnData or fragment) being processed by this job
+  def associated_file
+    anndata_file || cluster_file || cell_metadata_file || matrix_file
+  end
 end

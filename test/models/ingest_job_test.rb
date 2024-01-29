@@ -187,6 +187,248 @@ class IngestJobTest < ActiveSupport::TestCase
     end
   end
 
+  test 'should identify AnnData parses with extraction in mixpanel' do
+    # parsed AnnData
+    ann_data_file = FactoryBot.create(:ann_data_file, name: 'test.h5ad', study: @basic_study)
+    ann_data_file.ann_data_file_info.reference_file = false
+    ann_data_file.ann_data_file_info.data_fragments = [
+      { _id: BSON::ObjectId.new.to_s, data_type: :cluster, obsm_key_name: 'X_umap', name: 'UMAP' }
+    ]
+    ann_data_file.upload_file_size = 1.megabyte
+    ann_data_file.save
+    params_object = AnnDataIngestParameters.new(
+      anndata_file: ann_data_file.gs_url, obsm_keys: ann_data_file.ann_data_file_info.obsm_key_names,
+      file_size: ann_data_file.upload_file_size
+    )
+    job = IngestJob.new(
+      study: @basic_study, study_file: ann_data_file, user: @user, action: :ingest_anndata, params_object:
+    )
+    mock = Minitest::Mock.new
+    now = DateTime.now.in_time_zone
+    mock_metadata = {
+      events: [
+        { timestamp: now.to_s }.with_indifferent_access,
+        { timestamp: (now + 1.minute).to_s, containerStopped: { exitStatus: 0 } }.with_indifferent_access
+      ],
+      pipeline: {
+        resources: {
+          virtualMachine: {
+            machineType: 'n2d-highmem-4',
+            bootDiskSizeGb: 300
+          }
+        }
+      }
+    }.with_indifferent_access
+    mock.expect :metadata, mock_metadata
+    mock.expect :metadata, mock_metadata
+    mock.expect :metadata, mock_metadata
+    mock.expect :error, nil
+    mock.expect :done?, true
+
+    ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
+      expected_outputs = {
+        perfTime: 60000,
+        fileType: ann_data_file.file_type,
+        fileSize: ann_data_file.upload_file_size,
+        fileName: ann_data_file.name,
+        trigger: 'upload',
+        action: :ingest_anndata,
+        studyAccession: @basic_study.accession,
+        jobStatus: 'success',
+        referenceAnnDataFile: false,
+        extractedFileTypes: %w[cluster metadata processed_expression],
+        machineType: 'n2d-highmem-4',
+        bootDiskSizeGb: 300,
+        exitStatus: 0
+      }.with_indifferent_access
+
+      job_analytics = job.get_job_analytics
+      mock.verify
+      assert_equal expected_outputs, job_analytics
+    end
+
+    # reference AnnData
+    reference_file = FactoryBot.create(:ann_data_file, name: 'reference.h5ad', study: @basic_study)
+    reference_file.upload_file_size = 1.megabyte
+    reference_file.save
+    params_object = AnnDataIngestParameters.new(
+      anndata_file: reference_file.gs_url, extract: nil, obsm_keys: nil, file_size: reference_file.upload_file_size
+    )
+    job = IngestJob.new(
+      study: @basic_study, study_file: reference_file, user: @user, action: :ingest_anndata, params_object:
+    )
+    mock = Minitest::Mock.new
+    now = DateTime.now.in_time_zone
+    mock_metadata = {
+      events: [
+        { timestamp: now.to_s }.with_indifferent_access,
+        { timestamp: (now + 1.minute).to_s, containerStopped: { exitStatus: 0 } }.with_indifferent_access
+      ],
+      pipeline: {
+        resources: {
+          virtualMachine: {
+            machineType: 'n2d-highmem-4',
+            bootDiskSizeGb: 300
+          }
+        }
+      }
+    }.with_indifferent_access
+    mock.expect :metadata, mock_metadata
+    mock.expect :metadata, mock_metadata
+    mock.expect :metadata, mock_metadata
+    mock.expect :error, nil
+    mock.expect :done?, true
+
+    ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
+      expected_outputs = {
+        perfTime: 60000,
+        fileType: reference_file.file_type,
+        fileSize: reference_file.upload_file_size,
+        fileName: reference_file.name,
+        trigger: 'upload',
+        action: :ingest_anndata,
+        studyAccession: @basic_study.accession,
+        jobStatus: 'success',
+        referenceAnnDataFile: true,
+        extractedFileTypes: nil,
+        machineType: 'n2d-highmem-4',
+        bootDiskSizeGb: 300,
+        exitStatus: 0
+      }.with_indifferent_access
+
+      job_analytics = job.get_job_analytics
+      mock.verify
+      assert_equal expected_outputs, job_analytics
+    end
+  end
+
+  test 'should get ingest summary for AnnData parsing' do
+    ann_data_file = FactoryBot.create(:ann_data_file, name: 'data.h5ad', study: @basic_study)
+    ann_data_file.ann_data_file_info.reference_file = false
+    ann_data_file.ann_data_file_info.data_fragments = [
+      { _id: BSON::ObjectId.new.to_s, data_type: :cluster, obsm_key_name: 'X_umap', name: 'UMAP' }
+    ]
+    ann_data_file.upload_file_size = 1.megabyte
+    ann_data_file.options[:anndata_summary] = false
+    ann_data_file.save
+    cluster_file = RequestUtils.data_fragment_url(ann_data_file, 'cluster', file_type_detail: 'X_umap')
+    params_object = AnnDataIngestParameters.new(
+      ingest_cluster: true, name: 'UMAP', cluster_file:, domain_ranges: {}, ingest_anndata: false,
+      extract: nil, obsm_keys: nil
+    )
+    job = IngestJob.new(
+      study: @basic_study, study_file: ann_data_file, user: @user, action: :ingest_cluster, params_object:
+    )
+    now = DateTime.now
+    metadata_mock = {
+      pipeline: {
+        actions: [
+          {
+            commands: [
+              'python', 'ingest_pipeline.py', '--study-id', @basic_study.id.to_s, '--study-file-id',
+              ann_data_file.id.to_s, 'ingest_cluster', '--ingest-cluster', '--cluster-file', cluster_file,
+              '--name', 'UMAP', '--domain-ranges', '{}'
+            ]
+          }
+        ]
+      },
+      createTime: (now - 1.minutes).to_default_s,
+      startTime: (now - 1.minutes).to_default_s,
+      endTime: now.to_default_s
+    }.with_indifferent_access
+
+    pipeline_mock = MiniTest::Mock.new
+    pipeline_mock.expect :metadata, metadata_mock
+    pipeline_mock.expect :metadata, metadata_mock
+    pipeline_mock.expect :metadata, metadata_mock
+    pipeline_mock.expect :metadata, metadata_mock
+    pipeline_mock.expect :error, nil
+
+    operations_mock = Minitest::Mock.new
+    operations_mock.expect :operations, [pipeline_mock]
+
+    ApplicationController.life_sciences_api_client.stub :list_pipelines, operations_mock do
+      expected_job_props = {
+        perfTime: 60000,
+        fileName: ann_data_file.name,
+        fileType: 'AnnData',
+        fileSize: ann_data_file.upload_file_size,
+        studyAccession: @basic_study.accession,
+        trigger: ann_data_file.upload_trigger,
+        jobStatus: 'success',
+        numFilesExtracted: 1
+      }
+      job_props = job.anndata_summary_props
+      assert_equal expected_job_props, job_props
+      operations_mock.verify
+      pipeline_mock.verify
+    end
+  end
+
+  test 'should report AnnData summary to Mixpanel' do
+    ann_data_file = FactoryBot.create(:ann_data_file, name: 'matrix.h5ad', study: @basic_study)
+    ann_data_file.ann_data_file_info.reference_file = false
+    ann_data_file.ann_data_file_info.data_fragments = [
+      { _id: BSON::ObjectId.new.to_s, data_type: :cluster, obsm_key_name: 'X_umap', name: 'UMAP' }
+    ]
+    ann_data_file.upload_file_size = 1.megabyte
+    ann_data_file.options[:anndata_summary] = false
+    ann_data_file.save
+
+    cell_metadata_file = RequestUtils.data_fragment_url(ann_data_file, 'metadata')
+    metadata_params = AnnDataIngestParameters.new(
+      ingest_cell_metadata: true, cell_metadata_file:, ingest_anndata: false, extract: nil, obsm_keys: nil,
+      study_accession: @basic_study.accession
+    )
+    metadata_job = IngestJob.new(study: @basic_study, study_file: ann_data_file, user: @user,
+                                 action: :ingest_metadata, params_object: metadata_params)
+    cluster_file = RequestUtils.data_fragment_url(ann_data_file, 'cluster', file_type_detail: 'X_umap')
+    cluster_params_object = AnnDataIngestParameters.new(
+      ingest_cluster: true, name: 'UMAP', cluster_file:, domain_ranges: {}, ingest_anndata: false,
+      extract: nil, obsm_keys: nil
+    )
+    cluster_job = IngestJob.new(
+      study: @basic_study, study_file: ann_data_file, user: @user, action: :ingest_cluster,
+      params_object: cluster_params_object
+    )
+    job_mock = Minitest::Mock.new
+    job_mock.expect :object, cluster_job
+
+    # negative test
+    DelayedJobAccessor.stub :find_jobs_by_handler_type, [Delayed::Job.new] do
+      DelayedJobAccessor.stub :dump_job_handler, job_mock do
+        metadata_job.report_anndata_summary
+        job_mock.verify
+        ann_data_file.reload
+        assert_not ann_data_file.has_anndata_summary?
+      end
+    end
+
+    mock_job_props = {
+      perfTime: 60000,
+      fileName: ann_data_file.name,
+      fileType: 'AnnData',
+      fileSize: ann_data_file.upload_file_size,
+      studyAccession: @basic_study.accession,
+      trigger: ann_data_file.upload_trigger,
+      jobStatus: 'success',
+      numFilesExtracted: 1
+    }
+    metrics_mock = Minitest::Mock.new
+    metrics_mock.expect :call, true, ['ingestSummary', mock_job_props, @user]
+
+    # positive test
+    DelayedJobAccessor.stub :find_jobs_by_handler_type, [] do
+      MetricsService.stub :log, metrics_mock do
+        cluster_job.stub :anndata_summary_props, mock_job_props do
+          cluster_job.report_anndata_summary
+          ann_data_file.reload
+          assert ann_data_file.has_anndata_summary?
+        end
+      end
+    end
+  end
+
   test 'should limit size when reading error logfile for email' do
     job = IngestJob.new(study: @basic_study, study_file: @basic_study_exp_file, user: @user, action: :ingest_expression)
     file_location = @basic_study_exp_file.bucket_location
