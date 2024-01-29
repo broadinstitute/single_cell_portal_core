@@ -164,8 +164,10 @@ class AnnDataFileInfo
         next if missing_keys.empty? && missing_values.empty?
 
         all_missing = (missing_keys + missing_values.map(&:to_s)).uniq
+        obsm_key = fragment[:obsm_key_name]
         errors.add(:base,
-                   "#{data_type} form missing one or more required entries: #{all_missing.join(',')}")
+                   "#{data_type} form #{obsm_key.present? ? "(#{obsm_key}) " : nil}" \
+                        "missing one or more required entries: #{all_missing.join(', ')}")
       end
       # check for uniqueness
       keys.each do |key|

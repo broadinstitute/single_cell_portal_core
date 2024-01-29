@@ -212,6 +212,7 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
         },
         extra_expression_form_info_attributes: {
           _id: exp_frag_id,
+          taxon_id: BSON::ObjectId.new.to_s,
           description: 'expression description',
           y_axis_title: 'log(TPM) expression'
         },
