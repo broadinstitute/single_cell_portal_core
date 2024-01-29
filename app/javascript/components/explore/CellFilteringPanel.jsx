@@ -145,6 +145,7 @@ function FacetTools({
 /** Determine if user has deselected any filters */
 function getHasNondefaultSelection(checkedMap, facets) {
   let numTotalFilters = 0
+  // console.log('in getHasNondefaultSelection, facets', facets)
   facets
     .filter(f => f.type === 'group')
     .forEach(facet => numTotalFilters += facet.groups.length)
@@ -272,42 +273,46 @@ function getQuantitiesTooltip(baselineCount, passedCount, hasNondefaultSelection
   return quantitiesTooltip
 }
 
-/** Cell filter component */
-function CellFilter({
-  facet, filter, isChecked, checkedMap, handleCheck,
-  hasNondefaultSelection
-}) {
-  if (facet.type === 'group') {
-    return (
-      <GroupCellFilter
-        facet={facet}
-        filter={filter}
-        isChecked={isChecked}
-        checkedMap={checkedMap}
-        handleCheck={handleCheck}
-        hasNondefaultSelection={hasNondefaultSelection}
-      />
-    )
-  } else {
-    console.log('returning NumericCellFilter for facet', facet)
-    return (
-      <NumericCellFilter
-        facet={facet}
-        filter={filter}
-        isChecked={isChecked}
-        checkedMap={checkedMap}
-        handleCheck={handleCheck}
-        hasNondefaultSelection={hasNondefaultSelection}
-      />
-    )
+/** Get histogram to show with numeric filter */
+function getHistogramBarCounts(shownFilters) {
+  const minValue = shownFilters[0][0]
+  const maxValue = shownFilters.slice(-1)[0]
+
+  // TODO: Set maxCount only once, well upstream
+  let maxCount = 0
+  for (let i = 0; i < shownFilters.length; i++) {
+    const count = shownFilters[i][1]
+    if (count > maxCount) {maxCount = count}
   }
+
+  const numBins = 10
+  const binSize = maxValue / numBins
+  const barCounts = new Array(numBins).fill(0)
+  for (let i = 0; i < shownFilters.length; i++) {
+    const [value, count] = shownFilters[i]
+    for (let j = 0; j < numBins; j++) {
+      const binStartValue = binSize * j
+      const binEndValue = binSize * (j + 1)
+      if (value >= binStartValue && value < binEndValue) {
+        barCounts[j] += count
+      }
+    }
+  }
+
+  console.log('barCounts', barCounts)
 }
 
 /** Cell filter component for continuous numeric annotation dimension */
 function NumericCellFilter({
-  facet, filter, isChecked, checkedMap, handleCheck,
+  facet, shownFilters, isChecked, checkedMap, handleCheck,
   hasNondefaultSelection
 }) {
+  console.log('in NumericCellFilter, facet', facet)
+  console.log('in NumericCellFilter, shownFilters', shownFilters)
+
+  const histogramBarCounts = getHistogramBarCounts(shownFilters)
+  console.log('histogramBarCounts', histogramBarCounts)
+
   return (<span>test</span>)
 }
 
@@ -450,9 +455,9 @@ function CellFacet({
         sortKey={sortKey}
         setSortKey={setSortKey}
       />
-      {shownFilters.map((filter, i) => {
+      {facet.type === 'group' && shownFilters.map((filter, i) => {
         return (
-          <CellFilter
+          <GroupCellFilter
             facet={facet}
             filter={filter}
             isChecked={isChecked}
@@ -464,6 +469,17 @@ function CellFacet({
           />
         )
       })
+      }
+      {facet.type === 'numeric' &&
+          <NumericCellFilter
+            facet={facet}
+            filters={shownFilters}
+            isChecked={isChecked}
+            checkedMap={checkedMap}
+            handleCheck={handleCheck}
+            updateFilteredCells={updateFilteredCells}
+            hasNondefaultSelection={hasNondefaultSelection}
+          />
       }
       {!isFullyCollapsed && filters.length > numFiltersPartlyCollapsed &&
         <a
