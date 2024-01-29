@@ -21,20 +21,20 @@ import sharp from 'sharp'
 import { Storage } from '@google-cloud/storage'
 
 /** Print message with browser-tag preamble to local console and log file */
-function print(message, context={}) {
+function print(message, context = {}) {
   let preamble = ('preamble' in context === false) ? '' : context.preamble
   const timestamp = new Date().toISOString()
-  if (preamble !== '') {preamble = `${preamble} `}
+  if (preamble !== '') { preamble = `${preamble} ` }
   const fullMessage = preamble + message
 
   console.log(fullMessage)
 
-  logFileWriteStream.write(`[${timestamp}] -- : ${fullMessage }\n`)
+  logFileWriteStream.write(`[${timestamp}] -- : ${fullMessage}\n`)
   numLogEntries += 1
 
   // Stream logs to bucket in small chunks
   // For observability into ongoing jobs and crash-resilient logs
-  if (numLogEntries % 20 === 0 && context.bucket) {uploadLog(context.bucket)}
+  if (numLogEntries % 20 === 0 && context.bucket) { uploadLog(context.bucket) }
 }
 
 /** Is request a log post to Bard? */
@@ -168,7 +168,8 @@ async function makeExpressionScatterPlotImage(gene, page, context) {
 
   // TODO (SCP-4698): parallelize upload, and atomically trigger on success.
   //
-  // `gcloud storage cp` or (slower) `gsutil -m cp` would upload in parallel,
+  // `gcloud storage cp -Z` would compress locally, upload in parallel and
+  // store files compressed on cloud storage and decompressed during download
   // without needing to call GCS client library's bucket.upload on each file.
   // Ideally there would be a GCS client library equivalent of those commands,
   // but brief research found none.
@@ -251,8 +252,8 @@ async function prefetchExpressionData(gene, context) {
     const response = await fetch(url)
     const json = await response.json()
 
-    expressionArrayString = `[${ json.data.expression.toString() }]`
-    print(`Fetched expression data from URL: ${ url}`, context)
+    expressionArrayString = `[${json.data.expression.toString()}]`
+    print(`Fetched expression data from URL: ${url}`, context)
   }
 
   expressionByGene[gene] = expressionArrayString
@@ -444,7 +445,7 @@ async function parseCliArgs() {
   const { values } = parseArgs({ args, options })
 
   const bucket = values.bucket
-  print(`Command run via Node:\n\n${ commandToNode}\n`, { bucket })
+  print(`Command run via Node:\n\n${commandToNode}\n`, { bucket })
   await uploadLog(bucket)
 
   // Candidates for CLI argument
@@ -464,7 +465,7 @@ async function parseCliArgs() {
   // TODO (SCP-4564): Document how to adjust network rules to use staging locally
   const originsByEnvironment = {
     'development': 'https://localhost:3000',
-    'staging': `https://${ stagingDomainName}`,
+    'staging': `https://${stagingDomainName}`,
     'production': 'https://singlecell.broadinstitute.org'
   }
   const environment = values.environment || 'development'
@@ -472,7 +473,7 @@ async function parseCliArgs() {
 
   // Set origin for use in standalone fetch, which lacks Puppeteer host map
   const isStagingPAPI = environment === 'staging' && !process.env?.IS_LOCAL
-  const fetchOrigin = isStagingPAPI ? `https://${ stagingIP}` : origin
+  const fetchOrigin = isStagingPAPI ? `https://${stagingIP}` : origin
 
   return { values, numCPUs, origin, stagingHost, fetchOrigin }
 }
@@ -495,7 +496,7 @@ async function run() {
   } else {
     jsonDir = await makeLocalOutputDir('json')
   }
-  jsonFpStem = `${jsonDir + cluster }--`
+  jsonFpStem = `${jsonDir + cluster}--`
 
   // Cache for X, Y, and possibly Z coordinates
   coordinates = {}
@@ -579,7 +580,7 @@ async function fetchRankedGenes(context) {
 
   const lines = content.split('\n')
   lines.forEach(line => {
-    if (line[0] === '#') {return}
+    if (line[0] === '#') { return }
     const columns = line.split('\t')
     const gene = columns[0]
     rankedGenes.push(gene)
@@ -634,18 +635,18 @@ function msToTime(duration) {
   let minutes = Math.floor((duration / (1000 * 60)) % 60)
   let hours = Math.floor((duration / (1000 * 60 * 60)) % 24)
 
-  hours = (hours < 10) ? `0${ hours}` : hours
-  minutes = (minutes < 10) ? `0${ minutes}` : minutes
-  seconds = (seconds < 10) ? `0${ seconds}` : seconds
+  hours = (hours < 10) ? `0${hours}` : hours
+  minutes = (minutes < 10) ? `0${minutes}` : minutes
+  seconds = (seconds < 10) ? `0${seconds}` : seconds
 
-  return `${hours }:${ minutes }:${ seconds }.${ milliseconds}`
+  return `${hours}:${minutes}:${seconds}.${milliseconds}`
 }
 
 /** Wrap up job.  Log status, run time. */
-async function complete(error=null) {
+async function complete(error = null) {
   const bucket = values.bucket
   const context = { bucket }
-  if (error) {print(error.stack, context)}
+  if (error) { print(error.stack, context) }
 
   // Get timing data
   const endTime = Date.now()
@@ -682,7 +683,7 @@ const { values, numCPUs, origin, stagingHost, fetchOrigin } = await parseCliArgs
 
 let debugNonce = ''
 if (values['debug'] || values['debug-headless']) {
-  debugNonce = `_debug${ nonce}/`
+  debugNonce = `_debug${nonce}/`
 }
 
 let imagesDir

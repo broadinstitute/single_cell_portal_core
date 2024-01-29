@@ -18,7 +18,8 @@ class StudySyncService
     study_ws = "#{study.firecloud_project}/#{study.firecloud_workspace}"
     Rails.logger.info "setting shares for #{study.accession} based on #{study_ws} acl"
     updated_permissions = []
-    workspace_permissions = ApplicationController.firecloud_client.get_workspace_acl(study.firecloud_project, study.firecloud_workspace)
+    workspace_permissions = ApplicationController.firecloud_client.get_workspace_acl(study.firecloud_project,
+                                                                                     study.firecloud_workspace)
     workspace_permissions['acl'].each do |user, permissions|
       share_from_acl = process_acl_entry(study, user, permissions)
       updated_permissions << share_from_acl if share_from_acl.present?
@@ -65,9 +66,6 @@ class StudySyncService
       share = study.study_shares.detect { |s| s.email == acl_email }
       share.update(permission: StudyShare::PORTAL_ACL_MAP[acl_permissions['accessLevel']])
       share
-    else
-      # permissions are correct, skip
-      nil
     end
   end
 
@@ -318,7 +316,7 @@ class StudySyncService
   end
 
   # handle setting the content metadata headers (Content-Type, Content-Encoding) for a GCS resource (e.g. file)
-  # this is used mainly to address issues when a user has directly uploaded a file to a bucket via gsutil which can
+  # this is used mainly to address issues when a user has directly uploaded a file to a bucket via gcloud CLI which can
   # result in headers are not being set correctly that causes downstream issues when localizing files for parsing
   #
   # * *params*
@@ -364,7 +362,7 @@ class StudySyncService
       first_two_bytes = file.download(range: 0..1, skip_decompress: true)
       first_two_bytes.rewind
       first_two_bytes.read == StudyFile::GZIP_MAGIC_NUMBER
-    rescue => e
+    rescue StandardError => e
       Rails.logger.error "error checking gzip status on #{file.name}"
       ErrorTracker.report_exception(e, nil, file)
       false # we don't really know, so return false to halt execution
