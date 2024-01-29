@@ -21,7 +21,7 @@ class AnnDataFileInfo
 
   # required keys for data_fragments, by type
   REQUIRED_FRAGMENT_KEYS = {
-    cluster: %i[_id name obsm_key_name], expression: %i[_id]
+    cluster: %i[_id name obsm_key_name], expression: %i[_id taxon_id]
   }.freeze
 
   field :has_clusters, type: Boolean, default: false
@@ -160,25 +160,18 @@ class AnnDataFileInfo
       fragments = fragments_by_type(data_type)
       fragments.each do |fragment|
         missing_keys = keys.map(&:to_s) - fragment.keys.map(&:to_s)
-        if missing_keys.any?
-          errors.add(:data_fragments,
-                     "#{data_type} fragment missing one or more required keys: #{missing_keys.join(',')}")
-        end
-        # ensure presence
-        keys.each do |key|
-          value = fragment[key]
-          extra_info = keys.include?(:obsm_key_name) ? "for #{fragment[:obsm_key_name]}" : ''
-          if value.blank?
-            errors.add(:data_fragments,
-                       "#{data_type} fragment missing #{key} in form #{extra_info}")
-          end
-        end
+        missing_values = keys.select { |key| fragment[key].blank? }
+        next if missing_keys.empty? && missing_values.empty?
+
+        all_missing = (missing_keys + missing_values.map(&:to_s)).uniq
+        errors.add(:base,
+                   "#{data_type} form missing one or more required entries: #{all_missing.join(',')}")
       end
       # check for uniqueness
       keys.each do |key|
         values = fragments.map { |fragment| fragment[key] }
         if values.size > values.uniq.size
-          errors.add(:data_fragments, "#{key} are not unique in #{data_type} fragments: #{values}")
+          errors.add(:base, "#{key} are not unique in #{data_type} fragments: #{values}")
         end
       end
     end

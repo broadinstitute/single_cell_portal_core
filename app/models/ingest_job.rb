@@ -337,7 +337,7 @@ class IngestJob
     if done? && !failed?
       Rails.logger.info "IngestJob poller: #{pipeline_name} is done!"
       Rails.logger.info "IngestJob poller: #{pipeline_name} status: #{current_status}"
-      unless special_action?
+      unless special_action? || action == :ingest_anndata
         study_file.update(parse_status: 'parsed')
         study_file.bundled_files.each { |sf| sf.update(parse_status: 'parsed') }
       end
