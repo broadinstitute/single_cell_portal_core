@@ -281,17 +281,24 @@ function trimNullFilters(cellFaceting) {
       continue
     }
 
-    Object.entries(countsByFilter).forEach(([filter, count], filterIndex) => {
-      if (count !== null) {
-        nonzeroFilters.push(filter)
-        nonzeroFilterCounts[filter] = countsByFilter[filter]
-      } else {
-        facetHasNullFilter = true
+    if (facet.includes('--group--')) {
+      Object.entries(countsByFilter).forEach(([filter, count], filterIndex) => {
+        if (count !== null) {
+          nonzeroFilters.push(filter)
+          nonzeroFilterCounts[filter] = countsByFilter[filter]
+        } else {
+          facetHasNullFilter = true
 
-        hasAnyNullFilters = true
-        nullFilterIndex = filterIndex
-      }
-    })
+          hasAnyNullFilters = true
+          nullFilterIndex = filterIndex
+        }
+      })
+    } else {
+      Object.values(countsByFilter).forEach(([value, count], filterIndex) => {
+        nonzeroFilters.push([value, count])
+        nonzeroFilterCounts[value] = count
+      })
+    }
 
     if (facetHasNullFilter) {
       for (let j = 0; j < cellFaceting.filterableCells.length; j++) {
@@ -333,6 +340,7 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
 
     if (facet.includes('--group--')) {
       countsByFilter = {}
+      // console.log('facets[i]', facets[i])
       facets[i].groups.forEach((group, j) => {
         let count = null
         // check for originalGroups array first, if present

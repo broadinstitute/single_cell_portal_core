@@ -277,6 +277,45 @@ function CellFilter({
   facet, filter, isChecked, checkedMap, handleCheck,
   hasNondefaultSelection
 }) {
+  if (facet.type === 'group') {
+    return (
+      <GroupCellFilter
+        facet={facet}
+        filter={filter}
+        isChecked={isChecked}
+        checkedMap={checkedMap}
+        handleCheck={handleCheck}
+        hasNondefaultSelection={hasNondefaultSelection}
+      />
+    )
+  } else {
+    console.log('returning NumericCellFilter for facet', facet)
+    return (
+      <NumericCellFilter
+        facet={facet}
+        filter={filter}
+        isChecked={isChecked}
+        checkedMap={checkedMap}
+        handleCheck={handleCheck}
+        hasNondefaultSelection={hasNondefaultSelection}
+      />
+    )
+  }
+}
+
+/** Cell filter component for continuous numeric annotation dimension */
+function NumericCellFilter({
+  facet, filter, isChecked, checkedMap, handleCheck,
+  hasNondefaultSelection
+}) {
+  return (<span>test</span>)
+}
+
+/** Cell filter component for categorical group annotation dimension */
+function GroupCellFilter({
+  facet, filter, isChecked, checkedMap, handleCheck,
+  hasNondefaultSelection
+}) {
   let facetLabelStyle = {}
   const inputStyle = { 'margin': '1px 5px 0 0', 'verticalAlign': 'top' }
   if (!facet.isLoaded) {
@@ -331,6 +370,7 @@ function CellFacet({
   checkedMap, handleCheck, handleCheckAllFiltersInFacet, updateFilteredCells,
   isAllListsCollapsed, hasNondefaultSelection
 }) {
+  console.log('in CellFacet, facet', facet)
   if (Object.keys(facet).length === 0) {
     // Only create the list if the facet exists
     return <></>
@@ -347,33 +387,39 @@ function CellFacet({
   const [sortKey, setSortKey] = useState('count')
 
   const unsortedFilters = facet.unsortedGroups ?? []
-  let filters
+  let filters = facet.groups
 
-  //  Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
-  if (sortKey === 'label') {
-    filters = unsortedFilters.sort((a, b) => {
-      return a.localeCompare(b, 'en', { numeric: true, ignorePunctuation: true })
-    })
-  } else {
-    // Sort categorical filters (i.e., groups)
-    const filterCounts = facet.originalFilterCounts
-    const sortedGroups = unsortedFilters.sort((a, b) => {
-      if (filterCounts[a] && filterCounts[b]) {
-        return filterCounts[b] - filterCounts[a]
-      }
-    })
-    filters = sortedGroups
-  }
-
-  // Handle truncating filter lists to account for any full or partial collapse
   let shownFilters = filters
-  const numFiltersPartlyCollapsed = 5
-  if (isPartlyCollapsed) {
-    shownFilters = filters.slice(0, numFiltersPartlyCollapsed)
+  let numFiltersPartlyCollapsed = null
+  if (facet.type === 'group') {
+    //  Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
+    if (sortKey === 'label') {
+      filters = unsortedFilters.sort((a, b) => {
+        return a.localeCompare(b, 'en', { numeric: true, ignorePunctuation: true })
+      })
+    } else {
+      // Sort categorical filters (i.e., groups)
+      const filterCounts = facet.originalFilterCounts
+      const sortedGroups = unsortedFilters.sort((a, b) => {
+        if (filterCounts[a] && filterCounts[b]) {
+          return filterCounts[b] - filterCounts[a]
+        }
+      })
+      filters = sortedGroups
+    }
+
+    // Handle truncating filter lists to account for any full or partial collapse
+    numFiltersPartlyCollapsed = 5
+    if (isPartlyCollapsed) {
+      shownFilters = filters.slice(0, numFiltersPartlyCollapsed)
+    }
+    if (isFullyCollapsed) {
+      shownFilters = []
+    }
   }
-  if (isFullyCollapsed) {
-    shownFilters = []
-  }
+
+  console.log('facet', facet)
+  console.log('shownFilters', shownFilters)
 
   useEffect(() => {
     setIsFullyCollapsed(isAllListsCollapsed)
@@ -386,6 +432,8 @@ function CellFacet({
       cursor: 'default'
     }
   }
+
+  console.log('shownFilters', shownFilters)
 
   return (
     <div
@@ -570,14 +618,17 @@ export function CellFilteringPanel({
       // Sort categorical filters (i.e., groups)
       const initCounts = cellFaceting.filterCounts[facet.annotation]
       if (initCounts) {
-        if (!facet.unsortedGroups) {facet.unsortedGroups = facet.groups}
         if (!facet.originalFilterCounts) {facet.originalFilterCounts = initCounts}
-        const sortedGroups = facet.groups.sort((a, b) => {
-          if (initCounts[a] && initCounts[b]) {
-            return initCounts[b] - initCounts[a]
-          }
-        })
-        facet.groups = sortedGroups
+
+        if (facet.type === 'group') {
+          if (!facet.unsortedGroups) {facet.unsortedGroups = facet.groups}
+          const sortedGroups = facet.groups.sort((a, b) => {
+            if (initCounts[a] && initCounts[b]) {
+              return initCounts[b] - initCounts[a]
+            }
+          })
+          facet.groups = sortedGroups
+        }
       }
       return facet
     })
