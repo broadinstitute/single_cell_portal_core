@@ -170,7 +170,7 @@ export function applyNumericFilters(d, numericFilters) {
 
 /** Get filtered cell results */
 export function filterCells(
-  selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, rawFacets
+  selection, cellsByFacet, initFacets, filterableCells, rawFacets
 ) {
   const t0 = Date.now()
   const facets =
@@ -315,7 +315,6 @@ function trimNullFilters(cellFaceting) {
   cellFaceting.cellsByFacet = getCellsByFacet(filterableCells, annotationFacets)
   cellFaceting.filterableCells = filterableCells
   cellFaceting.filterCounts = nonzeroFilterCountsByFacet
-  cellFaceting.filtersByFacet = nonzeroFiltersByFacet
 
   return cellFaceting
 }
@@ -363,7 +362,7 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
     filterCounts[facet] = countsByFilter
   }
 
-  console.log('filterCounts', filterCounts)
+  // console.log('filterCounts', filterCounts)
 
   // If a filter has been deselected, set its count to 0
   if (selection) {
@@ -414,13 +413,8 @@ function initCrossfilter(facetData) {
 
   const filterCounts = getFilterCounts(annotationFacets, cellsByFacet, facets, null)
 
-  const filtersByFacet = {}
-  facets.forEach(facet => {
-    filtersByFacet[facet.annotation] = facet.groups
-  })
-
   return {
-    filterableCells, cellsByFacet, loadedFacets: facets, filtersByFacet,
+    filterableCells, cellsByFacet, loadedFacets: facets,
     filterCounts
   }
 }
@@ -545,7 +539,7 @@ export async function initCellFaceting(
   const timeInitCrossfilterStart = Date.now()
   const {
     filterableCells, cellsByFacet,
-    loadedFacets, filtersByFacet, filterCounts
+    loadedFacets, filterCounts
   } = initCrossfilter(rawFacets)
   perfTimes.initCrossfilter = Date.now() - timeInitCrossfilterStart
 
@@ -563,7 +557,6 @@ export async function initCellFaceting(
     filterableCells,
     cellsByFacet,
     facets,
-    filtersByFacet,
     isFullyLoaded,
     rawFacets,
     filterCounts
