@@ -326,25 +326,44 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
 
   for (let i = 0; i < annotationFacets.length; i++) {
     const facet = annotationFacets[i]
-    if (!facet.includes('--group--') || !facets[i].groups) {continue}
+    // if (!facet.includes('--group--') || !facets[i].groups) {continue}
     const facetCrossfilter = cellsByFacet[facet]
     // Set counts for each filter in facet
     const rawFilterCounts = facetCrossfilter.group().top(Infinity)
-    const countsByFilter = {}
+    let countsByFilter
 
-    facets[i].groups.forEach((group, j) => {
-      let count = null
-      // check for originalGroups array first, if present
-      const originalGroups = facets[i].originalGroups || facets[i].groups
-      const groupIdx = originalGroups.indexOf(group)
-      const rawFilterKeyAndValue = rawFilterCounts.find(rfc => rfc.key === groupIdx)
-      if (rawFilterKeyAndValue) {
-        count = rawFilterKeyAndValue.value
+    if (facet.includes('--group--')) {
+      countsByFilter = {}
+      facets[i].groups.forEach((group, j) => {
+        let count = null
+        // check for originalGroups array first, if present
+        const originalGroups = facets[i].originalGroups || facets[i].groups
+        const groupIdx = originalGroups.indexOf(group)
+        const rawFilterKeyAndValue = rawFilterCounts.find(rfc => rfc.key === groupIdx)
+        if (rawFilterKeyAndValue) {
+          count = rawFilterKeyAndValue.value
+        }
+        countsByFilter[group] = count
+      })
+    } else {
+      countsByFilter = []
+      for (let j = 0; j < rawFilterCounts.length; j++) {
+        // For numeric facets, `rawFilterCounts` is an array of objects, where
+        // each object is a distinct numeric value observed in the facet;
+        // the `key` of this object is the numeric value, and the `value` is
+        // how many cells were observed with that numeric value.
+        const countObject = rawFilterCounts[j]
+        const filterValueAndCount = [countObject.key, countObject.value]
+        countsByFilter.push(filterValueAndCount)
       }
-      countsByFilter[group] = count
-    })
+
+      // Sort array by numeric value, to aid later histogram, etc.
+      countsByFilter = countsByFilter.sort((a, b) => a[0] - b[0])
+    }
     filterCounts[facet] = countsByFilter
   }
+
+  console.log('filterCounts', filterCounts)
 
   // If a filter has been deselected, set its count to 0
   if (selection) {
@@ -557,7 +576,7 @@ export async function initCellFaceting(
   cellFaceting.perfTimes = perfTimes
 
   // Below line is worth keeping, but only uncomment to debug in development
-  // window.SCP.cellFaceting = cellFaceting
+  window.SCP.cellFaceting = cellFaceting
   return cellFaceting
 }
 
