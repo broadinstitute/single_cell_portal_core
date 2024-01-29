@@ -145,7 +145,9 @@ function FacetTools({
 /** Determine if user has deselected any filters */
 function getHasNondefaultSelection(checkedMap, facets) {
   let numTotalFilters = 0
-  facets.forEach(facet => numTotalFilters += facet.groups.length)
+  facets
+    .filter(f => f.type === 'group')
+    .forEach(facet => numTotalFilters += facet.groups.length)
   let numCheckedFilters = 0
   Object.entries(checkedMap).forEach(([_, filters]) => {
     numCheckedFilters += filters.length
@@ -559,7 +561,7 @@ export function CellFilteringPanel({
 
   const facets = cellFaceting.facets
     .filter(
-      facet => facet.isSelectedAnnotation === false && facet.annotation.includes('--group--')
+      facet => facet.isSelectedAnnotation === false
     )
     .map(facet => {
       // Add counts of matching cells for each filter to its containing facet object
@@ -587,15 +589,16 @@ export function CellFilteringPanel({
     }
   })
 
+  // console.log('facets', facets)
   const [checkedMap, setCheckedMap] = useState(defaultCheckedMap)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
-  const shownFacets = facets.filter(facet => facet.groups.length > 1)
+  const shownFacets = facets.filter(facet => facet.type === 'numeric' || facet.groups.length > 1)
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
   // Needed to propagate facets from URL to initial checkbox states
   useEffect(() => {
     setCheckedMap(defaultCheckedMap)
-  }, Object.values(defaultCheckedMap).join(','))
+  }, [Object.values(defaultCheckedMap).join(',')])
 
   /** Top header for the "Filter" section, including all-facet controls */
   function FilterSectionHeader({ hasNondefaultSelection, handleResetFilters, isAllListsCollapsed, setIsAllListsCollapsed }) {
