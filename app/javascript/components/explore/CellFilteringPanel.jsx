@@ -358,10 +358,14 @@ const operators = [
 /** Get options for numeric filter operators */
 function OperatorMenu({ selectedOption, setSelectedOption }) {
   return (
-    <select style={{ width: '80px' }}>
+    <select
+      style={{ width: '80px' }}
+      value={selectedOption}
+      onChange={event => {setSelectedOption(event.target.value)}}
+    >
       {operators.map(operator => {
         return (
-          <option>{operator}</option>
+          <option value={operator}>{operator}</option>
         )
       })}
     </select>
@@ -378,8 +382,12 @@ function NumericQueryBuilder() {
         setSelectedOption={setSelectedOption}
       />
       <input type="text" style={{ width: '50px', height: '20px', marginLeft: '4px' }} />
-      <span style={{ marginLeft: '4px' }}>and</span>
-      <input type="text" style={{ width: '50px', height: '20px', marginLeft: '4px' }} />
+      {['between', 'not between'].includes(selectedOption) &&
+      <>
+        <span style={{ marginLeft: '4px' }}>and</span>
+        <input type="text" style={{ width: '50px', height: '20px', marginLeft: '4px' }} />
+      </>
+      }
     </div>
   )
 }
