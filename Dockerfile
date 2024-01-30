@@ -1,5 +1,5 @@
 # use SCP base Rails image, configure only project-specific items here
-FROM gcr.io/broad-singlecellportal-staging/rails-baseimage:2.2.1
+FROM gcr.io/broad-singlecellportal-staging/rails-baseimage:2.2.2
 
 # Set ruby version
 RUN bash -lc 'rvm --default use ruby-3.1.3'
