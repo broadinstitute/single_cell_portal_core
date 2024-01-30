@@ -349,6 +349,54 @@ function Histogram({ filters }) {
   )
 }
 
+// 'equals') {
+//   // for fastest querying, exit function immediately upon _any_ condition
+//   // evaluating to true
+//   if (d === value) {return true}
+// } else if (operator === 'not equals') {
+//   if (d !== value) {return true}
+// } else if (operator === 'greater than') {
+//   if (d > value) {return true}
+// } else if (operator === 'greater than or equal to') {
+//   if (d >= value) {return true}
+// } else if (operator === 'less than') {
+//   if (d < value) {return true}
+// } else if (operator === 'less than or equal to') {
+//   if (d <= value) {return true}
+// } else if (operator === 'between') {
+//   if (value[0] <= d && d <= value[1]) {return true}
+// } else if (operator === 'not between') {
+
+const operators = [
+  'between', 'not between', 'equals', 'not equals',
+  'less than', 'less than or equal to',
+  'greater than', 'greater than or equal to'
+]
+
+/** Get options for numeric filter operators */
+function OperatorMenu({ selectedOption }) {
+  return (
+    <select style={{ width: '80px' }}>
+      {operators.map(operator => {
+        return (
+          <option>{operator}</option>
+        )
+      })}
+    </select>
+  )
+}
+
+/**  */
+function NumericQueryBuilder() {
+  return (
+    <div>
+      <input type="text" style={{ width: '50px', height: '20px', marginRight: '4px' }} />
+      <OperatorMenu />
+      <input type="text" style={{ width: '50px', height: '20px', marginLeft: '4px' }} />
+    </div>
+  )
+}
+
 /** Cell filter component for continuous numeric annotation dimension */
 function NumericCellFilter({
   facet, filters, isChecked, checkedMap, handleCheck,
@@ -360,6 +408,7 @@ function NumericCellFilter({
   return (
     <div style={{ marginLeft: 20 }}>
       <Histogram filters={filters} />
+      <NumericQueryBuilder />
     </div>
   )
 }
@@ -529,7 +578,7 @@ function CellFacet({
             hasNondefaultSelection={hasNondefaultSelection}
           />
       }
-      {!isFullyCollapsed && filters.length > numFiltersPartlyCollapsed &&
+      {facet.type === 'group' && !isFullyCollapsed && filters.length > numFiltersPartlyCollapsed &&
         <a
           className="facet-toggle"
           style={{ 'fontSize': '13px', 'marginLeft': '18px' }}
