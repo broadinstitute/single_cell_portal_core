@@ -317,19 +317,29 @@ function Histogram({ filters }) {
     const width = 10
     const attrs = {
       x: (width + 1) * i,
+      y: maxHeight - height + 1,
       width,
       height
     }
     barRectAttrs.push(attrs)
   })
 
+  const lastBar = barRectAttrs.slice(-1)[0]
+  const svgHeight = maxHeight + 2
+  const svgWidth = lastBar.x + lastBar.width
   return (
-    <svg className="numeric-filter-histogram">
+    <svg
+      height={svgHeight}
+      width={svgWidth}
+      style={{ borderBottom: '1px solid #AAA  ' }}
+      className="numeric-filter-histogram"
+    >
       {barRectAttrs.map((attrs, i) => {
         return (
           <rect
             fill="#3D5A87" // TODO: Source this from upstream
             x={attrs.x}
+            y={attrs.y}
             width={attrs.width}
             height={attrs.height}
           />
@@ -348,9 +358,9 @@ function NumericCellFilter({
   console.log('in NumericCellFilter, filters', filters)
 
   return (
-    <span>
+    <div style={{ marginLeft: 20 }}>
       <Histogram filters={filters} />
-    </span>
+    </div>
   )
 }
 
