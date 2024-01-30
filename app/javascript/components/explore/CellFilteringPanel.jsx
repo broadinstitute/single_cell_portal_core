@@ -283,7 +283,7 @@ function getMinMaxValues(filters) {
 }
 
 /** Get histogram to show with numeric filter */
-function getHistogramBarCounts(filters) {
+function getHistogramBars(filters) {
   const [minValue, maxValue, hasNull] = getMinMaxValues(filters)
 
   // TODO: Set maxCount only once, well upstream
@@ -294,39 +294,59 @@ function getHistogramBarCounts(filters) {
   }
 
   const numBins = 15
-  const binSize = maxValue / numBins
-  const barCounts = new Array(numBins).fill(0)
+  const binSize = (maxValue - minValue) / numBins
+  const bars = []
+
+  for (let i = 0; i < numBins; i++) {
+    const start = minValue + (binSize * i)
+    const end = minValue + (binSize * (i + 1))
+    const isNull = hasNull && i === 0
+
+    const bar = { count: 0, start, end, isNull }
+    bars.push(bar)
+  }
 
   for (let i = 0; i < filters.length; i++) {
     const [value, count] = filters[i]
-    for (let j = 0; j < numBins; j++) {
-      const binStartValue = binSize * j
-      const binEndValue = binSize * (j + 1)
-      if (binStartValue <= value && value < binEndValue) {
-        barCounts[j] += count
+    for (let j = 0; j < bars.length; j++) {
+      const bar = bars[j]
+      if (j === 0 && bar.isNull && value === null) {
+        bars[j].count += count
+      } else if (j < bars.length - 1) {
+        // If not last bar, use exclusive (<) upper-bound to avoid double-count
+        if (bar.start <= value && value < bar.end) {
+          bars[j].count += count
+        }
+      } else {
+        // If last bar, use inclusive (<=) upper-bound to include maximum
+        if (bar.start <= value && value <= bar.end) {
+          bars[j].count += count
+        }
       }
     }
   }
 
-  return [barCounts, maxValue, maxCount, minValue, hasNull]
+  console.log('bars', bars)
+
+  return [bars, maxValue, maxCount]
 }
 
 /** SVG histogram showing distribution of numeric annotation values */
 function Histogram({ filters }) {
   const maxHeight = 20
 
-  const [barCounts, maxValue, maxCount, minValue, hasNull] = getHistogramBarCounts(filters)
+  const [bars, maxValue, maxCount, minValue] = getHistogramBars(filters)
 
   const barRectAttrs = []
-  barCounts.forEach((barCount, i) => {
-    const height = maxHeight * (barCount / maxCount)
+  bars.forEach((bar, i) => {
+    const height = maxHeight * (bar.count / maxCount)
     const width = 11
     const attrs = {
       x: (width + 1) * i,
       y: maxHeight - height + 1,
       width,
       height,
-      color: (hasNull && i === 0) ? '#CCC' : '#3D5A87'
+      color: (bar.isNull) ? '#CCC' : '#3D5A87'
     }
     barRectAttrs.push(attrs)
   })
