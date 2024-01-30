@@ -275,14 +275,16 @@ function getQuantitiesTooltip(baselineCount, passedCount, hasNondefaultSelection
 
 /** Get minimum and maximum bounds of value range for numeric filters */
 function getMinMaxValues(filters) {
-  const minValue = filters[0][0]
+  const firstValue = filters[0][0]
+  const hasNull = firstValue === null
+  const minValue = hasNull ? filters[1][0] : firstValue
   const maxValue = filters.slice(-1)[0][0]
-  return [minValue, maxValue]
+  return [minValue, maxValue, hasNull]
 }
 
 /** Get histogram to show with numeric filter */
 function getHistogramBarCounts(filters) {
-  const [minValue, maxValue] = getMinMaxValues(filters)
+  const [minValue, maxValue, hasNull] = getMinMaxValues(filters)
 
   // TODO: Set maxCount only once, well upstream
   let maxCount = 0
@@ -295,7 +297,6 @@ function getHistogramBarCounts(filters) {
   const binSize = maxValue / numBins
   const barCounts = new Array(numBins).fill(0)
 
-
   for (let i = 0; i < filters.length; i++) {
     const [value, count] = filters[i]
     for (let j = 0; j < numBins; j++) {
@@ -307,15 +308,14 @@ function getHistogramBarCounts(filters) {
     }
   }
 
-  console.log('barCounts', barCounts)
-  return [barCounts, maxValue, maxCount, minValue]
+  return [barCounts, maxValue, maxCount, minValue, hasNull]
 }
 
 /** SVG histogram showing distribution of numeric annotation values */
 function Histogram({ filters }) {
   const maxHeight = 20
 
-  const [barCounts, maxValue, maxCount, minValue] = getHistogramBarCounts(filters)
+  const [barCounts, maxValue, maxCount, minValue, hasNull] = getHistogramBarCounts(filters)
 
   const barRectAttrs = []
   barCounts.forEach((barCount, i) => {
@@ -325,7 +325,8 @@ function Histogram({ filters }) {
       x: (width + 1) * i,
       y: maxHeight - height + 1,
       width,
-      height
+      height,
+      color: (hasNull && i === 0) ? '#CCC' : '#3D5A87'
     }
     barRectAttrs.push(attrs)
   })
@@ -343,7 +344,7 @@ function Histogram({ filters }) {
       {barRectAttrs.map((attrs, i) => {
         return (
           <rect
-            fill="#3D5A87" // TODO: Source this from upstream
+            fill={attrs.color}
             x={attrs.x}
             y={attrs.y}
             width={attrs.width}
@@ -558,8 +559,6 @@ function CellFacet({
       cursor: 'default'
     }
   }
-
-  console.log('shownFilters', shownFilters)
 
   return (
     <div
