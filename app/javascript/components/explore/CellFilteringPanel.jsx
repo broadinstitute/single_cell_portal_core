@@ -285,7 +285,7 @@ function getHistogramBarCounts(filters) {
     if (count > maxCount) {maxCount = count}
   }
 
-  const numBins = 10
+  const numBins = 15
   const binSize = maxValue / numBins
   const barCounts = new Array(numBins).fill(0)
 
@@ -314,7 +314,7 @@ function Histogram({ filters }) {
   const barRectAttrs = []
   barCounts.forEach((barCount, i) => {
     const height = maxHeight * (barCount / maxCount)
-    const width = 10
+    const width = 11
     const attrs = {
       x: (width + 1) * i,
       y: maxHeight - height + 1,
@@ -349,24 +349,6 @@ function Histogram({ filters }) {
   )
 }
 
-// 'equals') {
-//   // for fastest querying, exit function immediately upon _any_ condition
-//   // evaluating to true
-//   if (d === value) {return true}
-// } else if (operator === 'not equals') {
-//   if (d !== value) {return true}
-// } else if (operator === 'greater than') {
-//   if (d > value) {return true}
-// } else if (operator === 'greater than or equal to') {
-//   if (d >= value) {return true}
-// } else if (operator === 'less than') {
-//   if (d < value) {return true}
-// } else if (operator === 'less than or equal to') {
-//   if (d <= value) {return true}
-// } else if (operator === 'between') {
-//   if (value[0] <= d && d <= value[1]) {return true}
-// } else if (operator === 'not between') {
-
 const operators = [
   'between', 'not between', 'equals', 'not equals',
   'less than', 'less than or equal to',
@@ -374,7 +356,7 @@ const operators = [
 ]
 
 /** Get options for numeric filter operators */
-function OperatorMenu({ selectedOption }) {
+function OperatorMenu({ selectedOption, setSelectedOption }) {
   return (
     <select style={{ width: '80px' }}>
       {operators.map(operator => {
@@ -388,10 +370,15 @@ function OperatorMenu({ selectedOption }) {
 
 /**  */
 function NumericQueryBuilder() {
+  const [selectedOption, setSelectedOption] = useState('between')
   return (
     <div>
-      <input type="text" style={{ width: '50px', height: '20px', marginRight: '4px' }} />
-      <OperatorMenu />
+      <OperatorMenu
+        selectedOption={selectedOption}
+        setSelectedOption={setSelectedOption}
+      />
+      <input type="text" style={{ width: '50px', height: '20px', marginLeft: '4px' }} />
+      <span style={{ marginLeft: '4px' }}>and</span>
       <input type="text" style={{ width: '50px', height: '20px', marginLeft: '4px' }} />
     </div>
   )
