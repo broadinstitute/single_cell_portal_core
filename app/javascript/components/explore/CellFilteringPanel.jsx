@@ -273,10 +273,16 @@ function getQuantitiesTooltip(baselineCount, passedCount, hasNondefaultSelection
   return quantitiesTooltip
 }
 
-/** Get histogram to show with numeric filter */
-function getHistogramBarCounts(filters) {
+/** Get minimum and maximum bounds of value range for numeric filters */
+function getMinMaxValues(filters) {
   const minValue = filters[0][0]
   const maxValue = filters.slice(-1)[0][0]
+  return [minValue, maxValue]
+}
+
+/** Get histogram to show with numeric filter */
+function getHistogramBarCounts(filters) {
+  const [minValue, maxValue] = getMinMaxValues(filters)
 
   // TODO: Set maxCount only once, well upstream
   let maxCount = 0
@@ -305,7 +311,7 @@ function getHistogramBarCounts(filters) {
   return [barCounts, maxValue, maxCount, minValue]
 }
 
-/** Get list of SVG rectangles, representing histogram for facet */
+/** SVG histogram showing distribution of numeric annotation values */
 function Histogram({ filters }) {
   const maxHeight = 20
 
@@ -357,9 +363,20 @@ const operators = [
 
 /** Get options for numeric filter operators */
 function OperatorMenu({ selectedOption, setSelectedOption }) {
+  const widthsByOperator = {
+    'between': 80,
+    'not between': 100,
+    'equals': 65,
+    'not equals': 90,
+    'less than': 80,
+    'less than or equal to': 150,
+    'greater than': 100,
+    'greater than or equal to': 170
+  }
+  const menuWidth = `${widthsByOperator[selectedOption] }px`
   return (
     <select
-      style={{ width: '80px' }}
+      style={{ width: menuWidth }}
       value={selectedOption}
       onChange={event => {setSelectedOption(event.target.value)}}
     >
@@ -373,19 +390,29 @@ function OperatorMenu({ selectedOption, setSelectedOption }) {
 }
 
 /**  */
-function NumericQueryBuilder() {
+function NumericQueryBuilder({ filters }) {
+  console.log('in NumericQueryBuilder, filters', filters)
   const [selectedOption, setSelectedOption] = useState('between')
+  const [minValue, maxValue] = getMinMaxValues(filters)
+
+  const input1Default = minValue
+  const input2Default = maxValue
+
+  const inputStyle = {
+    width: '45px', height: '20px', marginLeft: '4px',
+    fontSize: '13px'
+  }
   return (
     <div>
       <OperatorMenu
         selectedOption={selectedOption}
         setSelectedOption={setSelectedOption}
       />
-      <input type="text" style={{ width: '50px', height: '20px', marginLeft: '4px' }} />
+      <input type="text" style={inputStyle} value={input1Default} />
       {['between', 'not between'].includes(selectedOption) &&
       <>
         <span style={{ marginLeft: '4px' }}>and</span>
-        <input type="text" style={{ width: '50px', height: '20px', marginLeft: '4px' }} />
+        <input type="text" style={inputStyle} value={input2Default} />
       </>
       }
     </div>
@@ -403,7 +430,7 @@ function NumericCellFilter({
   return (
     <div style={{ marginLeft: 20 }}>
       <Histogram filters={filters} />
-      <NumericQueryBuilder />
+      <NumericQueryBuilder filters={filters} />
     </div>
   )
 }
@@ -486,6 +513,11 @@ function CellFacet({
   const unsortedFilters = facet.unsortedGroups ?? []
   let filters = facet.groups
 
+  if (facet.type === 'numeric' && filters.length < 2) {
+    // If facet is numeric, only show if there are multiple values
+    return <></>
+  }
+
   let shownFilters = filters
   let numFiltersPartlyCollapsed = null
   if (facet.type === 'group') {
@@ -514,9 +546,6 @@ function CellFacet({
       shownFilters = []
     }
   }
-
-  console.log('facet', facet)
-  console.log('shownFilters', shownFilters)
 
   useEffect(() => {
     setIsFullyCollapsed(isAllListsCollapsed)
