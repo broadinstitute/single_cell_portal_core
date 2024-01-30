@@ -274,46 +274,84 @@ function getQuantitiesTooltip(baselineCount, passedCount, hasNondefaultSelection
 }
 
 /** Get histogram to show with numeric filter */
-function getHistogramBarCounts(shownFilters) {
-  const minValue = shownFilters[0][0]
-  const maxValue = shownFilters.slice(-1)[0]
+function getHistogramBarCounts(filters) {
+  const minValue = filters[0][0]
+  const maxValue = filters.slice(-1)[0][0]
 
   // TODO: Set maxCount only once, well upstream
   let maxCount = 0
-  for (let i = 0; i < shownFilters.length; i++) {
-    const count = shownFilters[i][1]
+  for (let i = 0; i < filters.length; i++) {
+    const count = filters[i][1]
     if (count > maxCount) {maxCount = count}
   }
 
   const numBins = 10
   const binSize = maxValue / numBins
   const barCounts = new Array(numBins).fill(0)
-  for (let i = 0; i < shownFilters.length; i++) {
-    const [value, count] = shownFilters[i]
+
+
+  for (let i = 0; i < filters.length; i++) {
+    const [value, count] = filters[i]
     for (let j = 0; j < numBins; j++) {
       const binStartValue = binSize * j
       const binEndValue = binSize * (j + 1)
-      if (value >= binStartValue && value < binEndValue) {
+      if (binStartValue <= value && value < binEndValue) {
         barCounts[j] += count
       }
     }
   }
 
   console.log('barCounts', barCounts)
+  return [barCounts, maxValue, maxCount, minValue]
+}
+
+/** Get list of SVG rectangles, representing histogram for facet */
+function Histogram({ filters }) {
+  const maxHeight = 20
+
+  const [barCounts, maxValue, maxCount, minValue] = getHistogramBarCounts(filters)
+
+  const barRectAttrs = []
+  barCounts.forEach((barCount, i) => {
+    const height = maxHeight * (barCount / maxCount)
+    const width = 10
+    const attrs = {
+      x: (width + 1) * i,
+      width,
+      height
+    }
+    barRectAttrs.push(attrs)
+  })
+
+  return (
+    <svg className="numeric-filter-histogram">
+      {barRectAttrs.map((attrs, i) => {
+        return (
+          <rect
+            fill="#3D5A87" // TODO: Source this from upstream
+            x={attrs.x}
+            width={attrs.width}
+            height={attrs.height}
+          />
+        )
+      })}
+    </svg>
+  )
 }
 
 /** Cell filter component for continuous numeric annotation dimension */
 function NumericCellFilter({
-  facet, shownFilters, isChecked, checkedMap, handleCheck,
+  facet, filters, isChecked, checkedMap, handleCheck,
   hasNondefaultSelection
 }) {
   console.log('in NumericCellFilter, facet', facet)
-  console.log('in NumericCellFilter, shownFilters', shownFilters)
+  console.log('in NumericCellFilter, filters', filters)
 
-  const histogramBarCounts = getHistogramBarCounts(shownFilters)
-  console.log('histogramBarCounts', histogramBarCounts)
-
-  return (<span>test</span>)
+  return (
+    <span>
+      <Histogram filters={filters} />
+    </span>
+  )
 }
 
 /** Cell filter component for categorical group annotation dimension */
