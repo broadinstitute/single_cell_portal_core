@@ -482,15 +482,16 @@ function NumericQueryBuilder({ filters }) {
         selectedOption={selectedOption}
         setSelectedOption={setSelectedOption}
       />
-
-      <input type="text" style={inputStyle} value={input1Default} />
-      <Fader />
+      <span className="fade-truncated-wrapper">
+        <input type="text" style={inputStyle} value={input1Default} className="fade-truncated"/>
+      </span>
       {['between', 'not between'].includes(selectedOption) &&
       <>
         <span>
           <span style={{ marginLeft: '4px' }}>and</span>
-          <input type="text" style={inputStyle} value={input2Default} />
-          <Fader />
+          <span className="fade-truncated-wrapper">
+            <input type="text" style={inputStyle} value={input2Default} className="fade-truncated"/>
+          </span>
         </span>
       </>
       }

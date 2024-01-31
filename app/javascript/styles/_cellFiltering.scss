@@ -200,3 +200,20 @@ input.cell-facet-header-checkbox {
 .sparkbar-tooltip-filtered {
   color: #CCC;
 }
+
+.fade-truncated-wrapper {
+  position: relative;
+}
+.fade-truncated-wrapper:after {
+  position: absolute;
+  left: -2px;
+  bottom: 0;
+  height: 100%;
+  width: 100%;
+  content: "";
+  background: linear-gradient(to left,
+    rgb(255, 255, 255) 5%,
+    rgba(255, 255, 255, 0) 20%
+  );
+  pointer-events: none; /* so the text is still selectable */
+}
