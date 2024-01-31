@@ -10,7 +10,7 @@ import Select from '~/lib/InstrumentedSelect'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
 import { log } from '~/lib/metrics-api'
-
+import { round } from '~/lib/metrics-perf'
 
 const tooltipAttrs = {
   'data-toggle': 'tooltip',
@@ -362,7 +362,6 @@ function Histogram({ filters }) {
   const lastBar = barRectAttrs.slice(-1)[0]
   const svgHeight = maxHeight + 2
   const svgWidth = lastBar.x + lastBar.width
-  const overlayTop = -1 * svgHeight - 4
   return (
     <>
       <svg
@@ -387,6 +386,17 @@ function Histogram({ filters }) {
       </svg>
       <div style={{ position: 'absolute', top: 0 }}>
         {barRectAttrs.map((attrs, i) => {
+          const bar = attrs.bar
+          let criteria
+          if (bar.start === null) {
+            criteria = 'N/A'
+          } else {
+            const briefStart = round(bar.start, 2)
+            const briefEnd = round(bar.end, 2)
+            criteria = `${briefStart}&nbsp;-&nbsp;${briefEnd}`
+          }
+          const tooltipContent = `<span>${criteria}:<br/>${bar.count}&nbsp;cells</span>`
+
           return (
             <span
               style={{
@@ -395,7 +405,8 @@ function Histogram({ filters }) {
                 height: maxHeight
               }}
               data-toggle="tooltip"
-              data-original-title={`Count: ${attrs.bar.count}`}
+              data-html={true}
+              data-original-title={tooltipContent}
             >
             </span>
           )
