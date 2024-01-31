@@ -907,6 +907,7 @@ export const cellFaceting = {
   'facets': [
     {
       'annotation': 'cell_type__ontology_label--group--study',
+      'isSelectedAnnotation': false,
       'groups': [
         'epithelial cell',
         'macrophage',
@@ -921,6 +922,7 @@ export const cellFaceting = {
     },
     {
       'annotation': 'infant_sick_YN--group--study',
+      'isSelectedAnnotation': false,
       'groups': [
         'no',
         'NA',
@@ -929,6 +931,7 @@ export const cellFaceting = {
     },
     {
       'annotation': 'ethnicity__ontology_label--group--study',
+      'isSelectedAnnotation': false,
       'groups': [
         'European',
         'Asian',
@@ -938,6 +941,7 @@ export const cellFaceting = {
     },
     {
       'annotation': 'biosample_id--group--study',
+      'isSelectedAnnotation': false,
       'groups': [
         'BM02_6wkpp_r1',
         'BM12_6wk',
@@ -1002,6 +1006,7 @@ export const cellFaceting = {
     },
     {
       'annotation': 'donor_id--group--study',
+      'isSelectedAnnotation': false,
       'groups': [
         'BM02',
         'BM12',

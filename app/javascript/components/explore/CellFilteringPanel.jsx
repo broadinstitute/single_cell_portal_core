@@ -11,6 +11,7 @@ import LoadingSpinner from '~/lib/LoadingSpinner'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
 import { log } from '~/lib/metrics-api'
 
+
 const tooltipAttrs = {
   'data-toggle': 'tooltip',
   'data-delay': '{"show": 150}' // Avoid flurry of tooltips on passing hover
@@ -556,34 +557,45 @@ export function CellFilteringPanel({
     )
   }
 
-  const facets = cellFaceting.facets.map(facet => {
-    // Add counts of matching cells for each filter to its containing facet object
-    facet.filterCounts = cellFilterCounts[facet.annotation]
+  const facets = cellFaceting.facets
+    .filter(
+      facet => facet.isSelectedAnnotation === false && facet.annotation.includes('--group--')
+    )
+    .map(facet => {
+      // Add counts of matching cells for each filter to its containing facet object
+      facet.filterCounts = cellFilterCounts[facet.annotation]
 
-    // Sort categorical filters (i.e., groups)
-    const initCounts = cellFaceting.filterCounts[facet.annotation]
-    if (initCounts) {
-      if (!facet.unsortedGroups) {facet.unsortedGroups = facet.groups}
-      if (!facet.originalFilterCounts) {facet.originalFilterCounts = initCounts}
-      const sortedGroups = facet.groups.sort((a, b) => {
-        if (initCounts[a] && initCounts[b]) {
-          return initCounts[b] - initCounts[a]
-        }
-      })
-      facet.groups = sortedGroups
+      // Sort categorical filters (i.e., groups)
+      const initCounts = cellFaceting.filterCounts[facet.annotation]
+      if (initCounts) {
+        if (!facet.unsortedGroups) {facet.unsortedGroups = facet.groups}
+        if (!facet.originalFilterCounts) {facet.originalFilterCounts = initCounts}
+        const sortedGroups = facet.groups.sort((a, b) => {
+          if (initCounts[a] && initCounts[b]) {
+            return initCounts[b] - initCounts[a]
+          }
+        })
+        facet.groups = sortedGroups
+      }
+      return facet
+    })
+
+  const defaultCheckedMap = {}
+  Object.entries(cellFilteringSelection).forEach(([key, value]) => {
+    if (key.includes('--group--')) {
+      defaultCheckedMap[key] = value
     }
-    return facet
   })
 
-  const [checkedMap, setCheckedMap] = useState(cellFilteringSelection)
+  const [checkedMap, setCheckedMap] = useState(defaultCheckedMap)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const shownFacets = facets.filter(facet => facet.groups.length > 1)
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
   // Needed to propagate facets from URL to initial checkbox states
   useEffect(() => {
-    setCheckedMap(cellFilteringSelection)
-  }, Object.values(cellFilteringSelection))
+    setCheckedMap(defaultCheckedMap)
+  }, Object.values(defaultCheckedMap).join(','))
 
   /** Top header for the "Filter" section, including all-facet controls */
   function FilterSectionHeader({ hasNondefaultSelection, handleResetFilters, isAllListsCollapsed, setIsAllListsCollapsed }) {

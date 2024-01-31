@@ -113,6 +113,29 @@ function onWillShowAnnotTooltip(annot) {
   return annot
 }
 
+/** Persist click handling for tissue toggle click */
+function addTissueToggleClickHandler(newTitle) {
+  const ideoTissueToggle = document.querySelector('._ideoMoreOrLessTissue')
+  ideoTissueToggle.addEventListener('click', () => {
+    const ideoTissuePlotTitle = document.querySelector('._ideoTissuePlotTitle')
+    ideoTissuePlotTitle.innerHTML = newTitle
+    addTissueToggleClickHandler(newTitle)
+  })
+}
+
+/** Make updates (e.g. to the tooltip) after showing tooltip */
+function onDidShowAnnotTooltip() {
+  const ideoTissuePlotTitle = document.querySelector('._ideoTissuePlotTitle')
+  if (!ideoTissuePlotTitle) {return}
+  const hoveredGene = document.querySelector('#ideo-related-gene').innerText
+  const gtexUrl = `https://www.gtexportal.org/home/gene/${hoveredGene}`
+  const gtexLink = `<a href="${gtexUrl}" class="_ideoTitleGtexLink" target="blank">GTEx</a>`
+  const newTitle = `Reference expression by tissue, per ${gtexLink}`
+  ideoTissuePlotTitle.innerHTML = newTitle
+
+  addTissueToggleClickHandler(newTitle)
+}
+
 /** Get summary of related-genes ideogram that was just loaded or clicked */
 function getRelatedGenesAnalytics(ideogram) {
   let props = Object.assign({}, ideogram.relatedGenesAnalytics)
@@ -162,6 +185,7 @@ export default function RelatedGenesIdeogram({
       onClickAnnot,
       onPlotRelatedGenes,
       onWillShowAnnotTooltip,
+      onDidShowAnnotTooltip,
       showGeneStructureInTooltip: showAdvanced,
       showProteinInTooltip: showAdvanced,
       showParalogNeighborhoods: showAdvanced,

@@ -50,7 +50,7 @@ let userId = ''
 let registeredForTerra = false
 
 // TODO (SCP-2237): Use Node environment to get React execution context
-if (env != 'test') {
+if (env !== 'test') {
   bardDomain = bardDomainsByEnv[env]
   // To consider: Replace SCP-specific userId with DSP-wide userId
   userId = window.SCP.userId
@@ -517,7 +517,7 @@ export function log(name, props = {}) {
 
   window.Appcues && window.Appcues.identify(window.SCP.userId)
 
-  if ('SCP' in window || metricsApiMock) {
+  if (('SCP' in window && !window.SCP.isTest) || metricsApiMock) {
     const url = `${bardDomain}/api/event/`
     fetch(url, init).then(response => {
       // log failed attempts to connect with Bard to Sentry

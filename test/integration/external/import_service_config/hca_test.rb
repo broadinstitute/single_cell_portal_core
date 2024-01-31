@@ -9,14 +9,33 @@ module ImportServiceConfig
       @user_id = @user.id
       @branding_group_id = @branding_group.id
       @attributes = {
-        file_id: 'b0517500-b39e-4c7a-b2f0-794ddc725433',
-        study_id: '85a9263b-0887-48ed-ab1a-ddfa773727b6',
+        file_id: '6e63e10e-7a5f-52b8-9242-df9d169b802a',
+        study_id: '74b6d569-3b11-42ef-b6b1-a0454522b4a0',
         obsm_key_names: %w[X_tsne X_umap],
         user_id: @user.id,
         branding_group_id: @branding_group.id
       }
       @configuration = ImportServiceConfig::Hca.new(**@attributes)
-      @project_name = 'Spatial and single-cell transcriptional landscape of human cerebellar development'
+      @project_name = '1.3 Million Brain Cells from E18 Mice'
+
+      @azul_is_ok = false
+      begin
+        project = @configuration.load_study
+        file = @configuration.load_file
+        if project && file
+          @azul_is_ok = true
+        end
+      rescue RestClient::Exception => e
+        puts "Error in determining if Azul is healthy: #{e.message}"
+      end
+      @skip_message = '-- skipping due to Azul API being unavailable or inconsistent --'
+    end
+
+    # skip a test if Azul is not up ; prevents unnecessary build failures due to releases/maintenance
+    def skip_if_api_down
+      unless @azul_is_ok
+        puts @skip_message; skip
+      end
     end
 
     after(:all) do
@@ -82,29 +101,34 @@ module ImportServiceConfig
     end
 
     test 'should load study analog' do
+      skip_if_api_down
       study = @configuration.load_study
       assert_equal @project_name, study['projectTitle']
-      assert_equal 'CerebellarDevLandscape', study['projectShortname']
-      assert_equal 70_000, study['estimatedCellCount']
+      assert_equal '1M Neurons', study['projectShortname']
+      assert_equal 1_330_000, study['estimatedCellCount']
     end
 
     test 'should load file analog' do
+      skip_if_api_down
       file = @configuration.load_file
-      assert_equal 'aldinger20.processed.h5ad', file['name']
-      assert_equal '.h5ad', file['format']
-      assert_equal 'CerebellarDevLandscape', file['projectShortname']
+      assert_equal '1M_neurons_filtered_gene_bc_matrices_h5.h5', file['name']
+      assert_equal 'h5', file['format']
+      assert_equal '1M Neurons', file['projectShortname']
     end
 
     test 'should load taxon common names' do
-      assert_equal ['Homo sapiens'], @configuration.taxon_names
+      skip_if_api_down
+      assert_equal ["Mus musculus"], @configuration.taxon_names
     end
 
     test 'should find library preparation protocol' do
+      skip_if_api_down
       assert_equal "10x 3' v3", @configuration.find_library_prep("10x chromium 3' v3 sequencing")
       assert_equal 'Drop-seq', @configuration.find_library_prep('drop-seq')
     end
 
     test 'should populate study and study_file' do
+      skip_if_api_down
       scp_study = @configuration.populate_study
       assert_equal @project_name, scp_study.name
       assert_not scp_study.public
@@ -115,8 +139,8 @@ module ImportServiceConfig
       # populate StudyFile, using above study
       scp_study_file = @configuration.populate_study_file(scp_study.id)
       assert_not scp_study_file.use_metadata_convention
-      assert_equal 'aldinger20.processed.h5ad', scp_study_file.upload_file_name
-      assert_equal 'SPLiT-seq', scp_study_file.expression_file_info.library_preparation_protocol
+      assert_equal '1M_neurons_filtered_gene_bc_matrices_h5.h5', scp_study_file.upload_file_name
+      assert_equal "10x 3' v2", scp_study_file.expression_file_info.library_preparation_protocol
       assert_equal @configuration.service_name, scp_study_file.imported_from
       assert_not scp_study_file.ann_data_file_info.reference_file
       @configuration.obsm_keys.each do |obsm_key_name|
@@ -126,9 +150,9 @@ module ImportServiceConfig
     end
 
     test 'should import from service' do
-      study_name = 'spatial-and-single-cell-transcriptional-landscape-of-human-cerebellar-development'
-      access_url = 'https://service.azul.data.humancellatlas.org/repository/files/' \
-                   'b0517500-b39e-4c7a-b2f0-794ddc725433?catalog=dcp32&version=2021-11-15T11%3A23%3A19.351000Z'
+      skip_if_api_down
+      study_name = '1-3-million-brain-cells-from-e18-mice'
+      access_url = @configuration.file_access_info
       file_mock = MiniTest::Mock.new
       file_mock.expect :generation, '123456789'
       # for study to save, we need to mock all Terra orchestration API calls for creating workspace & setting acls
