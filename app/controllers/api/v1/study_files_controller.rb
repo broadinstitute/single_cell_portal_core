@@ -278,6 +278,15 @@ module Api
 
       def format_log_props(status, error_message)
         log_props = study_file_params.to_unsafe_hash
+        # gotcha for handling :data_fragments as JSON string
+        if log_props.dig(:ann_data_file_info_attributes, :data_fragments).present?
+          begin
+            anndata_fragments = JSON.parse(log_props[:ann_data_file_info_attributes][:data_fragments])
+            log_props[:ann_data_file_info_attributes][:data_fragments] = anndata_fragments
+          rescue JSON::ParserError => e
+            ErrorTracker.report_exception(e, current_api_user, log_props)
+          end
+        end
         # do not send the actual file to the log
         log_props.delete(:upload)
         # don't log file paths that may contain sensitive data
@@ -730,7 +739,7 @@ module Api
           spatial_cluster_associations: [],
           options: [
             :cluster_group_id, :font_family, :font_size, :font_color, :matrix_id, :submission_id, :bam_id,
-            :analysis_name, :visualization_name, :cluster_name, :annotation_name, :cluster_file_id
+            :analysis_name, :visualization_name, :cluster_name, :annotation_name, :cluster_file_id, :upload_trigger
           ],
           expression_file_info_attributes: [
             :_id, :_destroy, :library_preparation_protocol, :units, :biosample_input_type, :modality, :is_raw_counts,
@@ -743,10 +752,7 @@ module Api
           ],
           metadata_form_info_attributes: [:_id, :use_metadata_convention, :description],
           extra_expression_form_info_attributes: [:_id, :taxon_id, :description, :y_axis_label],
-          ann_data_file_info_attributes: [
-            :_id, :reference_file, :has_clusters, :has_metadata, :has_expression, :has_raw_counts,
-            data_fragments: AnnDataFileInfo::DATA_FRAGMENT_PARAMS
-          ],
+          ann_data_file_info_attributes: [:_id, :reference_file, :data_fragments],
           differential_expression_file_info_attributes: [
             :_id, :clustering_association, :annotation_name, :annotation_scope, :computational_method,
             :gene_header, :group_header, :comparison_group_header,

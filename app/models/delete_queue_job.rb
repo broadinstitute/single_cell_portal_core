@@ -290,12 +290,11 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
     case fragment_type
     when "cluster"
       cluster_group = ClusterGroup.find_by(study_file_id:, study_id:, name: fragment[:name])
-
       data_arrays = DataArray.where(
         linear_data_type: 'ClusterGroup', linear_data_id: cluster_group.id, study_id:, study_file_id:
       )
       cluster_group.delete
-      data_arrays.delete
+      data_arrays.delete_all
     end
   end
 end

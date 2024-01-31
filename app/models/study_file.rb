@@ -1388,7 +1388,8 @@ class StudyFile
               @cluster.update(name:)
             end
           else
-            FileParseService.run_parse_job(self, study, study.user, obsm_key: fragment)
+            persist_on_fail = remote_location.present?
+            FileParseService.run_parse_job(self, study, study.user, persist_on_fail:, obsm_key: fragment)
           end
         end
       end

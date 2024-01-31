@@ -10,14 +10,15 @@ class AnnDataFileInfo
     cluster: 'cluster_form_info_attributes'
   }.freeze
 
-  # permitted list of data_fragment strong parameters
+  # permitted list of data_fragment parameters for sanitizing/validation by data type
   # allows nesting of StudyFile-like objects inside data_fragments
-  DATA_FRAGMENT_PARAMS = [
-    :_id, :data_type, :name, :description, :obsm_key_name, :x_axis_label, :y_axis_label, :x_axis_min, :x_axis_max,
-    :y_axis_min, :y_axis_max, :z_axis_min, :z_axis_max, :taxon_id,
-    { spatial_cluster_associations: [] },
-    { expression_file_info: ExpressionFileInfo.attribute_names }
-  ].freeze
+  DATA_FRAGMENT_PARAMS = {
+    cluster: %i[
+      _id data_type name description obsm_key_name x_axis_label y_axis_label x_axis_min x_axis_max y_axis_min
+      y_axis_max z_axis_min z_axis_max taxon_id parse_status spatial_cluster_associations
+    ],
+    expression: %i[_id data_type taxon_id description expression_file_info]
+  }.freeze
 
   # required keys for data_fragments, by type
   REQUIRED_FRAGMENT_KEYS = {
@@ -38,11 +39,17 @@ class AnnDataFileInfo
   # }
   # { _id: '6033f531e241391884633748', data_type: :expression, description: 'log(TMP) expression' }
   field :data_fragments, type: Array, default: []
+  before_validation :sanitize_fragments!
   validate :validate_fragments
 
   # collect data frame key_names for clustering data inside AnnData flle
   def obsm_key_names
-    data_fragments.map { |f| f[:obsm_key_name] }.compact
+    data_fragments.map { |f| f.with_indifferent_access[:obsm_key_name] }.compact
+  end
+
+  # helper to automatically call :with_indifferent_access on all data_fragments
+  def safe_data_fragments
+    data_fragments.map(&:with_indifferent_access)
   end
 
   # handle AnnData upload form data and merge into appropriate fields so that we can make a single update! call
@@ -50,7 +57,10 @@ class AnnDataFileInfo
     merged_data = form_data.with_indifferent_access
     # merge in existing information about AnnData file, using form data first if present
     anndata_info_attributes = form_data[:ann_data_file_info_attributes] || attributes.with_indifferent_access
-
+    # gotcha to reparse data_fragments from string-encoded JSON form data
+    if anndata_info_attributes[:data_fragments].is_a?(String)
+      anndata_info_attributes[:data_fragments] = JSON.parse(anndata_info_attributes[:data_fragments]).map(&:with_indifferent_access)
+    end
     # merge :reference_anndata_file parameter, if present
     if merged_data[:reference_anndata_file].present? || new_record?
       reference_file = merged_data[:reference_anndata_file].nil? ? true : merged_data[:reference_anndata_file] == 'true'
@@ -121,7 +131,7 @@ class AnnDataFileInfo
 
   # get all fragments of a specific data type
   def fragments_by_type(data_type)
-    data_fragments.select { |fragment| fragment[:data_type].to_s == data_type.to_s }
+    safe_data_fragments.select { |fragment| fragment[:data_type].to_s == data_type.to_s }
   end
 
   # mirror of study_file.get_cluster_domain_ranges for data_fragment
@@ -152,6 +162,20 @@ class AnnDataFileInfo
     else
       :presence
     end
+  end
+
+  # reject any extraneous values added from React forms
+  def sanitize_fragments!
+    sanitized_fragments = []
+    safe_data_fragments.each do |fragment|
+      sanitized_fragment = {}
+      data_type = fragment[:data_type].to_sym
+      fragment.each_pair do |key, value|
+        sanitized_fragment[key] = value if DATA_FRAGMENT_PARAMS[data_type].include?(key.to_sym)
+      end
+      sanitized_fragments << sanitized_fragment
+    end
+    self.data_fragments = sanitized_fragments
   end
 
   # ensure all fragments have required keys and are unique
