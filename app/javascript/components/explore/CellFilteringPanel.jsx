@@ -450,6 +450,19 @@ function OperatorMenu({ selectedOption, setSelectedOption }) {
   )
 }
 
+/** Overlay a faded element to economically indicate truncation */
+function Fader() {
+  const width = 8
+  return (
+    <span style={{ position: 'relative' }}>
+      <span style={{
+        width: `${width}px`, height: '18px', opacity: 0.5,
+        position: 'absolute', top: '0px', left: `-${width + 1}px`, background: '#FFF'
+      }}></span>
+    </span>
+  )
+}
+
 /**  */
 function NumericQueryBuilder({ filters }) {
   console.log('in NumericQueryBuilder, filters', filters)
@@ -469,11 +482,16 @@ function NumericQueryBuilder({ filters }) {
         selectedOption={selectedOption}
         setSelectedOption={setSelectedOption}
       />
+
       <input type="text" style={inputStyle} value={input1Default} />
+      <Fader />
       {['between', 'not between'].includes(selectedOption) &&
       <>
-        <span style={{ marginLeft: '4px' }}>and</span>
-        <input type="text" style={inputStyle} value={input2Default} />
+        <span>
+          <span style={{ marginLeft: '4px' }}>and</span>
+          <input type="text" style={inputStyle} value={input2Default} />
+          <Fader />
+        </span>
       </>
       }
     </div>
