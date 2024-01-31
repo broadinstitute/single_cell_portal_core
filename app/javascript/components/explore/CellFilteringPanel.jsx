@@ -362,6 +362,7 @@ function Histogram({ filters }) {
   const lastBar = barRectAttrs.slice(-1)[0]
   const svgHeight = maxHeight + 2
   const svgWidth = lastBar.x + lastBar.width
+  const overlayTop = -1 * svgHeight - 4
   return (
     <>
       <svg
@@ -384,7 +385,7 @@ function Histogram({ filters }) {
           )
         })}
       </svg>
-      <div style={{ position: 'relative', top: -1 * svgHeight - 4 }}>
+      <div style={{ position: 'absolute', top: 0 }}>
         {barRectAttrs.map((attrs, i) => {
           return (
             <span
@@ -477,7 +478,7 @@ function NumericCellFilter({
   console.log('in NumericCellFilter, filters', filters)
 
   return (
-    <div style={{ marginLeft: 20 }}>
+    <div style={{ marginLeft: 20, position: 'relative' }}>
       <Histogram filters={filters} />
       <NumericQueryBuilder filters={filters} />
     </div>
