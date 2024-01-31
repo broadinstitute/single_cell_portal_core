@@ -286,28 +286,20 @@ function getMinMaxValues(filters) {
 function getHistogramBars(filters) {
   const [minValue, maxValue, hasNull] = getMinMaxValues(filters)
 
-  // TODO: Set maxCount only once, well upstream
-  let maxCount = 0
-  for (let i = 0; i < filters.length; i++) {
-    const count = filters[i][1]
-    if (count > maxCount) {maxCount = count}
-  }
-
   const numBins = 15
   const binSize = (maxValue - minValue) / numBins
   const bars = []
 
   for (let i = 0; i < numBins; i++) {
     const isNull = hasNull && i === 0
-    const nullAdjustedIndex = hasNull ? i - 1 : i
     let start
     let end
     if (isNull) {
       start = null
       end = null
     } else {
-      start = minValue + (binSize * nullAdjustedIndex)
-      end = minValue + (binSize * (nullAdjustedIndex + 1))
+      start = minValue + (binSize * i)
+      end = minValue + (binSize * (i + 1))
     }
 
     const bar = { count: 0, start, end, isNull }
@@ -337,7 +329,11 @@ function getHistogramBars(filters) {
     }
   }
 
-  console.log('bars', bars)
+  let maxCount = 0
+  for (let i = 0; i < bars.length; i++) {
+    const count = bars[i].count
+    if (count > maxCount) {maxCount = count}
+  }
 
   return [bars, maxValue, maxCount]
 }
@@ -357,7 +353,8 @@ function Histogram({ filters }) {
       y: maxHeight - height + 1,
       width,
       height,
-      color: (bar.isNull) ? '#CCC' : '#3D5A87'
+      color: (bar.isNull) ? '#CCC' : '#3D5A87',
+      bar
     }
     barRectAttrs.push(attrs)
   })
@@ -380,6 +377,10 @@ function Histogram({ filters }) {
             y={attrs.y}
             width={attrs.width}
             height={attrs.height}
+            title={`Count: ${attrs.bar.count}`}
+            // TODO: Fix position of Tippy tooltips atop bars
+            // data-toggle="tooltip"
+            // data-original-title={`Count: ${attrs.bar.count}`}
           />
         )
       })}
