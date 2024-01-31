@@ -298,9 +298,17 @@ function getHistogramBars(filters) {
   const bars = []
 
   for (let i = 0; i < numBins; i++) {
-    const start = minValue + (binSize * i)
-    const end = minValue + (binSize * (i + 1))
     const isNull = hasNull && i === 0
+    const nullAdjustedIndex = hasNull ? i - 1 : i
+    let start
+    let end
+    if (isNull) {
+      start = null
+      end = null
+    } else {
+      start = minValue + (binSize * nullAdjustedIndex)
+      end = minValue + (binSize * (nullAdjustedIndex + 1))
+    }
 
     const bar = { count: 0, start, end, isNull }
     bars.push(bar)
@@ -310,15 +318,18 @@ function getHistogramBars(filters) {
     const [value, count] = filters[i]
     for (let j = 0; j < bars.length; j++) {
       const bar = bars[j]
-      if (j === 0 && bar.isNull && value === null) {
-        bars[j].count += count
+      if (j === 0 && bar.isNull) {
+        if (value === null) {
+          // Count number of cells that have no numeric value for this annotation
+          bars[j].count += count
+        }
       } else if (j < bars.length - 1) {
         // If not last bar, use exclusive (<) upper-bound to avoid double-count
         if (bar.start <= value && value < bar.end) {
           bars[j].count += count
         }
       } else {
-        // If last bar, use inclusive (<=) upper-bound to include maximum
+        // If last bar, use inclusive (<=) upper-bound to avoid omitting maximum
         if (bar.start <= value && value <= bar.end) {
           bars[j].count += count
         }
