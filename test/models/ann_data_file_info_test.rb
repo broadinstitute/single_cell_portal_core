@@ -76,6 +76,27 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
     assert_equal 'log(TPM) expression', expr_fragment[:y_axis_label]
   end
 
+  test 'should decode serialized JSON form data' do
+    data_fragments = [
+      {
+        _id: generate_id, data_type: 'expression', taxon_id: generate_id
+      }.with_indifferent_access,
+      {
+        _id: generate_id, data_type: 'cluster', name: 'UMAP', description: 'UMAP description', obsm_key_name: 'X_umap'
+      }.with_indifferent_access
+    ]
+    form_params = {
+      ann_data_file_info_attributes: {
+        _id: generate_id,
+        reference_file: false,
+        data_fragments: data_fragments.to_json
+      }
+    }
+    merged_data = AnnDataFileInfo.new.merge_form_data(form_params)
+    safe_fragments = merged_data.dig(:ann_data_file_info_attributes, :data_fragments).map(&:with_indifferent_access)
+    assert_equal data_fragments, safe_fragments
+  end
+
   test 'should extract specified data fragment from form data' do
     taxon_id = BSON::ObjectId.new.to_s
     description = 'this is the description'
