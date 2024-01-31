@@ -476,20 +476,24 @@ function NumericQueryBuilder({ filters }) {
     width: '45px', height: '20px', marginLeft: '4px',
     fontSize: '13px'
   }
+
+  const wrapClass1 = input1Default >= 100_000 ? 'fade-truncated' : ''
+  const wrapClass2 = input2Default >= 100_000 ? 'fade-truncated' : ''
+
   return (
     <div>
       <OperatorMenu
         selectedOption={selectedOption}
         setSelectedOption={setSelectedOption}
       />
-      <span className="fade-truncated-wrapper">
+      <span className={wrapClass1}>
         <input type="text" style={inputStyle} value={input1Default} />
       </span>
       {['between', 'not between'].includes(selectedOption) &&
       <>
         <span>
           <span style={{ marginLeft: '4px' }}>and</span>
-          <span className="fade-truncated-wrapper">
+          <span className={wrapClass2}>
             <input type="text" style={inputStyle} value={input2Default} />
           </span>
         </span>

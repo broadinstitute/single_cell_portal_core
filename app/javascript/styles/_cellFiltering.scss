@@ -203,10 +203,10 @@ input.cell-facet-header-checkbox {
 
 // Used to fade truncated text in inputs, as a visually economical affordance
 // that more content exists in the input, but must be keyed to view
-.fade-truncated-wrapper {
+.fade-truncated {
   position: relative;
 }
-.fade-truncated-wrapper:after {
+.fade-truncated:after {
   position: absolute;
   left: -2px;
   bottom: 0;
@@ -220,6 +220,6 @@ input.cell-facet-header-checkbox {
   pointer-events: none; /* so the text is still selectable */
 }
 
-.fade-truncated-wrapper:has(input:focus):after {
+.fade-truncated:has(input:focus):after {
   background: none;
 }
