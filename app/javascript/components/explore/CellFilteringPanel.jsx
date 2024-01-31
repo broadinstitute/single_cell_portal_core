@@ -371,17 +371,29 @@ function Histogram({ filters }) {
     >
       {barRectAttrs.map((attrs, i) => {
         return (
-          <rect
-            fill={attrs.color}
-            x={attrs.x}
-            y={attrs.y}
-            width={attrs.width}
-            height={attrs.height}
-            title={`Count: ${attrs.bar.count}`}
-            // TODO: Fix position of Tippy tooltips atop bars
-            // data-toggle="tooltip"
-            // data-original-title={`Count: ${attrs.bar.count}`}
-          />
+          <>
+            <foreignObject
+              x={attrs.x}
+              y={1}
+              width={attrs.width}
+              height={maxHeight}
+            >
+              <span
+                // TODO: Fix position of Tippy tooltips atop bars
+                style={{ background: 'red', display: 'inline-block', width: attrs.width, height: maxHeight }}
+                data-toggle="tooltip"
+                data-original-title={`Count: ${attrs.bar.count}`}
+              >
+              </span>
+            </foreignObject>
+            <rect
+              fill={attrs.color}
+              x={attrs.x}
+              y={attrs.y}
+              width={attrs.width}
+              height={attrs.height}
+            />
+          </>
         )
       })}
     </svg>
