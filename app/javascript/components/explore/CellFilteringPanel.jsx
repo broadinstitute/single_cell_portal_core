@@ -363,40 +363,44 @@ function Histogram({ filters }) {
   const svgHeight = maxHeight + 2
   const svgWidth = lastBar.x + lastBar.width
   return (
-    <svg
-      height={svgHeight}
-      width={svgWidth}
-      style={{ borderBottom: '1px solid #AAA  ' }}
-      className="numeric-filter-histogram"
-    >
-      {barRectAttrs.map((attrs, i) => {
-        return (
-          <>
-            <foreignObject
-              x={attrs.x}
-              y={1}
-              width={attrs.width}
-              height={maxHeight}
+    <>
+      <svg
+        height={svgHeight}
+        width={svgWidth}
+        style={{ borderBottom: '1px solid #AAA  ' }}
+        className="numeric-filter-histogram"
+      >
+        {barRectAttrs.map((attrs, i) => {
+          return (
+            <>
+              <rect
+                fill={attrs.color}
+                x={attrs.x}
+                y={attrs.y}
+                width={attrs.width}
+                height={attrs.height}
+              />
+            </>
+          )
+        })}
+      </svg>
+      <div style={{ position: 'relative', top: -1 * svgHeight - 4 }}>
+        {barRectAttrs.map((attrs, i) => {
+          return (
+            <span
+              style={{
+                display: 'inline-block',
+                width: attrs.width + 1,
+                height: maxHeight
+              }}
+              data-toggle="tooltip"
+              data-original-title={`Count: ${attrs.bar.count}`}
             >
-              <span
-                // TODO: Fix position of Tippy tooltips atop bars
-                style={{ background: 'red', display: 'inline-block', width: attrs.width, height: maxHeight }}
-                data-toggle="tooltip"
-                data-original-title={`Count: ${attrs.bar.count}`}
-              >
-              </span>
-            </foreignObject>
-            <rect
-              fill={attrs.color}
-              x={attrs.x}
-              y={attrs.y}
-              width={attrs.width}
-              height={attrs.height}
-            />
-          </>
-        )
-      })}
-    </svg>
+            </span>
+          )
+        })}
+      </div>
+    </>
   )
 }
 
