@@ -423,7 +423,7 @@ const operators = [
 ]
 
 /** Get options for numeric filter operators */
-function OperatorMenu({ selectedOption, setSelectedOption }) {
+function OperatorMenu({ operator, setOperator }) {
   const widthsByOperator = {
     'between': 80,
     'not between': 100,
@@ -434,12 +434,12 @@ function OperatorMenu({ selectedOption, setSelectedOption }) {
     'greater than': 100,
     'greater than or equal to': 170
   }
-  const menuWidth = `${widthsByOperator[selectedOption] }px`
+  const menuWidth = `${widthsByOperator[operator] }px`
   return (
     <select
       style={{ width: menuWidth }}
-      value={selectedOption}
-      onChange={event => {setSelectedOption(event.target.value)}}
+      value={operator}
+      onChange={event => {setOperator(event.target.value)}}
     >
       {operators.map(operator => {
         return (
@@ -451,7 +451,7 @@ function OperatorMenu({ selectedOption, setSelectedOption }) {
 }
 
 /** A visually economical input field for numeric query builder */
-function NumericQueryInput({ value, handleChange }) {
+function NumericQueryInput({ value, handleChange, facet, filterName }) {
   const fadeOverflowClass = value >= 100_000 ? 'fade-overflow' : ''
 
   return (
@@ -459,33 +459,53 @@ function NumericQueryInput({ value, handleChange }) {
       <input
         type="text"
         className="numeric-query-input"
+        data-analytics-name={`${facet.annotation}:${filterName}`}
+        name={`${facet.annotation}:${filterName}`}
         value={value}
-        onChange={event => {handleChange(event.target.value)}}
+        onChange={event => {
+          handleChange(event.target.value)
+        }}
       />
     </span>
   )
 }
 
-/**  */
-function NumericQueryBuilder({ filters }) {
+/** Enables manual input of numbers, by which cells get filtered */
+function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
   console.log('in NumericQueryBuilder, filters', filters)
-  const [selectedOption, setSelectedOption] = useState('between')
+  const [operator, setOperator] = useState('between')
   const [minValue, maxValue] = getMinMaxValues(filters)
 
   const [inputValue, setInputValue] = useState(minValue)
   const [inputValue2, setInputValue2] = useState(maxValue)
 
+  /** Propagate change locally and upstream */
+  function updateInputValue(newValue) {
+    setInputValue(newValue)
+    handleNumericChange(newValue)
+  }
+
   return (
     <div>
       <OperatorMenu
-        selectedOption={selectedOption}
-        setSelectedOption={setSelectedOption}
+        operator={operator}
+        setOperator={setOperator}
       />
-      <NumericQueryInput value={inputValue} handleChange={setInputValue} />
-      {['between', 'not between'].includes(selectedOption) &&
+      <NumericQueryInput
+        value={inputValue}
+        handleChange={setInputValue}
+        facet={facet}
+        filterName="value"
+      />
+      {['between', 'not between'].includes(operator) &&
       <span>
         <span style={{ marginLeft: '4px' }}>and</span>
-        <NumericQueryInput value={inputValue2} handleChange={setInputValue2} />
+        <NumericQueryInput
+          value={inputValue2}
+          handleChange={setInputValue2}
+          facet={facet}
+          filterName="value2"
+        />
       </span>
       }
     </div>
@@ -494,7 +514,7 @@ function NumericQueryBuilder({ filters }) {
 
 /** Cell filter component for continuous numeric annotation dimension */
 function NumericCellFilter({
-  facet, filters, isChecked, checkedMap, handleCheck,
+  facet, filters, isChecked, checkedMap, handleNumericChange,
   hasNondefaultSelection
 }) {
   console.log('in NumericCellFilter, facet', facet)
@@ -503,7 +523,11 @@ function NumericCellFilter({
   return (
     <div style={{ marginLeft: 20, position: 'relative' }}>
       <Histogram filters={filters} />
-      <NumericQueryBuilder filters={filters} />
+      <NumericQueryBuilder
+        filters={filters}
+        handleNumericChange={handleNumericChange}
+        facet={facet}
+      />
     </div>
   )
 }
@@ -564,7 +588,8 @@ function GroupCellFilter({
 /** Facet name and collapsible list of filter checkboxes */
 function CellFacet({
   facet,
-  checkedMap, handleCheck, handleCheckAllFiltersInFacet, updateFilteredCells,
+  checkedMap, handleCheck, handleNumericChange,
+  handleCheckAllFiltersInFacet, updateFilteredCells,
   isAllListsCollapsed, hasNondefaultSelection
 }) {
   console.log('in CellFacet, facet', facet)
@@ -668,7 +693,7 @@ function CellFacet({
             filters={shownFilters}
             isChecked={isChecked}
             checkedMap={checkedMap}
-            handleCheck={handleCheck}
+            handleNumericChange={handleNumericChange}
             updateFilteredCells={updateFilteredCells}
             hasNondefaultSelection={hasNondefaultSelection}
           />
@@ -943,6 +968,10 @@ export function CellFilteringPanel({
     updateFilteredCells(checkedMap)
   }
 
+  function handleNumericChange(event) {
+
+  }
+
   const currentlyInUseAnnotations = { colorBy: '', facets: [] }
   const annotationOptions = getAnnotationOptions(annotationList, cluster)
 
@@ -997,6 +1026,7 @@ export function CellFilteringPanel({
                     facet={facet}
                     checkedMap={checkedMap}
                     handleCheck={handleCheck}
+                    handleNumericChange={handleNumericChange}
                     handleCheckAllFiltersInFacet={handleCheckAllFiltersInFacet}
                     updateFilteredCells={updateFilteredCells}
                     isAllListsCollapsed={isAllListsCollapsed}
