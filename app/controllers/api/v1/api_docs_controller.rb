@@ -58,12 +58,12 @@ module Api
           key :description, 'Study publication/data link operations'
         end
         tag do
-          key :name, 'MetadataSchemas'
-          key :description, 'Metadata Convention schema definitions'
+          key :name, 'SavedViews'
+          key :description, 'Pinned/saved views for users'
         end
         tag do
-          key :name, 'Reports'
-          key :description, 'Reports/Portal Stats'
+          key :name, 'MetadataSchemas'
+          key :description, 'Metadata Convention schema definitions'
         end
         tag do
           key :name, 'Schemas'
@@ -107,6 +107,7 @@ module Api
           AnalysisConfiguration,
           ExternalResource,
           UserAnnotation,
+          SavedView,
           Api::V1::StudiesController,
           Api::V1::StudyFilesController,
           Api::V1::StudyFileBundlesController,
@@ -125,20 +126,16 @@ module Api
           Api::V1::Visualization::ExpressionController,
           Api::V1::Visualization::ExploreController,
           Api::V1::UserAnnotationsController,
-          Api::V1::ReportsController
+          Api::V1::SavedViewsController
       ].freeze
 
       def index
         render json: Swagger::Blocks.build_root_json(SWAGGERED_CLASSES)
       end
 
-      def swagger_ui
+      def swagger_ui; end
 
-      end
-
-      def oauth2_redirect
-
-      end
+      def oauth2_redirect; end
     end
   end
 end

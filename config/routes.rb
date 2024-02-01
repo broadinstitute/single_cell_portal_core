@@ -77,6 +77,7 @@ Rails.application.routes.draw do
             resources :user_annotations, only: [:create], params: :accession
           end
           resource :current_user, only: [:update], controller: 'current_user'
+          resources :saved_views, only: %i[index show create update destroy]
 
           get 'status', to: 'status#index'
           scope :site do

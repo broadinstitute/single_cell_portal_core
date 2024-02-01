@@ -965,6 +965,58 @@ export function getFullUrl(path, mock=false) {
   return fullPath
 }
 
+/** retrieve saved views for a user **/
+export async function fetchUserSavedViews(mock=false) {
+  const [savedViews] = await scpApi(`/saved_views`, defaultInit(), mock)
+  return savedViews
+}
+
+/**
+ * create and return a SavedView for a user
+ *
+ * @param savedView {Object} SavedView object, containing name, path, notes and userId
+ * @param mock
+ */
+export async function createUserSavedView(savedView, mock=false) {
+  const init = defaultPostInit(mock)
+
+  init.body = JSON.stringify({
+    saved_view: savedView
+  })
+  const [response] = await scpApi('/saved_views', init, mock)
+  return response
+}
+
+/**
+ * create and return a SavedView for a user
+ *
+ * @param viewId {String} id of SavedView to update
+ * @param savedView {Object} SavedView object, containing name, path, notes and userId
+ * @param mock
+ */
+export async function updateUserSavedView(viewId, updatedView, mock=false) {
+  const init = Object.assign({}, defaultInit(), {
+    method: 'PATCH',
+    body: JSON.stringify({saved_view: updatedView})
+  })
+  const [response] = await scpApi(`/saved_views/${viewId}`, init, mock)
+  return response
+}
+
+/**
+ * create and return a SavedView for a user
+ *
+ * @param viewId {String} id of SavedView to delete
+ * @param mock
+ */
+export async function deleteUserSavedView(viewId, mock=false) {
+  const init = Object.assign({}, defaultInit(), {
+    method: 'DELETE',
+  })
+  const [response] = await scpApi(`/saved_views/${viewId}`, init, mock)
+  return response
+}
+
 /**
  * Client for SCP REST API.  Less fetch boilerplate, easier mocks.
  *
