@@ -450,32 +450,16 @@ function OperatorMenu({ selectedOption, setSelectedOption }) {
   )
 }
 
-/** Overlay a faded element to economically indicate truncation */
-function Fader() {
-  const width = 8
-  return (
-    <span style={{ position: 'relative' }}>
-      <span style={{
-        width: `${width}px`, height: '18px', opacity: 0.5,
-        position: 'absolute', top: '0px', left: `-${width + 1}px`, background: '#FFF'
-      }}></span>
-    </span>
-  )
-}
-
 /** A visually economical input field for numeric query builder */
 function NumericQueryInput({ value, handleChange }) {
-  const style = {
-    width: '45px', height: '20px', marginLeft: '4px',
-    fontSize: '13px'
-  }
-
-  const wrapClass = value >= 100_000 ? 'fade-truncated' : ''
+  const fadeOverflowClass = value >= 100_000 ? 'fade-overflow' : ''
 
   return (
-    <span className={wrapClass}>
+    <span className={fadeOverflowClass}>
       <input
-        type="text" style={style} value={value}
+        type="text"
+        className="numeric-query-input"
+        value={value}
         onChange={event => {handleChange(event.target.value)}}
       />
     </span>
