@@ -463,22 +463,33 @@ function Fader() {
   )
 }
 
+/** A visually economical input field for numeric query builder */
+function NumericQueryInput({ value, handleChange }) {
+  const style = {
+    width: '45px', height: '20px', marginLeft: '4px',
+    fontSize: '13px'
+  }
+
+  const wrapClass = value >= 100_000 ? 'fade-truncated' : ''
+
+  return (
+    <span className={wrapClass}>
+      <input
+        type="text" style={style} value={value}
+        onChange={event => {handleChange(event.target.value)}}
+      />
+    </span>
+  )
+}
+
 /**  */
 function NumericQueryBuilder({ filters }) {
   console.log('in NumericQueryBuilder, filters', filters)
   const [selectedOption, setSelectedOption] = useState('between')
   const [minValue, maxValue] = getMinMaxValues(filters)
 
-  const input1Default = minValue
-  const input2Default = maxValue
-
-  const inputStyle = {
-    width: '45px', height: '20px', marginLeft: '4px',
-    fontSize: '13px'
-  }
-
-  const wrapClass1 = input1Default >= 100_000 ? 'fade-truncated' : ''
-  const wrapClass2 = input2Default >= 100_000 ? 'fade-truncated' : ''
+  const [inputValue, setInputValue] = useState(minValue)
+  const [inputValue2, setInputValue2] = useState(maxValue)
 
   return (
     <div>
@@ -486,18 +497,12 @@ function NumericQueryBuilder({ filters }) {
         selectedOption={selectedOption}
         setSelectedOption={setSelectedOption}
       />
-      <span className={wrapClass1}>
-        <input type="text" style={inputStyle} value={input1Default} />
-      </span>
+      <NumericQueryInput value={inputValue} handleChange={setInputValue} />
       {['between', 'not between'].includes(selectedOption) &&
-      <>
-        <span>
-          <span style={{ marginLeft: '4px' }}>and</span>
-          <span className={wrapClass2}>
-            <input type="text" style={inputStyle} value={input2Default} />
-          </span>
-        </span>
-      </>
+      <span>
+        <span style={{ marginLeft: '4px' }}>and</span>
+        <NumericQueryInput value={inputValue2} handleChange={setInputValue2} />
+      </span>
       }
     </div>
   )
