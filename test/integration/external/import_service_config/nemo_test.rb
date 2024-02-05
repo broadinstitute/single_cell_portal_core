@@ -160,14 +160,16 @@ module ImportServiceConfig
       AdminConfiguration.stub :find_or_create_ws_user_group!, owner_group do
         ImportService.stub :copy_file_to_bucket, file_mock do
           ApplicationController.stub :firecloud_client, fc_client_mock do
-            study, study_file = @configuration.import_from_service
-            file_mock.verify
-            fc_client_mock.verify
-            assert study.persisted?
-            assert study_file.persisted?
-            assert_equal study.external_identifier, @attributes[:study_id]
-            assert_equal study_file.external_identifier, @attributes[:file_id]
-            assert_equal study_file.external_link_url, access_url
+            @configuration.stub :taxon_from, Taxon.new(common_name: 'human') do
+              study, study_file = @configuration.import_from_service
+              file_mock.verify
+              fc_client_mock.verify
+              assert study.persisted?
+              assert study_file.persisted?
+              assert_equal study.external_identifier, @attributes[:study_id]
+              assert_equal study_file.external_identifier, @attributes[:file_id]
+              assert_equal study_file.external_link_url, access_url
+            end
           end
         end
       end

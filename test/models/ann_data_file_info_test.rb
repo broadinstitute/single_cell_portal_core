@@ -76,6 +76,27 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
     assert_equal 'log(TPM) expression', expr_fragment[:y_axis_label]
   end
 
+  test 'should decode serialized JSON form data' do
+    data_fragments = [
+      {
+        _id: generate_id, data_type: 'expression', taxon_id: generate_id
+      }.with_indifferent_access,
+      {
+        _id: generate_id, data_type: 'cluster', name: 'UMAP', description: 'UMAP description', obsm_key_name: 'X_umap'
+      }.with_indifferent_access
+    ]
+    form_params = {
+      ann_data_file_info_attributes: {
+        _id: generate_id,
+        reference_file: false,
+        data_fragments: data_fragments.to_json
+      }
+    }
+    merged_data = AnnDataFileInfo.new.merge_form_data(form_params)
+    safe_fragments = merged_data.dig(:ann_data_file_info_attributes, :data_fragments).map(&:with_indifferent_access)
+    assert_equal data_fragments, safe_fragments
+  end
+
   test 'should extract specified data fragment from form data' do
     taxon_id = BSON::ObjectId.new.to_s
     description = 'this is the description'
@@ -102,26 +123,43 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
   test 'should validate data fragments' do
     ann_data_info = AnnDataFileInfo.new(
       data_fragments: [
-        { data_type: :cluster, name: 'UMAP', obsm_key_name: 'X_umap' }
+        { data_type: :cluster, name: 'UMAP', obsm_key_name: 'X_umap' },
+        { data_type: :expression }
       ]
     )
     assert_not ann_data_info.valid?
-    error_msg = ann_data_info.errors.messages_for(:data_fragments).first
-    assert_equal 'cluster fragment missing one or more required keys: _id', error_msg
+    cluster_error_msg = ann_data_info.errors.messages_for(:base).first
+    assert_equal 'cluster form (X_umap) missing one or more required entries: _id', cluster_error_msg
+    exp_error_msg = ann_data_info.errors.messages_for(:base).last
+    assert_equal 'expression form missing one or more required entries: _id, taxon_id', exp_error_msg
     ann_data_info.data_fragments = [
       { _id: generate_id, data_type: :cluster, name: 'UMAP', obsm_key_name: 'X_umap' },
       { _id: generate_id, data_type: :cluster, name: 'UMAP', obsm_key_name: 'X_umap' }
     ]
     assert_not ann_data_info.valid?
-    error_messages = ann_data_info.errors.messages_for(:data_fragments)
+    error_messages = ann_data_info.errors.messages_for(:base)
     assert_equal 2, error_messages.count
     error_messages.each do |message|
       assert message.include?('are not unique')
     end
     ann_data_info.data_fragments = [
+      { _id: generate_id, data_type: :cluster, name: '', obsm_key_name: 'X_umap' },
+      { _id: generate_id, data_type: :cluster, name: nil, obsm_key_name: 'X_tsne' }
+    ]
+    assert_not ann_data_info.valid?
+    error_messages = ann_data_info.errors.messages_for(:base)
+    assert_equal 2, error_messages.count
+    error_messages.each do |message|
+      puts message
+      assert message.match(/cluster form \((X_umap|X_tsne)\) missing one or more required entries/)
+    end
+    ann_data_info.data_fragments = [
       { _id: generate_id, data_type: :cluster, name: 'UMAP', obsm_key_name: 'X_umap' },
       { _id: generate_id, data_type: :cluster, name: 'tSNE', obsm_key_name: 'X_tsne' },
-      { _id: generate_id, data_type: :expression, y_axis_title: 'log(TPM) expression' }
+      {
+        _id: generate_id, data_type: :expression, y_axis_title: 'log(TPM) expression',
+        taxon_id: BSON::ObjectId.new.to_s
+      }
     ]
     assert ann_data_info.valid?
   end

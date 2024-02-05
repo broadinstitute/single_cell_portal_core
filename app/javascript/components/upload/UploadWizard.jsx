@@ -508,7 +508,12 @@ export function RawUploadWizard({ studyAccession, name }) {
   function deleteFileFromForm(fileId) {
     setFormState(prevFormState => {
       const newFormState = _cloneDeep(prevFormState)
-      newFormState.files = newFormState.files.filter(f => f._id != fileId)
+      if (isAnnDataExperience) {
+        // AnnData UX delete should empty all forms
+        newFormState.files = []
+      } else {
+        newFormState.files = newFormState.files.filter(f => f._id != fileId)
+      }
       return newFormState
     })
   }
