@@ -589,7 +589,7 @@ export function CellFilteringPanel({
 
   const [checkedMap, setCheckedMap] = useState(defaultCheckedMap)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
-  const shownFacets = facets.filter(facet => facet.groups.length > 1)
+  const shownFacets = facets.filter(facet => facet.groups?.length > 1)
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
   // Needed to propagate facets from URL to initial checkbox states
