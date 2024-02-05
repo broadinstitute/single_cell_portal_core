@@ -276,3 +276,15 @@
     display: inline-block;
   }
 }
+
+.saved-view-list {
+  float: right;
+  button {
+    margin-left: 5px;
+  }
+}
+
+.saved-view-entry {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ccc;
+}
