@@ -2,6 +2,6 @@ FactoryBot.define do
   factory :saved_view do
     name {}
     path {}
-    notes {}
+    description {}
   end
 end

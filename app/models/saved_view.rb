@@ -82,6 +82,8 @@ class SavedView
 
   # only store path, query string and segment, if present
   def sanitize_path
+    return nil if path.blank?
+
     uri = URI.parse(path.to_s)
     sanitized_path = uri.path.starts_with?('/') ? uri.path : "/#{uri.path}"
     %i[query fragment].each do |segment|
