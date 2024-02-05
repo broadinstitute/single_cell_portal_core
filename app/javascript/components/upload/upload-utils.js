@@ -128,7 +128,7 @@ export function formatFileForApi(file, chunkStart, chunkEnd) {
       data.append('study_file[upload]', file.uploadSelection)
     }
   }
-  if (file.uploadSelection || file.remote_location) {
+  if (file.uploadSelection || (file.remote_location && file.hasRemoteFile)) {
     data.append('study_file[parse_on_upload]', true)
   }
   // set name attribute if using remote_location
@@ -255,12 +255,8 @@ export function addObjectPropertyToForm(obj, propertyName, formData, nested) {
   }
 
   if (DEEPLY_NESTED_PROPS.includes(propertyName)) {
-    obj[propertyName].forEach(fragment => {
-      Object.keys(fragment).forEach(fragmentKey => {
-        const nestedPropString = `${propString}[][${fragmentKey}]`
-        appendFormData(formData, nestedPropString, fragment[fragmentKey])
-      })
-    })
+    // encode as JSON string and decode server-side to avoid losing associations of values when iterating
+    appendFormData(formData, propString, JSON.stringify(obj[propertyName]))
   } else if (obj[propertyName] && typeof obj[propertyName] === 'object' && !Array.isArray(obj[propertyName])) {
     // handle nesting for _attributes fields, except for nested id hashes on embedded documents
     Object.keys(obj[propertyName]).forEach(subKey => {

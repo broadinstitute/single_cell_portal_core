@@ -70,7 +70,7 @@ export function handleClusterSwitchForFiltering(cellFilteringSelection, newCellF
     const existingSelectionFacets = Object.keys(cellFilteringSelection)
     const updatedSelectionFacets =
       newCellFaceting.facets.filter(
-        nf => !nf.isSelectedAnnotation && !existingSelectionFacets.includes(nf.annotation)
+        nf => !nf.isSelectedAnnotation && !existingSelectionFacets.includes(nf.annotation) && 'groups' in nf
       )
     if (updatedSelectionFacets.length > 0) {
       updatedSelectionFacets.forEach(uf => cellFilteringSelection[uf.annotation] = uf.groups)

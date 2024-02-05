@@ -150,7 +150,10 @@ async function validateRemoteFile(
   const startTime = performance.now()
 
   const requestStart = performance.now()
-  const response = await fetchBucketFile(bucketName, fileName, MAX_SYNC_CSFV_BYTES)
+  // special handling for AnnData to only read 100 bytes of file
+  // since we're not validating, we're just determining if the file exists
+  const maxBytes = fileType === 'AnnData' ? 100 : MAX_SYNC_CSFV_BYTES
+  const response = await fetchBucketFile(bucketName, fileName, maxBytes)
   let fileInfo, issues, perfTime, readRemoteTime
   if (response.ok) {
     const content = await response.text()
