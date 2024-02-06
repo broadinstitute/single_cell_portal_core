@@ -4,7 +4,6 @@ import KeywordSearch from './KeywordSearch'
 import FacetsPanel from './FacetsPanel'
 import DownloadButton from './download/DownloadButton'
 import { StudySearchContext } from '~/providers/StudySearchProvider'
-import SavedViews from '~/components/saved-views/SavedViews'
 
 /** helper method as, for unknown reasons, clicking the bootstrap modal auto-scrolls the page down */
 export function closeModal(modalShowFunc) {
@@ -42,7 +41,6 @@ export default function SearchPanel({
       { searchButtons }
       <KeywordSearch keywordPrompt={keywordPrompt}/>
       { downloadButtons }
-      <SavedViews />
     </div>
   )
 }

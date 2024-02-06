@@ -966,54 +966,54 @@ export function getFullUrl(path, mock=false) {
 }
 
 /** retrieve saved views for a user **/
-export async function fetchUserSavedViews(mock=false) {
-  const [savedViews] = await scpApi(`/saved_views`, defaultInit(), mock)
-  return savedViews
+export async function fetchBookmarks(mock=false) {
+  const [response] = await scpApi(`/bookmarks`, defaultInit(), mock)
+  return response
 }
 
 /**
- * create and return a SavedView for a user
+ * create and return a Bookmark for a user
  *
- * @param savedView {Object} SavedView object, containing name, path, notes and userId
+ * @param bookmark {Object} Bookmark object, containing name, path, notes and userId
  * @param mock
  */
-export async function createUserSavedView(savedView, mock=false) {
+export async function createBookmark(bookmark, mock=false) {
   const init = defaultPostInit(mock)
 
   init.body = JSON.stringify({
-    saved_view: savedView
+    bookmark: bookmark
   })
-  const [response] = await scpApi('/saved_views', init, mock)
+  const [response] = await scpApi('/bookmarks', init, mock)
   return response
 }
 
 /**
- * create and return a SavedView for a user
+ * create and return a Bookmark for a user
  *
- * @param viewId {String} id of SavedView to update
- * @param savedView {Object} SavedView object, containing name, path, notes and userId
+ * @param viewId {String} id of Bookmark to update
+ * @param updatedBookmark {Object} Bookmark object, containing name, path, description
  * @param mock
  */
-export async function updateUserSavedView(viewId, updatedView, mock=false) {
+export async function updateBookmark(viewId, updatedBookmark, mock=false) {
   const init = Object.assign({}, defaultInit(), {
     method: 'PATCH',
-    body: JSON.stringify({saved_view: updatedView})
+    body: JSON.stringify({bookmark: updatedBookmark})
   })
-  const [response] = await scpApi(`/saved_views/${viewId}`, init, mock)
+  const [response] = await scpApi(`/bookmarks/${viewId}`, init, mock)
   return response
 }
 
 /**
- * create and return a SavedView for a user
+ * create and return a Bookmark for a user
  *
- * @param viewId {String} id of SavedView to delete
+ * @param bookmarkId {String} id of Bookmark to delete
  * @param mock
  */
-export async function deleteUserSavedView(viewId, mock=false) {
+export async function deleteBookmark(bookmarkId, mock=false) {
   const init = Object.assign({}, defaultInit(), {
     method: 'DELETE',
   })
-  const [response] = await scpApi(`/saved_views/${viewId}`, init, mock)
+  const [response] = await scpApi(`/bookmarks/${bookmarkId}`, init, mock)
   return response
 }
 

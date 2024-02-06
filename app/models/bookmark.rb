@@ -1,4 +1,4 @@
-class SavedView
+class Bookmark
   include Mongoid::Document
   include Mongoid::Timestamps
   include Swagger::Blocks
@@ -11,7 +11,7 @@ class SavedView
   validates :name, :path, presence: true, uniqueness: { scope: :user_id }
   before_validation :sanitize_path, :set_name
 
-  swagger_schema :SavedView do
+  swagger_schema :Bookmark do
     key :required, %i[path name user_id]
     key :name, 'SavedView'
     property :id do
@@ -44,10 +44,10 @@ class SavedView
     end
   end
 
-  swagger_schema :SavedViewInput do
+  swagger_schema :BookmarkInput do
     allOf do
       schema do
-        property :saved_view do
+        property :bookmark do
           key :type, :object
           key :required, %i[path name]
           key :name, 'SavedView'

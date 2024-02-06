@@ -107,7 +107,7 @@ module Api
           AnalysisConfiguration,
           ExternalResource,
           UserAnnotation,
-          SavedView,
+          Bookmark,
           Api::V1::StudiesController,
           Api::V1::StudyFilesController,
           Api::V1::StudyFileBundlesController,
@@ -126,7 +126,7 @@ module Api
           Api::V1::Visualization::ExpressionController,
           Api::V1::Visualization::ExploreController,
           Api::V1::UserAnnotationsController,
-          Api::V1::SavedViewsController
+          Api::V1::BookmarksController
       ].freeze
 
       def index
