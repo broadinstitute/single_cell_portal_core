@@ -20,6 +20,7 @@ import DifferentialExpressionPanel, { DifferentialExpressionPanelHeader } from '
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
 import CellFilteringModal from '~/components/explore/CellFilteringModal'
 import { CellFilteringPanel, CellFilteringPanelHeader } from './CellFilteringPanel'
+import BookmarkForm from '~/components/bookmarks/BookmarkForm'
 
 /** Get the selected clustering and annotation, or their defaults */
 function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
@@ -508,6 +509,7 @@ export default function ExploreDisplayPanelManager({
               title="Copy a link to this visualization to the clipboard">
               <FontAwesomeIcon icon={faLink}/> Get link
             </button>
+            <BookmarkForm />
           </>
         }
         {showCellFiltering && panelToShow === 'cell-filtering' && clusterCanFilter &&
