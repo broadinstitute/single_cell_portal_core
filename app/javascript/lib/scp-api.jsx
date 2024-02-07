@@ -988,7 +988,7 @@ export async function createBookmark(bookmark, mock=false) {
 }
 
 /**
- * create and return a Bookmark for a user
+ * update and return a Bookmark for a user
  *
  * @param viewId {String} id of Bookmark to update
  * @param updatedBookmark {Object} Bookmark object, containing name, path, description
@@ -1004,7 +1004,7 @@ export async function updateBookmark(viewId, updatedBookmark, mock=false) {
 }
 
 /**
- * create and return a Bookmark for a user
+ * delete a Bookmark for a user
  *
  * @param bookmarkId {String} id of Bookmark to delete
  * @param mock
@@ -1113,7 +1113,7 @@ export default async function scpApi(
         }
       )
       throw new Error(`Authentication error: ${response.status}`)
-    } else if (Array.isArray(json.errors)) {
+    } else if (Array.isArray(json.errors) || (json.errors instanceof Object)) {
       throw new ApiError(json, response.status, path)
     } else {
       throw new Error(json.error || json.errors)
@@ -1127,7 +1127,12 @@ export default async function scpApi(
 class ApiError extends Error {
   /** get a new instance based on an already-parsed-to-json http response */
   constructor(jsonResponse, httpStatus, path) {
-    const rawString = jsonResponse.errors.map(err => err.detail).join('.\n')
+    let rawString
+    if (Array.isArray(jsonResponse.errors)) {
+      rawString = jsonResponse.errors.map(err => err.detail).join('.\n')
+    } else {
+      rawString = Object.keys(jsonResponse.errors).map(key => {`${key} ${jsonResponse.errors[key][0]}`}).join('.\n')
+    }
     const message = `API error calling ${path} (${httpStatus}): ${rawString}`
     super(message)
     this.errors = jsonResponse.errors
