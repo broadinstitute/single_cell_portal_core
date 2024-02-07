@@ -16,19 +16,21 @@ function getHistogramBars(filters) {
   const [minValue, maxValue, hasNull] = getMinMaxValues(filters)
 
   const numBins = 15
-  const binSize = (maxValue - minValue) / numBins
+  const numBinsNullTrimmed = hasNull ? numBins - 1 : numBins
+  const binSize = (maxValue - minValue) / numBinsNullTrimmed
   const bars = []
 
   for (let i = 0; i < numBins; i++) {
     const isNull = hasNull && i === 0
     let start
     let end
+    const indexNullTrimmed = hasNull ? i - 1 : i
     if (isNull) {
       start = null
       end = null
     } else {
-      start = minValue + (binSize * i)
-      end = minValue + (binSize * (i + 1))
+      start = minValue + (binSize * indexNullTrimmed)
+      end = minValue + (binSize * (indexNullTrimmed + 1))
     }
 
     const bar = { count: 0, start, end, isNull }

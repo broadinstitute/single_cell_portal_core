@@ -618,7 +618,6 @@ export function CellFilteringPanel({
     })
 
   const defaultCheckedMap = {}
-  console.log('atop, cellFilteringSelection', cellFilteringSelection)
   Object.entries(cellFilteringSelection).forEach(([key, value]) => {
     if (key.includes('--group--')) {
       defaultCheckedMap[key] = value
