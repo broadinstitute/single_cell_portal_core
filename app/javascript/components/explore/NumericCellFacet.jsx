@@ -257,12 +257,12 @@ function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
 }
 
 /** Cell filter component for continuous numeric annotation dimension */
-export function NumericCellFilter({
+export function NumericCellFacet({
   facet, filters, isChecked, checkedMap, handleNumericChange,
   hasNondefaultSelection
 }) {
-  // console.log('in NumericCellFilter, facet', facet)
-  // console.log('in NumericCellFilter, filters', filters)
+  // console.log('in NumericCellFacet, facet', facet)
+  // console.log('in NumericCellFacet, filters', filters)
 
   return (
     <div style={{ marginLeft: 20, position: 'relative' }}>

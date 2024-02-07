@@ -6,7 +6,7 @@ import {
   faSortAlphaDown, faSortAmountDown
 } from '@fortawesome/free-solid-svg-icons'
 
-import { NumericCellFilter } from '~/components/explore/NumericCellFilter'
+import { NumericCellFacet } from '~/components/explore/NumericCellFacet'
 import Select from '~/lib/InstrumentedSelect'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
@@ -432,7 +432,7 @@ function CellFacet({
       })
       }
       {facet.type === 'numeric' &&
-          <NumericCellFilter
+          <NumericCellFacet
             facet={facet}
             filters={shownFilters}
             isChecked={isChecked}
