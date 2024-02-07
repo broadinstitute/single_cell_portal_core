@@ -372,20 +372,18 @@ function Histogram({ filters }) {
       >
         {barRectAttrs.map((attrs, i) => {
           return (
-            <>
-              <rect
-                fill={attrs.color}
-                x={attrs.x}
-                y={attrs.y}
-                width={attrs.width}
-                height={attrs.height}
-                key={i}
-              />
-            </>
+            <rect
+              fill={attrs.color}
+              x={attrs.x}
+              y={attrs.y}
+              width={attrs.width}
+              height={attrs.height}
+              key={i}
+            />
           )
         })}
       </svg>
-      <div style={{ position: 'absolute', top: 0 }}>
+      <div style={{ position: 'absolute', top: 0 }} key={2}>
         {barRectAttrs.map((attrs, i) => {
           const bar = attrs.bar
           let criteria
@@ -408,6 +406,7 @@ function Histogram({ filters }) {
               data-toggle="tooltip"
               data-html={true}
               data-original-title={tooltipContent}
+              key={i}
             >
             </span>
           )
@@ -496,7 +495,7 @@ function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
     } else {
       value = inputValue
     }
-    const filterParam = [operator, value]
+    const filterParam = [[operator, value]]
 
     handleNumericChange(facet.annotation, filterParam)
   }
@@ -609,7 +608,10 @@ function CellFacet({
   isAllListsCollapsed, hasNondefaultSelection
 }) {
   // console.log('in CellFacet, facet', facet)
-  if (Object.keys(facet).length === 0) {
+  if (
+    Object.keys(facet).length === 0 ||
+    !('groups' in facet)
+  ) {
     // Only create the list if the facet exists
     return <></>
   }
@@ -625,6 +627,7 @@ function CellFacet({
   const [sortKey, setSortKey] = useState('count')
 
   const unsortedFilters = facet.unsortedGroups ?? []
+  console.log('in CellFacet, facet', facet)
   let filters = facet.groups
 
   if (facet.type === 'numeric' && filters.length < 2) {
@@ -712,6 +715,7 @@ function CellFacet({
             handleNumericChange={handleNumericChange}
             updateFilteredCells={updateFilteredCells}
             hasNondefaultSelection={hasNondefaultSelection}
+            key={facet}
           />
       }
       {facet.type === 'group' && !isFullyCollapsed && filters.length > numFiltersPartlyCollapsed &&
@@ -990,6 +994,8 @@ export function CellFilteringPanel({
   function handleNumericChange(facetName, newValue) {
     const newSelection = Object.assign({}, checkedMap)
     newSelection[facetName] = newValue
+
+    console.log('newSelection', newSelection)
 
     // update the filtered cells based on the checked condition of the filters
     updateFilteredCells(newSelection)
