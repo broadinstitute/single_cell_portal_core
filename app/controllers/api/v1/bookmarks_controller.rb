@@ -221,7 +221,7 @@ module Api
       end
 
       def bookmark_params
-        params.require(:bookmark).permit(:id, :name, :path, :description)
+        params.require(:bookmark).permit(:id, :name, :path, :query, :hash, :description)
       end
 
       def check_bookmark_permissions

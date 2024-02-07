@@ -974,15 +974,13 @@ export async function fetchBookmarks(mock=false) {
 /**
  * create and return a Bookmark for a user
  *
- * @param bookmark {Object} Bookmark object, containing name, path, notes and userId
+ * @param bookmark {Object} Bookmark object, containing name, path, notes
  * @param mock
  */
 export async function createBookmark(bookmark, mock=false) {
   const init = defaultPostInit(mock)
+  init.body = JSON.stringify({bookmark: bookmark})
 
-  init.body = JSON.stringify({
-    bookmark: bookmark
-  })
   const [response] = await scpApi('/bookmarks', init, mock)
   return response
 }

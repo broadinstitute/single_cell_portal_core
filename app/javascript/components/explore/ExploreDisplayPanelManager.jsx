@@ -497,19 +497,22 @@ export default function ExploreDisplayPanelManager({
               exploreParams={exploreParamsWithDefaults}
               updateExploreParams={updateExploreParams}
               allGenes={exploreInfo ? exploreInfo.uniqueGenes : []}/>
-            <button className="action action-with-bg margin-extra-right"
+            <button className="action action-with-bg"
               onClick={clearExploreParams}
               title="Reset all view options"
               data-analytics-name="explore-view-options-reset">
               <FontAwesomeIcon icon={faUndo}/> Reset view
             </button>
             <button onClick={() => copyLink(routerLocation)}
-              className="action action-with-bg"
+              className="action action-with-bg margin-extra-right"
               data-toggle="tooltip"
               title="Copy a link to this visualization to the clipboard">
               <FontAwesomeIcon icon={faLink}/> Get link
             </button>
-            <BookmarkForm />
+            {exploreInfo?.bookmarks &&
+              <BookmarkForm bookmarks={exploreInfo.bookmarks}/>
+            }
+
           </>
         }
         {showCellFiltering && panelToShow === 'cell-filtering' && clusterCanFilter &&

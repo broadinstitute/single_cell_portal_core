@@ -1,37 +1,45 @@
 import { Popover, OverlayTrigger } from 'react-bootstrap'
-import { fetchBookmarks, createBookmark } from '~/lib/scp-api'
+import { createBookmark } from '~/lib/scp-api'
 import React, { useEffect, useState } from 'react'
 import Button from 'react-bootstrap/lib/Button'
 import _cloneDeep from 'lodash/clone'
 import { isUserLoggedIn } from '~/providers/UserProvider'
 import { useLocation } from '@reach/router'
 
-export default function BookmarkForm() {
+export default function BookmarkForm({bookmarks}) {
   const location = useLocation()
+  const [errorMessage, setErrorMessage] = useState(null)
+  const [allBookmarks, setAllBookmarks] = useState(bookmarks)
+  const [savedBookmark, setSavedBookmark] = useState(null)
   const DEFAULT_BOOKMARK = {
     path: getBookmarkPath()
   }
   const [formState, setFormState] = useState(DEFAULT_BOOKMARK)
-  const [errorMessage, setErrorMessage] = useState(null)
-  const [allBookmarks, setAllBookmarks] = useState([])
-  const [bookmarkSaved, setBookmarkSaved] = useState(false)
 
   // determine if the current view has been bookmarked
   function canSaveBookMark() {
-    fetchBookmarks().then(bookmarks => {
-      setAllBookmarks(bookmarks)
-    })
     const existingBookmark = allBookmarks.find(bookmark => {
-      return bookmark.path === getBookmarkPath()
+      return bookmark.link === getBookmarkPath()
     })
     if (existingBookmark) {
-      setBookmarkSaved(true)
+      setSavedBookmark(existingBookmark)
     }
+  }
+  canSaveBookMark()
+
+  function addBookmarkToList(bookmark) {
+    const userBookmarks = _cloneDeep(allBookmarks)
+    userBookmarks.append(bookmark)
+    setAllBookmarks(userBookmarks)
   }
 
   // concatenate URL parts into string for saving
   function getBookmarkPath() {
     return `${location.pathname}${location.search}${location.hash}`
+  }
+
+  function getURLParts() {
+    return { path: location.path, query: location.search, hash: location.hash }
   }
 
   useEffect(() => {
@@ -47,7 +55,7 @@ export default function BookmarkForm() {
 
   // convenience handler for performing formState updates
   function handleUpdate(update) {
-    setBookmarkSaved(false)
+    setSavedBookmark(null)
     setFormState(prevFormState => {
       const newFormState = _cloneDeep(prevFormState)
       Object.assign(newFormState, update)
@@ -67,19 +75,16 @@ export default function BookmarkForm() {
   // create bookmark
   function handleSaveBookmark(e) {
     e.preventDefault()
-    const data = new FormData()
-    Object.keys(formState).forEach(key => {
-      data.append(key, formState[key])
-    })
-    createBookmark(data).then(() => {
-      setBookmarkSaved(true)
+    createBookmark(formState).then(bookmark => {
+      setSavedBookmark(bookmark)
+      addBookmarkToList(bookmark)
     }).catch(error => {
-      setBookmarkSaved(false)
+      setSavedBookmark(null)
       if (error.errors) {
         const message = formatErrorMessages(error.errors)
         setErrorMessage(message)
       } else {
-        setErrorMessage('unknown error')
+        setErrorMessage('server error')
       }
     })
   }
@@ -101,7 +106,7 @@ export default function BookmarkForm() {
 
 
   const savedPopover = <Popover id='bookmark-saved-popover'>
-    <p className='help-block'>This view has been bookmarked</p>
+    <p><a data-toggle='tooltip' data-original-title={savedBookmark?.path}>This view</a> has been bookmarked</p>
   </Popover>
 
   const bookmarkForm = <Popover id='bookmark-form-popover'>
@@ -112,7 +117,8 @@ export default function BookmarkForm() {
         </div>
       }
       <div className="form-group">
-        <label htmlFor='bookmark-name'>Name</label><br/>
+        <label htmlFor='bookmark-name'>Name</label>&nbsp;
+        <br/>
         <input className="form-control"
                type="text"
                id='bookmark-name'
@@ -130,14 +136,6 @@ export default function BookmarkForm() {
         />
       </div>
       <div className="form-group">
-        <span className='btn btn-small btn-default'
-              data-toggle='tooltip'
-              data-original-title={formState?.path}
-        >
-          See bookmark
-        </span>
-      </div>
-      <div className="form-group">
       <Button
           type="button"
           className="btn btn-primary"
@@ -150,8 +148,8 @@ export default function BookmarkForm() {
     </form>
   </Popover>
 
-  const starClass = bookmarkSaved ? 'fas' : 'far'
-  const triggerOverlay = bookmarkSaved ? savedPopover : bookmarkForm
+  const starClass = savedBookmark ? 'fas' : 'far'
+  const triggerOverlay = savedBookmark ? savedPopover : bookmarkForm
 
   return (
     <OverlayTrigger trigger={['click']} rootClose placement="left"

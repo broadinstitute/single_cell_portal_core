@@ -6,6 +6,8 @@ class Bookmark
   belongs_to :user
   field :name, type: String
   field :path, type: String
+  field :query, type: String
+  field :hash, type: String
   field :description, type: String
 
   validates :name, :path, presence: true, uniqueness: { scope: :user_id }
@@ -22,15 +24,23 @@ class Bookmark
     end
     property :name do
       key :type, :string
-      key :description, 'Name of saved view'
+      key :description, 'Name of bookmark'
     end
     property :path do
       key :type, :string
-      key :description, 'URL path of saved view'
+      key :description, 'URL path of bookmark'
+    end
+    property :query do
+      key :type, :string
+      key :description, 'URL query string of bookmark'
+    end
+    property :hash do
+      key :type, :string
+      key :description, 'URL hash of bookmark'
     end
     property :description do
       key :type, :string
-      key :description, 'Text description of saved view'
+      key :description, 'Text description of bookmark'
     end
     property :created_at do
       key :type, :string
@@ -53,19 +63,34 @@ class Bookmark
           key :name, 'SavedView'
           property :name do
             key :type, :string
-            key :description, 'Name of saved view'
+            key :description, 'Name of bookmark'
           end
           property :path do
             key :type, :string
-            key :description, 'URL Path of saved view'
+            key :description, 'URL Path of bookmark'
+          end
+          property :query do
+            key :type, :string
+            key :description, 'URL query string of bookmark'
+          end
+          property :hash do
+            key :type, :string
+            key :description, 'URL hash of bookmark'
           end
           property :description do
             key :type, :string
-            key :description, 'Text description of saved view'
+            key :description, 'Text description of bookmark'
           end
         end
       end
     end
+  end
+
+  # combination of path, query string and hash to redirect browser with
+  def link
+    base_link = path
+    base_link += "?#{query}" if query
+    base_lnk += "#{hash}" if hash
   end
 
   # fully-qualified href, for linking
