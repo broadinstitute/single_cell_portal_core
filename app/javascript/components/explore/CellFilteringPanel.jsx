@@ -11,6 +11,7 @@ import Select from '~/lib/InstrumentedSelect'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
 import { log } from '~/lib/metrics-api'
+import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
 const tooltipAttrs = {
   'data-toggle': 'tooltip',
@@ -399,6 +400,11 @@ function CellFacet({
       color: '#777',
       cursor: 'default'
     }
+  }
+
+  const flags = getFeatureFlagsWithDefaults()
+  if (facet.type === 'numeric' && !flags.show_numeric_cell_filtering) {
+    return <></>
   }
 
   return (
