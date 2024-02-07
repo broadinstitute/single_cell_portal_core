@@ -379,6 +379,7 @@ function Histogram({ filters }) {
                 y={attrs.y}
                 width={attrs.width}
                 height={attrs.height}
+                key={i}
               />
             </>
           )
@@ -441,9 +442,9 @@ function OperatorMenu({ operator, setOperator }) {
       value={operator}
       onChange={event => {setOperator(event.target.value)}}
     >
-      {operators.map(operator => {
+      {operators.map((operator, i) => {
         return (
-          <option value={operator}>{operator}</option>
+          <option value={operator} key={i}>{operator}</option>
         )
       })}
     </select>
@@ -451,7 +452,7 @@ function OperatorMenu({ operator, setOperator }) {
 }
 
 /** A visually economical input field for numeric query builder */
-function NumericQueryInput({ value, handleChange, facet, filterName }) {
+function NumericQueryInput({ value, updateInputValue, facet, filterName }) {
   const fadeOverflowClass = value >= 100_000 ? 'fade-overflow' : ''
 
   return (
@@ -463,7 +464,7 @@ function NumericQueryInput({ value, handleChange, facet, filterName }) {
         name={`${facet.annotation}:${filterName}`}
         value={value}
         onChange={event => {
-          handleChange(event.target.value)
+          updateInputValue(event)
         }}
       />
     </span>
@@ -472,7 +473,7 @@ function NumericQueryInput({ value, handleChange, facet, filterName }) {
 
 /** Enables manual input of numbers, by which cells get filtered */
 function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
-  console.log('in NumericQueryBuilder, filters', filters)
+  // console.log('in NumericQueryBuilder, filters', filters)
   const [operator, setOperator] = useState('between')
   const [minValue, maxValue] = getMinMaxValues(filters)
 
@@ -480,9 +481,24 @@ function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
   const [inputValue2, setInputValue2] = useState(maxValue)
 
   /** Propagate change locally and upstream */
-  function updateInputValue(newValue) {
-    setInputValue(newValue)
-    handleNumericChange(newValue)
+  function updateInputValue(event) {
+    const newValue = event.target.value
+    const isValue2 = event.target.name.endsWith('value2')
+    if (isValue2) {
+      setInputValue2(newValue)
+    } else {
+      setInputValue(newValue)
+    }
+
+    let value
+    if (['between', 'not between'].includes(operator)) {
+      value = [inputValue, inputValue2]
+    } else {
+      value = inputValue
+    }
+    const filterParam = [operator, value]
+
+    handleNumericChange(facet.annotation, filterParam)
   }
 
   return (
@@ -493,7 +509,7 @@ function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
       />
       <NumericQueryInput
         value={inputValue}
-        handleChange={setInputValue}
+        updateInputValue={updateInputValue}
         facet={facet}
         filterName="value"
       />
@@ -502,7 +518,7 @@ function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
         <span style={{ marginLeft: '4px' }}>and</span>
         <NumericQueryInput
           value={inputValue2}
-          handleChange={setInputValue2}
+          updateInputValue={updateInputValue}
           facet={facet}
           filterName="value2"
         />
@@ -517,8 +533,8 @@ function NumericCellFilter({
   facet, filters, isChecked, checkedMap, handleNumericChange,
   hasNondefaultSelection
 }) {
-  console.log('in NumericCellFilter, facet', facet)
-  console.log('in NumericCellFilter, filters', filters)
+  // console.log('in NumericCellFilter, facet', facet)
+  // console.log('in NumericCellFilter, filters', filters)
 
   return (
     <div style={{ marginLeft: 20, position: 'relative' }}>
@@ -592,7 +608,7 @@ function CellFacet({
   handleCheckAllFiltersInFacet, updateFilteredCells,
   isAllListsCollapsed, hasNondefaultSelection
 }) {
-  console.log('in CellFacet, facet', facet)
+  // console.log('in CellFacet, facet', facet)
   if (Object.keys(facet).length === 0) {
     // Only create the list if the facet exists
     return <></>
@@ -867,6 +883,7 @@ export function CellFilteringPanel({
     })
 
   const defaultCheckedMap = {}
+  console.log('atop, cellFilteringSelection', cellFilteringSelection)
   Object.entries(cellFilteringSelection).forEach(([key, value]) => {
     if (key.includes('--group--')) {
       defaultCheckedMap[key] = value
@@ -969,8 +986,13 @@ export function CellFilteringPanel({
     updateFilteredCells(checkedMap)
   }
 
-  function handleNumericChange(event) {
+  /** Propagate change in a numeric cell filter */
+  function handleNumericChange(facetName, newValue) {
+    const newSelection = Object.assign({}, checkedMap)
+    newSelection[facetName] = newValue
 
+    // update the filtered cells based on the checked condition of the filters
+    updateFilteredCells(newSelection)
   }
 
   const currentlyInUseAnnotations = { colorBy: '', facets: [] }
