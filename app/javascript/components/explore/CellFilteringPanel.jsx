@@ -148,10 +148,10 @@ function getHasNondefaultSelection(checkedMap, facets) {
   // console.log('in getHasNondefaultSelection, facets', facets)
   facets
     .filter(f => f.type === 'group')
-    .forEach(facet => numTotalFilters += facet.groups.length)
+    .forEach(facet => numTotalFilters += facet.groups?.length)
   let numCheckedFilters = 0
   Object.entries(checkedMap).forEach(([_, filters]) => {
-    numCheckedFilters += filters.length
+    numCheckedFilters += filters?.length
   })
 
   const hasNondefaultSelection = numTotalFilters !== numCheckedFilters
@@ -876,7 +876,8 @@ export function CellFilteringPanel({
   // console.log('facets', facets)
   const [checkedMap, setCheckedMap] = useState(defaultCheckedMap)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
-  const shownFacets = facets.filter(facet => facet.type === 'numeric' || facet.groups.length > 1)
+  const shownFacets = facets.filter(facet => facet.type === 'numeric' || facet.groups?.length > 1)
+
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
   // Needed to propagate facets from URL to initial checkbox states

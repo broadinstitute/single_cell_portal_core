@@ -172,7 +172,22 @@ export function SaveDeleteButtons({
 
 /** renders a save button for a given file */
 function SaveButton({ file, saveFile, allFiles, validationMessages = {}, isAnnDataExperience }) {
-  const saveDisabled = isAnnDataExperience ? false : Object.keys(validationMessages).length > 0
+  let saveDisabled
+  const validationMessageKeys = Object.keys(validationMessages)
+  if (isAnnDataExperience) {
+    let annDataValidationMessageKeys
+    // ignore file selection error, unless this is the AnnData upload form
+    if (file.file_type === 'AnnData') {
+      annDataValidationMessageKeys = validationMessageKeys
+    } else {
+      annDataValidationMessageKeys = validationMessageKeys.filter(key => {
+        return key !== 'uploadSelection'
+      })
+    }
+    saveDisabled = annDataValidationMessageKeys.length > 0
+  } else {
+    saveDisabled = validationMessageKeys.length > 0
+  }
 
   // show parsing in the save button for cluster and expression fragments if AnnData file is parsing
   let showParsingForFragment = false

@@ -543,7 +543,6 @@ export async function initCellFaceting(
 
   const rawFacets = mergeFacetsResponses(newRawFacets, prevCellFaceting)
 
-
   const timeInitCrossfilterStart = Date.now()
   const {
     filterableCells, cellsByFacet,

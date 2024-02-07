@@ -102,7 +102,7 @@ export default function FileUploadControl({
 
       // Prevent saving via '', if validation errors were detected
       const remoteLocation = issues.errors.length === 0 ? trimmedPath : ''
-      updateFile(file._id, {remote_location: remoteLocation})
+      updateFile(file._id, {remote_location: remoteLocation, hasRemoteFile: true})
     } catch (error) {
       // Catch file access error and allow user to proceed - validation will be handled server-side or in ingest
       setFileValidation({ validating: false, issues: {}, fileName: trimmedPath })
@@ -162,7 +162,7 @@ export default function FileUploadControl({
       file={file}
     />
     &nbsp;
-    {!isFileOnServer && showUploadButton &&
+    {!isFileOnServer && (showUploadButton && !file.hasRemoteFile) &&
       <button className={buttonClass} id={`fileButton-${file._id}`}
               data-testid="file-input-btn">
         {buttonText}
@@ -174,7 +174,7 @@ export default function FileUploadControl({
         />
       </button>
     }
-    {!isFileOnServer && showBucketPath &&
+    {!isFileOnServer && (showBucketPath || file.hasRemoteFile ) &&
       // we can't use TextFormField since we need a custom onBlur event
       // onBlur is the React equivalent of onfocusout, which will fire after the user is done updating the input
       <input className="form-control"
@@ -185,7 +185,7 @@ export default function FileUploadControl({
              onBlur={handleBucketLocationEntry}/>
     }
     &nbsp;&nbsp;
-    { !isFileOnServer && showBucketPath && googleBucketLink }
+    { !isFileOnServer && (showBucketPath || file.hasRemoteFile ) && googleBucketLink }
 
     &nbsp;&nbsp;
     { !isFileOnServer && uploadToggle }

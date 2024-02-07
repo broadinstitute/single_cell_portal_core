@@ -196,6 +196,7 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
   test 'should create and update AnnData file' do
     cluster_frag_id = BSON::ObjectId.new.to_s
     exp_frag_id = BSON::ObjectId.new.to_s
+    taxon_id = BSON::ObjectId.new.to_s
     ann_data_params = {
       study_file: {
         upload_file_name: 'data.h5ad',
@@ -212,6 +213,7 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
         },
         extra_expression_form_info_attributes: {
           _id: exp_frag_id,
+          taxon_id: taxon_id,
           description: 'expression description',
           y_axis_title: 'log(TPM) expression'
         },
@@ -242,12 +244,19 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
     update_attributes = {
       study_file: {
         description: 'updated',
+        file_type: 'AnnData',
         ann_data_file_info_attributes: {
           data_fragments:
             [
-              { _id: cluster_frag_id, name: 'UMAP', obsm_key_name: 'X_umap', description: 'updated' },
-              { _id: exp_frag_id, y_axis_title: 'log(TPM) expression', description: 'updated' }
-            ]
+              {
+                _id: cluster_frag_id, data_type: 'cluster', name: 'UMAP', obsm_key_name: 'X_umap',
+                description: 'updated'
+              },
+              {
+                _id: exp_frag_id, data_type: 'expression', taxon_id: taxon_id, y_axis_title: 'log(TPM) expression',
+                description: 'updated'
+              }
+            ].to_json
         }
       }
     }

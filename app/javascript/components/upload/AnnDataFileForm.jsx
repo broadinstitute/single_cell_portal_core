@@ -1,7 +1,7 @@
 import React from 'react'
 
 import ExpandableFileForm from './ExpandableFileForm'
-import { FileTypeExtensions } from './upload-utils'
+import { FileTypeExtensions, validateFile } from './upload-utils'
 import { TextFormField } from './form-components'
 
 const allowedFileExts = FileTypeExtensions.annData
@@ -17,9 +17,14 @@ export default function AnnDataFileForm({
   isInitiallyExpanded,
   isAnnDataExperience
 }) {
+
+  const validationMessages = validateFile({
+    file, allFiles, allowedFileExts, requiredFields: []
+  })
+
   return <ExpandableFileForm {...{
     file, allFiles, updateFile, saveFile,
-    allowedFileExts, deleteFile, bucketName, isInitiallyExpanded, isAnnDataExperience
+    allowedFileExts, deleteFile, validationMessages, bucketName, isInitiallyExpanded, isAnnDataExperience
   }}>
     <TextFormField label="Description" fieldName="description" file={file} updateFile={updateFile}/>
   </ExpandableFileForm>

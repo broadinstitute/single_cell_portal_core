@@ -1050,6 +1050,26 @@ class StudyFile
     is_anndata? && ann_data_file_info&.reference_file
   end
 
+  # AnnData files that are used for visualization (e.g. extracted data)
+  def is_viz_anndata?
+    is_anndata? && !is_reference_anndata?
+  end
+
+  # helper to reduce duplicates when reporting anndata ingest summaries to Mixpanel
+  def has_anndata_summary?
+    is_viz_anndata? && !!options[:anndata_summary]
+  end
+
+  def set_anndata_summary!
+    options.merge!(anndata_summary: true)
+    save
+  end
+
+  def unset_anndata_summary!
+    options.merge!(anndata_summary: false)
+    save
+  end
+
   # determine if a file is gzipped by reading the first two bytes and comparing to GZIP_MAGIC_NUMBER
   def gzipped?
     File.open(local_location.to_s).read(2) == GZIP_MAGIC_NUMBER # per IETF
@@ -1388,7 +1408,8 @@ class StudyFile
               @cluster.update(name:)
             end
           else
-            FileParseService.run_parse_job(self, study, study.user, obsm_key: fragment)
+            persist_on_fail = remote_location.present?
+            FileParseService.run_parse_job(self, study, study.user, persist_on_fail:, obsm_key: fragment)
           end
         end
       end
