@@ -965,12 +965,6 @@ export function getFullUrl(path, mock=false) {
   return fullPath
 }
 
-/** retrieve saved views for a user **/
-export async function fetchBookmarks(mock=false) {
-  const [response] = await scpApi(`/bookmarks`, defaultInit(), mock)
-  return response
-}
-
 /**
  * create and return a Bookmark for a user
  *
@@ -982,22 +976,6 @@ export async function createBookmark(bookmark, mock=false) {
   init.body = JSON.stringify({bookmark: bookmark})
 
   const [response] = await scpApi('/bookmarks', init, mock)
-  return response
-}
-
-/**
- * update and return a Bookmark for a user
- *
- * @param viewId {String} id of Bookmark to update
- * @param updatedBookmark {Object} Bookmark object, containing name, path, description
- * @param mock
- */
-export async function updateBookmark(viewId, updatedBookmark, mock=false) {
-  const init = Object.assign({}, defaultInit(), {
-    method: 'PATCH',
-    body: JSON.stringify({bookmark: updatedBookmark})
-  })
-  const [response] = await scpApi(`/bookmarks/${viewId}`, init, mock)
   return response
 }
 
