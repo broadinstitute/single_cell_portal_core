@@ -151,9 +151,12 @@ function getHasNondefaultSelection(selectionMap, facets) {
     .filter(f => f.type === 'group')
     .forEach(facet => numTotalFilters += facet.groups?.length)
   let numCheckedFilters = 0
-  Object.entries(selectionMap).forEach(([_, filters]) => {
-    numCheckedFilters += filters?.length
-  })
+
+  Object.entries(selectionMap)
+    .filter(([f, _]) => f.includes('--group--'))
+    .forEach(([_, filters]) => {
+      numCheckedFilters += filters?.length
+    })
 
   const hasNondefaultSelection = numTotalFilters !== numCheckedFilters
 

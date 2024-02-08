@@ -211,7 +211,7 @@ function updateNumericFilter(operator, inputValue, inputValue2, includeNa, facet
   } else {
     value = inputValue
   }
-  const filterParam = [[operator, value], includeNa]
+  const filterParam = [[[operator, value]], includeNa]
   console.log('in updateNumericFilter, filterParam', filterParam)
   handleNumericChange(facet.annotation, filterParam)
 }
@@ -220,7 +220,7 @@ function updateNumericFilter(operator, inputValue, inputValue2, includeNa, facet
 /** Enables manual input of numbers, by which cells get filtered */
 function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet }) {
   // console.log('in NumericQueryBuilder, filters', filters)
-  const filter = selectionMap[facet.annotation]
+  const filter = selectionMap[facet.annotation][0]
   const [operator, setOperator] = useState(filter[0][0])
   const [inputValue, setInputValue] = useState(filter[0][1][0])
   const [inputValue2, setInputValue2] = useState(filter[0][1][1])
@@ -282,7 +282,7 @@ function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet
           <input
             type="checkbox"
             checked={includeNa}
-            onChange={() => {updateIncludeNa()}}
+            onChange={updateIncludeNa}
             style={{ marginRight: '5px' }}
           />N/A</label>
       </div>
