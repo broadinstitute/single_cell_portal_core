@@ -58,8 +58,8 @@ module Api
           key :description, 'Study publication/data link operations'
         end
         tag do
-          key :name, 'SavedViews'
-          key :description, 'Pinned/saved views for users'
+          key :name, 'Bookmarks'
+          key :description, 'Bookmarked/saved views for users'
         end
         tag do
           key :name, 'MetadataSchemas'

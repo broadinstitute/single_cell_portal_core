@@ -28,6 +28,7 @@ export default function BookmarkForm({bookmarks}) {
   canSaveBookMark()
 
   function addBookmarkToList(bookmark) {
+    console.log('addBookmarkToList')
     const userBookmarks = _cloneDeep(allBookmarks)
     userBookmarks.append(bookmark)
     setAllBookmarks(userBookmarks)
@@ -36,10 +37,6 @@ export default function BookmarkForm({bookmarks}) {
   // concatenate URL parts into string for saving
   function getBookmarkPath() {
     return `${location.pathname}${location.search}${location.hash}`
-  }
-
-  function getURLParts() {
-    return { path: location.path, query: location.search, hash: location.hash }
   }
 
   useEffect(() => {

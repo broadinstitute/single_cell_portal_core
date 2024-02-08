@@ -15,7 +15,7 @@ class Bookmark
 
   swagger_schema :Bookmark do
     key :required, %i[path name user_id]
-    key :name, 'SavedView'
+    key :name, 'Bookmark'
     property :id do
       key :type, :string
     end
@@ -29,14 +29,6 @@ class Bookmark
     property :path do
       key :type, :string
       key :description, 'URL path of bookmark'
-    end
-    property :query do
-      key :type, :string
-      key :description, 'URL query string of bookmark'
-    end
-    property :hash do
-      key :type, :string
-      key :description, 'URL hash of bookmark'
     end
     property :description do
       key :type, :string
@@ -60,22 +52,14 @@ class Bookmark
         property :bookmark do
           key :type, :object
           key :required, %i[path name]
-          key :name, 'SavedView'
+          key :name, 'Bookmark'
           property :name do
             key :type, :string
             key :description, 'Name of bookmark'
           end
           property :path do
             key :type, :string
-            key :description, 'URL Path of bookmark'
-          end
-          property :query do
-            key :type, :string
-            key :description, 'URL query string of bookmark'
-          end
-          property :hash do
-            key :type, :string
-            key :description, 'URL hash of bookmark'
+            key :description, 'URL Path of bookmark, including query string/hash'
           end
           property :description do
             key :type, :string
@@ -84,13 +68,6 @@ class Bookmark
         end
       end
     end
-  end
-
-  # combination of path, query string and hash to redirect browser with
-  def link
-    base_link = path
-    base_link += "?#{query}" if query
-    base_lnk += "#{hash}" if hash
   end
 
   # fully-qualified href, for linking
@@ -105,14 +82,15 @@ class Bookmark
     self.name = path if name.blank?
   end
 
-  # only store path, query string and segment, if present
+  # only store path, query string and fragment (including delimiters), if present
   def sanitize_path
     return nil if path.blank?
 
     uri = URI.parse(path.to_s)
     sanitized_path = uri.path.starts_with?('/') ? uri.path : "/#{uri.path}"
-    %i[query fragment].each do |segment|
-      sanitized_path += uri.send(segment) if uri.send(segment)
+    # append delimiter and url segment, if present
+    { query: '?', fragment: '#' }.each do |segment, delimiter|
+      sanitized_path += "#{delimiter}#{uri.send(segment)}" if uri.send(segment)
     end
     self.path = sanitized_path
   end
