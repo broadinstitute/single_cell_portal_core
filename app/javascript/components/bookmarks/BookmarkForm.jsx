@@ -1,58 +1,83 @@
 import { Popover, OverlayTrigger } from 'react-bootstrap'
-import { createBookmark } from '~/lib/scp-api'
-import React, { useEffect, useState } from 'react'
+import { createBookmark, deleteBookmark } from '~/lib/scp-api'
+import React, { useEffect, useState, useRef } from 'react'
 import Button from 'react-bootstrap/lib/Button'
 import _cloneDeep from 'lodash/clone'
 import { isUserLoggedIn } from '~/providers/UserProvider'
 import { useLocation } from '@reach/router'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faLink, faUndo, faTimes } from '@fortawesome/free-solid-svg-icons'
+import useErrorMessage from '~/lib/error-message'
 
-export default function BookmarkForm({bookmarks}) {
+/**
+ * Component to bookmark views in Explore tab, as well as existing link/reset buttons
+ *
+ * @param bookmarks {Array} existing user bookmark objects
+ * @param clearExploreParams
+ */
+export default function BookmarkForm({bookmarks, clearExploreParams}) {
   const location = useLocation()
-  const [errorMessage, setErrorMessage] = useState(null)
   const [allBookmarks, setAllBookmarks] = useState(bookmarks)
-  const [savedBookmark, setSavedBookmark] = useState(null)
+  const [saveText, setSaveText] = useState('Save')
+  const [saveDisabled, setSaveDisabled] = useState(null)
+  const [deleteDisabled, setDeleteDisabled] = useState(null)
+  const { ErrorComponent, showError, setShowError, setError } = useErrorMessage()
   const DEFAULT_BOOKMARK = {
     path: getBookmarkPath()
   }
   const [formState, setFormState] = useState(DEFAULT_BOOKMARK)
+  const overlayRef = useRef('overlay')
 
-  // determine if the current view has been bookmarked
-  function canSaveBookMark() {
-    const existingBookmark = allBookmarks.find(bookmark => {
-      return bookmark.link === getBookmarkPath()
-    })
-    if (existingBookmark) {
-      setSavedBookmark(existingBookmark)
-    }
+  /** copies the url to the clipboard */
+  function copyLink() {
+    navigator.clipboard.writeText(location.href)
   }
-  canSaveBookMark()
 
+  /** Find a matching bookmark using the current URL params */
+  function findExistingBookmark() {
+    return allBookmarks.find(bookmark => { return bookmark.path === getBookmarkPath() })
+  }
+
+  const [currentBookmark, setCurrentBookmark] = useState(findExistingBookmark())
+
+  /** get bookmark ID from BSON object */
+  function getBookmarkId(bookmark) {
+    return bookmark?._id || bookmark?.id
+  }
+
+  /** Add a bookmark to the list of user bookmarks */
   function addBookmarkToList(bookmark) {
-    console.log('addBookmarkToList')
-    const userBookmarks = _cloneDeep(allBookmarks)
-    userBookmarks.append(bookmark)
-    setAllBookmarks(userBookmarks)
+    setAllBookmarks(prevBookmarks => [...prevBookmarks, bookmark])
   }
 
-  // concatenate URL parts into string for saving
+  /** remove a deleted bookmark from the list */
+  function removeBookmarkFromList(bookmarkId) {
+    const newBookmarks = allBookmarks.filter(bookmark => {
+      return getBookmarkId(bookmark) !== bookmarkId
+    })
+    setAllBookmarks(newBookmarks)
+  }
+
+  /** concatenate URL parts into string for saving */
   function getBookmarkPath() {
-    return `${location.pathname}${location.search}${location.hash}`
+    return `${location.pathname}${location.search}`
   }
 
-  useEffect(() => {
-    resetForm()
-    canSaveBookMark()
-  }, [location.search])
-
+  /** reset form state after changing view or creating/deleting bookmarks */
   function resetForm() {
-    setErrorMessage(null)
     const reset = { name: '', description: '', path: getBookmarkPath() }
+    setShowError(false)
     handleUpdate(reset)
   }
 
-  // convenience handler for performing formState updates
+  /** whenever the user changes a cluster/annotation, reset the bookmark form with the current URL params */
+  useEffect(() => {
+    resetForm()
+    setCurrentBookmark(findExistingBookmark())
+  }, [location.pathname, location.search])
+
+  /** convenience handler for performing formState updates */
   function handleUpdate(update) {
-    setSavedBookmark(null)
     setFormState(prevFormState => {
       const newFormState = _cloneDeep(prevFormState)
       Object.assign(newFormState, update)
@@ -60,7 +85,7 @@ export default function BookmarkForm({bookmarks}) {
     })
   }
 
-  // handle form updates
+  /** handle form updates */
   function updateBookmark(e) {
     const value = e.target.value
     const fieldName = e.target.id.split('-')[1]
@@ -69,28 +94,71 @@ export default function BookmarkForm({bookmarks}) {
     return handleUpdate(update)
   }
 
-  // create bookmark
-  function handleSaveBookmark(e) {
-    e.preventDefault()
-    createBookmark(formState).then(bookmark => {
-      setSavedBookmark(bookmark)
-      addBookmarkToList(bookmark)
-    }).catch(error => {
-      setSavedBookmark(null)
-      if (error.errors) {
-        const message = formatErrorMessages(error.errors)
-        setErrorMessage(message)
-      } else {
-        setErrorMessage('server error')
-      }
-    })
+  /** set state/text on Save button */
+  function enableSaveButton(enabled) {
+    if (enabled) {
+      setSaveText('Save')
+      setSaveDisabled(null)
+    } else {
+      setSaveText('Saving...')
+      setSaveDisabled(true)
+    }
+  }
+
+  function handleErrorContent(error) {
+    const errorMessage = formatErrorMessages(error)
+    setError(errorMessage)
+    setShowError(true)
   }
 
   // format errors object into comma-delimited message
-  function formatErrorMessages(errors) {
-    return Object.keys(errors).map(key => {
-      return `${key} ${errors[key][0]}`
-    }).join(', ')
+  function formatErrorMessages(error) {
+    if (error.errors) {
+      return Object.keys(error.errors).map(key => {
+        return `${key} ${errors[key][0]}`
+      }).join(', ')
+    } else {
+      return error.message
+    }
+  }
+
+  /** create a new bookmark */
+  function handleSaveBookmark(e) {
+    e.preventDefault()
+    enableSaveButton(false)
+    createBookmark(formState).then(bookmark => {
+      enableSaveButton(true)
+      setShowError(false)
+      overlayRef.current.handleHide()
+      resetForm()
+      addBookmarkToList(bookmark)
+      setCurrentBookmark(bookmark)
+    }).catch(error => {
+      enableSaveButton(true)
+      setCurrentBookmark(null)
+      handleErrorContent(error)
+    })
+  }
+
+  /** unbookmark a view */
+  function handleDeleteBookmark(e) {
+    e.preventDefault()
+    setDeleteDisabled(true)
+    const toDelete = getBookmarkId(currentBookmark)
+    if (!toDelete) {
+      setDeleteDisabled(false)
+      return false
+    } else {
+      deleteBookmark(toDelete).then(() => {
+        setDeleteDisabled(false)
+        setShowError(false)
+        overlayRef.current.handleHide()
+        removeBookmarkFromList(toDelete)
+      }).catch(error => {
+        setDeleteDisabled(false)
+        handleErrorContent(error)
+      })
+    }
   }
 
   const loginPopover = <Popover id='login-bookmark-popover' container='body'>
@@ -101,18 +169,21 @@ export default function BookmarkForm({bookmarks}) {
     />
   </Popover>
 
-
   const savedPopover = <Popover id='bookmark-saved-popover'>
-    <p><a data-toggle='tooltip' data-original-title={savedBookmark?.path}>This view</a> has been bookmarked</p>
+    This view is bookmarked&nbsp;<Button
+      className='btn btn-xs btn-danger'
+      id='delete-bookmark'
+      aria-label="Delete"
+      data-analytics-name="bookmark-delete"
+      disabled={deleteDisabled}
+      onClick={handleDeleteBookmark}
+    ><FontAwesomeIcon icon={faTimes} /></Button>
+    { ErrorComponent }
   </Popover>
 
   const bookmarkForm = <Popover id='bookmark-form-popover'>
     <form id='bookmark-form' onSubmit={handleSaveBookmark}>
-      { errorMessage &&
-        <div id='bookmark-errors' className='bs-callout bs-callout-danger'>
-          <p className='text-danger'>Failed to save bookmark: {errorMessage}</p>
-        </div>
-      }
+      { ErrorComponent }
       <div className="form-group">
         <label htmlFor='bookmark-name'>Name</label>&nbsp;
         <br/>
@@ -138,20 +209,35 @@ export default function BookmarkForm({bookmarks}) {
           className="btn btn-primary"
           aria-label="Save"
           data-analytics-name="bookmark-submit"
+          disabled={saveDisabled}
           onClick={handleSaveBookmark}
-        >Save
+        >{saveText}
         </Button>
       </div>
     </form>
   </Popover>
 
-  const starClass = savedBookmark ? 'fas' : 'far'
-  const triggerOverlay = savedBookmark ? savedPopover : bookmarkForm
+  const starClass = findExistingBookmark() ? 'fas' : 'far'
+  const triggerOverlay = findExistingBookmark() ? savedPopover : bookmarkForm
 
-  return (
-    <OverlayTrigger trigger={['click']} rootClose placement="left"
+  return <>
+    <button className="action action-with-bg"
+            onClick={clearExploreParams}
+            title="Reset all view options"
+            data-analytics-name="explore-view-options-reset">
+      <FontAwesomeIcon icon={faUndo}/> Reset view
+    </button>
+    <button onClick={copyLink}
+            className="action action-with-bg margin-extra-right"
+            data-toggle="tooltip"
+            title="Copy a link to this visualization to the clipboard">
+      <FontAwesomeIcon icon={faLink}/> Get link
+    </button>
+    <OverlayTrigger trigger={['click']} rootClose placement="left" ref={overlayRef} animation={false}
                     overlay={isUserLoggedIn() ? triggerOverlay : loginPopover}>
-    <span className={`fa-lg action ${starClass} fa-star`} />
-  </OverlayTrigger>
-  )
+      <span className={`fa-lg action ${starClass} fa-star`} data-analytics-name='bookmark-view'
+            title='Bookmark this view'
+      />
+    </OverlayTrigger>
+  </>
 }

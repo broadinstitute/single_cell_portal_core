@@ -263,11 +263,6 @@ export default function ExploreDisplayPanelManager({
     setExploreInfo(newExploreInfo)
   }
 
-  /** copies the url to the clipboard */
-  function copyLink(routerLocation) {
-    navigator.clipboard.writeText(routerLocation.href)
-  }
-
   /** handles cluster selection to also populate the default spatial groups */
   function updateClusterParams(newParams) {
     if (newParams.cluster && !newParams.spatialGroups) {
@@ -497,20 +492,10 @@ export default function ExploreDisplayPanelManager({
               exploreParams={exploreParamsWithDefaults}
               updateExploreParams={updateExploreParams}
               allGenes={exploreInfo ? exploreInfo.uniqueGenes : []}/>
-            <button className="action action-with-bg"
-              onClick={clearExploreParams}
-              title="Reset all view options"
-              data-analytics-name="explore-view-options-reset">
-              <FontAwesomeIcon icon={faUndo}/> Reset view
-            </button>
-            <button onClick={() => copyLink(routerLocation)}
-              className="action action-with-bg margin-extra-right"
-              data-toggle="tooltip"
-              title="Copy a link to this visualization to the clipboard">
-              <FontAwesomeIcon icon={faLink}/> Get link
-            </button>
             {exploreInfo?.bookmarks &&
-              <BookmarkForm bookmarks={exploreInfo.bookmarks}/>
+              <BookmarkForm
+                bookmarks={exploreInfo.bookmarks}
+                clearExploreParams={clearExploreParams}/>
             }
 
           </>

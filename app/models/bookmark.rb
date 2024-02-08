@@ -1,13 +1,13 @@
+# Book of particular SCP page
 class Bookmark
   include Mongoid::Document
   include Mongoid::Timestamps
   include Swagger::Blocks
+  include FlatId
 
   belongs_to :user
   field :name, type: String
   field :path, type: String
-  field :query, type: String
-  field :hash, type: String
   field :description, type: String
 
   validates :name, :path, presence: true, uniqueness: { scope: :user_id }
@@ -68,11 +68,6 @@ class Bookmark
         end
       end
     end
-  end
-
-  # fully-qualified href, for linking
-  def href
-    [RequestUtils.get_base_url, path].join
   end
 
   private

@@ -1,6 +1,3 @@
-bookmark.attributes.each do |name, value|
-  unless name == '_id' && !bookmark.persisted?
-    json.set! name, value
-  end
+bookmark.flat_attributes.each do |name, value|
+  json.set! name, value
 end
-json.set! :href, bookmark.href

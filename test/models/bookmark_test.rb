@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class SavedViewTest < ActiveSupport::TestCase
+class BookmarkTest < ActiveSupport::TestCase
 
   before(:all) do
     @user = FactoryBot.create(:user, test_array: @@users_to_clean)
@@ -8,20 +8,20 @@ class SavedViewTest < ActiveSupport::TestCase
                                name_prefix: 'Saved View Test',
                                user: @user,
                                test_array: @@studies_to_clean)
-    @saved_view = FactoryBot.create(:saved_view,
+    @bookmark = FactoryBot.create(:bookmark,
                                     user: @user,
                                     name: 'My Favorite Study',
                                     path: "/single_cell/study/#{@study.accession}")
   end
 
   test 'should instantiate and validate' do
-    saved_view = SavedView.new(
+    bookmark = Bookmark.new(
       name: 'My Saved View',
       path: '/single_cell/study/SCP1234',
       user: @user
     )
-    assert saved_view.valid?
-    invalid_view = SavedView.new(
+    assert bookmark.valid?
+    invalid_view = Bookmark.new(
       name: 'My Favorite Study',
       path: "/single_cell/study/#{@study.accession}",
       user: @user
@@ -40,10 +40,5 @@ class SavedViewTest < ActiveSupport::TestCase
     errors.each do |error|
       assert error.match(/(Name|Path) can't be blank/)
     end
-  end
-
-  test 'should get full href for saved view' do
-    expected_href = "#{RequestUtils.get_base_url}/single_cell/study/#{@study.accession}"
-    assert_equal expected_href, @saved_view.href
   end
 end

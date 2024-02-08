@@ -164,6 +164,9 @@ module Api
           response 403 do
             key :description, ApiBaseController.forbidden('access Bookmark')
           end
+          response 404 do
+            key :description, ApiBaseController.not_found(Bookmark)
+          end
           response 406 do
             key :description, ApiBaseController.not_acceptable
           end
@@ -202,6 +205,9 @@ module Api
           response 403 do
             key :description, ApiBaseController.forbidden('access Bookmark')
           end
+          response 404 do
+            key :description, ApiBaseController.not_found(Bookmark)
+          end
           response 406 do
             key :description, ApiBaseController.not_acceptable
           end
@@ -218,6 +224,7 @@ module Api
 
       def set_bookmark
         @bookmark = Bookmark.find(params[:id])
+        render json: { error: 'Bookmark not found' }, status: :not_found unless @bookmark
       end
 
       def bookmark_params

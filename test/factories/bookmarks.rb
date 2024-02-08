@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :saved_view do
+  factory :bookmark do
     name {}
     path {}
     description {}
