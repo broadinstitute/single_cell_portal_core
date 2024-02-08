@@ -158,7 +158,7 @@
         at the bottom right of the <span class="fas fa-eye"></span> <strong>OPTIONS</strong> menu when viewing any study.
       </p>
       <% else %>
-        <table class="table table-responsive table-striped">
+        <table class="table table-responsive table-striped" id="bookmarks-table">
           <thead>
           <tr>
             <th>Name</th>
@@ -168,7 +168,7 @@
           </thead>
           <tbody>
           <% @bookmarks.each do |bookmark| %>
-            <tr>
+            <tr class="bookmark-entry">
               <td>
                 <%= link_to bookmark.name, bookmark.path, class: 'btn btn-default', target: :_blank %>
               </td>
