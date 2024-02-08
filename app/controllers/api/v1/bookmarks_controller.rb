@@ -3,7 +3,7 @@ module Api
     # scaffold controller for CRUDing user saved views
     class BookmarksController < ApiBaseController
       before_action :authenticate_api_user!
-      before_action :set_bookmark, only: %i[update destroy]
+      before_action :set_and_verify_bookmark, only: %i[update destroy]
       before_action :check_bookmark_permissions, only: %i[update destroy]
 
       respond_to :json

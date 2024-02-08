@@ -13,12 +13,13 @@ class ProfilesController < ApplicationController
     authenticate_user!
     check_profile_access
   end
-
+  before_action :set_and_verify_bookmark, only: :delete_bookmark
   before_action :check_firecloud_registration, only: :update_firecloud_profile
 
   def show
     @study_shares = StudyShare.where(email: @user.email)
     @studies = Study.where(user_id: @user.id)
+    @bookmarks = @user.bookmarks
     @fire_cloud_profile = FireCloudProfile.new
     # check if profile services are available
     @profiles_available = ApplicationController.firecloud_client.services_available?(FireCloudClient::THURLOE_SERVICE)
@@ -97,9 +98,12 @@ class ProfilesController < ApplicationController
     end
   end
 
-  def accept_tos
-
+  def delete_bookmark
+    @bookmark.destroy
+    redirect_to view_profile_path(params[:id], anchor: 'profile-bookmarks'), notice: 'Bookmark successfully removed'
   end
+
+  def accept_tos; end
 
   def record_tos_action
     user_accepted = tos_params[:action] == 'accept'
@@ -123,6 +127,15 @@ class ProfilesController < ApplicationController
 
   def set_toggle_id
     @toggle_id = params[:toggle_id]
+  end
+
+  def set_and_verify_bookmark
+    @bookmark = Bookmark.find(params[:bookmark_id])
+    if @bookmark.nil?
+      redirect_to view_profile_path(params[:id]), alert: 'Bookmark not found'
+    elsif @bookmark.user_id != current_user.id
+      redirect_to view_profile_path(params[:id]), alert: 'You do not have permission to delete that bookmark'
+    end
   end
 
   # make sure the current user is the same as the requested profile

@@ -17,6 +17,9 @@
            title="Terra profiles are currently unavailable, please check back later.">Terra Profile</a>
       </li>
     <% end %>
+    <li role="presentation" class="profile-nav" id="profile-bookmarks-nav">
+      <a href="#profile-bookmarks" data-toggle="tab">Bookmarks</a>
+    </li>
   </ul>
 
   <div class="tab-content top-pad">
@@ -148,6 +151,42 @@
         <% end %>
       </div>
     <% end %>
+    <div class="tab-pane" id="profile-bookmarks" role="tabpanel">
+      <% if @bookmarks.empty? %>
+      <p class="scp-help-text">
+        You have not bookmarked any views.  You can do so using the <span class="far fa-star text-primary"></span> icon
+        at the bottom right of the <span class="fas fa-eye"></span> <strong>OPTIONS</strong> menu when viewing any study.
+      </p>
+      <% else %>
+        <table class="table table-responsive table-striped">
+          <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Bookmark</th>
+          </tr>
+          </thead>
+          <tbody>
+          <% @bookmarks.each do |bookmark| %>
+            <tr>
+              <td>
+                <%= link_to bookmark.name, bookmark.path, class: 'btn btn-default', target: :_blank %>
+              </td>
+              <td>
+                <%= bookmark.description %>
+              </td>
+              <td>
+                <%= bookmark.path %>
+                <%= link_to "<span class='btn btn-xs btn-danger'><i class='fas fa-times'></i></span>".html_safe,
+                            delete_profile_bookmark_path(bookmark_id: bookmark.id), method: :delete,
+                            data: { confirm: 'Delete this bookmark?' }, class: 'pull-right' %>
+              </td>
+            </tr>
+          <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
   </div>
 </div>
 
