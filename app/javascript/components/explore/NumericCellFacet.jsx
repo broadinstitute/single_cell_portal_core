@@ -1,15 +1,7 @@
 import React, { useState } from 'react'
 
 import { round } from '~/lib/metrics-perf'
-
-/** Get minimum and maximum bounds of value range for numeric filters */
-function getMinMaxValues(filters) {
-  const firstValue = filters[0][0]
-  const hasNull = firstValue === null
-  const minValue = hasNull ? filters[1][0] : firstValue
-  const maxValue = filters.slice(-1)[0][0]
-  return [minValue, maxValue, hasNull]
-}
+import { getMinMaxValues } from '~/lib/cell-faceting.js'
 
 /** Get histogram to show with numeric filter */
 function getHistogramBars(filters) {
@@ -212,34 +204,31 @@ function getFilterValue(operator, value1, value2) {
   return filterValue
 }
 
+function updateNumericFilter(operator, inputValue, inputValue2, includeNa, facet, handleNumericChange) {
+  let value
+  if (['between', 'not between'].includes(operator)) {
+    value = [inputValue, inputValue2]
+  } else {
+    value = inputValue
+  }
+  const filterParam = [[operator, value], includeNa]
+  console.log('in updateNumericFilter, filterParam', filterParam)
+  handleNumericChange(facet.annotation, filterParam)
+}
+
 
 /** Enables manual input of numbers, by which cells get filtered */
-function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
+function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet }) {
   // console.log('in NumericQueryBuilder, filters', filters)
-  const [operator, setOperator] = useState('between')
-  const [minValue, maxValue] = getMinMaxValues(filters)
-
-  const [inputValue, setInputValue] = useState(minValue)
-  const [inputValue2, setInputValue2] = useState(maxValue)
+  const filter = selectionMap[facet.annotation]
+  const [operator, setOperator] = useState(filter[0][0])
+  const [inputValue, setInputValue] = useState(filter[0][1][0])
+  const [inputValue2, setInputValue2] = useState(filter[0][1][1])
 
   // Whether to include cells with "not available" (N/A, `null`) numeric value
-  const [includeNa, setIncludeNa] = useState(true)
+  const [includeNa, setIncludeNa] = useState(filter[1])
 
   window.SCP.includeNa = includeNa
-
-  /** Propagate change upstream */
-  function updateNumericFilter() {
-    let value
-    if (['between', 'not between'].includes(operator)) {
-      value = [inputValue, inputValue2]
-    } else {
-      value = inputValue
-    }
-    const filterParam = [[operator, value], includeNa]
-    console.log('in updateNumericFilter, filterParam', filterParam)
-    handleNumericChange(facet.annotation, filterParam)
-  }
-
 
   /** Propagate change in numeric input locally and upstream */
   function updateInputValue(event) {
@@ -247,11 +236,13 @@ function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
     const isValue2 = parseFloat(event.target.name.endsWith('value2'))
     if (isValue2) {
       setInputValue2(newValue)
+      updateNumericFilter(operator, inputValue, newValue, includeNa, facet, handleNumericChange)
     } else {
       setInputValue(newValue)
+      updateNumericFilter(operator, newValue, inputValue2, includeNa, facet, handleNumericChange)
     }
 
-    updateNumericFilter()
+    // updateNumericFilter()
   }
 
   /** Propagate change in "N/A" checkbox locally and upstream */
@@ -260,7 +251,7 @@ function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
     setIncludeNa(!includeNa)
     console.log('in updateIncludeNa 2, includeNa', includeNa)
 
-    updateNumericFilter()
+    updateNumericFilter(operator, inputValue, inputValue2, !includeNa, facet, handleNumericChange)
   }
 
   return (
@@ -301,7 +292,7 @@ function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
 
 /** Cell filter component for continuous numeric annotation dimension */
 export function NumericCellFacet({
-  facet, filters, isChecked, checkedMap, handleNumericChange,
+  facet, filters, isChecked, selectionMap, handleNumericChange,
   hasNondefaultSelection
 }) {
   // console.log('in NumericCellFacet, facet', facet)
@@ -311,6 +302,7 @@ export function NumericCellFacet({
     <div style={{ marginLeft: 20, position: 'relative' }}>
       <Histogram filters={filters} />
       <NumericQueryBuilder
+        selectionMap={selectionMap}
         filters={filters}
         handleNumericChange={handleNumericChange}
         facet={facet}

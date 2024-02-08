@@ -143,9 +143,7 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
  * @returns {Boolean} Whether cell datum passed any filters
  */
 export function applyNumericFilters(d, rawFilters) {
-  // console.log('rawFilters', rawFilters)
   const [numericFilters, includeNa] = rawFilters
-  // console.log('d, numericFilters, includeNa', d, numericFilters, includeNa)
   if (!includeNa && d === null) {return true}
   for (let i = 0; i < numericFilters.length; i++) {
     const [operator, value] = numericFilters[i]
@@ -262,6 +260,15 @@ function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
   return mergedRawFacets
 }
 
+/** Get minimum and maximum bounds of value range for numeric filters */
+export function getMinMaxValues(filters) {
+  const firstValue = filters[0][0]
+  const hasNull = firstValue === null
+  const minValue = hasNull ? filters[1][0] : firstValue
+  const maxValue = filters.slice(-1)[0][0]
+  return [minValue, maxValue, hasNull]
+}
+
 /** Omit any filters that match 0 cells in the current clustering */
 function trimNullFilters(cellFaceting) {
   const filterCountsByFacet = cellFaceting.filterCounts
@@ -278,19 +285,22 @@ function trimNullFilters(cellFaceting) {
     const facet = annotationFacets[i]
     const sourceFacet = originalFacets.find(f => f.annotation === facet)
     let facetHasNullFilter = false
+    const isGroupFacet = facet.includes('--group--')
     let nullFilterIndex
 
     const countsByFilter = filterCountsByFacet[facet]
     const nonzeroFilters = []
+    let defaultSelection = []
     const nonzeroFilterCounts = {}
     if (!countsByFilter) {
       continue
     }
 
-    if (facet.includes('--group--')) {
+    if (isGroupFacet) {
       Object.entries(countsByFilter).forEach(([filter, count], filterIndex) => {
         if (count !== null) {
           nonzeroFilters.push(filter)
+          defaultSelection.push(filter)
           nonzeroFilterCounts[filter] = countsByFilter[filter]
         } else {
           facetHasNullFilter = true
@@ -300,10 +310,19 @@ function trimNullFilters(cellFaceting) {
         }
       })
     } else {
-      Object.values(countsByFilter).forEach(([value, count], filterIndex) => {
+      Object.values(countsByFilter).forEach(([value, count], _) => {
         nonzeroFilters.push([value, count])
         nonzeroFilterCounts[value] = count
       })
+
+      if (nonzeroFilters.length > 1) {
+        // console.log('nonzeroFilters', nonzeroFilters)
+        const sortedNonzeroFilters = nonzeroFilters.sort((a, b) => a[0] - b[0])
+        // console.log('sortedNonzeroFilters', sortedNonzeroFilters)
+        const [minValue, maxValue, _] = getMinMaxValues(sortedNonzeroFilters)
+        const includeNa = true // Include any cells with "N/A" numeric values
+        defaultSelection = [['between', [minValue, maxValue]], includeNa]
+      }
     }
 
     if (facetHasNullFilter) {
@@ -318,6 +337,7 @@ function trimNullFilters(cellFaceting) {
     nonzeroFilterCountsByFacet[facet] = nonzeroFilterCounts
     nonzeroFiltersByFacet[facet] = nonzeroFilters
     cellFaceting.facets[i].groups = nonzeroFilters
+    cellFaceting.facets[i].defaultSelection = defaultSelection
     if (typeof sourceFacet !== 'undefined') {
       cellFaceting.facets[i].originalGroups = sourceFacet.groups
     }

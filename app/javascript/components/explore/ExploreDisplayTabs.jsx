@@ -109,8 +109,9 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
           const initSelection = {}
           if (!cellFilteringSelection) {
             newCellFaceting.facets.filter(f => !f.isSelectedAnnotation).forEach(facet => {
-              initSelection[facet.annotation] = facet.groups
+              initSelection[facet.annotation] = facet.defaultSelection
             })
+            console.log('initSelection', initSelection)
 
             setCellFilteringSelection(initSelection)
           }
@@ -178,7 +179,7 @@ function getFacetsParam(initFacets, selection) {
   const initSelection = {}
   initFacets.filter(f => !f.isSelectedAnnotation).forEach(facet => {
     // if (facet.type === 'group') {
-    initSelection[facet.annotation] = facet.groups
+    initSelection[facet.annotation] = facet.defaultSelection
     // }
   })
 

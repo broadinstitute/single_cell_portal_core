@@ -619,9 +619,7 @@ export function CellFilteringPanel({
 
   const defaultSelectionMap = {}
   Object.entries(cellFilteringSelection).forEach(([key, value]) => {
-    if (key.includes('--group--')) {
-      defaultSelectionMap[key] = value
-    }
+    defaultSelectionMap[key] = value
   })
 
   // console.log('facets', facets)
@@ -724,15 +722,14 @@ export function CellFilteringPanel({
 
   /** Propagate change in a numeric cell filter */
   function handleNumericChange(facetName, newValues) {
-    const newSelection = Object.assign({}, selectionMap)
-    newSelection[facetName] = newValues
+    selectionMap[facetName] = newValues
 
-    console.log('facetName, newValues', facetName, newValues)
-    console.log('newSelection', newSelection)
-    setSelectionMap(newSelection)
+    console.log('in handleNumericChange, facetName, newValues', facetName, newValues)
+    console.log('in handleNumericChange, selectionMap', selectionMap)
+    setSelectionMap(selectionMap)
 
     // update the filtered cells based on the checked condition of the filters
-    updateFilteredCells(newSelection)
+    updateFilteredCells(selectionMap)
   }
 
   const currentlyInUseAnnotations = { colorBy: '', facets: [] }
