@@ -353,7 +353,7 @@ function CellFacet({
   const [sortKey, setSortKey] = useState('count')
 
   const unsortedFilters = facet.unsortedGroups ?? []
-  console.log('in CellFacet, facet', facet)
+  // console.log('in CellFacet, facet', facet)
   let filters = facet.groups
 
   if (facet.type === 'numeric' && filters.length < 2) {
@@ -721,10 +721,11 @@ export function CellFilteringPanel({
   }
 
   /** Propagate change in a numeric cell filter */
-  function handleNumericChange(facetName, newValue) {
+  function handleNumericChange(facetName, newValues) {
     const newSelection = Object.assign({}, checkedMap)
-    newSelection[facetName] = newValue
+    newSelection[facetName] = newValues
 
+    console.log('facetName, newValues', facetName, newValues)
     console.log('newSelection', newSelection)
 
     // update the filtered cells based on the checked condition of the filters

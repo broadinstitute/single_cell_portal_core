@@ -142,7 +142,11 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
  *
  * @returns {Boolean} Whether cell datum passed any filters
  */
-export function applyNumericFilters(d, numericFilters) {
+export function applyNumericFilters(d, rawFilters) {
+  // console.log('rawFilters', rawFilters)
+  const [numericFilters, includeNa] = rawFilters
+  // console.log('d, numericFilters, includeNa', d, numericFilters, includeNa)
+  if (!includeNa && d === null) {return true}
   for (let i = 0; i < numericFilters.length; i++) {
     const [operator, value] = numericFilters[i]
     if (operator === 'equals') {

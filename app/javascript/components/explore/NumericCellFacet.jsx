@@ -84,7 +84,7 @@ function Histogram({ filters }) {
       y: maxHeight - height + 1,
       width,
       height,
-      color: (bar.isNull) ? '#CCC' : '#3D5A87',
+      color: (bar.isNull) ? '#888' : '#3D5A87',
       bar
     }
     barRectAttrs.push(attrs)
@@ -201,6 +201,18 @@ function NumericQueryInput({ value, updateInputValue, facet, filterName }) {
   )
 }
 
+/** Get raw numeric value for numeric filter, given operator */
+function getFilterValue(operator, value1, value2) {
+  let filterValue
+  if (['between', 'not between'].includes(operator)) {
+    filterValue = [value1, value2]
+  } else {
+    filterValue = value1
+  }
+  return filterValue
+}
+
+
 /** Enables manual input of numbers, by which cells get filtered */
 function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
   // console.log('in NumericQueryBuilder, filters', filters)
@@ -210,25 +222,39 @@ function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
   const [inputValue, setInputValue] = useState(minValue)
   const [inputValue2, setInputValue2] = useState(maxValue)
 
-  /** Propagate change locally and upstream */
-  function updateInputValue(event) {
-    const newValue = event.target.value
-    const isValue2 = event.target.name.endsWith('value2')
-    if (isValue2) {
-      setInputValue2(newValue)
-    } else {
-      setInputValue(newValue)
-    }
+  // Whether to include cells with "not available" (N/A, `null`) numeric value
+  const [includeNa, setIncludeNa] = useState(true)
 
+  /** Propagate change upstream */
+  function updateNumericFilter() {
     let value
     if (['between', 'not between'].includes(operator)) {
       value = [inputValue, inputValue2]
     } else {
       value = inputValue
     }
-    const filterParam = [[operator, value]]
-
+    const filterParam = [[operator, value], includeNa]
     handleNumericChange(facet.annotation, filterParam)
+  }
+
+  /** Propagate change in numeric input locally and upstream */
+  function updateInputValue(event) {
+    const newValue = parseFloat(event.target.value)
+    const isValue2 = parseFloat(event.target.name.endsWith('value2'))
+    if (isValue2) {
+      setInputValue2(newValue)
+    } else {
+      setInputValue(newValue)
+    }
+
+    updateNumericFilter()
+  }
+
+  /** Propagate change in "N/A" checkbox locally and upstream */
+  function updateIncludeNa() {
+    setIncludeNa(!includeNa)
+
+    updateNumericFilter()
   }
 
   return (
@@ -254,6 +280,14 @@ function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
         />
       </span>
       }
+      <div>
+        <label style={{ fontWeight: 'normal' }}>
+          <input
+            type="checkbox"
+            checked={includeNa}
+            onChange={() => {updateIncludeNa()}}
+          /> N/A</label>
+      </div>
     </div>
   )
 }
