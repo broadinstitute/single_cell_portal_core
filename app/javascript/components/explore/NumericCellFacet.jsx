@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import { round } from '~/lib/metrics-perf'
 
@@ -201,17 +201,18 @@ function NumericQueryInput({ value, updateInputValue, facet, filterName }) {
   )
 }
 
-/** Get raw numeric value for numeric filter, given operator */
-function getFilterValue(operator, value1, value2) {
-  let filterValue
+/** Propagate change upstream */
+function updateNumericFilter(operator, inputValue, inputValue2, includeNa, handleNumericChange, facet) {
+  let value
   if (['between', 'not between'].includes(operator)) {
-    filterValue = [value1, value2]
+    value = [inputValue, inputValue2]
   } else {
-    filterValue = value1
+    value = inputValue
   }
-  return filterValue
+  const filterParam = [[operator, value], includeNa]
+  console.log('in updateNumericFilter, filterParam', filterParam)
+  handleNumericChange(facet.annotation, filterParam)
 }
-
 
 /** Enables manual input of numbers, by which cells get filtered */
 function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
@@ -225,36 +226,25 @@ function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
   // Whether to include cells with "not available" (N/A, `null`) numeric value
   const [includeNa, setIncludeNa] = useState(true)
 
-  /** Propagate change upstream */
-  function updateNumericFilter() {
-    let value
-    if (['between', 'not between'].includes(operator)) {
-      value = [inputValue, inputValue2]
-    } else {
-      value = inputValue
-    }
-    const filterParam = [[operator, value], includeNa]
-    handleNumericChange(facet.annotation, filterParam)
-  }
+  window.SCP.includeNa = includeNa
 
   /** Propagate change in numeric input locally and upstream */
   function updateInputValue(event) {
     const newValue = parseFloat(event.target.value)
-    const isValue2 = parseFloat(event.target.name.endsWith('value2'))
+    const isValue2 = event.target.name.endsWith('value2')
     if (isValue2) {
       setInputValue2(newValue)
+      updateNumericFilter(operator, newValue, inputValue2, includeNa, handleNumericChange, facet)
     } else {
       setInputValue(newValue)
+      updateNumericFilter(operator, inputValue, newValue, includeNa, handleNumericChange, facet)
     }
-
-    updateNumericFilter()
   }
 
   /** Propagate change in "N/A" checkbox locally and upstream */
   function updateIncludeNa() {
     setIncludeNa(!includeNa)
-
-    updateNumericFilter()
+    updateNumericFilter(operator, inputValue, inputValue2, !includeNa, handleNumericChange, facet)
   }
 
   return (
@@ -265,7 +255,7 @@ function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
       />
       <NumericQueryInput
         value={inputValue}
-        updateInputValue={updateInputValue}
+        updateInputValue={updateIncludeNa()}
         facet={facet}
         filterName="value"
       />
@@ -281,17 +271,13 @@ function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
       </span>
       }
       <div>
-        <label
-          style={{ fontWeight: 'normal' }}
-          data-toggle="tooltip"
-          data-placement="right"
-          data-original-title="Not available"
-        >
+        <label style={{ fontWeight: 'normal' }}>
           <input
             type="checkbox"
             checked={includeNa}
             onChange={() => {updateIncludeNa()}}
-          /> N/A</label>
+            style={{ marginRight: '5px' }}
+          />N/A</label>
       </div>
     </div>
   )

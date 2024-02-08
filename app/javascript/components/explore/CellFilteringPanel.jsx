@@ -727,6 +727,7 @@ export function CellFilteringPanel({
 
     console.log('facetName, newValues', facetName, newValues)
     console.log('newSelection', newSelection)
+    setCheckedMap(newSelection)
 
     // update the filtered cells based on the checked condition of the filters
     updateFilteredCells(newSelection)

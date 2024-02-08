@@ -184,6 +184,8 @@ export function filterCells(
 
   let fn; let facet; let results
 
+  console.log('in filterCells, selection', selection)
+
   if (Object.keys(selection).length === 0) {
     results = filterableCells
   } else {
