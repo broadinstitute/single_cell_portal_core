@@ -281,7 +281,12 @@ function NumericQueryBuilder({ filters, handleNumericChange, facet }) {
       </span>
       }
       <div>
-        <label style={{ fontWeight: 'normal' }}>
+        <label
+          style={{ fontWeight: 'normal' }}
+          data-toggle="tooltip"
+          data-placement="right"
+          data-original-title="Not available"
+        >
           <input
             type="checkbox"
             checked={includeNa}
