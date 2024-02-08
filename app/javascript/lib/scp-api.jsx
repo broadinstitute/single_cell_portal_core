@@ -980,6 +980,22 @@ export async function createBookmark(bookmark, mock=false) {
 }
 
 /**
+ * update and return a Bookmark for a user
+ *
+ * @param bookmarkId {String} id of Bookmark to update
+ * @param updatedBookmark {Object} Bookmark object, containing name, path, description
+ * @param mock
+ */
+export async function updateBookmark(bookmarkId, updatedBookmark, mock=false) {
+  const init = Object.assign({}, defaultInit(), {
+    method: 'PATCH',
+    body: JSON.stringify({bookmark: updatedBookmark})
+  })
+  const [response] = await scpApi(`/bookmarks/${bookmarkId}`, init, mock)
+  return response
+}
+
+/**
  * delete a Bookmark for a user
  *
  * @param bookmarkId {String} id of Bookmark to delete
