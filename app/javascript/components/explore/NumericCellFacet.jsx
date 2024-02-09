@@ -250,14 +250,11 @@ function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet
       setInputValue(newDisplayValue)
       updateNumericFilter(operator, newFilterValue, inputValue2, includeNa, facet, handleNumericChange)
     }
-
-    // updateNumericFilter()
   }
 
   /** Propagate change in "N/A" checkbox locally and upstream */
   function updateIncludeNa() {
     setIncludeNa(!includeNa)
-
     updateNumericFilter(operator, inputValue, inputValue2, !includeNa, facet, handleNumericChange)
   }
 

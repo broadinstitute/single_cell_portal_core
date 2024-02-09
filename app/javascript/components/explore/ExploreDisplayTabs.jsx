@@ -502,9 +502,6 @@ export default function ExploreDisplayTabs({
     return { main, side }
   }
 
-  console.log('cellFilteringSelection')
-  console.log(cellFilteringSelection)
-
   return (
     <>
       {/* Render top content for Explore view, i.e. gene search box and plot tabs */}

@@ -50,8 +50,6 @@ describe('Cell faceting', () => {
       'cell_type__ontology_label--group--study': ['epithelial cell'],
       'General_Celltype--group--study': ['LC1', 'LC2']
     }
-    // console.log('selections, cellsByFacet, facets, filterableCells, facets')
-    // console.log(selections, cellsByFacet, facets, filterableCells, facets)
     const newFilteredCells = filterCells(
       selections, cellsByFacet, facets, filterableCells, facets
     )[0]
