@@ -229,16 +229,27 @@ function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet
   // Whether to include cells with "not available" (N/A, `null`) numeric value
   const [includeNa, setIncludeNa] = useState(facetSelection[1])
 
-  console.log('facet.annotation, numericFilter, includeNa', facet.annotation, numericFilter, includeNa)
+  // console.log('facet.annotation, numericFilter, includeNa', facet.annotation, numericFilter, includeNa)
 
   /** Propagate change in numeric input locally and upstream */
   function updateInputValue(event) {
-    const newValue = parseFloat(event.target.value)
-    const isValue2 = parseFloat(event.target.name.endsWith('value2'))
+    const rawValue = event.target.value
+    let newValue
+    let minMax
+    const rawIsNaN = isNaN(rawValue) || rawValue === ''
+    if (rawIsNaN) {
+      minMax = getMinMaxValues(filters)
+    } else {
+      newValue = parseFloat(rawValue)
+    }
+
+    const isValue2 = event.target.name.endsWith('value2')
     if (isValue2) {
+      if (rawIsNaN) {newValue = minMax[0]}
       setInputValue2(newValue)
       updateNumericFilter(operator, inputValue, newValue, includeNa, facet, handleNumericChange)
     } else {
+      if (rawIsNaN) {newValue = minMax[1]}
       setInputValue(newValue)
       updateNumericFilter(operator, newValue, inputValue2, includeNa, facet, handleNumericChange)
     }
