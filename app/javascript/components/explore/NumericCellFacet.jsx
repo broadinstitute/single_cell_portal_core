@@ -174,8 +174,10 @@ function OperatorMenu({ operator, setOperator }) {
 }
 
 /** A visually economical input field for numeric query builder */
-function NumericQueryInput({ value, updateInputValue, facet, filterName }) {
+function NumericQueryInput({ value, border, updateInputValue, facet, filterName }) {
   const fadeOverflowClass = value >= 100_000 ? 'fade-overflow' : ''
+
+  const style = border ? { border: `1px solid ${border}` } : {}
 
   return (
     <span className={fadeOverflowClass}>
@@ -184,6 +186,7 @@ function NumericQueryInput({ value, updateInputValue, facet, filterName }) {
         className="numeric-query-input"
         data-analytics-name={`${facet.annotation}:${filterName}`}
         name={`${facet.annotation}:${filterName}`}
+        style={style}
         value={value}
         onChange={event => {
           updateInputValue(event)
@@ -193,17 +196,7 @@ function NumericQueryInput({ value, updateInputValue, facet, filterName }) {
   )
 }
 
-/** Get raw numeric value for numeric filter, given operator */
-function getFilterValue(operator, value1, value2) {
-  let filterValue
-  if (['between', 'not between'].includes(operator)) {
-    filterValue = [value1, value2]
-  } else {
-    filterValue = value1
-  }
-  return filterValue
-}
-
+/** Assembly and propagate numeric cell filter change */
 function updateNumericFilter(operator, inputValue, inputValue2, includeNa, facet, handleNumericChange) {
   let value
   if (['between', 'not between'].includes(operator)) {
@@ -216,42 +209,49 @@ function updateNumericFilter(operator, inputValue, inputValue2, includeNa, facet
   handleNumericChange(facet.annotation, filterParam)
 }
 
-
 /** Enables manual input of numbers, by which cells get filtered */
 function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet }) {
   // console.log('in NumericQueryBuilder, filters', filters)
+
+  // E.g. [['between', [20, 40]], true]
+  // or more generally: [[<operator>, [<inputValue>, <inputValue2>]], <includeNa>]
   const facetSelection = selectionMap[facet.annotation]
-  const numericFilter = facetSelection[0]
-  const [operator, setOperator] = useState(numericFilter[0][0])
-  const [inputValue, setInputValue] = useState(numericFilter[0][1][0])
-  const [inputValue2, setInputValue2] = useState(numericFilter[0][1][1])
+
+  const numericFilter = facetSelection[0] // e.g. ['between', [20, 40]]
+  const [operator, setOperator] = useState(numericFilter[0][0]) // e.g. 'between'
+  const [inputValue, setInputValue] = useState(numericFilter[0][1][0]) // e.g. 20
+  const [inputBorder, setInputBorder] = useState(null)
+  const [inputValue2, setInputValue2] = useState(numericFilter[0][1][1]) // e.g. 40
+  const [inputBorder2, setInputBorder2] = useState(null)
 
   // Whether to include cells with "not available" (N/A, `null`) numeric value
-  const [includeNa, setIncludeNa] = useState(facetSelection[1])
-
-  // console.log('facet.annotation, numericFilter, includeNa', facet.annotation, numericFilter, includeNa)
+  const [includeNa, setIncludeNa] = useState(facetSelection[1]) // e.g. true
 
   /** Propagate change in numeric input locally and upstream */
   function updateInputValue(event) {
     const rawValue = event.target.value
-    let newValue
-    let minMax
-    const rawIsNaN = isNaN(rawValue) || rawValue === ''
+    let newFilterValue
+    const newDisplayValue = rawValue
+
+    let min; let max
+    const rawIsNaN = isNaN(rawValue) || rawValue === '' || rawValue === ' '
     if (rawIsNaN) {
-      minMax = getMinMaxValues(filters)
+      [min, max] = getMinMaxValues(filters)
     } else {
-      newValue = parseFloat(rawValue)
+      newFilterValue = parseFloat(rawValue)
     }
 
     const isValue2 = event.target.name.endsWith('value2')
     if (isValue2) {
-      if (rawIsNaN) {newValue = minMax[0]}
-      setInputValue2(newValue)
-      updateNumericFilter(operator, inputValue, newValue, includeNa, facet, handleNumericChange)
+      if (rawIsNaN) {newFilterValue = max}
+      setInputBorder2(rawIsNaN ? 'red' : null)
+      setInputValue2(newDisplayValue)
+      updateNumericFilter(operator, inputValue, newFilterValue, includeNa, facet, handleNumericChange)
     } else {
-      if (rawIsNaN) {newValue = minMax[1]}
-      setInputValue(newValue)
-      updateNumericFilter(operator, newValue, inputValue2, includeNa, facet, handleNumericChange)
+      if (rawIsNaN) {newFilterValue = min}
+      setInputBorder(rawIsNaN ? 'red' : null)
+      setInputValue(newDisplayValue)
+      updateNumericFilter(operator, newFilterValue, inputValue2, includeNa, facet, handleNumericChange)
     }
 
     // updateNumericFilter()
@@ -274,6 +274,7 @@ function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet
       />
       <NumericQueryInput
         value={inputValue}
+        border={inputBorder}
         updateInputValue={updateInputValue}
         facet={facet}
         filterName="value"
@@ -283,6 +284,7 @@ function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet
         <span style={{ marginLeft: '4px' }}>and</span>
         <NumericQueryInput
           value={inputValue2}
+          border={inputBorder2}
           updateInputValue={updateInputValue}
           facet={facet}
           filterName="value2"
