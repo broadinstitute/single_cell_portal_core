@@ -122,7 +122,7 @@ function FacetTools({
         <LoadingSpinner height='14px'/>
       </span>
       }
-      {isLoaded && !isRoot && !isCollapsed &&
+      {isLoaded && !isRoot && !isCollapsed && facet.type === 'group' &&
       <SortFiltersIcon
         facet={facet}
         sortKey={sortKey}
