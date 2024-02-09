@@ -3,10 +3,45 @@ module Api
     # scaffold controller for CRUDing user saved views
     class BookmarksController < ApiBaseController
       before_action :authenticate_api_user!
-      before_action :set_and_verify_bookmark, only: %i[update destroy]
+      before_action :set_bookmark, only: %i[update destroy]
       before_action :check_bookmark_permissions, only: %i[update destroy]
 
       respond_to :json
+
+      swagger_path '/bookmarks' do
+        operation :get do
+          key :tags, [
+            'Bookmarks'
+          ]
+          key :summary, 'Get my Bookmarks'
+          key :description, 'Returns all Bookmarks for the given User'
+          key :operationId, 'bookmarks_path'
+          response 200 do
+            key :description, 'Array of Bookmarks objects'
+            schema do
+              key :type, :array
+              key :title, 'Array'
+              items do
+                key :title, 'Bookmark'
+                key :'$ref', :Bookmark
+              end
+            end
+          end
+          response 401 do
+            key :description, ApiBaseController.unauthorized
+          end
+          response 403 do
+            key :description, ApiBaseController.forbidden('view Bookmarks')
+          end
+          response 406 do
+            key :description, ApiBaseController.not_acceptable
+          end
+        end
+      end
+
+      def index
+        @bookmarks = current_api_user.bookmarks
+      end
 
       swagger_path '/bookmarks' do
         operation :post do

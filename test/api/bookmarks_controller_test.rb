@@ -11,9 +11,9 @@ class BookmarksControllerTest < ActionDispatch::IntegrationTest
                                user: @user,
                                test_array: @@studies_to_clean)
     @bookmark = FactoryBot.create(:bookmark,
-                                    user: @user,
-                                    name: 'My Favorite Study',
-                                    path: "/study/#{@study.accession}")
+                                  user: @user,
+                                  name: 'My Favorite Study',
+                                  path: "/study/#{@study.accession}")
   end
 
   setup do
@@ -25,22 +25,7 @@ class BookmarksControllerTest < ActionDispatch::IntegrationTest
     reset_user_tokens
   end
 
-  test 'should get saved view' do
-    execute_http_request(:get, api_v1_bookmark_path(id: @bookmark.id))
-    assert_response :success
-    # check all attributes against database
-    @bookmark.flat_attributes.each do |attribute, value|
-      case attribute
-      when /_at/
-        next
-      else
-        assert json[attribute.to_s] == value,
-               "Attribute mismatch: #{attribute} is incorrect, expected #{value} but found #{json[attribute.to_s]}"
-      end
-    end
-  end
-
-  test 'should create then update then delete saved view' do
+  test 'should create, update then delete bookmark' do
     # create bookmark
     bookmark_attributes = {
       bookmark: {

@@ -20,7 +20,7 @@ import DifferentialExpressionPanel, { DifferentialExpressionPanelHeader } from '
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
 import CellFilteringModal from '~/components/explore/CellFilteringModal'
 import { CellFilteringPanel, CellFilteringPanelHeader } from './CellFilteringPanel'
-import BookmarkForm from '~/components/bookmarks/BookmarkForm'
+import BookmarkManager from '~/components/bookmarks/BookmarkManager'
 
 /** Get the selected clustering and annotation, or their defaults */
 function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
@@ -493,7 +493,7 @@ export default function ExploreDisplayPanelManager({
               updateExploreParams={updateExploreParams}
               allGenes={exploreInfo ? exploreInfo.uniqueGenes : []}/>
             {exploreInfo?.bookmarks &&
-              <BookmarkForm
+              <BookmarkManager
                 bookmarks={exploreInfo.bookmarks}
                 clearExploreParams={clearExploreParams}/>
             }

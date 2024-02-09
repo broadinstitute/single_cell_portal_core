@@ -277,14 +277,14 @@
   }
 }
 
-.saved-view-list {
-  float: right;
-  button {
-    margin-left: 5px;
-  }
+#bookmarks-list-wrapper {
+  max-height: 500px;
+  overflow-y: scroll;
 }
 
-.saved-view-entry {
-  padding-bottom: 10px;
-  border-bottom: 1px solid #ccc;
+.bookmarks-list-item {
+  background-color: #eff2f5;
+  padding: 5px;
+  margin-bottom: 10px;
+  border-radius: 5px;
 }

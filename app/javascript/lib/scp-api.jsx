@@ -966,6 +966,16 @@ export function getFullUrl(path, mock=false) {
 }
 
 /**
+ * Fetch all bookmarks for a user
+ *
+ * @param mock
+ * @returns {array}
+ */
+export async function fetchBookmarks(mock=false) {
+  const [response] = await scpApi(`/bookmarks`, defaultInit(), mock)
+  return response
+}
+/**
  * create and return a Bookmark for a user
  *
  * @param bookmark {Object} Bookmark object, containing name, path, notes

@@ -1,11 +1,12 @@
 import { Popover, OverlayTrigger } from 'react-bootstrap'
-import { createBookmark, updateBookmark, deleteBookmark } from '~/lib/scp-api'
-import React, { useEffect, useState, useRef } from 'react'
+import BookmarksList from '~/components/bookmarks/BookmarksList'
+import { fetchBookmarks, createBookmark, updateBookmark, deleteBookmark } from '~/lib/scp-api'
+import React, { useEffect, useState } from 'react'
 import _cloneDeep from 'lodash/clone'
 import { isUserLoggedIn } from '~/providers/UserProvider'
 import { useLocation } from '@reach/router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faLink, faUndo, faTimes } from '@fortawesome/free-solid-svg-icons'
+import { faLink, faUndo } from '@fortawesome/free-solid-svg-icons'
 import useErrorMessage from '~/lib/error-message'
 
 /**
@@ -14,20 +15,19 @@ import useErrorMessage from '~/lib/error-message'
  * @param bookmarks {Array} existing user bookmark objects
  * @param clearExploreParams
  */
-export default function BookmarkForm({bookmarks, clearExploreParams}) {
+export default function BookmarkManager({bookmarks, clearExploreParams}) {
   const location = useLocation()
   const [allBookmarks, setAllBookmarks] = useState(bookmarks)
   const [saveText, setSaveText] = useState('Save')
-  const [saveDisabled, setSaveDisabled] = useState(null)
+  const [saveDisabled, setSaveDisabled] = useState(false)
   const [bookmarkSaved, setBookmarkSaved] = useState(null)
-  const [deleteDisabled, setDeleteDisabled] = useState(null)
+  const [deleteDisabled, setDeleteDisabled] = useState(false)
   const { ErrorComponent, setShowError, setError } = useErrorMessage()
   const DEFAULT_BOOKMARK = {
     name: '',
     description: '',
     path: getBookmarkPath()
   }
-  const overlayRef = useRef('overlay')
 
   /** copies the url to the clipboard */
   function copyLink() {
@@ -148,7 +148,6 @@ export default function BookmarkForm({bookmarks, clearExploreParams}) {
     }
     try {
       const bookmark = await saveFunc(...saveProps)
-      overlayRef.current.handleHide()
       enableSaveButton(true)
       setShowError(false)
       resetForm()
@@ -172,8 +171,8 @@ export default function BookmarkForm({bookmarks, clearExploreParams}) {
         await deleteBookmark(toDelete)
         setDeleteDisabled(false)
         setShowError(false)
-        overlayRef.current.handleHide()
         removeBookmarkFromList(toDelete)
+        loadServerBookmarks()
       } catch (error) {
         setDeleteDisabled(false)
         handleErrorContent(error)
@@ -181,13 +180,33 @@ export default function BookmarkForm({bookmarks, clearExploreParams}) {
     }
   }
 
+  const [serverBookmarks, setServerBookmarks] = useState([])
+  const [serverBookmarksLoaded, setServerBookmarksLoaded] = useState(false)
+  const [showBookmarksModal, setShowBookmarksModal] = useState(false)
+
+  const toggleBookmarkModal = () => {
+    setShowBookmarksModal(!showBookmarksModal)
+  }
+
+  /** load all user bookmarks from server */
+  async function loadServerBookmarks() {
+    toggleBookmarkModal()
+    setServerBookmarksLoaded(false)
+    try {
+      const serverUserBookmarks = await fetchBookmarks()
+      setServerBookmarks(serverUserBookmarks)
+      setServerBookmarksLoaded(true)
+    } catch (error) {
+      setShowBookmarksModal(false)
+      setServerBookmarks([])
+      setServerBookmarksLoaded(false)
+    }
+  }
+
   const loginPopover = <Popover id='login-bookmark-popover' container='body'>
-    <span className='action far-lg fa-star'
-          data-toggle='tooltip'
-          data-original-title='You must sign in to bookmark this view'
-          data-placement='left'
-    />
+    You must sign in to bookmark this view
   </Popover>
+
   const bookmarkForm = <Popover id='bookmark-form-popover'>
     <form id='bookmark-form' onSubmit={handleSaveBookmark}>
       { ErrorComponent }
@@ -230,6 +249,13 @@ export default function BookmarkForm({bookmarks, clearExploreParams}) {
       }
     </div>
     </form>
+    <span data-analytics-name='manage-bookmarks' className='action' onClick={loadServerBookmarks}>
+      See bookmarks
+    </span>
+    <BookmarksList serverBookmarks={serverBookmarks}
+                   serverBookmarksLoaded={serverBookmarksLoaded}
+                   showModal={showBookmarksModal}
+                   toggleModal={toggleBookmarkModal}/>
   </Popover>
 
   const starClass = bookmarkSaved ? 'fas' : 'far'
@@ -241,11 +267,11 @@ export default function BookmarkForm({bookmarks, clearExploreParams}) {
             data-analytics-name="explore-view-options-reset">
       <FontAwesomeIcon icon={faUndo}/> Reset view</button>
     <button onClick={copyLink}
-            className="action action-with-bg margin-extra-right"
+            className="action action-with-bg"
             data-toggle="tooltip"
             title="Copy a link to this visualization to the clipboard">
       <FontAwesomeIcon icon={faLink}/> Get link</button>
-    <OverlayTrigger trigger={['click']} rootClose placement="left" ref={overlayRef} animation={false}
+    <OverlayTrigger trigger={['click']} placement="left" animation={false}
                     overlay={isUserLoggedIn() ? bookmarkForm : loginPopover}>
       <span className={`fa-lg action ${starClass} fa-star`} data-analytics-name='bookmark-view'
             title='Bookmark this view'

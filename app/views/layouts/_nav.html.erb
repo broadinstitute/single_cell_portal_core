@@ -80,9 +80,6 @@
             <% end %>
             <li><%= scp_link_to "<span class='fas fa-user fa-fw'></span> My profile".html_safe, view_profile_path(current_user.id),
                                 class: 'check-upload', id: 'my-profile' %></li>
-            <li><%= scp_link_to "<span class='fas fa-star fa-fw'></span> My bookmarks".html_safe,
-                                view_profile_path(current_user.id, anchor: 'profile-bookmarks'),
-                                class: 'check-upload', id: 'my-profile' %></li>
             <li><%= scp_link_to "<span class='fas fa-tags fa-fw'></span> My annotations".html_safe, user_annotations_path,
                                 class: 'check-upload', id: 'my-annotations' %></li>
             <li><%= scp_link_to "<span class='fas fa-book fa-fw'></span> My studies".html_safe, studies_path, class: 'check-upload',
