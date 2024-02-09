@@ -290,6 +290,7 @@ function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet
         <label style={{ fontWeight: 'normal' }}>
           <input
             type="checkbox"
+            className="na-filter"
             checked={includeNa}
             onChange={updateIncludeNa}
             style={{ marginRight: '5px' }}

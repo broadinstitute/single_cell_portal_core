@@ -288,6 +288,8 @@ function GroupCellFilter({
     facetLabelStyle = { color: '#777', cursor: 'default' }
   }
 
+  console.log('facet', facet)
+  console.log('filter', filter)
   const filterDisplayName = filter.replace(/_/g, ' ')
 
   const baselineCount = facet.originalFilterCounts[filter]
@@ -404,7 +406,7 @@ function CellFacet({
   }
 
   const flags = getFeatureFlagsWithDefaults()
-  if (facet.type === 'numeric' && !flags.show_numeric_cell_filtering) {
+  if (facet.type === 'numeric' && !flags?.show_numeric_cell_filtering) {
     return <></>
   }
 

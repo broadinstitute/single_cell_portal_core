@@ -1,5 +1,7 @@
 import React from 'react'
 import { render, fireEvent, screen, waitFor } from '@testing-library/react'
+
+import * as UserProvider from '~/providers/UserProvider'
 import { CellFilteringPanel } from '~/components/explore/CellFilteringPanel'
 import {
   annotationList, cellFaceting, cellFilteringSelection, cellFilterCounts
@@ -131,22 +133,6 @@ describe('"Cell filtering" panel', () => {
     const updateClusterParams = jest.fn()
     const updateFilteredCells = jest.fn()
 
-    cellFaceting.facets =
-      cellFaceting.facets
-        .map(facet => {
-          facet.isLoaded = true
-          facet.type = 'group'
-
-          // Mimic result of null filter trimming
-          facet.groups = facet.groups.filter(group => {
-            return group !== 'animal cell'
-          })
-          facet.unsortedGroups = facet.unsortedGroups?.filter(group => {
-            return group !== 'animal cell'
-          })
-          return facet
-        })
-
     const { container } = render(
       <CellFilteringPanel
         annotationList={annotationList}
@@ -160,7 +146,7 @@ describe('"Cell filtering" panel', () => {
       />
     )
 
-    screen.debug(container, 300000) // Print cell filtering panel HTML
+    // screen.debug(container, 300000) // Print cell filtering panel HTML
 
     const firstFilter = container.querySelector('.cell-filter-label')
     expect(firstFilter).toHaveTextContent('epithelial cell')
@@ -175,7 +161,13 @@ describe('"Cell filtering" panel', () => {
     expect(firstFilterAfterSort).toHaveTextContent('52')
   })
 
-  it('applies numeric filters', async () => {
+  it('renders numeric filters', async () => {
+    jest
+      .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
+      .mockReturnValue({
+        show_numeric_cell_filtering: true
+      })
+
     const cluster = 'All Cells UMAP'
     const shownAnnotation = {
       'name': 'General_Celltype',
@@ -187,22 +179,6 @@ describe('"Cell filtering" panel', () => {
     // Mock functions
     const updateClusterParams = jest.fn()
     const updateFilteredCells = jest.fn()
-
-    cellFaceting.facets =
-      cellFaceting.facets
-        .map(facet => {
-          facet.isLoaded = true
-          facet.type = 'group'
-
-          // Mimic result of null filter trimming
-          facet.groups = facet.groups.filter(group => {
-            return group !== 'animal cell'
-          })
-          facet.unsortedGroups = facet.unsortedGroups?.filter(group => {
-            return group !== 'animal cell'
-          })
-          return facet
-        })
 
     const { container } = render(
       <CellFilteringPanel
@@ -217,18 +193,10 @@ describe('"Cell filtering" panel', () => {
       />
     )
 
-    screen.debug(container, 300000) // Print cell filtering panel HTML
+    // screen.debug(container, 300000) // Print cell filtering panel HTML
 
-    const firstFilter = container.querySelector('.cell-filter-label')
-    expect(firstFilter).toHaveTextContent('epithelial cell')
-    expect(firstFilter).toHaveTextContent('39825')
-
-    const sortFiltersIcon = container.querySelector('.sort-filters')
-    fireEvent.click(sortFiltersIcon)
-
-    const firstFilterAfterSort = container.querySelector('.cell-filter-label')
-
-    expect(firstFilterAfterSort).toHaveTextContent('B cell')
-    expect(firstFilterAfterSort).toHaveTextContent('52')
+    const lastFacet = Array.from(container.querySelectorAll('.cell-facet')).slice(-1)[0]
+    const lastFacetName = lastFacet.querySelector('.cell-facet-name')
+    expect(lastFacetName).toHaveTextContent('BMI pre pregnancy')
   })
 })
