@@ -248,10 +248,94 @@ export function filterCells(
   return [results, counts]
 }
 
+/**
+ * Omit facets and cells that are all null, which can happen in numeric facets
+ *
+ * Example null facet:
+ *  - SCP1671: ext_weight_during_study_lbs--numeric--study
+ */
+function trimNullFacets(newRawFacets) {
+  // console.log('in trimNullFacets')
+  const allNonNullFacetIndexes = new Set()
+
+  const numericFacetIndexes = []
+  console.log('newRawFacets.facets', newRawFacets.facets)
+  console.log('newRawFacets.cells', newRawFacets.cells)
+  newRawFacets.facets.forEach((f, i) => {
+    // console.log('f, i', f, i)
+    if (f.annotation.includes('--numeric--')) {
+      numericFacetIndexes.push(i)
+    } else {
+      allNonNullFacetIndexes.add(i)
+    }
+  })
+
+  if (numericFacetIndexes.length === 0) {
+    return [newRawFacets, []]
+  }
+
+  console.log('numericFacetIndexes', numericFacetIndexes)
+
+  const facets = []
+  const cells = []
+
+  console.log('allNonNullFacetIndexes', allNonNullFacetIndexes)
+  for (let i = 0; i < newRawFacets.cells.length; i++) {
+    const outerCellArray = newRawFacets.cells[i]
+    for (let j = 0; j < numericFacetIndexes.length; j++) {
+      const numericFacetIndex = numericFacetIndexes[j]
+      if (allNonNullFacetIndexes.has(numericFacetIndex)) {continue}
+      // console.log('outerCellArray[numericFacetIndex]', outerCellArray[numericFacetIndex])
+      if (outerCellArray[numericFacetIndex] !== null) {
+        allNonNullFacetIndexes.add(numericFacetIndex)
+      }
+    }
+  }
+
+  console.log('allNonNullFacetIndexes', allNonNullFacetIndexes)
+  const sortedNonNullFacetIndexes = Array.from(allNonNullFacetIndexes).sort()
+  const nullFacets =
+    newRawFacets.facets
+      .filter((f, i) => !sortedNonNullFacetIndexes.includes(i))
+      .map(f => f.annotation)
+  if (sortedNonNullFacetIndexes.length === 0) {
+    return [{ cells, facets }, nullFacets]
+  }
+  console.log('sortedNonNullFacetIndexes', sortedNonNullFacetIndexes)
+  for (let i = 0; i < newRawFacets.facets.length; i++) {
+    if (allNonNullFacetIndexes.has(i)) {
+      facets.push(newRawFacets.facets[i])
+    }
+  }
+  for (let i = 0; i < newRawFacets.cells.length; i++) {
+    const outerCellArray = newRawFacets.cells[i]
+    const newOuterCellArray = []
+    for (let j = 0; j < sortedNonNullFacetIndexes.length; j++) {
+      const nonNullFacetIndex = sortedNonNullFacetIndexes[j]
+      newOuterCellArray.push(outerCellArray[nonNullFacetIndex])
+    }
+    cells.push(newOuterCellArray)
+  }
+
+  console.log('cells, facets')
+  console.log(cells, facets)
+
+  // return newRawFacets
+  return [{ cells, facets }, nullFacets]
+}
+
+
 /** Merge /facets responses from new and all prior batches */
 function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
+  console.log('mergeFacetsResponses, newRawFacets', newRawFacets)
+  const nullTrimmedFacets = trimNullFacets(newRawFacets)
+  newRawFacets = nullTrimmedFacets[0]
+  const nullFacets = nullTrimmedFacets[1] // number of null facets in newRawFacets
+
+  // console.log('after trimNullFacets, newRawFacets', newRawFacets)
+
   if (!prevCellFaceting) {
-    return newRawFacets
+    return [newRawFacets, nullFacets]
   }
 
   const prevRawFacets = prevCellFaceting.rawFacets
@@ -264,7 +348,7 @@ function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
   }
 
   const mergedRawFacets = { cells, facets }
-  return mergedRawFacets
+  return [mergedRawFacets, nullFacets]
 }
 
 /** Get minimum and maximum bounds of value range for numeric filters */
@@ -551,7 +635,7 @@ export async function initCellFaceting(
         )
       })
 
-  const allRelevanceSortedFacets =
+  let allRelevanceSortedFacets =
     sortAnnotationsByRelevance(eligibleAnnots)
       .map(annot => {
         const facet = { annotation: annot.identifier, type: annot.type }
@@ -577,7 +661,12 @@ export async function initCellFaceting(
   //
   // await new Promise(resolve => setTimeout(resolve, 3000))
 
-  const rawFacets = mergeFacetsResponses(newRawFacets, prevCellFaceting)
+  const [rawFacets, nullFacets] = mergeFacetsResponses(newRawFacets, prevCellFaceting)
+  console.log('in initCellFaceting, nullFacets', nullFacets)
+  console.log('in initCellFaceting, allRelevanceSortedFacets before', allRelevanceSortedFacets)
+  allRelevanceSortedFacets = allRelevanceSortedFacets.filter(f => !nullFacets.includes(f.annotation))
+  console.log('in initCellFaceting, rawFacets', rawFacets)
+  console.log('in initCellFaceting, allRelevanceSortedFacets after', allRelevanceSortedFacets)
 
   const timeInitCrossfilterStart = Date.now()
   const {
