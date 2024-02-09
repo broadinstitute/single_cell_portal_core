@@ -457,7 +457,7 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
     if (facet.includes('--group--')) {
       countsByFilter = {}
       // console.log('facets[i]', facets[i])
-      facets[i].groups.forEach((group, j) => {
+      facets[i].groups?.forEach((group, j) => {
         let count = null
         // check for originalGroups array first, if present
         const originalGroups = facets[i].originalGroups || facets[i].groups

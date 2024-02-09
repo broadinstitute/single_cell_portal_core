@@ -50,6 +50,8 @@ describe('Cell faceting', () => {
       'cell_type__ontology_label--group--study': ['epithelial cell'],
       'General_Celltype--group--study': ['LC1', 'LC2']
     }
+    // console.log('selections, cellsByFacet, facets, filterableCells, facets')
+    // console.log(selections, cellsByFacet, facets, filterableCells, facets)
     const newFilteredCells = filterCells(
       selections, cellsByFacet, facets, filterableCells, facets
     )[0]
@@ -57,13 +59,13 @@ describe('Cell faceting', () => {
   })
 
   it('filters cells by numeric filters', async () => {
-    expect(applyNumericFilters(2, [['equals', 2]])).toStrictEqual(true)
-    expect(applyNumericFilters(2, [['equals', 1.3]])).toStrictEqual(false)
-    expect(applyNumericFilters(20, [['greater than or equal to', 6]])).toStrictEqual(true)
-    expect(applyNumericFilters(20, [['between', [5, 42]]])).toStrictEqual(true)
-    expect(applyNumericFilters(2, [['between', [0, 2]]])).toStrictEqual(true) // test inclusiveness
-    expect(applyNumericFilters(2, [['between', [0, 2.1]]], 2)).toStrictEqual(true) // test inclusiveness
-    expect(applyNumericFilters(10, [['between', [0, 2]], ['between', [8, 20]]])).toStrictEqual(true)
-    expect(applyNumericFilters(5, [['between', [0, 2]], ['between', [8, 20]]])).toStrictEqual(false)
+    expect(applyNumericFilters(2, [[['equals', 2]], true])).toStrictEqual(true)
+    expect(applyNumericFilters(2, [[['equals', 1.3]], true])).toStrictEqual(false)
+    expect(applyNumericFilters(20, [[['greater than or equal to', 6]], true])).toStrictEqual(true)
+    expect(applyNumericFilters(20, [[['between', [5, 42]]], true])).toStrictEqual(true)
+    expect(applyNumericFilters(2, [[['between', [0, 2]]], true])).toStrictEqual(true) // test inclusiveness
+    expect(applyNumericFilters(2, [[['between', [0, 2.1]]], true], 2)).toStrictEqual(true) // test inclusiveness
+    expect(applyNumericFilters(10, [[['between', [0, 2]], ['between', [8, 20]]], true])).toStrictEqual(true)
+    expect(applyNumericFilters(5, [[['between', [0, 2]], ['between', [8, 20]]], true])).toStrictEqual(false)
   })
 })

@@ -135,12 +135,13 @@ describe('"Cell filtering" panel', () => {
       cellFaceting.facets
         .map(facet => {
           facet.isLoaded = true
+          facet.type = 'group'
 
           // Mimic result of null filter trimming
           facet.groups = facet.groups.filter(group => {
             return group !== 'animal cell'
           })
-          facet.unsortedGroups = facet.unsortedGroups.filter(group => {
+          facet.unsortedGroups = facet.unsortedGroups?.filter(group => {
             return group !== 'animal cell'
           })
           return facet
@@ -159,7 +160,7 @@ describe('"Cell filtering" panel', () => {
       />
     )
 
-    // screen.debug(container, 300000) // Print cell filtering panel HTML
+    screen.debug(container, 300000) // Print cell filtering panel HTML
 
     const firstFilter = container.querySelector('.cell-filter-label')
     expect(firstFilter).toHaveTextContent('epithelial cell')

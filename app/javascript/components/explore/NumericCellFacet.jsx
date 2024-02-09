@@ -205,14 +205,11 @@ function updateNumericFilter(operator, inputValue, inputValue2, includeNa, facet
     value = inputValue
   }
   const filterParam = [[[operator, value]], includeNa]
-  console.log('in updateNumericFilter, filterParam', filterParam)
   handleNumericChange(facet.annotation, filterParam)
 }
 
 /** Enables manual input of numbers, by which cells get filtered */
 function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet }) {
-  // console.log('in NumericQueryBuilder, filters', filters)
-
   // E.g. [['between', [20, 40]], true]
   // or more generally: [[<operator>, [<inputValue>, <inputValue2>]], <includeNa>]
   const facetSelection = selectionMap[facet.annotation]
@@ -259,9 +256,7 @@ function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet
 
   /** Propagate change in "N/A" checkbox locally and upstream */
   function updateIncludeNa() {
-    console.log('in updateIncludeNa, includeNa', includeNa)
     setIncludeNa(!includeNa)
-    console.log('in updateIncludeNa 2, includeNa', includeNa)
 
     updateNumericFilter(operator, inputValue, inputValue2, !includeNa, facet, handleNumericChange)
   }
@@ -309,9 +304,6 @@ export function NumericCellFacet({
   facet, filters, isChecked, selectionMap, handleNumericChange,
   hasNondefaultSelection
 }) {
-  // console.log('in NumericCellFacet, facet', facet)
-  // console.log('in NumericCellFacet, filters', filters)
-
   return (
     <div style={{ marginLeft: 20, position: 'relative' }}>
       <Histogram filters={filters} />

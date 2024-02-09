@@ -146,7 +146,6 @@ function FacetTools({
 /** Determine if user has deselected any filters */
 function getHasNondefaultSelection(selectionMap, facets) {
   let numTotalFilters = 0
-  // console.log('in getHasNondefaultSelection, facets', facets)
   facets
     .filter(f => f.type === 'group')
     .forEach(facet => numTotalFilters += facet.groups?.length)
@@ -356,7 +355,6 @@ function CellFacet({
   const [sortKey, setSortKey] = useState('count')
 
   const unsortedFilters = facet.unsortedGroups ?? []
-  // console.log('in CellFacet, facet', facet)
   let filters = facet.groups
 
   if (facet.type === 'numeric' && filters.length < 2) {
@@ -625,7 +623,6 @@ export function CellFilteringPanel({
     defaultSelectionMap[key] = value
   })
 
-  // console.log('facets', facets)
   const [selectionMap, setSelectionMap] = useState(defaultSelectionMap)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
   const shownFacets = facets.filter(facet => facet.type === 'numeric' || facet.groups?.length > 1)
@@ -726,9 +723,6 @@ export function CellFilteringPanel({
   /** Propagate change in a numeric cell filter */
   function handleNumericChange(facetName, newValues) {
     selectionMap[facetName] = newValues
-
-    console.log('in handleNumericChange, facetName, newValues', facetName, newValues)
-    console.log('in handleNumericChange, selectionMap', selectionMap)
     setSelectionMap(selectionMap)
 
     // update the filtered cells based on the checked condition of the filters
