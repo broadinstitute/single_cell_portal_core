@@ -111,7 +111,6 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
             newCellFaceting.facets.filter(f => !f.isSelectedAnnotation).forEach(facet => {
               initSelection[facet.annotation] = facet.defaultSelection
             })
-            console.log('initSelection', initSelection)
 
             setCellFilteringSelection(initSelection)
           }
@@ -502,6 +501,9 @@ export default function ExploreDisplayTabs({
     }
     return { main, side }
   }
+
+  console.log('cellFilteringSelection')
+  console.log(cellFilteringSelection)
 
   return (
     <>
