@@ -221,6 +221,8 @@ function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet
   const [inputValue2, setInputValue2] = useState(numericFilter[0][1][1]) // e.g. 40
   const [inputBorder2, setInputBorder2] = useState(null)
 
+  const [min, max, hasNull] = getMinMaxValues(filters)
+
   // Whether to include cells with "not available" (N/A, `null`) numeric value
   const [includeNa, setIncludeNa] = useState(facetSelection[1]) // e.g. true
 
@@ -230,11 +232,8 @@ function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet
     let newFilterValue
     const newDisplayValue = rawValue
 
-    let min; let max
     const rawIsNaN = isNaN(rawValue) || rawValue === '' || rawValue === ' '
-    if (rawIsNaN) {
-      [min, max] = getMinMaxValues(filters)
-    } else {
+    if (!rawIsNaN) {
       newFilterValue = parseFloat(rawValue)
     }
 
@@ -283,6 +282,7 @@ function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet
         />
       </span>
       }
+      {hasNull &&
       <div>
         <label style={{ fontWeight: 'normal' }}>
           <input
@@ -293,6 +293,7 @@ function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet
             style={{ marginRight: '5px' }}
           />N/A</label>
       </div>
+      }
     </div>
   )
 }
