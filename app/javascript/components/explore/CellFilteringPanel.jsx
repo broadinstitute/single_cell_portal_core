@@ -516,6 +516,7 @@ function FacetHeader({
 
   return (
     <>
+      {facet.type === 'group' &&
       <input
         type="checkbox"
         className="cell-facet-header-checkbox"
@@ -531,8 +532,9 @@ function FacetHeader({
           }
         }}
       />
+      }
       <span
-        className={`cell-facet-header ${toggleClass}`}
+        className={`cell-facet-header cell-facet-header-${facet.type} ${toggleClass}`}
         onClick={event => {
           const domClasses = Array.from(event.target.classList)
           const parentDomClasses = Array.from(event.target.parentNode.classList)
