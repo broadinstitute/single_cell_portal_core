@@ -220,15 +220,16 @@ function updateNumericFilter(operator, inputValue, inputValue2, includeNa, facet
 /** Enables manual input of numbers, by which cells get filtered */
 function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet }) {
   // console.log('in NumericQueryBuilder, filters', filters)
-  const filter = selectionMap[facet.annotation][0]
-  const [operator, setOperator] = useState(filter[0][0])
-  const [inputValue, setInputValue] = useState(filter[0][1][0])
-  const [inputValue2, setInputValue2] = useState(filter[0][1][1])
+  const facetSelection = selectionMap[facet.annotation]
+  const numericFilter = facetSelection[0]
+  const [operator, setOperator] = useState(numericFilter[0][0])
+  const [inputValue, setInputValue] = useState(numericFilter[0][1][0])
+  const [inputValue2, setInputValue2] = useState(numericFilter[0][1][1])
 
   // Whether to include cells with "not available" (N/A, `null`) numeric value
-  const [includeNa, setIncludeNa] = useState(filter[1])
+  const [includeNa, setIncludeNa] = useState(facetSelection[1])
 
-  window.SCP.includeNa = includeNa
+  console.log('facet.annotation, numericFilter, includeNa', facet.annotation, numericFilter, includeNa)
 
   /** Propagate change in numeric input locally and upstream */
   function updateInputValue(event) {

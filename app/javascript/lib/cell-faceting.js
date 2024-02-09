@@ -143,9 +143,10 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
  * @returns {Boolean} Whether cell datum passed any filters
  */
 export function applyNumericFilters(d, rawFilters) {
-  // return true
   const [numericFilters, includeNa] = rawFilters
+
   if (includeNa && d === null) {return true}
+
   for (let i = 0; i < numericFilters.length; i++) {
     const [operator, value] = numericFilters[i]
     if (operator === 'equals') {
@@ -166,14 +167,9 @@ export function applyNumericFilters(d, rawFilters) {
       if (value[0] <= d && d <= value[1]) {return true}
     } else if (operator === 'not between') {
       if (!(value[0] <= d && d <= value[1])) {return true}
-    } else {
-      console.log('d, rawFilters, operator, value', d, rawFilters, operator, value)
-      debugger
     }
   }
 
-  console.log('d, rawFilters', d, rawFilters)
-  debugger
   return false
 }
 
