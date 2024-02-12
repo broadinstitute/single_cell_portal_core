@@ -234,3 +234,10 @@ input.cell-facet-header-checkbox {
   width: 45px;
   margin-left: 4px;
 }
+
+.cell-facet .brush .selection {
+  fill: #F00;
+  stroke: #F00;
+  fill-opacity: .3;
+  shape-rendering: crispEdges;
+}

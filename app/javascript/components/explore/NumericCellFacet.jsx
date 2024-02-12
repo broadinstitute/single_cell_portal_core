@@ -1,7 +1,37 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
+import * as d3 from 'd3'
 
 import { round } from '~/lib/metrics-perf'
 import { getMinMaxValues } from '~/lib/cell-faceting.js'
+
+/** Initialize D3 brush component, for draggable selections */
+function initBrush(svgRef, width, height) {
+  console.log('in initBrush, svgRef', svgRef)
+
+  /** Handler for the end of a brush event from D3 */
+  function brushEnded(event) {
+    const s = event.selection
+    // Consume the brush action
+    if (s) {
+      d3.select('.brush').call(brush.move, null)
+    }
+  }
+
+  /** Create a brush for selecting regions to zoom on */
+  const brush =
+    d3
+      .brushX()
+      .extent([
+        [0, 0],
+        [width, height]
+      ])
+      .on('end', brushEnded)
+
+  // Zoom brush
+  d3.select(svgRef.current).append('g').attr('class', 'brush').call(brush)
+
+  console.log('exit initBrush')
+}
 
 /** Get histogram to show with numeric filter */
 function getHistogramBars(filters) {
@@ -63,6 +93,8 @@ function getHistogramBars(filters) {
 
 /** SVG histogram showing distribution of numeric annotation values */
 function Histogram({ filters }) {
+  const svgRef = useRef(null)
+
   const maxHeight = 20
 
   const [bars, maxValue, maxCount, minValue] = getHistogramBars(filters)
@@ -85,6 +117,15 @@ function Histogram({ filters }) {
   const lastBar = barRectAttrs.slice(-1)[0]
   const svgHeight = maxHeight + 2
   const svgWidth = lastBar.x + lastBar.width
+
+
+  useEffect(() => {
+    console.log('in Histogram useEffect')
+    initBrush(svgRef, svgWidth, svgHeight)
+  },
+  [filters.join(',')]
+  )
+
   return (
     <>
       <svg
@@ -92,6 +133,7 @@ function Histogram({ filters }) {
         width={svgWidth}
         style={{ borderBottom: '1px solid #AAA  ' }}
         className="numeric-filter-histogram"
+        ref={svgRef}
       >
         {barRectAttrs.map((attrs, i) => {
           return (
