@@ -250,7 +250,6 @@ Rails.application.routes.draw do
     post 'profile/:id/firecloud_profile', to: 'profiles#update_firecloud_profile', as: :update_user_firecloud_profile
     get 'profile/:id/accept_tos', to: 'profiles#accept_tos', as: :accept_tos
     post 'profile/:id/accept_tos', to: 'profiles#record_tos_action', as: :record_tos_action
-    delete 'profile/:id/:bookmark_id', to: 'profiles#delete_bookmark', as: :delete_profile_bookmark
 
     # data viewing actions
     get 'study/:identifier', to: 'site#legacy_study', as: :legacy_study

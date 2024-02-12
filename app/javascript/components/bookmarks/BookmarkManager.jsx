@@ -65,7 +65,7 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
     } else {
       setAllBookmarks(prevBookmarks => [...prevBookmarks, bookmark])
     }
-
+    setServerBookmarksLoaded(false)
     setCurrentBookmark(bookmark)
   }
 
@@ -76,6 +76,7 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
     })
     setAllBookmarks(remainingBookmarks)
     setBookmarkSaved(false)
+    setServerBookmarksLoaded(false)
     setCurrentBookmark(DEFAULT_BOOKMARK)
   }
 
@@ -191,23 +192,24 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
   /** load all user bookmarks from server */
   async function loadServerBookmarks() {
     toggleBookmarkModal()
-    setServerBookmarksLoaded(false)
-    try {
-      const serverUserBookmarks = await fetchBookmarks()
-      setServerBookmarks(serverUserBookmarks)
-      setServerBookmarksLoaded(true)
-    } catch (error) {
-      setShowBookmarksModal(false)
-      setServerBookmarks([])
-      setServerBookmarksLoaded(false)
+    if (!serverBookmarksLoaded) {
+      try {
+        const serverUserBookmarks = await fetchBookmarks()
+        setServerBookmarks(serverUserBookmarks)
+        setServerBookmarksLoaded(true)
+      } catch (error) {
+        setShowBookmarksModal(false)
+        setServerBookmarks([])
+        setServerBookmarksLoaded(false)
+      }
     }
   }
 
-  const loginPopover = <Popover id='login-bookmark-popover' container='body'>
+  const loginPopover = <Popover data-analytics-name='login-bookmark-popover' id='login-bookmark-popover'>
     You must sign in to bookmark this view
   </Popover>
 
-  const bookmarkForm = <Popover id='bookmark-form-popover'>
+  const bookmarkForm = <Popover data-analytics-name='bookmark-form-popover' id='bookmark-form-popover'>
     <form id='bookmark-form' onSubmit={handleSaveBookmark}>
       { ErrorComponent }
       <div className="form-group">
@@ -249,7 +251,9 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
       }
     </div>
     </form>
-    <span data-analytics-name='manage-bookmarks' className='action' onClick={loadServerBookmarks}>
+    <span data-analytics-name='manage-bookmarks'
+          data-testid='manage-bookmarks'
+          className='action' onClick={loadServerBookmarks}>
       See bookmarks
     </span>
     <BookmarksList serverBookmarks={serverBookmarks}
@@ -260,7 +264,7 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
 
   const starClass = bookmarkSaved ? 'fas' : 'far'
 
-  return <>
+  return <div id='bookmark-container'>
     <button className="action action-with-bg"
             onClick={clearExploreParams}
             title="Reset all view options"
@@ -273,9 +277,11 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
       <FontAwesomeIcon icon={faLink}/> Get link</button>
     <OverlayTrigger trigger={['click']} placement="left" animation={false}
                     overlay={isUserLoggedIn() ? bookmarkForm : loginPopover}>
-      <span className={`fa-lg action ${starClass} fa-star`} data-analytics-name='bookmark-view'
+      <span className={`fa-lg action ${starClass} fa-star`}
+            data-analytics-name='bookmark-manager'
+            id='bookmark-manager'
             title='Bookmark this view'
       />
     </OverlayTrigger>
-  </>
+  </div>
 }

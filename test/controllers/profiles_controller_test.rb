@@ -58,17 +58,4 @@ class ProfilesControllerTest < ActionDispatch::IntegrationTest
 
     end
   end
-
-  test 'should load and delete bookmarks' do
-    bookmark = FactoryBot.create(:bookmark, name: 'First Bookmark', path: '/study/SCP1', user: @user)
-    get view_profile_path(@user.id)
-    assert_response :success
-    assert_select 'table#bookmarks-table', 1
-    assert_select 'tr.bookmark-entry', 1
-    delete delete_profile_bookmark_path(@user.id, bookmark_id: bookmark.id)
-    follow_redirect!
-    assert_select 'table#bookmarks-table', 0
-    assert_select 'tr.bookmark-entry', 0
-    assert @user.reload.bookmarks.empty?
-  end
 end

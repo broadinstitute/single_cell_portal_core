@@ -4,10 +4,22 @@ import LoadingSpinner from '~/lib/LoadingSpinner'
 import { navigate } from '@reach/router'
 
 export default function BookmarksList({serverBookmarks, serverBookmarksLoaded, showModal, toggleModal}) {
-  function loadBookmark(bookmark) {
-    navigate(bookmark.path)
+  const ACCESSION_MATCHER = /SCP\d{1,4}/
+  // determine if the requested bookmark is in another study
+  function isSameStudy(bookmark) {
+    const currentStudy = window.location.pathname.match(ACCESSION_MATCHER)
+    const bookmarkStudy = bookmark.path.match(ACCESSION_MATCHER)
+    return currentStudy[0] === bookmarkStudy[0]
   }
-  return <Modal id='bookmarks-list-modal' className='modal fade' show={showModal}>
+
+  function loadBookmark(bookmark) {
+    if (isSameStudy(bookmark)) {
+      navigate(bookmark.path)
+    } else {
+      window.location = bookmark.path
+    }
+  }
+  return <Modal id='bookmarks-list-modal' data-testid='bookmarks-list-modal' className='modal fade' show={showModal}>
     <Modal.Header><h4>My Bookmarks</h4></Modal.Header>
     <Modal.Body>
       <div id='bookmarks-list-wrapper'>
@@ -15,6 +27,8 @@ export default function BookmarksList({serverBookmarks, serverBookmarksLoaded, s
           return <div key={bookmark.id} className='bookmarks-list-item'>
             <span className='action'
                   onClick={() => {loadBookmark(bookmark)}}
+                  data-toggle='tooltip'
+                  data-original-title={bookmark.path}
             >{bookmark.name}</span><br/>
             {bookmark.description}
           </div>

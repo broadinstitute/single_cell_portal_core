@@ -25,6 +25,23 @@ class BookmarksControllerTest < ActionDispatch::IntegrationTest
     reset_user_tokens
   end
 
+  test 'should get bookmarks' do
+    execute_http_request(:get, api_v1_bookmarks_path)
+    assert_response :success
+    assert_equal 1, json.count
+    found_bookmark = json.first
+    # check all attributes against database
+    @bookmark.flat_attributes.each do |attribute, value|
+      case attribute
+      when /_at/
+        next
+      else
+        assert found_bookmark[attribute.to_s] == value,
+               "Attribute mismatch: #{attribute} is incorrect, expected #{value} but found #{found_bookmark[attribute.to_s]}"
+      end
+    end
+  end
+
   test 'should create, update then delete bookmark' do
     # create bookmark
     bookmark_attributes = {
