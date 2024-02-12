@@ -121,12 +121,12 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
  *   or an array of two numbers.
  *
  *   Example simple numeric filters:
- *   - ["equals", 1.3]
- *   - ["not equals", 1.3]
- *   - ["greater than", 6]
- *   - ["greater than or equal to", 6]
- *   - ["less than", 6]
- *   - ["less than or equal to", 6]
+ *   - ["=", 1.3]
+ *   - ["!=", 1.3]
+ *   - [">", 6]
+ *   - [">=", 6]
+ *   - ["<", 6]
+ *   - ["<=", 6]
  *   - ["between", [5, 42]] -- inclusive, i.e. 5 <= d <= 42
  *   - ["not between", [5, 42]] -- inclusive, i.e. !(5 <= d <= 42)
  *

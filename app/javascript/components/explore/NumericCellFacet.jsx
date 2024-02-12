@@ -140,9 +140,9 @@ function Histogram({ filters }) {
 }
 
 const operators = [
-  'between', 'not between', 'equals', 'not equals',
-  'less than', 'less than or equal to',
-  'greater than', 'greater than or equal to'
+  'between', 'not between', '=', '!=',
+  '<', '<=',
+  '>', '>='
 ]
 
 /** Get options for numeric filter operators */
@@ -150,12 +150,12 @@ function OperatorMenu({ operator, setOperator }) {
   const widthsByOperator = {
     'between': 80,
     'not between': 100,
-    'equals': 65,
-    'not equals': 90,
-    'less than': 80,
-    'less than or equal to': 150,
-    'greater than': 100,
-    'greater than or equal to': 170
+    '=': 50,
+    '!=': 50,
+    '<': 50,
+    '<=': 50,
+    '>': 50,
+    '>=': 50
   }
   const menuWidth = `${widthsByOperator[operator] }px`
   return (
