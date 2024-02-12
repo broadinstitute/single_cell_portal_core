@@ -243,6 +243,8 @@ export function filterCells(
  *
  * Example null facet:
  *  - SCP1671: ext_weight_during_study_lbs--numeric--study
+ *
+ * TODO (SCP-5513): Delete in MongoDB: numeric annotations with all null values
  */
 function trimNullFacets(newRawFacets) {
   const allNonNullFacetIndexes = new Set()
