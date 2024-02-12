@@ -173,7 +173,6 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
         setDeleteDisabled(false)
         setShowError(false)
         removeBookmarkFromList(toDelete)
-        loadServerBookmarks()
       } catch (error) {
         setDeleteDisabled(false)
         handleErrorContent(error)

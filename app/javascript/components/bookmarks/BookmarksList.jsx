@@ -23,7 +23,11 @@ export default function BookmarksList({serverBookmarks, serverBookmarksLoaded, s
     <Modal.Header><h4>My Bookmarks</h4></Modal.Header>
     <Modal.Body>
       <div id='bookmarks-list-wrapper'>
-        { serverBookmarksLoaded && serverBookmarks.map(bookmark => {
+        {!serverBookmarksLoaded && <>Loading bookmarks... <LoadingSpinner /></>}
+        {serverBookmarksLoaded && serverBookmarks.length === 0 &&
+          <p className='scp-help-text'>You do not have any saved bookmarks</p>
+        }
+        {serverBookmarksLoaded && serverBookmarks.length > 0 && serverBookmarks.map(bookmark => {
           return <div key={bookmark.id} className='bookmarks-list-item'>
             <span className='action'
                   onClick={() => {loadBookmark(bookmark)}}
@@ -33,7 +37,7 @@ export default function BookmarksList({serverBookmarks, serverBookmarksLoaded, s
             {bookmark.description}
           </div>
         })}
-        { !serverBookmarksLoaded && <>Loading bookmarks... <LoadingSpinner /></>}
+
       </div>
     </Modal.Body>
     <Modal.Footer>
