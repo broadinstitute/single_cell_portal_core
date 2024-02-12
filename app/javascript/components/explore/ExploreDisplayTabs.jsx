@@ -177,9 +177,7 @@ function getFacetsParam(initFacets, selection) {
 
   const initSelection = {}
   initFacets.filter(f => !f.isSelectedAnnotation).forEach(facet => {
-    // if (facet.type === 'group') {
     initSelection[facet.annotation] = facet.defaultSelection
-    // }
   })
 
   const innerParams = []
