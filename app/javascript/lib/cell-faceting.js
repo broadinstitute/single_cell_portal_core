@@ -121,12 +121,12 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
  *   or an array of two numbers.
  *
  *   Example simple numeric filters:
- *   - ["equals", 1.3]
- *   - ["not equals", 1.3]
- *   - ["greater than", 6]
- *   - ["greater than or equal to", 6]
- *   - ["less than", 6]
- *   - ["less than or equal to", 6]
+ *   - ["=", 1.3]
+ *   - ["!=", 1.3]
+ *   - [">", 6]
+ *   - [">=", 6]
+ *   - ["<", 6]
+ *   - ["<=", 6]
  *   - ["between", [5, 42]] -- inclusive, i.e. 5 <= d <= 42
  *   - ["not between", [5, 42]] -- inclusive, i.e. !(5 <= d <= 42)
  *
@@ -142,7 +142,11 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
  *
  * @returns {Boolean} Whether cell datum passed any filters
  */
-export function applyNumericFilters(d, numericFilters) {
+export function applyNumericFilters(d, rawFilters) {
+  const [numericFilters, includeNa] = rawFilters
+
+  if (includeNa && d === null) {return true}
+
   for (let i = 0; i < numericFilters.length; i++) {
     const [operator, value] = numericFilters[i]
     if (operator === 'equals') {
@@ -165,12 +169,13 @@ export function applyNumericFilters(d, numericFilters) {
       if (!(value[0] <= d && d <= value[1])) {return true}
     }
   }
+
   return false
 }
 
 /** Get filtered cell results */
 export function filterCells(
-  selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, rawFacets
+  selection, cellsByFacet, initFacets, filterableCells, rawFacets
 ) {
   const t0 = Date.now()
   const facets =
@@ -222,10 +227,6 @@ export function filterCells(
       }
     }
     results = cellsByFacet[facet].top(Infinity)
-
-    // Uncomment log below for observability into prototype numeric filters
-    // TODO: Remove this when numeric filter UI is ready
-    // console.log('# filtered results', results.length)
   }
 
   const annotationFacets = initFacets.map(facet => facet.annotation)
@@ -237,10 +238,79 @@ export function filterCells(
   return [results, counts]
 }
 
+/**
+ * Omit facets and cells that are all null, which can happen in numeric facets
+ *
+ * Example null facet:
+ *  - SCP1671: ext_weight_during_study_lbs--numeric--study
+ *
+ * TODO (SCP-5513): Delete in MongoDB: numeric annotations with all null values
+ */
+function trimNullFacets(newRawFacets) {
+  const allNonNullFacetIndexes = new Set()
+
+  const numericFacetIndexes = []
+  newRawFacets.facets.forEach((f, i) => {
+    if (f.annotation.includes('--numeric--')) {
+      numericFacetIndexes.push(i)
+    } else {
+      allNonNullFacetIndexes.add(i)
+    }
+  })
+
+  if (numericFacetIndexes.length === 0) {
+    return [newRawFacets, []]
+  }
+
+  const facets = []
+  const cells = []
+
+  for (let i = 0; i < newRawFacets.cells.length; i++) {
+    const outerCellArray = newRawFacets.cells[i]
+    for (let j = 0; j < numericFacetIndexes.length; j++) {
+      const numericFacetIndex = numericFacetIndexes[j]
+      if (allNonNullFacetIndexes.has(numericFacetIndex)) {continue}
+      if (outerCellArray[numericFacetIndex] !== null) {
+        allNonNullFacetIndexes.add(numericFacetIndex)
+      }
+    }
+  }
+
+  const sortedNonNullFacetIndexes = Array.from(allNonNullFacetIndexes).sort()
+  const nullFacets =
+    newRawFacets.facets
+      .filter((f, i) => !sortedNonNullFacetIndexes.includes(i))
+      .map(f => f.annotation)
+  if (sortedNonNullFacetIndexes.length === 0) {
+    return [{ cells, facets }, nullFacets]
+  }
+  for (let i = 0; i < newRawFacets.facets.length; i++) {
+    if (allNonNullFacetIndexes.has(i)) {
+      facets.push(newRawFacets.facets[i])
+    }
+  }
+  for (let i = 0; i < newRawFacets.cells.length; i++) {
+    const outerCellArray = newRawFacets.cells[i]
+    const newOuterCellArray = []
+    for (let j = 0; j < sortedNonNullFacetIndexes.length; j++) {
+      const nonNullFacetIndex = sortedNonNullFacetIndexes[j]
+      newOuterCellArray.push(outerCellArray[nonNullFacetIndex])
+    }
+    cells.push(newOuterCellArray)
+  }
+
+  return [{ cells, facets }, nullFacets]
+}
+
+
 /** Merge /facets responses from new and all prior batches */
 function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
+  const nullTrimmedFacets = trimNullFacets(newRawFacets)
+  newRawFacets = nullTrimmedFacets[0]
+  const nullFacets = nullTrimmedFacets[1] // number of null facets in newRawFacets
+
   if (!prevCellFaceting) {
-    return newRawFacets
+    return [newRawFacets, nullFacets]
   }
 
   const prevRawFacets = prevCellFaceting.rawFacets
@@ -253,7 +323,16 @@ function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
   }
 
   const mergedRawFacets = { cells, facets }
-  return mergedRawFacets
+  return [mergedRawFacets, nullFacets]
+}
+
+/** Get minimum and maximum bounds of value range for numeric filters */
+export function getMinMaxValues(filters) {
+  const firstValue = filters[0][0]
+  const hasNull = firstValue === null
+  const minValue = hasNull ? filters[1][0] : firstValue
+  const maxValue = filters.slice(-1)[0][0]
+  return [minValue, maxValue, hasNull]
 }
 
 /** Omit any filters that match 0 cells in the current clustering */
@@ -272,26 +351,46 @@ function trimNullFilters(cellFaceting) {
     const facet = annotationFacets[i]
     const sourceFacet = originalFacets.find(f => f.annotation === facet)
     let facetHasNullFilter = false
+    const isGroupFacet = facet.includes('--group--')
     let nullFilterIndex
 
     const countsByFilter = filterCountsByFacet[facet]
     const nonzeroFilters = []
+    let defaultSelection = []
     const nonzeroFilterCounts = {}
     if (!countsByFilter) {
       continue
     }
 
-    Object.entries(countsByFilter).forEach(([filter, count], filterIndex) => {
-      if (count !== null) {
-        nonzeroFilters.push(filter)
-        nonzeroFilterCounts[filter] = countsByFilter[filter]
-      } else {
-        facetHasNullFilter = true
+    if (isGroupFacet) {
+      Object.entries(countsByFilter).forEach(([filter, count], filterIndex) => {
+        if (count !== null) {
+          nonzeroFilters.push(filter)
+          defaultSelection.push(filter)
+          nonzeroFilterCounts[filter] = countsByFilter[filter]
+        } else {
+          facetHasNullFilter = true
 
-        hasAnyNullFilters = true
-        nullFilterIndex = filterIndex
+          hasAnyNullFilters = true
+          nullFilterIndex = filterIndex
+        }
+      })
+    } else {
+      Object.values(countsByFilter).forEach(([value, count], _) => {
+        nonzeroFilters.push([value, count])
+        nonzeroFilterCounts[value] = count
+      })
+
+      if (nonzeroFilters.length > 1) {
+        const sortedNonzeroFilters = nonzeroFilters.sort((a, b) => a[0] - b[0])
+        const [minValue, maxValue, _] = getMinMaxValues(sortedNonzeroFilters)
+        const includeNa = true // Include any cells with "N/A" numeric values
+        defaultSelection = [[['between', [minValue, maxValue]]], includeNa]
+      } else {
+        // Omit numeric annotations that have 1 or 0 values
+        continue
       }
-    })
+    }
 
     if (facetHasNullFilter) {
       for (let j = 0; j < cellFaceting.filterableCells.length; j++) {
@@ -305,6 +404,7 @@ function trimNullFilters(cellFaceting) {
     nonzeroFilterCountsByFacet[facet] = nonzeroFilterCounts
     nonzeroFiltersByFacet[facet] = nonzeroFilters
     cellFaceting.facets[i].groups = nonzeroFilters
+    cellFaceting.facets[i].defaultSelection = defaultSelection
     if (typeof sourceFacet !== 'undefined') {
       cellFaceting.facets[i].originalGroups = sourceFacet.groups
     }
@@ -315,7 +415,6 @@ function trimNullFilters(cellFaceting) {
   cellFaceting.cellsByFacet = getCellsByFacet(filterableCells, annotationFacets)
   cellFaceting.filterableCells = filterableCells
   cellFaceting.filterCounts = nonzeroFilterCountsByFacet
-  cellFaceting.filtersByFacet = nonzeroFiltersByFacet
 
   return cellFaceting
 }
@@ -326,23 +425,39 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
 
   for (let i = 0; i < annotationFacets.length; i++) {
     const facet = annotationFacets[i]
-    if (!facet.includes('--group--') || !facets[i].groups) {continue}
     const facetCrossfilter = cellsByFacet[facet]
     // Set counts for each filter in facet
     const rawFilterCounts = facetCrossfilter.group().top(Infinity)
-    const countsByFilter = {}
+    let countsByFilter
 
-    facets[i].groups.forEach((group, j) => {
-      let count = null
-      // check for originalGroups array first, if present
-      const originalGroups = facets[i].originalGroups || facets[i].groups
-      const groupIdx = originalGroups.indexOf(group)
-      const rawFilterKeyAndValue = rawFilterCounts.find(rfc => rfc.key === groupIdx)
-      if (rawFilterKeyAndValue) {
-        count = rawFilterKeyAndValue.value
+    if (facet.includes('--group--')) {
+      countsByFilter = {}
+      facets[i].groups?.forEach((group, j) => {
+        let count = null
+        // check for originalGroups array first, if present
+        const originalGroups = facets[i].originalGroups || facets[i].groups
+        const groupIdx = originalGroups.indexOf(group)
+        const rawFilterKeyAndValue = rawFilterCounts.find(rfc => rfc.key === groupIdx)
+        if (rawFilterKeyAndValue) {
+          count = rawFilterKeyAndValue.value
+        }
+        countsByFilter[group] = count
+      })
+    } else {
+      countsByFilter = []
+      for (let j = 0; j < rawFilterCounts.length; j++) {
+        // For numeric facets, `rawFilterCounts` is an array of objects, where
+        // each object is a distinct numeric value observed in the facet;
+        // the `key` of this object is the numeric value, and the `value` is
+        // how many cells were observed with that numeric value.
+        const countObject = rawFilterCounts[j]
+        const filterValueAndCount = [countObject.key, countObject.value]
+        countsByFilter.push(filterValueAndCount)
       }
-      countsByFilter[group] = count
-    })
+
+      // Sort array by numeric value, to aid later histogram, etc.
+      countsByFilter = countsByFilter.sort((a, b) => a[0] - b[0])
+    }
     filterCounts[facet] = countsByFilter
   }
 
@@ -395,13 +510,8 @@ function initCrossfilter(facetData) {
 
   const filterCounts = getFilterCounts(annotationFacets, cellsByFacet, facets, null)
 
-  const filtersByFacet = {}
-  facets.forEach(facet => {
-    filtersByFacet[facet.annotation] = facet.groups
-  })
-
   return {
-    filterableCells, cellsByFacet, loadedFacets: facets, filtersByFacet,
+    filterableCells, cellsByFacet, loadedFacets: facets,
     filterCounts
   }
 }
@@ -494,7 +604,7 @@ export async function initCellFaceting(
         )
       })
 
-  const allRelevanceSortedFacets =
+  let allRelevanceSortedFacets =
     sortAnnotationsByRelevance(eligibleAnnots)
       .map(annot => {
         const facet = { annotation: annot.identifier, type: annot.type }
@@ -520,13 +630,13 @@ export async function initCellFaceting(
   //
   // await new Promise(resolve => setTimeout(resolve, 3000))
 
-  const rawFacets = mergeFacetsResponses(newRawFacets, prevCellFaceting)
-
+  const [rawFacets, nullFacets] = mergeFacetsResponses(newRawFacets, prevCellFaceting)
+  allRelevanceSortedFacets = allRelevanceSortedFacets.filter(f => !nullFacets.includes(f.annotation))
 
   const timeInitCrossfilterStart = Date.now()
   const {
     filterableCells, cellsByFacet,
-    loadedFacets, filtersByFacet, filterCounts
+    loadedFacets, filterCounts
   } = initCrossfilter(rawFacets)
   perfTimes.initCrossfilter = Date.now() - timeInitCrossfilterStart
 
@@ -544,7 +654,6 @@ export async function initCellFaceting(
     filterableCells,
     cellsByFacet,
     facets,
-    filtersByFacet,
     isFullyLoaded,
     rawFacets,
     filterCounts

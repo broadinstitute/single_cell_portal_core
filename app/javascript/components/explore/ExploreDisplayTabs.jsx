@@ -109,7 +109,7 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
           const initSelection = {}
           if (!cellFilteringSelection) {
             newCellFaceting.facets.filter(f => !f.isSelectedAnnotation).forEach(facet => {
-              initSelection[facet.annotation] = facet.groups
+              initSelection[facet.annotation] = facet.defaultSelection
             })
 
             setCellFilteringSelection(initSelection)
@@ -177,9 +177,7 @@ function getFacetsParam(initFacets, selection) {
 
   const initSelection = {}
   initFacets.filter(f => !f.isSelectedAnnotation).forEach(facet => {
-    if (facet.type === 'group') {
-      initSelection[facet.annotation] = facet.groups
-    }
+    initSelection[facet.annotation] = facet.defaultSelection
   })
 
   const innerParams = []
@@ -403,13 +401,12 @@ export default function ExploreDisplayTabs({
 
     const cellsByFacet = thisCellFaceting.cellsByFacet
     const initFacets = thisCellFaceting.facets
-    const filtersByFacet = thisCellFaceting.filtersByFacet
     const filterableCells = thisCellFaceting.filterableCells
     const rawFacets = thisCellFaceting.rawFacets.facets
 
     // Filter cells by selection (i.e., selected facets and filters)
     const [newFilteredCells, newFilterCounts] = filterCells(
-      selection, cellsByFacet, initFacets, filtersByFacet, filterableCells, rawFacets
+      selection, cellsByFacet, initFacets, filterableCells, rawFacets
     )
 
     // Update UI
@@ -425,7 +422,6 @@ export default function ExploreDisplayTabs({
 
   // Below line is worth keeping, but only uncomment to debug in development
   // window.SCP.updateFilteredCells = updateFilteredCells
-
 
   /** handler for when the user selects points in a plotly scatter graph */
   function plotPointsSelected(points) {

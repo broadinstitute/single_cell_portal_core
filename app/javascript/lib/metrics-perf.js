@@ -21,7 +21,7 @@ if (performance.setResourceTimingBufferSize) {
  * This helps assess if / why frontend development iteration is slow.
  */
 function logFrontendIteration(name, event) {
-  const logEvent = {'vite:type': event.type}
+  const logEvent = { 'vite:type': event.type }
   if ('updates' in event) {
     logEvent['vite:path'] = event.updates[0].path
   }
@@ -34,13 +34,13 @@ if (importMetaHot()) {
   const eventNames = [
     'vite:beforeUpdate',
     // 'vite:afterUpdate', // This and other disabled events might help later
-    'vite:beforeFullReload',
+    'vite:beforeFullReload'
     // 'vite:beforePrune',
     // 'vite:invalidate',
     // 'vite:error'
   ]
   eventNames.forEach(eventName => {
-    importMetaHot().on(eventName, (event) => {
+    importMetaHot().on(eventName, event => {
       logFrontendIteration(eventName, event)
     })
   })
@@ -85,7 +85,7 @@ function getHardwareStats() {
  * @param {number} [precision]
  * @return {number}
  */
-function round(val, precision = 0) {
+export function round(val, precision = 0) {
   // @ts-ignore
   return +(`${Math.round(`${val}e+${precision}`)}e-${precision}`)
 }
