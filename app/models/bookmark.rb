@@ -16,7 +16,7 @@ class Bookmark
   swagger_schema :Bookmark do
     key :required, %i[path name user_id]
     key :name, 'Bookmark'
-    property :id do
+    property :_id do
       key :type, :string
     end
     property :user_id do

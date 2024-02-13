@@ -1,4 +1,4 @@
-import { Popover, OverlayTrigger } from 'react-bootstrap'
+import { Tooltip, Popover, OverlayTrigger } from 'react-bootstrap'
 import BookmarksList from '~/components/bookmarks/BookmarksList'
 import { fetchBookmarks, createBookmark, updateBookmark, deleteBookmark } from '~/lib/scp-api'
 import React, { useEffect, useState } from 'react'
@@ -36,7 +36,7 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
 
   /** Find a matching bookmark using the current URL params, or return default empty bookmark  */
   function findExistingBookmark() {
-    const bookmark = allBookmarks.find(bookmark => { return bookmark.path === getBookmarkPath() })
+    const bookmark = allBookmarks.find(bookmark => bookmark.path === getBookmarkPath())
     if (bookmark) {
       setBookmarkSaved(true)
       return bookmark
@@ -56,7 +56,7 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
   /** Add a bookmark to the list of user bookmarks, or update ref of existing */
   function updateBookmarkList(bookmark) {
     setBookmarkSaved(true)
-    const existingIdx = allBookmarks.findIndex(bookmark => { return bookmark.path === getBookmarkPath() })
+    const existingIdx = allBookmarks.findIndex(bookmark => bookmark.path === getBookmarkPath())
     if (existingIdx >= 0) {
       setAllBookmarks(prevBookmarks => {
         prevBookmarks[existingIdx] = bookmark
@@ -71,9 +71,7 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
 
   /** remove a deleted bookmark from the list */
   function removeBookmarkFromList(bookmarkId) {
-    const remainingBookmarks = allBookmarks.filter(bookmark => {
-      return getBookmarkId(bookmark) !== bookmarkId
-    })
+    const remainingBookmarks = allBookmarks.filter(bookmark => getBookmarkId(bookmark) !== bookmarkId)
     setAllBookmarks(remainingBookmarks)
     setBookmarkSaved(false)
     setServerBookmarksLoaded(false)
@@ -204,9 +202,10 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
     }
   }
 
-  const loginPopover = <Popover data-analytics-name='login-bookmark-popover' id='login-bookmark-popover'>
-    You must sign in to bookmark this view
-  </Popover>
+  const loginNotice = <a href='/single_cell/users/auth/google_oauth2' data-method='post'
+                         className={`fa-lg action far fa-star`} data-analytics-name='bookmark-login-notice'
+                         id='bookmark-login-notice' data-toggle='tooltip' data-placement='left'
+                         data-original-title='Click to sign in, then bookmark this view' />
 
   const bookmarkForm = <Popover data-analytics-name='bookmark-form-popover' id='bookmark-form-popover'>
     <form id='bookmark-form' onSubmit={handleSaveBookmark}>
@@ -234,7 +233,7 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
           type="button"
           className="btn btn-primary"
           aria-label="Save"
-          data-analytics-name="bookmark-submit"
+          data-analytics-name="submit-bookmark"
           disabled={saveDisabled}
           onClick={handleSaveBookmark}
       >{saveText}</button>
@@ -243,7 +242,7 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
           type="button"
           className="btn btn-danger pull-right"
           aria-label="Delete"
-          data-analytics-name="bookmark-delete"
+          data-analytics-name="delete-bookmark"
           disabled={deleteDisabled}
           onClick={handleDeleteBookmark}
         >Remove</button>
@@ -263,7 +262,7 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
 
   const starClass = bookmarkSaved ? 'fas' : 'far'
 
-  return <div id='bookmark-container'>
+  return (<div id='bookmark-container'>
     <button className="action action-with-bg"
             onClick={clearExploreParams}
             title="Reset all view options"
@@ -274,13 +273,16 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
             data-toggle="tooltip"
             title="Copy a link to this visualization to the clipboard">
       <FontAwesomeIcon icon={faLink}/> Get link</button>
-    <OverlayTrigger trigger={['click']} placement="left" animation={false}
-                    overlay={isUserLoggedIn() ? bookmarkForm : loginPopover}>
+    { isUserLoggedIn() &&
+      <OverlayTrigger trigger={['click']} placement="left" animation={false}
+                      overlay={bookmarkForm}>
       <span className={`fa-lg action ${starClass} fa-star`}
             data-analytics-name='bookmark-manager'
             id='bookmark-manager'
             title='Bookmark this view'
       />
-    </OverlayTrigger>
-  </div>
+      </OverlayTrigger>
+    }
+    { !isUserLoggedIn() && loginNotice }
+  </div>)
 }

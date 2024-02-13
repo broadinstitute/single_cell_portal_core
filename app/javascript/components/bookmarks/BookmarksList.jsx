@@ -2,9 +2,10 @@ import React from 'react'
 import { Modal } from 'react-bootstrap'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { navigate } from '@reach/router'
+import { log } from '~/lib/metrics-api'
 
 export default function BookmarksList({serverBookmarks, serverBookmarksLoaded, showModal, toggleModal}) {
-  const ACCESSION_MATCHER = /SCP\d{1,4}/
+  const ACCESSION_MATCHER = /SCP\d+/
   // determine if the requested bookmark is in another study
   function isSameStudy(bookmark) {
     const currentStudy = window.location.pathname.match(ACCESSION_MATCHER)
@@ -19,6 +20,7 @@ export default function BookmarksList({serverBookmarks, serverBookmarksLoaded, s
     } else {
       window.location = bookmark.path
     }
+    log('load-bookmark')
   }
   return <Modal id='bookmarks-list-modal' data-testid='bookmarks-list-modal' className='modal fade' show={showModal}>
     <Modal.Header><h4>My Bookmarks</h4></Modal.Header>
@@ -31,6 +33,7 @@ export default function BookmarksList({serverBookmarks, serverBookmarksLoaded, s
         {serverBookmarksLoaded && serverBookmarks.length > 0 && serverBookmarks.map(bookmark => {
           return <div key={bookmark.id} className='bookmarks-list-item'>
             <span className='action'
+                  data-analytics-name='load-bookmark'
                   onClick={() => {loadBookmark(bookmark)}}
                   data-toggle='tooltip'
                   data-original-title={bookmark.path}

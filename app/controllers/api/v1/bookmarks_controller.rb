@@ -17,7 +17,7 @@ module Api
           key :description, 'Returns all Bookmarks for the given User'
           key :operationId, 'bookmarks_path'
           response 200 do
-            key :description, 'Array of Bookmarks objects'
+            key :description, 'Array of Bookmark objects'
             schema do
               key :type, :array
               key :title, 'Array'

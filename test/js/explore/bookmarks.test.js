@@ -29,17 +29,16 @@ describe('Bookmarks manager', () => {
     { pathname: "/single_cell/study/SCP1234", search: '' }
   ))
 
-  it('shows login popover', async () => {
+  it('shows login notice', async () => {
     jest.spyOn(UserProvider, 'isUserLoggedIn').mockReturnValue(false)
     const clearExploreParams = jest.fn()
 
     const { container } = render(
       <BookmarkManager bookmarks={[]} clearExploreParams={clearExploreParams} />
     )
-    const bookmarkManager = container.querySelector('#bookmark-manager')
-    expect(bookmarkManager).toBeInTheDocument()
-    fireEvent.click(bookmarkManager)
-    expect(await screen.getByText('You must sign in to bookmark this view')).toBeVisible()
+    const loginNotice = container.querySelector('#bookmark-login-notice')
+    expect(loginNotice).toBeInTheDocument()
+    expect(loginNotice.getAttribute('href')).toEqual('/single_cell/users/auth/google_oauth2')
   })
 
   it('shows bookmark form', async () => {
