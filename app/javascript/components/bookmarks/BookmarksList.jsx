@@ -13,6 +13,7 @@ export default function BookmarksList({serverBookmarks, serverBookmarksLoaded, s
   }
 
   function loadBookmark(bookmark) {
+    toggleModal()
     if (isSameStudy(bookmark)) {
       navigate(bookmark.path)
     } else {
