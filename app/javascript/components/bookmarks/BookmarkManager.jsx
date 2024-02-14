@@ -125,7 +125,7 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
   function formatErrorMessages(error) {
     if (error.errors) {
       return Object.keys(error.errors).map(key => {
-        return `${key} ${errors[key][0]}`
+        return `${key} ${error.errors[key][0]}`
       }).join(', ')
     } else {
       return error.message
