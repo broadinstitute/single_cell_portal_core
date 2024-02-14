@@ -63,7 +63,6 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
       setAllBookmarks(prevBookmarks => [...prevBookmarks, bookmark])
     }
     setServerBookmarksLoaded(false)
-    setCurrentBookmark(bookmark)
   }
 
   /** remove a deleted bookmark from the list */
@@ -93,20 +92,9 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
     }
   }
 
-  function formIsUpdating() {
-    return saveDisabled || (bookmarkSaved && deleteDisabled)
-  }
-
   /** whenever the user changes a cluster/annotation, reset the bookmark form with the current URL params */
   useEffect(() => {
-    if (formIsUpdating()) {
-      //
-      handleLoadBookmarks().then(() => {
-        resetForm()
-      })
-    } else {
-      resetForm()
-    }
+    resetForm()
     document.addEventListener("keydown", closeOnEscape, false)
     // remove listener on unmount
     return () => {
@@ -209,24 +197,19 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
     setShowBookmarksModal(!showBookmarksModal)
   }
 
-  /** handler to call API to set bookmarks */
-  async function handleLoadBookmarks() {
-    try {
-      const serverUserBookmarks = await fetchBookmarks()
-      setServerBookmarks(serverUserBookmarks)
-      setServerBookmarksLoaded(true)
-    } catch (error) {
-      setShowBookmarksModal(false)
-      setServerBookmarks([])
-      setServerBookmarksLoaded(false)
-    }
-  }
-
   /** load all user bookmarks from server and open/close modal */
   async function loadServerBookmarks() {
     toggleBookmarkModal()
     if (!serverBookmarksLoaded) {
-      await handleLoadBookmarks()
+      try {
+        const serverUserBookmarks = await fetchBookmarks()
+        setServerBookmarks(serverUserBookmarks)
+        setServerBookmarksLoaded(true)
+      } catch (error) {
+        setShowBookmarksModal(false)
+        setServerBookmarks([])
+        setServerBookmarksLoaded(false)
+      }
     }
   }
 
