@@ -972,7 +972,7 @@ export function getFullUrl(path, mock=false) {
  * @returns {array}
  */
 export async function fetchBookmarks(mock=false) {
-  const [response] = await scpApi(`/bookmarks`, defaultInit(), mock)
+  const [response] = await scpApi(`/bookmarks`, defaultInit(), mock, false)
   return response
 }
 /**
@@ -985,7 +985,7 @@ export async function createBookmark(bookmark, mock=false) {
   const init = defaultPostInit(mock)
   init.body = JSON.stringify({bookmark: bookmark})
 
-  const [response] = await scpApi('/bookmarks', init, mock)
+  const [response] = await scpApi('/bookmarks', init, mock, false)
   return response
 }
 
@@ -1001,7 +1001,7 @@ export async function updateBookmark(bookmarkId, updatedBookmark, mock=false) {
     method: 'PATCH',
     body: JSON.stringify({bookmark: updatedBookmark})
   })
-  const [response] = await scpApi(`/bookmarks/${bookmarkId}`, init, mock)
+  const [response] = await scpApi(`/bookmarks/${bookmarkId}`, init, mock, false)
   return response
 }
 

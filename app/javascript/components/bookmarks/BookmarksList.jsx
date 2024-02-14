@@ -4,18 +4,12 @@ import LoadingSpinner from '~/lib/LoadingSpinner'
 import { navigate } from '@reach/router'
 import { log } from '~/lib/metrics-api'
 
-export default function BookmarksList({serverBookmarks, serverBookmarksLoaded, showModal, toggleModal}) {
-  const ACCESSION_MATCHER = /SCP\d+/
-  // determine if the requested bookmark is in another study
-  function isSameStudy(bookmark) {
-    const currentStudy = window.location.pathname.match(ACCESSION_MATCHER)
-    const bookmarkStudy = bookmark.path.match(ACCESSION_MATCHER)
-    return currentStudy[0] === bookmarkStudy[0]
-  }
+export default function BookmarksList({serverBookmarks, serverBookmarksLoaded, studyAccession, showModal, toggleModal}) {
 
+  /** determine whether to reload study or not when selecting bookmark */
   function loadBookmark(bookmark) {
     toggleModal()
-    if (isSameStudy(bookmark)) {
+    if (bookmark.study_accession === studyAccession) {
       navigate(bookmark.path)
     } else {
       window.location = bookmark.path
@@ -31,13 +25,13 @@ export default function BookmarksList({serverBookmarks, serverBookmarksLoaded, s
           <p className='scp-help-text'>You do not have any saved bookmarks</p>
         }
         {serverBookmarksLoaded && serverBookmarks.length > 0 && serverBookmarks.map(bookmark => {
-          return <div key={bookmark.id} className='bookmarks-list-item'>
+          return <div key={bookmark._id} className='bookmarks-list-item'>
             <span className='action'
                   data-analytics-name='load-bookmark'
                   onClick={() => {loadBookmark(bookmark)}}
                   data-toggle='tooltip'
                   data-original-title={bookmark.path}
-            >{bookmark.name}</span><br/>
+            ><strong>{bookmark.name}</strong></span> <em>{bookmark.study_accession}</em><br/>
             {bookmark.description}
           </div>
         })}

@@ -495,6 +495,7 @@ export default function ExploreDisplayPanelManager({
             {exploreInfo?.bookmarks &&
               <BookmarkManager
                 bookmarks={exploreInfo.bookmarks}
+                studyAccession={studyAccession}
                 clearExploreParams={clearExploreParams}/>
             }
 

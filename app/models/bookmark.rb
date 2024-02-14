@@ -8,9 +8,11 @@ class Bookmark
   belongs_to :user
   field :name, type: String
   field :path, type: String
+  field :study_accession, type: String
   field :description, type: String
 
   validates :name, :path, presence: true, uniqueness: { scope: :user_id }
+  validates :study_accession, presence: true
   before_validation :sanitize_path, :set_name
 
   swagger_schema :Bookmark do
@@ -29,6 +31,10 @@ class Bookmark
     property :path do
       key :type, :string
       key :description, 'URL path of bookmark'
+    end
+    property :study_accession do
+      key :type, :string
+      key :description, 'Accession of associated study'
     end
     property :description do
       key :type, :string
@@ -60,6 +66,10 @@ class Bookmark
           property :path do
             key :type, :string
             key :description, 'URL Path of bookmark, including query string/hash'
+          end
+          property :study_accession do
+            key :type, :string
+            key :description, 'Accession of associated study'
           end
           property :description do
             key :type, :string

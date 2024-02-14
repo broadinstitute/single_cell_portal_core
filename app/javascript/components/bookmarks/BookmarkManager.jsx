@@ -1,7 +1,7 @@
-import { Tooltip, Popover, OverlayTrigger } from 'react-bootstrap'
+import { Popover, OverlayTrigger } from 'react-bootstrap'
 import BookmarksList from '~/components/bookmarks/BookmarksList'
 import { fetchBookmarks, createBookmark, updateBookmark, deleteBookmark } from '~/lib/scp-api'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import _cloneDeep from 'lodash/clone'
 import { isUserLoggedIn } from '~/providers/UserProvider'
 import { useLocation } from '@reach/router'
@@ -15,7 +15,7 @@ import useErrorMessage from '~/lib/error-message'
  * @param bookmarks {Array} existing user bookmark objects
  * @param clearExploreParams
  */
-export default function BookmarkManager({bookmarks, clearExploreParams}) {
+export default function BookmarkManager({bookmarks, studyAccession, clearExploreParams}) {
   const location = useLocation()
   const [allBookmarks, setAllBookmarks] = useState(bookmarks)
   const [saveText, setSaveText] = useState('Save')
@@ -26,6 +26,7 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
   const DEFAULT_BOOKMARK = {
     name: '',
     description: '',
+    study_accession: studyAccession,
     path: getBookmarkPath()
   }
 
@@ -48,11 +49,6 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
 
   const [currentBookmark, setCurrentBookmark] = useState(findExistingBookmark)
 
-  /** get bookmark ID from BSON object */
-  function getBookmarkId(bookmark) {
-    return bookmark?._id || bookmark?.id
-  }
-
   /** Add a bookmark to the list of user bookmarks, or update ref of existing */
   function updateBookmarkList(bookmark) {
     setBookmarkSaved(true)
@@ -71,7 +67,7 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
 
   /** remove a deleted bookmark from the list */
   function removeBookmarkFromList(bookmarkId) {
-    const remainingBookmarks = allBookmarks.filter(bookmark => getBookmarkId(bookmark) !== bookmarkId)
+    const remainingBookmarks = allBookmarks.filter(bookmark => bookmark._id !== bookmarkId)
     setAllBookmarks(remainingBookmarks)
     setBookmarkSaved(false)
     setServerBookmarksLoaded(false)
@@ -143,7 +139,7 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
     const saveProps = [currentBookmark]
     const saveFunc = bookmarkSaved ? updateBookmark : createBookmark
     if (bookmarkSaved) {
-      saveProps.unshift(getBookmarkId(currentBookmark))
+      saveProps.unshift(currentBookmark._id)
     }
     try {
       const bookmark = await saveFunc(...saveProps)
@@ -161,7 +157,7 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
   async function handleDeleteBookmark(e) {
     e.preventDefault()
     setDeleteDisabled(true)
-    const toDelete = getBookmarkId(currentBookmark)
+    const toDelete = currentBookmark._id
     if (!toDelete) {
       setDeleteDisabled(false)
       return false
@@ -207,11 +203,14 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
                          id='bookmark-login-notice' data-toggle='tooltip' data-placement='left'
                          data-original-title='Click to sign in, then bookmark this view' />
 
+  const formRef = useRef('bookmarkForm')
   const bookmarkForm = <Popover data-analytics-name='bookmark-form-popover' id='bookmark-form-popover'>
     <form id='bookmark-form' onSubmit={handleSaveBookmark}>
       { ErrorComponent }
       <div className="form-group">
-        <label htmlFor='bookmark-name'>Bookmark name</label>&nbsp;
+        <span className='fa fa-times action bookmark-form-close'
+              onClick={() => {formRef.current.handleHide()}}></span>
+        <label htmlFor='bookmark-name'>Bookmark name</label>
         <br/>
         <input className="form-control"
                type="text"
@@ -225,6 +224,17 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
         <textarea className="form-control"
                id='bookmark-description'
                value={currentBookmark.description}
+               onChange={handleFormUpdate}
+        />
+      </div>
+      <div className="form-group">
+        <label htmlFor='bookmark-study-accession'>Study</label>&nbsp;
+        <br/>
+        <input className="form-control"
+               type="text"
+               id='bookmark-study-accession'
+               readOnly
+               value={studyAccession}
                onChange={handleFormUpdate}
         />
       </div>
@@ -256,6 +266,7 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
     </span>
     <BookmarksList serverBookmarks={serverBookmarks}
                    serverBookmarksLoaded={serverBookmarksLoaded}
+                   studyAccession={studyAccession}
                    showModal={showBookmarksModal}
                    toggleModal={toggleBookmarkModal}/>
   </Popover>
@@ -275,7 +286,7 @@ export default function BookmarkManager({bookmarks, clearExploreParams}) {
       <FontAwesomeIcon icon={faLink}/> Get link</button>
     { isUserLoggedIn() &&
       <OverlayTrigger trigger={['click']} placement="left" animation={false}
-                      overlay={bookmarkForm}>
+                      overlay={bookmarkForm} ref={formRef}>
       <span className={`fa-lg action ${starClass} fa-star`}
             data-analytics-name='bookmark-manager'
             id='bookmark-manager'

@@ -12,6 +12,7 @@ class BookmarksControllerTest < ActionDispatch::IntegrationTest
                                test_array: @@studies_to_clean)
     @bookmark = FactoryBot.create(:bookmark,
                                   user: @user,
+                                  study_accession: @study.accession,
                                   name: 'My Favorite Study',
                                   path: "/study/#{@study.accession}")
   end
@@ -47,7 +48,8 @@ class BookmarksControllerTest < ActionDispatch::IntegrationTest
     bookmark_attributes = {
       bookmark: {
         path: '/single_cell/study/SCP1234',
-        name: 'My Saved View'
+        name: 'My Saved View',
+        study_accession: 'SCP1234'
       }
     }
     execute_http_request(:post, api_v1_bookmarks_path, request_payload: bookmark_attributes)
