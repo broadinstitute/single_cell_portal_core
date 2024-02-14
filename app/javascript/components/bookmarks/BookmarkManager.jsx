@@ -8,6 +8,7 @@ import { useLocation } from '@reach/router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faLink, faUndo } from '@fortawesome/free-solid-svg-icons'
 import useErrorMessage from '~/lib/error-message'
+import { log } from '~/lib/metrics-api'
 
 /**
  * Component to bookmark views in Explore tab, as well as existing link/reset buttons
@@ -125,7 +126,7 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
   function formatErrorMessages(error) {
     if (error.errors) {
       return Object.keys(error.errors).map(key => {
-        return `${key} ${errors[key][0]}`
+        return `${key} ${error.errors[key][0]}`
       }).join(', ')
     } else {
       return error.message
@@ -138,6 +139,7 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
     enableSaveButton(false)
     const saveProps = [currentBookmark]
     const saveFunc = bookmarkSaved ? updateBookmark : createBookmark
+    const logEvent = bookmarkSaved ? 'update-bookmark' : 'create-bookmark'
     if (bookmarkSaved) {
       saveProps.unshift(currentBookmark._id)
     }
@@ -147,6 +149,7 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
       setShowError(false)
       resetForm()
       updateBookmarkList(bookmark)
+      log(logEvent)
     } catch (error) {
       enableSaveButton(true)
       handleErrorContent(error)
@@ -167,6 +170,7 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
         setDeleteDisabled(false)
         setShowError(false)
         removeBookmarkFromList(toDelete)
+        log('delete-bookmark')
       } catch (error) {
         setDeleteDisabled(false)
         handleErrorContent(error)
