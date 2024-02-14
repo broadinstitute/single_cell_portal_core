@@ -1,5 +1,7 @@
 import React from 'react'
 import { render, fireEvent, screen, waitFor } from '@testing-library/react'
+
+import * as UserProvider from '~/providers/UserProvider'
 import { CellFilteringPanel } from '~/components/explore/CellFilteringPanel'
 import {
   annotationList, cellFaceting, cellFilteringSelection, cellFilterCounts
@@ -131,21 +133,6 @@ describe('"Cell filtering" panel', () => {
     const updateClusterParams = jest.fn()
     const updateFilteredCells = jest.fn()
 
-    cellFaceting.facets =
-      cellFaceting.facets
-        .map(facet => {
-          facet.isLoaded = true
-
-          // Mimic result of null filter trimming
-          facet.groups = facet.groups.filter(group => {
-            return group !== 'animal cell'
-          })
-          facet.unsortedGroups = facet.unsortedGroups.filter(group => {
-            return group !== 'animal cell'
-          })
-          return facet
-        })
-
     const { container } = render(
       <CellFilteringPanel
         annotationList={annotationList}
@@ -172,5 +159,44 @@ describe('"Cell filtering" panel', () => {
 
     expect(firstFilterAfterSort).toHaveTextContent('B cell')
     expect(firstFilterAfterSort).toHaveTextContent('52')
+  })
+
+  it('renders numeric filters', async () => {
+    jest
+      .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
+      .mockReturnValue({
+        show_numeric_cell_filtering: true
+      })
+
+    const cluster = 'All Cells UMAP'
+    const shownAnnotation = {
+      'name': 'General_Celltype',
+      'type': 'group',
+      'scope': 'study',
+      'isDisabled': false
+    }
+
+    // Mock functions
+    const updateClusterParams = jest.fn()
+    const updateFilteredCells = jest.fn()
+
+    const { container } = render(
+      <CellFilteringPanel
+        annotationList={annotationList}
+        cluster={cluster}
+        shownAnnotation={shownAnnotation}
+        updateClusterParams={updateClusterParams}
+        cellFaceting={cellFaceting}
+        cellFilteringSelection={cellFilteringSelection}
+        cellFilterCounts={cellFilterCounts}
+        updateFilteredCells={updateFilteredCells}
+      />
+    )
+
+    // screen.debug(container, 300000) // Print cell filtering panel HTML
+
+    const lastFacet = Array.from(container.querySelectorAll('.cell-facet')).slice(-1)[0]
+    const lastFacetName = lastFacet.querySelector('.cell-facet-name')
+    expect(lastFacetName).toHaveTextContent('BMI pre pregnancy')
   })
 })

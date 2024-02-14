@@ -42,7 +42,7 @@ module Api
 
       # HTTP 406 - invalid response content type requested
       def self.not_acceptable
-        '"Accept" header must contain "application/json", "text/plain", or "*/*"'
+        '"Accept" header must contain "application/json", "text/plain", or "\*/\*"'
       end
 
       # HTTP 410 - Resource gone (this only happens when a Study workspace has been deleted)

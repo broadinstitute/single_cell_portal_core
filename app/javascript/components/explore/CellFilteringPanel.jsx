@@ -6,11 +6,12 @@ import {
   faSortAlphaDown, faSortAmountDown
 } from '@fortawesome/free-solid-svg-icons'
 
+import { NumericCellFacet } from '~/components/explore/NumericCellFacet'
 import Select from '~/lib/InstrumentedSelect'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
 import { log } from '~/lib/metrics-api'
-
+import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
 const tooltipAttrs = {
   'data-toggle': 'tooltip',
@@ -121,7 +122,7 @@ function FacetTools({
         <LoadingSpinner height='14px'/>
       </span>
       }
-      {isLoaded && !isRoot && !isCollapsed &&
+      {isLoaded && !isRoot && !isCollapsed && facet.type === 'group' &&
       <SortFiltersIcon
         facet={facet}
         sortKey={sortKey}
@@ -143,13 +144,18 @@ function FacetTools({
 }
 
 /** Determine if user has deselected any filters */
-function getHasNondefaultSelection(checkedMap, facets) {
+function getHasNondefaultSelection(selectionMap, facets) {
   let numTotalFilters = 0
-  facets.forEach(facet => numTotalFilters += facet.groups?.length)
+  facets
+    .filter(f => f.type === 'group')
+    .forEach(facet => numTotalFilters += facet.groups?.length)
   let numCheckedFilters = 0
-  Object.entries(checkedMap).forEach(([_, filters]) => {
-    numCheckedFilters += filters?.length
-  })
+
+  Object.entries(selectionMap)
+    .filter(([f, _]) => f.includes('--group--'))
+    .forEach(([_, filters]) => {
+      numCheckedFilters += filters?.length
+    })
 
   const hasNondefaultSelection = numTotalFilters !== numCheckedFilters
 
@@ -198,8 +204,8 @@ function CollapseToggleChevron({ isCollapsed, whatToToggle }) {
 }
 
 /** determine if the filter is checked or not */
-function isChecked(annotation, item, checkedMap) {
-  return checkedMap[annotation]?.includes(item)
+function isChecked(annotation, item, selectionMap) {
+  return selectionMap[annotation]?.includes(item)
 }
 
 /** Tiny bar chart showing proportions of passed vs. filtered cells */
@@ -270,9 +276,9 @@ function getQuantitiesTooltip(baselineCount, passedCount, hasNondefaultSelection
   return quantitiesTooltip
 }
 
-/** Cell filter component */
-function CellFilter({
-  facet, filter, isChecked, checkedMap, handleCheck,
+/** Cell filter component for categorical group annotation dimension */
+function GroupCellFilter({
+  facet, filter, isChecked, selectionMap, handleCheck,
   hasNondefaultSelection
 }) {
   let facetLabelStyle = {}
@@ -293,7 +299,7 @@ function CellFilter({
       <div style={{ marginLeft: '2px', lineHeight: '14px', ...facetLabelStyle }}>
         <input
           type="checkbox"
-          checked={isChecked(facet.annotation, filter, checkedMap)}
+          checked={isChecked(facet.annotation, filter, selectionMap)}
           value={filter}
           data-analytics-name={`${facet.annotation}:${filter}`}
           name={`${facet.annotation}:${filter}`}
@@ -326,10 +332,14 @@ function CellFilter({
 /** Facet name and collapsible list of filter checkboxes */
 function CellFacet({
   facet,
-  checkedMap, handleCheck, handleCheckAllFiltersInFacet, updateFilteredCells,
+  selectionMap, handleCheck, handleNumericChange,
+  handleCheckAllFiltersInFacet, updateFilteredCells,
   isAllListsCollapsed, hasNondefaultSelection
 }) {
-  if (Object.keys(facet).length === 0) {
+  if (
+    Object.keys(facet).length === 0 ||
+    !('groups' in facet)
+  ) {
     // Only create the list if the facet exists
     return <></>
   }
@@ -345,32 +355,40 @@ function CellFacet({
   const [sortKey, setSortKey] = useState('count')
 
   const unsortedFilters = facet.unsortedGroups ?? []
-  let filters
+  let filters = facet.groups
 
-  //  Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
-  if (sortKey === 'label') {
-    filters = unsortedFilters.sort((a, b) => {
-      return a.localeCompare(b, 'en', { numeric: true, ignorePunctuation: true })
-    })
-  } else {
-    // Sort categorical filters (i.e., groups)
-    const filterCounts = facet.originalFilterCounts
-    const sortedGroups = unsortedFilters.sort((a, b) => {
-      if (filterCounts[a] && filterCounts[b]) {
-        return filterCounts[b] - filterCounts[a]
-      }
-    })
-    filters = sortedGroups
+  if (facet.type === 'numeric' && filters.length < 2) {
+    // If facet is numeric, only show if there are multiple values
+    return <></>
   }
 
-  // Handle truncating filter lists to account for any full or partial collapse
   let shownFilters = filters
-  const numFiltersPartlyCollapsed = 5
-  if (isPartlyCollapsed) {
-    shownFilters = filters.slice(0, numFiltersPartlyCollapsed)
-  }
-  if (isFullyCollapsed) {
-    shownFilters = []
+  let numFiltersPartlyCollapsed = null
+  if (facet.type === 'group') {
+    //  Naturally sort groups (see https://en.wikipedia.org/wiki/Natural_sort_order)
+    if (sortKey === 'label') {
+      filters = unsortedFilters.sort((a, b) => {
+        return a.localeCompare(b, 'en', { numeric: true, ignorePunctuation: true })
+      })
+    } else {
+      // Sort categorical filters (i.e., groups)
+      const filterCounts = facet.originalFilterCounts
+      const sortedGroups = unsortedFilters.sort((a, b) => {
+        if (filterCounts[a] && filterCounts[b]) {
+          return filterCounts[b] - filterCounts[a]
+        }
+      })
+      filters = sortedGroups
+    }
+
+    // Handle truncating filter lists to account for any full or partial collapse
+    numFiltersPartlyCollapsed = 5
+    if (isPartlyCollapsed) {
+      shownFilters = filters.slice(0, numFiltersPartlyCollapsed)
+    }
+    if (isFullyCollapsed) {
+      shownFilters = []
+    }
   }
 
   useEffect(() => {
@@ -385,6 +403,11 @@ function CellFacet({
     }
   }
 
+  const flags = getFeatureFlagsWithDefaults()
+  if (facet.type === 'numeric' && !flags?.show_numeric_cell_filtering) {
+    return <></>
+  }
+
   return (
     <div
       className="cell-facet"
@@ -393,20 +416,20 @@ function CellFacet({
     >
       <FacetHeader
         facet={facet}
-        checkedMap={checkedMap}
+        selectionMap={selectionMap}
         handleCheckAllFiltersInFacet={handleCheckAllFiltersInFacet}
         isFullyCollapsed={isFullyCollapsed}
         setIsFullyCollapsed={setIsFullyCollapsed}
         sortKey={sortKey}
         setSortKey={setSortKey}
       />
-      {shownFilters.map((filter, i) => {
+      {facet.type === 'group' && shownFilters.map((filter, i) => {
         return (
-          <CellFilter
+          <GroupCellFilter
             facet={facet}
             filter={filter}
             isChecked={isChecked}
-            checkedMap={checkedMap}
+            selectionMap={selectionMap}
             handleCheck={handleCheck}
             updateFilteredCells={updateFilteredCells}
             hasNondefaultSelection={hasNondefaultSelection}
@@ -415,7 +438,19 @@ function CellFacet({
         )
       })
       }
-      {!isFullyCollapsed && filters.length > numFiltersPartlyCollapsed &&
+      {facet.type === 'numeric' &&
+          <NumericCellFacet
+            facet={facet}
+            filters={shownFilters}
+            isChecked={isChecked}
+            selectionMap={selectionMap}
+            handleNumericChange={handleNumericChange}
+            updateFilteredCells={updateFilteredCells}
+            hasNondefaultSelection={hasNondefaultSelection}
+            key={facet}
+          />
+      }
+      {facet.type === 'group' && !isFullyCollapsed && filters.length > numFiltersPartlyCollapsed &&
         <a
           className="facet-toggle"
           style={{ 'fontSize': '13px', 'marginLeft': '18px' }}
@@ -439,7 +474,7 @@ function includesSortIconClass(domClasses) {
 
 /** Get stylized name of facet, optional tooltip, collapse controls */
 function FacetHeader({
-  facet, checkedMap, handleCheckAllFiltersInFacet, isFullyCollapsed, setIsFullyCollapsed,
+  facet, selectionMap, handleCheckAllFiltersInFacet, isFullyCollapsed, setIsFullyCollapsed,
   sortKey, setSortKey
 }) {
   const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
@@ -472,7 +507,7 @@ function FacetHeader({
   // which is a common state in hierarchical checkboxes to indicate that
   // some lower checkboxes are checked, and some are not.
   const allFiltersInFacet = facet.groups
-  const allCheckedFiltersInFacet = checkedMap[facet.annotation]
+  const allCheckedFiltersInFacet = selectionMap[facet.annotation]
   const isFacetCheckboxSelected = allFiltersInFacet?.length === allCheckedFiltersInFacet?.length
   const isIndeterminate = !(
     allCheckedFiltersInFacet?.length === 0 ||
@@ -481,6 +516,7 @@ function FacetHeader({
 
   return (
     <>
+      {facet.type === 'group' &&
       <input
         type="checkbox"
         className="cell-facet-header-checkbox"
@@ -496,8 +532,9 @@ function FacetHeader({
           }
         }}
       />
+      }
       <span
-        className={`cell-facet-header ${toggleClass}`}
+        className={`cell-facet-header cell-facet-header-${facet.type} ${toggleClass}`}
         onClick={event => {
           const domClasses = Array.from(event.target.classList)
           const parentDomClasses = Array.from(event.target.parentNode.classList)
@@ -559,7 +596,7 @@ export function CellFilteringPanel({
 
   const facets = cellFaceting.facets
     .filter(
-      facet => facet.isSelectedAnnotation === false && facet.annotation.includes('--group--')
+      facet => facet.isSelectedAnnotation === false
     )
     .map(facet => {
       // Add counts of matching cells for each filter to its containing facet object
@@ -568,37 +605,41 @@ export function CellFilteringPanel({
       // Sort categorical filters (i.e., groups)
       const initCounts = cellFaceting.filterCounts[facet.annotation]
       if (initCounts) {
-        if (!facet.unsortedGroups) {facet.unsortedGroups = facet.groups}
         if (!facet.originalFilterCounts) {facet.originalFilterCounts = initCounts}
-        const sortedGroups = facet.groups.sort((a, b) => {
-          if (initCounts[a] && initCounts[b]) {
-            return initCounts[b] - initCounts[a]
-          }
-        })
-        facet.groups = sortedGroups
+
+        if (facet.type === 'group') {
+          if (!facet.unsortedGroups) {facet.unsortedGroups = facet.groups}
+          const sortedGroups = facet.groups.sort((a, b) => {
+            if (initCounts[a] && initCounts[b]) {
+              return initCounts[b] - initCounts[a]
+            }
+          })
+          facet.groups = sortedGroups
+        }
       }
       return facet
     })
 
-  const defaultCheckedMap = {}
+  const defaultSelectionMap = {}
   Object.entries(cellFilteringSelection).forEach(([key, value]) => {
-    if (key.includes('--group--')) {
-      defaultCheckedMap[key] = value
-    }
+    defaultSelectionMap[key] = value
   })
 
-  const [checkedMap, setCheckedMap] = useState(defaultCheckedMap)
+  const [selectionMap, setSelectionMap] = useState(defaultSelectionMap)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
-  const shownFacets = facets.filter(facet => facet.groups?.length > 1)
+  const shownFacets = facets.filter(facet => facet.type === 'numeric' || facet.groups?.length > 1)
+
   const [isAllListsCollapsed, setIsAllListsCollapsed] = useState(false)
 
   // Needed to propagate facets from URL to initial checkbox states
   useEffect(() => {
-    setCheckedMap(defaultCheckedMap)
-  }, [Object.values(defaultCheckedMap).join(',')])
+    setSelectionMap(defaultSelectionMap)
+  }, [Object.values(defaultSelectionMap).join(',')])
 
   /** Top header for the "Filter" section, including all-facet controls */
-  function FilterSectionHeader({ hasNondefaultSelection, handleResetFilters, isAllListsCollapsed, setIsAllListsCollapsed }) {
+  function FilterSectionHeader({
+    hasNondefaultSelection, handleResetFilters, isAllListsCollapsed, setIsAllListsCollapsed
+  }) {
     return (
       <div
         className="filter-section-header"
@@ -641,9 +682,9 @@ export function CellFilteringPanel({
     const isCheck = event.target.checked
     const allFiltersInFacet = facets.find(f => f.annotation === facetName).groups
     const updatedList = isCheck ? allFiltersInFacet : []
-    checkedMap[facetName] = updatedList
-    setCheckedMap(checkedMap)
-    updateFilteredCells(checkedMap)
+    selectionMap[facetName] = updatedList
+    setSelectionMap(selectionMap)
+    updateFilteredCells(selectionMap)
   }
 
   /** Reset all filters to initial, selected state */
@@ -653,7 +694,7 @@ export function CellFilteringPanel({
       initSelection[facet.annotation] = facet.groups
     })
 
-    setCheckedMap(initSelection)
+    setSelectionMap(initSelection)
     updateFilteredCells(initSelection)
   }
 
@@ -662,7 +703,7 @@ export function CellFilteringPanel({
     // grab the name of the facet from the check event
     const facetName = event.target.name.split(':')[0]
 
-    let updatedList = checkedMap[facetName] ? [...checkedMap[facetName]] : []
+    let updatedList = selectionMap[facetName] ? [...selectionMap[facetName]] : []
 
     // if the event was a check then add the checked filter to the list
     if (event.target.checked) {
@@ -673,12 +714,21 @@ export function CellFilteringPanel({
         return item !== event.target.value
       })
     }
-    // update the checkedMap state with the filter in it's updated condition
-    checkedMap[facetName] = updatedList
-    setCheckedMap(checkedMap)
+    // update the selectionMap state with the filter in it's updated condition
+    selectionMap[facetName] = updatedList
+    setSelectionMap(selectionMap)
 
     // update the filtered cells based on the checked condition of the filters
-    updateFilteredCells(checkedMap)
+    updateFilteredCells(selectionMap)
+  }
+
+  /** Propagate change in a numeric cell filter */
+  function handleNumericChange(facetName, newValues) {
+    selectionMap[facetName] = newValues
+    setSelectionMap(selectionMap)
+
+    // update the filtered cells based on the checked condition of the filters
+    updateFilteredCells(selectionMap)
   }
 
   const currentlyInUseAnnotations = { colorBy: '', facets: [] }
@@ -692,7 +742,7 @@ export function CellFilteringPanel({
   // Apply custom delay to tooltips added after initial pageload
   if (window.$) {window.$('[data-toggle="tooltip"]').tooltip()}
 
-  const hasNondefaultSelection = getHasNondefaultSelection(checkedMap, facets)
+  const hasNondefaultSelection = getHasNondefaultSelection(selectionMap, facets)
 
   return (
     <>
@@ -719,7 +769,7 @@ export function CellFilteringPanel({
             }}
             styles={clusterSelectStyle}/>
         </label>
-        { Object.keys(checkedMap).length !== 0 &&
+        { Object.keys(selectionMap).length !== 0 &&
         <>
           <div className="filter-section" style={{ marginTop: '10px', marginLeft: '-10px' }}>
             <FilterSectionHeader
@@ -733,8 +783,9 @@ export function CellFilteringPanel({
                 return (
                   <CellFacet
                     facet={facet}
-                    checkedMap={checkedMap}
+                    selectionMap={selectionMap}
                     handleCheck={handleCheck}
+                    handleNumericChange={handleNumericChange}
                     handleCheckAllFiltersInFacet={handleCheckAllFiltersInFacet}
                     updateFilteredCells={updateFilteredCells}
                     isAllListsCollapsed={isAllListsCollapsed}

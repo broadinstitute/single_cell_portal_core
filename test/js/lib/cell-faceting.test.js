@@ -36,7 +36,6 @@ describe('Cell faceting', () => {
 
     const cellsByFacet = cellFaceting.cellsByFacet
     const facets = cellFaceting.facets
-    const filtersByFacet = cellFaceting.filtersByFacet
     const filterableCells = cellFaceting.filterableCells
 
     const expectedFilterableCells99 = {
@@ -44,10 +43,7 @@ describe('Cell faceting', () => {
       'facetIndex': [1, 1, 0, 0, 0]
     }
 
-    const expectedInfantSickYN = ['no']
-
     expect(filterableCells[99]).toMatchObject(expectedFilterableCells99)
-    expect(filtersByFacet['infant_sick_YN--group--study']).toEqual(expectedInfantSickYN)
 
     // Test actual cell faceting
     const selections = {
@@ -55,19 +51,19 @@ describe('Cell faceting', () => {
       'General_Celltype--group--study': ['LC1', 'LC2']
     }
     const newFilteredCells = filterCells(
-      selections, cellsByFacet, facets, filtersByFacet, filterableCells, facets
+      selections, cellsByFacet, facets, filterableCells, facets
     )[0]
     expect(newFilteredCells).toHaveLength(33)
   })
 
   it('filters cells by numeric filters', async () => {
-    expect(applyNumericFilters(2, [['equals', 2]])).toStrictEqual(true)
-    expect(applyNumericFilters(2, [['equals', 1.3]])).toStrictEqual(false)
-    expect(applyNumericFilters(20, [['greater than or equal to', 6]])).toStrictEqual(true)
-    expect(applyNumericFilters(20, [['between', [5, 42]]])).toStrictEqual(true)
-    expect(applyNumericFilters(2, [['between', [0, 2]]])).toStrictEqual(true) // test inclusiveness
-    expect(applyNumericFilters(2, [['between', [0, 2.1]]], 2)).toStrictEqual(true) // test inclusiveness
-    expect(applyNumericFilters(10, [['between', [0, 2]], ['between', [8, 20]]])).toStrictEqual(true)
-    expect(applyNumericFilters(5, [['between', [0, 2]], ['between', [8, 20]]])).toStrictEqual(false)
+    expect(applyNumericFilters(2, [[['equals', 2]], true])).toStrictEqual(true)
+    expect(applyNumericFilters(2, [[['equals', 1.3]], true])).toStrictEqual(false)
+    expect(applyNumericFilters(20, [[['greater than or equal to', 6]], true])).toStrictEqual(true)
+    expect(applyNumericFilters(20, [[['between', [5, 42]]], true])).toStrictEqual(true)
+    expect(applyNumericFilters(2, [[['between', [0, 2]]], true])).toStrictEqual(true) // test inclusiveness
+    expect(applyNumericFilters(2, [[['between', [0, 2.1]]], true], 2)).toStrictEqual(true) // test inclusiveness
+    expect(applyNumericFilters(10, [[['between', [0, 2]], ['between', [8, 20]]], true])).toStrictEqual(true)
+    expect(applyNumericFilters(5, [[['between', [0, 2]], ['between', [8, 20]]], true])).toStrictEqual(false)
   })
 })

@@ -57,22 +57,29 @@ class ExternalResource
   end
 
   swagger_schema :ExternalResourceInput do
-    key :required, [:url, :title]
-    property :url do
-      key :type, :string
-      key :description, 'URL of external resource'
-    end
-    property :title do
-      key :type, :string
-      key :description, 'Title of external resource (used as button text)'
-    end
-    property :description do
-      key :type, :string
-      key :description, 'Text description of external resource (used as tooltip)'
-    end
-    property :publication_url do
-      key :type, :boolean
-      key :description, 'Boolean indication whether this external resource link is to a publication'
+    allOf do
+      schema do
+        property :external_resource do
+          key :type, :object
+          key :required, [:url, :title]
+          property :url do
+            key :type, :string
+            key :description, 'URL of external resource'
+          end
+          property :title do
+            key :type, :string
+            key :description, 'Title of external resource (used as button text)'
+          end
+          property :description do
+            key :type, :string
+            key :description, 'Text description of external resource (used as tooltip)'
+          end
+          property :publication_url do
+            key :type, :boolean
+            key :description, 'Boolean indication whether this external resource link is to a publication'
+          end
+        end
+      end
     end
   end
 end

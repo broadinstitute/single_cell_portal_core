@@ -966,6 +966,60 @@ export function getFullUrl(path, mock=false) {
 }
 
 /**
+ * Fetch all bookmarks for a user
+ *
+ * @param mock
+ * @returns {array}
+ */
+export async function fetchBookmarks(mock=false) {
+  const [response] = await scpApi(`/bookmarks`, defaultInit(), mock, false)
+  return response
+}
+/**
+ * create and return a Bookmark for a user
+ *
+ * @param bookmark {Object} Bookmark object, containing name, path, notes
+ * @param mock
+ */
+export async function createBookmark(bookmark, mock=false) {
+  const init = defaultPostInit(mock)
+  init.body = JSON.stringify({bookmark: bookmark})
+
+  const [response] = await scpApi('/bookmarks', init, mock, false)
+  return response
+}
+
+/**
+ * update and return a Bookmark for a user
+ *
+ * @param bookmarkId {String} id of Bookmark to update
+ * @param updatedBookmark {Object} Bookmark object, containing name, path, description
+ * @param mock
+ */
+export async function updateBookmark(bookmarkId, updatedBookmark, mock=false) {
+  const init = Object.assign({}, defaultInit(), {
+    method: 'PATCH',
+    body: JSON.stringify({bookmark: updatedBookmark})
+  })
+  const [response] = await scpApi(`/bookmarks/${bookmarkId}`, init, mock, false)
+  return response
+}
+
+/**
+ * delete a Bookmark for a user
+ *
+ * @param bookmarkId {String} id of Bookmark to delete
+ * @param mock
+ */
+export async function deleteBookmark(bookmarkId, mock=false) {
+  const init = Object.assign({}, defaultInit(), {
+    method: 'DELETE',
+  })
+  const [response] = await scpApi(`/bookmarks/${bookmarkId}`, init, mock)
+  return response
+}
+
+/**
  * Client for SCP REST API.  Less fetch boilerplate, easier mocks.
  *
  * @param {String} path Relative path for API endpoint, e.g. /search/auth_code
@@ -1061,7 +1115,7 @@ export default async function scpApi(
         }
       )
       throw new Error(`Authentication error: ${response.status}`)
-    } else if (Array.isArray(json.errors)) {
+    } else if (Array.isArray(json.errors) || (json.errors instanceof Object)) {
       throw new ApiError(json, response.status, path)
     } else {
       throw new Error(json.error || json.errors)
@@ -1075,7 +1129,12 @@ export default async function scpApi(
 class ApiError extends Error {
   /** get a new instance based on an already-parsed-to-json http response */
   constructor(jsonResponse, httpStatus, path) {
-    const rawString = jsonResponse.errors.map(err => err.detail).join('.\n')
+    let rawString
+    if (Array.isArray(jsonResponse.errors)) {
+      rawString = jsonResponse.errors.map(err => err.detail).join('.\n')
+    } else {
+      rawString = Object.keys(jsonResponse.errors).map(key => {`${key} ${jsonResponse.errors[key][0]}`}).join('.\n')
+    }
     const message = `API error calling ${path} (${httpStatus}): ${rawString}`
     super(message)
     this.errors = jsonResponse.errors

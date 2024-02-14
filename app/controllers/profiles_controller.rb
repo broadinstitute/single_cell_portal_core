@@ -13,7 +13,6 @@ class ProfilesController < ApplicationController
     authenticate_user!
     check_profile_access
   end
-
   before_action :check_firecloud_registration, only: :update_firecloud_profile
 
   def show
@@ -97,9 +96,7 @@ class ProfilesController < ApplicationController
     end
   end
 
-  def accept_tos
-
-  end
+  def accept_tos; end
 
   def record_tos_action
     user_accepted = tos_params[:action] == 'accept'
