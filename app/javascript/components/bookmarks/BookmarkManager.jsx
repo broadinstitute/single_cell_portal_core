@@ -86,9 +86,32 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
     setCurrentBookmark(findExistingBookmark())
   }
 
+  /** close form/modal on escape key press */
+  function closeOnEscape(event) {
+    if (event.keyCode === 27) {
+      formRef.current.handleHide()
+    }
+  }
+
+  function formIsUpdating() {
+    return saveDisabled || (bookmarkSaved && deleteDisabled)
+  }
+
   /** whenever the user changes a cluster/annotation, reset the bookmark form with the current URL params */
   useEffect(() => {
-    resetForm()
+    if (formIsUpdating()) {
+      //
+      handleLoadBookmarks().then(() => {
+        resetForm()
+      })
+    } else {
+      resetForm()
+    }
+    document.addEventListener("keydown", closeOnEscape, false)
+    // remove listener on unmount
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape, false)
+    }
   }, [location.pathname, location.search])
 
   /** convenience handler for performing formState updates */
@@ -186,19 +209,24 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
     setShowBookmarksModal(!showBookmarksModal)
   }
 
-  /** load all user bookmarks from server */
+  /** handler to call API to set bookmarks */
+  async function handleLoadBookmarks() {
+    try {
+      const serverUserBookmarks = await fetchBookmarks()
+      setServerBookmarks(serverUserBookmarks)
+      setServerBookmarksLoaded(true)
+    } catch (error) {
+      setShowBookmarksModal(false)
+      setServerBookmarks([])
+      setServerBookmarksLoaded(false)
+    }
+  }
+
+  /** load all user bookmarks from server and open/close modal */
   async function loadServerBookmarks() {
     toggleBookmarkModal()
     if (!serverBookmarksLoaded) {
-      try {
-        const serverUserBookmarks = await fetchBookmarks()
-        setServerBookmarks(serverUserBookmarks)
-        setServerBookmarksLoaded(true)
-      } catch (error) {
-        setShowBookmarksModal(false)
-        setServerBookmarks([])
-        setServerBookmarksLoaded(false)
-      }
+      await handleLoadBookmarks()
     }
   }
 
