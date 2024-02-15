@@ -5,16 +5,16 @@ import { round } from '~/lib/metrics-perf'
 import { getMinMaxValues } from '~/lib/cell-faceting.js'
 
 /** Initialize D3 brush component, for draggable selections */
-function initBrush(svgRef, width, height) {
-  console.log('in initBrush, svgRef', svgRef)
+function initBrush(sliderId, width, height) {
+  // console.log('in initBrush, svgRef', svgRef)
 
   /** Handler for the end of a brush event from D3 */
   function brushEnded(event) {
-    const s = event.selection
+    const selection = event.selection
     // Consume the brush action
-    if (s) {
-      d3.select('.brush').call(brush.move, null)
-    }
+    // if (selection) {
+    //   d3.select('.brush').call(brush.move, null)
+    // }
   }
 
   /** Create a brush for selecting regions to zoom on */
@@ -28,7 +28,7 @@ function initBrush(svgRef, width, height) {
       .on('end', brushEnded)
 
   // Zoom brush
-  d3.select(svgRef.current).append('g').attr('class', 'brush').call(brush)
+  d3.select(`#${sliderId}`).append('g').attr('class', 'brush').call(brush)
 
   console.log('exit initBrush')
 }
@@ -92,9 +92,7 @@ function getHistogramBars(filters) {
 }
 
 /** SVG histogram showing distribution of numeric annotation values */
-function Histogram({ filters }) {
-  const svgRef = useRef(null)
-
+function Histogram({ facet, filters }) {
   const maxHeight = 20
 
   const [bars, maxValue, maxCount, minValue] = getHistogramBars(filters)
@@ -118,10 +116,12 @@ function Histogram({ filters }) {
   const svgHeight = maxHeight + 2
   const svgWidth = lastBar.x + lastBar.width
 
+  const sliderId = `numeric-filter-histogram-slider___${facet.annotation}`
+
 
   useEffect(() => {
     console.log('in Histogram useEffect')
-    initBrush(svgRef, svgWidth, svgHeight)
+    initBrush(sliderId, svgWidth, svgHeight)
   },
   [filters.join(',')]
   )
@@ -133,7 +133,6 @@ function Histogram({ filters }) {
         width={svgWidth}
         style={{ borderBottom: '1px solid #AAA  ' }}
         className="numeric-filter-histogram"
-        ref={svgRef}
       >
         {barRectAttrs.map((attrs, i) => {
           return (
@@ -177,6 +176,13 @@ function Histogram({ filters }) {
           )
         })}
       </div>
+      <svg
+        height={svgHeight}
+        width={svgWidth}
+        style={{ position: 'absolute', top: 0, left: 0 }}
+        className="numeric-filter-histogram-slider"
+        id={sliderId}
+      ></svg>
     </>
   )
 }
@@ -293,6 +299,7 @@ function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet
     }
   }
 
+
   /** Propagate change in "N/A" checkbox locally and upstream */
   function updateIncludeNa() {
     setIncludeNa(!includeNa)
@@ -347,7 +354,7 @@ export function NumericCellFacet({
 }) {
   return (
     <div style={{ marginLeft: 20, position: 'relative' }}>
-      <Histogram filters={filters} />
+      <Histogram facet={facet} filters={filters} />
       <NumericQueryBuilder
         selectionMap={selectionMap}
         filters={filters}

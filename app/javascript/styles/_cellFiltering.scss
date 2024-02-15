@@ -236,8 +236,8 @@ input.cell-facet-header-checkbox {
 }
 
 .cell-facet .brush .selection {
-  fill: #F00;
-  stroke: #F00;
-  fill-opacity: .3;
+  fill-opacity: 0.1;
+  fill: $action-color;
+  stroke: $action-color;
   shape-rendering: crispEdges;
 }
