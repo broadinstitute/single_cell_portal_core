@@ -33,6 +33,10 @@ function initBrush(sliderId, width, height) {
   console.log('exit initBrush')
 }
 
+function moveBrush(sliderId, value1, value2) {
+  d3.select(`#${sliderId} .brush`).call(brush.move, null)
+}
+
 /** Get histogram to show with numeric filter */
 function getHistogramBars(filters) {
   const [minValue, maxValue, hasNull] = getMinMaxValues(filters)
@@ -257,7 +261,65 @@ function updateNumericFilter(operator, inputValue, inputValue2, includeNa, facet
 }
 
 /** Enables manual input of numbers, by which cells get filtered */
-function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet }) {
+function NumericQueryBuilder({
+  facet, operator, inputValue, inputValue2, includeNa, inputBorder, inputBorder2, hasNull,
+  setOperator, updateInputValue, updateIncludeNa
+}) {
+  return (
+    <div>
+      <OperatorMenu
+        operator={operator}
+        setOperator={setOperator}
+      />
+      <NumericQueryInput
+        value={inputValue}
+        border={inputBorder}
+        updateInputValue={updateInputValue}
+        facet={facet}
+        filterName="value"
+      />
+      {['between', 'not between'].includes(operator) &&
+      <span>
+        <span style={{ marginLeft: '4px' }}>and</span>
+        <NumericQueryInput
+          value={inputValue2}
+          border={inputBorder2}
+          updateInputValue={updateInputValue}
+          facet={facet}
+          filterName="value2"
+        />
+      </span>
+      }
+      {hasNull &&
+      <div>
+        <label style={{ fontWeight: 'normal' }}>
+          <input
+            type="checkbox"
+            className="na-filter"
+            checked={includeNa}
+            onChange={updateIncludeNa}
+            style={{ marginRight: '5px' }}
+          />N/A</label>
+      </div>
+      }
+    </div>
+  )
+}
+
+/** Cell filter component for continuous numeric annotation dimension */
+export function NumericCellFacet({
+  facet, filters, isChecked, selectionMap, handleNumericChange,
+  hasNondefaultSelection
+}) {
+  // const brush =
+  //   d3
+  //     .brushX()
+  //     .extent([
+  //       [0, 0],
+  //       [width, height]
+  //     ])
+  //     .on('end', brushEnded)
+
   // E.g. [['between', [20, 40]], true]
   // or more generally: [[<operator>, [<inputValue>, <inputValue2>]], <includeNa>]
   const facetSelection = selectionMap[facet.annotation]
@@ -307,59 +369,20 @@ function NumericQueryBuilder({ selectionMap, filters, handleNumericChange, facet
   }
 
   return (
-    <div>
-      <OperatorMenu
-        operator={operator}
-        setOperator={setOperator}
-      />
-      <NumericQueryInput
-        value={inputValue}
-        border={inputBorder}
-        updateInputValue={updateInputValue}
-        facet={facet}
-        filterName="value"
-      />
-      {['between', 'not between'].includes(operator) &&
-      <span>
-        <span style={{ marginLeft: '4px' }}>and</span>
-        <NumericQueryInput
-          value={inputValue2}
-          border={inputBorder2}
-          updateInputValue={updateInputValue}
-          facet={facet}
-          filterName="value2"
-        />
-      </span>
-      }
-      {hasNull &&
-      <div>
-        <label style={{ fontWeight: 'normal' }}>
-          <input
-            type="checkbox"
-            className="na-filter"
-            checked={includeNa}
-            onChange={updateIncludeNa}
-            style={{ marginRight: '5px' }}
-          />N/A</label>
-      </div>
-      }
-    </div>
-  )
-}
-
-/** Cell filter component for continuous numeric annotation dimension */
-export function NumericCellFacet({
-  facet, filters, isChecked, selectionMap, handleNumericChange,
-  hasNondefaultSelection
-}) {
-  return (
     <div style={{ marginLeft: 20, position: 'relative' }}>
       <Histogram facet={facet} filters={filters} />
       <NumericQueryBuilder
-        selectionMap={selectionMap}
-        filters={filters}
-        handleNumericChange={handleNumericChange}
         facet={facet}
+        operator={operator}
+        inputValue={inputValue}
+        inputValue2={inputValue2}
+        includeNa={includeNa}
+        inputBorder={inputBorder}
+        inputBorder2={inputBorder2}
+        hasNull={hasNull}
+        setOperator={setOperator}
+        updateInputValue={updateInputValue}
+        updateIncludeNa={updateIncludeNa}
       />
     </div>
   )
