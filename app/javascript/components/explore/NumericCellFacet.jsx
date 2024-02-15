@@ -4,6 +4,8 @@ import * as d3 from 'd3'
 import { round } from '~/lib/metrics-perf'
 import { getMinMaxValues } from '~/lib/cell-faceting.js'
 
+const HISTOGRAM_BAR_MAX_HEIGHT = 20
+
 /** Initialize D3 brush component, for draggable selections */
 function initBrush(sliderId, width, height) {
   // console.log('in initBrush, svgRef', svgRef)
@@ -37,6 +39,26 @@ function moveBrush(sliderId, value1, value2) {
   d3.select(`#${sliderId} .brush`).call(brush.move, null)
 }
 
+/** Get display attributes for histogram bars */
+function getHistogramBarDisplayAttrs(bars, maxCount) {
+  const barRectAttrs = []
+  const maxHeight = HISTOGRAM_BAR_MAX_HEIGHT
+  bars.forEach((bar, i) => {
+    const height = maxHeight * (bar.count / maxCount)
+    const width = 11
+    const attrs = {
+      x: (width + 1) * i,
+      y: maxHeight - height + 1,
+      width,
+      height,
+      color: (bar.isNull) ? '#888' : '#3D5A87',
+      bar
+    }
+    barRectAttrs.push(attrs)
+  })
+  return barRectAttrs
+}
+
 /** Get histogram to show with numeric filter */
 function getHistogramBars(filters) {
   const [minValue, maxValue, hasNull] = getMinMaxValues(filters)
@@ -44,7 +66,7 @@ function getHistogramBars(filters) {
   const numBins = 15
   const numBinsNullTrimmed = hasNull ? numBins - 1 : numBins
   const binSize = (maxValue - minValue) / numBinsNullTrimmed
-  const bars = []
+  let bars = []
 
   for (let i = 0; i < numBins; i++) {
     const isNull = hasNull && i === 0
@@ -92,36 +114,18 @@ function getHistogramBars(filters) {
     if (count > maxCount) {maxCount = count}
   }
 
-  return [bars, maxValue, maxCount]
+  bars = getHistogramBarDisplayAttrs(bars, maxCount)
+
+  return bars
 }
 
 /** SVG histogram showing distribution of numeric annotation values */
-function Histogram({ facet, filters }) {
-  const maxHeight = 20
-
-  const [bars, maxValue, maxCount, minValue] = getHistogramBars(filters)
-
-  const barRectAttrs = []
-  bars.forEach((bar, i) => {
-    const height = maxHeight * (bar.count / maxCount)
-    const width = 11
-    const attrs = {
-      x: (width + 1) * i,
-      y: maxHeight - height + 1,
-      width,
-      height,
-      color: (bar.isNull) ? '#888' : '#3D5A87',
-      bar
-    }
-    barRectAttrs.push(attrs)
-  })
-
-  const lastBar = barRectAttrs.slice(-1)[0]
-  const svgHeight = maxHeight + 2
+function Histogram({ facet, filters, bars }) {
+  const lastBar = bars.slice(-1)[0]
+  const svgHeight = HISTOGRAM_BAR_MAX_HEIGHT + 2
   const svgWidth = lastBar.x + lastBar.width
 
   const sliderId = `numeric-filter-histogram-slider___${facet.annotation}`
-
 
   useEffect(() => {
     console.log('in Histogram useEffect')
@@ -138,7 +142,7 @@ function Histogram({ facet, filters }) {
         style={{ borderBottom: '1px solid #AAA  ' }}
         className="numeric-filter-histogram"
       >
-        {barRectAttrs.map((attrs, i) => {
+        {bars.map((attrs, i) => {
           return (
             <rect
               fill={attrs.color}
@@ -152,7 +156,7 @@ function Histogram({ facet, filters }) {
         })}
       </svg>
       <div style={{ position: 'absolute', top: 0 }} key={2}>
-        {barRectAttrs.map((attrs, i) => {
+        {bars.map((attrs, i) => {
           const bar = attrs.bar
           let criteria
           if (bar.start === null) {
@@ -169,7 +173,7 @@ function Histogram({ facet, filters }) {
               style={{
                 display: 'inline-block',
                 width: attrs.width + 1,
-                height: maxHeight
+                height: HISTOGRAM_BAR_MAX_HEIGHT
               }}
               data-toggle="tooltip"
               data-html={true}
@@ -333,6 +337,8 @@ export function NumericCellFacet({
 
   const [min, max, hasNull] = getMinMaxValues(filters)
 
+  const bars = getHistogramBars(filters)
+
   // Whether to include cells with "not available" (N/A, `null`) numeric value
   const [includeNa, setIncludeNa] = useState(facetSelection[1]) // e.g. true
 
@@ -361,7 +367,6 @@ export function NumericCellFacet({
     }
   }
 
-
   /** Propagate change in "N/A" checkbox locally and upstream */
   function updateIncludeNa() {
     setIncludeNa(!includeNa)
@@ -370,7 +375,11 @@ export function NumericCellFacet({
 
   return (
     <div style={{ marginLeft: 20, position: 'relative' }}>
-      <Histogram facet={facet} filters={filters} />
+      <Histogram
+        facet={facet}
+        filters={filters}
+        bars={bars}
+      />
       <NumericQueryBuilder
         facet={facet}
         operator={operator}
