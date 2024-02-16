@@ -282,6 +282,31 @@ function NumericQueryBuilder({
   )
 }
 
+/** Get D3 scale to convert between numeric annotation values and pixels */
+function getXScale(bars, svgWidth, hasNull) {
+  const valueDomain = [1]
+  const pxRange = [1]
+  const barStartIndex = hasNull ? 1 : 0
+  for (let i = barStartIndex; i < bars.length; i++) {
+    const bar = bars[i]
+    valueDomain.push(bar.start)
+    pxRange.push(bar.x)
+  }
+  const lastBar = bars.slice(-1)[0]
+  valueDomain.push(lastBar.end)
+  pxRange.push(svgWidth)
+  const xScale = d3.scaleLinear().domain(valueDomain).range(pxRange)
+  return xScale
+}
+
+/** Get width and height for SVG elements for histogram (and slider overlay) */
+function getHistogramSvgDimensions(bars) {
+  const lastBar = bars.slice(-1)[0]
+  const svgWidth = lastBar.x + lastBar.width
+  const svgHeight = HISTOGRAM_BAR_MAX_HEIGHT + 2
+  return [svgWidth, svgHeight]
+}
+
 /** Cell filter component for continuous numeric annotation dimension */
 export function NumericCellFacet({
   facet, filters, isChecked, selectionMap, handleNumericChange,
@@ -351,21 +376,8 @@ export function NumericCellFacet({
     updateNumericFilter(operator, newValue1, newValue2, includeNa, facet, handleNumericChange)
   }
 
-  const lastBar = bars.slice(-1)[0]
-  const svgHeight = HISTOGRAM_BAR_MAX_HEIGHT + 2
-  const svgWidth = lastBar.x + lastBar.width
-  const valueDomain = [1]
-  const pxRange = [1]
-  const barStartIndex = hasNull ? 1 : 0
-  for (let i = barStartIndex; i < bars.length; i++) {
-    const bar = bars[i]
-    valueDomain.push(bar.start)
-    pxRange.push(bar.x)
-  }
-  const xScale = d3.scaleLinear().domain(valueDomain).range(pxRange)
-  // console.log('valueDomain', valueDomain)
-  // console.log('pxRange', pxRange)
-  // console.log('xScale', xScale)
+  const [svgWidth, svgHeight] = getHistogramSvgDimensions(bars)
+  const xScale = getXScale(bars, svgWidth, hasNull)
 
   const brush =
     d3
@@ -377,6 +389,8 @@ export function NumericCellFacet({
       .on('end', handleBrushEnd)
 
   const sliderId = `numeric-filter-histogram-slider___${facet.annotation}`
+
+  console.log('re-rendering NumericCellFacet')
 
   return (
     <div style={{ marginLeft: 20, position: 'relative' }}>
