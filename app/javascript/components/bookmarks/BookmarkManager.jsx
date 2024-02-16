@@ -8,6 +8,7 @@ import { useLocation } from '@reach/router'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faLink, faUndo } from '@fortawesome/free-solid-svg-icons'
 import useErrorMessage from '~/lib/error-message'
+import useResizeEffect from '~/hooks/useResizeEffect'
 import { log } from '~/lib/metrics-api'
 
 /**
@@ -141,6 +142,10 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
       closeBookmarkForm()
     }
   },[hash])
+
+  useResizeEffect(() => {
+    reopenBookmarkForm()
+  }, 50)
 
   /** convenience handler for performing formState updates */
   function handleFormUpdate(event) {
