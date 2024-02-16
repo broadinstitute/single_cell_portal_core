@@ -31,6 +31,8 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
     path: getBookmarkPath()
   }
 
+  const formRef = useRef('bookmarkForm')
+
   /** copies the url to the clipboard */
   function copyLink() {
     navigator.clipboard.writeText(location.href)
@@ -86,9 +88,16 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
     setCurrentBookmark(findExistingBookmark())
   }
 
+  /** close open form if changing tabs */
+  function closeBookmarkForm() {
+    if (isUserLoggedIn() && formRef.current?.state?.show) {
+      formRef.current.handleHide()
+    }
+  }
+
   /** wrapper to close both bookmark form & modal */
   function closeAllComponents() {
-    formRef.current.handleHide()
+    closeBookmarkForm()
     setShowBookmarksModal(false)
   }
 
@@ -129,7 +138,7 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
   /** close form if use changes to different top-level tab */
   useEffect(() => {
     if (hash !== '#study-visualize') {
-      formRef.current.handleHide()
+      closeBookmarkForm()
     }
   },[hash])
 
@@ -249,9 +258,8 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
   const loginNotice = <a href='/single_cell/users/auth/google_oauth2' data-method='post'
                          className={`fa-lg action far fa-star`} data-analytics-name='bookmark-login-notice'
                          id='bookmark-login-notice' data-toggle='tooltip' data-placement='left'
-                         data-original-title='Click to sign in, then bookmark this view' />
+                         data-original-title='Click to sign in, then bookmark this view'/>
 
-  const formRef = useRef('bookmarkForm')
   const bookmarkForm = <Popover data-analytics-name='bookmark-form-popover' id='bookmark-form-popover'>
     <form id='bookmark-form' onSubmit={handleSaveBookmark}>
       { ErrorComponent }

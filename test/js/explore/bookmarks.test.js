@@ -65,7 +65,7 @@ describe('Bookmarks manager', () => {
     )
     const bookmarkManager = container.querySelector('#bookmark-manager')
     fireEvent.click(bookmarkManager)
-    const allBookarks = await screen.getByText('See bookmarks')
+    const allBookarks = await screen.getByText('All bookmarks')
     fireEvent.click(allBookarks)
     const modal = await screen.getByTestId('bookmarks-list-modal')
     expect(modal).toBeVisible()
