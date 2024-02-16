@@ -63,6 +63,7 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
       setAllBookmarks(prevBookmarks => [...prevBookmarks, bookmark])
     }
     setServerBookmarksLoaded(false)
+    setCurrentBookmark(bookmark)
   }
 
   /** remove a deleted bookmark from the list */
@@ -85,22 +86,52 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
     setCurrentBookmark(findExistingBookmark())
   }
 
+  /** wrapper to close both bookmark form & modal */
+  function closeAllComponents() {
+    formRef.current.handleHide()
+    setShowBookmarksModal(false)
+  }
+
   /** close form/modal on escape key press */
   function closeOnEscape(event) {
     if (event.keyCode === 27) {
-      formRef.current.handleHide()
+      closeAllComponents()
     }
   }
 
-  /** whenever the user changes a cluster/annotation, reset the bookmark form with the current URL params */
+  /** close and reopen bookmark form to fix positioning issues */
+  function reopenBookmarkForm() {
+    formRef.current.handleToggle()
+    formRef.current.handleToggle()
+  }
+
+  /* keep track of opened top-level tab */
+  const [hash, setHash] = useState(window.location.hash)
+  function handleSetHash() {
+    setHash(window.location.hash)
+  }
+
+  /** whenever the user changes a cluster/annotation, reset the bookmark form with the current URL params
+   *  also add listeners for keydown & click to handle closing form on certain events
+   */
   useEffect(() => {
     resetForm()
     document.addEventListener("keydown", closeOnEscape, false)
-    // remove listener on unmount
+    // use a click listener as hashchange does not reliably fire
+    window.addEventListener("click", handleSetHash, false)
+    // remove listeners on unmount
     return () => {
       document.removeEventListener("keydown", closeOnEscape, false)
+      window.removeEventListener("click", handleSetHash, false)
     }
   }, [location.pathname, location.search])
+
+  /** close form if use changes to different top-level tab */
+  useEffect(() => {
+    if (hash !== '#study-visualize') {
+      formRef.current.handleHide()
+    }
+  },[hash])
 
   /** convenience handler for performing formState updates */
   function handleFormUpdate(event) {
@@ -131,6 +162,7 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
     const errorMessage = formatErrorMessages(error)
     setError(errorMessage)
     setShowError(true)
+    reopenBookmarkForm()
   }
 
   /** format errors object into comma-delimited message */
@@ -158,8 +190,8 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
       const bookmark = await saveFunc(...saveProps)
       enableSaveButton(true)
       setShowError(false)
-      resetForm()
       updateBookmarkList(bookmark)
+      resetForm()
       log(logEvent)
     } catch (error) {
       enableSaveButton(true)
@@ -193,6 +225,7 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
   const [serverBookmarksLoaded, setServerBookmarksLoaded] = useState(false)
   const [showBookmarksModal, setShowBookmarksModal] = useState(false)
 
+  /** toggle bookmarks modal open/close */
   const toggleBookmarkModal = () => {
     setShowBookmarksModal(!showBookmarksModal)
   }
@@ -224,7 +257,7 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
       { ErrorComponent }
       <div className="form-group">
         <span className='fa fa-times action bookmark-form-close'
-              onClick={() => {formRef.current.handleHide()}}></span>
+              onClick={closeAllComponents}></span>
         <label htmlFor='bookmark-name'>Bookmark name</label>
         <br/>
         <input className="form-control"
@@ -277,13 +310,14 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
     <span data-analytics-name='manage-bookmarks'
           data-testid='manage-bookmarks'
           className='action' onClick={loadServerBookmarks}>
-      See bookmarks
+      All bookmarks
     </span>
     <BookmarksList serverBookmarks={serverBookmarks}
                    serverBookmarksLoaded={serverBookmarksLoaded}
                    studyAccession={studyAccession}
                    showModal={showBookmarksModal}
-                   toggleModal={toggleBookmarkModal}/>
+                   toggleModal={toggleBookmarkModal}
+                   closeAllComponents={closeAllComponents}/>
   </Popover>
 
   const starClass = bookmarkSaved ? 'fas' : 'far'
