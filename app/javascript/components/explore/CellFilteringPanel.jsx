@@ -5,6 +5,7 @@ import {
   faArrowLeft, faChevronDown, faChevronRight, faUndo,
   faSortAlphaDown, faSortAmountDown
 } from '@fortawesome/free-solid-svg-icons'
+import _isEqual from 'lodash/isEqual'
 
 import { NumericCellFacet } from '~/components/explore/NumericCellFacet'
 import Select from '~/lib/InstrumentedSelect'
@@ -473,6 +474,14 @@ function includesSortIconClass(domClasses) {
   )
 }
 
+/** Determine if this numeric facet has a non-default selection */
+function getNumericHasNondefaultSelection(facet, selectionMap) {
+  const defaultSelection = facet.defaultSelection
+  const selection = selectionMap[facet.annotation]
+  const numericHasNondefaultSelection = !_isEqual(selection, defaultSelection)
+  return numericHasNondefaultSelection
+}
+
 /** Get stylized name of facet, optional tooltip, collapse controls */
 function FacetHeader({
   facet, selectionMap, handleCheckAllFiltersInFacet, handleResetFacet,
@@ -516,6 +525,11 @@ function FacetHeader({
     isFacetCheckboxSelected
   )
 
+  let numericHasNondefaultSelection = null
+  if (facet.type === 'numeric') {
+    numericHasNondefaultSelection = getNumericHasNondefaultSelection(facet, selectionMap)
+  }
+
   return (
     <>
       {facet.type === 'group' &&
@@ -541,6 +555,7 @@ function FacetHeader({
           className="reset-facet"
           data-toggle="tooltip"
           data-original-title="Reset selection"
+          style={{ 'visibility': numericHasNondefaultSelection ? 'visible' : 'hidden' }}
         >
           <FontAwesomeIcon icon={faUndo}/>
         </a>
