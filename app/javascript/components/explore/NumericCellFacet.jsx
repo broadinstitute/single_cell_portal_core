@@ -7,32 +7,10 @@ import { getMinMaxValues } from '~/lib/cell-faceting.js'
 const HISTOGRAM_BAR_MAX_HEIGHT = 20
 
 /** Initialize D3 brush component, for draggable selections */
-function initBrush(sliderId, width, height) {
-  // console.log('in initBrush, svgRef', svgRef)
-
-  /** Handler for the end of a brush event from D3 */
-  function brushEnded(event) {
-    const selection = event.selection
-    // Consume the brush action
-    // if (selection) {
-    //   d3.select('.brush').call(brush.move, null)
-    // }
-  }
-
-  /** Create a brush for selecting regions to zoom on */
-  const brush =
-    d3
-      .brushX()
-      .extent([
-        [0, 0],
-        [width, height]
-      ])
-      .on('end', brushEnded)
-
-  // Zoom brush
+function initBrush(brush, sliderId) {
+  const brushDom = document.querySelector(`#${sliderId} .brush`)
+  if (brushDom) {brushDom.remove()}
   d3.select(`#${sliderId}`).append('g').attr('class', 'brush').call(brush)
-
-  console.log('exit initBrush')
 }
 
 function moveBrush(sliderId, value1, value2) {
@@ -46,14 +24,13 @@ function getHistogramBarDisplayAttrs(bars, maxCount) {
   bars.forEach((bar, i) => {
     const height = maxHeight * (bar.count / maxCount)
     const width = 11
-    const attrs = {
+    const attrs = Object.assign({
       x: (width + 1) * i,
       y: maxHeight - height + 1,
       width,
       height,
-      color: (bar.isNull) ? '#888' : '#3D5A87',
-      bar
-    }
+      color: (bar.isNull) ? '#888' : '#3D5A87'
+    }, bar)
     barRectAttrs.push(attrs)
   })
   return barRectAttrs
@@ -120,16 +97,12 @@ function getHistogramBars(filters) {
 }
 
 /** SVG histogram showing distribution of numeric annotation values */
-function Histogram({ facet, filters, bars }) {
-  const lastBar = bars.slice(-1)[0]
-  const svgHeight = HISTOGRAM_BAR_MAX_HEIGHT + 2
-  const svgWidth = lastBar.x + lastBar.width
-
+function Histogram({ facet, filters, bars, brush, svgWidth, svgHeight }) {
   const sliderId = `numeric-filter-histogram-slider___${facet.annotation}`
 
   useEffect(() => {
     console.log('in Histogram useEffect')
-    initBrush(sliderId, svgWidth, svgHeight)
+    initBrush(brush, sliderId)
   },
   [filters.join(',')]
   )
@@ -142,22 +115,21 @@ function Histogram({ facet, filters, bars }) {
         style={{ borderBottom: '1px solid #AAA  ' }}
         className="numeric-filter-histogram"
       >
-        {bars.map((attrs, i) => {
+        {bars.map((bar, i) => {
           return (
             <rect
-              fill={attrs.color}
-              x={attrs.x}
-              y={attrs.y}
-              width={attrs.width}
-              height={attrs.height}
+              fill={bar.color}
+              x={bar.x}
+              y={bar.y}
+              width={bar.width}
+              height={bar.height}
               key={i}
             />
           )
         })}
       </svg>
       <div style={{ position: 'absolute', top: 0 }} key={2}>
-        {bars.map((attrs, i) => {
-          const bar = attrs.bar
+        {bars.map((bar, i) => {
           let criteria
           if (bar.start === null) {
             criteria = 'N/A'
@@ -172,7 +144,7 @@ function Histogram({ facet, filters, bars }) {
             <span
               style={{
                 display: 'inline-block',
-                width: attrs.width + 1,
+                width: bar.width + 1,
                 height: HISTOGRAM_BAR_MAX_HEIGHT
               }}
               data-toggle="tooltip"
@@ -315,15 +287,6 @@ export function NumericCellFacet({
   facet, filters, isChecked, selectionMap, handleNumericChange,
   hasNondefaultSelection
 }) {
-  // const brush =
-  //   d3
-  //     .brushX()
-  //     .extent([
-  //       [0, 0],
-  //       [width, height]
-  //     ])
-  //     .on('end', brushEnded)
-
   // E.g. [['between', [20, 40]], true]
   // or more generally: [[<operator>, [<inputValue>, <inputValue2>]], <includeNa>]
   const facetSelection = selectionMap[facet.annotation]
@@ -373,12 +336,53 @@ export function NumericCellFacet({
     updateNumericFilter(operator, inputValue, inputValue2, !includeNa, facet, handleNumericChange)
   }
 
+  /** Handler for the end of a brush event from D3 */
+  function handleBrushEnd(event) {
+    const selection = event.selection
+    console.log('selection', selection)
+    const extent = selection.map(xScale.invert)
+    console.log('extent', extent)
+    const newValue1 = round(extent[0], 2)
+    const newValue2 = round(extent[1], 2)
+    if (newValue1 !== inputValue) {setInputValue(newValue1)}
+    if (newValue2 !== inputValue2) {setInputValue2(newValue2)}
+    updateNumericFilter(operator, newValue1, newValue2, includeNa, facet, handleNumericChange)
+  }
+
+  const lastBar = bars.slice(-1)[0]
+  const svgHeight = HISTOGRAM_BAR_MAX_HEIGHT + 2
+  const svgWidth = lastBar.x + lastBar.width
+  const valueDomain = [1]
+  const pxRange = [1]
+  const barStartIndex = hasNull ? 1 : 0
+  for (let i = barStartIndex; i < bars.length; i++) {
+    const bar = bars[i]
+    valueDomain.push(bar.start)
+    pxRange.push(bar.x)
+  }
+  const xScale = d3.scaleLinear().domain(valueDomain).range(pxRange)
+  console.log('valueDomain', valueDomain)
+  console.log('pxRange', pxRange)
+  console.log('xScale', xScale)
+
+  const brush =
+    d3
+      .brushX()
+      .extent([
+        [0, 0],
+        [svgWidth, svgHeight]
+      ])
+      .on('end', handleBrushEnd)
+
   return (
     <div style={{ marginLeft: 20, position: 'relative' }}>
       <Histogram
         facet={facet}
         filters={filters}
         bars={bars}
+        brush={brush}
+        svgWidth={svgWidth}
+        svgHeight={svgHeight}
       />
       <NumericQueryBuilder
         facet={facet}
