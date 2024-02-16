@@ -333,7 +333,7 @@ function GroupCellFilter({
 function CellFacet({
   facet,
   selectionMap, handleCheck, handleNumericChange,
-  handleCheckAllFiltersInFacet, updateFilteredCells,
+  handleCheckAllFiltersInFacet, handleResetFacet, updateFilteredCells,
   isAllListsCollapsed, hasNondefaultSelection
 }) {
   if (
@@ -418,6 +418,7 @@ function CellFacet({
         facet={facet}
         selectionMap={selectionMap}
         handleCheckAllFiltersInFacet={handleCheckAllFiltersInFacet}
+        handleResetFacet={handleResetFacet}
         isFullyCollapsed={isFullyCollapsed}
         setIsFullyCollapsed={setIsFullyCollapsed}
         sortKey={sortKey}
@@ -474,7 +475,8 @@ function includesSortIconClass(domClasses) {
 
 /** Get stylized name of facet, optional tooltip, collapse controls */
 function FacetHeader({
-  facet, selectionMap, handleCheckAllFiltersInFacet, isFullyCollapsed, setIsFullyCollapsed,
+  facet, selectionMap, handleCheckAllFiltersInFacet, handleResetFacet,
+  isFullyCollapsed, setIsFullyCollapsed,
   sortKey, setSortKey
 }) {
   const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
@@ -532,6 +534,16 @@ function FacetHeader({
           }
         }}
       />
+      }
+      {facet.type === 'numeric' &&
+        <a
+          onClick={() => handleResetFacet()}
+          className="reset-facet"
+          data-toggle="tooltip"
+          data-original-title="Reset selection"
+        >
+          <FontAwesomeIcon icon={faUndo}/>
+        </a>
       }
       <span
         className={`cell-facet-header cell-facet-header-${facet.type} ${toggleClass}`}
@@ -687,6 +699,12 @@ export function CellFilteringPanel({
     updateFilteredCells(selectionMap)
   }
 
+  function handleResetFacet(event) {
+    const facetName = event.target.name.split(':')[0].replace('facet-', '')
+    // selectionMap[facetName]
+    console.log('in handleResetFacet, facetName, facets', facetName, facets)
+  }
+
   /** Reset all filters to initial, selected state */
   function handleResetFilters() {
     const initSelection = {}
@@ -787,6 +805,7 @@ export function CellFilteringPanel({
                     handleCheck={handleCheck}
                     handleNumericChange={handleNumericChange}
                     handleCheckAllFiltersInFacet={handleCheckAllFiltersInFacet}
+                    handleResetFacet={handleResetFacet}
                     updateFilteredCells={updateFilteredCells}
                     isAllListsCollapsed={isAllListsCollapsed}
                     hasNondefaultSelection={hasNondefaultSelection}
