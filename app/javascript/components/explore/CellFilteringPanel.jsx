@@ -525,7 +525,7 @@ function FacetHeader({
     isFacetCheckboxSelected
   )
 
-  let numericHasNondefaultSelection = null
+  let numericHasNondefaultSelection
   if (facet.type === 'numeric') {
     numericHasNondefaultSelection = getNumericHasNondefaultSelection(facet, selectionMap)
   }
@@ -551,7 +551,9 @@ function FacetHeader({
       }
       {facet.type === 'numeric' &&
         <a
-          onClick={() => handleResetFacet()}
+          onClick={() => {
+            handleResetFacet(facet.annotation)
+          }}
           className="reset-facet"
           data-toggle="tooltip"
           data-original-title="Reset selection"
@@ -714,10 +716,11 @@ export function CellFilteringPanel({
     updateFilteredCells(selectionMap)
   }
 
-  function handleResetFacet(event) {
-    const facetName = event.target.name.split(':')[0].replace('facet-', '')
-    // selectionMap[facetName]
-    console.log('in handleResetFacet, facetName, facets', facetName, facets)
+  /** Reset numeric facet to default values, i.e. clear facet */
+  function handleResetFacet(facetName) {
+    const facet = facets.find(f => f.annotation === facetName)
+    const defaultSelection = facet.defaultSelection
+    handleNumericChange(facetName, defaultSelection)
   }
 
   /** Reset all filters to initial, selected state */
