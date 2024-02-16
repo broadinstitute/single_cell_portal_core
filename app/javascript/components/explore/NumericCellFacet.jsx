@@ -13,8 +13,10 @@ function initBrush(brush, sliderId) {
   d3.select(`#${sliderId}`).append('g').attr('class', 'brush').call(brush)
 }
 
-function moveBrush(sliderId, value1, value2) {
-  d3.select(`#${sliderId} .brush`).call(brush.move, null)
+/** Move D3 brush slider */
+function moveBrush(sliderId, brush, value1, value2, xScale) {
+  const [px1, px2] = [value1, value2].map(xScale)
+  d3.select(`#${sliderId} .brush`).call(brush.move, [px1, px2])
 }
 
 /** Get display attributes for histogram bars */
@@ -97,9 +99,7 @@ function getHistogramBars(filters) {
 }
 
 /** SVG histogram showing distribution of numeric annotation values */
-function Histogram({ facet, filters, bars, brush, svgWidth, svgHeight }) {
-  const sliderId = `numeric-filter-histogram-slider___${facet.annotation}`
-
+function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight }) {
   useEffect(() => {
     console.log('in Histogram useEffect')
     initBrush(brush, sliderId)
@@ -322,11 +322,13 @@ export function NumericCellFacet({
       setInputBorder2(rawIsNaN ? 'red' : null)
       setInputValue2(newDisplayValue)
       updateNumericFilter(operator, inputValue, newFilterValue, includeNa, facet, handleNumericChange)
+      moveBrush(sliderId, brush, inputValue, newFilterValue, xScale)
     } else {
       if (rawIsNaN) {newFilterValue = min}
       setInputBorder(rawIsNaN ? 'red' : null)
       setInputValue(newDisplayValue)
       updateNumericFilter(operator, newFilterValue, inputValue2, includeNa, facet, handleNumericChange)
+      moveBrush(sliderId, brush, newFilterValue, inputValue2, xScale)
     }
   }
 
@@ -339,9 +341,9 @@ export function NumericCellFacet({
   /** Handler for the end of a brush event from D3 */
   function handleBrushEnd(event) {
     const selection = event.selection
-    console.log('selection', selection)
+    // console.log('selection', selection)
     const extent = selection.map(xScale.invert)
-    console.log('extent', extent)
+    console.log('in handleBrushEnd, extent', extent)
     const newValue1 = round(extent[0], 2)
     const newValue2 = round(extent[1], 2)
     if (newValue1 !== inputValue) {setInputValue(newValue1)}
@@ -361,9 +363,9 @@ export function NumericCellFacet({
     pxRange.push(bar.x)
   }
   const xScale = d3.scaleLinear().domain(valueDomain).range(pxRange)
-  console.log('valueDomain', valueDomain)
-  console.log('pxRange', pxRange)
-  console.log('xScale', xScale)
+  // console.log('valueDomain', valueDomain)
+  // console.log('pxRange', pxRange)
+  // console.log('xScale', xScale)
 
   const brush =
     d3
@@ -374,10 +376,12 @@ export function NumericCellFacet({
       ])
       .on('end', handleBrushEnd)
 
+  const sliderId = `numeric-filter-histogram-slider___${facet.annotation}`
+
   return (
     <div style={{ marginLeft: 20, position: 'relative' }}>
       <Histogram
-        facet={facet}
+        sliderId={sliderId}
         filters={filters}
         bars={bars}
         brush={brush}
