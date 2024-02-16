@@ -284,8 +284,9 @@ function NumericQueryBuilder({
 
 /** Get D3 scale to convert between numeric annotation values and pixels */
 function getXScale(bars, svgWidth, hasNull) {
-  const valueDomain = [1]
-  const pxRange = [1]
+  const firstBar = bars[hasNull ? 1 : 0]
+  const valueDomain = [firstBar.start]
+  const pxRange = [0]
   const barStartIndex = hasNull ? 1 : 0
   for (let i = barStartIndex; i < bars.length; i++) {
     const bar = bars[i]
@@ -378,12 +379,14 @@ export function NumericCellFacet({
 
   const [svgWidth, svgHeight] = getHistogramSvgDimensions(bars)
   const xScale = getXScale(bars, svgWidth, hasNull)
+  const barWidth = bars[0].width
+  const extentStartX = hasNull ? barWidth + 1 : 0
 
   const brush =
     d3
       .brushX()
       .extent([
-        [0, 0],
+        [extentStartX, 0],
         [svgWidth, svgHeight]
       ])
       .on('end', handleBrushEnd)
