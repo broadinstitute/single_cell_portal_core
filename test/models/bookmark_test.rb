@@ -25,18 +25,19 @@ class BookmarkTest < ActiveSupport::TestCase
     assert bookmark.valid?
     invalid_view = Bookmark.new(
       name: 'My Favorite Study',
+      study_accession: @study.accession,
       path: "/single_cell/study/#{@study.accession}",
       user: @user
     )
     assert_not invalid_view.valid?
     errors = invalid_view.errors.full_messages
-    assert_equal 3, errors.count
-    not_unique = errors.select { |e| e.match(/(Name|Path) is already taken/) }
-    blank = errors.select { |e| e == "Study accession can't be blank" }
-    assert_equal 2, not_unique.count
-    assert_equal 1, blank.count
+    assert_equal 2, errors.count
+    errors.each do |error|
+      assert error.match(/(Name|Path) is already taken/)
+    end
     invalid_view.name = nil
     invalid_view.path = nil
+    invalid_view.study_accession = nil
     assert_not invalid_view.valid?
     errors = invalid_view.errors.full_messages
     assert_equal 3, errors.count
