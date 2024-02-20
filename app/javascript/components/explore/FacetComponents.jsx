@@ -185,7 +185,8 @@ export function FacetTools({
 export function FacetHeader({
   facet, selectionMap, handleCheckAllFiltersInFacet, handleResetFacet,
   isFullyCollapsed, setIsFullyCollapsed,
-  sortKey, setSortKey
+  sortKey, setSortKey,
+  clearBrush, sliderId, brush
 }) {
   const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
   const isConventional = getIsConventionalAnnotation(rawFacetName)
@@ -252,6 +253,7 @@ export function FacetHeader({
         <a
           onClick={() => {
             handleResetFacet(facet.annotation)
+            clearBrush(sliderId, brush)
           }}
           className="reset-facet"
           data-toggle="tooltip"

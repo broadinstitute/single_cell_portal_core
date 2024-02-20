@@ -425,6 +425,9 @@ export function NumericCellFacet({
         facet={facet}
         selectionMap={selectionMap}
         handleResetFacet={handleResetFacet}
+        clearBrush={clearBrush}
+        sliderId={sliderId}
+        brush={brush}
       />
       <div style={{ marginLeft: 20, position: 'relative' }}>
         <Histogram
