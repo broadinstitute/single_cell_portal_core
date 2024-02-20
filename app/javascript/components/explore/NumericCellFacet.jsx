@@ -16,6 +16,7 @@ function initBrush(brush, sliderId) {
 /** Move D3 brush slider */
 function moveBrush(sliderId, brush, value1, value2, xScale) {
   const [px1, px2] = [value1, value2].map(xScale)
+  console.log('px1, px2, value1, value2', px1, px2, value1, value2)
   d3.select(`#${sliderId} .brush`).call(brush.move, [px1, px2])
 }
 
@@ -203,6 +204,7 @@ function OperatorMenu({ operator, setOperator }) {
 
 /** A visually economical input field for numeric query builder */
 function NumericQueryInput({ value, border, updateInputValue, facet, filterName }) {
+  // Visually indicate that more digits are specified than are shown
   const fadeOverflowClass = value >= 100_000 ? 'fade-overflow' : ''
 
   const style = border ? { border: `1px solid ${border}` } : {}
@@ -224,7 +226,7 @@ function NumericQueryInput({ value, border, updateInputValue, facet, filterName 
   )
 }
 
-/** Assembly and propagate numeric cell filter change */
+/** Assemble and propagate numeric cell filter change */
 function updateNumericFilter(operator, inputValue, inputValue2, includeNa, facet, handleNumericChange) {
   let value
   if (['between', 'not between'].includes(operator)) {
@@ -284,10 +286,10 @@ function NumericQueryBuilder({
 
 /** Get D3 scale to convert between numeric annotation values and pixels */
 function getXScale(bars, svgWidth, hasNull) {
-  const firstBar = bars[hasNull ? 1 : 0]
+  const barStartIndex = hasNull ? 1 : 0
+  const firstBar = bars[barStartIndex]
   const valueDomain = [firstBar.start]
   const pxRange = [0]
-  const barStartIndex = hasNull ? 1 : 0
   for (let i = barStartIndex; i < bars.length; i++) {
     const bar = bars[i]
     valueDomain.push(bar.start)
@@ -367,13 +369,11 @@ export function NumericCellFacet({
   /** Handler for the end of a brush event from D3 */
   function handleBrushEnd(event) {
     const selection = event.selection
-    // console.log('selection', selection)
     const extent = selection.map(xScale.invert)
-    console.log('in handleBrushEnd, extent', extent)
     const newValue1 = round(extent[0], 2)
     const newValue2 = round(extent[1], 2)
-    if (newValue1 !== inputValue) {setInputValue(newValue1)}
-    if (newValue2 !== inputValue2) {setInputValue2(newValue2)}
+    setInputValue(newValue1)
+    setInputValue2(newValue2)
     updateNumericFilter(operator, newValue1, newValue2, includeNa, facet, handleNumericChange)
   }
 
