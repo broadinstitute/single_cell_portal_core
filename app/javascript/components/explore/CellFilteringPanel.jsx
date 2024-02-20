@@ -760,6 +760,7 @@ export function CellFilteringPanel({
 
   /** Propagate change in a numeric cell filter */
   function handleNumericChange(facetName, newValues) {
+    console.log('facetName, newValues', facetName, newValues)
     selectionMap[facetName] = newValues
     setSelectionMap(selectionMap)
 

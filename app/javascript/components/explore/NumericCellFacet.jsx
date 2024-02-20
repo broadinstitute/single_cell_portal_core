@@ -243,6 +243,7 @@ function NumericQueryBuilder({
   facet, operator, inputValue, inputValue2, includeNa, inputBorder, inputBorder2, hasNull,
   setOperator, updateInputValue, updateIncludeNa
 }) {
+  console.log(`in NumericQueryBuilder for ${ facet.annotation }, inputValue, inputValue2`, inputValue, inputValue2)
   return (
     <div>
       <OperatorMenu
@@ -310,20 +311,31 @@ function getHistogramSvgDimensions(bars) {
   return [svgWidth, svgHeight]
 }
 
+/**
+ * Get operator and values from selection
+ *
+ * E.g. [['between', [20, 40]], true]
+ * or more generally: [[<operator>, [<inputValue>, <inputValue2>]], <includeNa>]
+ */
+function parseSelectionMap(facet, selectionMap) {
+  const facetSelection = selectionMap[facet.annotation] // e.g. ['between', [20, 40]]
+  const numericFilter = facetSelection[0] // e.g. ['between', [20, 40]]
+  const rawOp = numericFilter[0][0] // e.g. 'between'
+  const [raw1, raw2] = numericFilter[0][1] // e.g. 20, 40
+  const rawIncludeNa = facetSelection[1] // e.g. true
+  return [rawOp, raw1, raw2, rawIncludeNa]
+}
+
 /** Cell filter component for continuous numeric annotation dimension */
 export function NumericCellFacet({
   facet, filters, isChecked, selectionMap, handleNumericChange,
   hasNondefaultSelection
 }) {
-  // E.g. [['between', [20, 40]], true]
-  // or more generally: [[<operator>, [<inputValue>, <inputValue2>]], <includeNa>]
-  const facetSelection = selectionMap[facet.annotation]
-
-  const numericFilter = facetSelection[0] // e.g. ['between', [20, 40]]
-  const [operator, setOperator] = useState(numericFilter[0][0]) // e.g. 'between'
-  const [inputValue, setInputValue] = useState(numericFilter[0][1][0]) // e.g. 20
+  const [rawOp, raw1, raw2, rawIncludeNa] = parseSelectionMap(facet, selectionMap)
+  const [operator, setOperator] = useState(rawOp) // e.g. 'between'
+  const [inputValue, setInputValue] = useState(raw1) // e.g. 20
   const [inputBorder, setInputBorder] = useState(null)
-  const [inputValue2, setInputValue2] = useState(numericFilter[0][1][1]) // e.g. 40
+  const [inputValue2, setInputValue2] = useState(raw2) // e.g. 40
   const [inputBorder2, setInputBorder2] = useState(null)
 
   const [min, max, hasNull] = getMinMaxValues(filters)
@@ -331,7 +343,7 @@ export function NumericCellFacet({
   const bars = getHistogramBars(filters)
 
   // Whether to include cells with "not available" (N/A, `null`) numeric value
-  const [includeNa, setIncludeNa] = useState(facetSelection[1]) // e.g. true
+  const [includeNa, setIncludeNa] = useState(rawIncludeNa) // e.g. true
 
   /** Propagate change in numeric input locally and upstream */
   function updateInputValue(event) {
@@ -348,13 +360,13 @@ export function NumericCellFacet({
     if (isValue2) {
       if (rawIsNaN) {newFilterValue = max}
       setInputBorder2(rawIsNaN ? 'red' : null)
-      setInputValue2(newDisplayValue)
+      // setInputValue2(newDisplayValue)
       updateNumericFilter(operator, inputValue, newFilterValue, includeNa, facet, handleNumericChange)
       moveBrush(sliderId, brush, inputValue, newFilterValue, xScale)
     } else {
       if (rawIsNaN) {newFilterValue = min}
       setInputBorder(rawIsNaN ? 'red' : null)
-      setInputValue(newDisplayValue)
+      // setInputValue(newDisplayValue)
       updateNumericFilter(operator, newFilterValue, inputValue2, includeNa, facet, handleNumericChange)
       moveBrush(sliderId, brush, newFilterValue, inputValue2, xScale)
     }
@@ -372,8 +384,8 @@ export function NumericCellFacet({
     const extent = selection.map(xScale.invert)
     const newValue1 = round(extent[0], 2)
     const newValue2 = round(extent[1], 2)
-    setInputValue(newValue1)
-    setInputValue2(newValue2)
+    // setInputValue(newValue1)
+    // setInputValue2(newValue2)
     updateNumericFilter(operator, newValue1, newValue2, includeNa, facet, handleNumericChange)
   }
 
@@ -393,7 +405,15 @@ export function NumericCellFacet({
 
   const sliderId = `numeric-filter-histogram-slider___${facet.annotation}`
 
-  console.log('re-rendering NumericCellFacet')
+  console.log(`re-rendering NumericCellFacet for ${ facet.annotation}`)
+
+  useEffect(() => {
+    const [rawOp, raw1, raw2, rawIncludeNa] = parseSelectionMap(facet, selectionMap)
+    setOperator(rawOp)
+    setInputValue(raw1)
+    setInputValue2(raw2)
+    setIncludeNa(rawIncludeNa)
+  }, [Object.values(selectionMap).join(',')])
 
   return (
     <div style={{ marginLeft: 20, position: 'relative' }}>
