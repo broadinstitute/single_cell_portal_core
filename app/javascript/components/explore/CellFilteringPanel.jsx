@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowLeft
 } from '@fortawesome/free-solid-svg-icons'
-
+import _isEqual from 'lodash/isEqual'
 
 import {
   FacetHeader, FacetTools, tooltipAttrs
@@ -37,21 +37,17 @@ export function CellFilteringPanelHeader({
 
 /** Determine if user has deselected any filters */
 function getHasNondefaultSelection(selectionMap, facets) {
-  let numTotalFilters = 0
-  facets
-    .filter(f => f.type === 'group')
-    .forEach(facet => numTotalFilters += facet.groups?.length)
-  let numCheckedFilters = 0
+  const entries = Object.entries(selectionMap)
+  for (let i = 0; i < entries.length; i++) {
+    const [selectedFacet, selection] = entries[i]
 
-  Object.entries(selectionMap)
-    .filter(([f, _]) => f.includes('--group--'))
-    .forEach(([_, filters]) => {
-      numCheckedFilters += filters?.length
-    })
+    const facet = facets.find(f => f.annotation === selectedFacet)
+    if (!_isEqual(facet.defaultSelection, selection)) {
+      return true
+    }
+  }
 
-  const hasNondefaultSelection = numTotalFilters !== numCheckedFilters
-
-  return hasNondefaultSelection
+  return false
 }
 
 /** determine if the filter is checked or not */
@@ -472,7 +468,7 @@ export function CellFilteringPanel({
   function handleResetFilters() {
     const initSelection = {}
     facets.forEach(facet => {
-      initSelection[facet.annotation] = facet.groups
+      initSelection[facet.annotation] = facet.defaultSelection
     })
 
     setSelectionMap(initSelection)
@@ -505,7 +501,6 @@ export function CellFilteringPanel({
 
   /** Propagate change in a numeric cell filter */
   function handleNumericChange(facetName, newValues) {
-    console.log('facetName, newValues', facetName, newValues)
     selectionMap[facetName] = newValues
     setSelectionMap(selectionMap)
 

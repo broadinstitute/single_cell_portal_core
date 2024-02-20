@@ -14,6 +14,7 @@ function initBrush(brush, sliderId) {
   d3.select(`#${sliderId}`).append('g').attr('class', 'brush').call(brush)
 }
 
+/** Reset slider for this numeric cell facet */
 function clearBrush(sliderId, brush) {
   d3.select(`#${sliderId} .brush`).call(brush.move, null)
 }
@@ -21,7 +22,6 @@ function clearBrush(sliderId, brush) {
 /** Move D3 brush slider */
 function moveBrush(sliderId, brush, value1, value2, xScale) {
   const [px1, px2] = [value1, value2].map(xScale)
-  console.log('px1, px2, value1, value2', px1, px2, value1, value2)
   d3.select(`#${sliderId} .brush`).call(brush.move, [px1, px2])
 }
 
@@ -107,7 +107,6 @@ function getHistogramBars(filters) {
 /** SVG histogram showing distribution of numeric annotation values */
 function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight }) {
   useEffect(() => {
-    console.log('in Histogram useEffect')
     initBrush(brush, sliderId)
   },
   [filters.join(',')]
@@ -248,7 +247,6 @@ function NumericQueryBuilder({
   facet, operator, inputValue, inputValue2, includeNa, inputBorder, inputBorder2, hasNull,
   setOperator, updateInputValue, updateIncludeNa
 }) {
-  console.log(`in NumericQueryBuilder for ${ facet.annotation }, inputValue, inputValue2`, inputValue, inputValue2)
   return (
     <div>
       <OperatorMenu
@@ -409,7 +407,7 @@ export function NumericCellFacet({
 
   const sliderId = `numeric-filter-histogram-slider___${facet.annotation}`
 
-  console.log(`re-rendering NumericCellFacet for ${ facet.annotation}`)
+  // console.log(`re-rendering NumericCellFacet for ${ facet.annotation}`)
 
   useEffect(() => {
     const [rawOp, raw1, raw2, rawIncludeNa] = parseSelectionMap(facet, selectionMap)
