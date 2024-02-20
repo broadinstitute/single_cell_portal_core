@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import * as d3 from 'd3'
 
+import { FacetHeader } from '~/components/explore/FacetComponents'
 import { round } from '~/lib/metrics-perf'
 import { getMinMaxValues } from '~/lib/cell-faceting.js'
 
@@ -11,6 +12,10 @@ function initBrush(brush, sliderId) {
   const brushDom = document.querySelector(`#${sliderId} .brush`)
   if (brushDom) {brushDom.remove()}
   d3.select(`#${sliderId}`).append('g').attr('class', 'brush').call(brush)
+}
+
+function clearBrush(sliderId, brush) {
+  d3.select(`#${sliderId} .brush`).call(brush.move, null)
 }
 
 /** Move D3 brush slider */
@@ -288,9 +293,8 @@ function NumericQueryBuilder({
 /** Get D3 scale to convert between numeric annotation values and pixels */
 function getXScale(bars, svgWidth, hasNull) {
   const barStartIndex = hasNull ? 1 : 0
-  const firstBar = bars[barStartIndex]
-  const valueDomain = [firstBar.start]
-  const pxRange = [0]
+  const valueDomain = []
+  const pxRange = []
   for (let i = barStartIndex; i < bars.length; i++) {
     const bar = bars[i]
     valueDomain.push(bar.start)
@@ -329,7 +333,7 @@ function parseSelectionMap(facet, selectionMap) {
 /** Cell filter component for continuous numeric annotation dimension */
 export function NumericCellFacet({
   facet, filters, isChecked, selectionMap, handleNumericChange,
-  hasNondefaultSelection
+  hasNondefaultSelection, handleResetFacet
 }) {
   const [rawOp, raw1, raw2, rawIncludeNa] = parseSelectionMap(facet, selectionMap)
   const [operator, setOperator] = useState(rawOp) // e.g. 'between'
@@ -360,13 +364,13 @@ export function NumericCellFacet({
     if (isValue2) {
       if (rawIsNaN) {newFilterValue = max}
       setInputBorder2(rawIsNaN ? 'red' : null)
-      // setInputValue2(newDisplayValue)
+      setInputValue2(newDisplayValue)
       updateNumericFilter(operator, inputValue, newFilterValue, includeNa, facet, handleNumericChange)
       moveBrush(sliderId, brush, inputValue, newFilterValue, xScale)
     } else {
       if (rawIsNaN) {newFilterValue = min}
       setInputBorder(rawIsNaN ? 'red' : null)
-      // setInputValue(newDisplayValue)
+      setInputValue(newDisplayValue)
       updateNumericFilter(operator, newFilterValue, inputValue2, includeNa, facet, handleNumericChange)
       moveBrush(sliderId, brush, newFilterValue, inputValue2, xScale)
     }
@@ -416,28 +420,35 @@ export function NumericCellFacet({
   }, [Object.values(selectionMap).join(',')])
 
   return (
-    <div style={{ marginLeft: 20, position: 'relative' }}>
-      <Histogram
-        sliderId={sliderId}
-        filters={filters}
-        bars={bars}
-        brush={brush}
-        svgWidth={svgWidth}
-        svgHeight={svgHeight}
-      />
-      <NumericQueryBuilder
+    <>
+      <FacetHeader
         facet={facet}
-        operator={operator}
-        inputValue={inputValue}
-        inputValue2={inputValue2}
-        includeNa={includeNa}
-        inputBorder={inputBorder}
-        inputBorder2={inputBorder2}
-        hasNull={hasNull}
-        setOperator={setOperator}
-        updateInputValue={updateInputValue}
-        updateIncludeNa={updateIncludeNa}
+        selectionMap={selectionMap}
+        handleResetFacet={handleResetFacet}
       />
-    </div>
+      <div style={{ marginLeft: 20, position: 'relative' }}>
+        <Histogram
+          sliderId={sliderId}
+          filters={filters}
+          bars={bars}
+          brush={brush}
+          svgWidth={svgWidth}
+          svgHeight={svgHeight}
+        />
+        <NumericQueryBuilder
+          facet={facet}
+          operator={operator}
+          inputValue={inputValue}
+          inputValue2={inputValue2}
+          includeNa={includeNa}
+          inputBorder={inputBorder}
+          inputBorder2={inputBorder2}
+          hasNull={hasNull}
+          setOperator={setOperator}
+          updateInputValue={updateInputValue}
+          updateIncludeNa={updateIncludeNa}
+        />
+      </div>
+    </>
   )
 }
