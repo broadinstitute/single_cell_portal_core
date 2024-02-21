@@ -430,6 +430,7 @@ export function NumericCellFacet({
         sliderId={sliderId}
         brush={brush}
       />
+      {!isFullyCollapsed &&
       <div style={{ marginLeft: 20, position: 'relative' }}>
         <Histogram
           sliderId={sliderId}
@@ -453,6 +454,7 @@ export function NumericCellFacet({
           updateIncludeNa={updateIncludeNa}
         />
       </div>
+      }
     </>
   )
 }
