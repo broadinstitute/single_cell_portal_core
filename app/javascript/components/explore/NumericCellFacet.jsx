@@ -179,7 +179,7 @@ const operators = [
 ]
 
 /** Get options for numeric filter operators */
-function OperatorMenu({ operator, setOperator }) {
+function OperatorMenu({ operator, updateOperator }) {
   const widthsByOperator = {
     'between': 80,
     'not between': 100,
@@ -195,7 +195,7 @@ function OperatorMenu({ operator, setOperator }) {
     <select
       style={{ width: menuWidth }}
       value={operator}
-      onChange={event => {setOperator(event.target.value)}}
+      onChange={event => {updateOperator(event)}}
     >
       {operators.map((operator, i) => {
         return (
@@ -245,13 +245,13 @@ function updateNumericFilter(operator, inputValue, inputValue2, includeNa, facet
 /** Enables manual input of numbers, by which cells get filtered */
 function NumericQueryBuilder({
   facet, operator, inputValue, inputValue2, includeNa, inputBorder, inputBorder2, hasNull,
-  setOperator, updateInputValue, updateIncludeNa
+  updateOperator, updateInputValue, updateIncludeNa
 }) {
   return (
     <div>
       <OperatorMenu
         operator={operator}
-        setOperator={setOperator}
+        updateOperator={updateOperator}
       />
       <NumericQueryInput
         value={inputValue}
@@ -375,6 +375,13 @@ export function NumericCellFacet({
     }
   }
 
+  /** Propagate change in operator selected from menu locally and upstream */
+  function updateOperator(event) {
+    const newOperator = event.target.value
+    updateNumericFilter(newOperator, inputValue, inputValue2, includeNa, facet, handleNumericChange)
+    setOperator(newOperator)
+  }
+
   /** Propagate change in "N/A" checkbox locally and upstream */
   function updateIncludeNa() {
     setIncludeNa(!includeNa)
@@ -449,7 +456,7 @@ export function NumericCellFacet({
           inputBorder={inputBorder}
           inputBorder2={inputBorder2}
           hasNull={hasNull}
-          setOperator={setOperator}
+          updateOperator={updateOperator}
           updateInputValue={updateInputValue}
           updateIncludeNa={updateIncludeNa}
         />
