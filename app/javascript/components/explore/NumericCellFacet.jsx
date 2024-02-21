@@ -133,7 +133,9 @@ function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight }) {
           )
         })}
       </svg>
-      <div style={{ position: 'absolute', top: 0 }} key={2}>
+      {
+      // This enables per-bar counts on hover, but doesn't yet work with slider
+      /* <div style={{ position: 'absolute', top: 0 }} key={2}>
         {bars.map((bar, i) => {
           let criteria
           if (bar.start === null) {
@@ -159,8 +161,7 @@ function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight }) {
             >
             </span>
           )
-        })}
-      </div>
+        })} */}
       <svg
         height={svgHeight}
         width={svgWidth}
