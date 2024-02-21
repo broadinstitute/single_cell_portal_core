@@ -331,7 +331,8 @@ function parseSelectionMap(facet, selectionMap) {
 /** Cell filter component for continuous numeric annotation dimension */
 export function NumericCellFacet({
   facet, filters, isChecked, selectionMap, handleNumericChange,
-  hasNondefaultSelection, handleResetFacet
+  hasNondefaultSelection, handleResetFacet,
+  isFullyCollapsed, setIsFullyCollapsed
 }) {
   const [rawOp, raw1, raw2, rawIncludeNa] = parseSelectionMap(facet, selectionMap)
   const [operator, setOperator] = useState(rawOp) // e.g. 'between'
@@ -422,6 +423,8 @@ export function NumericCellFacet({
       <FacetHeader
         facet={facet}
         selectionMap={selectionMap}
+        isFullyCollapsed={isFullyCollapsed}
+        setIsFullyCollapsed={setIsFullyCollapsed}
         handleResetFacet={handleResetFacet}
         clearBrush={clearBrush}
         sliderId={sliderId}

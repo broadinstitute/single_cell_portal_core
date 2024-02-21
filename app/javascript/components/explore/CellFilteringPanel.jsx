@@ -326,6 +326,8 @@ function CellFacet({
             handleNumericChange={handleNumericChange}
             updateFilteredCells={updateFilteredCells}
             hasNondefaultSelection={hasNondefaultSelection}
+            isFullyCollapsed={isFullyCollapsed}
+            setIsFullyCollapsed={setIsFullyCollapsed}
             handleResetFacet={handleResetFacet}
             key={facet}
           />
