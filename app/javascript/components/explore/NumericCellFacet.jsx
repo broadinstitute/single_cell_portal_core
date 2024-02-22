@@ -105,7 +105,7 @@ function getHistogramBars(filters) {
 }
 
 /** SVG histogram showing distribution of numeric annotation values */
-function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight }) {
+function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight, operator }) {
   useEffect(() => {
     initBrush(brush, sliderId)
   },
@@ -162,6 +162,7 @@ function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight }) {
             </span>
           )
         })} */}
+      {['between', 'not between'].includes(operator) &&
       <svg
         height={svgHeight}
         width={svgWidth}
@@ -169,6 +170,7 @@ function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight }) {
         className="numeric-filter-histogram-slider"
         id={sliderId}
       ></svg>
+      }
     </>
   )
 }
@@ -324,7 +326,13 @@ function parseSelectionMap(facet, selectionMap) {
   const facetSelection = selectionMap[facet.annotation] // e.g. ['between', [20, 40]]
   const numericFilter = facetSelection[0] // e.g. ['between', [20, 40]]
   const rawOp = numericFilter[0][0] // e.g. 'between'
-  const [raw1, raw2] = numericFilter[0][1] // e.g. 20, 40
+  let raw1; let raw2
+  if (['between', 'not between'].includes(rawOp)) {
+    [raw1, raw2] = numericFilter[0][1] // e.g. 20, 40
+  } else {
+    raw1 = numericFilter[0][1]
+    raw2 = null
+  }
   const rawIncludeNa = facetSelection[1] // e.g. true
   return [rawOp, raw1, raw2, rawIncludeNa]
 }
