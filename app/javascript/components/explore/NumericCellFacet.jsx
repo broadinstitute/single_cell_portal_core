@@ -317,14 +317,13 @@ function getHistogramSvgDimensions(bars) {
 }
 
 /**
- * Get operator and values from selection
+ * Convert encoded selection to operator, values, and whether to include "N/A"
  *
  * E.g. [['between', [20, 40]], true]
  * or more generally: [[<operator>, [<inputValue>, <inputValue2>]], <includeNa>]
  */
-function parseSelectionMap(facet, selectionMap) {
-  const facetSelection = selectionMap[facet.annotation] // e.g. ['between', [20, 40]]
-  const numericFilter = facetSelection[0] // e.g. ['between', [20, 40]]
+function parseSelection(selection) {
+  const numericFilter = selection[0] // e.g. ['between', [20, 40]]
   const rawOp = numericFilter[0][0] // e.g. 'between'
   let raw1; let raw2
   if (['between', 'not between'].includes(rawOp)) {
@@ -333,7 +332,7 @@ function parseSelectionMap(facet, selectionMap) {
     raw1 = numericFilter[0][1]
     raw2 = null
   }
-  const rawIncludeNa = facetSelection[1] // e.g. true
+  const rawIncludeNa = selection[1] // e.g. true
   return [rawOp, raw1, raw2, rawIncludeNa]
 }
 
@@ -343,7 +342,8 @@ export function NumericCellFacet({
   hasNondefaultSelection, handleResetFacet,
   isFullyCollapsed, setIsFullyCollapsed
 }) {
-  const [rawOp, raw1, raw2, rawIncludeNa] = parseSelectionMap(facet, selectionMap)
+  const selection = selectionMap[facet.annotation] // e.g. [['between', [20, 40]], true]
+  const [rawOp, raw1, raw2, rawIncludeNa] = parseSelection(selection)
   const [operator, setOperator] = useState(rawOp) // e.g. 'between'
   const [inputValue, setInputValue] = useState(raw1) // e.g. 20
   const [inputBorder, setInputBorder] = useState(null)
@@ -387,8 +387,18 @@ export function NumericCellFacet({
   /** Propagate change in operator selected from menu locally and upstream */
   function updateOperator(event) {
     const newOperator = event.target.value
-    updateNumericFilter(newOperator, inputValue, inputValue2, includeNa, facet, handleNumericChange)
+
+    let newInputValue2 = inputValue2
+    if (['between', 'not between'].includes(newOperator) && inputValue2 === null) {
+      // If switching from operator "=" to e.g. "between", then we need to
+      // ensure the 2nd input value -- which was `null` for "=" -- is set
+      // to some valid value for the range expected by "between".
+      const defaultInputValue2 = parseSelection(facet.defaultSelection)[2]
+      newInputValue2 = defaultInputValue2
+    }
+    updateNumericFilter(newOperator, inputValue, newInputValue2, includeNa, facet, handleNumericChange)
     setOperator(newOperator)
+    setInputValue2(newInputValue2)
   }
 
   /** Propagate change in "N/A" checkbox locally and upstream */
@@ -427,7 +437,8 @@ export function NumericCellFacet({
   // console.log(`re-rendering NumericCellFacet for ${ facet.annotation}`)
 
   useEffect(() => {
-    const [rawOp, raw1, raw2, rawIncludeNa] = parseSelectionMap(facet, selectionMap)
+    const selection = selectionMap[facet.annotation]
+    const [rawOp, raw1, raw2, rawIncludeNa] = parseSelection(selection)
     setOperator(rawOp)
     setInputValue(raw1)
     setInputValue2(raw2)
