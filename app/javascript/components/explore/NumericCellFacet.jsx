@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import * as d3 from 'd3'
 
 import { FacetHeader } from '~/components/explore/FacetComponents'
@@ -109,7 +109,7 @@ function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight, operat
   useEffect(() => {
     initBrush(brush, sliderId)
   },
-  [filters.join(',')]
+  [filters.join(','), operator]
   )
 
   return (
@@ -133,35 +133,36 @@ function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight, operat
           )
         })}
       </svg>
-      {
-      // This enables per-bar counts on hover, but doesn't yet work with slider
-      /* <div style={{ position: 'absolute', top: 0 }} key={2}>
-        {bars.map((bar, i) => {
-          let criteria
-          if (bar.start === null) {
-            criteria = 'N/A'
-          } else {
-            const briefStart = round(bar.start, 2)
-            const briefEnd = round(bar.end, 2)
-            criteria = `${briefStart}&nbsp;-&nbsp;${briefEnd}`
-          }
-          const tooltipContent = `<span>${criteria}:<br/>${bar.count}&nbsp;cells</span>`
+      {!['between', 'not between'].includes(operator) &&
+        <div style={{ position: 'absolute', top: 0 }} key={2}>
+          {bars.map((bar, i) => {
+            let criteria
+            if (bar.start === null) {
+              criteria = 'N/A'
+            } else {
+              const briefStart = round(bar.start, 2)
+              const briefEnd = round(bar.end, 2)
+              criteria = `${briefStart}&nbsp;-&nbsp;${briefEnd}`
+            }
+            const tooltipContent = `<span>${criteria}:<br/>${bar.count}&nbsp;cells</span>`
 
-          return (
-            <span
-              style={{
-                display: 'inline-block',
-                width: bar.width + 1,
-                height: HISTOGRAM_BAR_MAX_HEIGHT
-              }}
-              data-toggle="tooltip"
-              data-html={true}
-              data-original-title={tooltipContent}
-              key={i}
-            >
-            </span>
-          )
-        })} */}
+            return (
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: bar.width + 1,
+                  height: HISTOGRAM_BAR_MAX_HEIGHT
+                }}
+                data-toggle="tooltip"
+                data-html={true}
+                data-original-title={tooltipContent}
+                key={i}
+              >
+              </span>
+            )
+          })}
+        </div>
+      }
       {['between', 'not between'].includes(operator) &&
       <svg
         height={svgHeight}
@@ -338,9 +339,8 @@ function parseSelection(selection) {
 
 /** Cell filter component for continuous numeric annotation dimension */
 export function NumericCellFacet({
-  facet, filters, isChecked, selectionMap, handleNumericChange,
-  hasNondefaultSelection, handleResetFacet,
-  isFullyCollapsed, setIsFullyCollapsed
+  facet, filters, selectionMap, handleNumericChange,
+  handleResetFacet, isFullyCollapsed, setIsFullyCollapsed
 }) {
   const selection = selectionMap[facet.annotation] // e.g. [['between', [20, 40]], true]
   const [rawOp, raw1, raw2, rawIncludeNa] = parseSelection(selection)
@@ -466,6 +466,7 @@ export function NumericCellFacet({
           brush={brush}
           svgWidth={svgWidth}
           svgHeight={svgHeight}
+          operator={operator}
         />
         <NumericQueryBuilder
           facet={facet}
