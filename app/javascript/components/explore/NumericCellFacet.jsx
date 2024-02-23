@@ -7,11 +7,39 @@ import { getMinMaxValues } from '~/lib/cell-faceting.js'
 
 const HISTOGRAM_BAR_MAX_HEIGHT = 20
 
+/** Get SVG for handle UI  */
+function resizePath(d) {
+  const e = +(d == 'e')
+  const x = e ? 1 : -1
+  const y = HISTOGRAM_BAR_MAX_HEIGHT / 3
+  return `M${ .5 * x },${ y
+      }A6,6 0 0 ${ e } ${ 6.5 * x },${ y + 6
+      }V${ 2 * y - 6
+      }A6,6 0 0 ${ e } ${ .5 * x },${ 2 * y
+      }Z` +
+      `M${ 2.5 * x },${ y + 8
+      }V${ 2 * y - 8
+      }M${ 4.5 * x },${ y + 8
+      }V${ 2 * y - 8}`
+}
+
 /** Initialize D3 brush component, for draggable selections */
 function initBrush(brush, sliderId) {
   const brushDom = document.querySelector(`#${sliderId} .brush`)
   if (brushDom) {brushDom.remove()}
-  d3.select(`#${sliderId}`).append('g').attr('class', 'brush').call(brush)
+  const gBrush = d3.select(`#${sliderId}`).append('g').attr('class', 'brush').call(brush)
+  // gBrush.selectAll('.handle').append('path').attr('d', resizePath)
+  // gBrush.append('path').attr('class', 'handle').attr('d', resizePath)
+  gBrush.selectAll('.handle--custom')
+    .data([{ type: 'w' }, { type: 'e' }])
+    .enter().append('path')
+    .attr('class', 'handle--custom')
+    .attr('fill', '#666')
+    .attr('fill-opacity', 0.8)
+    .attr('stroke', '#000')
+    .attr('stroke-width', 1.5)
+    .attr('cursor', 'ew-resize')
+    .attr('d', resizePath)
 }
 
 /** Reset slider for this numeric cell facet */
@@ -21,8 +49,21 @@ function clearBrush(sliderId, brush) {
 
 /** Move D3 brush slider */
 function moveBrush(sliderId, brush, value1, value2, xScale) {
-  const [px1, px2] = [value1, value2].map(xScale)
+  const selection = [value1, value2].map(xScale)
+  const [px1, px2] = selection
   d3.select(`#${sliderId} .brush`).call(brush.move, [px1, px2])
+}
+
+/** Handle move event, which is fired after brush.end */
+function handleBrushMoved(sliderId, d3BrushSelection) {
+  console.log('in handleBrushMoved, d3BrushSelection', d3BrushSelection)
+  d3.selectAll(`#${sliderId} .handle--custom`)
+    .attr('display', null)
+    .attr('transform', (d, i) => {
+      console.log('selection', d3BrushSelection)
+      console.log('d, i', d, i)
+      return `translate(${ d3BrushSelection[i] },${ HISTOGRAM_BAR_MAX_HEIGHT / 2 })`
+    })
 }
 
 /** Get display attributes for histogram bars */
@@ -374,13 +415,13 @@ export function NumericCellFacet({
       setInputBorder2(rawIsNaN ? 'red' : null)
       setInputValue2(newDisplayValue)
       updateNumericFilter(operator, inputValue, newFilterValue, includeNa, facet, handleNumericChange)
-      moveBrush(sliderId, brush, inputValue, newFilterValue, xScale)
+      moveBrush(sliderId, brush, resizeHandles, inputValue, newFilterValue, xScale)
     } else {
       if (rawIsNaN) {newFilterValue = min}
       setInputBorder(rawIsNaN ? 'red' : null)
       setInputValue(newDisplayValue)
       updateNumericFilter(operator, newFilterValue, inputValue2, includeNa, facet, handleNumericChange)
-      moveBrush(sliderId, brush, newFilterValue, inputValue2, xScale)
+      moveBrush(sliderId, brush, resizeHandles, newFilterValue, inputValue2, xScale)
     }
   }
 
@@ -412,12 +453,13 @@ export function NumericCellFacet({
 
   /** Handler for the end of a brush event from D3 */
   function handleBrushEnd(event) {
-    const selection = event.selection
-    const extent = selection.map(xScale.invert)
+    const d3BrushSelection = event.selection
+    const extent = d3BrushSelection.map(xScale.invert)
     const newValue1 = round(extent[0], precision)
     const newValue2 = round(extent[1], precision)
     // setInputValue(newValue1)
     // setInputValue2(newValue2)
+    handleBrushMoved(sliderId, d3BrushSelection)
     updateNumericFilter(operator, newValue1, newValue2, includeNa, facet, handleNumericChange)
   }
 
