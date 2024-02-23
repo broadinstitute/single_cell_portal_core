@@ -181,7 +181,7 @@ function GroupCellFacet({
   facet,
   selectionMap, handleCheck,
   handleCheckAllFiltersInFacet, handleResetFacet, updateFilteredCells,
-  isAllListsCollapsed, hasNondefaultSelection, isFullyCollapsed, setIsFullyCollapsed,
+  hasNondefaultSelection, isFullyCollapsed, setIsFullyCollapsed,
   shownFilters, sortKey, setSortKey
 }) {
   return (

@@ -278,10 +278,10 @@ function NumericQueryBuilder({
       }
       {hasNull &&
       <div>
-        <label style={{ fontWeight: 'normal' }}>
+        <label className="cell-filter-label" style={{ fontWeight: 'normal' }}>
           <input
             type="checkbox"
-            className="na-filter"
+            className="numeric-na-filter"
             checked={includeNa}
             onChange={updateIncludeNa}
             style={{ marginRight: '5px' }}
