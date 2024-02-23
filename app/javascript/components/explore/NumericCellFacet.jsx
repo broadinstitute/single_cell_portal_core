@@ -407,12 +407,15 @@ export function NumericCellFacet({
     updateNumericFilter(operator, inputValue, inputValue2, !includeNa, facet, handleNumericChange)
   }
 
+  const isLikelyAllIntegers = Number.isInteger(min) && Number.isInteger(max)
+  const precision = isLikelyAllIntegers ? 0 : 2 // Round to integer, or 2 decimal places
+
   /** Handler for the end of a brush event from D3 */
   function handleBrushEnd(event) {
     const selection = event.selection
     const extent = selection.map(xScale.invert)
-    const newValue1 = round(extent[0], 2)
-    const newValue2 = round(extent[1], 2)
+    const newValue1 = round(extent[0], precision)
+    const newValue2 = round(extent[1], precision)
     // setInputValue(newValue1)
     // setInputValue2(newValue2)
     updateNumericFilter(operator, newValue1, newValue2, includeNa, facet, handleNumericChange)
