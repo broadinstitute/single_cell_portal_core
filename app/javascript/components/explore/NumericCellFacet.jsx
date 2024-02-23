@@ -7,20 +7,51 @@ import { getMinMaxValues } from '~/lib/cell-faceting.js'
 
 const HISTOGRAM_BAR_MAX_HEIGHT = 20
 
-/** Get SVG for handle UI  */
-function resizePath(d) {
-  const e = +(d == 'e')
-  const x = e ? 1 : -1
-  const y = HISTOGRAM_BAR_MAX_HEIGHT / 3
-  return `M${ .5 * x },${ y
-      }A6,6 0 0 ${ e } ${ 6.5 * x },${ y + 6
-      }V${ 2 * y - 6
-      }A6,6 0 0 ${ e } ${ .5 * x },${ 2 * y
-      }Z` +
-      `M${ 2.5 * x },${ y + 8
-      }V${ 2 * y - 8
-      }M${ 4.5 * x },${ y + 8
-      }V${ 2 * y - 8}`
+/**
+ * Get SVG for handlebar UI, as an affordance for resizing
+ *
+ * Inspired by https://crossfilter.github.io/crossfilter
+ */
+function handlebarPath(d) {
+  const sweepFlag = d.type === 'e' ? 1 : 0
+  const x = sweepFlag ? 1 : -1
+  const y = HISTOGRAM_BAR_MAX_HEIGHT
+
+  // Construct an SVG arc
+  // Docs: https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Paths#arcs
+  const start = `M${ .5 * x },${ y}`
+  const rx = 6
+  const ry = 6
+  const xAxisRotation = 0
+  const largeArcFlag = 0
+  const arc1X = (6.5 * x)
+  const arc1Y = y + 6
+  const arc1EndLine = `V${ 2 * y - 6}`
+  const arc2X = 0.5 * x
+  const arc2Y = 2 * y
+  const arc1 = `A${rx},${ry} ${xAxisRotation} ${largeArcFlag} ${sweepFlag} ${arc1X},${arc1Y}`
+  const arc2 = `A${rx},${ry} ${xAxisRotation} ${largeArcFlag} ${sweepFlag} ${arc2X},${arc2Y}`
+
+  /* eslint-disable */
+  // Each handlebar has two vertical lines in it, resembling notched grooves
+  const notches = (
+    "M" + (2.5 * x) + "," + (y + 8) +
+    "V" + (2 * y - 8) +
+    "M" + (4.5 * x) + "," + (y + 8) +
+    "V" + (2 * y - 8)
+  )
+  /* eslint-enable */
+
+  /* eslint-disable */
+  return (
+    start +
+    arc1 +
+    arc1EndLine +
+    arc2 +
+    "Z" +
+    notches
+  )
+  /* eslint-enable */
 }
 
 /** Initialize D3 brush component, for draggable selections */
@@ -28,18 +59,16 @@ function initBrush(brush, sliderId) {
   const brushDom = document.querySelector(`#${sliderId} .brush`)
   if (brushDom) {brushDom.remove()}
   const gBrush = d3.select(`#${sliderId}`).append('g').attr('class', 'brush').call(brush)
-  // gBrush.selectAll('.handle').append('path').attr('d', resizePath)
-  // gBrush.append('path').attr('class', 'handle').attr('d', resizePath)
-  gBrush.selectAll('.handle--custom')
+  gBrush.selectAll('.handlebar')
     .data([{ type: 'w' }, { type: 'e' }])
     .enter().append('path')
-    .attr('class', 'handle--custom')
-    .attr('fill', '#666')
+    .attr('class', 'handlebar')
+    .attr('fill', '#EEE')
     .attr('fill-opacity', 0.8)
     .attr('stroke', '#000')
-    .attr('stroke-width', 1.5)
+    .attr('stroke-width', 0.5)
     .attr('cursor', 'ew-resize')
-    .attr('d', resizePath)
+    .attr('d', handlebarPath)
 }
 
 /** Reset slider for this numeric cell facet */
@@ -57,12 +86,12 @@ function moveBrush(sliderId, brush, value1, value2, xScale) {
 /** Handle move event, which is fired after brush.end */
 function handleBrushMoved(sliderId, d3BrushSelection) {
   console.log('in handleBrushMoved, d3BrushSelection', d3BrushSelection)
-  d3.selectAll(`#${sliderId} .handle--custom`)
+  d3.selectAll(`#${sliderId} .handlebar`)
     .attr('display', null)
     .attr('transform', (d, i) => {
-      console.log('selection', d3BrushSelection)
-      console.log('d, i', d, i)
-      return `translate(${ d3BrushSelection[i] },${ HISTOGRAM_BAR_MAX_HEIGHT / 2 })`
+      const handlebarX = d3BrushSelection[i]
+      const handlebarY = -1 * (HISTOGRAM_BAR_MAX_HEIGHT - 1)
+      return `translate(${ handlebarX }, ${handlebarY})`
     })
 }
 
