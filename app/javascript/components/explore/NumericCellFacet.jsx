@@ -204,8 +204,8 @@ function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight, operat
 
   const barWidth = bars[0].width
   const hasNull = bars[0].isNull
-  const sliderLeft = hasNull ? barWidth : 1
-  const sliderWidth = svgWidth + sliderLeft
+  const sliderLeft = hasNull ? 0 : -1 * (SLIDER_HANDLEBAR_WIDTH + 1)
+  const sliderWidth = svgWidth + (hasNull ? barWidth : 2 * SLIDER_HANDLEBAR_WIDTH + 2)
 
   return (
     <>
@@ -262,7 +262,7 @@ function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight, operat
       <svg
         height={svgHeight}
         width={sliderWidth}
-        style={{ position: 'absolute', top: 0, left: 0 }}
+        style={{ position: 'absolute', top: 0, left: sliderLeft }}
         className="numeric-filter-histogram-slider"
         id={sliderId}
       ></svg>
@@ -526,11 +526,9 @@ export function NumericCellFacet({
     }
 
     if (inputBorder !== null && newValue1 >= min) {
-      console.log('setInputBorder(null)')
       setInputBorder(null)
     }
     if (inputBorder2 !== null && newValue2 <= max) {
-      console.log('setInputBorder2(null)')
       setInputBorder2(null)
     }
   }
@@ -538,14 +536,15 @@ export function NumericCellFacet({
   const [svgWidth, svgHeight] = getHistogramSvgDimensions(bars)
   const xScale = getXScale(bars, svgWidth, hasNull)
   const barWidth = bars[0].width
-  const extentStartX = hasNull ? 2 * barWidth + 2 : 0
+  const extentStartX = hasNull ? 2 * barWidth + 2 : SLIDER_HANDLEBAR_WIDTH + 2
+  const sliderWidth = hasNull ? svgWidth : svgWidth + SLIDER_HANDLEBAR_WIDTH
 
   const brush =
     d3
       .brushX()
       .extent([
         [extentStartX, 0],
-        [svgWidth, svgHeight]
+        [sliderWidth, svgHeight]
       ])
       .on('end', handleBrushEnd)
       .on('brush', event => {
