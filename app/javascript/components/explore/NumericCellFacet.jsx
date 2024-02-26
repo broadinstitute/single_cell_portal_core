@@ -56,10 +56,11 @@ function handlebarPath(d) {
   /* eslint-enable */
 }
 
-/** Set slider to default pixel range, without updating numeric filter */
+/** Set slider to default pixel range, without duplicative filter update */
 function setFullSlider(sliderId, brush) {
   // Get default full pixel domain for slider, e.g. [23, 179]
   const brushDom = document.querySelector(`#${sliderId} .brush`)
+  if (!brushDom) {return}
   const extent = brushDom.__brush.extent
   const pxMin = extent[0][0]
   const pxMax = extent[1][0]
@@ -102,6 +103,7 @@ function moveBrush(sliderId, brush, value1, value2, xScale) {
 
 /** Handle move event, which is fired after brush.end */
 function handleBrushMoved(sliderId, d3BrushSelection) {
+  if (!d3BrushSelection) {return}
   d3.selectAll(`#${sliderId} .handlebar`)
     .attr('display', null)
     .attr('transform', (d, i) => {
@@ -202,8 +204,8 @@ function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight, operat
 
   const barWidth = bars[0].width
   const hasNull = bars[0].isNull
-  const sliderLeft = hasNull ? barWidth : 0
-  const sliderWidth = svgWidth + sliderLeft + 1
+  const sliderLeft = hasNull ? barWidth : 1
+  const sliderWidth = svgWidth + sliderLeft
 
   return (
     <>
@@ -520,7 +522,7 @@ export function NumericCellFacet({
   const [svgWidth, svgHeight] = getHistogramSvgDimensions(bars)
   const xScale = getXScale(bars, svgWidth, hasNull)
   const barWidth = bars[0].width
-  const extentStartX = hasNull ? 2 * barWidth + 1 : 0
+  const extentStartX = hasNull ? 2 * barWidth + 2 : 0
 
   const brush =
     d3
