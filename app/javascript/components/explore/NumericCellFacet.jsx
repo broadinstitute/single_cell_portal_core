@@ -466,16 +466,24 @@ export function NumericCellFacet({
     const isValue2 = event.target.name.endsWith('value2')
     if (isValue2) {
       if (rawIsNaN) {newFilterValue = max}
-      setInputBorder2(rawIsNaN ? 'red' : null)
       setInputValue2(newDisplayValue)
-      updateNumericFilter(operator, inputValue, newFilterValue, includeNa, facet, handleNumericChange)
-      moveBrush(sliderId, brush, inputValue, newFilterValue, xScale)
+      if (newFilterValue > max) {
+        setInputBorder2('orange')
+      } else {
+        setInputBorder2(rawIsNaN ? 'red' : null)
+        updateNumericFilter(operator, inputValue, newFilterValue, includeNa, facet, handleNumericChange)
+        moveBrush(sliderId, brush, inputValue, newFilterValue, xScale)
+      }
     } else {
       if (rawIsNaN) {newFilterValue = min}
-      setInputBorder(rawIsNaN ? 'red' : null)
       setInputValue(newDisplayValue)
-      updateNumericFilter(operator, newFilterValue, inputValue2, includeNa, facet, handleNumericChange)
-      moveBrush(sliderId, brush, newFilterValue, inputValue2, xScale)
+      if (newFilterValue < min) {
+        setInputBorder('orange')
+      } else {
+        setInputBorder(rawIsNaN ? 'red' : null)
+        updateNumericFilter(operator, newFilterValue, inputValue2, includeNa, facet, handleNumericChange)
+        moveBrush(sliderId, brush, newFilterValue, inputValue2, xScale)
+      }
     }
   }
 
@@ -511,11 +519,19 @@ export function NumericCellFacet({
     const extent = d3BrushSelection.map(xScale.invert)
     const newValue1 = round(extent[0], precision)
     const newValue2 = round(extent[1], precision)
-    // setInputValue(newValue1)
-    // setInputValue2(newValue2)
+
     handleBrushMoved(sliderId, d3BrushSelection)
     if (event.sourceEvent !== 'skipUpdateNumericFilter') {
       updateNumericFilter(operator, newValue1, newValue2, includeNa, facet, handleNumericChange)
+    }
+
+    if (inputBorder !== null && newValue1 >= min) {
+      console.log('setInputBorder(null)')
+      setInputBorder(null)
+    }
+    if (inputBorder2 !== null && newValue2 <= max) {
+      console.log('setInputBorder2(null)')
+      setInputBorder2(null)
     }
   }
 
