@@ -85,7 +85,7 @@ function moveBrush(sliderId, brush, value1, value2, xScale) {
 
 /** Handle move event, which is fired after brush.end */
 function handleBrushMoved(sliderId, d3BrushSelection) {
-  console.log('in handleBrushMoved, d3BrushSelection', d3BrushSelection)
+  // console.log('in handleBrushMoved, d3BrushSelection', d3BrushSelection)
   d3.selectAll(`#${sliderId} .handlebar`)
     .attr('display', null)
     .attr('transform', (d, i) => {
@@ -505,6 +505,10 @@ export function NumericCellFacet({
         [svgWidth, svgHeight]
       ])
       .on('end', handleBrushEnd)
+      .on('brush', event => {
+        const d3BrushSelection = event.selection
+        handleBrushMoved(sliderId, d3BrushSelection)
+      })
 
   const sliderId = `numeric-filter-histogram-slider___${facet.annotation}`
 
