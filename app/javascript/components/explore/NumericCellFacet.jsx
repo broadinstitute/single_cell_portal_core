@@ -121,15 +121,15 @@ function getHistogramBars(filters) {
   const [minValue, maxValue, hasNull] = getMinMaxValues(filters)
 
   const numBins = 15
-  const numBinsNullTrimmed = hasNull ? numBins - 1 : numBins
+  const numBinsNullTrimmed = hasNull ? numBins - 2 : numBins
   const binSize = (maxValue - minValue) / numBinsNullTrimmed
   let bars = []
 
   for (let i = 0; i < numBins; i++) {
-    const isNull = hasNull && i === 0
+    const isNull = hasNull && i < 2
     let start
     let end
-    const indexNullTrimmed = hasNull ? i - 1 : i
+    const indexNullTrimmed = hasNull ? i - 2 : i
     if (isNull) {
       start = null
       end = null
@@ -146,10 +146,12 @@ function getHistogramBars(filters) {
     const [value, count] = filters[i]
     for (let j = 0; j < bars.length; j++) {
       const bar = bars[j]
-      if (j === 0 && bar.isNull) {
+      if (j < 2 && bar.isNull) {
         if (value === null) {
+          // Account for 0-height "spacer" bar between null and non-null bars
+          const adjustedCount = (j === 1) ? 0 : count
           // Count number of cells that have no numeric value for this annotation
-          bars[j].count += count
+          bars[j].count += adjustedCount
         }
       } else if (j < bars.length - 1) {
         // If not last bar, use exclusive (<) upper-bound to avoid double-count
@@ -183,6 +185,11 @@ function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight, operat
   },
   [filters.join(','), operator]
   )
+
+  const barWidth = bars[0].width
+  const hasNull = bars[0].isNull
+  const sliderLeft = hasNull ? barWidth : 0
+  const sliderWidth = svgWidth + sliderLeft + 1
 
   return (
     <>
@@ -238,7 +245,7 @@ function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight, operat
       {['between', 'not between'].includes(operator) &&
       <svg
         height={svgHeight}
-        width={svgWidth + SLIDER_HANDLEBAR_WIDTH + 1}
+        width={sliderWidth}
         style={{ position: 'absolute', top: 0, left: 0 }}
         className="numeric-filter-histogram-slider"
         id={sliderId}
@@ -366,7 +373,7 @@ function NumericQueryBuilder({
 
 /** Get D3 scale to convert between numeric annotation values and pixels */
 function getXScale(bars, svgWidth, hasNull) {
-  const barStartIndex = hasNull ? 1 : 0
+  const barStartIndex = hasNull ? 2 : 0
   const valueDomain = []
   const pxRange = []
   for (let i = barStartIndex; i < bars.length; i++) {
@@ -497,7 +504,7 @@ export function NumericCellFacet({
   const [svgWidth, svgHeight] = getHistogramSvgDimensions(bars)
   const xScale = getXScale(bars, svgWidth, hasNull)
   const barWidth = bars[0].width
-  const extentStartX = hasNull ? barWidth + 1 : 0
+  const extentStartX = hasNull ? 2 * barWidth + 1 : 0
 
   const brush =
     d3
