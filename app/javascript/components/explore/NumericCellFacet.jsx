@@ -6,6 +6,7 @@ import { round } from '~/lib/metrics-perf'
 import { getMinMaxValues } from '~/lib/cell-faceting.js'
 
 const HISTOGRAM_BAR_MAX_HEIGHT = 20
+const SLIDER_HANDLEBAR_WIDTH = 6
 
 /**
  * Get SVG for handlebar UI, as an affordance for resizing
@@ -16,17 +17,18 @@ function handlebarPath(d) {
   const sweepFlag = d.type === 'e' ? 1 : 0
   const x = sweepFlag ? 1 : -1
   const y = HISTOGRAM_BAR_MAX_HEIGHT
+  const width = SLIDER_HANDLEBAR_WIDTH
 
   // Construct an SVG arc
   // Docs: https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Paths#arcs
   const start = `M${ .5 * x },${ y}`
-  const rx = 6
-  const ry = 6
+  const rx = width
+  const ry = width
   const xAxisRotation = 0
   const largeArcFlag = 0
-  const arc1X = (6.5 * x)
+  const arc1X = ((width + 0.5) * x)
   const arc1Y = y + 6
-  const arc1EndLine = `V${ 2 * y - 6}`
+  const arc1EndLine = `V${ 2 * y - width}`
   const arc2X = 0.5 * x
   const arc2Y = 2 * y
   const arc1 = `A${rx},${ry} ${xAxisRotation} ${largeArcFlag} ${sweepFlag} ${arc1X},${arc1Y}`
@@ -35,10 +37,10 @@ function handlebarPath(d) {
   /* eslint-disable */
   // Each handlebar has two vertical lines in it, resembling notched grooves
   const notches = (
-    "M" + (2.5 * x) + "," + (y + 8) +
-    "V" + (2 * y - 8) +
-    "M" + (4.5 * x) + "," + (y + 8) +
-    "V" + (2 * y - 8)
+    "M" + (2.5 * x) + "," + (y + (width + 2)) +
+    "V" + (2 * y - (width + 2)) +
+    "M" + (4.5 * x) + "," + (y + (width + 2)) +
+    "V" + (2 * y - (width + 2))
   )
   /* eslint-enable */
 
@@ -236,7 +238,7 @@ function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight, operat
       {['between', 'not between'].includes(operator) &&
       <svg
         height={svgHeight}
-        width={svgWidth}
+        width={svgWidth + SLIDER_HANDLEBAR_WIDTH + 1}
         style={{ position: 'absolute', top: 0, left: 0 }}
         className="numeric-filter-histogram-slider"
         id={sliderId}
@@ -444,13 +446,13 @@ export function NumericCellFacet({
       setInputBorder2(rawIsNaN ? 'red' : null)
       setInputValue2(newDisplayValue)
       updateNumericFilter(operator, inputValue, newFilterValue, includeNa, facet, handleNumericChange)
-      moveBrush(sliderId, brush, resizeHandles, inputValue, newFilterValue, xScale)
+      moveBrush(sliderId, brush, inputValue, newFilterValue, xScale)
     } else {
       if (rawIsNaN) {newFilterValue = min}
       setInputBorder(rawIsNaN ? 'red' : null)
       setInputValue(newDisplayValue)
       updateNumericFilter(operator, newFilterValue, inputValue2, includeNa, facet, handleNumericChange)
-      moveBrush(sliderId, brush, resizeHandles, newFilterValue, inputValue2, xScale)
+      moveBrush(sliderId, brush, newFilterValue, inputValue2, xScale)
     }
   }
 
