@@ -56,6 +56,19 @@ function handlebarPath(d) {
   /* eslint-enable */
 }
 
+/** Set slider to default pixel range, without updating numeric filter */
+function setFullSlider(sliderId, brush) {
+  // Get default full pixel domain for slider, e.g. [23, 179]
+  const brushDom = document.querySelector(`#${sliderId} .brush`)
+  const extent = brushDom.__brush.extent
+  const pxMin = extent[0][0]
+  const pxMax = extent[1][0]
+  const defaultPxDomain = [pxMin, pxMax]
+
+  const brushD3Node = d3.select(`#${sliderId} .brush`)
+  brushD3Node.call(brush.move, defaultPxDomain, 'skipUpdateNumericFilter')
+}
+
 /** Initialize D3 brush component, for draggable selections */
 function initBrush(brush, sliderId) {
   const brushDom = document.querySelector(`#${sliderId} .brush`)
@@ -71,11 +84,13 @@ function initBrush(brush, sliderId) {
     .attr('stroke-width', 0.5)
     .attr('cursor', 'ew-resize')
     .attr('d', handlebarPath)
+
+  setFullSlider(sliderId, brush)
 }
 
 /** Reset slider for this numeric cell facet */
 function clearBrush(sliderId, brush) {
-  d3.select(`#${sliderId} .brush`).call(brush.move, null)
+  setFullSlider(sliderId, brush)
 }
 
 /** Move D3 brush slider */
@@ -87,7 +102,6 @@ function moveBrush(sliderId, brush, value1, value2, xScale) {
 
 /** Handle move event, which is fired after brush.end */
 function handleBrushMoved(sliderId, d3BrushSelection) {
-  // console.log('in handleBrushMoved, d3BrushSelection', d3BrushSelection)
   d3.selectAll(`#${sliderId} .handlebar`)
     .attr('display', null)
     .attr('transform', (d, i) => {
@@ -498,7 +512,9 @@ export function NumericCellFacet({
     // setInputValue(newValue1)
     // setInputValue2(newValue2)
     handleBrushMoved(sliderId, d3BrushSelection)
-    updateNumericFilter(operator, newValue1, newValue2, includeNa, facet, handleNumericChange)
+    if (event.sourceEvent !== 'skipUpdateNumericFilter') {
+      updateNumericFilter(operator, newValue1, newValue2, includeNa, facet, handleNumericChange)
+    }
   }
 
   const [svgWidth, svgHeight] = getHistogramSvgDimensions(bars)

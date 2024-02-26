@@ -42,7 +42,7 @@ function getHasNondefaultSelection(selectionMap, facets) {
     const [selectedFacet, selection] = entries[i]
 
     const facet = facets.find(f => f.annotation === selectedFacet)
-    if (!_isEqual(facet.defaultSelection, selection)) {
+    if (!_isEqual(facet?.defaultSelection, selection)) {
       return true
     }
   }

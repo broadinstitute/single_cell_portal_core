@@ -176,7 +176,7 @@ function getFacetsParam(initFacets, selection) {
   const minimalSelection = {}
 
   const initSelection = {}
-  initFacets.filter(f => !f.isSelectedAnnotation).forEach(facet => {
+  initFacets.filter(f => !f.isSelectedAnnotation)?.forEach(facet => {
     initSelection[facet.annotation] = facet.defaultSelection
   })
 
