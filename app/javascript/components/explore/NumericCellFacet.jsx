@@ -514,9 +514,22 @@ export function NumericCellFacet({
   const isLikelyAllIntegers = Number.isInteger(min) && Number.isInteger(max)
   const precision = isLikelyAllIntegers ? 0 : 2 // Round to integer, or 2 decimal places
 
+  /** Handler for the start of a brush event from D3 */
+  function handleBrushStart(event) {
+    const d3BrushSelection = event.selection
+    console.log('in handleBrushStart, d3BrushSelection', d3BrushSelection)
+    if (d3BrushSelection[0] === d3BrushSelection[1]) {
+      // Reset slider upon plain click (i.e., without drag) outside selection
+      moveBrush(sliderId, brush, min, max, xScale)
+    }
+  }
+
   /** Handler for the end of a brush event from D3 */
   function handleBrushEnd(event) {
     const d3BrushSelection = event.selection
+
+    if (d3BrushSelection === null) {return}
+
     const extent = d3BrushSelection.map(xScale.invert)
     const newValue1 = round(extent[0], precision)
     const newValue2 = round(extent[1], precision)
@@ -547,6 +560,7 @@ export function NumericCellFacet({
         [extentStartX, 0],
         [sliderWidth, svgHeight]
       ])
+      .on('start', handleBrushStart)
       .on('end', handleBrushEnd)
       .on('brush', event => {
         const d3BrushSelection = event.selection
