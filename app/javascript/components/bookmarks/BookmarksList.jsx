@@ -4,11 +4,12 @@ import LoadingSpinner from '~/lib/LoadingSpinner'
 import { navigate } from '@reach/router'
 import { log } from '~/lib/metrics-api'
 
-export default function BookmarksList({serverBookmarks, serverBookmarksLoaded, studyAccession, showModal, toggleModal}) {
+export default function BookmarksList({serverBookmarks,serverBookmarksLoaded, studyAccession, showModal,
+  toggleModal, closeAllComponents}) {
 
   /** determine whether to reload study or not when selecting bookmark */
   function loadBookmark(bookmark) {
-    toggleModal()
+    closeAllComponents()
     if (bookmark.study_accession === studyAccession) {
       navigate(bookmark.path)
     } else {
@@ -16,7 +17,8 @@ export default function BookmarksList({serverBookmarks, serverBookmarksLoaded, s
     }
     log('load-bookmark')
   }
-  return <Modal id='bookmarks-list-modal' data-testid='bookmarks-list-modal' className='modal fade' show={showModal}>
+
+  return <Modal id='bookmarks-list-modal' data-testid='bookmarks-list-modal' className='modal' show={showModal}>
     <Modal.Header><h4>My Bookmarks</h4></Modal.Header>
     <Modal.Body>
       <div id='bookmarks-list-wrapper'>
