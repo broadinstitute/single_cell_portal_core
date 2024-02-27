@@ -29,6 +29,8 @@ class User
     end
   end
 
+  has_many :bookmarks, dependent: :delete_all
+
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable and :omniauthable,
   devise :database_authenticatable, :registerable,

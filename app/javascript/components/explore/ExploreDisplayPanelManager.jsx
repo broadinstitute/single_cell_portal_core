@@ -20,6 +20,7 @@ import DifferentialExpressionPanel, { DifferentialExpressionPanelHeader } from '
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
 import CellFilteringModal from '~/components/explore/CellFilteringModal'
 import { CellFilteringPanel, CellFilteringPanelHeader } from './CellFilteringPanel'
+import BookmarkManager from '~/components/bookmarks/BookmarkManager'
 
 /** Get the selected clustering and annotation, or their defaults */
 function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
@@ -262,11 +263,6 @@ export default function ExploreDisplayPanelManager({
     setExploreInfo(newExploreInfo)
   }
 
-  /** copies the url to the clipboard */
-  function copyLink(routerLocation) {
-    navigator.clipboard.writeText(routerLocation.href)
-  }
-
   /** handles cluster selection to also populate the default spatial groups */
   function updateClusterParams(newParams) {
     if (newParams.cluster && !newParams.spatialGroups) {
@@ -496,18 +492,13 @@ export default function ExploreDisplayPanelManager({
               exploreParams={exploreParamsWithDefaults}
               updateExploreParams={updateExploreParams}
               allGenes={exploreInfo ? exploreInfo.uniqueGenes : []}/>
-            <button className="action action-with-bg margin-extra-right"
-              onClick={clearExploreParams}
-              title="Reset all view options"
-              data-analytics-name="explore-view-options-reset">
-              <FontAwesomeIcon icon={faUndo}/> Reset view
-            </button>
-            <button onClick={() => copyLink(routerLocation)}
-              className="action action-with-bg"
-              data-toggle="tooltip"
-              title="Copy a link to this visualization to the clipboard">
-              <FontAwesomeIcon icon={faLink}/> Get link
-            </button>
+            {exploreInfo?.bookmarks &&
+              <BookmarkManager
+                bookmarks={exploreInfo.bookmarks}
+                studyAccession={studyAccession}
+                clearExploreParams={clearExploreParams}/>
+            }
+
           </>
         }
         {showCellFiltering && panelToShow === 'cell-filtering' && clusterCanFilter &&
