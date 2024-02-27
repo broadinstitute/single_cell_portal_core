@@ -95,10 +95,10 @@ function clearBrush(sliderId, brush) {
 }
 
 /** Move D3 brush slider */
-function moveBrush(sliderId, brush, value1, value2, xScale) {
+function moveBrush(sliderId, brush, value1, value2, xScale, sourceEvent=null) {
   const selection = [value1, value2].map(xScale)
   const [px1, px2] = selection
-  d3.select(`#${sliderId} .brush`).call(brush.move, [px1, px2])
+  d3.select(`#${sliderId} .brush`).call(brush.move, [px1, px2], sourceEvent)
 }
 
 /** Handle move event, which is fired after brush.end */
@@ -514,13 +514,11 @@ export function NumericCellFacet({
   const isLikelyAllIntegers = Number.isInteger(min) && Number.isInteger(max)
   const precision = isLikelyAllIntegers ? 0 : 2 // Round to integer, or 2 decimal places
 
-  /** Handler for the start of a brush event from D3 */
+  /** Handler for the start of a brush event from D3, e.g. mousedown */
   function handleBrushStart(event) {
-    const d3BrushSelection = event.selection
-    console.log('in handleBrushStart, d3BrushSelection', d3BrushSelection)
-    if (d3BrushSelection[0] === d3BrushSelection[1]) {
-      // Reset slider upon plain click (i.e., without drag) outside selection
-      moveBrush(sliderId, brush, min, max, xScale)
+    const [pxStart, pxStop] = event.selection
+    if (pxStart === pxStop) {
+      moveBrush(sliderId, brush, pxStart, pxStop, xScale, 'skipUpdateNumericFilter')
     }
   }
 
@@ -528,7 +526,10 @@ export function NumericCellFacet({
   function handleBrushEnd(event) {
     const d3BrushSelection = event.selection
 
-    if (d3BrushSelection === null) {return}
+    if (d3BrushSelection === null) {
+      moveBrush(sliderId, brush, min, max, xScale)
+      return
+    }
 
     const extent = d3BrushSelection.map(xScale.invert)
     const newValue1 = round(extent[0], precision)
