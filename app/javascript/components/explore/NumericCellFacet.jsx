@@ -102,8 +102,18 @@ function moveBrush(sliderId, brush, value1, value2, xScale, sourceEvent=null) {
 }
 
 /** Handle move event, which is fired after brush.end */
-function handleBrushMoved(sliderId, d3BrushSelection) {
+function handleBrushMoved(
+  sliderId, event,
+  setInputValue, setInputValue2, xScale, precision
+) {
+  const d3BrushSelection = event.selection
   if (!d3BrushSelection) {return}
+
+  if (d3BrushSelection[0] === d3BrushSelection[1]) {
+    // Hide handlebars on slide-start mousedown
+    d3.selectAll(`#${sliderId} .handlebar`).attr('display', 'none')
+    return
+  }
   d3.selectAll(`#${sliderId} .handlebar`)
     .attr('display', null)
     .attr('transform', (d, i) => {
@@ -111,6 +121,14 @@ function handleBrushMoved(sliderId, d3BrushSelection) {
       const handlebarY = -1 * (HISTOGRAM_BAR_MAX_HEIGHT - 1)
       return `translate(${ handlebarX }, ${handlebarY})`
     })
+
+  if (setInputValue) {
+    // Update inputs but not filter while moving slider
+    const [newValue1, newValue2] =
+      parseValuesFromBrushSelection(d3BrushSelection, xScale, precision)
+    setInputValue(newValue1)
+    setInputValue2(newValue2)
+  }
 }
 
 /** Get display attributes for histogram bars */
@@ -433,6 +451,14 @@ function parseSelection(selection) {
   return [rawOp, raw1, raw2, rawIncludeNa]
 }
 
+/** Return new values from D3 brush selection */
+function parseValuesFromBrushSelection(d3BrushSelection, xScale, precision) {
+  const extent = d3BrushSelection.map(xScale.invert)
+  const newValue1 = round(extent[0], precision)
+  const newValue2 = round(extent[1], precision)
+  return [newValue1, newValue2]
+}
+
 /** Cell filter component for continuous numeric annotation dimension */
 export function NumericCellFacet({
   facet, filters, selectionMap, handleNumericChange,
@@ -517,6 +543,7 @@ export function NumericCellFacet({
   /** Handler for the start of a brush event from D3, e.g. mousedown */
   function handleBrushStart(event) {
     const [pxStart, pxStop] = event.selection
+
     if (pxStart === pxStop) {
       moveBrush(sliderId, brush, pxStart, pxStop, xScale, 'skipUpdateNumericFilter')
     }
@@ -531,9 +558,8 @@ export function NumericCellFacet({
       return
     }
 
-    const extent = d3BrushSelection.map(xScale.invert)
-    const newValue1 = round(extent[0], precision)
-    const newValue2 = round(extent[1], precision)
+    const [newValue1, newValue2] =
+      parseValuesFromBrushSelection(d3BrushSelection, xScale, precision)
 
     handleBrushMoved(sliderId, d3BrushSelection)
     if (event.sourceEvent !== 'skipUpdateNumericFilter') {
@@ -564,8 +590,7 @@ export function NumericCellFacet({
       .on('start', handleBrushStart)
       .on('end', handleBrushEnd)
       .on('brush', event => {
-        const d3BrushSelection = event.selection
-        handleBrushMoved(sliderId, d3BrushSelection)
+        handleBrushMoved(sliderId, event, setInputValue, setInputValue2, xScale, precision)
       })
 
   const sliderId = `numeric-filter-histogram-slider___${facet.annotation}`
