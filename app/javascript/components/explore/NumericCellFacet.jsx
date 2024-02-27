@@ -413,12 +413,13 @@ function getXScale(bars, svgWidth, hasNull) {
   for (let i = barStartIndex; i < bars.length; i++) {
     const bar = bars[i]
     valueDomain.push(bar.start)
-    const x = bar.x + (hasNull ? 0 : SLIDER_HANDLEBAR_WIDTH + 1)
+    const x = bar.x + (hasNull ? 0 : SLIDER_HANDLEBAR_WIDTH + 2)
     pxRange.push(x)
   }
   const lastBar = bars.slice(-1)[0]
   valueDomain.push(lastBar.end)
-  pxRange.push(svgWidth + (hasNull ? 0 : SLIDER_HANDLEBAR_WIDTH + 1))
+  pxRange.push(svgWidth + (hasNull ? 0 : SLIDER_HANDLEBAR_WIDTH))
+
   const xScale = d3.scaleLinear().domain(valueDomain).range(pxRange)
   return xScale
 }
