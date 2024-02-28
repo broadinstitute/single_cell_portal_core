@@ -298,7 +298,7 @@ const operators = [
 /** Get options for numeric filter operators */
 function OperatorMenu({ operator, updateOperator }) {
   const widthsByOperator = {
-    'between': 80,
+    'between': 75,
     'not between': 100,
     '=': 50,
     '!=': 50,
@@ -324,11 +324,13 @@ function OperatorMenu({ operator, updateOperator }) {
 }
 
 /** A visually economical input field for numeric query builder */
-function NumericQueryInput({ value, border, updateInputValue, facet, filterName }) {
+function NumericQueryInput({ value, border, updateInputValue, facet, filterName, style }) {
   // Visually indicate that more digits are specified than are shown
-  const fadeOverflowClass = value >= 100_000 ? 'fade-overflow' : ''
+  const fadeOverflowClass = value >= 100_000 ? '' : ''
 
-  const style = border ? { border: `1px solid ${border}` } : {}
+  if (border) {
+    style.border = `1px solid ${border}`
+  }
 
   return (
     <span className={fadeOverflowClass}>
@@ -362,10 +364,11 @@ function updateNumericFilter(operator, inputValue, inputValue2, includeNa, facet
 /** Enables manual input of numbers, by which cells get filtered */
 function NumericQueryBuilder({
   facet, operator, inputValue, inputValue2, includeNa, inputBorder, inputBorder2, hasNull,
+  inputStyle, inputStyle2,
   updateOperator, updateInputValue, updateIncludeNa
 }) {
   return (
-    <div>
+    <div className="cell-facet-numeric-query-builder">
       <OperatorMenu
         operator={operator}
         updateOperator={updateOperator}
@@ -375,6 +378,7 @@ function NumericQueryBuilder({
         border={inputBorder}
         updateInputValue={updateInputValue}
         facet={facet}
+        style={inputStyle}
         filterName="value"
       />
       {['between', 'not between'].includes(operator) &&
@@ -385,6 +389,7 @@ function NumericQueryBuilder({
           border={inputBorder2}
           updateInputValue={updateInputValue}
           facet={facet}
+          style={inputStyle2}
           filterName="value2"
         />
       </span>
@@ -515,6 +520,38 @@ export function NumericCellFacet({
     }
   }
 
+  /**
+   * Get width and font size for input, to help keep full value glanceable
+   */
+  function getInputStyle(inputValue, precision) {
+    let width = 45
+    let fontSize = 13
+
+    const roundedNumber = round(parseFloat(inputValue), precision)
+    const numDigits = getNumDigits(roundedNumber)
+
+    if (numDigits > 5) {
+      fontSize = 12
+      width += 5.25 * (numDigits - 5)
+    }
+
+    const style = {
+      width: `${width}px`,
+      fontSize: `${fontSize}px`
+    }
+
+    return style
+  }
+
+  /**
+  * Get number of digits in a number `x`
+  *
+  * Inspired by https://stackoverflow.com/questions/14879691
+  */
+  function getNumDigits(x) {
+    return (x + '').length // eslint-disable-line
+  }
+
   /** Propagate change in operator selected from menu locally and upstream */
   function updateOperator(event) {
     const newOperator = event.target.value
@@ -598,6 +635,13 @@ export function NumericCellFacet({
 
   // console.log(`re-rendering NumericCellFacet for ${ facet.annotation}`)
 
+  let inputStyle = {}
+  let inputStyle2 = {}
+  if (operator === 'between') {
+    inputStyle = getInputStyle(inputValue, precision)
+    inputStyle2 = getInputStyle(inputValue2, precision)
+  }
+
   useEffect(() => {
     const selection = selectionMap[facet.annotation]
     const [rawOp, raw1, raw2, rawIncludeNa] = parseSelection(selection)
@@ -638,6 +682,8 @@ export function NumericCellFacet({
           includeNa={includeNa}
           inputBorder={inputBorder}
           inputBorder2={inputBorder2}
+          inputStyle={inputStyle}
+          inputStyle2={inputStyle2}
           hasNull={hasNull}
           updateOperator={updateOperator}
           updateInputValue={updateInputValue}

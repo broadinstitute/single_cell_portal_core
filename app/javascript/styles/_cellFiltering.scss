@@ -207,29 +207,6 @@ input.cell-facet-header-checkbox {
   color: #CCC;
 }
 
-// Used to fade truncated text in inputs, as a visually economical affordance
-// that more content exists in the input, but must be keyed to view
-.fade-overflow {
-  position: relative;
-}
-.fade-overflow:after {
-  position: absolute;
-  left: -2px;
-  bottom: 0;
-  height: 100%;
-  width: 100%;
-  content: "";
-  background: linear-gradient(to left,
-    rgb(255, 255, 255) 5%,
-    rgba(255, 255, 255, 0) 30%
-  );
-  pointer-events: none; /* so the text is still selectable */
-}
-
-.fade-overflow:has(input:focus):after {
-  background: none;
-}
-
 .numeric-query-input {
   font-size: 13px;
   height: 20px;
