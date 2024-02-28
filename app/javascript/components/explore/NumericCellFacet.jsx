@@ -367,13 +367,7 @@ function NumericQueryBuilder({
   precision,
   updateOperator, updateInputValue, updateIncludeNa
 }) {
-  const inputStyle = getInputStyle(inputValue, operator, precision)
-  const inputStyle2 = getInputStyle(inputValue2, operator, precision)
-  const andStyle = { marginLeft: '4px' }
-  if (inputStyle.isLargest && inputStyle2.isLargest) {
-    andStyle.marginLeft = '3px'
-    andStyle.marginRight = '-1px'
-  }
+  const styles = getResponsiveStyles(inputValue, inputValue2, operator, precision)
 
   return (
     <div className="cell-facet-numeric-query-builder">
@@ -386,18 +380,18 @@ function NumericQueryBuilder({
         border={inputBorder}
         updateInputValue={updateInputValue}
         facet={facet}
-        style={inputStyle}
+        style={styles.input}
         filterName="value"
       />
       {['between', 'not between'].includes(operator) &&
       <>
-        <span style={andStyle}>and</span>
+        <span style={styles.and}>and</span>
         <NumericQueryInput
           value={inputValue2}
           border={inputBorder2}
           updateInputValue={updateInputValue}
           facet={facet}
-          style={inputStyle2}
+          style={styles.input2}
           filterName="value2"
         />
       </>
@@ -465,7 +459,6 @@ function getInputStyle(inputValue, operator, precision) {
   const stringValue = roundedNumber.toString()
   let numDigits = getNumDigits(stringValue)
   if (stringValue.includes('.')) {numDigits -= 0.75}
-  let isLargest = false
 
   if (
     numDigits > 4 &&
@@ -476,16 +469,34 @@ function getInputStyle(inputValue, operator, precision) {
   } else if (numDigits > 7) {
     fontSize = 11
     width += 5.5 * (numDigits - 4)
-    isLargest = true
   }
 
   const style = {
     width: `${width}px`,
     fontSize: `${fontSize}px`,
-    isLargest // Not a standard style, but a helpful prop
+    numDigits // Not a standard style, but a helpful prop
   }
 
   return style
+}
+
+/** Make big input numbers fit on one more more often */
+function getResponsiveStyles(inputValue, inputValue2, operator, precision) {
+  const inputStyle = getInputStyle(inputValue, operator, precision)
+  const inputStyle2 = getInputStyle(inputValue2, operator, precision)
+  const andStyle = { marginLeft: '4px' }
+  const totalDigits = inputStyle.numDigits + inputStyle2.numDigits
+  if (totalDigits > 14) {
+    andStyle.marginLeft = '2px'
+    andStyle.marginRight = '-2px'
+    if (totalDigits > 16) {andStyle.fontSize = 11.5}
+  }
+  const styles = {
+    input: inputStyle,
+    input2: inputStyle2,
+    and: andStyle
+  }
+  return styles
 }
 
 /**
@@ -661,6 +672,7 @@ export function NumericCellFacet({
     setInputValue(raw1)
     setInputValue2(raw2)
     setIncludeNa(rawIncludeNa)
+    moveBrush(sliderId, brush, raw1, raw2, xScale, 'skipUpdateNumericFilter')
   }, [Object.values(selectionMap).join(',')])
 
   return (
