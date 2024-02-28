@@ -364,9 +364,17 @@ function updateNumericFilter(operator, inputValue, inputValue2, includeNa, facet
 /** Enables manual input of numbers, by which cells get filtered */
 function NumericQueryBuilder({
   facet, operator, inputValue, inputValue2, includeNa, inputBorder, inputBorder2, hasNull,
-  inputStyle, inputStyle2,
+  precision,
   updateOperator, updateInputValue, updateIncludeNa
 }) {
+  const inputStyle = getInputStyle(inputValue, operator, precision)
+  const inputStyle2 = getInputStyle(inputValue2, operator, precision)
+  const andStyle = { marginLeft: '4px' }
+  if (inputStyle.isLargest && inputStyle2.isLargest) {
+    andStyle.marginLeft = '3px'
+    andStyle.marginRight = '-1px'
+  }
+
   return (
     <div className="cell-facet-numeric-query-builder">
       <OperatorMenu
@@ -383,7 +391,7 @@ function NumericQueryBuilder({
       />
       {['between', 'not between'].includes(operator) &&
       <>
-        <span style={{ marginLeft: '4px' }}>and</span>
+        <span style={andStyle}>and</span>
         <NumericQueryInput
           value={inputValue2}
           border={inputBorder2}
@@ -435,6 +443,49 @@ function getHistogramSvgDimensions(bars) {
   const svgWidth = lastBar.x + lastBar.width
   const svgHeight = HISTOGRAM_BAR_MAX_HEIGHT + 2
   return [svgWidth, svgHeight]
+}
+
+/**
+* Get number of digits in a number `x`
+*
+* Inspired by https://stackoverflow.com/questions/14879691
+*/
+function getNumDigits(x) {
+  return (x + '').length // eslint-disable-line
+}
+
+/**
+ * Get width and font size for input, to help keep full value glanceable
+ */
+function getInputStyle(inputValue, operator, precision) {
+  let width = 37
+  let fontSize = 13
+
+  const roundedNumber = round(inputValue, precision)
+  const stringValue = roundedNumber.toString()
+  let numDigits = getNumDigits(stringValue)
+  if (stringValue.includes('.')) {numDigits -= 0.75}
+  let isLargest = false
+
+  if (
+    numDigits > 4 &&
+        (!['between', 'not between'].includes(operator) || numDigits <= 7)
+  ) {
+    fontSize = 12
+    width += 6 * (numDigits - 4)
+  } else if (numDigits > 7) {
+    fontSize = 11
+    width += 5.5 * (numDigits - 4)
+    isLargest = true
+  }
+
+  const style = {
+    width: `${width}px`,
+    fontSize: `${fontSize}px`,
+    isLargest // Not a standard style, but a helpful prop
+  }
+
+  return style
 }
 
 /**
@@ -520,40 +571,6 @@ export function NumericCellFacet({
     }
   }
 
-  /**
-   * Get width and font size for input, to help keep full value glanceable
-   */
-  function getInputStyle(inputValue, operator, precision) {
-    let width = 35
-    let fontSize = 13
-
-    const roundedNumber = round(inputValue, precision)
-    const stringValue = roundedNumber.toString()
-    let numDigits = getNumDigits(stringValue)
-    if (stringValue.includes('.')) {numDigits -= 0.75}
-
-    if (numDigits > 3) {
-      if (numDigits > 5) {fontSize = 12}
-      width += 5.75 * (numDigits - 3)
-    }
-
-    const style = {
-      width: `${width}px`,
-      fontSize: `${fontSize}px`
-    }
-
-    return style
-  }
-
-  /**
-  * Get number of digits in a number `x`
-  *
-  * Inspired by https://stackoverflow.com/questions/14879691
-  */
-  function getNumDigits(x) {
-    return (x + '').length // eslint-disable-line
-  }
-
   /** Propagate change in operator selected from menu locally and upstream */
   function updateOperator(event) {
     const newOperator = event.target.value
@@ -637,9 +654,6 @@ export function NumericCellFacet({
 
   // console.log(`re-rendering NumericCellFacet for ${ facet.annotation}`)
 
-  const inputStyle = getInputStyle(inputValue, operator, precision)
-  const inputStyle2 = getInputStyle(inputValue2, operator, precision)
-
   useEffect(() => {
     const selection = selectionMap[facet.annotation]
     const [rawOp, raw1, raw2, rawIncludeNa] = parseSelection(selection)
@@ -680,8 +694,7 @@ export function NumericCellFacet({
           includeNa={includeNa}
           inputBorder={inputBorder}
           inputBorder2={inputBorder2}
-          inputStyle={inputStyle}
-          inputStyle2={inputStyle2}
+          precision={precision}
           hasNull={hasNull}
           updateOperator={updateOperator}
           updateInputValue={updateInputValue}
