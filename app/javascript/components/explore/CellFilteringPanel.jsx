@@ -42,7 +42,14 @@ function getHasNondefaultSelection(selectionMap, facets) {
     const [selectedFacet, selection] = entries[i]
 
     const facet = facets.find(f => f.annotation === selectedFacet)
-    if (!_isEqual(facet?.defaultSelection, selection)) {
+    let normDefault = facet.defaultSelection
+    let normSelection = selection
+    if (facet.type === 'group') {
+      // Normalize categorical filters, given order doesn't matter for them
+      normDefault = new Set(normDefault)
+      normSelection = new Set(normSelection)
+    }
+    if (!_isEqual(normDefault, normSelection)) {
       return true
     }
   }
