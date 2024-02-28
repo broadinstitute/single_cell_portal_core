@@ -382,7 +382,7 @@ function NumericQueryBuilder({
         filterName="value"
       />
       {['between', 'not between'].includes(operator) &&
-      <span>
+      <>
         <span style={{ marginLeft: '4px' }}>and</span>
         <NumericQueryInput
           value={inputValue2}
@@ -392,7 +392,7 @@ function NumericQueryBuilder({
           style={inputStyle2}
           filterName="value2"
         />
-      </span>
+      </>
       }
       {hasNull &&
       <div>
@@ -523,16 +523,18 @@ export function NumericCellFacet({
   /**
    * Get width and font size for input, to help keep full value glanceable
    */
-  function getInputStyle(inputValue, precision) {
-    let width = 45
+  function getInputStyle(inputValue, operator, precision) {
+    let width = 35
     let fontSize = 13
 
-    const roundedNumber = round(parseFloat(inputValue), precision)
-    const numDigits = getNumDigits(roundedNumber)
+    const roundedNumber = round(inputValue, precision)
+    const stringValue = roundedNumber.toString()
+    let numDigits = getNumDigits(stringValue)
+    if (stringValue.includes('.')) {numDigits -= 0.75}
 
-    if (numDigits > 5) {
-      fontSize = 12
-      width += 5.25 * (numDigits - 5)
+    if (numDigits > 3) {
+      if (numDigits > 5) {fontSize = 12}
+      width += 5.75 * (numDigits - 3)
     }
 
     const style = {
@@ -635,12 +637,8 @@ export function NumericCellFacet({
 
   // console.log(`re-rendering NumericCellFacet for ${ facet.annotation}`)
 
-  let inputStyle = {}
-  let inputStyle2 = {}
-  if (operator === 'between') {
-    inputStyle = getInputStyle(inputValue, precision)
-    inputStyle2 = getInputStyle(inputValue2, precision)
-  }
+  const inputStyle = getInputStyle(inputValue, operator, precision)
+  const inputStyle2 = getInputStyle(inputValue2, operator, precision)
 
   useEffect(() => {
     const selection = selectionMap[facet.annotation]
