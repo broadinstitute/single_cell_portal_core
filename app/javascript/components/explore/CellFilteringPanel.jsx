@@ -187,7 +187,7 @@ function GroupCellFilter({
 function GroupCellFacet({
   facet,
   selectionMap, handleCheck,
-  handleCheckAllFiltersInFacet, handleResetFacet, updateFilteredCells,
+  handleCheckAllFiltersInFacet, updateFilteredCells,
   hasNondefaultSelection, isFullyCollapsed, setIsFullyCollapsed,
   shownFilters, sortKey, setSortKey
 }) {
@@ -197,7 +197,6 @@ function GroupCellFacet({
         facet={facet}
         selectionMap={selectionMap}
         handleCheckAllFiltersInFacet={handleCheckAllFiltersInFacet}
-        handleResetFacet={handleResetFacet}
         isFullyCollapsed={isFullyCollapsed}
         setIsFullyCollapsed={setIsFullyCollapsed}
         sortKey={sortKey}
@@ -226,7 +225,7 @@ function GroupCellFacet({
 function CellFacet({
   facet,
   selectionMap, handleCheck, handleNumericChange,
-  handleCheckAllFiltersInFacet, handleResetFacet, updateFilteredCells,
+  handleCheckAllFiltersInFacet, updateFilteredCells,
   isAllListsCollapsed, hasNondefaultSelection
 }) {
   if (
@@ -301,6 +300,8 @@ function CellFacet({
     return <></>
   }
 
+  const selection = selectionMap[facet.annotation]
+
   return (
     <div
       className="cell-facet"
@@ -313,7 +314,6 @@ function CellFacet({
             selectionMap={selectionMap}
             handleCheck={handleCheck}
             handleCheckAllFiltersInFacet={handleCheckAllFiltersInFacet}
-            handleResetFacet={handleResetFacet}
             updateFilteredCells={updateFilteredCells}
             isAllListsCollapsed={isAllListsCollapsed}
             hasNondefaultSelection={hasNondefaultSelection}
@@ -329,14 +329,14 @@ function CellFacet({
             facet={facet}
             filters={shownFilters}
             isChecked={isChecked}
+            selection={selection}
             selectionMap={selectionMap}
             handleNumericChange={handleNumericChange}
             updateFilteredCells={updateFilteredCells}
             hasNondefaultSelection={hasNondefaultSelection}
             isFullyCollapsed={isFullyCollapsed}
             setIsFullyCollapsed={setIsFullyCollapsed}
-            handleResetFacet={handleResetFacet}
-            key={facet}
+            key={facet.annotation}
           />
       }
       {facet.type === 'group' && !isFullyCollapsed && filters.length > numFiltersPartlyCollapsed &&
@@ -403,6 +403,7 @@ export function CellFilteringPanel({
   Object.entries(cellFilteringSelection).forEach(([key, value]) => {
     defaultSelectionMap[key] = value
   })
+  console.log('in CellFilteringPanel, defaultSelectionMap["time_post_partum_days--numeric--study"].toString()', defaultSelectionMap['time_post_partum_days--numeric--study'].toString())
 
   const [selectionMap, setSelectionMap] = useState(defaultSelectionMap)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
@@ -413,7 +414,17 @@ export function CellFilteringPanel({
   // Needed to propagate facets from URL to initial checkbox states
   useEffect(() => {
     setSelectionMap(defaultSelectionMap)
+    console.log('in useEffect1, defaultSelectionMap["time_post_partum_days--numeric--study"].toString()', defaultSelectionMap['time_post_partum_days--numeric--study'].toString())
   }, [Object.values(defaultSelectionMap).join(',')])
+
+  useEffect(() => {
+    // setSelectionMap(defaultSelectionMap)
+    console.log('in useEffect2, selectionMap["time_post_partum_days--numeric--study"].toString()', selectionMap['time_post_partum_days--numeric--study'].toString())
+  }, [Object.values(selectionMap).join(',')])
+
+  // useEffect(() => {
+  //   setSelectionMap(selectionMap)
+  // }, [Object.values(selectionMap).join(',')])
 
   /** Top header for the "Filter" section, including all-facet controls */
   function FilterSectionHeader({
@@ -466,13 +477,6 @@ export function CellFilteringPanel({
     updateFilteredCells(selectionMap)
   }
 
-  /** Reset numeric facet to default values, i.e. clear facet */
-  function handleResetFacet(facetName) {
-    const facet = facets.find(f => f.annotation === facetName)
-    const defaultSelection = facet.defaultSelection
-    handleNumericChange(facetName, defaultSelection)
-  }
-
   /** Reset all filters to initial, selected state */
   function handleResetFilters() {
     const initSelection = {}
@@ -500,7 +504,7 @@ export function CellFilteringPanel({
         return item !== event.target.value
       })
     }
-    // update the selectionMap state with the filter in it's updated condition
+    // update the selectionMap state with the filter in its updated condition
     selectionMap[facetName] = updatedList
     setSelectionMap(selectionMap)
 
@@ -510,11 +514,21 @@ export function CellFilteringPanel({
 
   /** Propagate change in a numeric cell filter */
   function handleNumericChange(facetName, newValues) {
-    selectionMap[facetName] = newValues
-    setSelectionMap(selectionMap)
+    console.log('facetName, newValues.toString()', facetName, newValues.toString())
+    selectionMap[facetName] = newValues.slice()
+    const newSelectionMap = Object.assign({}, selectionMap)
+    setSelectionMap(newSelectionMap)
 
     // update the filtered cells based on the checked condition of the filters
-    updateFilteredCells(selectionMap)
+    updateFilteredCells(newSelectionMap)
+  }
+
+  console.log('in CellFilteringPanel, selectionMap["time_post_partum_days--numeric--study"].toString()', selectionMap['time_post_partum_days--numeric--study'].toString())
+  const days = selectionMap['time_post_partum_days--numeric--study']
+  console.log('days[0][0][1][0]', days[0][0][1][0])
+  if (days[0][0][1][0] === 5) {
+    // debugger()
+    debugger
   }
 
   const currentlyInUseAnnotations = { colorBy: '', facets: [] }
@@ -573,7 +587,6 @@ export function CellFilteringPanel({
                     handleCheck={handleCheck}
                     handleNumericChange={handleNumericChange}
                     handleCheckAllFiltersInFacet={handleCheckAllFiltersInFacet}
-                    handleResetFacet={handleResetFacet}
                     updateFilteredCells={updateFilteredCells}
                     isAllListsCollapsed={isAllListsCollapsed}
                     hasNondefaultSelection={hasNondefaultSelection}

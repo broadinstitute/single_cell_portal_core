@@ -182,20 +182,24 @@ function getFacetsParam(initFacets, selection) {
 
   const innerParams = []
   Object.entries(initSelection).forEach(([facet, filters]) => {
-    filters.forEach(filter => {
-      // Unlike `selection`, which specifies all filters that are selected
-      // (i.e., checked and not applied), the `facets` parameter species only
-      // filters that are _not_ selected, i.e. they're unchecked and applied.
-      //
-      // This makes the `facets` parameter much clearer.
-      if (facet.type === 'group' && !selection[facet].includes(filter)) {
-        if (facet in minimalSelection) {
-          minimalSelection[facet].push(filter)
-        } else {
-          minimalSelection[facet] = [filter]
+    if (facet.type === 'group') {
+      filters.forEach(filter => {
+        // Unlike `selection`, which specifies all filters that are selected
+        // (i.e., checked and not applied), the `facets` parameter species only
+        // filters that are _not_ selected, i.e. they're unchecked and applied.
+        //
+        // This makes the `facets` parameter much clearer.
+        if (!selection[facet].includes(filter)) {
+          if (facet in minimalSelection) {
+            minimalSelection[facet].push(filter)
+          } else {
+            minimalSelection[facet] = [filter]
+          }
         }
-      }
-    })
+      })
+    } else {
+      // minimalSelection[facet] = selection[facet]
+    }
   })
 
   Object.entries(minimalSelection).forEach(([facet, filters]) => {
@@ -210,6 +214,8 @@ function getFacetsParam(initFacets, selection) {
 /** Parse `facets` URL parameter into cell filtering selection object */
 function parseFacetsParam(initFacets, facetsParam) {
   const selection = {}
+
+  console.log('initFacets', initFacets)
 
   // Convert the `facets` parameter value, which is a string,
   // into an object that has the same shape as `selections`

@@ -3,7 +3,6 @@
  */
 
 import React from 'react'
-import _isEqual from 'lodash/isEqual'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faChevronDown, faChevronRight, faUndo,
@@ -113,14 +112,6 @@ function includesSortIconClass(domClasses) {
   )
 }
 
-/** Determine if this numeric facet has a non-default selection */
-function getNumericHasNondefaultSelection(facet, selectionMap) {
-  const defaultSelection = facet.defaultSelection
-  const selection = selectionMap[facet.annotation]
-  const numericHasNondefaultSelection = !_isEqual(selection, defaultSelection)
-  return numericHasNondefaultSelection
-}
-
 /** Convert e.g. "cell_type__ontology_label" to "Cell type" */
 function parseAnnotationName(annotationIdentifier) {
   const rawName = annotationIdentifier.split('--')[0]
@@ -186,7 +177,8 @@ export function FacetHeader({
   facet, selectionMap, handleCheckAllFiltersInFacet, handleResetFacet,
   isFullyCollapsed, setIsFullyCollapsed,
   sortKey, setSortKey,
-  clearBrush, sliderId, brush
+  clearBrush, sliderId, brush,
+  numericHasNondefaultSelection
 }) {
   const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
   const isConventional = getIsConventionalAnnotation(rawFacetName)
@@ -225,10 +217,7 @@ export function FacetHeader({
     isFacetCheckboxSelected
   )
 
-  let numericHasNondefaultSelection
-  if (facet.type === 'numeric') {
-    numericHasNondefaultSelection = getNumericHasNondefaultSelection(facet, selectionMap)
-  }
+  console.log('in FacetComponents, selectionMap["time_post_partum_days--numeric--study"].toString()', selectionMap['time_post_partum_days--numeric--study'].toString())
 
   return (
     <>
@@ -252,8 +241,8 @@ export function FacetHeader({
       {facet.type === 'numeric' &&
         <a
           onClick={() => {
-            handleResetFacet(facet.annotation)
-            clearBrush(sliderId, brush)
+            // clearBrush(sliderId, brush)
+            handleResetFacet(facet)
           }}
           className="reset-facet"
           data-toggle="tooltip"
