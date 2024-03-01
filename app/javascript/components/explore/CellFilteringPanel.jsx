@@ -403,7 +403,7 @@ export function CellFilteringPanel({
   Object.entries(cellFilteringSelection).forEach(([key, value]) => {
     defaultSelectionMap[key] = value
   })
-  console.log('in CellFilteringPanel, defaultSelectionMap["time_post_partum_days--numeric--study"].toString()', defaultSelectionMap['time_post_partum_days--numeric--study'].toString())
+  // console.log('in CellFilteringPanel, defaultSelectionMap["time_post_partum_days--numeric--study"].toString()', defaultSelectionMap['time_post_partum_days--numeric--study'].toString())
 
   const [selectionMap, setSelectionMap] = useState(defaultSelectionMap)
   const [colorByFacet, setColorByFacet] = useState(shownAnnotation)
@@ -414,12 +414,12 @@ export function CellFilteringPanel({
   // Needed to propagate facets from URL to initial checkbox states
   useEffect(() => {
     setSelectionMap(defaultSelectionMap)
-    console.log('in useEffect1, defaultSelectionMap["time_post_partum_days--numeric--study"].toString()', defaultSelectionMap['time_post_partum_days--numeric--study'].toString())
+    // console.log('in useEffect1, defaultSelectionMap["time_post_partum_days--numeric--study"].toString()', defaultSelectionMap['time_post_partum_days--numeric--study'].toString())
   }, [Object.values(defaultSelectionMap).join(',')])
 
   useEffect(() => {
     // setSelectionMap(defaultSelectionMap)
-    console.log('in useEffect2, selectionMap["time_post_partum_days--numeric--study"].toString()', selectionMap['time_post_partum_days--numeric--study'].toString())
+    // console.log('in useEffect2, selectionMap["time_post_partum_days--numeric--study"].toString()', selectionMap['time_post_partum_days--numeric--study'].toString())
   }, [Object.values(selectionMap).join(',')])
 
   // useEffect(() => {
@@ -514,7 +514,7 @@ export function CellFilteringPanel({
 
   /** Propagate change in a numeric cell filter */
   function handleNumericChange(facetName, newValues) {
-    console.log('facetName, newValues.toString()', facetName, newValues.toString())
+    // console.log('facetName, newValues.toString()', facetName, newValues.toString())
     selectionMap[facetName] = newValues.slice()
     const newSelectionMap = Object.assign({}, selectionMap)
     setSelectionMap(newSelectionMap)
@@ -523,9 +523,9 @@ export function CellFilteringPanel({
     updateFilteredCells(newSelectionMap)
   }
 
-  console.log('in CellFilteringPanel, selectionMap["time_post_partum_days--numeric--study"].toString()', selectionMap['time_post_partum_days--numeric--study'].toString())
+  // console.log('in CellFilteringPanel, selectionMap["time_post_partum_days--numeric--study"].toString()', selectionMap['time_post_partum_days--numeric--study'].toString())
   const days = selectionMap['time_post_partum_days--numeric--study']
-  console.log('days[0][0][1][0]', days[0][0][1][0])
+  // console.log('days[0][0][1][0]', days[0][0][1][0])
   if (days[0][0][1][0] === 5) {
     // debugger()
     debugger

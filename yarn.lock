@@ -8320,6 +8320,13 @@ react-select@^5.2.2:
     react-transition-group "^4.3.0"
     use-isomorphic-layout-effect "^1.1.2"
 
+react-svg-brush@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/react-svg-brush/-/react-svg-brush-1.0.0.tgz#f6b8e20157cd243fb9606436d7c1f7606443b35d"
+  integrity sha512-LqTHN8iVFM33xnAQULxFaxTFnhRpMx/T+FMLcOGJkH6onTMWdmfIDBWr3M52wdKjXslS9elGjRa8RZyTBVzQWQ==
+  dependencies:
+    prop-types "^15.7.2"
+
 react-switch@6.0.0:
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/react-switch/-/react-switch-6.0.0.tgz#bd4a2dea08f211b8a32e55e8314fd44bc1ec947e"
