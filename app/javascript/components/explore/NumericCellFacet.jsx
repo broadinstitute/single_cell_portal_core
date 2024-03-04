@@ -145,11 +145,20 @@ function getSliderStyle(bars, svgWidth) {
   const hasNull = bars[0].isNull
   const sliderLeft = hasNull ? 0 : -1 * (SLIDER_HANDLEBAR_WIDTH + 1)
   const sliderWidth = svgWidth + (hasNull ? barWidth : 2 * SLIDER_HANDLEBAR_WIDTH + 2)
-  return [sliderLeft, sliderWidth]
+  const extentStartX = hasNull ? 2 * barWidth + 2 : SLIDER_HANDLEBAR_WIDTH + 2
+  const extentWidth = hasNull ? svgWidth : svgWidth + SLIDER_HANDLEBAR_WIDTH
+  return [sliderLeft, sliderWidth, extentStartX, extentWidth]
 }
 
 /** SVG histogram showing distribution of numeric annotation values */
-function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight, operator }) {
+function Histogram({
+  facet, bars, svgWidth, svgHeight, operator,
+  brushSelection, handleBrushMove, handleBrushEnd
+}) {
+  const sliderId = `numeric-filter-histogram-slider___${facet.annotation}`
+  const [sliderLeft, sliderWidth, extentStartX, extentWidth] = getSliderStyle(bars, svgWidth)
+  const handlebarY = -1 * (HISTOGRAM_BAR_MAX_HEIGHT - 1)
+
   return (
     <>
       <svg
@@ -201,15 +210,62 @@ function Histogram({ sliderId, filters, bars, brush, svgWidth, svgHeight, operat
           })}
         </div>
       }
-      {/* {['between', 'not between'].includes(operator) &&
-      <svg
-        height={svgHeight}
-        width={sliderWidth}
-        style={{ position: 'absolute', top: 0, left: sliderLeft }}
-        className="numeric-filter-histogram-slider"
-        id={sliderId}
-      ></svg>
-      } */}
+      {['between', 'not between'].includes(operator) &&
+      <div>
+        <svg
+          height={svgHeight}
+          width={sliderWidth}
+          style={{ position: 'absolute', top: 0, left: sliderLeft }}
+          className="numeric-filter-histogram-slider"
+          id={sliderId}
+        >
+          <path
+            className="handlebar"
+            fill="#EEE"
+            fillOpacity="0.8"
+            stroke="#000"
+            strokeWidth="0.5"
+            cursor="ew-resize"
+            d={getHandlebarPath({ type: 'w' })}
+            transform={`translate(${ brushSelection[0] }, ${handlebarY})`}
+          />
+          <path
+            className="handlebar"
+            fill="#EEE"
+            fillOpacity="0.8"
+            stroke="#000"
+            strokeWidth="0.5"
+            cursor="ew-resize"
+            d={getHandlebarPath({ type: 'e' })}
+            transform={`translate(${ brushSelection[1] }, ${handlebarY})`}
+          />
+          <SVGBrush
+            // Defines the boundary of the brush.
+            // Strictly uses the format [[x0, y0], [x1, y1]] for both 1d and 2d brush.
+            // Note: d3 allows the format [x, y] for 1d brush.
+            extent={[
+              [extentStartX, 0],
+              [extentWidth, svgHeight]
+            ]}
+            selection={[
+              [brushSelection[0], 0],
+              [brushSelection[1], svgHeight]
+            ]}
+            // Obtain mouse positions relative to the current svg during mouse events.
+            // By default, getEventMouse returns [event.clientX, event.clientY]
+            getEventMouse={event => {
+              const { clientX, clientY } = event
+              const { left, top } = document.querySelector(`#${sliderId}`).getBoundingClientRect()
+              return [clientX - left, clientY - top]
+            }}
+            brushType="x"
+            // onBrushStart={handleBrushStart}
+            onBrush={handleBrushMove}
+            onBrushEnd={handleBrushEnd}
+          />
+        </svg>
+      </div>
+      }
     </>
   )
 }
@@ -483,23 +539,14 @@ export function NumericCellFacet({
   const [inputBorder2, setInputBorder2] = useState(null)
 
   const [min, max, hasNull] = getMinMaxValues(filters)
-
   const bars = getHistogramBars(filters)
-
-  // Whether to include cells with "not available" (N/A, `null`) numeric value
-  // const [includeNa, setIncludeNa] = useState(rawIncludeNa) // e.g. true
-
   const [svgWidth, svgHeight] = getHistogramSvgDimensions(bars)
   const xScale = getXScale(bars, svgWidth, hasNull)
-  const barWidth = bars[0].width
-  const extentStartX = hasNull ? 2 * barWidth + 2 : SLIDER_HANDLEBAR_WIDTH + 2
-  const extentWidth = hasNull ? svgWidth : svgWidth + SLIDER_HANDLEBAR_WIDTH
+
+  const [brushSelection, setBrushSelection] = useState([inputValue, inputValue2].map(xScale))
 
   const packedSelection = packSelection(operator, inputValue, inputValue2, includeNa)
   const numericHasNondefaultSelection = getNumericHasNondefaultSelection(facet, packedSelection)
-
-
-  const [sliderLeft, sliderWidth] = getSliderStyle(bars, svgWidth)
 
   useEffect(() => {
     let [trimmedValue, trimmedValue2] = [inputValue, inputValue2]
@@ -508,11 +555,11 @@ export function NumericCellFacet({
     setBrushSelection([trimmedValue, trimmedValue2].map(xScale))
   }, [inputValue, inputValue2])
 
-  const [brushSelection, setBrushSelection] = useState([inputValue, inputValue2].map(xScale))
 
-  const handlebarY = -1 * (HISTOGRAM_BAR_MAX_HEIGHT - 1)
-
-  const sliderId = `numeric-filter-histogram-slider___${facet.annotation}`
+  useEffect(() => {
+    setInputValue(raw1)
+    setInputValue2(raw2)
+  }, [selection.toString()])
 
   /** Propagate change in numeric input locally and upstream */
   function updateInputValue(event) {
@@ -582,9 +629,7 @@ export function NumericCellFacet({
 
     console.log('in handleBrushEnd, newValue1, newValue2', newValue1, newValue2)
 
-    if (event.sourceEvent !== 'skipUpdateNumericFilter') {
-      updateNumericFilter(operator, newValue1, newValue2, includeNa, facet, handleNumericChange)
-    }
+    updateNumericFilter(operator, newValue1, newValue2, includeNa, facet, handleNumericChange)
 
     if (inputBorder !== null && newValue1 >= min) {
       setInputBorder(null)
@@ -593,11 +638,6 @@ export function NumericCellFacet({
       setInputBorder2(null)
     }
   }
-
-  useEffect(() => {
-    setInputValue(raw1)
-    setInputValue2(raw2)
-  }, [selection.toString()])
 
   /** Handle move event, which is fired after brush.end */
   function handleBrushMove(event) {
@@ -638,71 +678,16 @@ export function NumericCellFacet({
       {!isFullyCollapsed &&
       <div style={{ marginLeft: 20, position: 'relative' }}>
         <Histogram
-          sliderId={sliderId}
+          facet={facet}
           filters={filters}
           bars={bars}
           svgWidth={svgWidth}
           svgHeight={svgHeight}
           operator={operator}
+          brushSelection={brushSelection}
+          handleBrushMove={handleBrushMove}
+          handleBrushEnd={handleBrushEnd}
         />
-        <div>
-          <svg
-            height={svgHeight}
-            width={sliderWidth}
-            style={{ position: 'absolute', top: 0, left: sliderLeft }}
-            className="numeric-filter-histogram-slider"
-            id={sliderId}
-          >
-            {['between', 'not between'].includes(operator) &&
-          <>
-            <path
-              className="handlebar"
-              fill="#EEE"
-              fillOpacity="0.8"
-              stroke="#000"
-              strokeWidth="0.5"
-              cursor="ew-resize"
-              d={getHandlebarPath({ type: 'w' })}
-              transform={`translate(${ brushSelection[0] }, ${handlebarY})`}
-            />
-            <path
-              className="handlebar"
-              fill="#EEE"
-              fillOpacity="0.8"
-              stroke="#000"
-              strokeWidth="0.5"
-              cursor="ew-resize"
-              d={getHandlebarPath({ type: 'e' })}
-              transform={`translate(${ brushSelection[1] }, ${handlebarY})`}
-            />
-          </>
-            }
-            <SVGBrush
-            // Defines the boundary of the brush.
-            // Strictly uses the format [[x0, y0], [x1, y1]] for both 1d and 2d brush.
-            // Note: d3 allows the format [x, y] for 1d brush.
-              extent={[
-                [extentStartX, 0],
-                [extentWidth, svgHeight]
-              ]}
-              selection={[
-                [brushSelection[0], 0],
-                [brushSelection[1], svgHeight]
-              ]}
-              // Obtain mouse positions relative to the current svg during mouse events.
-              // By default, getEventMouse returns [event.clientX, event.clientY]
-              getEventMouse={event => {
-                const { clientX, clientY } = event
-                const { left, top } = document.querySelector(`#${sliderId}`).getBoundingClientRect()
-                return [clientX - left, clientY - top]
-              }}
-              brushType="x"
-              // onBrushStart={handleBrushStart}
-              onBrush={handleBrushMove}
-              onBrushEnd={handleBrushEnd}
-            />
-          </svg>
-        </div>
         <NumericQueryBuilder
           facet={facet}
           operator={operator}
