@@ -230,3 +230,7 @@ input.cell-facet-header-checkbox {
   fill: #eee;
   stroke: #666;
 }
+
+.brush .handle:not(.handle--e, .handle--w) {
+  display: none;
+}

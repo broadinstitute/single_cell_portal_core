@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import * as d3 from 'd3'
+import { scaleLinear } from 'd3-scale'
 import _isEqual from 'lodash/isEqual'
 import SVGBrush from 'react-svg-brush'
 
@@ -346,7 +346,7 @@ function getXScale(bars, svgWidth, hasNull) {
   valueDomain.push(lastBar.end)
   pxRange.push(svgWidth + (hasNull ? 0 : SLIDER_HANDLEBAR_WIDTH))
 
-  const xScale = d3.scaleLinear().domain(valueDomain).range(pxRange)
+  const xScale = scaleLinear().domain(valueDomain).range(pxRange)
   return xScale
 }
 

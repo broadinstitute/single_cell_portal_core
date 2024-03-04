@@ -6,9 +6,7 @@
 
 import crossfilter from 'crossfilter2'
 
-import {
-  getGroupAnnotationsForClusterAndStudy, getIdentifierForAnnotation
-} from '~/lib/cluster-utils'
+import { getIdentifierForAnnotation } from '~/lib/cluster-utils'
 import { fetchAnnotationFacets } from '~/lib/scp-api'
 import { log } from '~/lib/metrics-api'
 
