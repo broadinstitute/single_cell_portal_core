@@ -150,7 +150,7 @@ function getSliderStyle(bars, svgWidth) {
   return [sliderLeft, sliderWidth, extentStartX, extentWidth]
 }
 
-/** SVG histogram showing distribution of numeric annotation values */
+/** Histogram for distribution of numeric annotation values, with tooltips or slider */
 function Histogram({
   facet, bars, svgWidth, svgHeight, operator,
   brushSelection, handleBrushMove, handleBrushEnd
@@ -527,6 +527,11 @@ function get1DBrushSelection(brushEvent) {
   return [brushEvent.selection[0][0], brushEvent.selection[1][0]]
 }
 
+/** Return whether value or not a number, roughly */
+function isRoughNaN(value) {
+  return isNaN(value) || value === '' || value === ' '
+}
+
 /** Cell filter component for continuous numeric annotation dimension */
 export function NumericCellFacet({
   facet, filters, selection, selectionMap, handleNumericChange,
@@ -549,6 +554,8 @@ export function NumericCellFacet({
   const numericHasNondefaultSelection = getNumericHasNondefaultSelection(facet, packedSelection)
 
   useEffect(() => {
+    updateInputBorders(inputValue, inputValue2)
+
     let [trimmedValue, trimmedValue2] = [inputValue, inputValue2]
     if (inputValue < min) {trimmedValue = min}
     if (inputValue2 > max) {trimmedValue2 = max}
@@ -567,7 +574,7 @@ export function NumericCellFacet({
     let newFilterValue
     const newDisplayValue = rawValue
 
-    const rawIsNaN = isNaN(rawValue) || rawValue === '' || rawValue === ' '
+    const rawIsNaN = isRoughNaN(rawValue)
     if (!rawIsNaN) {
       newFilterValue = parseFloat(rawValue)
     }
@@ -576,7 +583,7 @@ export function NumericCellFacet({
     if (isValue2) {
       if (rawIsNaN) {newFilterValue = max}
       setInputValue2(newDisplayValue)
-      if (newFilterValue > max) {
+      if (newFilterValue < max || newFilterValue > max) {
         setInputBorder2('orange')
       } else {
         setInputBorder2(rawIsNaN ? 'red' : null)
@@ -585,7 +592,7 @@ export function NumericCellFacet({
     } else {
       if (rawIsNaN) {newFilterValue = min}
       setInputValue(newDisplayValue)
-      if (newFilterValue < min) {
+      if (newFilterValue < max || newFilterValue > max) {
         setInputBorder('orange')
       } else {
         setInputBorder(rawIsNaN ? 'red' : null)
@@ -620,23 +627,27 @@ export function NumericCellFacet({
   const isLikelyAllIntegers = Number.isInteger(min) && Number.isInteger(max)
   const precision = isLikelyAllIntegers ? 0 : 2 // Round to integer, or 2 decimal places
 
+  /** Clear any warning / error state from inputs if warranted */
+  function updateInputBorders(newValue, newValue2) {
+    if (inputBorder !== null && newValue <= max && newValue >= min) {
+      setInputBorder(null)
+    }
+    if (inputBorder2 !== null && newValue2 <= max && newValue2 >= min) {
+      setInputBorder2(null)
+    }
+  }
+
   /** Handler for the end of a brush event from D3 */
   function handleBrushEnd(event) {
     const brushSelection = get1DBrushSelection(event)
+    if (!brushSelection) {return}
 
-    const [newValue1, newValue2] =
+    const [newValue, newValue2] =
       parseValuesFromBrushSelection(brushSelection, xScale, precision)
 
-    console.log('in handleBrushEnd, newValue1, newValue2', newValue1, newValue2)
+    updateNumericFilter(operator, newValue, newValue2, includeNa, facet, handleNumericChange)
 
-    updateNumericFilter(operator, newValue1, newValue2, includeNa, facet, handleNumericChange)
-
-    if (inputBorder !== null && newValue1 >= min) {
-      setInputBorder(null)
-    }
-    if (inputBorder2 !== null && newValue2 <= max) {
-      setInputBorder2(null)
-    }
+    updateInputBorders(newValue, newValue2)
   }
 
   /** Handle move event, which is fired after brush.end */
@@ -661,8 +672,10 @@ export function NumericCellFacet({
   /** Reset numeric facet to default values, i.e. clear facet */
   function handleResetFacet(facet) {
     const defaultSelection = facet.defaultSelection
-    const [defOp, def1, def2, defIncludeNa] = unpackSelection(defaultSelection)
-    updateNumericFilter(defOp, def1, def2, defIncludeNa, facet, handleNumericChange)
+    const [defOp, def, def2, defIncludeNa] = unpackSelection(defaultSelection)
+    setInputBorder(null)
+    setInputBorder2(null)
+    updateNumericFilter(defOp, def, def2, defIncludeNa, facet, handleNumericChange)
   }
 
   return (
