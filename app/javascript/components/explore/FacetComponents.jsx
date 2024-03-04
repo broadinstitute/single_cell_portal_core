@@ -177,7 +177,6 @@ export function FacetHeader({
   facet, selectionMap, handleCheckAllFiltersInFacet, handleResetFacet,
   isFullyCollapsed, setIsFullyCollapsed,
   sortKey, setSortKey,
-  clearBrush, sliderId, brush,
   numericHasNondefaultSelection
 }) {
   const [facetName, rawFacetName] = parseAnnotationName(facet.annotation)
@@ -239,7 +238,6 @@ export function FacetHeader({
       {facet.type === 'numeric' &&
         <a
           onClick={() => {
-            // clearBrush(sliderId, brush)
             handleResetFacet(facet)
           }}
           className="reset-facet"
