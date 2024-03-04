@@ -58,51 +58,6 @@ function getHandlebarPath(d) {
   /* eslint-enable */
 }
 
-/** Set slider to default pixel range, without duplicative filter update */
-function setFullSlider(sliderId, brush) {
-  // Get default full pixel domain for slider, e.g. [23, 179]
-  const brushDom = document.querySelector(`#${sliderId} .brush`)
-  if (!brushDom) {return}
-  const extent = brushDom.__brush.extent
-  const pxMin = extent[0][0]
-  const pxMax = extent[1][0]
-  const defaultPxDomain = [pxMin, pxMax]
-
-  const brushD3Node = d3.select(`#${sliderId} .brush`)
-  brushD3Node.call(brush.move, defaultPxDomain, 'skipUpdateNumericFilter')
-}
-
-/** Initialize D3 brush component, for draggable selections */
-function initBrush(brush, sliderId) {
-  const brushDom = document.querySelector(`#${sliderId} .brush`)
-  if (brushDom) {brushDom.remove()}
-  const gBrush = d3.select(`#${sliderId}`).append('g').attr('class', 'brush').call(brush)
-  // gBrush.selectAll('.handlebar')
-  //   .data([{ type: 'w' }, { type: 'e' }])
-  //   .enter().append('path')
-  //   .attr('class', 'handlebar')
-  //   .attr('fill', '#EEE')
-  //   .attr('fill-opacity', 0.8)
-  //   .attr('stroke', '#000')
-  //   .attr('stroke-width', 0.5)
-  //   .attr('cursor', 'ew-resize')
-  //   .attr('d', handlebarPath)
-
-  setFullSlider(sliderId, brush)
-}
-
-/** Reset slider for this numeric cell facet */
-function clearBrush(sliderId, brush) {
-  setFullSlider(sliderId, brush)
-}
-
-/** Move D3 brush slider */
-function moveBrush(sliderId, brush, value1, value2, xScale, sourceEvent=null) {
-  const selection = [value1, value2].map(xScale)
-  const [px1, px2] = selection
-  d3.select(`#${sliderId} .brush`).call(brush.move, [px1, px2], sourceEvent)
-}
-
 /** Get display attributes for histogram bars */
 function getHistogramBarDisplayAttrs(bars, maxCount) {
   const barRectAttrs = []
@@ -506,14 +461,7 @@ function parseValuesFromBrushSelection(brushSelection, xScale, precision) {
 /** Determine if this numeric facet has a non-default selection */
 function getNumericHasNondefaultSelection(facet, selection) {
   const defaultSelection = facet.defaultSelection
-  // const selection = selectionMap[facet.annotation]
   const numericHasNondefaultSelection = !_isEqual(selection.toString(), defaultSelection.toString())
-  // if (facet.annotation.includes('time_post_partum')) {
-  //   console.log(
-  //     'facet, selection, ***, defaultSelection, ***, hasDefaultSelection',
-  //     facet.annotation, selection.toString(), '***', defaultSelection.toString(), '***', !numericHasNondefaultSelection
-  //   )
-  // }
   return numericHasNondefaultSelection
 }
 
@@ -528,27 +476,15 @@ export function NumericCellFacet({
   facet, filters, selection, selectionMap, handleNumericChange,
   isFullyCollapsed, setIsFullyCollapsed
 }) {
-  // if (facet.annotation.includes('time_post_partum')) {
-  //   console.log(
-  //     'facet.annotation, selection.toString(), ***',
-  //     facet.annotation, selection.toString()
-  //   )
-  // }
-  // `selection` is e.g. [['between', [20, 40]], true]
-  // const [rawOp, raw1, raw2, rawIncludeNa] = unpackSelection(selection)
   const [operator, raw1, raw2, includeNa] = unpackSelection(selection)
-  // const [operator, setOperator] = useState(rawOp) // e.g. 'between'
   const [inputValue, setInputValue] = useState(raw1) // e.g. 20
   const [inputBorder, setInputBorder] = useState(null)
   const [inputValue2, setInputValue2] = useState(raw2) // e.g. 40
   const [inputBorder2, setInputBorder2] = useState(null)
-  const [resetState, setResetState] = useState(false)
 
   const [min, max, hasNull] = getMinMaxValues(filters)
 
   const bars = getHistogramBars(filters)
-
-  // console.log('in NumericCellFacet, selectionMap["time_post_partum_days--numeric--study"].toString()', selectionMap['time_post_partum_days--numeric--study'].toString())
 
   // Whether to include cells with "not available" (N/A, `null`) numeric value
   // const [includeNa, setIncludeNa] = useState(rawIncludeNa) // e.g. true
@@ -563,37 +499,20 @@ export function NumericCellFacet({
   const numericHasNondefaultSelection = getNumericHasNondefaultSelection(facet, packedSelection)
 
 
-  // /** get brush object */
-  // function getBrushObj() {
-  //   console.log('in getBrushObj, selectionMap["time_post_partum_days--numeric--study"].toString()', selectionMap['time_post_partum_days--numeric--study'].toString())
-  //   return d3
-  //     .brushX()
-  //     .extent([
-  //       [extentStartX, 0],
-  //       [extentWidth, svgHeight]
-  //     ])
-  //     .on('start', handleBrushStart)
-  //     .on('end', handleBrushEnd, 'foo')
-  //     .on('brush', event => {
-  //       handleBrushMoved(sliderId, event)
-  //     })
-  // }
-  // let brush = getBrushObj()
+  const [sliderLeft, sliderWidth] = getSliderStyle(bars, svgWidth)
+
+  useEffect(() => {
+    let [trimmedValue, trimmedValue2] = [inputValue, inputValue2]
+    if (inputValue < min) {trimmedValue = min}
+    if (inputValue2 > max) {trimmedValue2 = max}
+    setBrushSelection([trimmedValue, trimmedValue2].map(xScale))
+  }, [inputValue, inputValue2])
+
+  const [brushSelection, setBrushSelection] = useState([inputValue, inputValue2].map(xScale))
+
+  const handlebarY = -1 * (HISTOGRAM_BAR_MAX_HEIGHT - 1)
 
   const sliderId = `numeric-filter-histogram-slider___${facet.annotation}`
-
-  // useEffect(() => {
-  //   initBrush(brush, sliderId)
-  // },
-  // [filters.join(','), operator, resetState]
-  // )
-
-  // useEffect(() => {
-  //   // setSelectionMap(defaultSelectionMap)
-  //   console.log('in NumericCellFacet useEffect, selectionMap["time_post_partum_days--numeric--study"].toString()', selectionMap['time_post_partum_days--numeric--study'].toString())
-  //   brush = getBrushObj()
-  // }, [Object.values(selectionMap).join(',')])
-
 
   /** Propagate change in numeric input locally and upstream */
   function updateInputValue(event) {
@@ -654,24 +573,9 @@ export function NumericCellFacet({
   const isLikelyAllIntegers = Number.isInteger(min) && Number.isInteger(max)
   const precision = isLikelyAllIntegers ? 0 : 2 // Round to integer, or 2 decimal places
 
-  /** Handler for the start of a brush event from D3, e.g. mousedown */
-  function handleBrushStart(event) {
-    const [pxStart, pxStop] = event.selection
-
-    if (pxStart === pxStop) {
-      moveBrush(sliderId, brush, pxStart, pxStop, xScale, 'skipUpdateNumericFilter')
-    }
-  }
-
   /** Handler for the end of a brush event from D3 */
   function handleBrushEnd(event) {
     const brushSelection = get1DBrushSelection(event)
-
-    console.log('in handleBrushEnd, brushSelection', brushSelection)
-    // if (brushSelection === null) {
-    //   moveBrush(sliderId, brush, min, max, xScale)
-    //   return
-    // }
 
     const [newValue1, newValue2] =
       parseValuesFromBrushSelection(brushSelection, xScale, precision)
@@ -690,28 +594,15 @@ export function NumericCellFacet({
     }
   }
 
-  // console.log(`re-rendering NumericCellFacet for ${ facet.annotation}`)
-
   useEffect(() => {
-    // const [rawOp, raw1, raw2, rawIncludeNa] = unpackSelection(selection)
-    // console.log('rawOp, raw1, raw2, rawIncludeNa', rawOp, raw1, raw2, rawIncludeNa)
-    // setOperator(rawOp)
     setInputValue(raw1)
     setInputValue2(raw2)
-    // setIncludeNa(rawIncludeNa)
-    // moveBrush(sliderId, brush, raw1, raw2, xScale, 'skipUpdateNumericFilter')
   }, [selection.toString()])
 
   /** Handle move event, which is fired after brush.end */
   function handleBrushMove(event) {
     const brushSelection = get1DBrushSelection(event)
     if (!brushSelection) {return}
-
-    // if (brushSelection[0] === brushSelection[1]) {
-    // // Hide handlebars on slide-start mousedown
-    //   d3.selectAll(`#${sliderId} .handlebar`).attr('display', 'none')
-    //   return
-    // }
 
     if (setBrushSelection) {
       // Update inputs but not filter while moving slider
@@ -734,19 +625,6 @@ export function NumericCellFacet({
     updateNumericFilter(defOp, def1, def2, defIncludeNa, facet, handleNumericChange)
   }
 
-  const [sliderLeft, sliderWidth] = getSliderStyle(bars, svgWidth)
-
-  useEffect(() => {
-    let [trimmedValue, trimmedValue2] = [inputValue, inputValue2]
-    if (inputValue < min) {trimmedValue = min}
-    if (inputValue2 > max) {trimmedValue2 = max}
-    setBrushSelection([trimmedValue, trimmedValue2].map(xScale))
-  }, [inputValue, inputValue2])
-
-  const [brushSelection, setBrushSelection] = useState([inputValue, inputValue2].map(xScale))
-
-  const handlebarY = -1 * (HISTOGRAM_BAR_MAX_HEIGHT - 1)
-
   return (
     <>
       <FacetHeader
@@ -755,9 +633,6 @@ export function NumericCellFacet({
         isFullyCollapsed={isFullyCollapsed}
         setIsFullyCollapsed={setIsFullyCollapsed}
         handleResetFacet={handleResetFacet}
-        // clearBrush={clearBrush}
-        // sliderId={sliderId}
-        // brush={brush}
         numericHasNondefaultSelection={numericHasNondefaultSelection}
       />
       {!isFullyCollapsed &&
@@ -766,7 +641,6 @@ export function NumericCellFacet({
           sliderId={sliderId}
           filters={filters}
           bars={bars}
-          // brush={brush}
           svgWidth={svgWidth}
           svgHeight={svgHeight}
           operator={operator}
@@ -779,6 +653,8 @@ export function NumericCellFacet({
             className="numeric-filter-histogram-slider"
             id={sliderId}
           >
+            {['between', 'not between'].includes(operator) &&
+          <>
             <path
               className="handlebar"
               fill="#EEE"
@@ -799,6 +675,8 @@ export function NumericCellFacet({
               d={getHandlebarPath({ type: 'e' })}
               transform={`translate(${ brushSelection[1] }, ${handlebarY})`}
             />
+          </>
+            }
             <SVGBrush
             // Defines the boundary of the brush.
             // Strictly uses the format [[x0, y0], [x1, y1]] for both 1d and 2d brush.
