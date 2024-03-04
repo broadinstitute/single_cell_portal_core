@@ -607,7 +607,6 @@ export function NumericCellFacet({
       } else {
         setInputBorder2(rawIsNaN ? 'red' : null)
         updateNumericFilter(operator, inputValue, newFilterValue, includeNa, facet, handleNumericChange)
-        moveBrush(sliderId, brush, inputValue, newFilterValue, xScale, 'skipUpdateNumericFilter')
       }
     } else {
       if (rawIsNaN) {newFilterValue = min}
@@ -617,7 +616,6 @@ export function NumericCellFacet({
       } else {
         setInputBorder(rawIsNaN ? 'red' : null)
         updateNumericFilter(operator, newFilterValue, inputValue2, includeNa, facet, handleNumericChange)
-        moveBrush(sliderId, brush, newFilterValue, inputValue2, xScale, 'skipUpdateNumericFilter')
       }
     }
   }
@@ -670,6 +668,8 @@ export function NumericCellFacet({
     const [newValue1, newValue2] =
       parseValuesFromBrushSelection(brushSelection, xScale, precision)
 
+    console.log('in handleBrushEnd, newValue1, newValue2', newValue1, newValue2)
+
     if (event.sourceEvent !== 'skipUpdateNumericFilter') {
       updateNumericFilter(operator, newValue1, newValue2, includeNa, facet, handleNumericChange)
     }
@@ -695,10 +695,9 @@ export function NumericCellFacet({
   // }, [selection.toString()])
 
   /** Handle move event, which is fired after brush.end */
-  function handleBrushMoved(event) {
+  function handleBrushMove(event) {
     const brushSelection = get1DBrushSelection(event)
     if (!brushSelection) {return}
-    console.log('handleBrushMoved, brushSelection', brushSelection)
 
     // if (brushSelection[0] === brushSelection[1]) {
     // // Hide handlebars on slide-start mousedown
@@ -706,18 +705,8 @@ export function NumericCellFacet({
     //   return
     // }
 
-    // d3.selectAll(`#${sliderId} .handlebar`)
-    //   .attr('display', null)
-    //   .attr('transform', (d, i) => {
-    //     const handlebarX = brushSelection[i]
-    //     const handlebarY = -1 * (HISTOGRAM_BAR_MAX_HEIGHT - 1)
-    //     return `translate(${ handlebarX }, ${handlebarY})`
-    //   })
-
     if (setBrushSelection) {
       // Update inputs but not filter while moving slider
-      // const [newValue1, newValue2] =
-      //   parseValuesFromBrushSelection(brushSelection, xScale, precision)
 
       setBrushSelection(brushSelection)
     }
@@ -744,13 +733,16 @@ export function NumericCellFacet({
     // brush = getBrushObj()
     // setResetState(!resetState)
     updateNumericFilter(defOp, def1, def2, defIncludeNa, facet, handleNumericChange)
-    moveBrush(sliderId, brush, def1, def2, xScale, 'skipUpdateNumericFilter')
+    // moveBrush(sliderId, brush, def1, def2, xScale, 'skipUpdateNumericFilter')
   }
 
   const [sliderLeft, sliderWidth] = getSliderStyle(bars, svgWidth)
 
+  useEffect(() => {
+    setBrushSelection([inputValue, inputValue2].map(xScale))
+  }, [inputValue, inputValue2])
+
   const [brushSelection, setBrushSelection] = useState([inputValue, inputValue2].map(xScale))
-  console.log('brushSelection A', brushSelection)
 
   const handlebarY = -1 * (HISTOGRAM_BAR_MAX_HEIGHT - 1)
 
@@ -796,6 +788,16 @@ export function NumericCellFacet({
               d={getHandlebarPath({ type: 'w' })}
               transform={`translate(${ brushSelection[0] }, ${handlebarY})`}
             />
+            <path
+              className="handlebar"
+              fill="#EEE"
+              fillOpacity="0.8"
+              stroke="#000"
+              strokeWidth="0.5"
+              cursor="ew-resize"
+              d={getHandlebarPath({ type: 'e' })}
+              transform={`translate(${ brushSelection[1] }, ${handlebarY})`}
+            />
             <SVGBrush
             // Defines the boundary of the brush.
             // Strictly uses the format [[x0, y0], [x1, y1]] for both 1d and 2d brush.
@@ -817,18 +819,8 @@ export function NumericCellFacet({
               }}
               brushType="x"
               // onBrushStart={handleBrushStart}
-              onBrush={handleBrushMoved}
+              onBrush={handleBrushMove}
               onBrushEnd={handleBrushEnd}
-            />
-            <path
-              className="handlebar"
-              fill="#EEE"
-              fillOpacity="0.8"
-              stroke="#000"
-              strokeWidth="0.5"
-              cursor="ew-resize"
-              d={getHandlebarPath({ type: 'e' })}
-              transform={`translate(${ brushSelection[1] }, ${handlebarY})`}
             />
           </svg>
         </div>
