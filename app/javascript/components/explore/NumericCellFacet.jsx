@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { scaleLinear } from 'd3-scale'
+import { scaleLinear } from 'd3'
 import _isEqual from 'lodash/isEqual'
 import SVGBrush from 'react-svg-brush'
 
