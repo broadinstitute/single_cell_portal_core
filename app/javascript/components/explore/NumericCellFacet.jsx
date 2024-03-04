@@ -321,13 +321,7 @@ function NumericQueryInput({ value, border, updateInputValue, facet, filterName,
 
 /** Assemble and propagate numeric cell filter change */
 function updateNumericFilter(operator, inputValue, inputValue2, includeNa, facet, handleNumericChange) {
-  let value
-  if (['between', 'not between'].includes(operator)) {
-    value = [inputValue, inputValue2]
-  } else {
-    value = inputValue
-  }
-  const filterParam = [[[operator, value]], includeNa]
+  const filterParam = packSelection(operator, inputValue, inputValue2, includeNa)
   handleNumericChange(facet.annotation, filterParam)
 }
 
@@ -470,12 +464,12 @@ function getResponsiveStyles(inputValue, inputValue2, operator, precision) {
 }
 
 /**
- * Convert encoded selection to operator, values, and whether to include "N/A"
+ * Convert nested array to flat list of params for a numeric filter selection
  *
  * E.g. [['between', [20, 40]], true]
  * or more generally: [[<operator>, [<inputValue>, <inputValue2>]], <includeNa>]
  */
-function parseSelection(selection) {
+function unpackSelection(selection) {
   const numericFilter = selection[0] // e.g. ['between', [20, 40]]
   const rawOp = numericFilter[0][0] // e.g. 'between'
   let raw1; let raw2
@@ -487,6 +481,18 @@ function parseSelection(selection) {
   }
   const rawIncludeNa = selection[1] // e.g. true
   return [rawOp, raw1, raw2, rawIncludeNa]
+}
+
+/** Convert flat list of params to nested array for a numeric filter selection */
+function packSelection(operator, inputValue, inputValue2, includeNa) {
+  let value
+  if (['between', 'not between'].includes(operator)) {
+    value = [inputValue, inputValue2]
+  } else {
+    value = inputValue
+  }
+  const filterParam = [[[operator, value]], includeNa]
+  return filterParam
 }
 
 /** Return new values from D3 brush selection */
@@ -529,12 +535,12 @@ export function NumericCellFacet({
   //   )
   // }
   // `selection` is e.g. [['between', [20, 40]], true]
-  // const [rawOp, raw1, raw2, rawIncludeNa] = parseSelection(selection)
-  const [operator, inputValue, inputValue2, includeNa] = parseSelection(selection)
+  // const [rawOp, raw1, raw2, rawIncludeNa] = unpackSelection(selection)
+  const [operator, raw1, raw2, includeNa] = unpackSelection(selection)
   // const [operator, setOperator] = useState(rawOp) // e.g. 'between'
-  // const [inputValue, setInputValue] = useState(raw1) // e.g. 20
+  const [inputValue, setInputValue] = useState(raw1) // e.g. 20
   const [inputBorder, setInputBorder] = useState(null)
-  // const [inputValue2, setInputValue2] = useState(raw2) // e.g. 40
+  const [inputValue2, setInputValue2] = useState(raw2) // e.g. 40
   const [inputBorder2, setInputBorder2] = useState(null)
   const [resetState, setResetState] = useState(false)
 
@@ -553,7 +559,9 @@ export function NumericCellFacet({
   const extentStartX = hasNull ? 2 * barWidth + 2 : SLIDER_HANDLEBAR_WIDTH + 2
   const extentWidth = hasNull ? svgWidth : svgWidth + SLIDER_HANDLEBAR_WIDTH
 
-  const numericHasNondefaultSelection = getNumericHasNondefaultSelection(facet, selection)
+  const packedSelection = packSelection(operator, inputValue, inputValue2, includeNa)
+  const numericHasNondefaultSelection = getNumericHasNondefaultSelection(facet, packedSelection)
+
 
   // /** get brush object */
   // function getBrushObj() {
@@ -601,7 +609,7 @@ export function NumericCellFacet({
     const isValue2 = event.target.name.endsWith('value2')
     if (isValue2) {
       if (rawIsNaN) {newFilterValue = max}
-      // setInputValue2(newDisplayValue)
+      setInputValue2(newDisplayValue)
       if (newFilterValue > max) {
         setInputBorder2('orange')
       } else {
@@ -610,7 +618,7 @@ export function NumericCellFacet({
       }
     } else {
       if (rawIsNaN) {newFilterValue = min}
-      // setInputValue(newDisplayValue)
+      setInputValue(newDisplayValue)
       if (newFilterValue < min) {
         setInputBorder('orange')
       } else {
@@ -629,7 +637,7 @@ export function NumericCellFacet({
       // If switching from operator "=" to e.g. "between", then we need to
       // ensure the 2nd input value -- which was `null` for "=" -- is set
       // to some valid value for the range expected by "between".
-      const defaultInputValue2 = parseSelection(facet.defaultSelection)[2]
+      const defaultInputValue2 = unpackSelection(facet.defaultSelection)[2]
       newInputValue2 = defaultInputValue2
     }
     updateNumericFilter(newOperator, inputValue, newInputValue2, includeNa, facet, handleNumericChange)
@@ -684,15 +692,15 @@ export function NumericCellFacet({
 
   // console.log(`re-rendering NumericCellFacet for ${ facet.annotation}`)
 
-  // useEffect(() => {
-  //   // const [rawOp, raw1, raw2, rawIncludeNa] = parseSelection(selection)
-  //   // console.log('rawOp, raw1, raw2, rawIncludeNa', rawOp, raw1, raw2, rawIncludeNa)
-  //   // setOperator(rawOp)
-  //   // setInputValue(raw1)
-  //   // setInputValue2(raw2)
-  //   // setIncludeNa(rawIncludeNa)
-  //   moveBrush(sliderId, brush, raw1, raw2, xScale, 'skipUpdateNumericFilter')
-  // }, [selection.toString()])
+  useEffect(() => {
+    // const [rawOp, raw1, raw2, rawIncludeNa] = unpackSelection(selection)
+    // console.log('rawOp, raw1, raw2, rawIncludeNa', rawOp, raw1, raw2, rawIncludeNa)
+    // setOperator(rawOp)
+    setInputValue(raw1)
+    setInputValue2(raw2)
+    // setIncludeNa(rawIncludeNa)
+    // moveBrush(sliderId, brush, raw1, raw2, xScale, 'skipUpdateNumericFilter')
+  }, [selection.toString()])
 
   /** Handle move event, which is fired after brush.end */
   function handleBrushMove(event) {
@@ -707,39 +715,32 @@ export function NumericCellFacet({
 
     if (setBrushSelection) {
       // Update inputs but not filter while moving slider
-
       setBrushSelection(brushSelection)
     }
 
-  // if (setInputValue) {
-  // Update inputs but not filter while moving slider
-  // const [newValue1, newValue2] =
-  //   parseValuesFromBrushSelection(brushSelection, xScale, precision)
-  // setBrushInputValue(newValue1)
-  // setBrushInputValue2(newValue2)
-  // }
+    if (setInputValue) {
+      // Update inputs but not filter while moving slider
+      const [newValue1, newValue2] =
+        parseValuesFromBrushSelection(brushSelection, xScale, precision)
+      setInputValue(newValue1)
+      setInputValue2(newValue2)
+    }
   }
 
   /** Reset numeric facet to default values, i.e. clear facet */
   function handleResetFacet(facet) {
     const defaultSelection = facet.defaultSelection
-    console.log('defaultSelection', defaultSelection)
-    const [defOp, def1, def2, defIncludeNa] = parseSelection(defaultSelection)
-    console.log('in handleResetFacet, def1, typeof def1', def1, typeof def1)
-    // setOperator(defOp)
-    // setInputValue(def1)
-    // setInputValue2(def2)
-    // setIncludeNa(defIncludeNa)
-    // brush = getBrushObj()
-    // setResetState(!resetState)
+    const [defOp, def1, def2, defIncludeNa] = unpackSelection(defaultSelection)
     updateNumericFilter(defOp, def1, def2, defIncludeNa, facet, handleNumericChange)
-    // moveBrush(sliderId, brush, def1, def2, xScale, 'skipUpdateNumericFilter')
   }
 
   const [sliderLeft, sliderWidth] = getSliderStyle(bars, svgWidth)
 
   useEffect(() => {
-    setBrushSelection([inputValue, inputValue2].map(xScale))
+    let [trimmedValue, trimmedValue2] = [inputValue, inputValue2]
+    if (inputValue < min) {trimmedValue = min}
+    if (inputValue2 > max) {trimmedValue2 = max}
+    setBrushSelection([trimmedValue, trimmedValue2].map(xScale))
   }, [inputValue, inputValue2])
 
   const [brushSelection, setBrushSelection] = useState([inputValue, inputValue2].map(xScale))
