@@ -15,7 +15,7 @@ const SLIDER_HANDLEBAR_WIDTH = 6
  *
  * Inspired by https://crossfilter.github.io/crossfilter
  */
-function handlebarPath(d) {
+function getHandlebarPath(d) {
   const sweepFlag = d.type === 'e' ? 1 : 0
   const x = sweepFlag ? 1 : -1
   const y = HISTOGRAM_BAR_MAX_HEIGHT
@@ -77,16 +77,16 @@ function initBrush(brush, sliderId) {
   const brushDom = document.querySelector(`#${sliderId} .brush`)
   if (brushDom) {brushDom.remove()}
   const gBrush = d3.select(`#${sliderId}`).append('g').attr('class', 'brush').call(brush)
-  gBrush.selectAll('.handlebar')
-    .data([{ type: 'w' }, { type: 'e' }])
-    .enter().append('path')
-    .attr('class', 'handlebar')
-    .attr('fill', '#EEE')
-    .attr('fill-opacity', 0.8)
-    .attr('stroke', '#000')
-    .attr('stroke-width', 0.5)
-    .attr('cursor', 'ew-resize')
-    .attr('d', handlebarPath)
+  // gBrush.selectAll('.handlebar')
+  //   .data([{ type: 'w' }, { type: 'e' }])
+  //   .enter().append('path')
+  //   .attr('class', 'handlebar')
+  //   .attr('fill', '#EEE')
+  //   .attr('fill-opacity', 0.8)
+  //   .attr('stroke', '#000')
+  //   .attr('stroke-width', 0.5)
+  //   .attr('cursor', 'ew-resize')
+  //   .attr('d', handlebarPath)
 
   setFullSlider(sliderId, brush)
 }
@@ -490,8 +490,8 @@ function parseSelection(selection) {
 }
 
 /** Return new values from D3 brush selection */
-function parseValuesFromBrushSelection(d3BrushSelection, xScale, precision) {
-  const extent = d3BrushSelection.map(xScale.invert)
+function parseValuesFromBrushSelection(brushSelection, xScale, precision) {
+  const extent = brushSelection.map(xScale.invert)
   const newValue1 = round(extent[0], precision)
   const newValue2 = round(extent[1], precision)
   return [newValue1, newValue2]
@@ -509,6 +509,12 @@ function getNumericHasNondefaultSelection(facet, selection) {
   //   )
   // }
   return numericHasNondefaultSelection
+}
+
+/** Convert SVGBrush event's 2D selection array to D3's 1D selection array */
+function get1DBrushSelection(brushEvent) {
+  if (brushEvent.selection === null) {return null}
+  return [brushEvent.selection[0][0], brushEvent.selection[1][0]]
 }
 
 /** Cell filter component for continuous numeric annotation dimension */
@@ -653,33 +659,28 @@ export function NumericCellFacet({
 
   /** Handler for the end of a brush event from D3 */
   function handleBrushEnd(event) {
-    const d3BrushSelection = [event.selection[0][0], event.selection[1][0]]
+    const brushSelection = get1DBrushSelection(event)
 
-    console.log('in handleBrushEnd, d3BrushSelection', d3BrushSelection)
-    // if (d3BrushSelection === null) {
+    console.log('in handleBrushEnd, brushSelection', brushSelection)
+    // if (brushSelection === null) {
     //   moveBrush(sliderId, brush, min, max, xScale)
     //   return
     // }
 
     const [newValue1, newValue2] =
-      parseValuesFromBrushSelection(d3BrushSelection, xScale, precision)
+      parseValuesFromBrushSelection(brushSelection, xScale, precision)
 
-    // handleBrushMoved(sliderId, d3BrushSelection)
-    // if (event.sourceEvent !== 'skipUpdateNumericFilter') {
-    // debugger
-    // console.log('days fooParam', fooParam)
-    // console.log('in handleBrushEnd, selectionMap["time_post_partum_days--numeric--study"].toString()', selectionMap['time_post_partum_days--numeric--study'].toString())
-    // console.log('in handleBrushEnd, newValue1, newValue2', newValue1, newValue2)
-    updateNumericFilter(operator, newValue1, newValue2, includeNa, facet, handleNumericChange)
+    handleBrushMoved(event)
+    if (event.sourceEvent !== 'skipUpdateNumericFilter') {
+      updateNumericFilter(operator, newValue1, newValue2, includeNa, facet, handleNumericChange)
+    }
 
-    // }
-
-    // if (inputBorder !== null && newValue1 >= min) {
-    //   setInputBorder(null)
-    // }
-    // if (inputBorder2 !== null && newValue2 <= max) {
-    //   setInputBorder2(null)
-    // }
+    if (inputBorder !== null && newValue1 >= min) {
+      setInputBorder(null)
+    }
+    if (inputBorder2 !== null && newValue2 <= max) {
+      setInputBorder2(null)
+    }
   }
 
   // console.log(`re-rendering NumericCellFacet for ${ facet.annotation}`)
@@ -695,14 +696,12 @@ export function NumericCellFacet({
   // }, [selection.toString()])
 
   /** Handle move event, which is fired after brush.end */
-  function handleBrushMoved(
-    event
-  ) {
-    const d3BrushSelection = event.selection
-    if (!d3BrushSelection) {return}
-    console.log('d3BrushSelection', d3BrushSelection)
+  function handleBrushMoved(event) {
+    const brushSelection = get1DBrushSelection(event)
+    if (!brushSelection) {return}
+    console.log('handleBrushMoved, brushSelection', brushSelection)
 
-    if (d3BrushSelection[0] === d3BrushSelection[1]) {
+    if (brushSelection[0] === brushSelection[1]) {
     // Hide handlebars on slide-start mousedown
       d3.selectAll(`#${sliderId} .handlebar`).attr('display', 'none')
       return
@@ -710,7 +709,7 @@ export function NumericCellFacet({
     d3.selectAll(`#${sliderId} .handlebar`)
       .attr('display', null)
       .attr('transform', (d, i) => {
-        const handlebarX = d3BrushSelection[i]
+        const handlebarX = brushSelection[i]
         const handlebarY = -1 * (HISTOGRAM_BAR_MAX_HEIGHT - 1)
         return `translate(${ handlebarX }, ${handlebarY})`
       })
@@ -719,7 +718,7 @@ export function NumericCellFacet({
   // if (setInputValue) {
   // Update inputs but not filter while moving slider
   // const [newValue1, newValue2] =
-  //   parseValuesFromBrushSelection(d3BrushSelection, xScale, precision)
+  //   parseValuesFromBrushSelection(brushSelection, xScale, precision)
   // setBrushInputValue(newValue1)
   // setBrushInputValue2(newValue2)
   // }
@@ -775,20 +774,19 @@ export function NumericCellFacet({
           className="numeric-filter-histogram-slider"
           id={sliderId}
         >
+          <path
+            className="handlebar"
+            fill="#EEE"
+            fillOpacity="0.8"
+            stroke="#000"
+            strokeWidth="0.5"
+            cursor="ew-resize"
+            d={getHandlebarPath({ type: 'w' })}
+          />
           <SVGBrush
-          //      .brushX()
-          // .extent([
-          //   [extentStartX, 0],
-          //   [sliderWidth, svgHeight]
-          // ])
-          // .on('start', handleBrushStart)
-          // .on('end', handleBrushEnd, 'foo')
-          // .on('brush', event => {
-          //   handleBrushMoved(sliderId, event)
-          // })
-          // Defines the boundary of the brush.
-          // Strictly uses the format [[x0, y0], [x1, y1]] for both 1d and 2d brush.
-          // Note: d3 allows the format [x, y] for 1d brush.
+            // Defines the boundary of the brush.
+            // Strictly uses the format [[x0, y0], [x1, y1]] for both 1d and 2d brush.
+            // Note: d3 allows the format [x, y] for 1d brush.
             extent={[
               [extentStartX, 0],
               [sliderWidth, svgHeight]
@@ -804,6 +802,15 @@ export function NumericCellFacet({
             // onBrushStart={handleBrushStart}
             // onBrush={handleBrushMoved}
             onBrushEnd={handleBrushEnd}
+          />
+          <path
+            className="handlebar"
+            fill="#EEE"
+            fillOpacity="0.8"
+            stroke="#000"
+            strokeWidth="0.5"
+            cursor="ew-resize"
+            d={getHandlebarPath({ type: 'e' })}
           />
         </svg>
         <NumericQueryBuilder

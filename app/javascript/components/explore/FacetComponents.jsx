@@ -217,8 +217,6 @@ export function FacetHeader({
     isFacetCheckboxSelected
   )
 
-  console.log('in FacetComponents, selectionMap["time_post_partum_days--numeric--study"].toString()', selectionMap['time_post_partum_days--numeric--study'].toString())
-
   return (
     <>
       {facet.type === 'group' &&
