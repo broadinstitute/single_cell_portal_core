@@ -198,6 +198,7 @@ function getFacetsParam(initFacets, selection) {
         }
       })
     } else {
+      // TODO (SCP-5531): Enable URL parameters for numeric cell facets
       // minimalSelection[facet] = selection[facet]
     }
   })
@@ -214,8 +215,6 @@ function getFacetsParam(initFacets, selection) {
 /** Parse `facets` URL parameter into cell filtering selection object */
 function parseFacetsParam(initFacets, facetsParam) {
   const selection = {}
-
-  console.log('initFacets', initFacets)
 
   // Convert the `facets` parameter value, which is a string,
   // into an object that has the same shape as `selections`
