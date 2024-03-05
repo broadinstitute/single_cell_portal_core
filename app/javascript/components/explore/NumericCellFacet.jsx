@@ -546,7 +546,7 @@ function get1DBrushSelection(brushEvent) {
 
 /** Return whether value or not a number, roughly */
 function isRoughNaN(value) {
-  return isNaN(value) || value === '' || value === ' '
+  return isNaN(value) || value === ' '
 }
 
 /** Cell filter component for continuous numeric annotation dimension */
@@ -586,8 +586,8 @@ export function NumericCellFacet({
 
 
   useEffect(() => {
-    setInputValue(raw1)
-    setInputValue2(raw2)
+    if (raw1 !== '') {setInputValue(raw1)}
+    if (raw2 !== '') {setInputValue2(raw2)}
   }, [selection.toString()])
 
   /** Propagate manual changes to numeric input UI fields */
@@ -597,7 +597,7 @@ export function NumericCellFacet({
     const newDisplayValue = rawValue
 
     const rawIsNaN = isRoughNaN(rawValue)
-    if (!rawIsNaN) {
+    if (!rawIsNaN && rawValue !== '') {
       newFilterValue = parseFloat(rawValue)
     }
 
@@ -606,16 +606,18 @@ export function NumericCellFacet({
     if (isValue2) {
       if (rawIsNaN) {newFilterValue = max}
       setInputValue2(newDisplayValue)
-      if (newFilterValue < max || newFilterValue > max) {
-        setInputBorder2('orange')
-      } else {
-        setInputBorder2(rawIsNaN ? 'red' : null)
-        updateNumericFilter(operator, inputValue, newFilterValue, includeNa, facet, handleNumericChange)
+      if (rawValue !== '') {
+        if (newFilterValue < min || newFilterValue > max) {
+          setInputBorder2('orange')
+        } else {
+          setInputBorder2(rawIsNaN ? 'red' : null)
+          updateNumericFilter(operator, inputValue, newFilterValue, includeNa, facet, handleNumericChange)
+        }
       }
     } else {
       if (rawIsNaN) {newFilterValue = min}
-      setInputValue(newDisplayValue)
-      if (newFilterValue < max || newFilterValue > max) {
+      if (rawValue !== '') {setInputValue(newDisplayValue)}
+      if (newFilterValue < min || newFilterValue > max) {
         setInputBorder('orange')
       } else {
         setInputBorder(rawIsNaN ? 'red' : null)
