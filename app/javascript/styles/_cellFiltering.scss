@@ -210,6 +210,10 @@ input.cell-facet-header-checkbox {
   margin-left: 4px;
 }
 
+.cell-facet-numeric-inputs-container {
+  display: inline-block;
+}
+
 .cell-facet .brush .selection {
   fill-opacity: 0.1;
   fill: $action-color;

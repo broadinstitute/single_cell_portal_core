@@ -350,15 +350,16 @@ function NumericQueryBuilder({
         operator={operator}
         updateOperator={updateOperator}
       />
-      <NumericQueryInput
-        value={inputValue}
-        border={inputBorder}
-        updateInputValue={updateInputValue}
-        facet={facet}
-        style={styles.input}
-        filterName="value"
-      />
-      {['between', 'not between'].includes(operator) &&
+      <div className="cell-facet-numeric-inputs-container">
+        <NumericQueryInput
+          value={inputValue}
+          border={inputBorder}
+          updateInputValue={updateInputValue}
+          facet={facet}
+          style={styles.input}
+          filterName="value"
+        />
+        {['between', 'not between'].includes(operator) &&
       <>
         <span style={styles.and}>and</span>
         <NumericQueryInput
@@ -370,7 +371,8 @@ function NumericQueryBuilder({
           filterName="value2"
         />
       </>
-      }
+        }
+      </div>
       {hasNull &&
       <div>
         <label className="cell-filter-label" style={{ fontWeight: 'normal' }}>
