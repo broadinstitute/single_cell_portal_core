@@ -139,31 +139,34 @@ function getHistogramBars(filters) {
   return bars
 }
 
-/** Get `left` and `width` style properties for slider / brush */
-function getSliderStyle(bars, svgWidth) {
+/** Get container offsets for brush */
+function getSliderStyle(bars, histogramWidth) {
   const barWidth = bars[0].width
   const hasNull = bars[0].isNull
+
   const sliderLeft = hasNull ? 0 : -1 * (SLIDER_HANDLEBAR_WIDTH + 1)
-  const sliderWidth = svgWidth + (hasNull ? barWidth : 2 * SLIDER_HANDLEBAR_WIDTH + 2)
+  const sliderWidth = histogramWidth + (hasNull ? barWidth : 2 * SLIDER_HANDLEBAR_WIDTH + 2)
+
   const extentStartX = hasNull ? 2 * barWidth + 2 : SLIDER_HANDLEBAR_WIDTH + 2
-  const extentWidth = hasNull ? svgWidth : svgWidth + SLIDER_HANDLEBAR_WIDTH
+  const extentWidth = hasNull ? histogramWidth : histogramWidth + SLIDER_HANDLEBAR_WIDTH
+
   return [sliderLeft, sliderWidth, extentStartX, extentWidth]
 }
 
 /** Histogram for distribution of numeric annotation values, with tooltips or slider */
 function Histogram({
-  facet, bars, svgWidth, svgHeight, operator,
+  facet, bars, histogramWidth, histogramHeight, operator,
   brushSelection, handleBrushMove, handleBrushEnd
 }) {
   const sliderId = `numeric-filter-histogram-slider___${facet.annotation}`
-  const [sliderLeft, sliderWidth, extentStartX, extentWidth] = getSliderStyle(bars, svgWidth)
+  const [sliderLeft, sliderWidth, extentStartX, extentWidth] = getSliderStyle(bars, histogramWidth)
   const handlebarY = -1 * (HISTOGRAM_BAR_MAX_HEIGHT - 1)
 
   return (
     <>
       <svg
-        height={svgHeight}
-        width={svgWidth}
+        height={histogramHeight}
+        width={histogramWidth}
         style={{ borderBottom: '1px solid #AAA  ' }}
         className="numeric-filter-histogram"
       >
@@ -213,7 +216,7 @@ function Histogram({
       {['between', 'not between'].includes(operator) &&
       <div>
         <svg
-          height={svgHeight}
+          height={histogramHeight}
           width={sliderWidth}
           style={{ position: 'absolute', top: 0, left: sliderLeft }}
           className="numeric-filter-histogram-slider"
@@ -239,26 +242,27 @@ function Histogram({
             d={getHandlebarPath({ type: 'e' })}
             transform={`translate(${ brushSelection[1] }, ${handlebarY})`}
           />
-          <SVGBrush
-            // Defines the boundary of the brush.
-            // Strictly uses the format [[x0, y0], [x1, y1]] for both 1d and 2d brush.
-            // Note: d3 allows the format [x, y] for 1d brush.
+          <SVGBrush // docs: https://github.com/kenns29/react-svg-brush#react-svg-brush
+            // `extent` is the maximum rectangular boundary of the brush.
+            // The format is [[x0, y0], [x1, y1]]
             extent={[
               [extentStartX, 0],
-              [extentWidth, svgHeight]
+              [extentWidth, histogramHeight]
             ]}
+            // `selection` is the current rectangular boundary of the brush
+            // `brushSelection` is the current 1D range of the brush
             selection={[
               [brushSelection[0], 0],
-              [brushSelection[1], svgHeight]
+              [brushSelection[1], histogramHeight]
             ]}
-            // Obtain mouse positions relative to the current svg during mouse events.
+            // Get mouse position relative to SVG (instead of relative to page).
             // By default, getEventMouse returns [event.clientX, event.clientY]
             getEventMouse={event => {
               const { clientX, clientY } = event
               const { left, top } = document.querySelector(`#${sliderId}`).getBoundingClientRect()
               return [clientX - left, clientY - top]
             }}
-            brushType="x"
+            brushType="x" // i.e., 1D brush
             // onBrushStart={handleBrushStart}
             onBrush={handleBrushMove}
             onBrushEnd={handleBrushEnd}
@@ -390,7 +394,7 @@ function NumericQueryBuilder({
 }
 
 /** Get D3 scale to convert between numeric annotation values and pixels */
-function getXScale(bars, svgWidth, hasNull) {
+function getXScale(bars, histogramWidth, hasNull) {
   const barStartIndex = hasNull ? 2 : 0
   const valueDomain = []
   const pxRange = []
@@ -402,27 +406,18 @@ function getXScale(bars, svgWidth, hasNull) {
   }
   const lastBar = bars.slice(-1)[0]
   valueDomain.push(lastBar.end)
-  pxRange.push(svgWidth + (hasNull ? 0 : SLIDER_HANDLEBAR_WIDTH))
+  pxRange.push(histogramWidth + (hasNull ? 0 : SLIDER_HANDLEBAR_WIDTH))
 
   const xScale = scaleLinear().domain(valueDomain).range(pxRange)
   return xScale
 }
 
-/** Get width and height for SVG elements for histogram (and slider overlay) */
+/** Get width and height for SVG elements for histogram */
 function getHistogramSvgDimensions(bars) {
   const lastBar = bars.slice(-1)[0]
-  const svgWidth = lastBar.x + lastBar.width
-  const svgHeight = HISTOGRAM_BAR_MAX_HEIGHT + 2
-  return [svgWidth, svgHeight]
-}
-
-/**
-* Get number of digits in a number `x`
-*
-* Inspired by https://stackoverflow.com/questions/14879691
-*/
-function getNumDigits(x) {
-  return (x + '').length // eslint-disable-line
+  const histogramWidth = lastBar.x + lastBar.width
+  const histogramHeight = HISTOGRAM_BAR_MAX_HEIGHT + 2
+  return [histogramWidth, histogramHeight]
 }
 
 /**
@@ -434,7 +429,7 @@ function getInputStyle(inputValue, operator, precision) {
 
   const roundedNumber = round(inputValue, precision)
   const stringValue = roundedNumber.toString()
-  let numDigits = getNumDigits(stringValue)
+  let numDigits = stringValue.length
   if (stringValue.includes('.')) {numDigits -= 0.75}
 
   if (
@@ -541,15 +536,20 @@ export function NumericCellFacet({
 }) {
   const [operator, raw1, raw2, includeNa] = unpackSelection(selection)
   const [inputValue, setInputValue] = useState(raw1) // e.g. 20
-  const [inputBorder, setInputBorder] = useState(null)
   const [inputValue2, setInputValue2] = useState(raw2) // e.g. 40
+
+  // These help indicate invalid manual input, e.g. > max, < min, non-numbers
+  const [inputBorder, setInputBorder] = useState(null)
   const [inputBorder2, setInputBorder2] = useState(null)
 
   const [min, max, hasNull] = getMinMaxValues(filters)
   const bars = getHistogramBars(filters)
-  const [svgWidth, svgHeight] = getHistogramSvgDimensions(bars)
-  const xScale = getXScale(bars, svgWidth, hasNull)
+  const [histogramWidth, histogramHeight] = getHistogramSvgDimensions(bars)
 
+  // Enables converting numeric annotation values to pixels, and vice versa
+  const xScale = getXScale(bars, histogramWidth, hasNull)
+
+  // Current range of the slider, in pixels
   const [brushSelection, setBrushSelection] = useState([inputValue, inputValue2].map(xScale))
 
   const packedSelection = packSelection(operator, inputValue, inputValue2, includeNa)
@@ -570,7 +570,7 @@ export function NumericCellFacet({
     setInputValue2(raw2)
   }, [selection.toString()])
 
-  /** Propagate change in numeric input locally and upstream */
+  /** Propagate manual changes to numeric input UI fields */
   function updateInputValue(event) {
     const rawValue = event.target.value
     let newFilterValue
@@ -581,6 +581,7 @@ export function NumericCellFacet({
       newFilterValue = parseFloat(rawValue)
     }
 
+    // Indicate any invalid input, and update the filter
     const isValue2 = event.target.name.endsWith('value2')
     if (isValue2) {
       if (rawIsNaN) {newFilterValue = max}
@@ -616,16 +617,15 @@ export function NumericCellFacet({
       newInputValue2 = defaultInputValue2
     }
     updateNumericFilter(newOperator, inputValue, newInputValue2, includeNa, facet, handleNumericChange)
-    // setOperator(newOperator)
-    // setInputValue2(newInputValue2)
   }
 
   /** Propagate change in "N/A" checkbox locally and upstream */
   function updateIncludeNa() {
-    // setIncludeNa(!includeNa)
     updateNumericFilter(operator, inputValue, inputValue2, !includeNa, facet, handleNumericChange)
   }
 
+  // Numeric annotations don't specify whether they are integers or floats.
+  // Inferring integers gives slider expected behavior for non-floats, and saves UI space.
   const isLikelyAllIntegers = Number.isInteger(min) && Number.isInteger(max)
   const precision = isLikelyAllIntegers ? 0 : 2 // Round to integer, or 2 decimal places
 
@@ -639,7 +639,7 @@ export function NumericCellFacet({
     }
   }
 
-  /** Handler for the end of a brush event from D3 */
+  /** Handle slider end event (i.e., mouseup) */
   function handleBrushEnd(event) {
     const brushSelection = get1DBrushSelection(event)
     if (!brushSelection) {return}
@@ -652,18 +652,18 @@ export function NumericCellFacet({
     updateInputBorders(newValue, newValue2)
   }
 
-  /** Handle move event, which is fired after brush.end */
+  /** Handle slider move event (i.e., drag or resize) */
   function handleBrushMove(event) {
     const brushSelection = get1DBrushSelection(event)
     if (!brushSelection) {return}
 
     if (setBrushSelection) {
-      // Update inputs but not filter while moving slider
+      // Update slider position but not filter while moving slider
       setBrushSelection(brushSelection)
     }
 
     if (setInputValue) {
-      // Update inputs but not filter while moving slider
+      // Update UI input fields but not filter while moving slider
       const [newValue1, newValue2] =
         parseValuesFromBrushSelection(brushSelection, xScale, precision)
       setInputValue(newValue1)
@@ -696,8 +696,8 @@ export function NumericCellFacet({
           facet={facet}
           filters={filters}
           bars={bars}
-          svgWidth={svgWidth}
-          svgHeight={svgHeight}
+          histogramWidth={histogramWidth}
+          histogramHeight={histogramHeight}
           operator={operator}
           brushSelection={brushSelection}
           handleBrushMove={handleBrushMove}
