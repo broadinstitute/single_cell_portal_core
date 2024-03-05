@@ -161,7 +161,7 @@ describe('"Cell filtering" panel', () => {
     expect(firstFilterAfterSort).toHaveTextContent('52')
   })
 
-  it('renders numeric filters', async () => {
+  it('renders numeric cell facet, which is interactive', async () => {
     jest
       .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
       .mockReturnValue({
@@ -198,5 +198,30 @@ describe('"Cell filtering" panel', () => {
     const lastFacet = Array.from(container.querySelectorAll('.cell-facet')).slice(-1)[0]
     const lastFacetName = lastFacet.querySelector('.cell-facet-name')
     expect(lastFacetName).toHaveTextContent('BMI pre pregnancy')
+
+    const sliderId = 'numeric-filter-histogram-slider___BMI_pre_pregnancy--numeric--study'
+    const histogram = container.querySelector(`#${ sliderId}`)
+
+    // Confirm left and right handles for slider
+    const handlebars = histogram.querySelectorAll('.handlebar')
+    expect(handlebars).toHaveLength(2)
+
+    // Confirm slider, and that its layout accounts for special "N/A" bar
+    const sliderSelection = histogram.querySelector('.selection')
+    const sliderOffset = sliderSelection.getAttribute('x')
+    const sliderWidth = sliderSelection.getAttribute('width')
+    expect(sliderOffset).toEqual('24')
+    expect(sliderWidth).toEqual('155')
+
+    // Confirm clicking "N/A" checkbox calls filtering code
+    const naCheckbox = lastFacet.querySelector('.numeric-na-filter')
+    fireEvent.click(naCheckbox)
+    expect(updateFilteredCells).toHaveBeenCalledWith(
+      expect.objectContaining({
+        'BMI_pre_pregnancy--numeric--study': [
+          [['between', [18.84, 34.01]]], false
+        ]
+      })
+    )
   })
 })

@@ -1,3 +1,22 @@
+/**
+ * @fileoverview Easy, rich query builder for numeric annotations
+ *
+ * Numeric cell facets provide:
+ * - Histogram for seeing distributions you can select from
+ * - Range slider (a.k.a. brush)
+ * - Inputs fields for manual numeric input
+ * - Operator menu
+ * - Support for special (but common) "not available" values, i.e. "N/A"
+ * - Reset button, expand / collapse button
+ *
+ * Each eligible numeric annotation gets one numeric cell facet.  Numeric
+ * facets combine with other ("group" / categorical or numeric facets),
+ * logically joining via the "AND" Boolean operator across facets.
+ *
+ * More context and demo video:
+ * https://github.com/broadinstitute/single_cell_portal_core/pull/1988
+ */
+
 import React, { useState, useEffect } from 'react'
 import { scaleLinear } from 'd3'
 import _isEqual from 'lodash/isEqual'
@@ -295,6 +314,7 @@ function OperatorMenu({ operator, updateOperator }) {
   const menuWidth = `${widthsByOperator[operator] }px`
   return (
     <select
+      className="cell-facet-numeric-operator-menu"
       style={{ width: menuWidth }}
       value={operator}
       onChange={event => {updateOperator(event)}}
