@@ -25,7 +25,6 @@ export function scaleLinear(domain, range) {
         return range[0] + ((x - domain[0]) / domainLength) * rangeLength
       }
     }
-    throw new Error(`Value is outside the defined domain.  Value: ${x}`)
   }
 
   scale.invert = function(y) {
@@ -35,7 +34,6 @@ export function scaleLinear(domain, range) {
         return domain[0] + ((y - range[0]) / rangeLength) * domainLength
       }
     }
-    throw new Error(`Value is outside the defined range.  Value: ${y}`)
   }
 
   return scale

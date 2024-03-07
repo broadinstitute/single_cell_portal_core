@@ -330,27 +330,22 @@ function OperatorMenu({ operator, updateOperator }) {
 
 /** A visually economical input field for numeric query builder */
 function NumericQueryInput({ value, border, updateInputValue, facet, filterName, style }) {
-  // Visually indicate that more digits are specified than are shown
-  const fadeOverflowClass = value >= 100_000 ? '' : ''
-
   if (border) {
     style.border = `1px solid ${border}`
   }
 
   return (
-    <span className={fadeOverflowClass}>
-      <input
-        type="text"
-        className="numeric-query-input"
-        data-analytics-name={`${facet.annotation}:${filterName}`}
-        name={`${facet.annotation}:${filterName}`}
-        style={style}
-        value={value}
-        onChange={event => {
-          updateInputValue(event)
-        }}
-      />
-    </span>
+    <input
+      type="text"
+      className="numeric-query-input"
+      data-analytics-name={`${facet.annotation}:${filterName}`}
+      name={`${facet.annotation}:${filterName}`}
+      style={style}
+      value={value}
+      onChange={event => {
+        updateInputValue(event)
+      }}
+    />
   )
 }
 
