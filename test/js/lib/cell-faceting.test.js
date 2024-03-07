@@ -60,6 +60,8 @@ describe('Cell faceting', () => {
     expect(applyNumericFilters(2, [[['=', 2]], true])).toStrictEqual(true)
     expect(applyNumericFilters(2, [[['=', 1.3]], true])).toStrictEqual(false)
     expect(applyNumericFilters(20, [[['>=', 6]], true])).toStrictEqual(true)
+    expect(applyNumericFilters(20, [[['<', 6]], true])).toStrictEqual(false)
+    expect(applyNumericFilters(20, [[['>', 20]], true])).toStrictEqual(false)
     expect(applyNumericFilters(20, [[['between', [5, 42]]], true])).toStrictEqual(true)
     expect(applyNumericFilters(2, [[['between', [0, 2]]], true])).toStrictEqual(true) // test inclusiveness
     expect(applyNumericFilters(2, [[['between', [0, 2.1]]], true], 2)).toStrictEqual(true) // test inclusiveness
