@@ -6,9 +6,7 @@
 
 import crossfilter from 'crossfilter2'
 
-import {
-  getGroupAnnotationsForClusterAndStudy, getIdentifierForAnnotation
-} from '~/lib/cluster-utils'
+import { getIdentifierForAnnotation } from '~/lib/cluster-utils'
 import { fetchAnnotationFacets } from '~/lib/scp-api'
 import { log } from '~/lib/metrics-api'
 
@@ -149,19 +147,19 @@ export function applyNumericFilters(d, rawFilters) {
 
   for (let i = 0; i < numericFilters.length; i++) {
     const [operator, value] = numericFilters[i]
-    if (operator === 'equals') {
+    if (operator === '=') {
       // for fastest querying, exit function immediately upon _any_ condition
       // evaluating to true
       if (d === value) {return true}
-    } else if (operator === 'not equals') {
+    } else if (operator === '!=') {
       if (d !== value) {return true}
-    } else if (operator === 'greater than') {
+    } else if (operator === '>') {
       if (d > value) {return true}
-    } else if (operator === 'greater than or equal to') {
+    } else if (operator === '>=') {
       if (d >= value) {return true}
-    } else if (operator === 'less than') {
+    } else if (operator === '<') {
       if (d < value) {return true}
-    } else if (operator === 'less than or equal to') {
+    } else if (operator === '<=') {
       if (d <= value) {return true}
     } else if (operator === 'between') {
       if (value[0] <= d && d <= value[1]) {return true}

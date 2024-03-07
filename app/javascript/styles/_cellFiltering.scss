@@ -50,10 +50,6 @@
   left: 4px;
 }
 
-.cell-facet-header-numeric {
-  margin-left: 18px;
-}
-
 input.cell-facet-header-checkbox {
   display: inline;
   margin-right: 5px;
@@ -130,6 +126,7 @@ input.cell-facet-header-checkbox {
 .cell-facet .cell-filters-shown .facet-toggle-chevron,
 .cell-facet .cell-filters-shown .sort-filters,
 .cell-facet .cell-facet-header-checkbox,
+.cell-facet .reset-facet,
 .filter-section .reset-cell-filters,
 .filter-section:hover .reset-cell-filters.hide-reset {
   visibility: hidden;
@@ -138,16 +135,17 @@ input.cell-facet-header-checkbox {
 .cell-facet:hover .cell-filters-shown .facet-toggle-chevron,
 .cell-facet:hover .cell-filters-shown .sort-filters,
 .cell-facet:hover .cell-facet-header-checkbox,
+.cell-facet:hover .reset-facet,
 .cell-facet:has(.cell-filters-hidden) .cell-facet-header-checkbox,
 .filter-section:hover .reset-cell-filters {
   visibility: visible;
 }
 
-.reset-cell-filters, .sort-filters {
+.reset-cell-filters, .sort-filters, .reset-facet {
   color: #777;
 }
 
-.reset-cell-filters:hover, .sort-filters:hover {
+.reset-cell-filters:hover, .sort-filters:hover, .reset-facet:hover {
   color: #77D;
 }
 
@@ -205,32 +203,34 @@ input.cell-facet-header-checkbox {
   color: #CCC;
 }
 
-// Used to fade truncated text in inputs, as a visually economical affordance
-// that more content exists in the input, but must be keyed to view
-.fade-overflow {
-  position: relative;
-}
-.fade-overflow:after {
-  position: absolute;
-  left: -2px;
-  bottom: 0;
-  height: 100%;
-  width: 100%;
-  content: "";
-  background: linear-gradient(to left,
-    rgb(255, 255, 255) 5%,
-    rgba(255, 255, 255, 0) 30%
-  );
-  pointer-events: none; /* so the text is still selectable */
-}
-
-.fade-overflow:has(input:focus):after {
-  background: none;
-}
-
 .numeric-query-input {
   font-size: 13px;
   height: 20px;
   width: 45px;
   margin-left: 4px;
+}
+
+.cell-facet-numeric-inputs-container {
+  display: inline-block;
+}
+
+.cell-facet .brush .selection {
+  fill-opacity: 0.1;
+  fill: $action-color;
+  stroke: $action-color;
+  shape-rendering: crispEdges;
+}
+
+.reset-facet .fa-undo {
+  height: 12px;
+  margin-right: 5px;
+}
+
+.brush path.handlebar {
+  fill: #eee;
+  stroke: #666;
+}
+
+.brush .handle:not(.handle--e, .handle--w) {
+  display: none;
 }

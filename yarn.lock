@@ -3179,9 +3179,9 @@ camelcase@^6.0.0:
   integrity sha512-Gmy6FhYlCY7uOElZUSbxo2UCDH8owEk996gkbrpsgGtrJLM3J7jGxl9Ic7Qwwj4ivOE5AWZWRMecDdF7hqGjFA==
 
 caniuse-lite@^1.0.30001464, caniuse-lite@^1.0.30001503:
-  version "1.0.30001517"
-  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001517.tgz#90fabae294215c3495807eb24fc809e11dc2f0a8"
-  integrity sha512-Vdhm5S11DaFVLlyiKu4hiUTkpZu+y1KA/rZZqVQfOD5YdDT/eQKlkt7NaE0WGOFgX32diqt9MiP9CAiFeRklaA==
+  version "1.0.30001593"
+  resolved "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001593.tgz"
+  integrity sha512-UWM1zlo3cZfkpBysd7AS+z+v007q9G1+fLTUU42rQnY6t2axoogPW/xol6T7juU5EUoOhML4WgBIdG+9yYqAjQ==
 
 capture-exit@^2.0.0:
   version "2.0.0"
@@ -8155,6 +8155,13 @@ react-select@^5.2.2:
     prop-types "^15.6.0"
     react-transition-group "^4.3.0"
     use-isomorphic-layout-effect "^1.1.2"
+
+react-svg-brush@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/react-svg-brush/-/react-svg-brush-1.0.0.tgz#f6b8e20157cd243fb9606436d7c1f7606443b35d"
+  integrity sha512-LqTHN8iVFM33xnAQULxFaxTFnhRpMx/T+FMLcOGJkH6onTMWdmfIDBWr3M52wdKjXslS9elGjRa8RZyTBVzQWQ==
+  dependencies:
+    prop-types "^15.7.2"
 
 react-switch@6.0.0:
   version "6.0.0"
