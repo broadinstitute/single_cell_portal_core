@@ -4,7 +4,7 @@ on:
     workflows: ["Build and publish single-cell-portal Docker image"]
     types:
       - completed
-    branches: [ew-cell-filtering-numeric-refined]
+    branches: [development]
   workflow_dispatch:
 env:
   DOCKER_IMAGE_NAME: 'gcr.io/broad-singlecellportal-staging/single-cell-portal'
