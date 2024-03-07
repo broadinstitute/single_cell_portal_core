@@ -679,6 +679,16 @@ export function NumericCellFacet({
     const brushSelection = get1DBrushSelection(event)
     if (!brushSelection) {return}
 
+    const [newValue, newValue2] =
+      parseValuesFromBrushSelection(brushSelection, xScale, precision)
+
+    if (newValue > max || newValue < min || newValue2 > max || newValue2 < min) {
+      // Prevent handlebar misdisplay if crosshair-select moves out-of-bounds
+      // See "overshot_slider.mov"
+      // in https://github.com/broadinstitute/single_cell_portal_core/pull/1988#pullrequestreview-1920037002
+      return
+    }
+
     if (setBrushSelection) {
       // Update slider position but not filter while moving slider
       setBrushSelection(brushSelection)
@@ -686,9 +696,7 @@ export function NumericCellFacet({
 
     if (setInputValue) {
       // Update UI input fields but not filter while moving slider
-      const [newValue1, newValue2] =
-        parseValuesFromBrushSelection(brushSelection, xScale, precision)
-      setInputValue(newValue1)
+      setInputValue(newValue)
       setInputValue2(newValue2)
     }
   }
