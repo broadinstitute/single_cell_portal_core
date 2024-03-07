@@ -4,10 +4,10 @@ on:
     workflows: ["Build and publish single-cell-portal Docker image"]
     types:
       - completed
-    branches: [development]
+    branches: [ew-cell-filtering-numeric-refined]
   workflow_dispatch:
 env:
-  DOCKER_IMAGE_NAME: 'gcr.io/broad-singlecellportal-staging/single-cell-portal:ew-cell-filtering-numeric-refined'
+  DOCKER_IMAGE_NAME: 'gcr.io/broad-singlecellportal-staging/single-cell-portal'
   GCLOUD_DOCKER_IMAGE: "gcr.io/google.com/cloudsdktool/google-cloud-cli:latest"
   IMAGE_NAME: 'staging-gcloud-config'
   PORTAL_SECRETS_PATH: 'secret/kdux/scp/staging/scp_config.json'
