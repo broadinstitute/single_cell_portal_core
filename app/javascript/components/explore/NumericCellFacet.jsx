@@ -18,13 +18,13 @@
  */
 
 import React, { useState, useEffect } from 'react'
-import { scaleLinear } from 'd3'
 import _isEqual from 'lodash/isEqual'
 import SVGBrush from 'react-svg-brush'
 
 import { FacetHeader } from '~/components/explore/FacetComponents'
 import { round } from '~/lib/metrics-perf'
 import { getMinMaxValues } from '~/lib/cell-faceting.js'
+import { scaleLinear } from '~/lib/scale-linear.js'
 
 const HISTOGRAM_BAR_MAX_HEIGHT = 20
 const SLIDER_HANDLEBAR_WIDTH = 6
@@ -428,7 +428,7 @@ function getXScale(bars, histogramWidth, hasNull) {
   valueDomain.push(lastBar.end)
   pxRange.push(histogramWidth + (hasNull ? 0 : SLIDER_HANDLEBAR_WIDTH))
 
-  const xScale = scaleLinear().domain(valueDomain).range(pxRange)
+  const xScale = scaleLinear(valueDomain, pxRange)
   return xScale
 }
 
