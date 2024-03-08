@@ -677,7 +677,10 @@ export function NumericCellFacet({
     const [newValue, newValue2] =
       parseValuesFromBrushSelection(brushSelection, xScale, precision)
 
-    if (newValue > max || newValue < min || newValue2 > max || newValue2 < min) {
+    if (
+      newValue > max || newValue < min || newValue2 > max || newValue2 < min ||
+      Number.isNaN(newValue) || Number.isNaN(newValue2)
+    ) {
       // Prevent handlebar misdisplay if crosshair-select moves out-of-bounds
       // See "overshot_slider.mov"
       // in https://github.com/broadinstitute/single_cell_portal_core/pull/1988#pullrequestreview-1920037002
