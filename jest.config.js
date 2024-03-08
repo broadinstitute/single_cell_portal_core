@@ -27,7 +27,6 @@ module.exports = {
     '^~/(.*)$': '$1', // strip off the ~/, as jest doesn't need it since it has configured module directories
     '@single-cell-portal/igv': '<rootDir>/test/js/jest-mocks/igv-mock.js', // mock igv as jest has trouble parsing it
     'ideogram': '<rootDir>/test/js/jest-mocks/file-mock.js', // mock igv as jest has trouble parsing it
-    '\\.css$': '<rootDir>/test/js/jest-mocks/file-mock.js', // mock CSS files as jest has trouble parsing them
-    '^d3$': '<rootDir>/node_modules/d3/dist/d3.min.js' // Fix "export" bug upon `yarn test`
+    '\\.css$': '<rootDir>/test/js/jest-mocks/file-mock.js' // mock CSS files as jest has trouble parsing them
   }
 }
