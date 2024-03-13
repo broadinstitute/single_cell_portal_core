@@ -176,26 +176,31 @@ function getFacetsParam(initFacets, selection) {
   const minimalSelection = {}
 
   const initSelection = {}
-  initFacets.filter(f => !f.isSelectedAnnotation).forEach(facet => {
+  initFacets.filter(f => !f.isSelectedAnnotation)?.forEach(facet => {
     initSelection[facet.annotation] = facet.defaultSelection
   })
 
   const innerParams = []
   Object.entries(initSelection).forEach(([facet, filters]) => {
-    filters.forEach(filter => {
-      // Unlike `selection`, which specifies all filters that are selected
-      // (i.e., checked and not applied), the `facets` parameter species only
-      // filters that are _not_ selected, i.e. they're unchecked and applied.
-      //
-      // This makes the `facets` parameter much clearer.
-      if (facet.type === 'group' && !selection[facet].includes(filter)) {
-        if (facet in minimalSelection) {
-          minimalSelection[facet].push(filter)
-        } else {
-          minimalSelection[facet] = [filter]
+    if (facet.type === 'group') {
+      filters.forEach(filter => {
+        // Unlike `selection`, which specifies all filters that are selected
+        // (i.e., checked and not applied), the `facets` parameter species only
+        // filters that are _not_ selected, i.e. they're unchecked and applied.
+        //
+        // This makes the `facets` parameter much clearer.
+        if (!selection[facet].includes(filter)) {
+          if (facet in minimalSelection) {
+            minimalSelection[facet].push(filter)
+          } else {
+            minimalSelection[facet] = [filter]
+          }
         }
-      }
-    })
+      })
+    } else {
+      // TODO (SCP-5531): Enable URL parameters for numeric cell facets
+      // minimalSelection[facet] = selection[facet]
+    }
   })
 
   Object.entries(minimalSelection).forEach(([facet, filters]) => {
