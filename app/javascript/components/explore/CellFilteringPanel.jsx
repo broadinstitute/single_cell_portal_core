@@ -42,6 +42,7 @@ function getHasNondefaultSelection(selectionMap, facets) {
     const [selectedFacet, selection] = entries[i]
 
     const facet = facets.find(f => f.annotation === selectedFacet)
+    if (!facet) {return false}
     let normDefault = facet.defaultSelection
     let normSelection = selection
     if (facet.type === 'group') {
