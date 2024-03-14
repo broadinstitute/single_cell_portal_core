@@ -4,6 +4,11 @@
 </div>
 <%= form_for :tos, url: record_tos_action_path, html: {class: 'form', id: 'tos-form'} do |f| %>
   <%= f.hidden_field :action, value: 'accept' %>
+  <div class="col-md-3">
+  <%= f.label :institution %>
+  <%= f.text_field :institution, class: 'form-control' %>
+  </div>
+  <br/>
   <%= link_to "Accept", '#', class: 'btn btn-lg btn-success submit-tos', id: 'accept-tos', data: {accept: 'accept'} %>
   <%= link_to "Cancel", '#', class: 'btn btn-lg btn-danger submit-tos', id: 'deny-tos', data: {accept: 'deny'} %>
 <% end %>
