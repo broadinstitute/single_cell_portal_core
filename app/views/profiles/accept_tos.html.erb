@@ -5,8 +5,12 @@
 <%= form_for :tos, url: record_tos_action_path, html: {class: 'form', id: 'tos-form'} do |f| %>
   <%= f.hidden_field :action, value: 'accept' %>
   <div class="col-md-3">
-  <%= f.label :institution %>
-  <%= f.text_field :institution, class: 'form-control' %>
+  <%= f.label :organization %>
+  <%= f.text_field :organization, class: 'form-control' %>
+  </div>
+  <div class="col-md-3">
+  <%= f.label :organization_email, "Organization email (if different from sign-in email)" %>
+  <%= f.text_field :organization_email, class: 'form-control' %>
   </div>
   <br/>
   <%= link_to "Accept", '#', class: 'btn btn-lg btn-success submit-tos', id: 'accept-tos', data: {accept: 'accept'} %>

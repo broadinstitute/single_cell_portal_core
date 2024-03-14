@@ -103,6 +103,9 @@ class ProfilesController < ApplicationController
     if user_accepted
       # record user acceptance, which tracks the email, the date, and the version of the ToS
       TosAcceptance.create(email: @user.email)
+      organization = tos_params[:organization]
+      organization_email = tos_params[:organization_email]
+      @user.update(organization:, organization_email:)
       redirect_to merge_default_redirect_params(site_path, scpbr: params[:scpbr]), notice: 'Terms of Service response successfully recorded.' and return
     else
       sign_out @user
@@ -160,6 +163,6 @@ class ProfilesController < ApplicationController
   end
 
   def tos_params
-    params.require(:tos).permit(:action)
+    params.require(:tos).permit(:action, :organization, :organization_email)
   end
 end
