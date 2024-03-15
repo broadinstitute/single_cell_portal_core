@@ -144,7 +144,7 @@ class ProfilesController < ApplicationController
   end
 
   def user_params
-    params.require(:user).permit(:admin_email_delivery, :use_short_session)
+    params.require(:user).permit(:admin_email_delivery, :use_short_session, :organization, :organizational_email)
   end
 
   def study_share_params

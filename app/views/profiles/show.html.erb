@@ -21,6 +21,24 @@
 
   <div class="tab-content top-pad">
     <div class="tab-pane active in" id="profile-emails" role="tabpanel">
+    <%= form_for(@user, url: update_profile_path, html: {class: 'form', id: 'update-user-organization',
+                                                           data: { remote: true }}) do |f| %>
+      <div class="row">
+        <div class="form-group">
+          <h3 style="margin-left: 15px">Organizational profile</h3>
+          <div class="col-md-3">
+            <%= f.label :organization %>
+            <%= f.text_field :organization, class: 'form-control' %>
+          </div>
+            <div class="col-md-3">
+            <%= f.label :organizational_email, "Organizational email (if different from sign-in)" %>
+            <%= f.text_field :organizational_email, class: 'form-control' %>
+          </div>
+          <%= f.submit 'Update', class: 'btn btn-lg btn-success', style: "margin-left: 15px; margin-top: 15px", id: 'update-organizational' %>
+        </div>
+      </div>
+      <% end %>
+
       <%= form_for(@user, url: update_profile_path, html: {class: 'form', id: 'update-user-session',
                                                            data: { remote: true }}) do |f| %>
         <%= hidden_field_tag :toggle_id, "toggle_user_use_short_session" %>
