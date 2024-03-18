@@ -210,7 +210,11 @@ describe('"Cell filtering" panel', () => {
     const sliderSelection = histogram.querySelector('.selection')
     const sliderOffset = sliderSelection.getAttribute('x')
     const sliderWidth = sliderSelection.getAttribute('width')
-    expect(sliderOffset).toEqual('24')
+
+    // Confirm minimum value of 18.8356789 in test data gets rounded to 2
+    // decimal places; without which this offset becomes "24.044423180157942" (SCP-5555)
+    const expectedOffset = '24'
+    expect(sliderOffset).toEqual(expectedOffset)
     expect(sliderWidth).toEqual('155')
 
     // Confirm clicking "N/A" checkbox calls filtering code
