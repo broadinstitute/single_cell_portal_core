@@ -9,7 +9,7 @@ import crossfilter from 'crossfilter2'
 import { getIdentifierForAnnotation } from '~/lib/cluster-utils'
 import { fetchAnnotationFacets } from '~/lib/scp-api'
 import { log } from '~/lib/metrics-api'
-
+import { round } from '~/lib/metrics-perf'
 
 const CELL_TYPE_REGEX = new RegExp(/cell.*type/i)
 
@@ -324,12 +324,14 @@ function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
   return [mergedRawFacets, nullFacets]
 }
 
-/** Get minimum and maximum bounds of value range for numeric filters */
+/** Get minimum and maximum value range for numeric filters, rounded to 2 decimal places */
 export function getMinMaxValues(filters) {
   const firstValue = filters[0][0]
   const hasNull = firstValue === null
-  const minValue = hasNull ? filters[1][0] : firstValue
-  const maxValue = filters.slice(-1)[0][0]
+  const rawMinValue = hasNull ? filters[1][0] : firstValue
+  const minValue = round(rawMinValue, 2)
+  const rawMaxValue = filters.slice(-1)[0][0]
+  const maxValue = round(rawMaxValue, 2)
   return [minValue, maxValue, hasNull]
 }
 
