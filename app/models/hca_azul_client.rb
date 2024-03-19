@@ -245,6 +245,7 @@ class HcaAzulClient
     filter_query = format_hash_as_query_string(project_filter)
     base_path += "?filters=#{filter_query}&format=#{format}"
     path = append_catalog(base_path, catalog)
+    byebug
     # since manifest files are generated on-demand, keep making requests until the Status code is 302 (Found)
     # Status 301 means that the manifest is still being generated; if no manifest is ready after 30s, return anyway
     time_slept = 0
