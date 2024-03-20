@@ -37,8 +37,8 @@ class User
          :recoverable, :rememberable, :trackable, :validatable, :timeoutable,
          :omniauthable, :omniauth_providers => [:google_oauth2]
 
-  validates_format_of :email, :with => Devise.email_regexp, message: 'is not a valid email address.'
-  validates_format_of :organizational_email, :with => Devise.email_regexp, allow_blank: true, message: 'is not a valid email address.'
+  validates_format_of :email, :with => Devise.email_regexp, message: 'is not a valid email address'
+  validates_format_of :organizational_email, :with => Devise.email_regexp, allow_blank: true, message: 'Invalid email address'
 
   ## Database authenticatable
   field :email,              type: String, default: ""
