@@ -105,18 +105,30 @@ class ProfilesController < ApplicationController
 
       organization = tos_params[:organization]
       organizational_email = tos_params[:organizational_email]
-      @user.update(organization:, organizational_email:)
-
-      if @user.errors
+      begin
+        @user.update!(organization:, organizational_email:)
+      rescue Mongoid::Errors::Validations => e
         message = @user.errors.errors[0].message
-        render json: {errors: message}, status: :bad_request and return
+
+        # Log errors to Sentry and Mixpanel
+        ErrorTracker.report_exception(e, current_user, tos_params)
+        MetricsService.report_error(e, request, current_user)
+
+        # Record error in local logs
+        message_with_email = "#{message}: \\\"#{organizational_email}\\\""
+        logger.info "#{Time.zone.now}: failed to record Terms of Service (TOS): #{message_with_email}"
+
+        # Report an actionable error message to user
+        workaround = 'Please give a valid email address, or leave field blank'
+        redirect_to merge_default_redirect_params(accept_tos_path, scpbr: params[:scpbr]),
+                    alert: "#{message_with_email}.  #{workaround}.  #{SCP_SUPPORT_EMAIL}" and return
       end
       TosAcceptance.create(email: @user.email)
       redirect_to merge_default_redirect_params(site_path, scpbr: params[:scpbr]), notice: 'Terms of Service response successfully recorded.' and return
     else
       sign_out @user
       redirect_to merge_default_redirect_params(site_path, scpbr: params[:scpbr]),
-                  alert: "You must accept the Terms of Use in order to sign in.  #{SCP_SUPPORT_EMAIL}" and return
+                  alert: "You must accept the Terms of Service to sign in.  #{SCP_SUPPORT_EMAIL}" and return
     end
   end
 
