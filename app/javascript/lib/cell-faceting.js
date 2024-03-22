@@ -215,6 +215,11 @@ export function filterCells(
           const numericFilters = selection[facet] // e.g. [0, 20]
 
           if (numericFilters === undefined) {
+            // Some numeric annotations can have 1 (and only 1) value repeated
+            // for every cell.  Such annotations are not eligible as facets,
+            // because filtering requires > 1 value.
+            //
+            // TODO (SCP-5513): Screen numeric facets with constant value
             continue
           }
 
