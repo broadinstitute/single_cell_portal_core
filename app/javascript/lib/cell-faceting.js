@@ -92,17 +92,18 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
   const filterPerfTime = t1 - t0
   const numCellsBefore = filterableCells.length
   const numCellsAfter = results.length
-  const numFacetsSelected = Object.keys(selection).length
+  const numFacets = Object.keys(selection).length
   const numFiltersSelected = Object.values(selection).reduce((numFilters, selectedFiltersForThisFacet) => {
     // return accumulator (an integer) + current value (an array, specifically its length)
     return numFilters + selectedFiltersForThisFacet?.length
   }, 0)
+
   const filterLogProps = {
     'perfTime': filterPerfTime,
     'perfTime:counts': perfTimeCounts,
     numCellsBefore,
     numCellsAfter,
-    numFacetsSelected,
+    numFacets,
     numFiltersSelected
   }
 
@@ -212,6 +213,10 @@ export function filterCells(
           // Example via console interface:
           // window.SCP.updateFilteredCells({'time_post_partum_days--numeric--study': [[0.5, 9]]})
           const numericFilters = selection[facet] // e.g. [0, 20]
+
+          if (numericFilters === undefined) {
+            continue
+          }
 
           fn = function(d) {
             return applyNumericFilters(d, numericFilters)
@@ -466,7 +471,7 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
     Object.entries(filterCounts).forEach(([facet, countsByFilter]) => {
       Object.entries(countsByFilter).forEach(([filter, count]) => {
         let newCount = count
-        if (!(facet in selection && selection[facet].includes(filter))) {
+        if (!(facet in selection && selection[facet]?.includes(filter))) {
           newCount = 0
         }
         filterCounts[facet][filter] = newCount
