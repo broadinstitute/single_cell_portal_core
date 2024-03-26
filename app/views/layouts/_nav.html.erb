@@ -40,6 +40,7 @@
           <li><%= link_to "<span class='fas fa-fw fa-info-circle'></span> Documentation".html_safe,
                           'https://singlecell.zendesk.com/hc/en-us', target: '_blank', rel: 'noopener noreferrer' %></li>
           <li><%= link_to "<span class='fas fa-fw fa-envelope'></span> Contact us".html_safe, '#', id: 'open-contact-modal' %></li>
+          <li><%= link_to "<span class='fas fa-fw fa-lightbulb'></span> Request a feature".html_safe, "https://singlecell.zendesk.com/hc/en-us/requests/new?ticket_form_id=360000303412&tf_1260822624790=SCP374&tf_anonymous_requester_email=#{current_user.present? ? current_user.email : ''}&tf_subject=Feature%20Request%20for%20Single%20Cell%20Portal&tf_description=Please%20describe%20your%20enhancement,%20including%20any%20links%20to%20relevant%20SCP%20studies%20or%20other%20resources,%20screenshots%20of%20related%20visualizations,%20and%20whether%20you%20are%20willing%20to%20financially%20sponsor%20this%20feature.%3Cbr/%3E---%3Cbr/%3E%3Cbr/%3E", id: 'request-a-feature' %></li>
           <li><%= link_to "<span class='fab fa-fw fa-github'></span> Portal source code".html_safe,
                           'https://github.com/broadinstitute/single_cell_portal_core', target: '_blank',
                           rel: 'noopener noreferrer' %></li>
