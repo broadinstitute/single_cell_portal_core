@@ -9,7 +9,7 @@ import crossfilter from 'crossfilter2'
 import { getIdentifierForAnnotation } from '~/lib/cluster-utils'
 import { fetchAnnotationFacets } from '~/lib/scp-api'
 import { log } from '~/lib/metrics-api'
-
+import { round } from '~/lib/metrics-perf'
 
 const CELL_TYPE_REGEX = new RegExp(/cell.*type/i)
 
@@ -92,17 +92,18 @@ function logFilterCells(t0Counts, t0, filterableCells, results, selection) {
   const filterPerfTime = t1 - t0
   const numCellsBefore = filterableCells.length
   const numCellsAfter = results.length
-  const numFacetsSelected = Object.keys(selection).length
+  const numFacets = Object.keys(selection).length
   const numFiltersSelected = Object.values(selection).reduce((numFilters, selectedFiltersForThisFacet) => {
     // return accumulator (an integer) + current value (an array, specifically its length)
     return numFilters + selectedFiltersForThisFacet?.length
   }, 0)
+
   const filterLogProps = {
     'perfTime': filterPerfTime,
     'perfTime:counts': perfTimeCounts,
     numCellsBefore,
     numCellsAfter,
-    numFacetsSelected,
+    numFacets,
     numFiltersSelected
   }
 
@@ -212,6 +213,15 @@ export function filterCells(
           // Example via console interface:
           // window.SCP.updateFilteredCells({'time_post_partum_days--numeric--study': [[0.5, 9]]})
           const numericFilters = selection[facet] // e.g. [0, 20]
+
+          if (numericFilters === undefined) {
+            // Some numeric annotations can have 1 (and only 1) value repeated
+            // for every cell.  Such annotations are not eligible as facets,
+            // because filtering requires > 1 value.
+            //
+            // TODO (SCP-5513): Screen numeric facets with constant value
+            continue
+          }
 
           fn = function(d) {
             return applyNumericFilters(d, numericFilters)
@@ -324,12 +334,14 @@ function mergeFacetsResponses(newRawFacets, prevCellFaceting) {
   return [mergedRawFacets, nullFacets]
 }
 
-/** Get minimum and maximum bounds of value range for numeric filters */
+/** Get minimum and maximum value range for numeric filters, rounded to 2 decimal places */
 export function getMinMaxValues(filters) {
   const firstValue = filters[0][0]
   const hasNull = firstValue === null
-  const minValue = hasNull ? filters[1][0] : firstValue
-  const maxValue = filters.slice(-1)[0][0]
+  const rawMinValue = hasNull ? filters[1][0] : firstValue
+  const minValue = round(rawMinValue, 2)
+  const rawMaxValue = filters.slice(-1)[0][0]
+  const maxValue = round(rawMaxValue, 2)
   return [minValue, maxValue, hasNull]
 }
 
@@ -464,7 +476,7 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
     Object.entries(filterCounts).forEach(([facet, countsByFilter]) => {
       Object.entries(countsByFilter).forEach(([filter, count]) => {
         let newCount = count
-        if (!(facet in selection && selection[facet].includes(filter))) {
+        if (!(facet in selection && selection[facet]?.includes(filter))) {
           newCount = 0
         }
         filterCounts[facet][filter] = newCount

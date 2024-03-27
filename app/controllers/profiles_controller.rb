@@ -102,12 +102,33 @@ class ProfilesController < ApplicationController
     user_accepted = tos_params[:action] == 'accept'
     if user_accepted
       # record user acceptance, which tracks the email, the date, and the version of the ToS
+
+      organization = tos_params[:organization]
+      organizational_email = tos_params[:organizational_email]
+      begin
+        @user.update!(organization:, organizational_email:)
+      rescue Mongoid::Errors::Validations => e
+        message = @user.errors.errors[0].message
+
+        # Log errors to Sentry and Mixpanel
+        ErrorTracker.report_exception(e, current_user, tos_params)
+        MetricsService.report_error(e, request, current_user)
+
+        # Record error in local logs
+        message_with_email = "#{message}: \\\"#{organizational_email}\\\""
+        logger.info "#{Time.zone.now}: failed to record Terms of Service (TOS): #{message_with_email}"
+
+        # Report an actionable error message to user
+        workaround = 'Please give a valid email address, or leave field blank'
+        redirect_to merge_default_redirect_params(accept_tos_path, scpbr: params[:scpbr]),
+                    alert: "#{message_with_email}.  #{workaround}.  #{SCP_SUPPORT_EMAIL}" and return
+      end
       TosAcceptance.create(email: @user.email)
       redirect_to merge_default_redirect_params(site_path, scpbr: params[:scpbr]), notice: 'Terms of Service response successfully recorded.' and return
     else
       sign_out @user
       redirect_to merge_default_redirect_params(site_path, scpbr: params[:scpbr]),
-                  alert: "You must accept the Terms of Use in order to sign in.  #{SCP_SUPPORT_EMAIL}" and return
+                  alert: "You must accept the Terms of Service to sign in.  #{SCP_SUPPORT_EMAIL}" and return
     end
   end
 
@@ -141,7 +162,7 @@ class ProfilesController < ApplicationController
   end
 
   def user_params
-    params.require(:user).permit(:admin_email_delivery, :use_short_session)
+    params.require(:user).permit(:admin_email_delivery, :use_short_session, :organization, :organizational_email)
   end
 
   def study_share_params
@@ -160,6 +181,6 @@ class ProfilesController < ApplicationController
   end
 
   def tos_params
-    params.require(:tos).permit(:action)
+    params.require(:tos).permit(:action, :organization, :organizational_email)
   end
 end

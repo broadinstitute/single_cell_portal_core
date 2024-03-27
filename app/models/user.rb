@@ -37,7 +37,8 @@ class User
          :recoverable, :rememberable, :trackable, :validatable, :timeoutable,
          :omniauthable, :omniauth_providers => [:google_oauth2]
 
-  validates_format_of :email, :with => Devise.email_regexp, message: 'is not a valid email address.'
+  validates_format_of :email, :with => Devise.email_regexp, message: 'is not a valid email address'
+  validates_format_of :organizational_email, :with => Devise.email_regexp, allow_blank: true, message: 'Invalid email address'
 
   ## Database authenticatable
   field :email,              type: String, default: ""
@@ -96,6 +97,9 @@ class User
   # }
   field :api_access_token, type: Hash
   field :metrics_uuid, type: String
+
+  field :organization, type: String, default: ""
+  field :organizational_email, type: String, default: ""
 
   # feature_flags should be a hash of true/false values.  If unspecified for a given flag, the
   # default_value from the FeatureFlag should be used.  Accordingly, the helper method feature_flags_with_defaults

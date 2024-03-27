@@ -4342,7 +4342,7 @@ export const cellFaceting = {
           6450
         ],
         [
-          18.84,
+          18.8356789, // Synthetic value to test rounding for long values (SCP-5555)
           1686
         ],
         [
