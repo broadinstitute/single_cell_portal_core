@@ -20,7 +20,6 @@ import { log } from '~/lib/metrics-api'
 export default function BookmarkManager({bookmarks, studyAccession, clearExploreParams}) {
   const location = useLocation()
   const [allBookmarks, setAllBookmarks] = useState(bookmarks)
-  console.log(`allBookmarks: ${allBookmarks.length}`)
   const [saveText, setSaveText] = useState('Save')
   const [saveDisabled, setSaveDisabled] = useState(false)
   const [bookmarkSaved, setBookmarkSaved] = useState(null)
