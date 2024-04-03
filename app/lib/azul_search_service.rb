@@ -236,39 +236,29 @@ class AzulSearchService
   def self.get_file_summary_info(accessions)
     client = ApplicationController.hca_azul_client
     file_query = { 'project' => { 'is' => accessions } }
-    if client.query_too_large?(file_query)
-      # cut query in half to prevent HTTP 413
-      queries = accessions.each_slice((accessions.size / 2.0).round).map { |list| { 'project' => { 'is' => list } } }
-    else
-      queries = [{ 'project' => { 'is' => accessions } }]
+    results = client.projects(query: file_query)
+    results['hits'].map do |entry|
+      entry_hash = entry.with_indifferent_access
+      project_hash = entry_hash[:projects].first # there will only ever be one project here
+      accession = project_hash[:projectShortname]
+      result = {
+        study_source: 'HCA',
+        name: project_hash[:projectTitle],
+        accession:,
+        description: project_hash[:projectDescription],
+        studyFiles: [
+          {
+            project_id: project_hash[:projectId],
+            file_type: 'Project Manifest',
+            count: 1,
+            upload_file_size: 1.megabyte, # placeholder filesize as we don't know until manifest is downloaded
+            name: "#{accession}.tsv"
+          }
+        ]
+      }.with_indifferent_access
+      project_file_info = extract_file_information(entry_hash)
+      result[:studyFiles] += project_file_info if project_file_info.any?
+      result
     end
-    all_results = []
-    Parallel.map(queries, in_threads: queries.size) do |query|
-      results = client.projects(query: query)
-      results['hits'].map do |entry|
-        entry_hash = entry.with_indifferent_access
-        project_hash = entry_hash[:projects].first # there will only ever be one project here
-        accession = project_hash[:projectShortname]
-        result = {
-          study_source: 'HCA',
-          name: project_hash[:projectTitle],
-          accession: accession,
-          description: project_hash[:projectDescription],
-          studyFiles: [
-            {
-              project_id: project_hash[:projectId],
-              file_type: 'Project Manifest',
-              count: 1,
-              upload_file_size: 1.megabyte, # placeholder filesize as we don't know until manifest is downloaded
-              name: "#{accession}.tsv"
-            }
-          ]
-        }.with_indifferent_access
-        project_file_info = extract_file_information(entry_hash)
-        result[:studyFiles] += project_file_info if project_file_info.any?
-        all_results << result
-      end
-    end
-    all_results
   end
 end

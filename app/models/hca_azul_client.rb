@@ -104,7 +104,7 @@ class HcaAzulClient
   # * *raises*
   #   - (RestClient::Exception) => if HTTP request fails for any reason
   def execute_http_request(http_method, path, payload = nil)
-    response = RestClient::Request.execute(method: http_method, url: path, payload: payload, headers: DEFAULT_HEADERS)
+    response = RestClient::Request.execute(method: http_method, url: path, payload:, headers: DEFAULT_HEADERS)
     # handle response using helper
     handle_response(response)
   end
@@ -163,7 +163,7 @@ class HcaAzulClient
   #
   # * *params*
   #   - +catalog+ (String) => HCA catalog name (optional)
-  #   - +query+ (Hash) => query object from :format_query_object
+  #   - +query+ (Hash) => query object
   #   - +size+ (Integer) => number of results to return (default is 200)
   #
   # * *returns*
@@ -172,18 +172,16 @@ class HcaAzulClient
   # * *raises*
   #   - (ArgumentError) => if catalog is not in self.all_catalogs
   def projects(catalog: nil, query: {}, size: MAX_RESULTS)
-    base_path = "#{api_root}/index/projects"
-    base_path += "?filters=#{format_hash_as_query_string(query)}"
-    base_path += "&size=#{size}"
+    base_path = "#{api_root}/index/projects?size=#{size}"
     path = append_catalog(base_path, catalog)
-    process_api_request(:get, path)
+    process_api_request(:post, path, payload: create_query_filters(query))
   end
 
   # simulate OR logic by splitting project queries on facet and joining results
   #
   # * *params*
   #   - +catalog+ (String) => HCA catalog name (optional)
-  #   - +query+ (Hash) => query object from :format_query_object
+  #   - +query+ (Hash) => query object
   #   - +size+ (Integer) => number of results to return (default is 200)
   #
   # * *returns*
@@ -196,7 +194,7 @@ class HcaAzulClient
     isolated_queries = query.each_pair.map { |facet, filters| { facet => filters } }
     Rails.logger.info "Splitting above query into #{isolated_queries.size} requests and joining results"
     Parallel.map(isolated_queries, in_threads: isolated_queries.size) do |project_query|
-      results = projects(catalog: catalog, query: project_query, size: size)
+      results = projects(catalog: catalog, query: project_query, size:)
       results['hits'].each do |result|
         project_id = result['projects'].first['projectId']
         unless all_results['project_ids'].include?(project_id)
@@ -242,13 +240,11 @@ class HcaAzulClient
 
     base_path = "#{api_root}/fetch/manifest/files"
     project_filter = { 'projectId' => { 'is' => [project_id] } }
-    filter_query = format_hash_as_query_string(project_filter)
-    base_path += "?filters=#{filter_query}&format=#{format}"
     path = append_catalog(base_path, catalog)
     # since manifest files are generated on-demand, keep making requests until the Status code is 302 (Found)
     # Status 301 means that the manifest is still being generated; if no manifest is ready after 30s, return anyway
     time_slept = 0
-    manifest_info = process_api_request(:get, path)
+    manifest_info = process_api_request(:put, path, payload: create_query_filters(project_filter))
     while manifest_info['Status'] == 301
       break if time_slept >= MAX_MANIFEST_TIMEOUT
 
@@ -271,12 +267,11 @@ class HcaAzulClient
   # * *returns*
   #   - (Hash) => List of files matching query
   def files(catalog: nil, query: {}, size: MAX_RESULTS)
-    base_path = "#{api_root}/index/files"
-    query_string = format_hash_as_query_string(query)
-    base_path += "?filters=#{query_string}&size=#{size}"
+    base_path = "#{api_root}/index/files?size=#{size}"
+    payload = create_query_filters(query)
     path = append_catalog(base_path, catalog)
     # make API request, but fold in project information to each result so that this is preserved for later use
-    raw_results = process_api_request(:get, path)['hits']
+    raw_results = process_api_request(:post, path, payload:)['hits']
     results = []
     raw_results.each do |result|
       files = result['files']
@@ -397,29 +392,17 @@ class HcaAzulClient
     merged_query
   end
 
-  # take a Hash/JSON object and format as a query string parameter
+  # create a query filter object to use in a request body
   #
   # * *params*
-  #   - +query_params+ (Hash) => Hash of query parameters
+  #   - +query+ (Hash) => Hash of query parameters
   #
   # * *returns*
-  #   - (String) => URL-encoded string version of query parameters
-  def format_hash_as_query_string(query_params)
-    # replace Ruby => assignment operators with JSON standard colons (:)
-    sanitized_params = query_params.to_s.gsub(/=>/, ':')
-    CGI.escape(sanitized_params)
-  end
-
-  # determine if a requested query is too long and would result in an HTTP 413 Payload Too Large exception
-  #
-  # * *params*
-  #   - +query_params+ (Hash) => Hash of query parameters
-  #
-  # * *returns*
-  #   - (Boolean) => T/F if query would be too large
-  def query_too_large?(query_params)
-    formatted_query = format_hash_as_query_string(query_params)
-    formatted_query.size >= MAX_QUERY_LENGTH
+  #   - (String) => JSON query object, with double-encoded 'filters' parameter
+  def create_query_filters(query)
+    {
+      filters: query.to_json
+    }.to_json
   end
 
   # append the HCA catalog name, if passed to a method
