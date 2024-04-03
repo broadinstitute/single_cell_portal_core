@@ -192,6 +192,14 @@ class HcaAzulClientTest < ActiveSupport::TestCase
     assert_equal expected_query, query
   end
 
+  test 'should create query filters object' do
+    project_id = SecureRandom.uuid
+    query = { 'projectId' => { 'is' => [project_id] } }
+    query_object = @hca_azul_client.create_query_filters(query)
+    expected_query = "{\"filters\":\"{\\\"projectId\\\":{\\\"is\\\":[\\\"#{project_id}\\\"]}}\"}"
+    assert_equal expected_query, query_object
+  end
+
   test 'should format numeric facet query' do
     age_facet = [
       {
