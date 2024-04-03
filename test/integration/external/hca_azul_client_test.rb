@@ -89,7 +89,7 @@ class HcaAzulClientTest < ActiveSupport::TestCase
   end
 
   test 'should get projects' do
-    # skip_if_api_down
+    skip_if_api_down
     raw_projects = @hca_azul_client.projects(size: 1)
     projects = get_entries_from_response(raw_projects, :projects)
     assert projects.size == 1
