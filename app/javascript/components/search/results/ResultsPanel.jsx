@@ -78,11 +78,7 @@ const FacetResultsFooter = ({ studySearchState }) => {
         <div className="">
           <p>Our advanced search is metadata-powered.
           By selecting filters, your search <b>targets only studies that use ontology terms</b> in their metadata file.
-          Currently, almost 25% of public studies supply that metadata.</p>
-          {/*
-            84 of 353 studies as of 2021-06-22,
-            per https://docs.google.com/spreadsheets/d/1FSpP2XTrG9FqAqD9X-BHxkCZae9vxZA3cQLow8mn-bk
-          */}
+          Many, but not all, public studies supply that metadata.</p>
           Learn more about our search capability on our{' '}
           <a className= "link-darker-blue" href="https://singlecell.zendesk.com/hc/en-us/articles/360061006431-Search-Studies"
             target="_blank" rel="noreferrer">documentation
