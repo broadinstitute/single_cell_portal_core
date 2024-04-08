@@ -181,8 +181,10 @@ function getFacetsParam(initFacets, selection) {
   })
 
   const innerParams = []
+
   Object.entries(initSelection).forEach(([facet, filters]) => {
-    if (facet.type === 'group') {
+    const facetObj = initFacets.find(f => f.annotation === facet)
+    if (facetObj.type === 'group') {
       filters.forEach(filter => {
         // Unlike `selection`, which specifies all filters that are selected
         // (i.e., checked and not applied), the `facets` parameter species only
