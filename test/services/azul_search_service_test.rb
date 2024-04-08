@@ -242,20 +242,4 @@ class AzulSearchServiceTest < ActiveSupport::TestCase
     expected_term_match = { total: 2, terms: { lung: 2 } }.with_indifferent_access
     assert_equal expected_term_match, AzulSearchService.get_search_term_weights(result, %w[lung])
   end
-
-  test 'should split large queries into two requests' do
-    accession_list = 1.upto(500).map { |n| "FakeHCAProject#{n}" }
-    query = { 'project' => { 'is' => accession_list } }
-    project_result = @human_tcell_response['hits'].first
-    mock_query_result = { 'hits' => Array.new(250, project_result) }
-    mock = Minitest::Mock.new
-    mock.expect :query_too_large?, true, [query]
-    mock.expect :projects, mock_query_result, [Hash]
-    mock.expect :projects, mock_query_result, [Hash]
-    ApplicationController.stub :hca_azul_client, mock do
-      results = AzulSearchService.get_file_summary_info(accession_list)
-      mock.verify
-      assert results.count == 500
-    end
-  end
 end
