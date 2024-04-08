@@ -241,10 +241,11 @@ class HcaAzulClient
     base_path = "#{api_root}/fetch/manifest/files"
     project_filter = { 'projectId' => { 'is' => [project_id] } }
     path = append_catalog(base_path, catalog)
+    payload = create_query_filters(project_filter)
     # since manifest files are generated on-demand, keep making requests until the Status code is 302 (Found)
     # Status 301 means that the manifest is still being generated; if no manifest is ready after 30s, return anyway
     time_slept = 0
-    manifest_info = process_api_request(:put, path, payload: create_query_filters(project_filter))
+    manifest_info = process_api_request(:put, path, payload:)
     while manifest_info['Status'] == 301
       break if time_slept >= MAX_MANIFEST_TIMEOUT
 
@@ -252,7 +253,7 @@ class HcaAzulClient
       Rails.logger.info "Manifest still generating for #{project_id} (#{format}), retrying in #{interval}"
       sleep interval
       time_slept += interval
-      manifest_info = process_api_request(:get, path)
+      manifest_info = process_api_request(:put, path, payload:)
     end
     manifest_info
   end
