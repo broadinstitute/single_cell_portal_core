@@ -111,8 +111,10 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
 
   /** close and reopen bookmark form to fix positioning issues */
   function reopenBookmarkForm() {
-    formRef.current.handleToggle()
-    formRef.current.handleToggle()
+    if (formRef && formRef.current) {
+      formRef.current.handleToggle()
+      formRef.current.handleToggle()
+    }
   }
 
   /* keep track of opened top-level tab */
@@ -205,7 +207,7 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
       enableSaveButton(true)
       setShowError(false)
       updateBookmarkList(bookmark)
-      resetForm()
+      setShowError(false)
       log(logEvent)
     } catch (error) {
       enableSaveButton(true)

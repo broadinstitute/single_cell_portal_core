@@ -166,31 +166,21 @@ class HcaAzulClientTest < ActiveSupport::TestCase
   # TODO: SCP-5564
   #   - Fix "Global bulk download breaks in default use"
   #   - Re-enable this test
-  # test 'should get HCA metadata tsv link' do
-  #   skip_if_api_down
-  #   manifest_info = @hca_azul_client.project_manifest_link(@project_id)
-  #   assert manifest_info.present?
-  #   assert_equal 302, manifest_info['Status']
-  #   # make GET on manifest URL and assert contents are HCA metadata
-  #   manifest_response = RestClient.get manifest_info['Location']
-  #   assert_equal 200, manifest_response.code
-  #   raw_manifest = manifest_response.body.split("\r\n")
-  #   headers = raw_manifest.first.split("\t")
-  #   project_id_header = 'project.provenance.document_id'
-  #   assert headers.include? project_id_header
-  #   project_idx = headers.index(project_id_header)
-  #   data_row = raw_manifest.sample.split("\t")
-  #   assert_equal @project_id, data_row[project_idx]
-  # end
-
-  test 'should format object for query string' do
-    query_object = { 'foo' => { 'bar' => 'baz' } }
-    expected_response = '%7B%22foo%22%3A%7B%22bar%22%3A%22baz%22%7D%7D'
-    formatted_query = @hca_azul_client.format_hash_as_query_string(query_object)
-    assert_equal expected_response, formatted_query
-    # assert we can get back to original object, but as JSON
-    query_as_json = CGI.unescape(formatted_query)
-    assert_equal query_object.to_json, query_as_json
+  test 'should get HCA metadata tsv link' do
+    skip_if_api_down
+    manifest_info = @hca_azul_client.project_manifest_link(@project_id)
+    assert manifest_info.present?
+    assert_equal 302, manifest_info['Status']
+    # make GET on manifest URL and assert contents are HCA metadata
+    manifest_response = RestClient.get manifest_info['Location']
+    assert_equal 200, manifest_response.code
+    raw_manifest = manifest_response.body.split("\r\n")
+    headers = raw_manifest.first.split("\t")
+    project_id_header = 'project.provenance.document_id'
+    assert headers.include? project_id_header
+    project_idx = headers.index(project_id_header)
+    data_row = raw_manifest.sample.split("\t")
+    assert_equal @project_id, data_row[project_idx]
   end
 
   test 'should format query object from search facets' do
@@ -200,6 +190,14 @@ class HcaAzulClientTest < ActiveSupport::TestCase
       genusSpecies: { is: ['Homo sapiens'] }
     }.with_indifferent_access
     assert_equal expected_query, query
+  end
+
+  test 'should create query filters object' do
+    project_id = SecureRandom.uuid
+    query = { 'projectId' => { 'is' => [project_id] } }
+    query_object = @hca_azul_client.create_query_filters(query)
+    expected_query = "{\"filters\":\"{\\\"projectId\\\":{\\\"is\\\":[\\\"#{project_id}\\\"]}}\"}"
+    assert_equal expected_query, query_object
   end
 
   test 'should format numeric facet query' do
@@ -304,13 +302,6 @@ class HcaAzulClientTest < ActiveSupport::TestCase
     assert_raises ArgumentError do
       @hca_azul_client.append_catalog(path, bad_catalog)
     end
-  end
-
-  test 'should determine if query is too large' do
-    accession_list = 1.upto(500).map { |n| "FakeHCAProject#{n}" }
-    query = { project: { is: accession_list } }
-    assert @hca_azul_client.query_too_large?(query)
-    assert_not @hca_azul_client.query_too_large?({ project: { is: accession_list.take(10) } })
   end
 
   test 'should not retry any error status code' do
