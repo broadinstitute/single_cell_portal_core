@@ -55,7 +55,7 @@ class SiteController < ApplicationController
 
     # determine study/cell count based on viewable to user
     @study_count = @viewable.count
-    @cell_count = @viewable.map(&:cell_count).inject(&:+)
+    @cell_count = @viewable.map(&:cell_count).compact.inject(0, &:+)
 
     if @cell_count.nil?
       @cell_count = 0

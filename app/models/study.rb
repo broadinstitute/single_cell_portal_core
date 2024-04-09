@@ -738,6 +738,7 @@ class Study
   validate :prevent_firecloud_attribute_changes, on: :update
   validates_presence_of :firecloud_project, :firecloud_workspace
   validates_uniqueness_of :external_identifier, allow_blank: true
+  validates :cell_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   # callbacks
   before_validation :set_url_safe_name
