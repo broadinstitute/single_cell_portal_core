@@ -89,9 +89,14 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
     setCurrentBookmark(findExistingBookmark())
   }
 
+  /** helper to determine if the bookmark form can be hidden/toggled **/
+  function formCanToggle() {
+    return isUserLoggedIn() && formRef.current?.state?.show
+  }
+
   /** close open form if changing tabs */
   function closeBookmarkForm() {
-    if (isUserLoggedIn() && formRef.current?.state?.show) {
+    if (formCanToggle()) {
       formRef.current.handleHide()
     }
   }
@@ -109,9 +114,9 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
     }
   }
 
-  /** close and reopen bookmark form to fix positioning issues */
+  /** close and reopen bookmark form if currently open to fix positioning issues */
   function reopenBookmarkForm() {
-    if (formRef && formRef.current) {
+    if (formCanToggle()) {
       formRef.current.handleToggle()
       formRef.current.handleToggle()
     }
