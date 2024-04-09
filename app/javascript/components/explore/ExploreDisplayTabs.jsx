@@ -249,10 +249,15 @@ function parseFacetsParam(initFacets, facetsParam) {
       const numericFiltersAndIncludeNa = facets[facet]
       if (numericFiltersAndIncludeNa) {
         const rawNumericFilters = numericFiltersAndIncludeNa.slice(0, -1)
-        const [operator, rawMin, rawMax] = rawNumericFilters[0].split(',')
-        const min = parseFloat(rawMin)
-        const max = parseFloat(rawMax)
-        const numericFilters = [[operator, [min, max]]]
+        const [operator, rawVal, rawVal2] = rawNumericFilters[0].split(',')
+        const value = parseFloat(rawVal)
+        const value2 = parseFloat(rawVal2)
+        let numericFilters
+        if (['between', 'not between'].includes(operator)) {
+          numericFilters = [[operator, [value, value2]]]
+        } else {
+          numericFilters = [[operator, value]]
+        }
         const rawIncludeNa = numericFiltersAndIncludeNa.slice(-1)[0]
         const includeNa = rawIncludeNa === 'true'
         selection[facet] = [numericFilters, includeNa]
