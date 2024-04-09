@@ -26,7 +26,9 @@ import ExploreDisplayPanelManager from './ExploreDisplayPanelManager'
 import OverlayTrigger from 'react-bootstrap/lib/OverlayTrigger'
 import Tooltip from 'react-bootstrap/lib/Tooltip'
 import PlotTabs from './PlotTabs'
-import { initCellFaceting, filterCells } from '~/lib/cell-faceting'
+import {
+  initCellFaceting, filterCells, getFacetsParam, parseFacetsParam
+} from '~/lib/cell-faceting'
 
 /** Get the selected clustering and annotation, or their defaults */
 export function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
@@ -169,103 +171,6 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
       }
     }
   }
-}
-
-/** Get `facets` parameter value, for cell filtering */
-function getFacetsParam(initFacets, selection) {
-  const minimalSelection = {}
-
-  const initSelection = {}
-  initFacets.filter(f => !f.isSelectedAnnotation)?.forEach(facet => {
-    initSelection[facet.annotation] = facet.defaultSelection
-  })
-
-  const innerParams = []
-
-  Object.entries(initSelection).forEach(([facet, filters]) => {
-    const facetObj = initFacets.find(f => f.annotation === facet)
-    if (facetObj.type === 'group') {
-      filters.forEach(filter => {
-        // Unlike `selection`, which specifies all filters that are selected
-        // (i.e., checked and not applied), the `facets` parameter species only
-        // filters that are _not_ selected, i.e. they're unchecked and applied.
-        //
-        // This makes the `facets` parameter much clearer.
-        if (!selection[facet].includes(filter)) {
-          if (facet in minimalSelection) {
-            minimalSelection[facet].push(filter)
-          } else {
-            minimalSelection[facet] = [filter]
-          }
-        }
-      })
-    } else {
-      // TODO (SCP-5531): Enable URL parameters for numeric cell facets
-      minimalSelection[facet] = selection[facet]
-    }
-  })
-
-  Object.entries(minimalSelection).forEach(([facet, filters]) => {
-    // TODO (SCP-5513): Screen numeric facets with constant value, then remove line below
-    if (filters === undefined) {return}
-
-    const innerParam = `${facet}:${filters.join('|')}`
-    innerParams.push(innerParam)
-  })
-
-  const facetParams = innerParams.join(';')
-  return facetParams
-}
-
-/** Parse `facets` URL parameter into cell filtering selection object */
-function parseFacetsParam(initFacets, facetsParam) {
-  const selection = {}
-
-  // Convert the `facets` parameter value, which is a string,
-  // into an object that has the same shape as `selections`
-  const facets = {}
-  const innerParams = facetsParam.split(';')
-  innerParams.forEach(innerParam => {
-    const [facet, rawFilters] = innerParam.split(':')
-    const filters = rawFilters.split('|')
-    facets[facet] = filters
-  })
-
-  // Take the complement of the minimal `facets` object, transforming
-  // it into the more verbose `selection` object which specifies filters
-  // that are _not_ applied.
-  Object.entries(initFacets).forEach(([facet, filters]) => {
-    if (facet.includes('group')) {
-        filters?.forEach(filter => {
-          if (!facets[facet]?.includes(filter)) {
-            if (facet in selection) {
-              selection[facet].push(filter)
-            } else {
-              selection[facet] = [filter]
-            }
-          }
-        })
-    } else {
-      const numericFiltersAndIncludeNa = facets[facet]
-      if (numericFiltersAndIncludeNa) {
-        const rawNumericFilters = numericFiltersAndIncludeNa.slice(0, -1)
-        const [operator, rawVal, rawVal2] = rawNumericFilters[0].split(',')
-        const value = parseFloat(rawVal)
-        const value2 = parseFloat(rawVal2)
-        let numericFilters
-        if (['between', 'not between'].includes(operator)) {
-          numericFilters = [[operator, [value, value2]]]
-        } else {
-          numericFilters = [[operator, value]]
-        }
-        const rawIncludeNa = numericFiltersAndIncludeNa.slice(-1)[0]
-        const includeNa = rawIncludeNa === 'true'
-        selection[facet] = [numericFilters, includeNa]
-      }
-    }
-  })
-
-  return selection
 }
 
 /**
