@@ -200,8 +200,8 @@ function getFacetsParam(initFacets, selection) {
         }
       })
     } else {
-      // TODO (SCP-5531): Enable URL parameters for numeric cell facets
-      // minimalSelection[facet] = selection[facet]
+      // Add numeric cell facet to URL parameter
+      minimalSelection[facet] = selection[facet]
     }
   })
 
@@ -232,15 +232,28 @@ function parseFacetsParam(initFacets, facetsParam) {
   // it into the more verbose `selection` object which specifies filters
   // that are _not_ applied.
   Object.entries(initFacets).forEach(([facet, filters]) => {
-    filters.forEach(filter => {
-      if (!facets[facet]?.includes(filter)) {
-        if (facet in selection) {
-          selection[facet].push(filter)
-        } else {
-          selection[facet] = [filter]
-        }
+    if (facet.includes('group')) {
+        filters?.forEach(filter => {
+          if (!facets[facet]?.includes(filter)) {
+            if (facet in selection) {
+              selection[facet].push(filter)
+            } else {
+              selection[facet] = [filter]
+            }
+          }
+        })
+    } else {
+      const numericFiltersAndIncludeNa = facets[facet]
+      if (numericFiltersAndIncludeNa) {
+        const rawNumericFilters = numericFiltersAndIncludeNa.slice(0, -1)
+        const [operator, rawMin, rawMax] = rawNumericFilters[0].split(',')
+        const min = parseFloat(rawMin)
+        const max = parseFloat(rawMax)
+        const numericFilters = [[operator, [min, max]]]
+        const includeNa = Boolean(numericFiltersAndIncludeNa.slice(-1)[0])
+        selection[facet] = [numericFilters, includeNa]
       }
-    })
+    }
   })
 
   return selection
