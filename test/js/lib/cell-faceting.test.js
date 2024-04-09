@@ -2,7 +2,7 @@ import { allAnnots, facetData } from './cell-faceting.test-data'
 import * as ScpApi from 'lib/scp-api'
 
 import {
-  initCellFaceting, filterCells, applyNumericFilters
+  initCellFaceting, filterCells, applyNumericFilters, parseFacetsParam
 } from 'lib/cell-faceting'
 
 // Test functionality to filter cells shown in plots across annotation facets
@@ -180,5 +180,35 @@ describe('Cell faceting', () => {
     console.log('filterCellsResult', filterCellsResult)
     // All cells in this example are neurons,
     expect(filterCellsResult[0]).toHaveLength(2)
+  })
+
+  it('parses facets URL parameter for cell filtering selection', () => {
+    const facetsParam =
+      'cell_type__ontology_label--group--study:epithelial cell|macrophage;' + // a non-default selection
+      'time_post_partum_days--numeric--study:between,3,323|true;' +
+      'time_post_partum_weeks--numeric--study:between,0.43,46.14|true;' +
+      'week_delivered--numeric--study:between,37,42|true;' +
+      'BMI_during_study--numeric--study:between,21.66,33.3|false;' + // a non-default selection
+      'BMI_pre_pregnancy--numeric--study:between,18.84,34.01|true'
+
+    const initFacets = {
+      'cell_type__ontology_label--group--study': [
+        'epithelial cell', 'macrophage', 'neutrophil', 'T cell', 'dendritic cell', 'fibroblast', 'B cell', 'eosinophil'
+      ],
+      'BMI_during_study--numeric--study': [
+        [null, 6450], [18.89, 1686], [20.31, 5639], [29.86, 1389], [33.3, 952]
+      ]
+    }
+
+    const expectedSelection = {
+      'BMI_during_study--numeric--study': [[['between', [21.66, 33.3]]], false],
+      'cell_type__ontology_label--group--study': [
+        'neutrophil', 'T cell', 'dendritic cell', 'fibroblast', 'B cell', 'eosinophil'
+      ]
+    }
+
+    const selection = parseFacetsParam(initFacets, facetsParam)
+
+    expect(selection).toEqual(expectedSelection)
   })
 })
