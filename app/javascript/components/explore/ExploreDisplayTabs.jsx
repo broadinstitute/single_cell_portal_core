@@ -206,6 +206,9 @@ function getFacetsParam(initFacets, selection) {
   })
 
   Object.entries(minimalSelection).forEach(([facet, filters]) => {
+    // TODO (SCP-5513): Screen numeric facets with constant value, then remove line below
+    if (filters === undefined) {return}
+
     const innerParam = `${facet}:${filters.join('|')}`
     innerParams.push(innerParam)
   })
