@@ -36,5 +36,11 @@
     associated Terra workspace.  If enabled, you can send the access URL & PIN to your corresponding editor to allow
     reviewers to view your study.
   </p>
+  <% unless @study.public? %>
+    <p class="text-danger">
+      NOTE: Due to current limitations with reviewer access in private studies, certain client-side visualizations will
+      not function properly.  This includes viewing any differential expression outputs, or rendering BAM files in IGV.
+    </p>
+  <% end %>
   <%= f.fields_for :reviewer_access %>
 </div>
