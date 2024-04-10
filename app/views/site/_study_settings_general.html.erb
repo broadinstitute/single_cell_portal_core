@@ -23,6 +23,6 @@
   </div>
   <div class="col-md-4">
     <%= f.label :cell_count %><br/>
-    <%= f.text_field :cell_count, class: 'form-control' %>
+    <%= f.number_field :cell_count, class: 'form-control', min: 0 %>
   </div>
 </div>
