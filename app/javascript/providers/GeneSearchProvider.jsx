@@ -4,7 +4,7 @@ import _isEqual from 'lodash/isEqual'
 import { navigate, useLocation } from '@reach/router'
 import * as queryString from 'query-string'
 
-import { fetchSearch, buildSearchQueryString } from '~/lib/scp-api'
+import { fetchSearch, buildSearchQueryString, buildFacetsFromQueryString } from '~/lib/scp-api'
 import { buildParamsFromQuery as buildStudyParamsFromQuery } from '~/providers/StudySearchProvider'
 
 /*
@@ -16,6 +16,8 @@ import { buildParamsFromQuery as buildStudyParamsFromQuery } from '~/providers/S
 export const emptySearch = {
   params: {
     genes: '',
+    terms: '',
+    facets: {},
     genePage: 1
   },
 
@@ -72,6 +74,8 @@ export function PropsGeneSearchProvider(props) {
       'gene', {
         page: searchParams.page,
         genes: searchParams.genes,
+        terms: searchParams.terms,
+        facets: searchParams.facets,
         preset: searchParams.preset
       }).then(results => {
       setSearchState({
@@ -122,6 +126,8 @@ export function buildParamsFromQuery(query, preset) {
   return {
     page: queryParams.genePage ? parseInt(queryParams.genePage) : 1,
     genes: cleanGeneParams,
+    terms: queryParams.terms ? queryParams.terms : '',
+    facets: buildFacetsFromQueryString(queryParams.facets),
     preset: preset ? preset : queryString.preset_search
   }
 }

@@ -112,6 +112,7 @@ export default function StudyGeneExpressions({ study }) {
                 updateClusterParams={updateClusterParams}/>
               <AnnotationSelector
                 annotationList={annotationList}
+                shownAnnotation={controlClusterParams.annotation}
                 {...controlClusterParams}
                 updateClusterParams={updateClusterParams}/>
               <SubsampleSelector

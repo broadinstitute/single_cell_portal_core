@@ -170,6 +170,7 @@ module Api
 
       def index
         @viewable = Study.viewable(current_api_user)
+        @search_type = params[:type].to_sym
 
         # filter results by branding group, if specified
         if @selected_branding_group.present?
@@ -273,8 +274,8 @@ module Api
 
         # perform Azul search if there are facets/terms provided by user
         # run this before inferred search so that they are weighted and sorted correctly
-        # skip if user is searching inside a collection
-        if (@facets.present? || @term_list.present?) && @selected_branding_group.nil?
+        # skip if user is searching inside a collection or they are performing global gene search
+        if (@facets.present? || @term_list.present?) && (@selected_branding_group.nil? && @search_type == :study)
           begin
             azul_results = ::AzulSearchService.append_results_to_studies(@studies,
                                                                          selected_facets: @facets,
@@ -366,6 +367,14 @@ module Api
                                                                                     accessions: @matching_accessions,
                                                                                     query_context: :inferred)
             @inferred_studies = search_match_obj[:studies]
+            # if gene search is being run, append new results
+            if params[:genes].present? && @inferred_studies.any?
+              new_genes = ::StudySearchService.find_studies_by_gene_param(params[:genes], @inferred_studies.pluck(:id))
+              @gene_results[:genes_by_study].merge!(new_genes[:genes_by_study])
+              @gene_results[:study_ids] += new_genes[:study_ids]
+              # only show results where we found a hit in gene search
+              @inferred_studies = Study.where(:id.in => new_genes[:study_ids])
+            end
             @inferred_accessions = @inferred_studies.pluck(:accession)
             logger.info "Found #{@inferred_accessions.count} inferred matches: #{@inferred_accessions}"
             @matching_accessions += @inferred_accessions
