@@ -19,6 +19,10 @@
 
     import igv from "./igv.esm.js"
 
+    import accessToken from './access-token.esm.js'
+
+    console.log('accessToken', accessToken)
+
     const options =
         {
             // Example of fully specifying a reference .  We could alternatively use  "genome: 'hg19'"
@@ -36,7 +40,8 @@
                         // type: "variant",
                         format: "bed",
                         url: "https://storage.googleapis.com/fc-bcc55e6c-bec3-4b2e-9fb2-5e1526ddfcd2/reference_data_dev/nemo_atac/10x_multiome_mouse_brain/M_Brain_Chromium_Nuc_Isolation_vs_SaltyEZ_vs_ComplexTissueDP_atac_fragments.bed.gz",
-                        indexURL: "https://storage.googleapis.com/fc-bcc55e6c-bec3-4b2e-9fb2-5e1526ddfcd2/reference_data_dev/nemo_atac/10x_multiome_mouse_brain/M_Brain_Chromium_Nuc_Isolation_vs_SaltyEZ_vs_ComplexTissueDP_atac_fragments.bed.gz.tbi"
+                        indexURL: "https://storage.googleapis.com/fc-bcc55e6c-bec3-4b2e-9fb2-5e1526ddfcd2/reference_data_dev/nemo_atac/10x_multiome_mouse_brain/M_Brain_Chromium_Nuc_Isolation_vs_SaltyEZ_vs_ComplexTissueDP_atac_fragments.bed.gz.tbi",
+                        headers: {'Authorization': `Bearer ${accessToken}`}
                     },
                     {
                         name: "Genes",
@@ -56,8 +61,11 @@
 
     igv.createBrowser(igvDiv, options)
         .then(function (browser) {
+            window.igvBrowser = browser
             console.log("Created IGV browser")
         })
+
+    window.igv = igv
 
 </script>
 
