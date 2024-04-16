@@ -153,7 +153,7 @@ function cellCountBadge(study) {
 }
 
 /** Generate the inferredBadge for SCP studies */
-function inferredBadge(study, termMatches) {
+export function inferredBadge(study, termMatches) {
   if (study.inferred_match) {
     const helpText = `${termMatches.join(', ')} was not found in study metadata,
      only in study title or description`

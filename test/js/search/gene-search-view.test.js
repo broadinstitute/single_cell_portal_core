@@ -32,7 +32,7 @@ describe('Gene search page landing', () => {
       </PropsStudySearchProvider>
     ))
 
-    expect(container.getElementsByClassName('study-label')).toHaveLength(0)
+    expect(container.getElementsByClassName('study-label')).toHaveLength(1)
     const wrapperText = container.getElementsByClassName('study-gene-result')[0].textContent
     expect(wrapperText.indexOf('This study contains agpat2 in expression data')).toBeGreaterThan(0)
   })
@@ -49,7 +49,7 @@ describe('Gene search page landing', () => {
       </PropsStudySearchProvider>
     ))
 
-    expect(container.getElementsByClassName('study-label')).toHaveLength(0)
+    expect(container.getElementsByClassName('study-label')).toHaveLength(1)
     const wrapperText = container.getElementsByClassName('study-gene-result')[0].textContent
     expect(wrapperText.indexOf('This study contains agpat2 in expression data')).toBeGreaterThan(0)
   })
@@ -67,7 +67,7 @@ describe('Gene search page landing', () => {
       </PropsStudySearchProvider>
     ))
 
-    expect(container.getElementsByClassName('study-label')).toHaveLength(0)
+    expect(container.getElementsByClassName('study-label')).toHaveLength(1)
     const wrapperText = container.getElementsByClassName('study-gene-result')[0].textContent
     expect(wrapperText.indexOf('This study contains agpat2, farsa in expression data')).toBeGreaterThan(0)
   })

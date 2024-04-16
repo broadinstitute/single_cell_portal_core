@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import _clone from 'lodash/clone'
 
-import StudySearchResult, { getByline } from '~/components/search/results/StudySearchResult'
+import StudySearchResult, { getByline, inferredBadge } from '~/components/search/results/StudySearchResult'
 import DotPlot from '~/components/visualization/DotPlot'
 import StudyViolinPlot from '~/components/visualization/StudyViolinPlot'
 import ScatterPlot from '~/components/visualization/ScatterPlot'
@@ -19,6 +19,7 @@ import {
     to inform which genes to show data for
   */
 export default function StudyGeneExpressions({ study }) {
+  const termMatches = study.term_matches
   const [clusterParams, setClusterParams] = useState(_clone(emptyDataParams))
   const [annotationList, setAnnotationList] = useState(getNonUserAnnotations(study))
   let controlClusterParams = _clone(clusterParams)
@@ -85,8 +86,9 @@ export default function StudyGeneExpressions({ study }) {
 
   return (
     <div className="study-gene-result">
-      <label htmlFor={study.name} id= 'result-title'>
+      <label htmlFor={study.name} id='result-title' className='study-label'>
         <a href={study.study_url} >{ study.name }</a>
+        { inferredBadge(study, termMatches) }
       </label>
       <div ><em>{ getByline(study.description) }</em></div>
       <div>
