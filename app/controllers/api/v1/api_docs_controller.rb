@@ -58,10 +58,6 @@ module Api
           key :description, 'Study publication/data link operations'
         end
         tag do
-          key :name, 'Publications'
-          key :description, 'Publication operations'
-        end
-        tag do
           key :name, 'Bookmarks'
           key :description, 'Bookmarked/saved views for users'
         end
@@ -119,7 +115,6 @@ module Api
           Api::V1::StudySharesController,
           Api::V1::DirectoryListingsController,
           Api::V1::ExternalResourcesController,
-          Api::V1::PublicationsController,
           Api::V1::SchemasController,
           Api::V1::MetadataSchemasController,
           Api::V1::TaxonsController,

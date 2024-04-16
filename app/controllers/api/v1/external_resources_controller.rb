@@ -40,7 +40,7 @@ module Api
             key :description, ApiBaseController.unauthorized
           end
           response 403 do
-            key :description, ApiBaseController.forbidden('edit Study')
+            key :description, ApiBaseController.forbidden('edit ExternalResource')
           end
           response 404 do
             key :description, ApiBaseController.not_found(Study)
@@ -62,12 +62,12 @@ module Api
               'ExternalResources'
           ]
           key :summary, 'Find an ExternalResource'
-          key :description, 'Finds a single Study'
+          key :description, 'Finds a single ExternalResource'
           key :operationId, 'study_external_resource_path'
           parameter do
             key :name, :study_id
             key :in, :path
-            key :description, 'ID of Study'
+            key :description, 'ID of ExternalResource'
             key :required, true
             key :type, :string
           end
