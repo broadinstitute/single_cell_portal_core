@@ -24,7 +24,8 @@ export default function KeywordSearch({ keywordPrompt }) {
 
   const textSearchModalContent = (<div>
     <h4 className="text-center">Text search</h4>
-    <p>Use the search box below to perform a text-based search on study titles, descriptions, authors*, and metadata.</p>
+    <p>Use the search box below to perform a text-based search on study titles, descriptions, accessions, authors*, and
+      metadata.</p>
     <ul>
       <li>
         A search without quotes (i.e. not wrapped in &quot;) will return any study that contains any of the specified terms.
