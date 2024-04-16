@@ -13,7 +13,6 @@ else
   json.directory_listings study.directory_listings.are_synced, partial: 'api/v1/site/directory_listing', as: :directory_listing, locals: {study: study}
 end
 json.publications do
-  # byebug
   json.array! study.publications do |publication|
     json.set! :title, publication.title
     json.set! :journal, publication.journal

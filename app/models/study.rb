@@ -589,14 +589,14 @@ class Study
         key '$ref', 'DirectoryListingDownload'
       end
     end
-    # property :publications do
-    #   key :type, :array
-    #   key :description, 'Available publications'
-    #   items do
-    #     key :title, 'Publication'
-    #     key '$ref', :PublicationInput
-    #   end
-    # end
+    property :publications do
+      key :type, :array
+      key :description, 'Available publications'
+      items do
+        key :title, 'Publication'
+        key '$ref', :PublicationInput
+      end
+    end
     property :external_resources do
       key :type, :array
       key :description, 'Available external resource links'
@@ -1064,8 +1064,7 @@ class Study
 
   # helper to determine if a study has any publications/external resources to link to from the study overview page
   def has_sidebar_content?
-    # publications.any? || external_resources.any? || authors.corresponding.any?
-    external_resources.any? || authors.corresponding.any?
+    publications.any? || external_resources.any? || authors.corresponding.any?
   end
 
   ###
