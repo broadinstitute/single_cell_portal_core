@@ -58,6 +58,10 @@ module Api
           key :description, 'Study publication/data link operations'
         end
         tag do
+          key :name, 'Publications'
+          key :description, 'Publication operations'
+        end
+        tag do
           key :name, 'Bookmarks'
           key :description, 'Bookmarked/saved views for users'
         end
