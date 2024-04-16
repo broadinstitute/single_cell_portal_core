@@ -75,6 +75,7 @@ export const ClearAllButton = () => {
     })
     const emptySearchParams = {
       terms: '',
+      genes: '',
       facets: emptyFilters
     }
     selectionContext.updateSelection(emptySearchParams, true)

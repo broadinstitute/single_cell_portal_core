@@ -45,8 +45,10 @@ export default function StudyGeneExpressions({ study }) {
   } else if (showDotPlot) {
     // render dotPlot for multigene searches that are not collapsed
     const annotationValues = getAnnotationValues(controlClusterParams.annotation, annotationList)
+    const [morpheusData, setMorpheusData] = useState(null)
     studyRenderComponent = <DotPlot studyAccession={study.accession}
       genes={study.gene_matches}
+      setMorpheusData={setMorpheusData}
       {...controlClusterParams}
       annotationValues={annotationValues}/>
   } else if (isNumericAnnotation) {
