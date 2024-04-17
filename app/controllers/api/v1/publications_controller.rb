@@ -306,7 +306,7 @@ module Api
 
       # study file params list
       def publication_params
-        params.require(:publication).permit(:id, :accession, :title, :description, :url, :publication_url)
+        params.require(:publication).permit(:id, :accession, :title, :journal, :url, :pmcid, :citation, :preprint)
       end
     end
   end
