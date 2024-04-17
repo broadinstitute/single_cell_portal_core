@@ -32,7 +32,7 @@ class RequestUtils
   # this prevents long parameter lists from being split in the middle due to maximum filename length limits
   # and resulting in invalid % encoding issue when trying to clear selected cache entries
   def self.construct_params_digest(params)
-    sorted_params = params.reject { |name, value| CACHE_PATH_EXCLUDE_LIST.include?(name) || value.empty? }
+    sorted_params = params.reject { |name, value| CACHE_PATH_EXCLUDE_LIST.include?(name) || value.blank? }
                           .sort_by { |key, _| key }.flatten
     return '' if sorted_params.empty? # gotcha to prevent converting empty string into hexdigest
 
