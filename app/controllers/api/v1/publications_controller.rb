@@ -282,7 +282,12 @@ module Api
       private
 
       def set_study
-        @study = Study.find_by(accession: params[:study_id])
+        study_key = params[:study_id]
+        if study_key.start_with?('SCP')
+          @study = Study.find_by(accession: study_key)
+        else
+          @study = Study.find_by(id: study_key)
+        end
         if @study.nil? || @study.queued_for_deletion?
           head 404 and return
         end
