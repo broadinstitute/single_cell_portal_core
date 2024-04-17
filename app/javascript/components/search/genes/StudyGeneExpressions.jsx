@@ -22,6 +22,7 @@ export default function StudyGeneExpressions({ study }) {
   const termMatches = study.term_matches
   const [clusterParams, setClusterParams] = useState(_clone(emptyDataParams))
   const [annotationList, setAnnotationList] = useState(getNonUserAnnotations(study))
+  const [_, setMorpheusData] = useState(null)
   let controlClusterParams = _clone(clusterParams)
   if (annotationList && !clusterParams.cluster) {
     // if the user hasn't specified anything yet, but we have the study defaults, use those
@@ -46,7 +47,6 @@ export default function StudyGeneExpressions({ study }) {
   } else if (showDotPlot) {
     // render dotPlot for multigene searches that are not collapsed
     const annotationValues = getAnnotationValues(controlClusterParams.annotation, annotationList)
-    const [morpheusData, setMorpheusData] = useState(null)
     studyRenderComponent = <DotPlot studyAccession={study.accession}
       genes={study.gene_matches}
       setMorpheusData={setMorpheusData}
