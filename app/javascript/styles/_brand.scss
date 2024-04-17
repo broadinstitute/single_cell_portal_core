@@ -282,6 +282,10 @@
   overflow-y: scroll;
 }
 
+#bookmarks-list-modal {
+  z-index: 9999;
+}
+
 .bookmarks-list-item {
   background-color: #eff2f5;
   padding: 5px;

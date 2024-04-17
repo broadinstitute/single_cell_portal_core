@@ -14,15 +14,16 @@ import { log } from '~/lib/metrics-api'
  *
  * @param bookmarks {Array} existing user bookmark objects
  * @param studyAccession {String} currently loaded study, if present
- * @param eagerLoadBookmarks {Boolean} load bookmarks from server on initialization
+ * @param eagerLoad {Boolean} load bookmarks from server on initialization
  */
-export default function BookmarkManager({bookmarks=[], studyAccession='', eagerLoadBookmarks=false}) {
+export default function BookmarkManager({bookmarks=[], studyAccession='', eagerLoad=false}) {
   const location = useLocation()
   const [allBookmarks, setAllBookmarks] = useState(bookmarks)
   const [saveText, setSaveText] = useState('Save')
   const [saveDisabled, setSaveDisabled] = useState(false)
   const [bookmarkSaved, setBookmarkSaved] = useState(null)
   const [deleteDisabled, setDeleteDisabled] = useState(false)
+  const [hasEagerLoaded, setHasEagerLoaded] = useState(null)
   const { ErrorComponent, setShowError, setError } = useErrorMessage()
   const DEFAULT_BOOKMARK = {
     name: '',
@@ -245,16 +246,30 @@ export default function BookmarkManager({bookmarks=[], studyAccession='', eagerL
   const [serverBookmarksLoaded, setServerBookmarksLoaded] = useState(false)
   const [showBookmarksModal, setShowBookmarksModal] = useState(false)
 
-  if (eagerLoadBookmarks && !serverBookmarksLoaded && isUserLoggedIn()) {
-    setServerBookmarksLoaded(true)
-    fetchBookmarks().then(userBookmarks => {
+  /** load bookmarks from server on initialization */
+  async function eagerLoadBookmarks() {
+    setHasEagerLoaded(true) // prevent thundering herd
+    try {
+      const userBookmarks = await fetchBookmarks()
       setAllBookmarks(userBookmarks)
       setServerBookmarks(userBookmarks)
-    }).catch(error => {
+      setServerBookmarksLoaded(true)
+      const existingBookmark = userBookmarks.find(bookmark => bookmark.path === getBookmarkPath())
+      if (existingBookmark) {
+        setCurrentBookmark(existingBookmark)
+        setBookmarkSaved(true)
+      }
+    } catch (error) {
       handleErrorContent(error)
-      setServerBookmarksLoaded(false)
-    })
+      setHasEagerLoaded(false)
+    }
   }
+
+  useEffect(() => {
+    if (eagerLoad && !hasEagerLoaded && isUserLoggedIn()) {
+      eagerLoadBookmarks()
+    }
+  }, [])
 
   /** toggle bookmarks modal open/close */
   const toggleBookmarkModal = () => {
@@ -356,7 +371,7 @@ export default function BookmarkManager({bookmarks=[], studyAccession='', eagerL
 
   return (<>
     { isUserLoggedIn() &&
-      <OverlayTrigger trigger={['click']} placement={position} animation={false}
+      <OverlayTrigger trigger={['click']} placement='left' animation={false}
                       overlay={bookmarkForm} ref={formRef}>
       <span className={`fa-lg action ${starClass} fa-star`}
             data-analytics-name='bookmark-manager'

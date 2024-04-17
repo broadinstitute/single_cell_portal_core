@@ -10,7 +10,7 @@ import ResultsPanel from '~/components/search/results/ResultsPanel'
 import StudyDetails from '~/components/search/results/StudySearchResult'
 import StudySearchProvider, { StudySearchContext } from '~/providers/StudySearchProvider'
 import SearchFacetProvider from '~/providers/SearchFacetProvider'
-import UserProvider, { isUserLoggedIn } from '~/providers/UserProvider'
+import UserProvider from '~/providers/UserProvider'
 import BookmarkManager from '~/components/bookmarks/BookmarkManager'
 import ErrorBoundary from '~/lib/ErrorBoundary'
 
@@ -35,25 +35,19 @@ const LinkableSearchTabs = function(props) {
   // the queryParams object does not support the more typical hasOwnProperty test
   return (
     <div>
-      <nav className="nav search-links" data-analytics-name="search" role="tablist">
-        <Link to={`${basePath}/app/studies${location.search}`}
-          className={showGenesTab ? '' : 'active'}>
-          <span className="fas fa-book"></span> Search studies
-        </Link>
-        <Link to={`${basePath}/app/genes${location.search}`}
-          className={showGenesTab ? 'active' : ''}>
-          <span className="fas fa-dna"></span> Search genes
-        </Link>
-        { isUserLoggedIn() &&
-          <span className='margin-left'>
-            <BookmarkManager eagerLoadBookmarks={true} />
+        <nav className="nav search-links" data-analytics-name="search" role="tablist">
+          <Link to={`${basePath}/app/studies${location.search}`}
+                className={showGenesTab ? '' : 'active'}>
+            <span className="fas fa-book"></span> Search studies
+          </Link>
+          <Link to={`${basePath}/app/genes${location.search}`}
+                className={showGenesTab ? 'active' : ''}>
+            <span className="fas fa-dna"></span> Search genes
+          </Link>
+          <span id='home-page-bookmark'>
+            <BookmarkManager eagerLoad={true} />
           </span>
-        }
-        { !isUserLoggedIn() &&
-          <BookmarkManager eagerLoadBookmarks={true} />
-        }
-
-      </nav>
+        </nav>
       <div className="tab-content top-pad">
         <Router basepath={basePath}>
           <GeneSearchView path="app/genes"/>
