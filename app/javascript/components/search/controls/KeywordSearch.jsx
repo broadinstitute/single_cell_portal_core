@@ -24,7 +24,8 @@ export default function KeywordSearch({ keywordPrompt }) {
 
   const textSearchModalContent = (<div>
     <h4 className="text-center">Text search</h4>
-    <p>Use the search box below to perform a text-based search on study titles, descriptions, authors*, and metadata.</p>
+    <p>Use the search box below to perform a text-based search on study titles, descriptions, accessions, authors*, and
+      metadata.</p>
     <ul>
       <li>
         A search without quotes (i.e. not wrapped in &quot;) will return any study that contains any of the specified terms.
@@ -35,6 +36,7 @@ export default function KeywordSearch({ keywordPrompt }) {
       <p>&quot;single cell&quot; Smith</p>
     </ul>
     <p>* Structured data for authors is new in SCP, and many studies lack it, so author search results may be limited.</p>
+    <p>You can find studies directly by entering their accessions as terms: SCP1 SCP101 SCP1234</p>
   </div>)
 
   const textSearchLink = <a className="action advanced-opts"
