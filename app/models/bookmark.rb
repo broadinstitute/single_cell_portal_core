@@ -12,7 +12,6 @@ class Bookmark
   field :description, type: String
 
   validates :name, :path, presence: true, uniqueness: { scope: %i[user_id study_accession] }
-  validates :study_accession, presence: true
   before_validation :sanitize_path, :set_name
 
   swagger_schema :Bookmark do

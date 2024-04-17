@@ -10,7 +10,8 @@ import ResultsPanel from '~/components/search/results/ResultsPanel'
 import StudyDetails from '~/components/search/results/StudySearchResult'
 import StudySearchProvider, { StudySearchContext } from '~/providers/StudySearchProvider'
 import SearchFacetProvider from '~/providers/SearchFacetProvider'
-import UserProvider from '~/providers/UserProvider'
+import UserProvider, { isUserLoggedIn } from '~/providers/UserProvider'
+import BookmarkManager from '~/components/bookmarks/BookmarkManager'
 import ErrorBoundary from '~/lib/ErrorBoundary'
 
 /** include search controls and results */
@@ -43,6 +44,15 @@ const LinkableSearchTabs = function(props) {
           className={showGenesTab ? 'active' : ''}>
           <span className="fas fa-dna"></span> Search genes
         </Link>
+        { isUserLoggedIn() &&
+          <span className='margin-left'>
+            <BookmarkManager eagerLoadBookmarks={true} />
+          </span>
+        }
+        { !isUserLoggedIn() &&
+          <BookmarkManager eagerLoadBookmarks={true} />
+        }
+
       </nav>
       <div className="tab-content top-pad">
         <Router basepath={basePath}>
