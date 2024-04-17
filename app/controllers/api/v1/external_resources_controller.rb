@@ -62,12 +62,12 @@ module Api
               'ExternalResources'
           ]
           key :summary, 'Find an ExternalResource'
-          key :description, 'Finds a single ExternalResource'
+          key :description, 'Finds a single Study'
           key :operationId, 'study_external_resource_path'
           parameter do
             key :name, :study_id
             key :in, :path
-            key :description, 'ID of ExternalResource'
+            key :description, 'ID of Study'
             key :required, true
             key :type, :string
           end
@@ -306,4 +306,3 @@ module Api
     end
   end
 end
-
