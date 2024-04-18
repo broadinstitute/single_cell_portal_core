@@ -205,7 +205,7 @@ module Api
             key :description, ApiBaseController.unauthorized
           end
           response 403 do
-            key :description, ApiBaseController.forbidden('edit Study')
+            key :description, ApiBaseController.forbidden('edit Publication')
           end
           response 404 do
             key :description, ApiBaseController.not_found(Study, Publication)
