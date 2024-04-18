@@ -1,4 +1,5 @@
 import React from 'react'
+import * as Reach from '@reach/router'
 import { render } from '@testing-library/react'
 import GeneSearchView from 'components/search/genes/GeneSearchView'
 import { PropsStudySearchProvider } from 'providers/StudySearchProvider'
@@ -6,6 +7,10 @@ import { GeneSearchContext, emptySearch } from 'providers/GeneSearchProvider'
 
 
 describe('Gene search page landing', () => {
+  const locationMock = jest.spyOn(Reach, 'useLocation')
+  locationMock.mockImplementation(() => (
+    { pathname: "/single_cell/app/genes", search: '' }
+  ))
   it('shows study details when empty', async () => {
     const searchState = emptySearch
     searchState.isLoaded = true
