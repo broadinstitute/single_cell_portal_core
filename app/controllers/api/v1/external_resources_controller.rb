@@ -1,7 +1,6 @@
 module Api
   module V1
     class ExternalResourcesController < ApiBaseController
-      include Concerns::FireCloudStatus
 
       before_action :authenticate_api_user!
       before_action :set_study
