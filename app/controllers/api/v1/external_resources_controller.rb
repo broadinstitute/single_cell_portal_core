@@ -2,9 +2,10 @@ module Api
   module V1
     class ExternalResourcesController < ApiBaseController
 
-      before_action :authenticate_api_user!
+      before_action :set_current_api_user!
       before_action :set_study
-      before_action :check_study_edit_permission
+      before_action :check_study_view_permission
+      before_action :check_study_edit_permission, except: [:index]
       before_action :set_external_resource, except: [:index, :create]
 
       respond_to :json
