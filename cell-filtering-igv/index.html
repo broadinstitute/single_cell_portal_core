@@ -19,10 +19,6 @@
 
     import igv from "./igv.esm.js"
 
-    import accessToken from './access-token.esm.js'
-
-    console.log('accessToken', accessToken)
-
     const options =
         {
             // Example of fully specifying a reference .  We could alternatively use  "genome: 'hg19'"
@@ -32,16 +28,15 @@
                     fastaURL: "https://s3.amazonaws.com/igv.broadinstitute.org/genomes/seq/1kg_v37/human_g1k_v37_decoy.fasta",
                     cytobandURL: "https://s3.amazonaws.com/igv.broadinstitute.org/genomes/seq/b37/b37_cytoband.txt"
                 },
-            locus: "8:128,750,948-128,751,025",
+            locus: "12:6,642,682-6,648,537", // GAPDH
             tracks:
                 [
                     {
                         name: "Test",
                         // type: "variant",
                         format: "bed",
-                        url: "https://storage.googleapis.com/fc-bcc55e6c-bec3-4b2e-9fb2-5e1526ddfcd2/reference_data_dev/nemo_atac/10x_multiome_mouse_brain/M_Brain_Chromium_Nuc_Isolation_vs_SaltyEZ_vs_ComplexTissueDP_atac_fragments.bed.gz",
-                        indexURL: "https://storage.googleapis.com/fc-bcc55e6c-bec3-4b2e-9fb2-5e1526ddfcd2/reference_data_dev/nemo_atac/10x_multiome_mouse_brain/M_Brain_Chromium_Nuc_Isolation_vs_SaltyEZ_vs_ComplexTissueDP_atac_fragments.bed.gz.tbi",
-                        headers: {'Authorization': `Bearer ${accessToken}`}
+                        url: "./M_Brain_Chromium_Nuc_Isolation_vs_SaltyEZ_vs_ComplexTissueDP_atac_fragments.bed.gz",
+                        indexURL: "./M_Brain_Chromium_Nuc_Isolation_vs_SaltyEZ_vs_ComplexTissueDP_atac_fragments.bed.gz.tbi"
                     },
                     {
                         name: "Genes",
