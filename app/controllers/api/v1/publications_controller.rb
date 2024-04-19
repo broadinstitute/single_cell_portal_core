@@ -4,7 +4,7 @@ module Api
 
       before_action :authenticate_api_user!
       before_action :set_study
-      before_action :check_study_permission
+      before_action :check_study_edit_permission
       before_action :set_publication, except: [:index, :create]
 
       respond_to :json
@@ -280,27 +280,11 @@ module Api
 
       private
 
-      def set_study
-        study_key = params[:study_id]
-        if study_key.start_with?('SCP')
-          @study = Study.find_by(accession: study_key)
-        else
-          @study = Study.find_by(id: study_key)
-        end
-        if @study.nil? || @study.queued_for_deletion?
-          head 404 and return
-        end
-      end
-
       def set_publication
         @publication = Publication.find_by(id: params[:id])
         if @publication.nil?
           head 404 and return
         end
-      end
-
-      def check_study_permission
-        head 403 unless @study.can_edit?(current_api_user)
       end
 
       # study file params list
