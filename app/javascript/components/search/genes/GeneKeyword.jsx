@@ -39,7 +39,7 @@ export default function GeneKeyword({ placeholder, helpTextContent }) {
 
   useEffect(() => {
     setGeneArray(searchedGenesAsArray)
-  }, [searchedGenesAsArray.join(' ')])
+  }, [searchedGenesAsArray.map(gene => {return gene.label}).join(' ')])
 
   /** handles a user submitting a gene search */
   function handleSubmit(event) {
