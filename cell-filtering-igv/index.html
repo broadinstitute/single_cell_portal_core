@@ -20,7 +20,8 @@
   // API proof via console:
   // originalFeaturesChr12 = igvBrowser.trackViews[3].track.featureSource.featureCache.allFeatures[12]
   // filteredFeatures = igvBrowser.trackViews[3].track.featureSource.featureCache.allFeatures[12].filter(feature => feature.score !== 1)
-  // igv.FeatureUtils.packFeatures(filteredFeatures)
+  // maxRows = 20
+  // igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
   // igvBrowser.trackViews[3].track.featureSource.featureCache = new igv.FeatureCache$1(filteredFeatures, igvBrowser.genome)
   // igvBrowser.trackViews[3].track.clearCachedFeatures()
   // igvBrowser.trackViews[3].track.updateViews()
@@ -36,7 +37,7 @@
                     fastaURL: "https://s3.amazonaws.com/igv.broadinstitute.org/genomes/seq/1kg_v37/human_g1k_v37_decoy.fasta",
                     cytobandURL: "https://s3.amazonaws.com/igv.broadinstitute.org/genomes/seq/b37/b37_cytoband.txt"
                 },
-            locus: "12:6,645,244-6,645,975", // 732 bp in GAPDH, close enough to see ATAC-seq fragments
+            locus: "12:6,642,682-6,648,537", // 5856 bp around GAPDH
             tracks:
                 [
                     {
@@ -46,6 +47,7 @@
                         url: "./M_Brain_Chromium_Nuc_Isolation_vs_SaltyEZ_vs_ComplexTissueDP_atac_fragments.bed.gz",
                         indexURL: "./M_Brain_Chromium_Nuc_Isolation_vs_SaltyEZ_vs_ComplexTissueDP_atac_fragments.bed.gz.tbi",
                         visibilityWindow: 100_000,
+                        height: 350
                     },
                     {
                         name: "Genes",
