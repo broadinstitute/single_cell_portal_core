@@ -11,11 +11,21 @@
 
 <body>
 
-<h1>VCF variants and CRAM alignments</h1>
+<h1>Ad-hoc filtering in IGV</h1>
 
 <div id="igvDiv" style="padding-top: 10px;padding-bottom: 10px; border:1px solid lightgray"></div>
 
 <script type="module">
+
+  // API proof via console:
+
+  // originalFeaturesChr12 = igvBrowser.trackViews[3].track.featureSource.featureCache.allFeatures[12]
+  // filteredFeatures = igvBrowser.trackViews[3].track.featureSource.featureCache.allFeatures[12].filter(feature => feature.score !== 1)
+  // igv.FeatureUtils.packFeatures(filteredFeatures)
+  // igvBrowser.trackViews[3].track.featureSource.featureCache = new igv.FeatureCache$1(filteredFeatures, igvBrowser.genome)
+  // igvBrowser.trackViews[3].track.clearCachedFeatures()
+  // igvBrowser.trackViews[3].track.updateViews()
+
 
     import igv from "./igv.esm.js"
 
@@ -28,7 +38,7 @@
                     fastaURL: "https://s3.amazonaws.com/igv.broadinstitute.org/genomes/seq/1kg_v37/human_g1k_v37_decoy.fasta",
                     cytobandURL: "https://s3.amazonaws.com/igv.broadinstitute.org/genomes/seq/b37/b37_cytoband.txt"
                 },
-            locus: "12:6,642,682-6,648,537", // GAPDH
+            locus: "12:6,645,244-6,645,975", // 732 bp in GAPDH, close enough to see ATAC-seq fragments
             tracks:
                 [
                     {
