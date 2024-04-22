@@ -14,16 +14,14 @@ import { log } from '~/lib/metrics-api'
  *
  * @param bookmarks {Array} existing user bookmark objects
  * @param studyAccession {String} currently loaded study, if present
- * @param eagerLoad {Boolean} load bookmarks from server on initialization
  */
-export default function BookmarkManager({bookmarks=[], studyAccession='', eagerLoad=false}) {
+export default function BookmarkManager({bookmarks=[], studyAccession=''}) {
   const location = useLocation()
   const [allBookmarks, setAllBookmarks] = useState(bookmarks)
   const [saveText, setSaveText] = useState('Save')
   const [saveDisabled, setSaveDisabled] = useState(false)
   const [bookmarkSaved, setBookmarkSaved] = useState(null)
   const [deleteDisabled, setDeleteDisabled] = useState(false)
-  const [hasEagerLoaded, setHasEagerLoaded] = useState(null)
   const { ErrorComponent, setShowError, setError } = useErrorMessage()
   const DEFAULT_BOOKMARK = {
     name: '',
@@ -245,31 +243,6 @@ export default function BookmarkManager({bookmarks=[], studyAccession='', eagerL
   const [serverBookmarks, setServerBookmarks] = useState([])
   const [serverBookmarksLoaded, setServerBookmarksLoaded] = useState(false)
   const [showBookmarksModal, setShowBookmarksModal] = useState(false)
-
-  /** load bookmarks from server on initialization */
-  async function eagerLoadBookmarks() {
-    setHasEagerLoaded(true) // prevent thundering herd
-    try {
-      const userBookmarks = await fetchBookmarks()
-      setAllBookmarks(userBookmarks)
-      setServerBookmarks(userBookmarks)
-      setServerBookmarksLoaded(true)
-      const existingBookmark = userBookmarks.find(bookmark => bookmark.path === getBookmarkPath())
-      if (existingBookmark) {
-        setCurrentBookmark(existingBookmark)
-        setBookmarkSaved(true)
-      }
-    } catch (error) {
-      handleErrorContent(error)
-      setHasEagerLoaded(false)
-    }
-  }
-
-  useEffect(() => {
-    if (eagerLoad && !hasEagerLoaded && isUserLoggedIn()) {
-      eagerLoadBookmarks()
-    }
-  }, [])
 
   /** toggle bookmarks modal open/close */
   const toggleBookmarkModal = () => {

@@ -1,5 +1,5 @@
 
-import React, { useContext } from 'react'
+import React, { useContext, useState, useEffect } from 'react'
 import { Router, Link, useLocation } from '@reach/router'
 
 import GeneSearchView from '~/components/search/genes/GeneSearchView'
@@ -10,20 +10,19 @@ import ResultsPanel from '~/components/search/results/ResultsPanel'
 import StudyDetails from '~/components/search/results/StudySearchResult'
 import StudySearchProvider, { StudySearchContext } from '~/providers/StudySearchProvider'
 import SearchFacetProvider from '~/providers/SearchFacetProvider'
-import UserProvider from '~/providers/UserProvider'
-import BookmarkManager from '~/components/bookmarks/BookmarkManager'
+import UserProvider, { isUserLoggedIn } from '~/providers/UserProvider'
+import { fetchBookmarks } from '~/lib/scp-api'
+import { logError } from '~/lib/metrics-api'
 import ErrorBoundary from '~/lib/ErrorBoundary'
 
 /** include search controls and results */
-export function StudySearchView() {
+export function StudySearchView({bookmarks}) {
   const studySearchState = useContext(StudySearchContext)
   return <>
     <SearchPanel searchOnLoad={true}/>
-    <ResultsPanel studySearchState={studySearchState} studyComponent={StudyDetails} />
+    <ResultsPanel studySearchState={studySearchState} studyComponent={StudyDetails} bookmarks={bookmarks} />
   </>
 }
-
-
 
 const LinkableSearchTabs = function(props) {
   // we can't use the regular ReachRouter methods for link highlighting
@@ -31,6 +30,25 @@ const LinkableSearchTabs = function(props) {
   const location = useLocation()
   const basePath = location.pathname.includes('covid19') ? '/single_cell/covid19' : '/single_cell'
   const showGenesTab = location.pathname.includes('/app/genes')
+  const [bookmarks, setBookmarks] = useState([])
+  const [hasLoadedBookmarks, setHasLoadedBookmarks] = useState(null)
+
+  async function loadUserBookmarks() {
+    setHasLoadedBookmarks(true) // short-circuit multiple calls to load bookmarks
+    try {
+      const userBookmarks = await fetchBookmarks()
+      setBookmarks(userBookmarks)
+    } catch (error) {
+      const errorMsg = error.message
+      logError(errorMsg, error)
+    }
+  }
+
+  useEffect(() => {
+    if (isUserLoggedIn() && !hasLoadedBookmarks) {
+      loadUserBookmarks()
+    }
+  }, [])
 
   // the queryParams object does not support the more typical hasOwnProperty test
   return (
@@ -44,14 +62,11 @@ const LinkableSearchTabs = function(props) {
                 className={showGenesTab ? 'active' : ''}>
             <span className="fas fa-dna"></span> Search genes
           </Link>
-          <span id='home-page-bookmark'>
-            <BookmarkManager eagerLoad={true} />
-          </span>
         </nav>
       <div className="tab-content top-pad">
         <Router basepath={basePath}>
-          <GeneSearchView path="app/genes"/>
-          <StudySearchView default/>
+          <GeneSearchView path="app/genes" bookmarks={bookmarks}/>
+          <StudySearchView default bookmarks={bookmarks}/>
         </Router>
       </div>
     </div>
