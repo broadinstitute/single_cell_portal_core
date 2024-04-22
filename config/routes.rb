@@ -41,6 +41,7 @@ Rails.application.routes.draw do
             resources :study_shares, only: [:index, :show, :create, :update, :destroy]
             resources :directory_listings, only: [:index, :show, :create, :update, :destroy]
             resources :external_resources, only: [:index, :show, :create, :update, :destroy]
+            resources :publications, only: [:index, :show, :create, :update, :destroy]
             member do
               post 'sync', to: 'studies#sync_study'
               get 'sync_batch', to: 'studies#sync_next_file_batch'
