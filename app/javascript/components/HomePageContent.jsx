@@ -1,5 +1,5 @@
 
-import React, { useContext } from 'react'
+import React, { useContext, useState, useEffect } from 'react'
 import { Router, Link, useLocation } from '@reach/router'
 
 import GeneSearchView from '~/components/search/genes/GeneSearchView'
@@ -10,19 +10,19 @@ import ResultsPanel from '~/components/search/results/ResultsPanel'
 import StudyDetails from '~/components/search/results/StudySearchResult'
 import StudySearchProvider, { StudySearchContext } from '~/providers/StudySearchProvider'
 import SearchFacetProvider from '~/providers/SearchFacetProvider'
-import UserProvider from '~/providers/UserProvider'
+import UserProvider, { isUserLoggedIn } from '~/providers/UserProvider'
+import { fetchBookmarks } from '~/lib/scp-api'
+import { logError } from '~/lib/metrics-api'
 import ErrorBoundary from '~/lib/ErrorBoundary'
 
 /** include search controls and results */
-export function StudySearchView() {
+export function StudySearchView({bookmarks}) {
   const studySearchState = useContext(StudySearchContext)
   return <>
     <SearchPanel searchOnLoad={true}/>
-    <ResultsPanel studySearchState={studySearchState} studyComponent={StudyDetails} />
+    <ResultsPanel studySearchState={studySearchState} studyComponent={StudyDetails} bookmarks={bookmarks} />
   </>
 }
-
-
 
 const LinkableSearchTabs = function(props) {
   // we can't use the regular ReachRouter methods for link highlighting
@@ -30,24 +30,44 @@ const LinkableSearchTabs = function(props) {
   const location = useLocation()
   const basePath = location.pathname.includes('covid19') ? '/single_cell/covid19' : '/single_cell'
   const showGenesTab = location.pathname.includes('/app/genes')
+  const [bookmarks, setBookmarks] = useState([])
+  const [hasLoadedBookmarks, setHasLoadedBookmarks] = useState(null)
+
+  // reload bookmarks from server when user switches tabs
+  async function reloadBookmarks() {
+    try {
+      const userBookmarks = await fetchBookmarks()
+      setBookmarks(userBookmarks)
+    } catch (error) {
+      const errorMsg = error.message
+      logError(errorMsg, error)
+    }
+  }
+
+  useEffect(() => {
+    if (isUserLoggedIn() && !hasLoadedBookmarks) {
+      setHasLoadedBookmarks(true) // short-circuit multiple calls to load bookmarks
+      reloadBookmarks()
+    }
+  }, [])
 
   // the queryParams object does not support the more typical hasOwnProperty test
   return (
     <div>
-      <nav className="nav search-links" data-analytics-name="search" role="tablist">
-        <Link to={`${basePath}/app/studies${location.search}`}
-          className={showGenesTab ? '' : 'active'}>
-          <span className="fas fa-book"></span> Search studies
-        </Link>
-        <Link to={`${basePath}/app/genes${location.search}`}
-          className={showGenesTab ? 'active' : ''}>
-          <span className="fas fa-dna"></span> Search genes
-        </Link>
-      </nav>
+        <nav className="nav search-links" data-analytics-name="search" role="tablist">
+          <Link to={`${basePath}/app/studies${location.search}`} onClick={reloadBookmarks}
+                className={showGenesTab ? '' : 'active'}>
+            <span className="fas fa-book"></span> Search studies
+          </Link>
+          <Link to={`${basePath}/app/genes${location.search}`} onClick={reloadBookmarks}
+                className={showGenesTab ? 'active' : ''}>
+            <span className="fas fa-dna"></span> Search genes
+          </Link>
+        </nav>
       <div className="tab-content top-pad">
         <Router basepath={basePath}>
-          <GeneSearchView path="app/genes"/>
-          <StudySearchView default/>
+          <GeneSearchView path="app/genes" bookmarks={bookmarks}/>
+          <StudySearchView default bookmarks={bookmarks}/>
         </Router>
       </div>
     </div>

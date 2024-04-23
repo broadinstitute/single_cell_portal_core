@@ -7,6 +7,7 @@ import SearchQueryDisplay, { ClearAllButton } from 'components/search/results/Se
 import { PropsStudySearchProvider } from 'providers/StudySearchProvider'
 import KeywordSearch from 'components/search/controls/KeywordSearch'
 import FacetControl from 'components/search/controls/FacetControl'
+import * as Reach from '@reach/router'
 
 
 const oneStringFacet = [
@@ -37,6 +38,11 @@ const orFacets = [
   },
   { id: 'cell_type__custom', filters: [{ id: 'ctc1', name: 'Bergmann' }] }
 ]
+
+const locationMock = jest.spyOn(Reach, 'useLocation')
+locationMock.mockImplementation(() => (
+  { pathname: "/single_cell/", search: '' }
+))
 
 describe('Search query display text', () => {
   it('renders a single facet', async () => {
@@ -100,8 +106,7 @@ describe('Clearing search query', () => {
       links: [{ name: 'NCBI Taxonomy', url: 'https://foo.tdb' }],
       filters: [
         { id: 'NCBITaxon_9606', name: 'Homo Sapiens' }
-      ],
-      links: []
+      ]
     }
     const component = <PropsStudySearchProvider searchParams={{ terms: 'foo', facets: { species: ['NCBITaxon_9606'] } }}>
       <ClearAllButton/>

@@ -5,8 +5,6 @@ import React, { useEffect, useState, useRef } from 'react'
 import _cloneDeep from 'lodash/clone'
 import { isUserLoggedIn } from '~/providers/UserProvider'
 import { useLocation } from '@reach/router'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faLink, faUndo } from '@fortawesome/free-solid-svg-icons'
 import useErrorMessage from '~/lib/error-message'
 import useResizeEffect from '~/hooks/useResizeEffect'
 import { log } from '~/lib/metrics-api'
@@ -15,9 +13,9 @@ import { log } from '~/lib/metrics-api'
  * Component to bookmark views in Explore tab, as well as existing link/reset buttons
  *
  * @param bookmarks {Array} existing user bookmark objects
- * @param clearExploreParams
+ * @param studyAccession {String} currently loaded study, if present
  */
-export default function BookmarkManager({bookmarks, studyAccession, clearExploreParams}) {
+export default function BookmarkManager({bookmarks=[], studyAccession=''}) {
   const location = useLocation()
   const [allBookmarks, setAllBookmarks] = useState(bookmarks)
   const [saveText, setSaveText] = useState('Save')
@@ -33,11 +31,6 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
   }
 
   const formRef = useRef('bookmarkForm')
-
-  /** copies the url to the clipboard */
-  function copyLink() {
-    navigator.clipboard.writeText(location.href)
-  }
 
   /** Find a matching bookmark using the current URL params, or return default empty bookmark  */
   function findExistingBookmark() {
@@ -92,6 +85,11 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
   /** helper to determine if the bookmark form can be hidden/toggled **/
   function formCanToggle() {
     return isUserLoggedIn() && formRef.current?.state?.show
+  }
+
+  /** helper to hide the study accession form field when bookmarking search results */
+  function hideStudyAccession() {
+    return studyAccession === ''
   }
 
   /** close open form if changing tabs */
@@ -267,9 +265,11 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
     }
   }
 
+  const accessionFormClass = hideStudyAccession() ? 'hidden' : 'form-group'
+  const position = hideStudyAccession() ? 'right' : 'left'
   const loginNotice = <a href='/single_cell/users/auth/google_oauth2' data-method='post'
                          className={`fa-lg action far fa-star`} data-analytics-name='bookmark-login-notice'
-                         id='bookmark-login-notice' data-toggle='tooltip' data-placement='left'
+                         id='bookmark-login-notice' data-toggle='tooltip' data-placement={position}
                          data-original-title='Click to sign in, then bookmark this view'/>
 
   const bookmarkForm = <Popover data-analytics-name='bookmark-form-popover' id='bookmark-form-popover'>
@@ -295,7 +295,7 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
                onChange={handleFormUpdate}
         />
       </div>
-      <div className="form-group">
+      <div className={accessionFormClass}>
         <label htmlFor='bookmark-study-accession'>Study</label>&nbsp;
         <br/>
         <input className="form-control"
@@ -342,19 +342,9 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
 
   const starClass = bookmarkSaved ? 'fas' : 'far'
 
-  return (<div id='bookmark-container'>
-    <button className="action action-with-bg"
-            onClick={clearExploreParams}
-            title="Reset all view options"
-            data-analytics-name="explore-view-options-reset">
-      <FontAwesomeIcon icon={faUndo}/> Reset view</button>
-    <button onClick={copyLink}
-            className="action action-with-bg"
-            data-toggle="tooltip"
-            title="Copy a link to this visualization to the clipboard">
-      <FontAwesomeIcon icon={faLink}/> Get link</button>
+  return (<>
     { isUserLoggedIn() &&
-      <OverlayTrigger trigger={['click']} placement="left" animation={false}
+      <OverlayTrigger trigger={['click']} placement='left' animation={false}
                       overlay={bookmarkForm} ref={formRef}>
       <span className={`fa-lg action ${starClass} fa-star`}
             data-analytics-name='bookmark-manager'
@@ -363,6 +353,6 @@ export default function BookmarkManager({bookmarks, studyAccession, clearExplore
       />
       </OverlayTrigger>
     }
-    { !isUserLoggedIn() && loginNotice }
-  </div>)
+    { !isUserLoggedIn() && loginNotice }</>
+  )
 }

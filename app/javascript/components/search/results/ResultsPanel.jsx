@@ -16,7 +16,7 @@ import LoadingSpinner from '~/lib/LoadingSpinner'
  * @studyComponent - the component to use to render individual studies.  If not specified, results/StudySearchResult.js
  * will be used
  */
-const ResultsPanel = ({ studySearchState, studyComponent, noResultsDisplay }) => {
+const ResultsPanel = ({ studySearchState, studyComponent, noResultsDisplay, bookmarks }) => {
   const results = studySearchState.results
 
   let panelContent
@@ -36,7 +36,7 @@ const ResultsPanel = ({ studySearchState, studyComponent, noResultsDisplay }) =>
   } else if (results.studies && results.studies.length > 0) {
     panelContent = (
       <>
-        { <SearchQueryDisplay terms={results.termList} facets={results.facets}/> }
+        { <SearchQueryDisplay terms={results.termList} facets={results.facets} bookmarks={bookmarks}/> }
         <StudyResults
           results={results}
           StudyComponent={studyComponent ? studyComponent : StudySearchResult}

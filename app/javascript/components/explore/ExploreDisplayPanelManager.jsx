@@ -263,6 +263,11 @@ export default function ExploreDisplayPanelManager({
     setExploreInfo(newExploreInfo)
   }
 
+  /** copies the url to the clipboard */
+  function copyLink() {
+    navigator.clipboard.writeText(location.href)
+  }
+
   /** handles cluster selection to also populate the default spatial groups */
   function updateClusterParams(newParams) {
     if (newParams.cluster && !newParams.spatialGroups) {
@@ -492,13 +497,23 @@ export default function ExploreDisplayPanelManager({
               exploreParams={exploreParamsWithDefaults}
               updateExploreParams={updateExploreParams}
               allGenes={exploreInfo ? exploreInfo.uniqueGenes : []}/>
-            {exploreInfo?.bookmarks &&
-              <BookmarkManager
-                bookmarks={exploreInfo.bookmarks}
-                studyAccession={studyAccession}
-                clearExploreParams={clearExploreParams}/>
-            }
-
+            <div id='bookmark-container'>
+              <button className="action action-with-bg"
+                      onClick={clearExploreParams}
+                      title="Reset all view options"
+                      data-analytics-name="explore-view-options-reset">
+                <FontAwesomeIcon icon={faUndo}/> Reset view</button>
+              <button onClick={copyLink}
+                      className="action action-with-bg"
+                      data-toggle="tooltip"
+                      title="Copy a link to this visualization to the clipboard">
+                <FontAwesomeIcon icon={faLink}/> Get link</button>
+              {exploreInfo?.bookmarks &&
+                <BookmarkManager
+                  bookmarks={exploreInfo.bookmarks}
+                  studyAccession={studyAccession}/>
+              }
+            </div>
           </>
         }
         {showCellFiltering && panelToShow === 'cell-filtering' && clusterCanFilter &&
