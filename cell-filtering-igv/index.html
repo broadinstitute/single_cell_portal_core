@@ -15,7 +15,9 @@
   function filterAtac() {
   // API proof via console:
     const ti = 4 // Track index
-    originalFeaturesChr12 = igvBrowser.trackViews[ti].track.featureSource.featureCache.allFeatures[12]
+    if (typeof originalFeaturesChr12 === 'undefined') {
+      originalFeaturesChr12 = igvBrowser.trackViews[ti].track.featureSource.featureCache.allFeatures[12]
+    }
     selection = {}
     inputs = document.querySelectorAll('.filters input')
     inputs.forEach(input => {
@@ -25,9 +27,7 @@
       }
     })
 
-    filteredFeatures =
-      igvBrowser.trackViews[ti].track.featureSource.featureCache.allFeatures[12]
-        .filter(feature => feature.score in selection)
+    filteredFeatures = originalFeaturesChr12.filter(feature => feature.score in selection)
     maxRows = 20
     igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
     igvBrowser.trackViews[ti].track.featureSource.featureCache = new igv.FeatureCache$1(filteredFeatures, igvBrowser.genome)
