@@ -33,8 +33,8 @@ const LinkableSearchTabs = function(props) {
   const [bookmarks, setBookmarks] = useState([])
   const [hasLoadedBookmarks, setHasLoadedBookmarks] = useState(null)
 
-  async function loadUserBookmarks() {
-    setHasLoadedBookmarks(true) // short-circuit multiple calls to load bookmarks
+  // reload bookmarks from server when user switches tabs
+  async function reloadBookmarks() {
     try {
       const userBookmarks = await fetchBookmarks()
       setBookmarks(userBookmarks)
@@ -46,7 +46,8 @@ const LinkableSearchTabs = function(props) {
 
   useEffect(() => {
     if (isUserLoggedIn() && !hasLoadedBookmarks) {
-      loadUserBookmarks()
+      setHasLoadedBookmarks(true) // short-circuit multiple calls to load bookmarks
+      reloadBookmarks()
     }
   }, [])
 
@@ -54,11 +55,11 @@ const LinkableSearchTabs = function(props) {
   return (
     <div>
         <nav className="nav search-links" data-analytics-name="search" role="tablist">
-          <Link to={`${basePath}/app/studies${location.search}`}
+          <Link to={`${basePath}/app/studies${location.search}`} onClick={reloadBookmarks}
                 className={showGenesTab ? '' : 'active'}>
             <span className="fas fa-book"></span> Search studies
           </Link>
-          <Link to={`${basePath}/app/genes${location.search}`}
+          <Link to={`${basePath}/app/genes${location.search}`} onClick={reloadBookmarks}
                 className={showGenesTab ? 'active' : ''}>
             <span className="fas fa-dna"></span> Search genes
           </Link>
