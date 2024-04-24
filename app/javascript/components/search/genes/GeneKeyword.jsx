@@ -1,32 +1,45 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faSearch } from '@fortawesome/free-solid-svg-icons'
 import Button from 'react-bootstrap/lib/Button'
 import CreatableSelect from 'react-select/creatable'
 
-import { GeneSearchContext } from '~/providers/GeneSearchProvider'
+import { GeneSearchContext, buildParamsFromQuery } from '~/providers/GeneSearchProvider'
 import { StudySearchContext } from '~/providers/StudySearchProvider'
+import { useLocation } from '@reach/router'
 
 /** renders the gene text input
   * This is split into its own component both for modularity, and also because
   * having it inlined in GeneSearchView led to a mysterious infinite-repaint bug in StudyResults
   */
 export default function GeneKeyword({ placeholder, helpTextContent }) {
+  const location = useLocation()
   const geneSearchState = useContext(GeneSearchContext)
   const studySearchState = useContext(StudySearchContext)
-  let geneParamAsArray = []
-  if (geneSearchState.params.genes) {
-    geneParamAsArray = geneSearchState.params.genes.split(' ').map(geneName => ({
-      label: geneName,
-      value: geneName
-    }))
+  const searchedGenesAsArray = getGenesFromLocation()
+
+  // use URL genes param for tracking state of gene search bar
+  function getGenesFromLocation() {
+    const searchParams = buildParamsFromQuery(location.search)
+    if (searchParams.genes) {
+      return searchParams.genes.split(' ').map(geneName => ({
+        label: geneName,
+        value: geneName
+      }))
+    } else {
+      return []
+    }
   }
 
   /** the search control tracks two state variables
     * an array of already entered genes (geneArray),
     * and the current text the user is typing (inputText) */
-  const [geneArray, setGeneArray] = useState(geneParamAsArray)
+  const [geneArray, setGeneArray] = useState(searchedGenesAsArray)
   const [inputText, setInputText] = useState('')
+
+  useEffect(() => {
+    setGeneArray(searchedGenesAsArray)
+  }, [searchedGenesAsArray.map(gene => {return gene.label}).join(' ')])
 
   /** handles a user submitting a gene search */
   function handleSubmit(event) {

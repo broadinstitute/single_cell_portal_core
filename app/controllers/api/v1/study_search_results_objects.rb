@@ -65,7 +65,7 @@ module Api
           if @preset_search.present? && @preset_search.accession_list.include?(study.accession)
             study_obj[:preset_match] = true
           end
-          if @gene_results.present?
+          if @gene_results.present? && @gene_results[:genes_by_study].any?
             study_obj[:gene_matches] = @gene_results[:genes_by_study][study.id].uniq
             study_obj[:can_visualize_clusters] = study.can_visualize_clusters?
             study_obj[:default_annotation_id] = study.default_annotation

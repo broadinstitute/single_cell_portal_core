@@ -383,3 +383,13 @@ span.text-search {
 .advanced-opts {
   margin-top: 23px;
 }
+
+#home-page-bookmark {
+  a, span.action {
+    padding: 0 5px;
+    font-size: larger;
+  }
+  :hover {
+    background-color: inherit;
+  }
+}

@@ -59,7 +59,6 @@ class Study
   end
   accepts_nested_attributes_for :publications, allow_destroy: :true
 
-
   has_many :study_files, dependent: :delete_all do
     # all study files not queued for deletion
     def available
@@ -228,8 +227,6 @@ class Study
   # External Resource links
   has_many :external_resources, as: :resource_links, dependent: :destroy
   accepts_nested_attributes_for :external_resources, allow_destroy: true
-
-
 
   # DownloadAgreement (extra user terms for downloading data)
   has_one :download_agreement, dependent: :delete_all
@@ -590,6 +587,14 @@ class Study
       items do
         key :title, 'DirectoryListing'
         key '$ref', 'DirectoryListingDownload'
+      end
+    end
+    property :publications do
+      key :type, :array
+      key :description, 'Available publications'
+      items do
+        key :title, 'Publication'
+        key '$ref', :PublicationInput
       end
     end
     property :external_resources do

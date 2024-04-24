@@ -37,12 +37,11 @@ class BookmarkTest < ActiveSupport::TestCase
     end
     invalid_view.name = nil
     invalid_view.path = nil
-    invalid_view.study_accession = nil
     assert_not invalid_view.valid?
     errors = invalid_view.errors.full_messages
-    assert_equal 3, errors.count
+    assert_equal 2, errors.count
     errors.each do |error|
-      assert error.match(/(Name|Path|Study accession) can't be blank/)
+      assert error.match(/(Name|Path) can't be blank/)
     end
   end
 end

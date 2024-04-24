@@ -8,7 +8,7 @@ import StudyGeneExpressions from './StudyGeneExpressions'
 /**
   * Renders a gene search control panel and the associated results
   */
-export default function GeneSearchView() {
+export default function GeneSearchView({bookmarks}) {
   const geneSearchState = useContext(GeneSearchContext)
 
   const showStudySearchResults = !geneSearchState.isLoaded &&
@@ -66,7 +66,8 @@ export default function GeneSearchView() {
           <ResultsPanel
             studySearchState={geneSearchState}
             studyComponent={StudyGeneExpressions}
-            noResultsDisplay={noResultsContent} />
+            noResultsDisplay={noResultsContent}
+            bookmarks={bookmarks}/>
         </div>
         <div className="col-md-12">
           <div id="load-more-genes-target"></div>

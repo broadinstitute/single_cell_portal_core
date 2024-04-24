@@ -1,11 +1,11 @@
 module Api
   module V1
     class ExternalResourcesController < ApiBaseController
-      include Concerns::FireCloudStatus
 
-      before_action :authenticate_api_user!
+      before_action :set_current_api_user!
       before_action :set_study
-      before_action :check_study_permission
+      before_action :check_study_view_permission
+      before_action :check_study_edit_permission, except: [:index]
       before_action :set_external_resource, except: [:index, :create]
 
       respond_to :json
@@ -40,7 +40,7 @@ module Api
             key :description, ApiBaseController.unauthorized
           end
           response 403 do
-            key :description, ApiBaseController.forbidden('edit Study')
+            key :description, ApiBaseController.forbidden('edit ExternalResource')
           end
           response 404 do
             key :description, ApiBaseController.not_found(Study)
@@ -281,22 +281,11 @@ module Api
 
       private
 
-      def set_study
-        @study = Study.find_by(id: params[:study_id])
-        if @study.nil? || @study.queued_for_deletion?
-          head 404 and return
-        end
-      end
-
       def set_external_resource
         @external_resource = ExternalResource.find_by(id: params[:id])
         if @external_resource.nil?
           head 404 and return
         end
-      end
-
-      def check_study_permission
-        head 403 unless @study.can_edit?(current_api_user)
       end
 
       # study file params list
@@ -306,4 +295,3 @@ module Api
     end
   end
 end
-
