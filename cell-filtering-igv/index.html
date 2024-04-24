@@ -1,20 +1,22 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html>
+<!--
+This is a static page derived from https://igv.org/web/release/2.15.5/examples/cram-vcf.html
+
+More context: https://github.com/broadinstitute/single_cell_portal_core/pull/2021
+-->
 <head>
-    <meta charset="utf-8">
-    <meta content="Jim Robinson" name="author">
-    <link href=img/favicon.ico rel="shortcut icon">
-    <title>igv.js</title>
-    <style>.filters li { display: inline} </style>
-    <script>
-
-  function checkFeature(feature, selection) {
-    return (feature.score in selection)
-  }
-
+  <title>igv.js</title>
+  <style>.filters li { display: inline} </style>
+  <script>
+  /**
+   * Apply crude faceted search in igv.js
+   *
+   * This is a proof of concept.  Lots is hard-coded and brittle, intentionally, as an
+   * engineering experiment to demonstrate that genomic features can be arbitrarily
+   * filtered directly in client-side JS in the browser.
+   */
   function filterAtac() {
-  // API proof via console:
     const ti = 4 // Track index
     if (typeof originalFeaturesChr12 === 'undefined') {
       originalFeaturesChr12 = igvBrowser.trackViews[ti].track.featureSource.featureCache.allFeatures[12]
@@ -28,7 +30,10 @@
     })
 
     filteredFeatures = originalFeaturesChr12.filter(feature => feature.score in selection)
+
+    // How many layers of features can be stacked / piled up.
     maxRows = 20
+
     igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
     igvBrowser.trackViews[ti].track.featureSource.featureCache = new igv.FeatureCache$1(filteredFeatures, igvBrowser.genome)
     igvBrowser.trackViews[ti].track.clearCachedFeatures()
@@ -77,7 +82,6 @@
                     },
                     {
                         name: "ATAC fragments",
-                        // type: "variant",
                         format: "bed",
                         url: "./M_Brain_Chromium_Nuc_Isolation_vs_SaltyEZ_vs_ComplexTissueDP_atac_fragments.bed.gz",
                         indexURL: "./M_Brain_Chromium_Nuc_Isolation_vs_SaltyEZ_vs_ComplexTissueDP_atac_fragments.bed.gz.tbi",
@@ -106,7 +110,5 @@
     window.igv = igv
 
 </script>
-
 </body>
-
 </html>
