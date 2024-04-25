@@ -301,7 +301,7 @@ function CellFacet({
     return <></>
   }
 
-  const selection = selectionMap[facet.annotation]
+  const selection = selectionMap[facet.annotation] ?? facet.defaultSelection
 
   return (
     <div
