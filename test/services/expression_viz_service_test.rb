@@ -104,8 +104,7 @@ class ExpressionVizServiceTest < ActiveSupport::TestCase
       cluster: cluster,
       selected_annotation: annotation,
       boxpoints: 'All',
-      consensus: 'nil',
-      current_user: @user
+      consensus: 'nil'
     )
     expected_values = %w(dog cat)
     assert_equal expected_values, rendered_data[:values].keys
@@ -129,8 +128,7 @@ class ExpressionVizServiceTest < ActiveSupport::TestCase
       cluster: cluster,
       selected_annotation: annotation,
       boxpoints: 'All',
-      consensus: 'mean',
-      current_user: @user
+      consensus: 'mean'
     )
     assert_equal [0.0, 4.75], rendered_data[:values]['dog'][:y]
 
@@ -144,8 +142,7 @@ class ExpressionVizServiceTest < ActiveSupport::TestCase
       cluster: cluster,
       selected_annotation: annotation,
       boxpoints: 'All',
-      consensus: 'nil',
-      current_user: @user
+      consensus: 'nil'
     )
     assert_equal [1.1, 2.2, 3.3], rendered_data[:values][:x]
   end

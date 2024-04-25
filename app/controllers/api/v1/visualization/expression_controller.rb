@@ -136,8 +136,7 @@ module Api
               cluster: @cluster,
               selected_annotation: @annotation,
               boxpoints: params[:boxpoints],
-              consensus: params[:consensus],
-              current_user: current_api_user
+              consensus: params[:consensus]
             )
             render json: render_data, status: :ok
           end
