@@ -5,6 +5,7 @@
  */
 
 import crossfilter from 'crossfilter2'
+import _isEqual from 'lodash/isEqual'
 
 import { getIdentifierForAnnotation } from '~/lib/cluster-utils'
 import { fetchAnnotationFacets } from '~/lib/scp-api'
@@ -760,7 +761,7 @@ export function getFacetsParam(initFacets, selection) {
         }
       })
     } else {
-      if (initSelection[facet] !== selection[facet]) {
+      if (!_isEqual(initSelection[facet], selection[facet])) {
         // Add numeric cell facet to `facets` URL parameter
         minimalSelection[facet] = selection[facet]
       }
