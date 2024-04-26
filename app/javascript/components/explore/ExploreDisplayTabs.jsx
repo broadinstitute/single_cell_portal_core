@@ -324,12 +324,13 @@ export default function ExploreDisplayTabs({
   }, [exploreParams?.cluster, exploreParams?.annotation])
 
 
-  /** Update filtered cells to only those that match annotation group value filter selections */
+  /** Update filtered cells to only those that match filter selections */
   function updateFilteredCells(selection, overrideCellFaceting) {
     const thisCellFaceting = overrideCellFaceting ?? cellFaceting
     if (!thisCellFaceting) {return}
     if (!selection) {
       setFilteredCells(null)
+      updateExploreParams({ facets: null })
       return
     }
 
