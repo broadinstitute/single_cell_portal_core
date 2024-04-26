@@ -329,8 +329,6 @@ export default function ExploreDisplayTabs({
     if (!thisCellFaceting) {return}
     if (!selection) {
       setFilteredCells(null)
-      setCellFilterCounts(null)
-      setCellFilteringSelection(null)
       updateExploreParams({ facets: null })
       return
     }
