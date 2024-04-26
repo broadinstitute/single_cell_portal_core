@@ -71,9 +71,26 @@ export function handleClusterSwitchForFiltering(cellFilteringSelection, newCellF
   if (cellFilteringSelection) {
     const existingSelectionFacets = Object.keys(cellFilteringSelection)
     const updatedSelectionFacets =
-      newCellFaceting.facets.filter(
-        nf => !nf.isSelectedAnnotation && !existingSelectionFacets.includes(nf.annotation) && 'groups' in nf
-      )
+      newCellFaceting.facets.filter(nf => {
+        const nfAnnot = nf.annotation
+        return (
+          !nf.isSelectedAnnotation &&
+          nf.type === 'group' &&
+          nf.isLoaded &&
+          (
+            !existingSelectionFacets.includes(nfAnnot) ||
+            (
+              // Handle cases where same annotation name exists in previous
+              // and current clusterings, but the annotation has a different
+              // number of groups.  E.g. "Cell type" in default and non-default
+              // clustering in SCP1671.
+              nfAnnot in cellFilteringSelection &&
+              cellFilteringSelection[nfAnnot].length !== nf.groups.length
+            )
+          )
+        )
+      })
+
     if (updatedSelectionFacets.length > 0) {
       updatedSelectionFacets.forEach(uf => cellFilteringSelection[uf.annotation] = uf.groups)
     }
@@ -329,6 +346,7 @@ export default function ExploreDisplayTabs({
     if (!thisCellFaceting) {return}
     if (!selection) {
       setFilteredCells(null)
+      setCellFilteringSelection(null)
       updateExploreParams({ facets: null })
       return
     }
