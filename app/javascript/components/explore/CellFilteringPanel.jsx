@@ -36,7 +36,7 @@ export function CellFilteringPanelHeader({
 }
 
 /** Determine if user has deselected any filters */
-function getHasNondefaultSelection(selectionMap, facets) {
+export function getHasNondefaultSelection(selectionMap, facets) {
   const entries = Object.entries(selectionMap)
   for (let i = 0; i < entries.length; i++) {
     const [selectedFacet, selection] = entries[i]
