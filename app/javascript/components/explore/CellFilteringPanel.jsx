@@ -47,6 +47,12 @@ export function getHasNondefaultSelection(selectionMap, facets) {
     if (facet.type === 'group') {
       // Normalize categorical filters, given order doesn't matter for them
       normDefault = new Set(normDefault)
+      if (normDefault.size === 1) {
+        // Skip considering ineligible categorical facets, like those with
+        // only 1 group.
+        continue
+      }
+
       normSelection = new Set(normSelection)
     }
 

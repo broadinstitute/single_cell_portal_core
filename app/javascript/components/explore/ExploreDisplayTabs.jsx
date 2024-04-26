@@ -135,7 +135,6 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
             setCellFaceting(newCellFaceting)
           }
 
-
           // The cell filtering UI is initialized in batches of 5 facets
           // This recursively loads the next 5 facets until faceting is fully loaded.
           getCellFacetingData(cluster, annotation, setterFunctions, context, newCellFaceting)
@@ -330,6 +329,8 @@ export default function ExploreDisplayTabs({
     if (!thisCellFaceting) {return}
     if (!selection) {
       setFilteredCells(null)
+      setCellFilterCounts(null)
+      setCellFilteringSelection(null)
       updateExploreParams({ facets: null })
       return
     }
