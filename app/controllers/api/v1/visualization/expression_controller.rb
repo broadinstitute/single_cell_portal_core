@@ -10,6 +10,7 @@ module Api
         before_action :set_study
         before_action :check_study_view_permission
         before_action :check_gene_limit
+        before_action :validate_cache_request
         before_action :check_api_cache!
         before_action :set_cluster
         before_action :set_genes
@@ -92,6 +93,9 @@ module Api
             end
             response 200 do
               key :description, 'JSON plot data to be fed to JS visualization'
+            end
+            response 400 do
+              key :description, 'Bad request'
             end
             extend SwaggerResponses::StudyControllerResponses
           end

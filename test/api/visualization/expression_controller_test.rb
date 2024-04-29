@@ -103,4 +103,13 @@ class ExpressionControllerTest < ActionDispatch::IntegrationTest
     ), user: @user)
     assert_response :unprocessable_entity
   end
+
+  test 'should reject bogus requests' do
+    sign_in_and_update @user
+    execute_http_request(:get, api_v1_study_expression_path(@basic_study, 'violin', {
+      cluster: 'xssdetected',
+      genes: 'PTEN'
+    }), user: @user)
+    assert_response :bad_request
+  end
 end

@@ -14,6 +14,7 @@ module Api
         before_action :set_study
         before_action :check_study_view_permission
         # don't cache the annotation list, since it is user dependent
+        before_action :validate_cache_request, except: :index
         before_action :check_api_cache!, except: :index
         after_action :write_api_cache!, except: :index
 
@@ -93,6 +94,9 @@ module Api
             response 200 do
               key :description, annotation_description_doc
             end
+            response 400 do
+              key :description, 'Bad request'
+            end
             extend SwaggerResponses::StudyControllerResponses
           end
         end
@@ -140,6 +144,9 @@ module Api
             end
             response 200 do
               key :description, '2-column TSV of cell names and their values for the requested annotation.  Column headers are NAME (the cell name) and the name of the returned annotation'
+            end
+            response 400 do
+              key :description, 'Bad request'
             end
             extend SwaggerResponses::StudyControllerResponses
           end
@@ -233,6 +240,9 @@ module Api
                   end
                 end
               end
+            end
+            response 400 do
+              key :description, 'Bad request'
             end
             extend SwaggerResponses::StudyControllerResponses
           end
@@ -329,6 +339,9 @@ module Api
             end
             response 200 do
               key :description, '2-column TSV of column header names from the gene list file.  Column headers are NAME (the cell name) and the name of the gene list'
+            end
+            response 400 do
+              key :description, 'Bad request'
             end
             extend SwaggerResponses::StudyControllerResponses
           end

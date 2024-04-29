@@ -16,6 +16,7 @@ module Api
         before_action :set_current_api_user!
         before_action :set_study
         before_action :check_study_view_permission
+        before_action :validate_cache_request
         before_action :check_api_cache!
         after_action :write_api_cache!
 
@@ -119,6 +120,9 @@ module Api
             end
             response 200 do
               key :description, 'Scatter plot visualization of cluster, suitable for rendering in Plotly'
+            end
+            response 400 do
+              key :description, 'Bad request'
             end
             extend SwaggerResponses::StudyControllerResponses
           end
