@@ -22,7 +22,7 @@ class StudyFile
   mount_uploader :upload, UploadUploader, mount_on: :upload_file_name
 
   # constants, used for statuses and file types
-  STUDY_FILE_TYPES = ['Cluster', 'Coordinate Labels','Expression Matrix', 'MM Coordinate Matrix', '10X Genes File',
+  STUDY_FILE_TYPES = ['Cluster', 'Coordinate Labels', 'Expression Matrix', 'MM Coordinate Matrix', '10X Genes File',
                       '10X Barcodes File', 'Gene List', 'Metadata', 'Fastq', 'BAM', 'BAM Index', 'Documentation',
                       'Other', 'Analysis Output', 'Ideogram Annotations', 'AnnData', 'Seurat',
                       'Differential Expression'].freeze
