@@ -36,20 +36,26 @@ export function CellFilteringPanelHeader({
 }
 
 /** Determine if user has deselected any filters */
-function getHasNondefaultSelection(selectionMap, facets) {
+export function getHasNondefaultSelection(selectionMap, facets) {
   const entries = Object.entries(selectionMap)
   for (let i = 0; i < entries.length; i++) {
     const [selectedFacet, selection] = entries[i]
-
     const facet = facets.find(f => f.annotation === selectedFacet)
-    if (!facet) {return false}
+    if (!facet) {continue}
     let normDefault = facet.defaultSelection
     let normSelection = selection
     if (facet.type === 'group') {
       // Normalize categorical filters, given order doesn't matter for them
       normDefault = new Set(normDefault)
+      if (normDefault.size === 1) {
+        // Skip considering ineligible categorical facets, like those with
+        // only 1 group.
+        continue
+      }
+
       normSelection = new Set(normSelection)
     }
+
     if (!_isEqual(normDefault, normSelection)) {
       return true
     }
@@ -301,7 +307,7 @@ function CellFacet({
     return <></>
   }
 
-  const selection = selectionMap[facet.annotation]
+  const selection = selectionMap[facet.annotation] ?? facet.defaultSelection
 
   return (
     <div

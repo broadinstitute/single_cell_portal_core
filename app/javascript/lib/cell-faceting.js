@@ -5,6 +5,7 @@
  */
 
 import crossfilter from 'crossfilter2'
+import _isEqual from 'lodash/isEqual'
 
 import { getIdentifierForAnnotation } from '~/lib/cluster-utils'
 import { fetchAnnotationFacets } from '~/lib/scp-api'
@@ -694,11 +695,11 @@ export function parseFacetsParam(initFacets, facetsParam) {
     facets[facet] = filters
   })
 
-  // Take the complement of the minimal `facets` object, transforming
-  // it into the more verbose `selection` object which specifies filters
-  // that are _not_ applied.
   Object.entries(initFacets).forEach(([facet, filters]) => {
     if (facet.includes('group')) {
+      // Take the complement of the minimal `facets` object, transforming
+      // it into the more verbose `selection` object which specifies filters
+      // that are _not_ applied.
         filters?.forEach(filter => {
           if (!facets[facet]?.includes(filter)) {
             if (facet in selection) {
@@ -760,8 +761,10 @@ export function getFacetsParam(initFacets, selection) {
         }
       })
     } else {
-      // Add numeric cell facet to `facets` URL parameter
-      minimalSelection[facet] = selection[facet]
+      if (!_isEqual(initSelection[facet], selection[facet])) {
+        // Add numeric cell facet to `facets` URL parameter
+        minimalSelection[facet] = selection[facet]
+      }
     }
   })
 
