@@ -1,6 +1,8 @@
 module Api
   module V1
     class StatusController < ApiBaseController
+      skip_before_action :validate_content_type!
+
       respond_to :json
 
       swagger_path '/status' do
