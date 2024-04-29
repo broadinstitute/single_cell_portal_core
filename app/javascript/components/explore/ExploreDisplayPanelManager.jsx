@@ -497,22 +497,24 @@ export default function ExploreDisplayPanelManager({
               exploreParams={exploreParamsWithDefaults}
               updateExploreParams={updateExploreParams}
               allGenes={exploreInfo ? exploreInfo.uniqueGenes : []}/>
-            <div id='bookmark-container'>
-              <button className="action action-with-bg"
-                      onClick={clearExploreParams}
-                      title="Reset all view options"
-                      data-analytics-name="explore-view-options-reset">
-                <FontAwesomeIcon icon={faUndo}/> Reset view</button>
-              <button onClick={copyLink}
-                      className="action action-with-bg"
-                      data-toggle="tooltip"
-                      title="Copy a link to this visualization to the clipboard">
-                <FontAwesomeIcon icon={faLink}/> Get link</button>
-              {exploreInfo?.bookmarks &&
-                <BookmarkManager
-                  bookmarks={exploreInfo.bookmarks}
-                  studyAccession={studyAccession}/>
-              }
+            <div id={!showCellFiltering ? 'bookmark-container' : ''} className={!showCellFiltering ? 'row' : ''}>
+              <div className={!showCellFiltering ? 'col-xs-12' : ''}>
+                <button className="action action-with-bg"
+                        onClick={clearExploreParams}
+                        title="Reset all view options"
+                        data-analytics-name="explore-view-options-reset">
+                  <FontAwesomeIcon icon={faUndo}/> Reset view</button>
+                <button onClick={copyLink}
+                        className="action action-with-bg"
+                        data-toggle="tooltip"
+                        title="Copy a link to this visualization to the clipboard">
+                  <FontAwesomeIcon icon={faLink}/> Get link</button>
+                {exploreInfo?.bookmarks &&
+                  <BookmarkManager
+                    bookmarks={exploreInfo.bookmarks}
+                    studyAccession={studyAccession}/>
+                }
+              </div>
             </div>
           </>
         }
