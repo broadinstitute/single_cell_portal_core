@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<!--
+This is a static page derived from https://igv.org/web/release/2.15.5/examples/cram-vcf.html
+
+More context: https://github.com/broadinstitute/single_cell_portal_core/pull/2021
+-->
+<head>
+  <title>igv.js</title>
+  <style>.filters li { display: inline} </style>
+  <script>
+  /**
+   * Apply crude faceted search in igv.js
+   *
+   * This is a proof of concept.  Lots is hard-coded and brittle, intentionally, as an
+   * engineering experiment to demonstrate that genomic features can be arbitrarily
+   * filtered directly in client-side JS in the browser.
+   */
+  function filterAtac() {
+    const ti = 4 // Track index
+    if (typeof originalFeaturesChr12 === 'undefined') {
+      originalFeaturesChr12 = igvBrowser.trackViews[ti].track.featureSource.featureCache.allFeatures[12]
+    }
+    selection = {}
+    inputs = document.querySelectorAll('.filters input')
+    inputs.forEach(input => {
+      if (input.checked) {
+        selection[input.value] = 1
+      }
+    })
+
+    filteredFeatures = originalFeaturesChr12.filter(feature => feature.score in selection)
+
+    // How many layers of features can be stacked / piled up.
+    maxRows = 20
+
+    igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
+    igvBrowser.trackViews[ti].track.featureSource.featureCache = new igv.FeatureCache$1(filteredFeatures, igvBrowser.genome)
+    igvBrowser.trackViews[ti].track.clearCachedFeatures()
+    igvBrowser.trackViews[ti].track.updateViews()
+  }
+    </script>
+</head>
+
+<body>
+
+<h1>Ad-hoc filtering in IGV</h1>
+<ul class="filters">
+  <span>Score</span>
+  <li><label>1 <input type="checkbox" value="1" onChange="filterAtac()" checked/></label></li>
+  <li><label>2 <input type="checkbox" value="2" onChange="filterAtac()" checked/></label></li>
+  <li><label>3 <input type="checkbox" value="3" onChange="filterAtac()" checked/></label></li>
+  <li><label>4 <input type="checkbox" value="4" onChange="filterAtac()" checked/></label></li>
+  <li><label>5 <input type="checkbox" value="5" onChange="filterAtac()" checked/></label></li>
+</ul>
+<div id="igvDiv" style="padding-top: 10px;padding-bottom: 10px; border:1px solid lightgray"></div>
+
+<script type="module">
+    import igv from "./igv.esm.js"
+
+    const options =
+        {
+            // Example of fully specifying a reference .  We could alternatively use  "genome: 'hg19'"
+            reference:
+                {
+                    id: "hg19",
+                    fastaURL: "https://s3.amazonaws.com/igv.broadinstitute.org/genomes/seq/1kg_v37/human_g1k_v37_decoy.fasta",
+                    cytobandURL: "https://s3.amazonaws.com/igv.broadinstitute.org/genomes/seq/b37/b37_cytoband.txt"
+                },
+            locus: "12:6,642,682-6,648,537", // 5856 bp around GAPDH
+            tracks:
+                [
+                    {
+                        name: "Genes",
+                        type: "annotation",
+                        format: "bed",
+                        url: "https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/refGene.hg19.bed.gz",
+                        indexURL: "https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/refGene.hg19.bed.gz.tbi",
+                        visibilityWindow: 300000000,
+                        displayMode: "EXPANDED",
+                        height: 150
+                    },
+                    {
+                        name: "ATAC fragments",
+                        format: "bed",
+                        url: "./M_Brain_Chromium_Nuc_Isolation_vs_SaltyEZ_vs_ComplexTissueDP_atac_fragments.bed.gz",
+                        indexURL: "./M_Brain_Chromium_Nuc_Isolation_vs_SaltyEZ_vs_ComplexTissueDP_atac_fragments.bed.gz.tbi",
+                        // url: "./Library-8-20230710_atac.fragments.possorted.bed.gz",
+                        // indexURL: "./Library-8-20230710_atac.fragments.possorted.bed.gz.tbi",
+                        visibilityWindow: 100_000,
+                        height: 250,
+                        featureHeight: 7,
+                        expandedVGap: 1,
+                        displayMode: 'SQUISHED',
+                        colorBy: 'score'
+
+                    },
+                ]
+
+        }
+
+    var igvDiv = document.getElementById("igvDiv")
+
+    igv.createBrowser(igvDiv, options)
+        .then(function (browser) {
+            window.igvBrowser = browser
+            console.log("Created IGV browser")
+        })
+
+    window.igv = igv
+
+</script>
+</body>
+</html>
