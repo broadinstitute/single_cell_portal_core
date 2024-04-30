@@ -13,7 +13,6 @@ import LoadingSpinner from '~/lib/LoadingSpinner'
 import { NumericCellFacet } from '~/components/explore/NumericCellFacet'
 import Select from '~/lib/InstrumentedSelect'
 import { annotationKeyProperties, clusterSelectStyle } from '~/lib/cluster-utils'
-import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
 /** Top content for cell facet filtering panel shown at right in Explore tab */
 export function CellFilteringPanelHeader({
@@ -300,11 +299,6 @@ function CellFacet({
       color: '#777',
       cursor: 'default'
     }
-  }
-
-  const flags = getFeatureFlagsWithDefaults()
-  if (facet.type === 'numeric' && !flags?.show_numeric_cell_filtering) {
-    return <></>
   }
 
   const selection = selectionMap[facet.annotation] ?? facet.defaultSelection

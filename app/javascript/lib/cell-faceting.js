@@ -11,6 +11,7 @@ import { getIdentifierForAnnotation } from '~/lib/cluster-utils'
 import { fetchAnnotationFacets } from '~/lib/scp-api'
 import { log } from '~/lib/metrics-api'
 import { round } from '~/lib/metrics-perf'
+import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
 const CELL_TYPE_REGEX = new RegExp(/cell.*type/i)
 
@@ -599,6 +600,9 @@ export async function initCellFaceting(
   let perfTimes = {}
   const timeStart = Date.now()
 
+  const flags = getFeatureFlagsWithDefaults()
+  const shouldHideNumericCellFiltering = !flags?.show_numeric_cell_filtering
+
   // Prioritize and fetch annotation facets for all cells
   const selectedAnnotId = getIdentifierForAnnotation(selectedAnnot)
   const eligibleAnnots =
@@ -611,7 +615,8 @@ export async function initCellFaceting(
         return (
           !(annot.type === 'group' && annot.values.length <= 1) &&
           !annot.identifier.endsWith('invalid') &&
-          !annot.identifier.endsWith('user')
+          !annot.identifier.endsWith('user') &&
+          !(annot.type === 'numeric' && shouldHideNumericCellFiltering)
         )
       })
 
