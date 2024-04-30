@@ -16,6 +16,7 @@ import useErrorMessage from '~/lib/error-message'
 import { logViolinPlot } from '~/lib/scp-api-metrics'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { formatGeneList } from '~/components/visualization/PlotTitle'
+import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
 /** Title for violin plot; also accounts for "Collapsed by" / consensus view */
 function ViolinPlotTitle({ cluster, annotation, genes, consensus }) {
@@ -51,6 +52,9 @@ async function filterResults(
   studyAccession, cluster, annotation, gene,
   results, cellFaceting, filteredCells
 ) {
+  const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
+  if (!showCellFiltering) {return results}
+
   if (gene in window.SCP.violinCellIndexes === false) {
     const allCellNames = await getAllCellNames(studyAccession, cluster, annotation)
     await workSetViolinCellIndexes(gene, results, allCellNames)
