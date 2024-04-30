@@ -1,13 +1,12 @@
 # handle launching differential expression ingest jobs
 class DifferentialExpressionService
   extend Loggable
-
-  # regex for matching annotation names for possible cell type analogs
+  # possible cell type analogs
   CELL_TYPE_MATCHER = /cell.*type/i
-
-  # Regex to matching annotation names for possible clustering algorithm results
+  # possible clustering algorithm results
   CLUSTERING_MATCHER = /(clust|seurat|leiden|louvain|_snn_res)/i
-
+  # union of all allowed annotations
+  ALLOWED_ANNOTS = Regexp.union(CELL_TYPE_MATCHER, CLUSTERING_MATCHER)
   # specific annotations to exclude from automation
   EXCLUDED_ANNOTS = /(enrichment__cell_type)/i
 
@@ -172,6 +171,9 @@ class DifferentialExpressionService
   # * *params*
   #   - +accessions+ (Array<String>) => array of study accessions to limit backfill processing
   #
+  # * *returns*
+  #   - (Integer) => total new jobs yielded
+  #
   # * *yields*
   #   - (IngestJob) => new DE ingest jobs
   def self.backfill_new_results(study_accessions: nil)
@@ -185,6 +187,7 @@ class DifferentialExpressionService
       end
     end
     log_message "Total new backfill jobs: #{total_jobs}"
+    total_jobs
   end
 
   # find all eligible annotations for DE for a given study
@@ -199,7 +202,7 @@ class DifferentialExpressionService
   def self.find_eligible_annotations(study, skip_existing: false)
     annotations = []
     metadata = study.cell_metadata.where(annotation_type: 'group').select do |meta|
-      annotation_eligible?(name) && meta.can_visualize?
+      annotation_eligible?(meta.name) && meta.can_visualize?
     end
     annotations += metadata.map { |meta| { annotation_name: meta.name, annotation_scope: 'study' } }
     # special gotcha to remove 'cell_type' metadata annotation if 'cell_type__ontology_label' is present
@@ -242,7 +245,7 @@ class DifferentialExpressionService
   # * *returns*
   #   - (Boolean)
   def self.annotation_eligible?(name)
-    (CELL_TYPE_MATCHER =~ name || CLUSTERING_MATCHER =~ name) && EXCLUDED_ANNOTS !~ name
+    ALLOWED_ANNOTS =~ name && EXCLUDED_ANNOTS !~ name
   end
 
   # determine if a study already has DE results for an annotation, taking scope into account
