@@ -48,7 +48,7 @@ async function getAllCellNames(studyAccession, cluster, annotation) {
 }
 
 /** Filter cells in violin plot */
-async function filterResults(
+export async function filterResults(
   studyAccession, cluster, annotation, gene,
   results, cellFaceting, filteredCells
 ) {
