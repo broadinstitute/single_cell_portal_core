@@ -5,6 +5,12 @@ class DifferentialExpressionService
   # regex for matching annotation names for possible cell type analogs
   CELL_TYPE_MATCHER = /cell.*type/i
 
+  # Regex to matching annotation names for possible clustering algorithm results
+  CLUSTERING_MATCHER = /(clust|seurat|leiden|louvain|_snn_res)/i
+
+  # specific annotations to exclude from automation
+  EXCLUDED_ANNOTS = /(enrichment__cell_type)/i
+
   # run a differential expression job for a given study on the default cluster/annotation
   #
   # * *params*
@@ -159,6 +165,28 @@ class DifferentialExpressionService
     end
   end
 
+  # a helper method to identify newly eligible annotations and process results
+  # NOTE: this will retry any annotations that are eligible and previously failed
+  # also, do not use this in a migration as it is IO blocking while jobs are assembled
+  #
+  # * *params*
+  #   - +accessions+ (Array<String>) => array of study accessions to limit backfill processing
+  #
+  # * *yields*
+  #   - (IngestJob) => new DE ingest jobs
+  def self.backfill_new_results(study_accessions: nil)
+    accessions = study_accessions || Study.pluck(:accession)
+    total_jobs = 0
+    accessions.each do |accession|
+      begin
+        total_jobs += DifferentialExpressionService.run_differential_expression_on_all(accession, skip_existing: true)
+      rescue ArgumentError => e
+        log_message e.message
+      end
+    end
+    log_message "Total new backfill jobs: #{total_jobs}"
+  end
+
   # find all eligible annotations for DE for a given study
   # will restrict to cell type analog annotations
   #
@@ -171,7 +199,7 @@ class DifferentialExpressionService
   def self.find_eligible_annotations(study, skip_existing: false)
     annotations = []
     metadata = study.cell_metadata.where(annotation_type: 'group').select do |meta|
-      meta.name =~ CELL_TYPE_MATCHER && meta.can_visualize?
+      annotation_eligible?(name) && meta.can_visualize?
     end
     annotations += metadata.map { |meta| { annotation_name: meta.name, annotation_scope: 'study' } }
     # special gotcha to remove 'cell_type' metadata annotation if 'cell_type__ontology_label' is present
@@ -184,7 +212,7 @@ class DifferentialExpressionService
       cell_annots = cluster.cell_annotations.select do |annot|
         safe_annot = annot.with_indifferent_access
         safe_annot[:type] == 'group' &&
-          safe_annot[:name] =~ CELL_TYPE_MATCHER &&
+          annotation_eligible?(safe_annot[:name]) &&
           cluster.can_visualize_cell_annotation?(safe_annot)
       end
       cell_annots.each do |annot|
@@ -204,6 +232,17 @@ class DifferentialExpressionService
     else
       annotations
     end
+  end
+
+  # match an annotation name against any potentially valid annotations for DE analysis
+  #
+  # * *params*
+  #   - +name+ (String) => name of annotation to match against eligible types
+  #
+  # * *returns*
+  #   - (Boolean)
+  def self.annotation_eligible?(name)
+    (CELL_TYPE_MATCHER =~ name || CLUSTERING_MATCHER =~ name) && EXCLUDED_ANNOTS !~ name
   end
 
   # determine if a study already has DE results for an annotation, taking scope into account

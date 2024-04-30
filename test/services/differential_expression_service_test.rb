@@ -278,4 +278,11 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
                       computational_method: 'wilcoxon')
     assert_not DifferentialExpressionService.study_eligible?(@basic_study)
   end
+
+  test 'should determine annotation eligibility by name' do
+    %w[cell_type__ontology_label clust seurat leiden louvain _snn_res].each do |name|
+      assert DifferentialExpressionService.annotation_eligible?(name)
+    end
+    assert_not DifferentialExpressionService.annotation_eligible?('enrichment__cell_type')
+  end
 end
