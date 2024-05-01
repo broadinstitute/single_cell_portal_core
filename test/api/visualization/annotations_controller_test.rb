@@ -194,4 +194,12 @@ class AnnotationsControllerTest < ActionDispatch::IntegrationTest
     assert_equal expected,
                  Api::V1::Visualization::AnnotationsController.convert_annotation_param('species--group--study')
   end
+
+  test 'should reject bogus requests' do
+    sign_in_and_update @user
+    execute_http_request(:get, api_v1_study_annotations_facets_path(
+      @basic_study, cluster: 'xssdetected', annotations: 'not-found--group--study'
+    ))
+    assert_response :bad_request
+  end
 end

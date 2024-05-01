@@ -10,6 +10,7 @@ module Api
         before_action :set_study
         before_action :check_study_view_permission
         before_action :check_gene_limit
+        before_action :validate_cache_request
         before_action :check_api_cache!
         before_action :set_cluster
         before_action :set_genes
