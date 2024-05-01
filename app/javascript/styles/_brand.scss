@@ -277,6 +277,11 @@
   }
 }
 
+#bookmark-container {
+  position: relative;
+  top: -20px;
+}
+
 #bookmarks-list-wrapper {
   max-height: 500px;
   overflow-y: scroll;

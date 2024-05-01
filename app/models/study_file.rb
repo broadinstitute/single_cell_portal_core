@@ -22,7 +22,7 @@ class StudyFile
   mount_uploader :upload, UploadUploader, mount_on: :upload_file_name
 
   # constants, used for statuses and file types
-  STUDY_FILE_TYPES = ['Cluster', 'Coordinate Labels' ,'Expression Matrix', 'MM Coordinate Matrix', '10X Genes File',
+  STUDY_FILE_TYPES = ['Cluster', 'Coordinate Labels', 'Expression Matrix', 'MM Coordinate Matrix', '10X Genes File',
                       '10X Barcodes File', 'Gene List', 'Metadata', 'Fastq', 'BAM', 'BAM Index', 'Documentation',
                       'Other', 'Analysis Output', 'Ideogram Annotations', 'AnnData', 'Seurat',
                       'Differential Expression'].freeze
@@ -31,13 +31,12 @@ class StudyFile
     'Expression Matrix' => 'Dense matrix',
     '10X Genes File' => '10X Features File'
   }.freeze
-  STUDY_FILE_TYPE_NAME_HASH = STUDY_FILE_TYPES.reduce({}) { |r, t| r[t] = t; r }.merge(CUSTOM_FILE_TYPE_NAMES).freeze
-
-
   PARSEABLE_TYPES = ['Cluster', 'Coordinate Labels', 'Expression Matrix', 'MM Coordinate Matrix', '10X Genes File',
                      '10X Barcodes File', 'Gene List', 'Metadata', 'Analysis Output', 'AnnData',
                      'Differential Expression'].freeze
-  DISALLOWED_SYNC_TYPES = ['Fastq'].freeze
+  DISALLOWED_SYNC_TYPES = ['Differential Expression'].freeze
+  ALLOWED_SYNC_TYPES = STUDY_FILE_TYPES - DISALLOWED_SYNC_TYPES
+  STUDY_FILE_TYPE_NAME_HASH = ALLOWED_SYNC_TYPES.zip(ALLOWED_SYNC_TYPES).to_h.merge(CUSTOM_FILE_TYPE_NAMES).freeze
   UPLOAD_STATUSES = %w(new uploading uploaded).freeze
   PARSE_STATUSES = %w(unparsed parsing parsed failed).freeze
   PRIMARY_DATA_EXTENTIONS = %w(

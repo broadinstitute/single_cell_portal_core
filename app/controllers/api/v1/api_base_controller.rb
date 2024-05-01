@@ -75,6 +75,9 @@ module Api
         # (e.g. those under the api/v1/studies/ path)
         module StudyControllerResponses
           def self.extended(base)
+            base.response 400 do
+              key :description, 'Bad request'
+            end
             base.response 401 do
               key :description, ApiBaseController.unauthorized
             end

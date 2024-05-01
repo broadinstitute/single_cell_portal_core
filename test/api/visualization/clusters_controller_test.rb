@@ -186,4 +186,12 @@ class ClustersControllerTest < ActionDispatch::IntegrationTest
     assert_equal expected_aspect, viz_data.dig(:axes, :aspects)
     assert_equal expected_ranges, viz_data.dig(:userSpecifiedRanges)
   end
+
+  test 'should reject bogus requests' do
+    sign_in_and_update @user
+    execute_http_request(:get, api_v1_study_cluster_path(
+      @basic_study, 'xssdetected', {annotation_name: 'species', annotation_scope: 'study', annotation_type: 'group'}
+    ))
+    assert_response :bad_request
+  end
 end

@@ -10,6 +10,7 @@ module Api
         before_action :set_study
         before_action :check_study_view_permission
         before_action :check_gene_limit
+        before_action :validate_cache_request
         before_action :check_api_cache!
         before_action :set_cluster
         before_action :set_genes
@@ -136,8 +137,7 @@ module Api
               cluster: @cluster,
               selected_annotation: @annotation,
               boxpoints: params[:boxpoints],
-              consensus: params[:consensus],
-              current_user: current_api_user
+              consensus: params[:consensus]
             )
             render json: render_data, status: :ok
           end

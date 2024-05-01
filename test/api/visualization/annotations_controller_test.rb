@@ -194,4 +194,22 @@ class AnnotationsControllerTest < ActionDispatch::IntegrationTest
     assert_equal expected,
                  Api::V1::Visualization::AnnotationsController.convert_annotation_param('species--group--study')
   end
+
+  test 'should reject bogus requests' do
+    sign_in_and_update @user
+    execute_http_request(:get, api_v1_study_annotations_facets_path(
+      @basic_study, cluster: 'xssdetected', annotations: 'not-found--group--study'
+    ))
+    assert_response :bad_request
+  end
+
+  test 'should not reject legit requests' do
+    # Ensure XSS detection does not return a false-positive for a URL that
+    # contains merely the substring "script", as in "description".
+    sign_in_and_update @user
+    execute_http_request(:get, api_v1_study_annotations_facets_path(
+      @basic_study, cluster: 'description', annotations: 'not-found--group--study'
+    ))
+    assert_response :not_found # we expect 404 (Not Found), not 400 (Bad request)
+  end
 end

@@ -2,7 +2,7 @@ import React from 'react'
 import { render, fireEvent, screen, waitFor } from '@testing-library/react'
 
 import * as UserProvider from '~/providers/UserProvider'
-import { CellFilteringPanel } from '~/components/explore/CellFilteringPanel'
+import { CellFilteringPanel, getHasNondefaultSelection } from '~/components/explore/CellFilteringPanel'
 import {
   annotationList, cellFaceting, cellFilteringSelection, cellFilterCounts
 } from './cell-filtering-panel.test-data'
@@ -227,5 +227,57 @@ describe('"Cell filtering" panel', () => {
         ]
       })
     )
+  })
+
+  it('handles absent facet in getHasNondefaultSelection', async () => {
+    // If an annotation is shown in the legend, then it is included in
+    // `selectionMap` but omitted in `facets`.  Poor handling of that in
+    // `hasNondefaultSelection` caused the "reset all facets" button to be
+    // unexpectedly hidden when page loaded with `facets` URL parameter.
+    // This regression test confirms the fix.
+
+    const selectionMap = {
+      'cell_type__ontology_label--group--study': [
+        'epithelial cell', 'macrophage', 'neutrophil', 'T cell', 'dendritic cell', 'fibroblast', 'B cell', 'eosinophil'
+      ],
+      'General_Celltype--group--study': [
+        'LC2', 'GPMNB macrophages', 'neutrophils', 'B cells', 'T cells', 'CSN1S1 macrophages', 'dendritic cells',
+        'LC1', 'eosinophils', 'fibroblasts'
+      ],
+      'infant_sick_YN--group--study': [
+        'no', 'NA', 'yes'
+      ],
+      'time_post_partum_days--numeric--study': [
+        [['between', [144, 323]]], true
+      ]
+    }
+    const facets =
+    [
+      {
+        'annotation': 'cell_type__ontology_label--group--study',
+        'type': 'group',
+        'defaultSelection': [
+          'epithelial cell', 'macrophage', 'neutrophil', 'B cell', 'T cell', 'dendritic cell', 'eosinophil', 'fibroblast'
+        ]
+      },
+      {
+        'annotation': 'infant_sick_YN--group--study',
+        'type': 'group',
+        'defaultSelection': [
+          'no', 'NA', 'yes'
+        ]
+      },
+      {
+        'annotation': 'time_post_partum_days--numeric--study',
+        'type': 'numeric',
+        'defaultSelection': [
+          [['between', [3, 323]]], true
+        ]
+      }
+    ]
+
+    const hasNondefaultSelection = getHasNondefaultSelection(selectionMap, facets)
+
+    expect(hasNondefaultSelection).toEqual(true)
   })
 })

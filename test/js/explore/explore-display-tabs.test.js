@@ -462,18 +462,24 @@ describe('explore tabs are activated based on study info and parameters', () => 
       facets: [
         {
           'annotation': 'cell_type__ontology_label--group--study',
-          'groups': ['epithelial cell']
+          'groups': ['epithelial cell'],
+          'type': 'group',
+          'isLoaded': true
         },
         {
           'annotation': 'infant_sick_YN--group--study',
-          'groups': ['no', 'NA', 'yes']
+          'groups': ['no', 'NA', 'yes'],
+          'type': 'group',
+          'isLoaded': true
         },
         {
           'annotation': 'Epithelial Cell Subclusters--group--cluster',
           'groups': [
             'Secretory Lactocytes', 'LC1', 'KRT high lactocytes 1', 'Cycling Lactocytes',
             'MT High Secretory Lactocytes', 'KRT high lactocytes 2'
-          ]
+          ],
+          'type': 'group',
+          'isLoaded': true
         }
       ]
     }

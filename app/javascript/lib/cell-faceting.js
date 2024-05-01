@@ -5,11 +5,13 @@
  */
 
 import crossfilter from 'crossfilter2'
+import _isEqual from 'lodash/isEqual'
 
 import { getIdentifierForAnnotation } from '~/lib/cluster-utils'
 import { fetchAnnotationFacets } from '~/lib/scp-api'
 import { log } from '~/lib/metrics-api'
 import { round } from '~/lib/metrics-perf'
+import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
 const CELL_TYPE_REGEX = new RegExp(/cell.*type/i)
 
@@ -598,6 +600,9 @@ export async function initCellFaceting(
   let perfTimes = {}
   const timeStart = Date.now()
 
+  const flags = getFeatureFlagsWithDefaults()
+  const shouldHideNumericCellFiltering = !flags?.show_numeric_cell_filtering
+
   // Prioritize and fetch annotation facets for all cells
   const selectedAnnotId = getIdentifierForAnnotation(selectedAnnot)
   const eligibleAnnots =
@@ -610,7 +615,8 @@ export async function initCellFaceting(
         return (
           !(annot.type === 'group' && annot.values.length <= 1) &&
           !annot.identifier.endsWith('invalid') &&
-          !annot.identifier.endsWith('user')
+          !annot.identifier.endsWith('user') &&
+          !(annot.type === 'numeric' && shouldHideNumericCellFiltering)
         )
       })
 
@@ -694,11 +700,11 @@ export function parseFacetsParam(initFacets, facetsParam) {
     facets[facet] = filters
   })
 
-  // Take the complement of the minimal `facets` object, transforming
-  // it into the more verbose `selection` object which specifies filters
-  // that are _not_ applied.
   Object.entries(initFacets).forEach(([facet, filters]) => {
     if (facet.includes('group')) {
+      // Take the complement of the minimal `facets` object, transforming
+      // it into the more verbose `selection` object which specifies filters
+      // that are _not_ applied.
         filters?.forEach(filter => {
           if (!facets[facet]?.includes(filter)) {
             if (facet in selection) {
@@ -760,8 +766,10 @@ export function getFacetsParam(initFacets, selection) {
         }
       })
     } else {
-      // Add numeric cell facet to `facets` URL parameter
-      minimalSelection[facet] = selection[facet]
+      if (!_isEqual(initSelection[facet], selection[facet])) {
+        // Add numeric cell facet to `facets` URL parameter
+        minimalSelection[facet] = selection[facet]
+      }
     }
   })
 

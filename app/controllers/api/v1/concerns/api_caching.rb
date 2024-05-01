@@ -3,6 +3,7 @@ module Api
     module Concerns
       module ApiCaching
         extend ActiveSupport::Concern
+        XSS_MATCHER = /(xssdetected|script3E)/
 
         # check Rails cache for JSON response based off url/params
         # cache expiration is still handled by CacheRemovalJob
@@ -33,6 +34,13 @@ module Api
             Rails.root.join('tmp/caching-dev.txt').exist?
           else
             true
+          end
+        end
+
+        # ignore obvious malicious/bogus requests that can lead to invalid cache path entries
+        def validate_cache_request
+          if request.fullpath =~ XSS_MATCHER
+            head 400 and return
           end
         end
       end

@@ -6,8 +6,9 @@ import { render, waitForElementToBeRemoved, screen } from '@testing-library/reac
 import { enableFetchMocks } from 'jest-fetch-mock'
 
 import * as WebWorker from 'lib/web-worker'
-import StudyViolinPlot from 'components/visualization/StudyViolinPlot'
+import StudyViolinPlot, {filterResults} from 'components/visualization/StudyViolinPlot'
 import Plotly from 'plotly.js-dist'
+import * as UserProvider from '~/providers/UserProvider'
 
 jest.mock('lib/scp-api-metrics', () => ({
   logViolinPlot: jest.fn()
@@ -69,6 +70,25 @@ describe('Violin plot in global gene search', () => {
 
     expect(args[2].xaxis.type).toBe('category')
 
+  })
+
+  it('skips index for cell filtering when disabled via flag', async () => {
+    // This confirms cell filtering can be disabled to unblock violin plots
+    // in very large studies.
+
+    jest
+      .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
+      .mockReturnValue({
+        show_cell_facet_filtering: false
+      })
+
+    const results = [1, 2, 3]
+
+    const filteredResults = await filterResults(
+      'SCP123', {}, {}, 'NF2', results, {}, []
+    )
+
+    expect(filteredResults).toEqual(results)
   })
 
 })

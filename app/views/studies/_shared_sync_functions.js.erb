@@ -93,6 +93,8 @@ $('#study-file-<%= study_file.id %>').on('change', '.file-type', async function(
         }
         // disable sync button until user has selected a BAM file
         submitBtn.attr('disabled', 'disabled');
+    } else if (fileType === 'AnnData') {
+        extraInfo.html("<%= j(render partial: 'reference_anndata_notice') %>");
     } else {
         extraInfo.empty();
         taxonTarget.empty();

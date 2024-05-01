@@ -14,6 +14,7 @@ module Api
         before_action :set_study
         before_action :check_study_view_permission
         # don't cache the annotation list, since it is user dependent
+        before_action :validate_cache_request, except: :index
         before_action :check_api_cache!, except: :index
         after_action :write_api_cache!, except: :index
 
