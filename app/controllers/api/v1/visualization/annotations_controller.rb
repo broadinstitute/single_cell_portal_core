@@ -94,9 +94,6 @@ module Api
             response 200 do
               key :description, annotation_description_doc
             end
-            response 400 do
-              key :description, 'Bad request'
-            end
             extend SwaggerResponses::StudyControllerResponses
           end
         end
@@ -144,9 +141,6 @@ module Api
             end
             response 200 do
               key :description, '2-column TSV of cell names and their values for the requested annotation.  Column headers are NAME (the cell name) and the name of the returned annotation'
-            end
-            response 400 do
-              key :description, 'Bad request'
             end
             extend SwaggerResponses::StudyControllerResponses
           end
@@ -240,9 +234,6 @@ module Api
                   end
                 end
               end
-            end
-            response 400 do
-              key :description, 'Bad request'
             end
             extend SwaggerResponses::StudyControllerResponses
           end
@@ -339,9 +330,6 @@ module Api
             end
             response 200 do
               key :description, '2-column TSV of column header names from the gene list file.  Column headers are NAME (the cell name) and the name of the gene list'
-            end
-            response 400 do
-              key :description, 'Bad request'
             end
             extend SwaggerResponses::StudyControllerResponses
           end

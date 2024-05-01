@@ -121,9 +121,6 @@ module Api
             response 200 do
               key :description, 'Scatter plot visualization of cluster, suitable for rendering in Plotly'
             end
-            response 400 do
-              key :description, 'Bad request'
-            end
             extend SwaggerResponses::StudyControllerResponses
           end
         end

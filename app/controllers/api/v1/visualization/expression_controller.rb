@@ -94,9 +94,6 @@ module Api
             response 200 do
               key :description, 'JSON plot data to be fed to JS visualization'
             end
-            response 400 do
-              key :description, 'Bad request'
-            end
             extend SwaggerResponses::StudyControllerResponses
           end
         end
