@@ -3,7 +3,7 @@ module Api
     module Concerns
       module ApiCaching
         extend ActiveSupport::Concern
-        XSS_MATCHER = /(xss|script)/
+        XSS_MATCHER = /(xssdetected|script3E)/
 
         # check Rails cache for JSON response based off url/params
         # cache expiration is still handled by CacheRemovalJob
