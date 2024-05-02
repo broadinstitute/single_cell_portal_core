@@ -172,22 +172,28 @@ class DifferentialExpressionService
   #   - +accessions+ (Array<String>) => array of study accessions to limit backfill processing
   #
   # * *returns*
-  #   - (Integer) => total new jobs yielded
+  #   - (Hash) => Hash of stats about new results, including total_jobs and results per study
   #
   # * *yields*
   #   - (IngestJob) => new DE ingest jobs
   def self.backfill_new_results(study_accessions: nil)
     accessions = study_accessions || Study.pluck(:accession)
     total_jobs = 0
+    study_results = {}
     accessions.each do |accession|
       begin
-        total_jobs += DifferentialExpressionService.run_differential_expression_on_all(accession, skip_existing: true)
+        jobs = DifferentialExpressionService.run_differential_expression_on_all(accession, skip_existing: true)
+        if jobs > 0
+          total_jobs += jobs
+          study_results[accession] = jobs
+        end
       rescue ArgumentError => e
         log_message e.message
       end
     end
-    log_message "Total new backfill jobs: #{total_jobs}"
-    total_jobs
+    log_message "Total new backfill jobs: #{total_jobs} across #{study_results.keys.count} studies"
+    study_results[:total_jobs] = total_jobs
+    study_results
   end
 
   # find all eligible annotations for DE for a given study
