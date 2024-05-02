@@ -4,7 +4,7 @@ class DifferentialExpressionService
   # possible cell type analogs
   CELL_TYPE_MATCHER = /cell.*type/i
   # possible clustering algorithm results
-  CLUSTERING_MATCHER = /(clust|seurat|leiden|louvain|_snn_res)/i
+  CLUSTERING_MATCHER = /(clust|seurat|leiden|louvain|snn_res)/i
   # union of all allowed annotations
   ALLOWED_ANNOTS = Regexp.union(CELL_TYPE_MATCHER, CLUSTERING_MATCHER)
   # specific annotations to exclude from automation
