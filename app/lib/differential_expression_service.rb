@@ -182,7 +182,7 @@ class DifferentialExpressionService
     study_results = {}
     accessions.each do |accession|
       begin
-        jobs = DifferentialExpressionService.run_differential_expression_on_all(accession, skip_existing: true)
+        jobs = run_differential_expression_on_all(accession, skip_existing: true)
         if jobs > 0
           total_jobs += jobs
           study_results[accession] = jobs
