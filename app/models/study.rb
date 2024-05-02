@@ -750,7 +750,7 @@ class Study
   before_validation :set_data_dir, :set_firecloud_workspace_name, on: :create
   after_validation  :assign_accession, on: :create
   # before_save       :verify_default_options
-  after_create      :make_data_dir, :set_default_participant
+  after_create      :make_data_dir, :set_default_participant, :check_bucket_read_access
   before_destroy    :ensure_cascade_on_associations
   after_destroy     :remove_data_dir
   before_save       :set_readonly_access
@@ -863,6 +863,20 @@ class Study
       end
     end
   end
+
+  # call Rawls to check bucket access for a given user (defaults to main service account)
+  # if a user should have access, but doesn't (403 response) then a FastPass request is issued to speed up the process
+  # this is mainly used as a proxy for synchronizing service account bucket access faster in non-default projects
+  def check_bucket_read_access(user: nil)
+    return nil if detached # exit for studies with no workspace
+
+    client = user ? FireCloudClient.new(user:) : FireCloudClient.new
+    client.check_bucket_read_access(firecloud_project, firecloud_workspace)
+  end
+
+  # always run :check_bucket_read_access in the background at lower priority
+  # can be invoked in the foreground with :check_bucket_read_access_without_delay
+  handle_asynchronously :check_bucket_read_access, priority: 10
 
   # check if a user has permission do download data from this study (either is public and user is signed in, user is an admin, or user has a direct share)
   def can_download?(user)
