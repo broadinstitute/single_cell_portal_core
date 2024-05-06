@@ -58,7 +58,8 @@ SecureHeaders::Configuration.default do |config|
                              'https://us.input.tcell.insight.rapid7.com', 'https://api.tcell.io', 'https://us.browser.tcell.insight.rapid7.com',
                              'https://us.agent.tcell.insight.rapid7.com', 'https://us.jsagent.tcell.insight.rapid7.com', 'https://accounts.google.com',
                              'https://terra-bard-dev.appspot.com', 'https://terra-bard-alpha.appspot.com', 'https://terra-bard-prod.appspot.com',
-                             'https://rest.ensembl.org', 'https://eutils.ncbi.nlm.nih.gov', 'https://mygene.info', 'https://webservice.wikipathways.org', 'https://o54426.ingest.sentry.io'
+                             'https://rest.ensembl.org', 'https://eutils.ncbi.nlm.nih.gov', 'https://mygene.info', 'https://webservice.wikipathways.org', 'https://o54426.ingest.sentry.io',
+                             'https://igv-genepattern-org.s3.amazonaws.com'
                             ]
   if ENV['NOT_DOCKERIZED']
     # enable connections to live reload server

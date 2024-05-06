@@ -161,7 +161,13 @@ function initializeIgv(containerId, bamAndBaiFiles, gtfFiles, uniqueGenes) {
   const igvContainer = document.getElementById(containerId)
   igvContainer.innerHTML = ''
 
-  const genomeId = bamAndBaiFiles[0].genomeAssembly
+  let genomeId = bamAndBaiFiles[0].genomeAssembly
+
+  if (genomeId === 'GRCh38') {
+    genomeId = 'hg38'
+    gtfFiles[genomeId] = gtfFiles['GRCh38']
+    delete gtfFiles['GRCh38']
+  }
 
   let reference
   let searchOptions
