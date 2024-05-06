@@ -1563,6 +1563,27 @@ class Study
     bams
   end
 
+  # Get a list of BED file objects where each object has a URL for the BED
+  # itself and index URL for its matching TBI file.
+  def get_bed_files
+
+    bed_files = self.study_files.by_type('BED')
+    beds = []
+
+    bed_files.each do |bed_file|
+      next unless bed_file.has_completed_bundle?
+
+      bams << {
+          'name' => bed_file.name,
+          'url' => bed_file.api_url,
+          'indexUrl' => bed_file.study_file_bundle.bundled_file_by_type('BED Index')&.api_url,
+          'genomeAssembly' => bed_file.genome_assembly_name,
+          'genomeAnnotation' => bed_file.genome_annotation
+      }
+    end
+    beds
+  end
+
   def get_genome_annotations_by_assembly
     genome_annotations = {}
     bam_files = self.study_files.by_type('BAM')

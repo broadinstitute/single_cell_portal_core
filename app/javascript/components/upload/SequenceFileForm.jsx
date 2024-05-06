@@ -24,7 +24,7 @@ export default function SequenceFileForm({
   addNewFile,
   sequenceFileTypes,
   fileMenuOptions,
-  associatedBaiFile,
+  associatedIndexFile,
   bucketName
 }) {
   const speciesOptions = fileMenuOptions.species.map(spec => ({ label: spec.common_name, value: spec.id }))
@@ -128,9 +128,19 @@ export default function SequenceFileForm({
         <TextFormField label="Description" fieldName="description" file={file} updateFile={updateFile}/>
 
         <SaveDeleteButtons {...{ file, updateFile, saveFile, deleteFile, validationMessages }}/>
-        { (file.file_type === 'BAM' || associatedBaiFile) &&
+        { (file.file_type === 'BAM' && associatedIndexFile) &&
           <BamIndexFileForm parentFile={file}
-            file={associatedBaiFile}
+            file={associatedIndexFile}
+            allFiles={allFiles}
+            updateFile={updateFile}
+            saveFile={saveFile}
+            deleteFile={deleteFile}
+            addNewFile={addNewFile}
+            bucketName={bucketName}/>
+        }
+        { (file.file_type === 'BED' && associatedIndexFile) &&
+          <BedIndexFileForm parentFile={file}
+            file={associatedIndexFile}
             allFiles={allFiles}
             updateFile={updateFile}
             saveFile={saveFile}
@@ -184,7 +194,66 @@ function BamIndexFileForm({
   return <div className="row">
     <div className="col-md-12 ">
       <div className="sub-form">
-        <h5>BAM Index File</h5>
+        <h5>BAM index file</h5>
+        <FileUploadControl
+          file={file}
+          allFiles={allFiles}
+          updateFile={updateFile}
+          allowedFileExts={FileTypeExtensions.bai}
+          validationMessages={validationMessages}
+          bucketName={bucketName}/>
+        <TextFormField label="Description" fieldName="description" file={file} updateFile={updateFile}/>
+        <SaveDeleteButtons
+          file={file}
+          updateFile={updateFile}
+          saveFile={saveFile}
+          deleteFile={deleteFile}
+          validationMessages={validationMessages}/>
+      </div>
+      <SavingOverlay file={file} updateFile={updateFile}/>
+    </div>
+  </div>
+}
+
+/** renders a control for uploading a BAM Index file */
+function BedIndexFileForm({
+  file,
+  allFiles,
+  parentFile,
+  updateFile,
+  saveFile,
+  deleteFile,
+  addNewFile,
+  bucketName
+}) {
+  const validationMessages = validateFile({ file, allFiles, allowedFileExts: FileTypeExtensions.tbi })
+
+  // add an empty file to be filled in if none are there
+  useEffect(() => {
+    if (!file) {
+      addNewFile({
+        file_type: 'BED Index',
+        human_fastq_url: '',
+        human_data: false,
+        options: { bed_id: parentFile._id }
+      })
+    }
+  }, [file])
+
+  // if parent id changes, update the child bed_id pointer
+  useEffect(() => {
+    if (file && file.options.bed_id !== parentFile._id) {
+      updateFile(file._id, { options: { bed_id: parentFile._id } })
+    }
+  }, [parentFile._id])
+
+  if (!file) {
+    return <span></span>
+  }
+  return <div className="row">
+    <div className="col-md-12 ">
+      <div className="sub-form">
+        <h5>BED index file</h5>
         <FileUploadControl
           file={file}
           allFiles={allFiles}

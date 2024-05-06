@@ -75,7 +75,7 @@
       if (typeof bamAndBaiFiles === 'undefined') {
         window.bamAndBaiFiles = <%= raw @study.get_bam_files.to_json %>;
       }
-      if (typeof bamAndBaiFiles === 'undefined') {
+      if (typeof bedFiles === 'undefined') {
         window.bedFiles = <%= raw @study.get_bed_files.to_json %>;
       }
     </script>
