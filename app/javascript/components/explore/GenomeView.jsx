@@ -212,9 +212,16 @@ function initializeIgv(containerId, bamAndBaiFiles, gtfFiles, uniqueGenes) {
     // The user searched within a study for one or multiple genes
     locus = [queriedGenes.first().text()]
   } else if (uniqueGenes.length > 0) {
-    // The user is viewing the default cluster plot, so select
-    // their first in their matrix
-    locus = [uniqueGenes[0]]
+    // The user is viewing the default cluster plot, so find
+    // a reasonable gene to view
+    let defaultGeneIndex = uniqueGenes.indexOf('GAPDH')
+    if (defaultGeneIndex === -1) {
+      defaultGeneIndex = uniqueGenes.indexOf('Gapdh')
+    }
+    if (defaultGeneIndex === -1) {
+      defaultGeneIndex = 0 // If GAPDH not found, use first gene in matrix
+    }
+    locus = [uniqueGenes[defaultGeneIndex]]
   } else {
     // Rarely, users will upload BAMs and *not* matrices.  This accounts for
     // that case.
