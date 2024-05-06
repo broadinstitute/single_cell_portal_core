@@ -1032,7 +1032,7 @@ class Study
   end
 
   # check if study has any files that can be streamed from the bucket for visualization
-  # this includes BAM, inferCNV Ideogram annotations, Image files, and DE files
+  # this includes BAM, BED, inferCNV Ideogram annotations, Image files, and DE files
   #
   # TODO (SCP-4336):
   # This is currently only used for getting auth tokens.  Consider incorporating this
@@ -1040,6 +1040,7 @@ class Study
   # of the API response.
   def has_streamable_files(user)
     has_bam_files? ||
+    has_bed_files? ||
     has_analysis_outputs?('infercnv', 'ideogram.js') ||
     user && user.feature_flag_for('differential_expression_frontend') ||
     feature_flag_for('differential_expression_frontend')
@@ -1535,6 +1536,10 @@ class Study
 
   def has_bam_files?
     self.study_files.by_type('BAM').any?
+  end
+
+  def has_bed_files?
+    self.study_files.by_type('BED').any?
   end
 
   # Get a list of BAM file objects where each object has a URL for the BAM

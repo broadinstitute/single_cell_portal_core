@@ -11,7 +11,7 @@ const DEFAULT_NEW_SEQUENCE_FILE = {
   options: {}
 }
 
-const sequenceFileTypes = ['BAM', 'Fastq']
+const sequenceFileTypes = ['BED', 'BAM', 'Fastq']
 const sequenceFileFilter = file => sequenceFileTypes.includes(file.file_type)
 
 export default {

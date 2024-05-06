@@ -562,7 +562,8 @@ export const BASIC_MENU_OPTIONS = {
   ],
   'sequence_file_types': [
     'Fastq',
-    'BAM'
+    'BAM',
+    'BED'
   ],
   'genome_assemblies': [{
     'id': '604009b9cc7ba03e1b277a42',

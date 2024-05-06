@@ -699,7 +699,8 @@ export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
   const isConsensus = !!exploreParams.consensus
   const hasClusters = exploreInfo && exploreInfo.clusterGroupNames.length > 0
   const hasSpatialGroups = exploreParams.spatialGroups?.length > 0
-  const hasGenomeFiles = exploreInfo && exploreInfo?.bamBundleList?.length > 0
+  const hasGenomeFiles =
+    exploreInfo && (exploreInfo?.bamBundleList?.length > 0 || exploreInfo?.bedBundleList?.length > 0)
   const hasIdeogramOutputs = !!exploreInfo?.inferCNVIdeogramFiles
   const isNumeric = exploreParams?.annotation?.type === 'numeric'
 
