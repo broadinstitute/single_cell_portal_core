@@ -335,6 +335,10 @@ export default function ExploreDisplayPanelManager({
     setRenderForcer({})
   }, 300)
 
+  // decide how to position the bookmark icon, depending on menu elements shown
+  const subsampleMenuShown = !!(exploreInfo?.cluster?.isSubsampled)
+  const offsetBookmark = !showCellFiltering || subsampleMenuShown
+  const useBookmarkContainer = hasSpatialGroups && exploreParams?.genes?.length === 0
   return (
     <>
       <div>
@@ -497,8 +501,8 @@ export default function ExploreDisplayPanelManager({
               exploreParams={exploreParamsWithDefaults}
               updateExploreParams={updateExploreParams}
               allGenes={exploreInfo ? exploreInfo.uniqueGenes : []}/>
-            <div id={!showCellFiltering ? 'bookmark-container' : ''} className={!showCellFiltering ? 'row' : ''}>
-              <div className={!showCellFiltering ? 'col-xs-12' : ''}>
+            <div id={useBookmarkContainer ? 'bookmark-container' : ''} className={offsetBookmark ? 'row' : ''}>
+              <div className={offsetBookmark ? 'col-xs-12' : ''}>
                 <button className="action action-with-bg"
                         onClick={clearExploreParams}
                         title="Reset all view options"
