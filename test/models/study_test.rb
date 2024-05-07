@@ -37,6 +37,10 @@ class StudyTest < ActiveSupport::TestCase
     @services_args = [String, String, String]
   end
 
+  after(:all) do
+    Study.where(firecloud_workspace: 'bucket-read-check-test').delete_all
+  end
+
   test 'should honor case in gene search within study' do
     gene_name = @gene_names.sample
     matrix_ids = @study.expression_matrix_files.pluck(:id)
@@ -160,5 +164,24 @@ class StudyTest < ActiveSupport::TestCase
     study.update(embargo: today)
     assert_not study.embargo_active?
     assert_not study.embargoed?(user)
+  end
+
+  test 'should check bucket read access' do
+    # stub detached to allow method to fire after the fact via direct invocation (doesn't execute for detached studies)
+    # there's no way to verify the mock on a background process hence the :check_bucket_read_access_without_delay
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Bucket Read Access Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    mock = Minitest::Mock.new
+    mock.expect :check_bucket_read_access,
+                true,
+                [study.firecloud_project, study.firecloud_workspace]
+    FireCloudClient.stub :new, mock do
+      study.stub :detached, false do
+        study.check_bucket_read_access_without_delay
+        mock.verify
+      end
+    end
   end
 end
