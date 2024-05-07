@@ -10,12 +10,14 @@ import { getReadOnlyToken, userHasTerraProfile } from '~/providers/UserProvider'
 import { profileWarning } from '~/lib/study-overview/terra-profile-warning'
 
 /** Component for displaying IGV for any BAM/BAI files provided with the study */
-function GenomeView({ studyAccession, bamFileName, uniqueGenes, isVisible, updateExploreParams }) {
+function GenomeView({ studyAccession, bamFileName, uniqueGenes, isVisible, exploreParams, updateExploreParams }) {
   const [isLoading, setIsLoading] = useState(false)
   const [bamFileList, setBamFileList] = useState(null)
   const [igvInitializedFiles, setIgvInitializedFiles] = useState('')
   const [igvContainerId] = useState(_uniqueId('study-igv-'))
   const [showProfileWarning, setShowProfileWarning] = useState(false)
+
+  const queriedGenes = exploreParams.genes
 
   useEffect(() => {
     // Get the BAM file names and urls from the server.
@@ -52,11 +54,16 @@ function GenomeView({ studyAccession, bamFileName, uniqueGenes, isVisible, updat
       // So we track what the last files are that we initialized
       // IGV with, and only rerender if they are different.
       if (igvInitializedFiles !== fileNamesToShow) {
-        initializeIgv(igvContainerId, listToShow, bamFileList.gtfFiles, uniqueGenes)
+        initializeIgv(igvContainerId, listToShow, bamFileList.gtfFiles, uniqueGenes, queriedGenes)
       }
       setIgvInitializedFiles(fileNamesToShow)
     }
   }, [fileListString, bamFileName, isVisible])
+
+  // Search gene in IGV upon searching gene in Explore
+  useEffect(() => {
+    window.igvBrowser.search(queriedGenes[0])
+  }, [queriedGenes])
 
   /** handle clicks on the download 'browse in genome' buttons
    * This should get refactored when/if we migrate the other study-overview tabs to react
@@ -102,6 +109,24 @@ function GenomeView({ studyAccession, bamFileName, uniqueGenes, isVisible, updat
 const SafeGenomeView = withErrorBoundary(GenomeView)
 export default SafeGenomeView
 
+/**
+ * Get tracks for selected TSV (e.g. BAM, BED) files, to show genomic features
+ */
+function getTracks(tsvAndIndexFiles) {
+  const tsvTracks = []
+
+  for (let i = 0; i < tsvAndIndexFiles.length; i++) {
+    const tsvTrack = tsvAndIndexFiles[i]
+
+    tsvTrack.oauthToken = getReadOnlyToken()
+    tsvTrack.label = tsvTrack.name
+    tsvTrack.indexURL = tsvTrack.indexUrl
+
+    tsvTracks.push(tsvTrack)
+  }
+
+  return tsvTracks
+}
 
 /**
  * Get tracks for selected BAM files, to show sequencing reads
@@ -153,7 +178,7 @@ function getGenesTrack(gtfFiles, genome, genesTrackName) {
 /**
  * Instantiates and renders igv.js widget on the page
  */
-function initializeIgv(containerId, bamAndBaiFiles, gtfFiles, uniqueGenes) {
+async function initializeIgv(containerId, bamAndBaiFiles, gtfFiles, uniqueGenes, queriedGenes) {
   // Bail if already displayed
 
   delete igv.browser
@@ -206,11 +231,10 @@ function initializeIgv(containerId, bamAndBaiFiles, gtfFiles, uniqueGenes) {
     fallbackLocus = 'myc'
     reference = genomeId
   }
-  const queriedGenes = $('.queried-gene')
   let locus
   if (queriedGenes.length > 0) {
     // The user searched within a study for one or multiple genes
-    locus = [queriedGenes.first().text()]
+    locus = [queriedGenes[0]]
   } else if (uniqueGenes.length > 0) {
     // The user is viewing the default cluster plot, so find
     // a reasonable gene to view
@@ -230,16 +254,43 @@ function initializeIgv(containerId, bamAndBaiFiles, gtfFiles, uniqueGenes) {
 
   const genesTrackName = `Genes | ${bamAndBaiFiles[0].genomeAnnotation.name}`
   const genesTrack = getGenesTrack(gtfFiles, genomeId, genesTrackName)
-  const bamTracks = getBamTracks(bamAndBaiFiles)
-  const tracks = [genesTrack].concat(bamTracks)
 
+  // const tsv = {
+  //   url
+  // }
+  // const bedTrack = {
+  //   url: tsv.url,
+  //   indexURL: tsv.indexUrl,
+  //   oauthToken: getReadOnlyToken(),
+  //   label: tsv.name
+  // }
+  // const otherTracks = getTracks()
+
+
+  const bedTrack = {
+    url: 'https://www.googleapis.com/storage/v1/b/fc-5203332f-a200-4b9e-8a0e-1f2a892de5fb/o/pbmc_3k_atac_fragments.possorted.bed.gz?alt=media',
+    indexUrl: 'https://www.googleapis.com/storage/v1/b/fc-5203332f-a200-4b9e-8a0e-1f2a892de5fb/o/pbmc_3k_atac_fragments.possorted.bed.gz.tbi?alt=media',
+    name: 'pbmc_3k_atac_fragments.possorted.bed.gz',
+    visibilityWindow: 100_000,
+    height: 250,
+    featureHeight: 7,
+    expandedVGap: 1,
+    displayMode: 'SQUISHED',
+    colorBy: 'score'
+  }
+  const otherTracks = getTracks([bedTrack])
+
+  const bamTracks = getBamTracks(bamAndBaiFiles)
+  const tracks = [genesTrack].concat(otherTracks, bamTracks)
+
+  // console.log('reference', reference)
   const igvOptions = { reference, locus, tracks }
 
   if (typeof searchOptions !== 'undefined') {
     igvOptions['search'] = searchOptions
   }
 
-  igv.createBrowser(igvContainer, igvOptions)
+  window.igvBrowser = await igv.createBrowser(igvContainer, igvOptions)
 
   // Log igv.js initialization in Google Analytics
   ga('send', 'event', 'igv', 'initialize')

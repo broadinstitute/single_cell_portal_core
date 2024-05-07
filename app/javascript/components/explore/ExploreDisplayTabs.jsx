@@ -617,6 +617,7 @@ export default function ExploreDisplayTabs({
                   bamFileName={exploreParams.bamFileName}
                   uniqueGenes={exploreInfo.uniqueGenes}
                   isVisible={shownTab === 'genome'}
+                  exploreParams={exploreParams}
                   updateExploreParams={updateExploreParams}
                 />
               </div>
