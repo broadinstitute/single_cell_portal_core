@@ -24,6 +24,8 @@ env:
 jobs:
   Deploy-To-Production:
     runs-on: ubuntu-20.04
+    concurrency:
+      group: production-deployment
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3

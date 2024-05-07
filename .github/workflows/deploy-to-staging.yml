@@ -20,6 +20,8 @@ env:
 jobs:
   Deploy-To-Staging:
     runs-on: ubuntu-20.04
+    concurrency:
+      group: staging-deployment
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
