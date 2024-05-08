@@ -614,7 +614,7 @@ export default function ExploreDisplayTabs({
               <div className={shownTab === 'genome' ? '' : 'hidden'}>
                 <GenomeView
                   studyAccession={studyAccession}
-                  bamFileName={exploreParams.bamFileName}
+                  trackFileName={exploreParams.trackFileName}
                   uniqueGenes={exploreInfo.uniqueGenes}
                   isVisible={shownTab === 'genome'}
                   exploreParams={exploreParams}

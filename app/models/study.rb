@@ -1016,7 +1016,7 @@ class Study
   end
 
   def can_visualize_genome_data?
-    self.has_bam_files? || self.has_analysis_outputs?('infercnv', 'ideogram.js')
+    self.has_track_files? || self.has_analysis_outputs?('infercnv', 'ideogram.js')
   end
 
   def can_visualize?
@@ -1039,8 +1039,7 @@ class Study
   # into existing endpoints, or perhaps a new endpoint, where the token is returned as part
   # of the API response.
   def has_streamable_files(user)
-    has_bam_files? ||
-    has_bed_files? ||
+    has_track_files? || # BAM or BED
     has_analysis_outputs?('infercnv', 'ideogram.js') ||
     user && user.feature_flag_for('differential_expression_frontend') ||
     feature_flag_for('differential_expression_frontend')
@@ -1534,73 +1533,52 @@ class Study
     }
   end
 
-  def has_bam_files?
-    self.study_files.by_type('BAM').any?
+  def has_track_files?
+    self.study_files.by_type(['BAM', 'BED']).any?
   end
 
-  def has_bed_files?
-    self.study_files.by_type('BED').any?
-  end
+  # Get a list of igv.js track file objects where each object has a URL for
+  # the track data itself and index URL for its matching index (BAI if BAM,
+  # else TBI) file.
+  def get_tracks
 
-  # Get a list of BAM file objects where each object has a URL for the BAM
-  # itself and index URL for its matching BAI file.
-  def get_bam_files
+    track_files = self.study_files.by_type(['BAM', 'BED'])
+    tracks = []
 
-    bam_files = self.study_files.by_type('BAM')
-    bams = []
+    track_files.each do |track_file|
+      next unless track_file.has_completed_bundle?
 
-    bam_files.each do |bam_file|
-      next unless bam_file.has_completed_bundle?
+      bundled_type = track_file.type == 'BAM' ? 'BAM Index' : 'TBI'
 
-      bams << {
-          'name' => bam_file.name,
-          'url' => bam_file.api_url,
-          'indexUrl' => bam_file.study_file_bundle.bundled_file_by_type('BAM Index')&.api_url,
-          'genomeAssembly' => bam_file.genome_assembly_name,
-          'genomeAnnotation' => bam_file.genome_annotation
+      tracks << {
+          'format' => track_file.type.downcase,
+          'name' => track_file.name,
+          'url' => track_file.api_url,
+          'indexUrl' => track_file.study_file_bundle.bundled_file_by_type(bundled_type)&.api_url,
+          'genomeAssembly' => track_file.genome_assembly_name,
+          'genomeAnnotation' => track_file.genome_annotation
       }
     end
-    bams
-  end
-
-  # Get a list of BED file objects where each object has a URL for the BED
-  # itself and index URL for its matching TBI file.
-  def get_bed_files
-
-    bed_files = self.study_files.by_type('BED')
-    beds = []
-
-    bed_files.each do |bed_file|
-      next unless bed_file.has_completed_bundle?
-
-      bams << {
-          'name' => bed_file.name,
-          'url' => bed_file.api_url,
-          'indexUrl' => bed_file.study_file_bundle.bundled_file_by_type('BED Index')&.api_url,
-          'genomeAssembly' => bed_file.genome_assembly_name,
-          'genomeAnnotation' => bed_file.genome_annotation
-      }
-    end
-    beds
+    tracks
   end
 
   def get_genome_annotations_by_assembly
     genome_annotations = {}
-    bam_files = self.study_files.by_type('BAM')
-    bam_files.each do |bam_file|
-      assembly = bam_file.genome_assembly_name
+    track_files = self.study_files.by_type(['BAM', 'BED'])
+    track_files.each do |track_file|
+      assembly = track_file.genome_assembly_name
       if !genome_annotations.key?(assembly)
         genome_annotations[assembly] = {}
       end
-      genome_annotation = bam_file.genome_annotation
+      genome_annotation = track_file.genome_annotation
       if !genome_annotations[assembly].key?(genome_annotation)
 
         # Only handle one annotation per genome assembly for now;
         # enhance to support multiple annotations when UI supports it
         genome_annotations[assembly]['genome_annotations'] = {
           'name': genome_annotation,
-          'url': bam_file.genome_annotation_link,
-          'indexUrl': bam_file.genome_annotation_index_link
+          'url': track_file.genome_annotation_link,
+          'indexUrl': track_file.genome_annotation_index_link
         }
       end
     end

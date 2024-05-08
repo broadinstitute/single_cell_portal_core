@@ -4,15 +4,15 @@ import _uniqueId from 'lodash/uniqueId'
 
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { log } from '~/lib/metrics-api'
-import { fetchBamFileInfo } from '~/lib/scp-api'
+import { fetchTrackInfo } from '~/lib/scp-api'
 import { withErrorBoundary } from '~/lib/ErrorBoundary'
 import { getReadOnlyToken, userHasTerraProfile } from '~/providers/UserProvider'
 import { profileWarning } from '~/lib/study-overview/terra-profile-warning'
 
 /** Component for displaying IGV for any BAM/BAI files provided with the study */
-function GenomeView({ studyAccession, bamFileName, uniqueGenes, isVisible, exploreParams, updateExploreParams }) {
+function GenomeView({ studyAccession, trackFileName, uniqueGenes, isVisible, exploreParams, updateExploreParams }) {
   const [isLoading, setIsLoading] = useState(false)
-  const [bamFileList, setBamFileList] = useState(null)
+  const [trackFileList, setTrackFileList] = useState(null)
   const [igvInitializedFiles, setIgvInitializedFiles] = useState('')
   const [igvContainerId] = useState(_uniqueId('study-igv-'))
   const [showProfileWarning, setShowProfileWarning] = useState(false)
@@ -20,33 +20,33 @@ function GenomeView({ studyAccession, bamFileName, uniqueGenes, isVisible, explo
   const queriedGenes = exploreParams.genes
 
   useEffect(() => {
-    // Get the BAM file names and urls from the server.
+    // Get the track file names and urls from the server.
     setIsLoading(true)
-    fetchBamFileInfo(studyAccession).then(result => {
-      setBamFileList(result)
+    fetchTrackInfo(studyAccession).then(result => {
+      setTrackFileList(result)
       setIsLoading(false)
     })
   }, [studyAccession])
 
   // create a concatenated string with the files to be rendered, so react can detect changes to it
   let fileListString = ''
-  if (bamFileList) {
-    fileListString = bamFileList.bamAndBaiFiles.map(file => file.url).join(',')
+  if (trackFileList) {
+    fileListString = trackFileList.tracks.map(file => file.url).join(',')
   }
 
-  // re-render IGV any time the listing of bamFiles changes
+  // re-render IGV any time the listing of trackFiles changes
   useEffect(() => {
-    if (bamFileList && bamFileList.bamAndBaiFiles.length && isVisible) {
+    if (trackFileList && trackFileList.tracks.length && isVisible) {
       // show profile warning from non-existent token due to incomplete Terra registration
       if (!userHasTerraProfile()) {
         setShowProfileWarning(true)
       }
 
-      let listToShow = bamFileList.bamAndBaiFiles
-      if (bamFileName) {
+      let listToShow = trackFileList.tracks
+      if (trackFileName) {
         // if the user has specified a particular file name (likely because they are coming from the study download tab)
         // then limit the lsit of files to show to just that one
-        listToShow = listToShow.filter(file => file.name === bamFileName)
+        listToShow = listToShow.filter(file => file.name === trackFileName)
       }
       const fileNamesToShow = listToShow.map(file => file.name).join(',')
       // we only want to render igv when this tab is visible (igv can't draw itself to hidden panels)
@@ -54,11 +54,11 @@ function GenomeView({ studyAccession, bamFileName, uniqueGenes, isVisible, explo
       // So we track what the last files are that we initialized
       // IGV with, and only rerender if they are different.
       if (igvInitializedFiles !== fileNamesToShow) {
-        initializeIgv(igvContainerId, listToShow, bamFileList.gtfFiles, uniqueGenes, queriedGenes)
+        initializeIgv(igvContainerId, listToShow, trackFileList.gtfFiles, uniqueGenes, queriedGenes)
       }
       setIgvInitializedFiles(fileNamesToShow)
     }
-  }, [fileListString, bamFileName, isVisible])
+  }, [fileListString, trackFileName, isVisible])
 
   // Search gene in IGV upon searching gene in Explore
   useEffect(() => {
@@ -71,10 +71,10 @@ function GenomeView({ studyAccession, bamFileName, uniqueGenes, isVisible, explo
    * This should get refactored when/if we migrate the other study-overview tabs to react
   */
   useEffect(() => {
-    $(document).on('click', '.bam-browse-genome', e => {
+    $(document).on('click', '.track-browse-genome', e => {
       $('#study-visualize-nav > a').click()
-      const selectedBam = $(e.target).attr('data-filename')
-      updateExploreParams({ bamFileName: selectedBam, tab: 'genome' })
+      const selectedTrack = $(e.target).attr('data-filename')
+      updateExploreParams({ trackFileName: selectedTrack, tab: 'genome' })
     })
     $(document).on('click', '#study-visualize-nav > a', () => {
       // IGV doesn't handle rendering to hidden divs. So for edge cases where this renders but is not shown
@@ -85,13 +85,13 @@ function GenomeView({ studyAccession, bamFileName, uniqueGenes, isVisible, explo
       }
     })
     return () => {
-      $(document).off('click', '.bam-browse-genome')
+      $(document).off('click', '.track-browse-genome')
     }
   }, [])
 
   /** show the full list of files, rather than the specific selected one */
   function showAllFiles() {
-    updateExploreParams({ bamFileName: '' })
+    updateExploreParams({ trackFileName: '' })
   }
 
   return <div>
@@ -101,7 +101,7 @@ function GenomeView({ studyAccession, bamFileName, uniqueGenes, isVisible, explo
     <div>
       <div id={igvContainerId}></div>
     </div>
-    { bamFileName && bamFileList?.bamAndBaiFiles?.length > 1 &&
+    { trackFileName && trackFileList?.tracks?.length > 1 &&
       <a className="action" onClick={showAllFiles}>See all sequence files for this study</a>
     }
     { showProfileWarning && profileWarning }
@@ -133,13 +133,13 @@ function getTracks(tsvAndIndexFiles) {
 /**
  * Get tracks for selected BAM files, to show sequencing reads
  */
-function getBamTracks(bamAndBaiFiles) {
+function getBamTracks(tracks) {
   let bam; let bamTrack; let i
 
   const bamTracks = []
 
-  for (i = 0; i < bamAndBaiFiles.length; i++) {
-    bam = bamAndBaiFiles[i]
+  for (i = 0; i < tracks.length; i++) {
+    bam = tracks[i]
 
     bamTrack = {
       url: bam.url,
@@ -180,7 +180,7 @@ function getGenesTrack(gtfFiles, genome, genesTrackName) {
 /**
  * Instantiates and renders igv.js widget on the page
  */
-async function initializeIgv(containerId, bamAndBaiFiles, gtfFiles, uniqueGenes, queriedGenes) {
+async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queriedGenes) {
   // Bail if already displayed
 
   delete igv.browser
@@ -188,7 +188,7 @@ async function initializeIgv(containerId, bamAndBaiFiles, gtfFiles, uniqueGenes,
   const igvContainer = document.getElementById(containerId)
   igvContainer.innerHTML = ''
 
-  let genomeId = bamAndBaiFiles[0].genomeAssembly
+  let genomeId = tracks[0].genomeAssembly
 
   if (genomeId === 'GRCh38') {
     genomeId = 'hg38'
@@ -204,7 +204,7 @@ async function initializeIgv(containerId, bamAndBaiFiles, gtfFiles, uniqueGenes,
 
     // To consider:
     //  - Update genomes pipeline to make such files automatically reproducible
-    const genomeAnnotationObj = bamAndBaiFiles[0].genomeAnnotation
+    const genomeAnnotationObj = tracks[0].genomeAnnotation
     const genomePath =
       `${genomeAnnotationObj.link.split('/').slice(0, -2).join('%2F')}%2F`
     const bucket = genomeAnnotationObj.bucket_id
@@ -254,7 +254,7 @@ async function initializeIgv(containerId, bamAndBaiFiles, gtfFiles, uniqueGenes,
     locus = [fallbackLocus]
   }
 
-  const genesTrackName = `Genes | ${bamAndBaiFiles[0].genomeAnnotation.name}`
+  const genesTrackName = `Genes | ${tracks[0].genomeAnnotation.name}`
   const genesTrack = getGenesTrack(gtfFiles, genomeId, genesTrackName)
 
   // const tsv = {
@@ -278,15 +278,16 @@ async function initializeIgv(containerId, bamAndBaiFiles, gtfFiles, uniqueGenes,
     featureHeight: 7,
     expandedVGap: 1,
     displayMode: 'SQUISHED',
-    colorBy: 'score'
+    colorBy: 'score',
+    format: 'bed'
   }
   const otherTracks = getTracks([bedTrack])
 
-  const bamTracks = getBamTracks(bamAndBaiFiles)
-  const tracks = [genesTrack].concat(otherTracks, bamTracks)
+  const bamTracks = getBamTracks(tracks)
+  const trackList = [genesTrack].concat(otherTracks, bamTracks)
 
   // console.log('reference', reference)
-  const igvOptions = { reference, locus, tracks }
+  const igvOptions = { reference, locus, tracks: trackList }
 
   if (typeof searchOptions !== 'undefined') {
     igvOptions['search'] = searchOptions

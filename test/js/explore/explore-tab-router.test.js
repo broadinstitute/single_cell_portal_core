@@ -70,7 +70,7 @@ describe('dataParams are appropriately managed on the url', () => {
     routerNav.mockImplementation(() => {})
     const locationMock = jest.spyOn(Reach, 'useLocation')
     let urlString = '?geneList=My%20List&genes=agpat2,apoe&cluster=foo&annotation=bar--group--study&subsample=1000'
-    urlString += '&spatialGroups=square,circle&consensus=mean&heatmapRowCentering=z-score&bamFileName=sample1.bam'
+    urlString += '&spatialGroups=square,circle&consensus=mean&heatmapRowCentering=z-score&trackFileName=sample1.bam'
     urlString += '&ideogramFileId=604fc5c4e241391a8ff93271'
     locationMock.mockImplementation(() => ({ search: urlString }))
     mockWindowLocationSearch(urlString)
@@ -82,7 +82,7 @@ describe('dataParams are appropriately managed on the url', () => {
       cluster: 'foo',
       genes: ['agpat2', 'apoe'],
       geneList: 'My List',
-      bamFileName: 'sample1.bam',
+      trackFileName: 'sample1.bam',
       annotation: { name: 'bar', type: 'group', scope: 'study' },
       subsample: '1000',
       spatialGroups: ['square', 'circle'],
@@ -100,7 +100,7 @@ describe('dataParams are appropriately managed on the url', () => {
       hiddenTraces: [],
       userSpecified: {
         annotation: true,
-        bamFileName: true,
+        trackFileName: true,
         cluster: true,
         consensus: true,
         genes: true,
@@ -113,7 +113,7 @@ describe('dataParams are appropriately managed on the url', () => {
     })
     testObj.updateExploreParams({ spatialGroups: ['triangle'] })
     let expectedUrlString = '?geneList=My%20List&genes=agpat2%2Capoe&cluster=foo&spatialGroups=triangle&annotation=bar--group--study&subsample=1000'
-    expectedUrlString += '&consensus=mean&heatmapRowCentering=z-score&bamFileName=sample1.bam&ideogramFileId=604fc5c4e241391a8ff93271#study-visualize'
+    expectedUrlString += '&consensus=mean&heatmapRowCentering=z-score&trackFileName=sample1.bam&ideogramFileId=604fc5c4e241391a8ff93271#study-visualize'
     expect(routerNav).toHaveBeenLastCalledWith(expectedUrlString, { replace: true })
   })
 })

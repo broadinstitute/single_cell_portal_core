@@ -2446,7 +2446,7 @@ class UiTestSuite < Test::Unit::TestCase
     login($test_email, $test_email_password)
 
     path = @base_url + "/study/test-study-#{$random_seed}"
-    
+
     @driver.get(path)
     study_accession = extract_accession_from_url(@driver.current_url)
     loaded_path = @base_url + "/study/#{study_accession}/test-study-#{$random_seed}"
@@ -3679,7 +3679,7 @@ class UiTestSuite < Test::Unit::TestCase
         close_modal('study-file-notices')
       end
     end
-    
+
     # validate update was persisted
     @driver.get path
     show_study = @driver.find_element(:class, "test-study-#{$random_seed}-show")
@@ -4979,7 +4979,7 @@ class UiTestSuite < Test::Unit::TestCase
 
     puts "#{File.basename(__FILE__)}: '#{self.method_name}' successful!"
   end
-  
+
   # Test viewing BAM files in igv.js
   test 'front-end: igv bam' do
     puts "#{File.basename(__FILE__)}: '#{self.method_name}'"
@@ -5071,7 +5071,7 @@ class UiTestSuite < Test::Unit::TestCase
     loaded_path = @base_url + "/study/#{study_accession}/igv-js-ui-test-#{$random_seed}"
     wait_until_page_loads(loaded_path)
     open_ui_tab('study-download')
-    browse_genome_button = @driver.find_element(:class, "bam-browse-genome")
+    browse_genome_button = @driver.find_element(:class, "track-browse-genome")
     browse_genome_button.click
 
     # Verify igv.js displays tracks in Explore tab's default view

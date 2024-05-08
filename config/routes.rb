@@ -53,7 +53,7 @@ Rails.application.routes.draw do
             resource :explore, controller: 'visualization/explore', only: [:show] do
               member do
                 get 'cluster_options'
-                get 'bam_file_info'
+                get 'track_info'
                 get 'study_user_info'
               end
             end

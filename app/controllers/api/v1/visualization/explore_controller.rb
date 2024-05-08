@@ -109,9 +109,9 @@ module Api
           render json: AnnotationVizService.get_study_annotation_options(@study, current_api_user)
         end
 
-        def bam_file_info
+        def track_info
           render json: {
-            bamAndBaiFiles: @study.get_bam_files,
+            tracks: @study.get_tracks,
             gtfFiles: @study.get_genome_annotations_by_assembly
           }
         end
