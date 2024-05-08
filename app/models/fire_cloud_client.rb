@@ -22,6 +22,7 @@ class FireCloudClient
   # base url for all API calls
   BASE_URL = 'https://api.firecloud.org'.freeze
   BASE_SAM_SERVICE_URL = 'https://sam.dsde-prod.broadinstitute.org'.freeze
+  BASE_RAWLS_SERVICE_URL = 'https://rawls.dsde-prod.broadinstitute.org'.freeze
   # default auth scopes for client tokens
   GOOGLE_SCOPES = %w[
     https://www.googleapis.com/auth/userinfo.profile
@@ -468,6 +469,39 @@ class FireCloudClient
       raise RuntimeError.new("Invalid FireCloud ACL permission setting \"#{permission}\"; must be member of #{WORKSPACE_PERMISSIONS.join(', ')}")
     end
   end
+
+  # check the read access for a workspace bucket, and issues FastPass process if permissions are not as they should yet
+  # OK responses have to content, but 40x or 500 will contain JSON stack trace
+  # In the case of 403, a FastPass request is submitted for the corresponding user
+  #
+  # * *params*
+  #   - +workspace_namespace+ (String) => namespace of workspace
+  #   - +workspace_name+ (String) => name of workspace
+  #
+  # * *returns*
+  #   - +True+, +Hash+ true for OK, error stack trace for other scenarios
+  #
+  # * *raises*
+  #   - (RestClient::Exception) if workspace is not found, or other internal error
+  def check_bucket_read_access(workspace_namespace, workspace_name)
+    ws_identifier = "#{workspace_namespace}/#{workspace_name}"
+    path = BASE_RAWLS_SERVICE_URL + "/api/workspaces/#{ws_identifier}/checkBucketReadAccess"
+    begin
+      Rails.logger.info "Checking bucket access on #{ws_identifier} with tracking identifier: #{tracking_identifier}"
+      # make raw request for specific error handling in 403 case
+      RestClient::Request.execute(method: :get, url: path, headers: get_default_headers)
+      true
+    rescue RestClient::Forbidden
+      # only rescue 403 as this means FastPass is being issued
+      Rails.logger.info "Permissions not yet synchronized for #{ws_identifier}, FastPass request initiated"
+      false
+    rescue RestClient::Exception => e
+      ErrorTracker.report_exception(e, issuer_object, { method: :get, url: path })
+      error_message = parse_error_message(e)
+      Rails.logger.error "Error checking bucket read access in #{ws_identifier} - #{error_message}"
+    end
+  end
+
 
   # set attributes for the specified workspace (will delete all existing attributes and overwrite with provided info)
   #

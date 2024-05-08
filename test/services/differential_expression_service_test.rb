@@ -42,12 +42,17 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
                         {
                           name: 'cell_type__ontology_label',
                           type: 'group',
-                          values: ['B cell', 'B cell', 'T cell', 'B cell', 'T cell', ]
+                          values: ['B cell', 'B cell', 'T cell', 'B cell', 'T cell']
                         },
                         {
                           name: 'cell_type',
                           type: 'group',
                           values: %w[CL_0000236 CL_0000236 CL_0000084 CL_0000236 CL_0000084]
+                        },
+                        {
+                          name: 'seurat_clusters',
+                          type: 'group',
+                          values: %w[1 1 2 1 2]
                         },
                         { name: 'species', type: 'group', values: %w[dog cat dog dog cat] },
                         { name: 'disease', type: 'group', values: %w[none none measles measles measles] }
@@ -218,16 +223,20 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
 
   test 'should run differential expression job on all eligible annotations' do
     DataArray.create!(@all_cells_array_params)
-    job_mock = Minitest::Mock.new
-    job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
+    job_mock_one = Minitest::Mock.new
+    job_mock_two = Minitest::Mock.new
+    job_mock_one.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
+    job_mock_two.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
     mock = Minitest::Mock.new
-    mock.expect(:delay, job_mock)
-    # only cell_type__ontology_label should be marked as eligible
+    mock.expect(:delay, job_mock_one)
+    mock.expect(:delay, job_mock_two)
+    # cell_type__ontology_label and seurat_clusters should be marked as eligible
     IngestJob.stub :new, mock do
       jobs_launched = DifferentialExpressionService.run_differential_expression_on_all(@basic_study.accession)
-      assert_equal 1 , jobs_launched
+      assert_equal 2, jobs_launched
       mock.verify
-      job_mock.verify
+      job_mock_one.verify
+      job_mock_two.verify
     end
   end
 
@@ -247,10 +256,12 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
   end
 
   test 'should find eligible annotations' do
-    expected_annotation = { annotation_name: 'cell_type__ontology_label', annotation_scope: 'study' }
+    cell_type = { annotation_name: 'cell_type__ontology_label', annotation_scope: 'study' }
+    seurat = { annotation_name: 'seurat_clusters', annotation_scope: 'study' }
     eligible_annotations = DifferentialExpressionService.find_eligible_annotations(@basic_study)
-    assert_equal 1, eligible_annotations.count
-    assert_includes eligible_annotations, expected_annotation
+    assert_equal 2, eligible_annotations.count
+    assert_includes eligible_annotations, cell_type
+    assert_includes eligible_annotations, seurat
   end
 
   test 'should determine study eligibility' do
@@ -277,5 +288,43 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
                       annotation_scope: 'group',
                       computational_method: 'wilcoxon')
     assert_not DifferentialExpressionService.study_eligible?(@basic_study)
+  end
+
+  test 'should determine annotation eligibility by name' do
+    %w[cell_type cell_type__ontology_label clust clustering seurat leiden louvain snn_res].each do |name|
+      assert DifferentialExpressionService.annotation_eligible?(name)
+      assert DifferentialExpressionService.annotation_eligible?(name.upcase)
+      assert DifferentialExpressionService.annotation_eligible?(name.capitalize)
+    end
+    disallowed = 'enrichment__cell_type'
+    assert_not DifferentialExpressionService.annotation_eligible?(disallowed)
+    assert_not DifferentialExpressionService.annotation_eligible?(disallowed.upcase)
+    assert_not DifferentialExpressionService.annotation_eligible?(disallowed.capitalize)
+  end
+
+  test 'should backfill new annotations' do
+    # create existing result to ensure this is not regenerated
+    DataArray.create!(@all_cells_array_params)
+    cluster = @basic_study.cluster_groups.by_name(@cluster_file.name)
+    annotation = { annotation_name: 'cell_type__ontology_label', annotation_scope: 'study' }
+    DifferentialExpressionResult.create(
+      study: @basic_study, cluster_group: cluster, matrix_file_id: @raw_matrix.id, cluster_name: cluster.name,
+      annotation_name: annotation[:annotation_name], annotation_scope: annotation[:annotation_scope],
+      computational_method: 'wilcoxon', one_vs_rest_comparisons: ['B cell', 'T cell']
+    )
+
+    @basic_study.reload
+    job_mock = Minitest::Mock.new
+    job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
+    mock = Minitest::Mock.new
+    mock.expect(:delay, job_mock)
+    IngestJob.stub :new, mock do
+      # restrict to this study to prevent any dangling studies being picked up
+      stats = DifferentialExpressionService.backfill_new_results(study_accessions: [@basic_study.accession])
+      assert_equal 1, stats[:total_jobs]
+      assert_equal 1, stats[@basic_study.accession]
+      mock.verify
+      job_mock.verify
+    end
   end
 end
