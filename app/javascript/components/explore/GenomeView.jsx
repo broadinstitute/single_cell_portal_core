@@ -62,7 +62,9 @@ function GenomeView({ studyAccession, bamFileName, uniqueGenes, isVisible, explo
 
   // Search gene in IGV upon searching gene in Explore
   useEffect(() => {
-    window.igvBrowser.search(queriedGenes[0])
+    if (window.igvBrowser) {
+      window.igvBrowser.search(queriedGenes[0])
+    }
   }, [queriedGenes])
 
   /** handle clicks on the download 'browse in genome' buttons
