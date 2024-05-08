@@ -247,6 +247,7 @@ class FireCloudClientTest < ActiveSupport::TestCase
   end
 
   def test_check_bucket_read_access
+    skip if @smoke_test
     workspace_name = "workspace-#{@random_test_seed}"
     # since the timing is arbitrary, we can't be sure that issuing a request will then result in success downstream
     # instead, validate that access either is granted (true), or that the FastPass has been requested (false)
