@@ -1548,10 +1548,10 @@ class Study
     track_files.each do |track_file|
       next unless track_file.has_completed_bundle?
 
-      bundled_type = track_file.type == 'BAM' ? 'BAM Index' : 'TBI'
+      bundled_type = track_file.file_type == 'BAM' ? 'BAM Index' : 'TBI'
 
       tracks << {
-          'format' => track_file.type.downcase,
+          'format' => track_file.file_type.downcase,
           'name' => track_file.name,
           'url' => track_file.api_url,
           'indexUrl' => track_file.study_file_bundle.bundled_file_by_type(bundled_type)&.api_url,

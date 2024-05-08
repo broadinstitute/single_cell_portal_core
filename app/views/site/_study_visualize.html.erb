@@ -9,7 +9,7 @@
   <% end %>
 </script>
 
-<% if @study.has_analysis_outputs?('infercnv', 'ideogram.js') or @study.has_bam_files? or @study.has_bed_files? %>
+<% if @study.has_analysis_outputs?('infercnv', 'ideogram.js') or @study.has_track_files? %>
   <!--
   TODO (SCP-3258): Migrate genome visualization scaffold from ERB/Rails to API/React
 
@@ -69,14 +69,11 @@
     </script>
   <% end %>
 
-  <% if @study.has_bam_files? or @study.has_bed_files? %>
+  <% if @study.has_track_files? %>
     <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
       window.gtfFiles = <%= raw @study.get_genome_annotations_by_assembly.to_json %>;
       if (typeof tracks === 'undefined') {
-        window.tracks = <%= raw @study.get_bam_files.to_json %>;
-      }
-      if (typeof bedFiles === 'undefined') {
-        window.bedFiles = <%= raw @study.get_bed_files.to_json %>;
+        window.tracks = <%= raw @study.get_tracks.to_json %>;
       }
     </script>
     <div id="igv-container">

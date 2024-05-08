@@ -761,7 +761,7 @@ class StudiesController < ApplicationController
         if index_file.present?
           @study_file_bundle.add_files(index_file)
         end
-      elsif @study_file.file_type == 'BED Index'
+      elsif @study_file.file_type == 'TBI'
         # add this index to the study_file_bundle, which should already be present
         bed_file = @study.study_files.find_by(id: @study_file.options[:bed_id])
         @study_file_bundle = StudyFileBundle.initialize_from_parent(@study, bed_file)

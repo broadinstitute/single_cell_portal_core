@@ -232,7 +232,7 @@ function BedIndexFileForm({
   useEffect(() => {
     if (!file) {
       addNewFile({
-        file_type: 'BED Index',
+        file_type: 'TBI',
         human_fastq_url: '',
         human_data: false,
         options: { bed_id: parentFile._id }
@@ -253,12 +253,12 @@ function BedIndexFileForm({
   return <div className="row">
     <div className="col-md-12 ">
       <div className="sub-form">
-        <h5>BED index file</h5>
+        <h5>TBI file</h5>
         <FileUploadControl
           file={file}
           allFiles={allFiles}
           updateFile={updateFile}
-          allowedFileExts={FileTypeExtensions.bai}
+          allowedFileExts={FileTypeExtensions.tbi}
           validationMessages={validationMessages}
           bucketName={bucketName}/>
         <TextFormField label="Description" fieldName="description" file={file} updateFile={updateFile}/>

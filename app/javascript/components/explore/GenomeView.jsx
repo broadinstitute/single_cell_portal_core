@@ -131,29 +131,6 @@ function getTracks(tsvAndIndexFiles) {
 }
 
 /**
- * Get tracks for selected BAM files, to show sequencing reads
- */
-function getBamTracks(tracks) {
-  let bam; let bamTrack; let i
-
-  const bamTracks = []
-
-  for (i = 0; i < tracks.length; i++) {
-    bam = tracks[i]
-
-    bamTrack = {
-      url: bam.url,
-      indexURL: bam.indexUrl,
-      oauthToken: getReadOnlyToken(),
-      label: bam.name
-    }
-    bamTracks.push(bamTrack)
-  }
-
-  return bamTracks
-}
-
-/**
  * Gets the track of genes and transcripts from the genome's BED file
  */
 function getGenesTrack(gtfFiles, genome, genesTrackName) {
@@ -283,7 +260,7 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
   }
   const otherTracks = getTracks([bedTrack])
 
-  const bamTracks = getBamTracks(tracks)
+  const bamTracks = getTracks(tracks.filter(track => track.format === 'bam'))
   const trackList = [genesTrack].concat(otherTracks, bamTracks)
 
   // console.log('reference', reference)
