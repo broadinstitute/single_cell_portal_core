@@ -1,19 +1,18 @@
 {
   "all": {
     "sourceCodeDir": "app/javascript",
-    "entrypointsDir": "vite",
     "watchAdditionalPaths": []
   },
   "development": {
     "autoBuild": true,
-    "publicOutputDir": "vite-dev",
+    "publicOutputDir": "single_cell/vite-dev",
     "port": 3036,
-    "host": "127.0.0.1",
+    "host": "localhost",
     "devServerConnectTimeout": 1.0
   },
   "test": {
     "autoBuild": true,
-    "publicOutputDir": "vite-test",
+    "publicOutputDir": "single_cell/vite-test",
     "port": 3037
   }
 }

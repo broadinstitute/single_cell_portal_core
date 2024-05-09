@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
-import rubyPlugin from 'vite-plugin-ruby'
+import RubyPlugin from 'vite-plugin-ruby'
 import react from '@vitejs/plugin-react'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
 import { readFileSync } from 'fs'
@@ -23,7 +23,7 @@ export default defineConfig({
   },
   'plugins': [
     // inject plugin needs to be first
-    rubyPlugin(),
+    RubyPlugin(),
     react({
       jsxRuntime: 'classic'
     }),
