@@ -128,25 +128,18 @@ export default function SequenceFileForm({
         <TextFormField label="Description" fieldName="description" file={file} updateFile={updateFile}/>
 
         <SaveDeleteButtons {...{ file, updateFile, saveFile, deleteFile, validationMessages }}/>
-        {/* { (file.file_type === 'BAM' || associatedIndexFile) &&
-          <BamIndexFileForm parentFile={file}
+
+        { (['BAM', 'BED'].includes(file.file_type) || associatedIndexFile) &&
+          <IndexFileForm
+            parentFile={file}
             file={associatedIndexFile}
             allFiles={allFiles}
             updateFile={updateFile}
             saveFile={saveFile}
             deleteFile={deleteFile}
             addNewFile={addNewFile}
-            bucketName={bucketName}/>
-        } */}
-        { (file.file_type === 'BED' || associatedIndexFile) &&
-          <TabIndexFileForm parentFile={file}
-            file={associatedIndexFile}
-            allFiles={allFiles}
-            updateFile={updateFile}
-            saveFile={saveFile}
-            deleteFile={deleteFile}
-            addNewFile={addNewFile}
-            bucketName={bucketName}/>
+            bucketName={bucketName}
+          />
         }
 
       </form>
@@ -156,8 +149,8 @@ export default function SequenceFileForm({
   </div>
 }
 
-/** renders a control for uploading a BAM Index file */
-function BamIndexFileForm({
+/** renders a control for uploading a BAM Index or BED Index file */
+function IndexFileForm({
   file,
   allFiles,
   parentFile,
@@ -167,24 +160,41 @@ function BamIndexFileForm({
   addNewFile,
   bucketName
 }) {
+  let indexFileType = 'BAM Index'
+  let optionsIdField = 'bam_id'
+  let displayName = 'BAM'
+  let extension = 'bai'
+  if (parentFile.file_type == 'BED') {
+    indexFileType = 'Tab Index'
+    optionsIdField = 'bed_id'
+    displayName = 'Tab'
+    extension = 'tbi'
+  }
+
+
   const validationMessages = validateFile({ file, allFiles, allowedFileExts: FileTypeExtensions.bai })
 
   // add an empty file to be filled in if none are there
   useEffect(() => {
     if (!file) {
-      addNewFile({
-        file_type: 'BAM Index',
-        human_fastq_url: '',
-        human_data: false,
-        options: { bam_id: parentFile._id }
-      })
+      const newFile = {
+        options: {
+          file_type: indexFileType,
+          human_fastq_url: '',
+          human_data: false
+        }
+      }
+      newFile.options[optionsIdField] = parentFile._id
+      addNewFile(newFile)
     }
   }, [file])
 
   // if parent id changes, update the child bam_id pointer
   useEffect(() => {
-    if (file && file.options.bam_id !== parentFile._id) {
-      updateFile(file._id, { options: { bam_id: parentFile._id } })
+    if (file && file.options[optionsIdField] !== parentFile._id) {
+      const updatedFields = { options: {} }
+      updatedFields.options[optionsIdField] = parentFile._id
+      updateFile(file._id, updatedFields)
     }
   }, [parentFile._id])
 
@@ -194,71 +204,12 @@ function BamIndexFileForm({
   return <div className="row">
     <div className="col-md-12 ">
       <div className="sub-form">
-        <h5>BAM index file</h5>
+        <h5>{displayName} index file</h5>
         <FileUploadControl
           file={file}
           allFiles={allFiles}
           updateFile={updateFile}
-          allowedFileExts={FileTypeExtensions.bai}
-          validationMessages={validationMessages}
-          bucketName={bucketName}/>
-        <TextFormField label="Description" fieldName="description" file={file} updateFile={updateFile}/>
-        <SaveDeleteButtons
-          file={file}
-          updateFile={updateFile}
-          saveFile={saveFile}
-          deleteFile={deleteFile}
-          validationMessages={validationMessages}/>
-      </div>
-      <SavingOverlay file={file} updateFile={updateFile}/>
-    </div>
-  </div>
-}
-
-/** renders a control for uploading a Tab Index file */
-function TabIndexFileForm({
-  file,
-  allFiles,
-  parentFile,
-  updateFile,
-  saveFile,
-  deleteFile,
-  addNewFile,
-  bucketName
-}) {
-  const validationMessages = validateFile({ file, allFiles, allowedFileExts: FileTypeExtensions.tbi })
-
-  // add an empty file to be filled in if none are there
-  useEffect(() => {
-    if (!file) {
-      addNewFile({
-        file_type: 'Tab Index',
-        human_fastq_url: '',
-        human_data: false,
-        options: { bed_id: parentFile._id }
-      })
-    }
-  }, [file])
-
-  // if parent id changes, update the child bed_id pointer
-  useEffect(() => {
-    if (file && file.options.bed_id !== parentFile._id) {
-      updateFile(file._id, { options: { bed_id: parentFile._id } })
-    }
-  }, [parentFile._id])
-
-  if (!file) {
-    return <span></span>
-  }
-  return <div className="row">
-    <div className="col-md-12 ">
-      <div className="sub-form">
-        <h5>BED index file (TBI)</h5>
-        <FileUploadControl
-          file={file}
-          allFiles={allFiles}
-          updateFile={updateFile}
-          allowedFileExts={FileTypeExtensions.tbi}
+          allowedFileExts={FileTypeExtensions[extension]}
           validationMessages={validationMessages}
           bucketName={bucketName}/>
         <TextFormField label="Description" fieldName="description" file={file} updateFile={updateFile}/>
