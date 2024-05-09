@@ -404,14 +404,14 @@ module ApplicationHelper
   # helper for rendering Vite javascript assets with a nonce
   # based off of nonced_javascript_pack_tag in secure_headers
   # see https://github.com/github/secure_headers/blob/main/lib/secure_headers/view_helper.rb
-  def nonced_vite_client_tag(**options)
-    tag_content = vite_client_tag(crossorigin: 'anonymous', **options)
+  def nonced_vite_client_tag(*args, &block)
+    tag_content = vite_client_tag(*args, &block)
     nonce = _content_security_policy_nonce(:script)
     tag_content&.gsub('module"', 'module" nonce="' + nonce + '"')&.gsub('localhost', 'https://localhost')&.html_safe
   end
 
-  def nonced_vite_react_refresh_tag(**options)
-    tag_content = vite_react_refresh_tag(**options)
+  def nonced_vite_react_refresh_tag(*args, &block)
+    tag_content = vite_react_refresh_tag(*args, &block)
     nonce = _content_security_policy_nonce(:script)
     tag_content&.gsub('module"', 'module" nonce="' + nonce + '"')&.gsub('localhost', 'https://localhost')&.html_safe
   end

@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
-import RubyPlugin from 'vite-plugin-ruby'
+import rubyPlugin from 'vite-plugin-ruby'
 import react from '@vitejs/plugin-react'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
 import { readFileSync } from 'fs'
@@ -23,7 +23,7 @@ export default defineConfig({
   },
   'plugins': [
     // inject plugin needs to be first
-    RubyPlugin(),
+    rubyPlugin(),
     react({
       jsxRuntime: 'classic'
     }),
@@ -52,7 +52,7 @@ export default defineConfig({
   },
   'server': {
     'hmr': {
-      'host': '127.0.0.1',
+      'host': 'localhost',
       'protocol': 'ws',
       'timeout': 1.0
     }
