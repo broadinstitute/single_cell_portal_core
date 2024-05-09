@@ -12,7 +12,7 @@
     }
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=20.0.0"
   },
   "dependencies": {
     "@babel/plugin-transform-runtime": "^7.17.0",
