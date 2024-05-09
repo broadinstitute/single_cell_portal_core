@@ -1548,7 +1548,7 @@ class Study
     track_files.each do |track_file|
       next unless track_file.has_completed_bundle?
 
-      bundled_type = track_file.file_type == 'BAM' ? 'BAM Index' : 'TBI'
+      bundled_type = track_file.file_type == 'BAM' ? 'BAM Index' : 'Tab Index'
 
       tracks << {
           'format' => track_file.file_type.downcase,

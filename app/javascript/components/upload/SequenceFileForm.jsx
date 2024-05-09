@@ -7,7 +7,7 @@ import { SavingOverlay } from './ExpandableFileForm'
 import { validateFile, FileTypeExtensions } from './upload-utils'
 
 const REQUIRED_FIELDS = [{ label: 'species', propertyName: 'taxon_id' }]
-const BAM_REQUIRED_FIELDS = REQUIRED_FIELDS.concat([{ label: 'Genome assembly', propertyName: 'genome_assembly_id' }])
+const TRACK_REQUIRED_FIELDS = REQUIRED_FIELDS.concat([{ label: 'Genome assembly', propertyName: 'genome_assembly_id' }])
 const HUMAN_REQUIRED_FIELDS = REQUIRED_FIELDS.concat([
   { label: 'External link', propertyName: 'external_link_url' },
   { label: 'External link name', propertyName: 'name' }
@@ -41,8 +41,8 @@ export default function SequenceFileForm({
   let requiredFields = REQUIRED_FIELDS
   if (file.human_data) {
     requiredFields = HUMAN_REQUIRED_FIELDS
-  } else if (file.file_type === 'BAM') {
-    requiredFields = BAM_REQUIRED_FIELDS
+  } else if (['BAM', 'BED'].includes(file.file_type)) {
+    requiredFields = TRACK_REQUIRED_FIELDS
   }
   const validationMessages = validateFile({ file, allFiles, requiredFields, allowedFileExts })
   const humanTaxon = speciesOptions.find(opt => opt.label === 'human')
@@ -54,7 +54,7 @@ export default function SequenceFileForm({
         onSubmit={e => e.preventDefault()}
         acceptCharset="UTF-8">
         <div className="form-group">
-          <label>Primary Human Data?</label><br/>
+          <label>Primary human data?</label><br/>
           <label className="sublabel">
             <input type="radio"
               name={`sequenceHuman-${file._id}`}
@@ -114,7 +114,7 @@ export default function SequenceFileForm({
               onChange={val => updateFile(file._id, { taxon_id: val.value })}/>
           </label>
         </div>
-        { file.file_type === 'BAM' &&
+        { ['BAM', 'BED'].includes(file.file_type) &&
           <div className="form-group">
             <label className="labeled-select">Genome Assembly *
               <Select options={assemblyOptions}
@@ -128,7 +128,7 @@ export default function SequenceFileForm({
         <TextFormField label="Description" fieldName="description" file={file} updateFile={updateFile}/>
 
         <SaveDeleteButtons {...{ file, updateFile, saveFile, deleteFile, validationMessages }}/>
-        { (file.file_type === 'BAM' && associatedIndexFile) &&
+        {/* { (file.file_type === 'BAM' || associatedIndexFile) &&
           <BamIndexFileForm parentFile={file}
             file={associatedIndexFile}
             allFiles={allFiles}
@@ -137,9 +137,9 @@ export default function SequenceFileForm({
             deleteFile={deleteFile}
             addNewFile={addNewFile}
             bucketName={bucketName}/>
-        }
-        { (file.file_type === 'BED' && associatedIndexFile) &&
-          <BedIndexFileForm parentFile={file}
+        } */}
+        { (file.file_type === 'BED' || associatedIndexFile) &&
+          <TabIndexFileForm parentFile={file}
             file={associatedIndexFile}
             allFiles={allFiles}
             updateFile={updateFile}
@@ -215,8 +215,8 @@ function BamIndexFileForm({
   </div>
 }
 
-/** renders a control for uploading a BAM Index file */
-function BedIndexFileForm({
+/** renders a control for uploading a Tab Index file */
+function TabIndexFileForm({
   file,
   allFiles,
   parentFile,
@@ -232,7 +232,7 @@ function BedIndexFileForm({
   useEffect(() => {
     if (!file) {
       addNewFile({
-        file_type: 'TBI',
+        file_type: 'Tab Index',
         human_fastq_url: '',
         human_data: false,
         options: { bed_id: parentFile._id }
@@ -253,7 +253,7 @@ function BedIndexFileForm({
   return <div className="row">
     <div className="col-md-12 ">
       <div className="sub-form">
-        <h5>TBI file</h5>
+        <h5>BED index file (TBI)</h5>
         <FileUploadControl
           file={file}
           allFiles={allFiles}
