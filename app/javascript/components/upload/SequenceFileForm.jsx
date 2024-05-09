@@ -149,7 +149,7 @@ export default function SequenceFileForm({
   </div>
 }
 
-/** renders a control for uploading a BAM Index or BED Index file */
+/** renders a control for uploading a BAM Index or Tab Index file */
 function IndexFileForm({
   file,
   allFiles,
@@ -178,11 +178,10 @@ function IndexFileForm({
   useEffect(() => {
     if (!file) {
       const newFile = {
-        options: {
-          file_type: indexFileType,
-          human_fastq_url: '',
-          human_data: false
-        }
+        file_type: indexFileType,
+        human_fastq_url: '',
+        human_data: false,
+        options: {}
       }
       newFile.options[optionsIdField] = parentFile._id
       addNewFile(newFile)

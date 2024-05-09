@@ -816,6 +816,20 @@ class StudiesController < ApplicationController
         if @study_file_bundle.bundled_files.detect {|f| f.upload_file_name == @study_file.upload_file_name}.nil?
           @study_file_bundle.add_files(@study_file)
         end
+      elsif @study_file.file_type == 'BED'
+        # we need to check if we have a study_file_bundle here
+        @study_file_bundle = StudyFileBundle.initialize_from_parent(@study, @study_file)
+        index_file = @study.study_files.find_by('options.bed_id' => @study_file.id.to_s)
+        if index_file.present?
+          @study_file_bundle.add_files(index_file)
+        end
+      elsif @study_file.file_type == 'Tab Index'
+        # add this index to the study_file_bundle, which should already be present
+        bam_file = @study.study_files.find_by(id: @study_file.options[:bed_id])
+        @study_file_bundle = StudyFileBundle.initialize_from_parent(@study, bam_file)
+        if @study_file_bundle.bundled_files.detect {|f| f.upload_file_name == @study_file.upload_file_name}.nil?
+          @study_file_bundle.add_files(@study_file)
+        end
       end
 
       respond_to do |format|
