@@ -87,6 +87,7 @@ Rails.application.routes.draw do
             get 'studies/:accession', to: 'site#view_study', as: :site_study_view
             get 'studies/:accession/download', to: 'site#download_data', as: :site_study_download_data
             get 'studies/:accession/stream', to: 'site#stream_data', as: :site_study_stream_data
+            get 'studies/:accession/bucket_access', to: 'site#bucket_access', as: :site_study_bucket_access
             get 'studies/:accession/renew_read_only_access_token', to: 'site#renew_read_only_access_token', as: :site_renew_read_only_access_token
             get 'renew_user_access_token', to: 'site#renew_user_access_token', as: :site_renew_user_access_token
 

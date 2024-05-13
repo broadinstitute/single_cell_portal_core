@@ -10,8 +10,10 @@ module Api
       before_action :check_study_detached, only: [:download_data, :stream_data, :get_study_analysis_config,
                                                   :submit_study_analysis, :get_study_submissions,
                                                   :get_study_submission, :sync_submission_outputs,
-                                                  :renew_read_only_access_token]
-      before_action :check_study_view_permission, except: [:studies, :check_terra_tos_acceptance, :analyses, :get_analysis, :renew_user_access_token]
+                                                  :renew_read_only_access_token, :bucket_access]
+      before_action :check_study_view_permission, except: [:studies, :check_terra_tos_acceptance, :analyses,
+                                                           :get_analysis, :renew_user_access_token, :bucket_access]
+      before_action :check_bucket_access_permission, only: :bucket_access
       before_action :check_study_compute_permission,
                     only: [:get_study_analysis_config, :submit_study_analysis, :get_study_submissions,
                            :get_study_submission, :sync_submission_outputs]
@@ -401,6 +403,78 @@ module Api
           logger.error "Error generating signed url for #{params[:filename]}; #{e.message}"
           render json: {error: "Error generating signed url for #{params[:filename]}; #{e.message}"}, status: 500
         end
+      end
+
+      swagger_path '/site/studies/{accession}/bucket_access' do
+        operation :get do
+          key :tags, [
+            'Site'
+          ]
+          key :summary, 'Get a signed URL for a bucket object'
+          key :description, 'Retrieve signed URL for a bucket object to pass to client'
+          key :operationId, 'site_study_bucket_access_path'
+          parameter do
+            key :name, :accession
+            key :in, :path
+            key :description, 'Accession of Study to fetch'
+            key :required, true
+            key :type, :string
+          end
+          parameter do
+            key :name, :filename
+            key :in, :query
+            key :description, 'Name/location of file to access'
+            key :required, true
+            key :type, :string
+          end
+          parameter do
+            key :name, :timeout
+            key :in, :query
+            key :description, 'Lifespan of signed URL, in minutes'
+            key :required, false
+            key :type, :string
+          end
+          response 200 do
+            key :description, 'JSON object with signed url'
+            schema do
+              key :type, :object
+              key :title, 'Remote Details'
+              property :filename do
+                key :type, :string
+                key :description, 'Name of file'
+              end
+              property :url do
+                key :type, :string
+                key :description, 'Signed URL to access file directly'
+              end
+              property :access_token do
+                key :type, :string
+                key :description, 'Authorization bearer token to pass along with media URL request'
+              end
+            end
+          end
+          response 401 do
+            key :description, ApiBaseController.unauthorized
+          end
+          response 403 do
+            key :description, ApiBaseController.forbidden('view study or get access to file')
+          end
+          response 404 do
+            key :description, ApiBaseController.not_found(Study, 'remote')
+          end
+          response 406 do
+            key :description, ApiBaseController.not_acceptable
+          end
+          response 410 do
+            key :description, ApiBaseController.resource_gone
+          end
+        end
+      end
+
+      def bucket_access
+        remote_path = params[:filename]
+        head 404 unless BucketAccessService.remote_exists?(remote_path, @study)
+
       end
 
       swagger_path '/site/analyses' do
@@ -1089,33 +1163,19 @@ module Api
       # Permission checks
       ##
 
-      def check_study_view_permission
-        if !@study.public? && !api_user_signed_in?
-          head 401
-        else
-          head 403 unless @study.public? || @study.can_view?(current_api_user)
-        end
-      end
-
-      def check_study_edit_permission
-        if !api_user_signed_in?
-          head 401
-        else
-          head 403 unless @study.can_edit?(current_api_user)
-        end
-      end
-
-      def check_study_compute_permission
-        if !api_user_signed_in?
-          head 401
-        else
-          head 403 unless @study.can_compute?(current_api_user)
-        end
-      end
-
-      def check_study_detached
-        if @study.detached?
-          head 410 and return
+      # clone of check_study_view_permission but skips group check for performance
+      def check_bucket_access_permission
+        unless @study.public?
+          # check for a reviewer_session cookie if reviewer access is enabled
+          if !api_user_signed_in? && @study.reviewer_access.present?
+            reviewer = @study.reviewer_access
+            session_key = cookies.signed[reviewer.cookie_name]
+            head 401 if reviewer.expired? || session_key.blank? || !reviewer.session_valid?(session_key)
+          elsif !api_user_signed_in?
+            head 401
+          else
+            head 403 unless @study.can_view?(current_api_user, check_groups: false)
+          end
         end
       end
 

@@ -120,7 +120,8 @@ module Api
           render json: {
             annotations: AnnotationVizService.available_annotations(@study, cluster: nil, current_user: current_api_user),
             canEdit: @study.can_edit?(current_api_user),
-            bookmarks: current_api_user&.bookmarks&.map(&:flat_attributes) || []
+            bookmarks: current_api_user&.bookmarks&.map(&:flat_attributes) || [],
+            bucketAccess: BucketAccessService.user_has_access?(@study, user: current_api_user)
           }
         end
 
