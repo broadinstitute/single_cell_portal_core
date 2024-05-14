@@ -255,7 +255,8 @@ module Api
         response_obj = {
           study: @study.attributes,
           files: files_obj,
-          feature_flags: FeatureFlaggable.feature_flags_for_instances(current_api_user, @study)
+          feature_flags: FeatureFlaggable.feature_flags_for_instances(current_api_user, @study),
+          bucketAccess: BucketAccessService.user_has_access?(@study, current_api_user)
         }
         if params[:include_options]
           response_obj[:menu_options] = {
