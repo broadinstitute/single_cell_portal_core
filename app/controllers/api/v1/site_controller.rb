@@ -427,13 +427,6 @@ module Api
             key :required, true
             key :type, :string
           end
-          parameter do
-            key :name, :timeout
-            key :in, :query
-            key :description, 'Lifespan of signed URL, in minutes'
-            key :required, false
-            key :type, :string
-          end
           response 200 do
             key :description, 'JSON object with signed url'
             schema do

@@ -504,6 +504,48 @@ export async function downloadBucketFile(bucketId, filePath) {
 }
 
 /**
+ * fetch a signed URL and other information about a remote object in a bucket
+ *
+ * @param {String} studyAccession Study accession
+ * @param {String} filePath path to file in bucket
+ */
+export async function fetchBucketAccessUrl(studyAccession, filePath, mock=false) {
+  const apiUrl = `/site/${studyAccession}/bucket_access?filename=${encodeURIComponent(filePath)}`
+  const [response] = await scpApi(apiUrl, defaultInit())
+  return response
+}
+
+/**
+ * Download a file retrieved from a Google Bucket using fetchBucketAccessUrl
+ *
+ * @param {String} studyAccession Study accession
+ * @param {String} filePath path to file in bucket
+ * @param {Integer} maxBytes number of bytes to download, if requested
+ */
+export async function downloadBucketAccessFile(studyAccession, filePath, maxBytes=null,
+  mock=false) {
+  const bucketAccess = await fetchBucketAccessUrl(studyAccession, filePath)
+  const init = { method: 'GET', headers: {} }
+  if (maxBytes) {
+    init.headers.Range = `bytes=0-${maxBytes}`
+  }
+  init.headers = new Headers(init.headers)
+
+  const response = await fetch(bucketAccess.url, init).then(response => {
+    // log failed attempts to access google storage to Sentry
+    if (!response.ok) {
+      logJSFetchExceptionToSentry(response, 'Error in fetch response when connecting to Google storage')
+    }
+    return response
+    // log errored attempts to access google storage to Sentry
+  }).catch(error => {
+    logJSFetchErrorToSentry(error, 'Error in JavaScript when connecting to Google storage', url, init)
+  })
+
+  return response
+}
+
+/**
  * Returns initial content for the "Explore" tab in Study Overview
  *
  * @param {String} studyAccession Study accession
