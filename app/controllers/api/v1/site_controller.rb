@@ -439,17 +439,17 @@ module Api
             schema do
               key :type, :object
               key :title, 'Remote Details'
-              property :filename do
+              property :basename do
                 key :type, :string
-                key :description, 'Name of file'
+                key :description, 'Basename of file'
               end
               property :url do
                 key :type, :string
                 key :description, 'Signed URL to access file directly'
               end
-              property :access_token do
-                key :type, :string
-                key :description, 'Authorization bearer token to pass along with media URL request'
+              property :size do
+                key :type, :integer
+                key :description, 'Size of remote file'
               end
             end
           end
@@ -475,6 +475,7 @@ module Api
         remote_path = params[:filename]
         head 404 unless BucketAccessService.remote_exists?(remote_path, @study)
 
+        render json: BucketAccessService.signed_url_for(remote_path, @study)
       end
 
       swagger_path '/site/analyses' do

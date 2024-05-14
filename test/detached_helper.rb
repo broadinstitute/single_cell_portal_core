@@ -54,6 +54,18 @@ def assign_get_file_mock!(mock)
   mock.expect :execute_gcloud_method, file_mock, [:get_workspace_file, 0, String, String]
 end
 
+def assign_bucket_access_mock!(remote_details, parent_study)
+  file_mock = Minitest::Mock.new
+  file_mock.expect :name, remote_details[:location]
+  file_mock.expect :size, remote_details[:size]
+  file_mock.expect :signed_url,
+                   "https://www.googleapis.com/storage/v1/b/#{parent_study.bucket_id}/#{remote_details[:location]}?",
+                   [{ expires: BucketAccessService::DEFAULT_TIMEOUT }]
+  signed_url_mock = Minitest::Mock.new
+  signed_url_mock.expect :get_workspace_file, file_mock, [String, String]
+  signed_url_mock
+end
+
 def assign_services_mock!(mock, private)
   if private
     # private file downloads have an extra call to :services_available? for Sam and Rawls in addition to GoogleBuckets
