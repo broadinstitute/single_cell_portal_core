@@ -544,6 +544,7 @@ export default function ExploreDisplayPanelManager({
               deGroup={deGroup}
               deGenes={deGenes}
               searchGenes={searchGenes}
+              studyAccession={studyAccession}
               exploreParamsWithDefaults={exploreParamsWithDefaults}
               exploreInfo={exploreInfo}
               clusterName={exploreParamsWithDefaults.cluster}

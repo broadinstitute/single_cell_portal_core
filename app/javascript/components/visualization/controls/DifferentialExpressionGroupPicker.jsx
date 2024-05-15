@@ -97,6 +97,8 @@ export function parseDeFile(tsvText, isAuthorDe=false) {
  *
  * @param {String} bucketId Identifier for study's Google bucket
  * @param {String} deFilePath File path of differential expression file in Google bucket
+ * @param {String} studyAccession Study accession
+ * @param {Boolean} bucketAccess control whether to use fetchBucketAccessUrl as proxy
  * @param {Boolean} isAuthorDe If requesting author-computed DE data
  *
  * @return {Array} deGenes Array of DE gene objects, each with properties:
@@ -108,8 +110,8 @@ export function parseDeFile(tsvText, isAuthorDe=false) {
  *   pctNzGroup: Percent non-zero, group.  % of cells with non-zero expression in selected group.
  *   pctNzReference: Percent non-zero, reference.  % of cells with non-zero expression in non-selected groups.
  **/
-async function fetchDeGenes(bucketId, deFilePath, isAuthorDe=false) {
-  const data = await fetchBucketFile(bucketId, deFilePath)
+async function fetchDeGenes(bucketId, studyAccession, bucketAccess, deFilePath, isAuthorDe=false) {
+  const data = await fetchBucketFile(bucketId, studyAccession, deFilePath, bucketAccess)
   const tsvText = await data.text()
   const deGenes = parseDeFile(tsvText, isAuthorDe)
   return deGenes
@@ -146,7 +148,7 @@ function getMatchingDeOption(
 
 /** Pick groups of cells for pairwise differential expression (DE) */
 export function PairwiseDifferentialExpressionGroupPicker({
-  bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup,
+  bucketId, studyAccession, bucketAccess, clusterName, annotation, deGenes, deGroup, setDeGroup,
   setDeGenes, countsByLabel, deObjects, setDeFilePath,
   deGroupB, setDeGroupB, hasOneVsRestDe, significanceMetric
 }) {
@@ -172,7 +174,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
     setDeFilePath(deFilePath)
 
     const isAuthorDe = true // SCP doesn't currently automatically compute pairwise DE
-    const deGenes = await fetchDeGenes(bucketId, deFilePath, isAuthorDe)
+    const deGenes = await fetchDeGenes(bucketId, studyAccession, deFilePath, bucketAccess)
     setDeGenes(deGenes)
   }
 
@@ -250,7 +252,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
 
 /** Pick groups of cells for one-vs-rest-only differential expression (DE) */
 export function OneVsRestDifferentialExpressionGroupPicker({
-  bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup, setDeGenes,
+  bucketId, studyAccession, bucketAccess, clusterName, annotation, deGenes, deGroup, setDeGroup, setDeGenes,
   countsByLabel, deObjects, setDeFilePath, isAuthorDe
 }) {
   let groups = getLegendSortedLabels(countsByLabel)
@@ -270,7 +272,7 @@ export function OneVsRestDifferentialExpressionGroupPicker({
 
     setDeFilePath(deFilePath)
 
-    const deGenes = await fetchDeGenes(bucketId, deFilePath, isAuthorDe)
+    const deGenes = await fetchDeGenes(bucketId, studyAccession, deFilePath, bucketAccess, isAuthorDe)
 
     setDeGroup(newGroup)
     setDeGenes(deGenes)

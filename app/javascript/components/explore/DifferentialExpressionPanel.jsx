@@ -611,7 +611,7 @@ function UnfoundGenesContainer({ unfoundGenes, searchedGenes, setSearchedGenes }
 
 /** Differential expression panel shown at right in Explore tab */
 export default function DifferentialExpressionPanel({
-  deGroup, deGenes, searchGenes,
+  deGroup, deGenes, searchGenes, studyAccession,
   exploreInfo, exploreParamsWithDefaults, setShowDeGroupPicker, setDeGenes, setDeGroup,
   countsByLabel, hasOneVsRestDe, hasPairwiseDe, isAuthorDe, deHeaders, deGroupB, setDeGroupB, numRows=50
 }) {
@@ -735,6 +735,8 @@ export default function DifferentialExpressionPanel({
       {!hasPairwiseDe &&
         <OneVsRestDifferentialExpressionGroupPicker
           bucketId={bucketId}
+          studyAccession={studyAccession}
+          bucketAccess={exploreInfo.bucketAccess}
           clusterName={clusterName}
           annotation={annotation}
           setShowDeGroupPicker={setShowDeGroupPicker}
@@ -753,6 +755,8 @@ export default function DifferentialExpressionPanel({
       {hasPairwiseDe &&
         <PairwiseDifferentialExpressionGroupPicker
           bucketId={bucketId}
+          studyAccession={studyAccession}
+          bucketAccess={exploreInfo.bucketAccess}
           clusterName={clusterName}
           annotation={annotation}
           setShowDeGroupPicker={setShowDeGroupPicker}

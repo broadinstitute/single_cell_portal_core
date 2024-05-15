@@ -41,6 +41,8 @@ function RoutableExploreTab({ studyAccession }) {
         newInfo.annotationList.annotations = userSpecificInfo.annotations
         newInfo.canEdit = userSpecificInfo.canEdit
         newInfo.bookmarks = userSpecificInfo.bookmarks
+        // determine if this user needs bucket access proxy via signed URLs in fetchBucketFile
+        newInfo.bucketAccess = userSpecificInfo.bucketAccess
 
         // Avoid double requests when initializing cell faceting
         newInfo.skipFetchFacets = true

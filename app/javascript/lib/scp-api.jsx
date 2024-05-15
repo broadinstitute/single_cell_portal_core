@@ -441,23 +441,32 @@ export async function deleteAnnDataFragment(studyAccession, fileId, fragId, mock
  * appropriate SCP readonly bearer token, and using the Google API URL that allows CORS
  *
  * @param {String} bucketName bucket name
+ * @param {String} studyAccession Study accession
  * @param {String} filePath path to file in bucket
+ * @param {Boolean} bucketAccess control whether to use fetchBucketAccessUrl as proxy
 */
-export async function fetchBucketFile(bucketName, filePath, maxBytes=null, mock=false) {
-  const init = {
+export async function fetchBucketFile(bucketName=null, studyAccession=null, filePath,
+  bucketAccess=false, maxBytes=null, mock=false) {
+  let url
+  let init = {
     method: 'GET',
-    headers: {
-      Authorization: `Bearer ${window.SCP.readOnlyToken}`
-    }
+    headers: {}
   }
 
-  const encodedFilePath = encodeURIComponent(filePath)
+  // determine if we need to get signed URL first before continuing
+  if (bucketAccess) {
+    const fileAccess = await fetchBucketAccessUrl(studyAccession, filePath)
+    url = fileAccess.url
+  } else {
+    const encodedFilePath = encodeURIComponent(filePath)
+    init.headers.Authorization = `Bearer ${window.SCP.readOnlyToken}`
+    url = `https://storage.googleapis.com/download/storage/v1/b/${bucketName}/o/${encodedFilePath}?alt=media`
+  }
 
   if (maxBytes) {
     init.headers.Range = `bytes=0-${maxBytes}`
   }
   init.headers = new Headers(init.headers)
-  const url = `https://storage.googleapis.com/download/storage/v1/b/${bucketName}/o/${encodedFilePath}?alt=media`
 
   const response = await fetch(url, init).then(response => {
     // log failed attempts to access google storage to Sentry
@@ -473,16 +482,18 @@ export async function fetchBucketFile(bucketName, filePath, maxBytes=null, mock=
   return response
 }
 
-
 /**
  * Download a file retreived from a Google Bucket
  *
  * @param {String} bucketId bucket id
+ * @param {String} studyAccession Study accession
  * @param {String} filePath path to file in bucket
+ * @param {Boolean} bucketAccess control whether to use fetchBucketAccessUrl as proxy
 */
-export async function downloadBucketFile(bucketId, filePath) {
+export async function downloadBucketFile(bucketId=null, studyAccession=null,
+  filePath, bucketAccess=false) {
   // Fetch the data from the bucket
-  const data = await fetchBucketFile(bucketId, filePath)
+  const data = await fetchBucketFile(bucketId, studyAccession, filePath, bucketAccess)
 
   // Convert data to a blob (standard for non-same-origin downloads)
   const dataBlob = await data.blob()
@@ -512,36 +523,6 @@ export async function downloadBucketFile(bucketId, filePath) {
 export async function fetchBucketAccessUrl(studyAccession, filePath, mock=false) {
   const apiUrl = `/site/${studyAccession}/bucket_access?filename=${encodeURIComponent(filePath)}`
   const [response] = await scpApi(apiUrl, defaultInit())
-  return response
-}
-
-/**
- * Download a file retrieved from a Google Bucket using fetchBucketAccessUrl
- *
- * @param {String} studyAccession Study accession
- * @param {String} filePath path to file in bucket
- * @param {Integer} maxBytes number of bytes to download, if requested
- */
-export async function downloadBucketAccessFile(studyAccession, filePath, maxBytes=null,
-  mock=false) {
-  const bucketAccess = await fetchBucketAccessUrl(studyAccession, filePath)
-  const init = { method: 'GET', headers: {} }
-  if (maxBytes) {
-    init.headers.Range = `bytes=0-${maxBytes}`
-  }
-  init.headers = new Headers(init.headers)
-
-  const response = await fetch(bucketAccess.url, init).then(response => {
-    // log failed attempts to access google storage to Sentry
-    if (!response.ok) {
-      logJSFetchExceptionToSentry(response, 'Error in fetch response when connecting to Google storage')
-    }
-    return response
-    // log errored attempts to access google storage to Sentry
-  }).catch(error => {
-    logJSFetchErrorToSentry(error, 'Error in JavaScript when connecting to Google storage', url, init)
-  })
-
   return response
 }
 
