@@ -52,15 +52,9 @@ class GenericProfiler
     puts "Profiling complete, writing reports"
     reports_basepath = make_profile_dir(report_dir)
     html_filepath = Rails.root.join(reports_basepath, base_filename + '.html')
-    flamegraph_filepath = Rails.root.join(reports_basepath, base_filename + '.calls.txt')
     puts "writing HTML results to #{html_filepath}"
     write_report(html_filepath, RubyProf::GraphHtmlPrinter.new(profile))
-    puts "writing FlameGraph results to #{flamegraph_filepath}"
-    write_report(flamegraph_filepath, RubyProf::FlameGraphPrinter.new(profile))
-    flamegraph_svg_path = Rails.root.join(reports_basepath, base_filename + '.svg')
-    puts "creating flamegraph SVG from #{flamegraph_filepath}"
-    system("#{FLAMEGRAPH_PATH} #{flamegraph_filepath} --countname=ms --title #{base_filename} > #{flamegraph_svg_path}")
-    [html_filepath, flamegraph_filepath, flamegraph_svg_path]
+    [html_filepath]
   end
 
   # write a single report to specified path
