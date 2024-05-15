@@ -521,7 +521,7 @@ export async function downloadBucketFile(bucketId=null, studyAccession=null,
  * @param {String} filePath path to file in bucket
  */
 export async function fetchBucketAccessUrl(studyAccession, filePath, mock=false) {
-  const apiUrl = `/site/${studyAccession}/bucket_access?filename=${encodeURIComponent(filePath)}`
+  const apiUrl = `/site/studies/${studyAccession}/bucket_access?filename=${encodeURIComponent(filePath)}`
   const [response] = await scpApi(apiUrl, defaultInit())
   return response
 }

@@ -20,7 +20,7 @@ class BucketAccessService
     remote_file = client.get_workspace_file(study.bucket_id, remote_path)
     {
       basename: remote_file.name.split('/').last,
-      url: remote_file.signed_url(expires: DEFAULT_TIMEOUT),
+      url: remote_file.signed_url(expires: DEFAULT_TIMEOUT, version: 'v4'),
       size: remote_file.size
     }
   end

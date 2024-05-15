@@ -110,7 +110,7 @@ export function parseDeFile(tsvText, isAuthorDe=false) {
  *   pctNzGroup: Percent non-zero, group.  % of cells with non-zero expression in selected group.
  *   pctNzReference: Percent non-zero, reference.  % of cells with non-zero expression in non-selected groups.
  **/
-async function fetchDeGenes(bucketId, studyAccession, bucketAccess, deFilePath, isAuthorDe=false) {
+async function fetchDeGenes(bucketId, studyAccession, deFilePath, bucketAccess, isAuthorDe=false) {
   const data = await fetchBucketFile(bucketId, studyAccession, deFilePath, bucketAccess)
   const tsvText = await data.text()
   const deGenes = parseDeFile(tsvText, isAuthorDe)
