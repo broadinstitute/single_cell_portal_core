@@ -2095,7 +2095,7 @@ class Study
   end
 
   # handler to create a workspace for a study, either user-controlled or visualization-related
-  def create_and_return_workspace(type: :study)
+  def create_and_return_workspace!(type: :study)
     ws_namespace, ws_name = workspace_attrs(type:)
     if ws_namespace == FireCloudClient::PORTAL_NAMESPACE || type == :visualization
       client = ApplicationController.firecloud_client
@@ -2106,16 +2106,35 @@ class Study
   end
 
   # assign all necessary workspace acls for a given workspace
-  def assign_workspace_acl!(type: :study)
+  def assign_workspace_acls!(type: :study)
     sa_access = set_service_account_permissions
-    return false if !sa_access
+    return false unless sa_access
 
-    ws_namespace, ws_name = workspace_attrs(type:)
     if type == :study
-
+      acls = [[user.email, 'WRITER']]
+      study_shares.where(:permission.ne => 'Reviewer').each do |share|
+        acls << [share.email, StudyShare::FIRECLOUD_ACL_MAP[share.permission]]
+      end
+      acls.each do |acl_info|
+        email, permission = *acl_info
+        assign_acl!(type:, email:, permission:)
+      end
     else
-
+      readers = [user.email]
+      readers << AdminConfiguration.find_or_create_admin_read_group!
+      readers += study_shares.non_reviewers
+      readers.each do |email|
+        assign_acl!(type:, email:, permission: 'READER', share_permission: false)
+      end
     end
+    true
+  end
+
+  def assign_acl!(type: :study, email:, permission:, share_permission: true, compute_permission: false)
+    ws_namespace, ws_name = workspace_attrs(type:)
+    client = ApplicationController.firecloud_client
+    acl = client.create_workspace_acl(email, permission, share_permission, compute_permission)
+    client.update_workspace_acl(ws_namespace, ws_name, acl)
   end
 
   # set bucket ID after workspace creation
