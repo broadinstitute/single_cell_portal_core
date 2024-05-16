@@ -259,6 +259,8 @@ class Study
   field :firecloud_workspace, type: String
   field :firecloud_project, type: String, default: FireCloudClient::PORTAL_NAMESPACE
   field :bucket_id, type: String
+  field :viz_workspace, type: String # Terra workspace where rendered visualization data lives
+  field :viz_bucket_id, type: String # GCS bucket associated with :viz_workspace
   field :data_dir, type: String
   field :public, type: Boolean, default: true
   field :queued_for_deletion, type: Boolean, default: false
@@ -749,6 +751,7 @@ class Study
   before_validation :set_url_safe_name
   before_validation :set_data_dir, :set_firecloud_workspace_name, on: :create
   after_validation  :assign_accession, on: :create
+  after_validation  :set_viz_workspace_name, on: :create
   # before_save       :verify_default_options
   after_create      :make_data_dir, :set_default_participant, :check_bucket_read_access
   before_destroy    :ensure_cascade_on_associations
@@ -1097,19 +1100,44 @@ class Study
     Rails.root.join('data', self.data_dir)
   end
 
-  # helper to generate a URL to a study's FireCloud workspace
-  def workspace_url
-    "https://app.terra.bio/#workspaces/#{self.firecloud_project}/#{self.firecloud_workspace}"
+  # helper to generate a URL to a study's FireCloud workspace,  either user-controlled or visualization-related
+  def workspace_url(type: :study)
+    "https://app.terra.bio/#workspaces/#{workspace_attrs(type:).join('/')}"
   end
 
-  # helper to generate an HTTPS URL to a study's GCP bucket
-  def google_bucket_url
-    "https://accounts.google.com/AccountChooser?continue=https://console.cloud.google.com/storage/browser/#{self.bucket_id}"
+  # array of Terra namespace/name attributes for a given workspace type
+  def workspace_attrs(type: :study)
+    case type
+    when :study
+      [firecloud_project, firecloud_workspace]
+    when :visualization
+      [FireCloudClient::PORTAL_NAMESPACE, viz_workspace]
+    else
+      [firecloud_project, firecloud_workspace]
+    end
+  end
+
+  # helper to generate an HTTPS URL to a study's GCP bucket, either user-controlled or visualization-related
+  def google_bucket_url(type: :study)
+    "https://accounts.google.com/AccountChooser?continue=" \
+    "https://console.cloud.google.com/storage/browser/#{google_bucket_name(type:)}"
   end
 
   # helper to generate a GS URL to a study's GCP bucket
-  def gs_url
-    "gs://#{self.bucket_id}"
+  def gs_url(type: :study)
+    "gs://#{google_bucket_name(type:)}"
+  end
+
+  # determine correct bucket_id for given type
+  def google_bucket_name(type: :study)
+    case type
+    when :study
+      bucket_id
+    when :visualization
+      viz_bucket_id
+    else
+      bucket_id
+    end
   end
 
   # helper to generate a URL to a specific FireCloud submission inside a study's GCP bucket
@@ -1840,6 +1868,12 @@ class Study
     self.data_dir = @dir_val
   end
 
+  # set the visualization workspace name
+  # add an 8-character alphanumeric slug to prevent naming collisions (mostly for testing purposes)
+  def set_viz_workspace_name
+    self.viz_workspace = "#{accession}-viz-#{SecureRandom.alphanumeric(8)}"
+  end
+
   ###
   #
   # CUSTOM VALIDATIONS
@@ -2060,6 +2094,52 @@ class Study
     end
   end
 
+  # handler to create a workspace for a study, either user-controlled or visualization-related
+  def create_and_return_workspace(type: :study)
+    ws_namespace, ws_name = workspace_attrs(type:)
+    if ws_namespace == FireCloudClient::PORTAL_NAMESPACE || type == :visualization
+      client = ApplicationController.firecloud_client
+    else
+      client = FireCloudClient.new(user: user, project: ws_namespace)
+    end
+    client.create_workspace(ws_namespace, ws_name)
+  end
+
+  # assign all necessary workspace acls for a given workspace
+  def assign_workspace_acl!(type: :study)
+    sa_access = set_service_account_permissions
+    return false if !sa_access
+
+    ws_namespace, ws_name = workspace_attrs(type:)
+    if type == :study
+
+    else
+
+    end
+  end
+
+  # set bucket ID after workspace creation
+  def set_bucket_id!(bucket, type: :study)
+    case type
+    when :study
+      self.bucket_id = bucket
+    when :visualization
+      self.viz_bucket_id = bucket
+    else
+      self.bucket_id = bucket
+    end
+    true
+  end
+
+  # determine if the requested billing project is valid to use
+  def billing_project_ok?
+    return true if firecloud_project == FireCloudClient::PORTAL_NAMESPACE
+
+    client = FireCloudClient.new(user: self.user, project: firecloud_project)
+    projects = client.get_billing_projects.map { |project| project['projectName'] }
+    projects.include?(firecloud_project)
+  end
+
   # sub-validation used on create
   def validate_name_and_url
     # check name and url_safe_name first and set validation error
@@ -2089,22 +2169,23 @@ class Study
 
   # set permissions on workspaces to workspace owner Google group for service account
   # this reduces the number of groups the SA is a member of to lower burden on quota (2000 direct memberships)
-  def set_service_account_permissions
+  def set_service_account_permissions(type: :study)
+    ws_namespace, ws_name = workspace_attrs(type:)
     begin
       sa_owner_group = AdminConfiguration.find_or_create_ws_user_group!
-      if self.firecloud_project == FireCloudClient::PORTAL_NAMESPACE
+      if ws_namespace == FireCloudClient::PORTAL_NAMESPACE
         client = ApplicationController.firecloud_client
       else
-        client = FireCloudClient.new(user: self.user, project: self.firecloud_project)
+        client = FireCloudClient.new(user: user, project: ws_namespace)
       end
       group_email = sa_owner_group['groupEmail']
       acl = client.create_workspace_acl(group_email, 'OWNER', true, false)
       client.update_workspace_acl(self.firecloud_project, self.firecloud_workspace, acl)
-      updated = client.get_workspace_acl(self.firecloud_project, self.firecloud_workspace)
+      updated = client.get_workspace_acl(ws_namespace, ws_name)
       return updated['acl'][group_email]['accessLevel'] == 'OWNER'
     rescue RestClient::Exception => e
-      ErrorTracker.report_exception(e, self.user, { firecloud_project: self.firecloud_workspace})
-      Rails.logger.error "Unable to add portal service account to #{self.firecloud_workspace}: #{e.message}"
+      ErrorTracker.report_exception(e, self.user, { firecloud_project: ws_namespace})
+      Rails.logger.error "Unable to add portal service account to #{ws_namespace}/#{ws_name}: #{e.message}"
       false
     end
   end
