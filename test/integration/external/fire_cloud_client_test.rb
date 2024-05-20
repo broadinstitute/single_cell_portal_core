@@ -246,6 +246,15 @@ class FireCloudClientTest < ActiveSupport::TestCase
     assert delete_confirmation, 'Entities did not delete successfully'
   end
 
+  def test_check_bucket_read_access
+    skip if @smoke_test
+    workspace_name = "workspace-#{@random_test_seed}"
+    # since the timing is arbitrary, we can't be sure that issuing a request will then result in success downstream
+    # instead, validate that access either is granted (true), or that the FastPass has been requested (false)
+    read_access = @fire_cloud_client.check_bucket_read_access(@fire_cloud_client.project, workspace_name)
+    assert_includes [true, false], read_access
+  end
+
   ##
   #
   # WORKFLOW & CONFIGURATION TESTS (only a subset can be run as submissions require user authentication)

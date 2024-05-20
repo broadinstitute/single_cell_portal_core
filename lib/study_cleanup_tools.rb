@@ -62,13 +62,9 @@ module StudyCleanupTools
 
     # these were corrupted during a partial Terra outage, and for now, cleaning them out is more difficult
     # than just leaving them be.  Otherwise the deletion attempt hangs for several minutes
-    corrupted_workspace_names = ['upload-wizard-test-pb6y0',
-    'download-agreement-686b0d44c83659cd70616a3f0874fde5',
-    'testing-study-6ec03b371c7cf59262df98424ff516e1',
-    'new-study-99f2a94b-f8a6-4efb-aa3b-4ecef24e1dad',
-    'testing-study-jdwjl', 
-    'test-study-06387e09-6661-45b5-bc1b-4fc507bd19ea',
-    'main-validation-study-szzob',]
+    corrupted_workspace_names = %w[upload-wizard-test-pb6y0 main-validation-study-hnds4 main-validation-study-szzob
+      testing-study-jdwjl testing-study-6ec03b371c7cf59262df98424ff516e1 new-study-99f2a94b-f8a6-4efb-aa3b-4ecef24e1dad
+      test-study-06387e09-6661-45b5-bc1b-4fc507bd19ea download-agreement-686b0d44c83659cd70616a3f0874fde5]
     workspaces.each do |workspace|
       ws_attr = workspace.dig('workspace')
       ws_name = ws_attr['name']
