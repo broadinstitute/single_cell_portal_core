@@ -45,7 +45,7 @@ function GenomeView({ studyAccession, trackFileName, uniqueGenes, isVisible, exp
       let listToShow = trackFileList.tracks
       if (trackFileName) {
         // if the user has specified a particular file name (likely because they are coming from the study download tab)
-        // then limit the lsit of files to show to just that one
+        // then limit the list of files to show to just that one
         listToShow = listToShow.filter(file => file.name === trackFileName)
       }
       const fileNamesToShow = listToShow.map(file => file.name).join(',')
@@ -63,6 +63,8 @@ function GenomeView({ studyAccession, trackFileName, uniqueGenes, isVisible, exp
   // Search gene in IGV upon searching gene in Explore
   useEffect(() => {
     if (window.igvBrowser) {
+      const genomeId = trackFileList.tracks[0].genomeAssembly
+      getDefaultLocus(queriedGenes, uniqueGenes, genomeId)
       window.igvBrowser.search(queriedGenes[0])
     }
   }, [queriedGenes])
@@ -154,6 +156,38 @@ function getGenesTrack(gtfFiles, genome, genesTrackName) {
   return genesTrack
 }
 
+/** Get genomic feature or coordinations to view in IGV */
+function getDefaultLocus(queriedGenes, uniqueGenes, genomeId) {
+  let fallbackLocus
+  if (genomeId === 'Macaca_fascicularis_5.0') {
+    fallbackLocus = 'chr1:1-2'
+  } else {
+    fallbackLocus = 'GAPDH'
+  }
+
+  let locus
+  if (queriedGenes.length > 0) {
+    // The user searched within a study for one or multiple genes
+    locus = [queriedGenes[0]]
+  } else if (uniqueGenes.length > 0) {
+    // The user is viewing the default cluster plot, so find
+    // a reasonable gene to view
+    let defaultGeneIndex = uniqueGenes.indexOf('GAPDH')
+    if (defaultGeneIndex === -1) {
+      defaultGeneIndex = uniqueGenes.indexOf('Gapdh')
+    }
+    if (defaultGeneIndex === -1) {
+      defaultGeneIndex = 0 // If GAPDH not found, use first gene in matrix
+    }
+    locus = [uniqueGenes[defaultGeneIndex]]
+  } else {
+    // Rarely, users will upload BAMs and *not* matrices.  This accounts for
+    // that case.
+    locus = [fallbackLocus]
+  }
+  return locus
+}
+
 /**
  * Instantiates and renders igv.js widget on the page
  */
@@ -175,10 +209,7 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
 
   let reference
   let searchOptions
-  let fallbackLocus
   if (genomeId === 'Macaca_fascicularis_5.0') {
-    fallbackLocus = 'chr1:1-2'
-
     // To consider:
     //  - Update genomes pipeline to make such files automatically reproducible
     const genomeAnnotationObj = tracks[0].genomeAnnotation
@@ -207,63 +238,19 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
       }
     }
   } else {
-    fallbackLocus = 'myc'
     reference = genomeId
   }
-  let locus
-  if (queriedGenes.length > 0) {
-    // The user searched within a study for one or multiple genes
-    locus = [queriedGenes[0]]
-  } else if (uniqueGenes.length > 0) {
-    // The user is viewing the default cluster plot, so find
-    // a reasonable gene to view
-    let defaultGeneIndex = uniqueGenes.indexOf('GAPDH')
-    if (defaultGeneIndex === -1) {
-      defaultGeneIndex = uniqueGenes.indexOf('Gapdh')
-    }
-    if (defaultGeneIndex === -1) {
-      defaultGeneIndex = 0 // If GAPDH not found, use first gene in matrix
-    }
-    locus = [uniqueGenes[defaultGeneIndex]]
-  } else {
-    // Rarely, users will upload BAMs and *not* matrices.  This accounts for
-    // that case.
-    locus = [fallbackLocus]
-  }
+
+  const locus = getDefaultLocus(queriedGenes, uniqueGenes, genomeId)
 
   const genesTrackName = `Genes | ${tracks[0].genomeAnnotation.name}`
   const genesTrack = getGenesTrack(gtfFiles, genomeId, genesTrackName)
 
-  // const tsv = {
-  //   url
-  // }
-  // const bedTrack = {
-  //   url: tsv.url,
-  //   indexURL: tsv.indexUrl,
-  //   oauthToken: getReadOnlyToken(),
-  //   label: tsv.name
-  // }
-  // const otherTracks = getTracks()
-
-
-  const bedTrack = {
-    url: 'https://www.googleapis.com/storage/v1/b/fc-5203332f-a200-4b9e-8a0e-1f2a892de5fb/o/pbmc_3k_atac_fragments.possorted.bed.gz?alt=media',
-    indexUrl: 'https://www.googleapis.com/storage/v1/b/fc-5203332f-a200-4b9e-8a0e-1f2a892de5fb/o/pbmc_3k_atac_fragments.possorted.bed.gz.tbi?alt=media',
-    name: 'pbmc_3k_atac_fragments.possorted.bed.gz',
-    visibilityWindow: 100_000,
-    height: 250,
-    featureHeight: 7,
-    expandedVGap: 1,
-    displayMode: 'SQUISHED',
-    colorBy: 'score',
-    format: 'bed'
-  }
-  const otherTracks = getTracks([bedTrack])
+  const otherTracks = getTracks(tracks.filter(track => track.format === 'bed'))
 
   const bamTracks = getTracks(tracks.filter(track => track.format === 'bam'))
   const trackList = [genesTrack].concat(otherTracks, bamTracks)
 
-  // console.log('reference', reference)
   const igvOptions = { reference, locus, tracks: trackList }
 
   if (typeof searchOptions !== 'undefined') {
