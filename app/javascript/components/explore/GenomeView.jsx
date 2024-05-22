@@ -188,17 +188,8 @@ function getDefaultLocus(queriedGenes, uniqueGenes, genomeId) {
   return locus
 }
 
-/**
- * Instantiates and renders igv.js widget on the page
- */
-async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queriedGenes) {
-  // Bail if already displayed
-
-  delete igv.browser
-
-  const igvContainer = document.getElementById(containerId)
-  igvContainer.innerHTML = ''
-
+/** Get configuration options for IGV genome browser) */
+export function getIgvOptions(tracks, gtfFiles, uniqueGenes, queriedGenes) {
   let genomeId = tracks[0].genomeAssembly
 
   if (genomeId === 'GRCh38') {
@@ -256,6 +247,22 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
   if (typeof searchOptions !== 'undefined') {
     igvOptions['search'] = searchOptions
   }
+
+  return igvOptions
+}
+
+/**
+ * Instantiates and renders igv.js widget on the page
+ */
+async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queriedGenes) {
+  // Bail if already displayed
+
+  delete igv.browser
+
+  const igvContainer = document.getElementById(containerId)
+  igvContainer.innerHTML = ''
+
+  const igvOptions = getIgvOptions(tracks, gtfFiles, uniqueGenes, queriedGenes)
 
   window.igvBrowser = await igv.createBrowser(igvContainer, igvOptions)
 

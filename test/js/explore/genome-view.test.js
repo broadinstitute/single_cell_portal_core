@@ -3,15 +3,15 @@ import React from 'react'
 const fetch = require('node-fetch')
 import '@testing-library/jest-dom/extend-expect'
 import { render, screen, waitFor } from '@testing-library/react'
-
-import GenomeView from 'components/explore/GenomeView'
+import GenomeView, { getIgvOptions } from 'components/explore/GenomeView'
+import { trackInfo } from './genome-view.test.data.js'
 
 describe('IGV genome browser in Explore tab', () => {
   beforeAll(() => {
     global.fetch = fetch
   })
 
-  it('should show IGV tracks for BED and BAM files', async () => {
+  it('should show spinner while IGV does not have content', async () => {
     const studyAccession = 'SCP123'
     const trackFileName = ''
     const uniqueGenes = ['GAD1', 'LDLR', 'GAPDH', 'GCG', 'ACE2']
@@ -28,11 +28,19 @@ describe('IGV genome browser in Explore tab', () => {
       updateExploreParams={updateExploreParams}
     />))
 
-    // console.log('container')
-    // console.log(container)
-    screen.debug(container, 100000)
 
-    const igvRoot = container.querySelector('.igv-root-div')
-    expect(igvRoot).toHaveLength(1)
+    const spinner = container.querySelector('.gene-load-spinner')
+    expect(spinner.getAttribute('data-icon')).toEqual('dna')
+  })
+
+  it('should get IGV configuration object', async () => {
+    const tracks = trackInfo.tracks
+    const gtfFiles = trackInfo.gtfFiles
+    const uniqueGenes = ['GAD1', 'LDLR', 'GAPDH', 'GCG', 'ACE2']
+    const queriedGenes = ['GCG']
+
+    const igvOptions = getIgvOptions(tracks, gtfFiles, uniqueGenes, queriedGenes)
+
+    expect(igvOptions.reference).toEqual('hg38')
   })
 })
