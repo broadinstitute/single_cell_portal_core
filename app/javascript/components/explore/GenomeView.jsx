@@ -73,21 +73,23 @@ function GenomeView({ studyAccession, trackFileName, uniqueGenes, isVisible, exp
    * This should get refactored when/if we migrate the other study-overview tabs to react
   */
   useEffect(() => {
-    $(document).on('click', '.track-browse-genome', e => {
-      $('#study-visualize-nav > a').click()
-      const selectedTrack = $(e.target).attr('data-filename')
-      updateExploreParams({ trackFileName: selectedTrack, tab: 'genome' })
-    })
-    $(document).on('click', '#study-visualize-nav > a', () => {
+    if (window.$) {
+      $(document).on('click', '.track-browse-genome', e => {
+        $('#study-visualize-nav > a').click()
+        const selectedTrack = $(e.target).attr('data-filename')
+        updateExploreParams({ trackFileName: selectedTrack, tab: 'genome' })
+      })
+      $(document).on('click', '#study-visualize-nav > a', () => {
       // IGV doesn't handle rendering to hidden divs. So for edge cases where this renders but is not shown
       // (e.g. someone is viewing the genome tab, then navigates to summary tab, then reloads the page)
       // we trigger a resize event so that IGV will know to redraw itself
-      if (isVisible) {
-        window.dispatchEvent(new Event('resize'))
+        if (isVisible) {
+          window.dispatchEvent(new Event('resize'))
+        }
+      })
+      return () => {
+        $(document).off('click', '.track-browse-genome')
       }
-    })
-    return () => {
-      $(document).off('click', '.track-browse-genome')
     }
   }, [])
 
