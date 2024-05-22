@@ -5,6 +5,9 @@ import Adapter from 'enzyme-adapter-react-16'
 // Mock `window.location` with Jest spies and extend expect
 import 'jest-location-mock'
 
+const jQ = jest.requireActual('jquery')
+global.$ = jQ
+
 configure({ adapter: new Adapter() })
 
 // Jest breaks on `import.meta.hot`, so mock it
