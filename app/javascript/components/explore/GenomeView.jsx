@@ -264,7 +264,6 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
   log('igv:initialize')
 }
 
-
 // Monkey patch getKnownGenome to remove baked-in genes track.
 // We use a different gene annotation source, in a different track order,
 // so removing this default gives our genome browser instance a more

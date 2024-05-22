@@ -1,4 +1,4 @@
-import React, { useEffect, useContext } from 'react'
+import React, { useEffect } from 'react'
 
 import ExpressionFileForm from './ExpressionFileForm'
 import { rawCountsFileFilter, getExpressionFileInfoMessage } from './RawCountsStep'
