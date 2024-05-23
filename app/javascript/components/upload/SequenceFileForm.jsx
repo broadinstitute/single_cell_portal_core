@@ -164,15 +164,16 @@ function IndexFileForm({
   let optionsIdField = 'bam_id'
   let displayName = 'BAM'
   let extension = 'bai'
-  if (parentFile.file_type == 'BED') {
+
+  if (parentFile.file_type === 'BED') {
     indexFileType = 'Tab Index'
     optionsIdField = 'bed_id'
     displayName = 'Tab'
     extension = 'tbi'
   }
 
-
-  const validationMessages = validateFile({ file, allFiles, allowedFileExts: FileTypeExtensions.bai })
+  const allowedFileExts = FileTypeExtensions[extension]
+  const validationMessages = validateFile({ file, allFiles, allowedFileExts })
 
   // add an empty file to be filled in if none are there
   useEffect(() => {
@@ -200,6 +201,7 @@ function IndexFileForm({
   if (!file) {
     return <span></span>
   }
+
   return <div className="row">
     <div className="col-md-12 ">
       <div className="sub-form">
@@ -208,7 +210,7 @@ function IndexFileForm({
           file={file}
           allFiles={allFiles}
           updateFile={updateFile}
-          allowedFileExts={FileTypeExtensions[extension]}
+          allowedFileExts={allowedFileExts}
           validationMessages={validationMessages}
           bucketName={bucketName}/>
         <TextFormField label="Description" fieldName="description" file={file} updateFile={updateFile}/>
