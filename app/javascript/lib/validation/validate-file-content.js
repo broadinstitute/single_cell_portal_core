@@ -47,6 +47,9 @@ export const REQUIRED_CONVENTION_COLUMNS = [
  */
 const MAX_GZIP_FILESIZE = 50 * oneMiB
 
+/** File extensions / suffixes that indicate content must be gzipped */
+const EXTENSIONS_MUST_GZIP = ['gz', 'bam', 'tbi']
+
 /**
  * Verify headers are unique and not empty
  */
@@ -317,8 +320,28 @@ export async function parseClusterFile(chunker, mimeType) {
   return { issues, delimiter, numColumns: headers[0].length }
 }
 
+/** Convert array of strings to a prose "or" or "and" phrase
+ *
+ * Example: prettyAndOr(['A', 'B', 'C'], 'or') > '"A", "B", or "C"' */
+function prettyAndOr(stringArray, operator) {
+  let phrase
+  const quoted = stringArray.map(ext => `"${ext}"`)
 
-/** confirm that the presence/absence of a .gz suffix matches the lead byte of the file
+  if (quoted.length === 1) {
+    phrase = quoted[0]
+  } else if (quoted.length === 2) {
+    phrase = quoted.join(` ${operator} `)
+    // e.g. "A" and "B"
+  } else if (quoted.length > 2) {
+    // e.g. "A", "B", or "C"
+    const last = quoted.slice(-1)[0]
+    phrase = `${quoted.slice(-1).join(', ') } ${operator} ${last}`
+  }
+
+  return phrase
+}
+
+/** Confirm that the presence/absence of a .gz extension matches the lead byte of the file
  * Throws an exception if the gzip is conflicted, since we don't want to parse further in that case
 */
 export async function validateGzipEncoding(file, fileType) {
@@ -333,17 +356,23 @@ export async function validateGzipEncoding(file, fileType) {
 
   // read a single byte from the file to check the magic number
   const firstByte = await readFileBytes(file, 0, 1)
-  if (fileName.endsWith('.gz') || fileName.endsWith('.bam')) {
+
+  const extension = fileName.split('.').slice(-1)[0]
+  const extensionMustGzip = EXTENSIONS_MUST_GZIP.includes(extension)
+
+  if (extensionMustGzip) {
     if (firstByte === GZIP_MAGIC_NUMBER) {
       isGzipped = true
     } else {
       throw new ParseException('encoding:invalid-gzip-magic-number',
-        'File has a .gz or .bam suffix but does not seem to be gzipped')
+        `Files with extension "${extension}" must be gzipped; please gzip and retry`)
     }
   } else {
     if (firstByte === GZIP_MAGIC_NUMBER) {
-      throw new ParseException('encoding:missing-gz-extension',
-        'File seems to be gzipped but does not have a ".gz" or ".bam" extension')
+      const prettyExts = prettyAndOr(EXTENSIONS_MUST_GZIP)
+      const problem = `Only files with extensions ${prettyExts}) may be gzipped`
+      const solution = 'please decompress file and retry'
+      throw new ParseException('encoding:missing-gz-extension', `${problem}; ${solution}`)
     } else {
       isGzipped = false
     }
