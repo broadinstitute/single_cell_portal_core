@@ -15,7 +15,7 @@ To pull the Docker image that Single Cell Portal is built off of, run the follow
 docker pull gcr.io/broad-singlecellportal-staging/single-cell-portal:development
 ```
 
-This is not strictly necessary as a pre-flight step, but will make calling `bin/boot_docker` faster 
+This is not strictly necessary as a pre-flight step, but will make calling `bin/boot_docker` faster
 (see [Running the Container](#running-the-container)) for more information.
 
 To build the Docker image locally, run the following command from the project root directory:
@@ -26,7 +26,7 @@ docker build -t gcr.io/broad-singlecellportal-staging/single-cell-portal:develop
 This will start the automated process of building the Docker image for running the portal.  The image is based on the
 [Passenger-docker baseimage](https://github.com/phusion/passenger-docker) and comes with Ruby, Nginx, and Passenger by
 default, but built on a different base image and with additional packages added to the [Broad Institute SCP Rails baseimage](https://github.com/broadinstitute/scp-rails-baseimage/)
-which pulls from the original baseimage. The extended image contains other required libraries, and self-signed SSL 
+which pulls from the original baseimage. The extended image contains other required libraries, and self-signed SSL
 certificates & CA Authority for doing local development in https.
 
 *If this is your first time building the image, it may take several minutes to download and install everything.*
@@ -70,16 +70,16 @@ deploying their own instance will need to register for an account with Sentry, a
 environment variable when deploying your instance (see [Running the Container](#running-the-container) and
 [DOCKER RUN COMMAND ENVIRONMENT VARIABLES](#docker-run-command-environment-variables) for more detail).
 
-Note - while the Sentry DSN is stored with secrets and may appear as one, it is not a secret and Sentry's 
-official stance is that [the Sentry DSN does not need to be kept private](https://github.com/getsentry/sentry-docs/pull/3123/files). 
+Note - while the Sentry DSN is stored with secrets and may appear as one, it is not a secret and Sentry's
+official stance is that [the Sentry DSN does not need to be kept private](https://github.com/getsentry/sentry-docs/pull/3123/files).
 
 #### [TCell Web Application Firewall](https://tcell.io)
 
 The Single Cell Portal employs the TCell web application firewall as part of its security configuration.  This is not
 required for the portal to function (this feature is opt-in and only functions when certain parameters are set at runtime).
 Developers deploying their own instance will need to register for an account with TCell, and then set the <code>TCELL_AGENT_APP_ID</code>,
-<code>TCELL_AGENT_API_KEY</code> and <code>T_CELL_SERVER_AGENT_API_KEY</code>environment variables when deploying your 
-instance (see [Running the Container](#running-the-container) and [DOCKER RUN COMMAND ENVIRONMENT VARIABLES](#docker-run-command-environment-variables) 
+<code>TCELL_AGENT_API_KEY</code> and <code>T_CELL_SERVER_AGENT_API_KEY</code>environment variables when deploying your
+instance (see [Running the Container](#running-the-container) and [DOCKER RUN COMMAND ENVIRONMENT VARIABLES](#docker-run-command-environment-variables)
 for more detail).
 
 #### [Google Analytics](https://analytics.google.com)
@@ -238,8 +238,8 @@ integration.
 [Google Analytics](https://analytics.google.com) if you have created an app ID.
 1. **TCELL_AGENT_APP_ID** (passed with -e): Sets the TCELL_AGENT_APP_ID environment variable to enable the TCell web application firewall (if enabled)
 1. **TCELL_AGENT_API_KEY** (passed with -e): Sets the TCELL_AGENT_API_KEY environment variable to enable the TCell web application firewall client-side (if enabled)
-1. **T_CELL_SERVER_AGENT_API_KEY** (passed with -e): Sets the T_CELL_SERVER_AGENT_API_KEY environment variable to enable 
-   the TCell web application firewall server-side (if enabled). Note - this variable does not follow the normal "TCELL_*" 
+1. **T_CELL_SERVER_AGENT_API_KEY** (passed with -e): Sets the T_CELL_SERVER_AGENT_API_KEY environment variable to enable
+   the TCell web application firewall server-side (if enabled). Note - this variable does not follow the normal "TCELL_*"
    pattern to avoid issues with the client throwing warning messages to `STDOUT`
 1. **PROD_DATABASE_PASSWORD** (passed with -e, for production deployments only): Sets the prod database password for accessing
 the production database instance.  Only needed when deploying the portal in production mode.  See <code>config/mongoid.yml</code>
@@ -339,34 +339,34 @@ To create an admin user account:
 Developing on SCP without a Docker container, while less robust, opens up some faster development paradigms, including live css/js reloading, faster build times, and byebug debugging in rails.  See [Non-containerized development README](./NON_CONTAINERIZED_DEV_README.md) for instructions
 
 ## HYBRID DOCKER LOCAL DEVELOPMENT
-SCP team members can develop locally using Docker with a 'hybrid' setup that merges the speed of developing outside the 
-container with the ease of using Docker for package/gem management.  This allows using `vite` for hot module replacement 
-(HMR) along with all the other features of native Rails development, but uses `docker-compose` to build and deploy 
+SCP team members can develop locally using Docker with a 'hybrid' setup that merges the speed of developing outside the
+container with the ease of using Docker for package/gem management.  This allows using `vite` for hot module replacement
+(HMR) along with all the other features of native Rails development, but uses `docker-compose` to build and deploy
 containers locally.  Both containers are built off of the `single-cell-portal:development` Docker image referenced above.
 
-This setup will behave almost exactly like developing 
-outside of the container - you can edit files in your IDE and have them updated in the container in real time, and any 
-JS/CSS changes will automatically reload thanks to HMR without any page refresh.  The startup process (minus any 
-`docker pull` latency) should only take ~30s, though if you update any JS dependencies it can take 2-3 minutes to run 
-`yarn install` on boot depending on how constrained your local Docker installation is in terms of CPU/RAM.  You can 
-reduce this latency by rebuilding the `single-cell-portal:development` Docker image locally.  See the section on 
+This setup will behave almost exactly like developing
+outside of the container - you can edit files in your IDE and have them updated in the container in real time, and any
+JS/CSS changes will automatically reload thanks to HMR without any page refresh.  The startup process (minus any
+`docker pull` latency) should only take ~30s, though if you update any JS dependencies it can take 2-3 minutes to run
+`yarn install` on boot depending on how constrained your local Docker installation is in terms of CPU/RAM.  You can
+reduce this latency by rebuilding the `single-cell-portal:development` Docker image locally.  See the section on
 [building the Docker image](#pullingbuilding-the-docker-image) above for more information.
 
 ### USING DOCKER COMPOSE LOCALLY
-To leverage this setup, there are two shell scripts for setup and cleanup, respectively.  To start the local instance, 
+To leverage this setup, there are two shell scripts for setup and cleanup, respectively.  To start the local instance,
 run:
 
     bin/docker-compose-setup.sh
 
-This will pull all necessary secrets from `vault` and write env files to pass to Docker, then create two containers 
-locally: `single_cell` (application server), and `single_cell_vite` (vite dev server). Both containers will install 
-their dependencies automatically if you have updated any gems or JS packages and then start their required services.  In 
-addition to the Rails server, the `single_cell` container will run any required migrations and start `Delayed::Job` on 
-startup.  Both containers can be stopped by pressing `Ctrl-C`.  This will not remove either container, and they can both 
+This will pull all necessary secrets from `vault` and write env files to pass to Docker, then create two containers
+locally: `single_cell` (application server), and `single_cell_vite` (vite dev server). Both containers will install
+their dependencies automatically if you have updated any gems or JS packages and then start their required services.  In
+addition to the Rails server, the `single_cell` container will run any required migrations and start `Delayed::Job` on
+startup.  Both containers can be stopped by pressing `Ctrl-C`.  This will not remove either container, and they can both
 be restarted with the same command.
 
-You can also start these containers headlessly by passing `-d`.  This runs the same startup commands, but will not 
-attach `STDOUT` from the containers to the terminal.  When using this option, note that it will take between 30-60 
+You can also start these containers headlessly by passing `-d`.  This runs the same startup commands, but will not
+attach `STDOUT` from the containers to the terminal.  When using this option, note that it will take between 30-60
 seconds before the portal instance is available at `https://localhost:3000/single_cell`.
 
     bin/docker-compose-setup.sh -d
@@ -375,36 +375,36 @@ To stop both services and clean up the Docker environment, run:
 
     bin/docker-compose-cleanup.sh
 
-This will remove both containers, their dependent volumes, and reset any local configuration files to their non-Dockerized 
+This will remove both containers, their dependent volumes, and reset any local configuration files to their non-Dockerized
 format.
 
 ## UPDATING JAVASCRIPT PEER/INDIRECT DEPENDENCIES
-Since `yarn` does not automatically upgrade peer/indirect dependencies automatically (it will only update packages declared 
+Since `yarn` does not automatically upgrade peer/indirect dependencies automatically (it will only update packages declared
 in package.json), The following snippet can be used to update dependencies not covered in `yarn upgrade`:
 
 https://gist.github.com/pftg/fa8fe4ca2bb4638fbd19324376487f42
 
 ## CACHING IN LOCAL DEVELOPMENT
-Single Cell Portal employs action caching for all data visualization requests, such as viewing cluster, violin, or dot 
-plots.  As such, making code changes during local development may not always reflect the most recent changes as a particular 
+Single Cell Portal employs action caching for all data visualization requests, such as viewing cluster, violin, or dot
+plots.  As such, making code changes during local development may not always reflect the most recent changes as a particular
 request may have already been cached by the server.
 
-In order to turn caching on/off dynamically without having to restart the server, developers can run the following command 
+In order to turn caching on/off dynamically without having to restart the server, developers can run the following command
 from the terminal:
 
     bin/rails dev:cache
 
-This will add/remove a file in the `tmp` directory called `caching-dev.txt` that will govern whether or not action caching 
+This will add/remove a file in the `tmp` directory called `caching-dev.txt` that will govern whether or not action caching
 is enabled.  NOTE: if you are developing inside Docker, you must run this command inside the running container.
 
-If you want to clear the entire cache for the portal while running, you can enter the Rails console and run the `Rails.cache.clear` 
+If you want to clear the entire cache for the portal while running, you can enter the Rails console and run the `Rails.cache.clear`
 command which will clear the entire Rails cache (actions and assets, such as CSS and JS assets):
 
     root@localhost:/home/app/webapp# bin/rails c
     Loading development environment (Rails 5.2.4.4)
     2.6.5 :001 > Rails.cache.clear
-   
-This will then return a list of cache paths that have been deleted.  If you encounter a `Directory not empty` error when 
+
+This will then return a list of cache paths that have been deleted.  If you encounter a `Directory not empty` error when
 running this command, simply retry until it succeeds, as it usually only takes one or two attempts.
 
 ## TESTS
@@ -412,7 +412,7 @@ running this command, simply retry until it succeeds, as it usually only takes o
 ### UNIT & INTEGRATION TESTS
 There is a unit & integration test framework for the Single Cell Portal that is run using the built-in test Rails
 harness, which uses [Test::Unit](https://github.com/test-unit/test-unit) and [minitest-rails](https://github.com/blowmage/minitest-rails).
-These tests can be run natively in Ruby once all project secrets have been loaded.  Each 
+These tests can be run natively in Ruby once all project secrets have been loaded.  Each
 test handles its own setup/teardown, and no test data needs to be seeded in order to run tests.
 
 To run all unit/integration tests:
@@ -431,7 +431,7 @@ bin/rails test test/api/search_controller_test.rb -n /facet/ # run all tests wit
 bin/rails test test/api/search_controller_test.rb -n 'test_should_search_facet_filters' # run exact match on name
 ```
 
-Additionally, these tests can be run automatically in Docker.  To run the unit & integration test suite, the `boot_docker` 
+Additionally, these tests can be run automatically in Docker.  To run the unit & integration test suite, the `boot_docker`
 script can be used:
 
     bin/boot_docker -e test -k (service account key path) -K (read-only service account path)
@@ -460,10 +460,6 @@ It is also possible to pass a fully-qualified single-quoted name to run only a s
 run only the test called `'test_workspaces'` in `test/integration/fire_cloud_client_test.rb`
 
     bin/boot_docker -e test -t test/integration/fire_cloud_client_test.rb -R 'test_workspaces' (... rest of parameters)
-
-### UI REGRESSION SUITE
-#### DEPRECATED
-Do not use test/ui_test_suite.rb as it no longer corresponds to most active UI features.
 
 ## GOOGLE DEPLOYMENT
 
@@ -643,9 +639,9 @@ To use this feature, run the `bin/enable_maintenance.sh [on/off]` script accordi
 
 ### RUBOCOP
 
-This project is configured to use [RuboCop](https://docs.rubocop.org/rubocop/index.html) for static code analysis.  There 
-is a [shell script](.bin/run_rubocop.sh) that allows for running RuboCop only on files that have been edited since the last 
-commit to Git.  Configuration for RuboCop can be found [here](.rubocop.yml), or referenced from RuboCop's 
+This project is configured to use [RuboCop](https://docs.rubocop.org/rubocop/index.html) for static code analysis.  There
+is a [shell script](.bin/run_rubocop.sh) that allows for running RuboCop only on files that have been edited since the last
+commit to Git.  Configuration for RuboCop can be found [here](.rubocop.yml), or referenced from RuboCop's
 [default configuration](https://github.com/rubocop-hq/rubocop/blob/master/config/default.yml).
 
 #### USAGE
@@ -653,11 +649,11 @@ commit to Git.  Configuration for RuboCop can be found [here](.rubocop.yml), or 
 To run RuboCop normally on all your local changes:
 
     bin/run_rubocop.sh
-    
+
 Run in "lint-only" mode (does not enforce style checks):
 
     bin/run_rubocop.sh -l
-    
+
 Run in "safe auto-correct" mode (will automatically correct any issues, where possible):
 
     bin/run_rubocop.sh -a
