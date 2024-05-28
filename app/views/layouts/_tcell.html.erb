@@ -1,5 +1,0 @@
-<% if ENV['TCELL_AGENT_APP_ID'].present? && ENV['TCELL_AGENT_API_KEY'].present? %>
-  <script src="https://us.jsagent.tcell.insight.rapid7.com/tcellagent.min.js" nonce="<%= content_security_policy_script_nonce %>"
-          tcellappid="<%= ENV['TCELL_AGENT_APP_ID'] %>" tcellapikey="<%= ENV['TCELL_AGENT_API_KEY'] %>"
-          tcellbaseurl="https://us.agent.tcell.insight.rapid7.com/api/v1"></script>
-<% end %>

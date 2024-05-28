@@ -493,9 +493,6 @@ GEM
     sys-filesystem (1.4.1)
       ffi (~> 1.1)
     systemu (2.6.5)
-    tcell_agent (2.7.0)
-      ffi (>= 1.3.0)
-      json (>= 1.8)
     test-unit (3.4.1)
       power_assert
     thor (1.3.1)
@@ -607,7 +604,6 @@ DEPENDENCIES
   stackprof
   swagger-blocks
   sys-filesystem
-  tcell_agent
   test-unit
   time_difference
   truncate_html
