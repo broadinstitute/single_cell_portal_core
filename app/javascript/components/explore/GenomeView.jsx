@@ -158,7 +158,7 @@ function getGenesTrack(gtfFiles, genome, genesTrackName) {
   return genesTrack
 }
 
-/** Get genomic feature or coordinations to view in IGV */
+/** Get genomic feature or coordinates to view in IGV */
 function getDefaultLocus(queriedGenes, uniqueGenes, genomeId) {
   let fallbackLocus
   if (genomeId === 'Macaca_fascicularis_5.0') {
