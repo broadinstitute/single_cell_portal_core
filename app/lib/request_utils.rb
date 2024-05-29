@@ -102,6 +102,15 @@ class RequestUtils
     id_string
   end
 
+  # correct any inconsistencies in study-based URLs
+  def self.format_study_url(study, fullpath, params)
+    if params[:identifier].present?
+      fullpath.gsub(/#{params[:identifier]}/, "#{study.accession}/#{study.url_safe_name}")
+    else
+      fullpath.gsub(/#{params[:study_name]}/, study.url_safe_name)
+    end
+  end
+
   # return the hostname (and port, if present) for this instance
   # e.g. "localhost", "localhost:3000", "singlecell.broadinstitute.org"
   def self.get_hostname

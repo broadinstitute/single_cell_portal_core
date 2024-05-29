@@ -194,4 +194,32 @@ class RequestUtilsTest < ActionDispatch::IntegrationTest
       assert_equal path, RequestUtils.data_fragment_url(file, 'cluster',  gs_url: false, file_type_detail:)
     end
   end
+
+  test 'should properly format incorrect study url' do
+    identifier = "#{@public_study.accession}/#{@public_study.url_safe_name}"
+    params = {
+      study_name: 'foo',
+      accession: @public_study.accession,
+      genes: 'GAD1',
+      facets: 'species--group--study%3Ahuman'
+    }
+    legacy_params = {
+      identifier: @public_study.accession,
+      genes: 'GAD1',
+      facets: 'species--group--study%3Ahuman'
+    }
+    expected_path = "/single_cell/study/#{identifier}?genes=#{params[:genes]}&facets=#{params[:facets]}"
+    bad_path = "/single_cell/study/#{params[:accession]}/#{params[:study_name]}?genes=#{params[:genes]}&facets=#{params[:facets]}"
+    legacy_path = "/single_cell/study/#{legacy_params[:identifier]}?genes=#{legacy_params[:genes]}&facets=#{legacy_params[:facets]}"
+    assert_equal expected_path, RequestUtils.format_study_url(@public_study, bad_path, params)
+    assert_equal expected_path, RequestUtils.format_study_url(@public_study, legacy_path, legacy_params)
+    # sanity check that properly formatted urls aren't changed
+    valid_params = {
+      study_name: @public_study.url_safe_name,
+      accession: @public_study.accession,
+      genes: 'GAD1',
+      facets: 'species--group--study%3Ahuman'
+    }
+    assert_equal expected_path, RequestUtils.format_study_url(@public_study, expected_path, valid_params)
+  end
 end
