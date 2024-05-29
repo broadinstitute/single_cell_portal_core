@@ -116,6 +116,41 @@ const SafeGenomeView = withErrorBoundary(GenomeView)
 export default SafeGenomeView
 
 /**
+   * Apply crude faceted search in igv.js
+   *
+   * This is a proof of concept.  Lots is hard-coded and brittle, intentionally, as an
+   * engineering experiment to demonstrate that genomic features can be arbitrarily
+   * filtered directly in client-side JS in the browser.
+   */
+function filterAtac() {
+  const ti = 4 // Track index
+  let originalFeaturesChr12
+  const igvBrowser = window.igvBrowser
+  if (typeof originalFeaturesChr12 === 'undefined') {
+    originalFeaturesChr12 = igvBrowser.trackViews[ti].track.featureSource.featureCache.allFeatures[12]
+  }
+  const selection = {}
+  const inputs = document.querySelectorAll('.filters input')
+  inputs.forEach(input => {
+    if (input.checked) {
+      selection[input.value] = 1
+    }
+  })
+
+  const filteredFeatures = originalFeaturesChr12.filter(feature => feature.score in selection)
+
+  // How many layers of features can be stacked / piled up.
+  const maxRows = 20
+
+  igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
+  igvBrowser.trackViews[ti].track.featureSource.featureCache = new igv.FeatureCache(filteredFeatures, igvBrowser.genome)
+  igvBrowser.trackViews[ti].track.clearCachedFeatures()
+  igvBrowser.trackViews[ti].track.updateViews()
+}
+
+window.filterAtac = filterAtac
+
+/**
  * Get tracks for selected TSV (e.g. BAM, BED) files, to show genomic features
  */
 function getTracks(tsvAndIndexFiles) {
@@ -190,7 +225,7 @@ function getDefaultLocus(queriedGenes, uniqueGenes, genomeId) {
   return locus
 }
 
-/** Get configuration options for IGV genome browser) */
+/** Get configuration options for IGV genome browser */
 export function getIgvOptions(tracks, gtfFiles, uniqueGenes, queriedGenes) {
   let genomeId = tracks[0].genomeAssembly
 
@@ -198,6 +233,12 @@ export function getIgvOptions(tracks, gtfFiles, uniqueGenes, queriedGenes) {
     genomeId = 'hg38'
     gtfFiles[genomeId] = gtfFiles['GRCh38']
     delete gtfFiles['GRCh38']
+  }
+
+  if (genomeId === 'GRCm38') {
+    genomeId = 'mm10'
+    gtfFiles[genomeId] = gtfFiles['GRCm38']
+    delete gtfFiles['GRCm38']
   }
 
   let reference
@@ -266,6 +307,7 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
 
   const igvOptions = getIgvOptions(tracks, gtfFiles, uniqueGenes, queriedGenes)
 
+  window.igv = igv
   window.igvBrowser = await igv.createBrowser(igvContainer, igvOptions)
 
   // Log igv.js initialization in Google Analytics
@@ -273,19 +315,3 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
   log('igv:initialize')
 }
 
-// Monkey patch getKnownGenome to remove baked-in genes track.
-// We use a different gene annotation source, in a different track order,
-// so removing this default gives our genome browser instance a more
-// polished feel.
-const originalGetKnownGenomes = igv.GenomeUtils.getKnownGenomes
-igv.GenomeUtils.getKnownGenomes = function() {
-  return originalGetKnownGenomes.apply(this).then(reference => {
-    const newRef = {}
-    newRef['GRCm38'] = reference['mm10'] // Fix name
-    Object.keys(reference).forEach(key => {
-      delete reference[key].tracks
-      newRef[key] = reference[key]
-    })
-    return newRef
-  })
-}

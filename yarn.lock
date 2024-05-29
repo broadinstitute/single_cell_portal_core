@@ -2214,10 +2214,10 @@
   resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.27.8.tgz#6667fac16c436b5434a387a34dedb013198f6e6e"
   integrity sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==
 
-"@single-cell-portal/igv@2.6.4-beta.1":
-  version "2.6.4-beta.1"
-  resolved "https://registry.yarnpkg.com/@single-cell-portal/igv/-/igv-2.6.4-beta.1.tgz#1e79523b615c79599a8a96eb4f3f7f14e5f84ce7"
-  integrity sha512-BMpHsdLX7XNpt8CD45vEseUSWt4AvrQJSSlgglrqCljqjzfvM2pBt7HlJGjmL5MPQdeFSayAWPmKz0ddLEY0tg==
+"@single-cell-portal/igv@2.16.0-alpha.2":
+  version "2.16.0-alpha.2"
+  resolved "https://registry.yarnpkg.com/@single-cell-portal/igv/-/igv-2.16.0-alpha.2.tgz#bf51049db6f593c07dfeeec26be7de6a2902d7e3"
+  integrity sha512-1zwJGNH0Sb6izgivmHiQnmzeoMINJmCfiH3AeCocgVnjLurs64zaDERAv2APaqKv7h5nqK2KlRhhGO5vr1H9Hw==
 
 "@sinonjs/commons@^1.7.0":
   version "1.8.6"

@@ -35,7 +35,7 @@ More context: https://github.com/broadinstitute/single_cell_portal_core/pull/202
     maxRows = 20
 
     igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
-    igvBrowser.trackViews[ti].track.featureSource.featureCache = new igv.FeatureCache$1(filteredFeatures, igvBrowser.genome)
+    igvBrowser.trackViews[ti].track.featureSource.featureCache = new igv.FeatureCache(filteredFeatures, igvBrowser.genome)
     igvBrowser.trackViews[ti].track.clearCachedFeatures()
     igvBrowser.trackViews[ti].track.updateViews()
   }
