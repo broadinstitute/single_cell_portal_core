@@ -531,12 +531,12 @@ export async function fetchStudyUserInfo(studyAccession, mock=false) {
 
 
 /**
-* Returns bam file information for the study, suitable for passing to IGV
+* Returns track data for the study, suitable for passing to IGV
 *
 * @param {String} studyAccession Study accession
 */
-export async function fetchBamFileInfo(studyAccession, mock=false) {
-  const apiUrl = `/studies/${studyAccession}/explore/bam_file_info`
+export async function fetchTrackInfo(studyAccession, mock=false) {
+  const apiUrl = `/studies/${studyAccession}/explore/track_info`
   const [exploreInit] =
     await scpApi(apiUrl, defaultInit(), mock, false)
   return exploreInit
@@ -983,7 +983,7 @@ export async function fetchBookmarks(mock=false) {
  */
 export async function createBookmark(bookmark, mock=false) {
   const init = defaultPostInit(mock)
-  init.body = JSON.stringify({bookmark: bookmark})
+  init.body = JSON.stringify({ bookmark })
 
   const [response] = await scpApi('/bookmarks', init, mock, false)
   return response
@@ -999,7 +999,7 @@ export async function createBookmark(bookmark, mock=false) {
 export async function updateBookmark(bookmarkId, updatedBookmark, mock=false) {
   const init = Object.assign({}, defaultInit(), {
     method: 'PATCH',
-    body: JSON.stringify({bookmark: updatedBookmark})
+    body: JSON.stringify({ bookmark: updatedBookmark })
   })
   const [response] = await scpApi(`/bookmarks/${bookmarkId}`, init, mock, false)
   return response
@@ -1013,7 +1013,7 @@ export async function updateBookmark(bookmarkId, updatedBookmark, mock=false) {
  */
 export async function deleteBookmark(bookmarkId, mock=false) {
   const init = Object.assign({}, defaultInit(), {
-    method: 'DELETE',
+    method: 'DELETE'
   })
   const [response] = await scpApi(`/bookmarks/${bookmarkId}`, init, mock)
   return response

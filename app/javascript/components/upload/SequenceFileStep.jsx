@@ -11,7 +11,7 @@ const DEFAULT_NEW_SEQUENCE_FILE = {
   options: {}
 }
 
-const sequenceFileTypes = ['BAM', 'Fastq']
+const sequenceFileTypes = ['BED', 'BAM', 'Fastq']
 const sequenceFileFilter = file => sequenceFileTypes.includes(file.file_type)
 
 export default {
@@ -66,7 +66,7 @@ function SequenceForm({
     </div>
     {sequenceFiles.length > 1 && <AddFileButton addNewFile={addNewFile} newFileTemplate={DEFAULT_NEW_SEQUENCE_FILE} />}
     {sequenceFiles.map(file => {
-      const associatedBaiFile = findBundleChildren(file, formState.files)[0]
+      const associatedIndexFile = findBundleChildren(file, formState.files)[0]
       return <SequenceFileForm
         key={file.oldId ? file.oldId : file._id}
         file={file}
@@ -77,7 +77,7 @@ function SequenceForm({
         deleteFile={deleteFile}
         sequenceFileTypes={sequenceFileTypes}
         fileMenuOptions={serverState.menu_options}
-        associatedBaiFile={associatedBaiFile}
+        associatedIndexFile={associatedIndexFile}
         bucketName={formState.study.bucket_id}
         isInitiallyExpanded={sequenceFiles.length === 1} />
     })}

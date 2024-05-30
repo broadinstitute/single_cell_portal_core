@@ -214,7 +214,7 @@ module Api
                   key :type, :array
                   items do
                     key :type, :string
-                    key :enum, %w[Fastq BAM]
+                    key :enum, %w[Fastq BAM BED]
                   end
                 end
                 property :genome_assemblies do
@@ -266,7 +266,7 @@ module Api
             library_preparation_protocol: ExpressionFileInfo::LIBRARY_PREPARATION_VALUES,
             modality: ExpressionFileInfo::MODALITY_VALUES,
             biosample_input_type: ExpressionFileInfo::BIOSAMPLE_INPUT_TYPE_VALUES,
-            sequence_file_types: ['Fastq', 'BAM'],
+            sequence_file_types: ['Fastq', 'BAM', 'BED'],
             genome_assemblies: ActiveRecordUtils.pluck_to_hash(GenomeAssembly, [:id, :name, :taxon_id])
               .map do |k| # return the hash but with ids converted to strings
                 k[:id] = k[:id].to_s

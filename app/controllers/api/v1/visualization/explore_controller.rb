@@ -109,9 +109,9 @@ module Api
           render json: AnnotationVizService.get_study_annotation_options(@study, current_api_user)
         end
 
-        def bam_file_info
+        def track_info
           render json: {
-            bamAndBaiFiles: @study.get_bam_files,
+            tracks: @study.get_tracks,
             gtfFiles: @study.get_genome_annotations_by_assembly
           }
         end
@@ -138,6 +138,7 @@ module Api
           end
           spatial_group_options = ClusterVizService.load_spatial_options(study)
           bam_bundle_list = study.study_file_bundles.where(bundle_type: 'BAM').pluck(:original_file_list)
+          bed_bundle_list = study.study_file_bundles.where(bundle_type: 'BED').pluck(:original_file_list)
           precomputed_scores = ActiveRecordUtils.pluck_to_hash(
             study.study_files.where(file_type: 'Gene List'),
               [:name, :heatmap_file_info, :description]
@@ -147,6 +148,7 @@ module Api
             taxonNames: study.expressed_taxon_names,
             inferCNVIdeogramFiles: ideogram_files,
             bamBundleList: bam_bundle_list,
+            bedBundleList: bed_bundle_list,
             uniqueGenes: study.unique_genes,
             geneLists: precomputed_scores,
             precomputedHeatmapLabel: study.default_options[:precomputed_heatmap_label],
