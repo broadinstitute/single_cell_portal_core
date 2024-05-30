@@ -124,28 +124,35 @@ export default SafeGenomeView
    */
 function filterAtac() {
   const ti = 4 // Track index
-  let originalFeaturesChr12
   const igvBrowser = window.igvBrowser
-  if (typeof originalFeaturesChr12 === 'undefined') {
-    originalFeaturesChr12 = igvBrowser.trackViews[ti].track.featureSource.featureCache.allFeatures[12]
+  console.log('originalFeaturesChr12')
+  if (typeof window.originalFeaturesChr12 === 'undefined') {
+    window.originalFeaturesChr12 = igvBrowser.trackViews[ti].track.featureSource.featureCache.allFeatures.chr12
   }
-  const selection = {}
-  const inputs = document.querySelectorAll('.filters input')
-  inputs.forEach(input => {
-    if (input.checked) {
-      selection[input.value] = 1
-    }
-  })
+  const selection = { 2: 1 }
+  // const inputs = document.querySelectorAll('.filters input')
+  // inputs.forEach(input => {
+  //   if (input.checked) {
+  //     selection[input.value] = 1
+  //   }
+  // })
 
-  const filteredFeatures = originalFeaturesChr12.filter(feature => feature.score in selection)
+
+  console.log('filterAtac 1')
+  const filteredFeatures = window.originalFeaturesChr12.filter(feature => feature.score in selection)
+  console.log('filterAtac 2')
 
   // How many layers of features can be stacked / piled up.
   const maxRows = 20
 
   igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
+  console.log('filterAtac 3')
   igvBrowser.trackViews[ti].track.featureSource.featureCache = new igv.FeatureCache(filteredFeatures, igvBrowser.genome)
+  console.log('filterAtac 4')
   igvBrowser.trackViews[ti].track.clearCachedFeatures()
+  console.log('filterAtac 5')
   igvBrowser.trackViews[ti].track.updateViews()
+  console.log('filterAtac 6')
 }
 
 window.filterAtac = filterAtac
@@ -163,6 +170,7 @@ function getTracks(tsvAndIndexFiles) {
     tsvTrack.label = tsvTrack.name
     tsvTrack.indexURL = decodeURIComponent(tsvTrack.indexUrl)
     tsvTrack.url = decodeURIComponent(tsvTrack.url)
+    tsvTrack.colorBy = 'score'
 
     tsvTracks.push(tsvTrack)
   }
