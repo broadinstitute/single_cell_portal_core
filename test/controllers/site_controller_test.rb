@@ -47,14 +47,23 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
     assert_equal(site_path, path, "Redirect did not successfully complete, #{site_path} != #{path}")
   end
 
-  test 'should redirect to correct study name url' do
+  test 'should load study from correct accession and preserve params' do
     correct_study_url = view_study_path(accession: @study.accession, study_name: @study.url_safe_name)
     incorrect_study_url = view_study_path(accession: @study.accession, study_name: "bogus_name")
     get incorrect_study_url
-    assert_response 302, 'Did not redirect to correct url'
+    assert_response 200
+    assert path.include?(@study.accession)
+    assert path.include?('bogus_name'), 'did not ignore incorrect name in path'
+    legacy_path = legacy_study_path(identifier: @study.accession)
+    get legacy_path
     assert_redirected_to correct_study_url, 'Url did not redirected successfully'
     follow_redirect!
+    # test query param persistence
     assert_equal(correct_study_url, path, "Url is #{path}. Expected #{correct_study_url}")
+    path_with_params = legacy_study_path(identifier: @study.accession, genes: 'GAD1')
+    get path_with_params
+    follow_redirect!
+    assert_equal request.query_string, 'genes=GAD1', "did not preserve query parameters: #{request.fullpath}"
   end
 
   test 'should create and delete deployment notification banner' do
