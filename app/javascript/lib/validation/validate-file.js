@@ -34,7 +34,7 @@ function validateFileName(file, studyFile, allStudyFiles, allowedFileExts=['*'])
   }
 
   if (!allowedFileExts.includes('*') && !allowedFileExts.some(ext => file.name.endsWith(ext))) {
-    const msg = `Allowed extensions are ${allowedFileExts.join(' ')}`
+    const msg = `Allowed extensions are ${allowedFileExts.join(', ')}`
     issues.push(['error', 'filename:extension', msg])
   }
 
@@ -154,7 +154,7 @@ async function validateRemoteFile(
   // since we're not validating, we're just determining if the file exists
   const maxBytes = fileType === 'AnnData' ? 100 : MAX_SYNC_CSFV_BYTES
   const response = await fetchBucketFile(bucketName, fileName, maxBytes)
-  let fileInfo, issues, perfTime, readRemoteTime
+  let fileInfo; let issues; let perfTime; let readRemoteTime
   if (response.ok) {
     const content = await response.text()
     readRemoteTime = Math.round(performance.now() - requestStart)
@@ -174,7 +174,7 @@ async function validateRemoteFile(
     perfTime = parseResults['perfTime']
   } else {
     readRemoteTime = Math.round(performance.now() - requestStart)
-    fileInfo = { fileName, linesRead: 0}
+    fileInfo = { fileName, linesRead: 0 }
     issues = [
       [
         'warn', 'file:access-failure', 'Unable to access the requested file. It will be fully validated after saving, ' +

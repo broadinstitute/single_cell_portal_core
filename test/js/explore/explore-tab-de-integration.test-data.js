@@ -26,7 +26,7 @@ export const exploreParams = {
   'distributionPoints': '',
   'tab': '',
   'heatmapFit': '',
-  'bamFileName': '',
+  'trackFileName': '',
   'ideogramFileId': '',
   'expressionFilter': [
     0,

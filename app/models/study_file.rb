@@ -23,8 +23,9 @@ class StudyFile
 
   # constants, used for statuses and file types
   STUDY_FILE_TYPES = ['Cluster', 'Coordinate Labels', 'Expression Matrix', 'MM Coordinate Matrix', '10X Genes File',
-                      '10X Barcodes File', 'Gene List', 'Metadata', 'Fastq', 'BAM', 'BAM Index', 'Documentation',
-                      'Other', 'Analysis Output', 'Ideogram Annotations', 'AnnData', 'Seurat',
+                      '10X Barcodes File', 'Gene List', 'Metadata',
+                      'Fastq', 'BAM', 'BAM Index', 'BED', 'Tab Index',
+                      'Documentation', 'Other', 'Analysis Output', 'Ideogram Annotations', 'AnnData', 'Seurat',
                       'Differential Expression'].freeze
   CUSTOM_FILE_TYPE_NAMES = {
     'MM Coordinate Matrix' => 'Sparse matrix (.mtx)',
@@ -43,14 +44,16 @@ class StudyFile
     fastq fastq.zip fastq.gz fastq.tar.gz fq fq.zip fq.gz fq.tar.gz bam bam.gz bam.bai bam.gz.bai
   ).freeze
   PRIMARY_DATA_TYPES = ['Fastq', 'BAM', 'BAM Index'].freeze
-  TAXON_REQUIRED_TYPES = ['Fastq', 'BAM', 'Expression Matrix', 'MM Coordinate Matrix', 'Ideogram Annotations'].freeze
-  ASSEMBLY_REQUIRED_TYPES = ['BAM', 'Ideogram Annotations'].freeze
+  TAXON_REQUIRED_TYPES = [
+    'Fastq', 'BAM', 'BED', 'Expression Matrix', 'MM Coordinate Matrix', 'Ideogram Annotations'
+  ].freeze
+  ASSEMBLY_REQUIRED_TYPES = ['BAM', 'BED', 'Ideogram Annotations'].freeze
   GZIP_MAGIC_NUMBER = "\x1f\x8b".force_encoding(Encoding::ASCII_8BIT).freeze
   REQUIRED_ATTRIBUTES = %w(file_type name).freeze
   # allowed bulk download file types
   # 'Expression' covers dense & sparse matrix files
   # 'None' is used when only bulk downloading a single directory_listing folder
-  BULK_DOWNLOAD_TYPES = ['Expression', 'Metadata', 'Cluster', 'Coordinate Labels', 'Fastq', 'BAM', 'Documentation',
+  BULK_DOWNLOAD_TYPES = ['Expression', 'Metadata', 'Cluster', 'Coordinate Labels', 'Fastq', 'BAM', 'BED', 'Documentation',
                          'Other', 'Analysis Output', 'Ideogram Annotations', 'None'].freeze
 
   # Constants for scoping values for AnalysisParameter inputs/outputs
@@ -900,6 +903,8 @@ class StudyFile
         selector += '.matrix_id'
       when 'BAM'
         selector += '.bam_id'
+      when 'BED'
+        selector += '.bed_id'
       when 'Cluster'
         selector += '.cluster_file_id'
         query_id = self.id.to_s
@@ -919,6 +924,8 @@ class StudyFile
         selector = :matrix_id
       when 'BAM Index'
         selector = :bam_id
+      when 'Tab Index'
+        selector = :bed_id
       when 'Coordinate Labels'
         selector = :cluster_file_id
       end

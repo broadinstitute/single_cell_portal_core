@@ -106,6 +106,7 @@ export function findBundleChildren(file, files) {
     const parentFields = [
       f.options?.matrix_id,
       f.options?.bam_id,
+      f.options?.bed_id,
       f.options?.cluster_file_id,
       f.study_file_bundle_id
     ]
@@ -217,7 +218,8 @@ function validateRequiredFields(file, requiredFields, validationMessages) {
 
 /** checks that a bundle parent is already saved */
 function validateBundleParent(file, allFiles, validationMessages) {
-  const parentId = file.options?.matrix_id || file.options?.bam_id || file.options?.cluster_file_id
+  const opts = file.options
+  const parentId = opts?.matrix_id || opts?.bam_id || opts?.bed_id || opts?.cluster_file_id
   if (parentId) {
     // don't allow saving until parent file is saved
     const parentFile = allFiles.find(f => f._id === parentId)
@@ -325,8 +327,11 @@ const plainTextExtensions = ['.txt', '.tsv', '.text', '.csv']
 const mtxExtensions = ['.mtx', '.mm', '.txt', '.text']
 const miscExtensions = ['.txt', '.text', '.tsv', '.csv', '.jpg', '.jpeg', '.png', '.pdf',
   '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip', '.loom', '.ipynb']
-const sequenceExtensions = ['.fq', '.fastq', '.fq.tar.gz', '.fastq.tar.gz', '.fq.gz', '.fastq.gz', '.bam']
+const sequenceExtensions = [
+  '.fq', '.fastq', '.fq.tar.gz', '.fastq.tar.gz', '.fq.gz', '.fastq.gz', '.bam', '.bed.gz'
+]
 const baiExtensions = ['.bai']
+const tbiExtensions = ['.tbi']
 const annDataExtensions = ['.h5', '.h5ad', '.hdf5']
 const seuratExtensions = ['.Rds', '.rds', '.RDS', '.seuratdata', '.h5seurat', '.seuratdisk', '.Rda', '.rda']
 
@@ -336,6 +341,7 @@ export const FileTypeExtensions = {
   misc: miscExtensions.concat(miscExtensions.map(ext => `${ext}.gz`)),
   sequence: sequenceExtensions,
   bai: baiExtensions,
+  tbi: tbiExtensions,
   annData: annDataExtensions,
   seurat: seuratExtensions
 }

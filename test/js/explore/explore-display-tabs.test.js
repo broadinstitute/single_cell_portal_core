@@ -178,11 +178,11 @@ describe('explore tabs are activated based on study info and parameters', () => 
     const exploreParams = {
       cluster: 'foo',
       annotation: { name: 'bar', type: 'group', scope: 'study' },
-      bamFileName: 'sample1.bam',
+      trackFileName: 'sample1.bam',
       userSpecified: {
         annotation: true,
         cluster: true,
-        bamFileName: true
+        trackFileName: true
       },
       facets: ''
     }
