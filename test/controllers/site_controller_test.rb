@@ -62,6 +62,7 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
     assert_equal(correct_study_url, path, "Url is #{path}. Expected #{correct_study_url}")
     path_with_params = legacy_study_path(identifier: @study.accession, genes: 'GAD1')
     get path_with_params
+    assert_response 302
     follow_redirect!
     assert_equal request.query_string, 'genes=GAD1', "did not preserve query parameters: #{request.fullpath}"
   end
