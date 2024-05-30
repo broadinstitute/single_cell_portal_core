@@ -161,7 +161,8 @@ function getTracks(tsvAndIndexFiles) {
 
     tsvTrack.oauthToken = getReadOnlyToken()
     tsvTrack.label = tsvTrack.name
-    tsvTrack.indexURL = tsvTrack.indexUrl
+    tsvTrack.indexURL = decodeURIComponent(tsvTrack.indexUrl)
+    tsvTrack.url = decodeURIComponent(tsvTrack.url)
 
     tsvTracks.push(tsvTrack)
   }
@@ -176,10 +177,14 @@ function getGenesTrack(gtfFiles, genome, genesTrackName) {
   // gtfFiles assigned in _genome.html.erb
   const gtfFile = gtfFiles[genome].genome_annotations
 
+  // SCP encodes these URLs, but IGV does too.  This avoids double-encoding.
+  gtfFile.url = decodeURIComponent(gtfFile.url)
+  gtfFile.indexUrl = decodeURIComponent(gtfFile.indexUrl)
+
   const genesTrack = {
     name: genesTrackName,
-    url: `${gtfFile.url}?alt=media`,
-    indexURL: `${gtfFile.indexUrl}?alt=media`,
+    url: gtfFile.url,
+    indexURL: gtfFile.indexUrl,
     type: 'annotation',
     format: 'gtf',
     sourceType: 'file',
