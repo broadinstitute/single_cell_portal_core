@@ -103,12 +103,24 @@ class RequestUtils
   end
 
   # correct any inconsistencies in study-based URLs
-  def self.format_study_url(study, fullpath, params)
-    if params[:identifier].present?
-      fullpath.gsub(/#{params[:identifier]}/, "#{study.accession}/#{study.url_safe_name}")
-    else
-      fullpath.gsub(/#{params[:study_name]}/, study.url_safe_name)
+  def self.format_study_url(study, fullpath)
+    begin
+      url = URI.parse(fullpath)
+    rescue URI::InvalidURIError => e
+      # default to study overview in case of invalid URL
+      ErrorTracker.report_exception(e, nil, study, { fullpath: })
+      return "/single_cell/study/#{study.accession}/#{study.url_safe_name}"
     end
+    # throw exception if somehow we got a fully-qualified URL that isn't pointing at the right host
+    if url.absolute? && url.hostname != ENV['HOSTNAME']
+      raise SecurityError, "attempted redirect to external host: #{url.hostname} via #{fullpath}"
+    end
+    # manually reconstruct URL to avoid injection while preserving query params
+    # this covers accession- or study_name-only urls called from :legacy_study
+    sanitized_path = "/single_cell/study/#{study.accession}/#{study.url_safe_name}"
+    query_string = url.query.present? ? "?#{url.query}" : ''
+    fragment = url.fragment.present? ? "##{url.fragment}" : ''
+    "#{sanitized_path}#{query_string}#{fragment}"
   end
 
   # return the hostname (and port, if present) for this instance

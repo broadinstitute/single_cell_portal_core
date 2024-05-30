@@ -71,7 +71,7 @@ class SiteController < ApplicationController
   def legacy_study
     study = Study.any_of({url_safe_name: params[:identifier]},{accession: params[:identifier]}).first
     if study.present?
-      fixed_path = RequestUtils.format_study_url(study, request.fullpath, params)
+      fixed_path = RequestUtils.format_study_url(study, request.fullpath)
       redirect_to fixed_path and return
     else
       redirect_to merge_default_redirect_params(site_path, scpbr: params[:scpbr]),
@@ -622,10 +622,6 @@ class SiteController < ApplicationController
       redirect_to merge_default_redirect_params(site_path, scpbr: params[:scpbr]),
                   alert: "You either do not have permission to perform that action, or #{params[:accession]} does not " \
                          "exist.  #{SCP_SUPPORT_EMAIL}" and return
-    end
-    unless @study.url_safe_name == params[:study_name]
-      fixed_path = RequestUtils.format_study_url(@study, request.fullpath, params)
-      redirect_to fixed_path
     end
   end
 

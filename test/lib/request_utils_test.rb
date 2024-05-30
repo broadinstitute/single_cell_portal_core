@@ -197,29 +197,18 @@ class RequestUtilsTest < ActionDispatch::IntegrationTest
 
   test 'should properly format incorrect study url' do
     identifier = "#{@public_study.accession}/#{@public_study.url_safe_name}"
+    base_path = "/single_cell/study/#{identifier}"
     params = {
-      study_name: 'foo',
-      accession: @public_study.accession,
       genes: 'GAD1',
       facets: 'species--group--study%3Ahuman'
     }
-    legacy_params = {
-      identifier: @public_study.accession,
-      genes: 'GAD1',
-      facets: 'species--group--study%3Ahuman'
-    }
-    expected_path = "/single_cell/study/#{identifier}?genes=#{params[:genes]}&facets=#{params[:facets]}"
-    bad_path = "/single_cell/study/#{params[:accession]}/#{params[:study_name]}?genes=#{params[:genes]}&facets=#{params[:facets]}"
-    legacy_path = "/single_cell/study/#{legacy_params[:identifier]}?genes=#{legacy_params[:genes]}&facets=#{legacy_params[:facets]}"
-    assert_equal expected_path, RequestUtils.format_study_url(@public_study, bad_path, params)
-    assert_equal expected_path, RequestUtils.format_study_url(@public_study, legacy_path, legacy_params)
-    # sanity check that properly formatted urls aren't changed
-    valid_params = {
-      study_name: @public_study.url_safe_name,
-      accession: @public_study.accession,
-      genes: 'GAD1',
-      facets: 'species--group--study%3Ahuman'
-    }
-    assert_equal expected_path, RequestUtils.format_study_url(@public_study, expected_path, valid_params)
+    expected_path = "#{base_path}?genes=#{params[:genes]}&facets=#{params[:facets]}"
+    legacy_path = "/single_cell/study/#{@public_study.accession}?genes=#{params[:genes]}&facets=#{params[:facets]}"
+    assert_equal expected_path, RequestUtils.format_study_url(@public_study, legacy_path)
+    # validation checks
+    assert_equal base_path, RequestUtils.format_study_url(@public_study, "(@#&%@#HF(")
+    assert_raises SecurityError do
+      RequestUtils.format_study_url(@public_study, "https://malicious-host.com#{base_path}")
+    end
   end
 end
