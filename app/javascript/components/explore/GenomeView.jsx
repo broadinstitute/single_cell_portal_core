@@ -171,6 +171,7 @@ function getTracks(tsvAndIndexFiles, dataType) {
     tsvTrack.indexURL = decodeURIComponent(tsvTrack.indexUrl)
     tsvTrack.url = decodeURIComponent(tsvTrack.url)
     if (dataType && dataType === 'atac-fragment') {
+      tsvTrack.dataType = 'atac-fragment'
       tsvTrack.colorBy = 'score'
       tsvTrack.height = 300
       tsvTrack.colorTable = {
@@ -333,6 +334,46 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
 
   window.igv = igv
   window.igvBrowser = await igv.createBrowser(igvContainer, igvOptions)
+
+
+  window.igvBrowser.on('trackclick', (track, popoverData) => {
+    // Don't show popover when there's no data.
+    if (!popoverData || !popoverData.length) {
+      return false
+    }
+
+    let markup = '<div class="igv-popover"><div>'
+
+    const spanStyle = 'style="font-weight: bolder"'
+
+    popoverData.forEach(nameValue => {
+      if (nameValue.name) {
+        // const value = nameValue.name.toLowerCase() === 'name' ?
+        //       `<a href="https://uswest.ensembl.org/Multi/Search/Results?q=${ nameValue.value }">${ nameValue.value }</a>` :
+        //   nameValue.value
+        let name = nameValue.name
+        const config = track.config
+        if (config.format === 'bed' && config.dataType === 'atac-fragment') {
+          const nameLc = name.toLowerCase()
+          if (nameLc === 'score') {
+            name = 'Read count'
+          } else if (nameLc === 'name') {
+            name = 'ATAC barcode'
+          }
+        }
+        const value = nameValue.value
+        markup += `<div><span ${spanStyle}>${ name }</span>&nbsp;&nbsp;&nbsp;${value}</div>`
+      } else {
+        // not a name/value pair
+        markup += `<div>${ nameValue.toString() }</div>`
+      }
+    })
+
+    markup += '</div></div>'
+
+    // By returning a string from the trackclick handler we're asking IGV to use our custom HTML in its pop-over.
+    return markup
+  })
 
   // Log igv.js initialization in Google Analytics
   ga('send', 'event', 'igv', 'initialize')
