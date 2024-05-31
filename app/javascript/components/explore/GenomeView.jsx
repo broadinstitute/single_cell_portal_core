@@ -172,13 +172,14 @@ function getTracks(tsvAndIndexFiles, dataType) {
     tsvTrack.url = decodeURIComponent(tsvTrack.url)
     if (dataType && dataType === 'atac-fragment') {
       tsvTrack.colorBy = 'score'
+      tsvTrack.height = 300
       tsvTrack.colorTable = {
         '1': '#AAA',
-        '2': '#866',
-        '3': '#844',
-        '4': '#600',
-        '5': '#600',
-        '6': '#600'
+        '2': '#C88',
+        '3': '#C66',
+        '4': '#E44',
+        '5': '#E44',
+        '6': '#E44'
       }
     }
 
