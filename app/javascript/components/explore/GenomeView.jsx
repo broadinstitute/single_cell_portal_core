@@ -160,7 +160,7 @@ window.filterAtac = filterAtac
 /**
  * Get tracks for selected TSV (e.g. BAM, BED) files, to show genomic features
  */
-function getTracks(tsvAndIndexFiles) {
+function getTracks(tsvAndIndexFiles, dataType) {
   const tsvTracks = []
 
   for (let i = 0; i < tsvAndIndexFiles.length; i++) {
@@ -170,7 +170,17 @@ function getTracks(tsvAndIndexFiles) {
     tsvTrack.label = tsvTrack.name
     tsvTrack.indexURL = decodeURIComponent(tsvTrack.indexUrl)
     tsvTrack.url = decodeURIComponent(tsvTrack.url)
-    tsvTrack.colorBy = 'score'
+    if (dataType && dataType === 'atac-fragment') {
+      tsvTrack.colorBy = 'score'
+      tsvTrack.colorTable = {
+        '1': '#AAA',
+        '2': '#866',
+        '3': '#844',
+        '4': '#600',
+        '5': '#600',
+        '6': '#600'
+      }
+    }
 
     tsvTracks.push(tsvTrack)
   }
@@ -293,7 +303,7 @@ export function getIgvOptions(tracks, gtfFiles, uniqueGenes, queriedGenes) {
   const genesTrackName = `Genes | ${tracks[0].genomeAnnotation.name}`
   const genesTrack = getGenesTrack(gtfFiles, genomeId, genesTrackName)
 
-  const otherTracks = getTracks(tracks.filter(track => track.format === 'bed'))
+  const otherTracks = getTracks(tracks.filter(track => track.format === 'bed'), 'atac-fragment')
 
   const bamTracks = getTracks(tracks.filter(track => track.format === 'bam'))
   const trackList = [genesTrack].concat(otherTracks, bamTracks)
