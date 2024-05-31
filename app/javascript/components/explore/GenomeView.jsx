@@ -103,7 +103,7 @@ function GenomeView({ studyAccession, trackFileName, uniqueGenes, isVisible, exp
       <LoadingSpinner testId="genome-view-loading-icon"/>
     }
     <div>
-      <div id={igvContainerId}></div>
+      <div id={igvContainerId} style={{ marginBottom: '20px' }}></div>
     </div>
     { trackFileName && trackFileList?.tracks?.length > 1 &&
       <a className="action" onClick={showAllFiles}>See all sequence files for this study</a>
@@ -171,7 +171,8 @@ function getTracks(tsvAndIndexFiles, dataType) {
     tsvTrack.indexURL = decodeURIComponent(tsvTrack.indexUrl)
     tsvTrack.url = decodeURIComponent(tsvTrack.url)
     if (dataType && dataType === 'atac-fragment') {
-      tsvTrack.dataType = 'atac-fragment'
+      tsvTrack.displayMode = 'SQUISHED'
+      tsvTrack.dataType = 'atac-fragment' // SCP custom track attribute
       tsvTrack.colorBy = 'score'
       tsvTrack.height = 300
       tsvTrack.colorTable = {
