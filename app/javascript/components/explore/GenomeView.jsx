@@ -164,25 +164,28 @@ function getTracks(tsvAndIndexFiles, dataType) {
   const tsvTracks = []
 
   for (let i = 0; i < tsvAndIndexFiles.length; i++) {
-    const tsvTrack = tsvAndIndexFiles[i]
+    let tsvTrack = tsvAndIndexFiles[i]
 
     tsvTrack.oauthToken = getReadOnlyToken()
     tsvTrack.label = tsvTrack.name
     tsvTrack.indexURL = decodeURIComponent(tsvTrack.indexUrl)
     tsvTrack.url = decodeURIComponent(tsvTrack.url)
     if (dataType && dataType === 'atac-fragment') {
-      tsvTrack.displayMode = 'SQUISHED'
-      tsvTrack.dataType = 'atac-fragment' // SCP custom track attribute
-      tsvTrack.colorBy = 'score'
-      tsvTrack.height = 300
-      tsvTrack.colorTable = {
-        '1': '#AAA',
-        '2': '#C88',
-        '3': '#C66',
-        '4': '#E44',
-        '5': '#E44',
-        '6': '#E44'
+      const atacProps = {
+        displayMode: 'SQUISHED',
+        colorBy: 'score',
+        height: 300,
+        colorTable: {
+          '1': '#AAA',
+          '2': '#C88',
+          '3': '#C66',
+          '4': '#E44',
+          '5': '#E44',
+          '6': '#E44'
+        },
+        dataType: 'atac-fragment' // SCP custom track attribute
       }
+      tsvTrack = Object.assign(tsvTrack, atacProps)
     }
 
     tsvTracks.push(tsvTrack)
