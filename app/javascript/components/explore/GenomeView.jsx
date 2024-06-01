@@ -311,7 +311,7 @@ export function getIgvOptions(tracks, gtfFiles, uniqueGenes, queriedGenes) {
   const bamTracks = getTracks(tracks.filter(track => track.format === 'bam'))
   const trackList = [genesTrack].concat(otherTracks, bamTracks)
 
-  const igvOptions = { reference, locus, tracks: trackList }
+  const igvOptions = { reference, locus, tracks: trackList, igvGenomeId: genomeId }
 
   if (typeof searchOptions !== 'undefined') {
     igvOptions['search'] = searchOptions
@@ -319,6 +319,7 @@ export function getIgvOptions(tracks, gtfFiles, uniqueGenes, queriedGenes) {
 
   return igvOptions
 }
+
 
 /**
  * Instantiates and renders igv.js widget on the page
@@ -333,9 +334,15 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
 
   const igvOptions = getIgvOptions(tracks, gtfFiles, uniqueGenes, queriedGenes)
 
+  // Omit default IGV "RefSeq genes" track
+  const originalInitializeGenomes = igv.GenomeUtils.initializeGenomes
+  igv.GenomeUtils.initializeGenomes = async function(config) {
+    await originalInitializeGenomes(config)
+    igv.GenomeUtils.KNOWN_GENOMES[igvOptions.igvGenomeId].tracks = []
+  }
+
   window.igv = igv
   window.igvBrowser = await igv.createBrowser(igvContainer, igvOptions)
-
 
   window.igvBrowser.on('trackclick', (track, popoverData) => {
     // Don't show popover when there's no data.
