@@ -68,7 +68,7 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
 
   test 'should destroy differential expression results on file deletion' do
     study = FactoryBot.create(:study,
-                              name_prefix: 'DiffExp DeleteQueueJon Test',
+                              name_prefix: 'DiffExp DeleteQueue Test',
                               user: @user,
                               test_array: @@studies_to_clean)
     cells = %w[A B C D E F G]
