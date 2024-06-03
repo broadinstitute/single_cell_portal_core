@@ -194,4 +194,21 @@ class RequestUtilsTest < ActionDispatch::IntegrationTest
       assert_equal path, RequestUtils.data_fragment_url(file, 'cluster',  gs_url: false, file_type_detail:)
     end
   end
+
+  test 'should properly format incorrect study url' do
+    identifier = "#{@public_study.accession}/#{@public_study.url_safe_name}"
+    base_path = "/single_cell/study/#{identifier}"
+    params = {
+      genes: 'GAD1',
+      facets: 'species--group--study%3Ahuman'
+    }
+    expected_path = "#{base_path}?genes=#{params[:genes]}&facets=#{params[:facets]}"
+    legacy_path = "/single_cell/study/#{@public_study.accession}?genes=#{params[:genes]}&facets=#{params[:facets]}"
+    assert_equal expected_path, RequestUtils.format_study_url(@public_study, legacy_path)
+    # validation checks
+    assert_equal base_path, RequestUtils.format_study_url(@public_study, "(@#&%@#HF(")
+    assert_raises SecurityError do
+      RequestUtils.format_study_url(@public_study, "https://malicious-host.com#{base_path}")
+    end
+  end
 end
