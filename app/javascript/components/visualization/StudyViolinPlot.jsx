@@ -70,6 +70,8 @@ export async function filterResults(
     filteredCellIndexes.add(filteredCells[i].allCellsIndex)
   }
 
+  const filteredCellNames = new Set()
+
   Object.keys(results.values).forEach(group => {
     filteredValues[group] = {
       annotations: [],
@@ -82,13 +84,17 @@ export async function filterResults(
       const cellIndex = allCellsIndex[group][i]
       if (filteredCellIndexes.has(cellIndex)) {
         const cellName = cellNames[i]
+        filteredCellNames[cellName] = 1
         filteredValues[group].cells.push(cellName)
         filteredValues[group].y.push(results.values[group].y[i])
+        filteredCellNames.add(cellName)
       }
     }
   })
 
   results.values = filteredValues
+
+  window.SCP.filteredCellNames = filteredCellNames
 
   return results
 }

@@ -733,16 +733,19 @@ export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
           enabledTabs = ['correlatedScatter', 'dotplot', 'heatmap']
         }
       }
-    } else if (isNumeric) {
-      enabledTabs = ['annotatedScatter', 'scatter']
     } else {
-      enabledTabs = ['scatter', 'distribution']
+      if (isNumeric) {
+        enabledTabs = ['annotatedScatter', 'scatter']
+      } else {
+        enabledTabs = ['scatter', 'distribution']
+      }
+
+      if (hasGenomeFiles) {
+        enabledTabs.push('genome')
+      }
     }
   } else if (hasClusters) {
     enabledTabs = ['scatter']
-  }
-  if (hasGenomeFiles) {
-    enabledTabs.push('genome')
   }
   if (hasIdeogramOutputs) {
     enabledTabs.push('infercnv-genome')

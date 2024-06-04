@@ -155,7 +155,38 @@ function filterAtac() {
   console.log('filterAtac 6')
 }
 
+/** Filter genomic features */
+function filterFeatures() {
+  const ti = 4 // Track index
+  const igvBrowser = window.igvBrowser
+
+  const filteredCellNames = window.SCP.filteredCellNames
+  console.log('filteredCellNames')
+  console.log(filteredCellNames)
+  if (typeof window.originalFeaturesChr12 === 'undefined') {
+    window.originalFeaturesChr12 = igvBrowser.trackViews[ti].track.featureSource.featureCache.allFeatures.chr12
+  }
+
+  console.log('filterFeatures 1')
+  const filteredFeatures = window.originalFeaturesChr12.filter(feature => filteredCellNames.has(feature.name))
+  console.log('filterFeatures 2')
+
+  // How many layers of features can be stacked / piled up.
+  const maxRows = 20
+
+  igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
+  console.log('filterFeatures 3')
+  igvBrowser.trackViews[ti].track.featureSource.featureCache = new igv.FeatureCache(filteredFeatures, igvBrowser.genome)
+  console.log('filterFeatures 4')
+  igvBrowser.trackViews[ti].track.clearCachedFeatures()
+  console.log('filterFeatures 5')
+  igvBrowser.trackViews[ti].track.updateViews()
+  console.log('filterFeatures 6')
+}
+
 window.filterAtac = filterAtac
+
+window.filterFeatures = filterFeatures
 
 /**
  * Get tracks for selected TSV (e.g. BAM, BED) files, to show genomic features
