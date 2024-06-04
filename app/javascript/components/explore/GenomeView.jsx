@@ -115,6 +115,24 @@ function GenomeView({ studyAccession, trackFileName, uniqueGenes, isVisible, exp
 const SafeGenomeView = withErrorBoundary(GenomeView)
 export default SafeGenomeView
 
+/** Get unfiltered genomic features on current chromosome */
+function getOriginalChrFeatures(trackIndex, igvBrowser) {
+  console.log('window.originalFeatures 1')
+  console.log(window.originalFeatures)
+  if (typeof window.originalFeatures === 'undefined') {
+    window.originalFeatures = igvBrowser.trackViews[trackIndex].track.featureSource.featureCache.allFeatures
+  }
+
+  console.log('window.originalFeatures 2')
+  console.log(window.originalFeatures)
+
+  const chr = window.igvBrowser.tracks[0].trackView.viewports[0].featureCache.chr
+
+  const originalChrFeatures = window.originalFeatures[chr]
+
+  return originalChrFeatures
+}
+
 /**
    * Apply crude faceted search in igv.js
    *
@@ -123,12 +141,12 @@ export default SafeGenomeView
    * filtered directly in client-side JS in the browser.
    */
 function filterAtac() {
-  const ti = 4 // Track index
+  const trackIndex = 4 // Track index
   const igvBrowser = window.igvBrowser
   console.log('originalFeaturesChr12')
-  if (typeof window.originalFeaturesChr12 === 'undefined') {
-    window.originalFeaturesChr12 = igvBrowser.trackViews[ti].track.featureSource.featureCache.allFeatures.chr12
-  }
+
+  const originalChrFeatures = getOriginalChrFeatures(trackIndex, igvBrowser)
+
   const selection = { 2: 1 }
   // const inputs = document.querySelectorAll('.filters input')
   // inputs.forEach(input => {
@@ -139,7 +157,7 @@ function filterAtac() {
 
 
   console.log('filterAtac 1')
-  const filteredFeatures = window.originalFeaturesChr12.filter(feature => feature.score in selection)
+  const filteredFeatures = originalChrFeatures.filter(feature => feature.score in selection)
   console.log('filterAtac 2')
 
   // How many layers of features can be stacked / piled up.
@@ -147,46 +165,46 @@ function filterAtac() {
 
   igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
   console.log('filterAtac 3')
-  igvBrowser.trackViews[ti].track.featureSource.featureCache = new igv.FeatureCache(filteredFeatures, igvBrowser.genome)
+  igvBrowser.trackViews[trackIndex].track.featureSource.featureCache = new igv.FeatureCache(filteredFeatures, igvBrowser.genome)
   console.log('filterAtac 4')
-  igvBrowser.trackViews[ti].track.clearCachedFeatures()
+  igvBrowser.trackViews[trackIndex].track.clearCachedFeatures()
   console.log('filterAtac 5')
-  igvBrowser.trackViews[ti].track.updateViews()
+  igvBrowser.trackViews[trackIndex].track.updateViews()
   console.log('filterAtac 6')
 }
 
+function updateTrack(trackIndex, filteredFeatures, igv, igvBrowser) {
+// How many layers of features can be stacked / piled up.
+  const maxRows = 20
+  console.log('updateTrack 1')
+  igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
+  console.log('updateTrack 2')
+  igvBrowser.trackViews[trackIndex].track.featureSource.featureCache = new igv.FeatureCache(filteredFeatures, igvBrowser.genome)
+  console.log('updateTrack 3')
+  igvBrowser.trackViews[trackIndex].track.clearCachedFeatures()
+  console.log('updateTrack 4')
+  igvBrowser.trackViews[trackIndex].track.updateViews()
+  console.log('updateTrack 5')
+}
+
 /** Filter genomic features */
-function filterFeatures() {
-  const ti = 4 // Track index
+function filterIgvFeatures() {
+  const trackIndex = 4 // Track index
   const igvBrowser = window.igvBrowser
 
   const filteredCellNames = window.SCP.filteredCellNames
-  console.log('filteredCellNames')
-  console.log(filteredCellNames)
-  if (typeof window.originalFeaturesChr12 === 'undefined') {
-    window.originalFeaturesChr12 = igvBrowser.trackViews[ti].track.featureSource.featureCache.allFeatures.chr12
-  }
+  const originalChrFeatures = getOriginalChrFeatures(trackIndex, igvBrowser)
 
   console.log('filterFeatures 1')
-  const filteredFeatures = window.originalFeaturesChr12.filter(feature => filteredCellNames.has(feature.name))
+  const filteredFeatures = originalChrFeatures.filter(feature => filteredCellNames.has(feature.name))
   console.log('filterFeatures 2')
 
-  // How many layers of features can be stacked / piled up.
-  const maxRows = 20
-
-  igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
-  console.log('filterFeatures 3')
-  igvBrowser.trackViews[ti].track.featureSource.featureCache = new igv.FeatureCache(filteredFeatures, igvBrowser.genome)
-  console.log('filterFeatures 4')
-  igvBrowser.trackViews[ti].track.clearCachedFeatures()
-  console.log('filterFeatures 5')
-  igvBrowser.trackViews[ti].track.updateViews()
-  console.log('filterFeatures 6')
+  updateTrack(trackIndex, filteredFeatures, igv, igvBrowser)
 }
 
 window.filterAtac = filterAtac
 
-window.filterFeatures = filterFeatures
+window.SCP.filterIgvFeatures = filterIgvFeatures
 
 /**
  * Get tracks for selected TSV (e.g. BAM, BED) files, to show genomic features

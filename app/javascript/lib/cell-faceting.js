@@ -243,6 +243,14 @@ export function filterCells(
   const t0Counts = Date.now()
   const counts = getFilterCounts(annotationFacets, cellsByFacet, initFacets, selection)
 
+  if (window.SCP.filterIgvFeatures) {
+    try {
+      window.SCP.filterIgvFeatures()
+    } catch {
+      console.log('error in window.SCP.filterIgvFeatures()')
+    }
+  }
+
   logFilterCells(t0Counts, t0, filterableCells, results, selection)
 
   return [results, counts]
