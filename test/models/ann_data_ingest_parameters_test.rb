@@ -95,4 +95,15 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
               "--barcode-file #{@fragment_basepath}/h5ad_frag.barcodes.processed.tsv.gz"
     assert_equal exp_cmd, exp_ingest.to_options_array.join(' ')
   end
+
+  test 'should set default machine type and allow override' do
+    params = AnnDataIngestParameters.new(@extract_params)
+    assert_equal 'n2d-highmem-16', params.machine_type
+    new_machine = 'n2d-highmem-32'
+    params.machine_type = new_machine
+    assert_equal new_machine, params.machine_type
+    assert params.valid?
+    params.machine_type = 'foo'
+    assert_not params.valid?
+  end
 end
