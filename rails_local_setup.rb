@@ -56,7 +56,7 @@ CONFIG_DIR = File.expand_path('.') + "/config"
 
 
 # load raw secrets from Google Secrets Manager (GSM)
-puts 'Processing secret parameters from Vault'
+puts 'Loading main configuration from GSM'
 base_gsm_command = "gcloud secrets versions access latest --project=#{google_project}"
 secret_string = `#{base_gsm_command} --secret=#{config_secret}`
 secret_data_hash = JSON.parse(secret_string)
@@ -73,7 +73,7 @@ source_file_string += "export MONGODB_USERNAME=#{mongo_user_hash['username']}\n"
 source_file_string += "export MONGODB_PASSWORD=#{mongo_user_hash['password']}\n"
 source_file_string += "export DATABASE_HOST=#{secret_data_hash['MONGO_LOCALHOST']}\n"
 
-puts 'Processing service account info'
+puts 'Processing service account keyfile'
 service_account_string = `#{base_gsm_command} --secret=#{default_sa_keyfile}`
 service_account_hash = JSON.parse(service_account_string)
 
@@ -82,7 +82,7 @@ puts "Setting google cloud project: #{service_account_hash['project_id']}"
 source_file_string += "export GOOGLE_CLOUD_PROJECT=#{service_account_hash['project_id']}\n"
 source_file_string += "export SERVICE_ACCOUNT_KEY=#{output_dir}/.scp_service_account.json\n"
 
-puts 'Processing read-only service account info'
+puts 'Processing read-only service account keyfile'
 readonly_string = `#{base_gsm_command} --secret=#{read_only_sa_keyfile}`
 readonly_hash = JSON.parse(readonly_string)
 File.open("#{CONFIG_DIR}/.read_only_service_account.json", 'w') { |file| file.write(readonly_hash.to_json) }
