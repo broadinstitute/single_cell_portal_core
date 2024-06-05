@@ -154,6 +154,7 @@ function filterAtac() {
   const filteredFeatures = originalChrFeatures.filter(feature => feature.score in selection)
 
   // How many layers of features can be stacked / piled up.
+  // TODO (SCP-5662): eliminate this constraint
   const maxRows = 20
 
   igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
@@ -208,6 +209,21 @@ function getTracks(tsvAndIndexFiles, dataType) {
         displayMode: 'SQUISHED',
         colorBy: 'score',
         height: 300,
+
+        // "Score" in scATAC-seq BED files is more accurately "read count".
+        //
+        // Per Pipeline Development team, multiple reads per fragment per
+        // barcode can occur due to technical factors like PCR duplicates,
+        // sequencing errors, or low complexity regions.
+        //
+        // So this colors features in a sequential scale from a neutral grey
+        // ("score": 1) to bright red ("score": 5/6).
+        //
+        // More context:
+        // https://broadinstitute.slack.com/archives/CESEYJW9W/p1717148489885659?thread_ts=1717099893.194269&cid=CESEYJW9W
+        //
+        // Per 2024-06-05, it might be worth giving users finer-grained control
+        // over the color table for their sequence file tracks.
         colorTable: {
           '1': '#AAA',
           '2': '#C88',
@@ -216,7 +232,13 @@ function getTracks(tsvAndIndexFiles, dataType) {
           '5': '#E44',
           '6': '#E44'
         },
-        dataType: 'atac-fragment' // SCP custom track attribute
+
+        // "dataType" is an SCP-custom IGV track attribute, which lets us
+        // distinguish between various kinds of BED file.
+        //
+        // TODO: Add an "ATAC fragment?" checkbox in "Sequence file" upload to
+        // distinguish this type of BED from default (generic) BEDs.
+        dataType: 'atac-fragment'
       }
       tsvTrack = Object.assign(tsvTrack, atacProps)
     }
