@@ -195,9 +195,7 @@ function filterIgvFeatures() {
   const filteredCellNames = window.SCP.filteredCellNames
   const originalChrFeatures = getOriginalChrFeatures(trackIndex, igvBrowser)
 
-  console.log('filterFeatures 1')
   const filteredFeatures = originalChrFeatures.filter(feature => filteredCellNames.has(feature.name))
-  console.log('filterFeatures 2')
 
   updateTrack(trackIndex, filteredFeatures, igv, igvBrowser)
 }

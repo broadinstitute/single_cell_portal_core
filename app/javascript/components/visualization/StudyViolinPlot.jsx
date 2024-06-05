@@ -52,7 +52,8 @@ export async function filterResults(
   studyAccession, cluster, annotation, gene,
   results, cellFaceting, filteredCells
 ) {
-  const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
+  const flags = getFeatureFlagsWithDefaults()
+  const showCellFiltering = flags?.show_cell_facet_filtering
   if (!showCellFiltering) {return results}
 
   if (gene in window.SCP.violinCellIndexes === false) {
@@ -87,14 +88,19 @@ export async function filterResults(
         filteredCellNames[cellName] = 1
         filteredValues[group].cells.push(cellName)
         filteredValues[group].y.push(results.values[group].y[i])
-        filteredCellNames.add(cellName)
+
+        if (flags?.show_multiome_igv) {
+          filteredCellNames.add(cellName)
+        }
       }
     }
   })
 
   results.values = filteredValues
 
-  window.SCP.filteredCellNames = filteredCellNames
+  if (flags?.show_multiome_igv) {
+    window.SCP.filteredCellNames = filteredCellNames
+  }
 
   return results
 }
