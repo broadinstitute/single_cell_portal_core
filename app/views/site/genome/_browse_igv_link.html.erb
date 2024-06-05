@@ -1,5 +1,5 @@
 <% if study_file.generation %>
-<%= link_to 'Browse in genome', '#study-visualize', data: {filename: ERB::Util.url_encode(study_file.upload_file_name)}, class: 'bam-browse-genome btn btn-primary dl-link other-file' %>
+<%= link_to 'Browse in genome', '#study-visualize', data: {filename: ERB::Util.url_encode(study_file.upload_file_name)}, class: 'track-browse-genome btn btn-primary dl-link other-file' %>
 <% else %>
 <span class="label label-warning no-download-available" title="You will be able to download this file once it has been uploaded to our remote data store.  Check back soon." , data-toggle="tooltip"><i class="fa fa-ban"></i> Awaiting remote file</span>
 <% end %>

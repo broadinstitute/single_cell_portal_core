@@ -24,9 +24,7 @@
 /single-cell-staging.broadinstitute.org.*
 /config/*.json
 /config/secrets
-/config/tcell_agent.config
 ssmtp.conf
-/tcell
 .byebug_history
 # Ignore hidden macOS files
 .DS_Store
@@ -58,4 +56,3 @@ node_modules
 # Vite uses dotenv and suggests to ignore local-only env files. See
 # https://vitejs.dev/guide/env-and-mode.html#env-files
 *.local
-

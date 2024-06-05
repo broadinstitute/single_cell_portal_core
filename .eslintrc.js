@@ -21,7 +21,7 @@ module.exports = {
         'Spinner': 'readonly',
         'morpheus': 'readonly',
         'ga': 'readonly',
-        'bamAndBaiFiles': 'readonly',
+        'tracks': 'readonly',
         'process': 'readonly'
     },
     'parser': 'babel-eslint',

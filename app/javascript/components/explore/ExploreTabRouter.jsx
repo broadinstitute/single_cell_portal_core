@@ -108,7 +108,7 @@ function buildExploreParamsFromQuery(query) {
   exploreParams.distributionPoints = queryParams.distributionPoints ? queryParams.distributionPoints : ''
   exploreParams.tab = queryParams.tab ? queryParams.tab : ''
   exploreParams.heatmapFit = queryParams.heatmapFit ? queryParams.heatmapFit : ''
-  exploreParams.bamFileName = queryParams.bamFileName ? queryParams.bamFileName : ''
+  exploreParams.trackFileName = queryParams.trackFileName ? queryParams.trackFileName : ''
   exploreParams.ideogramFileId = queryParams.ideogramFileId ? queryParams.ideogramFileId : ''
   exploreParams.expressionFilter = [0, 1]
   if (queryParams.expressionFilter) {
@@ -142,7 +142,7 @@ function buildQueryFromParams(exploreParams) {
     distributionPlot: exploreParams.distributionPlot,
     distributionPoints: exploreParams.distributionPoints,
     heatmapFit: exploreParams.heatmapFit,
-    bamFileName: exploreParams.bamFileName,
+    trackFileName: exploreParams.trackFileName,
     ideogramFileId: exploreParams.ideogramFileId,
     expressionFilter: exploreParams.expressionFilter ? exploreParams.expressionFilter.join(FILTER_RANGE_DELIMITER) : undefined,
     hiddenTraces: exploreParams.hiddenTraces.join(','),
@@ -166,7 +166,7 @@ function buildQueryFromParams(exploreParams) {
 const PARAM_LIST_ORDER = [
   'geneList', 'genes', 'cluster', 'spatialGroups', 'annotation', 'subsample', 'consensus',
   'tab', 'scatterColor', 'distributionPlot', 'distributionPoints',
-  'heatmapFit', 'heatmapRowCentering', 'bamFileName', 'ideogramFileId', 'expressionFilter',
+  'heatmapFit', 'heatmapRowCentering', 'trackFileName', 'ideogramFileId', 'expressionFilter',
   'isSplitLabelArrays', 'hiddenTraces', 'facets'
 ]
 /** sort function for passing to stringify to ensure url params are specified in a user-friendly order */

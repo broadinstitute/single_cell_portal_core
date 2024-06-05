@@ -41,11 +41,12 @@ class AnnDataIngestParameters
     gene_file: nil,
     barcode_file: nil,
     subsample: false,
-    file_size: 0
+    file_size: 0,
+    machine_type: nil
   }.freeze
 
   # values that are available as methods but not as attributes (and not passed to command line)
-  NON_ATTRIBUTE_PARAMS = %i[file_size].freeze
+  NON_ATTRIBUTE_PARAMS = %i[file_size machine_type].freeze
 
   # GCE machine types and file size ranges for handling fragment extraction
   # produces a hash with entries like { 'n2-highmem-4' => 0..4.gigabytes }
@@ -61,11 +62,16 @@ class AnnDataIngestParameters
   validates :anndata_file, :cluster_file, :cell_metadata_file, :matrix_file, :gene_file, :barcode_file,
             format: { with: Parameterizable::GS_URL_REGEXP, message: 'is not a valid GS url' },
             allow_blank: true
+  validates :machine_type, inclusion: Parameterizable::GCE_MACHINE_TYPES
 
-  # determine which GCE machine type to use for fragment extraction based on file size
-  # see https://ruby-doc.org/core-3.1.0/Range.html#method-i-3D-3D-3D for range detection doc
-  def machine_type
-    EXTRACT_MACHINE_TYPES.detect { |_, mem_range| mem_range === file_size }&.first || 'n2d-highmem-4'
+  def initialize(attributes = nil)
+    super
+    # determine which GCE machine type to use for fragment extraction based on file size
+    # machine_type default is declared here to allow for autoscaling with optional override
+    # see https://ruby-doc.org/core-3.1.0/Range.html#method-i-3D-3D-3D for range detection doc
+    if @machine_type.nil?
+      self.machine_type = EXTRACT_MACHINE_TYPES.detect { |_, mem_range| mem_range === file_size }&.first || 'n2d-highmem-4'
+    end
   end
 
   # get the particular file (either source AnnData or fragment) being processed by this job

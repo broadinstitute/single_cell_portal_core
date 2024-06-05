@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '3.1.3'
+ruby '3.2.2'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '6.1.7.7'
@@ -71,7 +71,6 @@ gem 'time_difference'
 gem 'sys-filesystem', require: 'sys/filesystem'
 gem 'browser'
 gem 'ruby-prof'
-gem 'ruby-prof-flamegraph'
 gem 'carrierwave', '~> 2.2'
 gem 'carrierwave-mongoid', :require => 'carrierwave/mongoid'
 gem 'uuid'
@@ -80,11 +79,6 @@ gem 'net-smtp'
 gem 'net-imap'
 gem 'net-pop'
 gem 'exponential-backoff'
-
-# only enable TCell in deployed environments due to Chrome sec-ch-ua header issue
-group :production, :staging do
-  gem 'tcell_agent'
-end
 
 group :development, :test do
   # Access an IRB console on exception pages or by using <%= console %> in views

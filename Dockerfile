@@ -1,8 +1,8 @@
 # use SCP base Rails image, configure only project-specific items here
-FROM gcr.io/broad-singlecellportal-staging/rails-baseimage:2.2.2
+FROM gcr.io/broad-singlecellportal-staging/rails-baseimage:2.3.0
 
 # Set ruby version
-RUN bash -lc 'rvm --default use ruby-3.1.3'
+RUN bash -lc 'rvm --default use ruby-3.2.2'
 RUN bash -lc 'rvm rvmrc warning ignore /home/app/webapp/Gemfile'
 
 # Set up project dir, install gems, set up script to migrate database and precompile static assets on run

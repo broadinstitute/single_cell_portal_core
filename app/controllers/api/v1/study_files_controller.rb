@@ -738,7 +738,7 @@ module Api
           :custom_color_updates, :reference_anndata_file,
           spatial_cluster_associations: [],
           options: [
-            :cluster_group_id, :font_family, :font_size, :font_color, :matrix_id, :submission_id, :bam_id,
+            :cluster_group_id, :font_family, :font_size, :font_color, :matrix_id, :submission_id, :bam_id, :bed_id,
             :analysis_name, :visualization_name, :cluster_name, :annotation_name, :cluster_file_id, :upload_trigger
           ],
           expression_file_info_attributes: [
