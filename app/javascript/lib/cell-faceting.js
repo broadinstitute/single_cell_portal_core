@@ -245,11 +245,11 @@ export function filterCells(
 
   const flags = getFeatureFlagsWithDefaults()
   if (flags?.show_multiome_igv && window.SCP.filterIgvFeatures) {
-    // TODO: Refactor and robustify
+    // TODO (SCP-5662): Refactor and robustify
     try {
       window.SCP.filterIgvFeatures()
     } catch {
-      // TODO: Refactor and robustify
+      // TODO (SCP-5662): Refactor and robustify
       console.log('error in window.SCP.filterIgvFeatures()')
     }
   }

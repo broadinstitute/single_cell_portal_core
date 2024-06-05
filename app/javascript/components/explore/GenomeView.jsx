@@ -117,14 +117,10 @@ export default SafeGenomeView
 
 /** Get unfiltered genomic features on current chromosome */
 function getOriginalChrFeatures(trackIndex, igvBrowser) {
-  console.log('window.originalFeatures 1')
   console.log(window.originalFeatures)
   if (typeof window.originalFeatures === 'undefined') {
     window.originalFeatures = igvBrowser.trackViews[trackIndex].track.featureSource.featureCache.allFeatures
   }
-
-  console.log('window.originalFeatures 2')
-  console.log(window.originalFeatures)
 
   const chr = window.igvBrowser.tracks[0].trackView.viewports[0].featureCache.chr
 
@@ -143,7 +139,6 @@ function getOriginalChrFeatures(trackIndex, igvBrowser) {
 function filterAtac() {
   const trackIndex = 4 // Track index
   const igvBrowser = window.igvBrowser
-  console.log('originalFeaturesChr12')
 
   const originalChrFeatures = getOriginalChrFeatures(trackIndex, igvBrowser)
 
@@ -156,35 +151,26 @@ function filterAtac() {
   // })
 
 
-  console.log('filterAtac 1')
   const filteredFeatures = originalChrFeatures.filter(feature => feature.score in selection)
-  console.log('filterAtac 2')
 
   // How many layers of features can be stacked / piled up.
   const maxRows = 20
 
   igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
-  console.log('filterAtac 3')
   igvBrowser.trackViews[trackIndex].track.featureSource.featureCache = new igv.FeatureCache(filteredFeatures, igvBrowser.genome)
-  console.log('filterAtac 4')
   igvBrowser.trackViews[trackIndex].track.clearCachedFeatures()
-  console.log('filterAtac 5')
   igvBrowser.trackViews[trackIndex].track.updateViews()
-  console.log('filterAtac 6')
 }
 
+/** Render update to reflect newly-selected features in IGV track */
 function updateTrack(trackIndex, filteredFeatures, igv, igvBrowser) {
-// How many layers of features can be stacked / piled up.
+  // How many layers of features can be stacked / piled up.
+  // TODO (SCP-5662): eliminate this constraint
   const maxRows = 20
-  console.log('updateTrack 1')
   igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
-  console.log('updateTrack 2')
   igvBrowser.trackViews[trackIndex].track.featureSource.featureCache = new igv.FeatureCache(filteredFeatures, igvBrowser.genome)
-  console.log('updateTrack 3')
   igvBrowser.trackViews[trackIndex].track.clearCachedFeatures()
-  console.log('updateTrack 4')
   igvBrowser.trackViews[trackIndex].track.updateViews()
-  console.log('updateTrack 5')
 }
 
 /** Filter genomic features */
