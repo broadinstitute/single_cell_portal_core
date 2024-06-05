@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# vault-gsm-secret-migration.sh
+# vault-gsm-migration.sh
 # script to pull out core SCP-specific secrets from vault and import them into Google Secret Manager (GSM)
 # this will allow the use of ./rails_local_setup.rb with GSM
 # require gcloud, vault, and jq to be installed and configured
