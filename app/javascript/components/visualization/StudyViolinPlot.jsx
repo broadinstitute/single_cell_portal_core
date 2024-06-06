@@ -89,7 +89,7 @@ export async function filterResults(
         filteredValues[group].cells.push(cellName)
         filteredValues[group].y.push(results.values[group].y[i])
 
-        if (flags?.show_multiome_igv) {
+        if (flags?.show_igv_multiome) {
           filteredCellNames.add(cellName)
         }
       }
@@ -98,7 +98,7 @@ export async function filterResults(
 
   results.values = filteredValues
 
-  if (flags?.show_multiome_igv) {
+  if (flags?.show_igv_multiome) {
     window.SCP.filteredCellNames = filteredCellNames
   }
 

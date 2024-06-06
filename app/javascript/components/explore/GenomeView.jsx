@@ -117,12 +117,14 @@ export default SafeGenomeView
 
 /** Get unfiltered genomic features on current chromosome */
 function getOriginalChrFeatures(trackIndex, igvBrowser) {
-  console.log(window.originalFeatures)
-  if (typeof window.originalFeatures === 'undefined') {
+  const chr = window.igvBrowser.tracks[0].trackView.viewports[0].featureCache.chr
+
+  if (
+    typeof window.originalFeatures === 'undefined' ||
+    chr in window.originalFeatures === false
+  ) {
     window.originalFeatures = igvBrowser.trackViews[trackIndex].track.featureSource.featureCache.allFeatures
   }
-
-  const chr = window.igvBrowser.tracks[0].trackView.viewports[0].featureCache.chr
 
   const originalChrFeatures = window.originalFeatures[chr]
 
