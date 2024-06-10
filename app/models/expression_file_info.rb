@@ -47,7 +47,8 @@ class ExpressionFileInfo
                                 '10x scATAC-seq', # scATAC-seq
                                 '10x TCR enrichment', # targeted transcriptomic
                                 '10x Visium', # spatial transcriptomic
-                                'CEL-seq2', # scRNAseq
+                                '10x Xenium', # spatial transcriptomics
+				'CEL-seq2', # scRNAseq
                                 'Drop-ChIP', # scChIP-seq
                                 'Drop-seq', # scRNAseq
                                 'dsc-ATAC-seq', # scATAC-seq
@@ -55,6 +56,7 @@ class ExpressionFileInfo
                                 'inDrop', # scRNAseq
                                 'MARS-seq', # scRNAseq
                                 'MERFISH', # spatial transcriptomic
+				'Nanostring CosMx', #spatial transcriptomic
                                 'osmFISH', # spatial transcriptomic
                                 'scATAC-seq/Fluidigm', # scATAC-seq
                                 'sci-ATAC-seq', # scATAC-seq
