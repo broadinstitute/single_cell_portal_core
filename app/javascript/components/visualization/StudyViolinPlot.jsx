@@ -100,7 +100,7 @@ export async function filterResults(
 
   if (flags?.show_igv_multiome) {
     // debugger
-    // window.SCP.filterIgvFeatures(filteredCellNames)
+    window.SCP.filterIgvFeatures(filteredCellNames)
   }
 
   return results

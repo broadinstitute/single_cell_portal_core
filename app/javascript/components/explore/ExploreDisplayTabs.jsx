@@ -615,9 +615,9 @@ export default function ExploreDisplayTabs({
                 <GenomeView
                   studyAccession={studyAccession}
                   trackFileName={exploreParams.trackFileName}
-                  uniqueGenes={['ANXA1', 'GAPDH']}
+                  uniqueGenes={exploreInfo.uniqueGenes}
                   isVisible={shownTab === 'genome'}
-                  queriedGenes={['ANXA1']}
+                  queriedGenes={exploreParams.genes}
                   updateExploreParams={updateExploreParams}
                 />
               </div>

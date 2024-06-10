@@ -20,8 +20,6 @@ const GenomeView = memo(function GenomeView({
   const [igvContainerId] = useState(_uniqueId('study-igv-'))
   const [showProfileWarning, setShowProfileWarning] = useState(false)
 
-  console.log('in GenomeView')
-
   useEffect(() => {
     // Get the track file names and urls from the server.
     setIsLoading(true)
@@ -70,7 +68,7 @@ const GenomeView = memo(function GenomeView({
       getDefaultLocus(queriedGenes, uniqueGenes, genomeId)
       window.igvBrowser.search(queriedGenes[0])
     }
-  }, [queriedGenes])
+  }, [queriedGenes.join(',')])
 
   /** handle clicks on the download 'browse in genome' buttons
    * This should get refactored when/if we migrate the other study-overview tabs to react
@@ -120,18 +118,6 @@ export default SafeGenomeView
 
 /** Get unfiltered genomic features on current chromosome */
 function getOriginalChrFeatures(trackIndex, igvBrowser) {
-  // debugger
-  // console.log('window.igvBrowser')
-  // console.log(window.igvBrowser)
-  // console.log('window.igvBrowser.tracks[0].trackView.viewports[0]')
-  // console.log(window.igvBrowser.tracks[0].trackView.viewports[0])
-  // console.log('window.igvBrowser.tracks[0].trackView.viewports[0]')
-  // console.log(window.igvBrowser.tracks[0].trackView.viewports[0])
-  console.log('window.igvBrowser.tracks[0].trackView.viewports[0].featureCache')
-  console.log(window.igvBrowser.tracks[0].trackView.viewports[0].featureCache)
-  // console.log('window.igvBrowser.tracks[0].trackView.viewports[0].featureCache.chr')
-  // console.log(window.igvBrowser.tracks[0].trackView.viewports[0].featureCache.chr)
-
   const chr = window.igvBrowser.tracks[0].trackView.viewports[0].featureCache.chr
 
   if (
@@ -170,7 +156,6 @@ function filterAtac(scoreSelection) {
   // })
 
   const filteredFeatures = originalChrFeatures.filter(feature => scoreSelection.has(feature.score))
-  console.log('filteredFeatures', filteredFeatures)
 
   updateTrack(trackIndex, filteredFeatures, igv, igvBrowser)
 }
@@ -180,50 +165,25 @@ function updateTrack(trackIndex, filteredFeatures, igv, igvBrowser) {
   // How many layers of features can be stacked / piled up.
   // TODO (SCP-5662): eliminate this constraint
   const maxRows = 20
+
   igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
-  // const range = igvBrowser.referenceFrameList[0]
-  igvBrowser.trackViews[trackIndex].track.featureSource.featureCache =
-    new igv.FeatureCache(filteredFeatures, igvBrowser.genome)
+
+  const newFeatureCache = new igv.FeatureCache(filteredFeatures, igvBrowser.genome)
+  igvBrowser.trackViews[trackIndex].track.featureSource.featureCache = newFeatureCache
+
   igvBrowser.trackViews[trackIndex].track.clearCachedFeatures()
   igvBrowser.trackViews[trackIndex].track.updateViews()
 }
 
 /** Filter genomic features */
-function filterIgvFeatures(filteredCellNames, retryAttempt=0, referenceFrame=null) {
-  // const trackIndex = 4 // Track index
-  // console.log('in filterIgvFeatures, window.SCP.prevIgvReferenceFrameList')
-  // console.log(window.SCP.prevIgvReferenceFrameList)
-  // window.igvBrowser.referenceFrameList = window.SCP.prevIgvReferenceFrameList
+function filterIgvFeatures(filteredCellNames) {
+  const trackIndex = 4 // Track index
+  const igvBrowser = window.igvBrowser
 
-  // const igvBrowser = window.igvBrowser
+  const originalChrFeatures = getOriginalChrFeatures(trackIndex, igvBrowser)
+  const filteredFeatures = originalChrFeatures.filter(feature => filteredCellNames.has(feature.name))
 
-  // console.log('in filterIgvFeatures, igvBrowser')
-  // console.log(igvBrowser)
-
-
-  // let originalChrFeatures
-  // try {
-  //   originalChrFeatures = getOriginalChrFeatures(trackIndex, igvBrowser)
-  // } catch (error) {
-  //   if (retryAttempt < 10) {
-  //     if (!referenceFrame) {
-  //       referenceFrame = igvBrowser.referenceFrameList[0]
-  //     }
-  //     setTimeout(() => filterIgvFeatures(filteredCellNames, retryAttempt += 1, referenceFrame), 500)
-  //     console.log('attempting retry of filterIgvFeatures')
-  //     console.log('referenceFrame')
-  //     console.log(referenceFrame)
-  //     return
-  //   } else {
-  //     throw error
-  //   }
-  // }
-
-  // console.log('filteredCellNames')
-  // console.log(filteredCellNames)
-  // const filteredFeatures = originalChrFeatures.filter(feature => filteredCellNames.has(feature.name))
-
-  // updateTrack(trackIndex, filteredFeatures, igv, igvBrowser)
+  updateTrack(trackIndex, filteredFeatures, igv, igvBrowser)
 }
 
 window.filterAtac = filterAtac
@@ -422,7 +382,6 @@ export function getIgvOptions(tracks, gtfFiles, uniqueGenes, queriedGenes) {
  * Instantiates and renders igv.js widget on the page
  */
 async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queriedGenes) {
-  console.log('starting initializeIgv')
   // Bail if already displayed
   delete igv.browser
 
@@ -439,12 +398,7 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
   }
 
   window.igv = igv
-  console.log('calling igv.createBrowser')
   window.igvBrowser = await igv.createBrowser(igvContainer, igvOptions)
-
-  const referenceFrame = window.igvBrowser.referenceFrameList[0]
-  console.log('init referenceFrame')
-  console.log(referenceFrame)
 
   window.igvBrowser.on('trackclick', (track, popoverData) => {
     // Don't show popover when there's no data.
