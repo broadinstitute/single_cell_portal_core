@@ -10,8 +10,7 @@ import { getReadOnlyToken, userHasTerraProfile } from '~/providers/UserProvider'
 import { profileWarning } from '~/lib/study-overview/terra-profile-warning'
 
 /** Component for displaying IGV for any BAM/BAI files provided with the study */
-// eslint-disable-next-line prefer-arrow-callback
-const GenomeView = memo(function GenomeView({
+function GenomeView({
   studyAccession, trackFileName, uniqueGenes, isVisible, queriedGenes, updateExploreParams
 }) {
   const [isLoading, setIsLoading] = useState(false)
@@ -111,7 +110,7 @@ const GenomeView = memo(function GenomeView({
     }
     { showProfileWarning && profileWarning }
   </div>
-})
+}
 
 const SafeGenomeView = withErrorBoundary(GenomeView)
 export default SafeGenomeView

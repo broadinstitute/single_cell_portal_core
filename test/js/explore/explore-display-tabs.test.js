@@ -165,7 +165,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
     expect(expectedResults).toEqual(getEnabledTabs(exploreInfo, exploreParams))
   })
 
-  it('should enable cluster and genome tab', async () => {
+  it('should only enable cluster tab in default, 0-gene view', async () => {
     // mock exploreInfo from study
     const exploreInfo = {
       ...defaultExploreInfo,
@@ -187,7 +187,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
       facets: ''
     }
     const expectedResults = {
-      enabledTabs: ['scatter', 'genome'],
+      enabledTabs: ['scatter'],
       disabledTabs: ['distribution', 'correlatedScatter', 'dotplot', 'heatmap'],
       isGeneList: false,
       isGene: false,

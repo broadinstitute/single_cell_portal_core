@@ -16,7 +16,7 @@ describe('IGV genome browser in Explore tab', () => {
     const trackFileName = ''
     const uniqueGenes = ['GAD1', 'LDLR', 'GAPDH', 'GCG', 'ACE2']
     const isVisible = true
-    const exploreParams = { genes: 'GCG' }
+    const queriedGenes = ['GCG']
     const updateExploreParams = () => {}
 
     const { container } = render((<GenomeView
@@ -24,7 +24,7 @@ describe('IGV genome browser in Explore tab', () => {
       trackFileName={trackFileName}
       uniqueGenes={uniqueGenes}
       isVisible={isVisible}
-      exploreParams={exploreParams}
+      queriedGenes={queriedGenes}
       updateExploreParams={updateExploreParams}
     />))
 

@@ -53,7 +53,6 @@ export function getURLSafeAccessToken() {
 /** Returns the feature flags with defaults for the current user */
 export function getFeatureFlagsWithDefaults() {
   const flags = readUserInfoFromPage().featureFlagsWithDefaults
-  flags.show_igv_multiome = true
   return flags
 }
 
