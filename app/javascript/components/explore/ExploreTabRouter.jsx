@@ -39,6 +39,7 @@ export default function useExploreTabRouter() {
 
 /** Merges the received update into the exploreParams, and updates the page URL if need */
 function updateExploreParams(newOptions, wasUserSpecified=true) {
+  console.log('calling updateExploreParams')
   // rebuild the params from the actual URL to avoid races
   const search = location.search
   const currentParams = buildExploreParamsFromQuery(search)

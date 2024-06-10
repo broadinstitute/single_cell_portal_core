@@ -243,18 +243,6 @@ export function filterCells(
   const t0Counts = Date.now()
   const counts = getFilterCounts(annotationFacets, cellsByFacet, initFacets, selection)
 
-  const flags = getFeatureFlagsWithDefaults()
-  if (flags?.show_igv_multiome && window.SCP.filterIgvFeatures) {
-    // TODO (SCP-5662): Refactor and robustify
-    try {
-      window.SCP.filterIgvFeatures()
-    } catch (error) {
-      // TODO (SCP-5662): Refactor and robustify
-      console.log('error in window.SCP.filterIgvFeatures()')
-      console.error(error)
-    }
-  }
-
   logFilterCells(t0Counts, t0, filterableCells, results, selection)
 
   return [results, counts]

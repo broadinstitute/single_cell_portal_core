@@ -340,7 +340,7 @@ export default function ExploreDisplayTabs({
   }, [exploreParams?.cluster, exploreParams?.annotation])
 
 
-  /** Update filtered cells to only those that match filter selections */
+  /** Update filtered celwls to only those that match filter selections */
   function updateFilteredCells(selection, overrideCellFaceting) {
     const thisCellFaceting = overrideCellFaceting ?? cellFaceting
     if (!thisCellFaceting) {return}
@@ -615,9 +615,9 @@ export default function ExploreDisplayTabs({
                 <GenomeView
                   studyAccession={studyAccession}
                   trackFileName={exploreParams.trackFileName}
-                  uniqueGenes={exploreInfo.uniqueGenes}
+                  uniqueGenes={['ANXA1', 'GAPDH']}
                   isVisible={shownTab === 'genome'}
-                  exploreParams={exploreParams}
+                  queriedGenes={['ANXA1']}
                   updateExploreParams={updateExploreParams}
                 />
               </div>
