@@ -56,7 +56,7 @@ class ExpressionFileInfo
                                 'inDrop', # scRNAseq
                                 'MARS-seq', # scRNAseq
                                 'MERFISH', # spatial transcriptomic
-				'Nanostring CosMx', #spatial transcriptomic
+				'NanoString CosMx', #spatial transcriptomic
                                 'osmFISH', # spatial transcriptomic
                                 'scATAC-seq/Fluidigm', # scATAC-seq
                                 'sci-ATAC-seq', # scATAC-seq
