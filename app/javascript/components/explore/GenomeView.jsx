@@ -5,6 +5,7 @@ import _uniqueId from 'lodash/uniqueId'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { log } from '~/lib/metrics-api'
 import { fetchTrackInfo } from '~/lib/scp-api'
+import { updateTrack } from '~/lib/igv-utils'
 import { withErrorBoundary } from '~/lib/ErrorBoundary'
 import { getReadOnlyToken, userHasTerraProfile } from '~/providers/UserProvider'
 import { profileWarning } from '~/lib/study-overview/terra-profile-warning'
@@ -117,7 +118,7 @@ export default SafeGenomeView
 
 /** Get unfiltered genomic features on current chromosome */
 function getOriginalChrFeatures(trackIndex, igvBrowser) {
-  const chr = window.igvBrowser.tracks[0].trackView.viewports[0].featureCache.chr
+  const chr = igvBrowser.tracks[0].trackView.viewports[0].featureCache.chr
 
   if (
     typeof window.originalFeatures === 'undefined' ||
@@ -159,23 +160,8 @@ function filterAtac(scoreSelection) {
   updateTrack(trackIndex, filteredFeatures, igv, igvBrowser)
 }
 
-/** Render update to reflect newly-selected features in IGV track */
-function updateTrack(trackIndex, filteredFeatures, igv, igvBrowser) {
-  // How many layers of features can be stacked / piled up.
-  // TODO (SCP-5662): eliminate this constraint
-  const maxRows = 20
-
-  igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
-
-  const newFeatureCache = new igv.FeatureCache(filteredFeatures, igvBrowser.genome)
-  igvBrowser.trackViews[trackIndex].track.featureSource.featureCache = newFeatureCache
-
-  igvBrowser.trackViews[trackIndex].track.clearCachedFeatures()
-  igvBrowser.trackViews[trackIndex].track.updateViews()
-}
-
 /** Filter genomic features */
-function filterIgvFeatures(filteredCellNames) {
+export function filterIgvFeatures(filteredCellNames) {
   const trackIndex = 4 // Track index
   const igvBrowser = window.igvBrowser
 
@@ -185,9 +171,9 @@ function filterIgvFeatures(filteredCellNames) {
   updateTrack(trackIndex, filteredFeatures, igv, igvBrowser)
 }
 
-window.filterAtac = filterAtac
+// window.filterAtac = filterAtac
 
-window.SCP.filterIgvFeatures = filterIgvFeatures
+// window.SCP.filterIgvFeatures = filterIgvFeatures
 
 /**
  * Get tracks for selected TSV (e.g. BAM, BED) files, to show genomic features

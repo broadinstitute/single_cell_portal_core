@@ -17,6 +17,7 @@ import { logViolinPlot } from '~/lib/scp-api-metrics'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { formatGeneList } from '~/components/visualization/PlotTitle'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
+import { filterIgvFeatures } from '~/components/explore/GenomeView'
 
 /** Title for violin plot; also accounts for "Collapsed by" / consensus view */
 function ViolinPlotTitle({ cluster, annotation, genes, consensus }) {
@@ -100,7 +101,7 @@ export async function filterResults(
 
   if (flags?.show_igv_multiome) {
     // debugger
-    window.SCP.filterIgvFeatures(filteredCellNames)
+    filterIgvFeatures(filteredCellNames)
   }
 
   return results
