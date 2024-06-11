@@ -43,11 +43,11 @@ class ExpressionFileInfo
                                 '10x feature barcode/CRISPR', # expression perturbation
                                 '10x feature barcode/multiplexing', # scRNAseq
                                 '10x Ig enrichment', # targeted transcriptomic
-                                '10x multiome', # multiomic ATAC-seq
+                                '10x multiome', # multimodal: scRNAseq, ATAC-seq
                                 '10x scATAC-seq', # scATAC-seq
                                 '10x TCR enrichment', # targeted transcriptomic
                                 '10x Visium', # spatial transcriptomic
-                                '10x Xenium', # spatial transcriptomics
+                                '10x Xenium', # spatial transcriptomic
 				'CEL-seq2', # scRNAseq
                                 'Drop-ChIP', # scChIP-seq
                                 'Drop-seq', # scRNAseq
@@ -58,7 +58,8 @@ class ExpressionFileInfo
                                 'MERFISH', # spatial transcriptomic
 				'NanoString CosMx', #spatial transcriptomic
                                 'osmFISH', # spatial transcriptomic
-                                'scATAC-seq/Fluidigm', # scATAC-seq
+                                'Patch-seq', # multimodal: scRNAseq, electrophys, morphology
+				'scATAC-seq/Fluidigm', # scATAC-seq
                                 'sci-ATAC-seq', # scATAC-seq
                                 'sci-RNA-seq', # scRNAseq
                                 'scTHS-seq', # scATAC-seq
