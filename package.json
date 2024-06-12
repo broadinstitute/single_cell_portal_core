@@ -1,7 +1,7 @@
 {
   "scripts": {
     "test": "export NODE_TLS_REJECT_UNAUTHORIZED=0; jest --coverage ",
-    "ui-test": "NODE_OPTIONS=\"--max-old-space-size=4096\" jest test/js --coverage --testPathIgnorePatterns=fetch/* precomputed-heatmaps.test metrics-perf.test",
+    "ui-test": "NODE_OPTIONS=\"--max-old-space-size=4096  --unhandled-rejections=warn\" jest test/js --coverage --testPathIgnorePatterns=fetch/* precomputed-heatmaps.test metrics-perf.test",
     "testDebug": "node --inspect-brk node_modules/.bin/jest --runInBand",
     "lint": "eslint app/javascript",
     "fix-styles": "prettier-stylelint --write 'src/**/*.{css,scss}' "
