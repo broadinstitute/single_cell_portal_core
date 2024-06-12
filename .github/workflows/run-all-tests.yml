@@ -21,6 +21,9 @@ jobs:
         uses: actions/checkout@v4
       - name: Configure gcloud
         uses: ./.github/actions/setup-gcloud
+        with:
+          service_account_email: '839419950053-compute@developer.gserviceaccount.com'
+          google_cloud_project: 'broad-singlecellportal-staging'
       - name: Build image and setup env
         id: build-image-setup-env
         uses: ./.github/actions/docker-build-env-setup
