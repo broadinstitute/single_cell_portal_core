@@ -8,9 +8,7 @@ on:
   workflow_dispatch:
 env:
   DOCKER_IMAGE_NAME: 'gcr.io/broad-singlecellportal-staging/single-cell-portal'
-  GCLOUD_DOCKER_IMAGE: 'gcr.io/google.com/cloudsdktool/google-cloud-cli:latest'
   VAULT_SECRET_PATH: 'secret/kdux/scp/staging/scp_service_account.json'
-  IMAGE_NAME: 'gcloud-config'
 
 jobs:
   Build-And-Publish-Docker-Image:
@@ -21,28 +19,18 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
-      - name: Configure gcloud container and activate service account
-        uses: ./.github/actions/configure-gcloud-container
+      - name: Configure gcloud
+        uses: ./.github/actions/setup-gcloud
         with:
-          gcloud_docker_image: ${{ env.GCLOUD_DOCKER_IMAGE }}
-          image_name: ${{ env.IMAGE_NAME }}
-          vault_secret_path: ${{ env.VAULT_SECRET_PATH }}
-          vault_addr: ${{ secrets.VAULT_ADDR }}
-          vault_role_id: ${{ secrets.VAULT_ROLE_ID }}
-          vault_secret_id: ${{ secrets.VAULT_SECRET_ID }}
-      - name: Authenticate to docker
-        shell: bash
-        run: |
-          # auth into GCR via Docker with token from service account
-          AUTH_TOKEN=$(docker run --rm ${{ env.IMAGE_NAME }} gcloud auth print-access-token)
-          echo $AUTH_TOKEN | docker login -u oauth2accesstoken --password-stdin https://gcr.io
+          service_account_email: '839419950053-compute@developer.gserviceaccount.com'
+          google_cloud_project: 'broad-singlecellportal-staging'
       - name: Build requested Docker image
         run: |
-          # substitute 'docker run ARGS gcloud' for regular gcloud command and determine if VERSION_TAG should be set
+          # determine if VERSION_TAG should be set
           if [[ ${{ github.ref_name }} == 'master' ]]; then
-            bin/build_image.sh -g "docker run --rm ${{ env.IMAGE_NAME }} gcloud"
+            bin/build_image.sh
           else
-            bin/build_image.sh -v ${{ github.ref_name }} -g "docker run --rm ${{ env.IMAGE_NAME }} gcloud"
+            bin/build_image.sh -v ${{ github.ref_name }}
           fi
           
           

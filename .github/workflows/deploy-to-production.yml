@@ -11,11 +11,9 @@ on:
         default: 'N'
 env:
   DOCKER_IMAGE_NAME: 'gcr.io/broad-singlecellportal-staging/single-cell-portal'
-  GCLOUD_DOCKER_IMAGE: "gcr.io/google.com/cloudsdktool/google-cloud-cli:latest"
-  IMAGE_NAME: 'prod-gcloud-config'
-  PORTAL_SECRETS_PATH: 'secret/kdux/scp/production/scp_config.json'
-  MAIN_SERVICE_ACCOUNT: 'secret/kdux/scp/production/scp_service_account.json'
-  READ_ONLY_SERVICE_ACCOUNT: 'secret/kdux/scp/production/read_only_service_account.json'
+  CONFIG_FILENAME: 'scp_config.env'
+  DEFAULT_SA_KEYFILE: 'scp_service_account.json'
+  READONLY_SA_KEYFILE: 'read_only_service_account.json'
   GOOGLE_PROJECT: 'broad-singlecellportal'
   COMPUTE_ZONE: 'us-central1-a'
   REMOTE_HOST: 'singlecell-01'
@@ -32,43 +30,31 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
-      - name: Install vault and other utilities
-        uses: ./.github/actions/install-vault-and-utils
-      - name: Configure gcloud container and activate service account
-        uses: ./.github/actions/configure-gcloud-container
+      - name: Configure gcloud
+        uses: ./.github/actions/setup-gcloud
         with:
-          gcloud_docker_image: ${{ env.GCLOUD_DOCKER_IMAGE }}
-          image_name: ${{ env.IMAGE_NAME }}
-          vault_secret_path:  ${{ env.MAIN_SERVICE_ACCOUNT }}
-          vault_addr: ${{ secrets.VAULT_ADDR }}
-          vault_role_id: ${{ secrets.VAULT_ROLE_ID }}
-          vault_secret_id: ${{ secrets.VAULT_SECRET_ID }}
+          service_account_email: '116798894341-compute@developer.gserviceaccount.com'
+          google_cloud_project: $GOOGLE_PROJECT
       - name: Extract secrets to env file
-        uses: ./.github/actions/extract-vault-secret-to-file
+        uses: ./.github/actions/extract-gsm-secret-to-file
         with:
-          vault_secret_path: ${{ env.PORTAL_SECRETS_PATH }}
-          vault_addr: ${{ secrets.VAULT_ADDR }}
-          vault_role_id: ${{ secrets.VAULT_ROLE_ID }}
-          vault_secret_id: ${{ secrets.VAULT_SECRET_ID }}
-          output_filename: 'scp_config.env'
+          google_cloud_project: $GOOGLE_PROJECT
+          gsm_secret: 'scp-config-json'
+          output_filename: ${{ env.CONFIG_FILENAME }}
           output_format: 'env'
-      - name: Extract main service account json
-        uses: ./.github/actions/extract-vault-secret-to-file
+      - name: Extract secrets to env file
+        uses: ./.github/actions/extract-gsm-secret-to-file
         with:
-          vault_secret_path: ${{ env.MAIN_SERVICE_ACCOUNT }}
-          vault_addr: ${{ secrets.VAULT_ADDR }}
-          vault_role_id: ${{ secrets.VAULT_ROLE_ID }}
-          vault_secret_id: ${{ secrets.VAULT_SECRET_ID }}
-          output_filename: 'scp_service_account.json'
+          google_cloud_project: $GOOGLE_PROJECT
+          gsm_secret: 'default-sa-keyfile'
+          output_filename: ${{ env.DEFAULT_SA_KEYFILE }}
           output_format: 'json'
-      - name: Extract readonly service account json
-        uses: ./.github/actions/extract-vault-secret-to-file
+      - name: Extract secrets to env file
+        uses: ./.github/actions/extract-gsm-secret-to-file
         with:
-          vault_secret_path: ${{ env.READ_ONLY_SERVICE_ACCOUNT }}
-          vault_addr: ${{ secrets.VAULT_ADDR }}
-          vault_role_id: ${{ secrets.VAULT_ROLE_ID }}
-          vault_secret_id: ${{ secrets.VAULT_SECRET_ID }}
-          output_filename: 'read_only_service_account.json'
+          google_cloud_project: $GOOGLE_PROJECT
+          gsm_secret: 'read-only-sa-keyfile'
+          output_filename: ${{ env.READONLY_SA_KEYFILE }}
           output_format: 'json'
       - name: Run deploy script
         shell: bash
@@ -78,4 +64,4 @@ jobs:
             ROLLBACK="-R"
           fi
           bin/deploy-github.sh -b master -e production -g $GOOGLE_PROJECT -G $IMAGE_NAME -h $REMOTE_HOST \
-                               -p $PORTAL_SECRETS_PATH -s $MAIN_SERVICE_ACCOUNT -r $READ_ONLY_SERVICE_ACCOUNT $ROLLBACK
+                               -p $CONFIG_FILENAME -s $DEFAULT_SA_KEYFILE -r $READONLY_SA_KEYFILE $ROLLBACK
