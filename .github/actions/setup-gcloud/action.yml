@@ -21,7 +21,7 @@ runs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
       with:
-        project_id: ${{ input.google_cloud_project }}
+        project_id: ${{ inputs.google_cloud_project }}
     - name: Authenticate docker
       shell: bash
       run: gcloud auth configure-docker gcr.io --quiet
