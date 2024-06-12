@@ -1,0 +1,28 @@
+name: 'Authenticate into gcloud'
+description: 'Installs jq and authenticates into gcloud via workload identity federation'
+inputs:
+  service_account_email:
+    description: 'service account email to use in workload identity'
+    required: true
+  google_cloud_project:
+    description: 'GCP project to load'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Install jq
+      shell: bash
+      run: sudo apt-get update && sudo apt-get -y jq
+    - name: Auth to GCP
+      uses: google-github-actions/auth@v1
+      with:
+        workload_identity_provider: "projects/1038484894585/locations/global/workloadIdentityPools/github-wi-pool/providers/github-wi-provider"
+        service_account: ${{ inputs.service_account_email }}
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        project_id: ${{ input.google_cloud_project }}
+    - name: Authenticate docker
+      shell: bash
+      run: gcloud auth configure-docker gcr.io --quiet
+

@@ -23,6 +23,9 @@ env:
 
 jobs:
   Deploy-To-Production:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
     runs-on: ubuntu-20.04
     concurrency:
       group: production-deployment

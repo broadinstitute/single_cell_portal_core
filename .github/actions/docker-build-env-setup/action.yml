@@ -7,8 +7,6 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Install vault and other utilities
-      uses: ./.github/actions/install-vault-and-utils
     - name: Detect changes to Dockerfile
       id: changed-dockerfile
       uses: tj-actions/changed-files@v44.3.0
