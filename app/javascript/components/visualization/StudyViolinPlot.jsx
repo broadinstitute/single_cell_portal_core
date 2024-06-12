@@ -86,7 +86,6 @@ export async function filterResults(
       const cellIndex = allCellsIndex[group][i]
       if (filteredCellIndexes.has(cellIndex)) {
         const cellName = cellNames[i]
-        filteredCellNames[cellName] = 1
         filteredValues[group].cells.push(cellName)
         filteredValues[group].y.push(results.values[group].y[i])
 
@@ -100,7 +99,6 @@ export async function filterResults(
   results.values = filteredValues
 
   if (flags?.show_igv_multiome) {
-    // debugger
     filterIgvFeatures(filteredCellNames)
   }
 

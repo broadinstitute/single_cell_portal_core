@@ -1,4 +1,4 @@
-import React, { useEffect, useState, memo } from 'react'
+import React, { useEffect, useState } from 'react'
 import igv from '@single-cell-portal/igv'
 import _uniqueId from 'lodash/uniqueId'
 
@@ -132,37 +132,38 @@ function getOriginalChrFeatures(trackIndex, igvBrowser) {
   return originalChrFeatures
 }
 
-/**
-   * Apply crude faceted search in igv.js
-   *
-   * This is a proof of concept.  Lots is hard-coded and brittle, intentionally, as an
-   * engineering experiment to demonstrate that genomic features can be arbitrarily
-   * filtered directly in client-side JS in the browser.
-   */
-function filterAtac(scoreSelection) {
-  const trackIndex = 4 // Track index
-  const igvBrowser = window.igvBrowser
+// /**
+//    * TODO: Consider maturing this filtering by "score", which is a
+//    * dimension that is _not_ an annotation yet is still often applicable
+//    * for all genomic features in a BED file.
+//    *
+//    * Context, demo:
+//    * https://github.com/broadinstitute/single_cell_portal_core/pull/2021
+//    */
+// function filterByScore(scoreSelection) {
+//   const trackIndex = 4 // Track index
+//   const igvBrowser = window.igvBrowser
 
-  const originalChrFeatures = getOriginalChrFeatures(trackIndex, igvBrowser)
+//   const originalChrFeatures = getOriginalChrFeatures(trackIndex, igvBrowser)
 
-  if (!scoreSelection) {
-    scoreSelection = new Set(2)
-  }
-  // const inputs = document.querySelectorAll('.filters input')
-  // inputs.forEach(input => {
-  //   if (input.checked) {
-  //     selection[input.value] = 1
-  //   }
-  // })
+//   if (!scoreSelection) {
+//     scoreSelection = new Set(2)
+//   }
+//   // const inputs = document.querySelectorAll('.filters input')
+//   // inputs.forEach(input => {
+//   //   if (input.checked) {
+//   //     selection[input.value] = 1
+//   //   }
+//   // })
 
-  const filteredFeatures = originalChrFeatures.filter(feature => scoreSelection.has(feature.score))
+//   const filteredFeatures = originalChrFeatures.filter(feature => scoreSelection.has(feature.score))
 
-  updateTrack(trackIndex, filteredFeatures, igv, igvBrowser)
-}
+//   updateTrack(trackIndex, filteredFeatures, igv, igvBrowser)
+// }
 
 /** Filter genomic features */
 export function filterIgvFeatures(filteredCellNames) {
-  const trackIndex = 4 // Track index
+  const trackIndex = 4 // TODO (SCP-5662): Robustify this
   const igvBrowser = window.igvBrowser
 
   const originalChrFeatures = getOriginalChrFeatures(trackIndex, igvBrowser)
@@ -171,8 +172,8 @@ export function filterIgvFeatures(filteredCellNames) {
   updateTrack(trackIndex, filteredFeatures, igv, igvBrowser)
 }
 
-// window.filterAtac = filterAtac
-
+// Uncomment to ease debugging
+// window.SCP.filterByScore = filterByScore
 // window.SCP.filterIgvFeatures = filterIgvFeatures
 
 /**
@@ -397,9 +398,6 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
 
     popoverData.forEach(nameValue => {
       if (nameValue.name) {
-        // const value = nameValue.name.toLowerCase() === 'name' ?
-        //       `<a href="https://uswest.ensembl.org/Multi/Search/Results?q=${ nameValue.value }">${ nameValue.value }</a>` :
-        //   nameValue.value
         let name = nameValue.name
         const config = track.config
         if (config.format === 'bed' && config.dataType === 'atac-fragment') {

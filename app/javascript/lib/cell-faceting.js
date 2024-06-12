@@ -682,7 +682,7 @@ export async function initCellFaceting(
   cellFaceting.perfTimes = perfTimes
 
   // Below line is worth keeping, but only uncomment to debug in development
-  window.SCP.cellFaceting = cellFaceting
+  // window.SCP.cellFaceting = cellFaceting
   return cellFaceting
 }
 

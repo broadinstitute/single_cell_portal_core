@@ -9,36 +9,6 @@ More context: https://github.com/broadinstitute/single_cell_portal_core/pull/202
   <title>igv.js</title>
   <style>.filters li { display: inline} </style>
   <script>
-  /**
-   * Apply crude faceted search in igv.js
-   *
-   * This is a proof of concept.  Lots is hard-coded and brittle, intentionally, as an
-   * engineering experiment to demonstrate that genomic features can be arbitrarily
-   * filtered directly in client-side JS in the browser.
-   */
-  // function filterAtac() {
-  //   const ti = 4 // Track index
-  //   if (typeof originalFeaturesChr12 === 'undefined') {
-  //     originalFeaturesChr12 = igvBrowser.trackViews[ti].track.featureSource.featureCache.allFeatures[12]
-  //   }
-  //   selection = {}
-  //   inputs = document.querySelectorAll('.filters input')
-  //   inputs.forEach(input => {
-  //     if (input.checked) {
-  //       selection[input.value] = 1
-  //     }
-  //   })
-
-  //   filteredFeatures = originalFeaturesChr12.filter(feature => feature.score in selection)
-
-  //   // How many layers of features can be stacked / piled up.
-  //   maxRows = 20
-
-  //   igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
-  //   igvBrowser.trackViews[ti].track.featureSource.featureCache = new igv.FeatureCache(filteredFeatures, igvBrowser.genome)
-  //   igvBrowser.trackViews[ti].track.clearCachedFeatures()
-  //   igvBrowser.trackViews[ti].track.updateViews()
-  // }
 
   /** Render update to reflect newly-selected features in IGV track */
   function updateTrack(trackIndex, filteredFeatures, igv, igvBrowser) {
@@ -53,16 +23,6 @@ More context: https://github.com/broadinstitute/single_cell_portal_core/pull/202
 
 /** Get unfiltered genomic features on current chromosome */
 function getOriginalChrFeatures(trackIndex, igvBrowser) {
-  // console.log('window.igvBrowser')
-  // console.log(window.igvBrowser)
-  // console.log('window.igvBrowser.tracks[0].trackView.viewports[0]')
-  // console.log(window.igvBrowser.tracks[0].trackView.viewports[0])
-  // console.log('window.igvBrowser.tracks[0].trackView.viewports[0]')
-  // console.log(window.igvBrowser.tracks[0].trackView.viewports[0])
-  // console.log('window.igvBrowser.tracks[0].trackView.viewports[0].featureCache')
-  // console.log(window.igvBrowser.tracks[0].trackView.viewports[0].featureCache)
-  // console.log('window.igvBrowser.tracks[0].trackView.viewports[0].featureCache.chr')
-  // console.log(window.igvBrowser.tracks[0].trackView.viewports[0].featureCache.chr)
   const chr = window.igvBrowser.tracks[0].trackView.viewports[0].featureCache.chr
 
   if (
@@ -86,12 +46,12 @@ function getOriginalChrFeatures(trackIndex, igvBrowser) {
     if (!scoreSelection) {
       scoreSelection = new Set([2])
     }
-    // const inputs = document.querySelectorAll('.filters input')
-    // inputs.forEach(input => {
-    //   if (input.checked) {
-    //     selection[input.value] = 1
-    //   }
-    // })
+    const inputs = document.querySelectorAll('.filters input')
+    inputs.forEach(input => {
+      if (input.checked) {
+        selection[input.value] = 1
+      }
+    })
 
     const filteredFeatures = originalChrFeatures.filter(feature => scoreSelection.has(feature.score))
     console.log('filteredFeatures', filteredFeatures)
