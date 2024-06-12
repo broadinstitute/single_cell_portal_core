@@ -54,7 +54,6 @@ function getOriginalChrFeatures(trackIndex, igvBrowser) {
     })
 
     const filteredFeatures = originalChrFeatures.filter(feature => scoreSelection.has(feature.score))
-    console.log('filteredFeatures', filteredFeatures)
 
     updateTrack(trackIndex, filteredFeatures, igv, igvBrowser)
   }

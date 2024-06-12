@@ -4,8 +4,8 @@ class HcaAzulClientTest < ActiveSupport::TestCase
 
   before(:all) do
     @hca_azul_client = ApplicationController.hca_azul_client
-    @project_shortname = 'ImmuneCellExhaustianHIV'
-    @project_id = '0fd8f918-62d6-4b8b-ac35-4c53dd601f71'
+    @project_shortname = 'ProstateCellAtlas'
+    @project_id = '53c53cd4-8127-4e12-bc7f-8fe1610a715c'
     @facets = [
       {
         id: 'disease',

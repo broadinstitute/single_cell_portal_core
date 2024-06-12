@@ -15,7 +15,6 @@ AllCops:
     - 'vendor/bundle/**/*'
     - '*.lock'
     - '.rubocop.yml'
-    - 'test/ui_test_suite.rb'
 
 Layout/LineLength:
   Max: 120
