@@ -10,7 +10,7 @@
 usage=$(
 cat <<EOF
 
-### shell script to load secrets from Vault and execute command ###
+### shell script to load secrets from GSM and execute command ###
 $0
 
 [OPTIONS]
@@ -82,7 +82,7 @@ unset NOT_DOCKERIZED
 BASE_GSM_COMMAND="gcloud secrets versions access latest --project=$GOOGLE_CLOUD_PROJECT"
 
 if [[ -n $SCP_CONFIG_NAME ]] ; then
-  # load raw secrets from vault
+  # load raw secrets from GSM
   VALS=$($BASE_GSM_COMMAND --secret=$SCP_CONFIG_NAME)
 
   # for each key in the secrets config, export the value

@@ -183,22 +183,23 @@ will cause the container to spawn headlessly by passing the `-d` flag, rather th
 
 ### BROAD INSTITUTE CONFIGURATION
 
-Broad Institute project members can load all project secrets from Vault and boot the portal directly by using the
-`bin/load_env_secrets.sh` script, thereby skipping all of the configuration/registration steps in [DEPLOYING A PRIVATE INSTANCE](#local-development-or-deploying-a-private-instance)
+Broad Institute project members can load all project secrets from Google Secrets Manager (via gcloud) and boot the portal 
+directly by using the `bin/load_env_secrets.sh` script, thereby skipping all of the configuration/registration steps in 
+[DEPLOYING A PRIVATE INSTANCE](#local-development-or-deploying-a-private-instance)
 
     bin/load_env_secrets.sh -p (path/to/service/account.json) -s (path/to/portal/config) -r (path/to/readonly/service/account.json) -e (environment)
 
 This script takes up to 7 parameters:
 
-1. **VAULT_SECRET_PATH** (passed with -p): Path to portal configuration JSON inside Vault.
-2. **SERVICE_ACCOUNT_PATH** (passed with -s): Path to GCP main service account configuration JSON inside Vault.
-3. **READ_ONLY_SERVICE_ACCOUNT_PATH** (passed with -r): Path to GCP read-only service account configuration JSON inside Vault.
-4. **COMMAND** (passed with -c): Command to execute after loading vault secrets.  Defaults to 'bin/boot_docker'
+1. **SCP_CONFIG_NAME** (passed with -p): Name of configuration JSON inside GSM.
+2. **DEFAULT_SA_KEYFILE** (passed with -s): Name of default service account keyfile inside GSM.
+3. **READ_ONLY_SA_KEYFILE** (passed with -r): Name of  read-only service account keyfile inside GSM.
+4. **COMMAND** (passed with -c): Command to execute after loading GSM secrets.  Defaults to 'bin/boot_docker'
 5. **PASSENGER_APP_ENV** (passed with -e; optional): Environment to boot portal in.  Defaults to 'development'.
 6. **DOCKER VERSION TAG** (passed with -v): Sets the version tag of the portal Docker image to run.  Defaults to 'development'
 7. **PORTAL_NAMESPACE** (passed with -n): Sets the value for the default Terra billing project.  Defaults to single-cell-portal-development
 
-The script requires two command line utilities: [vault](https://www.vaultproject.io) and [jq](https://stedolan.github.io/jq/).
+The script requires two command line utilities: [gcloud](https://cloud.google.com/sdk/gcloud/reference) and [jq](https://stedolan.github.io/jq/).
 Please refer to their respective sites for installation instructions.
 
 ### DOCKER RUN COMMAND ENVIRONMENT VARIABLES
@@ -302,7 +303,7 @@ scripts for the portal:
 This will set the necessary values inside the container.  **If your database is on the default network, this step is not
 necessary.  If you are using a third-party MongoDB provider, please refer to their documentation regarding network access.**
 
-**Single Cell Portal team members should set the associated values inside their vault configurations for their instance
+**Single Cell Portal team members should set the associated values inside their GSM configurations for their instance
 of the portal.**
 
 ### ADMIN USER ACCOUNTS
@@ -341,7 +342,7 @@ run:
 
     bin/docker-compose-setup.sh
 
-This will pull all necessary secrets from `vault` and write env files to pass to Docker, then create two containers
+This will pull all necessary secrets from Google Secrets Manager and write env files to pass to Docker, then create two containers
 locally: `single_cell` (application server), and `single_cell_vite` (vite dev server). Both containers will install
 their dependencies automatically if you have updated any gems or JS packages and then start their required services.  In
 addition to the Rails server, the `single_cell` container will run any required migrations and start `Delayed::Job` on
@@ -423,7 +424,7 @@ This will boot a new instance of the portal in test mode and run all associated 
 
 If you are a Broad engineer developing the canonical Single Cell Portal, run unit and integration tests like so:
 
-    bin/load_env_secrets.sh -e test -p vault/path/to/your/development/scp_config.json -s vault/path/to/your/development/scp_service_account.json -r vault/path/to/your/development/read_only_service_account.json
+    bin/load_env_secrets.sh -e test -p scp-config-json -s default-sa-keyfile -r read-only-sa-keyfile
 
 It is also possible to run individual tests suites by passing the following parameters to `boot_docker`. To run all tests
 in a single suite:

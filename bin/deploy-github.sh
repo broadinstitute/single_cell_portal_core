@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # script that can run deployments to GCE via Github Action runner
-# uses gcloud Docker image for authentication & ssh access via service accounts
-# vault secrets are extracted using extract-vault-secret-to-file action
+# uses gcloud action for authentication & ssh access via service accounts
+# vault secrets are extracted using extract-gsm-secret-to-file action
 
 THIS_DIR="$(cd "$(dirname -- "$0")"; pwd)"
 

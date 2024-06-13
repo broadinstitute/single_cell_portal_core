@@ -1,5 +1,5 @@
 name: 'Docker Build Env Setup'
-description: 'Installs vault and runs docker build during CI, incorporating changes as necessary'
+description: 'Runs docker build during CI, incorporating changes as necessary'
 outputs:
   docker-tag:
     description: 'Tag for locally built Docker image'

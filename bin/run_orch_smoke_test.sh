@@ -3,7 +3,7 @@
 usage=$(
 cat <<EOF
 
-### shell script to load secrets from Vault and execute command ###
+### shell script to load secrets from GSM and execute command ###
 $0
 
 [OPTIONS]

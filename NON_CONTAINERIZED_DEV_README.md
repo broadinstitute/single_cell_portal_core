@@ -56,8 +56,7 @@ bson_ext (1.5.1)
   -
     - Change directories back to `single_cell_portal_core`
 10. Run `yarn install`
-11. Run `./rails_local_setup.rb` to will write out required variables into an shell env file (using your Broad username 
-to determine which `vault` paths to read from).
+11. Run `./rails_local_setup.rb` to will write out required variables into an shell env file (using your current GCP project to load secrets).
 12. Run the source command the script outputs -- this will export those needed variables into the current shell
 13. Add `config/certs/localhost.crt` to your system's trusted certificates. 
   -  Automatic route (preferred), run `sudo security add-trusted-cert -d -r trustAsRoot -k /Library/Keychains/System.keychain config/certs/localhost.crt`
@@ -83,8 +82,8 @@ ulimit -Sn 10240
 
 ## REGULAR DEVELOPMENT
 Adding `source <<path-to-single-cell-portal-core>>/config/secrets/.source_env.bash` to your .zschrc or .bash_profile will source the 
-secrets read from Vault to each new shell, saving you the trouble of rerunning the setup process every time you open a 
-new shell.  
+secrets read from Google Secrets Manager (GSM) via `gcloud` to each new shell, saving you the trouble of rerunning the 
+setup process every time you open a new shell.  
 
 NOTE: If you ever use the `bin/run_tests.sh` script locally, this will write out and delete any shell env files 
 after completion.  You will need to run `./ruby_local_setup.rb` again to repopulate them.
