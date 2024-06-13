@@ -36,7 +36,7 @@ jobs:
         uses: ./.github/actions/setup-gcloud
         with:
           service_account_email: '839419950053-compute@developer.gserviceaccount.com'
-          google_cloud_project: $GOOGLE_PROJECT
+          google_cloud_project: ${{ env.GOOGLE_PROJECT }}
       - name: Extract secrets to env file
         uses: ./.github/actions/extract-gsm-secret-to-file
         with:
@@ -47,14 +47,14 @@ jobs:
       - name: Extract secrets to env file
         uses: ./.github/actions/extract-gsm-secret-to-file
         with:
-          google_cloud_project: $GOOGLE_PROJECT
+          google_cloud_project: ${{ env.GOOGLE_PROJECT }}
           gsm_secret: 'default-sa-keyfile'
           output_filename: ${{ env.DEFAULT_SA_KEYFILE }}
           output_format: 'json'
       - name: Extract secrets to env file
         uses: ./.github/actions/extract-gsm-secret-to-file
         with:
-          google_cloud_project: $GOOGLE_PROJECT
+          google_cloud_project: ${{ env.GOOGLE_PROJECT }}
           gsm_secret: 'read-only-sa-keyfile'
           output_filename: ${{ env.READONLY_SA_KEYFILE }}
           output_format: 'json'
