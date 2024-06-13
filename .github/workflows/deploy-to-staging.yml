@@ -40,7 +40,7 @@ jobs:
       - name: Extract secrets to env file
         uses: ./.github/actions/extract-gsm-secret-to-file
         with:
-          google_cloud_project: $GOOGLE_PROJECT
+          google_cloud_project: ${{ env.GOOGLE_PROJECT }}
           gsm_secret: 'scp-config-json'
           output_filename: ${{ env.CONFIG_FILENAME }}
           output_format: 'env'
