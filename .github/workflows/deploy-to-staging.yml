@@ -17,7 +17,7 @@ env:
   CONFIG_FILENAME: 'scp_config.env'
   DEFAULT_SA_KEYFILE: 'scp_service_account.json'
   READONLY_SA_KEYFILE: 'read_only_service_account.json'
-  GOOGLE_PROJECT: 'broad-singlecellportal-staging'
+  GOOGLE_CLOUD_PROJECT: 'broad-singlecellportal-staging'
   COMPUTE_ZONE: 'us-central1-a'
   REMOTE_HOST: 'singlecell-01'
 
@@ -36,25 +36,25 @@ jobs:
         uses: ./.github/actions/setup-gcloud
         with:
           service_account_email: '839419950053-compute@developer.gserviceaccount.com'
-          google_cloud_project: ${{ env.GOOGLE_PROJECT }}
+          google_cloud_project: ${{ env.GOOGLE_CLOUD_PROJECT }}
       - name: Extract secrets to env file
         uses: ./.github/actions/extract-gsm-secret-to-file
         with:
-          google_cloud_project: ${{ env.GOOGLE_PROJECT }}
+          google_cloud_project: ${{ env.GOOGLE_CLOUD_PROJECT }}
           gsm_secret: 'scp-config-json'
           output_filename: ${{ env.CONFIG_FILENAME }}
           output_format: 'env'
       - name: Extract secrets to env file
         uses: ./.github/actions/extract-gsm-secret-to-file
         with:
-          google_cloud_project: ${{ env.GOOGLE_PROJECT }}
+          google_cloud_project: ${{ env.GOOGLE_CLOUD_PROJECT }}
           gsm_secret: 'default-sa-keyfile'
           output_filename: ${{ env.DEFAULT_SA_KEYFILE }}
           output_format: 'json'
       - name: Extract secrets to env file
         uses: ./.github/actions/extract-gsm-secret-to-file
         with:
-          google_cloud_project: ${{ env.GOOGLE_PROJECT }}
+          google_cloud_project: ${{ env.GOOGLE_CLOUD_PROJECT }}
           gsm_secret: 'read-only-sa-keyfile'
           output_filename: ${{ env.READONLY_SA_KEYFILE }}
           output_format: 'json'
