@@ -18,7 +18,7 @@ export default function SpatialSelector({ spatialGroups, updateSpatialGroups, al
   const options = getSpatialOptions(allSpatialGroups)
   return (
     <div className="form-group">
-      <label className="labeled-select">Spatial Groups
+      <label className="labeled-select">Spatial groups
         <Select options={options}
           data-analytics-name="spatial-cluster-select"
           value={spatialGroups.map(name => ({ label: name, value: name }))}
