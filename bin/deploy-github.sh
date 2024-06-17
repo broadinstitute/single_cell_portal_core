@@ -204,5 +204,5 @@ function copy_file_to_remote {
 function set_remote_environment_vars {
   echo "PASSENGER_APP_ENV='$PASSENGER_APP_ENV' PORTAL_SECRETS_PATH='$PORTAL_SECRETS_PATH' DESTINATION_BASE_DIR='$DESTINATION_BASE_DIR'"
 }
-
+echo "params: $@"
 main "$@"
