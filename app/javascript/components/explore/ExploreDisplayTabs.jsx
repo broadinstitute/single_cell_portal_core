@@ -30,34 +30,6 @@ import {
   initCellFaceting, filterCells, getFacetsParam, parseFacetsParam
 } from '~/lib/cell-faceting'
 
-/**
- * Show an error modal upon encountering error seen in spatial plots
- *
- */
-function errorOnManyWebglContexts() {
-  /** Derived from https://stackoverflow.com/a/49248484 */
-  function myCustomWarn(...args) {
-    const messages = args.filter(e => typeof e === 'string')
-
-    const tooManyWebGl =
-      'Too many active WebGL contexts. Oldest context will be lost.'
-
-    // eslint-disable-next-line guard-for-in
-    for (const m in messages) {
-      if (messages[m].includes(tooManyWebGl)) {
-        // treat the warning as you want
-        // you could use switch case if you want
-      };
-    };
-
-    return console.oldWarn(...args)
-  };
-
-  console.oldWarn = console.warn
-
-  console.warn = myCustomWarn
-}
-
 /** Get the selected clustering and annotation, or their defaults */
 export function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
   if (!exploreInfo) {return [null, null]}

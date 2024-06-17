@@ -285,3 +285,29 @@
   z-index: 3;
 }
 
+.warning-inline {
+  color: $warning-icon-color;
+  font-size: 12px;
+}
+
+.clear-warning-inline {
+  font-size: 13px;
+  font-weight: bold;
+  background: none;
+  border: none;
+  margin-left: 0px;
+}
+
+.clear-warning-inline:hover {
+  background: $warning-background-color;
+}
+
+.clear-warning-inline svg {
+  position: relative;
+  top: 3px;
+}
+
+.clear-warning-inline path {
+  fill: $warning-icon-color;
+}
+
