@@ -25,7 +25,7 @@ function main {
   GOOGLE_CLOUD_PROJECT="broad-singlecellportal"
   COMPUTE_ZONE="us-central1-a"
 
-  while getopts "p:s:r:e:b:d:h:S:u:H:t:Rfv:g:z:G:" OPTION; do
+  while getopts "p:s:r:e:b:d:h:S:u:H:t:Rfv:g:z:" OPTION; do
     case $OPTION in
       p)
         CONFIG_FILENAME="$OPTARG"
@@ -71,9 +71,6 @@ function main {
         ;;
       z)
         COMPUTE_ZONE="$OPTARG"
-        ;;
-      G)
-        GCLOUD_CONFIG_IMAGE="$OPTARG"
         ;;
       H)
         echo "$usage"
