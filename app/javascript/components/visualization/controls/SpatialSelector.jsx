@@ -21,13 +21,32 @@ function InlineClearButton() {
   )
 }
 
-/** component for displaying a spatial group selector
+/**
+ * Determine whether to warn user about too many spatial groups
+ *
+ * Browsers usually limit the number of active WebGL contexts.  The limit
+ * is often variable, and browser signaling of when the limit is exceeded is not
+ * reliable.  So this uses a heuristic to assess when there are likely > 6
+ * WebGL contexts, and if SCP should warn user of the potential issue.
+ */
+function getShouldWarn(spatialGroups, genes) {
+  const numGenes = genes.length
+  const numSpatial = spatialGroups.length
+  return (
+    (numGenes === 0 && numSpatial > 5) ||
+    (numGenes === 1 && numSpatial > 2) ||
+    (numGenes > 2 && numSpatial > 5)
+  )
+}
+
+/** Component for displaying a spatial group selector
   @param spatialGroups: an array string names of the currently selected spatial groups
   @param updateSpatialGroups: an update function for handling changes to spatialGroups
   @param allSpatialGroups: an array of all possible spatial groups, each with a 'name' property
 */
-export default function SpatialSelector({ spatialGroups, updateSpatialGroups, allSpatialGroups }) {
+export default function SpatialSelector({ spatialGroups, updateSpatialGroups, allSpatialGroups, genes }) {
   const options = getSpatialOptions(allSpatialGroups)
+  const shouldWarn = getShouldWarn(spatialGroups, genes)
   return (
     <div className="form-group">
       <label className="labeled-select">Spatial groups
@@ -41,7 +60,7 @@ export default function SpatialSelector({ spatialGroups, updateSpatialGroups, al
           isClearable={false}
           styles={clusterSelectStyle}/>
       </label>
-      {spatialGroups.length > 5 &&
+      {shouldWarn &&
         <span className="warning-inline">Remove groups to avoid plot limit.<InlineClearButton/></span>
       }
     </div>
