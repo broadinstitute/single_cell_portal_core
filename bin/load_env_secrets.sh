@@ -2,20 +2,22 @@
 
 # load_env_secrets.sh
 #
-# shell script to export environment variables from Vault secrets or a JSON configuration file and then boot portal
-# requires the jq utility: https://stedolan.github.io/jq/ and vault: https://www.vaultproject.io
+# shell script to export environment variables from GSM or a JSON configuration file and then boot portal
+# requires the jq utility: https://stedolan.github.io/jq/ and all necessary secrets loaded into the
+# Secret Manager in GCP: https://console.cloud.google.com/security/secret-manager
 
 # usage error message
 usage=$(
 cat <<EOF
 
-### shell script to load secrets from Vault and execute command ###
+### shell script to load secrets from GSM and execute command ###
 $0
 
 [OPTIONS]
--p VALUE	set the path to the Vault configuration object
--s VALUE	set the path to the service account credentials object in Vault
--r VALUE	set the path to the 'read-only' service account credentials object in Vault
+-p VALUE	set the name of the main SCP config in GSM
+-s VALUE	set the name of the service account credentials object in GSM
+-r VALUE	set the name of the 'read-only' service account credentials object in GSM
+-g VAULE  set the name of the GCP project from which to load secrets
 -c VALUE	command to execute after loading secrets (defaults to bin/boot_docker, please wrap command in 'quotes' to ensure proper execution)
 -e VALUE	set the environment to boot the portal in (defaults to development)
 -v VALUE  set the version of the Docker image to load (defaults to latest)
@@ -30,16 +32,20 @@ COMMAND="bin/boot_docker"
 THIS_DIR="$(cd "$(dirname "$0")"; pwd)"
 CONFIG_DIR="$THIS_DIR/../config"
 SPECIAL_CMD="false"
-while getopts "p:s:r:c:e:v:n:H" OPTION; do
+GOOGLE_CLOUD_PROJECT=$(gcloud info --format="value(config.project)")
+while getopts "p:s:r:g:c:e:v:n:H" OPTION; do
 case $OPTION in
   p)
-    VAULT_SECRET_PATH="$OPTARG"
+    SCP_CONFIG_NAME="$OPTARG"
     ;;
   s)
-    SERVICE_ACCOUNT_PATH="$OPTARG"
+    DEFAULT_SA_KEYFILE="$OPTARG"
     ;;
   r)
-    READ_ONLY_SERVICE_ACCOUNT_PATH="$OPTARG"
+    READ_ONLY_SA_KEYFILE="$OPTARG"
+    ;;
+  g)
+    GOOGLE_CLOUD_PROJECT="$OPTARG"
     ;;
   c)
     COMMAND="$OPTARG"
@@ -64,8 +70,8 @@ case $OPTION in
     ;;
   esac
 done
-if [[ -z $SERVICE_ACCOUNT_PATH ]] && [[ -z $VAULT_SECRET_PATH ]] ; then
-  echo "You must supply the SERVICE_ACCOUNT_PATH [-c] & VAULT_SECRET_PATH [-p] (or CONFIG_PATH_PATH [-f]) to use this script."
+if [[ -z $DEFAULT_SA_KEYFILE ]] && [[ -z $SCP_CONFIG_NAME ]] ; then
+  echo "You must supply the DEFAULT_SA_KEYFILE [-c] & SCP_CONFIG_NAME [-p] (or CONFIG_PATH_PATH [-f]) to use this script."
   echo ""
   echo "$usage"
   exit 1
@@ -73,16 +79,17 @@ fi
 
 #  clear this environment variable just in case this terminal was used for local development
 unset NOT_DOCKERIZED
+BASE_GSM_COMMAND="gcloud secrets versions access latest --project=$GOOGLE_CLOUD_PROJECT"
 
-if [[ -n $VAULT_SECRET_PATH ]] ; then
-  # load raw secrets from vault
-  VALS=$(vault read -format=json $VAULT_SECRET_PATH)
+if [[ -n $SCP_CONFIG_NAME ]] ; then
+  # load raw secrets from GSM
+  VALS=$($BASE_GSM_COMMAND --secret=$SCP_CONFIG_NAME)
 
   # for each key in the secrets config, export the value
-  for key in $(echo $VALS | jq .data | jq --raw-output 'keys[]')
+  for key in $(echo $VALS | jq --raw-output 'keys[]')
   do
     echo "setting value for: $key"
-    curr_val=$(echo $VALS | jq .data | jq --raw-output .$key)
+    curr_val=$(echo $VALS | jq --raw-output .$key)
     # honor PORTAL_NAMESPACE from the environment, if present
     if [[ "$PORTAL_NAMESPACE" != "" && "$key" = "PORTAL_NAMESPACE" ]] ; then
       echo "honoring current value of PORTAL_NAMESPACE: $PORTAL_NAMESPACE"
@@ -93,24 +100,24 @@ if [[ -n $VAULT_SECRET_PATH ]] ; then
   done
 fi
 # now load service account credentials
-if [[ -n $SERVICE_ACCOUNT_PATH ]] ; then
+if [[ -n $DEFAULT_SA_KEYFILE ]] ; then
   echo "setting value for: GOOGLE_CLOUD_KEYFILE_JSON"
-  CREDS_VALS=$(vault read -format=json $SERVICE_ACCOUNT_PATH)
-  JSON_CONTENTS=$(echo $CREDS_VALS | jq --raw-output .data)
+  CREDS_VALS=$($BASE_GSM_COMMAND --secret=$DEFAULT_SA_KEYFILE)
+  JSON_CONTENTS=$(echo $CREDS_VALS | jq --raw-output)
   echo "*** WRITING MAIN SERVICE ACCOUNT ***"
   SERVICE_ACCOUNT_FILEPATH="$CONFIG_DIR/.scp_service_account.json"
   echo $JSON_CONTENTS >| $SERVICE_ACCOUNT_FILEPATH
   COMMAND=$COMMAND" -k /home/app/webapp/config/.scp_service_account.json"
-  JSON_CONTENTS=`echo $CREDS_VALS | jq --raw-output .data`
+  JSON_CONTENTS=$(echo $CREDS_VALS | jq --raw-output)
   echo "setting value for: GOOGLE_CLOUD_PROJECT"
-  export GOOGLE_CLOUD_PROJECT=$(echo $CREDS_VALS | jq --raw-output .data.project_id)
+  export GOOGLE_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT
 fi
 
 # now load public read-only service account credentials
-if [[ -n $READ_ONLY_SERVICE_ACCOUNT_PATH ]] ; then
+if [[ -n $READ_ONLY_SA_KEYFILE ]] ; then
   echo "setting value for: READ_ONLY_GOOGLE_CLOUD_KEYFILE_JSON"
-  READ_ONLY_CREDS_VALS=$(vault read -format=json $READ_ONLY_SERVICE_ACCOUNT_PATH)
-  READ_ONLY_JSON_CONTENTS=$(echo $READ_ONLY_CREDS_VALS | jq --raw-output .data)
+  READ_ONLY_CREDS_VALS=$($BASE_GSM_COMMAND --secret=$READ_ONLY_SA_KEYFILE)
+  READ_ONLY_JSON_CONTENTS=$(echo $READ_ONLY_CREDS_VALS | jq --raw-output)
   echo "*** WRITING READ ONLY SERVICE ACCOUNT CREDENTIALS ***"
   READONLY_FILEPATH="$CONFIG_DIR/.read_only_service_account.json"
   echo $READ_ONLY_JSON_CONTENTS >| $READONLY_FILEPATH

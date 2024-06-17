@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # script that can run deployments to GCE via Github Action runner
-# uses gcloud Docker image for authentication & ssh access via service accounts
-# vault secrets are extracted using extract-vault-secret-to-file action
+# uses gcloud action for authentication & ssh access via service accounts
+# vault secrets are extracted using extract-gsm-secret-to-file action
 
 THIS_DIR="$(cd "$(dirname -- "$0")"; pwd)"
 
@@ -22,21 +22,19 @@ function main {
   HOTFIX="false"
   TAG_OFFSET=1
   VERSION_TAG="development"
-  GCLOUD_DOCKER_IMAGE="gcr.io/google.com/cloudsdktool/google-cloud-cli:latest"
   GOOGLE_PROJECT="broad-singlecellportal"
   COMPUTE_ZONE="us-central1-a"
-  GCLOUD_CONFIG_IMAGE="gcloud-config"
 
   while getopts "p:s:r:e:b:d:h:S:u:H:t:Rfv:g:z:G:" OPTION; do
     case $OPTION in
       p)
-        PORTAL_SECRETS_VAULT_PATH="$OPTARG"
+        PORTAL_CONFIG_FILENAME="$OPTARG"
         ;;
       s)
-        SERVICE_ACCOUNT_VAULT_PATH="$OPTARG"
+        DEFAULT_SA_KEYFILE="$OPTARG"
         ;;
       r)
-        READ_ONLY_SERVICE_ACCOUNT_VAULT_PATH="$OPTARG"
+        READ_ONLY_SA_KEYFILE="$OPTARG"
         ;;
       e)
         PASSENGER_APP_ENV="$OPTARG"
@@ -90,34 +88,31 @@ function main {
   done
 
   # construct SSH command using gcloud and Identity Aware Proxy to access VM via authenticated Docker container
-  BASE_SSH="docker run --rm $GCLOUD_CONFIG_IMAGE gcloud compute ssh"
+  BASE_SSH="gcloud compute ssh"
   SSH_ARGS="$SSH_USER@$DESTINATION_HOST --tunnel-through-iap --project $GOOGLE_PROJECT --zone $COMPUTE_ZONE"
   SSH_COMMAND="$BASE_SSH  $SSH_ARGS --verbosity error --command "
 
   # copy command using gcloud compute scp
-  BASE_COPY="docker run --rm $GCLOUD_CONFIG_IMAGE gcloud compute scp"
+  BASE_COPY="gcloud compute scp"
   COPY_ARGS=
 
   # exit if all config is not present
-  if [[ -z "$PORTAL_SECRETS_VAULT_PATH" ]] || [[ -z "$SERVICE_ACCOUNT_VAULT_PATH" ]] || [[ -z "$READ_ONLY_SERVICE_ACCOUNT_VAULT_PATH" ]]; then
-    exit_with_error_message "Did not supply all necessary parameters: portal config: '$PORTAL_SECRETS_VAULT_PATH';" \
-      "service account path: '$SERVICE_ACCOUNT_VAULT_PATH'; read-only service account path: '$READ_ONLY_SERVICE_ACCOUNT_VAULT_PATH'$newline$newline$usage"
+  if [[ -z "$PORTAL_CONFIG_FILENAME" ]] || [[ -z "$DEFAULT_SA_KEYFILE" ]] || [[ -z "$READ_ONLY_SA_KEYFILE" ]]; then
+    exit_with_error_message "Did not supply all necessary parameters: portal config: '$PORTAL_CONFIG_FILENAME';" \
+      "service account path: '$DEFAULT_SA_KEYFILE'; read-only service account path: '$READ_ONLY_SA_KEYFILE'$newline$newline$usage"
   fi
 
-  echo "### extracting secrets from vault ###"
-  CONFIG_FILENAME="$(set_export_filename $PORTAL_SECRETS_VAULT_PATH env)"
-  SERVICE_ACCOUNT_FILENAME="$(set_export_filename $SERVICE_ACCOUNT_VAULT_PATH)"
-  READ_ONLY_SERVICE_ACCOUNT_FILENAME="$(set_export_filename $READ_ONLY_SERVICE_ACCOUNT_VAULT_PATH)"
-  # secrets will have already been extracted via extract-vault-secret-to-file
-  PORTAL_SECRETS_PATH="$DESTINATION_BASE_DIR/config/$CONFIG_FILENAME"
-  SERVICE_ACCOUNT_JSON_PATH="$DESTINATION_BASE_DIR/config/$SERVICE_ACCOUNT_FILENAME"
-  READ_ONLY_SERVICE_ACCOUNT_JSON_PATH="$DESTINATION_BASE_DIR/config/$READ_ONLY_SERVICE_ACCOUNT_FILENAME"
+  echo "### constructing paths to configs/secrets ###"
+  # secrets will have already been extracted via extract-gsm-secret-to-file
+  PORTAL_SECRETS_PATH="$DESTINATION_BASE_DIR/config/$PORTAL_CONFIG_FILENAME"
+  SERVICE_ACCOUNT_JSON_PATH="$DESTINATION_BASE_DIR/config/$DEFAULT_SA_KEYFILE"
+  READ_ONLY_SERVICE_ACCOUNT_JSON_PATH="$DESTINATION_BASE_DIR/config/$READ_ONLY_SA_KEYFILE"
   echo "### COMPLETED ###"
 
   # set paths in env file to be correct inside container
   echo "### Exporting Service Account Keys: $SERVICE_ACCOUNT_JSON_PATH, $READ_ONLY_SERVICE_ACCOUNT_JSON_PATH ###"
-  echo "export SERVICE_ACCOUNT_KEY=/home/app/webapp/config/$SERVICE_ACCOUNT_FILENAME" >> $CONFIG_FILENAME
-  echo "export READ_ONLY_SERVICE_ACCOUNT_KEY=/home/app/webapp/config/$READ_ONLY_SERVICE_ACCOUNT_FILENAME" >> $CONFIG_FILENAME
+  echo "export SERVICE_ACCOUNT_KEY=/home/app/webapp/config/$DEFAULT_SA_KEYFILE" >> $PORTAL_CONFIG_FILENAME
+  echo "export READ_ONLY_SERVICE_ACCOUNT_KEY=/home/app/webapp/config/$READ_ONLY_SA_KEYFILE" >> $PORTAL_CONFIG_FILENAME
   echo "### COMPLETED ###"
 
   # init folder/repo if this is the first deploy on this host
@@ -126,9 +121,9 @@ function main {
 
   # move secrets to remote host
   echo "### migrating secrets to remote host ###"
-  copy_file_to_remote ./$CONFIG_FILENAME $PORTAL_SECRETS_PATH || exit_with_error_message "could not move $CONFIG_FILENAME to $PORTAL_SECRETS_PATH"
-  copy_file_to_remote ./$SERVICE_ACCOUNT_FILENAME $SERVICE_ACCOUNT_JSON_PATH || exit_with_error_message "could not move $SERVICE_ACCOUNT_FILENAME to $SERVICE_ACCOUNT_JSON_PATH"
-  copy_file_to_remote ./$READ_ONLY_SERVICE_ACCOUNT_FILENAME $READ_ONLY_SERVICE_ACCOUNT_JSON_PATH || exit_with_error_message "could not move $READ_ONLY_SERVICE_ACCOUNT_FILENAME to $READ_ONLY_SERVICE_ACCOUNT_JSON_PATH"
+  copy_file_to_remote ./$PORTAL_CONFIG_FILENAME $PORTAL_SECRETS_PATH || exit_with_error_message "could not move $PORTAL_CONFIG_FILENAME to $PORTAL_SECRETS_PATH"
+  copy_file_to_remote ./$DEFAULT_SA_KEYFILE $SERVICE_ACCOUNT_JSON_PATH || exit_with_error_message "could not move $DEFAULT_SA_KEYFILE to $SERVICE_ACCOUNT_JSON_PATH"
+  copy_file_to_remote ./$READ_ONLY_SA_KEYFILE $READ_ONLY_SERVICE_ACCOUNT_JSON_PATH || exit_with_error_message "could not move $READ_ONLY_SA_KEYFILE to $READ_ONLY_SERVICE_ACCOUNT_JSON_PATH"
   echo "### COMPLETED ###"
 
   # update source on remote host to pull in changes before deployment
@@ -172,9 +167,9 @@ USAGE:
 ### extract secrets from vault, copy to remote host, build/stop/remove docker container and launch boot script for deployment ###
 
 [REQUIRED PARAMETERS]
--p VALUE    set the path to configuration secrets in vault
--s VALUE    set the path to the main service account json in vault
--r VALUE    set the path to the read-only service account json in vault
+-p VALUE    name of main portal configuration file
+-s VALUE    name of main service account keyfile
+-r VALUE    name of read-only service account keyfile
 
 [OPTIONS]
 -e VALUE    set the environment to boot the portal in (defaults to production)
