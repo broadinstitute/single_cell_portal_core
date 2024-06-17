@@ -57,7 +57,7 @@ SecureHeaders::Configuration.default do |config|
                              'https://www.googleapis.com', 'https://storage.googleapis.com', 'https://s3.amazonaws.com', 'https://data.broadinstitute.org', 'https://portals.broadinstitute.org',
                              'https://accounts.google.com', 'https://terra-bard-dev.appspot.com', 'https://terra-bard-alpha.appspot.com', 'https://terra-bard-prod.appspot.com',
                              'https://rest.ensembl.org', 'https://eutils.ncbi.nlm.nih.gov', 'https://mygene.info', 'https://webservice.wikipathways.org', 'https://o54426.ingest.sentry.io',
-                             'https://igv-genepattern-org.s3.amazonaws.com'
+                             'https://igv-genepattern-org.s3.amazonaws.com', 'https://*.soe.ucsc.edu'
                             ]
   if ENV['NOT_DOCKERIZED']
     # enable connections to live reload server
@@ -91,7 +91,7 @@ SecureHeaders::Configuration.default do |config|
     script_src: %w('self' blob: 'unsafe-eval' 'unsafe-inline' 'strict-dynamic' https://cdn.plot.ly https://cdn.datatables.net
                      https://www.google-analytics.com https://cdnjs.cloudflare.com https://maxcdn.bootstrapcdn.com
                      https://use.fontawesome.com https://js-agent.newrelic.com https://bam.nr-data.net
-                     https://*.appcues.com https://*.appcues.net),
+                     https://*.appcues.com https://*.appcues.net https://*.soe.ucsc.edu),
     style_src: %w('self' blob: https://maxcdn.bootstrapcdn.com
                       https://*.appcues.com https://*.appcues.net https://fonts.googleapis.com https://fonts.google.com 'unsafe-inline'),
     upgrade_insecure_requests: true # see https://www.w3.org/TR/upgrade-insecure-requests/

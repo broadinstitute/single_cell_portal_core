@@ -106,7 +106,7 @@ bin/delayed_job restart $PASSENGER_APP_ENV -n 6 || { echo "FAILED to start DELAY
 # than just `yarn ui-test`.
 if [[ "$TEST_FILEPATH" == "" ]]; then
   echo "Precompiling assets, yarn and vite..."
-  export NODE_OPTIONS="--max-old-space-size=4096"
+  export NODE_OPTIONS="--max-old-space-size=4096 --unhandled-rejections=warn"
   if [[ "$CI" == true ]]; then
     git config --global --add safe.directory $(pwd)
   fi

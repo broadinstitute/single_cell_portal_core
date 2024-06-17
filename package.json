@@ -1,7 +1,7 @@
 {
   "scripts": {
     "test": "export NODE_TLS_REJECT_UNAUTHORIZED=0; jest --coverage ",
-    "ui-test": "NODE_OPTIONS=\"--max-old-space-size=4096\" jest test/js --coverage --testPathIgnorePatterns=fetch/* precomputed-heatmaps.test metrics-perf.test",
+    "ui-test": "NODE_OPTIONS=\"--max-old-space-size=4096  --unhandled-rejections=warn\" jest test/js --coverage --testPathIgnorePatterns=fetch/* precomputed-heatmaps.test metrics-perf.test",
     "testDebug": "node --inspect-brk node_modules/.bin/jest --runInBand",
     "lint": "eslint app/javascript",
     "fix-styles": "prettier-stylelint --write 'src/**/*.{css,scss}' "
@@ -25,7 +25,7 @@
     "@sentry/react": "^7.54.0",
     "@sentry/tracing": "^7.54.0",
     "@sentry/vite-plugin": "^2.18.0",
-    "@single-cell-portal/igv": "2.6.4-beta.1",
+    "@single-cell-portal/igv": "2.16.0-alpha.2",
     "@tanstack/react-table": "^8.8.5",
     "@vitejs/plugin-react": "^1.2.0",
     "babel-plugin-transform-react-remove-prop-types": "^0.4.24",

@@ -233,9 +233,14 @@ export default function ExploreDisplayPanelManager({
   referencePlotDataParams.genes = []
 
   const annotationList = exploreInfo ? exploreInfo.annotationList : null
+
   // hide the cluster controls if we're on a genome tab, or if there aren't clusters to choose
-  const showClusterControls = !['genome', 'infercnv-genome', 'geneListHeatmap'].includes(shownTab) &&
-                                annotationList?.clusters?.length
+  let showClusterControls = !['infercnv-genome', 'geneListHeatmap'].includes(shownTab) &&
+                                annotationList?.clusters?.length > 0
+
+  if (showClusterControls === true && shownTab === 'genome') {
+    showClusterControls = flags?.show_igv_multiome
+  }
 
   const shownAnnotation = getShownAnnotation(exploreParamsWithDefaults.annotation, annotationList)
 
@@ -506,14 +511,14 @@ export default function ExploreDisplayPanelManager({
             <div id={useBookmarkContainer ? 'bookmark-container' : ''} className={useRowClass ? 'row' : ''}>
               <div className={useRowClass ? 'col-xs-12' : ''}>
                 <button className="action action-with-bg"
-                        onClick={clearExploreParams}
-                        title="Reset all view options"
-                        data-analytics-name="explore-view-options-reset">
+                  onClick={clearExploreParams}
+                  title="Reset all view options"
+                  data-analytics-name="explore-view-options-reset">
                   <FontAwesomeIcon icon={faUndo}/> Reset view</button>
                 <button onClick={copyLink}
-                        className="action action-with-bg"
-                        data-toggle="tooltip"
-                        title="Copy a link to this visualization to the clipboard">
+                  className="action action-with-bg"
+                  data-toggle="tooltip"
+                  title="Copy a link to this visualization to the clipboard">
                   <FontAwesomeIcon icon={faLink}/> Get link</button>
                 {exploreInfo?.bookmarks &&
                   <BookmarkManager

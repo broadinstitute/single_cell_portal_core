@@ -3,7 +3,9 @@ import React from 'react'
 const fetch = require('node-fetch')
 import '@testing-library/jest-dom/extend-expect'
 import { render, screen, waitFor } from '@testing-library/react'
-import GenomeView, { getIgvOptions } from 'components/explore/GenomeView'
+import igv from '@single-cell-portal/igv'
+import * as IgvUtils from 'lib/igv-utils'
+import GenomeView, { getIgvOptions, filterIgvFeatures } from 'components/explore/GenomeView'
 import { trackInfo } from './genome-view.test.data.js'
 
 describe('IGV genome browser in Explore tab', () => {
@@ -16,7 +18,7 @@ describe('IGV genome browser in Explore tab', () => {
     const trackFileName = ''
     const uniqueGenes = ['GAD1', 'LDLR', 'GAPDH', 'GCG', 'ACE2']
     const isVisible = true
-    const exploreParams = { genes: 'GCG' }
+    const queriedGenes = ['GCG']
     const updateExploreParams = () => {}
 
     const { container } = render((<GenomeView
@@ -24,7 +26,7 @@ describe('IGV genome browser in Explore tab', () => {
       trackFileName={trackFileName}
       uniqueGenes={uniqueGenes}
       isVisible={isVisible}
-      exploreParams={exploreParams}
+      queriedGenes={queriedGenes}
       updateExploreParams={updateExploreParams}
     />))
 
@@ -42,5 +44,54 @@ describe('IGV genome browser in Explore tab', () => {
     const igvOptions = getIgvOptions(tracks, gtfFiles, uniqueGenes, queriedGenes)
 
     expect(igvOptions.reference).toEqual('hg38')
+  })
+
+  it('should filter genomic features in IGV', async () => {
+    // Mock function that wraps a set of IGV calls
+    const updateTrack = jest.spyOn(IgvUtils, 'updateTrack')
+    updateTrack.mockImplementation(() => {})
+
+    const filteredCellNames = new Set(['GAT-1', 'TAC-1', 'AGA-1'])
+    const features = [
+      { name: 'GAT-1', score: 1 },
+      { name: 'TAC-1', score: 1 },
+      { name: 'AGA-1', score: 2 },
+      { name: 'AAA-1', score: 2 },
+      { name: 'TTT-1', score: 3 },
+      { name: 'CCC-1', score: 4 },
+      { name: 'GGG-1', score: 5 }
+    ]
+
+    const filteredFeatures = [
+      { name: 'GAT-1', score: 1 },
+      { name: 'TAC-1', score: 1 },
+      { name: 'AGA-1', score: 2 }
+    ]
+
+    const igvBrowser = {
+      tracks: [{ trackView: { viewports: [{ featureCache: { chr: 'chr9' } }] } }],
+      trackViews: [
+        {}, {}, {}, {}, {
+          track: {
+            featureSource: {
+              featureCache: {
+                allFeatures: {
+                  chr9: features
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+
+    global.igvBrowser = igvBrowser
+
+    filterIgvFeatures(filteredCellNames)
+
+    const trackIndex = 4
+    expect(updateTrack).toHaveBeenLastCalledWith(
+      trackIndex, filteredFeatures, igv, igvBrowser
+    )
   })
 })
