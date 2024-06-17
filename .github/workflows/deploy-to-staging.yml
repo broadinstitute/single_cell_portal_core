@@ -55,5 +55,6 @@ jobs:
       - name: Run deploy script
         shell: bash
         run: |
-          bin/deploy-github.sh -b ${{ github.ref_name }} -e staging -g ${{ env.GOOGLE_CLOUD_PROJECT }} -G $IMAGE_NAME \ 
-                               -h $REMOTE_HOST -p $CONFIG_FILENAME -s $DEFAULT_SA_KEYFILE -r $READONLY_SA_KEYFILE
+          bin/deploy-github.sh -b ${{ github.ref_name }} -e staging -g ${{ env.GOOGLE_CLOUD_PROJECT }} \ 
+                               -h ${{ env.REMOTE_HOST }} -p ${{ env.CONFIG_FILENAME }} -s ${{ env.DEFAULT_SA_KEYFILE }} \
+                               -r ${{ env.READONLY_SA_KEYFILE }}
