@@ -55,6 +55,102 @@
       "filename": "spatial_zigzag.txt",
       "name": "spatial_zigzag",
       "is_spatial": true
+    },
+    {
+      "type": "Cluster",
+      "filename": "spatial_square_2.txt",
+      "name": "spatial_square_2",
+      "is_spatial": true
+    },
+    {
+      "type": "Cluster",
+      "filename": "spatial_square_3.txt",
+      "name": "spatial_square_3",
+      "is_spatial": true
+    },
+    {
+      "type": "Cluster",
+      "filename": "spatial_square_4.txt",
+      "name": "spatial_square_4",
+      "is_spatial": true
+    },
+    {
+      "type": "Cluster",
+      "filename": "spatial_square_5.txt",
+      "name": "spatial_square_5",
+      "is_spatial": true
+    },
+    {
+      "type": "Cluster",
+      "filename": "spatial_square_6.txt",
+      "name": "spatial_square_6",
+      "is_spatial": true
+    },
+    {
+      "type": "Cluster",
+      "filename": "spatial_square_7.txt",
+      "name": "spatial_square_7",
+      "is_spatial": true
+    },
+    {
+      "type": "Cluster",
+      "filename": "spatial_square_8.txt",
+      "name": "spatial_square_8",
+      "is_spatial": true
+    },
+    {
+      "type": "Cluster",
+      "filename": "spatial_square_9.txt",
+      "name": "spatial_square_9",
+      "is_spatial": true
+    },
+    {
+      "type": "Cluster",
+      "filename": "spatial_square_10.txt",
+      "name": "spatial_square_10",
+      "is_spatial": true
+    },
+    {
+      "type": "Cluster",
+      "filename": "spatial_square_11.txt",
+      "name": "spatial_square_11",
+      "is_spatial": true
+    },
+    {
+      "type": "Cluster",
+      "filename": "spatial_square_12.txt",
+      "name": "spatial_square_12",
+      "is_spatial": true
+    },
+    {
+      "type": "Cluster",
+      "filename": "spatial_square_13.txt",
+      "name": "spatial_square_13",
+      "is_spatial": true
+    },
+    {
+      "type": "Cluster",
+      "filename": "spatial_square_14.txt",
+      "name": "spatial_square_14",
+      "is_spatial": true
+    },
+    {
+      "type": "Cluster",
+      "filename": "spatial_square_15.txt",
+      "name": "spatial_square_15",
+      "is_spatial": true
+    },
+    {
+      "type": "Cluster",
+      "filename": "spatial_square_16.txt",
+      "name": "spatial_square_16",
+      "is_spatial": true
+    },
+    {
+      "type": "Cluster",
+      "filename": "spatial_square_17.txt",
+      "name": "spatial_square_17",
+      "is_spatial": true
     }
   ]
 }

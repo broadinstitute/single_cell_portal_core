@@ -39,9 +39,12 @@ function errorOnManyWebglContexts() {
   function myCustomWarn(...args) {
     const messages = args.filter(e => typeof e === 'string')
 
+    const tooManyWebGl =
+      'Too many active WebGL contexts. Oldest context will be lost.'
+
     // eslint-disable-next-line guard-for-in
     for (const m in messages) {
-      if (messages[m].indexOf('The warning I am looking for...') != -1) {
+      if (messages[m].includes(tooManyWebGl)) {
         // treat the warning as you want
         // you could use switch case if you want
       };
