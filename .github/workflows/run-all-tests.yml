@@ -37,8 +37,7 @@ jobs:
           READONLY_SA: 'read-only-sa-keyfile'
           CI: true
         run: |
-          bin/load_env_secrets.sh -p $SCP_CONFIG -s $DEFAULT_SA -r $READONLY_SA -g $GOOGLE_CLOUD_PROJECT -e test \
-                                  -v $DOCKER_IMAGE_TAG -n single-cell-portal-test
+          bin/load_env_secrets.sh -p $SCP_CONFIG -s $DEFAULT_SA -r $READONLY_SA -g $GOOGLE_CLOUD_PROJECT -e test -v $DOCKER_IMAGE_TAG -n single-cell-portal-test
       - name: Preserve all test logs
         uses: actions/upload-artifact@v4
         if: always()
