@@ -46,6 +46,7 @@ function main {
         DESTINATION_BASE_DIR="$OPTARG"
         ;;
       h)
+        echo "SETTING DESTINATION_HOST to $OPTARG"
         DESTINATION_HOST="$OPTARG"
         ;;
       S)
@@ -87,11 +88,11 @@ function main {
   # construct SSH command using gcloud and Identity Aware Proxy to access VM via authenticated Docker container
   BASE_SSH="gcloud compute ssh"
   SSH_ARGS="$SSH_USER@$DESTINATION_HOST --tunnel-through-iap --project $GOOGLE_CLOUD_PROJECT --zone $COMPUTE_ZONE"
-  SSH_COMMAND="$BASE_SSH  $SSH_ARGS --verbosity error --command "
+  SSH_COMMAND="$BASE_SSH $SSH_ARGS --verbosity error --command "
 
   # copy command using gcloud compute scp
   BASE_COPY="gcloud compute scp"
-  COPY_ARGS=
+  COPY_ARGS=""
 
   # exit if all config is not present
   if [[ -z "$CONFIG_FILENAME" ]] || [[ -z "$DEFAULT_SA_KEYFILE" ]] || [[ -z "$READONLY_SA_KEYFILE" ]]; then
@@ -194,7 +195,7 @@ function copy_file_to_remote {
   LOCAL_FILEPATH="$1"
   REMOTE_FILEPATH="$2"
   $SSH_COMMAND "mkdir -p \$(dirname $REMOTE_FILEPATH)"
-  BASE_COPY="gcloud compute scp "
+  BASE_COPY="gcloud compute scp"
   COPY_ARGS="$LOCAL_FILEPATH $SSH_USER@$DESTINATION_HOST:$REMOTE_FILEPATH --tunnel-through-iap --project $GOOGLE_CLOUD_PROJECT --zone $COMPUTE_ZONE"
   COPY_CMD="$BASE_COPY $COPY_ARGS"
   $COPY_CMD
