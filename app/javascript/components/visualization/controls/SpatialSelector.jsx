@@ -74,8 +74,6 @@ export default function SpatialSelector({ spatialGroups, updateSpatialGroups, al
   const options = getSpatialOptions(allSpatialGroups)
   const shouldWarn = getShouldWarn(spatialGroups, genes)
 
-  console.log('shouldWarn', shouldWarn)
-
   return (
     <div className="form-group">
       <label className="labeled-select">Spatial groups
