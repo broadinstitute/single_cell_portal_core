@@ -87,11 +87,11 @@ function main {
   # construct SSH command using gcloud and Identity Aware Proxy to access VM via authenticated Docker container
   BASE_SSH="gcloud compute ssh"
   SSH_ARGS="$SSH_USER@$DESTINATION_HOST --tunnel-through-iap --project $GOOGLE_CLOUD_PROJECT --zone $COMPUTE_ZONE"
-  SSH_COMMAND="$BASE_SSH  $SSH_ARGS --verbosity error --command "
+  SSH_COMMAND="$BASE_SSH $SSH_ARGS --verbosity error --command "
 
   # copy command using gcloud compute scp
   BASE_COPY="gcloud compute scp"
-  COPY_ARGS=
+  COPY_ARGS=""
 
   # exit if all config is not present
   if [[ -z "$CONFIG_FILENAME" ]] || [[ -z "$DEFAULT_SA_KEYFILE" ]] || [[ -z "$READONLY_SA_KEYFILE" ]]; then
@@ -193,10 +193,9 @@ function run_remote_command {
 function copy_file_to_remote {
   LOCAL_FILEPATH="$1"
   REMOTE_FILEPATH="$2"
-  CONTAINER_PATH="/tmp/$(basename $LOCAL_FILEPATH)"
   $SSH_COMMAND "mkdir -p \$(dirname $REMOTE_FILEPATH)"
-  BASE_COPY="docker run --rm -v $LOCAL_FILEPATH:$CONTAINER_PATH:rw $GCLOUD_CONFIG_IMAGE gcloud compute scp "
-  COPY_ARGS="$CONTAINER_PATH $SSH_USER@$DESTINATION_HOST:$REMOTE_FILEPATH --tunnel-through-iap --project $GOOGLE_CLOUD_PROJECT --zone $COMPUTE_ZONE"
+  BASE_COPY="gcloud compute scp"
+  COPY_ARGS="$LOCAL_FILEPATH $SSH_USER@$DESTINATION_HOST:$REMOTE_FILEPATH --tunnel-through-iap --project $GOOGLE_CLOUD_PROJECT --zone $COMPUTE_ZONE"
   COPY_CMD="$BASE_COPY $COPY_ARGS"
   $COPY_CMD
 }
@@ -204,5 +203,4 @@ function copy_file_to_remote {
 function set_remote_environment_vars {
   echo "PASSENGER_APP_ENV='$PASSENGER_APP_ENV' PORTAL_SECRETS_PATH='$PORTAL_SECRETS_PATH' DESTINATION_BASE_DIR='$DESTINATION_BASE_DIR'"
 }
-
 main "$@"
