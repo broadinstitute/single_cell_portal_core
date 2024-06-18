@@ -9,7 +9,7 @@ function RawUploadExperienceSplitter({
 }) {
   const splitterPath = '?tab=fileuploadchoice'
   if (window.location.search !== splitterPath) {
-    navigate('?tab=fileuploadchoice')
+    navigate(splitterPath)
   }
 
 
