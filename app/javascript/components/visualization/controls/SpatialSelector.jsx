@@ -37,9 +37,9 @@ function getShouldWarn(spatialGroups, genes) {
   const numGenes = genes.length
   const numSpatial = spatialGroups.length
   return (
-    (numGenes === 0 && numSpatial > 5) ||
-    (numGenes === 1 && numSpatial > 2) ||
-    (numGenes > 1 && numSpatial > 5)
+    (numGenes === 0 && numSpatial > 7) ||
+    (numGenes === 1 && numSpatial > 3) ||
+    (numGenes > 1 && numSpatial > 8)
   )
 }
 
