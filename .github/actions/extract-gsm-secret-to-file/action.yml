@@ -20,16 +20,16 @@ runs:
     - name: Extract GSM secret to file
       shell: bash
       run: |
-        VALUES=$(gcloud secrets versions access latest --project=${{ inputs.google_cloud_project }} --secret=${{ inputs.gsm_secret }})
         if [[ "${{ inputs.output_format }}" = 'env' ]]; then
+          VALUES=$(gcloud secrets versions access latest --project=${{ inputs.google_cloud_project }} --secret=${{ inputs.gsm_secret }})
           echo "### env secrets from ${{ inputs.gsm_secret }} ###" >| ${{ inputs.output_filename }}
-          for key in $(echo $VALUES | jq .data | jq --raw-output 'keys[]')
+          for key in $(echo $VALUES | jq --raw-output 'keys[]')
           do
             echo "setting value for: $key"
-            curr_val=$(echo $VALUES | jq .data | jq --raw-output .$key)
+            curr_val=$(echo $VALUES | jq --raw-output .$key)
             echo "export $key='$curr_val'" >> ${{ inputs.output_filename }}
           done
         elif [[ "${{ inputs.output_format }}" = 'json' ]]; then
-          JSON_CONTENTS=$(echo $VALUES | jq --raw-output .data)
-          echo $JSON_CONTENTS >| ${{ inputs.output_filename }}
+          # strip newlines with sed as GSM outputs data as raw strings
+          gcloud secrets versions access latest --project=${{ inputs.google_cloud_project }} --secret=${{ inputs.gsm_secret }} | sed "s/\n//g" >| ${{ inputs.output_filename }}
         fi
