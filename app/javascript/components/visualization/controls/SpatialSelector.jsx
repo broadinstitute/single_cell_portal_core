@@ -69,6 +69,7 @@ function InlineMessage({ text, issueType, genes }) {
   @param spatialGroups: an array string names of the currently selected spatial groups
   @param updateSpatialGroups: an update function for handling changes to spatialGroups
   @param allSpatialGroups: an array of all possible spatial groups, each with a 'name' property
+  @param genes: an array of string names for genes that are queried
 */
 export default function SpatialSelector({ spatialGroups, updateSpatialGroups, allSpatialGroups, genes }) {
   const options = getSpatialOptions(allSpatialGroups)
