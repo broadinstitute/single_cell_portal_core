@@ -63,37 +63,31 @@ function getIsFeatureInFrame(feature, igvBrowser) {
   return isFeatureInFrame
 }
 
-  function filterAtac() {
-    const trackIndex = 4 // Track index
-    const igvBrowser = window.igvBrowser
+function filterAtac() {
+  const trackIndex = 4 // Track index
+  const igvBrowser = window.igvBrowser
 
-    const scoreSelection = new Set([])
+  const scoreSelection = new Set([])
 
-    const originalChrFeatures = getOriginalChrFeatures(trackIndex, igvBrowser)
+  const originalChrFeatures = getOriginalChrFeatures(trackIndex, igvBrowser)
 
-    const inputs = document.querySelectorAll('.filters input')
-    inputs.forEach(input => {
-      if (input.checked) {
-        scoreSelection.add(parseInt(input.value))
-      }
-    })
-
-    console.log('scoreSelection')
-    console.log(scoreSelection)
-
-    if (scoreSelection.size === 0) {
-      return scoreSelection.originalChrFeatures
+  const inputs = document.querySelectorAll('.filters input')
+  inputs.forEach(input => {
+    if (input.checked) {
+      scoreSelection.add(parseInt(input.value))
     }
+  })
 
-    const filteredFeatures = originalChrFeatures.filter(
-      feature => scoreSelection.has(feature.score) && getIsFeatureInFrame(feature, igvBrowser)
-    )
-
-    console.log('filteredFeatures.length')
-    console.log(filteredFeatures.length)
-
-    updateTrack(trackIndex, filteredFeatures, igv, igvBrowser)
+  if (scoreSelection.size === 0) {
+    return scoreSelection.originalChrFeatures
   }
+
+  const filteredFeatures = originalChrFeatures.filter(
+    feature => scoreSelection.has(feature.score) && getIsFeatureInFrame(feature, igvBrowser)
+  )
+
+  updateTrack(trackIndex, filteredFeatures, igv, igvBrowser)
+}
     </script>
 </head>
 
