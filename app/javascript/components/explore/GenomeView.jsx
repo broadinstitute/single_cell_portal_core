@@ -415,9 +415,10 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
   }
 
   window.igv = igv
-  window.igvBrowser = await igv.createBrowser(igvContainer, igvOptions)
+  const igvBrowser = await igv.createBrowser(igvContainer, igvOptions)
+  window.igvBrowser = igvBrowser
 
-  window.igvBrowser.on('trackclick', (track, popoverData) => {
+  igvBrowser.on('trackclick', (track, popoverData) => {
     // Don't show popover when there's no data.
     if (!popoverData || !popoverData.length) {
       return false
@@ -451,6 +452,13 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
 
     // By returning a string from the trackclick handler we're asking IGV to use our custom HTML in its pop-over.
     return markup
+  })
+
+  igvBrowser.on('locuschange', () => {
+    const filteredCellNames = window.SCP.filteredCellNames
+    if (filteredCellNames) {
+      filterIgvFeatures(filteredCellNames)
+    }
   })
 
   // Log igv.js initialization in Google Analytics
