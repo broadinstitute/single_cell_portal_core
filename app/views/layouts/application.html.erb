@@ -21,6 +21,7 @@
       window.MAX_GENE_SEARCH = <%= StudySearchService::MAX_GENE_SEARCH %>;
       window.MAX_GENE_SEARCH_MSG = '<%= StudySearchService::MAX_GENE_SEARCH_MSG %>';
 
+      window.SCP.analyticsPageName = '<%= get_page_name %>';
       window.SCP.currentStudyAccession = '<%= @study&.accession %>';
 
       // if we had search forms to preserve, recall and resubmit
