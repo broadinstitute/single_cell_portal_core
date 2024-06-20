@@ -403,9 +403,12 @@ export default function ExploreDisplayPanelManager({
                   updateClusterParams={updateClusterParams}
                   spatialGroups={exploreInfo ? exploreInfo.spatialGroups : []}/>
                 {hasSpatialGroups &&
-                <SpatialSelector allSpatialGroups={exploreInfo.spatialGroups}
+                <SpatialSelector
+                  allSpatialGroups={exploreInfo.spatialGroups}
                   spatialGroups={exploreParamsWithDefaults.spatialGroups}
-                  updateSpatialGroups={spatialGroups => updateClusterParams({ spatialGroups })}/>
+                  updateSpatialGroups={spatialGroups => updateClusterParams({ spatialGroups })}
+                  genes={exploreParams.genes}
+                />
                 }
                 <AnnotationSelector
                   annotationList={annotationList}
