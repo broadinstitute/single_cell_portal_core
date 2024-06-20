@@ -12,10 +12,7 @@ More context: https://github.com/broadinstitute/single_cell_portal_core/pull/202
 
   /** Render update to reflect newly-selected features in IGV track */
   function updateTrack(trackIndex, filteredFeatures, igv, igvBrowser) {
-    // How many layers of features can be stacked / piled up.
-    // TODO (SCP-5662): eliminate this constraint
-    const maxRows = 20
-    igv.FeatureUtils.packFeatures(filteredFeatures, maxRows)
+    igv.FeatureUtils.packFeatures(filteredFeatures)
     igvBrowser.trackViews[trackIndex].track.featureSource.featureCache = new igv.FeatureCache(filteredFeatures, igvBrowser.genome)
     igvBrowser.trackViews[trackIndex].track.clearCachedFeatures()
     igvBrowser.trackViews[trackIndex].track.updateViews()
@@ -37,23 +34,63 @@ function getOriginalChrFeatures(trackIndex, igvBrowser) {
   return originalChrFeatures
 }
 
-  function filterAtac(scoreSelection) {
+/** Determine if feature is in genomic frame */
+function getIsFeatureInFrame(feature, igvBrowser) {
+  const frame = igvBrowser.referenceFrameList[0]
+
+  const isFeatureInFrame = (
+    // Contained:
+    // Frame:     --------
+    // Feature:     ----
+    (feature.start >= frame.start && feature.end <= frame.end) ||
+
+    // Overlaps start
+    // Frame:     --------
+    // Feature:  ----
+    (feature.start <= frame.start && feature.end >= frame.start) ||
+
+    // Overlaps end
+    // Frame:     --------
+    // Feature:         ----
+    (feature.start <= frame.end && feature.end >= frame.end) ||
+
+    // Spans
+    // Frame:     --------
+    // Feature: ------------
+    (feature.start <= frame.start && feature.end >= frame.end)
+  )
+
+  return isFeatureInFrame
+}
+
+  function filterAtac() {
     const trackIndex = 4 // Track index
     const igvBrowser = window.igvBrowser
 
+    const scoreSelection = new Set([])
+
     const originalChrFeatures = getOriginalChrFeatures(trackIndex, igvBrowser)
 
-    if (!scoreSelection) {
-      scoreSelection = new Set([2])
-    }
     const inputs = document.querySelectorAll('.filters input')
     inputs.forEach(input => {
       if (input.checked) {
-        selection[input.value] = 1
+        scoreSelection.add(parseInt(input.value))
       }
     })
 
-    const filteredFeatures = originalChrFeatures.filter(feature => scoreSelection.has(feature.score))
+    console.log('scoreSelection')
+    console.log(scoreSelection)
+
+    if (scoreSelection.size === 0) {
+      return scoreSelection.originalChrFeatures
+    }
+
+    const filteredFeatures = originalChrFeatures.filter(
+      feature => scoreSelection.has(feature.score) && getIsFeatureInFrame(feature, igvBrowser)
+    )
+
+    console.log('filteredFeatures.length')
+    console.log(filteredFeatures.length)
 
     updateTrack(trackIndex, filteredFeatures, igv, igvBrowser)
   }
