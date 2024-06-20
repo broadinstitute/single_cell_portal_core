@@ -132,6 +132,35 @@ function getOriginalChrFeatures(trackIndex, igvBrowser) {
   return originalChrFeatures
 }
 
+/** Determine if feature is in genomic frame */
+function getIsFeatureInFrame(feature, igvBrowser) {
+  const frame = igvBrowser.referenceFrameList[0]
+
+  const isFeatureInFrame = (
+    // Contained:
+    // Frame:     --------
+    // Feature:     ----
+    (feature.start >= frame.start && feature.end <= frame.end) ||
+
+    // Overlaps start
+    // Frame:     --------
+    // Feature:  ----
+    (feature.start <= frame.start && feature.end >= frame.start) ||
+
+    // Overlaps end
+    // Frame:     --------
+    // Feature:         ----
+    (feature.start <= frame.end && feature.end >= frame.end) ||
+
+    // Spans
+    // Frame:     --------
+    // Feature: ------------
+    (feature.start <= frame.start && feature.end >= frame.end)
+  )
+
+  return isFeatureInFrame
+}
+
 // /**
 //    * TODO: Consider maturing this filtering by "score", which is a
 //    * dimension that is _not_ an annotation yet is still often applicable
@@ -167,7 +196,9 @@ export function filterIgvFeatures(filteredCellNames) {
   const igvBrowser = window.igvBrowser
 
   const originalChrFeatures = getOriginalChrFeatures(trackIndex, igvBrowser)
-  const filteredFeatures = originalChrFeatures.filter(feature => filteredCellNames.has(feature.name))
+  const filteredFeatures = originalChrFeatures.filter(
+    feature => filteredCellNames.has(feature.name) && getIsFeatureInFrame(feature, igvBrowser)
+  )
 
   updateTrack(trackIndex, filteredFeatures, igv, igvBrowser)
 }
