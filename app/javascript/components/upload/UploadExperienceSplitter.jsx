@@ -7,7 +7,11 @@ import { navigate } from '@reach/router'
 function RawUploadExperienceSplitter({
   setIsAnnDataExperience, setOverrideExperienceMode
 }) {
-  navigate('?tab=fileuploadchoice')
+  const splitterPath = '?tab=fileuploadchoice'
+  if (window.location.search !== splitterPath) {
+    navigate(splitterPath)
+  }
+
 
   return <div className="top-margin margin-left">
     <div className="row">

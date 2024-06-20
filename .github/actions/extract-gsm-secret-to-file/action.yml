@@ -1,0 +1,35 @@
+name: 'Extract GSM secret to file'
+description: 'read a secret from Google Secrets Manager and export as a file'
+inputs:
+  google_cloud_project:
+    description: 'Name of GCP project to read secret from'
+    required: true
+  gsm_secret:
+    description: 'Name of secret in GSM'
+    required: true
+  output_filename:
+    description: 'name of exported secrets file'
+    required: true
+  output_format:
+    description: 'form to write secrets to: env or json'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Extract GSM secret to file
+      shell: bash
+      run: |
+        if [[ "${{ inputs.output_format }}" = 'env' ]]; then
+          VALUES=$(gcloud secrets versions access latest --project=${{ inputs.google_cloud_project }} --secret=${{ inputs.gsm_secret }})
+          echo "### env secrets from ${{ inputs.gsm_secret }} ###" >| ${{ inputs.output_filename }}
+          for key in $(echo $VALUES | jq --raw-output 'keys[]')
+          do
+            echo "setting value for: $key"
+            curr_val=$(echo $VALUES | jq --raw-output .$key)
+            echo "export $key='$curr_val'" >> ${{ inputs.output_filename }}
+          done
+        elif [[ "${{ inputs.output_format }}" = 'json' ]]; then
+          # strip newlines with sed as GSM outputs data as raw strings
+          gcloud secrets versions access latest --project=${{ inputs.google_cloud_project }} --secret=${{ inputs.gsm_secret }} | sed "s/\n//g" >| ${{ inputs.output_filename }}
+        fi

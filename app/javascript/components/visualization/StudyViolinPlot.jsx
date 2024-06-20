@@ -17,6 +17,7 @@ import { logViolinPlot } from '~/lib/scp-api-metrics'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { formatGeneList } from '~/components/visualization/PlotTitle'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
+import { filterIgvFeatures } from '~/components/explore/GenomeView'
 
 /** Title for violin plot; also accounts for "Collapsed by" / consensus view */
 function ViolinPlotTitle({ cluster, annotation, genes, consensus }) {
@@ -52,7 +53,8 @@ export async function filterResults(
   studyAccession, cluster, annotation, gene,
   results, cellFaceting, filteredCells
 ) {
-  const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering
+  const flags = getFeatureFlagsWithDefaults()
+  const showCellFiltering = flags?.show_cell_facet_filtering
   if (!showCellFiltering) {return results}
 
   if (gene in window.SCP.violinCellIndexes === false) {
@@ -70,6 +72,8 @@ export async function filterResults(
     filteredCellIndexes.add(filteredCells[i].allCellsIndex)
   }
 
+  const filteredCellNames = new Set()
+
   Object.keys(results.values).forEach(group => {
     filteredValues[group] = {
       annotations: [],
@@ -84,11 +88,19 @@ export async function filterResults(
         const cellName = cellNames[i]
         filteredValues[group].cells.push(cellName)
         filteredValues[group].y.push(results.values[group].y[i])
+
+        if (flags?.show_igv_multiome) {
+          filteredCellNames.add(cellName)
+        }
       }
     }
   })
 
   results.values = filteredValues
+
+  if (flags?.show_igv_multiome) {
+    filterIgvFeatures(filteredCellNames)
+  }
 
   return results
 }

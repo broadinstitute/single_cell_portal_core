@@ -179,7 +179,7 @@ export function matchingFormFiles(formFiles, fileFilter, isAnnDataExperience, fr
  * requiredFields is array objects with label and propertyName:  e.g. [{label: 'species', propertyName: 'taxon_id'}]
  * it validates the propertyName is specified (propertyName can include '.' for nested properties), and
  * uses the label in the validation message returned if the property is not specified. */
-export function validateFile({ file, allFiles, allowedFileExts=[], requiredFields=[], isAnnDataExperience=false }) {
+export function validateFile({ file, allFiles, allowedFileExts = [], requiredFields = [], isAnnDataExperience = false }) {
   if (!file) {
     // edge case where the form is rendered but hook to add an empty file has not yet finished
     return { file: 'File not yet initialized' }
@@ -325,7 +325,7 @@ export function generateMongoId() {
 
 const plainTextExtensions = ['.txt', '.tsv', '.text', '.csv']
 const mtxExtensions = ['.mtx', '.mm', '.txt', '.text']
-const miscExtensions = ['.txt', '.text', '.tsv', '.csv', '.jpg', '.jpeg', '.png', '.pdf',
+const baseMiscExtensions = ['.tsv', '.csv', '.jpg', '.jpeg', '.png', '.pdf',
   '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip', '.loom', '.ipynb']
 const sequenceExtensions = [
   '.fq', '.fastq', '.fq.tar.gz', '.fastq.tar.gz', '.fq.gz', '.fastq.gz', '.bam', '.bed.gz'
@@ -334,6 +334,7 @@ const baiExtensions = ['.bai']
 const tbiExtensions = ['.tbi']
 const annDataExtensions = ['.h5', '.h5ad', '.hdf5']
 const seuratExtensions = ['.Rds', '.rds', '.RDS', '.seuratdata', '.h5seurat', '.seuratdisk', '.Rda', '.rda']
+const miscExtensions = baseMiscExtensions.concat(mtxExtensions, annDataExtensions, seuratExtensions)
 
 export const FileTypeExtensions = {
   plainText: plainTextExtensions.concat(plainTextExtensions.map(ext => `${ext}.gz`)),

@@ -7,33 +7,37 @@ on:
   pull_request:
 env:
   DOCKER_IMAGE_NAME: "gcr.io/broad-singlecellportal-staging/single-cell-portal"
+  GOOGLE_CLOUD_PROJECT: 'broad-singlecellportal-staging'
 
 jobs:
   Run-All-Tests:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
     runs-on: self-hosted
 
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
+      - name: Configure gcloud
+        uses: ./.github/actions/setup-gcloud
+        with:
+          service_account_email: '839419950053-compute@developer.gserviceaccount.com'
+          google_cloud_project: 'broad-singlecellportal-staging'
       - name: Build image and setup env
         id: build-image-setup-env
         uses: ./.github/actions/docker-build-env-setup
       - name: Load secrets and run tests
         env:
-          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
           RAILS_LOG_TO_STDOUT: true
-          VAULT_ROLE_ID: ${{ secrets.VAULT_ROLE_ID }}
-          VAULT_SECRET_ID: ${{ secrets.VAULT_SECRET_ID }}
           DOCKER_IMAGE_TAG: ${{ steps.build-image-setup-env.outputs.docker-tag }}
+          SCP_CONFIG: 'scp-config-json'
+          DEFAULT_SA: 'default-sa-keyfile'
+          READONLY_SA: 'read-only-sa-keyfile'
           CI: true
         run: |
-          export VAULT_TOKEN=$( vault write -field=token auth/approle/login role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID )
-          bin/load_env_secrets.sh -p secret/kdux/scp/staging/scp_config.json \
-                                  -s secret/kdux/scp/staging/scp_service_account.json \
-                                  -r secret/kdux/scp/staging/read_only_service_account.json \
-                                  -e test -v $DOCKER_IMAGE_TAG \
-                                  -n single-cell-portal-test
+          bin/load_env_secrets.sh -p $SCP_CONFIG -s $DEFAULT_SA -r $READONLY_SA -g $GOOGLE_CLOUD_PROJECT -e test -v $DOCKER_IMAGE_TAG -n single-cell-portal-test
       - name: Preserve all test logs
         uses: actions/upload-artifact@v4
         if: always()

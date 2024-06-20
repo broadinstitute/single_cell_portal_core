@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # script that can run deployments to GCE via Github Action runner
-# uses gcloud Docker image for authentication & ssh access via service accounts
-# vault secrets are extracted using extract-vault-secret-to-file action
+# uses gcloud action for authentication & ssh access via service accounts
+# vault secrets are extracted using extract-gsm-secret-to-file action
 
 THIS_DIR="$(cd "$(dirname -- "$0")"; pwd)"
 
@@ -22,21 +22,19 @@ function main {
   HOTFIX="false"
   TAG_OFFSET=1
   VERSION_TAG="development"
-  GCLOUD_DOCKER_IMAGE="gcr.io/google.com/cloudsdktool/google-cloud-cli:latest"
-  GOOGLE_PROJECT="broad-singlecellportal"
+  GOOGLE_CLOUD_PROJECT="broad-singlecellportal"
   COMPUTE_ZONE="us-central1-a"
-  GCLOUD_CONFIG_IMAGE="gcloud-config"
 
-  while getopts "p:s:r:e:b:d:h:S:u:H:t:Rfv:g:z:G:" OPTION; do
+  while getopts "p:s:r:e:b:d:h:S:u:H:t:Rfv:g:z:" OPTION; do
     case $OPTION in
       p)
-        PORTAL_SECRETS_VAULT_PATH="$OPTARG"
+        CONFIG_FILENAME="$OPTARG"
         ;;
       s)
-        SERVICE_ACCOUNT_VAULT_PATH="$OPTARG"
+        DEFAULT_SA_KEYFILE="$OPTARG"
         ;;
       r)
-        READ_ONLY_SERVICE_ACCOUNT_VAULT_PATH="$OPTARG"
+        READONLY_SA_KEYFILE="$OPTARG"
         ;;
       e)
         PASSENGER_APP_ENV="$OPTARG"
@@ -69,13 +67,10 @@ function main {
         VERSION_TAG="$OPTARG"
         ;;
       g)
-        GOOGLE_PROJECT="$OPTARG"
+        GOOGLE_CLOUD_PROJECT="$OPTARG"
         ;;
       z)
         COMPUTE_ZONE="$OPTARG"
-        ;;
-      G)
-        GCLOUD_CONFIG_IMAGE="$OPTARG"
         ;;
       H)
         echo "$usage"
@@ -90,34 +85,31 @@ function main {
   done
 
   # construct SSH command using gcloud and Identity Aware Proxy to access VM via authenticated Docker container
-  BASE_SSH="docker run --rm $GCLOUD_CONFIG_IMAGE gcloud compute ssh"
-  SSH_ARGS="$SSH_USER@$DESTINATION_HOST --tunnel-through-iap --project $GOOGLE_PROJECT --zone $COMPUTE_ZONE"
-  SSH_COMMAND="$BASE_SSH  $SSH_ARGS --verbosity error --command "
+  BASE_SSH="gcloud compute ssh"
+  SSH_ARGS="$SSH_USER@$DESTINATION_HOST --tunnel-through-iap --project $GOOGLE_CLOUD_PROJECT --zone $COMPUTE_ZONE"
+  SSH_COMMAND="$BASE_SSH $SSH_ARGS --verbosity error --command "
 
   # copy command using gcloud compute scp
-  BASE_COPY="docker run --rm $GCLOUD_CONFIG_IMAGE gcloud compute scp"
-  COPY_ARGS=
+  BASE_COPY="gcloud compute scp"
+  COPY_ARGS=""
 
   # exit if all config is not present
-  if [[ -z "$PORTAL_SECRETS_VAULT_PATH" ]] || [[ -z "$SERVICE_ACCOUNT_VAULT_PATH" ]] || [[ -z "$READ_ONLY_SERVICE_ACCOUNT_VAULT_PATH" ]]; then
-    exit_with_error_message "Did not supply all necessary parameters: portal config: '$PORTAL_SECRETS_VAULT_PATH';" \
-      "service account path: '$SERVICE_ACCOUNT_VAULT_PATH'; read-only service account path: '$READ_ONLY_SERVICE_ACCOUNT_VAULT_PATH'$newline$newline$usage"
+  if [[ -z "$CONFIG_FILENAME" ]] || [[ -z "$DEFAULT_SA_KEYFILE" ]] || [[ -z "$READONLY_SA_KEYFILE" ]]; then
+    exit_with_error_message "Did not supply all necessary parameters: portal config: '$CONFIG_FILENAME';" \
+      "service account keyfile: '$DEFAULT_SA_KEYFILE'; read-only service account keyfile: '$READONLY_SA_KEYFILE'$newline$newline$usage"
   fi
 
-  echo "### extracting secrets from vault ###"
-  CONFIG_FILENAME="$(set_export_filename $PORTAL_SECRETS_VAULT_PATH env)"
-  SERVICE_ACCOUNT_FILENAME="$(set_export_filename $SERVICE_ACCOUNT_VAULT_PATH)"
-  READ_ONLY_SERVICE_ACCOUNT_FILENAME="$(set_export_filename $READ_ONLY_SERVICE_ACCOUNT_VAULT_PATH)"
-  # secrets will have already been extracted via extract-vault-secret-to-file
+  echo "### constructing paths to configs/secrets ###"
+  # secrets will have already been extracted via extract-gsm-secret-to-file
   PORTAL_SECRETS_PATH="$DESTINATION_BASE_DIR/config/$CONFIG_FILENAME"
-  SERVICE_ACCOUNT_JSON_PATH="$DESTINATION_BASE_DIR/config/$SERVICE_ACCOUNT_FILENAME"
-  READ_ONLY_SERVICE_ACCOUNT_JSON_PATH="$DESTINATION_BASE_DIR/config/$READ_ONLY_SERVICE_ACCOUNT_FILENAME"
+  SERVICE_ACCOUNT_JSON_PATH="$DESTINATION_BASE_DIR/config/$DEFAULT_SA_KEYFILE"
+  READ_ONLY_SERVICE_ACCOUNT_JSON_PATH="$DESTINATION_BASE_DIR/config/$READONLY_SA_KEYFILE"
   echo "### COMPLETED ###"
 
   # set paths in env file to be correct inside container
   echo "### Exporting Service Account Keys: $SERVICE_ACCOUNT_JSON_PATH, $READ_ONLY_SERVICE_ACCOUNT_JSON_PATH ###"
-  echo "export SERVICE_ACCOUNT_KEY=/home/app/webapp/config/$SERVICE_ACCOUNT_FILENAME" >> $CONFIG_FILENAME
-  echo "export READ_ONLY_SERVICE_ACCOUNT_KEY=/home/app/webapp/config/$READ_ONLY_SERVICE_ACCOUNT_FILENAME" >> $CONFIG_FILENAME
+  echo "export SERVICE_ACCOUNT_KEY=/home/app/webapp/config/$DEFAULT_SA_KEYFILE" >> $CONFIG_FILENAME
+  echo "export READ_ONLY_SERVICE_ACCOUNT_KEY=/home/app/webapp/config/$READONLY_SA_KEYFILE" >> $CONFIG_FILENAME
   echo "### COMPLETED ###"
 
   # init folder/repo if this is the first deploy on this host
@@ -127,8 +119,8 @@ function main {
   # move secrets to remote host
   echo "### migrating secrets to remote host ###"
   copy_file_to_remote ./$CONFIG_FILENAME $PORTAL_SECRETS_PATH || exit_with_error_message "could not move $CONFIG_FILENAME to $PORTAL_SECRETS_PATH"
-  copy_file_to_remote ./$SERVICE_ACCOUNT_FILENAME $SERVICE_ACCOUNT_JSON_PATH || exit_with_error_message "could not move $SERVICE_ACCOUNT_FILENAME to $SERVICE_ACCOUNT_JSON_PATH"
-  copy_file_to_remote ./$READ_ONLY_SERVICE_ACCOUNT_FILENAME $READ_ONLY_SERVICE_ACCOUNT_JSON_PATH || exit_with_error_message "could not move $READ_ONLY_SERVICE_ACCOUNT_FILENAME to $READ_ONLY_SERVICE_ACCOUNT_JSON_PATH"
+  copy_file_to_remote ./$DEFAULT_SA_KEYFILE $SERVICE_ACCOUNT_JSON_PATH || exit_with_error_message "could not move $DEFAULT_SA_KEYFILE to $SERVICE_ACCOUNT_JSON_PATH"
+  copy_file_to_remote ./$READONLY_SA_KEYFILE $READ_ONLY_SERVICE_ACCOUNT_JSON_PATH || exit_with_error_message "could not move $READONLY_SA_KEYFILE to $READ_ONLY_SERVICE_ACCOUNT_JSON_PATH"
   echo "### COMPLETED ###"
 
   # update source on remote host to pull in changes before deployment
@@ -172,9 +164,9 @@ USAGE:
 ### extract secrets from vault, copy to remote host, build/stop/remove docker container and launch boot script for deployment ###
 
 [REQUIRED PARAMETERS]
--p VALUE    set the path to configuration secrets in vault
--s VALUE    set the path to the main service account json in vault
--r VALUE    set the path to the read-only service account json in vault
+-p VALUE    name of main portal configuration file
+-s VALUE    name of main service account keyfile
+-r VALUE    name of read-only service account keyfile
 
 [OPTIONS]
 -e VALUE    set the environment to boot the portal in (defaults to production)
@@ -186,7 +178,7 @@ USAGE:
 -f          set HOTFIX to true to deploy the latest release tag to a non-production host
 -t VALUE    set the TAG_OFFSET value for rolling back a release (defaults to 1, meaning release previous to the current)
 -v VALUE    set the VERSION_TAG value to control which Docker tag to pull (defaults to development)
--g VALUE    set the GOOGLE_PROJECT value to control which project to access (defaults to production project)
+-g VALUE    set the GOOGLE_CLOUD_PROJECT value to control which project to access (defaults to production project)
 -z VALUE    set the COMPUTE_ZONE value (for accessing VMs, defaults to us-central1)
 -G VALUE    set the GCLOUD_CONFIG_IMAGE value (defaults to $GCLOUD_DOCKER_IMAGE)
 -H COMMAND  print this text
@@ -201,10 +193,9 @@ function run_remote_command {
 function copy_file_to_remote {
   LOCAL_FILEPATH="$1"
   REMOTE_FILEPATH="$2"
-  CONTAINER_PATH="/tmp/$(basename $LOCAL_FILEPATH)"
   $SSH_COMMAND "mkdir -p \$(dirname $REMOTE_FILEPATH)"
-  BASE_COPY="docker run --rm -v $LOCAL_FILEPATH:$CONTAINER_PATH:rw $GCLOUD_CONFIG_IMAGE gcloud compute scp "
-  COPY_ARGS="$CONTAINER_PATH $SSH_USER@$DESTINATION_HOST:$REMOTE_FILEPATH --tunnel-through-iap --project $GOOGLE_PROJECT --zone $COMPUTE_ZONE"
+  BASE_COPY="gcloud compute scp"
+  COPY_ARGS="$LOCAL_FILEPATH $SSH_USER@$DESTINATION_HOST:$REMOTE_FILEPATH --tunnel-through-iap --project $GOOGLE_CLOUD_PROJECT --zone $COMPUTE_ZONE"
   COPY_CMD="$BASE_COPY $COPY_ARGS"
   $COPY_CMD
 }
@@ -212,5 +203,4 @@ function copy_file_to_remote {
 function set_remote_environment_vars {
   echo "PASSENGER_APP_ENV='$PASSENGER_APP_ENV' PORTAL_SECRETS_PATH='$PORTAL_SECRETS_PATH' DESTINATION_BASE_DIR='$DESTINATION_BASE_DIR'"
 }
-
 main "$@"

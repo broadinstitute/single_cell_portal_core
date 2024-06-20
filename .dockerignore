@@ -6,3 +6,4 @@ data_bak
 config/*.json
 node_modules/*
 .git
+gha-creds-*.json
