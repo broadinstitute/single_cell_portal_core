@@ -49,7 +49,6 @@ export function logScatterPlot(
  * Log create user annotation metrics
  */
 export function logCreateUserAnnotation() {
-  ga('send', 'event', 'engaged_user_action', 'create_custom_cell_annotation')
   log('create-custom-cell-annotation')
 }
 
@@ -98,5 +97,4 @@ export function logDownloadAuthorization(perfTimes, fileIds, azulFiles) {
   const numAzulFiles = getNumAzulFiles(azulFiles)
   const props = { perfTimes, 'numSCPFiles': fileIds.length, numAzulFiles }
   log('download-authorization', props)
-  ga('send', 'event', 'advanced-search', 'download-authorization') // eslint-disable-line no-undef, max-len
 }

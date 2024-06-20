@@ -62,12 +62,6 @@ export function logFilterSearch(facet, terms) {
   const defaultProps = { facet, terms }
   const props = Object.assign(defaultProps, { numTerms })
   log('search-filter', props)
-
-  // Google Analytics fallback: remove once Bard and Mixpanel are ready for SCP
-  ga( // eslint-disable-line no-undef
-    'send', 'event', 'advanced-search', 'search-filter',
-    'num-terms', numTerms
-  )
 }
 
 /**
@@ -173,11 +167,6 @@ export function logSearch(type, searchParams, perfTimes, searchResults) {
     gaEventCategory += `-${preset}`
   }
 
-  // Google Analytics fallback: remove once Bard and Mixpanel are ready for SCP
-  ga( // eslint-disable-line no-undef
-    'send', 'event', gaEventCategory, 'study-search',
-    'num-terms', numTerms
-  )
 }
 
 /**
