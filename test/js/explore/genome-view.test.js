@@ -53,22 +53,23 @@ describe('IGV genome browser in Explore tab', () => {
 
     const filteredCellNames = new Set(['GAT-1', 'TAC-1', 'AGA-1'])
     const features = [
-      { name: 'GAT-1', score: 1 },
-      { name: 'TAC-1', score: 1 },
-      { name: 'AGA-1', score: 2 },
-      { name: 'AAA-1', score: 2 },
-      { name: 'TTT-1', score: 3 },
-      { name: 'CCC-1', score: 4 },
-      { name: 'GGG-1', score: 5 }
+      { name: 'GAT-1', score: 1, start: 125, end: 130 },
+      { name: 'TAC-1', score: 1, start: 125, end: 130 },
+      { name: 'AGA-1', score: 2, start: 97, end: 102 },
+      { name: 'AAA-1', score: 2, start: 125, end: 130 },
+      { name: 'TTT-1', score: 3, start: 125, end: 130 },
+      { name: 'CCC-1', score: 4, start: 125, end: 130 },
+      { name: 'GGG-1', score: 5, start: 125, end: 130 }
     ]
 
     const filteredFeatures = [
-      { name: 'GAT-1', score: 1 },
-      { name: 'TAC-1', score: 1 },
-      { name: 'AGA-1', score: 2 }
+      { name: 'GAT-1', score: 1, start: 125, end: 130 },
+      { name: 'TAC-1', score: 1, start: 125, end: 130 },
+      { name: 'AGA-1', score: 2, start: 97, end: 102 }
     ]
 
     const igvBrowser = {
+      referenceFrameList: [{ start: 100, end: 200 }],
       tracks: [{ trackView: { viewports: [{ featureCache: { chr: 'chr9' } }] } }],
       trackViews: [
         {}, {}, {}, {}, {
