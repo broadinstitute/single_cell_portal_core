@@ -220,6 +220,7 @@ function getTracks(tsvAndIndexFiles, dataType) {
     tsvTrack.label = tsvTrack.name
     tsvTrack.indexURL = decodeURIComponent(tsvTrack.indexUrl)
     tsvTrack.url = decodeURIComponent(tsvTrack.url)
+    tsvTrack.visibilityWindow = 1_000_000 // 1 Mbp
     if (dataType && dataType === 'atac-fragment') {
       const atacProps = {
         displayMode: 'SQUISHED',
