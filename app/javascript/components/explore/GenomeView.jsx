@@ -192,8 +192,10 @@ function getIsFeatureInFrame(feature, igvBrowser) {
 
 /** Filter genomic features */
 export function filterIgvFeatures(filteredCellNames) {
-  const trackIndex = 4 // TODO (SCP-5662): Robustify this
   const igvBrowser = window.igvBrowser
+  const trackIndex = igvBrowser.tracks.findIndex(
+    track => track.config?.dataType === 'atac-fragment'
+  )
 
   const originalChrFeatures = getOriginalChrFeatures(trackIndex, igvBrowser)
   const filteredFeatures = originalChrFeatures.filter(
