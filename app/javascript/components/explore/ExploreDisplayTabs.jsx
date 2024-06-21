@@ -758,6 +758,10 @@ export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
     )
   })
 
+  if (hasGenomeFiles && !enabledTabs.includes('genome')) {
+    disabledTabs.push('genome')
+  }
+
   if (
     !exploreInfo ||
     (exploreParams.facets !== '' && !cellFaceting?.isFullyLoaded)
