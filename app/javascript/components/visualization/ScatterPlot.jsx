@@ -801,7 +801,7 @@ function getPlotlyTraces({
 }
 
 
-// handler to merge in new entries to the refColorMap (used for keeping track of trace colors across spatial plots
+// handler to merge in new entries to the refColorMap (used for keeping track of trace colors across spatial plots)
 function updateRefColorMap(setRefColorMap, color, traceName) {
   const colorEntry = {}
   colorEntry[traceName] = color
