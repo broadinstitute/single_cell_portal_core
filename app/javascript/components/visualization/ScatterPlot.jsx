@@ -46,8 +46,7 @@ function RawScatterPlot({
   studyAccession, cluster, annotation, subsample, consensus, genes, scatterColor, dimensionProps,
   isAnnotatedScatter=false, isCorrelatedScatter=false, isCellSelecting=false, plotPointsSelected, dataCache,
   canEdit, bucketId, expressionFilter=[0, 1], setCountsByLabelForDe, hiddenTraces=[],
-  isSplitLabelArrays, updateExploreParams,
-  filteredCells
+  isSplitLabelArrays, updateExploreParams, filteredCells, refColorMap, setRefColorMap
 }) {
   const [countsByLabel, setCountsByLabel] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -186,7 +185,10 @@ function RawScatterPlot({
       expressionFilter,
       isSplitLabelArrays: isSplitLabelArrays ?? scatter.isSplitLabelArrays,
       isRefGroup: isRG,
-      originalLabels
+      originalLabels,
+      refColorMap,
+      setRefColorMap,
+      isSpatialPlot: scatter.isSpatial
     })
     if (isRG) {
       setCountsByLabel(labelCounts)
@@ -607,6 +609,7 @@ function RawScatterPlot({
             originalLabels={originalLabels}
             titleTexts={titleTexts}
             plotWidth={widthAndHeight.width}
+            refColorMap={refColorMap}
           />
         }
       </div>
@@ -691,7 +694,10 @@ function getPlotlyTraces({
   expressionFilter,
   isSplitLabelArrays,
   isRefGroup,
-  originalLabels
+  originalLabels,
+  refColorMap,
+  setRefColorMap,
+  isSpatialPlot
 }) {
   const unfilteredTrace = {
     type: is3D ? 'scatter3d' : 'scattergl',
@@ -727,7 +733,19 @@ function getPlotlyTraces({
       groupTrace.type = unfilteredTrace.type
       groupTrace.mode = unfilteredTrace.mode
       groupTrace.opacity = unfilteredTrace.opacity
-      const color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, labelIndex)
+      let color
+      if (!isSpatialPlot) {
+        color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, labelIndex)
+        updateRefColorMap(setRefColorMap, color, groupTrace.name)
+      } else {
+        color = refColorMap[groupTrace.name]
+        // if a label in a spatial plot doesn't exist in refColorMap, add to it
+        if (typeof color === 'undefined') {
+          const newIndex = originalLabels?.length + 1
+          color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, newIndex)
+          updateRefColorMap(setRefColorMap, color, groupTrace.name)
+        }
+      }
       groupTrace.marker = {
         size: pointSize,
         color
@@ -780,6 +798,16 @@ function getPlotlyTraces({
   })
 
   return [traces, countsByLabel, isRefGroup]
+}
+
+
+// handler to merge in new entries to the refColorMap (used for keeping track of trace colors across spatial plots
+function updateRefColorMap(setRefColorMap, color, traceName) {
+  const colorEntry = {}
+  colorEntry[traceName] = color
+  setRefColorMap(prevColorMap => ({
+    ...prevColorMap, ...colorEntry
+  }))
 }
 
 /** makes the data trace attributes (cells, trace name) available via hover text */

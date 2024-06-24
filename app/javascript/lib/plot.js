@@ -272,7 +272,7 @@ PlotUtils.sortTraceByExpression = function(trace) {
 /**
  * Get color for the label, which can be applied to e.g. the icon or the trace
  */
-PlotUtils.getColorForLabel = function(label, customColors={}, editedCustomColors={}, i) {
+PlotUtils.getColorForLabel = function(label, customColors={}, editedCustomColors={}, refColorMap={}, i) {
   if ((label === UNSPECIFIED_ANNOTATION_NAME) &&
     !editedCustomColors[label] && !customColors[label]) {
     return 'rgba(80, 80, 80, 0.4)'
@@ -282,7 +282,7 @@ PlotUtils.getColorForLabel = function(label, customColors={}, editedCustomColors
     !editedCustomColors[label] && !customColors[label]) {
     return FILTERED_TRACE_COLOR
   }
-  return editedCustomColors[label] ?? customColors[label] ?? PlotUtils.getColorBrewerColor(i)
+  return editedCustomColors[label] ?? customColors[label] ?? refColorMap[label] ?? PlotUtils.getColorBrewerColor(i)
 }
 
 /** Sort annotation labels lexicographically, but always put the unspecified annotations last */

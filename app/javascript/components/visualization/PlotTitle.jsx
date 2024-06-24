@@ -32,7 +32,7 @@ export function getTitleTexts(cluster, genes, consensus, subsample, isCorrelated
   let titleText = cluster
   let detailText = ''
 
-  if (genes.length) {
+  if (genes?.length) {
     const geneList = formatGeneList(genes)
     if (isCorrelatedScatter) {
       geneList.splice(1, 0, <span key="vs"> vs. </span>)
