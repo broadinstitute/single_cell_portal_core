@@ -235,7 +235,7 @@ export default function ExploreDisplayTabs({
   const [panelToShow, setPanelToShow] = useState(initialPanel)
 
   // Hash of trace label names to the number of points in that trace
-  const [countsByLabel, setCountsByLabel] = useState(null)
+  const [countsByLabelForDe, setCountsByLabelForDe] = useState(null)
   const showDifferentialExpressionTable = (showViewOptionsControls && deGenes !== null)
   const plotContainerClass = 'explore-plot-tab-content'
 
@@ -511,10 +511,9 @@ export default function ExploreDisplayTabs({
                     showRelatedGenesIdeogram,
                     showViewOptionsControls
                   }}
+                  setCountsByLabelForDe={setCountsByLabelForDe}
                   isCellSelecting={isCellSelecting}
                   plotPointsSelected={plotPointsSelected}
-                  countsByLabel={countsByLabel}
-                  setCountsByLabel={setCountsByLabel}
                   updateExploreParams={updateExploreParams}
                 />
               </div>
@@ -525,14 +524,13 @@ export default function ExploreDisplayTabs({
                   studyAccession={studyAccession}
                   {...exploreParamsWithDefaults}
                   isCorrelatedScatter={true}
+                  setCountsByLabelForDe={setCountsByLabelForDe}
                   dimensionProps={{
                     numColumns: 1,
                     numRows: 1
                   }}
                   isCellSelecting={isCellSelecting}
                   plotPointsSelected={plotPointsSelected}
-                  countsByLabel={countsByLabel}
-                  setCountsByLabel={setCountsByLabel}
                   updateExploreParams={updateExploreParams}
                 />
               </div>
@@ -555,8 +553,7 @@ export default function ExploreDisplayTabs({
                     showViewOptionsControls,
                     showDifferentialExpressionTable,
                     scatterColor: exploreParamsWithDefaults.scatterColor,
-                    countsByLabel,
-                    setCountsByLabel,
+                    setCountsByLabelForDe,
                     dataCache,
                     filteredCells,
                     cellFilteringSelection
@@ -660,7 +657,7 @@ export default function ExploreDisplayTabs({
             exploreParamsWithDefaults={exploreParamsWithDefaults}
             routerLocation={routerLocation}
             searchGenes={searchGenes}
-            countsByLabel={countsByLabel}
+            countsByLabelForDe={countsByLabelForDe}
             setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
             showDifferentialExpressionPanel={showDifferentialExpressionPanel}
             setShowDifferentialExpressionPanel={setShowDifferentialExpressionPanel}

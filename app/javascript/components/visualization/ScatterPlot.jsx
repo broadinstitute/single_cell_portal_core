@@ -45,10 +45,11 @@ window.Plotly = Plotly
 function RawScatterPlot({
   studyAccession, cluster, annotation, subsample, consensus, genes, scatterColor, dimensionProps,
   isAnnotatedScatter=false, isCorrelatedScatter=false, isCellSelecting=false, plotPointsSelected, dataCache,
-  canEdit, bucketId, expressionFilter=[0, 1],
-  countsByLabel, setCountsByLabel, hiddenTraces=[], isSplitLabelArrays, updateExploreParams,
+  canEdit, bucketId, expressionFilter=[0, 1], setCountsByLabelForDe, hiddenTraces=[],
+  isSplitLabelArrays, updateExploreParams,
   filteredCells
 }) {
+  const [countsByLabel, setCountsByLabel] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [bulkCorrelation, setBulkCorrelation] = useState(null)
   const [labelCorrelations, setLabelCorrelations] = useState(null)
@@ -189,6 +190,7 @@ function RawScatterPlot({
     })
     if (isRG) {
       setCountsByLabel(labelCounts)
+      setCountsByLabelForDe(labelCounts)
     }
     return traces
   }

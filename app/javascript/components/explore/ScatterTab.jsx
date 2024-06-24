@@ -14,7 +14,7 @@ const MAX_PLOTS = PLOTLY_CONTEXT_NAMES.length
 export default function ScatterTab({
   exploreInfo, exploreParamsWithDefaults, updateExploreParamsWithDefaults, studyAccession, isGene, isMultiGene,
   plotPointsSelected, isCellSelecting, showRelatedGenesIdeogram, showViewOptionsControls, showDifferentialExpressionTable,
-  scatterColor, countsByLabel, setCountsByLabel, dataCache, filteredCells, cellFilteringSelection
+  scatterColor, setCountsByLabelForDe, dataCache, filteredCells, cellFilteringSelection
 }) {
   // maintain the map of plotly contexts to the params that generated the corresponding visualization
   const plotlyContextMap = useRef({})
@@ -47,8 +47,8 @@ export default function ScatterTab({
           <div className={isTwoColRow ? 'col-md-6' : 'col-md-12'} key={key}>
             <ScatterPlot
               {...{
-                studyAccession, plotPointsSelected, isCellSelecting, updateScatterColor,
-                countsByLabel, setCountsByLabel, updateExploreParams: updateExploreParamsWithDefaults
+                studyAccession, plotPointsSelected, isCellSelecting, updateScatterColor, setCountsByLabelForDe,
+                updateExploreParams: updateExploreParamsWithDefaults
               }}
               {...params}
               dataCache={dataCache}
