@@ -251,6 +251,8 @@ export default function ExploreDisplayTabs({
 
   // map of colors for maintaining associations in spatial UX
   const [refColorMap, setRefColorMap] = useState({})
+  // state tracker to ensure that spatial/secondary plots update with correct color map after main plot finishes
+  const [refClusterRendered, setRefClusterRendered] = useState(false)
 
   const {
     enabledTabs, disabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs
@@ -561,7 +563,9 @@ export default function ExploreDisplayTabs({
                     filteredCells,
                     cellFilteringSelection,
                     refColorMap,
-                    setRefColorMap
+                    setRefColorMap,
+                    refClusterRendered,
+                    setRefClusterRendered
                   }}/>
               </div>
             }

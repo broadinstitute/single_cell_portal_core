@@ -46,7 +46,8 @@ function RawScatterPlot({
   studyAccession, cluster, annotation, subsample, consensus, genes, scatterColor, dimensionProps,
   isAnnotatedScatter=false, isCorrelatedScatter=false, isCellSelecting=false, plotPointsSelected, dataCache,
   canEdit, bucketId, expressionFilter=[0, 1], setCountsByLabelForDe, hiddenTraces=[],
-  isSplitLabelArrays, updateExploreParams, filteredCells, refColorMap, setRefColorMap
+  isSplitLabelArrays, updateExploreParams, filteredCells, refColorMap, setRefColorMap, isRefCluster, refClusterRendered,
+  setRefClusterRendered
 }) {
   const [countsByLabel, setCountsByLabel] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -188,7 +189,8 @@ function RawScatterPlot({
       originalLabels,
       refColorMap,
       setRefColorMap,
-      isSpatialPlot: scatter.isSpatial
+      isRefCluster,
+      refClusterRendered
     })
     if (isRG) {
       setCountsByLabel(labelCounts)
@@ -205,6 +207,9 @@ function RawScatterPlot({
     }
     setShowError(false)
     setIsLoading(false)
+    if (isRefCluster) {
+      setRefClusterRendered(true)
+    }
   }
 
 
@@ -388,6 +393,11 @@ function RawScatterPlot({
     /** retrieve and process data */
     async function fetchData() {
       setIsLoading(true)
+      // purge color maps when changing primary cluster/annotation
+      if (isRefCluster) {
+        setRefColorMap({})
+        setRefClusterRendered(false)
+      }
 
       let expressionArray
 
@@ -479,6 +489,14 @@ function RawScatterPlot({
     cluster, annotation.name, subsample, genes.join(','), isAnnotatedScatter, consensus,
     filteredCells?.join(',')
   ])
+
+  // re-render non-primary plots after main has rendered to ensure color mappings are correct
+  useUpdateEffect( () => {
+    if (!isRefCluster && refClusterRendered && scatterData) {
+      const plotlyTraces = updateCountsAndGetTraces(scatterData)
+      Plotly.react(graphElementId, plotlyTraces, scatterData.layout)
+    }
+  }, [refClusterRendered])
 
   useUpdateEffect(() => {
     // Don't update if graph hasn't loaded
@@ -697,7 +715,8 @@ function getPlotlyTraces({
   originalLabels,
   refColorMap,
   setRefColorMap,
-  isSpatialPlot
+  isRefCluster,
+  refClusterRendered
 }) {
   const unfilteredTrace = {
     type: is3D ? 'scatter3d' : 'scattergl',
@@ -734,16 +753,16 @@ function getPlotlyTraces({
       groupTrace.mode = unfilteredTrace.mode
       groupTrace.opacity = unfilteredTrace.opacity
       let color
-      if (!isSpatialPlot) {
+      if (isRefCluster) {
         color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, labelIndex)
         updateRefColorMap(setRefColorMap, color, groupTrace.name)
       } else {
-        color = refColorMap[groupTrace.name]
-        // if a label in a spatial plot doesn't exist in refColorMap, add to it
-        if (typeof color === 'undefined') {
-          const newIndex = originalLabels?.length + 1
-          color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, newIndex)
-          updateRefColorMap(setRefColorMap, color, groupTrace.name)
+        color = refColorMap[groupTrace.name] ||
+          getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, labelIndex)
+        // once main plot has rendered, go ahead and update additional plots/legends
+        if (!isRefCluster && refClusterRendered) {
+          color = refColorMap[groupTrace.name] ||
+            getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, labelIndex)
         }
       }
       groupTrace.marker = {

@@ -14,13 +14,13 @@ const MAX_PLOTS = PLOTLY_CONTEXT_NAMES.length
 export default function ScatterTab({
   exploreInfo, exploreParamsWithDefaults, updateExploreParamsWithDefaults, studyAccession, isGene, isMultiGene,
   plotPointsSelected, isCellSelecting, showRelatedGenesIdeogram, showViewOptionsControls, showDifferentialExpressionTable,
-  scatterColor, setCountsByLabelForDe, dataCache, filteredCells, cellFilteringSelection, refColorMap, setRefColorMap
+  scatterColor, setCountsByLabelForDe, dataCache, filteredCells, cellFilteringSelection, refColorMap, setRefColorMap,
+  refClusterRendered, setRefClusterRendered
 }) {
   // maintain the map of plotly contexts to the params that generated the corresponding visualization
   const plotlyContextMap = useRef({})
   const { scatterParams, isTwoColumn, isMultiRow, firstRowSingleCol } =
     getScatterParams(exploreParamsWithDefaults, isGene, isMultiGene)
-
   /** helper function for Scatter plot color updates */
   function updateScatterColor(color) {
     updateExploreParamsWithDefaults({ scatterColor: color }, false)
@@ -36,6 +36,7 @@ export default function ScatterTab({
   return <div className="row">
     {
       scatterParams.map((params, index) => {
+        const isRefCluster = params.cluster === exploreParamsWithDefaults.cluster
         const isTwoColRow = isTwoColumn && !(index === 0 && firstRowSingleCol)
         const key = getKeyFromScatterParams(params)
         let rowDivider = <span key={`d${index}`}></span>
@@ -64,6 +65,9 @@ export default function ScatterTab({
               }}
               refColorMap={refColorMap}
               setRefColorMap={setRefColorMap}
+              isRefCluster={isRefCluster}
+              refClusterRendered={refClusterRendered}
+              setRefClusterRendered={setRefClusterRendered}
             />
           </div>,
           rowDivider
