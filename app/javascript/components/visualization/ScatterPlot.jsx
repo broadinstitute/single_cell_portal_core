@@ -123,6 +123,11 @@ function RawScatterPlot({
     return scatter
   }
 
+  useUpdateEffect( () => {
+    setRefColorMap({})
+    setRefClusterRendered(false)
+  }, [cluster, annotation.name, annotation.scope, subsample])
+
   /** redraw the plot when editedCustomColors changes */
   useEffect(() => {
     if (editedCustomColors && Object.keys(editedCustomColors).length > 0) {
@@ -207,9 +212,6 @@ function RawScatterPlot({
     }
     setShowError(false)
     setIsLoading(false)
-    if (isRefCluster) {
-      setRefClusterRendered(true)
-    }
   }
 
 
@@ -383,6 +385,10 @@ function RawScatterPlot({
     scatter.hasArrayLabels =
       scatter.annotParams.type === 'group' && scatter.data.annotations.some(annot => annot?.includes('|'))
 
+    if (isRefCluster) {
+      setRefClusterRendered(true)
+    }
+
     if (clusterResponse) {
       concludeRender(scatter)
     }
@@ -393,12 +399,6 @@ function RawScatterPlot({
     /** retrieve and process data */
     async function fetchData() {
       setIsLoading(true)
-      // purge color maps when changing primary cluster/annotation
-      if (isRefCluster) {
-        setRefColorMap({})
-        setRefClusterRendered(false)
-      }
-
       let expressionArray
 
       const fetchMethod = dataCache ? dataCache.fetchCluster : fetchCluster
@@ -491,7 +491,7 @@ function RawScatterPlot({
   ])
 
   // re-render non-primary plots after main has rendered to ensure color mappings are correct
-  useUpdateEffect( () => {
+  useEffect( () => {
     if (!isRefCluster && refClusterRendered && scatterData) {
       const plotlyTraces = updateCountsAndGetTraces(scatterData)
       Plotly.react(graphElementId, plotlyTraces, scatterData.layout)
@@ -752,18 +752,9 @@ function getPlotlyTraces({
       groupTrace.type = unfilteredTrace.type
       groupTrace.mode = unfilteredTrace.mode
       groupTrace.opacity = unfilteredTrace.opacity
-      let color
+      const color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, labelIndex)
       if (isRefCluster) {
-        color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, labelIndex)
         updateRefColorMap(setRefColorMap, color, groupTrace.name)
-      } else {
-        color = refColorMap[groupTrace.name] ||
-          getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, labelIndex)
-        // once main plot has rendered, go ahead and update additional plots/legends
-        if (!isRefCluster && refClusterRendered) {
-          color = refColorMap[groupTrace.name] ||
-            getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, labelIndex)
-        }
       }
       groupTrace.marker = {
         size: pointSize,
