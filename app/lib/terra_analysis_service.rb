@@ -35,11 +35,6 @@ class TerraAnalysisService
       return false
     end
 
-    services_up = ApplicationController.firecloud_client.services_available?(FireCloudClient::SAM_SERVICE, FireCloudClient::RAWLS_SERVICE, FireCloudClient::AGORA_SERVICE)
-    if !services_up
-      return false
-    end
-
     begin
       workspace_acl = ApplicationController.firecloud_client.get_workspace_acl(study.firecloud_project, study.firecloud_workspace)
       if workspace_acl['acl'][user.email].nil?

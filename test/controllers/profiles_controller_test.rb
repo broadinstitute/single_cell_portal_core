@@ -42,7 +42,6 @@ class ProfilesControllerTest < ActionDispatch::IntegrationTest
     profile_error = proc { raise 'user is not registered' }
     profile_mock.expect :get_profile, profile_error
     thurloe_mock = Minitest::Mock.new
-    thurloe_mock.expect :services_available?, true, [String]
     ApplicationController.stub :firecloud_client, thurloe_mock do
       FireCloudClient.stub :new, profile_mock do
         post update_user_firecloud_profile_path(@user.id, params: {fire_cloud_profile: profile.to_json})

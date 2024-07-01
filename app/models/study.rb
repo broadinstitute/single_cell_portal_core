@@ -899,22 +899,17 @@ class Study
     if user.nil? || !user.registered_for_firecloud?
       false
     else
-      # don't check permissions if API is not 'ok'
-      if ApplicationController.firecloud_client.services_available?(FireCloudClient::SAM_SERVICE, FireCloudClient::RAWLS_SERVICE, FireCloudClient::AGORA_SERVICE)
-        begin
-          workspace_acl = ApplicationController.firecloud_client.get_workspace_acl(self.firecloud_project, self.firecloud_workspace)
-          if workspace_acl['acl'][user.email].nil?
-            # check if user has project-level permissions
-            user.is_billing_project_owner?(self.firecloud_project)
-          else
-            workspace_acl['acl'][user.email]['canCompute']
-          end
-        rescue => e
-          ErrorTracker.report_exception(e, user, { study: self.attributes.to_h})
-          Rails.logger.error "Unable to retrieve compute permissions for #{user.email}: #{e.message}"
-          false
+      begin
+        workspace_acl = ApplicationController.firecloud_client.get_workspace_acl(self.firecloud_project, self.firecloud_workspace)
+        if workspace_acl['acl'][user.email].nil?
+          # check if user has project-level permissions
+          user.is_billing_project_owner?(self.firecloud_project)
+        else
+          workspace_acl['acl'][user.email]['canCompute']
         end
-      else
+      rescue => e
+        ErrorTracker.report_exception(e, user, { study: self.attributes.to_h})
+        Rails.logger.error "Unable to retrieve compute permissions for #{user.email}: #{e.message}"
         false
       end
     end

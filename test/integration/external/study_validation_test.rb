@@ -243,7 +243,6 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
       assert initial_bq_row_count > 0, "wrong number of BQ rows found to test deletion capability"
 
       mock = Minitest::Mock.new
-      mock.expect :services_available?, true, [String, String]
       mock.expect :execute_gcloud_method, true, [:workspace_file_exists?, Integer, String, String]
       mock.expect :execute_gcloud_method, true, [:delete_workspace_file, Integer, String, String]
 
