@@ -36,7 +36,7 @@ export default function ScatterTab({
   return <div className="row">
     {
       scatterParams.map((params, index) => {
-        const isRefCluster = params.cluster === exploreParamsWithDefaults.cluster
+        const isRefCluster = params.cluster === exploreParamsWithDefaults.cluster && !isGene
         const isTwoColRow = isTwoColumn && !(index === 0 && firstRowSingleCol)
         const key = getKeyFromScatterParams(params)
         let rowDivider = <span key={`d${index}`}></span>
