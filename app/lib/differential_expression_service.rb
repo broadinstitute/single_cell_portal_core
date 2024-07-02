@@ -181,10 +181,14 @@ class DifferentialExpressionService
     total_jobs = 0
     study_results = {}
     accessions.each do |accession|
-      if study.differential_expression_results.author.any?
+      study = Study.find_by(accession:)
+      next if study.nil?
+
+      if study_has_author_de?(study)
         log_message "#{accession} has author-uploaded results, skipping"
+        next
       end
-      author
+
       begin
         jobs = run_differential_expression_on_all(accession, skip_existing: true)
         if jobs > 0
