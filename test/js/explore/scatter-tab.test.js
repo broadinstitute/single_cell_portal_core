@@ -179,6 +179,8 @@ describe('getNewContextMap correctly assigns contexts', () => {
         dataCache={createCache()}
         setCountsByLabel={function() {}}
         countsByLabel={[]}
+        setRefColorMap={jest.fn()}
+        setRefClusterRendered={jest.fn()}
       />
     ))
 
