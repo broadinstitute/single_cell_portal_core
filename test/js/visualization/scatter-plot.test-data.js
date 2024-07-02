@@ -2,7 +2,7 @@
 
 export const COUNTS_BY_LABEL = {
   'A.Rather.Long.Label.With.Several.Periods': 17,
-  'A': 34,
+  'A': 32,
   'An_underscored_label': 19,
   'B label with space and number 4': 18,
   'B': 18,
@@ -33,6 +33,21 @@ export const COUNTS_BY_LABEL = {
   'C 25': 1,
   'C 26': 1
 }
+
+const colorBrewerList = [
+  '#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#a65628',
+  '#f781bf', '#999999', '#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3',
+  '#a6d854', '#ffd92f', '#e5c494', '#b3b3b3', '#8dd3c7', '#bebada',
+  '#fb8072', '#80b1d3', '#fdb462', '#b3de69', '#fccde5', '#d9d9d9',
+  '#bc80bd', '#ccebc5', '#ffed6f'
+]
+
+const refColorMap = {}
+Object.keys(COUNTS_BY_LABEL).map((label, index) => {
+  refColorMap[label] = colorBrewerList[index % 27]
+})
+
+export const REF_COLOR_MAP = refColorMap
 
 export const BASIC_PLOT_DATA = {
   scatter: {
@@ -193,8 +208,6 @@ export const MANY_LABELS_MOCKS = {
             'C 24',
             'C 25',
             'C 26'
-
-
           ],
           scope: 'cluster',
           cluster_name: 'cluster_many_long_odd_labels.tsv'
@@ -378,8 +391,6 @@ export const MANY_LABELS_MOCKS = {
         'A',
         'A',
         'A',
-        'A',
-        'A',
         'B label with space and number 4',
         'B label with space and number 4',
         'B label with space and number 4',
@@ -439,7 +450,9 @@ export const MANY_LABELS_MOCKS = {
         'C 21',
         'C 22',
         'C 23',
-        'C 24'
+        'C 24',
+        'C 25',
+        'C 26'
       ],
       cells: [
         'AH_1',

@@ -60,7 +60,7 @@ describe('Differential expression panel', () => {
     const setDeGenes = function() {}
     const setDeGroup = function() {}
 
-    const countsByLabel = {
+    const countsByLabelForDe = {
       'LC2': 35398,
       'GPMNB macrophages': 5318,
       'LC1': 4427,
@@ -88,7 +88,7 @@ describe('Differential expression panel', () => {
         setShowDeGroupPicker={setShowDeGroupPicker}
         setDeGenes={setDeGenes}
         setDeGroup={setDeGroup}
-        countsByLabel={countsByLabel}
+        countsByLabelForDe={countsByLabelForDe}
         deHeaders={deHeaders}
       />
     ))
@@ -174,7 +174,7 @@ describe('Differential expression panel', () => {
     const setDeFilePath = function() {}
     const setDeGroupB = function() {}
 
-    const countsByLabel = {
+    const countsByLabelForDe = {
       'LC2': 35398,
       'GPMNB macrophages': 5318,
       'LC1': 4427,
@@ -200,7 +200,7 @@ describe('Differential expression panel', () => {
         setDeGenes={setDeGenes}
         deGroup={deGroup}
         setDeGroup={setDeGroup}
-        countsByLabel={countsByLabel}
+        countsByLabelForDe={countsByLabelForDe}
         deObjects={deObjects}
         setDeFilePath={setDeFilePath}
         deGroupB={deGroupB}

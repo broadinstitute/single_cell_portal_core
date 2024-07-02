@@ -613,7 +613,7 @@ function UnfoundGenesContainer({ unfoundGenes, searchedGenes, setSearchedGenes }
 export default function DifferentialExpressionPanel({
   deGroup, deGenes, searchGenes,
   exploreInfo, exploreParamsWithDefaults, setShowDeGroupPicker, setDeGenes, setDeGroup,
-  countsByLabel, hasOneVsRestDe, hasPairwiseDe, isAuthorDe, deHeaders, deGroupB, setDeGroupB, numRows=50
+  countsByLabelForDe, hasOneVsRestDe, hasPairwiseDe, isAuthorDe, deHeaders, deGroupB, setDeGroupB, numRows=50
 }) {
   const clusterName = exploreParamsWithDefaults?.cluster
   const bucketId = exploreInfo?.bucketId
@@ -742,7 +742,7 @@ export default function DifferentialExpressionPanel({
           setDeGenes={setDeGenes}
           deGroup={deGroup}
           setDeGroup={setDeGroup}
-          countsByLabel={countsByLabel}
+          countsByLabelForDe={countsByLabelForDe}
           deObjects={deObjects}
           setDeFilePath={setDeFilePath}
           isAuthorDe={isAuthorDe}
@@ -760,7 +760,7 @@ export default function DifferentialExpressionPanel({
           setDeGenes={setDeGenes}
           deGroup={deGroup}
           setDeGroup={setDeGroup}
-          countsByLabel={countsByLabel}
+          countsByLabelForDe={countsByLabelForDe}
           deObjects={deObjects}
           setDeFilePath={setDeFilePath}
           deGroupB={deGroupB}
