@@ -344,11 +344,8 @@ function RawScatterPlot({
     scatter = updateScatterLayout(scatter)
 
     if (scatter.annotParams.identifier !== loadedAnnotation) {
-      const missingAnnot = new Error(`${cluster} does not have the requested annotation ${loadedAnnotation}`)
       setHasMissingAnnot(true)
       setIsLoading(false)
-      setShowError(true)
-      setError(missingAnnot)
     } else {
       setHasMissingAnnot(false)
       const annotIsNumeric = scatter.annotParams.type === 'numeric'
@@ -613,6 +610,11 @@ function RawScatterPlot({
   return (
     <div className="plot">
       { ErrorComponent }
+      { hasMissingAnnot &&
+        <div className="alert-warning text-center error-boundary">
+          {cluster} does not have the requested annotation {loadedAnnotation}
+        </div>
+      }
       { !hasMissingAnnot &&
         <PlotTitle
           titleTexts={titleTexts}
@@ -624,7 +626,7 @@ function RawScatterPlot({
         id={graphElementId}
         data-testid={graphElementId}
       >
-        { hasLegend &&
+        { !hasMissingAnnot && hasLegend &&
           <ScatterPlotLegend
             name={scatterData.annotParams.name}
             height={scatterData.height}
@@ -652,7 +654,7 @@ function RawScatterPlot({
         }
       </div>
       <p className="help-block">
-        { scatterData && scatterData.description &&
+        { scatterData && scatterData.description && !hasMissingAnnot &&
           <span style={descriptionStyle}>{scatterData.description}</span>
         }
       </p>
