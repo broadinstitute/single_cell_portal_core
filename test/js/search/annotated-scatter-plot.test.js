@@ -48,7 +48,7 @@ describe('Annotated scatter plot in global gene search', () => {
         studyAccession={study.accession}
         genes={study.gene_matches}
         cluster=''
-        annotation={{name: '', type: '', scope: ''}}
+        annotation={{name: 'Intensity', type: 'numeric', scope: 'cluster'}}
         isAnnotatedScatter={study.is_default_annotation_numeric}
       />
     )
