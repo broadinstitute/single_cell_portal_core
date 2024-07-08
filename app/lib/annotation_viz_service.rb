@@ -222,7 +222,7 @@ class AnnotationVizService
   # this allows for labels to maintain the same color across multiple plots, regardless of whether or not the
   # group is represented
   def self.annotation_color_map(values)
-    values.sort.map.with_index do |value, index|
+    values.sort_by!(&:downcase).map.with_index do |value, index|
       { "#{value}" => COLORBREWER_SET[index % COLORBREWER_SET.size] }
     end.reduce({}, :merge)
   end

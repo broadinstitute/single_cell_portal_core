@@ -46,8 +46,7 @@ function RawScatterPlot({
   studyAccession, cluster, annotation, subsample, consensus, genes, scatterColor, dimensionProps,
   isAnnotatedScatter=false, isCorrelatedScatter=false, isCellSelecting=false, plotPointsSelected, dataCache,
   canEdit, bucketId, expressionFilter=[0, 1], setCountsByLabelForDe, hiddenTraces=[],
-  isSplitLabelArrays, updateExploreParams, filteredCells, refColorMap, setRefColorMap, isRefCluster, refClusterRendered,
-  setRefClusterRendered, hasMultipleRefs
+  isSplitLabelArrays, updateExploreParams, filteredCells
 }) {
   const [countsByLabel, setCountsByLabel] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -124,13 +123,6 @@ function RawScatterPlot({
     return scatter
   }
 
-  useEffect( () => {
-    if (isRefCluster) {
-      setRefColorMap({})
-      setRefClusterRendered(false)
-    }
-  }, [cluster, loadedAnnotation, subsample])
-
   /** redraw the plot when editedCustomColors changes */
   useEffect(() => {
     if (editedCustomColors && Object.keys(editedCustomColors).length > 0) {
@@ -182,6 +174,7 @@ function RawScatterPlot({
     // may change as a result of the fetched data, but not be reflected in the isRefGroup constant
     // until `setScatterData` is called
     const isRG = getIsRefGroup(scatter.annotParams.type, genes, isCorrelatedScatter)
+    const refColorMap = scatter.annotParams.color_map
     const [traces, labelCounts] = getPlotlyTraces({
       genes,
       isAnnotatedScatter,
@@ -195,10 +188,7 @@ function RawScatterPlot({
       isSplitLabelArrays: isSplitLabelArrays ?? scatter.isSplitLabelArrays,
       isRefGroup: isRG,
       originalLabels,
-      refColorMap,
-      setRefColorMap,
-      isRefCluster,
-      hasMultipleRefs
+      refColorMap
     })
     if (isRG) {
       setCountsByLabel(labelCounts)
@@ -341,9 +331,6 @@ function RawScatterPlot({
       (clusterResponse ? clusterResponse : [scatterData, null])
     scatter = updateScatterLayout(scatter)
     const annotIsNumeric = scatter.annotParams.type === 'numeric'
-    if (isRefCluster && scatter.annotParams.color_map) {
-      setRefColorMap(scatter.annotParams.color_map)
-    }
 
     const layout = scatter.layout
 
@@ -391,10 +378,6 @@ function RawScatterPlot({
 
     scatter.hasArrayLabels =
       scatter.annotParams.type === 'group' && scatter.data.annotations.some(annot => annot?.includes('|'))
-
-    if (isRefCluster) {
-      setRefClusterRendered(true)
-    }
 
     if (clusterResponse) {
       concludeRender(scatter)
@@ -497,13 +480,6 @@ function RawScatterPlot({
     cluster, loadedAnnotation, subsample, genes.join(','), isAnnotatedScatter, consensus,
     filteredCells?.join(',')
   ])
-
-  // re-render non-primary plots after main has rendered to ensure color mappings are correct
-  useUpdateEffect( () => {
-    if (!isRefCluster && refClusterRendered) {
-      fetchData()
-    }
-  }, [loadedAnnotation, refClusterRendered])
 
   useUpdateEffect(() => {
     // Don't update if graph hasn't loaded
@@ -634,7 +610,7 @@ function RawScatterPlot({
             originalLabels={originalLabels}
             titleTexts={titleTexts}
             plotWidth={widthAndHeight.width}
-            refColorMap={refColorMap}
+            refColorMap={scatterData?.annotParams?.color_map}
           />
         }
       </div>
@@ -720,10 +696,7 @@ function getPlotlyTraces({
   isSplitLabelArrays,
   isRefGroup,
   originalLabels,
-  refColorMap,
-  setRefColorMap,
-  isRefCluster,
-  hasMultipleRefs
+  refColorMap
 }) {
   const unfilteredTrace = {
     type: is3D ? 'scatter3d' : 'scattergl',
