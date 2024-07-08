@@ -188,7 +188,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
     }
     const expectedResults = {
       enabledTabs: ['scatter'],
-      disabledTabs: ['distribution', 'correlatedScatter', 'dotplot', 'heatmap'],
+      disabledTabs: ['distribution', 'correlatedScatter', 'dotplot', 'heatmap', 'genome'],
       isGeneList: false,
       isGene: false,
       isMultiGene: false,
