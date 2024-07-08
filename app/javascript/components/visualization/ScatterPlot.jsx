@@ -66,7 +66,6 @@ function RawScatterPlot({
   const [originalLabels, setOriginalLabels] = useState([])
   const [hasMissingAnnot, setHasMissingAnnot] = useState(null)
   const loadedAnnotation = [annotation.name, annotation.type, annotation.scope].join('--')
-
   const flags = getFeatureFlagsWithDefaults()
 
   // Uncomment when running Image Pipeline
@@ -776,11 +775,6 @@ function getPlotlyTraces({
       groupTrace.opacity = unfilteredTrace.opacity
       let color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, labelIndex)
       if (isRefCluster) {
-        updateRefColorMap(setRefColorMap, color, groupTrace.name)
-      } else if (!isRefCluster && refClusterRendered) {
-        // don't re-use an existing color if extra plots have new groups
-        const newIndex = Object.keys(refColorMap).length + 1
-        color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, newIndex)
         updateRefColorMap(setRefColorMap, color, groupTrace.name)
       }
       groupTrace.marker = {
