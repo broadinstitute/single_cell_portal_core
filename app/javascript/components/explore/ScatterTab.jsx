@@ -25,6 +25,7 @@ export default function ScatterTab({
   function updateScatterColor(color) {
     updateExploreParamsWithDefaults({ scatterColor: color }, false)
   }
+  const hasMultipleRefs = exploreParamsWithDefaults?.spatialGroups?.length > 0
 
   // identify any repeat graphs
   const newContextMap = getNewContextMap(scatterParams, plotlyContextMap.current)
@@ -68,6 +69,7 @@ export default function ScatterTab({
               isRefCluster={isRefCluster}
               refClusterRendered={refClusterRendered}
               setRefClusterRendered={setRefClusterRendered}
+              hasMultipleRefs={hasMultipleRefs}
             />
           </div>,
           rowDivider

@@ -47,7 +47,7 @@ function RawScatterPlot({
   isAnnotatedScatter=false, isCorrelatedScatter=false, isCellSelecting=false, plotPointsSelected, dataCache,
   canEdit, bucketId, expressionFilter=[0, 1], setCountsByLabelForDe, hiddenTraces=[],
   isSplitLabelArrays, updateExploreParams, filteredCells, refColorMap, setRefColorMap, isRefCluster, refClusterRendered,
-  setRefClusterRendered
+  setRefClusterRendered, hasMultipleRefs
 }) {
   const [countsByLabel, setCountsByLabel] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -199,7 +199,7 @@ function RawScatterPlot({
       refColorMap,
       setRefColorMap,
       isRefCluster,
-      refClusterRendered
+      hasMultipleRefs
     })
     if (isRG) {
       setCountsByLabel(labelCounts)
@@ -737,7 +737,7 @@ function getPlotlyTraces({
   refColorMap,
   setRefColorMap,
   isRefCluster,
-  refClusterRendered
+  hasMultipleRefs
 }) {
   const unfilteredTrace = {
     type: is3D ? 'scatter3d' : 'scattergl',
@@ -773,7 +773,12 @@ function getPlotlyTraces({
       groupTrace.type = unfilteredTrace.type
       groupTrace.mode = unfilteredTrace.mode
       groupTrace.opacity = unfilteredTrace.opacity
-      let color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, labelIndex)
+      let color
+      if (hasMultipleRefs) {
+        color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, labelIndex)
+      } else {
+        color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, {}, labelIndex)
+      }
       if (isRefCluster) {
         updateRefColorMap(setRefColorMap, color, groupTrace.name)
       }
