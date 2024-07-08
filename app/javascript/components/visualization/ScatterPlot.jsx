@@ -341,6 +341,10 @@ function RawScatterPlot({
       (clusterResponse ? clusterResponse : [scatterData, null])
     scatter = updateScatterLayout(scatter)
     const annotIsNumeric = scatter.annotParams.type === 'numeric'
+    if (isRefCluster && scatter.annotParams.color_map) {
+      setRefColorMap(scatter.annotParams.color_map)
+    }
+
     const layout = scatter.layout
 
     if (filteredCells) {
@@ -755,15 +759,7 @@ function getPlotlyTraces({
       groupTrace.type = unfilteredTrace.type
       groupTrace.mode = unfilteredTrace.mode
       groupTrace.opacity = unfilteredTrace.opacity
-      let color
-      if (hasMultipleRefs) {
-        color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, labelIndex)
-      } else {
-        color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, {}, labelIndex)
-      }
-      if (isRefCluster) {
-        updateRefColorMap(setRefColorMap, color, groupTrace.name)
-      }
+      const color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, labelIndex)
       groupTrace.marker = {
         size: pointSize,
         color
@@ -816,16 +812,6 @@ function getPlotlyTraces({
   })
 
   return [traces, countsByLabel, isRefGroup]
-}
-
-
-// handler to merge in new entries to the refColorMap (used for keeping track of trace colors across spatial plots)
-function updateRefColorMap(setRefColorMap, color, traceName) {
-  const colorEntry = {}
-  colorEntry[traceName] = color
-  setRefColorMap(prevColorMap => ({
-    ...prevColorMap, ...colorEntry
-  }))
 }
 
 /** makes the data trace attributes (cells, trace name) available via hover text */

@@ -4,6 +4,11 @@ class AnnotationVizService
   # global label for dealing with blank/nil group-based annotation values
   MISSING_VALUE_LABEL = '--Unspecified--'.freeze
 
+  # main list of group-based color codes, same as colorBrewerList in app/javascript/lib/plot.js
+  COLORBREWER_SET = %w(#e41a1c #377eb8 #4daf4a #984ea3 #ff7f00 #a65628 #f781bf #999999
+    #66c2a5 #fc8d62 #8da0cb #e78ac3 #a6d854 #ffd92f #e5c494 #b3b3b3 #8dd3c7
+    #bebada #fb8072 #80b1d3 #fdb462 #b3de69 #fccde5 #d9d9d9 #bc80bd #ccebc5 #ffed6f)
+
   # Retrieves an object representing the selected annotation. If nil is passed for the last four
   # arguments, it will get the study's default annotation instead
   # Params:
@@ -80,6 +85,9 @@ class AnnotationVizService
     elsif source.is_a?(Hash)
       annotation = {name: source[:name], type: type, scope: scope, values: sanitize_values_array(source[:values].to_a, type),
                     identifier: "#{source[:name]}--#{type}--#{scope}"}
+    end
+    if type == 'group'
+      annotation[:color_map] = AnnotationVizService.annotation_color_map(annotation[:values])
     end
     annotation
   end
@@ -208,5 +216,18 @@ class AnnotationVizService
         select_options: de_result.result_files
       }
     end
+  end
+
+  # create a global color map for a given group-based annotation
+  # this allows for labels to maintain the same color across multiple plots, regardless of whether or not the
+  # group is represented
+  def self.annotation_color_map(values)
+    values.sort.map.with_index do |value, index|
+      { "#{value}" => COLORBREWER_SET[index % COLORBREWER_SET.size] }
+    end.reduce({}, :merge)
+  end
+
+  def self.conditional_label_sort()
+
   end
 end
