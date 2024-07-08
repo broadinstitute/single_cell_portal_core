@@ -241,9 +241,6 @@ function logClickButton(target) {
   const props = getStandardClickProps(target)
   const { eventName, updatedProps } = getEventPropsWithTabsApplied(target, props, 'click:button')
   log(eventName, updatedProps)
-
-  // Google Analytics fallback: remove once Bard and Mixpanel are ready for SCP
-  ga('send', 'event', 'click', 'button') // eslint-disable-line no-undef
 }
 
 /**

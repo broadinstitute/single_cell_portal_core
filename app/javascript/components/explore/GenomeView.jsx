@@ -453,8 +453,7 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
     return markup
   })
 
-  // Log igv.js initialization in Google Analytics
-  ga('send', 'event', 'igv', 'initialize')
+  // Log igv.js initialization
   log('igv:initialize')
 }
 
