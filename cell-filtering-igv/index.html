@@ -14,10 +14,6 @@ More context: https://github.com/broadinstitute/single_cell_portal_core/pull/202
   function updateTrack(trackIndex, filteredFeatures, igv, igvBrowser) {
     igv.FeatureUtils.packFeatures(filteredFeatures)
     const range = igvBrowser.trackViews[trackIndex].track.featureSource.featureCache.range
-    console.log('before, igvBrowser.trackViews[trackIndex].track.featureSource.featureCache')
-    console.log(igvBrowser.trackViews[trackIndex].track.featureSource.featureCache)
-    // const frame = igvBrowser.referenceFrameList[0]
-    // const range = new igv.GenomicInterval(frame.chr, frame.start, frame.end)
     igvBrowser.trackViews[trackIndex].track.featureSource.featureCache =
       new igv.FeatureCache(filteredFeatures, igvBrowser.genome, range)
 
