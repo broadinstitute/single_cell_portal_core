@@ -191,13 +191,23 @@ function getIsFeatureInFrame(feature, igvBrowser) {
 // }
 
 /** Filter genomic features */
-export function filterIgvFeatures(filteredCellNames) {
+export function filterIgvFeatures(filteredCellNames, retryAttempt=0) {
   const igvBrowser = window.igvBrowser
+  if (!igvBrowser.tracks) {return}
   const trackIndex = igvBrowser.tracks.findIndex(
     track => track.config?.dataType === 'atac-fragment'
   )
 
   const originalChrFeatures = getOriginalChrFeatures(trackIndex, igvBrowser)
+
+  if (typeof originalChrFeatures === 'undefined') {
+    if (retryAttempt < 20) { // Poll RAM every 250 ms, up to 20 times (~5 s)
+      setTimeout(() => {
+        filterIgvFeatures(filteredCellNames, retryAttempt++)
+      }, 250)
+    }
+    return
+  }
   const filteredFeatures = originalChrFeatures.filter(
     feature => filteredCellNames.has(feature.name) && getIsFeatureInFrame(feature, igvBrowser)
   )
