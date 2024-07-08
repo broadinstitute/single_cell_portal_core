@@ -210,7 +210,7 @@ export default function ScatterPlotLegend({
   updateHiddenTraces, customColors, editedCustomColors, setEditedCustomColors, setCustomColors,
   enableColorPicking=false, activeTraceLabel, setActiveTraceLabel,
   isSplitLabelArrays, updateIsSplitLabelArrays, hasArrayLabels,
-  externalLink, saveCustomColors, originalLabels, titleTexts, plotWidth
+  externalLink, saveCustomColors, originalLabels, titleTexts, plotWidth, refColorMap
 }) {
   // is the user currently in color-editing mode
   const [showColorControls, setShowColorControls] = useState(false)
@@ -282,7 +282,7 @@ export default function ScatterPlotLegend({
   /** create mapping of labels and colors of full label list (used for filtered legends) */
   const fullLabelsMappedToColor = labels.map((label, i) => {
     const colorIndex = getColorIndex(label, i)
-    const iconColor = getColorForLabel(label, customColors, editedCustomColors, colorIndex)
+    const iconColor = getColorForLabel(label, customColors, editedCustomColors, refColorMap, colorIndex)
     return { label, iconColor }
   })
 
@@ -439,7 +439,7 @@ export default function ScatterPlotLegend({
           const colorIndex = getColorIndex(label, i)
           const iconColor = showLegendSearch ?
             getColorForLabelIcon(label) :
-            getColorForLabel(label, customColors, editedCustomColors, colorIndex)
+            getColorForLabel(label, customColors, editedCustomColors, refColorMap, colorIndex)
           return (
             <LegendEntry
               key={label}

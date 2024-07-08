@@ -195,7 +195,7 @@ function getIsAuthorDe(exploreInfo, exploreParams) {
  *  */
 export default function ExploreDisplayPanelManager({
   studyAccession, exploreInfo, setExploreInfo, exploreParams, updateExploreParams, clearExploreParams,
-  exploreParamsWithDefaults, routerLocation, searchGenes, countsByLabel, setShowUpstreamDifferentialExpressionPanel,
+  exploreParamsWithDefaults, routerLocation, searchGenes, countsByLabelForDe, setShowUpstreamDifferentialExpressionPanel,
   setShowDifferentialExpressionPanel, showUpstreamDifferentialExpressionPanel, togglePanel, shownTab,
   showDifferentialExpressionPanel, setIsCellSelecting, currentPointsSelected, isCellSelecting, deGenes,
   setDeGenes, setShowDeGroupPicker,
@@ -546,7 +546,7 @@ export default function ExploreDisplayPanelManager({
           exploreInfo={exploreInfo}
           studyAccession={studyAccession}
         />}
-        {panelToShow === 'differential-expression' && countsByLabel && annotHasDe &&
+        {panelToShow === 'differential-expression' && countsByLabelForDe && annotHasDe &&
           <>
             <DifferentialExpressionPanel
               deGroup={deGroup}
@@ -565,7 +565,7 @@ export default function ExploreDisplayPanelManager({
               deHeaders={deHeaders}
               deGroupB={deGroupB}
               setDeGroupB={setDeGroupB}
-              countsByLabel={countsByLabel}
+              countsByLabelForDe={countsByLabelForDe}
               togglePanel={togglePanel}
             />
           </>

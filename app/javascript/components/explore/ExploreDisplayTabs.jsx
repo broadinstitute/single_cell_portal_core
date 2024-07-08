@@ -235,7 +235,7 @@ export default function ExploreDisplayTabs({
   const [panelToShow, setPanelToShow] = useState(initialPanel)
 
   // Hash of trace label names to the number of points in that trace
-  const [countsByLabel, setCountsByLabel] = useState(null)
+  const [countsByLabelForDe, setCountsByLabelForDe] = useState(null)
   const showDifferentialExpressionTable = (showViewOptionsControls && deGenes !== null)
   const plotContainerClass = 'explore-plot-tab-content'
 
@@ -248,6 +248,11 @@ export default function ExploreDisplayTabs({
   // flow/error handling for cell filtering
   const [clusterCanFilter, setClusterCanFilter] = useState(true)
   const [filterErrorText, setFilterErrorText] = useState(null)
+
+  // map of colors for maintaining associations in spatial UX
+  const [refColorMap, setRefColorMap] = useState({})
+  // state tracker to ensure that spatial/secondary plots update with correct color map after main plot finishes
+  const [refClusterRendered, setRefClusterRendered] = useState(false)
 
   const {
     enabledTabs, disabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs
@@ -511,10 +516,9 @@ export default function ExploreDisplayTabs({
                     showRelatedGenesIdeogram,
                     showViewOptionsControls
                   }}
+                  setCountsByLabelForDe={setCountsByLabelForDe}
                   isCellSelecting={isCellSelecting}
                   plotPointsSelected={plotPointsSelected}
-                  countsByLabel={countsByLabel}
-                  setCountsByLabel={setCountsByLabel}
                   updateExploreParams={updateExploreParams}
                 />
               </div>
@@ -525,14 +529,13 @@ export default function ExploreDisplayTabs({
                   studyAccession={studyAccession}
                   {...exploreParamsWithDefaults}
                   isCorrelatedScatter={true}
+                  setCountsByLabelForDe={setCountsByLabelForDe}
                   dimensionProps={{
                     numColumns: 1,
                     numRows: 1
                   }}
                   isCellSelecting={isCellSelecting}
                   plotPointsSelected={plotPointsSelected}
-                  countsByLabel={countsByLabel}
-                  setCountsByLabel={setCountsByLabel}
                   updateExploreParams={updateExploreParams}
                 />
               </div>
@@ -555,11 +558,14 @@ export default function ExploreDisplayTabs({
                     showViewOptionsControls,
                     showDifferentialExpressionTable,
                     scatterColor: exploreParamsWithDefaults.scatterColor,
-                    countsByLabel,
-                    setCountsByLabel,
+                    setCountsByLabelForDe,
                     dataCache,
                     filteredCells,
-                    cellFilteringSelection
+                    cellFilteringSelection,
+                    refColorMap,
+                    setRefColorMap,
+                    refClusterRendered,
+                    setRefClusterRendered
                   }}/>
               </div>
             }
@@ -660,7 +666,7 @@ export default function ExploreDisplayTabs({
             exploreParamsWithDefaults={exploreParamsWithDefaults}
             routerLocation={routerLocation}
             searchGenes={searchGenes}
-            countsByLabel={countsByLabel}
+            countsByLabelForDe={countsByLabelForDe}
             setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
             showDifferentialExpressionPanel={showDifferentialExpressionPanel}
             setShowDifferentialExpressionPanel={setShowDifferentialExpressionPanel}

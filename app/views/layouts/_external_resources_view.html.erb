@@ -6,12 +6,3 @@
                 data: {toggle: 'tooltip'} %>
   <% end %>
 </p>
-
-<script nonce="<%= content_security_policy_script_nonce %>">
-
-    $('.external-resource-link').on('click', function() {
-        var linkHref = $(this).attr('href');
-        gaTrack(linkHref, 'Single Cell Portal | External Resource Click');
-    });
-
-</script>

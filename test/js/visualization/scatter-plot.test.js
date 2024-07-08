@@ -16,7 +16,7 @@ import * as LayoutUtils from 'lib/layout-utils'
 
 import '@testing-library/jest-dom/extend-expect'
 
-import { BASIC_PLOT_DATA, MANY_LABELS_MOCKS, COUNTS_BY_LABEL } from './scatter-plot.test-data'
+import { BASIC_PLOT_DATA, MANY_LABELS_MOCKS, COUNTS_BY_LABEL, REF_COLOR_MAP } from './scatter-plot.test-data'
 
 const CACHE_PERF_PARAMS = {
   legacyBackend: 0,
@@ -62,7 +62,7 @@ it('shows custom legend with default group scatter plot', async () => {
   const fakeLog = jest.spyOn(MetricsApi, 'log')
   fakeLog.mockImplementation(() => {})
 
-  const countsByLabel = COUNTS_BY_LABEL
+  const refColorMap = REF_COLOR_MAP
 
   const getTextSizeSpy = jest.spyOn(LayoutUtils, 'getTextSize')
   getTextSizeSpy.mockImplementation(() => [10, 10])
@@ -82,8 +82,9 @@ it('shows custom legend with default group scatter plot', async () => {
         consensus: null,
         genes: [],
         dimensionProps: BASIC_DIMENSION_PROPS,
-        setCountsByLabel() {},
-        countsByLabel,
+        setCountsByLabelForDe() {},
+        refColorMap,
+        setRefColorMap() {},
         hiddenTraces: exploreParams.hiddenTraces,
         updateExploreParams: newParams => setExploreParams(newParams)
       }}/>
@@ -123,7 +124,7 @@ it('shows custom legend with default group scatter plot', async () => {
       numPoints: 19,
       numLabels: 31,
       wasShown: true,
-      iconColor: '#377eb8',
+      iconColor: '#4daf4a',
       hasCorrelations: false
     }
   )
@@ -132,6 +133,7 @@ it('shows custom legend with default group scatter plot', async () => {
 it('shows cluster external link', async () => {
   const scatterData = BASIC_PLOT_DATA.scatter
   const countsByLabel = COUNTS_BY_LABEL
+  const refColorMap = REF_COLOR_MAP
   const originalLabels = Object.keys(countsByLabel)
 
   const getTextSizeSpy = jest.spyOn(LayoutUtils, 'getTextSize')
@@ -146,10 +148,13 @@ it('shows cluster external link', async () => {
     hasArrayLabels={scatterData.hasArrayLabels}
     externalLink={BASIC_PLOT_DATA.externalLink}
     originalLabels={originalLabels}
+    refColorMap={refColorMap}
     titleTexts={titleTexts}
   />))
 
-  const { container } = render(<ScatterPlot/>)
+  const { container } = render((<ScatterPlot { ...{
+    annotation: { name: 'Category', type: 'group', scope: 'cluster'}, genes: []
+  }} />))
 
   await waitFor(() => {
     container.querySelectorAll('#study-scatter-1-legend').length > 0
@@ -162,6 +167,7 @@ it('shows cluster external link', async () => {
 it('shows legend search', async () => {
   const scatterData = BASIC_PLOT_DATA.scatter
   const countsByLabel = COUNTS_BY_LABEL
+  const refColorMap = REF_COLOR_MAP
   const originalLabels = Object.keys(countsByLabel)
 
   jest
@@ -183,6 +189,7 @@ it('shows legend search', async () => {
       hasArrayLabels={scatterData.hasArrayLabels}
       externalLink={BASIC_PLOT_DATA.externalLink}
       originalLabels={originalLabels}
+      refColorMap={refColorMap}
       titleTexts={titleTexts}
     />))
 

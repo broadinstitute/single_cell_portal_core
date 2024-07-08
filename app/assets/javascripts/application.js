@@ -651,20 +651,6 @@ function flipToggleSwitch(toggle) {
     jqToggle.html(newText)
 }
 
-// function to call Google Analytics whenever AJAX call is made
-// must be called manually from every AJAX success or js page render
-function gaTracker(id){
-    $.getScript('https://www.google-analytics.com/analytics.js'); // jQuery shortcut
-    window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-    ga('create', id, 'auto');
-    ga('send', 'pageview');
-}
-
-function gaTrack(path, title) {
-    ga('set', { page: path, title: title });
-    ga('send', 'pageview');
-}
-
 // decode an HTML-encoded string
 function unescapeHTML(encodedStr) {
     return $("<div/>").html(encodedStr).text();

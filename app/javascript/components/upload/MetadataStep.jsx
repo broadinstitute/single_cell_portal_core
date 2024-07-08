@@ -34,7 +34,6 @@ function MetadataForm({
   updateFile,
   saveFile,
   deleteFile,
-  bucketName,
   isAnnDataExperience
 }) {
   const userState = useContext(UserContext)
@@ -42,6 +41,7 @@ function MetadataForm({
   const conventionRequired = featureFlagState && featureFlagState.convention_required
 
   const file = formState.files.find(metadataFileFilter)
+  const bucketName = formState.study.bucket_id
   const validationMessages = validateFile({
     file,
     allFiles: formState.files,
