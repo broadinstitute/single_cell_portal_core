@@ -611,7 +611,7 @@ function RawScatterPlot({
       { ErrorComponent }
       { hasMissingAnnot &&
         <div className="alert-warning text-center error-boundary">
-          {cluster} does not have the requested annotation {loadedAnnotation}
+          "{cluster}" does not have the requested annotation "{loadedAnnotation}"
         </div>
       }
       { !hasMissingAnnot &&
