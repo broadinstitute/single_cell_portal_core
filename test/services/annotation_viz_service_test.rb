@@ -141,4 +141,12 @@ class AnnotationVizServiceTest < ActiveSupport::TestCase
     assert_equal 'study', species_label_annot[:scope]
 
   end
+
+  test 'should compute color map for group-based annotation' do
+    labels = %w(A B C D E F G)
+    map = AnnotationVizService.color_map(labels)
+    labels.each_with_index do |label, index|
+      assert_equal AnnotationVizService::COLORBREWER_SET[index], map[label]
+    end
+  end
 end

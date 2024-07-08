@@ -87,7 +87,7 @@ class AnnotationVizService
                     identifier: "#{source[:name]}--#{type}--#{scope}"}
     end
     if type == 'group'
-      annotation[:color_map] = AnnotationVizService.annotation_color_map(annotation[:values])
+      annotation[:color_map] = AnnotationVizService.color_map(annotation[:values])
     end
     annotation
   end
@@ -221,13 +221,9 @@ class AnnotationVizService
   # create a global color map for a given group-based annotation
   # this allows for labels to maintain the same color across multiple plots, regardless of whether or not the
   # group is represented
-  def self.annotation_color_map(values)
-    values.sort_by!(&:downcase).map.with_index do |value, index|
+  def self.color_map(values)
+    values.sort_by(&:downcase).map.with_index do |value, index|
       { "#{value}" => COLORBREWER_SET[index % COLORBREWER_SET.size] }
     end.reduce({}, :merge)
-  end
-
-  def self.conditional_label_sort()
-
   end
 end
