@@ -17,9 +17,6 @@ More context: https://github.com/broadinstitute/single_cell_portal_core/pull/202
     igvBrowser.trackViews[trackIndex].track.featureSource.featureCache =
       new igv.FeatureCache(filteredFeatures, igvBrowser.genome, range)
 
-    console.log('igvBrowser.trackViews[trackIndex].track.featureSource.featureCache')
-    console.log(igvBrowser.trackViews[trackIndex].track.featureSource.featureCache)
-
     igvBrowser.trackViews[trackIndex].track.clearCachedFeatures()
     igvBrowser.trackViews[trackIndex].track.updateViews()
   }
