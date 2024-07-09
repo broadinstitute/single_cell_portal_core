@@ -309,7 +309,9 @@ class ExpressionVizService
   def self.initialize_plotly_objects_by_annotation(annotation)
     values = {}
     annotation[:values].each do |value|
-      values["#{value}"] = {y: [], cells: [], annotations: [], name: "#{value}" }
+      values["#{value}"] = {
+        y: [], cells: [], annotations: [], name: "#{value}", color: annotation.dig(:color_map, value)
+      }
     end
     values
   end
