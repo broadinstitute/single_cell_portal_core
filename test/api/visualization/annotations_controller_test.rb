@@ -59,6 +59,8 @@ class AnnotationsControllerTest < ActionDispatch::IntegrationTest
                                              'ACTA2' => Hash[marker_cluster_list.zip([6,5,4])]
                                            }
                                          ])
+
+    @color_map = AnnotationVizService::COLORBREWER_SET
   end
 
   teardown do
@@ -176,12 +178,26 @@ class AnnotationsControllerTest < ActionDispatch::IntegrationTest
       @basic_study, cluster, annotation_param
     )
     assert_equal 4, annotations.size
-    expected_annotations = @basic_study.cell_metadata.map do |meta|
+    expected_annotations = [
       {
-        name: meta.name, type: meta.annotation_type, scope: 'study', values: meta.values,
-        identifier: meta.annotation_select_value
+        name: 'species', type: 'group', scope: 'study', values: %w(dog cat),
+        identifier: 'species--group--study', color_map: { cat: '#e41a1c', dog: '#377eb8' }.with_indifferent_access
+      },
+      {
+        name: 'disease', type: 'group', scope: 'study', values: %w(none measles),
+        identifier: 'disease--group--study',
+        color_map: { measles: '#e41a1c', none: '#377eb8' }.with_indifferent_access
+      },
+      {
+        name: 'cell_type', type: 'group', scope: 'study', values: %w(big --Unspecified--),
+        identifier: 'cell_type--group--study',
+        color_map: { '--Unspecified--' => '#e41a1c', big: '#377eb8' }.with_indifferent_access
+      },
+      {
+        name: 'nCount_RNA', type: 'numeric', scope: 'study', values: [],
+        identifier: 'nCount_RNA--numeric--study'
       }
-    end
+    ]
     expected_annotations[2][:values][1] = '--Unspecified--'
     assert_equal expected_annotations, annotations
     assert_empty Api::V1::Visualization::AnnotationsController.get_facet_annotations(

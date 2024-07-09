@@ -86,7 +86,8 @@ class ExpressionControllerTest < ActionDispatch::IntegrationTest
       genes: 'PTEN'
     }), user: @user)
     assert_equal 200, response.status
-    assert_equal({"y"=>[0.0, 3.0], "cells"=>["A", "B"], "annotations"=>[], "name"=>"bar"}, json['values']['bar'])
+    expected = { y: [0.0, 3.0], cells: %w(A B), annotations: [], name: 'bar', color: '#e41a1c' }.with_indifferent_access
+    assert_equal expected, json['values']['bar']
 
     execute_http_request(:get, api_v1_study_expression_path(@empty_study, 'violin', {
       cluster: 'clusterA.txt',

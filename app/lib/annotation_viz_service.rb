@@ -86,7 +86,7 @@ class AnnotationVizService
       annotation = {name: source[:name], type: type, scope: scope, values: sanitize_values_array(source[:values].to_a, type),
                     identifier: "#{source[:name]}--#{type}--#{scope}"}
     end
-    if type == 'group'
+    if annotation && type == 'group'
       annotation[:color_map] = AnnotationVizService.color_map(annotation[:values])
     end
     annotation
