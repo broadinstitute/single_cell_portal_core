@@ -1406,7 +1406,7 @@ class Study
 
     cluster_groups.each do |cluster_group|
       Rails.logger.info "creating cell index for #{accession}:#{cluster_group.name}"
-      cluster_group.create_cell_name_index!
+      cluster_group.create_all_cell_indices!
       Rails.logger.info "finished cell index for #{accession}:#{cluster_group.name}"
     end
   end

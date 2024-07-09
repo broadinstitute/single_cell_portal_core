@@ -539,7 +539,7 @@ class IngestJob
       study.create_all_cluster_cell_indices!
     when :ingest_cluster
       cluster = ClusterGroup.find_by(study:, study_file:, name: cluster_name_by_file_type)
-      cluster.create_cell_name_index!
+      cluster.create_all_cell_indices!
     end
   end
 

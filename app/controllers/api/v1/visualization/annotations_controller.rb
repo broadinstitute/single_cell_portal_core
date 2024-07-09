@@ -188,6 +188,21 @@ module Api
               key :type, :string
               key :required, true
             end
+            parameter do
+              key :name, :subsample_annotation
+              key :in, :query
+              key :description, 'Name of subsampled annotation (for sourcing cluster cells'
+              key :type, :string
+              key :required, false
+            end
+            parameter do
+              key :name, :subsample_threshold
+              key :in, :query
+              key :description, 'Subsampling threshold'
+              key :type, :integer
+              key :required, false
+              key :enum, [nil, 100000]
+            end
             response 200 do
               key :description, 'Array of integer-based annotation assignments for all cells in requested cluster'
               schema do
@@ -261,7 +276,9 @@ module Api
           end
 
           # use new cell index arrays to load data much faster
-          indexed_cluster_cells = cluster.cell_index_array
+          indexed_cluster_cells = cluster.cell_index_array(
+            subsample_annotation: params[:subsample_annotation], subsample_threshold: params[:subsample_threshold]
+          )
           annotation_arrays = {}
           facets = []
           # build arrays of annotation values, and populate facets response array
@@ -269,7 +286,6 @@ module Api
             annot_scope = annotation[:scope]
             annot_type = annotation[:type]
             identifier = annotation[:identifier]
-
             data_obj = annot_scope == 'study' ? @study.cell_metadata.by_name_and_type(annotation[:name], annot_type) : cluster
             study_file_id = annot_scope == 'study' ? @study.metadata_file.id : cluster.study_file_id
             array_query = {
@@ -383,6 +399,11 @@ module Api
 
         def self.find_missing_annotations(annotations, requested)
           requested.split(',').reject { |id| annotations.detect { |annot| annot[:identifier] == id } }
+        end
+
+        # create a subsampled array of annotations, using source cluster cells and study "all cells" array
+        def self.subsample_map(cells, subsampled_index, annotations)
+
         end
       end
     end
