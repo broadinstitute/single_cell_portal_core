@@ -449,7 +449,7 @@ class ClusterGroup
 
   # load indexed cell name array, or use default enumerator if identical to metadata file
   def cell_index_array(subsample_annotation: nil, subsample_threshold: nil)
-    if subsample_annotation
+    if subsample_annotation && subsample_threshold
       concatenate_data_arrays('index', 'cells', subsample_threshold, subsample_annotation)
     else
       use_default_index ? 0.upto(points - 1) : concatenate_data_arrays('index', 'cells')

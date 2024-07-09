@@ -189,19 +189,19 @@ module Api
               key :required, true
             end
             parameter do
-              key :name, :subsample_annotation
+              key :name, :loaded_annotation
               key :in, :query
-              key :description, 'Name of subsampled annotation (for sourcing cluster cells'
+              key :description, 'Name of currently loaded annotation (for sourcing cluster cells)'
               key :type, :string
               key :required, false
             end
             parameter do
-              key :name, :subsample_threshold
+              key :name, :subsample
               key :in, :query
               key :description, 'Subsampling threshold'
-              key :type, :integer
+              key :type, :string
               key :required, false
-              key :enum, [nil, 100000]
+              key :enum, [nil, 'all', 100000]
             end
             response 200 do
               key :description, 'Array of integer-based annotation assignments for all cells in requested cluster'
@@ -275,10 +275,14 @@ module Api
             render json: { error: "Cannot find annotations: #{missing.join(', ')}" }, status: :not_found and return
           end
 
+          if params[:subsample] == 'all' || params[:subsample].nil?
+            subsample_threshold = nil
+          else
+            subsample_threshold = params[:subsample_threshold].to_i
+          end
+          subsample_annotation = params[:loaded_annotation]
           # use new cell index arrays to load data much faster
-          indexed_cluster_cells = cluster.cell_index_array(
-            subsample_annotation: params[:subsample_annotation], subsample_threshold: params[:subsample_threshold]
-          )
+          indexed_cluster_cells = cluster.cell_index_array(subsample_annotation: , subsample_threshold:)
           annotation_arrays = {}
           facets = []
           # build arrays of annotation values, and populate facets response array
@@ -293,6 +297,12 @@ module Api
               linear_data_id: data_obj.id, study_id: @study.id, study_file_id:, subsample_annotation: nil,
               subsample_threshold: nil
             }
+            # for subsampled cluster-based annotations, load correct array to allow direct mapping
+            if subsample_threshold && annot_scope == 'cluster'
+              array_query[:subsample_threshold] = subsample_threshold
+              array_query[:subsample_annotation] = subsample_annotation
+            end
+
             annotation_arrays[identifier] = DataArray.concatenate_arrays(array_query)
             facets << { annotation: identifier, groups: annotation[:values] }
           end

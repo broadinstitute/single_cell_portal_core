@@ -595,7 +595,7 @@ function getFilterableAnnotationsForClusterAndStudy(annotations, clusterName) {
 
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
 export async function initCellFaceting(
-  selectedCluster, selectedAnnot, studyAccession, allAnnots, prevCellFaceting
+  selectedCluster, selectedAnnot, studyAccession, allAnnots, prevCellFaceting, subsample=null
 ) {
   let perfTimes = {}
   const timeStart = Date.now()
@@ -637,7 +637,7 @@ export async function initCellFaceting(
   const facetsToFetch = getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting)
 
   const timeFetchStart = Date.now()
-  const newRawFacets = await fetchAnnotationFacets(studyAccession, facetsToFetch, selectedCluster)
+  const newRawFacets = await fetchAnnotationFacets(studyAccession, facetsToFetch, selectedCluster, selectedAnnotId, subsample)
   perfTimes.fetch = Date.now() - timeFetchStart
 
   // Below line is worth keeping, but only uncomment to debug in development.
