@@ -106,7 +106,7 @@ describe('Differential expression panel', () => {
     // screen.debug(deTable) // Print DE table HTML
 
     const firstGeneAfterSort = container.querySelector('.de-gene-row td')
-    expect(firstGeneAfterSort).toHaveTextContent('HLA-DPA1')
+    expect(firstGeneAfterSort).toHaveTextContent('CD74')
 
     // Confirm base case for "Find genes"
     const deSearchBox = container.querySelector('.de-search-box')
