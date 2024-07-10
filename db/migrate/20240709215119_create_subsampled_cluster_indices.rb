@@ -3,6 +3,7 @@ class CreateSubsampledClusterIndices < Mongoid::Migration
     accessions = Study.pluck(:accession)
     accessions.each do |accession|
       study = Study.find_by(accession:)
+      study.cluster_groups.update_all(indexed: false, is_indexing: false)
       study.delay.create_all_cluster_cell_indices!
     end
   end
@@ -16,6 +17,5 @@ class CreateSubsampledClusterIndices < Mongoid::Migration
       :study_id.in => study_ids, :study_file_id.in => cluster_file_ids, :subsample_annotation.ne => nil,
       :subsample_threshold.ne => nil
     ).delete_all
-    ClusterGroup.update_all(indexed: false, is_indexing: false)
   end
 end
