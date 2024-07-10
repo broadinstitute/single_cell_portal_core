@@ -278,7 +278,7 @@ module Api
           if params[:subsample] == 'all' || params[:subsample].nil?
             subsample_threshold = nil
           else
-            subsample_threshold = params[:subsample_threshold].to_i
+            subsample_threshold = params[:subsample].to_i
           end
           subsample_annotation = params[:loaded_annotation]
           # use new cell index arrays to load data much faster
@@ -297,11 +297,6 @@ module Api
               linear_data_id: data_obj.id, study_id: @study.id, study_file_id:, subsample_annotation: nil,
               subsample_threshold: nil
             }
-            # for subsampled cluster-based annotations, load correct array to allow direct mapping
-            if subsample_threshold && annot_scope == 'cluster'
-              array_query[:subsample_threshold] = subsample_threshold
-              array_query[:subsample_annotation] = subsample_annotation
-            end
 
             annotation_arrays[identifier] = DataArray.concatenate_arrays(array_query)
             facets << { annotation: identifier, groups: annotation[:values] }
@@ -314,7 +309,7 @@ module Api
             facets.map do |facet|
               annotation = facet[:annotation]
               _, annotation_type, annotation_scope = annotation.split('--')
-              if annotation_scope == 'study'
+              if annotation_scope == 'study' || subsample_threshold.present?
                 label = annotation_arrays[annotation][value] || '--Unspecified--'
               else
                 label = annotation_arrays[annotation][index] || '--Unspecified--'

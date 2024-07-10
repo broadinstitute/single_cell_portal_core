@@ -1405,9 +1405,9 @@ class Study
     return nil if cluster_groups.empty?
 
     cluster_groups.each do |cluster_group|
-      Rails.logger.info "creating cell index for #{accession}:#{cluster_group.name}"
+      Rails.logger.info "creating all cell name indices for #{accession}:#{cluster_group.name}"
       cluster_group.create_all_cell_indices!
-      Rails.logger.info "finished cell index for #{accession}:#{cluster_group.name}"
+      Rails.logger.info "finished cell name index for #{accession}:#{cluster_group.name}"
     end
   end
 

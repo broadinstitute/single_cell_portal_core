@@ -429,6 +429,7 @@ class IngestJob
       create_cell_name_indexes
     when :ingest_subsample
       set_subsampling_flags
+      create_cell_name_indexes
     when :differential_expression
       create_differential_expression_results
     when :ingest_differential_expression
