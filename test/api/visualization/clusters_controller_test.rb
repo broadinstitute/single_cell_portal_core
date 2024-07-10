@@ -94,7 +94,10 @@ class ClustersControllerTest < ActionDispatch::IntegrationTest
       "pointAlpha"=>1.0,
       "cluster"=>"clusterA.txt",
       "genes"=>[],
-      "annotParams"=>{"name"=>"foo", "type"=>"group", "scope"=>"cluster", "values"=>["bar", "baz"], "identifier"=>"foo--group--cluster"},
+      "annotParams"=>{
+        "name"=>"foo", "type"=>"group", "scope"=>"cluster", "values"=>["bar", "baz"],
+        "identifier"=>"foo--group--cluster", "color_map"=>{"bar"=>"#e41a1c", "baz"=>"#377eb8"}
+      },
       "subsample"=>"all",
       "isSplitLabelArrays"=>false,
       "consensus"=>nil,

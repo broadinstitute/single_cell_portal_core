@@ -249,11 +249,6 @@ export default function ExploreDisplayTabs({
   const [clusterCanFilter, setClusterCanFilter] = useState(true)
   const [filterErrorText, setFilterErrorText] = useState(null)
 
-  // map of colors for maintaining associations in spatial UX
-  const [refColorMap, setRefColorMap] = useState({})
-  // state tracker to ensure that spatial/secondary plots update with correct color map after main plot finishes
-  const [refClusterRendered, setRefClusterRendered] = useState(false)
-
   const {
     enabledTabs, disabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs
   } = getEnabledTabs(exploreInfo, exploreParamsWithDefaults, cellFaceting)
@@ -561,11 +556,7 @@ export default function ExploreDisplayTabs({
                     setCountsByLabelForDe,
                     dataCache,
                     filteredCells,
-                    cellFilteringSelection,
-                    refColorMap,
-                    setRefColorMap,
-                    refClusterRendered,
-                    setRefClusterRendered
+                    cellFilteringSelection
                   }}/>
               </div>
             }

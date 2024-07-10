@@ -329,7 +329,7 @@ function getViolinTraces(
             color: '#000000',
             opacity: 0.8
           },
-          fillcolor: getColorBrewerColor(index),
+          fillcolor: traceData.color,
           line: {
             color: '#000000',
             width: 1.5
@@ -346,7 +346,7 @@ function getViolinTraces(
           y: dist,
           boxpoints: showPoints,
           marker: {
-            color: getColorBrewerColor(index),
+            color: traceData.color,
             size: 2,
             line: {
               color: plotlyDefaultLineColor

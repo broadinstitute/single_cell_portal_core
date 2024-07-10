@@ -84,7 +84,6 @@ it('shows custom legend with default group scatter plot', async () => {
         dimensionProps: BASIC_DIMENSION_PROPS,
         setCountsByLabelForDe() {},
         refColorMap,
-        setRefColorMap() {},
         hiddenTraces: exploreParams.hiddenTraces,
         updateExploreParams: newParams => setExploreParams(newParams)
       }}/>
@@ -124,7 +123,7 @@ it('shows custom legend with default group scatter plot', async () => {
       numPoints: 19,
       numLabels: 31,
       wasShown: true,
-      iconColor: '#4daf4a',
+      iconColor: '#377eb8',
       hasCorrelations: false
     }
   )

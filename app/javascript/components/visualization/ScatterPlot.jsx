@@ -46,8 +46,7 @@ function RawScatterPlot({
   studyAccession, cluster, annotation, subsample, consensus, genes, scatterColor, dimensionProps,
   isAnnotatedScatter=false, isCorrelatedScatter=false, isCellSelecting=false, plotPointsSelected, dataCache,
   canEdit, bucketId, expressionFilter=[0, 1], setCountsByLabelForDe, hiddenTraces=[],
-  isSplitLabelArrays, updateExploreParams, filteredCells, refColorMap, setRefColorMap, isRefCluster, refClusterRendered,
-  setRefClusterRendered, hasMultipleRefs
+  isSplitLabelArrays, updateExploreParams, filteredCells
 }) {
   const [countsByLabel, setCountsByLabel] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -125,11 +124,7 @@ function RawScatterPlot({
   }
 
   useEffect( () => {
-    if (isRefCluster) {
-      setRefColorMap({})
-      setRefClusterRendered(false)
-      setHasMissingAnnot(false)
-    }
+    setHasMissingAnnot(false)
   }, [cluster, loadedAnnotation, subsample])
 
   /** redraw the plot when editedCustomColors changes */
@@ -183,6 +178,7 @@ function RawScatterPlot({
     // may change as a result of the fetched data, but not be reflected in the isRefGroup constant
     // until `setScatterData` is called
     const isRG = getIsRefGroup(scatter.annotParams.type, genes, isCorrelatedScatter)
+    const refColorMap = scatter.annotParams.color_map
     const [traces, labelCounts] = getPlotlyTraces({
       genes,
       isAnnotatedScatter,
@@ -196,10 +192,7 @@ function RawScatterPlot({
       isSplitLabelArrays: isSplitLabelArrays ?? scatter.isSplitLabelArrays,
       isRefGroup: isRG,
       originalLabels,
-      refColorMap,
-      setRefColorMap,
-      isRefCluster,
-      hasMultipleRefs
+      refColorMap
     })
     if (isRG) {
       setCountsByLabel(labelCounts)
@@ -397,14 +390,10 @@ function RawScatterPlot({
 
       scatter.hasArrayLabels =
         scatter.annotParams.type === 'group' && scatter.data.annotations.some(annot => annot?.includes('|'))
+    }
 
-      if (isRefCluster) {
-        setRefClusterRendered(true)
-      }
-
-      if (clusterResponse) {
-        concludeRender(scatter)
-      }
+    if (clusterResponse) {
+      concludeRender(scatter)
     }
   }
 
@@ -504,13 +493,6 @@ function RawScatterPlot({
     cluster, loadedAnnotation, subsample, genes.join(','), isAnnotatedScatter, consensus,
     filteredCells?.join(',')
   ])
-
-  // re-render non-primary plots after main has rendered to ensure color mappings are correct
-  useUpdateEffect( () => {
-    if (!isRefCluster && refClusterRendered && !hasMissingAnnot) {
-      fetchData()
-    }
-  }, [loadedAnnotation, refClusterRendered])
 
   useUpdateEffect(() => {
     // Don't update if graph hasn't loaded
@@ -648,7 +630,7 @@ function RawScatterPlot({
             originalLabels={originalLabels}
             titleTexts={titleTexts}
             plotWidth={widthAndHeight.width}
-            refColorMap={refColorMap}
+            refColorMap={scatterData?.annotParams?.color_map}
           />
         }
       </div>
@@ -734,10 +716,7 @@ function getPlotlyTraces({
   isSplitLabelArrays,
   isRefGroup,
   originalLabels,
-  refColorMap,
-  setRefColorMap,
-  isRefCluster,
-  hasMultipleRefs
+  refColorMap
 }) {
   const unfilteredTrace = {
     type: is3D ? 'scatter3d' : 'scattergl',
@@ -773,15 +752,7 @@ function getPlotlyTraces({
       groupTrace.type = unfilteredTrace.type
       groupTrace.mode = unfilteredTrace.mode
       groupTrace.opacity = unfilteredTrace.opacity
-      let color
-      if (hasMultipleRefs) {
-        color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, labelIndex)
-      } else {
-        color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, {}, labelIndex)
-      }
-      if (isRefCluster) {
-        updateRefColorMap(setRefColorMap, color, groupTrace.name)
-      }
+      const color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, labelIndex)
       groupTrace.marker = {
         size: pointSize,
         color
@@ -834,16 +805,6 @@ function getPlotlyTraces({
   })
 
   return [traces, countsByLabel, isRefGroup]
-}
-
-
-// handler to merge in new entries to the refColorMap (used for keeping track of trace colors across spatial plots)
-function updateRefColorMap(setRefColorMap, color, traceName) {
-  const colorEntry = {}
-  colorEntry[traceName] = color
-  setRefColorMap(prevColorMap => ({
-    ...prevColorMap, ...colorEntry
-  }))
 }
 
 /** makes the data trace attributes (cells, trace name) available via hover text */

@@ -62,6 +62,7 @@ class ExpressionVizServiceTest < ActiveSupport::TestCase
         annotation: 'species--group--study'
     }
     @basic_study.update(default_options: defaults)
+    @color_list = AnnotationVizService::COLORBREWER_SET
   end
 
   # convenience method to load all gene expression data for a given study like requests to expression_controller
@@ -131,6 +132,9 @@ class ExpressionVizServiceTest < ActiveSupport::TestCase
       consensus: 'mean'
     )
     assert_equal [0.0, 4.75], rendered_data[:values]['dog'][:y]
+    rendered_data[:values].values.sort_by {|e| e[:name] }.each_with_index do |data, index|
+      assert_equal AnnotationVizService::COLORBREWER_SET[index], data[:color]
+    end
 
     # confirm it works for numeric annotations
     annot_name, annot_type, annot_scope = ['Intensity', 'numeric', 'cluster']
@@ -223,8 +227,8 @@ class ExpressionVizServiceTest < ActiveSupport::TestCase
     violin_data = ExpressionVizService.load_expression_boxplot_data_array_scores(@basic_study, gene, cluster, annotation)
     # cells A & C belong to 'dog', and cell B belongs to 'cat' from default metadata annotation
     expected_output = {
-        dog: {y: [0.0, 1.5], cells: %w(A C), annotations: [], name: 'dog'},
-        cat: {y: [3.0], cells: %w(B), annotations: [], name: 'cat'}
+        dog: {y: [0.0, 1.5], cells: %w(A C), annotations: [], name: 'dog', color: @color_list[1] },
+        cat: {y: [3.0], cells: %w(B), annotations: [], name: 'cat', color: @color_list[0] }
     }
     assert_equal expected_output.with_indifferent_access, violin_data.with_indifferent_access
   end
@@ -236,8 +240,11 @@ class ExpressionVizServiceTest < ActiveSupport::TestCase
     violin_data = ExpressionVizService.load_expression_boxplot_data_array_scores(@basic_study, gene, cluster, annotation)
     # cells A & B belong to 'bar', and cell C belongs to the blank label
     expected_output = {
-      bar: {y: [0.0, 3.0], cells: %w(A B), annotations: [], name: 'bar'},
-      "#{AnnotationVizService::MISSING_VALUE_LABEL}": {y: [1.5], cells: %w(C), annotations: [], name: AnnotationVizService::MISSING_VALUE_LABEL}
+      bar: {
+        y: [0.0, 3.0], cells: %w(A B), annotations: [], name: 'bar', color: @color_list[1]
+      }, "#{AnnotationVizService::MISSING_VALUE_LABEL}": {
+        y: [1.5], cells: %w(C), annotations: [], name: AnnotationVizService::MISSING_VALUE_LABEL, color: @color_list[0]
+      }
     }
     assert_equal expected_output.with_indifferent_access, violin_data.with_indifferent_access
   end
@@ -280,8 +287,8 @@ class ExpressionVizServiceTest < ActiveSupport::TestCase
     # cells A & C belong to 'dog', and cell B belongs to 'cat' from default metadata annotation
     # expression values for A: [0,0].mean (0), B: [1.5,8].mean (4.75), C: [0,3].mean (1.5)
     expected_set_expression = {
-        dog: {y: [0.0, 4.75], cells: %w(A C), annotations:[], name: 'dog'},
-        cat: {y: [1.5], cells: %w(B), annotations:[], name: 'cat'}
+        dog: {y: [0.0, 4.75], cells: %w(A C), annotations:[], name: 'dog', color: @color_list[1] },
+        cat: {y: [1.5], cells: %w(B), annotations:[], name: 'cat', color: @color_list[0] }
     }
     assert_equal expected_set_expression.with_indifferent_access, gene_set_violin.with_indifferent_access
   end
