@@ -446,7 +446,8 @@ class ClusterGroup
                         "#{subsample_annotation}:#{subsample_threshold}"
       create_cell_name_index!(study_cells, subsample_annotation:, subsample_threshold:)
     end
-    index_status = DataArray.where(index_query).any?
+    # determine if any indices
+    index_status = DataArray.any_of(index_query).any? || ClusterGroup.find(id).use_default_index
     update!(is_indexing: false, indexed: index_status)
   end
 
