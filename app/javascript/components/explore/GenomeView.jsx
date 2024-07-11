@@ -61,13 +61,31 @@ function GenomeView({
     }
   }, [fileListString, trackFileName, isVisible])
 
+  /** Wrap igvBrowser.search, retryable */
+  function igvSearch(queriedGenes, retryAttempt=0) {
+    if (window.igvBrowser) {
+
+      // Retry search every .25 s, up to ~5 s, if needed track absent
+      if (!trackFileList && retryAttempt < 20) {
+        setTimeout(() => {
+          igvSearch(queriedGenes, retryAttempt++)
+        }, 250)
+      } else {
+        const genomeId = trackFileList.tracks[0].genomeAssembly
+        getDefaultLocus(queriedGenes, uniqueGenes, genomeId)
+        window.igvBrowser.search(queriedGenes[0])
+
+        const filteredCellNames = window.SCP.filteredCellNames
+        if (filteredCellNames) {
+          filterIgvFeatures(filteredCellNames)
+        }
+      }
+    }
+  }
+
   // Search gene in IGV upon searching gene in Explore
   useEffect(() => {
-    if (window.igvBrowser) {
-      const genomeId = trackFileList.tracks[0].genomeAssembly
-      getDefaultLocus(queriedGenes, uniqueGenes, genomeId)
-      window.igvBrowser.search(queriedGenes[0])
-    }
+    igvSearch(queriedGenes)
   }, [queriedGenes.join(',')])
 
   /** handle clicks on the download 'browse in genome' buttons
