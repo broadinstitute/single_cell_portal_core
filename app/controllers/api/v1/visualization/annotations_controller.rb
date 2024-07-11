@@ -405,11 +405,6 @@ module Api
         def self.find_missing_annotations(annotations, requested)
           requested.split(',').reject { |id| annotations.detect { |annot| annot[:identifier] == id } }
         end
-
-        # create a subsampled array of annotations, using source cluster cells and study "all cells" array
-        def self.subsample_map(cells, subsampled_index, annotations)
-
-        end
       end
     end
   end
