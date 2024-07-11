@@ -541,6 +541,12 @@ class IngestJob
     when :ingest_cluster
       cluster = ClusterGroup.find_by(study:, study_file:, name: cluster_name_by_file_type)
       cluster.create_all_cell_indices!
+    when :ingest_subsample
+      # gotcha to unset the 'indexed' flag as this will block generating new indices
+      cluster = ClusterGroup.find_by(study:, study_file:, name: cluster_name_by_file_type)
+      cluster.update!(indexed: false)
+      cluster.reload
+      cluster.create_all_cell_indices!
     end
   end
 
