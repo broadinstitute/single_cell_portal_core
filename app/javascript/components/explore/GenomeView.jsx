@@ -17,8 +17,11 @@ function GenomeView({
 }) {
   const [isLoading, setIsLoading] = useState(false)
 
-  const numFacets = Object.keys(cellFilteringSelection).length
-  const [hasAppliedInitFilters, setHasAppliedInitFilters] = useState(numFacets > 0)
+  let numFacets
+  if (cellFilteringSelection) {
+    numFacets = Object.keys(cellFilteringSelection).length
+  }
+  const [hasAppliedInitFilters, setHasAppliedInitFilters] = useState(cellFilteringSelection && numFacets > 0)
   const [trackFileList, setTrackFileList] = useState(null)
   const [igvInitializedFiles, setIgvInitializedFiles] = useState('')
   const [igvContainerId] = useState(_uniqueId('study-igv-'))
@@ -223,7 +226,7 @@ function getIsFeatureInFrame(feature, igvBrowser) {
 /** Filter genomic features */
 export function filterIgvFeatures(filteredCellNames, retryAttempt=0) {
   const igvBrowser = window.igvBrowser
-  if (!igvBrowser.tracks) {return}
+  if (!igvBrowser?.tracks) {return}
   const trackIndex = igvBrowser.tracks.findIndex(
     track => track.config?.dataType === 'atac-fragment'
   )
@@ -289,7 +292,11 @@ function getTracks(tsvAndIndexFiles, dataType) {
           '3': '#C66',
           '4': '#E44',
           '5': '#E44',
-          '6': '#E44'
+          '6': '#E44',
+          '7': '#E44',
+          '8': '#F00',
+          '9': '#F00',
+          '10': '#F00'
         },
 
         // "dataType" is an SCP-custom IGV track attribute, which lets us
