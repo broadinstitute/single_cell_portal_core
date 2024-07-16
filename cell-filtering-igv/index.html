@@ -13,7 +13,10 @@ More context: https://github.com/broadinstitute/single_cell_portal_core/pull/202
   /** Render update to reflect newly-selected features in IGV track */
   function updateTrack(trackIndex, filteredFeatures, igv, igvBrowser) {
     igv.FeatureUtils.packFeatures(filteredFeatures)
-    igvBrowser.trackViews[trackIndex].track.featureSource.featureCache = new igv.FeatureCache(filteredFeatures, igvBrowser.genome)
+    const range = igvBrowser.trackViews[trackIndex].track.featureSource.featureCache.range
+    igvBrowser.trackViews[trackIndex].track.featureSource.featureCache =
+      new igv.FeatureCache(filteredFeatures, igvBrowser.genome, range)
+
     igvBrowser.trackViews[trackIndex].track.clearCachedFeatures()
     igvBrowser.trackViews[trackIndex].track.updateViews()
   }
@@ -132,8 +135,8 @@ function filterAtac() {
                     {
                         name: "ATAC fragments",
                         format: "bed",
-                        url: "./M_Brain_Chromium_Nuc_Isolation_vs_SaltyEZ_vs_ComplexTissueDP_atac_fragments.bed.gz",
-                        indexURL: "./M_Brain_Chromium_Nuc_Isolation_vs_SaltyEZ_vs_ComplexTissueDP_atac_fragments.bed.gz.tbi",
+                        url: "./pbmc_3k_atac_fragments.possorted.bed.gz",
+                        indexURL: "./pbmc_3k_atac_fragments.possorted.bed.gz.tbi",
                         // url: "./Library-8-20230710_atac.fragments.possorted.bed.gz",
                         // indexURL: "./Library-8-20230710_atac.fragments.possorted.bed.gz.tbi",
                         visibilityWindow: 100_000,

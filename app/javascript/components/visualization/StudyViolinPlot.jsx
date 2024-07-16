@@ -99,6 +99,7 @@ export async function filterResults(
   results.values = filteredValues
 
   if (flags?.show_igv_multiome) {
+    window.SCP.filteredCellNames = filteredCellNames
     filterIgvFeatures(filteredCellNames)
   }
 

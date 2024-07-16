@@ -118,7 +118,7 @@ export default SafeGenomeView
 
 /** Get unfiltered genomic features on current chromosome */
 function getOriginalChrFeatures(trackIndex, igvBrowser) {
-  const chr = igvBrowser.tracks[0].trackView.viewports[0].featureCache.chr
+  const chr = igvBrowser.referenceFrameList[0].chr
 
   if (
     typeof window.originalFeatures === 'undefined' ||
@@ -191,11 +191,23 @@ function getIsFeatureInFrame(feature, igvBrowser) {
 // }
 
 /** Filter genomic features */
-export function filterIgvFeatures(filteredCellNames) {
-  const trackIndex = 4 // TODO (SCP-5662): Robustify this
+export function filterIgvFeatures(filteredCellNames, retryAttempt=0) {
   const igvBrowser = window.igvBrowser
+  if (!igvBrowser.tracks) {return}
+  const trackIndex = igvBrowser.tracks.findIndex(
+    track => track.config?.dataType === 'atac-fragment'
+  )
 
   const originalChrFeatures = getOriginalChrFeatures(trackIndex, igvBrowser)
+
+  if (typeof originalChrFeatures === 'undefined') {
+    if (retryAttempt < 20) { // Poll RAM every 250 ms, up to 20 times (~5 s)
+      setTimeout(() => {
+        filterIgvFeatures(filteredCellNames, retryAttempt++)
+      }, 250)
+    }
+    return
+  }
   const filteredFeatures = originalChrFeatures.filter(
     feature => filteredCellNames.has(feature.name) && getIsFeatureInFrame(feature, igvBrowser)
   )
@@ -220,6 +232,7 @@ function getTracks(tsvAndIndexFiles, dataType) {
     tsvTrack.label = tsvTrack.name
     tsvTrack.indexURL = decodeURIComponent(tsvTrack.indexUrl)
     tsvTrack.url = decodeURIComponent(tsvTrack.url)
+    tsvTrack.visibilityWindow = 1_000_000 // 1 Mbp
     if (dataType && dataType === 'atac-fragment') {
       const atacProps = {
         displayMode: 'SQUISHED',
@@ -415,9 +428,10 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
   }
 
   window.igv = igv
-  window.igvBrowser = await igv.createBrowser(igvContainer, igvOptions)
+  const igvBrowser = await igv.createBrowser(igvContainer, igvOptions)
+  window.igvBrowser = igvBrowser
 
-  window.igvBrowser.on('trackclick', (track, popoverData) => {
+  igvBrowser.on('trackclick', (track, popoverData) => {
     // Don't show popover when there's no data.
     if (!popoverData || !popoverData.length) {
       return false
@@ -453,7 +467,13 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
     return markup
   })
 
-  // Log igv.js initialization
+  igvBrowser.on('locuschange', () => {
+    const filteredCellNames = window.SCP.filteredCellNames
+    if (filteredCellNames) {
+      filterIgvFeatures(filteredCellNames)
+    }
+  })
+
   log('igv:initialize')
 }
 
