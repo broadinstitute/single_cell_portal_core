@@ -156,10 +156,13 @@ export async function createUserAnnotation(
  * @param {Array<String>} annotations Array of annotation identifiers,
  *  e.g. ['cell_type__ontology_label--group--study', 'disease__ontology_label']
  * @param {String} cluster Name of requested cluster
+ * @param {String} loadedAnnot Name of loaded annotation (if subsampling)
+ * @param {String} subsample Subsampling threshold
  */
-export async function fetchAnnotationFacets(studyAccession, annotations, cluster) {
+export async function fetchAnnotationFacets(studyAccession, annotations, cluster,
+  loadedAnnot, subsample) {
   annotations = encodeURIComponent(annotations.join(','))
-  const params = `annotations=${annotations}&cluster=${cluster}`
+  const params = `annotations=${annotations}&cluster=${cluster}&loaded_annotation=${loadedAnnot}&subsample=${subsample}`
   const apiUrl = `/studies/${studyAccession}/annotations/facets?${params}`
   const [annotationFacets] = await scpApi(apiUrl, defaultInit())
   return annotationFacets

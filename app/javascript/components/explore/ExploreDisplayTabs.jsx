@@ -122,8 +122,9 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
     const allAnnots = exploreInfo?.annotationList.annotations
     if (allAnnots && allAnnots.length > 0) {
       if (!prevCellFaceting?.isFullyLoaded) {
+        const subsample = exploreParams?.subsample || (exploreInfo?.cluster?.numPoints > 100_000 ? 100_000 : null)
         initCellFaceting(
-          cluster, annotation, studyAccession, allAnnots, prevCellFaceting
+          cluster, annotation, studyAccession, allAnnots, prevCellFaceting, subsample
         ).then(newCellFaceting => {
           const initSelection = {}
           if (!cellFilteringSelection) {
@@ -337,7 +338,7 @@ export default function ExploreDisplayTabs({
       cellFilteringSelection
     }
     getCellFacetingData(newCluster, newAnnot, setterFunctions, context)
-  }, [exploreParams?.cluster, exploreParams?.annotation])
+  }, [exploreParams?.cluster, exploreParams?.annotation, exploreParams?.subsample])
 
 
   /** Update filtered cells to only those that match filter selections */

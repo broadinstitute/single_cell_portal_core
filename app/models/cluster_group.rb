@@ -381,8 +381,8 @@ class ClusterGroup
   # index the cells from this cluster against the 'all cells' array at the study level
   # study_cells.index_with.with_index creates hash of cell names => array index position
   # averts CPU saturation of calling Array#index on very large arrays
-  def cell_name_index(study_cells)
-    cluster_cells = concatenate_data_arrays('text', 'cells')
+  def cell_name_index(study_cells, subsample_annotation: nil, subsample_threshold: nil)
+    cluster_cells = concatenate_data_arrays('text', 'cells', subsample_threshold, subsample_annotation)
     # if cluster cells & study cells are identical, return empty array so we can set #use_default_index
     return [] if cluster_cells == study_cells
 
@@ -391,39 +391,69 @@ class ClusterGroup
   end
 
   # create all necessary data array entries for cell_name_index
-  def create_cell_name_index!
-    return nil unless can_index?
-
-    update!(is_indexing: true)
-    study_cells = study.all_cells_array
-    cell_index = cell_name_index(study_cells)
+  def create_cell_name_index!(study_cells, subsample_annotation: nil, subsample_threshold: nil)
+    cell_index = cell_name_index(study_cells, subsample_annotation:, subsample_threshold:)
     # if some cells are not indexed, don't create array as this will break things downstream
     index_count = cell_index.compact.size
-    if cell_index.empty?
+    expected_cells = subsample_threshold || points
+    if cell_index.empty? && subsample_threshold.nil?
       Rails.logger.info "using default cell index for #{study.accession}:#{name}"
-      update!(is_indexing: false, indexed: true, use_default_index: true)
-    elsif index_count != points
-      Rails.logger.info "aborting cell index for #{study.accession}:#{name} - #{points - index_count} cells not found"
-      update!(is_indexing: false)
+      update!(use_default_index: true)
+    elsif index_count != expected_cells
+      Rails.logger.info "aborting cell index for #{study.accession}:#{name} - #{expected_cells - index_count} cells not found"
     else
       cell_index.each_slice(DataArray::MAX_ENTRIES).with_index do |slice, index|
         begin
           DataArray.create!(
             name: 'index', array_type: 'cells', array_index: index, values: slice, linear_data_type: 'ClusterGroup',
-            linear_data_id: id, study_id: study.id, study_file_id:, cluster_name: name
+            linear_data_id: id, study_id: study.id, study_file_id:, cluster_name: name,
+            subsample_annotation:, subsample_threshold:
           )
         rescue => e
-          update!(is_indexing: false)
-          ErrorTracker.report_exception(e, nil, study, self, { job: :create_cell_name_index! })
+          context = { job: :create_cell_name_index!, subsample_annotation:, subsample_threshold: }
+          ErrorTracker.report_exception(e, nil, study, self, context)
         end
       end
-      update!(is_indexing: false, indexed: true)
     end
   end
 
+  # create all necessary cell index arrays, both full-resolution and subsampled
+  def create_all_cell_indices!
+    return nil unless can_index?
+
+    update!(is_indexing: true)
+    subsampled_annotations = DataArray.where(
+      study_id:, study_file_id:, subsample_threshold: 100000,
+      :subsample_annotation.ne => nil, array_type: 'cells', name: 'text'
+    ).pluck(:subsample_annotation, :subsample_threshold)
+    all_indexes = [[nil, nil]] + subsampled_annotations
+    index_query = {
+      study_id:, study_file_id:, linear_data_type: 'ClusterGroup', linear_data_id: id, name: 'index',
+      array_type: 'cells', cluster_name: name
+    }
+    study_cells = study.all_cells_array
+    all_indexes.each do |subsample_annotation, subsample_threshold|
+      # skip checking full-resolution data if use_default_index is already set
+      next if subsample_threshold.nil? && use_default_index
+
+      next if DataArray.where(index_query.merge({ subsample_annotation:, subsample_threshold: })).exists?
+
+      Rails.logger.info "creating cell name index on #{study.accession}:#{name} with " \
+                        "#{subsample_annotation}:#{subsample_threshold}"
+      create_cell_name_index!(study_cells, subsample_annotation:, subsample_threshold:)
+    end
+    # determine if any indices
+    index_status = DataArray.any_of(index_query).any? || ClusterGroup.find(id).use_default_index
+    update!(is_indexing: false, indexed: index_status)
+  end
+
   # load indexed cell name array, or use default enumerator if identical to metadata file
-  def cell_index_array
-    use_default_index ? 0.upto(points - 1) : concatenate_data_arrays('index', 'cells')
+  def cell_index_array(subsample_annotation: nil, subsample_threshold: nil)
+    if subsample_annotation && subsample_threshold
+      concatenate_data_arrays('index', 'cells', subsample_threshold, subsample_annotation)
+    else
+      use_default_index ? 0.upto(points - 1) : concatenate_data_arrays('index', 'cells')
+    end
   end
 
   ##

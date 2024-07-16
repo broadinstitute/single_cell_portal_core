@@ -40,9 +40,9 @@ function ViolinPlotTitle({ cluster, annotation, genes, consensus }) {
 
 
 /** Get array of names for all cells in clustering */
-async function getAllCellNames(studyAccession, cluster, annotation) {
+async function getAllCellNames(studyAccession, cluster, annotation, subsample='All') {
   const clusterData = await fetchCluster({
-    studyAccession, cluster, annotation, subsample: 'All'
+    studyAccession, cluster, annotation, subsample
   })
   const allCellNames = clusterData[0].data.cells
   return allCellNames
@@ -51,14 +51,14 @@ async function getAllCellNames(studyAccession, cluster, annotation) {
 /** Filter cells in violin plot */
 export async function filterResults(
   studyAccession, cluster, annotation, gene,
-  results, cellFaceting, filteredCells
+  results, cellFaceting, filteredCells, subsample
 ) {
   const flags = getFeatureFlagsWithDefaults()
   const showCellFiltering = flags?.show_cell_facet_filtering
   if (!showCellFiltering) {return results}
 
   if (gene in window.SCP.violinCellIndexes === false) {
-    const allCellNames = await getAllCellNames(studyAccession, cluster, annotation)
+    const allCellNames = await getAllCellNames(studyAccession, cluster, annotation, subsample)
     await workSetViolinCellIndexes(gene, results, allCellNames)
   }
 
@@ -146,7 +146,7 @@ function RawStudyViolinPlot({
 
     results = await filterResults(
       studyAccession, cluster, annotation, genes[0],
-      results, cellFaceting, filteredCells
+      results, cellFaceting, filteredCells, subsample
     )
 
     const startTime = performance.now()
