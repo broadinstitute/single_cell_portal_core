@@ -615,6 +615,7 @@ export default function ExploreDisplayTabs({
                   trackFileName={exploreParams.trackFileName}
                   uniqueGenes={exploreInfo.uniqueGenes}
                   isVisible={shownTab === 'genome'}
+                  cellFilteringSelection={cellFilteringSelection}
                   queriedGenes={exploreParams.genes}
                   updateExploreParams={updateExploreParams}
                 />
