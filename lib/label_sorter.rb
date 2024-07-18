@@ -1,4 +1,4 @@
-# natural sorting to handling complex strings with numbers, like biosample_id entries
+# natural sorting of complex labels with strings and integers, like biosample_id entries
 # adapted from https://rosettacode.org/wiki/Natural_sorting#Ruby
 class LabelSorter
   include Comparable
@@ -8,7 +8,7 @@ class LabelSorter
     @str = str
     @lowercase = str.downcase
     @natural_types = @lowercase.scan(/\d+|\D+/).map { |s| s =~ /\d/ ? s.to_i : s }
-    @type_order = @natural_types.map {|el| el.is_a?(Integer) ? :i : :s }.join
+    @type_order = @natural_types.map { |el| el.is_a?(Integer) ? :i : :s }.join
   end
 
   def <=> (other)
