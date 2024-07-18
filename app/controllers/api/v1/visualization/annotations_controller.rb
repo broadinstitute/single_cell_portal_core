@@ -275,7 +275,7 @@ module Api
             render json: { error: "Cannot find annotations: #{missing.join(', ')}" }, status: :not_found and return
           end
 
-          if params[:subsample] == 'all' || params[:subsample].nil?
+          if params[:subsample] == 'all' || params[:subsample] == 'null' || params[:subsample].nil?
             subsample_threshold = nil
           else
             subsample_threshold = params[:subsample].to_i
