@@ -13,9 +13,12 @@ class RemoveInvalidIndexArrays < Mongoid::Migration
       arrays = DataArray.where(query)
       if arrays.any?
         count = arrays.count
-        Rails.logger.info "#{cluster.name} has #{count} invalid arrays"
+        Rails.logger.info "#{cluster.name} in #{study.accession} has #{count} invalid arrays"
         bad_arrays += count
         arrays.delete_all
+        Rails.logger.info "re-indexing #{cluster.name}"
+        cluster.update(indexed: false)
+        cluster.create_all_cell_indices!
       end
     end
     puts "Completed: total arrays removed: #{bad_arrays}"
