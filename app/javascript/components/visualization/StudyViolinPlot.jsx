@@ -79,6 +79,7 @@ export async function filterResults(
       annotations: [],
       cells: [],
       name: group,
+      color: results.values[group].color,
       y: []
     }
     const cellNames = results.values[group].cells
