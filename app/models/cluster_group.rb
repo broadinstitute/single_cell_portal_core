@@ -429,7 +429,7 @@ class ClusterGroup
     all_indexes = [[nil, nil]] + subsampled_annotations
     index_query = {
       study_id:, study_file_id:, linear_data_type: 'ClusterGroup', linear_data_id: id, name: 'index',
-      array_type: 'cells', cluster_name: name
+      array_type: 'cells'
     }
     study_cells = study.all_cells_array
     all_indexes.each do |subsample_annotation, subsample_threshold|
