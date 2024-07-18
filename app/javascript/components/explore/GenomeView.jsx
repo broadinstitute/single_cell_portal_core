@@ -21,7 +21,7 @@ function GenomeView({
   if (cellFilteringSelection) {
     numFacets = Object.keys(cellFilteringSelection).length
   }
-  const [hasAppliedInitFilters, setHasAppliedInitFilters] = useState(cellFilteringSelection && numFacets > 0)
+  const [hasAppliedFilters, setHasAppliedFilters] = useState(!(cellFilteringSelection && numFacets > 0))
   const [trackFileList, setTrackFileList] = useState(null)
   const [igvInitializedFiles, setIgvInitializedFiles] = useState('')
   const [igvContainerId] = useState(_uniqueId('study-igv-'))
@@ -62,20 +62,19 @@ function GenomeView({
       // So we track what the last files are that we initialized
       // IGV with, and only rerender if they are different.
       if (igvInitializedFiles !== fileNamesToShow) {
-        const igvCellFilteringSelection = hasAppliedInitFilters ? cellFilteringSelection : null
+        const igvCellFilteringSelection = hasAppliedFilters ? cellFilteringSelection : null
         initializeIgv(
           igvContainerId, listToShow, trackFileList.gtfFiles, uniqueGenes,
-          queriedGenes, igvCellFilteringSelection, setHasAppliedInitFilters
+          queriedGenes, cellFilteringSelection, setHasAppliedFilters
         )
       }
       setIgvInitializedFiles(fileNamesToShow)
     }
   }, [fileListString, trackFileName, isVisible])
 
-  /** Wrap igvBrowser.search, retryable */
+  /** Wrap igvBrowser.search, retryably */
   function igvSearch(queriedGenes, retryAttempt=0) {
     if (window.igvBrowser) {
-
       // Retry search every .25 s, up to ~5 s, if needed track absent
       if (!trackFileList && retryAttempt < 20) {
         setTimeout(() => {
@@ -444,12 +443,12 @@ export function getIgvOptions(tracks, gtfFiles, uniqueGenes, queriedGenes) {
   return igvOptions
 }
 
-/** Apply cell filtering to IGV, retryable */
-function applyIgvFilters(retryAttempt=0, setHasAppliedInitFilters) {
+/** Apply cell filtering to IGV, retryably */
+function applyIgvFilters(retryAttempt=0, setHasAppliedFilters) {
   const filteredCellNames = window.SCP.filteredCellNames
   if (filteredCellNames) {
     filterIgvFeatures(filteredCellNames)
-    setHasAppliedInitFilters(true)
+    setHasAppliedFilters(true)
   } else {
     if (retryAttempt < 20) {
       setTimeout(() => {
@@ -464,7 +463,7 @@ function applyIgvFilters(retryAttempt=0, setHasAppliedInitFilters) {
  */
 async function initializeIgv(
   containerId, tracks, gtfFiles, uniqueGenes, queriedGenes,
-  igvCellFilteringSelection, setHasAppliedInitFilters
+  igvCellFilteringSelection, setHasAppliedFilters
 ) {
   // Bail if already displayed
   delete igv.browser
@@ -486,7 +485,7 @@ async function initializeIgv(
   window.igvBrowser = igvBrowser
 
   if (igvCellFilteringSelection) {
-    applyIgvFilters(0, setHasAppliedInitFilters)
+    applyIgvFilters(0, setHasAppliedFilters)
   }
 
   igvBrowser.on('trackclick', (track, popoverData) => {
