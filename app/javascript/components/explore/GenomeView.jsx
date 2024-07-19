@@ -459,16 +459,28 @@ function applyIgvFilters(retryAttempt=0, setIsLoadingFilters) {
 
 /** Find the ordinal position of an element among its sibling elements */
 function getIndexAmongSiblings(node, siblingClass=null) {
+  console.log('a')
   let siblings = node.parentNode.children
+  console.log('b')
   if (siblingClass) {
     siblings = Array.from(siblings).filter(node => {
       return Array.from(node.classList).includes(siblingClass)
     })
   }
+  console.log('c')
   for (let i = 0; i < siblings.length; i++) {
     if (siblings[i] === node) {return i}
   }
+  console.log('d')
   return -1
+}
+
+/** Change transparency of a track's canvas graphics layer */
+function updateTrackCanvasOpacity(spinner, opacity) {
+  Array.from(spinner.parentNode.children)
+    .find(node => node.tagName === 'CANVAS')
+    .style.opacity = opacity
+
 }
 
 /** Force loading UI in track if it's loading filters; else don't force */
@@ -479,8 +491,7 @@ function ensureTrackLoadingVisuals(isLoadingFilters, containerId, igvBrowser) {
 
   const igvContainer = document.querySelector(`#${containerId}`)
 
-
-  // Create a watcher for the IGV spinner, and update
+  // Create a watcher for the IGV spinner, and update DOM as needed
   const mutationObserver = new MutationObserver(mutationRecords => {
     mutationRecords.forEach(mutationRecord => {
       const target = mutationRecord.target
@@ -490,10 +501,15 @@ function ensureTrackLoadingVisuals(isLoadingFilters, containerId, igvBrowser) {
         const thisTrackIndex = getIndexAmongSiblings(target.parentNode, 'igv-viewport')
         if (thisTrackIndex === trackIndex) {
           const isSpinnerHidden = target.style.display === 'none'
+
           if (isSpinnerHidden && isLoadingFilters) {
+            console.log('show spinner')
             target.style.display = '' // Show spinner
+            updateTrackCanvasOpacity(target, 0.1)
           } else {
-            target.style.display = 'none' // Hide spinner
+            // TODO: Fix infinite loop caused by this commented-out code
+            // console.log('hide spinner')
+            // target.style.display = 'none' // Hide spinner
           }
         }
       }
