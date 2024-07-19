@@ -21,7 +21,7 @@ function GenomeView({
   if (cellFilteringSelection) {
     numFacets = Object.keys(cellFilteringSelection).length
   }
-  const [hasAppliedFilters, setHasAppliedFilters] = useState(!(cellFilteringSelection && numFacets > 0))
+  const [isLoadingFilters, setIsLoadingFilters] = useState(cellFilteringSelection && numFacets > 0)
   const [trackFileList, setTrackFileList] = useState(null)
   const [igvInitializedFiles, setIgvInitializedFiles] = useState('')
   const [igvContainerId] = useState(_uniqueId('study-igv-'))
@@ -62,10 +62,9 @@ function GenomeView({
       // So we track what the last files are that we initialized
       // IGV with, and only rerender if they are different.
       if (igvInitializedFiles !== fileNamesToShow) {
-        const igvCellFilteringSelection = hasAppliedFilters ? cellFilteringSelection : null
         initializeIgv(
           igvContainerId, listToShow, trackFileList.gtfFiles, uniqueGenes,
-          queriedGenes, cellFilteringSelection, setHasAppliedFilters
+          queriedGenes, cellFilteringSelection, isLoadingFilters, setIsLoadingFilters
         )
       }
       setIgvInitializedFiles(fileNamesToShow)
@@ -444,11 +443,11 @@ export function getIgvOptions(tracks, gtfFiles, uniqueGenes, queriedGenes) {
 }
 
 /** Apply cell filtering to IGV, retryably */
-function applyIgvFilters(retryAttempt=0, setHasAppliedFilters) {
+function applyIgvFilters(retryAttempt=0, setIsLoadingFilters) {
   const filteredCellNames = window.SCP.filteredCellNames
   if (filteredCellNames) {
     filterIgvFeatures(filteredCellNames)
-    setHasAppliedFilters(true)
+    setIsLoadingFilters(true)
   } else {
     if (retryAttempt < 20) {
       setTimeout(() => {
@@ -458,12 +457,26 @@ function applyIgvFilters(retryAttempt=0, setHasAppliedFilters) {
   }
 }
 
+/** Find the ordinal position of an element among its sibling elements */
+function getIndexAmongSiblings(node, siblingClass=null) {
+  let siblings = node.parentNode.children
+  if (siblingClass) {
+    siblings = Array.from(siblings).filter(node => {
+      return Array.from(node.classList).includes(siblingClass)
+    })
+  }
+  for (let i = 0; i < siblings.length; i++) {
+    if (siblings[i] === node) return i
+  }
+  return -1
+}
+
 /**
  * Instantiates and renders igv.js widget on the page
  */
 async function initializeIgv(
   containerId, tracks, gtfFiles, uniqueGenes, queriedGenes,
-  igvCellFilteringSelection, setHasAppliedFilters
+  igvCellFilteringSelection, isLoadingFilters, setIsLoadingFilters
 ) {
   // Bail if already displayed
   delete igv.browser
@@ -485,7 +498,33 @@ async function initializeIgv(
   window.igvBrowser = igvBrowser
 
   if (igvCellFilteringSelection) {
-    applyIgvFilters(0, setHasAppliedFilters)
+    applyIgvFilters(0, setIsLoadingFilters)
+  }
+
+  if (isLoadingFilters) {
+    const trackIndex = igvBrowser.tracks.findIndex(
+      track => track.config?.dataType === 'atac-fragment'
+    )
+
+    const igvContainer = document.querySelector(`#${containerId}`)
+
+
+    const mutationObserver = new MutationObserver(mutationRecords => {
+      mutationRecords.forEach(mutationRecord => {
+        const target = mutationRecord.target
+        if (Array.from(target?.classList).includes('igv-loading-spinner-container')) {
+          const thisTrackIndex = getIndexAmongSiblings(target.parentNode, 'igv-viewport')
+          if (thisTrackIndex === trackIndex) {
+            console.log(target.style)
+          }
+        }
+      })
+    })
+
+    // mutObs.observe(igvContainer, { attributes: true, childList: true, subtree: true });
+    mutationObserver.observe(igvContainer.shadowRoot, { attributes: true, subtree: true });
+
+    // mutObs.observe(igvContainer.shadowRoot, { childList: true });
   }
 
   igvBrowser.on('trackclick', (track, popoverData) => {
