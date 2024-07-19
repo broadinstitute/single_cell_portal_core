@@ -471,6 +471,42 @@ function getIndexAmongSiblings(node, siblingClass=null) {
   return -1
 }
 
+/** Force loading UI in track if it's loading filters; else don't force */
+function ensureTrackLoadingVisuals(isLoadingFilters, containerId, igvBrowser) {
+  const trackIndex = igvBrowser.tracks.findIndex(
+    track => track.config?.dataType === 'atac-fragment'
+  )
+
+  const igvContainer = document.querySelector(`#${containerId}`)
+
+
+  // Create a watcher for the IGV spinner, and update
+  const mutationObserver = new MutationObserver(mutationRecords => {
+    mutationRecords.forEach(mutationRecord => {
+      const target = mutationRecord.target
+
+      const isSpinner = Array.from(target?.classList).includes('igv-loading-spinner-container')
+      if (isSpinner) {
+        const thisTrackIndex = getIndexAmongSiblings(target.parentNode, 'igv-viewport')
+        if (thisTrackIndex === trackIndex) {
+          const isSpinnerHidden = target.style.display === 'none'
+          if (isSpinnerHidden && isLoadingFilters) {
+            target.style.display = '' // Show spinner
+          } else {
+            target.style.display = 'none' // Hide spinner
+          }
+        }
+      }
+    })
+  })
+
+  // mutObs.observe(igvContainer, { attributes: true, childList: true, subtree: true });
+  mutationObserver.observe(igvContainer.shadowRoot, { attributes: true, subtree: true });
+
+  // mutObs.observe(igvContainer.shadowRoot, { childList: true });
+
+}
+
 /**
  * Instantiates and renders igv.js widget on the page
  */
@@ -501,36 +537,8 @@ async function initializeIgv(
     applyIgvFilters(0, setIsLoadingFilters)
   }
 
-  if (isLoadingFilters) {
-    const trackIndex = igvBrowser.tracks.findIndex(
-      track => track.config?.dataType === 'atac-fragment'
-    )
-
-    const igvContainer = document.querySelector(`#${containerId}`)
-
-
-    const mutationObserver = new MutationObserver(mutationRecords => {
-      mutationRecords.forEach(mutationRecord => {
-        const target = mutationRecord.target
-
-        const isSpinner = Array.from(target?.classList).includes('igv-loading-spinner-container')
-        if (isSpinner) {
-          const thisTrackIndex = getIndexAmongSiblings(target.parentNode, 'igv-viewport')
-          if (thisTrackIndex === trackIndex) {
-            const isSpinnerHidden = target.style.display === 'none'
-            if (isSpinnerHidden) {
-              target.style.display = '' // Show spinner
-            }
-          }
-        }
-      })
-    })
-
-    // mutObs.observe(igvContainer, { attributes: true, childList: true, subtree: true });
-    mutationObserver.observe(igvContainer.shadowRoot, { attributes: true, subtree: true });
-
-    // mutObs.observe(igvContainer.shadowRoot, { childList: true });
-  }
+  // Force loading UI in track if it's loading filters; else don't force
+  ensureTrackLoadingVisuals(isLoadingFilters, containerId, igvBrowser)
 
   igvBrowser.on('trackclick', (track, popoverData) => {
     // Don't show popover when there's no data.
