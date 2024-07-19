@@ -466,7 +466,7 @@ function getIndexAmongSiblings(node, siblingClass=null) {
     })
   }
   for (let i = 0; i < siblings.length; i++) {
-    if (siblings[i] === node) return i
+    if (siblings[i] === node) {return i}
   }
   return -1
 }
@@ -512,10 +512,15 @@ async function initializeIgv(
     const mutationObserver = new MutationObserver(mutationRecords => {
       mutationRecords.forEach(mutationRecord => {
         const target = mutationRecord.target
-        if (Array.from(target?.classList).includes('igv-loading-spinner-container')) {
+
+        const isSpinner = Array.from(target?.classList).includes('igv-loading-spinner-container')
+        if (isSpinner) {
           const thisTrackIndex = getIndexAmongSiblings(target.parentNode, 'igv-viewport')
           if (thisTrackIndex === trackIndex) {
-            console.log(target.style)
+            const isSpinnerHidden = target.style.display === 'none'
+            if (isSpinnerHidden) {
+              target.style.display = '' // Show spinner
+            }
           }
         }
       })
