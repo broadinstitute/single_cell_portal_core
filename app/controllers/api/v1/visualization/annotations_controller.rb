@@ -188,6 +188,21 @@ module Api
               key :type, :string
               key :required, true
             end
+            parameter do
+              key :name, :loaded_annotation
+              key :in, :query
+              key :description, 'Name of currently loaded annotation (for sourcing cluster cells)'
+              key :type, :string
+              key :required, false
+            end
+            parameter do
+              key :name, :subsample
+              key :in, :query
+              key :description, 'Subsampling threshold'
+              key :type, :string
+              key :required, false
+              key :enum, [nil, 'all', 100000]
+            end
             response 200 do
               key :description, 'Array of integer-based annotation assignments for all cells in requested cluster'
               schema do
@@ -260,8 +275,14 @@ module Api
             render json: { error: "Cannot find annotations: #{missing.join(', ')}" }, status: :not_found and return
           end
 
+          if params[:subsample] == 'all' || params[:subsample] == 'null' || params[:subsample].nil?
+            subsample_threshold = nil
+          else
+            subsample_threshold = params[:subsample].to_i
+          end
+          subsample_annotation = params[:loaded_annotation]
           # use new cell index arrays to load data much faster
-          indexed_cluster_cells = cluster.cell_index_array
+          indexed_cluster_cells = cluster.cell_index_array(subsample_annotation: , subsample_threshold:)
           annotation_arrays = {}
           facets = []
           # build arrays of annotation values, and populate facets response array
@@ -269,7 +290,6 @@ module Api
             annot_scope = annotation[:scope]
             annot_type = annotation[:type]
             identifier = annotation[:identifier]
-
             data_obj = annot_scope == 'study' ? @study.cell_metadata.by_name_and_type(annotation[:name], annot_type) : cluster
             study_file_id = annot_scope == 'study' ? @study.metadata_file.id : cluster.study_file_id
             array_query = {
@@ -277,6 +297,7 @@ module Api
               linear_data_id: data_obj.id, study_id: @study.id, study_file_id:, subsample_annotation: nil,
               subsample_threshold: nil
             }
+
             annotation_arrays[identifier] = DataArray.concatenate_arrays(array_query)
             facets << { annotation: identifier, groups: annotation[:values] }
           end
@@ -288,7 +309,7 @@ module Api
             facets.map do |facet|
               annotation = facet[:annotation]
               _, annotation_type, annotation_scope = annotation.split('--')
-              if annotation_scope == 'study'
+              if annotation_scope == 'study' || subsample_threshold.present?
                 label = annotation_arrays[annotation][value] || '--Unspecified--'
               else
                 label = annotation_arrays[annotation][index] || '--Unspecified--'

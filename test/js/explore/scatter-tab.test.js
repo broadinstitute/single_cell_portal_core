@@ -168,7 +168,7 @@ describe('getNewContextMap correctly assigns contexts', () => {
         exploreParamsWithDefaults={{
           cluster: 'clusterA',
           spatialGroups: ['spatialClusterA'],
-          annotation: { name: 'foo', type: 'group' },
+          annotation: { name: 'biosample_id', type: 'group', scope: 'study' },
           genes: ['farsa']
         }}
         updateExploreParamsWithDefaults={() => {}}
@@ -179,8 +179,6 @@ describe('getNewContextMap correctly assigns contexts', () => {
         dataCache={createCache()}
         setCountsByLabel={function() {}}
         countsByLabel={[]}
-        setRefColorMap={jest.fn()}
-        setRefClusterRendered={jest.fn()}
       />
     ))
 

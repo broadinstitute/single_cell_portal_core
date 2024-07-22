@@ -253,11 +253,8 @@ export default function ExploreDisplayPanelManager({
     }
   }
 
-  /** Toggle cell filtering panel, and remove subsampling if needed */
+  /** Toggle cell filtering panel */
   function toggleCellFilterPanel() {
-    if (isSubsampled) {
-      updateClusterParams({ subsample: 'All Cells' })
-    }
     togglePanel('cell-filtering')
   }
 

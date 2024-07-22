@@ -46,8 +46,7 @@ function RawScatterPlot({
   studyAccession, cluster, annotation, subsample, consensus, genes, scatterColor, dimensionProps,
   isAnnotatedScatter=false, isCorrelatedScatter=false, isCellSelecting=false, plotPointsSelected, dataCache,
   canEdit, bucketId, expressionFilter=[0, 1], setCountsByLabelForDe, hiddenTraces=[],
-  isSplitLabelArrays, updateExploreParams, filteredCells, refColorMap, setRefColorMap, isRefCluster, refClusterRendered,
-  setRefClusterRendered, hasMultipleRefs
+  isSplitLabelArrays, updateExploreParams, filteredCells
 }) {
   const [countsByLabel, setCountsByLabel] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -64,8 +63,8 @@ function RawScatterPlot({
 
   const isRefGroup = getIsRefGroup(scatterData?.annotParams?.type, genes, isCorrelatedScatter)
   const [originalLabels, setOriginalLabels] = useState([])
-  const loadedAnnotation = [annotation.name, annotation.type, annotation.scope].join('-')
-
+  const [hasMissingAnnot, setHasMissingAnnot] = useState(null)
+  const loadedAnnotation = [annotation.name, annotation.type, annotation.scope].join('--')
   const flags = getFeatureFlagsWithDefaults()
 
   // Uncomment when running Image Pipeline
@@ -125,10 +124,7 @@ function RawScatterPlot({
   }
 
   useEffect( () => {
-    if (isRefCluster) {
-      setRefColorMap({})
-      setRefClusterRendered(false)
-    }
+    setHasMissingAnnot(false)
   }, [cluster, loadedAnnotation, subsample])
 
   /** redraw the plot when editedCustomColors changes */
@@ -182,6 +178,7 @@ function RawScatterPlot({
     // may change as a result of the fetched data, but not be reflected in the isRefGroup constant
     // until `setScatterData` is called
     const isRG = getIsRefGroup(scatter.annotParams.type, genes, isCorrelatedScatter)
+    const refColorMap = scatter.annotParams.color_map
     const [traces, labelCounts] = getPlotlyTraces({
       genes,
       isAnnotatedScatter,
@@ -195,10 +192,7 @@ function RawScatterPlot({
       isSplitLabelArrays: isSplitLabelArrays ?? scatter.isSplitLabelArrays,
       isRefGroup: isRG,
       originalLabels,
-      refColorMap,
-      setRefColorMap,
-      isRefCluster,
-      hasMultipleRefs
+      refColorMap
     })
     if (isRG) {
       setCountsByLabel(labelCounts)
@@ -340,56 +334,62 @@ function RawScatterPlot({
     let [scatter, perfTimes] =
       (clusterResponse ? clusterResponse : [scatterData, null])
     scatter = updateScatterLayout(scatter)
-    const annotIsNumeric = scatter.annotParams.type === 'numeric'
-    const layout = scatter.layout
 
-    if (filteredCells) {
-      const originalData = scatter.data
-      const [intersected, plottedIndexes] = intersect(filteredCells, scatter)
-      scatter.data = reassignFilteredCells(plottedIndexes, originalData, intersected, annotIsNumeric, setOriginalLabels)
-    } else if (!annotIsNumeric) {
-      setOriginalLabels(getPlottedLabels(scatter.data))
-    }
-
-    const plotlyTraces = updateCountsAndGetTraces(scatter)
-
-    const startTime = performance.now()
-
-    if (flags?.progressive_loading && genes.length === 1 && document.querySelector(imageSelector)) {
-      Plotly.newPlot(graphElementId, plotlyTraces, layout)
-
-      // TODO (SCP-4839): Instrument more bucket cache analytics, then remove console log below
-      // console.log(`Interactive plot with bucket data took: ${ Date.now() - window.t0}`)
+    if (scatter.annotParams.identifier !== loadedAnnotation) {
+      setHasMissingAnnot(true)
+      setIsLoading(false)
     } else {
-      Plotly.react(graphElementId, plotlyTraces, layout)
-    }
+      setHasMissingAnnot(false)
+      const annotIsNumeric = scatter.annotParams.type === 'numeric'
+      const layout = scatter.layout
 
-    if (perfTimes) {
-      perfTimes.plot = performance.now() - startTime
-      logScatterPlot({ scatter, genes }, perfTimes)
-    }
+      if (filteredCells) {
+        const originalData = scatter.data
+        const [intersected, plottedIndexes] = intersect(filteredCells, scatter)
+        scatter.data = reassignFilteredCells(plottedIndexes, originalData, intersected, annotIsNumeric, setOriginalLabels)
+      } else if (!annotIsNumeric) {
+        setOriginalLabels(getPlottedLabels(scatter.data))
+      }
 
-    if (isCorrelatedScatter) {
-      const rhoStartTime = performance.now()
+      const plotlyTraces = updateCountsAndGetTraces(scatter)
 
-      // Compute correlations asynchronously, to not block other rendering
-      computeCorrelations(scatter).then(correlations => {
-        const rhoTime = Math.round(performance.now() - rhoStartTime)
-        setBulkCorrelation(correlations.bulk)
-        if (flags.correlation_refinements) {
-          setLabelCorrelations(correlations.byLabel)
-        }
-        if (perfTimes) {
-          log('plot:correlations', { perfTime: rhoTime })
-        }
-      })
-    }
+      const startTime = performance.now()
 
-    scatter.hasArrayLabels =
-      scatter.annotParams.type === 'group' && scatter.data.annotations.some(annot => annot?.includes('|'))
+      if (flags?.progressive_loading && genes.length === 1 && document.querySelector(imageSelector)) {
+        Plotly.newPlot(graphElementId, plotlyTraces, layout)
 
-    if (isRefCluster) {
-      setRefClusterRendered(true)
+        // TODO (SCP-4839): Instrument more bucket cache analytics, then remove console log below
+        // console.log(`Interactive plot with bucket data took: ${ Date.now() - window.t0}`)
+      } else {
+        Plotly.react(graphElementId, plotlyTraces, layout)
+      }
+
+      if (perfTimes) {
+        perfTimes.plot = performance.now() - startTime
+        logScatterPlot({
+          scatter,
+          genes
+        }, perfTimes)
+      }
+
+      if (isCorrelatedScatter) {
+        const rhoStartTime = performance.now()
+
+        // Compute correlations asynchronously, to not block other rendering
+        computeCorrelations(scatter).then(correlations => {
+          const rhoTime = Math.round(performance.now() - rhoStartTime)
+          setBulkCorrelation(correlations.bulk)
+          if (flags.correlation_refinements) {
+            setLabelCorrelations(correlations.byLabel)
+          }
+          if (perfTimes) {
+            log('plot:correlations', { perfTime: rhoTime })
+          }
+        })
+      }
+
+      scatter.hasArrayLabels =
+        scatter.annotParams.type === 'group' && scatter.data.annotations.some(annot => annot?.includes('|'))
     }
 
     if (clusterResponse) {
@@ -494,13 +494,6 @@ function RawScatterPlot({
     filteredCells?.join(',')
   ])
 
-  // re-render non-primary plots after main has rendered to ensure color mappings are correct
-  useUpdateEffect( () => {
-    if (!isRefCluster && refClusterRendered) {
-      fetchData()
-    }
-  }, [loadedAnnotation, refClusterRendered])
-
   useUpdateEffect(() => {
     // Don't update if graph hasn't loaded
     if (scatterData && !isLoading) {
@@ -598,16 +591,23 @@ function RawScatterPlot({
   return (
     <div className="plot">
       { ErrorComponent }
-      <PlotTitle
-        titleTexts={titleTexts}
-        isCorrelatedScatter={isCorrelatedScatter}
-        correlation={bulkCorrelation}/>
+      { hasMissingAnnot &&
+        <div className="alert-warning text-center error-boundary">
+          "{cluster}" does not have the requested annotation "{loadedAnnotation}"
+        </div>
+      }
+      { !hasMissingAnnot &&
+        <PlotTitle
+          titleTexts={titleTexts}
+          isCorrelatedScatter={isCorrelatedScatter}
+          correlation={bulkCorrelation}/>
+      }
       <div
         className="scatter-graph"
         id={graphElementId}
         data-testid={graphElementId}
       >
-        { hasLegend &&
+        { !hasMissingAnnot && hasLegend &&
           <ScatterPlotLegend
             name={scatterData.annotParams.name}
             height={scatterData.height}
@@ -630,12 +630,12 @@ function RawScatterPlot({
             originalLabels={originalLabels}
             titleTexts={titleTexts}
             plotWidth={widthAndHeight.width}
-            refColorMap={refColorMap}
+            refColorMap={scatterData?.annotParams?.color_map}
           />
         }
       </div>
       <p className="help-block">
-        { scatterData && scatterData.description &&
+        { scatterData && scatterData.description && !hasMissingAnnot &&
           <span style={descriptionStyle}>{scatterData.description}</span>
         }
       </p>
@@ -716,10 +716,7 @@ function getPlotlyTraces({
   isSplitLabelArrays,
   isRefGroup,
   originalLabels,
-  refColorMap,
-  setRefColorMap,
-  isRefCluster,
-  hasMultipleRefs
+  refColorMap
 }) {
   const unfilteredTrace = {
     type: is3D ? 'scatter3d' : 'scattergl',
@@ -755,15 +752,7 @@ function getPlotlyTraces({
       groupTrace.type = unfilteredTrace.type
       groupTrace.mode = unfilteredTrace.mode
       groupTrace.opacity = unfilteredTrace.opacity
-      let color
-      if (hasMultipleRefs) {
-        color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, labelIndex)
-      } else {
-        color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, {}, labelIndex)
-      }
-      if (isRefCluster) {
-        updateRefColorMap(setRefColorMap, color, groupTrace.name)
-      }
+      const color = getColorForLabel(groupTrace.name, customColors, editedCustomColors, refColorMap, labelIndex)
       groupTrace.marker = {
         size: pointSize,
         color
@@ -816,16 +805,6 @@ function getPlotlyTraces({
   })
 
   return [traces, countsByLabel, isRefGroup]
-}
-
-
-// handler to merge in new entries to the refColorMap (used for keeping track of trace colors across spatial plots)
-function updateRefColorMap(setRefColorMap, color, traceName) {
-  const colorEntry = {}
-  colorEntry[traceName] = color
-  setRefColorMap(prevColorMap => ({
-    ...prevColorMap, ...colorEntry
-  }))
 }
 
 /** makes the data trace attributes (cells, trace name) available via hover text */

@@ -224,13 +224,8 @@ function DifferentialExpressionTable({
     pageSize: numRows
   }
 
-  const defaultSorting = [
-    { id: 'significance', desc: false },
-    { id: 'size', desc: true }
-  ]
-
   const [rowSelection, setRowSelection] = useState({})
-  const [sorting, setSorting] = React.useState(defaultSorting)
+  const [sorting, setSorting] = React.useState([])
   const [pagination, setPagination] = React.useState(defaultPagination)
 
   const logProps = {
@@ -350,7 +345,7 @@ function DifferentialExpressionTable({
   /** Put DE table back to its original state */
   function resetDifferentialExpression() {
     setRowSelection({})
-    setSorting(defaultSorting)
+    setSorting([])
     setPagination(defaultPagination)
     handleClear()
   }

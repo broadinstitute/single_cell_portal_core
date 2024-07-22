@@ -12,9 +12,16 @@ import { profileWarning } from '~/lib/study-overview/terra-profile-warning'
 
 /** Component for displaying IGV for any BAM/BAI files provided with the study */
 function GenomeView({
-  studyAccession, trackFileName, uniqueGenes, isVisible, queriedGenes, updateExploreParams
+  studyAccession, trackFileName, uniqueGenes, isVisible, cellFilteringSelection,
+  queriedGenes, updateExploreParams
 }) {
   const [isLoading, setIsLoading] = useState(false)
+
+  let numFacets
+  if (cellFilteringSelection) {
+    numFacets = Object.keys(cellFilteringSelection).length
+  }
+  const [hasAppliedInitFilters, setHasAppliedInitFilters] = useState(cellFilteringSelection && numFacets > 0)
   const [trackFileList, setTrackFileList] = useState(null)
   const [igvInitializedFiles, setIgvInitializedFiles] = useState('')
   const [igvContainerId] = useState(_uniqueId('study-igv-'))
@@ -55,19 +62,41 @@ function GenomeView({
       // So we track what the last files are that we initialized
       // IGV with, and only rerender if they are different.
       if (igvInitializedFiles !== fileNamesToShow) {
-        initializeIgv(igvContainerId, listToShow, trackFileList.gtfFiles, uniqueGenes, queriedGenes)
+        const igvCellFilteringSelection = hasAppliedInitFilters ? cellFilteringSelection : null
+        initializeIgv(
+          igvContainerId, listToShow, trackFileList.gtfFiles, uniqueGenes,
+          queriedGenes, igvCellFilteringSelection, setHasAppliedInitFilters
+        )
       }
       setIgvInitializedFiles(fileNamesToShow)
     }
   }, [fileListString, trackFileName, isVisible])
 
+  /** Wrap igvBrowser.search, retryable */
+  function igvSearch(queriedGenes, retryAttempt=0) {
+    if (window.igvBrowser) {
+
+      // Retry search every .25 s, up to ~5 s, if needed track absent
+      if (!trackFileList && retryAttempt < 20) {
+        setTimeout(() => {
+          igvSearch(queriedGenes, retryAttempt++)
+        }, 250)
+      } else {
+        const genomeId = trackFileList.tracks[0].genomeAssembly
+        getDefaultLocus(queriedGenes, uniqueGenes, genomeId)
+        window.igvBrowser.search(queriedGenes[0])
+
+        const filteredCellNames = window.SCP.filteredCellNames
+        if (filteredCellNames) {
+          filterIgvFeatures(filteredCellNames)
+        }
+      }
+    }
+  }
+
   // Search gene in IGV upon searching gene in Explore
   useEffect(() => {
-    if (window.igvBrowser) {
-      const genomeId = trackFileList.tracks[0].genomeAssembly
-      getDefaultLocus(queriedGenes, uniqueGenes, genomeId)
-      window.igvBrowser.search(queriedGenes[0])
-    }
+    igvSearch(queriedGenes)
   }, [queriedGenes.join(',')])
 
   /** handle clicks on the download 'browse in genome' buttons
@@ -118,13 +147,17 @@ export default SafeGenomeView
 
 /** Get unfiltered genomic features on current chromosome */
 function getOriginalChrFeatures(trackIndex, igvBrowser) {
-  const chr = igvBrowser.tracks[0].trackView.viewports[0].featureCache.chr
+  const chr = igvBrowser.referenceFrameList[0].chr
 
   if (
     typeof window.originalFeatures === 'undefined' ||
     chr in window.originalFeatures === false
   ) {
-    window.originalFeatures = igvBrowser.trackViews[trackIndex].track.featureSource.featureCache.allFeatures
+    if (igvBrowser.trackViews[trackIndex].track.featureSource.featureCache) {
+      window.originalFeatures = igvBrowser.trackViews[trackIndex].track.featureSource.featureCache.allFeatures
+    } else {
+      return
+    }
   }
 
   const originalChrFeatures = window.originalFeatures[chr]
@@ -191,11 +224,23 @@ function getIsFeatureInFrame(feature, igvBrowser) {
 // }
 
 /** Filter genomic features */
-export function filterIgvFeatures(filteredCellNames) {
-  const trackIndex = 4 // TODO (SCP-5662): Robustify this
+export function filterIgvFeatures(filteredCellNames, retryAttempt=0) {
   const igvBrowser = window.igvBrowser
+  if (!igvBrowser?.tracks) {return}
+  const trackIndex = igvBrowser.tracks.findIndex(
+    track => track.config?.dataType === 'atac-fragment'
+  )
 
   const originalChrFeatures = getOriginalChrFeatures(trackIndex, igvBrowser)
+
+  if (typeof originalChrFeatures === 'undefined') {
+    if (retryAttempt < 20) { // Poll RAM every 250 ms, up to 20 times (~5 s)
+      setTimeout(() => {
+        filterIgvFeatures(filteredCellNames, retryAttempt++)
+      }, 250)
+    }
+    return
+  }
   const filteredFeatures = originalChrFeatures.filter(
     feature => filteredCellNames.has(feature.name) && getIsFeatureInFrame(feature, igvBrowser)
   )
@@ -220,6 +265,7 @@ function getTracks(tsvAndIndexFiles, dataType) {
     tsvTrack.label = tsvTrack.name
     tsvTrack.indexURL = decodeURIComponent(tsvTrack.indexUrl)
     tsvTrack.url = decodeURIComponent(tsvTrack.url)
+    tsvTrack.visibilityWindow = 1_000_000 // 1 Mbp
     if (dataType && dataType === 'atac-fragment') {
       const atacProps = {
         displayMode: 'SQUISHED',
@@ -246,7 +292,11 @@ function getTracks(tsvAndIndexFiles, dataType) {
           '3': '#C66',
           '4': '#E44',
           '5': '#E44',
-          '6': '#E44'
+          '6': '#E44',
+          '7': '#E44',
+          '8': '#F00',
+          '9': '#F00',
+          '10': '#F00'
         },
 
         // "dataType" is an SCP-custom IGV track attribute, which lets us
@@ -394,11 +444,28 @@ export function getIgvOptions(tracks, gtfFiles, uniqueGenes, queriedGenes) {
   return igvOptions
 }
 
+/** Apply cell filtering to IGV, retryable */
+function applyIgvFilters(retryAttempt=0, setHasAppliedInitFilters) {
+  const filteredCellNames = window.SCP.filteredCellNames
+  if (filteredCellNames) {
+    filterIgvFeatures(filteredCellNames)
+    setHasAppliedInitFilters(true)
+  } else {
+    if (retryAttempt < 20) {
+      setTimeout(() => {
+        applyIgvFilters(retryAttempt++)
+      }, 250)
+    }
+  }
+}
 
 /**
  * Instantiates and renders igv.js widget on the page
  */
-async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queriedGenes) {
+async function initializeIgv(
+  containerId, tracks, gtfFiles, uniqueGenes, queriedGenes,
+  igvCellFilteringSelection, setHasAppliedInitFilters
+) {
   // Bail if already displayed
   delete igv.browser
 
@@ -415,9 +482,14 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
   }
 
   window.igv = igv
-  window.igvBrowser = await igv.createBrowser(igvContainer, igvOptions)
+  const igvBrowser = await igv.createBrowser(igvContainer, igvOptions)
+  window.igvBrowser = igvBrowser
 
-  window.igvBrowser.on('trackclick', (track, popoverData) => {
+  if (igvCellFilteringSelection) {
+    applyIgvFilters(0, setHasAppliedInitFilters)
+  }
+
+  igvBrowser.on('trackclick', (track, popoverData) => {
     // Don't show popover when there's no data.
     if (!popoverData || !popoverData.length) {
       return false
@@ -453,7 +525,13 @@ async function initializeIgv(containerId, tracks, gtfFiles, uniqueGenes, queried
     return markup
   })
 
-  // Log igv.js initialization
+  igvBrowser.on('locuschange', () => {
+    const filteredCellNames = window.SCP.filteredCellNames
+    if (filteredCellNames) {
+      filterIgvFeatures(filteredCellNames)
+    }
+  })
+
   log('igv:initialize')
 }
 

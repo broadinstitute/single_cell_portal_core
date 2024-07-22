@@ -122,8 +122,9 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
     const allAnnots = exploreInfo?.annotationList.annotations
     if (allAnnots && allAnnots.length > 0) {
       if (!prevCellFaceting?.isFullyLoaded) {
+        const subsample = exploreParams?.subsample || (exploreInfo?.cluster?.numPoints > 100_000 ? 100_000 : null)
         initCellFaceting(
-          cluster, annotation, studyAccession, allAnnots, prevCellFaceting
+          cluster, annotation, studyAccession, allAnnots, prevCellFaceting, subsample
         ).then(newCellFaceting => {
           const initSelection = {}
           if (!cellFilteringSelection) {
@@ -249,11 +250,6 @@ export default function ExploreDisplayTabs({
   const [clusterCanFilter, setClusterCanFilter] = useState(true)
   const [filterErrorText, setFilterErrorText] = useState(null)
 
-  // map of colors for maintaining associations in spatial UX
-  const [refColorMap, setRefColorMap] = useState({})
-  // state tracker to ensure that spatial/secondary plots update with correct color map after main plot finishes
-  const [refClusterRendered, setRefClusterRendered] = useState(false)
-
   const {
     enabledTabs, disabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs
   } = getEnabledTabs(exploreInfo, exploreParamsWithDefaults, cellFaceting)
@@ -342,7 +338,7 @@ export default function ExploreDisplayTabs({
       cellFilteringSelection
     }
     getCellFacetingData(newCluster, newAnnot, setterFunctions, context)
-  }, [exploreParams?.cluster, exploreParams?.annotation])
+  }, [exploreParams?.cluster, exploreParams?.annotation, exploreParams?.subsample])
 
 
   /** Update filtered cells to only those that match filter selections */
@@ -561,11 +557,7 @@ export default function ExploreDisplayTabs({
                     setCountsByLabelForDe,
                     dataCache,
                     filteredCells,
-                    cellFilteringSelection,
-                    refColorMap,
-                    setRefColorMap,
-                    refClusterRendered,
-                    setRefClusterRendered
+                    cellFilteringSelection
                   }}/>
               </div>
             }
@@ -623,6 +615,7 @@ export default function ExploreDisplayTabs({
                   trackFileName={exploreParams.trackFileName}
                   uniqueGenes={exploreInfo.uniqueGenes}
                   isVisible={shownTab === 'genome'}
+                  cellFilteringSelection={cellFilteringSelection}
                   queriedGenes={exploreParams.genes}
                   updateExploreParams={updateExploreParams}
                 />
@@ -763,6 +756,10 @@ export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
       !(!isNumeric && tab === 'annotatedScatter') // Omit "Annotated scatter" for group annotations
     )
   })
+
+  if (hasGenomeFiles && !enabledTabs.includes('genome')) {
+    disabledTabs.push('genome')
+  }
 
   if (
     !exploreInfo ||

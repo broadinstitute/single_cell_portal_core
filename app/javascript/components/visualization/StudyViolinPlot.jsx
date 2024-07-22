@@ -40,9 +40,9 @@ function ViolinPlotTitle({ cluster, annotation, genes, consensus }) {
 
 
 /** Get array of names for all cells in clustering */
-async function getAllCellNames(studyAccession, cluster, annotation) {
+async function getAllCellNames(studyAccession, cluster, annotation, subsample='All') {
   const clusterData = await fetchCluster({
-    studyAccession, cluster, annotation, subsample: 'All'
+    studyAccession, cluster, annotation, subsample
   })
   const allCellNames = clusterData[0].data.cells
   return allCellNames
@@ -51,14 +51,14 @@ async function getAllCellNames(studyAccession, cluster, annotation) {
 /** Filter cells in violin plot */
 export async function filterResults(
   studyAccession, cluster, annotation, gene,
-  results, cellFaceting, filteredCells
+  results, cellFaceting, filteredCells, subsample
 ) {
   const flags = getFeatureFlagsWithDefaults()
   const showCellFiltering = flags?.show_cell_facet_filtering
   if (!showCellFiltering) {return results}
 
   if (gene in window.SCP.violinCellIndexes === false) {
-    const allCellNames = await getAllCellNames(studyAccession, cluster, annotation)
+    const allCellNames = await getAllCellNames(studyAccession, cluster, annotation, subsample)
     await workSetViolinCellIndexes(gene, results, allCellNames)
   }
 
@@ -79,6 +79,7 @@ export async function filterResults(
       annotations: [],
       cells: [],
       name: group,
+      color: results.values[group].color,
       y: []
     }
     const cellNames = results.values[group].cells
@@ -99,6 +100,7 @@ export async function filterResults(
   results.values = filteredValues
 
   if (flags?.show_igv_multiome) {
+    window.SCP.filteredCellNames = filteredCellNames
     filterIgvFeatures(filteredCellNames)
   }
 
@@ -145,7 +147,7 @@ function RawStudyViolinPlot({
 
     results = await filterResults(
       studyAccession, cluster, annotation, genes[0],
-      results, cellFaceting, filteredCells
+      results, cellFaceting, filteredCells, subsample
     )
 
     const startTime = performance.now()
@@ -329,7 +331,7 @@ function getViolinTraces(
             color: '#000000',
             opacity: 0.8
           },
-          fillcolor: getColorBrewerColor(index),
+          fillcolor: traceData.color,
           line: {
             color: '#000000',
             width: 1.5
@@ -346,7 +348,7 @@ function getViolinTraces(
           y: dist,
           boxpoints: showPoints,
           marker: {
-            color: getColorBrewerColor(index),
+            color: traceData.color,
             size: 2,
             line: {
               color: plotlyDefaultLineColor

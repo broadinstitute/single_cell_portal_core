@@ -69,8 +69,13 @@ describe('IGV genome browser in Explore tab', () => {
     ]
 
     const igvBrowser = {
-      referenceFrameList: [{ start: 100, end: 200 }],
-      tracks: [{ trackView: { viewports: [{ featureCache: { chr: 'chr9' } }] } }],
+      referenceFrameList: [{ chr: 'chr9', start: 100, end: 200 }],
+      tracks: [
+        {}, {}, {}, {}, {
+          config: { dataType: 'atac-fragment' },
+          trackView: { viewports: [{ featureCache: { chr: 'chr9' } }] }
+        }
+      ],
       trackViews: [
         {}, {}, {}, {}, {
           track: {

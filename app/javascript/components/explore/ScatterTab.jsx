@@ -14,8 +14,7 @@ const MAX_PLOTS = PLOTLY_CONTEXT_NAMES.length
 export default function ScatterTab({
   exploreInfo, exploreParamsWithDefaults, updateExploreParamsWithDefaults, studyAccession, isGene, isMultiGene,
   plotPointsSelected, isCellSelecting, showRelatedGenesIdeogram, showViewOptionsControls, showDifferentialExpressionTable,
-  scatterColor, setCountsByLabelForDe, dataCache, filteredCells, cellFilteringSelection, refColorMap, setRefColorMap,
-  refClusterRendered, setRefClusterRendered
+  scatterColor, setCountsByLabelForDe, dataCache, filteredCells, cellFilteringSelection
 }) {
   // maintain the map of plotly contexts to the params that generated the corresponding visualization
   const plotlyContextMap = useRef({})
@@ -25,7 +24,6 @@ export default function ScatterTab({
   function updateScatterColor(color) {
     updateExploreParamsWithDefaults({ scatterColor: color }, false)
   }
-  const hasMultipleRefs = exploreParamsWithDefaults?.spatialGroups?.length > 0
 
   // identify any repeat graphs
   const newContextMap = getNewContextMap(scatterParams, plotlyContextMap.current)
@@ -37,7 +35,6 @@ export default function ScatterTab({
   return <div className="row">
     {
       scatterParams.map((params, index) => {
-        const isRefCluster = params.cluster === exploreParamsWithDefaults.cluster && params.genes.length === 0
         const isTwoColRow = isTwoColumn && !(index === 0 && firstRowSingleCol)
         const key = getKeyFromScatterParams(params)
         let rowDivider = <span key={`d${index}`}></span>
@@ -64,12 +61,6 @@ export default function ScatterTab({
                 showRelatedGenesIdeogram, showViewOptionsControls,
                 showDifferentialExpressionTable
               }}
-              refColorMap={refColorMap}
-              setRefColorMap={setRefColorMap}
-              isRefCluster={isRefCluster}
-              refClusterRendered={refClusterRendered}
-              setRefClusterRendered={setRefClusterRendered}
-              hasMultipleRefs={hasMultipleRefs}
             />
           </div>,
           rowDivider
