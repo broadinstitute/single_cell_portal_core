@@ -42,7 +42,7 @@ const PROPERTIES_NOT_TO_SEND = [
 ]
 
 const PROPERTIES_AS_JSON = ['custom_color_updates']
-const DEEPLY_NESTED_PROPS = ['data_fragments']
+const DEEPLY_NESTED_PROPS = ['custom_color_updates', 'data_fragments']
 
 /** gets an object representing a new, empty study file.  Does not communicate to server */
 export function newStudyFileObj(studyId) {
