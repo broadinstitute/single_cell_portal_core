@@ -184,4 +184,42 @@ class StudyTest < ActiveSupport::TestCase
       end
     end
   end
+
+  test 'should return proper API client' do
+    assert_equal ApplicationController.firecloud_client, @study.workspace_client
+
+    @study.firecloud_project = 'foo'
+    workspace_client = @study.workspace_client
+    assert_equal 'foo', workspace_client.project
+    assert_equal @user.access_token[:access_token], workspace_client.access_token[:access_token]
+  end
+
+  test 'should check user workspace and billing project access' do
+    mock = Minitest::Mock.new
+    acl = {
+      acl: {
+        @user.email => {
+          accessLevel: 'WRITER', canCompute: false, canShare: true, pending: false
+        }
+      }
+    }
+    mock.expect :get_workspace_acl, acl, [String, String]
+    ApplicationController.stub :firecloud_client, mock do
+      assert @study.user_has_workspace_access?
+      mock.verify
+    end
+
+    user_client_mock = Minitest::Mock.new
+    project_name = 'my-billing-project'
+    projects = [{ projectName: project_name, status: 'Ready', roles: %w[Owner] }.with_indifferent_access]
+    user_client_mock.expect :get_workspace_acl, { acl: {} }, [String, String]
+    user_client_mock.expect :get_billing_projects, projects
+    user_client_mock.expect :get_billing_projects, projects
+    FireCloudClient.stub :new, user_client_mock do
+      @study.firecloud_project = project_name
+      assert @study.user_has_workspace_access?
+      assert @study.billing_project_ok?
+      user_client_mock.verify
+    end
+  end
 end

@@ -70,7 +70,9 @@ module StudyCleanupTools
       ws_name = ws_attr['name']
       ws_project = ws_attr['namespace']
       ws_owner = ws_attr['createdBy']
-      existing_study = Study.find_by(firecloud_project: ws_project, firecloud_workspace: ws_name)
+      existing_study = Study.where(firecloud_project: ws_project).any_of(
+        { firecloud_workspace: ws_name }, { internal_workspace: ws_name }
+      )
       if existing_study.present?
         puts "skipping #{ws_project}/#{ws_name} as it belongs to #{existing_study.accession}"
         next

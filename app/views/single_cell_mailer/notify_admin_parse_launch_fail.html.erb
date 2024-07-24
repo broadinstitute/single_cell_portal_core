@@ -9,6 +9,8 @@
   <li>Study: <%= @study.accession %></li>
   <li>Workspace: <%= link_to @study.workspace_url, @study.workspace_url %></li>
   <li>Bucket:  <%= link_to @study.google_bucket_url, @study.google_bucket_url %></li>
+  <li>Internal workspace: <%= link_to @study.workspace_url(:internal), @study.workspace_url(:internal) %></li>
+  <li>Internal bucket:  <%= link_to @study.google_bucket_url(:internal), @study.google_bucket_url(:internal) %></li>
   <li>File: <%= @study_file.upload_file_name %></li>
   <li>File Type: <%= @study_file.file_type %></li>
   <li>Uploaded/synced on: <%= @study_file.created_at.to_s(:db) %></li>

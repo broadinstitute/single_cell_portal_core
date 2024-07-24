@@ -33,6 +33,7 @@ FactoryBot.define do
     factory :detached_study do
       detached { true }
       bucket_id { SecureRandom.alphanumeric(16) } # needed to prevent test errors when mocking/stubbing GCS calls
+      internal_bucket_id { SecureRandom.alphanumeric(16) } # needed to prevent test errors when mocking/stubbing GCS calls
     end
   end
 end

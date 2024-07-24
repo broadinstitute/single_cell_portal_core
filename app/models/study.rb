@@ -259,6 +259,8 @@ class Study
   field :firecloud_workspace, type: String
   field :firecloud_project, type: String, default: FireCloudClient::PORTAL_NAMESPACE
   field :bucket_id, type: String
+  field :internal_workspace, type: String # workspace that holds internal bucket
+  field :internal_bucket_id, type: String # for visualization assets, pare logs, etc
   field :data_dir, type: String
   field :public, type: Boolean, default: true
   field :queued_for_deletion, type: Boolean, default: false
@@ -312,11 +314,11 @@ class Study
     property :firecloud_project do
       key :type, :string
       key :default, FireCloudClient::PORTAL_NAMESPACE
-      key :description, 'FireCloud billing project to which Study firecloud_workspace belongs'
+      key :description, 'Terra billing project to which Study firecloud_workspace belongs'
     end
     property :firecloud_workspace do
       key :type, :string
-      key :description, 'FireCloud workspace that corresponds to this Study'
+      key :description, 'Terra user-specific workspace that corresponds to this Study'
     end
     property :use_existing_workspace do
       key :type, :boolean
@@ -326,6 +328,14 @@ class Study
     property :bucket_id do
       key :type, :string
       key :description, 'GCS Bucket name where uploaded files are stored'
+    end
+    property :internal_workspace do
+      key :type, :string
+      key :description, 'Terra workspace that holds internal SCP assets'
+    end
+    property :internal_bucket_id do
+      key :type, :string
+      key :description, 'GCS Bucket name where internal SCP assets are stored'
     end
     property :data_dir do
       key :type, :string
@@ -730,10 +740,10 @@ class Study
   validates_format_of :name, with: ValidationTools::OBJECT_LABELS,
                       message: ValidationTools::OBJECT_LABELS_ERROR
 
-  validates_format_of :firecloud_workspace, :firecloud_project,
+  validates_format_of :firecloud_workspace, :firecloud_project, :internal_workspace,
                       with: ValidationTools::ALPHANUMERIC_SPACE_DASH, message: ValidationTools::ALPHANUMERIC_SPACE_DASH_ERROR
 
-  validates_format_of :data_dir, :bucket_id, :url_safe_name,
+  validates_format_of :data_dir, :bucket_id, :internal_bucket_id, :url_safe_name,
                       with: ValidationTools::ALPHANUMERIC_DASH, message: ValidationTools::ALPHANUMERIC_DASH_ERROR
 
   # update validators
@@ -744,11 +754,14 @@ class Study
   validates_presence_of :firecloud_project, :firecloud_workspace
   validates_uniqueness_of :external_identifier, allow_blank: true
   validates :cell_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validate  :assign_accession, on: :create
+  validate  :set_internal_workspace_name, on: :create
+  validate  :create_internal_workspace, on: :create, unless: proc { |study| study.detached }
 
   # callbacks
   before_validation :set_url_safe_name
   before_validation :set_data_dir, :set_firecloud_workspace_name, on: :create
-  after_validation  :assign_accession, on: :create
+
   # before_save       :verify_default_options
   after_create      :make_data_dir, :set_default_participant, :check_bucket_read_access
   before_destroy    :ensure_cascade_on_associations
@@ -1097,19 +1110,43 @@ class Study
     Rails.root.join('data', self.data_dir)
   end
 
-  # helper to generate a URL to a study's FireCloud workspace
-  def workspace_url
-    "https://app.terra.bio/#workspaces/#{self.firecloud_project}/#{self.firecloud_workspace}"
+  # helper to generate a URL to a study's FireCloud workspace,  either user-controlled or internal
+  def workspace_url(type = :study)
+    "https://app.terra.bio/#workspaces/#{workspace_attrs(type).join('/')}"
   end
 
-  # helper to generate an HTTPS URL to a study's GCP bucket
-  def google_bucket_url
-    "https://accounts.google.com/AccountChooser?continue=https://console.cloud.google.com/storage/browser/#{self.bucket_id}"
+  # helper to generate an HTTPS URL to a study's GCP bucket, either user-controlled or visualization-related
+  def google_bucket_url(type = :study)
+    "https://accounts.google.com/AccountChooser?continue=" \
+    "https://console.cloud.google.com/storage/browser/#{google_bucket_name(type)}"
   end
 
-  # helper to generate a GS URL to a study's GCP bucket
-  def gs_url
-    "gs://#{self.bucket_id}"
+  # array of Terra namespace/name attributes for a given workspace type
+  def workspace_attrs(type = :study)
+    case type
+    when :study
+      [firecloud_project, firecloud_workspace]
+    when :internal
+      [FireCloudClient::PORTAL_NAMESPACE, internal_workspace]
+    else
+      [firecloud_project, firecloud_workspace]
+    end
+  end
+
+  def gs_url(type = :study)
+    "gs://#{google_bucket_name(type)}"
+  end
+
+  # determine correct bucket_id for given type
+  def google_bucket_name(type = :study)
+    case type
+    when :study
+      bucket_id
+    when :internal
+      internal_bucket_id
+    else
+      bucket_id
+    end
   end
 
   # helper to generate a URL to a specific FireCloud submission inside a study's GCP bucket
@@ -1779,7 +1816,7 @@ class Study
     end
     Rails.logger.info "Removing workspace #{firecloud_project}/#{firecloud_workspace} in #{Rails.env} environment"
     begin
-      ApplicationController.firecloud_client.delete_workspace(firecloud_project, firecloud_workspace) unless detached
+      clean_up_workspaces
       DeleteQueueJob.new(self.metadata_file).delay.perform if self.metadata_file.present?
       destroy
     rescue => e
@@ -1809,6 +1846,43 @@ class Study
 
   def last_initialized_date
     history_tracks.where('modified.initialized': true).order_by(created_at: :desc).first&.created_at
+  end
+
+  # determine correct FireCloudClient type to use, either user- or service account-based
+  def workspace_client(project = firecloud_project)
+    if project == FireCloudClient::PORTAL_NAMESPACE
+      ApplicationController.firecloud_client
+    else
+      FireCloudClient.new(user:, project:)
+    end
+  end
+
+  # ensure a user has requisite permissions on an existing workspace
+  def user_has_workspace_access?
+    client = workspace_client(firecloud_project)
+    acl = client.get_workspace_acl(firecloud_project, firecloud_workspace)&.with_indifferent_access
+    study_owner = user.email
+    existing_acl = acl.dig(:acl, study_owner)
+    write_access = existing_acl && %w[OWNER WRITER].include?(existing_acl[:accessLevel])
+    if write_access
+      Rails.logger.info "Study owner has sufficient permissions for #{firecloud_project}/#{firecloud_workspace}"
+    else
+      Rails.logger.info "checking project-level permissions for user_id:#{user.id} in #{firecloud_project}"
+      unless user.is_billing_project_owner?(firecloud_project)
+        errors.add(:firecloud_workspace, ': You do not have write permission for the workspace you provided.  Please use another workspace.')
+        return false
+      end
+      Rails.logger.info "project-level permissions check successful"
+    end
+    true
+  end
+
+  # determine if the requested billing project is valid to use
+  def billing_project_ok?
+    return true if firecloud_project == FireCloudClient::PORTAL_NAMESPACE
+
+    projects = workspace_client(firecloud_project).get_billing_projects.map { |project| project['projectName'] }
+    projects.include?(firecloud_project)
   end
 
   private
@@ -1844,215 +1918,173 @@ class Study
     self.data_dir = @dir_val
   end
 
+  # set bucket ID after workspace creation
+  def set_bucket_id!(bucket, type: :study)
+    case type
+    when :study
+      self.bucket_id = bucket
+    when :internal
+      self.internal_bucket_id = bucket
+    else
+      self.bucket_id = bucket
+    end
+    true
+  end
+
+  # set the internal workspace name
+  # will be called after study accession is assigned
+  # add an 8-character alphanumeric slug to prevent naming collisions
+  def set_internal_workspace_name
+    if accession.present?
+      self.internal_workspace = "#{accession}-internal-#{SecureRandom.alphanumeric(8)}"
+    else
+      errors.add(:internal_workspace, 'Unable to assign internal workspace, study accession not set')
+    end
+  end
+
   ###
   #
   # CUSTOM VALIDATIONS
   #
   ###
 
-  # automatically create a FireCloud workspace on study creation after validating name & url_safe_name
-  # will raise validation errors if creation, bucket or ACL assignment fail for any reason and deletes workspace on validation fail
-  def initialize_with_new_workspace
-    Rails.logger.info "#{Time.zone.now}: Study: #{self.name} creating FireCloud workspace"
-    validate_name_and_url
+  # create requested workspace type
+  def create_and_validate_workspace(workspace_type)
+    workspace = create_terra_workspace(workspace_type)
+    Rails.logger.info "'#{name}' Terra #{workspace_type} workspace creation successful"
+    acls_assigned = assign_workspace_acls!(workspace_type)
+    if !acls_assigned
+      requested_workspace = workspace_type == :study ? :firecloud_workspace : :internal_workspace
+      errors.add(requested_workspace, ": We encountered an error when attempting to set workspace permissions.  Please try again, or chose a different project.")
+      return false
+    else
+      Rails.logger.info "'#{name}' acls ok for user workspace #{workspace_attrs.join('/')}"
+    end
+    # assign bucket ID
+    set_bucket_id!(workspace['bucketName'], type: workspace_type)
+  end
 
-    # check if project is valid to use
-    if self.firecloud_project != FireCloudClient::PORTAL_NAMESPACE
-      client = FireCloudClient.new(user: self.user, project: self.firecloud_project)
-      projects = client.get_billing_projects.map {|project| project['projectName']}
-      unless projects.include?(self.firecloud_project)
-        errors.add(:firecloud_project, ' is not a project you are a member of.  Please choose another project.')
+  # handler to create a workspace for a study, either user-facing or internal
+  def create_terra_workspace(type = :study)
+    ws_namespace, ws_name = workspace_attrs(type)
+    workspace_client(ws_namespace).create_workspace(ws_namespace, ws_name)
+  end
+
+  # assign all workspace-related acls to allow access
+  # internal buckets grant only read access for visualization purposes
+  def assign_workspace_acls!(type = :study)
+    ws_namespace, ws_name = workspace_attrs(type)
+    ws_identifier = "#{ws_namespace}/#{ws_name}"
+    sa_access = set_service_account_permissions(type)
+    unless sa_access
+      Rails.logger.info "Unable to set service account permissions for #{ws_identifier}"
+      return false
+    end
+
+    Rails.logger.info "Setting workspaces acls for #{ws_identifier}"
+    if type == :study
+      if use_existing_workspace && ws_namespace != FireCloudClient::PORTAL_NAMESPACE
+        acls = []
+      else
+        acls = [[user.email, 'WRITER']]
       end
+      study_shares.where(:permission.ne => 'Reviewer').each do |share|
+        acls << [share.email, StudyShare::FIRECLOUD_ACL_MAP[share.permission]]
+      end
+      acls.each do |acl_info|
+        email, permission = *acl_info
+        compute_permission = permission == 'WRITER' && !FireCloudClient::COMPUTE_DENYLIST.include?(ws_namespace)
+        assign_acl!(type:, email:, permission:, compute_permission:)
+      end
+    else
+      readers = [user.email]
+      admin_read_group = AdminConfiguration.find_or_create_admin_read_group!
+      readers << admin_read_group['groupEmail']
+      readers += study_shares.non_reviewers
+      readers.each do |email|
+        assign_acl!(type:, email:, permission: 'READER', share_permission: false)
+      end
+    end
+    Rails.logger.info "Workspace acls for #{ws_identifier} configured successfully"
+    true
+  end
+
+  # assign an individual workspace acl
+  def assign_acl!(type: :study, email:, permission:, share_permission: true, compute_permission: false)
+    ws_namespace, ws_name = workspace_attrs(type)
+    client = workspace_client(ws_namespace)
+    acl = client.create_workspace_acl(email, permission, share_permission, compute_permission)
+    client.update_workspace_acl(ws_namespace, ws_name, acl)
+  end
+
+  # automatically create associated cloud resources, such as Terra workspaces & buckets
+  def initialize_with_new_workspace
+    Rails.logger.info "Creating associated Terra workspaces for '#{name}'"
+    validate_name_and_url
+    unless billing_project_ok?
+      errors.add(:firecloud_project, ' is not a project you are a member of.  Please choose another project.')
     end
 
     unless self.errors.any?
       begin
-        # create workspace
-        if self.firecloud_project == FireCloudClient::PORTAL_NAMESPACE
-          workspace = ApplicationController.firecloud_client.create_workspace(self.firecloud_project, self.firecloud_workspace, true)
-        else
-          workspace = client.create_workspace(self.firecloud_project, self.firecloud_workspace)
-        end
-        Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace creation successful"
-
-        # wait until after workspace creation to set service account permissions
-        Rails.logger.info "#{Time.zone.now}: Study: #{self.name} checking service account permissions"
-        has_access = set_service_account_permissions
-        if !has_access
-          errors.add(:firecloud_workspace, ": We encountered an error when attempting to set service account permissions.  Please try again, or chose a different project.")
-        else
-          Rails.logger.info "#{Time.zone.now}: Study: #{self.name} service account permissions ok"
-        end
-
-        ws_name = workspace['name']
-        # validate creation
-        unless ws_name == self.firecloud_workspace
-          # delete workspace on validation fail
-          ApplicationController.firecloud_client.delete_workspace(self.firecloud_project, self.firecloud_workspace)
-          errors.add(:firecloud_workspace, ' was not created properly (workspace name did not match or was not created).  Please try again later.')
-          return false
-        end
-        Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace validation successful"
-        # set bucket_id
-        bucket = workspace['bucketName']
-        self.bucket_id = bucket
-        if self.bucket_id.nil?
-          # delete workspace on validation fail
-          ApplicationController.firecloud_client.delete_workspace(self.firecloud_project, self.firecloud_workspace)
-          errors.add(:firecloud_workspace, ' was not created properly (storage bucket was not set).  Please try again later.')
-          return false
-        end
-        Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud bucket assignment successful"
-
-        # if user has no project acls, then we set specific workspace-level acls
-        if self.firecloud_project == FireCloudClient::PORTAL_NAMESPACE
-          # set workspace acl
-          study_owner = self.user.email
-          workspace_permission = 'WRITER'
-          can_compute = true
-          # if study project is in the compute denylist, revoke compute permission
-          if Rails.env.production? && FireCloudClient::COMPUTE_DENYLIST.include?(self.firecloud_project)
-            can_compute = false
-          end
-          acl = ApplicationController.firecloud_client.create_workspace_acl(study_owner, workspace_permission, true, can_compute)
-          ApplicationController.firecloud_client.update_workspace_acl(self.firecloud_project, self.firecloud_workspace, acl)
-          # validate acl
-          ws_acl = ApplicationController.firecloud_client.get_workspace_acl(self.firecloud_project, ws_name)
-          unless ws_acl['acl'][study_owner]['accessLevel'] == workspace_permission && ws_acl['acl'][study_owner]['canCompute'] == can_compute
-            # delete workspace on validation fail
-            ApplicationController.firecloud_client.delete_workspace(self.firecloud_project, self.firecloud_workspace)
-            errors.add(:firecloud_workspace, ' was not created properly (permissions do not match).  Please try again later.')
-            return false
-          end
-        end
-        Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace acl assignment successful"
-        if self.study_shares.any?
-          Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace acl assignment for shares starting"
-          self.study_shares.each do |share|
-            begin
-              acl = ApplicationController.firecloud_client.create_workspace_acl(share.email, StudyShare::FIRECLOUD_ACL_MAP[share.permission], true, false)
-              ApplicationController.firecloud_client.update_workspace_acl(self.firecloud_project, self.firecloud_workspace, acl)
-              Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace acl assignment for shares #{share.email} successful"
-            rescue RestClient::Exception => e
-              ErrorTracker.report_exception(e, user, self, acl)
-              errors.add(:study_shares, "Could not create a share for #{share.email} to workspace #{self.firecloud_workspace} due to: #{e.message}")
-              return false
-            end
-          end
-        end
-
+        create_and_validate_workspace(:study)
       rescue => e
         ErrorTracker.report_exception(e, user, self)
         # delete workspace on any fail as this amounts to a validation fail
-        Rails.logger.info "#{Time.zone.now}: Error creating workspace: #{e.message}"
-        # delete firecloud workspace unless error is 409 Conflict (workspace already taken)
-        if e.message.include?("Workspace #{self.firecloud_project}/#{self.firecloud_workspace} already exists")
+        Rails.logger.info "Error creating Terra workspace: #{e.message}"
+        # delete Terra workspace unless error is 409 Conflict (workspace already taken)
+        if e.message.include?("Workspace #{firecloud_project}/#{firecloud_workspace} already exists")
           errors.add(:firecloud_workspace, ' - there is already an existing workspace using this name.  Please choose another name for your study.')
           errors.add(:name, ' - you must choose a different name for your study.')
           self.firecloud_workspace = nil
         else
-          # ensure workspace exists before trying to delete
-          if ApplicationController.firecloud_client.workspace_exists?(firecloud_project, firecloud_workspace)
-            ApplicationController.firecloud_client.delete_workspace(firecloud_project, firecloud_workspace)
+          # clean up user workspace, if needed
+          client = workspace_client(firecloud_project)
+          if client.workspace_exists?(firecloud_project, firecloud_workspace)
+            client.delete_workspace(irecloud_project, firecloud_workspace)
           end
           error_message = ApplicationController.firecloud_client.parse_error_message(e)
           errors.add(:firecloud_workspace, " creation failed: #{error_message}")
         end
-        return false
+        false
       end
     end
   end
 
   # validator to use existing FireCloud workspace
   def initialize_with_existing_workspace
-    Rails.logger.info "#{Time.zone.now}: Study: #{self.name} using FireCloud workspace: #{self.firecloud_workspace}"
+    Rails.logger.info "Validating Terra workspace: #{firecloud_workspace} for '#{name}'"
     validate_name_and_url
-    # check if workspace is already being used
-    if Study.where(firecloud_workspace: self.firecloud_workspace).exists?
+    if Study.where(firecloud_workspace:).exists?
       errors.add(:firecloud_workspace, ': The workspace you provided is already in use by another study.  Please use another workspace.')
       return false
     end
 
-    # check if project is valid to use
-    if self.firecloud_project != FireCloudClient::PORTAL_NAMESPACE
-      client = FireCloudClient.new(user: self.user, project: self.firecloud_project)
-      projects = client.get_billing_projects.map {|project| project['projectName']}
-      unless projects.include?(self.firecloud_project)
-        errors.add(:firecloud_project, ' is not a project you are a member of.  Please choose another project.')
-      end
+    unless billing_project_ok?
+      errors.add(:firecloud_project, ' is not a project you are a member of.  Please choose another project.')
     end
 
-    Rails.logger.info "#{Time.zone.now}: Study: #{self.name} checking service account permissions"
-    has_access = set_service_account_permissions
-    if !has_access
-      errors.add(:firecloud_workspace, ": We encountered an error when attempting to set service account permissions.  Please try again, or chose a different project.")
-    else
-      Rails.logger.info "#{Time.zone.now}: Study: #{self.name} service account permissions ok"
-    end
     unless self.errors.any?
       begin
-        workspace = ApplicationController.firecloud_client.get_workspace(self.firecloud_project, self.firecloud_workspace)
-        study_owner = self.user.email
-        # set acls if using default project
-        if self.firecloud_project == FireCloudClient::PORTAL_NAMESPACE
-          workspace_permission = 'WRITER'
-          can_compute = true
-          # if study project is in the compute denylist, revoke compute permission
-          if Rails.env.production? && FireCloudClient::COMPUTE_DENYLIST.include?(self.firecloud_project)
-            can_compute = false
-            Rails.logger.info "#{Time.zone.now}: Study: #{self.name} removing compute permissions"
-            compute_acl = ApplicationController.firecloud_client.create_workspace_acl(self.user.email, workspace_permission, true, can_compute)
-            ApplicationController.firecloud_client.update_workspace_acl(self.firecloud_project, self.firecloud_workspace, compute_acl)
-          end
-          acl = ApplicationController.firecloud_client.get_workspace_acl(self.firecloud_project, self.firecloud_workspace)
-          # first check workspace authorization domain
-          auth_domain = workspace['workspace']['authorizationDomain']
-          unless auth_domain.empty?
-            errors.add(:firecloud_workspace, ': The workspace you provided is restricted.  We currently do not allow use of restricted workspaces.  Please use another workspace.')
-            return false
-          end
-          # check permissions, falling back to project-level permissions if needed
-          is_project_owner = false
-          if acl['acl'][study_owner].nil? || acl['acl'][study_owner]['accessLevel'] == 'READER'
-            Rails.logger.info "checking project-level permissions for user_id:#{self.user.id} in #{self.firecloud_project}"
-            is_project_owner = self.user.is_billing_project_owner?(self.firecloud_project)
-            unless is_project_owner
-              errors.add(:firecloud_workspace, ': You do not have write permission for the workspace you provided.  Please use another workspace.')
-              return false
-            end
-            Rails.logger.info "project-level permissions check successful"
-          end
-          # check compute permissions (only if not project owner, as compute is inherited and not present at the workspace level)
-          if !is_project_owner && acl['acl'][study_owner]['canCompute'] != can_compute
-            errors.add(:firecloud_workspace, ': There was an error setting the permissions on your workspace (compute permissions were not set correctly).  Please try again.')
-            return false
-          end
-          Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace acl check successful"
-          # set bucket_id, it is nested lower since we had to get an existing workspace
-        end
-
-        bucket = workspace['workspace']['bucketName']
-        self.bucket_id = bucket
-        if self.bucket_id.nil?
-          # delete workspace on validation fail
-          errors.add(:firecloud_workspace, ' was not created properly (storage bucket was not set).  Please try again later.')
+        workspace = ApplicationController.firecloud_client.get_workspace(firecloud_project, firecloud_workspace)
+        auth_domain = workspace['workspace']['authorizationDomain']
+        unless auth_domain.empty?
+          errors.add(:firecloud_workspace, ': The workspace you provided is restricted.  We currently do not allow use of restricted workspaces.  Please use another workspace.')
           return false
         end
-        Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud bucket assignment successful"
-        if self.study_shares.any?
-          Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace acl assignment for shares starting"
-          self.study_shares.each do |share|
-            begin
-              acl = ApplicationController.firecloud_client.create_workspace_acl(share.email, StudyShare::FIRECLOUD_ACL_MAP[share.permission], true, false)
-              ApplicationController.firecloud_client.update_workspace_acl(self.firecloud_project, self.firecloud_workspace, acl)
-              Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace acl assignment for shares #{share.email} successful"
-            rescue RestClient::Exception => e
-              ErrorTracker.report_exception(e, user, self, acl)
-              errors.add(:study_shares, "Could not create a share for #{share.email} to workspace #{self.firecloud_workspace} due to: #{e.message}")
-              return false
-            end
-          end
+        # ensure user has enough permission to use existing workspace
+        unless user_has_workspace_access?
+          errors.add(:firecloud_workspace, ': You do not have write permission for the workspace you provided.  Please use another workspace.')
+          return false
         end
+        acls_assigned = assign_workspace_acls!(workspace_type)
+        if !acls_assigned
+          errors.add(:firecloud_workspace, ": We encountered an error when attempting to set workspace permissions.  Please try again, or chose a different project.")
+        else
+          Rails.logger.info "'#{name}' acls ok for user workspace #{workspace_attrs.join('/')}"
+        end
+        # assign bucket ID
+        set_bucket_id!(workspace['bucketName'])
       rescue => e
         ErrorTracker.report_exception(e, self.user, self)
         # delete workspace on any fail as this amounts to a validation fail
@@ -2060,6 +2092,37 @@ class Study
         error_message = ApplicationController.firecloud_client.parse_error_message(e)
         errors.add(:firecloud_workspace, " assignment failed: #{error_message}; Please check the workspace in question and try again.")
         return false
+      end
+    end
+  end
+
+  # create internal workspace for holding SCP internal data, like visualization assets or parse logs
+  def create_internal_workspace
+    begin
+      create_and_validate_workspace(:internal)
+    rescue => e
+      clean_up_workspaces
+      # remove StudyAccession entry to free it up for re-use
+      # this should ONLY ever be done here as an accession was just assigned but never used
+      StudyAccession.find_by(study_id: id, accession:)&.delete
+      ErrorTracker.report_exception(e, user, self)
+      # delete workspace on any fail as this amounts to a validation fail
+      Rails.logger.info "Error creating Terra internal workspace: #{e.message}"
+      error_message = ApplicationController.firecloud_client.parse_error_message(e)
+      errors.add(:internal_workspace, " creation failed: #{error_message}, please try again")
+      false
+    end
+  end
+
+  def clean_up_workspaces
+    [:study, :internal].each do |workspace_type|
+      # don't delete existing workspace
+      next if workspace_type == :study && use_existing_workspace
+
+      ws_namespace, ws_name = workspace_attrs(workspace_type)
+      client = workspace_client(ws_namespace)
+      if client.workspace_exists?(ws_namespace, ws_name)
+        client.delete_workspace(ws_namespace, ws_name)
       end
     end
   end
@@ -2093,22 +2156,20 @@ class Study
 
   # set permissions on workspaces to workspace owner Google group for service account
   # this reduces the number of groups the SA is a member of to lower burden on quota (2000 direct memberships)
-  def set_service_account_permissions
+  def set_service_account_permissions(type = :study)
+    ws_namespace, ws_name = workspace_attrs(type)
+    Rails.logger.info "Checking service account permissions for #{ws_namespace}/#{ws_name}"
+    client = workspace_client(ws_namespace)
     begin
       sa_owner_group = AdminConfiguration.find_or_create_ws_user_group!
-      if self.firecloud_project == FireCloudClient::PORTAL_NAMESPACE
-        client = ApplicationController.firecloud_client
-      else
-        client = FireCloudClient.new(user: self.user, project: self.firecloud_project)
-      end
       group_email = sa_owner_group['groupEmail']
       acl = client.create_workspace_acl(group_email, 'OWNER', true, false)
-      client.update_workspace_acl(self.firecloud_project, self.firecloud_workspace, acl)
-      updated = client.get_workspace_acl(self.firecloud_project, self.firecloud_workspace)
+      client.update_workspace_acl(ws_namespace, ws_name, acl)
+      updated = client.get_workspace_acl(ws_namespace, ws_name)
       return updated['acl'][group_email]['accessLevel'] == 'OWNER'
     rescue RestClient::Exception => e
-      ErrorTracker.report_exception(e, self.user, { firecloud_project: self.firecloud_workspace})
-      Rails.logger.error "Unable to add portal service account to #{self.firecloud_workspace}: #{e.message}"
+      ErrorTracker.report_exception(e, self.user, { firecloud_project: ws_namespace})
+      Rails.logger.error "Unable to add portal service account to #{ws_namespace}/#{ws_name}: #{e.message}"
       false
     end
   end

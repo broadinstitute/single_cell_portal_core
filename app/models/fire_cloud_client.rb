@@ -50,6 +50,8 @@ class FireCloudClient
   # groups the portal service account needs to be a member of
   # defaults to the Terra billing project this instance is configured against, plus "-sa-owner-group"
   WS_OWNER_GROUP_NAME = "#{PORTAL_NAMESPACE}-sa-owner-group".freeze
+  # name of user group for admin read access to visualization workspaces
+  ADMIN_READ_GROUP_NAME = "#{PORTAL_NAMESPACE}-admin-read-group".freeze
 
   ##
   # SERVICE NAMES AND DESCRIPTIONS

@@ -267,17 +267,22 @@ class AdminConfiguration
   end
 
   def self.find_or_create_ws_user_group!
-    groups = ApplicationController.firecloud_client.get_user_groups
-    ws_owner_group = groups.detect {|group| group['groupName'] == FireCloudClient::WS_OWNER_GROUP_NAME &&
-        group['role'] == 'Admin'}
-    # create group if not found
-    if ws_owner_group.present?
-      ws_owner_group
-    else
-      # create and return group
-      ApplicationController.firecloud_client.create_user_group(FireCloudClient::WS_OWNER_GROUP_NAME)
-      ApplicationController.firecloud_client.get_user_group(FireCloudClient::WS_OWNER_GROUP_NAME)
-    end
+    find_or_create_group!(FireCloudClient::WS_OWNER_GROUP_NAME)
+  end
+
+  def self.find_or_create_admin_read_group!
+    find_or_create_group!(FireCloudClient::ADMIN_READ_GROUP_NAME)
+  end
+
+  def self.find_or_create_group!(group_name)
+    client = ApplicationController.firecloud_client
+    groups = client.get_user_groups
+    requested_group = groups.detect { |group| group['groupName'] == group_name && group['role'] == 'Admin' }
+    # return group if found, or create and return
+    return requested_group if requested_group.present?
+
+    client.create_user_group(group_name)
+    client.get_user_group(group_name)
   end
 
   # getter to return all configuration options as a hash
