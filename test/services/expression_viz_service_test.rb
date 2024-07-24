@@ -241,9 +241,9 @@ class ExpressionVizServiceTest < ActiveSupport::TestCase
     # cells A & B belong to 'bar', and cell C belongs to the blank label
     expected_output = {
       bar: {
-        y: [0.0, 3.0], cells: %w(A B), annotations: [], name: 'bar', color: @color_list[1]
+        y: [0.0, 3.0], cells: %w(A B), annotations: [], name: 'bar', color: @color_list[0]
       }, "#{AnnotationVizService::MISSING_VALUE_LABEL}": {
-        y: [1.5], cells: %w(C), annotations: [], name: AnnotationVizService::MISSING_VALUE_LABEL, color: @color_list[0]
+        y: [1.5], cells: %w(C), annotations: [], name: AnnotationVizService::MISSING_VALUE_LABEL, color: @color_list[1]
       }
     }
     assert_equal expected_output.with_indifferent_access, violin_data.with_indifferent_access

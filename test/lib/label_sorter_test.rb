@@ -28,4 +28,14 @@ class LabelSorterTest < ActiveSupport::TestCase
     assert_equal 1, last <=> first
     assert_equal 1, last <=> middle
   end
+
+  test 'should move blank or unspecified to the end' do
+    random = @labels.take(10).shuffle
+    blank_label = [''] + random
+    sorted = LabelSorter.natural_sort(blank_label)
+    assert sorted.last.blank?
+    unspecified = [AnnotationVizService::MISSING_VALUE_LABEL] + random
+    sorted = LabelSorter.natural_sort(unspecified)
+    assert_equal AnnotationVizService::MISSING_VALUE_LABEL, sorted.last
+  end
 end
