@@ -144,8 +144,12 @@ class ImportService
     # first check if a study already exists using this external_identifer to prevent accidental workspace deletion
     return false if Study.where(external_identifier: study.external_identifier, :id.ne => study.id).exists?
 
-    if ApplicationController.firecloud_client.workspace_exists?(study.firecloud_project, study.firecloud_workspace)
-      ApplicationController.firecloud_client.delete_workspace(study.firecloud_project, study.firecloud_workspace)
+    [:study, :internal].each do |workspace_type|
+      ws_namespace, ws_name = study.workspace_attrs(workspace_type)
+      client = study.workspace_client(ws_namespace)
+      if client.workspace_exists?(ws_namespace, ws_name)
+        client.delete_workspace(ws_namespace, ws_name)
+      end
     end
   end
 end

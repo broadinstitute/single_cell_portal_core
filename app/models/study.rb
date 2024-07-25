@@ -749,9 +749,8 @@ class Study
   # update validators
   validates_uniqueness_of :name, on: :update, message: ": %{value} has already been taken.  Please choose another name."
   validates_presence_of   :name, on: :update
-  validates_uniqueness_of :url_safe_name, on: :update, message: ": The name you provided tried to create a public URL (%{value}) that is already assigned.  Please rename your study to a different value."
   validate :prevent_firecloud_attribute_changes, on: :update
-  validates_presence_of :firecloud_project, :firecloud_workspace
+  validates_presence_of :firecloud_project, :firecloud_workspace, :internal_workspace
   validates_uniqueness_of :external_identifier, allow_blank: true
   validates :cell_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate  :assign_accession, on: :create
@@ -885,6 +884,9 @@ class Study
 
     client = user ? FireCloudClient.new(user:) : FireCloudClient.new
     client.check_bucket_read_access(firecloud_project, firecloud_workspace)
+    if internal_workspace
+      client.check_bucket_read_access(FireCloudClient::PORTAL_NAMESPACE, internal_workspace)
+    end
   end
 
   # always run :check_bucket_read_access in the background at lower priority
@@ -1885,6 +1887,27 @@ class Study
     projects.include?(firecloud_project)
   end
 
+  # public version of create_internal_workspace to use in backfill migration
+  # will assign internal_workspace and internal_bucket_id
+  def add_internal_workspace
+    set_internal_workspace_name if internal_workspace.blank?
+    ws_namespace, ws_name = workspace_attrs(:internal)
+    client = workspace_client(ws_namespace)
+    if client.workspace_exists?(ws_namespace, ws_name)
+      Rails.logger.info "#{accession} already has internal workspace: #{ws_namespace}/#{ws_name}"
+      return nil
+    end
+    workspace = create_terra_workspace(:internal)
+    Rails.logger.info "#{accession} Terra internal workspace #{internal_workspace} creation successful"
+    assign_workspace_acls!(:internal)
+    Rails.logger.info "#{accession} Terra internal workspace acls assigned successfully"
+    set_bucket_id(workspace['bucketName'], type: :internal)
+    save!
+    Rails.logger.info "#{accession} Terra internal workspace creation complete"
+    client.check_bucket_read_access(ws_namespace, ws_name)
+    workspace
+  end
+
   private
 
   ###
@@ -1919,7 +1942,7 @@ class Study
   end
 
   # set bucket ID after workspace creation
-  def set_bucket_id!(bucket, type: :study)
+  def set_bucket_id(bucket, type: :study)
     case type
     when :study
       self.bucket_id = bucket
@@ -1933,10 +1956,12 @@ class Study
 
   # set the internal workspace name
   # will be called after study accession is assigned
-  # add an 8-character alphanumeric slug to prevent naming collisions
+  # adds extra 5-character slug in test environment to avoid name collisions
   def set_internal_workspace_name
     if accession.present?
-      self.internal_workspace = "#{accession}-internal-#{SecureRandom.alphanumeric(8)}"
+      workspace = "#{accession}-#{Rails.env}-internal"
+      workspace += "-#{SecureRandom.alphanumeric(5)}" if Rails.env.test?
+      self.internal_workspace = workspace
     else
       errors.add(:internal_workspace, 'Unable to assign internal workspace, study accession not set')
     end
@@ -1961,7 +1986,7 @@ class Study
       Rails.logger.info "'#{name}' acls ok for user workspace #{workspace_attrs.join('/')}"
     end
     # assign bucket ID
-    set_bucket_id!(workspace['bucketName'], type: workspace_type)
+    set_bucket_id(workspace['bucketName'], type: workspace_type)
   end
 
   # handler to create a workspace for a study, either user-facing or internal
@@ -1971,7 +1996,7 @@ class Study
   end
 
   # assign all workspace-related acls to allow access
-  # internal buckets grant only read access for visualization purposes
+  # internal buckets grant read access to users for visualization purposes, write access for admin QA
   def assign_workspace_acls!(type = :study)
     ws_namespace, ws_name = workspace_attrs(type)
     ws_identifier = "#{ws_namespace}/#{ws_name}"
@@ -1983,11 +2008,9 @@ class Study
 
     Rails.logger.info "Setting workspaces acls for #{ws_identifier}"
     if type == :study
-      if use_existing_workspace && ws_namespace != FireCloudClient::PORTAL_NAMESPACE
-        acls = []
-      else
-        acls = [[user.email, 'WRITER']]
-      end
+      # don't change ACL for study owner on existing workspace in their own billing project
+      grant_user_write = use_existing_workspace && ws_namespace != FireCloudClient::PORTAL_NAMESPACE
+      acls = grant_user_write ? [[user.email, 'WRITER']] : []
       study_shares.where(:permission.ne => 'Reviewer').each do |share|
         acls << [share.email, StudyShare::FIRECLOUD_ACL_MAP[share.permission]]
       end
@@ -1997,9 +2020,9 @@ class Study
         assign_acl!(type:, email:, permission:, compute_permission:)
       end
     else
+      admin_internal_group = AdminConfiguration.find_or_create_admin_internal_group!
+      assign_acl!(type:, email: admin_internal_group['groupEmail'], permission: 'WRITER')
       readers = [user.email]
-      admin_read_group = AdminConfiguration.find_or_create_admin_read_group!
-      readers << admin_read_group['groupEmail']
       readers += study_shares.non_reviewers
       readers.each do |email|
         assign_acl!(type:, email:, permission: 'READER', share_permission: false)
@@ -2084,7 +2107,7 @@ class Study
           Rails.logger.info "'#{name}' acls ok for user workspace #{workspace_attrs.join('/')}"
         end
         # assign bucket ID
-        set_bucket_id!(workspace['bucketName'])
+        set_bucket_id(workspace['bucketName'])
       rescue => e
         ErrorTracker.report_exception(e, self.user, self)
         # delete workspace on any fail as this amounts to a validation fail

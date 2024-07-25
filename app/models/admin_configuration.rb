@@ -270,8 +270,8 @@ class AdminConfiguration
     find_or_create_group!(FireCloudClient::WS_OWNER_GROUP_NAME)
   end
 
-  def self.find_or_create_admin_read_group!
-    find_or_create_group!(FireCloudClient::ADMIN_READ_GROUP_NAME)
+  def self.find_or_create_admin_internal_group!
+    find_or_create_group!(FireCloudClient::ADMIN_INTERNAL_GROUP_NAME)
   end
 
   def self.find_or_create_group!(group_name)

@@ -37,6 +37,10 @@ class StudyTest < ActiveSupport::TestCase
     @services_args = [String, String, String]
   end
 
+  teardown do
+    @study.reload
+  end
+
   after(:all) do
     Study.where(firecloud_workspace: 'bucket-read-check-test').delete_all
   end
@@ -177,6 +181,9 @@ class StudyTest < ActiveSupport::TestCase
     mock.expect :check_bucket_read_access,
                 true,
                 [study.firecloud_project, study.firecloud_workspace]
+    mock.expect :check_bucket_read_access,
+                true,
+                [FireCloudClient::PORTAL_NAMESPACE, study.internal_workspace]
     FireCloudClient.stub :new, mock do
       study.stub :detached, false do
         study.check_bucket_read_access_without_delay
@@ -192,6 +199,10 @@ class StudyTest < ActiveSupport::TestCase
     workspace_client = @study.workspace_client
     assert_equal 'foo', workspace_client.project
     assert_equal @user.access_token[:access_token], workspace_client.access_token[:access_token]
+  end
+
+  test 'should assign internal workspace name' do
+    assert @study.internal_workspace =~ /#{@study.accession}-test-internal/
   end
 
   test 'should check user workspace and billing project access' do

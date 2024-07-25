@@ -50,8 +50,8 @@ class FireCloudClient
   # groups the portal service account needs to be a member of
   # defaults to the Terra billing project this instance is configured against, plus "-sa-owner-group"
   WS_OWNER_GROUP_NAME = "#{PORTAL_NAMESPACE}-sa-owner-group".freeze
-  # name of user group for admin read access to visualization workspaces
-  ADMIN_READ_GROUP_NAME = "#{PORTAL_NAMESPACE}-admin-read-group".freeze
+  # name of user group for admin access to internal workspaces
+  ADMIN_INTERNAL_GROUP_NAME = "#{PORTAL_NAMESPACE}-admin-internal-group".freeze
 
   ##
   # SERVICE NAMES AND DESCRIPTIONS
@@ -388,6 +388,7 @@ class FireCloudClient
   end
 
   # passthru to determine if a workspace exists
+  # bypasses :process_firecloud_request to avoid needless error reporting
   #
   # * *params*
   #   - +workspace_namespace+ (String) => namespace of workspace
@@ -397,7 +398,8 @@ class FireCloudClient
   #   - +Boolean+
   def workspace_exists?(workspace_namespace, workspace_name)
     begin
-      get_workspace(workspace_namespace, workspace_name)
+      path = "#{api_root}/api/workspaces/#{uri_encode(workspace_namespace)}/#{uri_encode(workspace_name)}"
+      RestClient::Request.execute(method: :get, url: path, headers: get_default_headers)
       true
     rescue RestClient::NotFound
       false
