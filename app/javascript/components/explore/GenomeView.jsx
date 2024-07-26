@@ -459,28 +459,37 @@ function applyIgvFilters(retryAttempt=0, setIsLoadingFilters) {
 
 /** Find the ordinal position of an element among its sibling elements */
 function getIndexAmongSiblings(node, siblingClass=null) {
-  console.log('a')
+  // console.log('a')
   let siblings = node.parentNode.children
-  console.log('b')
+  // console.log('b')
   if (siblingClass) {
     siblings = Array.from(siblings).filter(node => {
       return Array.from(node.classList).includes(siblingClass)
     })
   }
-  console.log('c')
+  // console.log('c')
   for (let i = 0; i < siblings.length; i++) {
     if (siblings[i] === node) {return i}
   }
-  console.log('d')
+  // console.log('d')
   return -1
+}
+
+/** Get canvas for track -- this is where genomic features are rendered */
+function getTrackCanvas(spinner) {
+  const spinnerSiblings = Array.from(spinner.parentNode.children)
+  const canvas = spinnerSiblings.find(node => node.tagName === 'CANVAS')
+  return canvas
 }
 
 /** Change transparency of a track's canvas graphics layer */
 function updateTrackCanvasOpacity(spinner, opacity) {
-  Array.from(spinner.parentNode.children)
-    .find(node => node.tagName === 'CANVAS')
-    .style.opacity = opacity
-
+  const spinnerSiblings = Array.from(spinner.parentNode.children)
+  console.log('spinnerSiblings')
+  console.log(spinnerSiblings)
+  const canvas = spinnerSiblings.find(node => node.tagName === 'CANVAS')
+  console.log('canvas', canvas)
+  return canvas
 }
 
 /** Force loading UI in track if it's loading filters; else don't force */
@@ -499,13 +508,21 @@ function ensureTrackLoadingVisuals(isLoadingFilters, containerId, igvBrowser) {
       const isSpinner = Array.from(target?.classList).includes('igv-loading-spinner-container')
       if (isSpinner) {
         const thisTrackIndex = getIndexAmongSiblings(target.parentNode, 'igv-viewport')
+        console.log('thisTrackIndex', thisTrackIndex)
         if (thisTrackIndex === trackIndex) {
           const isSpinnerHidden = target.style.display === 'none'
 
+          const canvas = getTrackCanvas(target)
+
+          // Is canvas fogged / not fully transparent?
+          const isBlurred = canvas.style.opacity !== ''
+
+          console.log('isSpinnerHidden, isLoadingFilters')
+          console.log(isSpinnerHidden, isLoadingFilters)
           if (isSpinnerHidden && isLoadingFilters) {
             console.log('show spinner')
             target.style.display = '' // Show spinner
-            updateTrackCanvasOpacity(target, 0.1)
+            updateTrackCanvasOpacity(target, 0.4)
           } else {
             // TODO: Fix infinite loop caused by this commented-out code
             // console.log('hide spinner')
