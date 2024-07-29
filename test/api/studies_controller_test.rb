@@ -135,7 +135,7 @@ class StudiesControllerTest < ActionDispatch::IntegrationTest
     puts 'creating ACL...'
     user_acl = ApplicationController.firecloud_client.create_workspace_acl(@user.email, 'WRITER', true, true)
     ApplicationController.firecloud_client.update_workspace_acl(FireCloudClient::PORTAL_NAMESPACE, workspace_name, user_acl)
-    share_user = FactoryBot.create(:api_user)
+    share_user = FactoryBot.create(:api_user, test_array: @@users_to_clean)
     share_acl = ApplicationController.firecloud_client.create_workspace_acl(share_user.email, 'READER', true, false)
     ApplicationController.firecloud_client.update_workspace_acl(FireCloudClient::PORTAL_NAMESPACE, workspace_name, share_acl)
     # validate acl set
@@ -160,6 +160,7 @@ class StudiesControllerTest < ActionDispatch::IntegrationTest
     # call sync
     puts 'syncing study...'
     execute_http_request(:post, sync_api_v1_study_path(id: sync_study.id))
+    assert_response 200
     assert json['study_shares'].detect {|share| share['email'] == share_user.email}.present?, "Did not create share for #{share_user.email}"
     assert json['study_files']['unsynced'].detect {|file| file['name'] == metadata_filename},
            "Did not find unsynced study file for #{metadata_filename}"

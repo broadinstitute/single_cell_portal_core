@@ -1827,7 +1827,7 @@ class Study
       Rails.logger.error "#{e.message}"
       destroy # ensure deletion of study, even if workspace is orphaned
     end
-    Rails.logger.info "Workspace #{firecloud_project}/#{firecloud_workspace} successfully removed."
+    Rails.logger.info "Workspaces for #{accession} successfully removed."
   end
 
   # helper method that mimics DeleteQueueJob.delete_convention_data
@@ -1986,14 +1986,20 @@ class Study
       Rails.logger.info "'#{name}' acls ok for #{workspace_type} workspace #{workspace_attrs(workspace_type).join('/')}"
     end
     # assign bucket ID
-    set_bucket_id(workspace['bucketName'], type: workspace_type)
+    bucket = workspace['bucketName']
+    bucket_attr = workspace_type == :study ? :bucket_id : :internal_bucket_id
+    if bucket
+      set_bucket_id(workspace['bucketName'], type: workspace_type)
+    else
+      errors.add(bucket_attr, ": We were unable to assign the associated bucket for this workspace.  Please try again.")
+    end
   end
 
   # handler to create a workspace for a study, either user-facing or internal
   def create_terra_workspace(type = :study)
     set_internal_workspace_name if type == :internal
     ws_namespace, ws_name = workspace_attrs(type)
-    workspace_client(ws_namespace).create_workspace(ws_namespace, ws_name)
+    workspace_client(ws_namespace).create_workspace(ws_namespace, ws_name, true)
   end
 
   # assign all workspace-related acls to allow access
@@ -2010,8 +2016,8 @@ class Study
     Rails.logger.info "Setting workspaces acls for #{ws_identifier}"
     if type == :study
       # don't change ACL for study owner on existing workspace in their own billing project
-      grant_user_write = use_existing_workspace && ws_namespace != FireCloudClient::PORTAL_NAMESPACE
-      acls = grant_user_write ? [[user.email, 'WRITER']] : []
+      preserve_acl = use_existing_workspace && ws_namespace != FireCloudClient::PORTAL_NAMESPACE
+      acls = preserve_acl ? [] : [[user.email, 'WRITER']]
       study_shares.where(:permission.ne => 'Reviewer').each do |share|
         acls << [share.email, StudyShare::FIRECLOUD_ACL_MAP[share.permission]]
       end
@@ -2091,7 +2097,8 @@ class Study
     unless self.errors.any?
       begin
         workspace = ApplicationController.firecloud_client.get_workspace(firecloud_project, firecloud_workspace)
-        auth_domain = workspace['workspace']['authorizationDomain']
+        Rails.logger.info "existing_workspace: #{workspace}"
+        auth_domain = workspace.dig('workspace', 'authorizationDomain')
         unless auth_domain.empty?
           errors.add(:firecloud_workspace, ': The workspace you provided is restricted.  We currently do not allow use of restricted workspaces.  Please use another workspace.')
           return false
@@ -2101,14 +2108,19 @@ class Study
           errors.add(:firecloud_workspace, ': You do not have write permission for the workspace you provided.  Please use another workspace.')
           return false
         end
-        acls_assigned = assign_workspace_acls!(workspace_type)
+        acls_assigned = assign_workspace_acls!(:study)
         if !acls_assigned
           errors.add(:firecloud_workspace, ": We encountered an error when attempting to set workspace permissions.  Please try again, or chose a different project.")
         else
           Rails.logger.info "'#{name}' acls ok for user workspace #{workspace_attrs.join('/')}"
         end
         # assign bucket ID
-        set_bucket_id(workspace['bucketName'])
+        bucket = workspace.dig('workspace', 'bucketName')
+        if bucket
+          set_bucket_id(bucket)
+        else
+          errors.add(:bucket_id, "We could not find the associated bucket for this workspace.  Please try again, or choose a different workspace")
+        end
       rescue => e
         ErrorTracker.report_exception(e, self.user, self)
         # delete workspace on any fail as this amounts to a validation fail

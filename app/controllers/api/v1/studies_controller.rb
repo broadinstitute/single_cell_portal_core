@@ -745,9 +745,9 @@ module Api
         rescue => e
           ErrorTracker.report_exception(e, current_user, @study, params)
           MetricsService.report_error(e, request, current_user, @study)
-          logger.error "#{Time.zone.now}: error syncing files in workspace bucket #{@study.firecloud_workspace} due to error: #{e.message}"
-          redirect_to merge_default_redirect_params(studies_path, scpbr: params[:scpbr]),
-                      alert: "We were unable to sync with your workspace bucket due to an error: #{view_context.simple_format(e.message)}.  #{SCP_SUPPORT_EMAIL}" and return
+          error_msg = "Error syncing files in workspace bucket #{@study.firecloud_workspace} due to error: #{e.message}"
+          logger.error error_msg
+          render json: { error: error_msg }, status: 500
         end
 
         # refresh study state before continuing as new records may have been inserted
