@@ -163,4 +163,28 @@ class UserTest < ActiveSupport::TestCase
       end
     end
   end
+
+  test 'should manage admin group membership on save' do
+    user = FactoryBot.create(:user, registered_for_firecloud: true, test_array: @@users_to_clean)
+    group_name = FireCloudClient::ADMIN_INTERNAL_GROUP_NAME
+    add_mock = Minitest::Mock.new
+    admin_group = [
+      { groupName: group_name, groupEmail: "#{group_name}@firecloud.org", role: 'Admin' }.with_indifferent_access
+    ]
+    add_mock.expect :get_user_groups, admin_group
+    add_mock.expect :add_user_to_group, true, [group_name, 'member', user.email]
+    # we don't have an actual Terra user, so we can't validate group membership, only that methods were called
+    ApplicationController.stub :firecloud_client, add_mock do
+      user.update(admin: true)
+      add_mock.verify
+    end
+
+    remove_mock = Minitest::Mock.new
+    remove_mock.expect :get_user_groups, admin_group
+    remove_mock.expect :delete_user_from_group, true, [group_name, 'member', user.email]
+    ApplicationController.stub :firecloud_client, remove_mock do
+      user.update(admin: false)
+      remove_mock.verify
+    end
+  end
 end

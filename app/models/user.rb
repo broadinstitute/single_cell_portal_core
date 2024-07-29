@@ -39,6 +39,7 @@ class User
 
   validates_format_of :email, :with => Devise.email_regexp, message: 'is not a valid email address'
   validates_format_of :organizational_email, :with => Devise.email_regexp, allow_blank: true, message: 'Invalid email address'
+  before_save :manage_admin_group_membership, if: proc { |user| user.admin_changed? && user.registered_for_firecloud }
 
   ## Database authenticatable
   field :email,              type: String, default: ""
@@ -459,6 +460,32 @@ class User
     end
   end
 
+  def add_to_admin_group
+    return false if !admin
+
+    admin_group = AdminConfiguration.find_or_create_admin_internal_group!
+    group_name = admin_group['groupName']
+    begin
+      ApplicationController.firecloud_client.add_user_to_group(group_name, 'member', email)
+    rescue RestClient::ExceptionWithResponse => e
+      Rails.logger.error "Error adding user:#{id} to internal admin group - #{e.message}"
+      ErrorTracker.report_exception(e, self)
+    end
+  end
+
+  def remove_from_admin_group
+    return false if admin
+
+    admin_group = AdminConfiguration.find_or_create_admin_internal_group!
+    group_name = admin_group['groupName']
+    begin
+      ApplicationController.firecloud_client.delete_user_from_group(group_name, 'member', email)
+    rescue RestClient::ExceptionWithResponse => e
+      Rails.logger.error "Error removing user:#{id} to internal admin group - #{e.message}"
+      ErrorTracker.report_exception(e, self)
+    end
+  end
+
   # helper method to migrate study ownership & shares from old email to new email
   def self.migrate_studies_and_shares(existing_email, new_email)
     existing_user = self.find_by(email: existing_email)
@@ -470,5 +497,11 @@ class User
     puts "Migrating #{shares.size} shares from #{existing_email} to #{new_email}"
     shares.update_all(email: new_email)
     puts "Migration complete"
+  end
+
+  private
+
+  def manage_admin_group_membership
+    admin ? add_to_admin_group : remove_from_admin_group
   end
 end

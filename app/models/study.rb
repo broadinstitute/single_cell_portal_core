@@ -750,12 +750,12 @@ class Study
   validates_uniqueness_of :name, on: :update, message: ": %{value} has already been taken.  Please choose another name."
   validates_presence_of   :name, on: :update
   validate :prevent_firecloud_attribute_changes, on: :update
-  validates_presence_of :firecloud_project, :firecloud_workspace, :internal_workspace
   validates_uniqueness_of :external_identifier, allow_blank: true
   validates :cell_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate  :assign_accession, on: :create
   validate  :set_internal_workspace_name, on: :create
   validate  :create_internal_workspace, on: :create, unless: proc { |study| study.detached }
+  validates_presence_of :firecloud_project, :firecloud_workspace, :internal_workspace
 
   # callbacks
   before_validation :set_url_safe_name
@@ -1983,7 +1983,7 @@ class Study
       errors.add(requested_workspace, ": We encountered an error when attempting to set workspace permissions.  Please try again, or chose a different project.")
       return false
     else
-      Rails.logger.info "'#{name}' acls ok for user workspace #{workspace_attrs.join('/')}"
+      Rails.logger.info "'#{name}' acls ok for #{workspace_type} workspace #{workspace_attrs(workspace_type).join('/')}"
     end
     # assign bucket ID
     set_bucket_id(workspace['bucketName'], type: workspace_type)
@@ -1991,6 +1991,7 @@ class Study
 
   # handler to create a workspace for a study, either user-facing or internal
   def create_terra_workspace(type = :study)
+    set_internal_workspace_name if type == :internal
     ws_namespace, ws_name = workspace_attrs(type)
     workspace_client(ws_namespace).create_workspace(ws_namespace, ws_name)
   end
