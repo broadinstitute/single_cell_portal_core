@@ -240,7 +240,7 @@ class StudyTest < ActiveSupport::TestCase
     mock = Minitest::Mock.new
     owner_group = { groupEmail: 'sa-owner-group@firecloud.org' }.with_indifferent_access
     admin_group = { groupEmail: "#{FireCloudClient::ADMIN_INTERNAL_GROUP_NAME}@firecloud.org" }.with_indifferent_access
-    assign_workspace_mock!(mock, owner_group, @study.firecloud_workspace)
+    assign_workspace_mock!(mock, owner_group, @study.firecloud_workspace, skip_entities: true)
     AdminConfiguration.stub :find_or_create_ws_user_group!, owner_group do
       AdminConfiguration.stub :find_or_create_admin_internal_group!, admin_group do
         ApplicationController.stub :firecloud_client, mock do

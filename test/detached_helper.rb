@@ -71,21 +71,23 @@ def assign_workspace_mock!(mock, group, study_name, skip_entities: false)
   user_read_acl = { acl: { @user.email => { accessLevel: 'READER' } } }.with_indifferent_access
   admin_group = "#{FireCloudClient::ADMIN_INTERNAL_GROUP_NAME}@firecloud.org"
   admin_acl = { acl: { admin_group => { accessLevel: 'WRITER' } } }.with_indifferent_access
-  # user workspace mocks
+  # we don't actually know in what order acls will be assigned as workspace creation happens in parallel
+  # since Minitest cares about parameters for :expect, use a Set for the share/compute permissions to avoid
+  # MockExpectationError from unexpected arguments
+  permission_set = Set[true, false]
   mock.expect :create_workspace, workspace, [String, String, true]
-  mock.expect :create_workspace_acl, Hash, [String, String, true, false]
+  mock.expect :create_workspace_acl, Hash, [String, String, permission_set, permission_set]
   mock.expect :update_workspace_acl, owner_acl, [String, String, Hash]
   mock.expect :get_workspace_acl, owner_acl, [String, String]
-  mock.expect :create_workspace_acl, Hash, [String, String, true, false]
+  mock.expect :create_workspace_acl, Hash, [String, String, permission_set, permission_set]
   mock.expect :update_workspace_acl, owner_acl, [String, String, Hash]
   mock.expect :get_workspace_acl, owner_acl, [String, String]
-  mock.expect :create_workspace_acl, Hash, [String, String, true, false]
+  mock.expect :create_workspace_acl, Hash, [String, String, permission_set, permission_set]
   mock.expect :update_workspace_acl, admin_acl, [String, String, Hash]
-  mock.expect :create_workspace_acl, Hash, [String, String, true, true]
+  mock.expect :create_workspace_acl, Hash, [String, String, permission_set, permission_set]
   mock.expect :update_workspace_acl, compute_acl, [String, String, Hash]
   mock.expect :import_workspace_entities_file, true, [String, String, File] unless skip_entities
-  # internal workspace mocks
   mock.expect :create_workspace, workspace, [String, String, true]
-  mock.expect :create_workspace_acl, Hash, [String, String, false, false]
+  mock.expect :create_workspace_acl, Hash, [String, String, permission_set, permission_set]
   mock.expect :update_workspace_acl, user_read_acl, [String, String, Hash]
 end
