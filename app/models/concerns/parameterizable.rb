@@ -18,7 +18,7 @@ module Parameterizable
   # https://cloud.google.com/compute/docs/general-purpose-machines
   GCE_MACHINE_TYPES = %w[n2 n2d].map do |family|
     %w[standard highmem highcpu].map do |series|
-      [2, 4, 8, 16, 32, 64, 96].map do |cores|
+      [2, 4, 8, 16, 32, 48, 64, 80, 96].map do |cores|
         [family, series, cores].join('-')
       end
     end
