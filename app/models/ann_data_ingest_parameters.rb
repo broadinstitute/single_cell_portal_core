@@ -49,13 +49,15 @@ class AnnDataIngestParameters
   NON_ATTRIBUTE_PARAMS = %i[file_size machine_type].freeze
 
   # GCE machine types and file size ranges for handling fragment extraction
-  # produces a hash with entries like { 'n2-highmem-4' => 0..4.gigabytes }
-  EXTRACT_MACHINE_TYPES = [4, 8, 16, 32, 48, 64, 80, 96].map.with_index do |cores, index|
-    floor = index == 0 ? 0 : (cores / 2).gigabytes
-    limit = (cores * 8).gigabytes
+  # produces a hash with entries like { 'n2-highmem-4' => 0..32.gigabytes }
+  NUM_CORES = [4, 8, 16, 32, 48, 64, 80, 96].freeze
+  RAM_PER_CORE = NUM_CORES.map { |core| (core * 8).gigabytes }.freeze
+  EXTRACT_MACHINE_TYPES = NUM_CORES.map.with_index do |cores, index|
+    floor = index == 0 ? 0 : RAM_PER_CORE[index - 1]
+    limit = RAM_PER_CORE[index]
     # ranges that use '...' exclude the given end value.
     { "n2d-highmem-#{cores}" => floor...limit }
-  end.reduce({}, :merge)
+  end.reduce({}, :merge).freeze
 
   attr_accessor(*PARAM_DEFAULTS.keys)
 
