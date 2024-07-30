@@ -49,13 +49,15 @@ class AnnDataIngestParameters
   NON_ATTRIBUTE_PARAMS = %i[file_size machine_type].freeze
 
   # GCE machine types and file size ranges for handling fragment extraction
-  # produces a hash with entries like { 'n2-highmem-4' => 0..4.gigabytes }
-  EXTRACT_MACHINE_TYPES = [4, 8, 16, 32, 48, 64, 80, 96].map.with_index do |cores, index|
-    floor = index == 0 ? 0 : (cores / 2).gigabytes
-    limit = (cores * 8).gigabytes
-    # ranges that use '...' exclude the given end value.
+  # produces a hash with entries like { 'n2-highmem-4' => 0..25.gigabytes }
+  # adjust (core * n) to n=4 for faster scaling (ie. n2-highmem-4 for 0 to 17G)
+  NUM_CORES = [4, 8, 16, 32, 48, 64, 80, 96].freeze
+  RAM_PER_CORE = NUM_CORES.map { |core| (core * 6).gigabytes }.freeze
+  EXTRACT_MACHINE_TYPES = NUM_CORES.map.with_index do |cores, index|
+    floor = index == 0 ? 0 : RAM_PER_CORE[index - 1]
+    limit = index == NUM_CORES.count - 1 ? RAM_PER_CORE[index] * 2 : RAM_PER_CORE[index]
     { "n2d-highmem-#{cores}" => floor...limit }
-  end.reduce({}, :merge)
+  end.reduce({}, :merge).freeze
 
   attr_accessor(*PARAM_DEFAULTS.keys)
 
@@ -70,7 +72,9 @@ class AnnDataIngestParameters
     # machine_type default is declared here to allow for autoscaling with optional override
     # see https://ruby-doc.org/core-3.1.0/Range.html#method-i-3D-3D-3D for range detection doc
     if @machine_type.nil?
-      self.machine_type = EXTRACT_MACHINE_TYPES.detect { |_, mem_range| mem_range === file_size }&.first || 'n2d-highmem-4'
+      self.machine_type = EXTRACT_MACHINE_TYPES.detect do |_, mem_range|
+                            mem_range === file_size
+                          end&.first || 'n2d-highmem-4'
     end
   end
 
