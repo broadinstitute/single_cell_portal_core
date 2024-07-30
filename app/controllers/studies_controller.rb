@@ -261,7 +261,10 @@ class StudiesController < ApplicationController
         @study.update(firecloud_workspace: SecureRandom.uuid)
       else
         begin
-          ApplicationController.firecloud_client.delete_workspace(@study.firecloud_project, @study.firecloud_workspace)
+          Parallel.map([:study, :internal], in_threads: 2) do |workspace_type|
+            project, workspace = @study.workspace_attr(workspace_type)
+            ApplicationController.firecloud_client.delete_workspace(project, workspace)
+          end
         rescue => e
           ErrorTracker.report_exception(e, current_user, @study, params)
           MetricsService.report_error(e, request, current_user, @study)
@@ -271,16 +274,6 @@ class StudiesController < ApplicationController
                              "<br />No files or database records have been deleted.  Please try again later.  #{SCP_SUPPORT_EMAIL}" and return
         end
       end
-
-      # remove internal workspace in all cases
-      begin
-        ApplicationController.firecloud_client.delete_workspace(FireCloudClient::PORTAL_NAMESPACE, @study.internal_workspace)
-      rescue => e
-        ErrorTracker.report_exception(e, current_user, @study, params)
-        MetricsService.report_error(e, request, current_user, @study)
-        logger.error "Unable to delete internal workspace: #{@study.internal_workspace}; #{e.message}"
-      end
-
       # queue jobs to delete study caches & study itself
       CacheRemovalJob.new(@study.accession).delay(queue: :cache).perform
       DeleteQueueJob.new(@study).delay.perform

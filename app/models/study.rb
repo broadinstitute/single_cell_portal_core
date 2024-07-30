@@ -709,6 +709,7 @@ class Study
   # VALIDATIONS & CALLBACKS
   #
   ###
+  validate  :assign_accession, on: :create
 
   # custom validator since we need everything to pass in a specific order (otherwise we get orphaned FireCloud workspaces)
   validate :initialize_with_new_workspace, on: :create, if: Proc.new {|study| !study.use_existing_workspace && !study.detached}
@@ -752,9 +753,8 @@ class Study
   validate :prevent_firecloud_attribute_changes, on: :update
   validates_uniqueness_of :external_identifier, allow_blank: true
   validates :cell_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
-  validate  :assign_accession, on: :create
   validate  :set_internal_workspace_name, on: :create
-  validate  :create_internal_workspace, on: :create, unless: proc { |study| study.detached }
+  validate  :create_internal_workspace, on: :create, if: proc { |study| study.use_existing_workspace && !study.detached }
   validates_presence_of :firecloud_project, :firecloud_workspace, :internal_workspace
 
   # callbacks
@@ -1908,71 +1908,6 @@ class Study
     workspace
   end
 
-  private
-
-  ###
-  #
-  # SETTERS
-  #
-  ###
-
-  # sets a url-safe version of study name (for linking)
-  def set_url_safe_name
-    self.url_safe_name = self.name.downcase.gsub(/[^a-zA-Z0-9]+/, '-').chomp('-')
-  end
-
-  # set the FireCloud workspace name to be used when creating study
-  # will only set the first time, and will not set if user is initializing from an existing workspace
-  def set_firecloud_workspace_name
-    unless self.use_existing_workspace
-      self.firecloud_workspace = self.url_safe_name
-    end
-  end
-
-  # set the data directory to a random value to use as a temp location for uploads while parsing
-  # this is useful as study deletes will happen asynchronously, so while the study is marked for deletion we can allow
-  # other users to re-use the old name & url_safe_name
-  # will only set the first time
-  def set_data_dir
-    @dir_val = SecureRandom.hex(32)
-    while Study.where(data_dir: @dir_val).exists?
-      @dir_val = SecureRandom.hex(32)
-    end
-    self.data_dir = @dir_val
-  end
-
-  # set bucket ID after workspace creation
-  def set_bucket_id(bucket, type: :study)
-    case type
-    when :study
-      self.bucket_id = bucket
-    when :internal
-      self.internal_bucket_id = bucket
-    else
-      self.bucket_id = bucket
-    end
-    true
-  end
-
-  # set the internal workspace name
-  # will be called after study accession is assigned
-  # adds extra 5-character slug in test environment to avoid name collisions
-  def set_internal_workspace_name
-    if accession.present?
-      workspace = "#{accession}-#{Rails.env}-internal"
-      workspace += "-#{SecureRandom.alphanumeric(5)}" if Rails.env.test?
-      self.internal_workspace = workspace
-    else
-      errors.add(:internal_workspace, 'Unable to assign internal workspace, study accession not set')
-    end
-  end
-
-  ###
-  #
-  # CUSTOM VALIDATIONS
-  #
-  ###
-
   # create requested workspace type
   def create_and_validate_workspace(workspace_type)
     workspace = create_terra_workspace(workspace_type)
@@ -2047,6 +1982,71 @@ class Study
     client.update_workspace_acl(ws_namespace, ws_name, acl)
   end
 
+  private
+
+  ###
+  #
+  # SETTERS
+  #
+  ###
+
+  # sets a url-safe version of study name (for linking)
+  def set_url_safe_name
+    self.url_safe_name = self.name.downcase.gsub(/[^a-zA-Z0-9]+/, '-').chomp('-')
+  end
+
+  # set the FireCloud workspace name to be used when creating study
+  # will only set the first time, and will not set if user is initializing from an existing workspace
+  def set_firecloud_workspace_name
+    unless self.use_existing_workspace
+      self.firecloud_workspace = self.url_safe_name
+    end
+  end
+
+  # set the data directory to a random value to use as a temp location for uploads while parsing
+  # this is useful as study deletes will happen asynchronously, so while the study is marked for deletion we can allow
+  # other users to re-use the old name & url_safe_name
+  # will only set the first time
+  def set_data_dir
+    @dir_val = SecureRandom.hex(32)
+    while Study.where(data_dir: @dir_val).exists?
+      @dir_val = SecureRandom.hex(32)
+    end
+    self.data_dir = @dir_val
+  end
+
+  # set bucket ID after workspace creation
+  def set_bucket_id(bucket, type: :study)
+    case type
+    when :study
+      self.bucket_id = bucket
+    when :internal
+      self.internal_bucket_id = bucket
+    else
+      self.bucket_id = bucket
+    end
+    true
+  end
+
+  # set the internal workspace name
+  # will be called after study accession is assigned
+  # adds extra 5-character slug in test environment to avoid name collisions
+  def set_internal_workspace_name
+    if accession.present?
+      workspace = "#{accession}-#{Rails.env}-internal"
+      workspace += "-#{SecureRandom.alphanumeric(5)}" if Rails.env.test?
+      self.internal_workspace = workspace
+    else
+      errors.add(:internal_workspace, 'Unable to assign internal workspace, study accession not set')
+    end
+  end
+
+  ###
+  #
+  # CUSTOM VALIDATIONS
+  #
+  ###
+
   # automatically create associated cloud resources, such as Terra workspaces & buckets
   def initialize_with_new_workspace
     Rails.logger.info "Creating associated Terra workspaces for '#{name}'"
@@ -2057,22 +2057,30 @@ class Study
 
     unless self.errors.any?
       begin
-        create_and_validate_workspace(:study)
+        # create workspaces in parallel to reduce latency
+        Parallel.map([:study, :internal], in_threads: 2) do |workspace_type|
+          create_and_validate_workspace(workspace_type)
+        end
       rescue => e
         ErrorTracker.report_exception(e, user, self)
         # delete workspace on any fail as this amounts to a validation fail
         Rails.logger.info "Error creating Terra workspace: #{e.message}"
         # delete Terra workspace unless error is 409 Conflict (workspace already taken)
-        if e.message.include?("Workspace #{firecloud_project}/#{firecloud_workspace} already exists")
+        error_msgs = [
+          "Workspace #{firecloud_project}/#{firecloud_workspace} already exists",
+          "Workspace #{FireCloudClient::PORTAL_NAMESPACE}/#{internal_workspace} already exists"
+        ]
+        if e.message.include?(error_msgs.first)
           errors.add(:firecloud_workspace, ' - there is already an existing workspace using this name.  Please choose another name for your study.')
           errors.add(:name, ' - you must choose a different name for your study.')
           self.firecloud_workspace = nil
+        elsif e.message.include?(error_msgs.last)
+          errors.add(:internal_workspace, ' - there is already an internal workspace using this accession.  Please try again.')
         else
-          # clean up user workspace, if needed
-          client = workspace_client(firecloud_project)
-          if client.workspace_exists?(firecloud_project, firecloud_workspace)
-            client.delete_workspace(irecloud_project, firecloud_workspace)
-          end
+          # clean up workspaces, if needed
+          clean_up_workspaces
+          # remove StudyAccession entry to free it up for re-use since the study never fully created
+          StudyAccession.find_by(study_id: id, accession:)&.delete
           error_message = ApplicationController.firecloud_client.parse_error_message(e)
           errors.add(:firecloud_workspace, " creation failed: #{error_message}")
         end
@@ -2138,8 +2146,7 @@ class Study
       create_and_validate_workspace(:internal)
     rescue => e
       clean_up_workspaces
-      # remove StudyAccession entry to free it up for re-use
-      # this should ONLY ever be done here as an accession was just assigned but never used
+      # remove StudyAccession entry to free it up for re-use since the study never fully created
       StudyAccession.find_by(study_id: id, accession:)&.delete
       ErrorTracker.report_exception(e, user, self)
       # delete workspace on any fail as this amounts to a validation fail

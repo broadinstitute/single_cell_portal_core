@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'detached_helper'
 
 class StudyTest < ActiveSupport::TestCase
 
@@ -231,6 +232,27 @@ class StudyTest < ActiveSupport::TestCase
       assert @study.user_has_workspace_access?
       assert @study.billing_project_ok?
       user_client_mock.verify
+    end
+  end
+
+  # new test to cover workspace creation sub-methods
+  test 'should create workspace assign workspace acls' do
+    mock = Minitest::Mock.new
+    owner_group = { groupEmail: 'sa-owner-group@firecloud.org' }.with_indifferent_access
+    admin_group = { groupEmail: "#{FireCloudClient::ADMIN_INTERNAL_GROUP_NAME}@firecloud.org" }.with_indifferent_access
+    assign_workspace_mock!(mock, owner_group, @study.firecloud_workspace)
+    AdminConfiguration.stub :find_or_create_ws_user_group!, owner_group do
+      AdminConfiguration.stub :find_or_create_admin_internal_group!, admin_group do
+        ApplicationController.stub :firecloud_client, mock do
+          @study.stub :detached, false do
+            Parallel.map([:study, :internal], in_threads: 2) do |workspace_type|
+              @study.create_and_validate_workspace(workspace_type)
+            end
+            assert_not @study.errors.any?
+            mock.verify
+          end
+        end
+      end
     end
   end
 end

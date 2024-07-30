@@ -64,7 +64,7 @@ end
 
 # helper to mock all calls to Terra orchestration API when saving a new study & creating workspace
 # useful for when we don't want the study to be detached, but still want to save to the database
-def assign_workspace_mock!(mock, group, study_name)
+def assign_workspace_mock!(mock, group, study_name, skip_entities: false)
   workspace = { name: study_name, bucketName: SecureRandom.uuid }.with_indifferent_access
   owner_acl = { acl: { group[:groupEmail] => { accessLevel: 'OWNER' } } }.with_indifferent_access
   compute_acl = { acl: { @user.email => { accessLevel: 'WRITER', canCompute: true } } }.with_indifferent_access
@@ -75,17 +75,17 @@ def assign_workspace_mock!(mock, group, study_name)
   mock.expect :create_workspace, workspace, [String, String, true]
   mock.expect :create_workspace_acl, Hash, [String, String, true, false]
   mock.expect :update_workspace_acl, owner_acl, [String, String, Hash]
-  mock.expect :create_workspace_acl, Hash, [String, String, true, true]
   mock.expect :get_workspace_acl, owner_acl, [String, String]
-  mock.expect :update_workspace_acl, compute_acl, [String, String, Hash]
-  mock.expect :import_workspace_entities_file, true, [String, String, File]
-  # internal workspace mocks
-  mock.expect :create_workspace, workspace, [String, String, true]
   mock.expect :create_workspace_acl, Hash, [String, String, true, false]
   mock.expect :update_workspace_acl, owner_acl, [String, String, Hash]
   mock.expect :get_workspace_acl, owner_acl, [String, String]
   mock.expect :create_workspace_acl, Hash, [String, String, true, false]
   mock.expect :update_workspace_acl, admin_acl, [String, String, Hash]
+  mock.expect :create_workspace_acl, Hash, [String, String, true, true]
+  mock.expect :update_workspace_acl, compute_acl, [String, String, Hash]
+  mock.expect :import_workspace_entities_file, true, [String, String, File] unless skip_entities
+  # internal workspace mocks
+  mock.expect :create_workspace, workspace, [String, String, true]
   mock.expect :create_workspace_acl, Hash, [String, String, false, false]
   mock.expect :update_workspace_acl, user_read_acl, [String, String, Hash]
 end
