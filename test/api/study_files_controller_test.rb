@@ -274,12 +274,12 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
   test 'should not reset parse status on update when using bucket path' do
     study_file = FactoryBot.create(:cluster_file,
                                    name: 'clusterNew.txt',
-                                   study: @study,
-                                   remote_location: 'clusterNew.txt')
+                                   study: @study)
     description = 'This is an update'
     study_file_attributes = {
       study_file: {
-        description:
+        description:,
+        remote_location: 'clusterNew.txt'
       }
     }
     execute_http_request(:patch, api_v1_study_study_file_path(study_id: @study.id, id: study_file.id),
