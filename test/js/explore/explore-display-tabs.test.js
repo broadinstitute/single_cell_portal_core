@@ -30,7 +30,7 @@ import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import * as UserProvider from '~/providers/UserProvider'
 import ExploreDisplayTabs, {
-  getEnabledTabs, handleClusterSwitchForFiltering
+  getEnabledTabs, handleClusterSwitchForFiltering, getSubsampleThreshold
 } from 'components/explore/ExploreDisplayTabs'
 import ExploreDisplayPanelManager from '~/components/explore/ExploreDisplayPanelManager'
 import PlotTabs from 'components/explore/PlotTabs'
@@ -498,5 +498,34 @@ describe('explore tabs are activated based on study info and parameters', () => 
         ]
       })
     )
+  })
+
+  it('Loads correct subsampling threshold', async () => {
+    const subsampleExploreInfo = {
+      cluster: {
+        isSubsampled: true,
+        numPoints: 212345
+      }
+    }
+    const exploreInfo = {
+      cluster: {
+        isSubsampled: false,
+        numPoints: 212345
+      }
+    }
+    const exploreWithSubsample = {
+      cluster: 'foo',
+      subsample: 100000
+    }
+    const exploreWithoutSubsample = { cluster: 'foo'}
+
+    let subsampleThreshold = getSubsampleThreshold(exploreWithSubsample, subsampleExploreInfo)
+    expect(subsampleThreshold).toEqual(exploreWithSubsample.subsample)
+    subsampleThreshold = getSubsampleThreshold(exploreWithoutSubsample, subsampleExploreInfo)
+    expect(subsampleThreshold).toEqual(100000)
+    subsampleThreshold = getSubsampleThreshold(exploreWithSubsample, exploreInfo)
+    expect(subsampleThreshold).toBeNull()
+    subsampleThreshold = getSubsampleThreshold(exploreWithoutSubsample, exploreInfo)
+    expect(subsampleThreshold).toBeNull()
   })
 })

@@ -99,6 +99,14 @@ export function handleClusterSwitchForFiltering(cellFilteringSelection, newCellF
   }
 }
 
+/** get the appropriate subsampling value, accounting for number of points & subsampling status **/
+export function getSubsampleThreshold(exploreParams, exploreInfo) {
+  if (exploreInfo?.cluster && !exploreInfo.cluster.isSubsampled) {
+    return null
+  }
+  return exploreParams?.subsample || (exploreInfo?.cluster?.numPoints > 100_000 ? 100_000 : null)
+}
+
 /** wrapper function with error handling/state setting for retrieving cell facet data */
 function getCellFacetingData(cluster, annotation, setterFunctions, context, prevCellFaceting) {
   const [
@@ -122,7 +130,7 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
     const allAnnots = exploreInfo?.annotationList.annotations
     if (allAnnots && allAnnots.length > 0) {
       if (!prevCellFaceting?.isFullyLoaded) {
-        const subsample = exploreParams?.subsample || (exploreInfo?.cluster?.numPoints > 100_000 ? 100_000 : null)
+        const subsample = getSubsampleThreshold(exploreParams, exploreInfo)
         initCellFaceting(
           cluster, annotation, studyAccession, allAnnots, prevCellFaceting, subsample
         ).then(newCellFaceting => {
