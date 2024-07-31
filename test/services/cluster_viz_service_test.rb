@@ -122,6 +122,7 @@ class ClusterVizServiceTest < ActiveSupport::TestCase
                           cells: cells
                       })
     cluster = @study.cluster_groups.by_name(cluster_name)
+    cluster.update(subsampled: true)
     options = ClusterVizService.subsampling_options(cluster)
     assert_equal [1000], options
   end

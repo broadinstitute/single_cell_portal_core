@@ -67,7 +67,7 @@ class ClusterVizService
   # only options allowed are 1000, 10000, 20000, and 100000
   # will only provide options if subsampling has completed for a cluster
   def self.subsampling_options(cluster)
-    return [] if cluster.nil? || cluster.is_subsampling?
+    return [] if cluster.nil? || cluster.is_subsampling? || !cluster.subsampled
 
     ClusterGroup::SUBSAMPLE_THRESHOLDS.select { |sample| sample < cluster.points }
   end
