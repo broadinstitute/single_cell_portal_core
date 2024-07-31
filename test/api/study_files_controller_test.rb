@@ -270,4 +270,23 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
       assert_equal 'updated', fragment[:description]
     end
   end
+
+  test 'should not reset parse status on update when using bucket path' do
+    study_file = FactoryBot.create(:cluster_file,
+                                   name: 'clusterNew.txt',
+                                   study: @study,
+                                   remote_location: 'clusterNew.txt')
+    description = 'This is an update'
+    study_file_attributes = {
+      study_file: {
+        description:
+      }
+    }
+    execute_http_request(:patch, api_v1_study_study_file_path(study_id: @study.id, id: study_file.id),
+                         request_payload: study_file_attributes)
+    assert_response :success
+    study_file.reload
+    assert_equal description, study_file.description
+    assert study_file.parsed?
+  end
 end
