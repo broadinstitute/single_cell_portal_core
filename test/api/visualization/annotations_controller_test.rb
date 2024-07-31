@@ -191,14 +191,13 @@ class AnnotationsControllerTest < ActionDispatch::IntegrationTest
       {
         name: 'cell_type', type: 'group', scope: 'study', values: %w(big --Unspecified--),
         identifier: 'cell_type--group--study',
-        color_map: { '--Unspecified--' => '#e41a1c', big: '#377eb8' }.with_indifferent_access
+        color_map: { big: '#e41a1c', '--Unspecified--' => '#377eb8' }.with_indifferent_access
       },
       {
         name: 'nCount_RNA', type: 'numeric', scope: 'study', values: [],
         identifier: 'nCount_RNA--numeric--study'
       }
     ]
-    expected_annotations[2][:values][1] = '--Unspecified--'
     assert_equal expected_annotations, annotations
     assert_empty Api::V1::Visualization::AnnotationsController.get_facet_annotations(
       @basic_study, cluster, 'does-not-exist--group--study'

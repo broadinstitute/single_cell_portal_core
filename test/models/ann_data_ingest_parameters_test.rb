@@ -58,7 +58,7 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     cmd = '--ingest-anndata --anndata-file gs://bucket_id/test.h5ad --obsm-keys ["X_umap", "X_tsne"] --extract ' \
           '["cluster", "metadata", "processed_expression"]'
     assert_equal cmd, extraction.to_options_array.join(' ')
-    assert_equal 'n2d-highmem-16', extraction.machine_type
+    assert_equal 'n2d-highmem-32', extraction.machine_type
   end
 
   test 'should validate cluster params' do
@@ -98,8 +98,8 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
 
   test 'should set default machine type and allow override' do
     params = AnnDataIngestParameters.new(@extract_params)
-    assert_equal 'n2d-highmem-16', params.machine_type
-    new_machine = 'n2d-highmem-32'
+    assert_equal 'n2d-highmem-32', params.machine_type
+    new_machine = 'n2d-highmem-80'
     params.machine_type = new_machine
     assert_equal new_machine, params.machine_type
     assert params.valid?
