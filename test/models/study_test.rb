@@ -43,7 +43,7 @@ class StudyTest < ActiveSupport::TestCase
   end
 
   after(:all) do
-    Study.where(firecloud_workspace: 'bucket-read-check-test').delete_all
+    Study.where(:firecloud_workspace.in => %w[bucket-read-check-test add-internal-workspace-test]).delete_all
   end
 
   test 'should honor case in gene search within study' do
@@ -206,6 +206,11 @@ class StudyTest < ActiveSupport::TestCase
     assert @study.internal_workspace =~ /#{@study.accession}-test-internal/
   end
 
+  test 'should load google bucket name' do
+    assert_equal @study.bucket_id, @study.google_bucket_name(:study)
+    assert_equal @study.internal_bucket_id, @study.google_bucket_name(:internal)
+  end
+
   test 'should check user workspace and billing project access' do
     mock = Minitest::Mock.new
     acl = {
@@ -249,6 +254,46 @@ class StudyTest < ActiveSupport::TestCase
               @study.create_and_validate_workspace(workspace_type)
             end
             assert_not @study.errors.any?
+            mock.verify
+          end
+        end
+      end
+    end
+  end
+
+  test 'should create internal workspace for existing study' do
+    study = Study.create(name: 'Add Internal Workspace Test', detached: true, user: @user)
+    mock = Minitest::Mock.new
+    project = FireCloudClient::PORTAL_NAMESPACE
+    workspace = {
+      name: "#{study.accession}-test-internal-#{SecureRandom.alphanumeric(5)}",
+      bucketName: SecureRandom.uuid
+    }.with_indifferent_access
+    owner_email = 'sa-owner-group@firecloud.org'
+    owner_group = { groupEmail: owner_email }.with_indifferent_access
+    admin_email = "#{FireCloudClient::ADMIN_INTERNAL_GROUP_NAME}@firecloud.org"
+    admin_group = { groupEmail: admin_email }.with_indifferent_access
+    owner_acl = { acl: { owner_group[:groupEmail] => { accessLevel: 'OWNER' } } }.with_indifferent_access
+    user_read_acl = { acl: { @user.email => { accessLevel: 'READER' } } }.with_indifferent_access
+    admin_acl = { acl: { admin_group[:groupEmail] => { accessLevel: 'WRITER' } } }.with_indifferent_access
+    mock.expect :workspace_exists?, false, [project, String]
+    mock.expect :create_workspace, workspace, [project, String, true]
+    mock.expect :create_workspace_acl, owner_acl, [owner_email, 'OWNER', true, false]
+    mock.expect :update_workspace_acl, Hash, [project, String, owner_acl]
+    mock.expect :get_workspace_acl, owner_acl, [project, String]
+    mock.expect :create_workspace_acl, admin_acl, [admin_email, 'WRITER', true, false]
+    mock.expect :update_workspace_acl, Hash, [project, String, admin_acl]
+    mock.expect :create_workspace_acl, user_read_acl, [@user.email, 'READER', false, false]
+    mock.expect :update_workspace_acl, Hash, [project, String, user_read_acl]
+    mock.expect :check_bucket_read_access, true, [project, String]
+    AdminConfiguration.stub :find_or_create_ws_user_group!, owner_group do
+      AdminConfiguration.stub :find_or_create_admin_internal_group!, admin_group do
+        ApplicationController.stub :firecloud_client, mock do
+          study.stub :detached, false do
+            study.add_internal_workspace
+            assert study.valid?
+            assert study.internal_workspace.start_with?("#{study.accession}-test-internal")
+            assert_equal workspace[:bucketName], study.internal_bucket_id
             mock.verify
           end
         end

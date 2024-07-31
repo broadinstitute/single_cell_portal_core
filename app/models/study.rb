@@ -709,7 +709,7 @@ class Study
   # VALIDATIONS & CALLBACKS
   #
   ###
-  validate  :assign_accession, on: :create
+  validate :assign_accession, on: :create
 
   # custom validator since we need everything to pass in a specific order (otherwise we get orphaned FireCloud workspaces)
   validate :initialize_with_new_workspace, on: :create, if: Proc.new {|study| !study.use_existing_workspace && !study.detached}
