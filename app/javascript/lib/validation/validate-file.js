@@ -8,6 +8,7 @@ import { logFileValidation } from './log-validation'
 import { fetchBucketFile } from '~/lib/scp-api'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
+const noContentValidationFileTypes = ['Seurat', 'AnnData', 'Other', 'Documentation']
 
 /** take an array of [category, type, msg] issues, and format it */
 function formatIssues(issues) {
@@ -60,8 +61,6 @@ async function validateLocalFile(file, studyFile, allStudyFiles=[], allowedFileE
 
   let issuesObj
   let notesObj
-
-  const noContentValidationFileTypes = ['Seurat', 'AnnData', 'Other', 'Documentation']
 
   const studyFileType = studyFile.file_type
 
@@ -152,7 +151,8 @@ async function validateRemoteFile(
   const requestStart = performance.now()
   // special handling for AnnData to only read 100 bytes of file
   // since we're not validating, we're just determining if the file exists
-  const maxBytes = fileType === 'AnnData' ? 100 : MAX_SYNC_CSFV_BYTES
+  const maxBytes = noContentValidationFileTypes.includes(fileType) ? 100 : MAX_SYNC_CSFV_BYTES
+
   const response = await fetchBucketFile(bucketName, fileName, maxBytes)
   let fileInfo; let issues; let perfTime; let readRemoteTime
   if (response.ok) {
