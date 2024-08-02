@@ -87,15 +87,17 @@ function RawScatterPlot({
   function updateHiddenTraces(labels, wasShown, applyToAll=false) {
     let newHiddenTraces
 
+    // Handle labels like:
+    // central memory CD4-positive, alpha-beta T cell
     const safeHiddenTraces = hiddenTraces.map(ht => ht.replaceAll(',', '-'))
-    const safeLabels = labels.replaceAll(',', '-')
 
     if (applyToAll) {
       // Handle multi-filter interaction
+      const safeLabels = labels.map(label => label.replaceAll(',', '-'))
       newHiddenTraces = (wasShown ? safeLabels : [])
     } else {
       // Handle single-filter interaction
-      const safeLabel = safeLabels
+      const safeLabel = labels.replaceAll(',', '-')
       newHiddenTraces = [...safeHiddenTraces]
 
       if (wasShown && !newHiddenTraces?.includes(safeLabel)) {
