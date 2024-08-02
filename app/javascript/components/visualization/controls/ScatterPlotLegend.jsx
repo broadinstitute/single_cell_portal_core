@@ -36,7 +36,8 @@ function LegendEntry({
     entry = `${label} (${numPoints} points, ρ = ${correlation})`
   }
 
-  const isShown = hiddenTraces.includes(label)
+  const safeLabel = label.replaceAll(',', '-')
+  const isShown = hiddenTraces.includes(safeLabel)
 
   const iconStyle = { backgroundColor: iconColor }
   const shownClass = (isShown ? '' : 'shown')

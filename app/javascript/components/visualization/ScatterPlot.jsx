@@ -84,21 +84,25 @@ function RawScatterPlot({
    * labeled cells (i.e., the corresponding Plotly.js trace) in the scatter
    * plot.
    */
-  function updateHiddenTraces(labels, value, applyToAll=false) {
+  function updateHiddenTraces(labels, wasShown, applyToAll=false) {
     let newHiddenTraces
+
+    const safeHiddenTraces = hiddenTraces.map(ht => ht.replaceAll(',', '-'))
+    const safeLabels = labels.replaceAll(',', '-')
+
     if (applyToAll) {
       // Handle multi-filter interaction
-      newHiddenTraces = (value ? labels : [])
+      newHiddenTraces = (wasShown ? safeLabels : [])
     } else {
       // Handle single-filter interaction
-      const label = labels
-      newHiddenTraces = [...hiddenTraces]
+      const safeLabel = safeLabels
+      newHiddenTraces = [...safeHiddenTraces]
 
-      if (value && !newHiddenTraces?.includes(label)) {
-        newHiddenTraces.push(label)
+      if (wasShown && !newHiddenTraces?.includes(safeLabel)) {
+        newHiddenTraces.push(safeLabel)
       }
-      if (!value) {
-        _remove(newHiddenTraces, thisLabel => {return thisLabel === label})
+      if (!wasShown) {
+        _remove(newHiddenTraces, thisLabel => {return thisLabel === safeLabel})
       }
     }
 
