@@ -408,13 +408,13 @@ class IngestJob
     when :ingest_cell_metadata
       study.set_cell_count
       set_study_default_options
+      set_anndata_file_info if study_file.is_anndata?
       launch_subsample_jobs
       # update search facets if convention data
       if study_file.use_metadata_convention
         SearchFacet.delay.update_all_facet_filters
       end
       launch_differential_expression_jobs unless study_file.is_anndata?
-      set_anndata_file_info if study_file.is_anndata?
       create_cell_name_indexes
     when :ingest_expression
       set_anndata_file_info if study_file.is_anndata?
@@ -423,9 +423,9 @@ class IngestJob
     when :ingest_cluster
       set_cluster_point_count
       set_study_default_options
+      set_anndata_file_info if study_file.is_anndata?
       launch_subsample_jobs
       launch_differential_expression_jobs unless study_file.is_anndata?
-      set_anndata_file_info if study_file.is_anndata?
       create_cell_name_indexes
     when :ingest_subsample
       set_subsampling_flags
@@ -593,10 +593,8 @@ class IngestJob
         end
       end
     when 'AnnData'
-      # TODO (SCP-5140): subsampling logic works but MongoDB throws index uniqueness violations due to same study_file_id
-      # return if study_file.is_anndata?
-
       file_info = study_file.ann_data_file_info
+      file_info.reload # clear cached state
       if file_info.has_clusters? && file_info.has_metadata?
         file_identifier = "#{study_file.bucket_location}:#{study_file.id}"
         file_info.fragments_by_type(:cluster).each do |fragment|
