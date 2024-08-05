@@ -1412,8 +1412,8 @@ class Study
   end
 
   # return the cells found in a single expression matrix
-  def expression_matrix_cells(study_file)
-    filename = study_file.is_viz_anndata? ? 'h5ad_frag.matrix.processed.mtx.gz' : study_file.upload_file_name
+  def expression_matrix_cells(study_file, matrix_type: 'processed')
+    filename = study_file.is_viz_anndata? ? "h5ad_frag.matrix.#{matrix_type}.mtx.gz" : study_file.upload_file_name
     query = {
       name: "#{filename} Cells", cluster_name: filename, array_type: 'cells', linear_data_type: 'Study',
       linear_data_id: self.id, study_file_id: study_file.id, cluster_group_id: nil, subsample_annotation: nil,
