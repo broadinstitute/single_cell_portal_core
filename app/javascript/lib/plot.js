@@ -224,7 +224,7 @@ PlotUtils.splitTraceByAnnotationArray = function(trace, hasZvalues) {
 
 PlotUtils.updateTraceVisibility = function(traces, hiddenTraces) {
   traces.forEach(trace => {
-    trace.visible = hiddenTraces.includes(trace.name) ? 'legendonly' : true
+    trace.visible = hiddenTraces.includes(safenLabels(trace.name)) ? 'legendonly' : true
   })
 }
 

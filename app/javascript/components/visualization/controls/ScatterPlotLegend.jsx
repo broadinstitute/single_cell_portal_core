@@ -45,7 +45,7 @@ function LegendEntry({
   /** Toggle state of this legend filter, and accordingly upstream */
   function toggleSelection(event) {
     const wasShown = !isShown
-    updateHiddenTraces(safeLabel, wasShown)
+    updateHiddenTraces(label, wasShown)
 
     const legendEntry = {
       label, numPoints, numLabels, wasShown, iconColor,
