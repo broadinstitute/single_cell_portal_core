@@ -8,6 +8,7 @@ import ExifReader from 'exifreader'
 import { fetchCluster, updateStudyFile, fetchBucketFile } from '~/lib/scp-api'
 import { logScatterPlot } from '~/lib/scp-api-metrics'
 import { log } from '~/lib/metrics-api'
+import { safenLabels } from '~/lib/plot'
 import { useUpdateEffect } from '~/hooks/useUpdate'
 import PlotTitle, { getTitleTexts } from './PlotTitle'
 
@@ -89,15 +90,15 @@ function RawScatterPlot({
 
     // Handle labels like:
     // central memory CD4-positive, alpha-beta T cell
-    const safeHiddenTraces = hiddenTraces.map(ht => ht.replaceAll(',', '-'))
+    const safeHiddenTraces = safenLabels(hiddenTraces)
 
     if (applyToAll) {
       // Handle multi-filter interaction
-      const safeLabels = labels.map(label => label.replaceAll(',', '-'))
+      const safeLabels = safenLabels(labels)
       newHiddenTraces = (wasShown ? safeLabels : [])
     } else {
       // Handle single-filter interaction
-      const safeLabel = labels.replaceAll(',', '-')
+      const safeLabel = safenLabels(labels)
       newHiddenTraces = [...safeHiddenTraces]
 
       if (wasShown && !newHiddenTraces?.includes(safeLabel)) {
