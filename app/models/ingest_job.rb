@@ -594,7 +594,7 @@ class IngestJob
       end
     when 'AnnData'
       # TODO (SCP-5140): subsampling logic works but MongoDB throws index uniqueness violations due to same study_file_id
-      return if study_file.is_anndata?
+      # return if study_file.is_anndata?
 
       file_info = study_file.ann_data_file_info
       if file_info.has_clusters? && file_info.has_metadata?
