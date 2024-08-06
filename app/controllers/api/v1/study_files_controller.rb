@@ -438,7 +438,8 @@ module Api
       end
 
       def complete_upload_process(study_file, parse_on_upload)
-        study_file.update!(status: 'uploaded', parse_status: 'unparsed') # set status to uploaded on full create
+        # set status to uploaded on full create, unless file is parsed and this is just an update
+        study_file.update!(status: 'uploaded', parse_status: 'unparsed') unless study_file.parsed?
         if parse_on_upload
           if study_file.parseable?
             persist_on_fail = study_file.remote_location.present?
