@@ -46,7 +46,7 @@ function GenomeView({
   useEffect(() => {
     if (trackFileList && trackFileList.tracks.length && isVisible) {
       // show profile warning from non-existent token due to incomplete Terra registration
-      if (!userHasTerraProfile()) {
+      if (!userHasTerraProfile() && !window.SCP.isPublic) {
         setShowProfileWarning(true)
       }
 
