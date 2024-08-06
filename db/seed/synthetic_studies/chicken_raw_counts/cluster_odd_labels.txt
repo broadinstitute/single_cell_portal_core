@@ -1,0 +1,42 @@
+NAME	X	Y	odd_labels
+TYPE	numeric	numeric	group
+AA	-2	3	has,comma
+AB	-3	2	has,comma
+AC	-3	3	has,comma
+AD	-4	4	has,comma
+AE	-5	5	has,comma
+AF	-4	3	has,comma
+AG	-2	2	has,comma
+AH	-2	1	has,comma
+AI	-1	2	has,2,commas
+AJ	-1	1	has,2,commas
+BA	1	2	has,2,commas
+BB	2	2	has,2,commas
+BC	2	3	.=/[:]–><';,()+ all less common supported
+BD	3	4	.=/[:]–><';,()+ all less common supported
+BE	5	5	.=/[:]–><';,()+ all less common supported
+BF	4	4	.=/[:]–><';,()+ all less common supported
+BG	3	3	.=/[:]–><';,()+ all less common supported
+BH	3	2	.=/[:]–><';,()+ all less common supported
+BI	1	1	.=/[:]–><';,()+ all less common supported
+BJ	2	1	.=/[:]–><';,()+ all less common supported
+CA	-2	-3	central memory CD4-positive, alpha-beta T cell
+CB	-1	-1	central memory CD4-positive, alpha-beta T cell
+CC	-2	-2	central memory CD4-positive, alpha-beta T cell
+CD	-3	-4	central memory CD4-positive, alpha-beta T cell
+CE	-5	-5	central memory CD4-positive, alpha-beta T cell
+CF	-4	-4	central memory CD4-positive, alpha-beta T cell
+CG	-3	-3	central memory CD4-positive, alpha-beta T cell
+CH	-3	-2	central memory CD4-positive, alpha-beta T cell
+CI	-1	-2	central memory CD4-positive, alpha-beta T cell
+CJ	-2	-1	central memory CD4-positive, alpha-beta T cell
+DA	3	-2	central memory CD4-positive, alpha-beta T cell
+DB	2	-3	central memory CD4-positive, alpha-beta T cell
+DC	2	-2	GW7_this_should_appear_sorted_before_GW10_PR2084
+DD	4	-3	GW10_this_should_appear_sorted_after_GW7_PR2084
+DE	5	-5	GW10_this_should_appear_sorted_after_GW7_PR2084
+DF	4	-4	GW10_this_should_appear_sorted_after_GW7_PR2084
+DG	3	-3	GW7_this_should_appear_sorted_before_GW10_PR2084
+DH	1	-1	GW7_this_should_appear_sorted_before_GW10_PR2084
+DI	1	-2	GW7_this_should_appear_sorted_before_GW10_PR2084
+DJ	2	-1	GW7_this_should_appear_sorted_before_GW10_PR2084
