@@ -31,14 +31,11 @@
     }
 
     async function parseHdf5File(fileOrUrl) {
+
+      const idType = typeof fileOrUrl === 'string' ? 'url' : 'file'
       const openParams = {}
-      if (typeof fileOrUrl === 'string') {
-        window.hdf5File = await openH5File({url: fileOrUrl})
-      } else {
-        window.hdf5File = await openH5File({file: fileOrUrl})
-      }
-      console.log('hdf5File')
-      console.log(hdf5File)
+      openParams[idType] = fileOrUrl
+      window.hdf5File = await openH5File(openParams)
 
       const headers = await getAnnotationHeaders('obs', hdf5File)
       const headerRow = headers.join('\t')
@@ -52,6 +49,7 @@
     const fileInput = document.querySelector('input')
     fileInput.addEventListener('change', async (event) => {
       const file = event.target.files[0];
+      parseHdf5File(file)
     });
   </script>
 </html>
