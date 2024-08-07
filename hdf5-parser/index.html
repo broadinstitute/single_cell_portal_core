@@ -1,0 +1,50 @@
+<html>
+  <head>
+    <script src="https://raw.githubusercontent.com/jrobinso/hdf5-indexed-reader/v0.5.6/dist/hdf5-indexed-reader.esm.js" type="module"></script>
+  </head>
+  <body>
+    <span style="float:left">
+    Pick an HDF5 file
+    <input type="file" id="datafile" style="display:inline"/>
+    Any pauses in this spinning image mean the UI is frozen.
+    </span>
+      <img src="dna-spinning.gif" style="float: left; display: inline;"/>
+  </body>
+  <script type="module">
+
+
+    async function getAnnotationHeaders(key, hdf5File) {
+      const t0 = Date.now()
+      const obsGroup = await hdf5File.get(key)
+      const rawObsValues = await obsGroup.values
+      const headers = []
+      const obsValues = await Promise.all(rawObsValues)
+      obsValues.forEach(obsValue => {
+          const annotationName = obsValue.name.split(`/${key}/`)[1]
+          // console.log('annotationName')
+          console.log(annotationName)
+          headers.push(annotationName)
+      })
+      console.log(headers)
+      console.log((Date.now() - t0)/1000)
+      return headers
+    }
+
+    import {openH5File} from './hdf5-indexed-reader.js'
+    // Usage example: https://github.com/jrobinso/hdf5-indexed-reader#example
+    const fileInput = document.querySelector('input')
+    fileInput.addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      window.hdf5File = await openH5File({file})
+      console.log('hdf5File')
+      console.log(hdf5File)
+
+      const headers = await getAnnotationHeaders('obs', hdf5File)
+      const headerRow = headers.join('\t')
+
+      const obsmHeaders = await getAnnotationHeaders('obsm', hdf5File)
+
+      const xHeaders = await getAnnotationHeaders('X', hdf5File)
+    });
+  </script>
+</html>
