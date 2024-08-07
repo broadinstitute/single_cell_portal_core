@@ -184,4 +184,21 @@ class StudyTest < ActiveSupport::TestCase
       end
     end
   end
+
+  test 'should load expression matrix cells by file type' do
+    genes = %w[farsa phex]
+    cells = %w[cellA cellB cellC]
+    expression_input = genes.index_with(cells.map {|c| [c, rand.floor(3)]})
+    dense_matrix = FactoryBot.create(:expression_file, study: @study, name: 'dense_matrix.tsv', expression_input:)
+    ann_data_file = FactoryBot.create(:ann_data_file,
+                                      study: @study,
+                                      name: 'test.h5ad',
+                                      reference_file: false,
+                                      cell_input: cells,
+                                      expression_input:)
+    assert_equal cells, @study.expression_matrix_cells(dense_matrix)
+    assert_equal cells, @study.expression_matrix_cells(ann_data_file)
+    assert_equal cells, @study.expression_matrix_cells(ann_data_file, matrix_type: 'processed')
+    assert_empty @study.expression_matrix_cells(ann_data_file, matrix_type: 'raw')
+  end
 end
