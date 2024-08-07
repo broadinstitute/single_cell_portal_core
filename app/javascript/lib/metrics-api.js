@@ -408,6 +408,12 @@ export function log(name, props = {}) {
   } else {
     isDifferentialExpressionEnabled = !!window.SCP?.isDifferentialExpressionEnabled
   }
+  let isPublic // track whether study is publicly visible
+  if ('isPublic' in props) {
+    isPublic = props.isPublic
+  } else {
+    isPublic = !!window.SCP?.isPublic
+  }
 
   // track A/B feature test assignments on all events
   const abTests = window.SCP?.abTests || []
@@ -420,6 +426,7 @@ export function log(name, props = {}) {
     logger: 'app-frontend',
     scpVersion: version,
     isDifferentialExpressionEnabled,
+    isPublic,
     isServiceWorkerCacheEnabled,
     abTests
   }, getDefaultProperties())

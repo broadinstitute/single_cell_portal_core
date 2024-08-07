@@ -31,6 +31,7 @@ function RoutableExploreTab({ studyAccession }) {
     // set window.SCP.isDifferentialExpressionEnabled so that we can track differential expression visibility globally
     if (window.SCP && !window.SCP.isTest) {
       window.SCP.isDifferentialExpressionEnabled = exploreResponse.differentialExpression.length > 0
+      window.SCP.isPublic = exploreResponse.isPublic
     }
     // after the explore info is received, fetch the user-specific study data, but do it
     // after a timeout to ensure the visualization data gets fetched first
