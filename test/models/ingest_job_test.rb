@@ -604,20 +604,24 @@ class IngestJobTest < ActiveSupport::TestCase
   end
 
   test 'should handle ingest failure by action' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'IngestJob Fail Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
     # test subsampling fail logic
     cluster_file = FactoryBot.create(
-      :cluster_file, name: 'UMAP.txt', study: @basic_study,
+      :cluster_file, name: 'UMAP.txt', study:,
       cell_input: { x: [1, 2, 3], y: [1, 2, 3], cells: %w[cellA cellB cellC] }
     )
-    cluster = @basic_study.cluster_groups.by_name('UMAP.txt')
+    cluster = study.cluster_groups.by_name('UMAP.txt')
     cluster.update(is_subsampling: true)
     job = IngestJob.new(
-      pipeline_name: SecureRandom.uuid, study: @basic_study, study_file: cluster_file, user: @user,
+      pipeline_name: SecureRandom.uuid, study:, study_file: cluster_file, user: @user,
       action: :ingest_subsample
     )
     job.handle_ingest_failure
     cluster_file.reload
-    @basic_study.reload
+    study.reload
     cluster.reload
     assert cluster_file.parsed?
     assert cluster.present?
@@ -626,26 +630,26 @@ class IngestJobTest < ActiveSupport::TestCase
 
     # normal fail
     failed_file = FactoryBot.create(
-      :cluster_file, name: 'tSNE.txt', study: @basic_study,
+      :cluster_file, name: 'tSNE.txt', study:,
       cell_input: { x: [1, 2, 3], y: [1, 2, 3], cells: %w[cellA cellB cellC] }
     )
     pipeline_name = SecureRandom.uuid
     failed_job = IngestJob.new(
-      pipeline_name: , study: @basic_study, study_file: failed_file, user: @user, action: :ingest_cluster
+      pipeline_name: , study:, study_file: failed_file, user: @user, action: :ingest_cluster
     )
     error_log = "parse_logs/#{failed_file.id}/user_log.txt"
     mock = Minitest::Mock.new
     mock.expect :execute_gcloud_method, true,
-                [:copy_workspace_file, 0, @basic_study.bucket_id, failed_file.bucket_location, failed_file.parse_fail_bucket_location]
-    mock.expect :delete_workspace_file, true, [@basic_study.bucket_id, failed_file.bucket_location]
-    mock.expect :workspace_file_exists?, true, [@basic_study.bucket_id, error_log]
+                [:copy_workspace_file, 0, study.bucket_id, failed_file.bucket_location, failed_file.parse_fail_bucket_location]
+    mock.expect :delete_workspace_file, true, [study.bucket_id, failed_file.bucket_location]
+    mock.expect :workspace_file_exists?, true, [study.bucket_id, error_log]
     mock.expect(
       :execute_gcloud_method,
       StringIO.new("error"),
-      [:read_workspace_file, 0, @basic_study.bucket_id, error_log]
+      [:read_workspace_file, 0, study.bucket_id, error_log]
     )
     mock.expect :execute_gcloud_method, true,
-                [:delete_workspace_file, 0, @basic_study.bucket_id, error_log]
+                [:delete_workspace_file, 0, study.bucket_id, error_log]
     metadata = {
       pipeline: {
         actions: [
