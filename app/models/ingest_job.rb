@@ -374,25 +374,39 @@ class IngestJob
       log_error_messages
       log_to_mixpanel # log before queuing file for deletion to preserve properties
       # don't delete files or notify users if this is a 'special action', like DE or image pipeline jobs
-      subject = "Error: #{study_file.file_type} file: '#{study_file.upload_file_name}' parse has failed"
-      unless special_action?
-        create_study_file_copy
-        study_file.update(parse_status: 'failed')
-        DeleteQueueJob.new(study_file).delay.perform
-        unless persist_on_fail
-          ApplicationController.firecloud_client.delete_workspace_file(study.bucket_id, study_file.bucket_location)
-          study_file.bundled_files.each do |bundled_file|
-            ApplicationController.firecloud_client.delete_workspace_file(study.bucket_id, bundled_file.bucket_location)
-          end
-        end
-        user_email_content = generate_error_email_body
-        SingleCellMailer.notify_user_parse_fail(user.email, subject, user_email_content, study).deliver_now
-      end
+      handle_ingest_failure unless special_action?
       admin_email_content = generate_error_email_body(email_type: :dev)
       SingleCellMailer.notify_admin_parse_fail(user.email, subject, admin_email_content).deliver_now
     else
       Rails.logger.info "IngestJob poller: #{pipeline_name} is not done; queuing check for #{run_at}"
       delay(run_at: run_at).poll_for_completion
+    end
+  end
+
+  # sub-handler for when ingest jobs fail
+  # will automatically clean up data and notify user
+  # in case of subsampling, only subsampled data cleanup is run and all other data is left in place
+  # this reduces churn for study owners as full-resolution data is still valid
+  def handle_ingest_failure
+    if action.to_sym == :ingest_subsample
+      study_file.update(parse_status: 'parsed') # reset parse flag
+      cluster_name = cluster_name_by_file_type
+      cluster = ClusterGroup.find_by(name: cluster_name, study:, study_file:)
+      cluster.find_subsampled_data_arrays.delete_all
+      cluster.update(subsampled: false, is_subsampling: false)
+    else
+      create_study_file_copy
+      study_file.update(parse_status: 'failed')
+      DeleteQueueJob.new(study_file).delay.perform
+      unless persist_on_fail
+        ApplicationController.firecloud_client.delete_workspace_file(study.bucket_id, study_file.bucket_location)
+        study_file.bundled_files.each do |bundled_file|
+          ApplicationController.firecloud_client.delete_workspace_file(study.bucket_id, bundled_file.bucket_location)
+        end
+      end
+      subject = "Error: #{study_file.file_type} file: '#{study_file.upload_file_name}' parse has failed"
+      user_email_content = generate_error_email_body
+      SingleCellMailer.notify_user_parse_fail(user.email, subject, user_email_content, study).deliver_now
     end
   end
 
