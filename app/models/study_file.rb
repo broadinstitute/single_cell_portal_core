@@ -639,6 +639,7 @@ class StudyFile
   before_validation :upload_from_remote_location,
                     on: :create,
                     if: proc { |f| f.remote_location.present? && f.upload_file_name.blank? }
+  before_validation :strip_unsafe_characters_from_fields
   before_save         :sanitize_name
   after_save          :set_cluster_group_ranges, :set_options_by_file_type
   after_update        :handle_clustering_fragment_updates
@@ -651,9 +652,6 @@ class StudyFile
   validates_format_of :human_fastq_url, with: URI.regexp,
                       message: 'is not a valid URL', if: proc { |f| f.human_data }
   validate :validate_name_by_file_type
-
-  validate :strip_unsafe_characters_from_fields
-
   validates_format_of :generation, with: /\A\d+\z/, if: proc { |f| f.generation.present? }
 
   validates_inclusion_of :file_type, in: STUDY_FILE_TYPES, unless: proc { |f| f.file_type == 'DELETE' }
@@ -1457,9 +1455,9 @@ class StudyFile
 
   # xss injection protection
   def strip_unsafe_characters_from_fields
-    [:description, :x_axis_label, :y_axis_label, :z_axis_label].each do |attribute_name|
-      sanitized_value = RequestUtils::SANITIZER.sanitize(send(attribute_name), tags: %w[script])
-      self.send("#{attribute_name}=", sanitized_value)
+    [:description, :x_axis_label, :y_axis_label, :z_axis_label].each do |attr|
+      sanitized_value = RequestUtils::SANITIZER.sanitize(send(attr), tags: %w[script])
+      send("#{attr}=", sanitized_value)
     end
   end
 

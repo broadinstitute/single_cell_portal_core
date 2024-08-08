@@ -47,12 +47,12 @@ module Api
         end
 
         # properly sanitize filename before calling send_file
-        # since we cannot include ActiveStorage with Mongoid this is manually implemented
-        # from https://github.com/rails/rails/blob/main/activestorage/app/models/active_storage/filename.rb#L59
         def sanitized_filename(filename)
-          filename.encode(
-            Encoding::UTF_8, invalid: :replace, undef: :replace, replace: "�"
-          ).strip.tr("\u{202E}%$|:;/\t\r\n\\", "-")
+          begin
+            ::ActiveStorage::Filename.new(filename).sanitized
+          rescue NameError
+            filename
+          end
         end
       end
     end
