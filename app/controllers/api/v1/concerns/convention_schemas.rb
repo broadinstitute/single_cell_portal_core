@@ -47,12 +47,11 @@ module Api
         end
 
         # properly sanitize filename before calling send_file
+        # from https://api.rubyonrails.org/classes/ActiveStorage/Filename.html#method-i-sanitized
         def sanitized_filename(filename)
-          begin
-            ::ActiveStorage::Filename.new(filename).sanitized
-          rescue NameError
-            filename
-          end
+          filename.encode(
+            Encoding::UTF_8, invalid: :replace, undef: :replace, replace: "�"
+          ).strip.tr("\u{202E}%$|:;/\t\r\n\\", "-")
         end
       end
     end
