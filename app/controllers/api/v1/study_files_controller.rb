@@ -704,8 +704,8 @@ module Api
 
       # manual check to see if user supplied taxon/assembly by name
       def set_taxon_and_assembly_by_name(param_list)
-        species_name = param_list[:species]
-        assembly_name = param_list[:assembly]
+        species_name = Regexp.new(Regexp.escape(param_list[:species].to_s), 'i')
+        assembly_name = Regexp.new(Regexp.escape(param_list[:assembly].to_s), 'i')
         matching_taxon = Taxon.find_by(common_name: /#{species_name}/i)
         matching_assembly = GenomeAssembly.find_by(name: /#{assembly_name}/i)
         if matching_taxon.present? && !species_name.blank?

@@ -89,10 +89,11 @@ class AnalysisConfigurationsController < ApplicationController
 
   # load options for associated model
   def load_associated_model
-    associated_model = params[:model]
-    model_attributes = {}
+    model = self.class.to_constant params[:model]
+    render json: {} and return if model.nil?
+
     begin
-      model = associated_model.constantize
+      model_attributes = {}
       AnalysisParameter::ASSOCIATED_MODEL_ATTR_NAMES.each do |constant_name|
         model_attributes[constant_name.downcase.to_s] = model.const_defined?(constant_name) ? model.const_get(constant_name) : []
       end
@@ -104,11 +105,11 @@ class AnalysisConfigurationsController < ApplicationController
   end
 
   def load_associated_model_filter_types
-    associated_model = params[:model]
-    model_filters = {}
+    model = self.class.to_constant params[:model]
+    render json: [] and return if model.nil?
+
     begin
-      model = associated_model.constantize
-      model_filters= []
+      model_filters = []
       if model.const_defined?(:ANALYSIS_PARAMETER_FILTERS)
         model_filters = model.const_get(:ANALYSIS_PARAMETER_FILTERS).keys
       end
@@ -120,11 +121,11 @@ class AnalysisConfigurationsController < ApplicationController
   end
 
   def load_associated_model_filter_values
-    associated_model = params[:model]
+    model = self.class.to_constant params[:model]
     filter_attr = params[:filter]
-    model_filters = {}
+    render json: [] and return if model.nil?
+
     begin
-      model = associated_model.constantize
       model_filters = []
       if model.const_defined?(:ANALYSIS_PARAMETER_FILTERS)
         model_filters = model.const_get(:ANALYSIS_PARAMETER_FILTERS)[filter_attr]
@@ -146,47 +147,61 @@ class AnalysisConfigurationsController < ApplicationController
     @study = Study.find(params[:study][:id])
   end
 
+  def self.to_constant(model)
+    begin
+      model.constantize if Object.const_defined?(model)
+    rescue NameError
+      nil
+    end
+  end
+
+  def self.available_models
+    models = Dir.glob("app/models/**/*.rb").reject { |m| m.include? 'concerns' }
+    models.map {|m| m.gsub(/app\/models\//, '').chomp('.rb').camelize }
+  end
+
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_analysis_configuration
-      @analysis_configuration = AnalysisConfiguration.find(params[:id])
-    end
 
-    def set_analysis_parameter
-      @analysis_parameter = AnalysisParameter.find_by(id: params[:analysis_parameter_id], analysis_configuration_id: params[:id])
-    end
+  # Use callbacks to share common setup or constraints between actions.
+  def set_analysis_configuration
+    @analysis_configuration = AnalysisConfiguration.find(params[:id])
+  end
 
-    # Never trust parameters from the scary internet, only allow the permit list through.
-    def analysis_configuration_params
-      params.require(:analysis_configuration).permit(:namespace, :name, :snapshot, :configuration_namespace,
-                                                     :configuration_name, :configuration_snapshot, :user_id, :description,
-                                                     external_resources_attributes: [:id, :_destroy, :title, :description,
-                                                                                     :url, :publication_url])
-    end
+  def set_analysis_parameter
+    @analysis_parameter = AnalysisParameter.find_by(id: params[:analysis_parameter_id], analysis_configuration_id: params[:id])
+  end
 
-    def analysis_parameter_params
-      params.require(:analysis_parameter).permit(:id, :data_type, :call_name, :parameter_type, :parameter_name,
-                                                 :parameter_value, :optional, :associated_model, :associated_model_method,
-                                                 :associated_model_display_method, :association_filter_attribute,
-                                                 :association_filter_value, :output_file_type, :description, :visible,
-                                                 :apply_to_all, :is_reference_bundle,
-                                                 analysis_parameter_filters_attributes: [:id, :attribute_name, :value,
-                                                                                         :multiple, :_destroy, :multiple_values => []],
-                                                 analysis_output_associations_attributes: [:id, :attribute_name,
-                                                                                           :attribute_value, :association_source,
-                                                                                           :association_method, :association_data_type,
-                                                                                           :_destroy])
-    end
+  # Never trust parameters from the scary internet, only allow the permit list through.
+  def analysis_configuration_params
+    params.require(:analysis_configuration).permit(:namespace, :name, :snapshot, :configuration_namespace,
+                                                   :configuration_name, :configuration_snapshot, :user_id, :description,
+                                                   external_resources_attributes: [:id, :_destroy, :title, :description,
+                                                                                   :url, :publication_url])
+  end
 
-    def check_firecloud_status
-      unless ApplicationController.firecloud_client.services_available?(FireCloudClient::RAWLS_SERVICE)
-        alert = 'The Methods Repository is temporarily unavailable, so we cannot complete your request.  Please try again later.'
-        respond_to do |format|
-          format.js {render js: "$('.modal').modal('hide'); alert('#{alert}')" and return}
-          format.html {redirect_to merge_default_redirect_params(studies_path, scpbr: params[:scpbr]),
-                                   alert: alert and return}
-          format.json {head 503}
-        end
+  def analysis_parameter_params
+    params.require(:analysis_parameter).permit(:id, :data_type, :call_name, :parameter_type, :parameter_name,
+                                               :parameter_value, :optional, :associated_model, :associated_model_method,
+                                               :associated_model_display_method, :association_filter_attribute,
+                                               :association_filter_value, :output_file_type, :description, :visible,
+                                               :apply_to_all, :is_reference_bundle,
+                                               analysis_parameter_filters_attributes: [:id, :attribute_name, :value,
+                                                                                       :multiple, :_destroy, :multiple_values => []],
+                                               analysis_output_associations_attributes: [:id, :attribute_name,
+                                                                                         :attribute_value, :association_source,
+                                                                                         :association_method, :association_data_type,
+                                                                                         :_destroy])
+  end
+
+  def check_firecloud_status
+    unless ApplicationController.firecloud_client.services_available?(FireCloudClient::RAWLS_SERVICE)
+      alert = 'The Methods Repository is temporarily unavailable, so we cannot complete your request.  Please try again later.'
+      respond_to do |format|
+        format.js {render js: "$('.modal').modal('hide'); alert('#{alert}')" and return}
+        format.html {redirect_to merge_default_redirect_params(studies_path, scpbr: params[:scpbr]),
+                                 alert: alert and return}
+        format.json {head 503}
       end
     end
+  end
 end

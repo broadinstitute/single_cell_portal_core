@@ -126,7 +126,7 @@
               const curlExec = isWindows ? 'curl.exe' : 'curl'
               const accession = "<%= @study.accession %>"
               const curlSecureFlag = "<%= Rails.env.development? ? '-k' : '' %>"
-              const matcher = /root-dir/
+              const matcher = /root-dir/g
               const downloadObjectName = downloadObject.match(matcher) ? downloadObject.replace(matcher, '%2F') : downloadObject
               // Gets a curl configuration ("cfg.txt") containing signed
               // URLs and output names for all files in the download object.

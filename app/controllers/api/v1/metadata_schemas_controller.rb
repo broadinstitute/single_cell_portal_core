@@ -65,19 +65,8 @@ module Api
       end
 
       def load_schema
-        # set path to requested schema file
-        project_name = params[:project_name]
-        schema_format = params[:schema_format]
-        schema_version = params[:version]
-        schema_filename = "#{project_name}_schema.#{schema_format}"
-        schema_pathname = SCHEMAS_BASE_DIR + project_name
-        if schema_version != 'latest'
-          schema_pathname += "snapshot/#{params[:version]}"
-        end
-        schema_pathname += schema_filename
-
         # determine response type
-        case schema_format
+        case params[:schema_format]
         when 'json'
           response_type = 'application/json'
         when 'tsv'
@@ -86,8 +75,9 @@ module Api
           response_type = 'application/json'
         end
 
-        if File.exist?(schema_pathname)
-          send_file schema_pathname, type: response_type, filename: schema_filename
+        schema_info = validate_schema_params(params[:project_name], params[:version], params[:schema_format])
+        if schema_info.present?
+          send_file schema_info[:path], type: response_type, filename: schema_info[:filename]
         else
           head 404 and return
         end

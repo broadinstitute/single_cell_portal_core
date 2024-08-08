@@ -27,6 +27,24 @@ module Api
           # e.g. get_latest_schema_version('does_not_exist') == nil
           versions&.delete_if {|version| version == 'latest'}&.first
         end
+
+        # take user params and determine if requested schema file exists
+        def validate_schema_params(project, version, schema_format)
+          schemas = get_available_schemas
+          projects = schemas.keys
+          return nil unless projects.include? project
+
+          versions = schemas[project]
+          return nil unless versions.include? version
+
+          return nil unless %w[json tsv].include? schema_format
+
+          schema_filename = "#{project}_schema.#{schema_format}"
+          schema_pathname = SCHEMAS_BASE_DIR + project
+          schema_pathname += "snapshot/#{version}" if version != 'latest'
+
+          { path: "#{schema_pathname}/#{schema_filename}", filename: schema_filename }
+        end
       end
     end
   end

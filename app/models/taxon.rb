@@ -143,9 +143,6 @@ class Taxon
     if tempfile_upload.is_a?(ActionDispatch::Http::UploadedFile)
       file = File.open(tempfile_upload.tempfile.path)
       original_filename = tempfile_upload.original_filename
-    elsif tempfile_upload.is_a?(Pathname)
-      file = File.open(tempfile_upload)
-      original_filename = tempfile_upload.basename.to_s
     elsif tempfile_upload.is_a?(File)
       file = tempfile_upload
       original_filename = file.path.split('/').last

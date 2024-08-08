@@ -652,18 +652,7 @@ class StudyFile
                       message: 'is not a valid URL', if: proc { |f| f.human_data }
   validate :validate_name_by_file_type
 
-  validates_format_of :description, with: ValidationTools::NO_SCRIPT_TAGS,
-                      message: ValidationTools::NO_SCRIPT_TAGS_ERROR, allow_blank: true
-
-  validates_format_of :x_axis_label, with: ValidationTools::NO_SCRIPT_TAGS,
-                      message: ValidationTools::NO_SCRIPT_TAGS_ERROR,
-                      allow_blank: true
-  validates_format_of :y_axis_label, with: ValidationTools::NO_SCRIPT_TAGS,
-                      message: ValidationTools::NO_SCRIPT_TAGS_ERROR,
-                      allow_blank: true
-  validates_format_of :z_axis_label, with: ValidationTools::NO_SCRIPT_TAGS,
-                      message: ValidationTools::NO_SCRIPT_TAGS_ERROR,
-                      allow_blank: true
+  validate :strip_unsafe_characters_from_fields
 
   validates_format_of :generation, with: /\A\d+\z/, if: proc { |f| f.generation.present? }
 
@@ -1463,6 +1452,14 @@ class StudyFile
     end
     if self.name !~ regex
       errors.add(:name, error)
+    end
+  end
+
+  # xss injection protection
+  def strip_unsafe_characters_from_fields
+    [:description, :x_axis_label, :y_axis_label, :z_axis_label].each do |attribute_name|
+      sanitized_value = RequestUtils::SANITIZER.sanitize(send(attribute_name), tags: %w[script])
+      self.send("#{attribute_name}=", sanitized_value)
     end
   end
 
