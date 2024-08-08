@@ -16,9 +16,11 @@ import {
 } from './expression-matrices-validation'
 import {
   getParsedHeaderLines, parseLine, ParseException,
-  validateUniqueCellNamesWithinFile, validateMetadataLabelMatches, validateGroupColumnCounts, timeOutCSFV
+  validateUniqueCellNamesWithinFile, validateMetadataLabelMatches,
+  validateGroupColumnCounts, timeOutCSFV, validateUnique
 } from './shared-validation'
 import { parseDifferentialExpressionFile } from './validate-differential-expression'
+import { parseAnnDataFile } from './validate-anndata'
 
 // from lib/assets/metadata_schemas/alexandria_convention_schema.json
 // (which in turn is from scp-ingest-pipeline/schemas)
@@ -50,37 +52,6 @@ const MAX_GZIP_FILESIZE = 50 * oneMiB
 /** File extensions / suffixes that indicate content must be gzipped */
 const EXTENSIONS_MUST_GZIP = ['gz', 'bam', 'tbi']
 
-/**
- * Verify headers are unique and not empty
- */
-function validateUnique(headers) {
-  // eslint-disable-next-line max-len
-  // Mirrors https://github.com/broadinstitute/scp-ingest-pipeline/blob/0b6289dd91f877e5921a871680602d776271217f/ingest/annotations.py#L233
-  const issues = []
-  const uniques = new Set(headers)
-
-  // Are headers unique?
-  if (uniques.size !== headers.length) {
-    const seen = new Set()
-    const duplicates = new Set()
-    headers.forEach(header => {
-      if (seen.has(header)) {duplicates.add(header)}
-      seen.add(header)
-    })
-
-    const dupString = [...duplicates].join(', ')
-    const msg = `Duplicate header names are not allowed: ${dupString}`
-    issues.push(['error', 'format:cap:unique', msg])
-  }
-
-  // Are all headers non-empty?
-  if (uniques.has('')) {
-    const msg = 'Headers cannot contain empty values'
-    issues.push(['error', 'format:cap:no-empty', msg])
-  }
-
-  return issues
-}
 
 /**
  * Helper function to verify first pair of headers is NAME or TYPE
@@ -346,7 +317,7 @@ function prettyAndOr(stringArray, operator) {
 */
 export async function validateGzipEncoding(file, fileType) {
   // skip check on any file type not included in CSFV
-  if (UNVALIDATED_TYPES.includes(fileType)) {
+  if (UNVALIDATED_TYPES.includes(fileType) || fileType === 'AnnData') {
     return false
   }
 
@@ -409,6 +380,7 @@ async function parseFile(file, fileType, fileOptions={}, sizeProps={}) {
     fileInfo.isGzipped = await validateGzipEncoding(file, fileType)
     // if the file is compressed or we can't figure out the compression, don't try to parse further
     const isFileFragment = file.size > sizeProps?.fileSizeTotal // likely a partial download from a GCP bucket
+
     if (
       !CSFV_VALIDATED_TYPES.includes(fileType) ||
       fileInfo.isGzipped && (isFileFragment || file.size >= MAX_GZIP_FILESIZE)
@@ -430,7 +402,11 @@ async function parseFile(file, fileType, fileOptions={}, sizeProps={}) {
       'Differential Expression': parseDifferentialExpressionFile
     }
 
-    if (parseFunctions[fileType]) {
+    if (fileType === 'AnnData') {
+      const { issues } = await parseAnnDataFile(file)
+      console.log('issues')
+      console.log(issues)
+    } else if (parseFunctions[fileType]) {
       let ignoreLastLine = false
       if (sizeProps?.fetchedCompleteFile === false) {
         ignoreLastLine = true

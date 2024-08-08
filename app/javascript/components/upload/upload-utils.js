@@ -5,7 +5,7 @@ export const PARSEABLE_TYPES = ['Cluster', 'Coordinate Labels', 'Expression Matr
   '10X Genes File', '10X Barcodes File', 'Gene List', 'Metadata', 'Analysis Output', 'AnnData',
   'Differential Expression']
 // file types to ignore in CSFV context (still validated server-side)
-export const UNVALIDATED_TYPES = ['AnnData', 'Documentation', 'Other']
+export const UNVALIDATED_TYPES = ['Documentation', 'Other']
 export const CSFV_VALIDATED_TYPES = PARSEABLE_TYPES.filter(ft => !UNVALIDATED_TYPES.includes(ft))
 
 const EXPRESSION_INFO_TYPES = ['Expression Matrix', 'MM Coordinate Matrix']

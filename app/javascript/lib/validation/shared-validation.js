@@ -194,6 +194,38 @@ export function validateGroupColumnCounts(headers, line, isLastLine, dataObj) {
 }
 
 /**
+ * Verify headers are unique and not empty
+ */
+export function validateUnique(headers) {
+  // eslint-disable-next-line max-len
+  // Mirrors https://github.com/broadinstitute/scp-ingest-pipeline/blob/0b6289dd91f877e5921a871680602d776271217f/ingest/annotations.py#L233
+  const issues = []
+  const uniques = new Set(headers)
+
+  // Are headers unique?
+  if (uniques.size !== headers.length) {
+    const seen = new Set()
+    const duplicates = new Set()
+    headers.forEach(header => {
+      if (seen.has(header)) {duplicates.add(header)}
+      seen.add(header)
+    })
+
+    const dupString = [...duplicates].join(', ')
+    const msg = `Duplicate header names are not allowed: ${dupString}`
+    issues.push(['error', 'format:cap:unique', msg])
+  }
+
+  // Are all headers non-empty?
+  if (uniques.has('')) {
+    const msg = 'Headers cannot contain empty values'
+    issues.push(['error', 'format:cap:no-empty', msg])
+  }
+
+  return issues
+}
+
+/**
  * Timeout the CSFV if taking longer than 10 seconds
  *
  */
