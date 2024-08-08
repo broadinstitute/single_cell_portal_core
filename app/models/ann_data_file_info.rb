@@ -172,6 +172,10 @@ class AnnDataFileInfo
       data_type = fragment[:data_type].to_sym
       fragment.each_pair do |key, value|
         sanitized_fragment[key] = value if DATA_FRAGMENT_PARAMS[data_type].include?(key.to_sym)
+        if key.to_sym == :description
+          safe_description = ::RequestUtils::SANITIZER.sanitize(value, tags: %w[script])
+          sanitized_fragment[key] = safe_description
+        end
       end
       sanitized_fragments << sanitized_fragment
     end

@@ -7,6 +7,7 @@ class StudyDetail
   field :full_description, type: String, default: ''
 
   after_save :set_study_description_text
+  before_save :remove_unsafe_tags
 
   def plain_text_description
     ActionController::Base.helpers.strip_tags(self.full_description)
@@ -21,5 +22,9 @@ class StudyDetail
     study_object = Study.find(self.study_id)
     study_object.description = self.plain_text_description
     study_object.save!
+  end
+
+  def remove_unsafe_tags
+    self.full_description = RequestUtils::SANITIZER.sanitize(full_description, tags: %w[script iframe]).strip
   end
 end

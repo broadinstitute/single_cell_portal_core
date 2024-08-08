@@ -58,7 +58,8 @@
       // TODO (SCP-2451): Remove monkey patching of fetch
       var originalFetch = window.fetch;
       window.fetch = function () {
-        if (arguments[0].includes('https://www.googleapis.com')) {
+        const fetchUrl = new URL(arguments[0])
+        if (fetchUrl.host === 'www.googleapis.com') {
           var myHeaders = new Headers({
             'Authorization': 'Bearer ' + window.SCP.readOnlyToken
           });

@@ -237,4 +237,12 @@ class StudyFileTest < ActiveSupport::TestCase
       mock.verify
     end
   end
+
+  test 'should remove unsafe tags from description' do
+    @expression_matrix.update(
+      description: 'This is fine <script>alert("this is not");</script><iframe src="https://www.evil-site.com"></iframe>'
+    )
+    @expression_matrix.reload
+    assert_equal 'This is fine', @expression_matrix.description
+  end
 end

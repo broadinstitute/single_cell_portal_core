@@ -26,7 +26,7 @@ class UserAnnotationsController < ApplicationController
 
   def find_annotation
     @user_annotations = UserAnnotation.viewable(current_user).select do |annotation|
-      annotation.name =~ /#{params[:annotation_name]}/i
+      annotation.name =~ Regexp.new(Regexp.escape(params[:annotation_name]), 'i')
     end.paginate(page: params[:page], per_page: 25)
 
     render action: :index

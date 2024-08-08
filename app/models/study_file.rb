@@ -639,6 +639,7 @@ class StudyFile
   before_validation :upload_from_remote_location,
                     on: :create,
                     if: proc { |f| f.remote_location.present? && f.upload_file_name.blank? }
+  before_save         :remove_unsafe_tags
   before_save         :sanitize_name
   after_save          :set_cluster_group_ranges, :set_options_by_file_type
   after_update        :handle_clustering_fragment_updates
@@ -651,20 +652,6 @@ class StudyFile
   validates_format_of :human_fastq_url, with: URI.regexp,
                       message: 'is not a valid URL', if: proc { |f| f.human_data }
   validate :validate_name_by_file_type
-
-  validates_format_of :description, with: ValidationTools::NO_SCRIPT_TAGS,
-                      message: ValidationTools::NO_SCRIPT_TAGS_ERROR, allow_blank: true
-
-  validates_format_of :x_axis_label, with: ValidationTools::NO_SCRIPT_TAGS,
-                      message: ValidationTools::NO_SCRIPT_TAGS_ERROR,
-                      allow_blank: true
-  validates_format_of :y_axis_label, with: ValidationTools::NO_SCRIPT_TAGS,
-                      message: ValidationTools::NO_SCRIPT_TAGS_ERROR,
-                      allow_blank: true
-  validates_format_of :z_axis_label, with: ValidationTools::NO_SCRIPT_TAGS,
-                      message: ValidationTools::NO_SCRIPT_TAGS_ERROR,
-                      allow_blank: true
-
   validates_format_of :generation, with: /\A\d+\z/, if: proc { |f| f.generation.present? }
 
   validates_inclusion_of :file_type, in: STUDY_FILE_TYPES, unless: proc { |f| f.file_type == 'DELETE' }
@@ -1463,6 +1450,15 @@ class StudyFile
     end
     if self.name !~ regex
       errors.add(:name, error)
+    end
+  end
+
+  # xss injection protection
+  def remove_unsafe_tags
+    [:description, :x_axis_label, :y_axis_label, :z_axis_label].each do |attr|
+      sanitized_value = RequestUtils::SANITIZER.sanitize(send(attr).to_s, tags: %w[script iframe]).strip
+      # rescue is to guard against case where parent study is updated while BSON document has been changed
+      send("#{attr}=", sanitized_value) rescue FrozenError
     end
   end
 
