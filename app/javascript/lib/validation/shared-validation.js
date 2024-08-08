@@ -217,7 +217,6 @@ export function validateUnique(headers) {
   // Mirrors https://github.com/broadinstitute/scp-ingest-pipeline/blob/0b6289dd91f877e5921a871680602d776271217f/ingest/annotations.py#L233
   const issues = []
   const uniques = new Set(headers)
-  console.log(uniques)
 
   // Are headers unique?
   if (uniques.size !== headers.length) {
