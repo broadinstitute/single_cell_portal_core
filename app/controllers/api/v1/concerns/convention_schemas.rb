@@ -39,11 +39,20 @@ module Api
 
           return nil unless %w[json tsv].include? schema_format
 
-          schema_filename = "#{project}_schema.#{schema_format}"
+          schema_filename = sanitized_filename("#{project}_schema.#{schema_format}")
           schema_pathname = SCHEMAS_BASE_DIR + project
           schema_pathname += "snapshot/#{version}" if version != 'latest'
 
           { path: "#{schema_pathname}/#{schema_filename}", filename: schema_filename }
+        end
+
+        # properly sanitize filename before calling send_file
+        # since we cannot include ActiveStorage with Mongoid this is manually implemented
+        # from https://github.com/rails/rails/blob/main/activestorage/app/models/active_storage/filename.rb#L59
+        def sanitized_filename(filename)
+          filename.encode(
+            Encoding::UTF_8, invalid: :replace, undef: :replace, replace: "�"
+          ).strip.tr("\u{202E}%$|:;/\t\r\n\\", "-")
         end
       end
     end
