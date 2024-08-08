@@ -184,4 +184,14 @@ class StudyTest < ActiveSupport::TestCase
       end
     end
   end
+
+  test 'should remove unsafe tags from description' do
+    @study.build_study_detail if @study.study_detail.nil?
+    @study.study_detail.update(
+      full_description: 'This is fine <script>alert("this is not");</script><iframe src="https://www.evil-site.com"></iframe>'
+    )
+    @study.reload
+    assert_equal 'This is fine', @study.full_description
+    assert_equal 'This is fine', @study.description
+  end
 end

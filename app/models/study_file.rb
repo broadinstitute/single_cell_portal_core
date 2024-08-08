@@ -639,7 +639,7 @@ class StudyFile
   before_validation :upload_from_remote_location,
                     on: :create,
                     if: proc { |f| f.remote_location.present? && f.upload_file_name.blank? }
-  before_validation :strip_unsafe_characters_from_fields
+  before_save         :remove_unsafe_tags
   before_save         :sanitize_name
   after_save          :set_cluster_group_ranges, :set_options_by_file_type
   after_update        :handle_clustering_fragment_updates
@@ -1454,10 +1454,11 @@ class StudyFile
   end
 
   # xss injection protection
-  def strip_unsafe_characters_from_fields
+  def remove_unsafe_tags
     [:description, :x_axis_label, :y_axis_label, :z_axis_label].each do |attr|
-      sanitized_value = RequestUtils::SANITIZER.sanitize(send(attr), tags: %w[script])
-      send("#{attr}=", sanitized_value)
+      sanitized_value = RequestUtils::SANITIZER.sanitize(send(attr).to_s, tags: %w[script iframe]).strip
+      # rescue is to guard against case where parent study is updated while BSON document has been changed
+      send("#{attr}=", sanitized_value) rescue FrozenError
     end
   end
 

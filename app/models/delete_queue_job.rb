@@ -79,7 +79,7 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
         delete_differential_expression_results(study:, study_file: object)
         delete_parsed_data(object.id, study.id, CellMetadatum, DataArray)
         delete_cell_index_arrays(study)
-        study.update(cell_count: 0)
+        study.set_cell_count
         reset_default_annotation(study:)
       when 'AnnData'
         unless object.is_reference_anndata?

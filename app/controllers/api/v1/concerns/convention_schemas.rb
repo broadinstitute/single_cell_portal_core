@@ -44,7 +44,7 @@ module Api
           schema_pathname += "snapshot/#{version}" if version != 'latest'
 
           {
-            path: sanitize("#{schema_pathname}/#{schema_filename}"),
+            path: "#{schema_pathname}/#{schema_filename}",
             filename: sanitize(schema_filename)
           }
         end
