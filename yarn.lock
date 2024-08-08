@@ -2148,6 +2148,11 @@
   resolved "https://registry.npmjs.org/@sinclair/typebox/-/typebox-0.27.8.tgz"
   integrity sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==
 
+"@single-cell-portal/hdf5-indexed-reader@0.5.6":
+  version "0.5.6"
+  resolved "https://registry.yarnpkg.com/@single-cell-portal/hdf5-indexed-reader/-/hdf5-indexed-reader-0.5.6.tgz#c99ae7436b88530a6dfb854e8aafdf96c67c90a0"
+  integrity sha512-2+XSdcbglGZYJv/lWmBCJ0OpVhrYbKLei5K50Y0WT92EfqOes4rTtn7iF4XYwfuWmjFXn+9zCFfHMDPzXfh1RQ==
+
 "@single-cell-portal/igv@2.16.0-alpha.4":
   version "2.16.0-alpha.4"
   resolved "https://registry.npmjs.org/@single-cell-portal/igv/-/igv-2.16.0-alpha.4.tgz"
