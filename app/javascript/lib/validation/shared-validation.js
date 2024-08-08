@@ -2,6 +2,22 @@
 * @fileoverview Functions used in multiple file types validation
 */
 
+// from lib/assets/metadata_schemas/alexandria_convention_schema.json
+// (which in turn is from scp-ingest-pipeline/schemas)
+export const REQUIRED_CONVENTION_COLUMNS = [
+  'biosample_id',
+  'disease',
+  'disease__ontology_label',
+  'donor_id',
+  'library_preparation_protocol',
+  'library_preparation_protocol__ontology_label',
+  'organ',
+  'organ__ontology_label',
+  'sex',
+  'species',
+  'species__ontology_label'
+]
+
 /**
  * ParseException can be thrown when we encounter an error that prevents us from parsing the file further
  */
@@ -201,6 +217,7 @@ export function validateUnique(headers) {
   // Mirrors https://github.com/broadinstitute/scp-ingest-pipeline/blob/0b6289dd91f877e5921a871680602d776271217f/ingest/annotations.py#L233
   const issues = []
   const uniques = new Set(headers)
+  console.log(uniques)
 
   // Are headers unique?
   if (uniques.size !== headers.length) {
@@ -222,6 +239,23 @@ export function validateUnique(headers) {
     issues.push(['error', 'format:cap:no-empty', msg])
   }
 
+  return issues
+}
+
+/** Verifies metadata file has all required columns */
+export function validateRequiredMetadataColumns(parsedHeaders) {
+  const issues = []
+  const firstLine = parsedHeaders[0]
+  const missingCols = []
+  REQUIRED_CONVENTION_COLUMNS.forEach(colName => {
+    if (!firstLine.includes(colName)) {
+      missingCols.push(colName)
+    }
+  })
+  if (missingCols.length) {
+    const msg = `File is missing required columns ${missingCols.join(', ')}`
+    issues.push(['error', 'format:cap:metadata-missing-column', msg])
+  }
   return issues
 }
 

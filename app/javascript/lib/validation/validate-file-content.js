@@ -22,22 +22,6 @@ import {
 import { parseDifferentialExpressionFile } from './validate-differential-expression'
 import { parseAnnDataFile } from './validate-anndata'
 
-// from lib/assets/metadata_schemas/alexandria_convention_schema.json
-// (which in turn is from scp-ingest-pipeline/schemas)
-export const REQUIRED_CONVENTION_COLUMNS = [
-  'biosample_id',
-  'disease',
-  'disease__ontology_label',
-  'donor_id',
-  'library_preparation_protocol',
-  'library_preparation_protocol__ontology_label',
-  'organ',
-  'organ__ontology_label',
-  'sex',
-  'species',
-  'species__ontology_label'
-]
-
 
 /**
  * Gzip decompression requires reading the whole file, given the current
@@ -204,23 +188,6 @@ function validateNoMetadataCoordinates(headers) {
     issues.push(['error', 'format:cap:metadata-no-coordinates', msg])
   }
 
-  return issues
-}
-
-/** Verifies metadata file has all required columns */
-function validateRequiredMetadataColumns(parsedHeaders) {
-  const issues = []
-  const firstLine = parsedHeaders[0]
-  const missingCols = []
-  REQUIRED_CONVENTION_COLUMNS.forEach(colName => {
-    if (!firstLine.includes(colName)) {
-      missingCols.push(colName)
-    }
-  })
-  if (missingCols.length) {
-    const msg = `File is missing required columns ${missingCols.join(', ')}`
-    issues.push(['error', 'format:cap:metadata-missing-column', msg])
-  }
   return issues
 }
 

@@ -1,6 +1,6 @@
 import {openH5File} from '@single-cell-portal/hdf5-indexed-reader'
 
-import { validateUnique } from './shared-validation'
+import { validateUnique, validateRequiredMetadataColumns } from './shared-validation'
 
 /** Get annotation headers for a key (e.g. obs) from an HDF5 file */
 async function getAnnotationHeaders(key, hdf5File) {
@@ -13,7 +13,6 @@ async function getAnnotationHeaders(key, hdf5File) {
     console.log(annotationName)
     headers.push(annotationName)
   })
-  console.log(headers)
   return headers
 }
 
@@ -28,7 +27,6 @@ async function getAnnDataHeaders(file) {
   const hdf5File = await openH5File(openParams)
 
   const headers = await getAnnotationHeaders('obs', hdf5File)
-  // const headerRow = headers.join('\t')
 
   // const obsmHeaders = await getAnnotationHeaders('obsm', hdf5File)
   // const xHeaders = await getAnnotationHeaders('X', hdf5File)
@@ -37,14 +35,14 @@ async function getAnnDataHeaders(file) {
 
 /** Parse AnnData file, and return an array of issues, along with file parsing info */
 export async function parseAnnDataFile(file) {
-  console.log('in parseAnnDataFile')
-  const { headers } = await getAnnDataHeaders(file)
-  console.log('headers')
-  console.log(headers)
+  const headers = await getAnnDataHeaders(file)
 
-  let issues = validateUnique(headers)
+  let issues = []
 
-  console.log('issues')
-  console.log(issues)
+  issues = issues.concat(
+    validateUnique(headers),
+    validateRequiredMetadataColumns(headers)
+  )
+
   return { issues }
 }
