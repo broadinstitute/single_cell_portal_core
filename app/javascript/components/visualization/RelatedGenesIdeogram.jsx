@@ -38,6 +38,16 @@ function onClickAnnot(annot) {
   ideogram.SCP.searchGenes([annot.name])
 }
 
+function getPathwayGenes() {
+  const dataNodes = Array.from(document.querySelectorAll('#ideo-pathway-container g.DataNode'))
+  const geneNodes = dataNodes.filter(dataNode => Array.from(dataNode.classList).some(cls => cls.startsWith('Ensembl_ENS')))
+  const genes = geneNodes.map(node => node.querySelector('text').textContent)
+  const ranks = ideogram.geneCache.interestingNames
+  const rankedGenes = genes.filter(gene => ranks.includes(gene)).sort((a, b) => ranks.indexOf(a) - ranks.indexOf(b))
+  // TODO: Ensure highlighted genes are among dotplot genes
+  const dotplotGenes = rankedGenes.slice(0, 50)
+}
+
 /**
  * Reports if current genome assembly has chromosome length data
  *
