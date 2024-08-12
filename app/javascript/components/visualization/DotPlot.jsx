@@ -180,7 +180,73 @@ function patchServiceWorkerCache() {
   }
 }
 
-/** renders a morpheus powered dotPlot for the given URL paths and annotation
+/**
+ * Get mean, percent, and color per gene, by annotation label
+ *
+ * For scRNA-seq:
+ * - Mean: average expression value
+ * - Percent: percent of cells expressing
+ * - Color: hex value for color of scaled mean expression: blue low, purple medium, red high
+ */
+function getDotPlotMetrics(dotPlot) {
+  const metrics = {}
+
+  const colorScheme = dotPlot.getColorScheme()
+
+  const dataset = dotPlot.dataset
+  const labels = dataset.columnMetadata.vectors[0].array
+  const genes = dataset.rowMetadata.vectors[0].array
+
+  labels.forEach((label, labelIndex) => {
+    metrics[label] = {}
+    genes.forEach((gene, geneIndex) => {
+      const mean = dataset.getValue(geneIndex, labelIndex, 0)
+      const percent = dataset.getValue(geneIndex, labelIndex, 0)
+      const color = colorScheme.getColor(geneIndex, labelIndex, mean)
+      metrics[label][gene] = {mean, percent, color}
+    })
+  })
+
+  return metrics
+}
+
+/** Render undisplayed Morpheus dot plot, to get metrics for pathway diagram */
+export async function renderBackgroundDotPlot(
+  studyAccession, genes=[], cluster, annotation={},
+  subsample, annotationValues
+) {
+  const graphId = 'background-dot-plot'
+  const relatedGenesIdeogramContainer = document.querySelector('#related-genes-ideogram-container')
+
+
+  const container = `<div id="${graphId}" style="display: none;">`
+
+  relatedGenesIdeogramContainer.insertAdjacentHTML('beforeEnd', container)
+  const target = `#${graphId}`
+
+  const [dataset, perfTimes] = await fetchMorpheusJson(
+    studyAccession,
+    genes,
+    cluster,
+    annotation.name,
+    annotation.type,
+    annotation.scope,
+    subsample
+  )
+
+  renderDotPlot({
+    target,
+    dataset,
+    annotationName: annotation.name,
+    annotationValues,
+    setErrorContent: () => {},
+    setShowError: () => {},
+    genes,
+    drawCallback: getDotPlotMetrics
+  })
+}
+
+/** Renders a Morpheus-powered dot plot for the given URL paths and annotation
   * Note that this has a lot in common with Heatmap.js.  they are separate for now
   * as their display capabilities may diverge (esp. since DotPlot is used in global gene search)
   * @param cluster {string} the name of the cluster, or blank/null for the study's default
@@ -257,10 +323,14 @@ const DotPlot = withErrorBoundary(RawDotPlot)
 export default DotPlot
 
 /** Render Morpheus dot plot */
-function renderDotPlot({
+export function renderDotPlot({
   target, dataset, annotationName, annotationValues,
-  setShowError, setErrorContent, genes
+  setShowError, setErrorContent, genes, drawCallback
 }) {
+  console.log('in renderDotPlot')
+  console.log('target, dataset, annotationName, annotationValues, setShowError, setErrorContent, genes')
+  console.log(target, dataset, annotationName, annotationValues, setShowError, setErrorContent, genes)
+
   const $target = $(target)
   $target.empty()
 
@@ -323,13 +393,16 @@ function renderDotPlot({
   patchServiceWorkerCache()
 
   config.drawCallback = function(event) {
-    window.SCP.dotPlot = this
+    const dotPlot = this
+    window.SCP.dotPlot = dotPlot
+    if (drawCallback) {drawCallback(dotPlot)}
   }
 
   // Instantiate dot plot and embed in DOM element
   new window.morpheus.HeatMap(config)
-
 }
+
+window.renderDotPlot = renderDotPlot
 
 /** return a trivial tab manager that handles focus and sizing
  * We implement our own trivial tab manager as it seems to be the only way

@@ -461,6 +461,11 @@ export default function ExploreDisplayTabs({
     return { main, side }
   }
 
+  const annotationValues = getAnnotationValues(
+      exploreParamsWithDefaults?.annotation,
+      exploreParamsWithDefaults?.annotationList?.annotations
+  )
+
   return (
     <>
       {/* Render top content for Explore view, i.e. gene search box and plot tabs */}
@@ -506,6 +511,10 @@ export default function ExploreDisplayTabs({
                 genesInScope={exploreInfo.uniqueGenes}
                 searchGenes={searchGenes}
                 speciesList={exploreInfo.taxonNames}
+
+                studyAccession={studyAccession}
+                {... exploreParamsWithDefaults}
+                annotationValues={annotationValues}
               />
             }
             { enabledTabs.includes('annotatedScatter') &&
@@ -587,10 +596,7 @@ export default function ExploreDisplayTabs({
                 <DotPlot
                   studyAccession={studyAccession}
                   {... exploreParamsWithDefaults}
-                  annotationValues={getAnnotationValues(
-                     exploreParamsWithDefaults?.annotation,
-                     exploreParamsWithDefaults?.annotationList?.annotations
-                  )}
+                  annotationValues={annotationValues}
                   setMorpheusData={setMorpheusData}
                   dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
                 />

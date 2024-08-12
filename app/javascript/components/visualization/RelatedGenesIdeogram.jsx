@@ -18,6 +18,7 @@ import PlotUtils from '~/lib/plot'
 const ideogramHeight = PlotUtils.ideogramHeight
 import { log } from '~/lib/metrics-api'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
+import { renderBackgroundDotPlot } from './DotPlot'
 
 /** Handle clicks on Ideogram annotations */
 function onClickAnnot(annot) {
@@ -40,7 +41,7 @@ function onClickAnnot(annot) {
 
 /** Get unique genes in pathway diagram, ranked by global interest */
 function getPathwayGenes(ideogram) {
-  const dataNodes = Array.from(document.querySelectorAll('#ideo-pathway-container g.DataNode'))
+  const dataNodes = Array.from(document.querySelectorAll('#_ideogramPathwayContainer g.DataNode'))
   const geneNodes = dataNodes.filter(dataNode => Array.from(dataNode.classList).some(cls => cls.startsWith('Ensembl_ENS')))
   const rawGenes = geneNodes.map(node => node.querySelector('text').textContent)
   const genes = Array.from(new Set(rawGenes))
@@ -49,12 +50,13 @@ function getPathwayGenes(ideogram) {
   return rankedGenes
 }
 
-/** Color pathway gene nodes by expression */
-function renderPathwayExpression(searchedGene, interactingGene, ideogram) {
-
+/** Get 50 genes from pathway, including searched gene and interacting gene */
+function getDotPlotGenes(searchedGene, interactingGene, ideogram) {
   // TODO: Ensure highlighted genes are among dotplot genes
   const pathwayGenes = getPathwayGenes(ideogram)
   const dotPlotGenes = pathwayGenes.slice(0, 50)
+  console.log('0 dotPlotGenes')
+  console.log(dotPlotGenes)
   if (!dotPlotGenes.includes(searchedGene)) {
     dotPlotGenes[dotPlotGenes.length - 2] = searchedGene
   }
@@ -62,7 +64,27 @@ function renderPathwayExpression(searchedGene, interactingGene, ideogram) {
     dotPlotGenes[dotPlotGenes.length - 1] = interactingGene
   }
 
+  return dotPlotGenes
+}
 
+window.getDotPlotGenes = getDotPlotGenes
+
+/** Color pathway gene nodes by expression */
+function renderPathwayExpression(searchedGene, interactingGene, ideogram, dotPlotParams) {
+  console.log('in renderPathwayExpression')
+
+  const dotPlotGenes = getDotPlotGenes(searchedGene, interactingGene, ideogram)
+  console.log('dotPlotGenes')
+  console.log(dotPlotGenes)
+  console.log('dotPlotParams')
+  console.log(dotPlotParams)
+
+  const { studyAccession, cluster, annotation, annotationValues } = dotPlotParams
+  renderPathwayExpression
+  renderBackgroundDotPlot(
+    studyAccession, dotPlotGenes, cluster, annotation,
+    'All', annotationValues
+  )
 }
 
 /**
@@ -188,7 +210,8 @@ function onPlotRelatedGenes() {
  * This is only done in the context of single-gene search in Study Overview
  */
 export default function RelatedGenesIdeogram({
-  gene, taxon, target, genesInScope, searchGenes, speciesList
+  gene, taxon, target, genesInScope, searchGenes, speciesList,
+  studyAccession, cluster, annotation, annotationValues
 }) {
   if (taxon === null) {
     // Quick fix to decrease Sentry error log rate
@@ -226,13 +249,15 @@ export default function RelatedGenesIdeogram({
     window.ideogram =
       Ideogram.initRelatedGenes(ideoConfig, genesInScope)
 
-
-
-    document.addEventListener('ideogramDrawPathway', (event) => {
-      const details = event.detail;
-      const searchedGene = details.sourceGene;
-      const interactingGene = details.destGene;
-      renderPathwayExpression(searchedGene, interactingGene, window.ideogram)
+    const dotPlotParams = {studyAccession, cluster, annotation, annotationValues}
+    document.addEventListener('ideogramDrawPathway', event => {
+      const details = event.detail
+      const searchedGene = details.sourceGene
+      const interactingGene = details.destGene
+      renderPathwayExpression(
+        searchedGene, interactingGene, window.ideogram,
+        dotPlotParams
+      )
     })
 
     // Extend ideogram with custom SCP function to search genes
