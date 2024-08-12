@@ -38,14 +38,31 @@ function onClickAnnot(annot) {
   ideogram.SCP.searchGenes([annot.name])
 }
 
-function getPathwayGenes() {
+/** Get unique genes in pathway diagram, ranked by global interest */
+function getPathwayGenes(ideogram) {
   const dataNodes = Array.from(document.querySelectorAll('#ideo-pathway-container g.DataNode'))
   const geneNodes = dataNodes.filter(dataNode => Array.from(dataNode.classList).some(cls => cls.startsWith('Ensembl_ENS')))
-  const genes = geneNodes.map(node => node.querySelector('text').textContent)
+  const rawGenes = geneNodes.map(node => node.querySelector('text').textContent)
+  const genes = Array.from(new Set(rawGenes))
   const ranks = ideogram.geneCache.interestingNames
   const rankedGenes = genes.filter(gene => ranks.includes(gene)).sort((a, b) => ranks.indexOf(a) - ranks.indexOf(b))
+  return rankedGenes
+}
+
+/** Color pathway gene nodes by expression */
+function renderPathwayExpression(searchedGene, interactingGene, ideogram) {
+
   // TODO: Ensure highlighted genes are among dotplot genes
-  const dotplotGenes = rankedGenes.slice(0, 50)
+  const pathwayGenes = getPathwayGenes(ideogram)
+  const dotPlotGenes = pathwayGenes.slice(0, 50)
+  if (!dotPlotGenes.includes(searchedGene)) {
+    dotPlotGenes[dotPlotGenes.length - 2] = searchedGene
+  }
+  if (!dotPlotGenes.includes(interactingGene)) {
+    dotPlotGenes[dotPlotGenes.length - 1] = interactingGene
+  }
+
+
 }
 
 /**
@@ -208,6 +225,15 @@ export default function RelatedGenesIdeogram({
     }
     window.ideogram =
       Ideogram.initRelatedGenes(ideoConfig, genesInScope)
+
+
+
+    document.addEventListener('ideogramDrawPathway', (event) => {
+      const details = event.detail;
+      const searchedGene = details.sourceGene;
+      const interactingGene = details.destGene;
+      renderPathwayExpression(searchedGene, interactingGene, window.ideogram)
+    })
 
     // Extend ideogram with custom SCP function to search genes
     window.ideogram.SCP = { searchGenes, speciesList }
