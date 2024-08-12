@@ -322,8 +322,13 @@ function renderDotPlot({
 
   patchServiceWorkerCache()
 
+  config.drawCallback = function(event) {
+    window.SCP.dotPlot = this
+  }
+
   // Instantiate dot plot and embed in DOM element
   new window.morpheus.HeatMap(config)
+
 }
 
 /** return a trivial tab manager that handles focus and sizing
