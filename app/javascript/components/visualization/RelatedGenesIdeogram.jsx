@@ -76,9 +76,11 @@ function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
   genes.forEach(geneObj => {
     const domId = geneObj.domId
     const gene = geneObj.name
-    const color = dotPlotMetrics[annotationLabel][gene].color
+    const metrics = dotPlotMetrics[annotationLabel][gene]
+    const color = metrics.color
+    const opacity = metrics.percent + 0.25
     const baseSelector = `#_ideogramPathwayContainer .DataNode#${domId}`
-    const rectRuleset = `${baseSelector} rect {fill: ${color};}`
+    const rectRuleset = `${baseSelector} rect {fill: ${color}; opacity: ${opacity};}`
     const textRuleset = `${baseSelector} text {fill: white;}`
     const rulesets = `${rectRuleset} ${textRuleset}`
     styleRulesets.push(rulesets)
