@@ -474,14 +474,14 @@ To deploy or access an instance of Single Cell Portal in production mode:
 * Once connected, switch to root via `sudo -i`.
 * Change directory to where the portal is running, for instance: `cd /home/docker-user/deployments/single_cell_portal`
 * Switch to the Docker user: `sudo -u docker-user -Hs`
-* Get latest source code from GitHub: `git pull origin master`
+* Get latest source code from GitHub: `git pull origin main`
 * Exit Docker user to return to root: `exit`
 * Ensure no uploads are occuring: `tail -n 1000 log/production.log`
 * Put the portal in maintenance mode: `bin/enable_maintenance.sh on`
 * Stop the portal: `docker stop single_cell`
 * Remove the container instance: `docker rm single_cell`
 * Launch a new instance of the portal with the updated container (please refer to the
-[bin/boot_docker](https://github.com/broadinstitute/single_cell_portal_core/blob/master/bin/boot_docker) script for more
+[bin/boot_docker](https://github.com/broadinstitute/single_cell_portal_core/blob/main/bin/boot_docker) script for more
 information regarding all possible arguments as they are not all listed here):
 
 

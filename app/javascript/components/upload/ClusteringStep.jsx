@@ -70,7 +70,7 @@ function getDetailsContent(isAnnDataExperience, clusterFiles, addNewFile) {
           <div className="form-terra">
             <div className="row">
               <div className="col-md-12">
-                <p>A <a href="https://github.com/broadinstitute/single_cell_portal/blob/master/demo_data/cluster_example.txt" target="_blank" rel="noreferrer">cluster file</a> (.txt or .txt.gz) contains any cluster ordinations and optional cluster-specific metadata.</p>
+                <p>A <a href="https://github.com/broadinstitute/single_cell_portal/blob/main/demo_data/cluster_example.txt" target="_blank" rel="noreferrer">cluster file</a> (.txt or .txt.gz) contains any cluster ordinations and optional cluster-specific metadata.</p>
               </div>
             </div>
             <div className="row">

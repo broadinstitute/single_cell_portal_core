@@ -27,7 +27,7 @@ jobs:
       - name: Build requested Docker image
         run: |
           # determine if VERSION_TAG should be set
-          if [[ ${{ github.ref_name }} == 'master' ]]; then
+          if [[ ${{ github.ref_name }} == 'main' ]]; then
             bin/build_image.sh
           else
             bin/build_image.sh -v ${{ github.ref_name }}

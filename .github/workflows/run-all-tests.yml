@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - development
-      - master
+      - main
   pull_request:
 env:
   DOCKER_IMAGE_NAME: "gcr.io/broad-singlecellportal-staging/single-cell-portal"
