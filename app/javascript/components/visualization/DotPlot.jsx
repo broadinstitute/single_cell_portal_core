@@ -192,15 +192,21 @@ export function getDotPlotMetrics(dotPlot) {
   const metrics = {}
 
   const colorScheme = dotPlot.getColorScheme()
+  console.log('colorScheme', colorScheme)
 
   const dataset = dotPlot.dataset
+  window.dotPlot = dotPlot
   const labels = dataset.columnMetadata.vectors[0].array
   const genes = dataset.rowMetadata.vectors[0].array
 
+  console.log('labels', labels)
+  console.log('genes', genes)
+
   labels.forEach((label, labelIndex) => {
     metrics[label] = {}
+    console.log('label', label)
     genes.forEach((gene, geneIndex) => {
-      const mean = dataset.getValue(geneIndex, labelIndex, 0)
+      const mean = dataset.getValue(geneIndex, labelIndex, 1)
       const percent = dataset.getValue(geneIndex, labelIndex, 0)
       const color = colorScheme.getColor(geneIndex, labelIndex, mean)
       metrics[label][gene] = {mean, percent, color}
@@ -208,20 +214,24 @@ export function getDotPlotMetrics(dotPlot) {
   })
 
   return metrics
+  // return {}
 }
 
 /** Render undisplayed Morpheus dot plot, to get metrics for pathway diagram */
 export async function renderBackgroundDotPlot(
   studyAccession, genes=[], cluster, annotation={},
-  subsample, annotationValues, drawCallback
+  subsample, annotationValues, drawCallback,
+  topContainerSelector
 ) {
   const graphId = 'background-dot-plot'
-  const relatedGenesIdeogramContainer = document.querySelector('#related-genes-ideogram-container')
+  const prevElement = document.querySelector(`#${graphId}`)
+  if (prevElement) {prevElement.remove()}
 
+  const topContainer = document.querySelector(topContainerSelector)
 
   const container = `<div id="${graphId}" style="display: none;">`
 
-  relatedGenesIdeogramContainer.insertAdjacentHTML('beforeEnd', container)
+  topContainer.insertAdjacentHTML('beforeEnd', container)
   const target = `#${graphId}`
 
   const [dataset, perfTimes] = await fetchMorpheusJson(

@@ -70,33 +70,44 @@ function getDotPlotGenes(searchedGene, interactingGene, pathwayGenes, ideogram) 
   return dotPlotGenes
 }
 
-window.getDotPlotGenes = getDotPlotGenes
+/** Color genes by expression dot plot */
+function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
+  const styleRulesets = []
+  genes.forEach(geneObj => {
+    const domId = geneObj.domId
+    const gene = geneObj.name
+    const color = dotPlotMetrics[annotationLabel][gene].color
+    const baseSelector = `#_ideogramPathwayContainer .DataNode#${domId}`
+    const rectRuleset = `${baseSelector} rect {fill: ${color};}`
+    const textRuleset = `${baseSelector} text {fill: white;}`
+    const rulesets = `${rectRuleset} ${textRuleset}`
+    styleRulesets.push(rulesets)
+  })
+  const style = `<style>${styleRulesets.join(' ')}</style>`
+  const pathwayContainer = document.querySelector('#_ideogramPathwayContainer')
+  pathwayContainer.insertAdjacentHTML('afterbegin', style)
+}
 
 /** Color pathway gene nodes by expression */
 function renderPathwayExpression(
   searchedGene, interactingGene,
   ideogram, dotPlotParams
 ) {
-
   const pathwayGenes = getPathwayGenes(ideogram)
   const dotPlotGenes = getDotPlotGenes(searchedGene, interactingGene, pathwayGenes, ideogram)
 
-  /** After invisible dot plot renders, get expression metrics for each gene */
+  /** After invisible dot plot renders, color each gene by expression metrics */
   function backgroundDotPlotDrawCallback(dotPlot) {
     const dotPlotMetrics = getDotPlotMetrics(dotPlot)
-    const annotationLabel = '0'
-    pathwayGenes.forEach(pwGene => {
-      const domId = pwGene.domId
-      const gene = pwGene.name
-      const color = dotPlotMetrics[annotationLabel][gene].color
-      document.querySelector(`#${domId}-icon`).setAttribute('fill', color)
-    })
+    const annotationLabel = 'LC2'
+    colorPathwayGenesByExpression(pathwayGenes, dotPlotMetrics, annotationLabel)
   }
 
   const { studyAccession, cluster, annotation, annotationValues } = dotPlotParams
   renderBackgroundDotPlot(
     studyAccession, dotPlotGenes, cluster, annotation,
-    'All', annotationValues, backgroundDotPlotDrawCallback
+    'All', annotationValues, backgroundDotPlotDrawCallback,
+    '#related-genes-ideogram-container'
   )
 }
 
