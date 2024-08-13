@@ -188,7 +188,7 @@ function patchServiceWorkerCache() {
  * - Percent: percent of cells expressing
  * - Color: hex value for color of scaled mean expression: blue low, purple medium, red high
  */
-function getDotPlotMetrics(dotPlot) {
+export function getDotPlotMetrics(dotPlot) {
   const metrics = {}
 
   const colorScheme = dotPlot.getColorScheme()
@@ -213,7 +213,7 @@ function getDotPlotMetrics(dotPlot) {
 /** Render undisplayed Morpheus dot plot, to get metrics for pathway diagram */
 export async function renderBackgroundDotPlot(
   studyAccession, genes=[], cluster, annotation={},
-  subsample, annotationValues
+  subsample, annotationValues, drawCallback
 ) {
   const graphId = 'background-dot-plot'
   const relatedGenesIdeogramContainer = document.querySelector('#related-genes-ideogram-container')
@@ -242,7 +242,7 @@ export async function renderBackgroundDotPlot(
     setErrorContent: () => {},
     setShowError: () => {},
     genes,
-    drawCallback: getDotPlotMetrics
+    drawCallback
   })
 }
 
@@ -392,9 +392,8 @@ export function renderDotPlot({
 
   patchServiceWorkerCache()
 
-  config.drawCallback = function(event) {
+  config.drawCallback = function() {
     const dotPlot = this
-    window.SCP.dotPlot = dotPlot
     if (drawCallback) {drawCallback(dotPlot)}
   }
 

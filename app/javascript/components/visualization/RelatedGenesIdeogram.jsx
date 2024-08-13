@@ -18,7 +18,7 @@ import PlotUtils from '~/lib/plot'
 const ideogramHeight = PlotUtils.ideogramHeight
 import { log } from '~/lib/metrics-api'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
-import { renderBackgroundDotPlot } from './DotPlot'
+import { renderBackgroundDotPlot, getDotPlotMetrics } from './DotPlot'
 
 /** Handle clicks on Ideogram annotations */
 function onClickAnnot(annot) {
@@ -70,20 +70,23 @@ function getDotPlotGenes(searchedGene, interactingGene, ideogram) {
 window.getDotPlotGenes = getDotPlotGenes
 
 /** Color pathway gene nodes by expression */
-function renderPathwayExpression(searchedGene, interactingGene, ideogram, dotPlotParams) {
-  console.log('in renderPathwayExpression')
+function renderPathwayExpression(
+  searchedGene, interactingGene,
+  ideogram, dotPlotParams
+) {
 
   const dotPlotGenes = getDotPlotGenes(searchedGene, interactingGene, ideogram)
-  console.log('dotPlotGenes')
-  console.log(dotPlotGenes)
-  console.log('dotPlotParams')
-  console.log(dotPlotParams)
+
+  /** After invisible dot plot renders, get expression metrics for each gene */
+  function backgroundDotPlotDrawCallback(dotPlot) {
+    const dotPlotMetrics = getDotPlotMetrics(dotPlot)
+
+  }
 
   const { studyAccession, cluster, annotation, annotationValues } = dotPlotParams
-  renderPathwayExpression
   renderBackgroundDotPlot(
     studyAccession, dotPlotGenes, cluster, annotation,
-    'All', annotationValues
+    'All', annotationValues, backgroundDotPlotDrawCallback
   )
 }
 
@@ -246,8 +249,8 @@ export default function RelatedGenesIdeogram({
         showRelatedGenesIdeogram(target)
       }
     }
-    window.ideogram =
-      Ideogram.initRelatedGenes(ideoConfig, genesInScope)
+    const ideogram = Ideogram.initRelatedGenes(ideoConfig, genesInScope)
+    window.ideogram = ideogram
 
     const dotPlotParams = {studyAccession, cluster, annotation, annotationValues}
     document.addEventListener('ideogramDrawPathway', event => {
@@ -255,7 +258,7 @@ export default function RelatedGenesIdeogram({
       const searchedGene = details.sourceGene
       const interactingGene = details.destGene
       renderPathwayExpression(
-        searchedGene, interactingGene, window.ideogram,
+        searchedGene, interactingGene, ideogram,
         dotPlotParams
       )
     })
