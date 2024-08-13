@@ -385,11 +385,14 @@ function getAnalyticsPageName() {
  * gets the tab name for analytics
  */
 function getTabProperty() {
-  if (window.location.href?.match(/\?tab=/)) {
-    return window.location.href.split('?tab=')[1]
-  } else {
-    return window.location.hash?.replace(/#/, '')
+  let tabParam = window.location.hash?.replace(/#/, '')
+  if (window.location.search) {
+    const searchParams = new URLSearchParams(window.location.search)
+    if (searchParams.has('tab')) {
+      tabParam = searchParams.get('tab')
+    }
   }
+  return tabParam
 }
 
 /**
