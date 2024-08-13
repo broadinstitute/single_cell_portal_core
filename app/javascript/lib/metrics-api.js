@@ -384,7 +384,7 @@ function getAnalyticsPageName() {
 /**
  * gets the tab name for analytics
  */
-function getTabProperty() {
+export function getTabProperty() {
   let tabParam = window.location.hash?.replace(/#/, '')
   if (window.location.search) {
     const searchParams = new URLSearchParams(window.location.search)
