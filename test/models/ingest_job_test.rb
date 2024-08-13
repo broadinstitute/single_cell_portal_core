@@ -615,18 +615,45 @@ class IngestJobTest < ActiveSupport::TestCase
     )
     cluster = study.cluster_groups.by_name('UMAP.txt')
     cluster.update(is_subsampling: true)
-    job = IngestJob.new(
-      pipeline_name: SecureRandom.uuid, study:, study_file: cluster_file, user: @user,
-      action: :ingest_subsample
+    pipeline_name = SecureRandom.uuid
+
+    job = IngestJob.new(pipeline_name:, study:, study_file: cluster_file, user: @user, action: :ingest_subsample)
+    metadata = {
+      pipeline: {
+        actions: [
+          { commands: %w[foo bar bing baz] }
+        ]
+      }
+    }.with_indifferent_access
+
+    error_log = "parse_logs/#{cluster_file.id}/user_log.txt"
+    mock = Minitest::Mock.new
+    mock.expect :workspace_file_exists?, true, [study.bucket_id, error_log]
+    mock.expect(
+      :execute_gcloud_method,
+      StringIO.new("error"),
+      [:read_workspace_file, 0, study.bucket_id, error_log]
     )
-    job.handle_ingest_failure
-    cluster_file.reload
-    study.reload
-    cluster.reload
-    assert cluster_file.parsed?
-    assert cluster.present?
-    assert_not cluster.is_subsampling?
-    assert_equal 3, cluster.concatenate_data_arrays('text', 'cells').count
+    mock.expect :execute_gcloud_method, true,
+                [:delete_workspace_file, 0, study.bucket_id, error_log]
+
+    pipeline_mock = Minitest::Mock.new
+    pipeline_mock.expect :metadata, metadata
+    ls_mock = Minitest::Mock.new
+    ls_mock.expect :get_pipeline, pipeline_mock, [{ name: pipeline_name }]
+    ApplicationController.stub :firecloud_client, mock do
+      ApplicationController.stub :life_sciences_api_client, ls_mock do
+        job.handle_ingest_failure
+        cluster_file.reload
+        study.reload
+        cluster.reload
+        assert cluster_file.parsed?
+        assert cluster.present?
+        assert_not cluster.is_subsampling?
+        assert_equal 3, cluster.concatenate_data_arrays('text', 'cells').count
+        mock.verify
+      end
+    end
 
     # normal fail
     failed_file = FactoryBot.create(
@@ -650,13 +677,7 @@ class IngestJobTest < ActiveSupport::TestCase
     )
     mock.expect :execute_gcloud_method, true,
                 [:delete_workspace_file, 0, study.bucket_id, error_log]
-    metadata = {
-      pipeline: {
-        actions: [
-          { commands: %w[foo bar bing baz] }
-        ]
-      }
-    }.with_indifferent_access
+
     pipeline_mock = Minitest::Mock.new
     pipeline_mock.expect :metadata, metadata
     ls_mock = Minitest::Mock.new
