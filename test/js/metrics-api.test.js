@@ -167,6 +167,13 @@ describe('Library for client-side usage analytics', () => {
     expect(enabledTab).toBeUndefined()
 
     global.window.location = {
+      hash: '#study-visualize',
+      pathname: '/single_cell/study/SCP1234'
+    }
+    enabledTab = getTabProperty()
+    expect(enabledTab).toEqual('study-visualize')
+
+    global.window.location = {
       search: '?cluster=foo&genes=bar&tab=distribution',
       pathname: '/single_cell/study/SCP1234'
     }
