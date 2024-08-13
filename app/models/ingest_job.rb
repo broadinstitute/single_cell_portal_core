@@ -392,7 +392,7 @@ class IngestJob
       study_file.update(parse_status: 'parsed') # reset parse flag
       cluster_name = cluster_name_by_file_type
       cluster = ClusterGroup.find_by(name: cluster_name, study:, study_file:)
-      cluster.find_subsampled_data_arrays.delete_all
+      cluster.find_subsampled_data_arrays&.delete_all
       cluster.update(subsampled: false, is_subsampling: false)
     else
       create_study_file_copy
@@ -404,10 +404,10 @@ class IngestJob
           ApplicationController.firecloud_client.delete_workspace_file(study.bucket_id, bundled_file.bucket_location)
         end
       end
-      subject = "Error: #{study_file.file_type} file: '#{study_file.upload_file_name}' parse has failed"
-      user_email_content = generate_error_email_body
-      SingleCellMailer.notify_user_parse_fail(user.email, subject, user_email_content, study).deliver_now
     end
+    subject = "Error: #{study_file.file_type} file: '#{study_file.upload_file_name}' parse has failed"
+    user_email_content = generate_error_email_body
+    SingleCellMailer.notify_user_parse_fail(user.email, subject, user_email_content, study).deliver_now
   end
 
   # TODO (SCP-4709, SCP-4710) Processed and Raw expression files
