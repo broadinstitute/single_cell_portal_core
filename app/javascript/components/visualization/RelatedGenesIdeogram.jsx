@@ -42,21 +42,24 @@ function onClickAnnot(annot) {
 /** Get unique genes in pathway diagram, ranked by global interest */
 function getPathwayGenes(ideogram) {
   const dataNodes = Array.from(document.querySelectorAll('#_ideogramPathwayContainer g.DataNode'))
-  const geneNodes = dataNodes.filter(dataNode => Array.from(dataNode.classList).some(cls => cls.startsWith('Ensembl_ENS')))
-  const rawGenes = geneNodes.map(node => node.querySelector('text').textContent)
-  const genes = Array.from(new Set(rawGenes))
+  const geneNodes = dataNodes.filter(
+    dataNode => Array.from(dataNode.classList).some(cls => cls.startsWith('Ensembl_ENS'))
+  )
+  const genes = geneNodes.map(
+    node => {return { domId: node.id, name: node.querySelector('text').textContent }}
+  )
   const ranks = ideogram.geneCache.interestingNames
-  const rankedGenes = genes.filter(gene => ranks.includes(gene)).sort((a, b) => ranks.indexOf(a) - ranks.indexOf(b))
+  const rankedGenes = genes
+    .filter(gene => ranks.includes(gene.name))
+    .sort((a, b) => ranks.indexOf(a.name) - ranks.indexOf(b.name))
   return rankedGenes
 }
 
 /** Get 50 genes from pathway, including searched gene and interacting gene */
-function getDotPlotGenes(searchedGene, interactingGene, ideogram) {
-  // TODO: Ensure highlighted genes are among dotplot genes
-  const pathwayGenes = getPathwayGenes(ideogram)
-  const dotPlotGenes = pathwayGenes.slice(0, 50)
-  console.log('0 dotPlotGenes')
-  console.log(dotPlotGenes)
+function getDotPlotGenes(searchedGene, interactingGene, pathwayGenes, ideogram) {
+  const genes = pathwayGenes.map(g => g.name)
+  const uniqueGenes = Array.from(new Set(genes))
+  const dotPlotGenes = uniqueGenes.slice(0, 50)
   if (!dotPlotGenes.includes(searchedGene)) {
     dotPlotGenes[dotPlotGenes.length - 2] = searchedGene
   }
@@ -75,12 +78,19 @@ function renderPathwayExpression(
   ideogram, dotPlotParams
 ) {
 
-  const dotPlotGenes = getDotPlotGenes(searchedGene, interactingGene, ideogram)
+  const pathwayGenes = getPathwayGenes(ideogram)
+  const dotPlotGenes = getDotPlotGenes(searchedGene, interactingGene, pathwayGenes, ideogram)
 
   /** After invisible dot plot renders, get expression metrics for each gene */
   function backgroundDotPlotDrawCallback(dotPlot) {
     const dotPlotMetrics = getDotPlotMetrics(dotPlot)
-
+    const annotationLabel = '0'
+    pathwayGenes.forEach(pwGene => {
+      const domId = pwGene.domId
+      const gene = pwGene.name
+      const color = dotPlotMetrics[annotationLabel][gene].color
+      document.querySelector(`#${domId}-icon`).setAttribute('fill', color)
+    })
   }
 
   const { studyAccession, cluster, annotation, annotationValues } = dotPlotParams
@@ -252,7 +262,7 @@ export default function RelatedGenesIdeogram({
     const ideogram = Ideogram.initRelatedGenes(ideoConfig, genesInScope)
     window.ideogram = ideogram
 
-    const dotPlotParams = {studyAccession, cluster, annotation, annotationValues}
+    const dotPlotParams = { studyAccession, cluster, annotation, annotationValues }
     document.addEventListener('ideogramDrawPathway', event => {
       const details = event.detail
       const searchedGene = details.sourceGene
