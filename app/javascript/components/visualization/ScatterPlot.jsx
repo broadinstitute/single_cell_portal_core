@@ -747,7 +747,7 @@ function getPlotlyTraces({
     expressionFilter, expressionData: data.expression, isSplitLabelArrays
   })
 
-  // TODO (SCP-): Refactor pathway diagrams into independent component where
+  // TODO (SCP-5760): Refactor pathway diagrams into independent component where
   // React state can be propagated conventionally, then remove this
   window.SCP.countsByLabel = countsByLabel
 

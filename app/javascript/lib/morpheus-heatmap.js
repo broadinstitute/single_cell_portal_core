@@ -68,9 +68,7 @@ export function renderHeatmap({
   config.rows = [
     { field: 'id', display: 'text' }
   ]
-  // const heatmap = new window.morpheus.HeatMap(config)
-  // window.heatmap = heatmap
-  // return heatmap
+  return new window.morpheus.HeatMap(config)
 }
 
 /** updates the heatmap in response to a change in the fit parameter

@@ -209,7 +209,6 @@ export function getDotPlotMetrics(dotPlot) {
   })
 
   return metrics
-  // return {}
 }
 
 /** Render undisplayed Morpheus dot plot, to get metrics for pathway diagram */

@@ -266,7 +266,7 @@ export default function ExploreDisplayTabs({
   const referencePlotDataParams = _clone(exploreParams)
   referencePlotDataParams.genes = []
 
-  // TODO (SCP-): Refactor pathway diagrams into independent component where
+  // TODO (SCP-5760): Refactor pathway diagrams into independent component where
   // React state can be propagated conventionally, then remove this
   window.SCP.exploreParamsWithDefaults = exploreParamsWithDefaults
   window.SCP.exploreInfo = exploreInfo
@@ -466,12 +466,6 @@ export default function ExploreDisplayTabs({
     return { main, side }
   }
 
-
-  const annotationValues = getAnnotationValues(
-      exploreParamsWithDefaults?.annotation,
-      exploreParamsWithDefaults?.annotationList?.annotations
-  )
-
   return (
     <>
       {/* Render top content for Explore view, i.e. gene search box and plot tabs */}
@@ -601,7 +595,10 @@ export default function ExploreDisplayTabs({
                 <DotPlot
                   studyAccession={studyAccession}
                   {... exploreParamsWithDefaults}
-                  annotationValues={annotationValues}
+                  annotationValues={getAnnotationValues(
+                    exploreParamsWithDefaults?.annotation,
+                    exploreParamsWithDefaults?.annotationList?.annotations
+                  )}
                   setMorpheusData={setMorpheusData}
                   dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
                 />
