@@ -94,12 +94,33 @@ function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
   const style = `<style class="ideo-pathway-style">${styleRulesets.join(' ')}</style>`
   const pathwayContainer = document.querySelector('#_ideogramPathwayContainer')
   if (unassayedGenes.length > 0) {
+    // This might help to eventually convey in hover text, etc.
     console.debug(`Study did not assay these genes in pathway: ${unassayedGenes.join(', ')}`)
   }
   const prevStyle = document.querySelector('.ideo-pathway-style')
   if (prevStyle) {prevStyle.remove()}
   pathwayContainer.insertAdjacentHTML('afterbegin', style)
 }
+
+// TODO: Replace this React FontAwesome Icon upon refactoring to React
+const infoIcon = `<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="info-circle" class="svg-inline--fa fa-info-circle " role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="#3D5A87" d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"></path></svg>`
+
+/** Write brief legend for color and opacity */
+function writePathwayLegend() {
+  // const pathwayLegend = getPathwayLegend()
+  const legendText =
+    'Color represents scaled mean expression: red is high, purple medium, blue low.  ' +
+    'Opacity represents percent of cells expressing: higher % is more opaque, lower more transparent.'
+  const legendAttrs =
+    `class="pathway-legend" style="margin-left: 10px;" ` +
+    `data-toggle="tooltip" data-original-title="${legendText}"`
+  const legend = `<span ${legendAttrs}>${infoIcon}</span>`
+  const headerLink = document.querySelector('._ideoPathwayHeader a')
+  const prevElement = document.querySelector('.pathway-legend')
+  if (prevElement) {prevElement.remove()}
+  headerLink.insertAdjacentHTML('afterend', legend)
+}
+
 
 /** Get dropdown menu of annotation labels; pick one to color genes */
 function writePathwayAnnotationLabelMenu(labels, pathwayGenes, dotPlotMetrics) {
@@ -110,8 +131,8 @@ function writePathwayAnnotationLabelMenu(labels, pathwayGenes, dotPlotMetrics) {
       `<label>Expression in:</label> <select class="pathway-label-menu">${options.join()}</select>` +
     `</span>`
   const headerLink = document.querySelector('._ideoPathwayHeader a')
-  const prevMenu = document.querySelector('.pathway-label-menu-container')
-  if (prevMenu) {prevMenu.remove()}
+  const prevElement = document.querySelector('.pathway-label-menu-container')
+  if (prevElement) {prevElement.remove()}
   headerLink.insertAdjacentHTML('afterend', menu)
   const menuSelectDom = document.querySelector('.pathway-label-menu')
   menuSelectDom.addEventListener('change', () => {
@@ -150,7 +171,9 @@ function renderPathwayExpression(
     if (numDraws === 1) {return}
 
     const dotPlotMetrics = getDotPlotMetrics(dotPlot)
+    writePathwayLegend()
     writePathwayAnnotationLabelMenu(annotationLabels, pathwayGenes, dotPlotMetrics)
+
     const annotationLabel = annotationLabels[0]
     colorPathwayGenesByExpression(pathwayGenes, dotPlotMetrics, annotationLabel)
   }
