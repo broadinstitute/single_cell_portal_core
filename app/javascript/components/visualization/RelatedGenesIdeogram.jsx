@@ -103,11 +103,11 @@ function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
 }
 
 // TODO: Replace this React FontAwesome Icon upon refactoring to React
+// eslint-disable-next-line max-len
 const infoIcon = `<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="info-circle" class="svg-inline--fa fa-info-circle " role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="#3D5A87" d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"></path></svg>`
 
-/** Write brief legend for color and opacity */
-function writePathwayLegend() {
-  // const pathwayLegend = getPathwayLegend()
+/** Write brief icon explaining color and opacity */
+function writePathwayExpressionLegend() {
   const legendText =
     'Color represents scaled mean expression: red is high, purple medium, blue low.  ' +
     'Opacity represents percent of cells expressing: higher % is more opaque, lower more transparent.'
@@ -163,6 +163,8 @@ function renderPathwayExpression(
   )
   const annotationLabels = rawAnnotLabels.filter(label => countsByLabel[label] > 0)
 
+  console.log('annotation')
+  console.log(annotation)
   /** After invisible dot plot renders, color each gene by expression metrics */
   function backgroundDotPlotDrawCallback(dotPlot) {
     // The first render is for uncollapsed cell-x-gene metrics (heatmap),
@@ -171,7 +173,7 @@ function renderPathwayExpression(
     if (numDraws === 1) {return}
 
     const dotPlotMetrics = getDotPlotMetrics(dotPlot)
-    writePathwayLegend()
+    writePathwayExpressionLegend()
     writePathwayAnnotationLabelMenu(annotationLabels, pathwayGenes, dotPlotMetrics)
 
     const annotationLabel = annotationLabels[0]
@@ -348,16 +350,18 @@ export default function RelatedGenesIdeogram({
     window.ideogram = ideogram
 
     const dotPlotParams = { studyAccession, cluster, annotation }
-    document.removeEventListener('ideogramDrawPathway')
-    document.addEventListener('ideogramDrawPathway', event => {
-      const details = event.detail
-      const searchedGene = details.sourceGene
-      const interactingGene = details.destGene
-      renderPathwayExpression(
-        searchedGene, interactingGene, ideogram,
-        dotPlotParams
-      )
-    })
+    if (annotation.type === 'group') {
+      document.removeEventListener('ideogramDrawPathway')
+      document.addEventListener('ideogramDrawPathway', event => {
+        const details = event.detail
+        const searchedGene = details.sourceGene
+        const interactingGene = details.destGene
+        renderPathwayExpression(
+          searchedGene, interactingGene, ideogram,
+          dotPlotParams
+        )
+      })
+    }
 
     // Extend ideogram with custom SCP function to search genes
     window.ideogram.SCP = { searchGenes, speciesList }
