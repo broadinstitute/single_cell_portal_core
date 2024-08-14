@@ -73,10 +73,15 @@ function getDotPlotGenes(searchedGene, interactingGene, pathwayGenes, ideogram) 
 /** Color genes by expression dot plot */
 function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
   const styleRulesets = []
+  const unassayedGenes = []
   genes.forEach(geneObj => {
     const domId = geneObj.domId
     const gene = geneObj.name
     const metrics = dotPlotMetrics[annotationLabel][gene]
+    if (!metrics) {
+      unassayedGenes.push(gene)
+      return
+    }
     const color = metrics.color
     const opacity = metrics.percent + 0.25
     const baseSelector = `#_ideogramPathwayContainer .DataNode#${domId}`
@@ -87,6 +92,9 @@ function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
   })
   const style = `<style>${styleRulesets.join(' ')}</style>`
   const pathwayContainer = document.querySelector('#_ideogramPathwayContainer')
+  if (unassayedGenes.length > 0) {
+    console.debug(`Study did not assay these genes in pathway: ${unassayedGenes.join(', ')}`)
+  }
   pathwayContainer.insertAdjacentHTML('afterbegin', style)
 }
 
@@ -98,14 +106,22 @@ function renderPathwayExpression(
   const pathwayGenes = getPathwayGenes(ideogram)
   const dotPlotGenes = getDotPlotGenes(searchedGene, interactingGene, pathwayGenes, ideogram)
 
+  const { studyAccession, cluster, annotation, annotationValues } = dotPlotParams
+
+  let numDraws = 0
+
   /** After invisible dot plot renders, color each gene by expression metrics */
   function backgroundDotPlotDrawCallback(dotPlot) {
+    // The first render is for uncollapsed cell-x-gene metrics (heatmap),
+    // the second render is for collapsed label-x-gene metrics (dotplot)
+    numDraws += 1
+    if (numDraws === 1) {return}
+
     const dotPlotMetrics = getDotPlotMetrics(dotPlot)
     const annotationLabel = 'LC2'
     colorPathwayGenesByExpression(pathwayGenes, dotPlotMetrics, annotationLabel)
   }
 
-  const { studyAccession, cluster, annotation, annotationValues } = dotPlotParams
   renderBackgroundDotPlot(
     studyAccession, dotPlotGenes, cluster, annotation,
     'All', annotationValues, backgroundDotPlotDrawCallback,
@@ -276,6 +292,7 @@ export default function RelatedGenesIdeogram({
     window.ideogram = ideogram
 
     const dotPlotParams = { studyAccession, cluster, annotation, annotationValues }
+    document.removeEventListener('ideogramDrawPathway')
     document.addEventListener('ideogramDrawPathway', event => {
       const details = event.detail
       const searchedGene = details.sourceGene

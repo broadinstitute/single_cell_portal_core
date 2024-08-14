@@ -461,6 +461,7 @@ export default function ExploreDisplayTabs({
     return { main, side }
   }
 
+
   const annotationValues = getAnnotationValues(
       exploreParamsWithDefaults?.annotation,
       exploreParamsWithDefaults?.annotationList?.annotations

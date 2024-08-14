@@ -192,19 +192,14 @@ export function getDotPlotMetrics(dotPlot) {
   const metrics = {}
 
   const colorScheme = dotPlot.getColorScheme()
-  console.log('colorScheme', colorScheme)
 
   const dataset = dotPlot.dataset
-  window.dotPlot = dotPlot
+  // window.dotPlot = dotPlot
   const labels = dataset.columnMetadata.vectors[0].array
   const genes = dataset.rowMetadata.vectors[0].array
 
-  console.log('labels', labels)
-  console.log('genes', genes)
-
   labels.forEach((label, labelIndex) => {
     metrics[label] = {}
-    console.log('label', label)
     genes.forEach((gene, geneIndex) => {
       const mean = dataset.getValue(geneIndex, labelIndex, 1)
       const percent = dataset.getValue(geneIndex, labelIndex, 0)
@@ -337,10 +332,6 @@ export function renderDotPlot({
   target, dataset, annotationName, annotationValues,
   setShowError, setErrorContent, genes, drawCallback
 }) {
-  console.log('in renderDotPlot')
-  console.log('target, dataset, annotationName, annotationValues, setShowError, setErrorContent, genes')
-  console.log(target, dataset, annotationName, annotationValues, setShowError, setErrorContent, genes)
-
   const $target = $(target)
   $target.empty()
 
@@ -408,10 +399,9 @@ export function renderDotPlot({
   }
 
   // Instantiate dot plot and embed in DOM element
-  new window.morpheus.HeatMap(config)
+  delete window.dotPlot
+  window.dotPlot = new window.morpheus.HeatMap(config)
 }
-
-window.renderDotPlot = renderDotPlot
 
 /** return a trivial tab manager that handles focus and sizing
  * We implement our own trivial tab manager as it seems to be the only way
