@@ -19,6 +19,7 @@ const ideogramHeight = PlotUtils.ideogramHeight
 import { log } from '~/lib/metrics-api'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
 import { renderBackgroundDotPlot, getDotPlotMetrics } from './DotPlot'
+import { getAnnotationValues } from '~/lib/cluster-utils'
 
 /** Handle clicks on Ideogram annotations */
 function onClickAnnot(annot) {
@@ -90,12 +91,33 @@ function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
     const rulesets = `${rectRuleset} ${textRuleset}`
     styleRulesets.push(rulesets)
   })
-  const style = `<style>${styleRulesets.join(' ')}</style>`
+  const style = `<style class="ideo-pathway-style">${styleRulesets.join(' ')}</style>`
   const pathwayContainer = document.querySelector('#_ideogramPathwayContainer')
   if (unassayedGenes.length > 0) {
     console.debug(`Study did not assay these genes in pathway: ${unassayedGenes.join(', ')}`)
   }
+  const prevStyle = document.querySelector('.ideo-pathway-style')
+  if (prevStyle) {prevStyle.remove()}
   pathwayContainer.insertAdjacentHTML('afterbegin', style)
+}
+
+/** Get dropdown menu of annotation labels; pick one to color genes */
+function writePathwayAnnotationLabelMenu(labels, pathwayGenes, dotPlotMetrics) {
+
+  const options = labels.map(label => `<option>${label}</option>`)
+  const menu =
+    `<span class="pathway-label-menu-container" style="margin-left: 10px;">` +
+      `<label>Expression in:</label> <select class="pathway-label-menu">${options.join()}</select>` +
+    `</span>`
+  const headerLink = document.querySelector('._ideoPathwayHeader a')
+  const prevMenu = document.querySelector('.pathway-label-menu-container')
+  if (prevMenu) {prevMenu.remove()}
+  headerLink.insertAdjacentHTML('afterend', menu)
+  const menuSelectDom = document.querySelector('.pathway-label-menu')
+  menuSelectDom.addEventListener('change', () => {
+    const newLabel = menuSelectDom.value
+    colorPathwayGenesByExpression(pathwayGenes, dotPlotMetrics, newLabel)
+  })
 }
 
 /** Color pathway gene nodes by expression */
@@ -106,9 +128,19 @@ function renderPathwayExpression(
   const pathwayGenes = getPathwayGenes(ideogram)
   const dotPlotGenes = getDotPlotGenes(searchedGene, interactingGene, pathwayGenes, ideogram)
 
-  const { studyAccession, cluster, annotation, annotationValues } = dotPlotParams
+  const { studyAccession, cluster, annotation } = dotPlotParams
 
   let numDraws = 0
+
+  const exploreParamsWithDefaults = window.SCP.exploreParamsWithDefaults
+  const exploreInfo = window.SCP.exploreInfo
+  const countsByLabel = window.SCP.countsByLabel
+
+  const rawAnnotLabels = getAnnotationValues(
+    exploreParamsWithDefaults?.annotation,
+    exploreInfo?.annotationList
+  )
+  const annotationLabels = rawAnnotLabels.filter(label => countsByLabel[label] > 0)
 
   /** After invisible dot plot renders, color each gene by expression metrics */
   function backgroundDotPlotDrawCallback(dotPlot) {
@@ -118,13 +150,14 @@ function renderPathwayExpression(
     if (numDraws === 1) {return}
 
     const dotPlotMetrics = getDotPlotMetrics(dotPlot)
-    const annotationLabel = 'LC2'
+    writePathwayAnnotationLabelMenu(annotationLabels, pathwayGenes, dotPlotMetrics)
+    const annotationLabel = annotationLabels[0]
     colorPathwayGenesByExpression(pathwayGenes, dotPlotMetrics, annotationLabel)
   }
 
   renderBackgroundDotPlot(
     studyAccession, dotPlotGenes, cluster, annotation,
-    'All', annotationValues, backgroundDotPlotDrawCallback,
+    'All', annotationLabels, backgroundDotPlotDrawCallback,
     '#related-genes-ideogram-container'
   )
 }
@@ -253,7 +286,7 @@ function onPlotRelatedGenes() {
  */
 export default function RelatedGenesIdeogram({
   gene, taxon, target, genesInScope, searchGenes, speciesList,
-  studyAccession, cluster, annotation, annotationValues
+  studyAccession, cluster, annotation
 }) {
   if (taxon === null) {
     // Quick fix to decrease Sentry error log rate
@@ -291,7 +324,7 @@ export default function RelatedGenesIdeogram({
     const ideogram = Ideogram.initRelatedGenes(ideoConfig, genesInScope)
     window.ideogram = ideogram
 
-    const dotPlotParams = { studyAccession, cluster, annotation, annotationValues }
+    const dotPlotParams = { studyAccession, cluster, annotation }
     document.removeEventListener('ideogramDrawPathway')
     document.addEventListener('ideogramDrawPathway', event => {
       const details = event.detail

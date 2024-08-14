@@ -747,6 +747,10 @@ function getPlotlyTraces({
     expressionFilter, expressionData: data.expression, isSplitLabelArrays
   })
 
+  // TODO (SCP-): Refactor pathway diagrams into independent component where
+  // React state can be propagated conventionally, then remove this
+  window.SCP.countsByLabel = countsByLabel
+
   if (isRefGroup) {
     const labels = getLegendSortedLabels(countsByLabel)
     traces.forEach(groupTrace => {

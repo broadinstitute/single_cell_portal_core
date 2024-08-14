@@ -266,6 +266,11 @@ export default function ExploreDisplayTabs({
   const referencePlotDataParams = _clone(exploreParams)
   referencePlotDataParams.genes = []
 
+  // TODO (SCP-): Refactor pathway diagrams into independent component where
+  // React state can be propagated conventionally, then remove this
+  window.SCP.exploreParamsWithDefaults = exploreParamsWithDefaults
+  window.SCP.exploreInfo = exploreInfo
+
   /** helper function so that StudyGeneField doesn't have to see the full exploreParams object */
   function searchGenes(genes) {
     // also unset any selected gene lists or ideogram files
@@ -515,7 +520,6 @@ export default function ExploreDisplayTabs({
 
                 studyAccession={studyAccession}
                 {... exploreParamsWithDefaults}
-                annotationValues={annotationValues}
               />
             }
             { enabledTabs.includes('annotatedScatter') &&
