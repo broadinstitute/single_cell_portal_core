@@ -333,7 +333,7 @@ const sequenceExtensions = [
 const baiExtensions = ['.bai']
 const tbiExtensions = ['.tbi']
 const annDataExtensions = ['.h5', '.h5ad', '.hdf5']
-const seuratExtensions = ['.Rds', '.rds', '.RDS', '.seuratdata', '.h5seurat', '.seuratdisk', '.Rda', '.rda']
+const seuratExtensions = ['.Rds', '.rds', '.RDS', '.seuratdata', '.h5seurat', '.h5Seurat', '.seuratdisk', '.Rda', '.rda']
 const miscExtensions = baseMiscExtensions.concat(mtxExtensions, annDataExtensions, seuratExtensions)
 
 export const FileTypeExtensions = {

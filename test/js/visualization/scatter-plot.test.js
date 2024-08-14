@@ -5,6 +5,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 import Plotly from 'plotly.js-dist'
 
+import { safenLabels } from '~/lib/plot'
 import * as UserProvider from '~/providers/UserProvider'
 import * as ScpApi from 'lib/scp-api'
 import ScatterPlot, { intersect, reassignFilteredCells, getPlottedLabels } from 'components/visualization/ScatterPlot'
@@ -127,6 +128,11 @@ it('shows custom legend with default group scatter plot', async () => {
       hasCorrelations: false
     }
   )
+})
+
+it('replaces comma (which delimits exploreParams in URL) with hyphen', async () => {
+  const safeLabel = safenLabels('An_underscored_label,_with_comma')
+  expect(safeLabel).toEqual('An_underscored_label-_with_comma')
 })
 
 it('shows cluster external link', async () => {

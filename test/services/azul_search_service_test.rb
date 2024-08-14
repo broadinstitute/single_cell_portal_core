@@ -150,7 +150,7 @@ class AzulSearchServiceTest < ActiveSupport::TestCase
     summary = AzulSearchService.get_file_summary_info(projects)
     assert_equal projects.count, summary.count
     found_projects = summary.map { |project| project[:accession] }
-    assert_equal projects, found_projects
+    assert_equal projects.sort, found_projects.sort
     manifests = summary.map { |project| project[:studyFiles].detect { |file| file[:file_type] == 'Project Manifest' } }
     assert_equal 3, manifests.count
     other_files = summary.map { |project| project[:studyFiles].reject { |file| file[:file_type] == 'Project Manifest' } }

@@ -602,4 +602,91 @@ class IngestJobTest < ActiveSupport::TestCase
       assert_not_includes de_result.pairwise_comparisons['B cells'], 'CSN1S1 macrophages'
     end
   end
+
+  test 'should handle ingest failure by action' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'IngestJob Fail Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    # test subsampling fail logic
+    cluster_file = FactoryBot.create(
+      :cluster_file, name: 'UMAP.txt', study:,
+      cell_input: { x: [1, 2, 3], y: [1, 2, 3], cells: %w[cellA cellB cellC] }
+    )
+    cluster = study.cluster_groups.by_name('UMAP.txt')
+    cluster.update(is_subsampling: true)
+    pipeline_name = SecureRandom.uuid
+
+    job = IngestJob.new(pipeline_name:, study:, study_file: cluster_file, user: @user, action: :ingest_subsample)
+    metadata = {
+      pipeline: {
+        actions: [
+          { commands: %w[foo bar bing baz] }
+        ]
+      }
+    }.with_indifferent_access
+
+    error_log = "parse_logs/#{cluster_file.id}/user_log.txt"
+    mock = Minitest::Mock.new
+    mock.expect :workspace_file_exists?, true, [study.bucket_id, error_log]
+    mock.expect(
+      :execute_gcloud_method,
+      StringIO.new("error"),
+      [:read_workspace_file, 0, study.bucket_id, error_log]
+    )
+    mock.expect :execute_gcloud_method, true,
+                [:delete_workspace_file, 0, study.bucket_id, error_log]
+
+    pipeline_mock = Minitest::Mock.new
+    pipeline_mock.expect :metadata, metadata
+    ls_mock = Minitest::Mock.new
+    ls_mock.expect :get_pipeline, pipeline_mock, [{ name: pipeline_name }]
+    ApplicationController.stub :firecloud_client, mock do
+      ApplicationController.stub :life_sciences_api_client, ls_mock do
+        job.handle_ingest_failure
+        cluster_file.reload
+        study.reload
+        cluster.reload
+        assert cluster_file.parsed?
+        assert cluster.present?
+        assert_not cluster.is_subsampling?
+        assert_equal 3, cluster.concatenate_data_arrays('text', 'cells').count
+        mock.verify
+      end
+    end
+
+    # normal fail
+    failed_file = FactoryBot.create(
+      :cluster_file, name: 'tSNE.txt', study:,
+      cell_input: { x: [1, 2, 3], y: [1, 2, 3], cells: %w[cellA cellB cellC] }
+    )
+    pipeline_name = SecureRandom.uuid
+    failed_job = IngestJob.new(
+      pipeline_name: , study:, study_file: failed_file, user: @user, action: :ingest_cluster
+    )
+    error_log = "parse_logs/#{failed_file.id}/user_log.txt"
+    mock = Minitest::Mock.new
+    mock.expect :execute_gcloud_method, true,
+                [:copy_workspace_file, 0, study.bucket_id, failed_file.bucket_location, failed_file.parse_fail_bucket_location]
+    mock.expect :delete_workspace_file, true, [study.bucket_id, failed_file.bucket_location]
+    mock.expect :workspace_file_exists?, true, [study.bucket_id, error_log]
+    mock.expect(
+      :execute_gcloud_method,
+      StringIO.new("error"),
+      [:read_workspace_file, 0, study.bucket_id, error_log]
+    )
+    mock.expect :execute_gcloud_method, true,
+                [:delete_workspace_file, 0, study.bucket_id, error_log]
+
+    pipeline_mock = Minitest::Mock.new
+    pipeline_mock.expect :metadata, metadata
+    ls_mock = Minitest::Mock.new
+    ls_mock.expect :get_pipeline, pipeline_mock, [{ name: pipeline_name }]
+    ApplicationController.stub :firecloud_client, mock do
+      ApplicationController.stub :life_sciences_api_client, ls_mock do
+        failed_job.handle_ingest_failure
+        mock.verify
+      end
+    end
+  end
 end
