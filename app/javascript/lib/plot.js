@@ -25,6 +25,7 @@ const SPECIAL_LEGEND_ENTRIES = [UNSPECIFIED_ANNOTATION_NAME, FILTERED_TRACE_NAME
  * central memory CD4-positive, alpha-beta T cell
  */
 export function safenLabels(labels) {
+  if (!labels) {return labels} // Prevents erroring gene exp scatter on legend filter
   if (Array.isArray(labels)) {
     return labels.map(label => label.replaceAll(',', '-'))
   } else {
