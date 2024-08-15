@@ -159,7 +159,8 @@ module Api
             hasImageCache: study.cluster_groups.where(has_image_cache: true).pluck(:name),
             clusterPointAlpha: study.default_cluster_point_alpha,
             colorProfile: study.default_color_profile,
-            bucketId: study.bucket_id
+            bucketId: study.bucket_id,
+            isPublic: study.public
           }
         end
       end

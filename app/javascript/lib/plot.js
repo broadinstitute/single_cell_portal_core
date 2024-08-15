@@ -18,6 +18,23 @@ const PlotUtils = function() {
 const SPECIAL_LEGEND_ENTRIES = [UNSPECIFIED_ANNOTATION_NAME, FILTERED_TRACE_NAME]
 
 /**
+ * Enables handling labels with commas in legend filtering.
+ * Used for non-display comparison, not for rendering text.
+ *
+ * Example:
+ * central memory CD4-positive, alpha-beta T cell
+ */
+export function safenLabels(labels) {
+  if (!labels) {return labels} // Prevents erroring gene exp scatter on legend filter
+  if (Array.isArray(labels)) {
+    return labels.map(label => label.replaceAll(',', '-'))
+  } else {
+    const label = labels
+    return label.replaceAll(',', '-')
+  }
+}
+
+/**
  * Used in both categorical scatter plots and violin plots, to ensure
  * they use consistent friendly colors for annotations, etc.
  */
@@ -208,7 +225,7 @@ PlotUtils.splitTraceByAnnotationArray = function(trace, hasZvalues) {
 
 PlotUtils.updateTraceVisibility = function(traces, hiddenTraces) {
   traces.forEach(trace => {
-    trace.visible = hiddenTraces.includes(trace.name) ? 'legendonly' : true
+    trace.visible = hiddenTraces.includes(safenLabels(trace.name)) ? 'legendonly' : true
   })
 }
 

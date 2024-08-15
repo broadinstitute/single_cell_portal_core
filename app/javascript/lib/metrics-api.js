@@ -384,12 +384,15 @@ function getAnalyticsPageName() {
 /**
  * gets the tab name for analytics
  */
-function getTabProperty() {
-  if (window.location.href?.match(/\?tab=/)) {
-    return window.location.href.split('?tab=')[1]
-  } else {
-    return window.location.hash?.replace(/#/, '')
+export function getTabProperty() {
+  let tabParam = window.location.hash?.replace(/#/, '')
+  if (window.location.search) {
+    const searchParams = new URLSearchParams(window.location.search)
+    if (searchParams.has('tab')) {
+      tabParam = searchParams.get('tab')
+    }
   }
+  return tabParam
 }
 
 /**
@@ -408,6 +411,12 @@ export function log(name, props = {}) {
   } else {
     isDifferentialExpressionEnabled = !!window.SCP?.isDifferentialExpressionEnabled
   }
+  let isPublic // track whether study is publicly visible
+  if ('isPublic' in props) {
+    isPublic = props.isPublic
+  } else {
+    isPublic = !!window.SCP?.isPublic
+  }
 
   // track A/B feature test assignments on all events
   const abTests = window.SCP?.abTests || []
@@ -420,6 +429,7 @@ export function log(name, props = {}) {
     logger: 'app-frontend',
     scpVersion: version,
     isDifferentialExpressionEnabled,
+    isPublic,
     isServiceWorkerCacheEnabled,
     abTests
   }, getDefaultProperties())

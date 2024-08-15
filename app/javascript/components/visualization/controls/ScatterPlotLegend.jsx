@@ -8,7 +8,7 @@ import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 import debounce from 'lodash.debounce'
 
 import { log } from '~/lib/metrics-api'
-import PlotUtils from '~/lib/plot'
+import PlotUtils, { safenLabels } from '~/lib/plot'
 const { scatterLabelLegendWidth, getColorForLabel, getLegendSortedLabels } = PlotUtils
 import { getTextSize } from '~/lib/layout-utils'
 
@@ -36,7 +36,8 @@ function LegendEntry({
     entry = `${label} (${numPoints} points, ρ = ${correlation})`
   }
 
-  const isShown = hiddenTraces.includes(label)
+  const safeLabel = safenLabels(label)
+  const isShown = hiddenTraces.includes(safeLabel)
 
   const iconStyle = { backgroundColor: iconColor }
   const shownClass = (isShown ? '' : 'shown')

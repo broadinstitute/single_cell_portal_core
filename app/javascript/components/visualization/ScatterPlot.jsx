@@ -8,6 +8,7 @@ import ExifReader from 'exifreader'
 import { fetchCluster, updateStudyFile, fetchBucketFile } from '~/lib/scp-api'
 import { logScatterPlot } from '~/lib/scp-api-metrics'
 import { log } from '~/lib/metrics-api'
+import { safenLabels } from '~/lib/plot'
 import { useUpdateEffect } from '~/hooks/useUpdate'
 import PlotTitle, { getTitleTexts } from './PlotTitle'
 
@@ -84,21 +85,27 @@ function RawScatterPlot({
    * labeled cells (i.e., the corresponding Plotly.js trace) in the scatter
    * plot.
    */
-  function updateHiddenTraces(labels, value, applyToAll=false) {
+  function updateHiddenTraces(labels, wasShown, applyToAll=false) {
     let newHiddenTraces
+
+    // Handle labels like:
+    // central memory CD4-positive, alpha-beta T cell
+    const safeHiddenTraces = safenLabels(hiddenTraces)
+
     if (applyToAll) {
       // Handle multi-filter interaction
-      newHiddenTraces = (value ? labels : [])
+      const safeLabels = safenLabels(labels)
+      newHiddenTraces = (wasShown ? safeLabels : [])
     } else {
       // Handle single-filter interaction
-      const label = labels
-      newHiddenTraces = [...hiddenTraces]
+      const safeLabel = safenLabels(labels)
+      newHiddenTraces = [...safeHiddenTraces]
 
-      if (value && !newHiddenTraces?.includes(label)) {
-        newHiddenTraces.push(label)
+      if (wasShown && !newHiddenTraces?.includes(safeLabel)) {
+        newHiddenTraces.push(safeLabel)
       }
-      if (!value) {
-        _remove(newHiddenTraces, thisLabel => {return thisLabel === label})
+      if (!wasShown) {
+        _remove(newHiddenTraces, thisLabel => {return thisLabel === safeLabel})
       }
     }
 

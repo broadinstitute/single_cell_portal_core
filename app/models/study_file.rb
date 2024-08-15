@@ -1405,7 +1405,9 @@ class StudyFile
             name = cluster_data_fragment&.[](:name) || fragment # fallback if we can't find data_fragment
 
             if prev_ids[curr_id]["name"] != name
-              @cluster = ClusterGroup.find_by(study:, study_file:, name: prev_ids.dig(curr_id, 'name'))
+              @cluster = ClusterGroup.find_by(
+                study_id: study.id, study_file_id: id, name: prev_ids.dig(curr_id, 'name')
+              )
               # before updating, check if the defaults also need to change
               if study.default_cluster == @cluster
                 study.default_options[:cluster] = name

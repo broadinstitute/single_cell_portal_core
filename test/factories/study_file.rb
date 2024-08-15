@@ -77,9 +77,21 @@ FactoryBot.define do
         expression_input { {} }
       end
       after(:create) do |file, evaluator|
+        if evaluator.expression_input.any?
+          cells = evaluator.expression_input.values.map { |vals| vals.map(&:first) }.flatten.uniq
+          FactoryBot.create(:data_array,
+                            array_type: 'cells',
+                            array_index: 0,
+                            name: "#{file.name} Cells",
+                            cluster_name: file.name,
+                            values: cells,
+                            study_file: file
+          )
+        end
         evaluator.expression_input.each do |gene, expression|
           FactoryBot.create(:gene_with_expression,
                             expression_input: expression,
+                            name: gene,
                             study_file: file)
         end
       end
@@ -141,6 +153,7 @@ FactoryBot.define do
       file_type { 'AnnData' }
       parse_status { 'parsed' }
       transient do
+        reference_file { true }
         # cell_input is an array of all cell names
         # e.g.  ['cellA', 'cellB', 'cellC']
         cell_input { [] }
@@ -152,9 +165,18 @@ FactoryBot.define do
         # values should be an array in the same length and order as the 'cells' array above
         # e.g. [{ name: 'category', type: 'group', values: ['foo', 'foo', 'bar'] }]
         annotation_input { [] }
+        # expression_input is a hash of gene names to expression values
+        # expression values should be an array of arrays, where each sub array is a cellName->value pair
+        # e.g.
+        # {
+        #   farsa: [['cellA', 0.0],['cellB', 1.1], ['cellC', 0.5]],
+        #   phex: [['cellA', 0.6],['cellB', 6.1], ['cellC', 4.5]]
+        # }
+        expression_input { {} }
       end
       after(:create) do |file, evaluator|
         file.build_ann_data_file_info
+        file.ann_data_file_info.reference_file = evaluator.reference_file
         evaluator.annotation_input.each do |annotation|
           file.ann_data_file_info.has_metadata = true
           FactoryBot.create(:cell_metadatum,
@@ -168,6 +190,24 @@ FactoryBot.define do
                             array_index: 0,
                             values: evaluator.cell_input,
                             study_file: file)
+        end
+        if evaluator.expression_input.any?
+          file.ann_data_file_info.has_expression = true
+          # TODO: update this when raw count ingest enabled for AnnData
+          FactoryBot.create(:data_array,
+                            array_type: 'cells',
+                            array_index: 0,
+                            name: 'h5ad_frag.matrix.processed.mtx.gz Cells',
+                            cluster_name: 'h5ad_frag.matrix.processed.mtx.gz',
+                            values: evaluator.cell_input,
+                            study_file: file
+          )
+          evaluator.expression_input.each do |gene, expression|
+            FactoryBot.create(:gene_with_expression,
+                              expression_input: expression,
+                              name: gene,
+                              study_file: file)
+          end
         end
         evaluator.coordinate_input.each do |entry|
           entry.each do |cluster_name, axes|
