@@ -228,6 +228,7 @@ export async function renderBackgroundDotPlot(
   topContainer.insertAdjacentHTML('beforeEnd', container)
   const target = `#${graphId}`
 
+  performance.mark(`perfTimeStart-${graphId}`)
   const [dataset, perfTimes] = await fetchMorpheusJson(
     studyAccession,
     genes,
