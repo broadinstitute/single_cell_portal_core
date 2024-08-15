@@ -47,7 +47,7 @@ export default function ClusteringFileForm({
         trigger={['hover', 'focus']}
         rootClose placement="top"
         overlay={obsmKeyNameHelpContent()}>
-        <span> .obsm key name <FontAwesomeIcon icon={faQuestionCircle}/></span>
+        <span> .obsm key name * <FontAwesomeIcon icon={faQuestionCircle}/></span>
       </OverlayTrigger>
     </span>
 
