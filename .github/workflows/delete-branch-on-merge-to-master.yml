@@ -1,16 +1,16 @@
 name: Selectively delete feature branch after merge to master
 
-# Only run the workflow when a PR that targets master is closed
+# Only run the workflow when a PR that targets main is closed
 on:
   pull_request:
     types:
       - closed
     branches:
-      - 'master'
+      - 'main'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-  
+
 jobs:
   merge_job:
     # this job will only run if the PR has been merged
@@ -21,7 +21,7 @@ jobs:
     # from the github actions marketplace repo here: https://github.com/pabio/delete-merged-action
       uses: koj-co/delete-merged-action@master
       with:
-      # do not delete master, development, or hotfix-release branches
-        branches: "!master, !development, !*hotfix*, *"
+      # do not delete main, development, or hotfix-release branches
+        branches: "!main, !development, !*hotfix*, *"
       env:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

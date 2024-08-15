@@ -53,7 +53,7 @@ function GeneListForm({
           <p>
             The file must be tab- or comma-delimited plain text (.txt) with the value &quot;GENE NAMES&quot; in the first column, and cluster names in each successive column.
             <br/>
-            <a href="https://raw.githubusercontent.com/broadinstitute/single_cell_portal/master/demo_data/marker_gene_list_example.txt" target="_blank" rel="noreferrer noopener">
+            <a href="https://raw.githubusercontent.com/broadinstitute/single_cell_portal/main/demo_data/marker_gene_list_example.txt" target="_blank" rel="noreferrer noopener">
               Example file
             </a>
             <br/>

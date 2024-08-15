@@ -51,7 +51,7 @@ function CoordinateLabelForm({
       <div className="col-md-12">
         <div className="form-terra">
           <p>
-            A <a href="https://raw.githubusercontent.com/broadinstitute/single_cell_portal/master/demo_data/coordinate_labels_example.txt" target="_blank" rel="noopener noreferrer">Coordinate Label File</a>
+            A <a href="https://raw.githubusercontent.com/broadinstitute/single_cell_portal/main/demo_data/coordinate_labels_example.txt" target="_blank" rel="noopener noreferrer">Coordinate Label File</a>
             &nbsp;specifies labels to display at specified coordinates of a cluster.
           </p>
           <pre>

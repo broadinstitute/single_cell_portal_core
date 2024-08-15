@@ -14,7 +14,7 @@ function main {
   # defaults
   SSH_USER="jenkins"
   DESTINATION_BASE_DIR='/home/jenkins/deployments/single_cell_portal_core'
-  GIT_BRANCH="master"
+  GIT_BRANCH="main"
   PASSENGER_APP_ENV="production"
   BOOT_COMMAND="bin/remote_deploy.sh"
   SCP_REPO="https://github.com/broadinstitute/single_cell_portal_core.git"
@@ -170,7 +170,7 @@ USAGE:
 
 [OPTIONS]
 -e VALUE    set the environment to boot the portal in (defaults to production)
--b VALUE    set the branch to pull from git (defaults to master)
+-b VALUE    set the branch to pull from git (defaults to main)
 -d VALUE    set the target directory to deploy from (defaults to $DESTINATION_BASE_DIR)
 -S VALUE    set the path to SSH_KEYFILE (private key for SSH auth, no default, not needing except for manual testing)
 -h VALUE    set the DESTINATION_HOST (remote GCP VM to SSH into, no default)

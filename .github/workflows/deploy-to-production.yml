@@ -63,4 +63,4 @@ jobs:
           if [[ "${{ github.event.inputs.rollback }}" = "Y" ]]; then
             ROLLBACK="-R"
           fi
-          bin/deploy-github.sh -b master -e production -g ${{ env.GOOGLE_CLOUD_PROJECT }} -h ${{ env.REMOTE_HOST }} -p ${{ env.CONFIG_FILENAME }} -s ${{ env.DEFAULT_SA_KEYFILE }} -r ${{ env.READONLY_SA_KEYFILE }} $ROLLBACK
+          bin/deploy-github.sh -b main -e production -g ${{ env.GOOGLE_CLOUD_PROJECT }} -h ${{ env.REMOTE_HOST }} -p ${{ env.CONFIG_FILENAME }} -s ${{ env.DEFAULT_SA_KEYFILE }} -r ${{ env.READONLY_SA_KEYFILE }} $ROLLBACK
