@@ -242,7 +242,7 @@ export function validateUnique(headers) {
 }
 
 /** Verifies metadata file has all required columns */
-export function validateRequiredMetadataColumns(parsedHeaders) {
+export function validateRequiredMetadataColumns(parsedHeaders, isAnnData=false) {
   const issues = []
   const firstLine = parsedHeaders[0]
   const missingCols = []
@@ -252,7 +252,8 @@ export function validateRequiredMetadataColumns(parsedHeaders) {
     }
   })
   if (missingCols.length) {
-    const msg = `File is missing required columns ${missingCols.join(', ')}`
+    const columns = isAnnData ? 'obs keys' : 'columns'
+    const msg = `File is missing required ${columns}: ${missingCols.join(', ')}`
     issues.push(['error', 'format:cap:metadata-missing-column', msg])
   }
   return issues

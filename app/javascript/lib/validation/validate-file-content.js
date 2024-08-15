@@ -17,7 +17,8 @@ import {
 import {
   getParsedHeaderLines, parseLine, ParseException,
   validateUniqueCellNamesWithinFile, validateMetadataLabelMatches,
-  validateGroupColumnCounts, timeOutCSFV, validateUnique
+  validateGroupColumnCounts, timeOutCSFV, validateUnique,
+  validateRequiredMetadataColumns
 } from './shared-validation'
 import { parseDifferentialExpressionFile } from './validate-differential-expression'
 import { parseAnnDataFile } from './validate-anndata'

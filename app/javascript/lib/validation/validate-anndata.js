@@ -41,7 +41,7 @@ export async function parseAnnDataFile(file) {
 
   issues = issues.concat(
     validateUnique(headers),
-    validateRequiredMetadataColumns([headers])
+    validateRequiredMetadataColumns([headers], true)
   )
 
   return { issues }
