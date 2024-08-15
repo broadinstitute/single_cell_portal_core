@@ -139,7 +139,6 @@ function getExtraInfo(extraInfoType) {
 
 /** renders the note that AnnData upload will occur later for preceeding upload steps */
 export function AnnDataPreUploadDirections({extraInfoType=null}) {
-  console.log(`extraInfoType: ${extraInfoType}`)
   return <>
     <div className="row">
       <div className="col-md-12">
