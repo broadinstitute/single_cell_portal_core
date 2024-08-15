@@ -19,11 +19,15 @@ async function getAnnotationHeaders(key, hdf5File) {
 /** Get all headers from AnnData file */
 async function getAnnDataHeaders(file) {
   // TODO: Parameterize this, also support URL to remote file
-  const fileOrUrl = file
+  const idType = file.type === 'application/octet-stream' ? 'url' : 'file'
 
-  const idType = typeof fileOrUrl === 'string' ? 'url' : 'file'
+  // TODO (SCP-5770): Extend AnnData CSFV to remote files, then remove this
+  if (idType === 'url') {
+    return null
+  }
+
   const openParams = {}
-  openParams[idType] = fileOrUrl
+  openParams[idType] = file
   const hdf5File = await openH5File(openParams)
 
   const headers = await getAnnotationHeaders('obs', hdf5File)
@@ -36,6 +40,9 @@ async function getAnnDataHeaders(file) {
 /** Parse AnnData file, and return an array of issues, along with file parsing info */
 export async function parseAnnDataFile(file) {
   const headers = await getAnnDataHeaders(file)
+
+  // TODO (SCP-5770): Extend AnnData CSFV to remote files, then remove this
+  if (!headers) {return []}
 
   let issues = []
 
