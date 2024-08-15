@@ -7,10 +7,10 @@ on:
       - closed
     branches:
       - 'development'
-    
+
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-  
+
 jobs:
   merge_job:
     # this job will only run if the PR has been merged
@@ -21,7 +21,7 @@ jobs:
     # from the github actions marketplace repo here: https://github.com/pabio/delete-merged-action
       uses: koj-co/delete-merged-action@master
       with:
-      # do not delete master, development branches
-        branches: "!master, !development, *"
+      # do not delete main, development branches
+        branches: "!main, !development, *"
       env:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

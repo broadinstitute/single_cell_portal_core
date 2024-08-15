@@ -54,7 +54,7 @@ export function SpatialUploadForm({
           <div className="row">
             <div className="col-md-12">
               <p>
-                A <a href="https://github.com/broadinstitute/single_cell_portal/blob/master/demo_data/spatial_example.txt" target="_blank" rel="noreferrer">spatial file</a>
+                A <a href="https://github.com/broadinstitute/single_cell_portal/blob/main/demo_data/spatial_example.txt" target="_blank" rel="noreferrer">spatial file</a>
                 &nbsp;(.txt or .txt.gz) contains <a href="https://en.wikipedia.org/wiki/Spatial_transcriptomics" target="_blank" rel="noreferrer">spatial transcriptomics</a> cell coordinates and optional metadata.
               </p>
             </div>
