@@ -352,6 +352,10 @@ export default function RelatedGenesIdeogram({
     if (annotation.type === 'group') {
       document.removeEventListener('ideogramDrawPathway')
       document.addEventListener('ideogramDrawPathway', event => {
+
+        // Hide popover instantly upon drawing pathway; don't wait ~2 seconds
+        document.querySelector('._ideogramTooltip').style.opacity = 0
+
         const details = event.detail
         const searchedGene = details.sourceGene
         const interactingGene = details.destGene
