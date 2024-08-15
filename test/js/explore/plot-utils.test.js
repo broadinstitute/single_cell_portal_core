@@ -1,4 +1,4 @@
-import PlotUtils from 'lib/plot'
+import PlotUtils, { safenLabels } from 'lib/plot'
 
 describe('Plot grouping function cache', () => {
   it('makes traces based on the annotation groups', async () => {
@@ -164,5 +164,11 @@ describe('Plot grouping function cache', () => {
     expect(trace2[0]).toEqual({
       ...data
     })
+  })
+
+  it('does not error when raw labels are undefined', async () => {
+    // This prevents erroring gene expression scatter plots up applying a legend filter
+    const safeLabels = safenLabels(undefined)
+    expect(safeLabels).toBeUndefined()
   })
 })
