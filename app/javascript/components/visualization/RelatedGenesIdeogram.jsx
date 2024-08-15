@@ -263,6 +263,7 @@ function onWillShowAnnotTooltip(annot) {
 /** Persist click handling for tissue toggle click */
 function addTissueToggleClickHandler(newTitle) {
   const ideoTissueToggle = document.querySelector('._ideoMoreOrLessTissue')
+  if (!ideoTissueToggle) {return} // Some genes (e.g. CSN2) have <= 3 tissue entries
   ideoTissueToggle.addEventListener('click', () => {
     const ideoTissuePlotTitle = document.querySelector('._ideoTissuePlotTitle')
     ideoTissuePlotTitle.innerHTML = newTitle
