@@ -5,7 +5,7 @@ const fetch = require('node-fetch')
 import { screen, render, fireEvent } from '@testing-library/react'
 import React from 'react';
 
-import {logClick, logClickLink, logMenuChange, setMetricsApiMockFlag} from 'lib/metrics-api'
+import { logClick, logClickLink, logMenuChange, setMetricsApiMockFlag, getTabProperty } from 'lib/metrics-api'
 import {logToSentry} from 'lib/sentry-logging'
 import * as SCPContextProvider from '~/providers/SCPContextProvider'
 import * as Sentry from '@sentry/react'
@@ -157,4 +157,27 @@ describe('Library for client-side usage analytics', () => {
     expect(numDroppedWhenInfo).toEqual(1)
   })
 
+  it('sets tab parameter correctly', () => {
+    delete global.window.location
+    global.window = Object.create(window)
+    global.window.location = {
+      pathname: '/single_cell/study/SCP1234'
+    }
+    let enabledTab = getTabProperty()
+    expect(enabledTab).toBeUndefined()
+
+    global.window.location = {
+      hash: '#study-visualize',
+      pathname: '/single_cell/study/SCP1234'
+    }
+    enabledTab = getTabProperty()
+    expect(enabledTab).toEqual('study-visualize')
+
+    global.window.location = {
+      search: '?cluster=foo&genes=bar&tab=distribution',
+      pathname: '/single_cell/study/SCP1234'
+    }
+    enabledTab = getTabProperty()
+    expect(enabledTab).toEqual('distribution')
+  })
 })
