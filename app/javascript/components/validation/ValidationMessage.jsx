@@ -72,11 +72,7 @@ export default function ValidationMessage({
       { suggestSync &&
       <div className="validation-info" data-testid="validation-info">
         <>
-      Your file is large.  If it is already in a Google bucket,{' '}
-          <a href="sync" target="_blank" data-analytics-name="sync-suggestion">
-          sync your file
-          </a>{' '}
-      to add it faster.
+      Your file is large.  If it is already in a Google bucket, click "Use bucket path" to add it faster.
         </>
       </div>
       }
