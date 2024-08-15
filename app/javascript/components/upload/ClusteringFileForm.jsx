@@ -20,7 +20,7 @@ export default function ClusteringFileForm({
   updateFile,
   saveFile,
   deleteFile,
-  associatedClusterFileOptions = [],
+  associatedClusterFileOptions=[],
   updateCorrespondingClusters,
   bucketName,
   isInitiallyExpanded,
@@ -30,7 +30,7 @@ export default function ClusteringFileForm({
     .map(id => associatedClusterFileOptions.find(opt => opt.value === id))
 
   if (isAnnDataExperience) {
-    requiredFields.push({ label: '.obsm key name', propertyName: 'obsm_key_name' })
+    requiredFields.push({ label: '.obsm key name', propertyName: 'obsm_key_name'})
   }
   const validationMessages = validateFile({
     file, allFiles, allowedFileExts, requiredFields, isAnnDataExperience
@@ -47,7 +47,7 @@ export default function ClusteringFileForm({
         trigger={['hover', 'focus']}
         rootClose placement="top"
         overlay={obsmKeyNameHelpContent()}>
-        <span> .obsm key name * <FontAwesomeIcon icon={faQuestionCircle} /></span>
+        <span> .obsm key name * <FontAwesomeIcon icon={faQuestionCircle}/></span>
       </OverlayTrigger>
     </span>
 
@@ -70,15 +70,15 @@ export default function ClusteringFileForm({
     if (isAnnDataExperience) {
       return <div className="row">
         <div className="col-md-6">
-          <TextFormField label="Name" fieldName="name" file={file} updateFile={updateFile} />
+          <TextFormField label="Name" fieldName="name" file={file} updateFile={updateFile}/>
         </div>
         <div className="col-md-6">
-          <TextFormField label={obsmKeyNameMessage()} fieldName="obsm_key_name" file={file}
+          <TextFormField label= {obsmKeyNameMessage()} fieldName="obsm_key_name" file={file}
             updateFile={updateFile} placeholderText='For example, X_tsne' isDisabled={file.parse_status !== 'unparsed'} />
         </div>
       </div>
     } else {
-      return <TextFormField label="Name" fieldName="name" file={file} updateFile={updateFile} />
+      return <TextFormField label="Name" fieldName="name" file={file} updateFile={updateFile}/>
     }
   }
 
@@ -87,7 +87,7 @@ export default function ClusteringFileForm({
     allowedFileExts, deleteFile, validationMessages, bucketName, isInitiallyExpanded, isAnnDataExperience, isLastClustering
   }}>
     {nameFields(isAnnDataExperience)}
-    {(file.is_spatial && !isAnnDataExperience) &&
+    { (file.is_spatial && !isAnnDataExperience) &&
       <div className="form-group">
         <label className="labeled-select">Corresponding clusters
           <Select options={associatedClusterFileOptions}
@@ -95,50 +95,50 @@ export default function ClusteringFileForm({
             value={spatialClusterAssocs}
             isMulti={true}
             placeholder="None"
-            onChange={val => updateCorrespondingClusters(file, val)} />
+            onChange={val => updateCorrespondingClusters(file, val)}/>
         </label>
       </div>
     }
     <TextFormField label="Description / Figure legend (this will be displayed below cluster)"
-      fieldName="description" file={file} updateFile={updateFile} />
+      fieldName="description" file={file} updateFile={updateFile}/>
 
     <div className="row">
       <div className="col-md-4">
-        <TextFormField label="X axis label" fieldName="x_axis_label" file={file} updateFile={updateFile} />
+        <TextFormField label="X axis label" fieldName="x_axis_label" file={file} updateFile={updateFile}/>
       </div>
       <div className="col-md-4">
-        <TextFormField label="Y axis label" fieldName="y_axis_label" file={file} updateFile={updateFile} />
+        <TextFormField label="Y axis label" fieldName="y_axis_label" file={file} updateFile={updateFile}/>
       </div>
     </div>
     <div className="row">
       <div className="col-md-2">
-        <TextFormField label="X domain min" fieldName="x_axis_min" file={file} updateFile={updateFile} />
+        <TextFormField label="X domain min" fieldName="x_axis_min" file={file} updateFile={updateFile}/>
       </div>
       <div className="col-md-2">
-        <TextFormField label="X domain max" fieldName="x_axis_max" file={file} updateFile={updateFile} />
+        <TextFormField label="X domain max" fieldName="x_axis_max" file={file} updateFile={updateFile}/>
       </div>
       <div className="col-md-2">
-        <TextFormField label="Y domain min" fieldName="y_axis_min" file={file} updateFile={updateFile} />
+        <TextFormField label="Y domain min" fieldName="y_axis_min" file={file} updateFile={updateFile}/>
       </div>
       <div className="col-md-2">
-        <TextFormField label="Y domain max" fieldName="y_axis_max" file={file} updateFile={updateFile} />
+        <TextFormField label="Y domain max" fieldName="y_axis_max" file={file} updateFile={updateFile}/>
       </div>
       <div className="col-md-2">
-        <TextFormField label="Z domain min" fieldName="z_axis_min" file={file} updateFile={updateFile} />
+        <TextFormField label="Z domain min" fieldName="z_axis_min" file={file} updateFile={updateFile}/>
       </div>
       <div className="col-md-2">
-        <TextFormField label="Z domain max" fieldName="z_axis_max" file={file} updateFile={updateFile} />
+        <TextFormField label="Z domain max" fieldName="z_axis_max" file={file} updateFile={updateFile}/>
       </div>
     </div>
     <div className="row">
       <div className="col-md-4">
-        <TextFormField label="External link URL" fieldName="external_link_url" file={file} updateFile={updateFile} />
+        <TextFormField label="External link URL" fieldName="external_link_url" file={file} updateFile={updateFile}/>
       </div>
       <div className="col-md-4">
-        <TextFormField label="External link title" fieldName="external_link_title" file={file} updateFile={updateFile} />
+        <TextFormField label="External link title" fieldName="external_link_title" file={file} updateFile={updateFile}/>
       </div>
       <div className="col-md-4">
-        <TextFormField label="External link description (used as tooltip)" fieldName="external_link_description" file={file} updateFile={updateFile} />
+        <TextFormField label="External link description (used as tooltip)" fieldName="external_link_description" file={file} updateFile={updateFile}/>
       </div>
     </div>
   </ExpandableFileForm>
