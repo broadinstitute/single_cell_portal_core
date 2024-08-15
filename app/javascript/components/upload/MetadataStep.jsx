@@ -1,5 +1,6 @@
 import React, { useEffect, useContext } from 'react'
 import metadataExplainerImage from '~/../assets/images/metadata-convention-explainer.jpg'
+import annDataMetadataExplainerImage from '~/../assets/images/metadata-convention-explainer-anndata.jpg'
 import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Popover, OverlayTrigger } from 'react-bootstrap'
@@ -39,6 +40,7 @@ function MetadataForm({
   const userState = useContext(UserContext)
   const featureFlagState = serverState.feature_flags
   const conventionRequired = featureFlagState && featureFlagState.convention_required
+  const explainerImg = isAnnDataExperience ? annDataMetadataExplainerImage : metadataExplainerImage
 
   const file = formState.files.find(metadataFileFilter)
   const bucketName = formState.study.bucket_id
@@ -62,7 +64,7 @@ function MetadataForm({
           <div className="row">
             <div className="col-md-12" id="overflow-x-scroll">
               A <b>metadata file</b> lists all cells in the study
-              <img src={metadataExplainerImage} alt={'Diagram of data required for metadata file'}/>
+              <img src={explainerImg} alt={'Diagram of data required for metadata file'}/>
             </div>
           </div>
           <div className="row">

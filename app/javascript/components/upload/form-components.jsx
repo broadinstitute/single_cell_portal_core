@@ -123,13 +123,29 @@ export function SaveDeleteButtons({ file, updateFile, saveFile, deleteFile, vali
   </div>
 }
 
+function getExtraInfo(extraInfoType) {
+  switch (extraInfoType) {
+    case 'Processed':
+      return <><br /><br />
+        To visualize processed expression data, <strong>adata.X</strong> should have processed expression data. Raw
+        count data can be included in <strong>adata.raw</strong> (not used for visualization). SCP plans to support
+        “exploratory differential expression” analysis for raw count data in <strong>adata.raw</strong>. If you have
+        raw count data but cannot include it in the <strong>adata.raw</strong> slot, please contact&nbsp;
+        <a href="mailto:scp-support@broadinstitute.zendesk.com">scp-support@broadinstitute.zendesk.com</a> for
+        further assistance.
+      </>
+  }
+}
+
 /** renders the note that AnnData upload will occur later for preceeding upload steps */
-export function AnnDataPreUploadDirections() {
+export function AnnDataPreUploadDirections({extraInfoType=null}) {
+  console.log(`extraInfoType: ${extraInfoType}`)
   return <>
     <div className="row">
       <div className="col-md-12">
         <p className="form-terra">
-        Fill in data here, the file upload will occur in the AnnData tab.
+        Fill in form below, the file upload will occur in the AnnData tab.
+          { getExtraInfo(extraInfoType) }
         </p>
       </div>
     </div></>

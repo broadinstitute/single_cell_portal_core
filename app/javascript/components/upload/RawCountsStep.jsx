@@ -72,6 +72,7 @@ function RawCountsUploadForm({
  * Retrieve the expression file info message for when in classic upload mode
 */
 export function getExpressionFileInfoMessage(isAnnDataExperience, expressionType) {
+  console.log(`expressionType: ${expressionType}`)
   if (!isAnnDataExperience) {
     let message = ''
     if (expressionType === 'Raw') {
@@ -92,7 +93,7 @@ export function getExpressionFileInfoMessage(isAnnDataExperience, expressionType
         </div>
       </div>
     </div>
-  } else if (isAnnDataExperience) {return <AnnDataPreUploadDirections/>}
+  } else if (isAnnDataExperience) {return <AnnDataPreUploadDirections extraInfoType={expressionType} />}
 }
 
 const expressionFileStructureHelp = <>
