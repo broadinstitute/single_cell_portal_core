@@ -41,6 +41,9 @@ function MetadataForm({
   const featureFlagState = serverState.feature_flags
   const conventionRequired = featureFlagState && featureFlagState.convention_required
   const explainerImg = isAnnDataExperience ? annDataMetadataExplainerImage : metadataExplainerImage
+  const infoText = isAnnDataExperience ?
+    <>Uploaded data must conform to the SCP metadata convention by including the following required metadata in <strong>adata.obs</strong>.</> :
+    <>A <b>metadata file</b> lists all cells in the study.</>
 
   const file = formState.files.find(metadataFileFilter)
   const bucketName = formState.study.bucket_id
@@ -63,7 +66,7 @@ function MetadataForm({
         <div className="form-terra">
           <div className="row">
             <div className="col-md-12" id="overflow-x-scroll">
-              A <b>metadata file</b> lists all cells in the study
+              {infoText}
               <img src={explainerImg} alt={'Diagram of data required for metadata file'}/>
             </div>
           </div>
