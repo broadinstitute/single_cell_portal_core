@@ -21,8 +21,6 @@
       const obsValues = await Promise.all(rawObsValues)
       obsValues.forEach(obsValue => {
           const annotationName = obsValue.name.split(`/${key}/`)[1]
-          // console.log('annotationName')
-          console.log(annotationName)
           headers.push(annotationName)
       })
       console.log(headers)

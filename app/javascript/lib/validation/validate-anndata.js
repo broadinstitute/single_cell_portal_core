@@ -10,7 +10,6 @@ async function getAnnotationHeaders(key, hdf5File) {
   const obsValues = await Promise.all(rawObsValues)
   obsValues.forEach(obsValue => {
     const annotationName = obsValue.name.split(`/${key}/`)[1]
-    console.log(annotationName)
     headers.push(annotationName)
   })
   return headers

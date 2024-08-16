@@ -372,8 +372,6 @@ async function parseFile(file, fileType, fileOptions={}, sizeProps={}) {
 
     if (fileType === 'AnnData') {
       const { issues } = await parseAnnDataFile(file)
-      console.log('issues')
-      console.log(issues)
       parseResult.issues = parseResult.issues.concat(issues)
     } else if (parseFunctions[fileType]) {
       let ignoreLastLine = false

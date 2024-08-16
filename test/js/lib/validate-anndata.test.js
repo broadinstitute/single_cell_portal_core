@@ -8,7 +8,7 @@ describe('Client-side file validation for AnnData', () => {
     expect(parseResults.issues).toHaveLength(0)
   })
 
-  // TODO:
+  // TODO (SCP-5718): Uncomment this negative test when test file is available in GitHub
   // it('Reports SCP-invalid AnnData file as invalid', async () => {
   //   // eslint-disable-next-line max-len
   //   const url = 'https://github.com/broadinstitute/single_cell_portal_core/raw/development/test/test_data/anndata/anndata_test_bad_header_no_species.h5ad'
