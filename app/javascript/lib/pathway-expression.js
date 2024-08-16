@@ -1,5 +1,5 @@
 /**
- * @fileoverview Overlays expression summary metrics on genes in pathway diagram
+ * @fileoverview Overlays expression summary graphics on genes in pathway diagram
  *
  * This augments pathway diagrams shown via related genes ideogram.  Ideogram renders
  * a pathway diagram with some basic coloring, then code in this module enriches it.
@@ -10,8 +10,8 @@
  * Upon fetching the metrics, each gene in the pathway is colored by mean expression, and
  * its opacity is adjusted by percent of cells expressing.  This "expression overlay"
  * essentially shows the same metrics as a dot plot, but for one annotation label at a time,
- * and with the major added benefit of showing a rich knowledge graphs: specific directed
- * interactions among networks of genes in molecular biology context.
+ * and with the major added benefit of showing a rich knowledge graph: specific directed
+ * interactions among networks of genes in detailed molecular biology context.
  *
  * More background and demo video are available at:
  * https://github.com/broadinstitute/single_cell_portal_core/pull/2104
@@ -36,7 +36,7 @@ function getPathwayGenes(ideogram) {
   return rankedGenes
 }
 
-/** Get 50 genes from pathway, including searched gene and interacting gene */
+/** Get up to 50 genes from pathway, including searched gene and interacting gene */
 function getDotPlotGenes(searchedGene, interactingGene, pathwayGenes, ideogram) {
   const genes = pathwayGenes.map(g => g.name)
   const uniqueGenes = Array.from(new Set(genes))
@@ -51,10 +51,14 @@ function getDotPlotGenes(searchedGene, interactingGene, pathwayGenes, ideogram) 
   return dotPlotGenes
 }
 
-/** Color genes by expression dot plot */
+/**
+ * Color each gene red/purple/blue by mean expression, and
+ * set each gene's opacity by percent of cells expression
+ */
 function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
   const styleRulesets = []
   const unassayedGenes = []
+
   genes.forEach(geneObj => {
     const domId = geneObj.domId
     const gene = geneObj.name
@@ -71,12 +75,15 @@ function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
     const rulesets = `${rectRuleset} ${textRuleset}`
     styleRulesets.push(rulesets)
   })
+
   const style = `<style class="ideo-pathway-style">${styleRulesets.join(' ')}</style>`
   const pathwayContainer = document.querySelector('#_ideogramPathwayContainer')
+
   if (unassayedGenes.length > 0) {
     // This might help to eventually convey in hover text, etc.
-    console.debug(`Study did not assay these genes in pathway: ${unassayedGenes.join(', ')}`)
+    console.debug(`Genes omitted due to dot plot restrictions, or not assayed in study: ${unassayedGenes.join(', ')}`)
   }
+
   const prevStyle = document.querySelector('.ideo-pathway-style')
   if (prevStyle) {prevStyle.remove()}
   pathwayContainer.insertAdjacentHTML('afterbegin', style)
@@ -86,7 +93,7 @@ function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
 // eslint-disable-next-line max-len
 const infoIcon = `<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="info-circle" class="svg-inline--fa fa-info-circle " role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="#3D5A87" d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"></path></svg>`
 
-/** Write brief icon explaining color and opacity */
+/** Add a small info icon ("i") in pathway header explaining color and opacity */
 function writePathwayExpressionLegend() {
   const legendText =
     'Color represents scaled mean expression: red is high, purple medium, blue low.  ' +
@@ -101,10 +108,8 @@ function writePathwayExpressionLegend() {
   headerLink.insertAdjacentHTML('afterend', legend)
 }
 
-
 /** Get dropdown menu of annotation labels; pick one to color genes */
 function writePathwayAnnotationLabelMenu(labels, pathwayGenes, dotPlotMetrics) {
-
   const options = labels.map(label => `<option>${label}</option>`)
   const menu =
     `<span class="pathway-label-menu-container" style="margin-left: 10px;">` +
@@ -121,6 +126,43 @@ function writePathwayAnnotationLabelMenu(labels, pathwayGenes, dotPlotMetrics) {
   })
 }
 
+/**
+ * Get annotation labels that have > 1 cell in the labeled group
+ *
+ * TODO (SCP-5760): Propagate these window.SCP values via React
+ */
+function getEligibleLabels() {
+  const exploreParamsWithDefaults = window.SCP.exploreParamsWithDefaults
+  const exploreInfo = window.SCP.exploreInfo
+  const countsByLabel = window.SCP.countsByLabel
+
+  const rawAnnotLabels = getAnnotationValues(
+    exploreParamsWithDefaults?.annotation,
+    exploreInfo?.annotationList
+  )
+  const annotationLabels = rawAnnotLabels.filter(label => countsByLabel[label] > 0)
+  return annotationLabels
+}
+
+/** Update pathway header with SCP label menu, info icon */
+function writePathwayExpressionHeader(loadingCls, dotPlotMetrics, annotationLabels, pathwayGenes) {
+  // Remove "Loading expression...", as load is done
+  document.querySelector(`.${loadingCls}`).remove()
+
+  writePathwayExpressionLegend()
+  writePathwayAnnotationLabelMenu(annotationLabels, pathwayGenes, dotPlotMetrics)
+}
+
+/** Add "Loading expression..." to pathway header while dot plot metrics are being fetched */
+function writeLoadingIndicator(loadingCls) {
+  const headerLink = document.querySelector('._ideoPathwayHeader a')
+  const style = 'color: #777; font-style: italic; margin-left: 10px;'
+  const loading = `<span class="${loadingCls}" style="${style}">Loading expression...</span>`
+  const prevElement = document.querySelector(`.${loadingCls}`)
+  if (prevElement) {prevElement.remove()}
+  headerLink.insertAdjacentHTML('afterend', loading)
+}
+
 /** Color pathway gene nodes by expression */
 function renderPathwayExpression(
   searchedGene, interactingGene,
@@ -133,22 +175,10 @@ function renderPathwayExpression(
 
   let numDraws = 0
 
-  const exploreParamsWithDefaults = window.SCP.exploreParamsWithDefaults
-  const exploreInfo = window.SCP.exploreInfo
-  const countsByLabel = window.SCP.countsByLabel
-
-  const rawAnnotLabels = getAnnotationValues(
-    exploreParamsWithDefaults?.annotation,
-    exploreInfo?.annotationList
-  )
-  const annotationLabels = rawAnnotLabels.filter(label => countsByLabel[label] > 0)
+  const annotationLabels = getEligibleLabels()
 
   const loadingCls = 'pathway-loading-expression'
-  const headerLink = document.querySelector('._ideoPathwayHeader a')
-  const loading = `<span class="${loadingCls}" style="color: #555; margin-left: 10px;">Loading expression...</span>`
-  const prevElement = document.querySelector(`.${loadingCls}`)
-  if (prevElement) {prevElement.remove()}
-  headerLink.insertAdjacentHTML('afterend', loading)
+  writeLoadingIndicator(loadingCls)
 
   /** After invisible dot plot renders, color each gene by expression metrics */
   function backgroundDotPlotDrawCallback(dotPlot) {
@@ -157,17 +187,16 @@ function renderPathwayExpression(
     numDraws += 1
     if (numDraws === 1) {return}
 
-    // Remove "Loading expression..."
-    document.querySelector(`.${loadingCls}`).remove()
-
     const dotPlotMetrics = getDotPlotMetrics(dotPlot)
-    writePathwayExpressionLegend()
-    writePathwayAnnotationLabelMenu(annotationLabels, pathwayGenes, dotPlotMetrics)
+    writePathwayExpressionHeader(loadingCls, dotPlotMetrics, annotationLabels, pathwayGenes)
 
     const annotationLabel = annotationLabels[0]
     colorPathwayGenesByExpression(pathwayGenes, dotPlotMetrics, annotationLabel)
   }
 
+  // Future optimization: render background dot plot one annotation at a time.  This would
+  // speed up initial pathway expression overlay rendering, and increase the practical limit
+  // on number of genes that could be retrieved via SCP API Morpheus endpoint.
   renderBackgroundDotPlot(
     studyAccession, dotPlotGenes, cluster, annotation,
     'All', annotationLabels, backgroundDotPlotDrawCallback,
@@ -178,7 +207,7 @@ function renderPathwayExpression(
 /**
  * Add and remove event listeners for Ideogram's `ideogramDrawPathway` event
  *
- * This sets up the expression overlay for pathway nodes
+ * This sets up the pathway expression overlay
  */
 export function manageDrawPathway(studyAccession, cluster, annotation, ideogram) {
   const dotPlotParams = { studyAccession, cluster, annotation }
