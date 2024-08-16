@@ -163,12 +163,22 @@ function renderPathwayExpression(
   )
   const annotationLabels = rawAnnotLabels.filter(label => countsByLabel[label] > 0)
 
+  const loadingCls = 'pathway-loading-expression'
+  const headerLink = document.querySelector('._ideoPathwayHeader a')
+  const loading = `<span class="${loadingCls}" style="color: #555; margin-left: 10px;">Loading expression...</span>`
+  const prevElement = document.querySelector(`.${loadingCls}`)
+  if (prevElement) {prevElement.remove()}
+  headerLink.insertAdjacentHTML('afterend', loading)
+
   /** After invisible dot plot renders, color each gene by expression metrics */
   function backgroundDotPlotDrawCallback(dotPlot) {
     // The first render is for uncollapsed cell-x-gene metrics (heatmap),
     // the second render is for collapsed label-x-gene metrics (dotplot)
     numDraws += 1
     if (numDraws === 1) {return}
+
+    // Remove "Loading expression..."
+    document.querySelector(`.${loadingCls}`).remove()
 
     const dotPlotMetrics = getDotPlotMetrics(dotPlot)
     writePathwayExpressionLegend()
@@ -304,6 +314,31 @@ function onPlotRelatedGenes() {
 }
 
 /**
+ * Add and remove event listeners for Ideogram's `ideogramDrawPathway` event
+ *
+ * This sets up the expression overlay for pathway nodes
+ */
+function manageDrawPathway(studyAccession, cluster, annotation, ideogram) {
+  const dotPlotParams = { studyAccession, cluster, annotation }
+  if (annotation.type === 'group') {
+    document.removeEventListener('ideogramDrawPathway')
+    document.addEventListener('ideogramDrawPathway', event => {
+
+      // Hide popover instantly upon drawing pathway; don't wait ~2 seconds
+      document.querySelector('._ideogramTooltip').style.opacity = 0
+
+      const details = event.detail
+      const searchedGene = details.sourceGene
+      const interactingGene = details.destGene
+      renderPathwayExpression(
+        searchedGene, interactingGene, ideogram,
+        dotPlotParams
+      )
+    })
+  }
+}
+
+/**
  * Initiates Ideogram for related genes
  *
  * This is only done in the context of single-gene search in Study Overview
@@ -348,23 +383,7 @@ export default function RelatedGenesIdeogram({
     const ideogram = Ideogram.initRelatedGenes(ideoConfig, genesInScope)
     window.ideogram = ideogram
 
-    const dotPlotParams = { studyAccession, cluster, annotation }
-    if (annotation.type === 'group') {
-      document.removeEventListener('ideogramDrawPathway')
-      document.addEventListener('ideogramDrawPathway', event => {
-
-        // Hide popover instantly upon drawing pathway; don't wait ~2 seconds
-        document.querySelector('._ideogramTooltip').style.opacity = 0
-
-        const details = event.detail
-        const searchedGene = details.sourceGene
-        const interactingGene = details.destGene
-        renderPathwayExpression(
-          searchedGene, interactingGene, ideogram,
-          dotPlotParams
-        )
-      })
-    }
+    manageDrawPathway(studyAccession, cluster, annotation, ideogram)
 
     // Extend ideogram with custom SCP function to search genes
     window.ideogram.SCP = { searchGenes, speciesList }
