@@ -17,11 +17,15 @@ async function getAnnotationHeaders(key, hdf5File) {
 
 /** Get all headers from AnnData file */
 async function getAnnDataHeaders(file) {
-  // TODO: Parameterize this, also support URL to remote file
-  const idType = file.type === 'application/octet-stream' ? 'url' : 'file'
+  // TODO (SCP-5770): Parameterize this, also support URL to remote file
+  const idType = file.startsWith('http') || file.type === 'application/octet-stream' ? 'url' : 'file'
+
+  // Jest test uses Node, where file API differs
+  // TODO (SCP-5770): See if we can smoothen this and do away with `isTest`
+  const isTest = file.startsWith('http')
 
   // TODO (SCP-5770): Extend AnnData CSFV to remote files, then remove this
-  if (idType === 'url') {
+  if (idType === 'url' && !isTest) {
     return null
   }
 
