@@ -208,6 +208,10 @@ export default function RelatedGenesIdeogram({
     window.ideogram.SCP = { searchGenes, speciesList }
   }, [gene])
 
+  useEffect(() => {
+    manageDrawPathway(studyAccession, cluster, annotation, window.ideogram)
+  }, [cluster, annotation])
+
   return (
     <div
       id="related-genes-ideogram-container"

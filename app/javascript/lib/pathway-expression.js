@@ -84,8 +84,7 @@ function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
     console.debug(`Genes omitted due to dot plot restrictions, or not assayed in study: ${unassayedGenes.join(', ')}`)
   }
 
-  const prevStyle = document.querySelector('.ideo-pathway-style')
-  if (prevStyle) {prevStyle.remove()}
+  document.querySelector('.ideo-pathway-style')?.remove()
   pathwayContainer.insertAdjacentHTML('afterbegin', style)
 }
 
@@ -103,8 +102,7 @@ function writePathwayExpressionLegend() {
     `data-toggle="tooltip" data-original-title="${legendText}"`
   const legend = `<span ${legendAttrs}>${infoIcon}</span>`
   const headerLink = document.querySelector('._ideoPathwayHeader a')
-  const prevElement = document.querySelector('.pathway-legend')
-  if (prevElement) {prevElement.remove()}
+  document.querySelector('.pathway-legend')?.remove()
   headerLink.insertAdjacentHTML('afterend', legend)
 }
 
@@ -116,8 +114,7 @@ function writePathwayAnnotationLabelMenu(labels, pathwayGenes, dotPlotMetrics) {
       `<label>Expression in:</label> <select class="pathway-label-menu">${options.join()}</select>` +
     `</span>`
   const headerLink = document.querySelector('._ideoPathwayHeader a')
-  const prevElement = document.querySelector('.pathway-label-menu-container')
-  if (prevElement) {prevElement.remove()}
+  document.querySelector('.pathway-label-menu-container')?.remove()
   headerLink.insertAdjacentHTML('afterend', menu)
   const menuSelectDom = document.querySelector('.pathway-label-menu')
   menuSelectDom.addEventListener('change', () => {
@@ -147,7 +144,7 @@ function getEligibleLabels() {
 /** Update pathway header with SCP label menu, info icon */
 function writePathwayExpressionHeader(loadingCls, dotPlotMetrics, annotationLabels, pathwayGenes) {
   // Remove "Loading expression...", as load is done
-  document.querySelector(`.${loadingCls}`).remove()
+  document.querySelector(`.${loadingCls}`)?.remove()
 
   writePathwayExpressionLegend()
   writePathwayAnnotationLabelMenu(annotationLabels, pathwayGenes, dotPlotMetrics)
@@ -158,8 +155,7 @@ function writeLoadingIndicator(loadingCls) {
   const headerLink = document.querySelector('._ideoPathwayHeader a')
   const style = 'color: #777; font-style: italic; margin-left: 10px;'
   const loading = `<span class="${loadingCls}" style="${style}">Loading expression...</span>`
-  const prevElement = document.querySelector(`.${loadingCls}`)
-  if (prevElement) {prevElement.remove()}
+  document.querySelector(`.${loadingCls}`)?.remove()
   headerLink.insertAdjacentHTML('afterend', loading)
 }
 
