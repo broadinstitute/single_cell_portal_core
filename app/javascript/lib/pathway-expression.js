@@ -219,7 +219,9 @@ export function manageDrawPathway(studyAccession, cluster, annotation, ideogram)
     document.addEventListener('ideogramDrawPathway', event => {
 
       // Hide popover instantly upon drawing pathway; don't wait ~2 seconds
-      document.querySelector('._ideogramTooltip').style.display = 'none'
+      const ideoTooltip = document.querySelector('._ideogramTooltip')
+      ideoTooltip.style.opacity = 0
+      ideoTooltip.style.pointerEvents = 'none'
 
       const details = event.detail
       const searchedGene = details.sourceGene

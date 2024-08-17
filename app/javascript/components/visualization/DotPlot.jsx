@@ -211,6 +211,8 @@ export function getDotPlotMetrics(dotPlot) {
   return metrics
 }
 
+window.SCP.renderBackgroundDotPlotRegister = {}
+
 /** Render undisplayed Morpheus dot plot, to get metrics for pathway diagram */
 export async function renderBackgroundDotPlot(
   studyAccession, genes=[], cluster, annotation={},
@@ -218,8 +220,24 @@ export async function renderBackgroundDotPlot(
   topContainerSelector
 ) {
   const graphId = 'background-dot-plot'
-  const prevElement = document.querySelector(`#${graphId}`)
-  if (prevElement) {prevElement.remove()}
+  document.querySelector(`#${graphId}`)?.remove()
+
+  const registerKey = [
+    studyAccession,
+    genes.join(','),
+    cluster,
+    annotation.name,
+    annotation.type,
+    annotation.scope,
+    subsample
+  ].join('--')
+
+  // Prevent duplicate parallel requests of the same dot plot
+  if (registerKey in window.SCP.renderBackgroundDotPlotRegister) {
+    console.log('Prevented duplicate parallel requests of background dot plot')
+    return
+  }
+  window.SCP.renderBackgroundDotPlotRegister[registerKey] = 1
 
   const topContainer = document.querySelector(topContainerSelector)
 
@@ -229,15 +247,28 @@ export async function renderBackgroundDotPlot(
   const target = `#${graphId}`
 
   performance.mark(`perfTimeStart-${graphId}`)
-  const [dataset, perfTimes] = await fetchMorpheusJson(
-    studyAccession,
-    genes,
-    cluster,
-    annotation.name,
-    annotation.type,
-    annotation.scope,
-    subsample
-  )
+  let dataset
+  let perfTimes
+
+  try {
+    const results = await fetchMorpheusJson(
+      studyAccession,
+      genes,
+      cluster,
+      annotation.name,
+      annotation.type,
+      annotation.scope,
+      subsample
+    )
+    dataset = results[0]
+    perfTimes = results[1]
+
+    // Don't prevent non-parallel duplicate requests
+    delete window.SCP.renderBackgroundDotPlotRegister[registerKey]
+  } catch (error) {
+    delete window.SCP.renderBackgroundDotPlotRegister[registerKey]
+  }
+
 
   renderDotPlot({
     target,
