@@ -67,12 +67,19 @@ function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
       unassayedGenes.push(gene)
       return
     }
-    const color = metrics.color
-    const opacity = metrics.percent + 0.25
+    const percent = metrics.percent
+    const colorPercent = percent < 75 ? percent : percent + 25
+    const textColor = percent < 50 ? 'black' : 'white'
+    const rectColor = `color-mix(in oklab, ${metrics.color} ${colorPercent}%, white)`
     const baseSelector = `#_ideogramPathwayContainer .DataNode#${domId}`
-    const rectRuleset = `${baseSelector} rect {fill: ${color}; opacity: ${opacity};}`
-    const textRuleset = `${baseSelector} text {fill: white;}`
+    const rectRuleset = `${baseSelector} rect {fill: ${rectColor};}`
+    const textRuleset = `${baseSelector} text {fill: ${textColor};}`
     const rulesets = `${rectRuleset} ${textRuleset}`
+
+    const rect = document.querySelector(`${baseSelector} rect`)
+    rect.setAttribute('data-expression-scaled-mean', metrics.mean)
+    rect.setAttribute('data-expression-percent', percent)
+
     styleRulesets.push(rulesets)
   })
 
@@ -212,7 +219,7 @@ export function manageDrawPathway(studyAccession, cluster, annotation, ideogram)
     document.addEventListener('ideogramDrawPathway', event => {
 
       // Hide popover instantly upon drawing pathway; don't wait ~2 seconds
-      document.querySelector('._ideogramTooltip').style.opacity = 0
+      document.querySelector('._ideogramTooltip').style.display = 'none'
 
       const details = event.detail
       const searchedGene = details.sourceGene

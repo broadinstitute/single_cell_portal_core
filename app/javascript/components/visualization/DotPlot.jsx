@@ -201,8 +201,8 @@ export function getDotPlotMetrics(dotPlot) {
   labels.forEach((label, labelIndex) => {
     metrics[label] = {}
     genes.forEach((gene, geneIndex) => {
-      const mean = dataset.getValue(geneIndex, labelIndex, 1)
-      const percent = dataset.getValue(geneIndex, labelIndex, 0)
+      const mean = dataset.getValue(geneIndex, labelIndex, 0)
+      const percent = dataset.getValue(geneIndex, labelIndex, 1)
       const color = colorScheme.getColor(geneIndex, labelIndex, mean)
       metrics[label][gene] = {mean, percent, color}
     })
