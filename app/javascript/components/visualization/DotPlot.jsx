@@ -194,19 +194,31 @@ export function getDotPlotMetrics(dotPlot) {
   const colorScheme = dotPlot.getColorScheme()
 
   const dataset = dotPlot.dataset
-  // window.dotPlot = dotPlot
   const labels = dataset.columnMetadata.vectors[0].array
   const genes = dataset.rowMetadata.vectors[0].array
 
-  labels.forEach((label, labelIndex) => {
+  for (let i = 0; i < labels.length; i++) {
+    const label = labels[i]
+    const labelIndex = i
     metrics[label] = {}
-    genes.forEach((gene, geneIndex) => {
-      const mean = dataset.getValue(geneIndex, labelIndex, 0)
-      const percent = dataset.getValue(geneIndex, labelIndex, 1)
-      const color = colorScheme.getColor(geneIndex, labelIndex, mean)
-      metrics[label][gene] = {mean, percent, color}
-    })
-  })
+    for (let j = 0; j < genes.length; j++) {
+      const gene = genes[j]
+      const geneIndex = j
+      try {
+        const mean = dataset.getValue(geneIndex, labelIndex, 0)
+        const percent = dataset.getValue(geneIndex, labelIndex, 1)
+        const color = colorScheme.getColor(geneIndex, labelIndex, mean)
+        metrics[label][gene] = { mean, percent, color }
+      } catch (error) {
+        // eslint-disable-next-line quotes
+        if (error.message === "Cannot read properties of undefined (reading 'getValue')") {
+          // Occurs upon resizing window, artifact of internal Morpheus handling
+          // of pre-dot-plot heatmap matrix.  No user-facing impact.
+          return null
+        }
+      }
+    }
+  }
 
   return metrics
 }
@@ -248,7 +260,6 @@ export async function renderBackgroundDotPlot(
 
   performance.mark(`perfTimeStart-${graphId}`)
   let dataset
-  let perfTimes
 
   try {
     const results = await fetchMorpheusJson(
@@ -261,7 +272,6 @@ export async function renderBackgroundDotPlot(
       subsample
     )
     dataset = results[0]
-    perfTimes = results[1]
 
     // Don't prevent non-parallel duplicate requests
     delete window.SCP.renderBackgroundDotPlotRegister[registerKey]

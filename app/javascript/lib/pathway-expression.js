@@ -68,7 +68,7 @@ function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
       return
     }
     const percent = metrics.percent
-    const colorPercent = percent < 75 ? percent : percent + 25
+    const colorPercent = Math.min(percent < 75 ? percent : percent + 25, 100)
     const textColor = percent < 50 ? 'black' : 'white'
     const rectColor = `color-mix(in oklab, ${metrics.color} ${colorPercent}%, white)`
     const baseSelector = `#_ideogramPathwayContainer .DataNode#${domId}`
@@ -191,6 +191,11 @@ function renderPathwayExpression(
     if (numDraws === 1) {return}
 
     const dotPlotMetrics = getDotPlotMetrics(dotPlot)
+    if (!dotPlotMetrics) {
+      // Occurs upon resizing window, artifact of internal Morpheus handling
+      // of pre-dot-plot heatmap matrix.  No user-facing impact.
+      return
+    }
     writePathwayExpressionHeader(loadingCls, dotPlotMetrics, annotationLabels, pathwayGenes)
 
     const annotationLabel = annotationLabels[0]
