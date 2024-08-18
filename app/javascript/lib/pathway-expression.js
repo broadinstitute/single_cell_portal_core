@@ -8,7 +8,7 @@
  * Those expression metrics are available for each (annotation label, gene) tuple.
  *
  * Upon fetching the metrics, each gene in the pathway is colored by mean expression, and
- * its opacity is adjusted by percent of cells expressing.  This "expression overlay"
+ * its contrast is adjusted by percent of cells expressing.  This "expression overlay"
  * essentially shows the same metrics as a dot plot, but for one annotation label at a time,
  * and with the major added benefit of showing a rich knowledge graph: specific directed
  * interactions among networks of genes in detailed molecular biology context.
@@ -17,8 +17,133 @@
  * https://github.com/broadinstitute/single_cell_portal_core/pull/2104
  */
 
-import { renderBackgroundDotPlot, getDotPlotMetrics } from '~/components/visualization/DotPlot'
+import { renderDotPlot } from '~/components/visualization/DotPlot'
 import { getAnnotationValues } from '~/lib/cluster-utils'
+import { fetchMorpheusJson } from '~/lib/scp-api'
+
+// Denoise DevTools console log by not showing error that lacks user impact
+window.onerror = function(error) {
+  console.log('error')
+  console.log(error)
+
+  if (error.includes(`Failed to execute 'inverse' on 'SVGMatrix': The matrix is not invertible.`)) {
+    console.debug(
+      'Suppress non-user-impacting Pvjs error due to resize when showing pathway diagram'
+    )
+    return true
+  }
+}
+
+/**
+ * Get mean, percent, and color per gene, by annotation label
+ *
+ * For scRNA-seq:
+ * - Mean: average expression value
+ * - Percent: percent of cells expressing
+ * - Color: hex value for color of scaled mean expression: blue low, purple medium, red high
+ */
+export function getDotPlotMetrics(dotPlot) {
+  const metrics = {}
+
+  const colorScheme = dotPlot.getColorScheme()
+
+  const dataset = dotPlot.dataset
+  const labels = dataset.columnMetadata.vectors[0].array
+  const genes = dataset.rowMetadata.vectors[0].array
+
+  for (let i = 0; i < labels.length; i++) {
+    const label = labels[i]
+    const labelIndex = i
+    metrics[label] = {}
+    for (let j = 0; j < genes.length; j++) {
+      const gene = genes[j]
+      const geneIndex = j
+      try {
+        const mean = dataset.getValue(geneIndex, labelIndex, 0)
+        const percent = dataset.getValue(geneIndex, labelIndex, 1)
+        const color = colorScheme.getColor(geneIndex, labelIndex, mean)
+        metrics[label][gene] = { mean, percent, color }
+      } catch (error) {
+        // eslint-disable-next-line quotes
+        if (error.message === "Cannot read properties of undefined (reading 'getValue')") {
+          // Occurs upon resizing window, artifact of internal Morpheus handling
+          // of pre-dot-plot heatmap matrix.  No user-facing impact.
+          return null
+        }
+      }
+    }
+  }
+
+  return metrics
+}
+
+window.SCP.renderBackgroundDotPlotRegister = {}
+
+/** Render undisplayed Morpheus dot plot, to get metrics for pathway diagram */
+export async function renderBackgroundDotPlot(
+  studyAccession, genes=[], cluster, annotation={},
+  subsample, annotationValues, drawCallback,
+  topContainerSelector
+) {
+  const graphId = 'background-dot-plot'
+  document.querySelector(`#${graphId}`)?.remove()
+
+  const registerKey = [
+    studyAccession,
+    genes.join(','),
+    cluster,
+    annotation.name,
+    annotation.type,
+    annotation.scope,
+    subsample
+  ].join('--')
+
+  // Prevent duplicate parallel requests of the same dot plot
+  if (registerKey in window.SCP.renderBackgroundDotPlotRegister) {
+    return
+  }
+  window.SCP.renderBackgroundDotPlotRegister[registerKey] = 1
+
+  const topContainer = document.querySelector(topContainerSelector)
+
+  const container = `<div id="${graphId}" style="display: none;">`
+
+  topContainer.insertAdjacentHTML('beforeEnd', container)
+  const target = `#${graphId}`
+
+  performance.mark(`perfTimeStart-${graphId}`)
+  let dataset
+
+  try {
+    const results = await fetchMorpheusJson(
+      studyAccession,
+      genes,
+      cluster,
+      annotation.name,
+      annotation.type,
+      annotation.scope,
+      subsample
+    )
+    dataset = results[0]
+
+    // Don't prevent non-parallel duplicate requests
+    delete window.SCP.renderBackgroundDotPlotRegister[registerKey]
+  } catch (error) {
+    delete window.SCP.renderBackgroundDotPlotRegister[registerKey]
+  }
+
+
+  renderDotPlot({
+    target,
+    dataset,
+    annotationName: annotation.name,
+    annotationValues,
+    setErrorContent: () => {},
+    setShowError: () => {},
+    genes,
+    drawCallback
+  })
+}
 
 /** Get unique genes in pathway diagram, ranked by global interest */
 function getPathwayGenes(ideogram) {
@@ -53,7 +178,7 @@ function getDotPlotGenes(searchedGene, interactingGene, pathwayGenes, ideogram) 
 
 /**
  * Color each gene red/purple/blue by mean expression, and
- * set each gene's opacity by percent of cells expression
+ * set each gene's contrast by percent of cells expression
  */
 function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
   const styleRulesets = []
@@ -67,16 +192,22 @@ function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
       unassayedGenes.push(gene)
       return
     }
+
+    const baseSelector = `#_ideogramPathwayContainer .DataNode#${domId}`
+    const rect = document.querySelector(`${baseSelector} rect`)
+    if (!rect) {
+      // Can happen when resizing and pathway DOM nodes are transiently unavailable
+      return
+    }
+
     const percent = metrics.percent
     const colorPercent = Math.min(percent < 75 ? percent : percent + 25, 100)
     const textColor = percent < 50 ? 'black' : 'white'
     const rectColor = `color-mix(in oklab, ${metrics.color} ${colorPercent}%, white)`
-    const baseSelector = `#_ideogramPathwayContainer .DataNode#${domId}`
     const rectRuleset = `${baseSelector} rect {fill: ${rectColor};}`
     const textRuleset = `${baseSelector} text {fill: ${textColor};}`
     const rulesets = `${rectRuleset} ${textRuleset}`
 
-    const rect = document.querySelector(`${baseSelector} rect`)
     rect.setAttribute('data-expression-scaled-mean', metrics.mean)
     rect.setAttribute('data-expression-percent', percent)
 
@@ -99,11 +230,11 @@ function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
 // eslint-disable-next-line max-len
 const infoIcon = `<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="info-circle" class="svg-inline--fa fa-info-circle " role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="#3D5A87" d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"></path></svg>`
 
-/** Add a small info icon ("i") in pathway header explaining color and opacity */
+/** Add a small info icon ("i") in pathway header explaining color and contrast */
 function writePathwayExpressionLegend() {
   const legendText =
     'Color represents scaled mean expression: red is high, purple medium, blue low.  ' +
-    'Opacity represents percent of cells expressing: higher % is more opaque, lower more transparent.'
+    'Contrast represents percent of cells expressing: bold is high, faint is low.'
   const legendAttrs =
     `class="pathway-legend" style="margin-left: 10px;" ` +
     `data-toggle="tooltip" data-original-title="${legendText}"`
