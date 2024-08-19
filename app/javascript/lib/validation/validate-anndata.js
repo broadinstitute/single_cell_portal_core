@@ -15,22 +15,29 @@ async function getAnnotationHeaders(key, hdf5File) {
   return headers
 }
 
-/** Get all headers from AnnData file */
-async function getAnnDataHeaders(file) {
-  // TODO (SCP-5770): Parameterize this, also support URL to remote file
-  const idType = file.startsWith('http') || file.type === 'application/octet-stream' ? 'url' : 'file'
+/** Returns whether argument is an HTTP(S) URL */
+function isUrl(fileOrUrl) {
+  return typeof fileOrUrl === 'string' && fileOrUrl.startsWith('http')
+}
 
+/** Get all headers from AnnData file */
+async function getAnnDataHeaders(fileOrUrl) {
   // Jest test uses Node, where file API differs
   // TODO (SCP-5770): See if we can smoothen this and do away with `isTest`
-  const isTest = file.startsWith('http')
+  const isTest = isUrl(fileOrUrl)
+
+  const isRemoteFileObject = !isUrl(fileOrUrl) && fileOrUrl.type === 'application/octet-stream'
+
+  // TODO (SCP-5770): Parameterize this, also support URL to remote file
+  const idType = 'file'
 
   // TODO (SCP-5770): Extend AnnData CSFV to remote files, then remove this
-  if (idType === 'url' && !isTest) {
+  if (isTest || isRemoteFileObject) {
     return null
   }
 
   const openParams = {}
-  openParams[idType] = file
+  openParams[idType] = fileOrUrl
   const hdf5File = await openH5File(openParams)
 
   const headers = await getAnnotationHeaders('obs', hdf5File)
@@ -42,12 +49,14 @@ async function getAnnDataHeaders(file) {
 
 /** Parse AnnData file, and return an array of issues, along with file parsing info */
 export async function parseAnnDataFile(file) {
+  let issues = []
+
   const headers = await getAnnDataHeaders(file)
 
   // TODO (SCP-5770): Extend AnnData CSFV to remote files, then remove this
-  if (!headers) {return []}
-
-  let issues = []
+  if (!headers) {
+    return { issues }
+  }
 
   issues = issues.concat(
     validateUnique(headers),
