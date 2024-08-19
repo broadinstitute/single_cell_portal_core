@@ -149,11 +149,7 @@ class AnnDataFileInfo
 
     exp_info = study_file.expression_file_info
     info_update = exp_fragment.with_indifferent_access[:expression_file_info]
-    return nil if info_update.nil? # in case expression_file_info form data is not present
-
-    info_update.each do |attr, val|
-      exp_info.send("#{attr}=", val)
-    end
+    exp_info.assign_attributes(**info_update) if info_update.present?
   end
 
   private
