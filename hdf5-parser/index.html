@@ -32,7 +32,9 @@
       const idType = typeof fileOrUrl === 'string' ? 'url' : 'file'
       const openParams = {}
       openParams[idType] = fileOrUrl
-      openParams.oauthToken = oauthToken
+      if (oauthToken) {
+        openParams.oauthToken = oauthToken
+      }
       window.hdf5File = await openH5File(openParams)
 
       const headers = await getAnnotationHeaders('obs', hdf5File)
@@ -46,10 +48,10 @@
     // Usage example: https://github.com/jrobinso/hdf5-indexed-reader#example
     const fileInput = document.querySelector('input')
     fileInput.addEventListener('change', async (event) => {
-      // const file = event.target.files[0];
-      // parseHdf5File(file)
-      const url = 'https://storage.googleapis.com/download/storage/v1/b/fc-e6d1ebe2-dfab-405b-924f-48e3c93d3444/o/anndata_test.h5ad?alt=media'
-      parseHdf5File(url, oauthToken)
+      const file = event.target.files[0];
+      parseHdf5File(file)
+      // const url = 'https://storage.googleapis.com/download/storage/v1/b/fc-e6d1ebe2-dfab-405b-924f-48e3c93d3444/o/anndata_test.h5ad?alt=media'
+      // parseHdf5File(url, oauthToken)
     });
 
   </script>
