@@ -21,7 +21,7 @@ function isUrl(fileOrUrl) {
 }
 
 /** Get all headers from AnnData file */
-async function getAnnDataHeaders(fileOrUrl) {
+export async function getAnnDataHeaders(fileOrUrl) {
   // Jest test uses Node, where file API differs
   // TODO (SCP-5770): See if we can smoothen this and do away with `isTest`
   const isTest = isUrl(fileOrUrl)
@@ -29,10 +29,10 @@ async function getAnnDataHeaders(fileOrUrl) {
   const isRemoteFileObject = !isUrl(fileOrUrl) && fileOrUrl.type === 'application/octet-stream'
 
   // TODO (SCP-5770): Parameterize this, also support URL to remote file
-  const idType = 'file'
+  const idType = isTest ? 'url' : 'file'
 
   // TODO (SCP-5770): Extend AnnData CSFV to remote files, then remove this
-  if (isTest || isRemoteFileObject) {
+  if (isRemoteFileObject) {
     return null
   }
 
