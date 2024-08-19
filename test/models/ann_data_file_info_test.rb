@@ -150,7 +150,6 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
     error_messages = ann_data_info.errors.messages_for(:base)
     assert_equal 2, error_messages.count
     error_messages.each do |message|
-      puts message
       assert message.match(/cluster form \((X_umap|X_tsne)\) missing one or more required entries/)
     end
     ann_data_info.data_fragments = [
@@ -162,5 +161,36 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
       }
     ]
     assert ann_data_info.valid?
+  end
+
+  test 'should propagate expression_file_info when saving' do
+    user = FactoryBot.create(:user, registered_for_firecloud: true, test_array: @@users_to_clean)
+    study = FactoryBot.create(:detached_study, user:, name_prefix: 'AnnData Save Test', test_array: @@studies_to_clean)
+    ann_data_file = FactoryBot.create(:ann_data_file,
+                                      name: 'test.h5ad',
+                                      study:,
+                                      cell_input: %w[bar bing],
+                                      expression_input: {
+                                        'foo' => [['bar', 0.3], ['bing', 1.0]]
+                                      })
+    assert_not ann_data_file.expression_file_info.is_raw_counts?
+    assert_equal 'Whole cell', ann_data_file.expression_file_info.biosample_input_type
+    ann_data_file.ann_data_file_info.reference_file = false
+    expression_file_info = {
+      library_preparation_protocol: "10x 5' v3",
+      biosample_input_type: 'Single nuclei',
+      modality: 'Transcriptomic: targeted',
+      is_raw_counts: true,
+      units: 'raw counts'
+    }
+    ann_data_file.ann_data_file_info.data_fragments = [
+      { _id: generate_id, data_type: :cluster, obsm_key_name: 'X_umap', name: 'UMAP' },
+      { _id: generate_id, data_type: :expression, taxon_id: generate_id, expression_file_info: }
+    ]
+    ann_data_file.save!
+    ann_data_file.reload
+    expression_file_info.each do |attr, val|
+      assert_equal val, ann_data_file.expression_file_info.send(attr)
+    end
   end
 end

@@ -144,12 +144,16 @@ class AnnDataFileInfo
 
   # persist information in expression fragment back to expression_file_info object
   def update_expression_file_info
-    exp_fragment = find_fragment(data_type: :expression).with_indifferent_access
+    exp_fragment = find_fragment(data_type: :expression) || fragments_by_type(:expression).first
     return nil if reference_file || exp_fragment.nil?
 
     exp_info = study_file.expression_file_info
-    info_update = exp_fragment[:expression_file_info]
-    exp_info.update(info_update)
+    info_update = exp_fragment.with_indifferent_access[:expression_file_info]
+    return nil if info_update.nil? # in case expression_file_info form data is not present
+
+    info_update.each do |attr, val|
+      exp_info.send("#{attr}=", val)
+    end
   end
 
   private
