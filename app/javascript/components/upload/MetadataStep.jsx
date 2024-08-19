@@ -1,6 +1,6 @@
 import React, { useEffect, useContext } from 'react'
 import metadataExplainerImage from '~/../assets/images/metadata-convention-explainer.jpg'
-import annDataMetadataExplainerImage from '~/../assets/images/metadata-convention-explainer-anndata.jpg'
+import annDataMetadataExplainerImage from '~/../assets/images/metadata-convention-explainer-anndata.png'
 import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Popover, OverlayTrigger } from 'react-bootstrap'
