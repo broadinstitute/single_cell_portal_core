@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import _kebabCase from 'lodash/kebabCase'
 
 import Select from '~/lib/InstrumentedSelect'
@@ -39,8 +39,10 @@ export default function ExpressionFileForm({
   const speciesOptions = fileMenuOptions.species.map(spec => ({ label: spec.common_name, value: spec.id }))
   const selectedSpecies = speciesOptions.find(opt => opt.value === file.taxon_id)
   const isMtxFile = file.file_type === 'MM Coordinate Matrix'
-  const isRawCountsFile = file.expression_file_info.is_raw_counts
-  const showRawCountsUnits = isRawCountsFile
+  // check if is_raw_counts is a string or boolean
+  const isRawCountsFile = typeof file.expression_file_info.is_raw_counts === 'string' ?
+    file.expression_file_info.is_raw_counts === 'true' : file.expression_file_info.is_raw_counts
+  const [showRawCountsUnits, setShowRawCountsUnits] = useState(isRawCountsFile || isAnnDataExperience)
 
   const allowedFileExts = isMtxFile ? FileTypeExtensions.mtx : FileTypeExtensions.plainText
   let requiredFields = showRawCountsUnits ? RAW_COUNTS_REQUIRED_FIELDS : REQUIRED_FIELDS
@@ -54,6 +56,11 @@ export default function ExpressionFileForm({
     label: rawCountsOptions.find(rf => rf.value == id)?.label,
     value: id
   }))
+
+  function toggleIsRawCounts(rawCountsVal) {
+    updateFile(file._id, { expression_file_info: {is_raw_counts: rawCountsVal} })
+    setShowRawCountsUnits(rawCountsVal)
+  }
 
   return <ExpandableFileForm {...{
     file, allFiles, updateFile, saveFile,
@@ -106,12 +113,44 @@ export default function ExpressionFileForm({
       </label>
     </div>
 
-    { showRawCountsUnits &&
+    { showRawCountsUnits && !isAnnDataExperience &&
       <ExpressionFileInfoSelect label="Units *"
         propertyName="units"
         rawOptions={fileMenuOptions.units}
         file={file}
         updateFile={updateFile}/>
+    }
+
+    { isAnnDataExperience &&
+      <div className="form-group row">
+        <div className="col-sm-4">
+          <label>I have raw count data in the <strong>adata.raw</strong> slot</label><br/>
+          <label className="sublabel">
+            <input type="radio"
+                   name={`anndata-raw-counts-${file._id}`}
+                   value="true"
+                   checked={isRawCountsFile}
+                   onChange={e => toggleIsRawCounts(true) } />
+            &nbsp;Yes
+          </label>
+          <label className="sublabel">
+            <input type="radio"
+                   name={`anndata-raw-counts-${file._id}`}
+                   value="false"
+                   checked={!isRawCountsFile}
+                   onChange={e => toggleIsRawCounts(false) }/>
+            &nbsp;No
+          </label>
+        </div>
+        {showRawCountsUnits && <div className="col-sm-8">
+          <ExpressionFileInfoSelect label="Units *"
+                                    propertyName="units"
+                                    rawOptions={fileMenuOptions.units}
+                                    file={file}
+                                    updateFile={updateFile}/>
+        </div>
+        }
+      </div>
     }
 
     <ExpressionFileInfoSelect label="Biosample input type *"
@@ -167,4 +206,3 @@ function ExpressionFileInfoSelect({ label, propertyName, rawOptions, file, updat
     </label>
   </div>
 }
-

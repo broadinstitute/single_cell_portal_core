@@ -41,6 +41,7 @@ class AnnDataFileInfo
   field :data_fragments, type: Array, default: []
   before_validation :sanitize_fragments!
   validate :validate_fragments
+  after_validation :update_expression_file_info
 
   # collect data frame key_names for clustering data inside AnnData flle
   def obsm_key_names
@@ -139,6 +140,16 @@ class AnnDataFileInfo
     fragment = find_fragment(data_type: :cluster, name:)
     axes = %i[x_axis_min x_axis_max y_axis_min y_axis_max z_axis_min z_axis_max]
     hash_from_keys(fragment, *axes, transform: :to_f)
+  end
+
+  # persist information in expression fragment back to expression_file_info object
+  def update_expression_file_info
+    exp_fragment = find_fragment(data_type: :expression).with_indifferent_access
+    return nil if reference_file || exp_fragment.nil?
+
+    exp_info = study_file.expression_file_info
+    info_update = exp_fragment[:expression_file_info]
+    exp_info.update(info_update)
   end
 
   private

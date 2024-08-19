@@ -1038,11 +1038,23 @@ class Study
   end
 
   def has_raw_counts_matrices?
-    self.expression_matrices.where('expression_file_info.is_raw_counts' => true).exists?
+    expression_matrices.select do |matrix|
+      if matrix.is_viz_anndata?
+        matrix.ann_data_file_info&.has_raw_counts
+      else
+        matrix.expression_file_info&.is_raw_counts
+      end
+    end.any?
   end
 
   def has_visualization_matrices?
-    self.expression_matrices.any_of({'expression_file_info.is_raw_counts' => false}, {expression_file_info: nil}).exists?
+    expression_matrices.select do |matrix|
+      if matrix.is_viz_anndata?
+        matrix.ann_data_file_info&.has_expression
+      else
+        !matrix.expression_file_info&.is_raw_counts || matrix.expression_file_info.nil?
+      end
+    end.any?
   end
 
   # check if study has any files that can be streamed from the bucket for visualization
@@ -1497,7 +1509,8 @@ class Study
   def expression_matrices
     study_files.any_of(
       { :file_type.in => ['Expression Matrix', 'MM Coordinate Matrix'] },
-      { file_type: 'AnnData', 'ann_data_file_info.has_expression' => true }
+      { file_type: 'AnnData', 'ann_data_file_info.has_expression' => true },
+      { file_type: 'AnnData', 'ann_data_file_info.has_raw_counts' => true },
     )
   end
 
