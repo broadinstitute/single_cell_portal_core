@@ -2,6 +2,11 @@
 * @fileoverview Functions used in multiple file types validation
 */
 
+// Ultimately sourced from: scp-ingest-pipeline/schemas
+import * as data from 'lib/assets/metadata_schemas/alexandria_convention/alexandria_convention_schema.json';
+
+export const REQUIRED_CONVENTION_COLUMNS = data.required.filter(c => c !== 'CellID')
+
 /**
  * ParseException can be thrown when we encounter an error that prevents us from parsing the file further
  */
@@ -189,6 +194,56 @@ export function validateGroupColumnCounts(headers, line, isLastLine, dataObj) {
         ])
       }
     })
+  }
+  return issues
+}
+
+/**
+ * Verify headers are unique and not empty
+ */
+export function validateUnique(headers) {
+  // eslint-disable-next-line max-len
+  // Mirrors https://github.com/broadinstitute/scp-ingest-pipeline/blob/0b6289dd91f877e5921a871680602d776271217f/ingest/annotations.py#L233
+  const issues = []
+  const uniques = new Set(headers)
+
+  // Are headers unique?
+  if (uniques.size !== headers.length) {
+    const seen = new Set()
+    const duplicates = new Set()
+    headers.forEach(header => {
+      if (seen.has(header)) {duplicates.add(header)}
+      seen.add(header)
+    })
+
+    const dupString = [...duplicates].join(', ')
+    const msg = `Duplicate header names are not allowed: ${dupString}`
+    issues.push(['error', 'format:cap:unique', msg])
+  }
+
+  // Are all headers non-empty?
+  if (uniques.has('')) {
+    const msg = 'Headers cannot contain empty values'
+    issues.push(['error', 'format:cap:no-empty', msg])
+  }
+
+  return issues
+}
+
+/** Verifies metadata file has all required columns */
+export function validateRequiredMetadataColumns(parsedHeaders, isAnnData=false) {
+  const issues = []
+  const firstLine = parsedHeaders[0]
+  const missingCols = []
+  REQUIRED_CONVENTION_COLUMNS.forEach(colName => {
+    if (!firstLine.includes(colName)) {
+      missingCols.push(colName)
+    }
+  })
+  if (missingCols.length) {
+    const columns = isAnnData ? 'obs keys' : 'columns'
+    const msg = `File is missing required ${columns}: ${missingCols.join(', ')}`
+    issues.push(['error', 'format:cap:metadata-missing-column', msg])
   }
   return issues
 }

@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 
 import ValidateFile from 'lib/validation/validate-file'
-import { REQUIRED_CONVENTION_COLUMNS } from 'lib/validation/validate-file-content'
+import { REQUIRED_CONVENTION_COLUMNS } from 'lib/validation/shared-validation'
 import { getLogProps } from 'lib/validation/log-validation'
 import ValidationMessage from 'components/validation/ValidationMessage'
 import * as MetricsApi from 'lib/metrics-api'

@@ -8,7 +8,7 @@ import { logFileValidation } from './log-validation'
 import { fetchBucketFile } from '~/lib/scp-api'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
-const noContentValidationFileTypes = ['Seurat', 'AnnData', 'Other', 'Documentation']
+const noContentValidationFileTypes = ['Seurat', 'Other', 'Documentation']
 
 /** take an array of [category, type, msg] issues, and format it */
 function formatIssues(issues) {
@@ -71,7 +71,6 @@ async function validateLocalFile(file, studyFile, allStudyFiles=[], allowedFileE
     }
     const { fileInfo, issues, perfTime, notes } =
       await ValidateFileContent.parseFile(file, studyFileType, fileOptions)
-
     const allIssues = issues.concat(nameIssues)
     issuesObj = formatIssues(allIssues)
     notesObj = notes
