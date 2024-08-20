@@ -5,7 +5,7 @@
 // Ultimately sourced from: scp-ingest-pipeline/schemas
 import * as data from 'lib/assets/metadata_schemas/alexandria_convention/alexandria_convention_schema.json';
 
-const REQUIRED_CONVENTION_COLUMNS = data.required
+export const REQUIRED_CONVENTION_COLUMNS = data.required.filter(c => c !== 'CellID')
 
 /**
  * ParseException can be thrown when we encounter an error that prevents us from parsing the file further
