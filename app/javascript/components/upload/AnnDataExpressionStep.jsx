@@ -9,7 +9,8 @@ const DEFAULT_NEW_PROCESSED_FILE = {
   expression_file_info: {
     is_raw_counts: false,
     biosample_input_type: 'Whole cell',
-    modality: 'Transcriptomic: unbiased'
+    modality: 'Transcriptomic: unbiased',
+    raw_counts_associations: []
   },
   file_type: 'Expression Matrix'
 }

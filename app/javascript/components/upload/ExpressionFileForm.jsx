@@ -42,7 +42,7 @@ export default function ExpressionFileForm({
   // check if is_raw_counts is a string or boolean
   const isRawCountsFile = typeof file.expression_file_info.is_raw_counts === 'string' ?
     file.expression_file_info.is_raw_counts === 'true' : file.expression_file_info.is_raw_counts
-  const [showRawCountsUnits, setShowRawCountsUnits] = useState(isRawCountsFile || isAnnDataExperience)
+  const [showRawCountsUnits, setShowRawCountsUnits] = useState(isRawCountsFile)
 
   const allowedFileExts = isMtxFile ? FileTypeExtensions.mtx : FileTypeExtensions.plainText
   let requiredFields = showRawCountsUnits ? RAW_COUNTS_REQUIRED_FIELDS : REQUIRED_FIELDS
@@ -122,9 +122,9 @@ export default function ExpressionFileForm({
     }
 
     { isAnnDataExperience &&
-      <div className="form-group row">
-        <div className="col-sm-4">
-          <label>I have raw count data in the <strong>adata.raw</strong> slot</label><br/>
+      <div className="row">
+        <div className="form-radio col-sm-4">
+          <label className="labeled-select">I have raw count data in the <strong>adata.raw</strong> slot</label>
           <label className="sublabel">
             <input type="radio"
                    name={`anndata-raw-counts-${file._id}`}
