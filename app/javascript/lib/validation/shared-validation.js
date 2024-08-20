@@ -2,21 +2,10 @@
 * @fileoverview Functions used in multiple file types validation
 */
 
-// from lib/assets/metadata_schemas/alexandria_convention_schema.json
-// (which in turn is from scp-ingest-pipeline/schemas)
-export const REQUIRED_CONVENTION_COLUMNS = [
-  'biosample_id',
-  'disease',
-  'disease__ontology_label',
-  'donor_id',
-  'library_preparation_protocol',
-  'library_preparation_protocol__ontology_label',
-  'organ',
-  'organ__ontology_label',
-  'sex',
-  'species',
-  'species__ontology_label'
-]
+// Ultimately sourced from: scp-ingest-pipeline/schemas
+import * as data from 'lib/assets/metadata_schemas/alexandria_convention/alexandria_convention_schema.json';
+
+export const REQUIRED_CONVENTION_COLUMNS = data.required.filter(c => c !== 'CellID')
 
 /**
  * ParseException can be thrown when we encounter an error that prevents us from parsing the file further
