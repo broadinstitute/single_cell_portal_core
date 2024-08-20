@@ -51,6 +51,7 @@ function validateFileName(file, studyFile, allStudyFiles, allowedFileExts=['*'])
  * @param allowedFileExts { String[] } array of allowable extensions, ['*'] for all
  */
 async function validateLocalFile(file, studyFile, allStudyFiles=[], allowedFileExts=['*']) {
+  console.log('validateLocalFile')
   // if clientside file validation feature flag is false skip validation
   const flags = getFeatureFlagsWithDefaults()
   if (flags && flags.clientside_validation === false) {
@@ -145,6 +146,7 @@ function getSizeProps(contentRange, contentLength, file) {
 async function validateRemoteFile(
   bucketName, fileName, fileType, fileOptions
 ) {
+  console.log('validateRemoteFile')
   const startTime = performance.now()
 
   const requestStart = performance.now()
@@ -166,8 +168,17 @@ async function validateRemoteFile(
 
     const sizeProps = getSizeProps(contentRange, contentLength, file)
 
+    const remoteProps = {
+      url: response.url
+    }
+
+    console.log('response')
+    console.log(response)
+
     // Equivalent block exists in validateFileContent
-    const parseResults = await ValidateFileContent.parseFile(file, fileType, fileOptions, sizeProps)
+    const parseResults = await ValidateFileContent.parseFile(
+      file, fileType, fileOptions, sizeProps, remoteProps
+    )
     fileInfo = parseResults['fileInfo']
     issues = parseResults['issues']
     perfTime = parseResults['perfTime']

@@ -438,6 +438,10 @@ export async function deleteAnnDataFragment(studyAccession, fileId, fragId, mock
   return response
 }
 
+/** Get OAuth token for HTTP requests that require "Authorization: Bearer" header */
+export function getOAuthToken() {
+  return window.SCP.readOnlyToken
+}
 
 /**
  * Fetches a given resource from a GCP bucket -- this handles adding the
@@ -450,7 +454,7 @@ export async function fetchBucketFile(bucketName, filePath, maxBytes=null, mock=
   const init = {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${window.SCP.readOnlyToken}`
+      Authorization: `Bearer ${getOAuthToken()}`
     }
   }
 

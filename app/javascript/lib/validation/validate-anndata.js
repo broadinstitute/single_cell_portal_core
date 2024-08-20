@@ -1,6 +1,7 @@
 import {openH5File} from '@single-cell-portal/hdf5-indexed-reader'
 
 import { validateUnique, validateRequiredMetadataColumns } from './shared-validation'
+import { getOAuthToken } from '~/lib/scp-api'
 
 /** Get annotation headers for a key (e.g. obs) from an HDF5 file */
 async function getAnnotationHeaders(key, hdf5File) {
@@ -21,7 +22,7 @@ function isUrl(fileOrUrl) {
 }
 
 /** Get all headers from AnnData file */
-export async function getAnnDataHeaders(fileOrUrl) {
+export async function getAnnDataHeaders(fileOrUrl, remoteProps) {
   // Jest test uses Node, where file API differs
   // TODO (SCP-5770): See if we can smoothen this and do away with `isTest`
   const isTest = isUrl(fileOrUrl)
@@ -29,16 +30,35 @@ export async function getAnnDataHeaders(fileOrUrl) {
   const isRemoteFileObject = !isUrl(fileOrUrl) && fileOrUrl.type === 'application/octet-stream'
 
   // TODO (SCP-5770): Parameterize this, also support URL to remote file
-  const idType = isTest ? 'url' : 'file'
+  const idType = isTest || isRemoteFileObject ? 'url' : 'file'
 
-  // TODO (SCP-5770): Extend AnnData CSFV to remote files, then remove this
   if (isRemoteFileObject) {
-    return null
+    fileOrUrl = remoteProps.url
   }
+  // // TODO (SCP-5770): Extend AnnData CSFV to remote files, then remove this
+  // if (isRemoteFileObject) {
+  //   return null
+  // }
 
   const openParams = {}
   openParams[idType] = fileOrUrl
+
+  console.log('isRemoteFileObject')
+  console.log(isRemoteFileObject)
+  console.log('remoteProps')
+  console.log(remoteProps)
+  if (isRemoteFileObject) {
+    const oauthToken = getOAuthToken()
+    openParams.oauthToken = oauthToken
+  }
+
+  console.log('openParams')
+  console.log(openParams)
+
+
   const hdf5File = await openH5File(openParams)
+
+  console.log('hdf5File', hdf5File)
 
   const headers = await getAnnotationHeaders('obs', hdf5File)
 
@@ -48,10 +68,10 @@ export async function getAnnDataHeaders(fileOrUrl) {
 }
 
 /** Parse AnnData file, and return an array of issues, along with file parsing info */
-export async function parseAnnDataFile(file) {
+export async function parseAnnDataFile(file, remoteProps) {
   let issues = []
 
-  const headers = await getAnnDataHeaders(file)
+  const headers = await getAnnDataHeaders(file, remoteProps)
 
   // TODO (SCP-5770): Extend AnnData CSFV to remote files, then remove this
   if (!headers) {
