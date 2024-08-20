@@ -193,4 +193,39 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
       assert_equal val, ann_data_file.expression_file_info.send(attr)
     end
   end
+
+  test 'should find index of fragment' do
+    anndata_info = AnnDataFileInfo.new(
+      data_fragments: [
+        { _id: generate_id, data_type: :cluster, name: 'UMAP', obsm_key_name: 'X_umap' },
+        { _id: generate_id, data_type: :cluster, name: 'tSNE', obsm_key_name: 'X_tsne' },
+        { _id: generate_id, data_type: :expression, y_axis_title: 'log(TPM) expression' }
+      ]
+    )
+    0.upto(anndata_info.data_fragments.size - 1).each_with_index do |idx|
+      fragment = anndata_info.data_fragments[idx]
+      assert_equal idx, anndata_info.fragment_index_of(fragment)
+    end
+  end
+
+  test 'should unset units in expression fragment if not raw counts' do
+    anndata_info = AnnDataFileInfo.new(
+      data_fragments: [
+        {
+          _id: generate_id, data_type: :expression, taxon_id: generate_id,
+          expression_file_info: {
+            library_preparation_protocol: "10x 5' v3",
+            biosample_input_type: 'Single nuclei',
+            modality: 'Transcriptomic: targeted',
+            is_raw_counts: false,
+            units: 'raw counts'
+          }
+        }.with_indifferent_access
+      ]
+    )
+    assert anndata_info.valid? # invokes validations
+    exp_frag = anndata_info.data_fragments.first
+    puts exp_frag
+    assert_nil exp_frag.with_indifferent_access.dig(:expression_file_info, :units)
+  end
 end
