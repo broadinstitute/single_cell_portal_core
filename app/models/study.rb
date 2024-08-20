@@ -1510,7 +1510,7 @@ class Study
     study_files.any_of(
       { :file_type.in => ['Expression Matrix', 'MM Coordinate Matrix'] },
       { file_type: 'AnnData', 'ann_data_file_info.has_expression' => true },
-      { file_type: 'AnnData', 'ann_data_file_info.has_raw_counts' => true },
+      { file_type: 'AnnData', 'ann_data_file_info.has_raw_counts' => true }
     )
   end
 
