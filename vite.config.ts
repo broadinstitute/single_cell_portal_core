@@ -35,6 +35,11 @@ export default defineConfig({
       'disable': disableSentry
     })
   ],
+  'resolve': {
+    'alias': {
+      'lib/assets/metadata_schemas/alexandria_convention/alexandria_convention_schema.json': 'lib/assets/metadata_schemas/alexandria_convention/alexandria_convention_schema.json'
+    }
+  },
   'build': {
     'sourcemap': true,
     'chunkSizeWarningLimit': 4096,
