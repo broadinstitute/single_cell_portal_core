@@ -23,9 +23,6 @@ import { fetchMorpheusJson } from '~/lib/scp-api'
 
 // Denoise DevTools console log by not showing error that lacks user impact
 window.onerror = function(error) {
-  console.log('error')
-  console.log(error)
-
   if (error.includes(`Failed to execute 'inverse' on 'SVGMatrix': The matrix is not invertible.`)) {
     console.debug(
       'Suppress non-user-impacting Pvjs error due to resize when showing pathway diagram'
@@ -132,7 +129,6 @@ export async function renderBackgroundDotPlot(
     delete window.SCP.renderBackgroundDotPlotRegister[registerKey]
   }
 
-
   renderDotPlot({
     target,
     dataset,
@@ -162,7 +158,7 @@ function getPathwayGenes(ideogram) {
 }
 
 /** Get up to 50 genes from pathway, including searched gene and interacting gene */
-function getDotPlotGenes(searchedGene, interactingGene, pathwayGenes, ideogram) {
+function getDotPlotGenes(searchedGene, interactingGene, pathwayGenes) {
   const genes = pathwayGenes.map(g => g.name)
   const uniqueGenes = Array.from(new Set(genes))
   const dotPlotGenes = uniqueGenes.slice(0, 50)
