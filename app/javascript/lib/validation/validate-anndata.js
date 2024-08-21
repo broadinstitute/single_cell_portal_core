@@ -24,41 +24,25 @@ function isUrl(fileOrUrl) {
 /** Get all headers from AnnData file */
 export async function getAnnDataHeaders(fileOrUrl, remoteProps) {
   // Jest test uses Node, where file API differs
-  // TODO (SCP-5770): See if we can smoothen this and do away with `isTest`
   const isTest = isUrl(fileOrUrl)
 
   const isRemoteFileObject = !isUrl(fileOrUrl) && fileOrUrl.type === 'application/octet-stream'
 
-  // TODO (SCP-5770): Parameterize this, also support URL to remote file
   const idType = isTest || isRemoteFileObject ? 'url' : 'file'
 
   if (isRemoteFileObject) {
     fileOrUrl = remoteProps.url
   }
-  // // TODO (SCP-5770): Extend AnnData CSFV to remote files, then remove this
-  // if (isRemoteFileObject) {
-  //   return null
-  // }
 
   const openParams = {}
   openParams[idType] = fileOrUrl
 
-  console.log('isRemoteFileObject')
-  console.log(isRemoteFileObject)
-  console.log('remoteProps')
-  console.log(remoteProps)
   if (isRemoteFileObject) {
     const oauthToken = getOAuthToken()
     openParams.oauthToken = oauthToken
   }
 
-  console.log('openParams')
-  console.log(openParams)
-
-
   const hdf5File = await openH5File(openParams)
-
-  console.log('hdf5File', hdf5File)
 
   const headers = await getAnnotationHeaders('obs', hdf5File)
 

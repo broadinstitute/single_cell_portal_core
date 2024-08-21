@@ -29,11 +29,18 @@ describe('Client-side file validation for AnnData', () => {
     expect(parseResults.issues).toHaveLength(0)
   })
 
-  // TODO (SCP-5718): Uncomment this negative test when test file is available in GitHub
-  // it('Reports SCP-invalid AnnData file as invalid', async () => {
-  //   // eslint-disable-next-line max-len
-  //   const url = 'https://github.com/broadinstitute/single_cell_portal_core/raw/development/test/test_data/anndata/anndata_test_bad_header_no_species.h5ad'
-  //   const parseResults = await parseAnnDataFile(url)
-  // expect(parseResults.issues.length).toBeGreaterThan(0)
-  // })
+  it('Reports SCP-invalid AnnData file as invalid', async () => {
+    // eslint-disable-next-line max-len
+    const url = 'https://github.com/broadinstitute/single_cell_portal_core/raw/development/test/test_data/anndata_test_bad_header_no_species.h5ad'
+    const parseResults = await parseAnnDataFile(url)
+
+    expect(parseResults.issues).toHaveLength(1)
+
+    const expectedIssue = [
+      'error',
+      'format:cap:metadata-missing-column',
+      'File is missing required obs keys: species'
+    ]
+    expect(parseResults.issues[0]).toEqual(expectedIssue)
+  })
 })
