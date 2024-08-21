@@ -1027,14 +1027,12 @@ class IngestJob
     message = ["Total parse time: #{get_total_runtime}"]
     case action
     when :ingest_expression
-      # since genes are not ingested for raw count matrices, report number of cells ingested
-      if study_file.is_raw_counts_file?
-        cells = study.expression_matrix_cells(study_file).count
-        message << "Cells ingested: #{cells}"
-      else
-        genes = Gene.where(study_id: study.id, study_file_id: study_file.id).count
-        message << "Gene-level entries created: #{genes}"
-      end
+      count_genes = !study_file.is_raw_counts_file? || study_file.is_viz_anndata?
+      count_cells = study_file.is_raw_counts_file?
+      genes = Gene.where(study_id: study.id, study_file_id: study_file.id).count
+      cells = study.expression_matrix_cells(study_file, matrix_type: 'raw').count
+      message << "Gene-level entries created: #{genes}" if count_genes
+      message << "Cells ingested: #{cells}" if count_cells
     when :ingest_cell_metadata
       use_metadata_convention = study_file.use_metadata_convention
       if use_metadata_convention
