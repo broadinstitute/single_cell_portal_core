@@ -142,7 +142,7 @@ export async function renderBackgroundDotPlot(
 }
 
 /** Get unique genes in pathway diagram, ranked by global interest */
-function getPathwayGenes(ideogram) {
+export function getPathwayGenes(ranks) {
   const dataNodes = Array.from(document.querySelectorAll('#_ideogramPathwayContainer g.DataNode'))
   const geneNodes = dataNodes.filter(
     dataNode => Array.from(dataNode.classList).some(cls => cls.startsWith('Ensembl_ENS'))
@@ -150,7 +150,6 @@ function getPathwayGenes(ideogram) {
   const genes = geneNodes.map(
     node => {return { domId: node.id, name: node.querySelector('text').textContent }}
   )
-  const ranks = ideogram.geneCache.interestingNames
   const rankedGenes = genes
     .filter(gene => ranks.includes(gene.name))
     .sort((a, b) => ranks.indexOf(a.name) - ranks.indexOf(b.name))
@@ -298,7 +297,8 @@ function renderPathwayExpression(
   searchedGene, interactingGene,
   ideogram, dotPlotParams
 ) {
-  const pathwayGenes = getPathwayGenes(ideogram)
+  const ranks = ideogram.geneCache.interestingNames
+  const pathwayGenes = getPathwayGenes(ranks)
   const dotPlotGenes = getDotPlotGenes(searchedGene, interactingGene, pathwayGenes, ideogram)
 
   const { studyAccession, cluster, annotation } = dotPlotParams
