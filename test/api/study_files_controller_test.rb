@@ -215,7 +215,7 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
           _id: exp_frag_id,
           taxon_id: taxon_id,
           description: 'expression description',
-          y_axis_title: 'log(TPM) expression',
+          y_axis_title: 'log(TPM) expression'
         },
         metadata_form_info_attributes: {
           use_metadata_convention: false # check that override is in place to enforce convention

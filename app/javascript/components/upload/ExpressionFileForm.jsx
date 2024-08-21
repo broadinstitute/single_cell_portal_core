@@ -39,9 +39,8 @@ export default function ExpressionFileForm({
   const speciesOptions = fileMenuOptions.species.map(spec => ({ label: spec.common_name, value: spec.id }))
   const selectedSpecies = speciesOptions.find(opt => opt.value === file.taxon_id)
   const isMtxFile = file.file_type === 'MM Coordinate Matrix'
-  // check if is_raw_counts is a string or boolean
-  const isRawCountsFile = typeof file.expression_file_info.is_raw_counts === 'string' ?
-    file.expression_file_info.is_raw_counts === 'true' : file.expression_file_info.is_raw_counts
+const rawCountsInfo = file.expression_file_info.is_raw_counts
+const isRawCountsFile = rawCountsInfo === 'true' || rawCountsInfo
   const [showRawCountsUnits, setShowRawCountsUnits] = useState(isRawCountsFile)
 
   const allowedFileExts = isMtxFile ? FileTypeExtensions.mtx : FileTypeExtensions.plainText
