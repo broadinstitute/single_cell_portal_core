@@ -729,6 +729,7 @@ class IngestJob
     study_file.ann_data_file_info.has_clusters = ClusterGroup.where(study:, study_file:).exists?
     study_file.ann_data_file_info.has_metadata = CellMetadatum.where(study:, study_file:).exists?
     study_file.ann_data_file_info.has_expression = Gene.where(study:, study_file:).exists?
+    study_file.ann_data_file_info.has_raw_counts = study.expression_matrix_cells(study_file, matrix_type: 'raw').any?
     study_file.save
   end
 
