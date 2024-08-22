@@ -199,10 +199,10 @@ export function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationL
 
     const percent = metrics.percent
 
-    // Higher `colorPercent`, lower contrast.  Lowering visual prominence by
+    // Higher `colorPercent`, higher contrast.  Lowering visual prominence by
     // decreasing contrast in these pathway nodes is analogous to how dot
     // plots lower visual prominence by decreasing size in circle nodes.
-    // Adjust node size in pathways isn't feasible because the nodes also
+    // Adjusting node size in pathways isn't feasible because the nodes also
     // contain shown labels, and pathway graphics layout is sensitive to
     // node size.
     const colorPercent = Math.min(percent < 75 ? percent : percent + 25, 100)
