@@ -374,6 +374,11 @@ export function manageDrawPathway(studyAccession, cluster, annotation, ideogram)
       ideoTooltip.style.opacity = 0
       ideoTooltip.style.pointerEvents = 'none'
 
+      // Ensure popover for pathway diagram doesn't appear over gene search autocomplete,
+      // while still appearing over default visualizations.
+      const container = document.querySelector('#_ideogramPathwayContainer')
+      container.style.zIndex = 2
+
       const details = event.detail
       const searchedGene = details.sourceGene
       const interactingGene = details.destGene
