@@ -1,9 +1,16 @@
 import { getPathwayGenes, colorPathwayGenesByExpression } from '~/lib/pathway-expression'
+import * as UserProvider from '~/providers/UserProvider'
 
 import { pathwayContainerHtml, dotPlotMetrics } from './pathway-expression.test-data.js'
 
 describe('Expression overlay for pathway diagram', () => {
   it('gets objects containing e.g. DOM ID for genes in pathway ', () => {
+    jest
+      .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
+      .mockReturnValue({
+        show_pathway_expression: true
+      })
+
     const body = document.querySelector('body')
     body.insertAdjacentHTML('beforeend', pathwayContainerHtml)
     // Helpful debug technique:
@@ -16,11 +23,16 @@ describe('Expression overlay for pathway diagram', () => {
   })
 
   it('colors pathway genes by expression', () => {
+    jest
+      .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
+      .mockReturnValue({
+        show_pathway_expression: true
+      })
+
     const body = document.querySelector('body')
     body.insertAdjacentHTML('beforeend', pathwayContainerHtml)
     const ranks = ['CSN2', 'NR3C1', 'EGFR', 'PRL']
     const pathwayGenes = getPathwayGenes(ranks)
-    console.log('pathwayGenes', pathwayGenes)
     const annotationLabel = 'LC2'
 
     colorPathwayGenesByExpression(pathwayGenes, dotPlotMetrics, annotationLabel)

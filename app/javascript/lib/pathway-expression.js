@@ -20,6 +20,7 @@
 import { renderDotPlot } from '~/components/visualization/DotPlot'
 import { getAnnotationValues } from '~/lib/cluster-utils'
 import { fetchMorpheusJson } from '~/lib/scp-api'
+import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
 // Denoise DevTools console log by not showing error that lacks user impact
 window.onerror = function(error) {
@@ -359,6 +360,10 @@ function renderPathwayExpression(
  * This sets up the pathway expression overlay
  */
 export function manageDrawPathway(studyAccession, cluster, annotation, ideogram) {
+
+  const flags = getFeatureFlagsWithDefaults()
+  if (!flags?.show_pathway_expression) {return}
+
   const dotPlotParams = { studyAccession, cluster, annotation }
   if (annotation.type === 'group') {
     document.removeEventListener('ideogramDrawPathway')
