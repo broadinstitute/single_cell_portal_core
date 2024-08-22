@@ -175,7 +175,7 @@ function getDotPlotGenes(searchedGene, interactingGene, pathwayGenes) {
  * Color each gene red/purple/blue by mean expression, and
  * set each gene's contrast by percent of cells expression
  */
-function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
+export function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
   const styleRulesets = []
   const unassayedGenes = []
 
@@ -183,6 +183,7 @@ function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
     const domId = geneObj.domId
     const gene = geneObj.name
     const metrics = dotPlotMetrics[annotationLabel][gene]
+
     if (!metrics) {
       unassayedGenes.push(gene)
       return
@@ -196,13 +197,26 @@ function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
     }
 
     const percent = metrics.percent
+
+    // Higher `colorPercent`, lower contrast.  Lowering visual prominence by
+    // decreasing contrast in these pathway nodes is analogous to how dot
+    // plots lower visual prominence by decreasing size in circle nodes.
+    // Adjust node size in pathways isn't feasible because the nodes also
+    // contain shown labels, and pathway graphics layout is sensitive to
+    // node size.
     const colorPercent = Math.min(percent < 75 ? percent : percent + 25, 100)
+
     const textColor = percent < 50 ? 'black' : 'white'
+
+    // Docs: https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix
     const rectColor = `color-mix(in oklab, ${metrics.color} ${colorPercent}%, white)`
+
     const rectRuleset = `${baseSelector} rect {fill: ${rectColor};}`
     const textRuleset = `${baseSelector} text {fill: ${textColor};}`
     const rulesets = `${rectRuleset} ${textRuleset}`
 
+    // In future work, consider showing these values on node hover.
+    // For now they help engineers inspect nodes to confirm mean and percent.
     rect.setAttribute('data-expression-scaled-mean', metrics.mean)
     rect.setAttribute('data-expression-percent', percent)
 

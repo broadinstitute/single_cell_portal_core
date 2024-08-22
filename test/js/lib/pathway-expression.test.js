@@ -1,9 +1,9 @@
 import { getPathwayGenes, colorPathwayGenesByExpression } from '~/lib/pathway-expression'
 
-import { pathwayContainerHtml } from './pathway-expression.test-data.js'
+import { pathwayContainerHtml, dotPlotMetrics } from './pathway-expression.test-data.js'
 
 describe('Expression overlay for pathway diagram', () => {
-  it('colors pathway genes by expression', () => {
+  it('gets objects containing e.g. DOM ID for genes in pathway ', () => {
     const body = document.querySelector('body')
     body.insertAdjacentHTML('beforeend', pathwayContainerHtml)
     // Helpful debug technique:
@@ -20,9 +20,22 @@ describe('Expression overlay for pathway diagram', () => {
     body.insertAdjacentHTML('beforeend', pathwayContainerHtml)
     const ranks = ['CSN2', 'NR3C1', 'EGFR', 'PRL']
     const pathwayGenes = getPathwayGenes(ranks)
-    // const dotPlotMetrics =
-    colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel)
+    console.log('pathwayGenes', pathwayGenes)
+    const annotationLabel = 'LC2'
+
+    colorPathwayGenesByExpression(pathwayGenes, dotPlotMetrics, annotationLabel)
+
+    const egfrDomId = pathwayGenes.find(g => g.name === 'EGFR').domId
+    const egfrRectNode = document.querySelector(`#${egfrDomId} rect`)
+    const egfrStyle = getComputedStyle(egfrRectNode)
+    const egfrColor = egfrStyle.fill
+
+    // Blue-ish purple (#6800a1) -- base color for scaled mean expression
+    // Roughly 88% white / 12% purple -- for percent of cells expressing
+    // See color-mix() on MDN:
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix
+    expect(egfrColor).toBe('color-mix(in oklab, #6800a1 12.350979804992676%, white)')
+
+    expect(1).toBe(1)
   })
-
-
 })
