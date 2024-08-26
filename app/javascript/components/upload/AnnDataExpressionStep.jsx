@@ -9,21 +9,21 @@ const DEFAULT_NEW_PROCESSED_FILE = {
   expression_file_info: {
     is_raw_counts: false,
     biosample_input_type: 'Whole cell',
-    modality: 'Transcriptomic: unbiased'
+    modality: 'Transcriptomic: unbiased',
+    raw_counts_associations: []
   },
   file_type: 'Expression Matrix'
 }
 
 export const fileTypes = ['Expression Matrix', 'MM Coordinate Matrix']
-export const processedFileFilter = file => fileTypes.includes(file.file_type) &&
-  !file.expression_file_info?.is_raw_counts
+export const annDataExpFilter = file => fileTypes.includes(file.file_type)
 
 export default {
   title: 'Expression matrices',
   header: 'Expression matrices',
   name: 'combined expression matrices',
   component: ExpressionUploadForm,
-  fileFilter: processedFileFilter
+  fileFilter: annDataExpFilter
 }
 
 /** form for uploading a parent expression file and any children */
@@ -37,24 +37,24 @@ function ExpressionUploadForm({
   isAnnDataExperience
 }) {
   const fragmentType = isAnnDataExperience ? 'expression' : null
-  const processedParentFiles = matchingFormFiles(
-    formState.files, processedFileFilter, isAnnDataExperience, fragmentType
+  const annDataExpFiles = matchingFormFiles(
+    formState.files, annDataExpFilter, isAnnDataExperience, fragmentType
   )
   const fileMenuOptions = serverState.menu_options
 
   const featureFlagState = serverState.feature_flags
 
   useEffect(() => {
-    if (processedParentFiles.length === 0) {
+    if (annDataExpFiles.length === 0) {
       addNewFile(DEFAULT_NEW_PROCESSED_FILE)
     }
-  }, [processedParentFiles.length])
+  }, [annDataExpFiles.length])
 
   return <div>
     <div className="row">
       <div className="col-md-12">
         {getExpressionFileInfoMessage(isAnnDataExperience, 'Processed')}
-        { processedParentFiles.map(file => {
+        { annDataExpFiles.map(file => {
           return <ExpressionFileForm
             key={file.oldId ? file.oldId : file._id}
             file={file}

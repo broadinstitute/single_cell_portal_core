@@ -192,6 +192,8 @@ FactoryBot.define do
                             study_file: file)
         end
         if evaluator.expression_input.any?
+          file.build_expression_file_info(library_preparation_protocol: "10x 5' v3")
+          file.expression_file_info.save
           file.ann_data_file_info.has_expression = true
           # TODO: update this when raw count ingest enabled for AnnData
           FactoryBot.create(:data_array,

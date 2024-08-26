@@ -150,7 +150,6 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
     error_messages = ann_data_info.errors.messages_for(:base)
     assert_equal 2, error_messages.count
     error_messages.each do |message|
-      puts message
       assert message.match(/cluster form \((X_umap|X_tsne)\) missing one or more required entries/)
     end
     ann_data_info.data_fragments = [
@@ -162,5 +161,71 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
       }
     ]
     assert ann_data_info.valid?
+  end
+
+  test 'should propagate expression_file_info when saving' do
+    user = FactoryBot.create(:user, registered_for_firecloud: true, test_array: @@users_to_clean)
+    study = FactoryBot.create(:detached_study, user:, name_prefix: 'AnnData Save Test', test_array: @@studies_to_clean)
+    ann_data_file = FactoryBot.create(:ann_data_file,
+                                      name: 'test.h5ad',
+                                      study:,
+                                      cell_input: %w[bar bing],
+                                      expression_input: {
+                                        'foo' => [['bar', 0.3], ['bing', 1.0]]
+                                      })
+    assert_not ann_data_file.expression_file_info.is_raw_counts?
+    assert_equal 'Whole cell', ann_data_file.expression_file_info.biosample_input_type
+    ann_data_file.ann_data_file_info.reference_file = false
+    expression_file_info = {
+      library_preparation_protocol: "10x 5' v3",
+      biosample_input_type: 'Single nuclei',
+      modality: 'Transcriptomic: targeted',
+      is_raw_counts: true,
+      units: 'raw counts'
+    }
+    ann_data_file.ann_data_file_info.data_fragments = [
+      { _id: generate_id, data_type: :cluster, obsm_key_name: 'X_umap', name: 'UMAP' },
+      { _id: generate_id, data_type: :expression, taxon_id: generate_id, expression_file_info: }
+    ]
+    ann_data_file.save!
+    ann_data_file.reload
+    expression_file_info.each do |attr, val|
+      assert_equal val, ann_data_file.expression_file_info.send(attr)
+    end
+  end
+
+  test 'should find index of fragment' do
+    anndata_info = AnnDataFileInfo.new(
+      data_fragments: [
+        { _id: generate_id, data_type: :cluster, name: 'UMAP', obsm_key_name: 'X_umap' },
+        { _id: generate_id, data_type: :cluster, name: 'tSNE', obsm_key_name: 'X_tsne' },
+        { _id: generate_id, data_type: :expression, y_axis_title: 'log(TPM) expression' }
+      ]
+    )
+    0.upto(anndata_info.data_fragments.size - 1).each_with_index do |idx|
+      fragment = anndata_info.data_fragments[idx]
+      assert_equal idx, anndata_info.fragment_index_of(fragment)
+    end
+  end
+
+  test 'should unset units in expression fragment if not raw counts' do
+    anndata_info = AnnDataFileInfo.new(
+      data_fragments: [
+        {
+          _id: generate_id, data_type: :expression, taxon_id: generate_id,
+          expression_file_info: {
+            library_preparation_protocol: "10x 5' v3",
+            biosample_input_type: 'Single nuclei',
+            modality: 'Transcriptomic: targeted',
+            is_raw_counts: false,
+            units: 'raw counts'
+          }
+        }.with_indifferent_access
+      ]
+    )
+    assert anndata_info.valid? # invokes validations
+    exp_frag = anndata_info.data_fragments.first
+    puts exp_frag
+    assert_nil exp_frag.with_indifferent_access.dig(:expression_file_info, :units)
   end
 end

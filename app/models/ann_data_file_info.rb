@@ -41,6 +41,7 @@ class AnnDataFileInfo
   field :data_fragments, type: Array, default: []
   before_validation :sanitize_fragments!
   validate :validate_fragments
+  after_validation :update_expression_file_info
 
   # collect data frame key_names for clustering data inside AnnData flle
   def obsm_key_names
@@ -134,11 +135,27 @@ class AnnDataFileInfo
     safe_data_fragments.select { |fragment| fragment[:data_type].to_s == data_type.to_s }
   end
 
+  # get the index of a fragment by BSON ObjectId (for making in-place updates)
+  def fragment_index_of(fragment)
+    id = fragment[:_id] || fragment['_id']
+    safe_data_fragments.index { |frag| frag[:_id] == id }
+  end
+
   # mirror of study_file.get_cluster_domain_ranges for data_fragment
   def get_cluster_domain_ranges(name)
     fragment = find_fragment(data_type: :cluster, name:)
     axes = %i[x_axis_min x_axis_max y_axis_min y_axis_max z_axis_min z_axis_max]
     hash_from_keys(fragment, *axes, transform: :to_f)
+  end
+
+  # persist information in expression fragment back to expression_file_info object
+  def update_expression_file_info
+    exp_fragment = find_fragment(data_type: :expression) || fragments_by_type(:expression).first
+    exp_info = study_file&.expression_file_info
+    return nil if reference_file || exp_fragment.nil? || exp_info.nil?
+
+    info_update = exp_fragment.with_indifferent_access[:expression_file_info]
+    exp_info.assign_attributes(**info_update) if info_update
   end
 
   private
@@ -183,6 +200,7 @@ class AnnDataFileInfo
     REQUIRED_FRAGMENT_KEYS.each do |data_type, keys|
       fragments = fragments_by_type(data_type)
       fragments.each do |fragment|
+        unset_units_in_exp_fragment(fragment) if data_type == :expression
         missing_keys = keys.map(&:to_s) - fragment.keys.map(&:to_s)
         missing_values = keys.select { |key| fragment[key].blank? }
         next if missing_keys.empty? && missing_values.empty?
@@ -200,6 +218,19 @@ class AnnDataFileInfo
           errors.add(:base, "#{key} are not unique in #{data_type} fragments: #{values}")
         end
       end
+    end
+  end
+
+  # unset units in expression fragment since form data won't have value
+  # element must be replaced by index in order to persist
+  def unset_units_in_exp_fragment(fragment)
+    exp_info = fragment[:expression_file_info]
+    return nil unless exp_info
+
+    unless exp_info[:is_raw_counts]
+      exp_info.delete(:units)
+      frag_idx = fragment_index_of(fragment)
+      data_fragments[frag_idx][:expression_file_info] = exp_info
     end
   end
 end
