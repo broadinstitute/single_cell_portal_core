@@ -28,7 +28,7 @@ module.exports = {
     '@single-cell-portal/igv': '<rootDir>/test/js/jest-mocks/igv-mock.js', // mock igv as jest has trouble parsing it
     'ideogram': '<rootDir>/test/js/jest-mocks/file-mock.js', // mock igv as jest has trouble parsing it
     '\\.css$': '<rootDir>/test/js/jest-mocks/file-mock.js', // mock CSS files as jest has trouble parsing them
-    '^@single-cell-portal/hdf5-indexed-reader$': '<rootDir>/node_modules/@single-cell-portal/hdf5-indexed-reader/dist/hdf5-indexed-reader.node.cjs',
+    '^hdf5-indexed-reader$': '<rootDir>/node_modules/hdf5-indexed-reader/dist/hdf5-indexed-reader.node.cjs',
     'lib/assets/metadata_schemas/alexandria_convention/alexandria_convention_schema.json': '<rootDir>/lib/assets/metadata_schemas/alexandria_convention/alexandria_convention_schema.json'
   }
 }
