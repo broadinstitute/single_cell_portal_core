@@ -5196,10 +5196,10 @@ iconv-lite@0.4, iconv-lite@0.4.24, iconv-lite@^0.4.24:
   dependencies:
     safer-buffer ">= 2.1.2 < 3"
 
-ideogram@1.45.1:
-  version "1.45.1"
-  resolved "https://registry.npmjs.org/ideogram/-/ideogram-1.45.1.tgz"
-  integrity sha512-WKYiFpfxNUsdpcy8uazZHvaMw3wzS70OQDlA83EBbV3ADKbt+tbPFiuJfgS+guDORtBnjhLR9YlCUxLHkKwTdw==
+ideogram@1.47.0:
+  version "1.47.0"
+  resolved "https://registry.yarnpkg.com/ideogram/-/ideogram-1.47.0.tgz#58889a0212d66f84964779895e06e2f0ed8fd561"
+  integrity sha512-koCd/An2VofPoKfd41Wo8hyhwTVu4vCB7w4w7M8e4aWxFU4Si0NWo2ECJ8BG5fZ61xJhI68HHzQvmvhhWsCBpw==
   dependencies:
     crossfilter2 "1.5.2"
     d3-array "^2.8.0"
