@@ -199,6 +199,6 @@ class StudyTest < ActiveSupport::TestCase
     assert_equal cells, @study.expression_matrix_cells(dense_matrix)
     assert_equal cells, @study.expression_matrix_cells(ann_data_file)
     assert_equal cells, @study.expression_matrix_cells(ann_data_file, matrix_type: 'processed')
-    assert_empty @study.expression_matrix_cells(ann_data_file, matrix_type: 'raw')
+    assert_equal cells, @study.expression_matrix_cells(ann_data_file, matrix_type: 'raw')
   end
 end
