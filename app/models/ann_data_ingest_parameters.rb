@@ -32,7 +32,7 @@ class AnnDataIngestParameters
     cluster_file: nil,
     name: nil,
     domain_ranges: nil,
-    extract: %w[cluster metadata processed_expression],
+    extract: %w[cluster metadata processed_expression raw_counts],
     cell_metadata_file: nil,
     ingest_cell_metadata: false,
     study_accession: nil,

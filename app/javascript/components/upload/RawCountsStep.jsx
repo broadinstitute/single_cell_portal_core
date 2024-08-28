@@ -92,7 +92,7 @@ export function getExpressionFileInfoMessage(isAnnDataExperience, expressionType
         </div>
       </div>
     </div>
-  } else if (isAnnDataExperience) {return <AnnDataPreUploadDirections/>}
+  } else if (isAnnDataExperience) {return <AnnDataPreUploadDirections extraInfoType={expressionType} />}
 }
 
 const expressionFileStructureHelp = <>

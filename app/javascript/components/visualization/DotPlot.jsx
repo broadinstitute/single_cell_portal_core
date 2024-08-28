@@ -180,7 +180,7 @@ function patchServiceWorkerCache() {
   }
 }
 
-/** renders a morpheus powered dotPlot for the given URL paths and annotation
+/** Renders a Morpheus-powered dot plot for the given URL paths and annotation
   * Note that this has a lot in common with Heatmap.js.  they are separate for now
   * as their display capabilities may diverge (esp. since DotPlot is used in global gene search)
   * @param cluster {string} the name of the cluster, or blank/null for the study's default
@@ -257,9 +257,9 @@ const DotPlot = withErrorBoundary(RawDotPlot)
 export default DotPlot
 
 /** Render Morpheus dot plot */
-function renderDotPlot({
+export function renderDotPlot({
   target, dataset, annotationName, annotationValues,
-  setShowError, setErrorContent, genes
+  setShowError, setErrorContent, genes, drawCallback
 }) {
   const $target = $(target)
   $target.empty()
@@ -322,8 +322,14 @@ function renderDotPlot({
 
   patchServiceWorkerCache()
 
+  config.drawCallback = function() {
+    const dotPlot = this
+    if (drawCallback) {drawCallback(dotPlot)}
+  }
+
   // Instantiate dot plot and embed in DOM element
-  new window.morpheus.HeatMap(config)
+  delete window.dotPlot
+  window.dotPlot = new window.morpheus.HeatMap(config)
 }
 
 /** return a trivial tab manager that handles focus and sizing

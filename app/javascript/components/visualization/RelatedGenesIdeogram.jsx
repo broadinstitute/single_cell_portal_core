@@ -18,6 +18,7 @@ import PlotUtils from '~/lib/plot'
 const ideogramHeight = PlotUtils.ideogramHeight
 import { log } from '~/lib/metrics-api'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
+import { manageDrawPathway } from '~/lib/pathway-expression'
 
 /** Handle clicks on Ideogram annotations */
 function onClickAnnot(annot) {
@@ -116,6 +117,7 @@ function onWillShowAnnotTooltip(annot) {
 /** Persist click handling for tissue toggle click */
 function addTissueToggleClickHandler(newTitle) {
   const ideoTissueToggle = document.querySelector('._ideoMoreOrLessTissue')
+  if (!ideoTissueToggle) {return} // Some genes (e.g. CSN2) have <= 3 tissue entries
   ideoTissueToggle.addEventListener('click', () => {
     const ideoTissuePlotTitle = document.querySelector('._ideoTissuePlotTitle')
     ideoTissuePlotTitle.innerHTML = newTitle
@@ -161,7 +163,8 @@ function onPlotRelatedGenes() {
  * This is only done in the context of single-gene search in Study Overview
  */
 export default function RelatedGenesIdeogram({
-  gene, taxon, target, genesInScope, searchGenes, speciesList
+  gene, taxon, target, genesInScope, searchGenes, speciesList,
+  studyAccession, cluster, annotation
 }) {
   if (taxon === null) {
     // Quick fix to decrease Sentry error log rate
@@ -196,12 +199,18 @@ export default function RelatedGenesIdeogram({
         showRelatedGenesIdeogram(target)
       }
     }
-    window.ideogram =
-      Ideogram.initRelatedGenes(ideoConfig, genesInScope)
+    const ideogram = Ideogram.initRelatedGenes(ideoConfig, genesInScope)
+    window.ideogram = ideogram
+
+    manageDrawPathway(studyAccession, cluster, annotation, ideogram)
 
     // Extend ideogram with custom SCP function to search genes
     window.ideogram.SCP = { searchGenes, speciesList }
   }, [gene])
+
+  useEffect(() => {
+    manageDrawPathway(studyAccession, cluster, annotation, window.ideogram)
+  }, [cluster, annotation])
 
   return (
     <div

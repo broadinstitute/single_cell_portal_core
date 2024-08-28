@@ -2148,6 +2148,11 @@
   resolved "https://registry.npmjs.org/@sinclair/typebox/-/typebox-0.27.8.tgz"
   integrity sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==
 
+"@single-cell-portal/hdf5-indexed-reader@0.5.6":
+  version "0.5.6"
+  resolved "https://registry.yarnpkg.com/@single-cell-portal/hdf5-indexed-reader/-/hdf5-indexed-reader-0.5.6.tgz#c99ae7436b88530a6dfb854e8aafdf96c67c90a0"
+  integrity sha512-2+XSdcbglGZYJv/lWmBCJ0OpVhrYbKLei5K50Y0WT92EfqOes4rTtn7iF4XYwfuWmjFXn+9zCFfHMDPzXfh1RQ==
+
 "@single-cell-portal/igv@2.16.0-alpha.4":
   version "2.16.0-alpha.4"
   resolved "https://registry.npmjs.org/@single-cell-portal/igv/-/igv-2.16.0-alpha.4.tgz"
@@ -5191,10 +5196,10 @@ iconv-lite@0.4, iconv-lite@0.4.24, iconv-lite@^0.4.24:
   dependencies:
     safer-buffer ">= 2.1.2 < 3"
 
-ideogram@1.45.1:
-  version "1.45.1"
-  resolved "https://registry.npmjs.org/ideogram/-/ideogram-1.45.1.tgz"
-  integrity sha512-WKYiFpfxNUsdpcy8uazZHvaMw3wzS70OQDlA83EBbV3ADKbt+tbPFiuJfgS+guDORtBnjhLR9YlCUxLHkKwTdw==
+ideogram@1.47.0:
+  version "1.47.0"
+  resolved "https://registry.yarnpkg.com/ideogram/-/ideogram-1.47.0.tgz#58889a0212d66f84964779895e06e2f0ed8fd561"
+  integrity sha512-koCd/An2VofPoKfd41Wo8hyhwTVu4vCB7w4w7M8e4aWxFU4Si0NWo2ECJ8BG5fZ61xJhI68HHzQvmvhhWsCBpw==
   dependencies:
     crossfilter2 "1.5.2"
     d3-array "^2.8.0"

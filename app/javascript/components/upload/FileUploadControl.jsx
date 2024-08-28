@@ -19,7 +19,7 @@ export default function FileUploadControl({
   file, allFiles, updateFile,
   allowedFileExts=['*'],
   validationIssues={},
-  bucketName
+  bucketName, isAnnDataExperience
 }) {
   const [fileValidation, setFileValidation] = useState({
     validating: false, issues: {}, fileName: null
@@ -151,9 +151,10 @@ export default function FileUploadControl({
     </div>
   }
 
+  const displayName = isAnnDataExperience && file?.data_type === 'cluster' ? file?.name : file?.upload_file_name
   return <div className="form-inline">
     <label>
-      { !file.uploadSelection && <h5 data-testid="file-uploaded-name">{file.upload_file_name}</h5> }
+      { !file.uploadSelection && <h5 data-testid="file-uploaded-name">{displayName}</h5> }
       { file.uploadSelection && <h5 data-testid="file-selection-name">
         {file.uploadSelection.name} ({bytesToSize(file.uploadSelection.size)})
       </h5> }

@@ -192,16 +192,21 @@ FactoryBot.define do
                             study_file: file)
         end
         if evaluator.expression_input.any?
+          file.build_expression_file_info(library_preparation_protocol: "10x 5' v3")
+          file.expression_file_info.save
           file.ann_data_file_info.has_expression = true
-          # TODO: update this when raw count ingest enabled for AnnData
-          FactoryBot.create(:data_array,
-                            array_type: 'cells',
-                            array_index: 0,
-                            name: 'h5ad_frag.matrix.processed.mtx.gz Cells',
-                            cluster_name: 'h5ad_frag.matrix.processed.mtx.gz',
-                            values: evaluator.cell_input,
-                            study_file: file
-          )
+          file.ann_data_file_info.has_raw_counts = true
+          %w[raw processed].each do |matrix_type|
+            FactoryBot.create(:data_array,
+                              array_type: 'cells',
+                              array_index: 0,
+                              name: "h5ad_frag.matrix.#{matrix_type}.mtx.gz Cells",
+                              cluster_name: "h5ad_frag.matrix.#{matrix_type}.mtx.gz",
+                              values: evaluator.cell_input,
+                              study_file: file
+            )
+          end
+
           evaluator.expression_input.each do |gene, expression|
             FactoryBot.create(:gene_with_expression,
                               expression_input: expression,
@@ -210,14 +215,17 @@ FactoryBot.define do
           end
         end
         evaluator.coordinate_input.each do |entry|
-          entry.each do |cluster_name, axes|
+          entry.each do |name, axes|
             file.ann_data_file_info.has_clusters = true
             axes_and_cells = axes.merge(cells: evaluator.cell_input)
             FactoryBot.create(:cluster_group_with_cells,
-                              name: cluster_name,
+                              name:,
                               cell_input: axes_and_cells,
                               cluster_type: "#{axes.keys.size}d",
                               study_file: file)
+            file.ann_data_file_info.data_fragments << {
+              _id: BSON::ObjectId.new.to_s, data_type: :cluster, obsm_key_name: "X_#{name}", name:
+            }.with_indifferent_access
           end
         end
         # gotcha to save updates to ann_data_file_info

@@ -254,7 +254,7 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
               },
               {
                 _id: exp_frag_id, data_type: 'expression', taxon_id: taxon_id, y_axis_title: 'log(TPM) expression',
-                description: 'updated'
+                description: 'updated', expression_file_info: { biosample_input_type: 'Single nuclei' }
               }
             ].to_json
         }
@@ -269,6 +269,7 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
     ann_data.ann_data_file_info.data_fragments.each do |fragment|
       assert_equal 'updated', fragment[:description]
     end
+    assert_equal 'Single nuclei', ann_data.expression_file_info.biosample_input_type
   end
 
   test 'should not reset parse status on update when using bucket path' do

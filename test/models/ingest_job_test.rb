@@ -236,7 +236,7 @@ class IngestJobTest < ActiveSupport::TestCase
         studyAccession: @basic_study.accession,
         jobStatus: 'success',
         referenceAnnDataFile: false,
-        extractedFileTypes: %w[cluster metadata processed_expression],
+        extractedFileTypes: %w[cluster metadata processed_expression raw_counts],
         machineType: 'n2d-highmem-4',
         bootDiskSizeGb: 300,
         exitStatus: 0
