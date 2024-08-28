@@ -40,7 +40,7 @@ class DifferentialExpressionParameters
   validates :annotation_file, :cluster_file, :matrix_file_path,
             format: { with: Parameterizable::GS_URL_REGEXP, message: 'is not a valid GS url' }
   validates :annotation_scope, inclusion: %w[cluster study]
-  validates :matrix_file_type, inclusion: %w[dense mtx]
+  validates :matrix_file_type, inclusion: %w[dense mtx h5ad]
   validates :machine_type, inclusion: Parameterizable::GCE_MACHINE_TYPES
   validates :gene_file, :barcode_file,
             presence: true,

@@ -34,6 +34,7 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
                                          is_differential_expression_enabled: false
                                        }
                                      ])
+    @cluster_group = @basic_study.cluster_groups.by_name('cluster_diffexp.txt')
     FactoryBot.create(:metadata_file,
                       name: 'metadata.txt',
                       study: @basic_study,
@@ -83,13 +84,13 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     # should fail on annotation missing
     assert_raise ArgumentError do
       DifferentialExpressionService.run_differential_expression_job(
-        @cluster_file, @basic_study, @user, annotation_name: 'NA', annotation_scope: 'study'
+        @cluster_group, @basic_study, @user, annotation_name: 'NA', annotation_scope: 'study'
       )
     end
 
     # should fail on cell validation
     assert_raise ArgumentError do
-      DifferentialExpressionService.run_differential_expression_job(@cluster_file, @basic_study, @user, **@job_params)
+      DifferentialExpressionService.run_differential_expression_job(@cluster_group, @basic_study, @user, **@job_params)
     end
     # test launch by manually creating expression matrix cells array for validation
     DataArray.create!(@all_cells_array_params)
@@ -101,7 +102,7 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     mock.expect(:delay, job_mock)
     IngestJob.stub :new, mock do
       job_launched = DifferentialExpressionService.run_differential_expression_job(
-        @cluster_file, @basic_study, @user, **@job_params
+        @cluster_group, @basic_study, @user, **@job_params
       )
       assert job_launched
       mock.verify
@@ -153,6 +154,7 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
                                       y: [7, 5, 3, 4, 5],
                                       cells: cells
                                     })
+    cluster_group = study.cluster_groups.by_name('cluster_diffexp.txt')
     FactoryBot.create(:metadata_file,
                       name: 'metadata.txt',
                       study: study,
@@ -179,7 +181,7 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     mock.expect(:delay, job_mock)
     IngestJob.stub :new, mock do
       job_launched = DifferentialExpressionService.run_differential_expression_job(
-        cluster_file, study, @user, **annotation
+        cluster_group, study, @user, **annotation
       )
       assert job_launched
       mock.verify
@@ -191,7 +193,7 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     # test validation
     @basic_study.update(default_options: {})
     assert_raise ArgumentError do
-      DifferentialExpressionService.run_differential_expression_job(@cluster_file, @basic_study, @user, **@job_params)
+      DifferentialExpressionService.run_differential_expression_job(@cluster_group, @basic_study, @user, **@job_params)
     end
 
     @basic_study.update(default_options: { cluster: 'cluster_diffexp.txt', annotation: 'species--group--study' })
@@ -216,7 +218,9 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
       dry_run: true
     }
 
-    job_requested = DifferentialExpressionService.run_differential_expression_job(@cluster_file, @basic_study, @user, **params)
+    job_requested = DifferentialExpressionService.run_differential_expression_job(
+      @cluster_group, @basic_study, @user, **params
+    )
     assert job_requested
     assert_equal [], DelayedJobAccessor.find_jobs_by_handler_type(IngestJob, @cluster_file)
   end
@@ -323,6 +327,44 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
       stats = DifferentialExpressionService.backfill_new_results(study_accessions: [@basic_study.accession])
       assert_equal 1, stats[:total_jobs]
       assert_equal 1, stats[@basic_study.accession]
+      mock.verify
+      job_mock.verify
+    end
+  end
+
+  test 'should launch DE job for single AnnData file' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'AnnData DE Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+
+    cells = 'A'.upto('H').map { |c| "cell#{c}"}
+    genes = %w[gad1 gad2 phex farsa cldn4 sox1 itm2a sergef]
+    expression_input = genes.index_with(cells.map {|c| [c, rand.floor(3)]})
+    annotation_input = [{ name: 'louvain', type: 'group', values: %w(0 0 0 1 1 1 2 2) }]
+    coordinate_input = [
+      { 'umap' => { x: 1.upto(8).to_a, y: 8.downto(1).to_a } }
+    ]
+    ann_data_file = FactoryBot.create(:ann_data_file,
+                                      study:,
+                                      name: 'test.h5ad',
+                                      reference_file: false,
+                                      cell_input: cells,
+                                      expression_input:,
+                                      annotation_input:,
+                                      coordinate_input:)
+    ann_data_file.expression_file_info.update(is_raw_counts: true)
+    ann_data_file.ann_data_file_info.update(has_raw_counts: true)
+    ann_data_file.save
+    ann_data_file.reload
+    job_mock = Minitest::Mock.new
+    job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
+    mock = Minitest::Mock.new
+    mock.expect(:delay, job_mock)
+    # cell_type__ontology_label and seurat_clusters should be marked as eligible
+    IngestJob.stub :new, mock do
+      jobs_launched = DifferentialExpressionService.run_differential_expression_on_all(study.accession)
+      assert_equal 1, jobs_launched
       mock.verify
       job_mock.verify
     end

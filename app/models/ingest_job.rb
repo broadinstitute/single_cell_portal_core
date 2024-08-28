@@ -428,7 +428,7 @@ class IngestJob
       if study_file.use_metadata_convention
         SearchFacet.delay.update_all_facet_filters
       end
-      launch_differential_expression_jobs unless study_file.is_anndata?
+      launch_differential_expression_jobs
       create_cell_name_indexes
     when :ingest_expression
       set_anndata_file_info if study_file.is_anndata?
@@ -439,7 +439,7 @@ class IngestJob
       set_study_default_options
       set_anndata_file_info if study_file.is_anndata?
       launch_subsample_jobs
-      launch_differential_expression_jobs unless study_file.is_anndata?
+      launch_differential_expression_jobs
       create_cell_name_indexes
     when :ingest_subsample
       set_subsampling_flags
@@ -486,7 +486,8 @@ class IngestJob
     when 'Cluster'
       study_file.name
     when 'AnnData'
-      params_object.name
+      attr_name = action == :differential_expression ? :cluster_name : :name
+      params_object.send(attr_name)
     else
       nil
     end
@@ -659,7 +660,7 @@ class IngestJob
   def create_differential_expression_results
     annotation_identifier = "#{params_object.annotation_name}--group--#{params_object.annotation_scope}"
     Rails.logger.info "Creating differential expression result object for annotation: #{annotation_identifier}"
-    cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id)
+    cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: params_object.cluster_name)
     matrix_url = params_object.matrix_file_path
     matrix_filename = matrix_url.split("gs://#{study.bucket_id}/").last
     matrix_file = StudyFile.where(study: study, 'expression_file_info.is_raw_counts' => true).any_of(
@@ -919,7 +920,7 @@ class IngestJob
         )
       end
     when :differential_expression
-      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id)
+      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: params_object.cluster_name)
       annotation_params = {
         cluster: cluster,
         annot_name: params_object.annotation_name,
@@ -960,7 +961,7 @@ class IngestJob
     mixpanel_log_props = get_job_analytics
     # log job properties to Mixpanel
     MetricsService.log(mixpanel_event_name, mixpanel_log_props, user)
-    report_anndata_summary if study_file.is_viz_anndata?
+    report_anndata_summary if study_file.is_viz_anndata? && action != :differential_expression
   end
 
   # set a mixpanel event name based on action

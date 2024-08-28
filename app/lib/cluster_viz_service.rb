@@ -240,16 +240,13 @@ class ClusterVizService
   # * *raises*
   #   - (ArgumentError) => if requested parameters do not validate
   def self.raw_matrix_for_cluster_cells(study, cluster)
-    raw_counts_matrices = StudyFile.where(study_id: study.id,
-                                          parse_status: 'parsed',
-                                          queued_for_deletion: false,
-                                          'expression_file_info.is_raw_counts' => true)
+    raw_counts_matrices = study.expression_matrices.select { |matrix| matrix.is_raw_counts_file? }
     raise ArgumentError, "#{study.accession} has no parsed raw counts data" if raw_counts_matrices.empty?
 
     cluster_cells = cluster.concatenate_data_arrays('text', 'cells')
     # if the intersection of cluster_cells and matrix_cells is complete, then this will return a matrix file
     raw_matrix = raw_counts_matrices.detect do |matrix|
-      matrix_cells = study.expression_matrix_cells(matrix)
+      matrix_cells = study.expression_matrix_cells(matrix, matrix_type: 'raw')
       (cluster_cells & matrix_cells) == cluster_cells
     end
     raise ArgumentError, "#{cluster.name} does not have all cells in a single raw counts matrix" if raw_matrix.nil?
