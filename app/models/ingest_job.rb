@@ -428,7 +428,7 @@ class IngestJob
       if study_file.use_metadata_convention
         SearchFacet.delay.update_all_facet_filters
       end
-      launch_differential_expression_jobs unless study_file.is_anndata?
+      launch_differential_expression_jobs
       create_cell_name_indexes
     when :ingest_expression
       set_anndata_file_info if study_file.is_anndata?
@@ -439,7 +439,7 @@ class IngestJob
       set_study_default_options
       set_anndata_file_info if study_file.is_anndata?
       launch_subsample_jobs
-      launch_differential_expression_jobs unless study_file.is_anndata?
+      launch_differential_expression_jobs
       create_cell_name_indexes
     when :ingest_subsample
       set_subsampling_flags
@@ -486,7 +486,8 @@ class IngestJob
     when 'Cluster'
       study_file.name
     when 'AnnData'
-      params_object.name
+      attr_name = action == :differential_expression ? :cluster_name : :name
+      params_object.send(attr_name)
     else
       nil
     end
@@ -659,7 +660,7 @@ class IngestJob
   def create_differential_expression_results
     annotation_identifier = "#{params_object.annotation_name}--group--#{params_object.annotation_scope}"
     Rails.logger.info "Creating differential expression result object for annotation: #{annotation_identifier}"
-    cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id)
+    cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: params_object.cluster_name)
     matrix_url = params_object.matrix_file_path
     matrix_filename = matrix_url.split("gs://#{study.bucket_id}/").last
     matrix_file = StudyFile.where(study: study, 'expression_file_info.is_raw_counts' => true).any_of(
@@ -729,6 +730,7 @@ class IngestJob
     study_file.ann_data_file_info.has_clusters = ClusterGroup.where(study:, study_file:).exists?
     study_file.ann_data_file_info.has_metadata = CellMetadatum.where(study:, study_file:).exists?
     study_file.ann_data_file_info.has_expression = Gene.where(study:, study_file:).exists?
+    study_file.ann_data_file_info.has_raw_counts = study.expression_matrix_cells(study_file, matrix_type: 'raw').any?
     study_file.save
   end
 
@@ -918,7 +920,7 @@ class IngestJob
         )
       end
     when :differential_expression
-      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id)
+      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: params_object.cluster_name)
       annotation_params = {
         cluster: cluster,
         annot_name: params_object.annotation_name,
@@ -959,7 +961,7 @@ class IngestJob
     mixpanel_log_props = get_job_analytics
     # log job properties to Mixpanel
     MetricsService.log(mixpanel_event_name, mixpanel_log_props, user)
-    report_anndata_summary if study_file.is_viz_anndata?
+    report_anndata_summary if study_file.is_viz_anndata? && action != :differential_expression
   end
 
   # set a mixpanel event name based on action
@@ -1027,14 +1029,12 @@ class IngestJob
     message = ["Total parse time: #{get_total_runtime}"]
     case action
     when :ingest_expression
-      # since genes are not ingested for raw count matrices, report number of cells ingested
-      if study_file.is_raw_counts_file?
-        cells = study.expression_matrix_cells(study_file).count
-        message << "Cells ingested: #{cells}"
-      else
-        genes = Gene.where(study_id: study.id, study_file_id: study_file.id).count
-        message << "Gene-level entries created: #{genes}"
-      end
+      count_genes = !study_file.is_raw_counts_file? || study_file.is_viz_anndata?
+      count_cells = study_file.is_raw_counts_file?
+      genes = Gene.where(study_id: study.id, study_file_id: study_file.id).count
+      cells = study.expression_matrix_cells(study_file, matrix_type: 'raw').count
+      message << "Gene-level entries created: #{genes}" if count_genes
+      message << "Cells ingested: #{cells}" if count_cells
     when :ingest_cell_metadata
       use_metadata_convention = study_file.use_metadata_convention
       if use_metadata_convention

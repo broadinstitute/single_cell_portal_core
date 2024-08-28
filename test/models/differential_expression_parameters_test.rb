@@ -24,6 +24,16 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
       gene_file: 'gs://test_bucket/genes.tsv',
       barcode_file: 'gs://test_bucket/barcodes.tsv'
     }
+
+    @anndata_options = {
+      annotation_name: 'Category',
+      annotation_scope: 'cluster',
+      annotation_file: 'gs://test_bucket/metadata.tsv',
+      cluster_file: 'gs://test_bucket/cluster.tsv',
+      cluster_name: 'UMAP',
+      matrix_file_path: 'gs://test_bucket/matrix.h5ad',
+      matrix_file_type: 'h5ad'
+    }
   end
 
   test 'should instantiate and validate parameters' do
@@ -31,6 +41,8 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
     assert dense_params.valid?
     sparse_params = DifferentialExpressionParameters.new(@sparse_options)
     assert sparse_params.valid?
+    anndata_params = DifferentialExpressionParameters.new(@anndata_options)
+    assert anndata_params.valid?
 
     # test conditional validations
     dense_params.annotation_file = ''
@@ -60,6 +72,17 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
     sparse_params = DifferentialExpressionParameters.new(@sparse_options)
     options_array = sparse_params.to_options_array
     sparse_params.attributes.each do |name, value|
+      expected_name = Parameterizable.to_cli_opt(name)
+      assert_includes options_array, expected_name
+      assert_includes options_array, value
+    end
+    assert_includes options_array, DifferentialExpressionParameters::PARAMETER_NAME
+
+    anndata_params = DifferentialExpressionParameters.new(@anndata_options)
+    options_array = anndata_params.to_options_array
+    anndata_params.attributes.each do |name, value|
+      next if value.blank? # gene_file and barcode_file will not be set
+
       expected_name = Parameterizable.to_cli_opt(name)
       assert_includes options_array, expected_name
       assert_includes options_array, value

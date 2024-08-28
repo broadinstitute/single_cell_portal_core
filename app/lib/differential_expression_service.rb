@@ -36,9 +36,8 @@ class DifferentialExpressionService
     raise ArgumentError, "#{study.accession} default annotation is not group-based" if annotation_type != 'group'
 
     annotation = { annotation_name:, annotation_scope:, machine_type:, dry_run: }
-    cluster_file = study.default_cluster.study_file
     requested_user = user || study.user
-    run_differential_expression_job(cluster_file, study, requested_user, **annotation)
+    run_differential_expression_job(study.default_cluster, study, requested_user, **annotation)
   end
 
   # same as default method, except runs differential expression job on all eligible annotations
@@ -68,25 +67,25 @@ class DifferentialExpressionService
     requested_user = user || study.user
     job_count = 0
     skip_count = 0
-    study.cluster_ordinations_files.each do |cluster_file|
+    study.cluster_groups.each do |cluster_group|
       eligible_annotations.each do |annotation|
         begin
-          # skip if this is a cluster-based annotation and is not available on this cluster file
-          next if annotation[:annotation_scope] == 'cluster' && annotation[:cluster_file_id] != cluster_file.id
+          # skip if this is a cluster-based annotation and is not available on this cluster object
+          next if annotation[:annotation_scope] == 'cluster' && annotation[:cluster_group_id] != cluster_group.id
 
           annotation_params = annotation.deep_dup # make a copy so we don't lose the association next time we check
-          annotation_params.delete(:cluster_file_id)
+          annotation_params.delete(:cluster_group_id)
           annotation_params.merge!(dry_run:, machine_type:)
           annotation_identifier = [
             annotation_params[:annotation_name], 'group', annotation_params[:annotation_scope]
           ].join('--')
-          job_identifier = "#{study_accession}: #{cluster_file.name} (#{annotation_identifier})"
+          job_identifier = "#{study_accession}: #{cluster_group.name} (#{annotation_identifier})"
           if annotation_params[:machine_type]
             job_identifier += "[#{machine_type}]"
           end
           log_message "Checking DE job for #{job_identifier}"
           DifferentialExpressionService.run_differential_expression_job(
-            cluster_file, study, requested_user, **annotation_params
+            cluster_group, study, requested_user, **annotation_params
           )
           if annotation_params[:dry_run]
             log_message "==> Dry run found job #{job_identifier}"
@@ -107,7 +106,7 @@ class DifferentialExpressionService
   # handle setting up and launching a single differential expression job
   #
   # * *params*
-  #   - +cluster_file+      (StudyFile) => Clustering file being used as control cell list
+  #   - +cluster_group+    (ClusterGroup) => Clustering object to source name/file from
   #   - +study+            (Study) => Study to which StudyFile belongs
   #   - +user+             (User) => User initiating parse action (for email delivery)
   #   - +annotation_name+  (String) => Name of requested annotation
@@ -123,20 +122,24 @@ class DifferentialExpressionService
   #
   # * *raises*
   #   - (ArgumentError) => if requested parameters do not validate
-  def self.run_differential_expression_job(cluster_file, study, user, annotation_name:, annotation_scope:,
+  def self.run_differential_expression_job(cluster_group, study, user, annotation_name:, annotation_scope:,
                                            machine_type: nil, dry_run: nil)
     validate_study(study)
-    validate_annotation(cluster_file, study, annotation_name, annotation_scope)
+    validate_annotation(cluster_group, study, annotation_name, annotation_scope)
+    cluster_url = cluster_file_url(cluster_group)
+    study_file = cluster_group.study_file
+    metadata_url = study_file.is_viz_anndata? ?
+                     RequestUtils.data_fragment_url(study_file, 'metadata') :
+                     study.metadata_file.gs_url
     # begin assembling parameters
     de_params = {
       annotation_name: annotation_name,
       annotation_scope: annotation_scope,
-      annotation_file: annotation_scope == 'cluster' ? cluster_file.gs_url : study.metadata_file.gs_url,
-      cluster_file: cluster_file.gs_url,
-      cluster_name: cluster_file.name
+      annotation_file: annotation_scope == 'cluster' ? cluster_url : metadata_url,
+      cluster_file: cluster_url,
+      cluster_name: cluster_group.name
     }
-    cluster = study.cluster_groups.by_name(cluster_file.name)
-    raw_matrix = ClusterVizService.raw_matrix_for_cluster_cells(study, cluster)
+    raw_matrix = ClusterVizService.raw_matrix_for_cluster_cells(study, cluster_group)
     de_params[:matrix_file_path] = raw_matrix.gs_url
     if raw_matrix.file_type == 'MM Coordinate Matrix'
       de_params[:matrix_file_type] = 'mtx'
@@ -146,6 +149,8 @@ class DifferentialExpressionService
       barcode_file = bundle.bundled_file_by_type('10X Barcodes File')
       de_params[:gene_file] = gene_file.gs_url
       de_params[:barcode_file] = barcode_file.gs_url
+    elsif raw_matrix.file_type == 'AnnData'
+      de_params[:matrix_file_type] = 'h5ad'
     else
       de_params[:matrix_file_type] = 'dense'
     end
@@ -155,8 +160,7 @@ class DifferentialExpressionService
 
     if params_object.valid?
       # launch DE job
-      job = IngestJob.new(study: study, study_file: cluster_file, user: user, action: :differential_expression,
-                          params_object: params_object)
+      job = IngestJob.new(study:, study_file:, user:, action: :differential_expression, params_object:)
       job.delay.push_remote_and_launch_ingest
       true
     else
@@ -233,7 +237,7 @@ class DifferentialExpressionService
           cluster.can_visualize_cell_annotation?(safe_annot)
       end
       cell_annots.each do |annot|
-        annot[:cluster_file_id] = cluster.study_file.id # for checking associations later
+        annot[:cluster_group_id] = cluster.id # for checking associations later
       end
       cell_annotations += cell_annots
     end
@@ -241,7 +245,7 @@ class DifferentialExpressionService
       {
         annotation_name: annot[:name],
         annotation_scope: 'cluster',
-        cluster_file_id: annot[:cluster_file_id]
+        cluster_group_id: annot[:cluster_group_id]
       }
     end
     if skip_existing
@@ -312,21 +316,18 @@ class DifferentialExpressionService
   # validate annotation exists and can be visualized for a DE job
   #
   # * *params*
-  #   - +cluster_file+      (StudyFile) => Clustering file being used as control cell list
+  #   - +cluster_group+    (ClusterGroup) => Clustering object to source name/file from
   #   - +study+            (Study) => Study to which StudyFile belongs
   #   - +annotation_name+  (String) => Name of requested annotation
   #   - +annotation_scope+ (String) => Scope of requested annotation ('study' or 'cluster')
   #
   # * *raises*
   #   - (ArgumentError) => if requested parameters do not validate
-  def self.validate_annotation(cluster_file, study, annotation_name, annotation_scope)
-    cluster_group = study.cluster_groups.by_name(cluster_file.name)
-    raise ArgumentError, "cannot find cluster for #{cluster_file.name}" if cluster_group.nil?
-
+  def self.validate_annotation(cluster_group, study, annotation_name, annotation_scope)
     result = DifferentialExpressionResult.find_by(study:, cluster_group:, annotation_name:, annotation_scope:)
     if result.present?
       raise ArgumentError,
-            "#{annotation_name} already exists for #{study.accession}:#{cluster_file.name}, " \
+            "#{annotation_name} already exists for #{study.accession}:#{cluster_group.name}, " \
             "please delete result #{result.id} before retrying"
     end
     can_visualize = false
@@ -379,11 +380,28 @@ class DifferentialExpressionService
   # handles special case of encoding plus signs (+) as 'pos'
   #
   # * *params*
-  #   -+values+ (Array<String>) => Array of values to transform into encoded name
+  #   - +values+ (Array<String>) => Array of values to transform into encoded name
   #
   # * *returns*
   #   - (String)
   def self.encode_filename(values)
     values.map { |val| val.gsub(/\+/, 'pos').gsub(/\W/, '_') }.join('--')
+  end
+
+  # return a GS URL for a requested ClusterGroup, depending on file type
+  #
+  # * *params*
+  #   - +cluster_group+ (ClusterGroup) => Clustering object to source name/file from
+  #
+  # * *returns*
+  #   - (String)
+  def self.cluster_file_url(cluster_group)
+    study_file = cluster_group.study_file
+    if study_file.is_viz_anndata?
+      data_frag = study_file.ann_data_file_info.find_fragment(data_type: :cluster, name: cluster_group.name)
+      RequestUtils.data_fragment_url(study_file, 'cluster', file_type_detail: data_frag[:obsm_key_name])
+    else
+      study_file.gs_url
+    end
   end
 end

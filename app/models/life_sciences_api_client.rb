@@ -23,7 +23,7 @@ class LifeSciencesApiClient
     ingest_cluster: %w[Cluster AnnData],
     ingest_cell_metadata: %w[Metadata AnnData],
     ingest_subsample: %w[Cluster AnnData],
-    differential_expression: %w[Cluster],
+    differential_expression: %w[Cluster AnnData],
     ingest_differential_expression: ['Differential Expression'],
     render_expression_arrays: %w[Cluster],
     image_pipeline: %w[Cluster],
