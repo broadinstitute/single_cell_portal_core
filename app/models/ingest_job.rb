@@ -1010,7 +1010,7 @@ class IngestJob
     # discard the job that corresponds with this ingest process
     still_processing = remaining_jobs.reject do |job|
       ingest_job = DelayedJobAccessor.dump_job_handler(job).object
-      ingest_job.params_object.associated_file == fragment
+      ingest_job.params_object.is_a?(AnnDataIngestParameters) && ingest_job.params_object.associated_file == fragment
     end.any?
 
     # only continue if there are no more jobs and a summary has not been sent yet
