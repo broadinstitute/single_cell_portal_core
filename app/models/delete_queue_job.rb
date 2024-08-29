@@ -226,7 +226,7 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
     when 'Cluster'
       cluster = ClusterGroup.find_by(study:, study_file: study_file)
       results = DifferentialExpressionResult.where(study:, cluster_group: cluster)
-    when 'Expression Matrix', 'MM Coordinate Matrix'
+    when 'Expression Matrix', 'MM Coordinate Matrix', 'AnnData'
       results = DifferentialExpressionResult.where(study:, matrix_file_id: study_file.id)
     when 'Differential Expression'
       results = DifferentialExpressionResult.where(study_file: object)
