@@ -85,26 +85,6 @@ export async function getAnnDataHeaders(hdf5File) {
   return headers
 }
 
-// /**  */
-// async function validateDiseases(hdf5File) {
-//   console.log('in validateDiseases')
-//   let issues = []
-//   const diseases = await getDiseases(hdf5File)
-//   console.log('diseases')
-//   console.log(diseases)
-//   // "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/mondo,https://www.ebi.ac.uk/ols/ontologies/pato",
-//   diseases.forEach(disease => {
-//     const ontologyShortName = disease.split('_')[0]
-//     console.log('ontologyShortName', ontologyShortName)
-//     if (!['MONDO', 'PATO'].includes(ontologyShortName)) {
-//       const msg = `Disease ID ${disease} is not among supported ontologies (MONDO, PATO)`
-//       issues.push(['error', 'metadata:ontology', msg])
-//     }
-//   })
-//   console.log('issues', issues)
-//   return issues
-// }
-
 /**
  * Get list of ontology names accepted for key from metadata schema
  *
@@ -112,9 +92,13 @@ export async function getAnnDataHeaders(hdf5File) {
  */
 function getAcceptedOntologies(key, metadataSchema) {
   // E.g. "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/mondo,https://www.ebi.ac.uk/ols/ontologies/pato"
-  const olsUrls = metadataSchema.properties[key].ontology_browser_url
+  const olsUrls = metadataSchema.properties[key].ontology
 
   const acceptedOntologies = olsUrls?.split(',').map(url => url.split('/').slice(-1)[0].toUpperCase())
+
+  if (acceptedOntologies.includes('NCBITAXON')) {
+    acceptedOntologies.push('NCBITaxon')
+  }
 
   return acceptedOntologies
 }
@@ -124,13 +108,14 @@ async function validateOntologyIdFormat(hdf5File) {
   const issues = []
 
   // Validate IDs for species, organ, disease, and library preparation protocol
-  await REQUIRED_CONVENTION_COLUMNS.forEach(async column => {
-    if (!column.endsWith('__ontology_label')) {return}
+  for (let i = 0; i < REQUIRED_CONVENTION_COLUMNS.length; i++) {
+    const column = REQUIRED_CONVENTION_COLUMNS[i]
+    if (!column.endsWith('__ontology_label')) {continue}
     const key = column.split('__ontology_label')[0]
     const ontologyIds = await getOntologyIds(key, hdf5File)
 
     const acceptedOntologies = getAcceptedOntologies(key, metadataSchema)
-    if (!acceptedOntologies) {return}
+    if (!acceptedOntologies) {continue}
 
     ontologyIds.forEach(ontologyId => {
       const ontologyShortName = ontologyId.split('_')[0]
@@ -140,10 +125,10 @@ async function validateOntologyIdFormat(hdf5File) {
           `Ontology ID "${ontologyId}" ` +
           `is not among accepted ontologies (${accepted}) ` +
           `for key "${key}"`
-        issues.push(['error', 'metadata:ontology', msg])
+        issues.push(['error', 'ontology:misformatted-ontology-id', msg])
       }
     })
-  })
+  }
 
   return issues
 }
@@ -151,13 +136,10 @@ async function validateOntologyIdFormat(hdf5File) {
 /** Parse AnnData file, and return an array of issues, along with file parsing info */
 export async function parseAnnDataFile(fileOrUrl, remoteProps) {
   let issues = []
-  console.log('0')
 
   const hdf5File = await getH5adFile(fileOrUrl, remoteProps)
 
   const headers = await getAnnDataHeaders(hdf5File)
-  console.log('headers')
-  console.log(headers)
 
   // TODO (SCP-5770): Extend AnnData CSFV to remote files, then remove this
   if (!headers) {
