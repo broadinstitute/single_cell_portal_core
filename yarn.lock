@@ -2148,11 +2148,6 @@
   resolved "https://registry.npmjs.org/@sinclair/typebox/-/typebox-0.27.8.tgz"
   integrity sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==
 
-"@single-cell-portal/hdf5-indexed-reader@0.5.6":
-  version "0.5.6"
-  resolved "https://registry.yarnpkg.com/@single-cell-portal/hdf5-indexed-reader/-/hdf5-indexed-reader-0.5.6.tgz#c99ae7436b88530a6dfb854e8aafdf96c67c90a0"
-  integrity sha512-2+XSdcbglGZYJv/lWmBCJ0OpVhrYbKLei5K50Y0WT92EfqOes4rTtn7iF4XYwfuWmjFXn+9zCFfHMDPzXfh1RQ==
-
 "@single-cell-portal/igv@2.16.0-alpha.4":
   version "2.16.0-alpha.4"
   resolved "https://registry.npmjs.org/@single-cell-portal/igv/-/igv-2.16.0-alpha.4.tgz"
@@ -5092,6 +5087,11 @@ has@^1.0.3:
   integrity sha512-f2dvO0VU6Oej7RkWJGrehjbzMAjFp5/VKPp5tTpWIV4JHHZK1/BxbFRtf/siA2SWTe09caDmVtYYzWEIbBS4zw==
   dependencies:
     function-bind "^1.1.1"
+
+hdf5-indexed-reader@1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/hdf5-indexed-reader/-/hdf5-indexed-reader-1.0.1.tgz#47254e17771d619f4295605c31d501cf1fd2ba64"
+  integrity sha512-hGFgkIrc3Tm9QMON88cYH3v+6XMVYlaN/ONCBte+hTqC9QMEEbG0HIOuyLxaEfpNcmIJJt+EZBLoHlMbA1tJKA==
 
 hoist-non-react-statics@^3.3.1, hoist-non-react-statics@^3.3.2:
   version "3.3.2"
