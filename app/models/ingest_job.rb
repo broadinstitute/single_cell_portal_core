@@ -286,8 +286,6 @@ class IngestJob
     nil # catch-all
   end
 
-
-
   # Reconstruct the command line from the pipeline actions
   #
   # * *returns*
@@ -973,7 +971,8 @@ class IngestJob
   def anndata_summary_props
     pipelines = ApplicationController.life_sciences_api_client.list_pipelines
     previous_jobs = pipelines.operations.select do |op|
-      op.metadata.dig('pipeline', 'actions').first['commands'].detect { |c| c == study_file.id.to_s }
+      pipeline_args = op.metadata.dig('pipeline', 'actions').first['commands']
+      pipeline_args.detect { |c| c == study_file.id.to_s } && !pipeline_args.include?('--differential-expression')
     end
     # get total runtime from initial extract to final parse
     initial_extract = previous_jobs.last
@@ -985,10 +984,22 @@ class IngestJob
     file_type = study_file.file_type
     trigger = study_file.upload_trigger
     job_status = previous_jobs.map(&:error).compact.any? ? 'failed' : 'success'
+    error_action = nil
+    code = 0
+    if job_status == 'failed'
+      first_failure = previous_jobs.reverse.detect { |p| p.error.present? }
+      args = first_failure.metadata.dig('pipeline', 'actions').first['commands']
+      error_action = args.detect {|c| LifeSciencesApiClient::FILE_TYPES_BY_ACTION.keys.include?(c.to_sym) }
+      failure_events = first_failure.metadata['events'].sort_by! { |event| event['timestamp'] }
+      stopped_msg = failure_events.detect do |event|
+        event.dig('containerStopped', 'exitStatus').present?
+      end
+      code = stopped_msg.dig('containerStopped', 'exitStatus').to_i
+    end
     # count total number of files extracted
     num_files_extracted = previous_jobs.reject do |op|
-      op.metadata.dig('pipeline', 'actions').first['commands'].detect { |c| c == '--extract' } &&
-        op.error.nil?
+      op.metadata.dig('pipeline', 'actions').first['commands'].detect { |c| c == '--extract' } ||
+        op.error.present?
     end.count
     # event properties for Mixpanel summary event
     {
@@ -999,7 +1010,9 @@ class IngestJob
       studyAccession: study.accession,
       trigger:,
       jobStatus: job_status,
-      numFilesExtracted: num_files_extracted
+      numFilesExtracted: num_files_extracted,
+      error: error_action,
+      exitCode: code
     }
   end
 
