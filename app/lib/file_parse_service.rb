@@ -113,7 +113,7 @@ class FileParseService
           else
             params_object = AnnDataIngestParameters.new(
               anndata_file: study_file.gs_url, obsm_keys: study_file.ann_data_file_info.obsm_key_names,
-              file_size: study_file.upload_file_size
+              file_size: study_file.upload_file_size, extract_raw_counts: study_file.is_raw_counts_file?
             )
           end
           # TODO extract and parse Raw Exp Data (SCP-4710)

@@ -236,7 +236,7 @@ class IngestJobTest < ActiveSupport::TestCase
         studyAccession: @basic_study.accession,
         jobStatus: 'success',
         referenceAnnDataFile: false,
-        extractedFileTypes: %w[cluster metadata processed_expression raw_counts],
+        extractedFileTypes: %w[cluster metadata processed_expression],
         machineType: 'n2d-highmem-4',
         bootDiskSizeGb: 300,
         exitStatus: 0
@@ -687,6 +687,46 @@ class IngestJobTest < ActiveSupport::TestCase
         failed_job.handle_ingest_failure
         mock.verify
       end
+    end
+  end
+
+  test 'should perform secondary cleanup if AnnData subparse fails' do
+    study = FactoryBot.create(:detached_study,
+                                name_prefix: 'Secondary Cleanup Test',
+                                user: @user,
+                                test_array: @@studies_to_clean)
+    study_file = FactoryBot.create(:ann_data_file,
+                                   name: 'data.h5ad',
+                                   study:,
+                                   cell_input: %w[A B C D],
+                                   annotation_input: [
+                                     { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                                   ],
+                                   coordinate_input: [
+                                     { x_tsne: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                   ],
+                                   expression_input: {
+                                     'phex' => [['A', 0.3], ['B', 1.0], ['C', 0.5], ['D', 0.1]]
+                                   })
+    study.reload
+    assert_equal 1, study.cluster_groups.count
+    assert_equal 1, study.cell_metadata.count
+    assert_equal 1, study.genes.count
+
+    job = IngestJob.new(pipeline_name: SecureRandom.uuid, study:, study_file:, user: @user, action: :ingest_subsample)
+    mock = Minitest::Mock.new
+    2.times do
+      mock.expect :error, nil
+      mock.expect :done?, true
+    end
+    ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
+      study_file.update(queued_for_deletion: true)
+      job.poll_for_completion
+      study.reload
+      assert study.cluster_groups.empty?
+      assert study.cell_metadata.empty?
+      assert study.genes.empty?
+      mock.verify
     end
   end
 end

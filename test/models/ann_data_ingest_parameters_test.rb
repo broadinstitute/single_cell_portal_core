@@ -5,6 +5,7 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
   before(:all) do
     @extract_params = {
       anndata_file: 'gs://bucket_id/test.h5ad',
+      extract_raw_counts: true,
       file_size: 100.gigabytes
     }
 
@@ -105,5 +106,10 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     assert params.valid?
     params.machine_type = 'foo'
     assert_not params.valid?
+  end
+
+  test 'should not extract raw counts unless specified' do
+    params = AnnDataIngestParameters.new(anndata_file: 'gs://bucket_id/test.h5ad', file_size: 100.gigabytes)
+    assert_equal AnnDataIngestParameters::PARAM_DEFAULTS[:extract], params.extract
   end
 end
