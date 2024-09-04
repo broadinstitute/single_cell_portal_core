@@ -1011,6 +1011,7 @@ class IngestJob
       trigger:,
       jobStatus: job_status,
       numFilesExtracted: num_files_extracted,
+      machineType: params_object.machine_type,
       error: error_action,
       exitCode: code
     }

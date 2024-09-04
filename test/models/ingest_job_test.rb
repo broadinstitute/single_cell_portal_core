@@ -348,6 +348,7 @@ class IngestJobTest < ActiveSupport::TestCase
         trigger: ann_data_file.upload_trigger,
         jobStatus: 'success',
         numFilesExtracted: 1,
+        machineType: params_object.machine_type,
         error: nil,
         exitCode: 0
       }
@@ -406,6 +407,7 @@ class IngestJobTest < ActiveSupport::TestCase
       trigger: ann_data_file.upload_trigger,
       jobStatus: 'success',
       numFilesExtracted: 1,
+      machineType: metadata_params.machine_type,
       error: nil,
       exitCode: 0
     }
