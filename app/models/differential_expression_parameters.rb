@@ -2,9 +2,13 @@
 class DifferentialExpressionParameters
   include ActiveModel::Model
   include Parameterizable
+  include ComputeScaling
 
   # name of Ingest Pipeline CLI parameter that invokes correct parser
   PARAMETER_NAME = '--differential-expression'.freeze
+
+  # scaling coefficient for auto-selecting machine_type
+  GB_PER_CORE = 3.5
 
   # annotation_name: name of annotation to use for DE
   # annotation_scope: scope of annotation (study, cluster)
@@ -16,6 +20,7 @@ class DifferentialExpressionParameters
   # gene_file (optional): genes/features file for sparse matrix
   # barcode_file (optional): barcodes file for sparse matrix
   # machine_type (optional): override for default ingest machine type (uses 'n2d-highmem-8')
+  # file_size (optional): size of raw matrix for machine_type scaling (only needed for h5ad files)
   PARAM_DEFAULTS = {
     annotation_name: nil,
     annotation_type: 'group',
@@ -27,11 +32,12 @@ class DifferentialExpressionParameters
     matrix_file_type: nil,
     gene_file: nil,
     barcode_file: nil,
-    machine_type: 'n2d-highmem-8'
+    machine_type: 'n2d-highmem-8',
+    file_size: 0
   }.freeze
 
   # values that are available as methods but not as attributes (and not passed to command line)
-  NON_ATTRIBUTE_PARAMS = %i[machine_type].freeze
+  NON_ATTRIBUTE_PARAMS = %i[machine_type file_size].freeze
 
   attr_accessor(*PARAM_DEFAULTS.keys)
 
@@ -49,4 +55,13 @@ class DifferentialExpressionParameters
               message: 'is not a valid GS url'
             },
             if: -> { matrix_file_type == 'mtx' }
+
+  def initialize(attributes = nil)
+    super
+
+    # auto-scale machine type for AnnData files
+    if @matrix_file_type == 'h5ad'
+      self.machine_type = assign_machine_type
+    end
+  end
 end
