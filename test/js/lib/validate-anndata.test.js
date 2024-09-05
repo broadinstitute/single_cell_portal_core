@@ -1,4 +1,6 @@
-import {parseAnnDataFile, getAnnDataHeaders} from 'lib/validation/validate-anndata'
+import {
+  getHdf5File, parseAnnDataFile, getAnnDataHeaders, checkOntologyIdFormat
+} from 'lib/validation/validate-anndata'
 
 describe('Client-side file validation for AnnData', () => {
   it('Parses AnnData headers', async () => {
@@ -18,18 +20,20 @@ describe('Client-side file validation for AnnData', () => {
       'species',
       'species__ontology_label'
     ]
-    const headers = await getAnnDataHeaders(url)
+    const remoteProps = {url}
+    const hdf5File = await getHdf5File(url, remoteProps)
+    const headers = await getAnnDataHeaders(hdf5File)
     expect(headers).toEqual(expectedHeaders)
   })
 
-  it('Reports SCP-valid AnnData file as valid', async () => {
+  it('Reports AnnData with valid headers as valid', async () => {
     // eslint-disable-next-line max-len
     const url = 'https://github.com/broadinstitute/single_cell_portal_core/raw/development/test/test_data/anndata_test.h5ad'
     const parseResults = await parseAnnDataFile(url)
     expect(parseResults.issues).toHaveLength(0)
   })
 
-  it('Reports SCP-invalid AnnData file as invalid', async () => {
+  it('Reports AnnData with invalid headers as invalid', async () => {
     // eslint-disable-next-line max-len
     const url = 'https://github.com/broadinstitute/single_cell_portal_core/raw/development/test/test_data/anndata_test_bad_header_no_species.h5ad'
     const parseResults = await parseAnnDataFile(url)
@@ -43,4 +47,29 @@ describe('Client-side file validation for AnnData', () => {
     ]
     expect(parseResults.issues[0]).toEqual(expectedIssue)
   })
+
+  it('Reports valid ontology IDs as valid', async () => {
+    const issues = await checkOntologyIdFormat(
+      // Underscore or colon can delimit shortname and number;
+      // disease can use MONDO or PATO IDs.
+      'disease', ['MONDO_0000001', 'MONDO:0000001', 'PATO:0000001']
+    )
+    expect(issues).toHaveLength(0)
+  })
+
+  // TODO: Uncomment this after row-level AnnData parsing PR is merged
+  // it('Parses AnnData rows and reports invalid ontology IDs', async () => {
+  //   // eslint-disable-next-line max-len
+  //   const url = 'https://github.com/broadinstitute/single_cell_portal_core/raw/development/test/test_data/anndata_test_invalid_disease.h5ad'
+  //   const parseResults = await parseAnnDataFile(url)
+
+  //   expect(parseResults.issues).toHaveLength(1)
+
+  //   const expectedIssue = [
+  //     'error',
+  //     'ontology:label-lookup-error',
+  //     'Ontology ID "FOO_0000042" is not among accepted ontologies (MONDO, PATO) for key "disease"'
+  //   ]
+  //   expect(parseResults.issues[0]).toEqual(expectedIssue)
+  // })
 })

@@ -52,7 +52,7 @@ function isUrl(fileOrUrl) {
 }
 
 /** Load local or remote AnnData file, return stream-parseable HDF5 object */
-export async function getH5adFile(fileOrUrl, remoteProps) {
+export async function getHdf5File(fileOrUrl, remoteProps) {
   // Jest test uses Node, where file API differs
   const isTest = isUrl(fileOrUrl)
 
@@ -152,7 +152,7 @@ async function validateOntologyIdFormat(hdf5File) {
 export async function parseAnnDataFile(fileOrUrl, remoteProps) {
   let issues = []
 
-  const hdf5File = await getH5adFile(fileOrUrl, remoteProps)
+  const hdf5File = await getHdf5File(fileOrUrl, remoteProps)
 
   const headers = await getAnnDataHeaders(hdf5File)
 
