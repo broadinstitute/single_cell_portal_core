@@ -105,7 +105,7 @@ function getAcceptedOntologies(key, metadataSchema) {
 }
 
 /** Check format of ontology IDs for key, return updated issues array */
-function checkOntologyIdFormat(key, ontologyIds) {
+export function checkOntologyIdFormat(key, ontologyIds) {
   const issues = []
 
   const acceptedOntologies = getAcceptedOntologies(key, metadataSchema)
@@ -161,10 +161,16 @@ export async function parseAnnDataFile(fileOrUrl, remoteProps) {
     return { issues }
   }
 
+  const requiredMetadataIssues = validateRequiredMetadataColumns([headers], true)
+  let ontologyIdFormatIssues = []
+  if (requiredMetadataIssues.length === 0) {
+    ontologyIdFormatIssues = await validateOntologyIdFormat(hdf5File)
+  }
+
   issues = issues.concat(
     validateUnique(headers),
-    validateRequiredMetadataColumns([headers], true),
-    await validateOntologyIdFormat(hdf5File)
+    requiredMetadataIssues,
+    ontologyIdFormatIssues
   )
 
   return { issues }

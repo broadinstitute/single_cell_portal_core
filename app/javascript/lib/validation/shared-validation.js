@@ -246,6 +246,7 @@ export function validateRequiredMetadataColumns(parsedHeaders, isAnnData=false) 
     const msg = `File is missing required ${columns}: ${missingCols.join(', ')}`
     issues.push(['error', 'format:cap:metadata-missing-column', msg])
   }
+
   return issues
 }
 
