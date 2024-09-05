@@ -94,7 +94,8 @@ function getAcceptedOntologies(key, metadataSchema) {
   // E.g. "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/mondo,https://www.ebi.ac.uk/ols/ontologies/pato"
   const olsUrls = metadataSchema.properties[key].ontology
 
-  const acceptedOntologies = olsUrls?.split(',').map(url => url.split('/').slice(-1)[0].toUpperCase())
+  const acceptedOntologies =
+    olsUrls?.split(',').map(url => url.split('/').slice(-1)[0].toUpperCase())
 
   if (acceptedOntologies.includes('NCBITAXON')) {
     acceptedOntologies.push('NCBITaxon')
@@ -118,7 +119,7 @@ async function validateOntologyIdFormat(hdf5File) {
     if (!acceptedOntologies) {continue}
 
     ontologyIds.forEach(ontologyId => {
-      const ontologyShortName = ontologyId.split('_')[0]
+      const ontologyShortName = ontologyId.split(/[_:]/)[0]
       if (!acceptedOntologies.includes(ontologyShortName)) {
         const accepted = acceptedOntologies.join(', ')
         const msg =
