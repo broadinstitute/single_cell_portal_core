@@ -104,9 +104,34 @@ function getAcceptedOntologies(key, metadataSchema) {
   return acceptedOntologies
 }
 
+/** Check format of ontology IDs for key, return updated issues array */
+function checkOntologyIdFormat(key, ontologyIds) {
+  const issues = []
+
+  const acceptedOntologies = getAcceptedOntologies(key, metadataSchema)
+  if (!acceptedOntologies) {return}
+
+  ontologyIds.forEach(ontologyId => {
+    const ontologyShortName = ontologyId.split(/[_:]/)[0]
+    if (!acceptedOntologies.includes(ontologyShortName)) {
+      const accepted = acceptedOntologies.join(', ')
+      const msg =
+        `Ontology ID "${ontologyId}" ` +
+        `is not among accepted ontologies (${accepted}) ` +
+        `for key "${key}"`
+
+      // Match "ontology:label-lookup-error" error type used in Ingest Pipeline, per
+      // https://github.com/broadinstitute/scp-ingest-pipeline/blob/858bb96ea7669f799d8f42d30b0b3131e2091710/ingest/validation/validate_metadata.py
+      issues.push(['error', 'ontology:label-lookup-error', msg])
+    }
+  })
+
+  return issues
+}
+
 /** Validate ontology IDs for required metadata columns in AnnData file */
 async function validateOntologyIdFormat(hdf5File) {
-  const issues = []
+  let issues = []
 
   // Validate IDs for species, organ, disease, and library preparation protocol
   for (let i = 0; i < REQUIRED_CONVENTION_COLUMNS.length; i++) {
@@ -115,23 +140,9 @@ async function validateOntologyIdFormat(hdf5File) {
     const key = column.split('__ontology_label')[0]
     const ontologyIds = await getOntologyIds(key, hdf5File)
 
-    const acceptedOntologies = getAcceptedOntologies(key, metadataSchema)
-    if (!acceptedOntologies) {continue}
-
-    ontologyIds.forEach(ontologyId => {
-      const ontologyShortName = ontologyId.split(/[_:]/)[0]
-      if (!acceptedOntologies.includes(ontologyShortName)) {
-        const accepted = acceptedOntologies.join(', ')
-        const msg =
-          `Ontology ID "${ontologyId}" ` +
-          `is not among accepted ontologies (${accepted}) ` +
-          `for key "${key}"`
-
-        // Match "ontology:label-lookup-error" error type used in Ingest Pipeline, per
-        // https://github.com/broadinstitute/scp-ingest-pipeline/blob/858bb96ea7669f799d8f42d30b0b3131e2091710/ingest/validation/validate_metadata.py
-        issues.push(['error', 'ontology:label-lookup-error', msg])
-      }
-    })
+    issues = issues.concat(
+      checkOntologyIdFormat(key, ontologyIds)
+    )
   }
 
   return issues
