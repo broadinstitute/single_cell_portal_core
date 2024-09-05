@@ -1012,7 +1012,7 @@ class IngestJob
       jobStatus: job_status,
       numFilesExtracted: num_files_extracted,
       machineType: params_object.machine_type,
-      error: error_action,
+      action: error_action,
       exitCode: code
     }
   end

@@ -349,7 +349,7 @@ class IngestJobTest < ActiveSupport::TestCase
         jobStatus: 'success',
         numFilesExtracted: 1,
         machineType: params_object.machine_type,
-        error: nil,
+        action: nil,
         exitCode: 0
       }
       job_props = job.anndata_summary_props
@@ -408,7 +408,7 @@ class IngestJobTest < ActiveSupport::TestCase
       jobStatus: 'success',
       numFilesExtracted: 1,
       machineType: metadata_params.machine_type,
-      error: nil,
+      action: nil,
       exitCode: 0
     }
     metrics_mock = Minitest::Mock.new
@@ -454,7 +454,7 @@ class IngestJobTest < ActiveSupport::TestCase
       assert_equal 3_600_000, props[:perfTime]
       assert_equal 'failed', props[:jobStatus]
       assert_equal 0, props[:numFilesExtracted]
-      assert_equal 'ingest_cell_metadata', props[:error]
+      assert_equal 'ingest_cell_metadata', props[:action]
       assert_equal 65, props[:exitCode]
     end
   end
