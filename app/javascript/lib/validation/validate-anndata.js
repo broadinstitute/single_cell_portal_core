@@ -126,7 +126,10 @@ async function validateOntologyIdFormat(hdf5File) {
           `Ontology ID "${ontologyId}" ` +
           `is not among accepted ontologies (${accepted}) ` +
           `for key "${key}"`
-        issues.push(['error', 'ontology:misformatted-ontology-id', msg])
+
+        // Match "ontology:label-lookup-error" error type used in Ingest Pipeline, per
+        // https://github.com/broadinstitute/scp-ingest-pipeline/blob/858bb96ea7669f799d8f42d30b0b3131e2091710/ingest/validation/validate_metadata.py
+        issues.push(['error', 'ontology:label-lookup-error', msg])
       }
     })
   }
