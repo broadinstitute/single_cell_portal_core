@@ -6,20 +6,6 @@ import {
 } from './shared-validation'
 import { getOAuthToken } from '~/lib/scp-api'
 
-// async function getValuesArray(key, hdf5File) {
-//   const group = await hdf5File.get(key)
-//   const rawValuePromises = await group.values
-//   const headers = []
-//   const valuesGroup = await Promise.all(rawValuePromises)
-//   const valuesByArray = {}
-//   const valuesGroup =
-//   obsValues.forEach(obsValue => {
-//     const annotationName = obsValue.name.split(`/${key}/`)[1]
-//     headers.push(annotationName)
-//   })
-//   return headers
-// }
-
 /** Get ontology ID values for key in AnnData file */
 async function getOntologyIds(key, hdf5File) {
   const obs = await hdf5File.get('obs')
@@ -104,7 +90,11 @@ function getAcceptedOntologies(key, metadataSchema) {
   return acceptedOntologies
 }
 
-/** Check format of ontology IDs for key, return updated issues array */
+/**
+ * Check format of ontology IDs for key, return updated issues array
+ *
+ * TODO (SCP-5791): Move this rule to shared-validation.js, apply to classic as well
+ */
 export function checkOntologyIdFormat(key, ontologyIds) {
   const issues = []
 
