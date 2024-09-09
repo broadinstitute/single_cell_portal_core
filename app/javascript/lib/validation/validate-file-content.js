@@ -414,6 +414,7 @@ async function parseFile(
     } else {
       parseResult.issues.push(['error', 'parse:unhandled', error.message])
     }
+    console.error(error)
   }
 
   const perfTime = Math.round(performance.now() - startTime)
