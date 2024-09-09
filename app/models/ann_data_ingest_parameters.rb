@@ -79,11 +79,19 @@ class AnnDataIngestParameters
                             mem_range === file_size
                           end&.first || 'n2d-highmem-4'
     end
-    self.extract << 'raw_counts' if @ingest_anndata && @extract_raw_counts
+    append_raw_counts_extract!
   end
 
   # get the particular file (either source AnnData or fragment) being processed by this job
   def associated_file
     anndata_file || cluster_file || cell_metadata_file || matrix_file
+  end
+
+  private
+
+  def append_raw_counts_extract!
+    if @ingest_anndata && @extract_raw_counts && !@extract.include?('raw_counts')
+      self.extract << 'raw_counts'
+    end
   end
 end
