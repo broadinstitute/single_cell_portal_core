@@ -12,7 +12,14 @@ async function getOntologyIds(key, hdf5File) {
 
   const obs = await hdf5File.get('obs')
   const obsValues = await Promise.all(obs.values)
+
+  // Old versions of the AnnData spec used __categories as an obs.
+  // However, in new versions (since before 2023-01-23) of AnnData spec,
+  // categorical arrays are encoded as self-contained groups containing their
+  // own `categories` and `codes`.
+  // See e.g. https://github.com/scverse/anndata/issues/879
   const internalCategories = obsValues.find(o => o.name.endsWith('__categories'))
+
   let resolvedCategories = obsValues
   if (internalCategories) {
     resolvedCategories = await Promise.all(internalCategories.values)
