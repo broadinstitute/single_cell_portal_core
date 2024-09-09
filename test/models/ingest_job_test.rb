@@ -156,9 +156,7 @@ class IngestJobTest < ActiveSupport::TestCase
         }
       }
     }.with_indifferent_access
-    mock.expect :metadata, mock_metadata
-    mock.expect :metadata, mock_metadata
-    mock.expect :metadata, mock_metadata
+    3.times {mock.expect :metadata, mock_metadata  }
     mock.expect :error, { code: 1, message: 'mock message' } # simulate error
     mock.expect :done?, true
 
@@ -219,9 +217,7 @@ class IngestJobTest < ActiveSupport::TestCase
         }
       }
     }.with_indifferent_access
-    mock.expect :metadata, mock_metadata
-    mock.expect :metadata, mock_metadata
-    mock.expect :metadata, mock_metadata
+    3.times {mock.expect :metadata, mock_metadata  }
     mock.expect :error, nil
     mock.expect :done?, true
 
@@ -273,9 +269,7 @@ class IngestJobTest < ActiveSupport::TestCase
         }
       }
     }.with_indifferent_access
-    mock.expect :metadata, mock_metadata
-    mock.expect :metadata, mock_metadata
-    mock.expect :metadata, mock_metadata
+    3.times {mock.expect :metadata, mock_metadata  }
     mock.expect :error, nil
     mock.expect :done?, true
 
@@ -338,11 +332,8 @@ class IngestJobTest < ActiveSupport::TestCase
     }.with_indifferent_access
 
     pipeline_mock = MiniTest::Mock.new
-    pipeline_mock.expect :metadata, metadata_mock
-    pipeline_mock.expect :metadata, metadata_mock
-    pipeline_mock.expect :metadata, metadata_mock
-    pipeline_mock.expect :metadata, metadata_mock
-    pipeline_mock.expect :error, nil
+    4.times {pipeline_mock.expect :metadata, metadata_mock }
+    2.times {pipeline_mock.expect :error, nil  }
 
     operations_mock = Minitest::Mock.new
     operations_mock.expect :operations, [pipeline_mock]
@@ -356,7 +347,10 @@ class IngestJobTest < ActiveSupport::TestCase
         studyAccession: @basic_study.accession,
         trigger: ann_data_file.upload_trigger,
         jobStatus: 'success',
-        numFilesExtracted: 1
+        numFilesExtracted: 1,
+        machineType: params_object.machine_type,
+        action: nil,
+        exitCode: 0
       }
       job_props = job.anndata_summary_props
       assert_equal expected_job_props, job_props
@@ -412,7 +406,10 @@ class IngestJobTest < ActiveSupport::TestCase
       studyAccession: @basic_study.accession,
       trigger: ann_data_file.upload_trigger,
       jobStatus: 'success',
-      numFilesExtracted: 1
+      numFilesExtracted: 1,
+      machineType: metadata_params.machine_type,
+      action: nil,
+      exitCode: 0
     }
     metrics_mock = Minitest::Mock.new
     metrics_mock.expect :call, true, ['ingestSummary', mock_job_props, @user]
@@ -426,6 +423,39 @@ class IngestJobTest < ActiveSupport::TestCase
           assert ann_data_file.has_anndata_summary?
         end
       end
+    end
+  end
+
+  test 'should report failure step in ingestSummary' do
+    ann_data_file = FactoryBot.create(:ann_data_file, name: 'failed.h5ad', study: @basic_study)
+    now = DateTime.now.in_time_zone
+    actions = [
+      { commands: ['python', 'ingest_pipeline.py', '--study-file-id', ann_data_file.id.to_s, 'ingest_cell_metadata'] }
+    ]
+    events = [{ timestamp: now.to_s, containerStopped: { exitStatus: 65 } }.with_indifferent_access]
+    pipeline = { actions: }
+    failed_metadata = { pipeline:, events:, startTime: (now - 1.hour).to_s, endTime: now.to_s }.with_indifferent_access
+    failed_pipeline = Minitest::Mock.new
+    6.times { failed_pipeline.expect(:metadata, failed_metadata) }
+    3.times { failed_pipeline.expect(:error, true) }
+    operations_mock = Minitest::Mock.new
+    operations_mock.expect :operations, [failed_pipeline]
+    client_mock = Minitest::Mock.new
+    client_mock.expect :list_pipelines, operations_mock
+    ApplicationController.stub :life_sciences_api_client, client_mock do
+      cell_metadata_file = RequestUtils.data_fragment_url(ann_data_file, 'metadata')
+      metadata_params = AnnDataIngestParameters.new(
+        ingest_cell_metadata: true, cell_metadata_file:, ingest_anndata: false, extract: nil, obsm_keys: nil,
+        study_accession: @basic_study.accession
+      )
+      metadata_job = IngestJob.new(study: @basic_study, study_file: ann_data_file, user: @user,
+                                   action: :ingest_metadata, params_object: metadata_params)
+      props = metadata_job.anndata_summary_props.with_indifferent_access
+      assert_equal 3_600_000, props[:perfTime]
+      assert_equal 'failed', props[:jobStatus]
+      assert_equal 0, props[:numFilesExtracted]
+      assert_equal 'ingest_cell_metadata', props[:action]
+      assert_equal 65, props[:exitCode]
     end
   end
 
