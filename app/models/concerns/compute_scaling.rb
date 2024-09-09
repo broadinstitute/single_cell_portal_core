@@ -16,12 +16,17 @@ module ComputeScaling
     end.reduce({}, :merge)
   end
 
+  # default machine_type for parameters class
+  def default_machine_type
+    self.class::PARAM_DEFAULTS[:machine_type] || scaled_machine_types.keys.first
+  end
+
   # set machine_type based on file_size, using class defaults if specified
   def assign_machine_type
     max_file_size = scaled_machine_types.values.last.last
     return scaled_machine_types.keys.last if file_size > max_file_size
 
     scaled_machine = scaled_machine_types.detect { |_, mem_range| mem_range === file_size }&.first
-    scaled_machine || self.class::PARAM_DEFAULTS[:machine_type] || scaled_machine_types.keys.first
+    scaled_machine || default_machine_type
   end
 end

@@ -65,7 +65,7 @@ class AnnDataIngestParameters
     # machine_type default is declared here to allow for autoscaling with optional override
     # see https://ruby-doc.org/core-3.1.0/Range.html#method-i-3D-3D-3D for range detection doc
     if @machine_type.nil?
-      self.machine_type = assign_machine_type
+      self.machine_type = ingest_anndata ? assign_machine_type : default_machine_type
     end
   end
 
