@@ -8,14 +8,26 @@ import { getOAuthToken } from '~/lib/scp-api'
 
 /** Get ontology ID values for key in AnnData file */
 async function getOntologyIds(key, hdf5File) {
+  let ontologyIds = []
+
   const obs = await hdf5File.get('obs')
   const obsValues = await Promise.all(obs.values)
-  const group = obsValues.find(o => o.name.endsWith(key))
-  let ontologyIds = null
-  if (group) {
-    const categories = await group.values[0]
-    ontologyIds = await categories.value
+  const internalCategories = obsValues.find(o => o.name.endsWith('__categories'))
+  let resolvedCategories = obsValues
+  if (internalCategories) {
+    resolvedCategories = await Promise.all(internalCategories.values)
   }
+  const group = resolvedCategories.find(o => o.name.endsWith(key))
+  if (group) {
+    let categories
+    if (internalCategories) {
+      ontologyIds = await group.value
+    } else {
+      categories = await group.values[0]
+      ontologyIds = await categories.value
+    }
+  }
+
   return ontologyIds
 }
 
