@@ -661,10 +661,11 @@ class IngestJob
   # Set correct subsampling flags on a cluster after job completion
   def set_subsampling_flags
     cluster_group = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: cluster_name_by_file_type)
-    if cluster_group.is_subsampling? && cluster_group.find_subsampled_data_arrays.any?
-      Rails.logger.info "Setting subsampled flags for #{study_file.upload_file_name}:#{study_file.id} (#{cluster_group.name}) for visualization"
-      cluster_group.update(subsampled: true, is_subsampling: false)
-    end
+    return false if cluster_group.nil? # can happen during AnnData ingest failures
+
+    subsampled = cluster_group.find_subsampled_data_arrays.any?
+    Rails.logger.info "Setting subsampling flags for #{study_file.upload_file_name}:#{study_file.id} (#{cluster_group.name})"
+    cluster_group.update(subsampled:, is_subsampling: false)
   end
 
   # determine if differential expression should be run for study, and submit available jobs (skipping existing results)
