@@ -3,6 +3,10 @@
 class AnnDataIngestParameters
   include ActiveModel::Model
   include Parameterizable
+  include ComputeScaling
+
+  # RAM scaling coefficient for auto-selecting machine_type
+  GB_PER_CORE = 1.75
 
   # default values for parameters, also used as control list for attributes hash
   # attributes marked as true are passed to the command line as a standalone flag with no value
@@ -50,18 +54,6 @@ class AnnDataIngestParameters
   # values that are available as methods but not as attributes (and not passed to command line)
   NON_ATTRIBUTE_PARAMS = %i[file_size machine_type extract_raw_counts].freeze
 
-  # GCE machine types and file size ranges for handling fragment extraction
-  # produces a hash with entries like { 'n2-highmem-4' => 0..24.gigabytes }
-  # adjust (core * n) to n=4 for faster scaling (ie. n2-highmem-4 for 0 to 16G)
-  NUM_CORES = [4, 8, 16, 32, 48, 64, 80, 96].freeze
-  RAM_PER_CORE = NUM_CORES.map { |core| (core * 6).gigabytes }.freeze
-  EXTRACT_MACHINE_TYPES = NUM_CORES.map.with_index do |cores, index|
-    floor = index == 0 ? 0 : RAM_PER_CORE[index - 1]
-    limit = index == NUM_CORES.count - 1 ? RAM_PER_CORE[index] * 2 : RAM_PER_CORE[index]
-    # ranges that use '...' exclude the given end value.
-    { "n2d-highmem-#{cores}" => floor...limit }
-  end.reduce({}, :merge).freeze
-
   attr_accessor(*PARAM_DEFAULTS.keys)
 
   validates :anndata_file, :cluster_file, :cell_metadata_file, :matrix_file, :gene_file, :barcode_file,
@@ -75,9 +67,7 @@ class AnnDataIngestParameters
     # machine_type default is declared here to allow for autoscaling with optional override
     # see https://ruby-doc.org/core-3.1.0/Range.html#method-i-3D-3D-3D for range detection doc
     if @machine_type.nil?
-      self.machine_type = EXTRACT_MACHINE_TYPES.detect do |_, mem_range|
-                            mem_range === file_size
-                          end&.first || 'n2d-highmem-4'
+      self.machine_type = ingest_anndata ? assign_machine_type : default_machine_type
     end
     append_raw_counts_extract!
   end

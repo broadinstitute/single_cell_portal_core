@@ -6,7 +6,7 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     @extract_params = {
       anndata_file: 'gs://bucket_id/test.h5ad',
       extract_raw_counts: true,
-      file_size: 100.gigabytes
+      file_size: 50.gigabytes
     }
 
     @file_id = BSON::ObjectId.new
@@ -72,6 +72,7 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     cluster_cmd = "--ingest-cluster --cluster-file #{@fragment_basepath}/" \
                   'h5ad_frag.cluster.X_umap.tsv.gz --name X_umap --domain-ranges {}'
     assert_equal cluster_cmd, cluster_ingest.to_options_array.join(' ')
+    assert_equal cluster_ingest.default_machine_type, cluster_ingest.machine_type
   end
 
   test 'should validate metadata params' do
@@ -83,6 +84,7 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     end
     md_cmd = "--cell-metadata-file #{@fragment_basepath}/h5ad_frag.metadata.tsv.gz --ingest-cell-metadata"
     assert_equal md_cmd, metadata_ingest.to_options_array.join(' ')
+    assert_equal metadata_ingest.default_machine_type, metadata_ingest.machine_type
   end
 
   test 'should validate expression params' do
@@ -95,17 +97,24 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
               "--gene-file #{@fragment_basepath}/h5ad_frag.features.processed.tsv.gz " \
               "--barcode-file #{@fragment_basepath}/h5ad_frag.barcodes.processed.tsv.gz"
     assert_equal exp_cmd, exp_ingest.to_options_array.join(' ')
+    assert_equal exp_ingest.default_machine_type, exp_ingest.machine_type
   end
 
   test 'should set default machine type and allow override' do
     params = AnnDataIngestParameters.new(@extract_params)
     assert_equal 'n2d-highmem-32', params.machine_type
-    new_machine = 'n2d-highmem-80'
+    new_machine = 'n2d-highmem-64'
     params.machine_type = new_machine
     assert_equal new_machine, params.machine_type
     assert params.valid?
     params.machine_type = 'foo'
     assert_not params.valid?
+  end
+
+  test 'should set default machine type' do
+    params = AnnDataIngestParameters.new
+    assert_equal 'n2d-highmem-4', params.default_machine_type
+    assert_equal 'n2d-highmem-4', params.machine_type
   end
 
   test 'should not extract raw counts unless specified' do
