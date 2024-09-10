@@ -6,7 +6,7 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     @extract_params = {
       anndata_file: 'gs://bucket_id/test.h5ad',
       extract_raw_counts: true,
-      file_size: 100.gigabytes
+      file_size: 50.gigabytes
     }
 
     @file_id = BSON::ObjectId.new
@@ -103,7 +103,7 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
   test 'should set default machine type and allow override' do
     params = AnnDataIngestParameters.new(@extract_params)
     assert_equal 'n2d-highmem-32', params.machine_type
-    new_machine = 'n2d-highmem-80'
+    new_machine = 'n2d-highmem-64'
     params.machine_type = new_machine
     assert_equal new_machine, params.machine_type
     assert params.valid?
@@ -116,7 +116,7 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     assert_equal 'n2d-highmem-4', params.default_machine_type
     assert_equal 'n2d-highmem-4', params.machine_type
   end
-  
+
   test 'should not extract raw counts unless specified' do
     params = AnnDataIngestParameters.new(anndata_file: 'gs://bucket_id/test.h5ad', file_size: 100.gigabytes)
     assert_equal AnnDataIngestParameters::PARAM_DEFAULTS[:extract], params.extract
