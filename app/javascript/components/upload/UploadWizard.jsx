@@ -280,7 +280,7 @@ export function RawUploadWizard({ studyAccession, name }) {
     let fileToSave = file
     let studyFileId = file._id
 
-    if (isAnnDataExperience) {
+    if (isAnnDataExperience && fileToSave?.file_type === 'AnnData') {
       fileToSave = saveAnnDataFileHelper(file, fileToSave)
       studyFileId = fileToSave._id
     }
