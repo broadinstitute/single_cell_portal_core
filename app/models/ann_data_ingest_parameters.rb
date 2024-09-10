@@ -17,6 +17,7 @@ class AnnDataIngestParameters
   # ingest_anndata: gate primary validation/extraction of AnnData file
   # anndata_file: GS URL for AnnData file
   # extract: array of values for different file type extractions
+  # extract_raw_counts: T/F for whether to add raw_counts to extraction
   # obsm_keys: data slots containing clustering information
   # ingest_cluster: gate ingesting an extracted cluster file
   # cluster_file: GS URL for extracted cluster file
@@ -36,7 +37,8 @@ class AnnDataIngestParameters
     cluster_file: nil,
     name: nil,
     domain_ranges: nil,
-    extract: %w[cluster metadata processed_expression raw_counts],
+    extract: %w[cluster metadata processed_expression],
+    extract_raw_counts: false,
     cell_metadata_file: nil,
     ingest_cell_metadata: false,
     study_accession: nil,
@@ -50,7 +52,7 @@ class AnnDataIngestParameters
   }.freeze
 
   # values that are available as methods but not as attributes (and not passed to command line)
-  NON_ATTRIBUTE_PARAMS = %i[file_size machine_type].freeze
+  NON_ATTRIBUTE_PARAMS = %i[file_size machine_type extract_raw_counts].freeze
 
   attr_accessor(*PARAM_DEFAULTS.keys)
 
@@ -67,10 +69,19 @@ class AnnDataIngestParameters
     if @machine_type.nil?
       self.machine_type = ingest_anndata ? assign_machine_type : default_machine_type
     end
+    append_raw_counts_extract!
   end
 
   # get the particular file (either source AnnData or fragment) being processed by this job
   def associated_file
     anndata_file || cluster_file || cell_metadata_file || matrix_file
+  end
+
+  private
+
+  def append_raw_counts_extract!
+    if @ingest_anndata && @extract_raw_counts && !@extract.include?('raw_counts')
+      self.extract << 'raw_counts'
+    end
   end
 end

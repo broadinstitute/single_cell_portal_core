@@ -5,7 +5,8 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
   before(:all) do
     @extract_params = {
       anndata_file: 'gs://bucket_id/test.h5ad',
-      file_size: 50.gigabytes
+      extract_raw_counts: true,
+      file_size: 100.gigabytes
     }
 
     @file_id = BSON::ObjectId.new
@@ -114,5 +115,10 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     params = AnnDataIngestParameters.new
     assert_equal 'n2d-highmem-4', params.default_machine_type
     assert_equal 'n2d-highmem-4', params.machine_type
+  end
+  
+  test 'should not extract raw counts unless specified' do
+    params = AnnDataIngestParameters.new(anndata_file: 'gs://bucket_id/test.h5ad', file_size: 100.gigabytes)
+    assert_equal AnnDataIngestParameters::PARAM_DEFAULTS[:extract], params.extract
   end
 end
