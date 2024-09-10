@@ -353,18 +353,23 @@ class IngestJob
       end
       study.reload # refresh cached instance of study
       study_file.reload # refresh cached instance of study_file
-      set_study_state_after_ingest
-      study_file.invalidate_cache_by_file_type # clear visualization caches for file
-      log_to_mixpanel
-      subject = "#{study_file.file_type} file: '#{study_file.upload_file_name}' has completed parsing"
-      message = generate_success_email_array
-      if special_action?
-        # don't email users for 'special actions' like DE or image pipeline, instead notify admins
-        qa_config = AdminConfiguration.find_by(config_type: 'QA Dev Email')
-        email = qa_config.present? ? qa_config.value : User.find_by(admin: true)&.email
-        SingleCellMailer.notify_user_parse_complete(email, subject, message, study).deliver_now unless email.blank?
-      elsif action != :ingest_anndata # don't email users on "extract" AnnData jobs
-        SingleCellMailer.notify_user_parse_complete(user.email, subject, message, study).deliver_now
+      # check if another process marked file for deletion, can happen if this is an AnnData file
+      if study_file.queued_for_deletion
+        run_secondary_cleanup
+      else
+        set_study_state_after_ingest
+        study_file.invalidate_cache_by_file_type # clear visualization caches for file
+        log_to_mixpanel
+        subject = "#{study_file.file_type} file: '#{study_file.upload_file_name}' has completed parsing"
+        message = generate_success_email_array
+        if special_action?
+          # don't email users for 'special actions' like DE or image pipeline, instead notify admins
+          qa_config = AdminConfiguration.find_by(config_type: 'QA Dev Email')
+          email = qa_config.present? ? qa_config.value : User.find_by(admin: true)&.email
+          SingleCellMailer.notify_user_parse_complete(email, subject, message, study).deliver_now unless email.blank?
+        elsif action != :ingest_anndata # don't email users on "extract" AnnData jobs
+          SingleCellMailer.notify_user_parse_complete(user.email, subject, message, study).deliver_now
+        end
       end
     elsif done? && failed?
       Rails.logger.error "IngestJob poller: #{pipeline_name} has failed."
@@ -560,6 +565,22 @@ class IngestJob
       cluster.update!(indexed: false)
       cluster.reload
       cluster.create_all_cell_indices!
+    end
+  end
+
+  # check if an AnnData file has failed in a separate ingest process and perform necessary cleanups
+  # can happen as all primary AnnData ingests (expression, metadata, clustering) happen in parallel
+  # will lead to orphaned data that prevents all future uploads
+  def run_secondary_cleanup
+    Rails.logger.info "Checking for secondary cleanup on #{study_file.id} after #{pipeline_name} completion"
+    study_file.reload
+    if study_file.queued_for_deletion
+      Rails.logger.info "Performing secondary cleanup on #{study_file.id} due to upstream failure"
+      [ClusterGroup, CellMetadatum, Gene, DataArray].each do |model|
+        Rails.logger.info "Removing all #{model} records for #{study_file.id}"
+        model.where(study_id: study.id, study_file_id: study_file.id).delete_all
+      end
+      Rails.logger.info "Secondary cleanup for #{study_file.id} complete"
     end
   end
 
