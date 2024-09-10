@@ -7,7 +7,7 @@ class DifferentialExpressionParameters
   # name of Ingest Pipeline CLI parameter that invokes correct parser
   PARAMETER_NAME = '--differential-expression'.freeze
 
-  # scaling coefficient for auto-selecting machine_type
+  # RAM scaling coefficient for auto-selecting machine_type
   GB_PER_CORE = 3.5
 
   # annotation_name: name of annotation to use for DE

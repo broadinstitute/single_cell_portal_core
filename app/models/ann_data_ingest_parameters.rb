@@ -5,7 +5,7 @@ class AnnDataIngestParameters
   include Parameterizable
   include ComputeScaling
 
-  # scaling coefficient for auto-selecting machine_type
+  # RAM scaling coefficient for auto-selecting machine_type
   GB_PER_CORE = 1.75
 
   # default values for parameters, also used as control list for attributes hash
