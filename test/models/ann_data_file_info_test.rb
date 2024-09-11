@@ -225,7 +225,6 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
     )
     assert anndata_info.valid? # invokes validations
     exp_frag = anndata_info.data_fragments.first
-    puts exp_frag
     assert_nil exp_frag.with_indifferent_access.dig(:expression_file_info, :units)
   end
 end
