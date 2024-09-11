@@ -759,4 +759,22 @@ class IngestJobTest < ActiveSupport::TestCase
       mock.verify
     end
   end
+
+  test 'should always unset subsampling flags' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Subsample Flag Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    # test subsampling flags where no new data was ingested
+    study_file = FactoryBot.create(
+      :cluster_file, name: 'UMAP.txt', study:,
+      cell_input: { x: [1, 2, 3], y: [1, 2, 3], cells: %w[cellA cellB cellC] }
+    )
+    cluster = study.cluster_groups.by_name('UMAP.txt')
+    cluster.update(is_subsampling: true)
+    job = IngestJob.new(pipeline_name: SecureRandom.uuid, study:, study_file:, user: @user, action: :ingest_subsample)
+    job.set_subsampling_flags
+    cluster.reload
+    assert_not cluster.is_subsampling
+  end
 end
