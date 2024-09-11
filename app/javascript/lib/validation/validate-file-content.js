@@ -327,7 +327,10 @@ export async function validateGzipEncoding(file, fileType) {
  * @returns {Object} result.issues Array of [category, type, message]
  * @returns {Number} result.perfTime How long this function took
  */
-async function parseFile(file, fileType, fileOptions={}, sizeProps={}) {
+async function parseFile(
+  file, fileType, fileOptions={},
+  sizeProps={}, remoteProps={}
+) {
   const startTime = performance.now()
 
   const fileInfo = {
@@ -371,7 +374,7 @@ async function parseFile(file, fileType, fileOptions={}, sizeProps={}) {
     }
 
     if (fileType === 'AnnData') {
-      const { issues } = await parseAnnDataFile(file)
+      const { issues } = await parseAnnDataFile(file, remoteProps)
       parseResult.issues = parseResult.issues.concat(issues)
     } else if (parseFunctions[fileType]) {
       let ignoreLastLine = false
@@ -411,6 +414,7 @@ async function parseFile(file, fileType, fileOptions={}, sizeProps={}) {
     } else {
       parseResult.issues.push(['error', 'parse:unhandled', error.message])
     }
+    console.error(error)
   }
 
   const perfTime = Math.round(performance.now() - startTime)

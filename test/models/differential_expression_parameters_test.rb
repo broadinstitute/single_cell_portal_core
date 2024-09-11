@@ -32,7 +32,8 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
       cluster_file: 'gs://test_bucket/cluster.tsv',
       cluster_name: 'UMAP',
       matrix_file_path: 'gs://test_bucket/matrix.h5ad',
-      matrix_file_type: 'h5ad'
+      matrix_file_type: 'h5ad',
+      file_size: 10.gigabytes
     }
   end
 
@@ -97,7 +98,15 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
 
   test 'should set default machine type for DE jobs' do
     params = DifferentialExpressionParameters.new
+    assert_equal 'n2d-highmem-8', params.default_machine_type
     assert_equal 'n2d-highmem-8', params.machine_type
+  end
+
+  test 'should scale machine type for h5ad files' do
+    params = DifferentialExpressionParameters.new(
+      matrix_file_path: 'gs://test_bucket/matrix.h5ad', matrix_file_type: 'h5ad', file_size: 64.gigabytes
+    )
+    assert_equal 'n2d-highmem-32', params.machine_type
   end
 
   test 'should remove non-attribute values from attribute hash' do

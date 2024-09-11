@@ -1,7 +1,4 @@
 <html>
-  <head>
-    <script src="https://raw.githubusercontent.com/jrobinso/hdf5-indexed-reader/v0.5.6/dist/hdf5-indexed-reader.esm.js" type="module"></script>
-  </head>
   <body>
     <span style="float:left">
     Pick an HDF5 file
@@ -11,7 +8,9 @@
       <img src="dna-spinning.gif" style="float: left; display: inline;"/>
   </body>
   <script type="module">
-    import {openH5File} from './hdf5-indexed-reader.js'
+    // import {openH5File} from '../node_modules/hdf5-indexed-reader/dist/hdf5-indexed-reader.esm.js'
+    import {openH5File} from './hdf5-indexed-reader.esm.js'
+    import {oauthToken} from './.oauth-token.js'
 
     async function getAnnotationHeaders(key, hdf5File) {
       const t0 = Date.now()
@@ -23,23 +22,26 @@
           const annotationName = obsValue.name.split(`/${key}/`)[1]
           headers.push(annotationName)
       })
+      console.log(key)
       console.log(headers)
       console.log((Date.now() - t0)/1000)
       return headers
     }
 
-    async function parseHdf5File(fileOrUrl) {
-
+    async function parseHdf5File(fileOrUrl, oauthToken) {
       const idType = typeof fileOrUrl === 'string' ? 'url' : 'file'
       const openParams = {}
       openParams[idType] = fileOrUrl
+      if (oauthToken) {
+        openParams.oauthToken = oauthToken
+      }
       window.hdf5File = await openH5File(openParams)
 
       const headers = await getAnnotationHeaders('obs', hdf5File)
       const headerRow = headers.join('\t')
 
-      const obsmHeaders = await getAnnotationHeaders('obsm', hdf5File)
-      const xHeaders = await getAnnotationHeaders('X', hdf5File)
+      // const obsmHeaders = await getAnnotationHeaders('obsm', hdf5File)
+      // const xHeaders = await getAnnotationHeaders('X', hdf5File)
     }
     window.parseHdf5File = parseHdf5File
 
@@ -48,6 +50,9 @@
     fileInput.addEventListener('change', async (event) => {
       const file = event.target.files[0];
       parseHdf5File(file)
+      // const url = 'https://storage.googleapis.com/download/storage/v1/b/fc-e6d1ebe2-dfab-405b-924f-48e3c93d3444/o/anndata_test.h5ad?alt=media'
+      // parseHdf5File(url, oauthToken)
     });
+
   </script>
 </html>

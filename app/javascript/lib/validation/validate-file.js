@@ -166,8 +166,14 @@ async function validateRemoteFile(
 
     const sizeProps = getSizeProps(contentRange, contentLength, file)
 
+    const remoteProps = {
+      url: response.url
+    }
+
     // Equivalent block exists in validateFileContent
-    const parseResults = await ValidateFileContent.parseFile(file, fileType, fileOptions, sizeProps)
+    const parseResults = await ValidateFileContent.parseFile(
+      file, fileType, fileOptions, sizeProps, remoteProps
+    )
     fileInfo = parseResults['fileInfo']
     issues = parseResults['issues']
     perfTime = parseResults['perfTime']

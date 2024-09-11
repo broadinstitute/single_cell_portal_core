@@ -151,6 +151,7 @@ class DifferentialExpressionService
       de_params[:barcode_file] = barcode_file.gs_url
     elsif raw_matrix.file_type == 'AnnData'
       de_params[:matrix_file_type] = 'h5ad'
+      de_params[:file_size] = raw_matrix.upload_file_size
     else
       de_params[:matrix_file_type] = 'dense'
     end

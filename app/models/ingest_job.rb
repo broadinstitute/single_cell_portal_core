@@ -286,8 +286,6 @@ class IngestJob
     nil # catch-all
   end
 
-
-
   # Reconstruct the command line from the pipeline actions
   #
   # * *returns*
@@ -355,18 +353,23 @@ class IngestJob
       end
       study.reload # refresh cached instance of study
       study_file.reload # refresh cached instance of study_file
-      set_study_state_after_ingest
-      study_file.invalidate_cache_by_file_type # clear visualization caches for file
-      log_to_mixpanel
-      subject = "#{study_file.file_type} file: '#{study_file.upload_file_name}' has completed parsing"
-      message = generate_success_email_array
-      if special_action?
-        # don't email users for 'special actions' like DE or image pipeline, instead notify admins
-        qa_config = AdminConfiguration.find_by(config_type: 'QA Dev Email')
-        email = qa_config.present? ? qa_config.value : User.find_by(admin: true)&.email
-        SingleCellMailer.notify_user_parse_complete(email, subject, message, study).deliver_now unless email.blank?
-      elsif action != :ingest_anndata # don't email users on "extract" AnnData jobs
-        SingleCellMailer.notify_user_parse_complete(user.email, subject, message, study).deliver_now
+      # check if another process marked file for deletion, can happen if this is an AnnData file
+      if study_file.queued_for_deletion
+        run_secondary_cleanup
+      else
+        set_study_state_after_ingest
+        study_file.invalidate_cache_by_file_type # clear visualization caches for file
+        log_to_mixpanel
+        subject = "#{study_file.file_type} file: '#{study_file.upload_file_name}' has completed parsing"
+        message = generate_success_email_array
+        if special_action?
+          # don't email users for 'special actions' like DE or image pipeline, instead notify admins
+          qa_config = AdminConfiguration.find_by(config_type: 'QA Dev Email')
+          email = qa_config.present? ? qa_config.value : User.find_by(admin: true)&.email
+          SingleCellMailer.notify_user_parse_complete(email, subject, message, study).deliver_now unless email.blank?
+        elsif action != :ingest_anndata # don't email users on "extract" AnnData jobs
+          SingleCellMailer.notify_user_parse_complete(user.email, subject, message, study).deliver_now
+        end
       end
     elsif done? && failed?
       Rails.logger.error "IngestJob poller: #{pipeline_name} has failed."
@@ -565,6 +568,22 @@ class IngestJob
     end
   end
 
+  # check if an AnnData file has failed in a separate ingest process and perform necessary cleanups
+  # can happen as all primary AnnData ingests (expression, metadata, clustering) happen in parallel
+  # will lead to orphaned data that prevents all future uploads
+  def run_secondary_cleanup
+    Rails.logger.info "Checking for secondary cleanup on #{study_file.id} after #{pipeline_name} completion"
+    study_file.reload
+    if study_file.queued_for_deletion
+      Rails.logger.info "Performing secondary cleanup on #{study_file.id} due to upstream failure"
+      [ClusterGroup, CellMetadatum, Gene, DataArray].each do |model|
+        Rails.logger.info "Removing all #{model} records for #{study_file.id}"
+        model.where(study_id: study.id, study_file_id: study_file.id).delete_all
+      end
+      Rails.logger.info "Secondary cleanup for #{study_file.id} complete"
+    end
+  end
+
   # determine if subsampling needs to be run based on file ingested and current study state
   #
   # * *yields*
@@ -642,10 +661,11 @@ class IngestJob
   # Set correct subsampling flags on a cluster after job completion
   def set_subsampling_flags
     cluster_group = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: cluster_name_by_file_type)
-    if cluster_group.is_subsampling? && cluster_group.find_subsampled_data_arrays.any?
-      Rails.logger.info "Setting subsampled flags for #{study_file.upload_file_name}:#{study_file.id} (#{cluster_group.name}) for visualization"
-      cluster_group.update(subsampled: true, is_subsampling: false)
-    end
+    return false if cluster_group.nil? # can happen during AnnData ingest failures
+
+    subsampled = cluster_group.find_subsampled_data_arrays.any?
+    Rails.logger.info "Setting subsampling flags for #{study_file.upload_file_name}:#{study_file.id} (#{cluster_group.name})"
+    cluster_group.update(subsampled:, is_subsampling: false)
   end
 
   # determine if differential expression should be run for study, and submit available jobs (skipping existing results)
@@ -973,7 +993,8 @@ class IngestJob
   def anndata_summary_props
     pipelines = ApplicationController.life_sciences_api_client.list_pipelines
     previous_jobs = pipelines.operations.select do |op|
-      op.metadata.dig('pipeline', 'actions').first['commands'].detect { |c| c == study_file.id.to_s }
+      pipeline_args = op.metadata.dig('pipeline', 'actions').first['commands']
+      pipeline_args.detect { |c| c == study_file.id.to_s } && !pipeline_args.include?('--differential-expression')
     end
     # get total runtime from initial extract to final parse
     initial_extract = previous_jobs.last
@@ -985,10 +1006,22 @@ class IngestJob
     file_type = study_file.file_type
     trigger = study_file.upload_trigger
     job_status = previous_jobs.map(&:error).compact.any? ? 'failed' : 'success'
+    error_action = nil
+    code = 0
+    if job_status == 'failed'
+      first_failure = previous_jobs.reverse.detect { |p| p.error.present? }
+      args = first_failure.metadata.dig('pipeline', 'actions').first['commands']
+      error_action = args.detect {|c| LifeSciencesApiClient::FILE_TYPES_BY_ACTION.keys.include?(c.to_sym) }
+      failure_events = first_failure.metadata['events'].sort_by! { |event| event['timestamp'] }
+      stopped_msg = failure_events.detect do |event|
+        event.dig('containerStopped', 'exitStatus').present?
+      end
+      code = stopped_msg.dig('containerStopped', 'exitStatus').to_i
+    end
     # count total number of files extracted
     num_files_extracted = previous_jobs.reject do |op|
-      op.metadata.dig('pipeline', 'actions').first['commands'].detect { |c| c == '--extract' } &&
-        op.error.nil?
+      op.metadata.dig('pipeline', 'actions').first['commands'].detect { |c| c == '--extract' } ||
+        op.error.present?
     end.count
     # event properties for Mixpanel summary event
     {
@@ -999,7 +1032,10 @@ class IngestJob
       studyAccession: study.accession,
       trigger:,
       jobStatus: job_status,
-      numFilesExtracted: num_files_extracted
+      numFilesExtracted: num_files_extracted,
+      machineType: params_object.machine_type,
+      action: error_action,
+      exitCode: code
     }
   end
 
@@ -1010,7 +1046,7 @@ class IngestJob
     # discard the job that corresponds with this ingest process
     still_processing = remaining_jobs.reject do |job|
       ingest_job = DelayedJobAccessor.dump_job_handler(job).object
-      ingest_job.params_object.associated_file == fragment
+      ingest_job.params_object.is_a?(AnnDataIngestParameters) && ingest_job.params_object.associated_file == fragment
     end.any?
 
     # only continue if there are no more jobs and a summary has not been sent yet
