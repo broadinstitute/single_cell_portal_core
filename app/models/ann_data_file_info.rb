@@ -202,7 +202,10 @@ class AnnDataFileInfo
     default_obsm_keys = AnnDataIngestParameters::PARAM_DEFAULTS[:obsm_keys]
     default_obsm_keys.each do |obsm_key_name|
       name = obsm_key_name.delete_prefix('X_')
-      data_fragments << { _id: BSON::ObjectId.new.to_s, data_type: :cluster, name:, obsm_key_name: }
+      fragment = {
+        _id: BSON::ObjectId.new.to_s, data_type: :cluster, name:, obsm_key_name:, spatial_cluster_associations: []
+      }
+      data_fragments << fragment
     end
   end
 
