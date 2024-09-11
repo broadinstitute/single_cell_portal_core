@@ -57,19 +57,18 @@ describe('Client-side file validation for AnnData', () => {
     expect(issues).toHaveLength(0)
   })
 
-  // TODO: Uncomment this after row-level AnnData parsing PR is merged
-  // it('Parses AnnData rows and reports invalid ontology IDs', async () => {
-  //   // eslint-disable-next-line max-len
-  //   const url = 'https://github.com/broadinstitute/single_cell_portal_core/raw/development/test/test_data/anndata_test_invalid_disease.h5ad'
-  //   const parseResults = await parseAnnDataFile(url)
+  it('Parses AnnData rows and reports invalid ontology IDs', async () => {
+    // eslint-disable-next-line max-len
+    const url = 'https://github.com/broadinstitute/single_cell_portal_core/raw/development/test/test_data/anndata_test_invalid_disease.h5ad'
+    const parseResults = await parseAnnDataFile(url)
 
-  //   expect(parseResults.issues).toHaveLength(1)
+    expect(parseResults.issues).toHaveLength(1)
 
-  //   const expectedIssue = [
-  //     'error',
-  //     'ontology:label-lookup-error',
-  //     'Ontology ID "FOO_0000042" is not among accepted ontologies (MONDO, PATO) for key "disease"'
-  //   ]
-  //   expect(parseResults.issues[0]).toEqual(expectedIssue)
-  // })
+    const expectedIssue = [
+      'error',
+      'ontology:label-lookup-error',
+      'Ontology ID "FOO_0000042" is not among accepted ontologies (MONDO, PATO) for key "disease"'
+    ]
+    expect(parseResults.issues[0]).toEqual(expectedIssue)
+  })
 })
