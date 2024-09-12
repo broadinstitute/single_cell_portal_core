@@ -8,6 +8,32 @@ const ONTOLOGY_BASE_URL =
   'https://raw.githubusercontent.com/broadinstitute/scp-ingest-pipeline/' +
   'ew-refine-mini-ontologies/ingest/validation/ontologies/'
 
+/** Quickly retrieve current version cache key for ontologies */
+async function fetchOntologyCacheVersion() {
+  const response = await fetch(`${ONTOLOGY_BASE_URL}version.txt`)
+  const text = await response.text()
+  const version = text.trim().split('#')[0]
+  return version
+}
+
+/** Get frontend SW cache object for minified ontologies */
+async function getServiceWorkerCache() {
+  const version = await fetchOntologyCacheVersion()
+  const currentOntologies = `ontologies-${version}`
+
+  // Delete other versions of ontologies cache; there should be 1 per dodmain
+  const cacheNames = await caches.keys()
+  cacheNames.forEach(name => {
+    if (name.startsWith('ontologies-') && name !== currentOntologies) {
+      caches.delete(name)
+    }
+  })
+
+  const cache = await caches.open(currentOntologies)
+
+  return cache
+}
+
 /** Fetch .gz file, decompress it, return plaintext */
 async function fetchGzipped(url) {
   const response = await fetch(url)
@@ -15,6 +41,26 @@ async function fetchGzipped(url) {
   const uint8Array = new Uint8Array(await blob.arrayBuffer());
   const plaintext = strFromU8(decompressSync(uint8Array));
   return plaintext
+}
+
+/** Fetch from service worker cache if available, from remote otherwise */
+export async function cacheFetch(url) {
+  const cache = await getServiceWorkerCache()
+
+  const decompressedUrl = url.replace('.gz', '')
+  const response = await cache.match(decompressedUrl)
+  if (typeof response === 'undefined') {
+    // If cache miss, then fetch, decompress, and put response in cache
+    const data = await fetchGzipped(url)
+    const contentLength = data.length
+    const decompressedResponse = new Response(
+      new Blob([data], { type: 'text/tab-separated-values' }),
+      { headers: new Headers({ 'Content-Length': contentLength }) }
+    )
+    await cache.put(decompressedUrl, decompressedResponse)
+    return await cache.match(decompressedUrl)
+  }
+  return await cache.match(decompressedUrl)
 }
 
 /**
@@ -48,7 +94,8 @@ async function fetchOntologies() {
   for (let i = 0; i < ontologyNames.length; i++) {
     const ontologyName = ontologyNames[i]
     const ontologyUrl = `${ONTOLOGY_BASE_URL + ontologyName}.min.tsv.gz`
-    const tsv = await fetchGzipped(ontologyUrl)
+    const response = await cacheFetch(ontologyUrl)
+    const tsv = await response.text()
 
     const lines = tsv.split('\n')
 
