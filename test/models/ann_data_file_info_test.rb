@@ -120,6 +120,17 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
     assert_equal %w[X_umap X_tsne], ann_data_info.obsm_key_names
   end
 
+  test 'should set default cluster fragments' do
+    ann_data_info = AnnDataFileInfo.new
+    assert ann_data_info.valid?
+    default_keys = AnnDataIngestParameters::PARAM_DEFAULTS[:obsm_keys]
+    default_keys.each do |obsm_key_name|
+      name = obsm_key_name.delete_prefix('X_')
+      matcher = { data_type: :cluster, name:, obsm_key_name: }.with_indifferent_access
+      assert ann_data_info.find_fragment(**matcher).present?
+    end
+  end
+
   test 'should validate data fragments' do
     ann_data_info = AnnDataFileInfo.new(
       data_fragments: [
@@ -224,7 +235,7 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
       ]
     )
     assert anndata_info.valid? # invokes validations
-    exp_frag = anndata_info.data_fragments.first
+    exp_frag = anndata_info.fragments_by_type(:expression).first
     assert_nil exp_frag.with_indifferent_access.dig(:expression_file_info, :units)
   end
 end
