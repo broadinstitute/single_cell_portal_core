@@ -6,7 +6,7 @@ import {
 
 const ONTOLOGY_BASE_URL =
   'https://raw.githubusercontent.com/broadinstitute/scp-ingest-pipeline/' +
-  'ew-minify-uberon/ingest/validation/ontologies/'
+  'ew-refine-mini-ontologies/ingest/validation/ontologies/'
 
 /** Fetch .gz file, decompress it, return plaintext */
 async function fetchGzipped(url) {
@@ -17,11 +17,32 @@ async function fetchGzipped(url) {
   return plaintext
 }
 
-/** Fetch minified ontologies */
+/**
+ * Fetch minified ontologies, transform into object of object of arrays, e.g.:
+ *
+ * {
+ *   'mondo': {
+ *     'MONDO_0008315': ['prostate cancer', 'prostate neoplasm', 'prostatic neoplasm'],
+ *     'MONDO_0018076': ['tuberculosis', 'TB'],
+ *     ...
+ *   },
+ *   'ncbitaxon': {
+ *     'NCBITaxon_9606': ['Homo sapiens', 'human'],
+ *     'NCBITaxon_10090': ['Mus musculus', 'house mouse', 'mouse'],
+ *     ...
+ *   },
+ *   ...
+ * }
+ */
 async function fetchOntologies() {
+  if (window.SCP.ontologies) {
+    // Reuse fetched, processed ontologies from this page load
+    return window.SCP.ontologies
+  }
+
+  const t0 = Date.now()
   const ontologies = {}
 
-  fetchOntologies
   const ontologyNames = getOntologyShortNames()
 
   for (let i = 0; i < ontologyNames.length; i++) {
@@ -45,6 +66,10 @@ async function fetchOntologies() {
     }
   }
 
+  const t1 = Date.now()
+  console.log(t1-t0)
+
+  window.SCP.ontologies = ontologies
   return ontologies
 }
 
