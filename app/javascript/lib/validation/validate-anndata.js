@@ -1,10 +1,11 @@
 import {openH5File} from 'hdf5-indexed-reader'
 
+import { getOAuthToken } from '~/lib/scp-api'
 import {
   validateUnique, validateRequiredMetadataColumns,
   metadataSchema, REQUIRED_CONVENTION_COLUMNS
 } from './shared-validation'
-import { getOAuthToken } from '~/lib/scp-api'
+import { getAcceptedOntologies } from './ontology-validation'
 
 /** Get ontology ID values for key in AnnData file */
 async function getOntologyIds(key, hdf5File) {
@@ -88,25 +89,6 @@ export async function getAnnDataHeaders(hdf5File) {
   // const obsmHeaders = await getAnnotationHeaders('obsm', hdf5File)
   // const xHeaders = await getAnnotationHeaders('X', hdf5File)
   return headers
-}
-
-/**
- * Get list of ontology names accepted for key from metadata schema
- *
- * E.g. "disease" -> ["MONDO", "PATO"]
- */
-function getAcceptedOntologies(key, metadataSchema) {
-  // E.g. "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/mondo,https://www.ebi.ac.uk/ols/ontologies/pato"
-  const olsUrls = metadataSchema.properties[key].ontology
-
-  const acceptedOntologies =
-    olsUrls?.split(',').map(url => url.split('/').slice(-1)[0].toUpperCase())
-
-  if (acceptedOntologies.includes('NCBITAXON')) {
-    acceptedOntologies.push('NCBITaxon')
-  }
-
-  return acceptedOntologies
 }
 
 /**
