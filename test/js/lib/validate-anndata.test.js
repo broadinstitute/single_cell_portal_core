@@ -2,10 +2,15 @@ import {
   getHdf5File, parseAnnDataFile, getAnnDataHeaders, checkOntologyIdFormat
 } from 'lib/validation/validate-anndata'
 
+const BASE_URL = 'https://github.com/broadinstitute/single_cell_portal_core/raw/development/test/test_data'
+
+// TODO: Uncomment this after PR merge
+// const BASE_URL = 'https://github.com/broadinstitute/single_cell_portal_core/raw/development/test/test_data/anndata'
+
 describe('Client-side file validation for AnnData', () => {
   it('Parses AnnData headers', async () => {
-    // eslint-disable-next-line max-len
-    const url = 'https://github.com/broadinstitute/single_cell_portal_core/raw/development/test/test_data/anndata_test.h5ad'
+    const url = `${BASE_URL}/anndata_test.h5ad`
+    // const url = `${BASE_URL}/valid.h5ad` // Uncomment after PR merge
     const expectedHeaders = [
       '_index',
       'biosample_id',
@@ -20,22 +25,22 @@ describe('Client-side file validation for AnnData', () => {
       'species',
       'species__ontology_label'
     ]
-    const remoteProps = {url}
+    const remoteProps = { url }
     const hdf5File = await getHdf5File(url, remoteProps)
     const headers = await getAnnDataHeaders(hdf5File)
     expect(headers).toEqual(expectedHeaders)
   })
 
   it('Reports AnnData with valid headers as valid', async () => {
-    // eslint-disable-next-line max-len
-    const url = 'https://github.com/broadinstitute/single_cell_portal_core/raw/development/test/test_data/anndata_test.h5ad'
+    const url = `${BASE_URL}/anndata_test.h5ad`
+    // const url = `${BASE_URL}/valid.h5ad` // Uncomment after PR merge
     const parseResults = await parseAnnDataFile(url)
     expect(parseResults.issues).toHaveLength(0)
   })
 
   it('Reports AnnData with invalid headers as invalid', async () => {
-    // eslint-disable-next-line max-len
-    const url = 'https://github.com/broadinstitute/single_cell_portal_core/raw/development/test/test_data/anndata_test_bad_header_no_species.h5ad'
+    const url = `${BASE_URL}/anndata_test_bad_header_no_species.h5ad`
+    // const url = `${BASE_URL}/invalid_header_no_species.h5ad` // Uncomment after PR merge
     const parseResults = await parseAnnDataFile(url)
 
     expect(parseResults.issues).toHaveLength(1)
@@ -58,8 +63,8 @@ describe('Client-side file validation for AnnData', () => {
   })
 
   it('Parses AnnData rows and reports invalid ontology IDs', async () => {
-    // eslint-disable-next-line max-len
-    const url = 'https://github.com/broadinstitute/single_cell_portal_core/raw/development/test/test_data/anndata_test_invalid_disease.h5ad'
+    const url = `${BASE_URL}/anndata_test_invalid_disease.h5ad`
+    // const url = `${BASE_URL}/invalid_disease_id.h5ad` // Uncomment after PR merge
     const parseResults = await parseAnnDataFile(url)
 
     expect(parseResults.issues).toHaveLength(1)
@@ -71,4 +76,28 @@ describe('Client-side file validation for AnnData', () => {
     ]
     expect(parseResults.issues[0]).toEqual(expectedIssue)
   })
+
+  // it('Reports valid ontology labels as valid', async () => {
+  //   const issues = await checkOntologyLabels(
+  //     // Underscore or colon can delimit shortname and number;
+  //     // disease can use MONDO or PATO IDs.
+  //     'disease', ['MONDO_0000001', 'MONDO:0000001', 'PATO:0000001']
+  //   )
+  //   expect(issues).toHaveLength(0)
+  // })
+
+  // TODO: Uncomment after PR merge
+  // it('Parses AnnData rows and reports invalid ontology labels', async () => {
+  //   const url = `${BASE_URL}/invalid_disease_id.h5ad`
+  //   const parseResults = await parseAnnDataFile(url)
+
+  //   expect(parseResults.issues).toHaveLength(1)
+
+  //   const expectedIssue = [
+  //     'error',
+  //     'ontology:label-lookup-error',
+  //     'Ontology ID "FOO_0000042" is not among accepted ontologies (MONDO, PATO) for key "disease"'
+  //   ]
+  //   expect(parseResults.issues[0]).toEqual(expectedIssue)
+  // })
 })
