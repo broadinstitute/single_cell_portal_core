@@ -5,7 +5,7 @@ import {
   validateUnique, validateRequiredMetadataColumns,
   metadataSchema, REQUIRED_CONVENTION_COLUMNS
 } from './shared-validation'
-import { getAcceptedOntologies } from './ontology-validation'
+import { getAcceptedOntologies, fetchOntologies } from './ontology-validation'
 
 /** Get ontology ID values for key in AnnData file */
 async function getOntologyIds(key, hdf5File) {
@@ -38,6 +38,7 @@ async function getOntologyIds(key, hdf5File) {
 
   return ontologyIds
 }
+window.getOntologyIds = getOntologyIds
 
 /** Get annotation headers for a key (e.g. obs) from an HDF5 file */
 async function getAnnotationHeaders(key, hdf5File) {
@@ -120,6 +121,81 @@ export function checkOntologyIdFormat(key, ontologyIds) {
   return issues
 }
 
+/** Validate author's annotation labels match those in ontologies */
+async function checkOntologyLabels(hdf5File) {
+
+}
+
+/** Get ontology ID values for key in AnnData file */
+async function getOntologyLabels(key, hdf5File) {
+  let ontologyIds = []
+
+  const obs = await hdf5File.get('obs')
+  const obsValues = await Promise.all(obs.values)
+
+  // Old versions of the AnnData spec used __categories as an obs.
+  // However, in new versions (since before 2023-01-23) of AnnData spec,
+  // categorical arrays are encoded as self-contained groups containing their
+  // own `categories` and `codes`.
+  // See e.g. https://github.com/scverse/anndata/issues/879
+  const internalCategories = obsValues.find(o => o.name.endsWith('__categories'))
+
+  let resolvedCategories = obsValues
+  if (internalCategories) {
+    resolvedCategories = await Promise.all(internalCategories.values)
+  }
+  const group = resolvedCategories.find(o => o.name.endsWith(key))
+  if (group) {
+    if (internalCategories) {
+      ontologyIds = await group.value
+    } else {
+      // AnnData organizes each "obs" annotation (e.g. disease__ontology_label,
+      // sex) into a container with a `categories` frame and a `code` frame.
+      //
+      // - categories: external values, non-redundant array. E.g.:
+      //     ["tuberculosis", "TB", "foo"] or ["female"]
+      //
+      // - codes: internal values, redundant array of integers that specify
+      //     the index (position) of each category value in the array of obs
+      //     (cells)
+      //
+      // This organization greatly decreases filesize, but requires more code
+      // to map paired obs annotations like `disease` (ontology IDs) to
+      // `disease__ontology_label` (ontology names) than needed for e.g. TSVs.
+      const categories = await group.values[0]
+      ontologyIds = await categories.value
+
+      const codes = await group.values[1]
+      const indexes = await codes.value
+    }
+  }
+
+  return ontologyIds
+}
+
+/** Validate ontology labels for required metadata columns in AnnData file */
+async function validateOntologyLabels(hdf5File) {
+  window.hdf5File = hdf5File
+  let issues = []
+
+  return issues
+
+  // Validate IDs for species, organ, disease, and library preparation protocol
+  for (let i = 0; i < REQUIRED_CONVENTION_COLUMNS.length; i++) {
+    const column = REQUIRED_CONVENTION_COLUMNS[i]
+    if (!column.endsWith('__ontology_label')) {continue}
+    const key = column.split('__ontology_label')[0]
+    const ontologyIds = await getOntologyIds(key, hdf5File)
+
+    issues = issues.concat(
+      checkOntologyIdFormat(key, ontologyIds)
+    )
+  }
+
+  return issues
+}
+
+
 /** Validate ontology IDs for required metadata columns in AnnData file */
 async function validateOntologyIdFormat(hdf5File) {
   let issues = []
@@ -154,8 +230,12 @@ export async function parseAnnDataFile(fileOrUrl, remoteProps) {
 
   const requiredMetadataIssues = validateRequiredMetadataColumns([headers], true)
   let ontologyIdFormatIssues = []
+  let ontologyLabelIssues = []
   if (requiredMetadataIssues.length === 0) {
     ontologyIdFormatIssues = await validateOntologyIdFormat(hdf5File)
+    if (ontologyIdFormatIssues.length === 0) {
+      ontologyLabelIssues = await validateOntologyLabels(hdf5File)
+    }
   }
 
   issues = issues.concat(

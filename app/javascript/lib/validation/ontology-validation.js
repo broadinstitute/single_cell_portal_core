@@ -6,7 +6,7 @@ import {
 
 const ONTOLOGY_BASE_URL =
   'https://raw.githubusercontent.com/broadinstitute/scp-ingest-pipeline/' +
-  'ew-refine-mini-ontologies/ingest/validation/ontologies/'
+  'development/ingest/validation/ontologies/'
 
 /** Quickly retrieve current version cache key for ontologies */
 async function fetchOntologyCacheVersion() {
@@ -80,13 +80,12 @@ export async function cacheFetch(url) {
  *   ...
  * }
  */
-async function fetchOntologies() {
+export async function fetchOntologies() {
   if (window.SCP.ontologies) {
     // Reuse fetched, processed ontologies from this page load
     return window.SCP.ontologies
   }
 
-  const t0 = Date.now()
   const ontologies = {}
 
   const ontologyNames = getOntologyShortNames()
@@ -112,9 +111,6 @@ async function fetchOntologies() {
       ontologies[ontologyName][ontologyId] = names
     }
   }
-
-  const t1 = Date.now()
-  console.log(t1-t0)
 
   window.SCP.ontologies = ontologies
   return ontologies
