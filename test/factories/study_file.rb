@@ -173,6 +173,7 @@ FactoryBot.define do
         #   phex: [['cellA', 0.6],['cellB', 6.1], ['cellC', 4.5]]
         # }
         expression_input { {} }
+        has_raw_counts { true }
       end
       after(:create) do |file, evaluator|
         file.build_ann_data_file_info
@@ -195,7 +196,7 @@ FactoryBot.define do
           file.build_expression_file_info(library_preparation_protocol: "10x 5' v3")
           file.expression_file_info.save
           file.ann_data_file_info.has_expression = true
-          file.ann_data_file_info.has_raw_counts = true
+          file.ann_data_file_info.has_raw_counts = evaluator.has_raw_counts
           %w[raw processed].each do |matrix_type|
             FactoryBot.create(:data_array,
                               array_type: 'cells',

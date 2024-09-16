@@ -187,13 +187,22 @@ class IngestJobTest < ActiveSupport::TestCase
 
   test 'should identify AnnData parses with extraction in mixpanel' do
     # parsed AnnData
-    ann_data_file = FactoryBot.create(:ann_data_file, name: 'test.h5ad', study: @basic_study)
-    ann_data_file.ann_data_file_info.reference_file = false
-    ann_data_file.ann_data_file_info.data_fragments = [
-      { _id: BSON::ObjectId.new.to_s, data_type: :cluster, obsm_key_name: 'X_umap', name: 'UMAP' }
-    ]
-    ann_data_file.upload_file_size = 1.megabyte
-    ann_data_file.save
+    ann_data_file = FactoryBot.create(:ann_data_file,
+                                      name: 'test.h5ad',
+                                      study: @basic_study,
+                                      upload_file_size: 1.megabyte,
+                                      cell_input: %w[A B C D],
+                                      has_raw_counts: false,
+                                      reference_file: false,
+                                      annotation_input: [
+                                        { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                                      ],
+                                      coordinate_input: [
+                                        { X_umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                      ],
+                                      expression_input: {
+                                        'phex' => [['A', 0.3], ['B', 1.0], ['C', 0.5], ['D', 0.1]]
+                                      })
     params_object = AnnDataIngestParameters.new(
       anndata_file: ann_data_file.gs_url, obsm_keys: ann_data_file.ann_data_file_info.obsm_key_names,
       file_size: ann_data_file.upload_file_size
