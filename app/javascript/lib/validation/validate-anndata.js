@@ -122,8 +122,45 @@ export function checkOntologyIdFormat(key, ontologyIds) {
 }
 
 /** Validate author's annotation labels match those in ontologies */
-async function checkOntologyLabels(hdf5File) {
+async function checkOntologyLabels(ids, idIndexes, labels, labelIndexes) {
+  let issues = []
 
+  const ontologies = await fetchOntologies()
+
+  const labelIdPairs = []
+  for (let i = 0; i < idIndexes.length; i++) {
+    const id = ids[idIndexes[i]]
+    // console.log('id', id)
+    for (let j = 0; j < labelIndexes.length; j++) {
+      const label = labels[labelIndexes[j]]
+      // console.log('label', label)
+      labelIdPairs.push(`${id} || ${label}`)
+    }
+  }
+  const rawUniques = Array.from(new Set(labelIdPairs))
+
+  rawUniques.map(r => {
+    const [id, label] = r.split(' || ')
+    const ontologyShortNameLc = id.split(/[_:]/)[0].toLowerCase()
+    const ontology = ontologies[ontologyShortNameLc]
+    if (!(id in ontology)) {
+      const msg = `Invalid ontology ID: ${id}`
+      issues.push([
+        'error', 'ontology:label-lookup-error', msg,
+        { subtype: 'ontology:invalid-id' }
+      ])
+    } else {
+      const validLabels = ontology[id]
+      if (!(validLabels.includes(label))) {
+        const validLabelsClause = `Valid labels: ${validLabels.join(', ')}`
+        const msg = `Invalid ontology label "${id}".  ${validLabelsClause}`
+        issues.push([
+          'error', 'ontology:label-lookup-error', msg,
+          { subtype: 'ontology:invalid-label' }
+        ])
+      }
+    }
+})
 }
 
 /** Get ontology ID values for key in AnnData file */
@@ -167,6 +204,7 @@ async function getOntologyLabels(key, hdf5File) {
 
       const codes = await group.values[1]
       const indexes = await codes.value
+
     }
   }
 
