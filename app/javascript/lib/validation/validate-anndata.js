@@ -122,18 +122,16 @@ export function checkOntologyIdFormat(key, ontologyIds) {
 }
 
 /** Validate author's annotation labels match those in ontologies */
-async function checkOntologyLabels(ids, idIndexes, labels, labelIndexes) {
-  let issues = []
+async function checkOntologyLabels(key, ids, idIndexes, labels, labelIndexes) {
+  const issues = []
 
   const ontologies = await fetchOntologies()
 
   const labelIdPairs = []
   for (let i = 0; i < idIndexes.length; i++) {
     const id = ids[idIndexes[i]]
-    // console.log('id', id)
     for (let j = 0; j < labelIndexes.length; j++) {
       const label = labels[labelIndexes[j]]
-      // console.log('label', label)
       labelIdPairs.push(`${id} || ${label}`)
     }
   }
@@ -152,19 +150,22 @@ async function checkOntologyLabels(ids, idIndexes, labels, labelIndexes) {
     } else {
       const validLabels = ontology[id]
       if (!(validLabels.includes(label))) {
-        const validLabelsClause = `Valid labels: ${validLabels.join(', ')}`
-        const msg = `Invalid ontology label "${id}".  ${validLabelsClause}`
+        const prettyLabels = validLabels.join(', ')
+        const validLabelsClause = `Valid labels for ${id}: ${prettyLabels}`
+        const msg = `Invalid ${key} label "${label}".  ${validLabelsClause}`
         issues.push([
           'error', 'ontology:label-lookup-error', msg,
           { subtype: 'ontology:invalid-label' }
         ])
       }
     }
-})
+  })
+
+  return issues
 }
 
 /** Get ontology ID values for key in AnnData file */
-async function getOntologyLabels(key, hdf5File) {
+async function getOntologyIdsAndLabels(requiredName, hdf5File) {
   let ontologyIds = []
 
   const obs = await hdf5File.get('obs')
@@ -181,10 +182,16 @@ async function getOntologyLabels(key, hdf5File) {
   if (internalCategories) {
     resolvedCategories = await Promise.all(internalCategories.values)
   }
-  const group = resolvedCategories.find(o => o.name.endsWith(key))
-  if (group) {
+
+  const idKey = requiredName
+  const labelKey = `${requiredName}__ontology_label`
+
+  const idGroup = obsValues.find(o => o.name.endsWith(idKey))
+  const labelGroup = obsValues.find(o => o.name.endsWith(labelKey))
+
+  if (idGroup) {
     if (internalCategories) {
-      ontologyIds = await group.value
+      ontologyIds = await idGroup.value
     } else {
       // AnnData organizes each "obs" annotation (e.g. disease__ontology_label,
       // sex) into a container with a `categories` frame and a `code` frame.
@@ -199,16 +206,19 @@ async function getOntologyLabels(key, hdf5File) {
       // This organization greatly decreases filesize, but requires more code
       // to map paired obs annotations like `disease` (ontology IDs) to
       // `disease__ontology_label` (ontology names) than needed for e.g. TSVs.
-      const categories = await group.values[0]
-      ontologyIds = await categories.value
+      const idCategories = await idGroup.values[0]
+      const idCodes = await idGroup.values[1]
+      const ids = await idCategories.value
+      const idIndexes = await idCodes.value
 
-      const codes = await group.values[1]
-      const indexes = await codes.value
+      const labelCategories = await labelGroup.values[0]
+      const labelCodes = await labelGroup.values[1]
+      const labels = await labelCategories.value
+      const labelIndexes = await labelCodes.value
 
+      return [ids, idIndexes, labels, labelIndexes]
     }
   }
-
-  return ontologyIds
 }
 
 /** Validate ontology labels for required metadata columns in AnnData file */
@@ -216,17 +226,15 @@ async function validateOntologyLabels(hdf5File) {
   window.hdf5File = hdf5File
   let issues = []
 
-  return issues
-
   // Validate IDs for species, organ, disease, and library preparation protocol
   for (let i = 0; i < REQUIRED_CONVENTION_COLUMNS.length; i++) {
     const column = REQUIRED_CONVENTION_COLUMNS[i]
     if (!column.endsWith('__ontology_label')) {continue}
     const key = column.split('__ontology_label')[0]
-    const ontologyIds = await getOntologyIds(key, hdf5File)
+    const [ids, idIndexes, labels, labelIndexes] = await getOntologyIdsAndLabels(key, hdf5File)
 
     issues = issues.concat(
-      checkOntologyIdFormat(key, ontologyIds)
+      await checkOntologyLabels(key, ids, idIndexes, labels, labelIndexes)
     )
   }
 
@@ -279,7 +287,8 @@ export async function parseAnnDataFile(fileOrUrl, remoteProps) {
   issues = issues.concat(
     validateUnique(headers),
     requiredMetadataIssues,
-    ontologyIdFormatIssues
+    ontologyIdFormatIssues,
+    ontologyLabelIssues
   )
 
   return { issues }
