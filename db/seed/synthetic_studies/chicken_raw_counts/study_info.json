@@ -41,6 +41,11 @@
     },
     {
       "type": "Cluster",
+      "filename": "cluster_odd_labels.txt",
+      "name": "cluster_odd_labels"
+    },
+    {
+      "type": "Cluster",
       "filename": "cluster_square.txt",
       "name": "cluster_square"
     },
