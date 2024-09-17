@@ -28,6 +28,10 @@ export default function FileUploadControl({
   const [showUploadButton, setShowUploadButton] = useState(true)
   const [showBucketPath, setShowBucketPath] = useState(false)
   const ToggleUploadButton = () => {
+    // this is an inverted check since the user is clicking and the value is about to change
+    if (!showUploadButton) {
+      unsetRemoteLocation()
+    }
     setShowUploadButton(!showUploadButton)
     setShowBucketPath(!showBucketPath)
   }
@@ -80,10 +84,22 @@ export default function FileUploadControl({
     }
   }
 
+  // keep track of pending timeout for remote validation via bucket path
+  const [timeOutId, setTimeOutID] = useState(null)
+
+  // clear out remote_location and hasRemoteFile to allow switching back to file upload button
+  function unsetRemoteLocation() {
+    updateFile(file._id, {remote_location: '', hasRemoteFile: false})
+  }
+
   // perform CSFV on remote file when specifying a GS URL or bucket path
   // will sanitize GS URL before calling validateRemoteFile
-  async function handleBucketLocationEntry(e) {
-    const path = e.target.value
+  async function handleBucketLocationEntry(path) {
+    if (path === "") {
+      unsetRemoteLocation()
+      return false
+    }
+
     const matcher = new RegExp(`(gs:\/\/)?${bucketName}\/?`)
     const trimmedPath = path.replace(matcher, '')
     if (!trimmedPath) {
@@ -183,7 +199,14 @@ export default function FileUploadControl({
              size={60}
              id={`remote_location-input-${file._id}`}
              placeholder='GS URL or path to file in GCP bucket'
-             onBlur={handleBucketLocationEntry}/>
+             onChange={ (e) => {
+               const newBucketPath = e.target.value
+               if (timeOutId) {
+                 clearTimeout(timeOutId)
+               }
+               const newTimeout = setTimeout(handleBucketLocationEntry, 500, newBucketPath)
+               setTimeOutID(newTimeout)
+             }}/>
     }
     &nbsp;&nbsp;
     { !isFileOnServer && (showBucketPath || file.hasRemoteFile ) && googleBucketLink }
