@@ -234,6 +234,7 @@ class IngestJobTest < ActiveSupport::TestCase
       anndata_file: ann_data_file.gs_url, obsm_keys: ann_data_file.ann_data_file_info.obsm_key_names,
       file_size: ann_data_file.upload_file_size
     )
+    assert_not params_object.extract.include?('raw_counts')
     job = IngestJob.new(
       study: @basic_study, study_file: ann_data_file, user: @user, action: :ingest_anndata, params_object:
     )
