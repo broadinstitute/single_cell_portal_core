@@ -57,13 +57,13 @@ class SingleCellMailer < ApplicationMailer
   def notify_user_parse_complete(email, title, message, study)
     @message = message
     @study = study
-    mail(to: email, subject: '[Single Cell Portal Notifier] ' + title)
+    mail(to: email, subject: "[Single Cell Portal Notifier] #{title}")
   end
 
   def notify_user_parse_fail(email, title, error, study)
     @error = error
     @study = study
-    mail(to: email, subject: '[Single Cell Portal Notifier] ' + title)
+    mail(to: email, subject: "[Single Cell Portal Notifier] #{title}")
   end
 
   def notify_admin_parse_fail(user_email, title, contents)
