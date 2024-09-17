@@ -122,10 +122,11 @@ export function checkOntologyIdFormat(key, ontologyIds) {
 }
 
 /** Validate author's annotation labels match those in ontologies */
-async function checkOntologyLabels(key, ids, idIndexes, labels, labelIndexes) {
-  const issues = []
+async function checkOntologyLabels(key, ontologies, groups) {
 
-  const ontologies = await fetchOntologies()
+  const [ids, idIndexes, labels, labelIndexes] = groups
+
+  const issues = []
 
   const labelIdPairs = []
   for (let i = 0; i < idIndexes.length; i++) {
@@ -226,15 +227,17 @@ async function validateOntologyLabels(hdf5File) {
   window.hdf5File = hdf5File
   let issues = []
 
+  const ontologies = await fetchOntologies()
+
   // Validate IDs for species, organ, disease, and library preparation protocol
   for (let i = 0; i < REQUIRED_CONVENTION_COLUMNS.length; i++) {
     const column = REQUIRED_CONVENTION_COLUMNS[i]
     if (!column.endsWith('__ontology_label')) {continue}
     const key = column.split('__ontology_label')[0]
-    const [ids, idIndexes, labels, labelIndexes] = await getOntologyIdsAndLabels(key, hdf5File)
+    const groups = await getOntologyIdsAndLabels(key, hdf5File)
 
     issues = issues.concat(
-      await checkOntologyLabels(key, ids, idIndexes, labels, labelIndexes)
+      await checkOntologyLabels(key, ontologies, groups)
     )
   }
 

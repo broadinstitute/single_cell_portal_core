@@ -10,9 +10,11 @@ const ONTOLOGY_BASE_URL =
 
 /** Quickly retrieve current version cache key for ontologies */
 async function fetchOntologyCacheVersion() {
+  if (window.SCP.ontologiesVersion) { return window.SCP.ontologiesVersion }
   const response = await fetch(`${ONTOLOGY_BASE_URL}version.txt`)
   const text = await response.text()
   const version = text.trim().split('#')[0]
+  window.SCP.ontologiesVersion = version
   return version
 }
 
