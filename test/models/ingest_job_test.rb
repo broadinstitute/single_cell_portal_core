@@ -362,9 +362,9 @@ class IngestJobTest < ActiveSupport::TestCase
           }
         ]
       },
-      createTime: (now - 1.minutes).to_default_s,
-      startTime: (now - 1.minutes).to_default_s,
-      endTime: now.to_default_s
+      createTime: (now - 1.minutes).to_s,
+      startTime: (now - 1.minutes).to_s,
+      endTime: now.to_s
     }.with_indifferent_access
 
     pipeline_mock = MiniTest::Mock.new
@@ -713,7 +713,7 @@ class IngestJobTest < ActiveSupport::TestCase
     ls_mock.expect :get_pipeline, pipeline_mock, [{ name: pipeline_name }]
     ApplicationController.stub :firecloud_client, mock do
       ApplicationController.stub :life_sciences_api_client, ls_mock do
-        job.handle_ingest_failure
+        job.handle_ingest_failure('parse failure')
         cluster_file.reload
         study.reload
         cluster.reload
@@ -754,7 +754,7 @@ class IngestJobTest < ActiveSupport::TestCase
     ls_mock.expect :get_pipeline, pipeline_mock, [{ name: pipeline_name }]
     ApplicationController.stub :firecloud_client, mock do
       ApplicationController.stub :life_sciences_api_client, ls_mock do
-        failed_job.handle_ingest_failure
+        failed_job.handle_ingest_failure('parse failure')
         mock.verify
       end
     end
@@ -797,6 +797,77 @@ class IngestJobTest < ActiveSupport::TestCase
       assert study.cell_metadata.empty?
       assert study.genes.empty?
       mock.verify
+    end
+  end
+
+  test 'should ensure email delivery on special action failures' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Special Action Email',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    study_file = FactoryBot.create(:ann_data_file,
+                                   name: 'matrix.h5ad',
+                                   study:,
+                                   upload_file_size: 1.megabyte,
+                                   cell_input: %w[A B C D],
+                                   annotation_input: [
+                                     { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                                   ],
+                                   coordinate_input: [
+                                     { X_umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                   ])
+    annotation_file = 'gs://test_bucket/anndata/h5ad_frag.metadata.tsv'
+    cluster_file = 'gs://test_bucket/anndata/h5ad_frag.cluster.X_umap.tsv'
+    params_object = DifferentialExpressionParameters.new(
+      matrix_file_path: 'gs://test_bucket/matrix.h5ad', matrix_file_type: 'h5ad', file_size: study_file.upload_file_size,
+      annotation_file:, cluster_file:, cluster_name: 'umap', annotation_name: 'disease', annotation_scope: 'study'
+    )
+    pipeline_name = SecureRandom.uuid
+    job = IngestJob.new(
+      pipeline_name:, study:, study_file:, user: @user, action: :differential_expression, params_object:
+    )
+    now = DateTime.now.in_time_zone
+    mock_metadata = {
+      events: [
+        { timestamp: now.to_s },
+        { timestamp: (now + 2.minutes).to_s, containerStopped: { exitStatus: 1 } }
+      ],
+      pipeline: {
+        actions: [
+          {
+            commands: [
+              'python', 'ingest_pipeline.py', '--study-id', study.id.to_s, '--study-file-id',
+              study_file.id.to_s, 'differential_expression', '--differential-expression', '--cluster-file', cluster_file,
+              '--annotation-file', annotation_file, '--cluster-name', 'umap', '--annotation-name', 'disease',
+              '--annotation-scope', 'study'
+            ]
+          }
+        ],
+        resources: {
+          virtualMachine: {
+            machineType: 'n2d-highmem-8',
+            bootDiskSizeGb: 300
+          }
+        }
+      },
+      createTime: (now - 3.minutes).to_s,
+      startTime: now.to_s,
+      endTime: now.to_s
+    }.with_indifferent_access
+    mock = Minitest::Mock.new
+    6.times { mock.expect :metadata, mock_metadata }
+    3.times do
+      mock.expect :error, { code: 1, message: 'mock message' }
+      mock.expect :done?, true
+    end
+    email_mock = Minitest::Mock.new
+    email_mock.expect :deliver_now, true
+    ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
+      SingleCellMailer.stub :notify_admin_parse_fail, email_mock do
+        job.poll_for_completion
+        mock.verify
+        email_mock.verify
+      end
     end
   end
 
