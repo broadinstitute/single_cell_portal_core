@@ -20,7 +20,7 @@ describe('Client-side file validation for AnnData', () => {
 
   it('Parses AnnData headers', async () => {
     const ontologies = await fetchOntologies()
-    console.log('ontologies')
+    console.log('ontologies', ontologies)
     expect(1).toEqual(1)
   })
 })
