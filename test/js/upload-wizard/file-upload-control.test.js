@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, cleanup, fireEvent, waitForElementToBeRemoved } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent, waitForElementToBeRemoved, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 
 import { StudyContext } from 'components/upload/upload-utils'
@@ -354,6 +354,35 @@ describe('file upload control validates the selected file', () => {
     expect(screen.queryAllByText('Use bucket path')).toHaveLength(1)
     const bucketToggle = screen.getByText('Use bucket path')
     fireEvent.click(bucketToggle)
-    expect(container.querySelector('#remote_location-input-123')).toBeVisible();
+    expect(container.querySelector('#remote_location-input-123')).toBeVisible()
+  })
+
+  it('validates file extension on bucket path entries', async () => {
+    const file = {
+      _id: '123',
+      name: '',
+      status: 'new',
+      file_type: 'Cluster'
+    }
+    render((
+      <StudyContext.Provider value={{ accession: 'SCP123' }}>
+        <FileUploadControl
+          file={file}
+          allFiles={[file]}
+          allowedFileExts={['.tsv']}
+          validationMessages={{}}/>
+      </StudyContext.Provider>
+    ))
+    expect(screen.queryAllByText('Use bucket path')).toHaveLength(1)
+    const bucketToggle = screen.getByText('Use bucket path')
+    fireEvent.click(bucketToggle)
+    const bucketPathInput = screen.getByTestId('remote-location-input')
+    expect(bucketPathInput).toBeVisible()
+    fireEvent.change(bucketPathInput, { target: { value: 'bad.pdf' } })
+    expect(bucketPathInput).toHaveValue('bad.pdf')
+    await waitFor(() => {
+      expect(screen.getByTestId('validation-error')).toBeInTheDocument()
+      expect(screen.getByText('.pdf is not an allowed file extension for Cluster files: .tsv')).toBeVisible()
+    })
   })
 })

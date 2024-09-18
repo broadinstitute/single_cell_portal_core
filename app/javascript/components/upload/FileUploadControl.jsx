@@ -42,7 +42,7 @@ export default function FileUploadControl({
     'Upload a file from your computer' :
     "Input a path to a file that is already in this study's bucket"
   const uploadToggle = <span
-    className='btn btn-default'
+    className='btn btn-default margin-left'
     onClick={ToggleUploadButton}
     data-toggle="tooltip"
     data-original-title={toggleTooltip}>{toggleText}
@@ -55,7 +55,7 @@ export default function FileUploadControl({
   </Popover>
   const googleBucketLink =
     <OverlayTrigger trigger={['hover', 'focus']} rootClose placement="top" overlay={bucketPopover} delayHide={1500}>
-      <a className='btn btn-default'
+      <a className='btn btn-default margin-left'
          href={`https://accounts.google.com/AccountChooser?continue=https://console.cloud.google.com/storage/browser/${bucketName}`}
          target='_blank'><FontAwesomeIcon icon={faExternalLinkSquareAlt} /> Browse bucket</a>
     </OverlayTrigger>
@@ -95,18 +95,32 @@ export default function FileUploadControl({
   // perform CSFV on remote file when specifying a GS URL or bucket path
   // will sanitize GS URL before calling validateRemoteFile
   async function handleBucketLocationEntry(path) {
-    if (path === "") {
-      unsetRemoteLocation()
-      return false
-    }
-
     const matcher = new RegExp(`(gs:\/\/)?${bucketName}\/?`)
     const trimmedPath = path.replace(matcher, '')
     if (!trimmedPath) {
+      unsetRemoteLocation()
+      setFileValidation({ validating: false, issues: {}, fileName: null })
       return false
     }
 
+    // don't continue unless a dot is present (otherwise, no valid file extension)
+    if (trimmedPath.indexOf('.') < 0 ) { return false }
+
     const fileType = file.file_type
+    const fileExtension = `.${trimmedPath.split('.').slice(-1)[0]}`
+    if (!inputAcceptExts.includes(fileExtension)) {
+      const invalidExt = {
+        errors: [
+          [
+            'error', 'file:invalid-ext',
+            `${fileExtension} is not an allowed file extension for ${fileType} files: ${inputAcceptExts.join(', ')}`
+          ]
+        ]
+      }
+      setFileValidation({ validating: false, issues: invalidExt, fileName: trimmedPath })
+      return false
+    }
+
     const fileOptions = fileType === 'Metadata' ? { use_metadata_convention: file?.use_metadata_convention } : {}
 
     setFileValidation({ validating: true, issues: {}, fileName: trimmedPath })
@@ -191,6 +205,7 @@ export default function FileUploadControl({
         />
       </button>
     }
+
     {!isFileOnServer && (showBucketPath || file.hasRemoteFile ) &&
       // we can't use TextFormField since we need a custom onBlur event
       // onBlur is the React equivalent of onfocusout, which will fire after the user is done updating the input
@@ -198,22 +213,22 @@ export default function FileUploadControl({
              type="text"
              size={60}
              id={`remote_location-input-${file._id}`}
+             data-testid="remote-location-input"
              placeholder='GS URL or path to file in GCP bucket'
              onChange={ (e) => {
                const newBucketPath = e.target.value
-               if (timeOutId) {
-                 clearTimeout(timeOutId)
-               }
-               const newTimeout = setTimeout(handleBucketLocationEntry, 500, newBucketPath)
+               if (timeOutId) { clearTimeout(timeOutId) }
+               const newTimeout = setTimeout(handleBucketLocationEntry, 300, newBucketPath)
                setTimeOutID(newTimeout)
              }}/>
     }
-    &nbsp;&nbsp;
     { !isFileOnServer && (showBucketPath || file.hasRemoteFile ) && googleBucketLink }
 
-    &nbsp;&nbsp;
     { !isFileOnServer && uploadToggle }
 
+    { showBucketPath && fileValidation.validating &&
+      <span className='margin-left' id='remote-location-validation'>Validating... <LoadingSpinner testId="file-validation-spinner"/></span>
+    }
     <ValidationMessage
       studyAccession={study.accession}
       issues={fileValidation.issues}
