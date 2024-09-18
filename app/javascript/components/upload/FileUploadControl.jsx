@@ -112,8 +112,8 @@ export default function FileUploadControl({
       const invalidExt = {
         errors: [
           [
-            'error', 'file:invalid-ext',
-            `${fileExtension} is not an allowed file extension for ${fileType} files: ${inputAcceptExts.join(', ')}`
+            'error', 'filename:extension',
+            `Allowed extensions are ${allowedFileExts.join(', ')}`
           ]
         ]
       }
