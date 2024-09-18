@@ -224,7 +224,6 @@ async function getOntologyIdsAndLabels(requiredName, hdf5File) {
 
 /** Validate ontology labels for required metadata columns in AnnData file */
 async function validateOntologyLabels(hdf5File) {
-  window.hdf5File = hdf5File
   let issues = []
 
   const ontologies = await fetchOntologies()

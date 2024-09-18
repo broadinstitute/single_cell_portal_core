@@ -25,6 +25,7 @@ async function getServiceWorkerCache() {
 
   // Delete other versions of ontologies cache; there should be 1 per dodmain
   const cacheNames = await caches.keys()
+  console.log('cacheNames', cacheNames)
   cacheNames.forEach(name => {
     if (name.startsWith('ontologies-') && name !== currentOntologies) {
       caches.delete(name)
@@ -37,7 +38,7 @@ async function getServiceWorkerCache() {
 }
 
 /** Fetch .gz file, decompress it, return plaintext */
-async function fetchGzipped(url) {
+export async function fetchGzipped(url) {
   const response = await fetch(url)
   const blob = await response.blob();
   const uint8Array = new Uint8Array(await blob.arrayBuffer());
@@ -51,10 +52,12 @@ export async function cacheFetch(url) {
 
   const decompressedUrl = url.replace('.gz', '')
   const response = await cache.match(decompressedUrl)
+  console.log('in cacheFetch, typeof response', typeof response)
   if (typeof response === 'undefined') {
     // If cache miss, then fetch, decompress, and put response in cache
     const data = await fetchGzipped(url)
     const contentLength = data.length
+    // console.log('data', data)
     const decompressedResponse = new Response(
       new Blob([data], { type: 'text/tab-separated-values' }),
       { headers: new Headers({ 'Content-Length': contentLength }) }
@@ -64,6 +67,8 @@ export async function cacheFetch(url) {
   }
   return await cache.match(decompressedUrl)
 }
+
+
 
 /**
  * Fetch minified ontologies, transform into object of object of arrays, e.g.:
@@ -95,9 +100,14 @@ export async function fetchOntologies() {
   for (let i = 0; i < ontologyNames.length; i++) {
     const ontologyName = ontologyNames[i]
     const ontologyUrl = `${ONTOLOGY_BASE_URL + ontologyName}.min.tsv.gz`
+    console.log('ontologyUrl', ontologyUrl)
     const response = await cacheFetch(ontologyUrl)
+
+    console.log('response', response)
+
     const tsv = await response.text()
 
+    // console.log('tsv', tsv)
     const lines = tsv.split('\n')
 
     ontologies[ontologyName] = {}
@@ -117,7 +127,6 @@ export async function fetchOntologies() {
   window.SCP.ontologies = ontologies
   return ontologies
 }
-
 window.fetchOntologies = fetchOntologies
 
 /** Get lowercase shortnames for all required ontologies */
