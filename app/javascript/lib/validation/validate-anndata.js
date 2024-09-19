@@ -128,15 +128,19 @@ async function checkOntologyLabels(key, ontologies, groups) {
 
   const issues = []
 
-  const labelIdPairs = []
+  console.log('in checkOntologyLabels')
+  const labelIdPairs = new Set()
   for (let i = 0; i < idIndexes.length; i++) {
     const id = ids[idIndexes[i]]
-    for (let j = 0; j < labelIndexes.length; j++) {
-      const label = labels[labelIndexes[j]]
-      labelIdPairs.push(`${id} || ${label}`)
+    const label = labels[labelIndexes[i]]
+    if (label === undefined) {
+      console.log("label === 'undefined', i, labelIndexes[i]", i, labelIndexes[i])
     }
+    labelIdPairs.add(`${id} || ${label}`)
   }
-  const rawUniques = Array.from(new Set(labelIdPairs))
+  console.log('labelIdPairs', labelIdPairs)
+  const rawUniques = Array.from(labelIdPairs)
+  console.log('rawUniques', rawUniques)
 
   rawUniques.map(r => {
     const [id, label] = r.split(' || ')
@@ -161,6 +165,8 @@ async function checkOntologyLabels(key, ontologies, groups) {
       }
     }
   })
+
+  console.log('issues', issues)
 
   return issues
 }
@@ -203,15 +209,23 @@ async function getOntologyIdsAndLabels(requiredName, hdf5File) {
   // This organization greatly decreases filesize, but requires more code
   // to map paired obs annotations like `disease` (ontology IDs) to
   // `disease__ontology_label` (ontology names) than needed for e.g. TSVs.
+  console.log('idGroup', idGroup)
+  console.log('labelGroup', labelGroup)
   const idCategories = await idGroup.values[0]
+  console.log('idCategories', idCategories)
   const idCodes = await idGroup.values[1]
+  console.log('idGroup', idCodes)
   const ids = await idCategories.value
+  console.log('ids', ids)
   const idIndexes = await idCodes.value
+  console.log('idIndexes', idIndexes)
 
   const labelCategories = await labelGroup.values[0]
   const labelCodes = await labelGroup.values[1]
   const labels = await labelCategories.value
+  console.log('labels', labels)
   const labelIndexes = await labelCodes.value
+  console.log('labelIndexes', labelIndexes)
 
   return [ids, idIndexes, labels, labelIndexes]
 }
