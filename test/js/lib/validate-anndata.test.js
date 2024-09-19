@@ -77,18 +77,9 @@ describe('Client-side file validation for AnnData', () => {
     expect(parseResults.issues[0]).toEqual(expectedIssue)
   })
 
-  // it('Reports valid ontology labels as valid', async () => {
-  //   const issues = await checkOntologyLabels(
-  //     // Underscore or colon can delimit shortname and number;
-  //     // disease can use MONDO or PATO IDs.
-  //     'disease', ['MONDO_0000001', 'MONDO:0000001', 'PATO:0000001']
-  //   )
-  //   expect(issues).toHaveLength(0)
-  // })
-
-  // TODO: Uncomment after PR merge
+  // // TODO: Uncomment after PR merge
   // it('Parses AnnData rows and reports invalid ontology labels', async () => {
-  //   const url = `${BASE_URL}/invalid_disease_id.h5ad`
+  //   const url = `${BASE_URL}/invalid_disease_label.h5ad`
   //   const parseResults = await parseAnnDataFile(url)
 
   //   expect(parseResults.issues).toHaveLength(1)
@@ -96,7 +87,10 @@ describe('Client-side file validation for AnnData', () => {
   //   const expectedIssue = [
   //     'error',
   //     'ontology:label-lookup-error',
-  //     'Ontology ID "FOO_0000042" is not among accepted ontologies (MONDO, PATO) for key "disease"'
+  //     'Invalid disease label "foo".  Valid labels for MONDO_0018076: tuberculosis, tuberculosis disease, active tuberculosis, Kochs disease, TB',
+  //     {
+  //       'subtype': 'ontology:invalid-label'
+  //     }
   //   ]
   //   expect(parseResults.issues[0]).toEqual(expectedIssue)
   // })
