@@ -104,11 +104,11 @@ export default function FileUploadControl({
     }
 
     // don't continue unless a dot is present (otherwise, no valid file extension)
-    if (trimmedPath.indexOf('.') < 0 ) { return false }
+    if (!trimmedPath.includes('.')) { return false }
 
     const fileType = file.file_type
     const fileExtension = `.${trimmedPath.split('.').slice(-1)[0]}`
-    if (!inputAcceptExts.includes(fileExtension)) {
+    if (fileExtension.length > 1 && !inputAcceptExts.includes(fileExtension)) {
       const invalidExt = {
         errors: [
           [
