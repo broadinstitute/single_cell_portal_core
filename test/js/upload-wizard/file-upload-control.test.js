@@ -382,7 +382,7 @@ describe('file upload control validates the selected file', () => {
     expect(bucketPathInput).toHaveValue('bad.pdf')
     await waitFor(() => {
       expect(screen.getByTestId('validation-error')).toBeInTheDocument()
-      expect(screen.getByText('Allowed extensions are: .tsv')).toBeVisible()
+      expect(screen.getByText('Allowed extensions are .tsv')).toBeVisible()
     })
   })
 })
