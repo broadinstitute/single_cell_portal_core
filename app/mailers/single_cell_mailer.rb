@@ -38,7 +38,7 @@ class SingleCellMailer < ApplicationMailer
     @study_file = study_file
     @error = error
     @user = @study.user
-    mail(to: emails, subject: '[Single Cell Portal ERROR] FireCloud auto-upload fail in ' + @study.accession) do |format|
+    mail(to: emails, subject: "[Single Cell Portal ERROR] FireCloud auto-upload fail in #{@study.accession}") do |format|
       format.html
     end
   end
@@ -51,19 +51,19 @@ class SingleCellMailer < ApplicationMailer
     dev_email_config = AdminConfiguration.find_by(config_type: 'QA Dev Email')
     dev_email = dev_email_config.present? ? dev_email_config.value : nil
     title = "#{study_file.upload_file_name} did not finish uploading"
-    mail(to: user.email, bcc: dev_email, subject: '[Single Cell Portal Notifier] ' + title)
+    mail(to: user.email, bcc: dev_email, subject: "[Single Cell Portal Notifier] #{title}")
   end
 
   def notify_user_parse_complete(email, title, message, study)
     @message = message
     @study = study
-    mail(to: email, subject: '[Single Cell Portal Notifier] ' + title)
+    mail(to: email, subject: "[Single Cell Portal Notifier] #{title}")
   end
 
   def notify_user_parse_fail(email, title, error, study)
     @error = error
     @study = study
-    mail(to: email, subject: '[Single Cell Portal Notifier] ' + title)
+    mail(to: email, subject: "[Single Cell Portal Notifier] #{title}")
   end
 
   def notify_admin_parse_fail(user_email, title, contents)
@@ -72,7 +72,7 @@ class SingleCellMailer < ApplicationMailer
       dev_email = dev_email_config.value
       @contents = contents
       @user_email = user_email
-      mail(to: dev_email, subject: '[Single Cell Portal Admin Notification] ' + title)
+      mail(to: dev_email, subject: "[Single Cell Portal Admin Notification] #{title}")
     end
   end
 
@@ -91,7 +91,7 @@ class SingleCellMailer < ApplicationMailer
     @error = error
     @action = ingest_action
     title = 'Ingest Pipeline Launch Failure'
-    mail(to: emails, subject: '[Single Cell Portal Admin Notification] ' + title)
+    mail(to: emails, subject: "[Single Cell Portal Admin Notification] #{title}")
   end
 
   def daily_disk_status
