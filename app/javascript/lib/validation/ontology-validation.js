@@ -25,7 +25,6 @@ async function getServiceWorkerCache() {
 
   // Delete other versions of ontologies cache; there should be 1 per dodmain
   const cacheNames = await caches.keys()
-  console.log('cacheNames', cacheNames)
   cacheNames.forEach(name => {
     if (name.startsWith('ontologies-') && name !== currentOntologies) {
       caches.delete(name)
@@ -40,9 +39,9 @@ async function getServiceWorkerCache() {
 /** Fetch .gz file, decompress it, return plaintext */
 export async function fetchGzipped(url) {
   const response = await fetch(url)
-  const blob = await response.blob();
-  const uint8Array = new Uint8Array(await blob.arrayBuffer());
-  const plaintext = strFromU8(decompressSync(uint8Array));
+  const blob = await response.blob()
+  const uint8Array = new Uint8Array(await blob.arrayBuffer())
+  const plaintext = strFromU8(decompressSync(uint8Array))
   return plaintext
 }
 
@@ -57,8 +56,13 @@ export async function cacheFetch(url) {
     const data = await fetchGzipped(url)
     const contentLength = data.length
     const decompressedResponse = new Response(
-      new Blob([data], { type: 'text/tab-separated-values' }),
-      { headers: new Headers({ 'Content-Length': contentLength }) }
+      data,
+      {
+        headers: new Headers({
+          'Content-Length': contentLength,
+          'Content-Type': 'text/tab-separated-values'
+        })
+      }
     )
     await cache.put(decompressedUrl, decompressedResponse)
     return await cache.match(decompressedUrl)

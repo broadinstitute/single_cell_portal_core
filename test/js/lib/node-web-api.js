@@ -1,6 +1,7 @@
 /* eslint-disable require-jsdoc */
 /** @fileoverview Node port for interfaces of Web API; helps mocking
  *
+ * https://developer.mozilla.org/en-US/docs/Web/API/CacheStorage
  * https://developer.mozilla.org/en-US/docs/Web/API/Cache
 */
 const { Readable } = require('stream')
@@ -8,6 +9,7 @@ const { Readable } = require('stream')
 export const nodeCaches = {
   _cacheStores: {},
 
+  /** Returns a Promise that resolves to the requested Cache object. */
   open: jest.fn(cacheName => {
     // Initialize the store for the cache name if it doesn't exist
     if (!nodeCaches._cacheStores[cacheName]) {
@@ -91,7 +93,7 @@ export const nodeResponse = class {
       read() {
         this.push(readableBody) // Push the string or buffer into the stream
         this.push(null) // Signal the end of the stream
-      },
+      }
     })
 
     this.body = stream // Assign the readable stream to body

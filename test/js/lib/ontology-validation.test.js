@@ -18,9 +18,11 @@ describe('Client-side file validation for AnnData', () => {
     global.Headers = nodeHeaders
   })
 
-  it('Parses AnnData headers', async () => {
+  it('Parses minified ontologies', async () => {
     const ontologies = await fetchOntologies()
-    console.log('ontologies', ontologies)
-    expect(1).toEqual(1)
+    const expectedOntologyNames = ['mondo', 'pato', 'efo', 'uberon', 'ncbitaxon']
+    expect(Object.keys(ontologies)).toEqual(expectedOntologyNames)
+    const expectedSpeciesNames = ['Homo sapiens', 'human']
+    expect(ontologies.ncbitaxon['NCBITaxon_9606']).toEqual(expectedSpeciesNames)
   })
 })
