@@ -282,7 +282,7 @@ export async function parseAnnDataFile(fileOrUrl, remoteProps) {
       // TODO (SCP-5813):
       // For big remote AnnData, hdf5-indexed-reader sometimes corrupts index codes,
       // so skip ontology label validation for e.g. "Use bucket path"
-      'url' in remoteProps === false
+      remoteProps && 'url' in remoteProps === false
     ) {
       ontologyLabelIssues = await validateOntologyLabels(hdf5File)
     }
