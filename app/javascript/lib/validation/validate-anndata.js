@@ -38,7 +38,6 @@ async function getOntologyIds(key, hdf5File) {
 
   return ontologyIds
 }
-window.getOntologyIds = getOntologyIds
 
 /** Get annotation headers for a key (e.g. obs) from an HDF5 file */
 async function getAnnotationHeaders(key, hdf5File) {
@@ -127,6 +126,7 @@ async function checkOntologyLabels(key, ontologies, groups) {
 
   const issues = []
 
+  // Determine unique (ontology ID, ontology label) pairs
   const labelIdPairs = new Set()
   for (let i = 0; i < idIndexes.length; i++) {
     const id = ids[idIndexes[i]]
@@ -139,7 +139,9 @@ async function checkOntologyLabels(key, ontologies, groups) {
     const [id, label] = r.split(' || ')
     const ontologyShortNameLc = id.split(/[_:]/)[0].toLowerCase()
     const ontology = ontologies[ontologyShortNameLc]
+
     if (!(id in ontology)) {
+      // Register invalid ontology ID
       const msg = `Invalid ontology ID: ${id}`
       issues.push([
         'error', 'ontology:label-lookup-error', msg,
@@ -147,7 +149,9 @@ async function checkOntologyLabels(key, ontologies, groups) {
       ])
     } else {
       const validLabels = ontology[id]
+
       if (!(validLabels.includes(label))) {
+        // Register invalid ontology label
         const prettyLabels = validLabels.join(', ')
         const validLabelsClause = `Valid labels for ${id}: ${prettyLabels}`
         const msg = `Invalid ${key} label "${label}".  ${validLabelsClause}`
@@ -158,8 +162,6 @@ async function checkOntologyLabels(key, ontologies, groups) {
       }
     }
   })
-
-  console.log('issues', issues)
 
   return issues
 }

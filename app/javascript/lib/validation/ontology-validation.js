@@ -1,3 +1,15 @@
+/**
+ * @fileoverview Validates ontology labels and IDs in files added by users
+ *
+ * SCP requires uploaded data to content certain metadata annotations, e.g.
+ * species, organ, disease, and library preparation protocol.  This module
+ * loads ontology reference data, and it to required metadata in the
+ * user's uploaded or transferred file.
+ *
+ * More context, demo:
+ * https://github.com/broadinstitute/single_cell_portal_core/pull/2129
+ */
+
 import { decompressSync, strFromU8 } from 'fflate'
 
 import {
@@ -70,8 +82,6 @@ export async function cacheFetch(url) {
   return await cache.match(decompressedUrl)
 }
 
-
-
 /**
  * Fetch minified ontologies, transform into object of object of arrays, e.g.:
  *
@@ -124,7 +134,6 @@ export async function fetchOntologies() {
   window.SCP.ontologies = ontologies
   return ontologies
 }
-window.fetchOntologies = fetchOntologies
 
 /** Get lowercase shortnames for all required ontologies */
 function getOntologyShortNames() {
