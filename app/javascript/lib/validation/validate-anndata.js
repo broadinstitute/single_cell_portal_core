@@ -123,24 +123,17 @@ export function checkOntologyIdFormat(key, ontologyIds) {
 
 /** Validate author's annotation labels match those in ontologies */
 async function checkOntologyLabels(key, ontologies, groups) {
-
   const [ids, idIndexes, labels, labelIndexes] = groups
 
   const issues = []
 
-  console.log('in checkOntologyLabels')
   const labelIdPairs = new Set()
   for (let i = 0; i < idIndexes.length; i++) {
     const id = ids[idIndexes[i]]
     const label = labels[labelIndexes[i]]
-    if (label === undefined) {
-      console.log("label === 'undefined', i, labelIndexes[i]", i, labelIndexes[i])
-    }
     labelIdPairs.add(`${id} || ${label}`)
   }
-  console.log('labelIdPairs', labelIdPairs)
   const rawUniques = Array.from(labelIdPairs)
-  console.log('rawUniques', rawUniques)
 
   rawUniques.map(r => {
     const [id, label] = r.split(' || ')
@@ -209,23 +202,15 @@ async function getOntologyIdsAndLabels(requiredName, hdf5File) {
   // This organization greatly decreases filesize, but requires more code
   // to map paired obs annotations like `disease` (ontology IDs) to
   // `disease__ontology_label` (ontology names) than needed for e.g. TSVs.
-  console.log('idGroup', idGroup)
-  console.log('labelGroup', labelGroup)
   const idCategories = await idGroup.values[0]
-  console.log('idCategories', idCategories)
   const idCodes = await idGroup.values[1]
-  console.log('idGroup', idCodes)
   const ids = await idCategories.value
-  console.log('ids', ids)
   const idIndexes = await idCodes.value
-  console.log('idIndexes', idIndexes)
 
   const labelCategories = await labelGroup.values[0]
   const labelCodes = await labelGroup.values[1]
   const labels = await labelCategories.value
-  console.log('labels', labels)
   const labelIndexes = await labelCodes.value
-  console.log('labelIndexes', labelIndexes)
 
   return [ids, idIndexes, labels, labelIndexes]
 }
@@ -291,7 +276,14 @@ export async function parseAnnDataFile(fileOrUrl, remoteProps) {
   let ontologyLabelIssues = []
   if (requiredMetadataIssues.length === 0) {
     ontologyIdFormatIssues = await validateOntologyIdFormat(hdf5File)
-    if (ontologyIdFormatIssues.length === 0) {
+    if (
+      ontologyIdFormatIssues.length === 0 &&
+
+      // TODO (SCP-5813):
+      // For big remote AnnData, hdf5-indexed-reader sometimes corrupts index codes,
+      // so skip ontology label validation for e.g. "Use bucket path"
+      'url' in remoteProps === false
+    ) {
       ontologyLabelIssues = await validateOntologyLabels(hdf5File)
     }
   }
