@@ -266,11 +266,6 @@ export async function parseAnnDataFile(fileOrUrl, remoteProps) {
 
   const headers = await getAnnDataHeaders(hdf5File)
 
-  // TODO (SCP-5770): Extend AnnData CSFV to remote files, then remove this
-  if (!headers) {
-    return { issues }
-  }
-
   const requiredMetadataIssues = validateRequiredMetadataColumns([headers], true)
   let ontologyIdFormatIssues = []
   let ontologyLabelIssues = []
@@ -279,9 +274,7 @@ export async function parseAnnDataFile(fileOrUrl, remoteProps) {
     if (
       ontologyIdFormatIssues.length === 0 &&
 
-      // TODO (SCP-5813):
-      // For big remote AnnData, hdf5-indexed-reader sometimes corrupts index codes,
-      // so skip ontology label validation for e.g. "Use bucket path"
+      // TODO (SCP-5813): Enable ontology validation for remote AnnData
       remoteProps && 'url' in remoteProps === false
     ) {
       ontologyLabelIssues = await validateOntologyLabels(hdf5File)
