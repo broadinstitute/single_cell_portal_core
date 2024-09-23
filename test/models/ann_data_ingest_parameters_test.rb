@@ -56,7 +56,7 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
       assert extraction.send(attr).blank?
     end
 
-    cmd = '--ingest-anndata --anndata-file gs://bucket_id/test.h5ad --obsm-keys ["X_umap", "X_tsne"] --extract ' \
+    cmd = '--ingest-anndata --anndata-file gs://bucket_id/test.h5ad --obsm-keys ["X_umap"] --extract ' \
           '["cluster", "metadata", "processed_expression", "raw_counts"]'
     assert_equal cmd, extraction.to_options_array.join(' ')
     assert_equal 'n2d-highmem-32', extraction.machine_type

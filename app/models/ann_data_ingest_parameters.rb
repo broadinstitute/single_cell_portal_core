@@ -32,7 +32,7 @@ class AnnDataIngestParameters
   PARAM_DEFAULTS = {
     ingest_anndata: true,
     anndata_file: nil,
-    obsm_keys: %w[X_umap X_tsne],
+    obsm_keys: %w[X_umap],
     ingest_cluster: false,
     cluster_file: nil,
     name: nil,

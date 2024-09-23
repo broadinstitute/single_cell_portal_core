@@ -289,7 +289,8 @@ export function createCache() {
     Fields.cellsAndCoords.merge(cacheEntry, scatter)
     // only merge in annotation values if the annotation matches (or the default was requested, so
     // we can then assume the response matches)
-    if (!requestedAnnotation.name || scatter.annotParams.name === requestedAnnotation.name) {
+    // annotParams may be undefined in spatial UX if a cluster-based annotation does not exist for the plot
+    if (!requestedAnnotation.name || scatter.annotParams?.name === requestedAnnotation.name) {
       Fields.annotation.merge(cacheEntry, scatter)
     }
     if (scatter.genes.length && scatter.genes.join('') === requestedGenes.join('')) {

@@ -72,7 +72,7 @@ module ImportServiceConfig
 
     # retrieve common species names from associated collection
     def taxon_names
-      load_study&.[]('taxonomies') || []
+      load_study&.[]('taxa')&.map { |t| t['name']} || []
     end
 
     # map attribute names SCP Study attributes onto NeMO attribute names

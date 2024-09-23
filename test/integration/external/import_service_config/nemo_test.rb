@@ -96,8 +96,8 @@ module ImportServiceConfig
     test 'should load study analog' do
       study = @configuration.load_study
       assert_equal '"Human variation study (10x), GRU"', study['name']
-      assert_equal "10x chromium 3' v3 sequencing", study['technique']
-      assert_equal %w[human], study['taxonomies']
+      assert_equal ["10x chromium 3' v3 sequencing"], study['techniques']
+      assert_equal [{"name"=>"human", "cv_term_id"=>"NCBI:txid9606"}], study['taxa']
     end
 
     # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
