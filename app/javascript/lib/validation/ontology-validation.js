@@ -1,10 +1,10 @@
 /**
  * @fileoverview Validates ontology labels and IDs in files added by users
  *
- * SCP requires uploaded data to content certain metadata annotations, e.g.
+ * SCP requires cells to have certain metadata annotations, e.g.
  * species, organ, disease, and library preparation protocol.  This module
- * loads ontology reference data, and uses it to check required metadata in
- * the user's uploaded or transferred file.
+ * loads ontology reference data, and uses it to check required cell metadata
+ * in the user's uploaded or transferred file.
  *
  * More context, demo:
  * https://github.com/broadinstitute/single_cell_portal_core/pull/2129
