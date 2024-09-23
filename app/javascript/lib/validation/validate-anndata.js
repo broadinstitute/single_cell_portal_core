@@ -120,8 +120,8 @@ export function checkOntologyIdFormat(key, ontologyIds) {
   return issues
 }
 
-/** Validate author's annotation labels match those in ontologies */
-async function checkOntologyLabels(key, ontologies, groups) {
+/** Validate author's annotation labels and IDs match those in ontologies */
+async function checkOntologyLabelsAndIds(key, ontologies, groups) {
   const [ids, idIndexes, labels, labelIndexes] = groups
 
   const issues = []
@@ -218,7 +218,7 @@ async function getOntologyIdsAndLabels(requiredName, hdf5File) {
 }
 
 /** Validate ontology labels for required metadata columns in AnnData file */
-async function validateOntologyLabels(hdf5File) {
+async function validateOntologyLabelsAndIds(hdf5File) {
   let issues = []
 
   const ontologies = await fetchOntologies()
@@ -232,7 +232,7 @@ async function validateOntologyLabels(hdf5File) {
 
     if (groups) {
       issues = issues.concat(
-        await checkOntologyLabels(key, ontologies, groups)
+        await checkOntologyLabelsAndIds(key, ontologies, groups)
       )
     }
   }
@@ -270,7 +270,7 @@ export async function parseAnnDataFile(fileOrUrl, remoteProps) {
 
   const requiredMetadataIssues = validateRequiredMetadataColumns([headers], true)
   let ontologyIdFormatIssues = []
-  let ontologyLabelIssues = []
+  let ontologyLabelAndIdIssues = []
   if (requiredMetadataIssues.length === 0) {
     ontologyIdFormatIssues = await validateOntologyIdFormat(hdf5File)
     if (
@@ -279,7 +279,7 @@ export async function parseAnnDataFile(fileOrUrl, remoteProps) {
       // TODO (SCP-5813): Enable ontology validation for remote AnnData
       remoteProps && 'url' in remoteProps === false
     ) {
-      ontologyLabelIssues = await validateOntologyLabels(hdf5File)
+      ontologyLabelAndIdIssues = await validateOntologyLabelsAndIds(hdf5File)
     }
   }
 
@@ -287,7 +287,7 @@ export async function parseAnnDataFile(fileOrUrl, remoteProps) {
     validateUnique(headers),
     requiredMetadataIssues,
     ontologyIdFormatIssues,
-    ontologyLabelIssues
+    ontologyLabelAndIdIssues
   )
 
   return { issues }

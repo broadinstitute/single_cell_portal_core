@@ -3,6 +3,9 @@
  *
  * https://developer.mozilla.org/en-US/docs/Web/API/CacheStorage
  * https://developer.mozilla.org/en-US/docs/Web/API/Cache
+ * https://developer.mozilla.org/en-US/docs/Web/API/Request
+ * https://developer.mozilla.org/en-US/docs/Web/API/Response
+ * https://developer.mozilla.org/en-US/docs/Web/API/Headers
 */
 const { Readable } = require('stream')
 
