@@ -275,12 +275,17 @@ export function RawUploadWizard({ studyAccession, name }) {
     setTimeout(() => deleteFileFromServer(requestCanceller.fileId), 500)
   }
 
+  /** helper for determining when to use saveAnnDataFileHelper (sets ids/values correctly for AnnData UX **/
+  function useAnnDataFileHelper(file) {
+    return isAnnDataExperience && (file?.file_type === 'AnnData' || Object.keys(file).includes("data_type"))
+  }
+
   /** save the given file and perform an upload if a selected file is present */
   async function saveFile(file) {
     let fileToSave = file
     let studyFileId = file._id
 
-    if (isAnnDataExperience && fileToSave?.file_type === 'AnnData') {
+    if (useAnnDataFileHelper(fileToSave)) {
       fileToSave = saveAnnDataFileHelper(file, fileToSave)
       studyFileId = fileToSave._id
     }
