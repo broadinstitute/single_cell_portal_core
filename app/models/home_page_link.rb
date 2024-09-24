@@ -16,11 +16,11 @@ class HomePageLink
   validates :name, :href, presence: true
   validate :ensure_one_published_link
 
-  def publish
+  def publish!
     update(published: true)
   end
 
-  def unpublish
+  def unpublish!
     update(published: false)
   end
 
@@ -38,17 +38,18 @@ class HomePageLink
     self.find_by(published: true)
   end
 
-  def self.publish_last
+  def self.publish_last!
+    unpublish!
     link = last
     if link
       puts "Publishing '#{link.name}'"
-      link.publish
+      link.publish!
     else
       puts "Nothing to publish"
     end
   end
 
-  def self.unpublish
+  def self.unpublish!
     if published.present?
       puts "Unpublishing '#{published.name}'"
       published.update(published: false)

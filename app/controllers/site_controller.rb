@@ -62,7 +62,6 @@ class SiteController < ApplicationController
     end
 
     @home_page_link = HomePageLink.published
-
   end
 
   def covid

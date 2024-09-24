@@ -7,7 +7,7 @@ class HomePageLinkTest < ActiveSupport::TestCase
   end
 
   teardown do
-    HomePageLink.unpublish
+    HomePageLink.unpublish!
   end
 
   after(:all) do
@@ -16,14 +16,14 @@ class HomePageLinkTest < ActiveSupport::TestCase
 
   test 'should publish/unpublish link' do
     assert_nil HomePageLink.published
-    HomePageLink.publish_last
+    HomePageLink.publish_last!
     assert HomePageLink.published.present?
     link = HomePageLink.published
-    link.unpublish
+    link.unpublish!
     assert_nil HomePageLink.published
-    link.publish
+    link.publish!
     assert HomePageLink.published.present?
-    HomePageLink.unpublish
+    HomePageLink.unpublish!
     assert_nil HomePageLink.published
   end
 
@@ -39,7 +39,7 @@ class HomePageLinkTest < ActiveSupport::TestCase
 
   test 'should ensure only one link is published' do
     assert_not HomePageLink.published.present?
-    HomePageLink.publish_last
+    HomePageLink.publish_last!
     assert HomePageLink.published.present?
     new_link = HomePageLink.new(name: 'Google', href: 'https://google.com', published: true)
     assert_not new_link.valid?
