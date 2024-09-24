@@ -30,7 +30,7 @@ class HomePageLink
   end
 
   def reset_bg_color!
-    puts "Resetting css_class to '#{DEFAULT_BG_COLOR}'"
+    puts "Resetting bg_color to '#{DEFAULT_BG_COLOR}'"
     update(bg_color: DEFAULT_BG_COLOR)
   end
 
@@ -39,7 +39,11 @@ class HomePageLink
   end
 
   def self.publish_last!
-    unpublish!
+    if published
+      puts "'#{published.name}' is already published"
+      return false
+    end
+
     link = last
     if link
       puts "Publishing '#{link.name}'"
@@ -55,6 +59,7 @@ class HomePageLink
       published.update(published: false)
     else
       puts "No published links"
+      return false
     end
   end
 
@@ -65,7 +70,7 @@ class HomePageLink
       existing = HomePageLink.published
       errors.add(
         :published,
-        "link exists: '#{existing.name}' (#{existing.id}), please unpublish first with HomePageLink.unpublish"
+        "link exists: '#{existing.name}', please unpublish first with HomePageLink.unpublish"
       )
       puts errors.full_messages.to_sentence
     end
