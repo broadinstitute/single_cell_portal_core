@@ -219,7 +219,7 @@ class IngestJobTest < ActiveSupport::TestCase
                                       study: @basic_study,
                                       upload_file_size: 1.megabyte,
                                       cell_input: %w[A B C D],
-                                      has_raw_counts: false,
+                                      has_raw_counts: true,
                                       reference_file: false,
                                       annotation_input: [
                                         { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
@@ -232,9 +232,9 @@ class IngestJobTest < ActiveSupport::TestCase
                                       })
     params_object = AnnDataIngestParameters.new(
       anndata_file: ann_data_file.gs_url, obsm_keys: ann_data_file.ann_data_file_info.obsm_key_names,
-      file_size: ann_data_file.upload_file_size
+      file_size: ann_data_file.upload_file_size, extract_raw_counts: true
     )
-    assert_not params_object.extract.include?('raw_counts')
+    assert params_object.extract.include?('raw_counts')
     job = IngestJob.new(
       study: @basic_study, study_file: ann_data_file, user: @user, action: :ingest_anndata, params_object:
     )
@@ -269,7 +269,7 @@ class IngestJobTest < ActiveSupport::TestCase
         studyAccession: @basic_study.accession,
         jobStatus: 'success',
         referenceAnnDataFile: false,
-        extractedFileTypes: %w[cluster metadata processed_expression],
+        extractedFileTypes: %w[cluster metadata processed_expression raw_counts],
         machineType: 'n2d-highmem-4',
         bootDiskSizeGb: 300,
         exitStatus: 0
