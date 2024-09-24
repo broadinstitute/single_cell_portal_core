@@ -16,6 +16,7 @@ import {
   metadataSchema, REQUIRED_CONVENTION_COLUMNS
 } from './shared-validation'
 
+// TODO: Replace "development" with "main" after next ingest release
 const ONTOLOGY_BASE_URL =
   'https://raw.githubusercontent.com/broadinstitute/scp-ingest-pipeline/' +
   'development/ingest/validation/ontologies/'
