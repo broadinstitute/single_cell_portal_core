@@ -19,7 +19,7 @@ class DownloadQuotaService
   def self.download_exceeds_quota?(user, requested_bytes)
     return false if user.daily_download_quota.nil?
 
-    user_quota = user.daily_download_quota + requested_bytes
+    user_quota = user.daily_download_quota + requested_bytes.to_i
     user_quota > download_quota
   end
 
@@ -28,7 +28,7 @@ class DownloadQuotaService
     # skip incrementing quota if exemption is set via nil value
     return true if user.daily_download_quota.nil?
 
-    user_quota = user.daily_download_quota + requested_bytes
+    user_quota = user.daily_download_quota + requested_bytes.to_i
     user.update(daily_download_quota: user_quota)
   end
 
