@@ -252,11 +252,17 @@
   }
 }
 
-#whitepaper-btn {
+#home-page-link {
   position: absolute;
   top: 220px;
   right: 15px;
   z-index: 500;
+
+  img {
+    height: 24px;
+    object-fit: scale-down;
+    padding-right: 5px;
+  }
 }
 
 #latest-features-btn {
