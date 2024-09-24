@@ -70,7 +70,7 @@ class HomePageLink
       existing = HomePageLink.published
       errors.add(
         :published,
-        "link exists: '#{existing.name}', please unpublish first with HomePageLink.unpublish"
+        "link exists: '#{existing.name}', please unpublish first with HomePageLink.unpublish!"
       )
       puts errors.full_messages.to_sentence
     end
