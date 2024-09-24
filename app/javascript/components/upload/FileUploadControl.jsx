@@ -81,6 +81,13 @@ export default function FileUploadControl({
         name: newName,
         notes
       })
+    } else if (issues.errors.length > 0 && file.uploadSelection) {
+      // clear out a previous known good file, if present
+      updateFile(file._id, {
+        uploadSelection: null,
+        upload_file_name: '',
+        name: ''
+      })
     }
   }
 
