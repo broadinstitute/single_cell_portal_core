@@ -163,6 +163,7 @@ function validateCapFormat([headers, annotTypes]) {
   // Check format rules that apply to both metadata and cluster files
   issues = issues.concat(
     validateUnique(headers),
+    validateAlphanumericAndUnderscore(headers),
     validateNameKeyword(headers),
     validateTypeKeyword(annotTypes),
     validateGroupOrNumeric(annotTypes),

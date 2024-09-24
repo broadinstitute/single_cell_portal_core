@@ -231,6 +231,35 @@ export function validateUnique(headers) {
   return issues
 }
 
+/**
+ * Check headers for disallowed characters
+ */
+export function validateAlphanumericAndUnderscores(headers) {
+  // eslint-disable-next-line max-len
+  // Mirrors https://github.com/broadinstitute/scp-ingest-pipeline/blob/7c3ea039683c3df90d6e32f23bf5e6813d8fbaba/ingest/validation/validate_metadata.py#L1223
+  const issues = []
+  const uniques = new Set(headers)
+  const prohibitedChars = new RegExp(/[^A-Za-z0-9_]/)
+
+  const problemHeaders = []
+
+  // Do headers have prohibited characters?
+  uniques.forEach(header => {
+    const hasProhibited = (header.search(prohibitedChars) !== -1)
+    if (hasProhibited) {
+      problemHeaders.push(header)
+    }
+  })
+
+  if (problemHeaders.length > 0) {
+    const problems = `"${problemHeaders.join('", "')}"`
+    const msg = `Update these headers to use only letters, numbers, and underscores: ${problems}`
+    issues.push(['error', 'format:cap:only-alphanumeric-underscore', msg])
+  }
+
+  return issues
+}
+
 /** Verifies metadata file has all required columns */
 export function validateRequiredMetadataColumns(parsedHeaders, isAnnData=false) {
   const issues = []
