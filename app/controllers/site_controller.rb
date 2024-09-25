@@ -61,6 +61,7 @@ class SiteController < ApplicationController
       @cell_count = 0
     end
 
+    @home_page_link = HomePageLink.published
   end
 
   def covid
