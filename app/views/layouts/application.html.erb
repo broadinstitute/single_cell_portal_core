@@ -192,10 +192,12 @@
       &copy; <%= Date.today.year %> The Broad Institute of MIT and Harvard
     </div>
     <div class="footer-text-block pull-left left-border-0-5">
-      <%= scp_link_to 'Privacy Policy', privacy_policy_path %>
-      &nbsp;
-      <%= scp_link_to "Terms of Service".html_safe, terms_of_service_path %>
-      &nbsp;
+      <%= scp_link_to 'Privacy Policy', privacy_policy_path %>&nbsp;
+      <%= scp_link_to 'Terms of Service', terms_of_service_path %>&nbsp;
+      <%= scp_link_to 'Portal whitepaper', "https://www.biorxiv.org/content/10.1101/2023.07.13.548886v1",
+                      id: 'whitepaper-btn', data: { toggle: 'tooltip', placement: 'top' },
+                      title: 'Read the Single Cell Portal whitepaper!', target: :_blank %>
+
       <% if @selected_branding_group.present? %>
         <%= link_to "<i class='fas fa-chevron-circle-left fa-fw'></i> Return to Single Cell Portal".html_safe, site_path %>
       <% end %>

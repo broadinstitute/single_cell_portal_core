@@ -39,7 +39,7 @@ class AnnDataFileInfo
   # }
   # { _id: '6033f531e241391884633748', data_type: :expression, description: 'log(TMP) expression' }
   field :data_fragments, type: Array, default: []
-  before_validation :sanitize_fragments!
+  before_validation :set_default_cluster_fragments!, :sanitize_fragments!
   validate :validate_fragments
   after_validation :update_expression_file_info
 
@@ -193,6 +193,20 @@ class AnnDataFileInfo
       sanitized_fragments << sanitized_fragment
     end
     self.data_fragments = sanitized_fragments
+  end
+
+  # create the default cluster data_fragment entries
+  def set_default_cluster_fragments!
+    return false if fragments_by_type(:cluster).any?
+
+    default_obsm_keys = AnnDataIngestParameters::PARAM_DEFAULTS[:obsm_keys]
+    default_obsm_keys.each do |obsm_key_name|
+      name = obsm_key_name.delete_prefix('X_')
+      fragment = {
+        _id: BSON::ObjectId.new.to_s, data_type: :cluster, name:, obsm_key_name:, spatial_cluster_associations: []
+      }
+      data_fragments << fragment
+    end
   end
 
   # ensure all fragments have required keys and are unique

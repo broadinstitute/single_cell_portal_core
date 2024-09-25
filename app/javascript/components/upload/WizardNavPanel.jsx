@@ -222,7 +222,7 @@ function MainStepsDisplay(formState, serverState, currentStep, setCurrentStep, m
           </span>
           <span>
             <a className="action link" role="link">
-            AnnData <sup>BETA</sup> <AnnDataHelpMessage/> <FontAwesomeIcon icon={expansionIcon}/>
+            AnnData <AnnDataHelpMessage/> <FontAwesomeIcon icon={expansionIcon}/>
             </a>
           </span>
         </button>

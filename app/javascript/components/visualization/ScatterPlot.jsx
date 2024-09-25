@@ -598,16 +598,14 @@ function RawScatterPlot({
   return (
     <div className="plot">
       { ErrorComponent }
+      <PlotTitle
+        titleTexts={titleTexts}
+        isCorrelatedScatter={isCorrelatedScatter}
+        correlation={bulkCorrelation}/>
       { hasMissingAnnot &&
         <div className="alert-warning text-center error-boundary">
           "{cluster}" does not have the requested annotation "{loadedAnnotation}"
         </div>
-      }
-      { !hasMissingAnnot &&
-        <PlotTitle
-          titleTexts={titleTexts}
-          isCorrelatedScatter={isCorrelatedScatter}
-          correlation={bulkCorrelation}/>
       }
       <div
         className="scatter-graph"

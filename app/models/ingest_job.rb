@@ -377,7 +377,8 @@ class IngestJob
       log_error_messages
       log_to_mixpanel # log before queuing file for deletion to preserve properties
       # don't delete files or notify users if this is a 'special action', like DE or image pipeline jobs
-      handle_ingest_failure unless special_action?
+      subject = "Error: #{study_file.file_type} file: '#{study_file.upload_file_name}' parse has failed"
+      handle_ingest_failure(subject) unless special_action?
       admin_email_content = generate_error_email_body(email_type: :dev)
       SingleCellMailer.notify_admin_parse_fail(user.email, subject, admin_email_content).deliver_now
     else
@@ -390,7 +391,7 @@ class IngestJob
   # will automatically clean up data and notify user
   # in case of subsampling, only subsampled data cleanup is run and all other data is left in place
   # this reduces churn for study owners as full-resolution data is still valid
-  def handle_ingest_failure
+  def handle_ingest_failure(email_subject)
     if action.to_sym == :ingest_subsample
       study_file.update(parse_status: 'parsed') # reset parse flag
       cluster_name = cluster_name_by_file_type
@@ -408,9 +409,8 @@ class IngestJob
         end
       end
     end
-    subject = "Error: #{study_file.file_type} file: '#{study_file.upload_file_name}' parse has failed"
     user_email_content = generate_error_email_body
-    SingleCellMailer.notify_user_parse_fail(user.email, subject, user_email_content, study).deliver_now
+    SingleCellMailer.notify_user_parse_fail(user.email, email_subject, user_email_content, study).deliver_now
   end
 
   # TODO (SCP-4709, SCP-4710) Processed and Raw expression files

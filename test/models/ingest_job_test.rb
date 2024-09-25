@@ -9,15 +9,14 @@ class IngestJobTest < ActiveSupport::TestCase
                                      user: @user,
                                      test_array: @@studies_to_clean)
 
-    @basic_study_exp_file = FactoryBot.create(:study_file,
+    @basic_study_exp_file = FactoryBot.create(:expression_file,
                                               name: 'dense.txt',
                                               file_type: 'Expression Matrix',
-                                              study: @basic_study)
+                                              study: @basic_study,
+                                              expression_input: {
+                                                'PTEN' => [['A', 0],['B', 3],['C', 1.5]]
+                                              })
 
-    @pten_gene = FactoryBot.create(:gene_with_expression,
-                                   name: 'PTEN',
-                                   study_file: @basic_study_exp_file,
-                                   expression_input: [['A', 0],['B', 3],['C', 1.5]])
     @basic_study_exp_file.build_expression_file_info(is_raw_counts: false,
                                                      library_preparation_protocol: 'MARS-seq',
                                                      modality: 'Transcriptomic: unbiased',
@@ -25,11 +24,6 @@ class IngestJobTest < ActiveSupport::TestCase
     @basic_study_exp_file.parse_status = 'parsed'
     @basic_study_exp_file.upload_file_size = 1024
     @basic_study_exp_file.save!
-
-    # insert "all cells" array for this expression file
-    DataArray.create!(study_id: @basic_study.id, study_file_id: @basic_study_exp_file.id, values: %w(A B C),
-                      name: "#{@basic_study_exp_file.name} Cells", array_type: 'cells', linear_data_type: 'Study',
-                      linear_data_id: @basic_study.id, array_index: 0, cluster_name: @basic_study_exp_file.name)
 
     @other_matrix = FactoryBot.create(:study_file,
                                        name: 'dense_2.txt',
@@ -39,6 +33,13 @@ class IngestJobTest < ActiveSupport::TestCase
                                              modality: 'Transcriptomic: unbiased', biosample_input_type: 'Whole cell')
     @other_matrix.upload_file_size = 2048
     @other_matrix.save!
+    @basic_study.reload
+  end
+
+  teardown do
+    @basic_study.default_options[:annotation] = nil
+    @basic_study.save
+    @basic_study_exp_file.update(parse_status: 'parsed')
   end
 
   test 'should hold ingest until other matrix validates' do
@@ -89,7 +90,25 @@ class IngestJobTest < ActiveSupport::TestCase
 
   test 'should gather job properties to report to mixpanel' do
     # positive test
-    job = IngestJob.new(study: @basic_study, study_file: @basic_study_exp_file, user: @user, action: :ingest_expression)
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'IngestJob Mixpanel Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+
+    study_file = FactoryBot.create(:expression_file,
+                                   name: 'matrix.txt',
+                                   study:,
+                                   expression_input: {
+                                     'Phex' => [['A', 1],['B', 2],['C', 0.5]]
+                                   })
+
+    study_file.build_expression_file_info(is_raw_counts: false,
+                                         library_preparation_protocol: "10x 5' v3",
+                                         modality: 'Transcriptomic: unbiased',
+                                         biosample_input_type: 'Whole cell')
+    study_file.upload_file_size = 1.megabyte
+    study_file.save!
+    job = IngestJob.new(study:, study_file:, user: @user, action: :ingest_expression)
     mock = Minitest::Mock.new
     now = DateTime.now.in_time_zone
     mock_metadata = {
@@ -112,20 +131,20 @@ class IngestJobTest < ActiveSupport::TestCase
     mock.expect :error, nil
     mock.expect :done?, true
 
-    cells = @basic_study.expression_matrix_cells(@basic_study_exp_file)
-    num_cells = cells.present? ? cells.count : 0
+    cells = study.expression_matrix_cells(study_file)
+    num_cells = cells.count
 
     ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
       expected_outputs = {
         perfTime: 60000,
-        fileType: @basic_study_exp_file.file_type,
-        fileSize: @basic_study_exp_file.upload_file_size,
-        fileName: @basic_study_exp_file.name,
+        fileType: study_file.file_type,
+        fileSize: study_file.upload_file_size,
+        fileName: study_file.name,
         trigger: 'upload',
         action: :ingest_expression,
-        studyAccession: @basic_study.accession,
+        studyAccession: study.accession,
         jobStatus: 'success',
-        numGenes: @basic_study.genes.count,
+        numGenes: study.genes.count,
         is_raw_counts: false,
         numCells: num_cells,
         machineType: 'n2d-highmem-4',
@@ -139,7 +158,15 @@ class IngestJobTest < ActiveSupport::TestCase
     end
 
     # negative test
-    job = IngestJob.new(study: @basic_study, study_file: @other_matrix, user: @user, action: :ingest_expression)
+    other_file = FactoryBot.create(:study_file,
+                                   name: 'matrix_2.txt',
+                                   file_type: 'Expression Matrix',
+                                   study:)
+    other_file.build_expression_file_info(is_raw_counts: false, library_preparation_protocol: 'MARS-seq',
+                                          modality: 'Transcriptomic: unbiased', biosample_input_type: 'Whole cell')
+    other_file.upload_file_size = 2048
+    other_file.save!
+    job = IngestJob.new(study:, study_file: other_file, user: @user, action: :ingest_expression)
     mock = Minitest::Mock.new
     now = DateTime.now.in_time_zone
     mock_metadata = {
@@ -164,12 +191,12 @@ class IngestJobTest < ActiveSupport::TestCase
     ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
       expected_outputs = {
         perfTime: 120000,
-        fileType: @other_matrix.file_type,
-        fileSize: @other_matrix.upload_file_size,
-        fileName: @other_matrix.name,
+        fileType: other_file.file_type,
+        fileSize: other_file.upload_file_size,
+        fileName: other_file.name,
         trigger: "upload",
         action: :ingest_expression,
-        studyAccession: @basic_study.accession,
+        studyAccession: study.accession,
         jobStatus: 'failed',
         numCells: 0,
         is_raw_counts: false,
@@ -187,17 +214,27 @@ class IngestJobTest < ActiveSupport::TestCase
 
   test 'should identify AnnData parses with extraction in mixpanel' do
     # parsed AnnData
-    ann_data_file = FactoryBot.create(:ann_data_file, name: 'test.h5ad', study: @basic_study)
-    ann_data_file.ann_data_file_info.reference_file = false
-    ann_data_file.ann_data_file_info.data_fragments = [
-      { _id: BSON::ObjectId.new.to_s, data_type: :cluster, obsm_key_name: 'X_umap', name: 'UMAP' }
-    ]
-    ann_data_file.upload_file_size = 1.megabyte
-    ann_data_file.save
+    ann_data_file = FactoryBot.create(:ann_data_file,
+                                      name: 'test.h5ad',
+                                      study: @basic_study,
+                                      upload_file_size: 1.megabyte,
+                                      cell_input: %w[A B C D],
+                                      has_raw_counts: true,
+                                      reference_file: false,
+                                      annotation_input: [
+                                        { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                                      ],
+                                      coordinate_input: [
+                                        { X_umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                      ],
+                                      expression_input: {
+                                        'phex' => [['A', 0.3], ['B', 1.0], ['C', 0.5], ['D', 0.1]]
+                                      })
     params_object = AnnDataIngestParameters.new(
       anndata_file: ann_data_file.gs_url, obsm_keys: ann_data_file.ann_data_file_info.obsm_key_names,
-      file_size: ann_data_file.upload_file_size
+      file_size: ann_data_file.upload_file_size, extract_raw_counts: true
     )
+    assert params_object.extract.include?('raw_counts')
     job = IngestJob.new(
       study: @basic_study, study_file: ann_data_file, user: @user, action: :ingest_anndata, params_object:
     )
@@ -232,7 +269,7 @@ class IngestJobTest < ActiveSupport::TestCase
         studyAccession: @basic_study.accession,
         jobStatus: 'success',
         referenceAnnDataFile: false,
-        extractedFileTypes: %w[cluster metadata processed_expression],
+        extractedFileTypes: %w[cluster metadata processed_expression raw_counts],
         machineType: 'n2d-highmem-4',
         bootDiskSizeGb: 300,
         exitStatus: 0
@@ -326,9 +363,9 @@ class IngestJobTest < ActiveSupport::TestCase
           }
         ]
       },
-      createTime: (now - 1.minutes).to_default_s,
-      startTime: (now - 1.minutes).to_default_s,
-      endTime: now.to_default_s
+      createTime: (now - 1.minutes).to_s,
+      startTime: (now - 1.minutes).to_s,
+      endTime: now.to_s
     }.with_indifferent_access
 
     pipeline_mock = MiniTest::Mock.new
@@ -484,40 +521,44 @@ class IngestJobTest < ActiveSupport::TestCase
   end
 
   test 'should set default annotation even if not visualizable' do
-    assert @basic_study.default_annotation.nil?
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Default Annotation Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    assert study.default_annotation.nil?
     # test metadata file with a single annotation with only one unique value
     metadata_file = FactoryBot.create(:metadata_file,
                                       name: 'metadata.txt',
-                                      study: @basic_study,
+                                      study:,
                                       cell_input: %w[A B C],
                                       annotation_input: [
                                         { name: 'species', type: 'group', values: %w[dog dog dog] }
                                       ])
-    job = IngestJob.new(study: @basic_study, study_file: metadata_file, user: @user, action: :ingest_cell_metadata)
+    job = IngestJob.new(study:, study_file: metadata_file, user: @user, action: :ingest_cell_metadata)
     job.set_study_default_options
-    @basic_study.reload
-    assert_equal 'species--group--invalid', @basic_study.default_annotation
+    study.reload
+    assert_equal 'species--group--invalid', study.default_annotation
 
     # reset default annotation, then test cluster file with a single annotation with only one unique value
-    @basic_study.cell_metadata.destroy_all
-    @basic_study.default_options = {}
-    @basic_study.save
-    assert @basic_study.default_annotation.nil?
-    assert @basic_study.default_cluster.nil?
+    study.cell_metadata.destroy_all
+    study.default_options = {}
+    study.save
+    assert study.default_annotation.nil?
+    assert study.default_cluster.nil?
     cluster_file = FactoryBot.create(:cluster_file,
-                                     name: 'cluster.txt', study: @basic_study,
+                                     name: 'cluster.txt', study:,
                                      cell_input: {
                                        x: [1, 4, 6],
                                        y: [7, 5, 3],
                                        cells: %w[A B C]
                                      },
                                      annotation_input: [{ name: 'foo', type: 'group', values: %w[bar bar bar] }])
-    job = IngestJob.new(study: @basic_study, study_file: cluster_file, user: @user, action: :ingest_cluster)
+    job = IngestJob.new(study:, study_file: cluster_file, user: @user, action: :ingest_cluster)
     job.set_study_default_options
-    @basic_study.reload
-    cluster = @basic_study.cluster_groups.first
-    assert_equal cluster, @basic_study.default_cluster
-    assert_equal 'foo--group--invalid', @basic_study.default_annotation
+    study.reload
+    cluster = study.cluster_groups.first
+    assert_equal cluster, study.default_cluster
+    assert_equal 'foo--group--invalid', study.default_annotation
   end
 
   test 'should launch DE jobs if study is eligible' do
@@ -673,7 +714,7 @@ class IngestJobTest < ActiveSupport::TestCase
     ls_mock.expect :get_pipeline, pipeline_mock, [{ name: pipeline_name }]
     ApplicationController.stub :firecloud_client, mock do
       ApplicationController.stub :life_sciences_api_client, ls_mock do
-        job.handle_ingest_failure
+        job.handle_ingest_failure('parse failure')
         cluster_file.reload
         study.reload
         cluster.reload
@@ -714,7 +755,7 @@ class IngestJobTest < ActiveSupport::TestCase
     ls_mock.expect :get_pipeline, pipeline_mock, [{ name: pipeline_name }]
     ApplicationController.stub :firecloud_client, mock do
       ApplicationController.stub :life_sciences_api_client, ls_mock do
-        failed_job.handle_ingest_failure
+        failed_job.handle_ingest_failure('parse failure')
         mock.verify
       end
     end
@@ -757,6 +798,77 @@ class IngestJobTest < ActiveSupport::TestCase
       assert study.cell_metadata.empty?
       assert study.genes.empty?
       mock.verify
+    end
+  end
+
+  test 'should ensure email delivery on special action failures' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Special Action Email',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    study_file = FactoryBot.create(:ann_data_file,
+                                   name: 'matrix.h5ad',
+                                   study:,
+                                   upload_file_size: 1.megabyte,
+                                   cell_input: %w[A B C D],
+                                   annotation_input: [
+                                     { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                                   ],
+                                   coordinate_input: [
+                                     { X_umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                   ])
+    annotation_file = 'gs://test_bucket/anndata/h5ad_frag.metadata.tsv'
+    cluster_file = 'gs://test_bucket/anndata/h5ad_frag.cluster.X_umap.tsv'
+    params_object = DifferentialExpressionParameters.new(
+      matrix_file_path: 'gs://test_bucket/matrix.h5ad', matrix_file_type: 'h5ad', file_size: study_file.upload_file_size,
+      annotation_file:, cluster_file:, cluster_name: 'umap', annotation_name: 'disease', annotation_scope: 'study'
+    )
+    pipeline_name = SecureRandom.uuid
+    job = IngestJob.new(
+      pipeline_name:, study:, study_file:, user: @user, action: :differential_expression, params_object:
+    )
+    now = DateTime.now.in_time_zone
+    mock_metadata = {
+      events: [
+        { timestamp: now.to_s },
+        { timestamp: (now + 2.minutes).to_s, containerStopped: { exitStatus: 1 } }
+      ],
+      pipeline: {
+        actions: [
+          {
+            commands: [
+              'python', 'ingest_pipeline.py', '--study-id', study.id.to_s, '--study-file-id',
+              study_file.id.to_s, 'differential_expression', '--differential-expression', '--cluster-file', cluster_file,
+              '--annotation-file', annotation_file, '--cluster-name', 'umap', '--annotation-name', 'disease',
+              '--annotation-scope', 'study'
+            ]
+          }
+        ],
+        resources: {
+          virtualMachine: {
+            machineType: 'n2d-highmem-8',
+            bootDiskSizeGb: 300
+          }
+        }
+      },
+      createTime: (now - 3.minutes).to_s,
+      startTime: now.to_s,
+      endTime: now.to_s
+    }.with_indifferent_access
+    mock = Minitest::Mock.new
+    6.times { mock.expect :metadata, mock_metadata }
+    3.times do
+      mock.expect :error, { code: 1, message: 'mock message' }
+      mock.expect :done?, true
+    end
+    email_mock = Minitest::Mock.new
+    email_mock.expect :deliver_now, true
+    ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
+      SingleCellMailer.stub :notify_admin_parse_fail, email_mock do
+        job.poll_for_completion
+        mock.verify
+        email_mock.verify
+      end
     end
   end
 

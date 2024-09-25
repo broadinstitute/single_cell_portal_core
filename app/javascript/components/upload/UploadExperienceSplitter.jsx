@@ -46,7 +46,7 @@ function RawUploadExperienceSplitter({
                 onClick={() => {
                   setIsAnnDataExperience(true)
                   setOverrideExperienceMode(true)
-                }}> AnnData <sup>BETA</sup>
+                }}> AnnData
               </a>
               <div className='col'>
                 Upload one AnnData (.h5ad) file
