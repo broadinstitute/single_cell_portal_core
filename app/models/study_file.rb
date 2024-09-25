@@ -17,6 +17,7 @@ class StudyFile
   include Rails.application.routes.url_helpers # for accessing download_file_path and download_private_file_path
   include Swagger::Blocks
   include Mongoid::History::Trackable
+  extend StrongParameterizable
 
   # carrierwave settings
   mount_uploader :upload, UploadUploader, mount_on: :upload_file_name

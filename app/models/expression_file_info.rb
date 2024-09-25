@@ -1,5 +1,6 @@
 class ExpressionFileInfo
   include Mongoid::Document
+  extend StrongParameterizable
 
   embedded_in :study_file
 

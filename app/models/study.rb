@@ -12,6 +12,7 @@ class Study
   extend ValidationTools
   include Swagger::Blocks
   include Mongoid::History::Trackable
+  extend StrongParameterizable
 
   # feature flag integration
   include FeatureFlaggable
