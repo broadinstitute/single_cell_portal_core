@@ -1,4 +1,4 @@
-import {openH5File} from 'hdf5-indexed-reader'
+import { openH5File } from 'hdf5-indexed-reader'
 
 import {
   validateUnique, validateRequiredMetadataColumns,
