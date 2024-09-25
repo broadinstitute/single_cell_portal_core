@@ -15,9 +15,10 @@ class AnnDataFileInfo
   DATA_FRAGMENT_PARAMS = {
     cluster: %i[
       _id data_type name description obsm_key_name x_axis_label y_axis_label x_axis_min x_axis_max y_axis_min
-      y_axis_max z_axis_min z_axis_max taxon_id parse_status spatial_cluster_associations
+      y_axis_max z_axis_min z_axis_max external_link_url external_link_title external_link_description
+      parse_status spatial_cluster_associations
     ],
-    expression: %i[_id data_type taxon_id description expression_file_info]
+    expression: %i[_id data_type taxon_id description expression_file_info y_axis_label]
   }.freeze
 
   # required keys for data_fragments, by type
@@ -73,21 +74,16 @@ class AnnDataFileInfo
       fragment_form = merged_data[form_segment_name]
       next if fragment_form.blank? || fragment_form.empty?
 
+      allowed_params = DATA_FRAGMENT_PARAMS[key]&.reject {|k, _| k == :data_type }
       case key
       when :metadata
         merged_data[:use_metadata_convention] = fragment_form[:use_metadata_convention]
       when :cluster
-        fragments << extract_form_fragment(
-          fragment_form, key,
-          :_id, :name, :description, :obsm_key_name, :x_axis_label, :y_axis_label, :x_axis_min, :x_axis_max,
-          :y_axis_min, :y_axis_max, :z_axis_min, :z_axis_max, :spatial_cluster_associations
-        )
+        fragments << extract_form_fragment(fragment_form, key, *allowed_params)
       when :expression
         merged_data[:taxon_id] = fragment_form[:taxon_id]
         merged_exp_fragment = fragment_form.merge(expression_file_info: merged_data[:expression_file_info_attributes])
-        fragments << extract_form_fragment(
-          merged_exp_fragment, key, :_id, :description, :y_axis_label, :taxon_id, :expression_file_info
-        )
+        fragments << extract_form_fragment(merged_exp_fragment, key, *allowed_params)
       end
       # remove from form data once processed to allow normal save of nested form data
       merged_data.delete(form_segment_name)
