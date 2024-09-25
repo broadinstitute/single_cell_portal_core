@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, cleanup, fireEvent, waitForElementToBeRemoved } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent, waitForElementToBeRemoved, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 
 import { StudyContext } from 'components/upload/upload-utils'
@@ -354,6 +354,77 @@ describe('file upload control validates the selected file', () => {
     expect(screen.queryAllByText('Use bucket path')).toHaveLength(1)
     const bucketToggle = screen.getByText('Use bucket path')
     fireEvent.click(bucketToggle)
-    expect(container.querySelector('#remote_location-input-123')).toBeVisible();
+    expect(container.querySelector('#remote_location-input-123')).toBeVisible()
+  })
+
+  it('validates file extension on bucket path entries', async () => {
+    const file = {
+      _id: '123',
+      name: '',
+      status: 'new',
+      file_type: 'Cluster'
+    }
+    render((
+      <StudyContext.Provider value={{ accession: 'SCP123' }}>
+        <FileUploadControl
+          file={file}
+          allFiles={[file]}
+          allowedFileExts={['.tsv']}
+          validationMessages={{}}/>
+      </StudyContext.Provider>
+    ))
+    expect(screen.queryAllByText('Use bucket path')).toHaveLength(1)
+    const bucketToggle = screen.getByText('Use bucket path')
+    fireEvent.click(bucketToggle)
+    const bucketPathInput = screen.getByTestId('remote-location-input')
+    expect(bucketPathInput).toBeVisible()
+    fireEvent.change(bucketPathInput, { target: { value: 'bad.pdf' } })
+    expect(bucketPathInput).toHaveValue('bad.pdf')
+    await waitFor(() => {
+      expect(screen.getByTestId('validation-error')).toBeInTheDocument()
+      expect(screen.getByText('Allowed extensions are .tsv')).toBeVisible()
+    })
+  })
+
+  it ('clears out previous uploaded file after replace fails to validate', async () => {
+    const file = {
+      _id: '123',
+      name: 'cluster.txt',
+      status: 'new',
+      file_type: 'Cluster',
+      upload_file_name: 'cluster.txt',
+      uploadSelection: {} // needed to mock a file already being selected
+    }
+    const updateFileHolder = { updateFile: () => {} }
+    const updateFileSpy = jest.spyOn(updateFileHolder, 'updateFile')
+    render((
+      <StudyContext.Provider value={{ accession: 'SCP123' }}>
+        <FileUploadControl
+          file={file}
+          allFiles={[file]}
+          updateFile={updateFileHolder.updateFile}
+          allowedFileExts={['.txt']}
+          validationMessages={{}}/>
+      </StudyContext.Provider>
+    ))
+
+    const replaceLink = screen.getByText('Replace')
+    expect(replaceLink).toBeVisible()
+    // test replacing with bad file & clearing out state
+    // this won't  update the button state back to 'Choose file' since updateFile() is mocked above
+    // unsetting uploadSelection and upload_file_name achieves this in actual usage
+    fireFileSelectionEvent(screen.getByTestId('file-input'), {
+      fileName: 'cluster_bad.txt',
+      content: 'foo,X,Y\nTYPE,numeric,numeric\nCell1,1,0\n'
+    },true)
+    await waitForElementToBeRemoved(() => screen.getByTestId('file-validation-spinner'))
+    expect(updateFileSpy).toHaveBeenLastCalledWith('123', {
+      uploadSelection: null,
+      name: '',
+      upload_file_name: ''
+    })
+    expect(screen.getByTestId('validation-error')).toHaveTextContent('after correcting cluster_bad.txt')
+    expect(screen.getByTestId('validation-error'))
+      .toHaveTextContent('First row, first column must be "NAME" (case insensitive). Your value was "foo')
   })
 })

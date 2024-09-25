@@ -57,4 +57,11 @@ class DownloadQuotaServiceTest < ActiveSupport::TestCase
     )
     assert_equal 1.megabyte, DownloadQuotaService.download_quota
   end
+
+  test 'should handle nil file size' do
+    starting_quota = @user.daily_download_quota
+    DownloadQuotaService.increment_user_quota(@user, nil)
+    @user.reload
+    assert_equal starting_quota, @user.daily_download_quota
+  end
 end

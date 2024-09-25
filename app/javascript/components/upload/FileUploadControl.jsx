@@ -28,6 +28,10 @@ export default function FileUploadControl({
   const [showUploadButton, setShowUploadButton] = useState(true)
   const [showBucketPath, setShowBucketPath] = useState(false)
   const ToggleUploadButton = () => {
+    // this is an inverted check since the user is clicking and the value is about to change
+    if (!showUploadButton) {
+      unsetRemoteLocation()
+    }
     setShowUploadButton(!showUploadButton)
     setShowBucketPath(!showBucketPath)
   }
@@ -38,7 +42,7 @@ export default function FileUploadControl({
     'Upload a file from your computer' :
     "Input a path to a file that is already in this study's bucket"
   const uploadToggle = <span
-    className='btn btn-default'
+    className='btn btn-default margin-left'
     onClick={ToggleUploadButton}
     data-toggle="tooltip"
     data-original-title={toggleTooltip}>{toggleText}
@@ -51,7 +55,7 @@ export default function FileUploadControl({
   </Popover>
   const googleBucketLink =
     <OverlayTrigger trigger={['hover', 'focus']} rootClose placement="top" overlay={bucketPopover} delayHide={1500}>
-      <a className='btn btn-default'
+      <a className='btn btn-default margin-left'
          href={`https://accounts.google.com/AccountChooser?continue=https://console.cloud.google.com/storage/browser/${bucketName}`}
          target='_blank'><FontAwesomeIcon icon={faExternalLinkSquareAlt} /> Browse bucket</a>
     </OverlayTrigger>
@@ -77,20 +81,53 @@ export default function FileUploadControl({
         name: newName,
         notes
       })
+    } else if (issues.errors.length > 0 && file.uploadSelection) {
+      // clear out a previous known good file, if present
+      updateFile(file._id, {
+        uploadSelection: null,
+        upload_file_name: '',
+        name: ''
+      })
     }
+  }
+
+  // keep track of pending timeout for remote validation via bucket path
+  const [timeOutId, setTimeOutID] = useState(null)
+
+  // clear out remote_location and hasRemoteFile to allow switching back to file upload button
+  function unsetRemoteLocation() {
+    updateFile(file._id, {remote_location: '', hasRemoteFile: false})
   }
 
   // perform CSFV on remote file when specifying a GS URL or bucket path
   // will sanitize GS URL before calling validateRemoteFile
-  async function handleBucketLocationEntry(e) {
-    const path = e.target.value
+  async function handleBucketLocationEntry(path) {
     const matcher = new RegExp(`(gs:\/\/)?${bucketName}\/?`)
     const trimmedPath = path.replace(matcher, '')
     if (!trimmedPath) {
+      unsetRemoteLocation()
+      setFileValidation({ validating: false, issues: {}, fileName: null })
       return false
     }
 
+    // don't continue unless a dot is present (otherwise, no valid file extension)
+    if (!trimmedPath.includes('.')) { return false }
+
     const fileType = file.file_type
+    const fileExtension = `.${trimmedPath.split('.').slice(-1)[0]}`
+    if (fileExtension.length > 1 && !inputAcceptExts.includes(fileExtension)) {
+      const invalidExt = {
+        errors: [
+          [
+            'error', 'filename:extension',
+            `Allowed extensions are ${allowedFileExts.join(', ')}`
+          ]
+        ]
+      }
+      setFileValidation({ validating: false, issues: invalidExt, fileName: trimmedPath })
+      return false
+    }
+
     const fileOptions = fileType === 'Metadata' ? { use_metadata_convention: file?.use_metadata_convention } : {}
 
     setFileValidation({ validating: true, issues: {}, fileName: trimmedPath })
@@ -175,6 +212,7 @@ export default function FileUploadControl({
         />
       </button>
     }
+
     {!isFileOnServer && (showBucketPath || file.hasRemoteFile ) &&
       // we can't use TextFormField since we need a custom onBlur event
       // onBlur is the React equivalent of onfocusout, which will fire after the user is done updating the input
@@ -182,15 +220,22 @@ export default function FileUploadControl({
              type="text"
              size={60}
              id={`remote_location-input-${file._id}`}
+             data-testid="remote-location-input"
              placeholder='GS URL or path to file in GCP bucket'
-             onBlur={handleBucketLocationEntry}/>
+             onChange={ (e) => {
+               const newBucketPath = e.target.value
+               if (timeOutId) { clearTimeout(timeOutId) }
+               const newTimeout = setTimeout(handleBucketLocationEntry, 300, newBucketPath)
+               setTimeOutID(newTimeout)
+             }}/>
     }
-    &nbsp;&nbsp;
     { !isFileOnServer && (showBucketPath || file.hasRemoteFile ) && googleBucketLink }
 
-    &nbsp;&nbsp;
     { !isFileOnServer && uploadToggle }
 
+    { showBucketPath && fileValidation.validating &&
+      <span className='margin-left' id='remote-location-validation'>Validating... <LoadingSpinner testId="file-validation-spinner"/></span>
+    }
     <ValidationMessage
       studyAccession={study.accession}
       issues={fileValidation.issues}

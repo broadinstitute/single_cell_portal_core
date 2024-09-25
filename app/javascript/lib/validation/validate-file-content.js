@@ -18,7 +18,7 @@ import {
   getParsedHeaderLines, parseLine, ParseException,
   validateUniqueCellNamesWithinFile, validateMetadataLabelMatches,
   validateGroupColumnCounts, timeOutCSFV, validateUnique,
-  validateRequiredMetadataColumns
+  validateRequiredMetadataColumns, validateAlphanumericAndUnderscores
 } from './shared-validation'
 import { parseDifferentialExpressionFile } from './validate-differential-expression'
 import { parseAnnDataFile } from './validate-anndata'
@@ -163,7 +163,7 @@ function validateCapFormat([headers, annotTypes]) {
   // Check format rules that apply to both metadata and cluster files
   issues = issues.concat(
     validateUnique(headers),
-    validateAlphanumericAndUnderscore(headers),
+    validateAlphanumericAndUnderscores(headers),
     validateNameKeyword(headers),
     validateTypeKeyword(annotTypes),
     validateGroupOrNumeric(annotTypes),
