@@ -249,4 +249,13 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
       assert @study.publications.empty?
     end
   end
+
+  test 'should show home page link' do
+    get site_path
+    assert_select '#home-page-link', 0
+    HomePageLink.create(name: 'Foo', href: 'http://foo.com', published: true)
+    get site_path
+    assert_select '#home-page-link', 1
+    HomePageLink.delete_all
+  end
 end

@@ -5,10 +5,9 @@
                     latest_feature_announcements_path, class: 'btn btn-warning-scp', id: 'latest-features-btn',
                     data: { toggle: 'tooltip', placement: 'left' }, title: 'Learn about new Single Cell Portal features!' %>
   <% end %>
-  <%= link_to "<span class='badge btn-warning-scp-icon'></span> " \
-  "Portal whitepaper".html_safe, 
-  "https://www.biorxiv.org/content/10.1101/2023.07.13.548886v1", class: 'btn btn-warning-scp', id: 'whitepaper-btn',
-  data: { toggle: 'tooltip', placement: 'left' }, title: 'Read the Single Cell Portal whitepaper!', target: :_blank %>
+  <% if @home_page_link.present? %>
+    <%= render partial: 'home_page_link' %>
+  <% end %>
   <% if @selected_branding_group.present? %>
   <% content_for(:html_title) { "#{@selected_branding_group.name} - Collections - Single Cell Portal" } %>
     <% if @selected_branding_group.banner_image.file %>

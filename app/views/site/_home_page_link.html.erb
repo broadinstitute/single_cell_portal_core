@@ -1,0 +1,11 @@
+<% image_link = @home_page_link.image.present? ? "#{image_tag(@home_page_link.image)}" : nil %>
+<style>
+  #home-page-link {
+    background-color: <%= @home_page_link.bg_color %>;
+  }
+</style>
+<%=
+  link_to "#{image_link}#{@home_page_link.name}".html_safe, @home_page_link.href, title: @home_page_link.tooltip,
+          data: { toggle: 'tooltip', placement: 'left'}, class: @home_page_link.css_class,
+          id: 'home-page-link', target: :_blank
+%>
