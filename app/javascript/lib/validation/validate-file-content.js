@@ -310,7 +310,7 @@ export async function validateGzipEncoding(file, fileType) {
     if (firstByte === GZIP_MAGIC_NUMBER) {
       const prettyExts = prettyAndOr(EXTENSIONS_MUST_GZIP, 'or')
       const problem = `Only files with extensions ${prettyExts} may be gzipped`
-      const solution = 'Please decompress file, or add a ".gz" extension to the file name, and retry.'
+      const solution = 'Please add a ".gz" extension to the file name, or decompress the file, and retry.'
       throw new ParseException('encoding:missing-gz-extension', `${problem}.  ${solution}`)
     } else {
       isGzipped = false

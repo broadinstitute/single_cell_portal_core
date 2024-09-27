@@ -326,7 +326,7 @@ describe('Client-side file validation', () => {
     expect(errors[0][1]).toEqual('encoding:missing-gz-extension')
     const expectedMessage =
       // eslint-disable-next-line max-len
-      'Only files with extensions ".gz", ".bam", or ".tbi" may be gzipped.  Please decompress file, or add a ".gz" extension to the file name, and retry.'
+      'Only files with extensions ".gz", ".bam", or ".tbi" may be gzipped.  Please add a ".gz" extension to the file name, or decompress the file, and retry.'
     expect(errors[0][2]).toEqual(expectedMessage)
   })
 
