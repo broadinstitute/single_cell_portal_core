@@ -319,6 +319,17 @@ describe('Client-side file validation', () => {
     expect(errors[0][1]).toEqual('encoding:missing-gz-extension')
   })
 
+  it('catches real gzipped file with txt extension', async () => {
+    const file = createMockFile({ fileName: 'missing_gz_extension.txt'})
+    const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })
+    expect(errors).toHaveLength(1)
+    expect(errors[0][1]).toEqual('encoding:missing-gz-extension')
+    const expectedMessage =
+      // eslint-disable-next-line max-len
+      'Only files with extensions ".gz", ".bam", or ".tbi" may be gzipped.  Please decompress file, or add a ".gz" extension to the file name, and retry.'
+    expect(errors[0][2]).toEqual(expectedMessage)
+  })
+
   it('catches text file with .gz suffix', async () => {
     const file = createMockFile({ fileName: 'foo.gz', content: 'CELL\tX\tY' })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })
