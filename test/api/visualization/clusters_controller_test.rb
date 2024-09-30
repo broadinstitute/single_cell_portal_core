@@ -20,7 +20,10 @@ class ClustersControllerTest < ActionDispatch::IntegrationTest
                                                      cells: ['A', 'B', 'C']
                                                   },
                                                   annotation_input: [{name: 'foo', type: 'group', values: ['bar', 'bar', 'baz']},
-                                                                     {name: 'intensity', type: 'numeric', values: [1, 2, 5]}])
+                                                                     {name: 'intensity', type: 'numeric', values: [1, 2, 5]}],
+                                                  external_link_url: 'https://example.com',
+                                                  external_link_title: 'Example link',
+                                                  external_link_description: 'This is a link')
 
     @basic_study_metadata_file = FactoryBot.create(:metadata_file,
                                                    name: 'metadata.txt',
@@ -101,7 +104,7 @@ class ClustersControllerTest < ActionDispatch::IntegrationTest
       "subsample"=>"all",
       "isSplitLabelArrays"=>false,
       "consensus"=>nil,
-      "externalLink"=>{"url"=>nil, "title"=>nil, "description"=>nil}
+      "externalLink"=>{"url"=>"https://example.com", "title"=>"Example link", "description"=>"This is a link"}
     }, json)
   end
 
@@ -196,5 +199,38 @@ class ClustersControllerTest < ActionDispatch::IntegrationTest
       @basic_study, 'xssdetected', {annotation_name: 'species', annotation_scope: 'study', annotation_type: 'group'}
     ))
     assert_response :bad_request
+  end
+
+  test 'should get external links' do
+    sign_in_and_update @user
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'AnnData Cluster Link Study',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    study_file = FactoryBot.create(:ann_data_file,
+                                   name: 'data.h5ad',
+                                   study:,
+                                   reference_file: false,
+                                   cell_input: %w[A B C D],
+                                   annotation_input: [
+                                     { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                                   ],
+                                   coordinate_input: [
+                                     { tsne: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                   ])
+    study_file.reload
+    fragment = study_file.ann_data_file_info.find_fragment(data_type: :cluster, name: 'tsne')
+    fragment[:external_link_url] = 'https://foo.com'
+    fragment[:external_link_title] = 'Foo'
+    fragment[:external_link_description] = 'This is foo'
+    frag_idx = study_file.ann_data_file_info.fragment_index_of(fragment)
+    study_file.ann_data_file_info.data_fragments[frag_idx] = fragment
+    study_file.save!
+    execute_http_request(:get, api_v1_study_cluster_path(study, 'tsne'))
+    assert_response :success
+    link = json.with_indifferent_access[:externalLink]
+    assert_equal 'https://foo.com', link[:url]
+    assert_equal 'Foo', link[:title]
+    assert_equal 'This is foo', link[:description]
   end
 end

@@ -59,7 +59,10 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
           x_axis_min: '-10',
           x_axis_max: '10',
           y_axis_min: '-10',
-          y_axis_max: '10'
+          y_axis_max: '10',
+          external_link_url: 'https://example.com',
+          external_link_title: 'Example Link',
+          external_link_description: 'This is an external link'
       }
     }
     merged_data = AnnDataFileInfo.new.merge_form_data(form_params)
@@ -71,6 +74,9 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
     assert_equal 'x axis', cluster_fragment[:x_axis_label]
     assert_equal '10', cluster_fragment[:x_axis_max]
     assert_equal 'cluster description', cluster_fragment[:description]
+    assert_equal 'https://example.com', cluster_fragment[:external_link_url]
+    assert_equal 'Example Link', cluster_fragment[:external_link_title]
+    assert_equal 'This is an external link', cluster_fragment[:external_link_description]
     expr_fragment = merged_data.dig(root_form_key, :data_fragments).detect { |f| f[:data_type] == :expression }
     assert_equal 'expression description', expr_fragment[:description]
     assert_equal 'log(TPM) expression', expr_fragment[:y_axis_label]

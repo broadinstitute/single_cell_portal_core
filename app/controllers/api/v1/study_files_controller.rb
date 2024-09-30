@@ -749,7 +749,8 @@ module Api
           heatmap_file_info_attributes: [:id, :_destroy, :custom_scaling, :color_min, :color_max, :legend_label],
           cluster_form_info_attributes: [
             :_id, :name, :obsm_key_name, :description, :x_axis_label, :y_axis_label, :x_axis_min, :x_axis_max,
-            :y_axis_min, :y_axis_max, :z_axis_min, :z_axis_max, spatial_cluster_associations: []
+            :y_axis_min, :y_axis_max, :z_axis_min, :z_axis_max, :external_link_url, :external_link_title,
+            :external_link_description, spatial_cluster_associations: []
           ],
           metadata_form_info_attributes: [:_id, :use_metadata_convention, :description],
           extra_expression_form_info_attributes: [:_id, :taxon_id, :description, :y_axis_label],

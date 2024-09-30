@@ -256,11 +256,7 @@ module Api
             customColors: custom_annotation_colors,
             clusterFileId: cluster.study_file_id.to_s,
             isSplitLabelArrays: is_split_label_arrays,
-            externalLink: {
-              url: cluster.study_file[:external_link_url],
-              title: cluster.study_file[:external_link_title],
-              description: cluster.study_file[:external_link_description]
-            }
+            externalLink: get_cluster_external_link(cluster, cluster.study_file)
           }
         end
 
@@ -275,6 +271,19 @@ module Api
             subsample = param.to_i
           end
           subsample
+        end
+
+        def self.get_cluster_external_link(cluster, study_file)
+          if study_file.is_viz_anndata?
+            data = study_file.ann_data_file_info.find_fragment(data_type: :cluster, name: cluster.name)
+          else
+            data = study_file.attributes
+          end
+          {
+            url: data[:external_link_url],
+            title: data[:external_link_title],
+            description: data[:external_link_description]
+          }
         end
       end
     end

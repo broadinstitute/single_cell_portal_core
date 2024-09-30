@@ -225,7 +225,7 @@ class IngestJobTest < ActiveSupport::TestCase
                                         { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
                                       ],
                                       coordinate_input: [
-                                        { X_umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                        { umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
                                       ],
                                       expression_input: {
                                         'phex' => [['A', 0.3], ['B', 1.0], ['C', 0.5], ['D', 0.1]]
@@ -774,7 +774,7 @@ class IngestJobTest < ActiveSupport::TestCase
                                      { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
                                    ],
                                    coordinate_input: [
-                                     { x_tsne: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                     { tsne: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
                                    ],
                                    expression_input: {
                                      'phex' => [['A', 0.3], ['B', 1.0], ['C', 0.5], ['D', 0.1]]
@@ -815,7 +815,7 @@ class IngestJobTest < ActiveSupport::TestCase
                                      { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
                                    ],
                                    coordinate_input: [
-                                     { X_umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                     { umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
                                    ])
     annotation_file = 'gs://test_bucket/anndata/h5ad_frag.metadata.tsv'
     cluster_file = 'gs://test_bucket/anndata/h5ad_frag.cluster.X_umap.tsv'
