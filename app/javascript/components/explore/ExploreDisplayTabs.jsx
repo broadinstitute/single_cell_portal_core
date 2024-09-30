@@ -235,19 +235,13 @@ export default function ExploreDisplayTabs({
   const [showDifferentialExpressionPanel, setShowDifferentialExpressionPanel] = useState(deGenes !== null)
   const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(deGenes !== null)
 
-  const canFilter = (exploreParams?.genes?.length <= 1 || exploreParams?.consensus !== null)
   let initialPanel = 'options'
   if (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel) {
     initialPanel = 'differential-expression'
-  } else if (exploreParams.facets !== '' && canFilter) {
+  } else if (exploreParams.facets !== '') {
     initialPanel = 'cell-filtering'
   }
   const [panelToShow, setPanelToShow] = useState(initialPanel)
-
-  // gotcha to hide cell filtering UX if user searches for more than one gene
-  if (panelToShow == 'cell-filtering' && !canFilter) {
-    setPanelToShow('options')
-  }
 
   // Hash of trace label names to the number of points in that trace
   const [countsByLabelForDe, setCountsByLabelForDe] = useState(null)
@@ -259,6 +253,15 @@ export default function ExploreDisplayTabs({
   const [cellFilterCounts, setCellFilterCounts] = useState(null)
 
   const [cellFilteringSelection, setCellFilteringSelection] = useState(null)
+
+  // hide cell filtering in non-applicable settings, but remember state
+  // will re-enable if user returns to a UX scenario where cell filtering can be re-applied
+  const shouldShowFiltering = (exploreParams?.genes?.length <= 1 || exploreParams?.consensus !== null)
+  if (panelToShow === 'cell-filtering' && !shouldShowFiltering) {
+    togglePanel('options')
+  } else if (shouldShowFiltering && filteredCells && panelToShow === 'options') {
+    togglePanel('cell-filtering')
+  }
 
   // flow/error handling for cell filtering
   const [clusterCanFilter, setClusterCanFilter] = useState(true)
@@ -702,7 +705,7 @@ export default function ExploreDisplayTabs({
             updateFilteredCells={updateFilteredCells}
             panelToShow={panelToShow}
             toggleViewOptions={toggleViewOptions}
-            canFilter={canFilter}
+            shouldShowFiltering={shouldShowFiltering}
           />
         </div>
       </div>
