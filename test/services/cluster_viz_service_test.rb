@@ -245,7 +245,7 @@ class ClusterVizServiceTest < ActiveSupport::TestCase
   end
 
   test 'should retrieve clustering information for AnnData files' do
-    cluster_name = 'x_tsne'
+    cluster_name = 'tsne'
     study = FactoryBot.create(:detached_study,
                               name_prefix: 'AnnData Cluster Test',
                               user: @user,

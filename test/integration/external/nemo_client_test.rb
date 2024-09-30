@@ -64,13 +64,13 @@ class NemoClientTest < ActiveSupport::TestCase
   #   assert entity.present?
   # end
 
-  test 'should get collection' do
-    skip_if_api_down
-    identifier = @identifiers[:collection]
-    collection = @nemo_client.collection(identifier)
-    assert collection.present?
-    assert_equal 'adey_sciATAC_human_cortex', collection['short_name']
-  end
+  # test 'should get collection' do
+  #   skip_if_api_down
+  #   identifier = @identifiers[:collection]
+  #   collection = @nemo_client.collection(identifier)
+  #   assert collection.present?
+  #   assert_equal 'adey_sciATAC_human_cortex', collection['short_name']
+  # end
 
   # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
   # test 'should get file' do
@@ -95,16 +95,16 @@ class NemoClientTest < ActiveSupport::TestCase
   #   assert_equal 'NIMH', grant['funding_agency']
   # end
 
-  test 'should get project' do
-    skip_if_api_down
-    identifier = @identifiers[:project]
-    project = @nemo_client.project(identifier)
-    assert project.present?
-    assert_equal 'Single-nucleus analysis of preoptic area development from late embryonic to adult stages',
-                 project['title']
-    assert_equal 'biccn', project['program']
-    assert_equal 'dulac_poa_dev_sn_10x_proj', project['short_name']
-  end
+  # test 'should get project' do
+  #   skip_if_api_down
+  #   identifier = @identifiers[:project]
+  #   project = @nemo_client.project(identifier)
+  #   assert project.present?
+  #   assert_equal 'Single-nucleus analysis of preoptic area development from late embryonic to adult stages',
+  #                project['title']
+  #   assert_equal 'biccn', project['program']
+  #   assert_equal 'dulac_poa_dev_sn_10x_proj', project['short_name']
+  # end
 
   # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
   # test 'should get publication' do

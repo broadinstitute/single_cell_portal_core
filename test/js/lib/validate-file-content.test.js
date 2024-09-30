@@ -319,6 +319,16 @@ describe('Client-side file validation', () => {
     expect(errors[0][1]).toEqual('encoding:missing-gz-extension')
   })
 
+  it('does not catch gzipped RDS file without .gz extension', async () => {
+    const file = createMockFile({ fileName: 'foo.rds', content: '\x1F\x2E3lkjf3' })
+    const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })
+    console.log('errors', errors)
+    const hasMissingGzipExtensionError = errors.some(
+      error => error[1] === 'encoding:missing-gz-extension'
+    )
+    expect(hasMissingGzipExtensionError).toBe(false)
+  })
+
   it('catches text file with .gz suffix', async () => {
     const file = createMockFile({ fileName: 'foo.gz', content: 'CELL\tX\tY' })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })

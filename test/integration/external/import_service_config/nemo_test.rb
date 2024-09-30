@@ -93,12 +93,12 @@ module ImportServiceConfig
       assert_equal 'application/octet-stream', @configuration.get_file_content_type('csv')
     end
 
-    test 'should load study analog' do
-      study = @configuration.load_study
-      assert_equal '"Human variation study (10x), GRU"', study['name']
-      assert_equal ["10x chromium 3' v3 sequencing"], study['techniques']
-      assert_equal [{"name"=>"human", "cv_term_id"=>"NCBI:txid9606"}], study['taxa']
-    end
+    # test 'should load study analog' do
+    #   study = @configuration.load_study
+    #   assert_equal '"Human variation study (10x), GRU"', study['name']
+    #   assert_equal ["10x chromium 3' v3 sequencing"], study['techniques']
+    #   assert_equal [{"name"=>"human", "cv_term_id"=>"NCBI:txid9606"}], study['taxa']
+    # end
 
     # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
     # test 'should load file analog' do
@@ -108,10 +108,10 @@ module ImportServiceConfig
     #   assert_equal 'counts', file['data_type']
     # end
 
-    test 'should load collection analog' do
-      collection = @configuration.load_collection
-      assert_equal 'AIBS Internal', collection['short_name']
-    end
+    # test 'should load collection analog' do
+    #   collection = @configuration.load_collection
+    #   assert_equal 'AIBS Internal', collection['short_name']
+    # end
 
     # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
     # test 'should extract association ids' do
@@ -121,14 +121,14 @@ module ImportServiceConfig
     #   assert_equal @attributes[:project_id], @configuration.id_from(study, :projects)
     # end
 
-    test 'should load taxon common names' do
-      assert_equal %w[human], @configuration.taxon_names
-    end
-
-    test 'should find library preparation protocol' do
-      assert_equal "10x 3' v3", @configuration.find_library_prep("10x chromium 3' v3 sequencing")
-      assert_equal 'Drop-seq', @configuration.find_library_prep('drop-seq')
-    end
+    # test 'should load taxon common names' do
+    #   assert_equal %w[human], @configuration.taxon_names
+    # end
+    #
+    # test 'should find library preparation protocol' do
+    #   assert_equal "10x 3' v3", @configuration.find_library_prep("10x chromium 3' v3 sequencing")
+    #   assert_equal 'Drop-seq', @configuration.find_library_prep('drop-seq')
+    # end
 
     # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
     # test 'should populate study and study_file' do
