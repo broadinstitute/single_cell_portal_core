@@ -297,6 +297,13 @@ export async function validateGzipEncoding(file, fileType) {
   const firstByte = await readFileBytes(file, 0, 1)
 
   const extension = fileName.split('.').slice(-1)[0]
+
+  if (extension.toLowerCase() === 'rds') {
+    // The R community often omits .gz extensions from gzip-compressed RDS files
+    // More context: https://github.com/broadinstitute/single_cell_portal_core/pull/2145
+    return false
+  }
+
   const extensionMustGzip = EXTENSIONS_MUST_GZIP.includes(extension)
 
   if (extensionMustGzip) {
