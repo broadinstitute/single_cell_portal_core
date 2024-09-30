@@ -145,12 +145,6 @@ function getSizeProps(contentRange, contentLength, file) {
 async function validateRemoteFile(
   bucketName, fileName, fileType, fileOptions
 ) {
-  const flags = getFeatureFlagsWithDefaults()
-  if (flags && flags.clientside_validation === false) {
-    const issues = formatIssues([])
-    return [issues, {}]
-  }
-
   const startTime = performance.now()
 
   const requestStart = performance.now()
@@ -161,6 +155,12 @@ async function validateRemoteFile(
   const response = await fetchBucketFile(bucketName, fileName, maxBytes)
   let fileInfo; let issues; let perfTime; let readRemoteTime
   if (response.ok) {
+    const flags = getFeatureFlagsWithDefaults()
+    if (flags && flags.clientside_validation === false) {
+      const issues = formatIssues([])
+      return issues
+    }
+
     const content = await response.text()
     readRemoteTime = Math.round(performance.now() - requestStart)
 
