@@ -235,13 +235,19 @@ export default function ExploreDisplayTabs({
   const [showDifferentialExpressionPanel, setShowDifferentialExpressionPanel] = useState(deGenes !== null)
   const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(deGenes !== null)
 
+  const canFilter = (exploreParams?.genes?.length <= 1 || exploreParams?.consensus !== null)
   let initialPanel = 'options'
   if (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel) {
     initialPanel = 'differential-expression'
-  } else if (exploreParams.facets !== '') {
+  } else if (exploreParams.facets !== '' && canFilter) {
     initialPanel = 'cell-filtering'
   }
   const [panelToShow, setPanelToShow] = useState(initialPanel)
+
+  // gotcha to hide cell filtering UX if user searches for more than one gene
+  if (panelToShow == 'cell-filtering' && !canFilter) {
+    setPanelToShow('options')
+  }
 
   // Hash of trace label names to the number of points in that trace
   const [countsByLabelForDe, setCountsByLabelForDe] = useState(null)
@@ -696,6 +702,7 @@ export default function ExploreDisplayTabs({
             updateFilteredCells={updateFilteredCells}
             panelToShow={panelToShow}
             toggleViewOptions={toggleViewOptions}
+            canFilter={canFilter}
           />
         </div>
       </div>

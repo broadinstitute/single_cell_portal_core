@@ -200,7 +200,7 @@ export default function ExploreDisplayPanelManager({
   showDifferentialExpressionPanel, setIsCellSelecting, currentPointsSelected, isCellSelecting, deGenes,
   setDeGenes, setShowDeGroupPicker,
   cellFaceting, cellFilteringSelection, cellFilterCounts, clusterCanFilter, filterErrorText,
-  updateFilteredCells, panelToShow, toggleViewOptions
+  updateFilteredCells, panelToShow, toggleViewOptions, canFilter
 }) {
   const [, setRenderForcer] = useState({})
   const [dataCache] = useState(createCache())
@@ -213,7 +213,7 @@ export default function ExploreDisplayPanelManager({
     hasSpatialGroups = exploreInfo.spatialGroups.length > 0
   }
 
-  const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering && !hasSpatialGroups
+  const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering && !hasSpatialGroups && canFilter
 
 
   // Differential expression settings
