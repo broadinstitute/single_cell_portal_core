@@ -244,14 +244,7 @@ export default function ExploreDisplayPanelManager({
 
   const shownAnnotation = getShownAnnotation(exploreParamsWithDefaults.annotation, annotationList)
 
-  const isSubsampled = exploreParamsWithDefaults.subsample !== 'all'
   let cellFilteringTooltipAttrs = {}
-  if (isSubsampled) {
-    cellFilteringTooltipAttrs = {
-      'data-toggle': 'tooltip',
-      'data-original-title': 'Clicking will remove subsampling; plots might be noticeably slower.'
-    }
-  }
 
   /** Toggle cell filtering panel */
   function toggleCellFilterPanel() {
