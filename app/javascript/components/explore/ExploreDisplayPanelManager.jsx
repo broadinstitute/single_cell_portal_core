@@ -200,7 +200,7 @@ export default function ExploreDisplayPanelManager({
   showDifferentialExpressionPanel, setIsCellSelecting, currentPointsSelected, isCellSelecting, deGenes,
   setDeGenes, setShowDeGroupPicker,
   cellFaceting, cellFilteringSelection, cellFilterCounts, clusterCanFilter, filterErrorText,
-  updateFilteredCells, panelToShow, toggleViewOptions, shouldShowFiltering
+  updateFilteredCells, panelToShow, toggleViewOptions, allowCellFiltering
 }) {
   const [, setRenderForcer] = useState({})
   const [dataCache] = useState(createCache())
@@ -213,9 +213,7 @@ export default function ExploreDisplayPanelManager({
     hasSpatialGroups = exploreInfo.spatialGroups.length > 0
   }
 
-  const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering &&
-    !hasSpatialGroups &&
-    shouldShowFiltering
+  const showCellFiltering = getFeatureFlagsWithDefaults()?.show_cell_facet_filtering && !hasSpatialGroups
 
 
   // Differential expression settings
@@ -361,7 +359,7 @@ export default function ExploreDisplayPanelManager({
                 </button>
               </>
           }
-          {showCellFiltering && panelToShow === 'cell-filtering' &&
+          {showCellFiltering && panelToShow === 'cell-filtering' && allowCellFiltering &&
             <CellFilteringPanelHeader
               togglePanel={togglePanel}
               setShowDifferentialExpressionPanel={setShowDifferentialExpressionPanel}
@@ -372,8 +370,7 @@ export default function ExploreDisplayPanelManager({
               setDeGroupB={setDeGroupB}
               isAuthorDe={isAuthorDe}
               updateFilteredCells={updateFilteredCells}
-              deGenes={deGenes}
-            />
+              deGenes={deGenes}/>
           }
           {panelToShow === 'differential-expression' &&
               <DifferentialExpressionPanelHeader
@@ -449,7 +446,7 @@ export default function ExploreDisplayPanelManager({
                   </div>
                 </>
                 }
-                { showCellFiltering && clusterCanFilter &&
+                { showCellFiltering && clusterCanFilter && allowCellFiltering &&
                   <>
                     <div className="row">
                       <div className={`col-xs-12 cell-filtering-button ${shownTab === 'scatter' && !studyHasDe ? 'create-annotation-cell-filtering' : ''}`}>
@@ -474,6 +471,21 @@ export default function ExploreDisplayPanelManager({
                           data-testid="cell-filtering-button"
                           data-toggle="tooltip"
                           data-original-title={`Cell filtering cannot be displayed for this selection: ${filterErrorText}.`}
+                        >Filtering unavailable</button>
+                      </div>
+                    </div>
+                  </>
+                }
+                { showCellFiltering && !allowCellFiltering &&
+                  <>
+                    <div className="row">
+                      <div className={`col-xs-12 cell-filtering-button ${shownTab === 'scatter' && !studyHasDe ? 'create-annotation-cell-filtering' : ''}`}>
+                        <button
+                          disabled="disabled"
+                          className={`btn btn-primary`}
+                          data-testid="cell-filtering-button-disabled"
+                          data-toggle="tooltip"
+                          data-original-title={`Cell filtering cannot be shown in this context (only scatter or distribution tabs)`}
                         >Filtering unavailable</button>
                       </div>
                     </div>

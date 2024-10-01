@@ -26,6 +26,13 @@ jest.mock('lib/cell-faceting', () => {
   }
 })
 
+// Prevent "ReferenceError: $ is not defined" errors when trying to call $(window) functions
+jest.mock('lib/plot', () => {
+  return {
+    getPlotDimensions: jest.fn(() => { return { width: 100, height: 100 } })
+  }
+})
+
 import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import * as UserProvider from '~/providers/UserProvider'
@@ -424,6 +431,64 @@ describe('explore tabs are activated based on study info and parameters', () => 
     expect(screen.getByTestId('cell-filtering-button')).toHaveTextContent('Filter plotted cells')
   })
 
+  it('hides cell filtering when not applicable', async () => {
+    jest
+      .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
+      .mockReturnValue({
+        show_cell_facet_filtering: true
+      })
+
+    const newExplore = {
+      'cluster': 'All Cells UMAP',
+      'annotation': {
+        'name': 'biosample_id',
+        'type': 'group',
+        'scope': 'study'
+      },
+      'consensus': null,
+      'genes': ['A1BG', 'A1BG-AS1']
+    }
+    render((
+      <ExploreDisplayTabs
+        studyAccession={'SCP123'}
+        exploreParams={newExplore}
+        exploreParamsWithDefaults={newExplore}
+        exploreInfo={exploreInfoDe}
+      />
+    ))
+    expect(screen.getByTestId('cell-filtering-button-disabled')).toHaveTextContent('Filtering unavailable')
+  })
+
+  it('shows cell filtering when using consensus metric', async () => {
+    jest
+      .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
+      .mockReturnValue({
+        show_cell_facet_filtering: true
+      })
+
+    const newExplore = {
+      'cluster': 'All Cells UMAP',
+      'annotation': {
+        'name': 'biosample_id',
+        'type': 'group',
+        'scope': 'study'
+      },
+      'consensus': 'median',
+      'genes': ['A1BG', 'A1BG-AS1'],
+      'tab': 'scatter',
+      'facets': ''
+    }
+    render((
+      <ExploreDisplayTabs
+        studyAccession={'SCP123'}
+        exploreParams={newExplore}
+        exploreParamsWithDefaults={newExplore}
+        exploreInfo={exploreInfoDe}
+      />
+    ))
+    expect(screen.getByTestId('cell-filtering-button')).toHaveTextContent('Filter plotted cells')
+  })
+
   it('disables cell filtering button', async () => {
     jest
       .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
@@ -440,6 +505,7 @@ describe('explore tabs are activated based on study info and parameters', () => 
         clusterCanFilter={false}
         filterErrorText={'Cluster is not indexed'}
         panelToShow={'options'}
+        allowCellFiltering={true}
       />
     )
 
