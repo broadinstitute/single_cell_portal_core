@@ -454,7 +454,7 @@ export default function ExploreDisplayPanelManager({
                     </div>
                   </>
                 }
-                { showCellFiltering && !clusterCanFilter &&
+                { showCellFiltering && !clusterCanFilter && allowCellFiltering &&
                   <>
                     <div className="row">
                       <div className={`col-xs-12 cell-filtering-button ${shownTab === 'scatter' && !studyHasDe ? 'create-annotation-cell-filtering' : ''}`}>
