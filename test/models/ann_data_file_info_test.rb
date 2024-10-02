@@ -127,7 +127,7 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
   end
 
   test 'should set default cluster fragments' do
-    ann_data_info = AnnDataFileInfo.new
+    ann_data_info = AnnDataFileInfo.new(reference_file: false)
     assert ann_data_info.valid?
     default_keys = AnnDataIngestParameters::PARAM_DEFAULTS[:obsm_keys]
     default_keys.each do |obsm_key_name|
@@ -135,6 +135,11 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
       matcher = { data_type: :cluster, name:, obsm_key_name: }.with_indifferent_access
       assert ann_data_info.find_fragment(**matcher).present?
     end
+    # ensure non-parseable AnnData files don't create fragment
+    reference_anndata = AnnDataFileInfo.new
+    assert reference_anndata.valid?
+    assert_empty reference_anndata.data_fragments
+    assert_empty reference_anndata.obsm_key_names
   end
 
   test 'should validate data fragments' do
