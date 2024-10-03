@@ -430,6 +430,25 @@ describe('Client-side file validation', () => {
     const displayedWarning = screen.getByTestId('validation-warning')
     expect(displayedWarning).toHaveTextContent(issues.warnings[0][2])
   })
+
+  it('Does not throw disallowed characters in cluster header', async () => {
+    const file = createMockFile({
+      fileName: 'foo.txt',
+      content: 'NAME,X,Y,invalid.header\nTYPE,numeric,numeric,numeric,numeric\nCELL_0001,34.472,32.211\nCELL_0002,15.975,10.043,5'
+    })
+    const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })
+    expect(errors).toHaveLength(0)
+  })
+})
+
+it('Catches disallowed characters in metadata header', async () => {
+  const file = createMockFile({ fileName: 'metadata_invalid_annotation_name_period.tsv' })
+  const [{ errors }] = await validateLocalFile(file, { file_type: 'Metadata' })
+  expect(errors).toHaveLength(1)
+
+  const expectedErrorType = 'format:cap:only-alphanumeric-underscore'
+  const errorType = errors[0][1]
+  expect(errorType).toBe(expectedErrorType)
 })
 
 // With the client side file validation feature flag set to false expect invalid files to pass

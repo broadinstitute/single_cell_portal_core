@@ -1,0 +1,12 @@
+NAME	donor_id	biosample_id	sex	species	species__ontology_label	library_preparation_protocol	library_preparation_protocol__ontology_label	organ	organ__ontology_label	disease	disease__ontology_label	invalid.header
+TYPE	group	group	group	group	group	group	group	group	group	group	group	group
+A	donor_1	biosample_1	unknown	NCBITaxon_9606	Homo sapiens	EFO_0009901	10x 3' v1	UBERON_0000178	blood	PATO_0000461	normal	unknown
+B	donor_1	biosample_1	unknown	NCBITaxon_9606	Homo sapiens	EFO_0009901	10x 3' v1	UBERON_0000178	blood	PATO_0000461	normal	unknown
+C	donor_1	biosample_1	unknown	NCBITaxon_9606	Homo sapiens	EFO_0009901	10x 3' v1	UBERON_0000178	blood	PATO_0000461	normal	unknown
+D	donor_1	biosample_1	unknown	NCBITaxon_9606	Homo sapiens	EFO_0009901	10x 3' v1	UBERON_0000178	blood	PATO_0000461	normal	unknown
+E	donor_1	biosample_1	unknown	NCBITaxon_9606	Homo sapiens	EFO_0009901	10x 3' v1	UBERON_0000178	blood	PATO_0000461	normal	unknown
+F	donor_1	biosample_1	unknown	NCBITaxon_9606	Homo sapiens	EFO_0009901	10x 3' v1	UBERON_0000178	blood	PATO_0000461	normal	unknown
+G	donor_1	biosample_1	unknown	NCBITaxon_9606	Homo sapiens	EFO_0009901	10x 3' v1	UBERON_0000178	blood	PATO_0000461	normal	unknown
+H	donor_1	biosample_1	unknown	NCBITaxon_9606	Homo sapiens	EFO_0009901	10x 3' v1	UBERON_0000178	blood	PATO_0000461	normal	unknown
+I	donor_1	biosample_1	unknown	NCBITaxon_9606	Homo sapiens	EFO_0009901	10x 3' v1	UBERON_0000178	blood	PATO_0000461	normal	unknown
+J	donor_1	biosample_1	unknown	NCBITaxon_9606	Homo sapiens	EFO_0009901	10x 3' v1	UBERON_0000178	blood	PATO_0000461	normal	unknown
