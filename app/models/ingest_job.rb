@@ -32,6 +32,9 @@ class IngestJob
   # steps that need to be accounted for
   SPECIAL_ACTIONS = %i[differential_expression render_expression_arrays image_pipeline].freeze
 
+  # main processes that extract or ingest data for core visualizations (scatter, violin, dot, etc)
+  CORE_ACTIONS = %w[ingest_anndata ingest_expression ingest_cell_metadata ingest_cluster]
+
   # jobs that need parameters objects in order to launch correctly
   PARAMS_OBJ_REQUIRED = %i[
     differential_expression render_expression_arrays image_pipeline ingest_anndata
@@ -996,7 +999,7 @@ class IngestJob
       pipeline_args = op.metadata.dig('pipeline', 'actions').first['commands']
       op.done? &&
         pipeline_args.detect { |c| c == study_file.id.to_s } &&
-        (!pipeline_args.include?('--differential-expression') && !pipeline_args.include?('--subsample'))
+        (pipeline_args & CORE_ACTIONS).any?
     end
     # get total runtime from initial extract to final parse
     initial_extract = previous_jobs.last
