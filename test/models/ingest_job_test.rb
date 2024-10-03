@@ -333,7 +333,7 @@ class IngestJobTest < ActiveSupport::TestCase
     end
   end
 
-  test 'should get ingest summary for AnnData parsing' do
+  test 'should get ingestSummary for AnnData parsing' do
     ann_data_file = FactoryBot.create(:ann_data_file, name: 'data.h5ad', study: @basic_study)
     ann_data_file.ann_data_file_info.reference_file = false
     ann_data_file.ann_data_file_info.data_fragments = [
@@ -369,7 +369,7 @@ class IngestJobTest < ActiveSupport::TestCase
     }.with_indifferent_access
 
     pipeline_mock = MiniTest::Mock.new
-    4.times {pipeline_mock.expect :metadata, metadata_mock }
+    5.times {pipeline_mock.expect :metadata, metadata_mock }
     2.times {pipeline_mock.expect :error, nil  }
     pipeline_mock.expect :done?, true
 
@@ -482,7 +482,7 @@ class IngestJobTest < ActiveSupport::TestCase
     pipeline = { actions: }
     failed_metadata = { pipeline:, events:, startTime: (now - 1.hour).to_s, endTime: now.to_s }.with_indifferent_access
     failed_pipeline = Minitest::Mock.new
-    6.times { failed_pipeline.expect(:metadata, failed_metadata) }
+    7.times { failed_pipeline.expect(:metadata, failed_metadata) }
     3.times { failed_pipeline.expect(:error, true) }
     failed_pipeline.expect :done?, true
     operations_mock = Minitest::Mock.new

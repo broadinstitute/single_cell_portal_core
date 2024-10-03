@@ -1028,6 +1028,7 @@ class IngestJob
       op.metadata.dig('pipeline', 'actions').first['commands'].detect { |c| c == '--extract' } ||
         op.error.present?
     end.count
+    num_files_extracted += 1 if extracted_raw_counts?(initial_extract.metadata)
     # event properties for Mixpanel summary event
     {
       perfTime: job_perftime,
@@ -1042,6 +1043,17 @@ class IngestJob
       action: error_action,
       exitCode: code
     }
+  end
+
+  # determine if an ingest_anndata job extracted raw counts data
+  # reads from the --extract parameter to avoid counting filenames that include 'raw_counts'
+  def extracted_raw_counts?(pipeline_metadata)
+    commands = pipeline_metadata.dig('pipeline', 'actions').first['commands']
+    extract_idx = commands.index('--extract')
+    return false if extract_idx.nil?
+
+    extract_params = commands[extract_idx + 1]
+    extract_params.include?('raw_counts')
   end
 
   # report a summary of all AnnData extraction for this file to Mixpanel, if this is the last job
