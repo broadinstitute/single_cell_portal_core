@@ -265,7 +265,7 @@ export async function parseClusterFile(chunker, mimeType) {
  * Example: prettyAndOr(['A', 'B', 'C'], 'or') > '"A", "B", or "C"' */
 function prettyAndOr(stringArray, operator) {
   let phrase
-  const quoted = stringArray.map(ext => `"${ext}"`)
+  const quoted = stringArray.map(ext => `".${ext}"`)
 
   if (quoted.length === 1) {
     phrase = quoted[0]
@@ -275,7 +275,7 @@ function prettyAndOr(stringArray, operator) {
   } else if (quoted.length > 2) {
     // e.g. "A", "B", or "C"
     const last = quoted.slice(-1)[0]
-    phrase = `${quoted.slice(-1).join(', ') } ${operator} ${last}`
+    phrase = `${quoted.slice(0, -1).join(', ')}, ${operator} ${last}`
   }
 
   return phrase
@@ -316,10 +316,10 @@ export async function validateGzipEncoding(file, fileType) {
     }
   } else {
     if (firstByte === GZIP_MAGIC_NUMBER) {
-      const prettyExts = prettyAndOr(EXTENSIONS_MUST_GZIP)
-      const problem = `Only files with extensions ${prettyExts}) may be gzipped`
-      const solution = 'please decompress file and retry'
-      throw new ParseException('encoding:missing-gz-extension', `${problem}; ${solution}`)
+      const prettyExts = prettyAndOr(EXTENSIONS_MUST_GZIP, 'or')
+      const problem = `Only files with extensions ${prettyExts} may be gzipped`
+      const solution = 'Please add a ".gz" extension to the file name, or decompress the file, and retry.'
+      throw new ParseException('encoding:missing-gz-extension', `${problem}.  ${solution}`)
     } else {
       isGzipped = false
     }
