@@ -232,12 +232,28 @@ export function validateUnique(headers) {
 }
 
 /**
- * Check headers for disallowed characters
+ * Check headers for disallowed characters in metadata annotations
+ *
+ * This rule exists because BigQuery does not except e.g. periods in its
+ * column names, without special quoting.  We use BigQuery to enable cross-study
+ * search on annotations like "species", "disease", etc.
+ *
+ * Cluster-specific annotations aren't searchable in cross-study search, so
+ * we skip this rule for cluster files (via `false` for `hasMetadataAnnotations`).
+ *
+ * More context: https://github.com/broadinstitute/single_cell_portal_core/pull/2143
  */
-export function validateAlphanumericAndUnderscores(headers) {
+export function validateAlphanumericAndUnderscores(headers, hasMetadataAnnotations=true) {
   // eslint-disable-next-line max-len
   // Mirrors https://github.com/broadinstitute/scp-ingest-pipeline/blob/7c3ea039683c3df90d6e32f23bf5e6813d8fbaba/ingest/validation/validate_metadata.py#L1223
   const issues = []
+
+  if (!hasMetadataAnnotations) {
+    // Skip this validation for cluster files
+    return issues
+  }
+
+
   const uniques = new Set(headers)
   const prohibitedChars = new RegExp(/[^A-Za-z0-9_]/)
 
