@@ -93,12 +93,27 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
       DifferentialExpressionService.run_differential_expression_job(@cluster_group, @basic_study, @user, **@job_params)
     end
 
-    # test pairwise validations
-    @job_params[:]
     # test launch by manually creating expression matrix cells array for validation
     DataArray.create!(@all_cells_array_params)
 
     # we need to mock 2 levels deep as :delay should yield the :push_remote_and_launch_ingest mock
+    job_mock = Minitest::Mock.new
+    job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
+    mock = Minitest::Mock.new
+    mock.expect(:delay, job_mock)
+    IngestJob.stub :new, mock do
+      job_launched = DifferentialExpressionService.run_differential_expression_job(
+        @cluster_group, @basic_study, @user, **@job_params
+      )
+      assert job_launched
+      mock.verify
+      job_mock.verify
+    end
+
+    # test pairwise job
+    @job_params[:annotation_label] = 'dog'
+    @job_params[:reference_label] = 'cat'
+
     job_mock = Minitest::Mock.new
     job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
     mock = Minitest::Mock.new

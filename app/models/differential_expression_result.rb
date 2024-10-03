@@ -168,6 +168,11 @@ class DifferentialExpressionResult
     pairwise_comparisons.values.map(&:count).reduce(0, &:+)
   end
 
+  # check if a particular a vs. b comparison exists
+  def has_pairwise_comparison?(reference, label)
+    !!pairwise_comparisons&.[](reference)&.include?(label)
+  end
+
   # initialize one-vs-rest and pairwise comparisons from manifest contents
   # will clobber any previous values and save in place once completed, so only use with new instances
   #
