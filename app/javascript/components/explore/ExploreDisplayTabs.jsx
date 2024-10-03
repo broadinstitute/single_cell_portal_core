@@ -302,6 +302,18 @@ export default function ExploreDisplayTabs({
 
   const isCorrelatedScatter = enabledTabs.includes('correlatedScatter')
 
+  // decide whether or not to allow the cell filtering UX
+  // must be in the scatter or distribution tab with less than 2 genes, or using consensus metric
+  const allowCellFiltering = (exploreParams?.genes?.length <= 1 || exploreParams?.consensus !== null) &&
+    ['scatter', 'distribution'].includes(shownTab)
+
+  // hide cell filtering panel in non-applicable settings, but remember state
+  // will reload if user returns to a scenario where cell filtering can be re-applied
+  if (panelToShow === 'cell-filtering' && !allowCellFiltering) {
+    togglePanel('options')
+  } else if (allowCellFiltering && filteredCells && panelToShow === 'options') {
+    togglePanel('cell-filtering')
+  }
 
   // If clustering or annotation changes, then update facets shown for cell filtering
   useEffect(() => {
@@ -696,6 +708,7 @@ export default function ExploreDisplayTabs({
             updateFilteredCells={updateFilteredCells}
             panelToShow={panelToShow}
             toggleViewOptions={toggleViewOptions}
+            allowCellFiltering={allowCellFiltering}
           />
         </div>
       </div>

@@ -55,7 +55,10 @@ export default function PlotTabs({
           const tooltip = disabledTooltips[tabKey]
           const numGenes = tooltip.numToSearch
           const geneText = `gene${tooltip.isMulti ? 's' : ''}`
-          const text = `To show this plot, search ${numGenes} ${geneText} using the box at left`
+          let text = `To show this plot, search ${numGenes} ${geneText} using the box at left`
+          if (['scatter', 'distribution'].includes(tabKey)) {
+            text += " or use the 'Collapse genes by' menu for multiple genes"
+          }
           return (
             <li key={tabKey}
               role="presentation"

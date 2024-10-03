@@ -188,15 +188,15 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
                                      { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
                                    ],
                                    coordinate_input: [
-                                     { x_tsne: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                     { tsne: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
                                    ])
-    study.update(default_options: { cluster: 'x_tsne', annotation: 'disease--group--study' })
+    study.update(default_options: { cluster: 'tsne', annotation: 'disease--group--study' })
     study.reload
     assert_equal 1, study.cluster_groups.size
     assert_equal 1, study.cell_metadata.size
     assert_equal %w[A B C D], study.all_cells_array
     assert_equal study_file, study.metadata_file
-    assert_equal 'x_tsne', study.default_cluster.name
+    assert_equal 'tsne', study.default_cluster.name
     mock = Minitest::Mock.new
     mock.expect(:get_workspace_files, [], [String, Hash])
     ApplicationController.stub :firecloud_client, mock do

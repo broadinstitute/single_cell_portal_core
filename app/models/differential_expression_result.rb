@@ -228,7 +228,7 @@ class DifferentialExpressionResult
     # in production, DeleteQueueJob will handle all necessary cleanup
     return true if study.nil? || study.detached || study.queued_for_deletion
 
-    identifier = "#{study.accession}:#{annotation_identifier}"
+    identifier = "#{study.accession}:#{annotation_name}--group--#{annotation_scope}"
     bucket_files.each do |filepath|
       remote = ApplicationController.firecloud_client.get_workspace_file(study.bucket_id, filepath)
       if remote.present?

@@ -225,7 +225,7 @@ class IngestJobTest < ActiveSupport::TestCase
                                         { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
                                       ],
                                       coordinate_input: [
-                                        { X_umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                        { umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
                                       ],
                                       expression_input: {
                                         'phex' => [['A', 0.3], ['B', 1.0], ['C', 0.5], ['D', 0.1]]
@@ -333,7 +333,7 @@ class IngestJobTest < ActiveSupport::TestCase
     end
   end
 
-  test 'should get ingest summary for AnnData parsing' do
+  test 'should get ingestSummary for AnnData parsing' do
     ann_data_file = FactoryBot.create(:ann_data_file, name: 'data.h5ad', study: @basic_study)
     ann_data_file.ann_data_file_info.reference_file = false
     ann_data_file.ann_data_file_info.data_fragments = [
@@ -369,8 +369,9 @@ class IngestJobTest < ActiveSupport::TestCase
     }.with_indifferent_access
 
     pipeline_mock = MiniTest::Mock.new
-    4.times {pipeline_mock.expect :metadata, metadata_mock }
+    5.times {pipeline_mock.expect :metadata, metadata_mock }
     2.times {pipeline_mock.expect :error, nil  }
+    pipeline_mock.expect :done?, true
 
     operations_mock = Minitest::Mock.new
     operations_mock.expect :operations, [pipeline_mock]
@@ -418,20 +419,27 @@ class IngestJobTest < ActiveSupport::TestCase
       ingest_cluster: true, name: 'UMAP', cluster_file:, domain_ranges: {}, ingest_anndata: false,
       extract: nil, obsm_keys: nil
     )
+    pipeline_name = SecureRandom.uuid
     cluster_job = IngestJob.new(
-      study: @basic_study, study_file: ann_data_file, user: @user, action: :ingest_cluster,
+      pipeline_name:, study: @basic_study, study_file: ann_data_file, user: @user, action: :ingest_cluster,
       params_object: cluster_params_object
     )
     job_mock = Minitest::Mock.new
-    job_mock.expect :object, cluster_job
+    2.times { job_mock.expect :object, cluster_job }
+
+    pipeline_mock = Minitest::Mock.new
+    pipeline_mock.expect :done?, false
 
     # negative test
     DelayedJobAccessor.stub :find_jobs_by_handler_type, [Delayed::Job.new] do
       DelayedJobAccessor.stub :dump_job_handler, job_mock do
-        metadata_job.report_anndata_summary
-        job_mock.verify
-        ann_data_file.reload
-        assert_not ann_data_file.has_anndata_summary?
+        ApplicationController.life_sciences_api_client.stub :get_pipeline, pipeline_mock do
+          metadata_job.report_anndata_summary
+          job_mock.verify
+          pipeline_mock.verify
+          ann_data_file.reload
+          assert_not ann_data_file.has_anndata_summary?
+        end
       end
     end
 
@@ -458,6 +466,7 @@ class IngestJobTest < ActiveSupport::TestCase
           cluster_job.report_anndata_summary
           ann_data_file.reload
           assert ann_data_file.has_anndata_summary?
+          metrics_mock.verify
         end
       end
     end
@@ -473,8 +482,9 @@ class IngestJobTest < ActiveSupport::TestCase
     pipeline = { actions: }
     failed_metadata = { pipeline:, events:, startTime: (now - 1.hour).to_s, endTime: now.to_s }.with_indifferent_access
     failed_pipeline = Minitest::Mock.new
-    6.times { failed_pipeline.expect(:metadata, failed_metadata) }
+    7.times { failed_pipeline.expect(:metadata, failed_metadata) }
     3.times { failed_pipeline.expect(:error, true) }
+    failed_pipeline.expect :done?, true
     operations_mock = Minitest::Mock.new
     operations_mock.expect :operations, [failed_pipeline]
     client_mock = Minitest::Mock.new
@@ -774,7 +784,7 @@ class IngestJobTest < ActiveSupport::TestCase
                                      { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
                                    ],
                                    coordinate_input: [
-                                     { x_tsne: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                     { tsne: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
                                    ],
                                    expression_input: {
                                      'phex' => [['A', 0.3], ['B', 1.0], ['C', 0.5], ['D', 0.1]]
@@ -815,7 +825,7 @@ class IngestJobTest < ActiveSupport::TestCase
                                      { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
                                    ],
                                    coordinate_input: [
-                                     { X_umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                     { umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
                                    ])
     annotation_file = 'gs://test_bucket/anndata/h5ad_frag.metadata.tsv'
     cluster_file = 'gs://test_bucket/anndata/h5ad_frag.cluster.X_umap.tsv'
