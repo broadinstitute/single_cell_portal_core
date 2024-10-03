@@ -92,6 +92,9 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     assert_raise ArgumentError do
       DifferentialExpressionService.run_differential_expression_job(@cluster_group, @basic_study, @user, **@job_params)
     end
+
+    # test pairwise validations
+    @job_params[:]
     # test launch by manually creating expression matrix cells array for validation
     DataArray.create!(@all_cells_array_params)
 

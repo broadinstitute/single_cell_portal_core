@@ -35,6 +35,19 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
       matrix_file_type: 'h5ad',
       file_size: 10.gigabytes
     }
+
+    @pairwise_options = {
+      annotation_name: 'Category',
+      annotation_scope: 'cluster',
+      annotation_label: 'foo',
+      reference_label: 'bar',
+      pairwise: true,
+      annotation_file: 'gs://test_bucket/metadata.tsv',
+      cluster_file: 'gs://test_bucket/cluster.tsv',
+      cluster_name: 'UMAP',
+      matrix_file_path: 'gs://test_bucket/dense.tsv',
+      matrix_file_type: 'dense'
+    }
   end
 
   test 'should instantiate and validate parameters' do
@@ -44,6 +57,8 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
     assert sparse_params.valid?
     anndata_params = DifferentialExpressionParameters.new(@anndata_options)
     assert anndata_params.valid?
+    pairwise_params = DifferentialExpressionParameters.new(@pairwise_options)
+    assert pairwise_params.valid?
 
     # test conditional validations
     dense_params.annotation_file = ''
@@ -56,39 +71,54 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
     sparse_params.machine_type = 'foo'
     assert_not sparse_params.valid?
     assert_equal [:machine_type, :gene_file], sparse_params.errors.attribute_names
+    pairwise_params.reference_label = ''
+    assert_not pairwise_params.valid?
   end
 
   test 'should format differential expression parameters for python cli' do
     dense_params = DifferentialExpressionParameters.new(@dense_options)
     options_array = dense_params.to_options_array
     dense_params.attributes.each do |name, value|
-      next if value.blank? # gene_file and barcode_file will not be set
+      next if value.blank?
 
       expected_name = Parameterizable.to_cli_opt(name)
       assert_includes options_array, expected_name
       assert_includes options_array, value
     end
-    assert_includes options_array, DifferentialExpressionParameters::PARAMETER_NAME
+    assert_includes options_array, '--differential-expression'
 
     sparse_params = DifferentialExpressionParameters.new(@sparse_options)
     options_array = sparse_params.to_options_array
     sparse_params.attributes.each do |name, value|
+      next if value.blank?
+
       expected_name = Parameterizable.to_cli_opt(name)
       assert_includes options_array, expected_name
       assert_includes options_array, value
     end
-    assert_includes options_array, DifferentialExpressionParameters::PARAMETER_NAME
+    assert_includes options_array, '--differential-expression'
 
     anndata_params = DifferentialExpressionParameters.new(@anndata_options)
     options_array = anndata_params.to_options_array
     anndata_params.attributes.each do |name, value|
-      next if value.blank? # gene_file and barcode_file will not be set
+      next if value.blank?
 
       expected_name = Parameterizable.to_cli_opt(name)
       assert_includes options_array, expected_name
       assert_includes options_array, value
     end
-    assert_includes options_array, DifferentialExpressionParameters::PARAMETER_NAME
+    assert_includes options_array, '--differential-expression'
+
+    pairwise_params = DifferentialExpressionParameters.new(@pairwise_options)
+    options_array = pairwise_params.to_options_array
+    pairwise_params.attributes.each do |name, value|
+      next if value.blank?
+
+      expected_name = Parameterizable.to_cli_opt(name)
+      assert_includes options_array, expected_name
+      assert_includes options_array, value
+    end
+    assert_includes options_array, '--pairwise-differential-expression'
   end
 
   test 'converts keys into cli options' do
@@ -112,5 +142,14 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
   test 'should remove non-attribute values from attribute hash' do
     dense_params = DifferentialExpressionParameters.new(@dense_options)
     assert_not_includes dense_params.attributes, :machine_type
+  end
+
+  test 'correctly sets parameterized_name' do
+    params = DifferentialExpressionParameters.new(@dense_options)
+    assert_equal '--differential-expression', params.parameterized_name
+    params.annotation_label = 'foo'
+    params.reference_label = 'bar'
+    params.pairwise = true
+    assert_equal '--pairwise-differential-expression', params.parameterized_name
   end
 end

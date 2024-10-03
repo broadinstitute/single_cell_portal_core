@@ -44,7 +44,7 @@ class RenderExpressionArraysParametersTest < ActiveSupport::TestCase
       assert_includes options_array, expected_name
       assert_includes options_array, value
     end
-    assert_includes options_array, RenderExpressionArraysParameters::PARAMETER_NAME
+    assert_includes options_array, '--render-expression-arrays'
 
     sparse_params = RenderExpressionArraysParameters.new(@sparse_options)
     options_array = sparse_params.to_options_array
@@ -53,7 +53,7 @@ class RenderExpressionArraysParametersTest < ActiveSupport::TestCase
       assert_includes options_array, expected_name
       assert_includes options_array, value
     end
-    assert_includes options_array, RenderExpressionArraysParameters::PARAMETER_NAME
+    assert_includes options_array, '--render-expression-arrays'
   end
 
   test 'converts keys into cli options' do

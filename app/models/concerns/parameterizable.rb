@@ -57,7 +57,7 @@ module Parameterizable
         options_array += [Parameterizable.to_cli_opt(attr_name), value.to_s]
       end
     end
-    options_array << self.class::PARAMETER_NAME if defined? self.class::PARAMETER_NAME
+    options_array << parameterized_name if respond_to? :parameterized_name
     options_array
   end
 

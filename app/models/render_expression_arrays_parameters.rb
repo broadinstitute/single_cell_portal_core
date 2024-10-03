@@ -63,4 +63,8 @@ class RenderExpressionArraysParameters
       MACHINE_TYPES[:large]
     end
   end
+
+  def parameterized_name
+    '--render-expression-arrays'
+  end
 end

@@ -111,6 +111,8 @@ class DifferentialExpressionService
   #   - +user+             (User) => User initiating parse action (for email delivery)
   #   - +annotation_name+  (String) => Name of requested annotation
   #   - +annotation_scope+ (String) => Scope of requested annotation ('study' or 'cluster')
+  #   - +annotation_label+ (String) => Name of comparison label for pairwise DE (optional)
+  #   - +reference_label+  (String) => Name of reference label for pairwise DE (optional)
   #   - +machine_type+     (String) => Override default VM machine type
   #   - +dry_run+          (Boolean) => Indication of whether or not this is a pre-flight check
   #
@@ -123,7 +125,7 @@ class DifferentialExpressionService
   # * *raises*
   #   - (ArgumentError) => if requested parameters do not validate
   def self.run_differential_expression_job(cluster_group, study, user, annotation_name:, annotation_scope:,
-                                           machine_type: nil, dry_run: nil)
+                                           annotation_label:, reference_label:, machine_type: nil, dry_run: nil)
     validate_study(study)
     validate_annotation(cluster_group, study, annotation_name, annotation_scope)
     cluster_url = cluster_file_url(cluster_group)
@@ -154,6 +156,12 @@ class DifferentialExpressionService
       de_params[:file_size] = raw_matrix.upload_file_size
     else
       de_params[:matrix_file_type] = 'dense'
+    end
+    # append pairwise info, if present
+    if annotation_label && reference_label
+      de_params[:annotation_label] = annotation_label
+      de_params[:reference_label] = reference_label
+      de_params[:pairwise] = true
     end
     params_object = DifferentialExpressionParameters.new(de_params)
     params_object.machine_type = machine_type if machine_type.present? # override :machine_type if specified
