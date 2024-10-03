@@ -127,7 +127,7 @@ class DifferentialExpressionService
   def self.run_differential_expression_job(cluster_group, study, user, annotation_name:, annotation_scope:,
                                            annotation_label: nil, reference_label: nil, machine_type: nil, dry_run: nil)
     validate_study(study)
-    validate_annotation(cluster_group, study, annotation_name, annotation_scope)
+    validate_annotation(cluster_group, study, annotation_name, annotation_scope, reference_label:, annotation_label:)
     cluster_url = cluster_file_url(cluster_group)
     study_file = cluster_group.study_file
     metadata_url = study_file.is_viz_anndata? ?
@@ -135,8 +135,8 @@ class DifferentialExpressionService
                      study.metadata_file.gs_url
     # begin assembling parameters
     de_params = {
-      annotation_name: annotation_name,
-      annotation_scope: annotation_scope,
+      annotation_name:,
+      annotation_scope:,
       annotation_file: annotation_scope == 'cluster' ? cluster_url : metadata_url,
       cluster_file: cluster_url,
       cluster_name: cluster_group.name
@@ -160,7 +160,6 @@ class DifferentialExpressionService
 
     # append pairwise info, if present
     if annotation_label || reference_label
-      validate_pairwise(study, annotation_name:, annotation_scope:, annotation_label:, reference_label:)
       de_params[:annotation_label] = annotation_label
       de_params[:reference_label] = reference_label
       de_params[:pairwise] = true
@@ -348,7 +347,7 @@ class DifferentialExpressionService
       raise ArgumentError,
             "#{annotation_name} already exists for #{study.accession}:#{cluster_group.name}, " \
             "please delete result #{result.id} before retrying"
-    elsif pairwise && result.has_pairwise_comparison?(reference_label, annotation_label)
+    elsif pairwise && result.present? && result.has_pairwise_comparison?(reference_label, annotation_label)
       raise ArgumentError,
             "#{reference_label} vs. #{annotation_label} pairwise already exists for #{annotation_name} on " \
             "#{study.accession}:#{cluster_group.name}, you must remove that entry from #{result.id} before retrying"
