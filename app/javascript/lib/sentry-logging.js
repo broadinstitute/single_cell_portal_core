@@ -115,7 +115,8 @@ export function setupSentry() {
     dsn: 'https://a713dcf8bbce4a26aa1fe3bf19008d26@o54426.ingest.sentry.io/1424198',
     integrations: [
       new Sentry.BrowserTracing(),
-      new Sentry.Replay()
+      new Sentry.Replay(),
+      new Sentry.ReplayCanvas()
     ],
 
     // replays sampling rates - this will only record replays for 5% of errors that are reported
