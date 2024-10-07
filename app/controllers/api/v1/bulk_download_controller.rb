@@ -461,7 +461,7 @@ module Api
         when 'nodirs'
           []
         when 'all'
-          study.directory_listings.all
+          study&.directory_listings&.are_synced || []
         else
           DirectoryListing.where(name: sanitized_dirname, study_id: study.id, sync_status: true, file_type: file_type)
         end
