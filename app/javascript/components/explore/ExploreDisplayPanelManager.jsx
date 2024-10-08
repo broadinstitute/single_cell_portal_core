@@ -478,7 +478,7 @@ export default function ExploreDisplayPanelManager({
                           className={`btn btn-primary`}
                           data-testid="cell-filtering-button-disabled"
                           data-toggle="tooltip"
-                          data-original-title={`Cell filtering cannot be shown in this context (only scatter or distribution tabs)`}
+                          data-original-title={`Cell filtering cannot be applied in this context (only scatter or distribution tabs) - visible plots are unfiltered`}
                         >Filtering unavailable</button>
                       </div>
                     </div>
