@@ -155,7 +155,7 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
     end
   end
 
-  # prepare a StudyFile for permanent deletion by unsetting protected attributes
+  # prepare a StudyFile for permanent deletion by unsetting attributes with uniqueness constraints
   # this allows these values to be immediately reused, like when retrying a failed upload/ingest
   def self.prepare_file_for_deletion(study_file_id)
     new_name = "DELETE-#{SecureRandom.uuid}"

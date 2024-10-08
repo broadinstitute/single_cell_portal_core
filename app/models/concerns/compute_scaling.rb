@@ -4,11 +4,11 @@ module ComputeScaling
 
   # GCE machine types and file size ranges
   # produces a hash with entries like { 'n2-highmem-4' => 0..16.gigabytes }
-  # change GB_PER_CORE in parent class to adjust scaling (1-8, higher number means more aggressive scaling)
+  # change GB_PER_CORE in parent class to adjust scaling (1-8, lower number means more aggressive scaling)
   def scaled_machine_types
     gb_per_core = defined?(self.class::GB_PER_CORE) && self.class::GB_PER_CORE || 4
     num_cores = [4, 8, 16, 32, 48, 64]
-    ram_per_core = num_cores.map { |core| (core * gb_per_core).gigabytes }.freeze
+    ram_per_core = num_cores.map { |core| (core * gb_per_core).gigabytes }
     num_cores.map.with_index do |cores, index|
       floor = index == 0 ? 0 : ram_per_core[index - 1]
       limit = index == num_cores.count - 1 ? ram_per_core[index] * 2 : ram_per_core[index]
@@ -36,7 +36,7 @@ module ComputeScaling
   # find the next largest machine to use for an ingest process
   def next_machine_type
     machine_names = scaled_machine_types.keys
-    # return if there are no larger machines available
+    # nil return used as escape clause for stopping retries after largest machine fails
     return nil if machine_type == machine_names.last
 
     current_machine_idx = machine_names.index(machine_type)
