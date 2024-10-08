@@ -32,4 +32,14 @@ module ComputeScaling
     scaled_machine = scaled_machine_types.detect { |_, mem_range| mem_range === file_size }&.first
     scaled_machine || default_machine_type
   end
+
+  # find the next largest machine to use for an ingest process
+  def next_machine_type
+    machine_names = scaled_machine_types.keys
+    # return if there are no larger machines available
+    return nil if machine_type == machine_names.last
+
+    current_machine_idx = machine_names.index(machine_type)
+    machine_names[current_machine_idx + 1]
+  end
 end

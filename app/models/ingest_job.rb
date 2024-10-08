@@ -289,6 +289,14 @@ class IngestJob
     nil # catch-all
   end
 
+  # determine if this job should automatically retry due to OOM exception
+  #
+  # * *returns*
+  #   - (Boolean)
+  def should_retry?
+    [137, 139].include?(exit_code)
+  end
+
   # Reconstruct the command line from the pipeline actions
   #
   # * *returns*
@@ -299,6 +307,14 @@ class IngestJob
       command_line += action['commands'].join(' ') + "\n"
     end
     command_line.chomp("\n")
+  end
+
+  # return the currently assigned machine_type for this ingest run
+  #
+  # * *returns*
+  #   - (String) => machine_type name, e.g. n2d-highmem-4
+  def machine_type
+    params_object&.machine_type || metadata.dig('pipeline', 'resources', 'virtualMachine', 'machineType')
   end
 
   # Get a timestamp from a metadata event or datetime string
@@ -381,9 +397,22 @@ class IngestJob
       log_to_mixpanel # log before queuing file for deletion to preserve properties
       # don't delete files or notify users if this is a 'special action', like DE or image pipeline jobs
       subject = "Error: #{study_file.file_type} file: '#{study_file.upload_file_name}' parse has failed"
-      handle_ingest_failure(subject) unless special_action?
-      admin_email_content = generate_error_email_body(email_type: :dev)
-      SingleCellMailer.notify_admin_parse_fail(user.email, subject, admin_email_content).deliver_now
+      retry_job = should_retry?
+      handle_ingest_failure(subject, retry_job:) unless special_action?
+      if retry_job && params_object&.next_machine_type
+        new_machine = params_object.next_machine_type
+        params_object.machine_type = new_machine
+        cloned_file = study_file.clone
+        # free up filename and other values so cloned_file can save properly
+        DeleteQueueJob.prepare_file_for_deletion(study_file.id)
+        cloned_file.save!
+        Rails.logger.info "Retrying #{action} after #{exit_code} failure with machine_type: #{new_machine}"
+        retry_job = IngestJob.new(study:, study_file: cloned_file, user:, params_object:, action:, persist_on_fail:)
+        retry_job.push_remote_and_launch_ingest
+      else
+        admin_email_content = generate_error_email_body(email_type: :dev)
+        SingleCellMailer.notify_admin_parse_fail(user.email, subject, admin_email_content).deliver_now
+      end
     else
       Rails.logger.info "IngestJob poller: #{pipeline_name} is not done; queuing check for #{run_at}"
       delay(run_at: run_at).poll_for_completion
@@ -394,7 +423,7 @@ class IngestJob
   # will automatically clean up data and notify user
   # in case of subsampling, only subsampled data cleanup is run and all other data is left in place
   # this reduces churn for study owners as full-resolution data is still valid
-  def handle_ingest_failure(email_subject)
+  def handle_ingest_failure(email_subject, retry_job: false)
     if action.to_sym == :ingest_subsample
       study_file.update(parse_status: 'parsed') # reset parse flag
       cluster_name = cluster_name_by_file_type
@@ -405,15 +434,17 @@ class IngestJob
       create_study_file_copy
       study_file.update(parse_status: 'failed')
       DeleteQueueJob.new(study_file).delay.perform
-      unless persist_on_fail
+      unless persist_on_fail || retry_job
         ApplicationController.firecloud_client.delete_workspace_file(study.bucket_id, study_file.bucket_location)
         study_file.bundled_files.each do |bundled_file|
           ApplicationController.firecloud_client.delete_workspace_file(study.bucket_id, bundled_file.bucket_location)
         end
       end
     end
-    user_email_content = generate_error_email_body
-    SingleCellMailer.notify_user_parse_fail(user.email, email_subject, user_email_content, study).deliver_now
+    unless retry_job
+      user_email_content = generate_error_email_body
+      SingleCellMailer.notify_user_parse_fail(user.email, email_subject, user_email_content, study).deliver_now
+    end
   end
 
   # TODO (SCP-4709, SCP-4710) Processed and Raw expression files
