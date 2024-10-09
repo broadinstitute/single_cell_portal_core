@@ -18,7 +18,7 @@ import {
   getParsedHeaderLines, parseLine, ParseException,
   validateUniqueCellNamesWithinFile, validateMetadataLabelMatches,
   validateGroupColumnCounts, timeOutCSFV, validateUnique,
-  validateRequiredMetadataColumns
+  validateRequiredMetadataColumns, validateAlphanumericAndUnderscores
 } from './shared-validation'
 import { parseDifferentialExpressionFile } from './validate-differential-expression'
 import { parseAnnDataFile } from './validate-anndata'
@@ -154,15 +154,16 @@ function validateEqualCount(headers, annotTypes) {
  * Cap lines are like meta-information lines in other file formats
  * (e.g. VCF), but do not begin with pound signs (#).
  */
-function validateCapFormat([headers, annotTypes]) {
+function validateCapFormat([headers, annotTypes], isMetadataFile=true) {
   let issues = []
   if (!headers || !annotTypes) {
     return [['error', 'format:cap:no-cap-rows', 'File does not have 2 non-empty header rows']]
   }
 
-  // Check format rules that apply to both metadata and cluster files
+  // Check format rules that apply to both metadata and (except one rule) cluster files
   issues = issues.concat(
     validateUnique(headers),
+    validateAlphanumericAndUnderscores(headers, isMetadataFile),
     validateNameKeyword(headers),
     validateTypeKeyword(annotTypes),
     validateGroupOrNumeric(annotTypes),
@@ -240,7 +241,7 @@ export async function parseMetadataFile(chunker, mimeType, fileOptions) {
 /** parse a cluster file, and return an array of issues, along with file parsing info */
 export async function parseClusterFile(chunker, mimeType) {
   const { headers, delimiter } = await getParsedHeaderLines(chunker, mimeType)
-  let issues = validateCapFormat(headers)
+  let issues = validateCapFormat(headers, false)
   issues = issues.concat(validateClusterCoordinates(headers))
   // add other header validations here
 
@@ -264,7 +265,7 @@ export async function parseClusterFile(chunker, mimeType) {
  * Example: prettyAndOr(['A', 'B', 'C'], 'or') > '"A", "B", or "C"' */
 function prettyAndOr(stringArray, operator) {
   let phrase
-  const quoted = stringArray.map(ext => `"${ext}"`)
+  const quoted = stringArray.map(ext => `".${ext}"`)
 
   if (quoted.length === 1) {
     phrase = quoted[0]
@@ -274,7 +275,7 @@ function prettyAndOr(stringArray, operator) {
   } else if (quoted.length > 2) {
     // e.g. "A", "B", or "C"
     const last = quoted.slice(-1)[0]
-    phrase = `${quoted.slice(-1).join(', ') } ${operator} ${last}`
+    phrase = `${quoted.slice(0, -1).join(', ')}, ${operator} ${last}`
   }
 
   return phrase
@@ -315,10 +316,10 @@ export async function validateGzipEncoding(file, fileType) {
     }
   } else {
     if (firstByte === GZIP_MAGIC_NUMBER) {
-      const prettyExts = prettyAndOr(EXTENSIONS_MUST_GZIP)
-      const problem = `Only files with extensions ${prettyExts}) may be gzipped`
-      const solution = 'please decompress file and retry'
-      throw new ParseException('encoding:missing-gz-extension', `${problem}; ${solution}`)
+      const prettyExts = prettyAndOr(EXTENSIONS_MUST_GZIP, 'or')
+      const problem = `Only files with extensions ${prettyExts} may be gzipped`
+      const solution = 'Please add a ".gz" extension to the file name, or decompress the file, and retry.'
+      throw new ParseException('encoding:missing-gz-extension', `${problem}.  ${solution}`)
     } else {
       isGzipped = false
     }

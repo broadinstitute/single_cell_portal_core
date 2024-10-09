@@ -193,7 +193,7 @@ class AnnDataFileInfo
 
   # create the default cluster data_fragment entries
   def set_default_cluster_fragments!
-    return false if fragments_by_type(:cluster).any?
+    return false if fragments_by_type(:cluster).any? || reference_file
 
     default_obsm_keys = AnnDataIngestParameters::PARAM_DEFAULTS[:obsm_keys]
     default_obsm_keys.each do |obsm_key_name|

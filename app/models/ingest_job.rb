@@ -32,6 +32,9 @@ class IngestJob
   # steps that need to be accounted for
   SPECIAL_ACTIONS = %i[differential_expression render_expression_arrays image_pipeline].freeze
 
+  # main processes that extract or ingest data for core visualizations (scatter, violin, dot, etc)
+  CORE_ACTIONS = %w[ingest_anndata ingest_expression ingest_cell_metadata ingest_cluster]
+
   # jobs that need parameters objects in order to launch correctly
   PARAMS_OBJ_REQUIRED = %i[
     differential_expression render_expression_arrays image_pipeline ingest_anndata
@@ -347,7 +350,7 @@ class IngestJob
     if done? && !failed?
       Rails.logger.info "IngestJob poller: #{pipeline_name} is done!"
       Rails.logger.info "IngestJob poller: #{pipeline_name} status: #{current_status}"
-      unless special_action? || action == :ingest_anndata
+      unless special_action? || (action == :ingest_anndata && study_file.is_viz_anndata?)
         study_file.update(parse_status: 'parsed')
         study_file.bundled_files.each { |sf| sf.update(parse_status: 'parsed') }
       end
@@ -981,7 +984,7 @@ class IngestJob
     mixpanel_log_props = get_job_analytics
     # log job properties to Mixpanel
     MetricsService.log(mixpanel_event_name, mixpanel_log_props, user)
-    report_anndata_summary if study_file.is_viz_anndata? && action != :differential_expression
+    report_anndata_summary if study_file.is_viz_anndata? && action != :ingest_anndata
   end
 
   # set a mixpanel event name based on action
@@ -994,7 +997,9 @@ class IngestJob
     pipelines = ApplicationController.life_sciences_api_client.list_pipelines
     previous_jobs = pipelines.operations.select do |op|
       pipeline_args = op.metadata.dig('pipeline', 'actions').first['commands']
-      pipeline_args.detect { |c| c == study_file.id.to_s } && !pipeline_args.include?('--differential-expression')
+      op.done? &&
+        pipeline_args.detect { |c| c == study_file.id.to_s } &&
+        (pipeline_args & CORE_ACTIONS).any?
     end
     # get total runtime from initial extract to final parse
     initial_extract = previous_jobs.last
@@ -1023,6 +1028,7 @@ class IngestJob
       op.metadata.dig('pipeline', 'actions').first['commands'].detect { |c| c == '--extract' } ||
         op.error.present?
     end.count
+    num_files_extracted += 1 if extracted_raw_counts?(initial_extract.metadata)
     # event properties for Mixpanel summary event
     {
       perfTime: job_perftime,
@@ -1039,20 +1045,43 @@ class IngestJob
     }
   end
 
+  # determine if an ingest_anndata job extracted raw counts data
+  # reads from the --extract parameter to avoid counting filenames that include 'raw_counts'
+  def extracted_raw_counts?(pipeline_metadata)
+    commands = pipeline_metadata.dig('pipeline', 'actions').first['commands']
+    extract_idx = commands.index('--extract')
+    return false if extract_idx.nil?
+
+    extract_params = commands[extract_idx + 1]
+    extract_params.include?('raw_counts')
+  end
+
   # report a summary of all AnnData extraction for this file to Mixpanel, if this is the last job
   def report_anndata_summary
-    remaining_jobs = DelayedJobAccessor.find_jobs_by_handler_type(IngestJob, study_file)
-    fragment = params_object.associated_file # fragment file from this job
-    # discard the job that corresponds with this ingest process
-    still_processing = remaining_jobs.reject do |job|
-      ingest_job = DelayedJobAccessor.dump_job_handler(job).object
-      ingest_job.params_object.is_a?(AnnDataIngestParameters) && ingest_job.params_object.associated_file == fragment
-    end.any?
-
-    # only continue if there are no more jobs and a summary has not been sent yet
     study_file.reload
-    return false if still_processing || study_file.has_anndata_summary?
+    return false if study_file.has_anndata_summary? # don't bother checking if summary is already sent
 
+    file_identifier = "#{study_file.upload_file_name} (#{study_file.id})"
+    Rails.logger.info "Checking AnnData summary for #{file_identifier} after #{action}"
+    remaining_jobs = DelayedJobAccessor.find_jobs_by_handler_type(IngestJob, study_file)
+    # find running jobs associated with this file that are part of primary extraction (expression, metadata, clustering)
+    still_processing = remaining_jobs.select do |job|
+      ingest_job = DelayedJobAccessor.dump_job_handler(job).object
+      ingest_job.params_object.is_a?(AnnDataIngestParameters) &&
+        !ingest_job.done? &&
+        %i[ingest_cluster ingest_cell_metadata ingest_expression].include?(ingest_job.action)
+    end
+
+    if still_processing.any?
+      files = still_processing.map do |job|
+        ingest_job = DelayedJobAccessor.dump_job_handler(job).object
+        "#{ingest_job.action} - #{ingest_job.params_object.associated_file}"
+      end
+      Rails.logger.info "Found #{still_processing.count} jobs still processing for #{file_identifier} #{files.join(', ')}"
+      return false
+    end
+
+    Rails.logger.info "Sending AnnData summary for #{file_identifier} after #{action}"
     study_file.set_anndata_summary! # prevent race condition leading to duplicate summaries
     MetricsService.log('ingestSummary', anndata_summary_props, user)
   end

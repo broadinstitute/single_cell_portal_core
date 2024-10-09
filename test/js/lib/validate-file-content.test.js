@@ -319,6 +319,17 @@ describe('Client-side file validation', () => {
     expect(errors[0][1]).toEqual('encoding:missing-gz-extension')
   })
 
+  it('catches real gzipped file with txt extension', async () => {
+    const file = createMockFile({ fileName: 'missing_gz_extension.txt'})
+    const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })
+    expect(errors).toHaveLength(1)
+    expect(errors[0][1]).toEqual('encoding:missing-gz-extension')
+    const expectedMessage =
+      // eslint-disable-next-line max-len
+      'Only files with extensions ".gz", ".bam", or ".tbi" may be gzipped.  Please add a ".gz" extension to the file name, or decompress the file, and retry.'
+    expect(errors[0][2]).toEqual(expectedMessage)
+  })
+
   it('does not catch gzipped RDS file without .gz extension', async () => {
     const file = createMockFile({ fileName: 'foo.rds', content: '\x1F\x2E3lkjf3' })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })
@@ -430,6 +441,25 @@ describe('Client-side file validation', () => {
     const displayedWarning = screen.getByTestId('validation-warning')
     expect(displayedWarning).toHaveTextContent(issues.warnings[0][2])
   })
+
+  it('Does not throw disallowed characters in cluster header', async () => {
+    const file = createMockFile({
+      fileName: 'foo.txt',
+      content: 'NAME,X,Y,invalid.header\nTYPE,numeric,numeric,numeric,numeric\nCELL_0001,34.472,32.211\nCELL_0002,15.975,10.043,5'
+    })
+    const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })
+    expect(errors).toHaveLength(0)
+  })
+})
+
+it('Catches disallowed characters in metadata header', async () => {
+  const file = createMockFile({ fileName: 'metadata_invalid_annotation_name_period.tsv' })
+  const [{ errors }] = await validateLocalFile(file, { file_type: 'Metadata' })
+  expect(errors).toHaveLength(1)
+
+  const expectedErrorType = 'format:cap:only-alphanumeric-underscore'
+  const errorType = errors[0][1]
+  expect(errorType).toBe(expectedErrorType)
 })
 
 // With the client side file validation feature flag set to false expect invalid files to pass

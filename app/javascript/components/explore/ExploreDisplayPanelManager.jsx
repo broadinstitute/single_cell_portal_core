@@ -200,7 +200,7 @@ export default function ExploreDisplayPanelManager({
   showDifferentialExpressionPanel, setIsCellSelecting, currentPointsSelected, isCellSelecting, deGenes,
   setDeGenes, setShowDeGroupPicker,
   cellFaceting, cellFilteringSelection, cellFilterCounts, clusterCanFilter, filterErrorText,
-  updateFilteredCells, panelToShow, toggleViewOptions
+  updateFilteredCells, panelToShow, toggleViewOptions, allowCellFiltering
 }) {
   const [, setRenderForcer] = useState({})
   const [dataCache] = useState(createCache())
@@ -244,14 +244,7 @@ export default function ExploreDisplayPanelManager({
 
   const shownAnnotation = getShownAnnotation(exploreParamsWithDefaults.annotation, annotationList)
 
-  const isSubsampled = exploreParamsWithDefaults.subsample !== 'all'
   let cellFilteringTooltipAttrs = {}
-  if (isSubsampled) {
-    cellFilteringTooltipAttrs = {
-      'data-toggle': 'tooltip',
-      'data-original-title': 'Clicking will remove subsampling; plots might be noticeably slower.'
-    }
-  }
 
   /** Toggle cell filtering panel */
   function toggleCellFilterPanel() {
@@ -359,7 +352,7 @@ export default function ExploreDisplayPanelManager({
                 </button>
               </>
           }
-          {showCellFiltering && panelToShow === 'cell-filtering' &&
+          {showCellFiltering && panelToShow === 'cell-filtering' && allowCellFiltering &&
             <CellFilteringPanelHeader
               togglePanel={togglePanel}
               setShowDifferentialExpressionPanel={setShowDifferentialExpressionPanel}
@@ -370,8 +363,7 @@ export default function ExploreDisplayPanelManager({
               setDeGroupB={setDeGroupB}
               isAuthorDe={isAuthorDe}
               updateFilteredCells={updateFilteredCells}
-              deGenes={deGenes}
-            />
+              deGenes={deGenes}/>
           }
           {panelToShow === 'differential-expression' &&
               <DifferentialExpressionPanelHeader
@@ -447,7 +439,7 @@ export default function ExploreDisplayPanelManager({
                   </div>
                 </>
                 }
-                { showCellFiltering && clusterCanFilter &&
+                { showCellFiltering && clusterCanFilter && allowCellFiltering &&
                   <>
                     <div className="row">
                       <div className={`col-xs-12 cell-filtering-button ${shownTab === 'scatter' && !studyHasDe ? 'create-annotation-cell-filtering' : ''}`}>
@@ -462,7 +454,7 @@ export default function ExploreDisplayPanelManager({
                     </div>
                   </>
                 }
-                { showCellFiltering && !clusterCanFilter &&
+                { showCellFiltering && !clusterCanFilter && allowCellFiltering &&
                   <>
                     <div className="row">
                       <div className={`col-xs-12 cell-filtering-button ${shownTab === 'scatter' && !studyHasDe ? 'create-annotation-cell-filtering' : ''}`}>
@@ -472,6 +464,21 @@ export default function ExploreDisplayPanelManager({
                           data-testid="cell-filtering-button"
                           data-toggle="tooltip"
                           data-original-title={`Cell filtering cannot be displayed for this selection: ${filterErrorText}.`}
+                        >Filtering unavailable</button>
+                      </div>
+                    </div>
+                  </>
+                }
+                { showCellFiltering && !allowCellFiltering &&
+                  <>
+                    <div className="row">
+                      <div className={`col-xs-12 cell-filtering-button ${shownTab === 'scatter' && !studyHasDe ? 'create-annotation-cell-filtering' : ''}`}>
+                        <button
+                          disabled="disabled"
+                          className={`btn btn-primary`}
+                          data-testid="cell-filtering-button-disabled"
+                          data-toggle="tooltip"
+                          data-original-title={`Cell filtering cannot be applied in this context (only scatter or distribution tabs) - visible plots are unfiltered`}
                         >Filtering unavailable</button>
                       </div>
                     </div>

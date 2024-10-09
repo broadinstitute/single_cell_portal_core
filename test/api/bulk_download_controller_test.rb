@@ -484,4 +484,18 @@ class BulkDownloadControllerTest < ActionDispatch::IntegrationTest
       assert_equal %w[FakeHCAProject AnotherFakeHCAProject].sort, hca_accessions.sort
     end
   end
+
+  test 'should ignore unsynced directories' do
+    study = FactoryBot.create(:detached_study, name: 'Unsynced Dir Test', user: @user, test_array: @@studies_to_clean)
+    files = 1.upto(30).map do |i|
+      {
+        name: "_scp_internal/subdir/output_#{i}.tsv",
+        size: i * 100,
+        generation: SecureRandom.random_number(10000..99999)
+      }
+    end
+    directory = DirectoryListing.create(study:, file_type: 'tsv', name: '_scp_internal', files:, sync_status: false)
+    assert directory.persisted?
+    assert_empty Api::V1::BulkDownloadController.find_matching_directories('all', '', study.accession)
+  end
 end

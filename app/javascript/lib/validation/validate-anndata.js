@@ -1,8 +1,9 @@
-import {openH5File} from 'hdf5-indexed-reader'
+import { openH5File } from 'hdf5-indexed-reader'
 
 import { getOAuthToken } from '~/lib/scp-api'
 import {
   validateUnique, validateRequiredMetadataColumns,
+  validateAlphanumericAndUnderscores,
   metadataSchema, REQUIRED_CONVENTION_COLUMNS
 } from './shared-validation'
 import { getAcceptedOntologies, fetchOntologies } from './ontology-validation'
@@ -285,6 +286,7 @@ export async function parseAnnDataFile(fileOrUrl, remoteProps) {
 
   issues = issues.concat(
     validateUnique(headers),
+    validateAlphanumericAndUnderscores(headers),
     requiredMetadataIssues,
     ontologyIdFormatIssues,
     ontologyLabelAndIdIssues
