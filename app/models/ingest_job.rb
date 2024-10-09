@@ -407,7 +407,8 @@ class IngestJob
         # free up filename and other values so cloned_file can save properly
         DeleteQueueJob.prepare_file_for_deletion(study_file.id)
         cloned_file.update!(parse_status: 'parsing')
-        Rails.logger.info "Retrying #{action} after #{exit_code} failure with machine_type: #{new_machine}"
+        file_identifier = "#{cloned_file.upload_file_name}:#{cloned_file.id} (#{study.accession})"
+        Rails.logger.info "Retrying #{action} after #{exit_code} failure for #{file_identifier} with machine_type: #{new_machine}"
         retry_job = IngestJob.new(study:, study_file: cloned_file, user:, params_object:, action:, persist_on_fail:)
         retry_job.push_remote_and_launch_ingest
         # notify admins that the parse failed for visibility purposes
