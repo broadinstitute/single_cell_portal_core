@@ -882,6 +882,71 @@ class IngestJobTest < ActiveSupport::TestCase
     end
   end
 
+  test 'should automatically retry on OOM failure' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'OOM Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    study_file = FactoryBot.create(:ann_data_file,
+                                   name: 'matrix.h5ad',
+                                   study:,
+                                   upload_file_size: 8.gigabytes,
+                                   cell_input: %w[A B C D],
+                                   annotation_input: [
+                                     { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                                   ],
+                                   coordinate_input: [
+                                     { umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                   ])
+    puts "file id: #{study_file.id}"
+    params_object = AnnDataIngestParameters.new(
+      anndata_file: 'gs://test_bucket/matrix.h5ad', file_size: study_file.upload_file_size
+    )
+    pipeline_name = SecureRandom.uuid
+    job = IngestJob.new(
+      pipeline_name:, study:, study_file:, user: @user, action: :ingest_anndata, params_object:
+    )
+    now = DateTime.now.in_time_zone
+    mock_metadata = {
+      events: [
+        { timestamp: now.to_s },
+        { timestamp: (now + 2.minutes).to_s, containerStopped: { exitStatus: 137 } }
+      ],
+      pipeline: {
+        resources: {
+          virtualMachine: {
+            machineType: 'n2d-highmem-8',
+            bootDiskSizeGb: 300
+          }
+        }
+      },
+      createTime: (now - 3.minutes).to_s,
+      startTime: now.to_s,
+      endTime: now.to_s
+    }.with_indifferent_access
+    pipeline_mock = Minitest::Mock.new
+    6.times { pipeline_mock.expect :metadata, mock_metadata }
+    5.times { pipeline_mock.expect :done?, true }
+    3.times { pipeline_mock.expect :error, { code: 137, message: 'OOM exception' } }
+    client_mock = Minitest::Mock.new
+    14.times { client_mock.expect :get_pipeline, pipeline_mock, [{ name: pipeline_name }] }
+    client_mock.expect :run_pipeline, Google::Apis::LifesciencesV2beta::Operation.new do |args|
+      args[:params_object].machine_type == 'n2d-highmem-16'
+    end
+    terra_mock = Minitest::Mock.new
+    terra_mock.expect :get_workspace_file,
+                      Google::Cloud::Storage::File.new,
+                      [study.bucket_id, study_file.upload_file_name]
+    ApplicationController.stub :life_sciences_api_client, client_mock do
+      ApplicationController.stub :firecloud_client, terra_mock do
+        job.poll_for_completion
+        pipeline_mock.verify
+        terra_mock.verify
+        client_mock.verify
+      end
+    end
+  end
+
   test 'should always unset subsampling flags' do
     study = FactoryBot.create(:detached_study,
                               name_prefix: 'Subsample Flag Test',

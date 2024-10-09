@@ -97,8 +97,9 @@ class IngestJob
       else
         if can_launch_ingest?
           Rails.logger.info "Remote found for #{file_identifier}, launching Ingest job"
-          submission = ApplicationController.life_sciences_api_client.run_pipeline(study_file: study_file, user: user,
-                                                                                   action: action, params_object: params_object)
+          submission = ApplicationController.life_sciences_api_client.run_pipeline(
+            study_file:, user:, action:, params_object:
+          )
           Rails.logger.info "Ingest run initiated: #{submission.name}, queueing Ingest poller"
           IngestJob.new(pipeline_name: submission.name, study: study, study_file: study_file,
                         user: user, action: action, reparse: reparse,
@@ -405,7 +406,7 @@ class IngestJob
         cloned_file = study_file.clone
         # free up filename and other values so cloned_file can save properly
         DeleteQueueJob.prepare_file_for_deletion(study_file.id)
-        cloned_file.save!
+        cloned_file.update!(parse_status: 'parsing')
         Rails.logger.info "Retrying #{action} after #{exit_code} failure with machine_type: #{new_machine}"
         retry_job = IngestJob.new(study:, study_file: cloned_file, user:, params_object:, action:, persist_on_fail:)
         retry_job.push_remote_and_launch_ingest
