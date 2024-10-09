@@ -4,9 +4,9 @@ module ComputeScaling
 
   # GCE machine types and file size ranges
   # produces a hash with entries like { 'n2-highmem-4' => 0..16.gigabytes }
-  # change GB_PER_CORE in parent class to adjust scaling (1-8, lower number means more aggressive scaling)
+  # change RAM_SCALING in parent class to adjust scaling (1-8, lower number means faster scaling relative to file size)
   def scaled_machine_types
-    gb_per_core = defined?(self.class::GB_PER_CORE) && self.class::GB_PER_CORE || 4
+    gb_per_core = defined?(self.class::RAM_SCALING) && self.class::RAM_SCALING || 4
     num_cores = [4, 8, 16, 32, 48, 64]
     ram_per_core = num_cores.map { |core| (core * gb_per_core).gigabytes }
     num_cores.map.with_index do |cores, index|

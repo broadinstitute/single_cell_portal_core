@@ -400,6 +400,7 @@ class IngestJob
       subject = "Error: #{study_file.file_type} file: '#{study_file.upload_file_name}' parse has failed"
       retry_job = should_retry?
       handle_ingest_failure(subject, retry_job:) unless special_action?
+      admin_email_content = generate_error_email_body(email_type: :dev)
       if retry_job && params_object&.next_machine_type
         new_machine = params_object.next_machine_type
         params_object.machine_type = new_machine
@@ -414,7 +415,6 @@ class IngestJob
         # notify admins that the parse failed for visibility purposes
         SingleCellMailer.notify_admin_parse_fail(user.email, subject, admin_email_content).deliver_now
       else
-        admin_email_content = generate_error_email_body(email_type: :dev)
         SingleCellMailer.notify_admin_parse_fail(user.email, subject, admin_email_content).deliver_now
       end
     else

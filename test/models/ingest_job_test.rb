@@ -912,19 +912,29 @@ class IngestJobTest < ActiveSupport::TestCase
         { timestamp: now.to_s },
         { timestamp: (now + 2.minutes).to_s, containerStopped: { exitStatus: 137 } }
       ],
-      pipeline: { resources: { virtualMachine: { machineType: 'n2d-highmem-8', bootDiskSizeGb: 300 } } },
+      pipeline: {
+        actions: [
+          {
+            commands: [
+              'python', 'ingest_pipeline.py', '--study-id', study.id.to_s, '--study-file-id',
+              study_file.id.to_s, 'ingest_anndata', '--ingest-anndata', '--anndata-file', params_object.anndata_file,
+              '--obsm-keys', '["X_umap"]', '--extract', '["cluster", "metadata", "processed_expression", "raw_counts"]'
+            ]
+          }
+        ],
+        resources: { virtualMachine: { machineType: 'n2d-highmem-8', bootDiskSizeGb: 300 } } },
       createTime: (now - 3.minutes).to_s,
       startTime: now.to_s,
       endTime: now.to_s
     }.with_indifferent_access
     # first pipeline mock represents the failed OOM job
     pipeline_mock = Minitest::Mock.new
-    6.times { pipeline_mock.expect :metadata, mock_metadata }
+    8.times { pipeline_mock.expect :metadata, mock_metadata }
     5.times { pipeline_mock.expect :done?, true }
     3.times { pipeline_mock.expect :error, { code: 137, message: 'OOM exception' } }
     # must mock life_sciences_api_client getting pipeline metadata
     client_mock = Minitest::Mock.new
-    14.times { client_mock.expect :get_pipeline, pipeline_mock, [{ name: pipeline_name }] }
+    16.times { client_mock.expect :get_pipeline, pipeline_mock, [{ name: pipeline_name }] }
     # new pipeline mock is resubmitted job with larger machine_type
     new_pipeline = Minitest::Mock.new
     new_op = Google::Apis::LifesciencesV2beta::Operation.new(name: 'oom-retry')
@@ -948,6 +958,9 @@ class IngestJobTest < ActiveSupport::TestCase
     terra_mock.expect :execute_gcloud_method,
                       Google::Cloud::Storage::File.new,
                       [:copy_workspace_file, 0, bucket, study_file.bucket_location, study_file.parse_fail_bucket_location]
+    terra_mock.expect :workspace_file_exists?,
+                      false,
+                      [bucket, String]
     ApplicationController.stub :life_sciences_api_client, client_mock do
       ApplicationController.stub :firecloud_client, terra_mock do
         job.poll_for_completion
