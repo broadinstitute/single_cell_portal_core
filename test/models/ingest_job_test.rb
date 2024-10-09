@@ -42,6 +42,10 @@ class IngestJobTest < ActiveSupport::TestCase
     @basic_study_exp_file.update(parse_status: 'parsed')
   end
 
+  after(:all) do
+    Delayed::Job.delete_all # remove any unneeded jobs that will pollute logs with errors later
+  end
+
   test 'should hold ingest until other matrix validates' do
 
     ingest_job = IngestJob.new(study: @basic_study, study_file: @other_matrix, action: :ingest_expression)
@@ -866,11 +870,10 @@ class IngestJobTest < ActiveSupport::TestCase
       endTime: now.to_s
     }.with_indifferent_access
     mock = Minitest::Mock.new
-    6.times { mock.expect :metadata, mock_metadata }
-    3.times do
-      mock.expect :error, { code: 1, message: 'mock message' }
-      mock.expect :done?, true
-    end
+    7.times { mock.expect :metadata, mock_metadata }
+    3.times { mock.expect :error, { code: 1, message: 'mock message' } }
+    4.times { mock.expect :done?, true }
+
     email_mock = Minitest::Mock.new
     email_mock.expect :deliver_now, true
     ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
@@ -892,13 +895,9 @@ class IngestJobTest < ActiveSupport::TestCase
                                    study:,
                                    upload_file_size: 8.gigabytes,
                                    cell_input: %w[A B C D],
-                                   annotation_input: [
-                                     { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
-                                   ],
                                    coordinate_input: [
                                      { umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
                                    ])
-    puts "file id: #{study_file.id}"
     params_object = AnnDataIngestParameters.new(
       anndata_file: 'gs://test_bucket/matrix.h5ad', file_size: study_file.upload_file_size
     )
@@ -906,37 +905,49 @@ class IngestJobTest < ActiveSupport::TestCase
     job = IngestJob.new(
       pipeline_name:, study:, study_file:, user: @user, action: :ingest_anndata, params_object:
     )
+    bucket = study.bucket_id
     now = DateTime.now.in_time_zone
     mock_metadata = {
       events: [
         { timestamp: now.to_s },
         { timestamp: (now + 2.minutes).to_s, containerStopped: { exitStatus: 137 } }
       ],
-      pipeline: {
-        resources: {
-          virtualMachine: {
-            machineType: 'n2d-highmem-8',
-            bootDiskSizeGb: 300
-          }
-        }
-      },
+      pipeline: { resources: { virtualMachine: { machineType: 'n2d-highmem-8', bootDiskSizeGb: 300 } } },
       createTime: (now - 3.minutes).to_s,
       startTime: now.to_s,
       endTime: now.to_s
     }.with_indifferent_access
+    # first pipeline mock represents the failed OOM job
     pipeline_mock = Minitest::Mock.new
     6.times { pipeline_mock.expect :metadata, mock_metadata }
     5.times { pipeline_mock.expect :done?, true }
     3.times { pipeline_mock.expect :error, { code: 137, message: 'OOM exception' } }
+    # must mock life_sciences_api_client getting pipeline metadata
     client_mock = Minitest::Mock.new
     14.times { client_mock.expect :get_pipeline, pipeline_mock, [{ name: pipeline_name }] }
-    client_mock.expect :run_pipeline, Google::Apis::LifesciencesV2beta::Operation.new do |args|
-      args[:params_object].machine_type == 'n2d-highmem-16'
+    # new pipeline mock is resubmitted job with larger machine_type
+    new_pipeline = Minitest::Mock.new
+    new_op = Google::Apis::LifesciencesV2beta::Operation.new(name: 'oom-retry')
+    2.times do
+      client_mock.expect :get_pipeline, new_pipeline, [{ name: new_op.name }]
+      new_pipeline.expect :done?, false
+      new_pipeline.expect :failed?, false
+    end
+    # block for keyword arguments allows better control of assertions
+    # also prevents mock 'unexpected arguments' errors that can happen
+    client_mock.expect :run_pipeline, new_op do |args|
+      args[:study_file].upload_file_name == study_file.upload_file_name &&
+        args[:study_file].id.to_s != study_file.id.to_s && # this should be a new file with the same name
+        args[:action] == :ingest_anndata &&
+        args[:params_object].machine_type == 'n2d-highmem-16'
     end
     terra_mock = Minitest::Mock.new
     terra_mock.expect :get_workspace_file,
                       Google::Cloud::Storage::File.new,
-                      [study.bucket_id, study_file.upload_file_name]
+                      [bucket, study_file.bucket_location]
+    terra_mock.expect :execute_gcloud_method,
+                      Google::Cloud::Storage::File.new,
+                      [:copy_workspace_file, 0, bucket, study_file.bucket_location, study_file.parse_fail_bucket_location]
     ApplicationController.stub :life_sciences_api_client, client_mock do
       ApplicationController.stub :firecloud_client, terra_mock do
         job.poll_for_completion
