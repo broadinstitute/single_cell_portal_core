@@ -410,6 +410,8 @@ class IngestJob
         Rails.logger.info "Retrying #{action} after #{exit_code} failure with machine_type: #{new_machine}"
         retry_job = IngestJob.new(study:, study_file: cloned_file, user:, params_object:, action:, persist_on_fail:)
         retry_job.push_remote_and_launch_ingest
+        # notify admins that the parse failed for visibility purposes
+        SingleCellMailer.notify_admin_parse_fail(user.email, subject, admin_email_content).deliver_now
       else
         admin_email_content = generate_error_email_body(email_type: :dev)
         SingleCellMailer.notify_admin_parse_fail(user.email, subject, admin_email_content).deliver_now
