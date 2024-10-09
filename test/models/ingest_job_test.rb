@@ -42,6 +42,10 @@ class IngestJobTest < ActiveSupport::TestCase
     @basic_study_exp_file.update(parse_status: 'parsed')
   end
 
+  after(:all) do
+    Delayed::Job.delete_all # remove any unneeded jobs that will pollute logs with errors later
+  end
+
   test 'should hold ingest until other matrix validates' do
 
     ingest_job = IngestJob.new(study: @basic_study, study_file: @other_matrix, action: :ingest_expression)
@@ -866,11 +870,10 @@ class IngestJobTest < ActiveSupport::TestCase
       endTime: now.to_s
     }.with_indifferent_access
     mock = Minitest::Mock.new
-    6.times { mock.expect :metadata, mock_metadata }
-    3.times do
-      mock.expect :error, { code: 1, message: 'mock message' }
-      mock.expect :done?, true
-    end
+    7.times { mock.expect :metadata, mock_metadata }
+    3.times { mock.expect :error, { code: 1, message: 'mock message' } }
+    4.times { mock.expect :done?, true }
+
     email_mock = Minitest::Mock.new
     email_mock.expect :deliver_now, true
     ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
@@ -878,6 +881,92 @@ class IngestJobTest < ActiveSupport::TestCase
         job.poll_for_completion
         mock.verify
         email_mock.verify
+      end
+    end
+  end
+
+  test 'should automatically retry on OOM failure' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'OOM Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    study_file = FactoryBot.create(:ann_data_file,
+                                   name: 'matrix.h5ad',
+                                   study:,
+                                   upload_file_size: 8.gigabytes,
+                                   cell_input: %w[A B C D],
+                                   coordinate_input: [
+                                     { umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                   ])
+    params_object = AnnDataIngestParameters.new(
+      anndata_file: 'gs://test_bucket/matrix.h5ad', file_size: study_file.upload_file_size
+    )
+    pipeline_name = SecureRandom.uuid
+    job = IngestJob.new(
+      pipeline_name:, study:, study_file:, user: @user, action: :ingest_anndata, params_object:
+    )
+    bucket = study.bucket_id
+    now = DateTime.now.in_time_zone
+    mock_metadata = {
+      events: [
+        { timestamp: now.to_s },
+        { timestamp: (now + 2.minutes).to_s, containerStopped: { exitStatus: 137 } }
+      ],
+      pipeline: {
+        actions: [
+          {
+            commands: [
+              'python', 'ingest_pipeline.py', '--study-id', study.id.to_s, '--study-file-id',
+              study_file.id.to_s, 'ingest_anndata', '--ingest-anndata', '--anndata-file', params_object.anndata_file,
+              '--obsm-keys', '["X_umap"]', '--extract', '["cluster", "metadata", "processed_expression", "raw_counts"]'
+            ]
+          }
+        ],
+        resources: { virtualMachine: { machineType: 'n2d-highmem-8', bootDiskSizeGb: 300 } } },
+      createTime: (now - 3.minutes).to_s,
+      startTime: now.to_s,
+      endTime: now.to_s
+    }.with_indifferent_access
+    # first pipeline mock represents the failed OOM job
+    pipeline_mock = Minitest::Mock.new
+    8.times { pipeline_mock.expect :metadata, mock_metadata }
+    5.times { pipeline_mock.expect :done?, true }
+    3.times { pipeline_mock.expect :error, { code: 137, message: 'OOM exception' } }
+    # must mock life_sciences_api_client getting pipeline metadata
+    client_mock = Minitest::Mock.new
+    16.times { client_mock.expect :get_pipeline, pipeline_mock, [{ name: pipeline_name }] }
+    # new pipeline mock is resubmitted job with larger machine_type
+    new_pipeline = Minitest::Mock.new
+    new_op = Google::Apis::LifesciencesV2beta::Operation.new(name: 'oom-retry')
+    2.times do
+      client_mock.expect :get_pipeline, new_pipeline, [{ name: new_op.name }]
+      new_pipeline.expect :done?, false
+      new_pipeline.expect :failed?, false
+    end
+    # block for keyword arguments allows better control of assertions
+    # also prevents mock 'unexpected arguments' errors that can happen
+    client_mock.expect :run_pipeline, new_op do |args|
+      args[:study_file].upload_file_name == study_file.upload_file_name &&
+        args[:study_file].id.to_s != study_file.id.to_s && # this should be a new file with the same name
+        args[:action] == :ingest_anndata &&
+        args[:params_object].machine_type == 'n2d-highmem-16'
+    end
+    terra_mock = Minitest::Mock.new
+    terra_mock.expect :get_workspace_file,
+                      Google::Cloud::Storage::File.new,
+                      [bucket, study_file.bucket_location]
+    terra_mock.expect :execute_gcloud_method,
+                      Google::Cloud::Storage::File.new,
+                      [:copy_workspace_file, 0, bucket, study_file.bucket_location, study_file.parse_fail_bucket_location]
+    terra_mock.expect :workspace_file_exists?,
+                      false,
+                      [bucket, String]
+    ApplicationController.stub :life_sciences_api_client, client_mock do
+      ApplicationController.stub :firecloud_client, terra_mock do
+        job.poll_for_completion
+        pipeline_mock.verify
+        terra_mock.verify
+        client_mock.verify
       end
     end
   end

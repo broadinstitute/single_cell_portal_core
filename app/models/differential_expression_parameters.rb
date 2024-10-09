@@ -8,7 +8,7 @@ class DifferentialExpressionParameters
   PARAMETER_NAME = '--differential-expression'.freeze
 
   # RAM scaling coefficient for auto-selecting machine_type
-  GB_PER_CORE = 3.5
+  RAM_SCALING = 3.5
 
   # annotation_name: name of annotation to use for DE
   # annotation_scope: scope of annotation (study, cluster)

@@ -6,7 +6,7 @@ class AnnDataIngestParameters
   include ComputeScaling
 
   # RAM scaling coefficient for auto-selecting machine_type
-  GB_PER_CORE = 1.75
+  RAM_SCALING = 1.75
 
   # default values for parameters, also used as control list for attributes hash
   # attributes marked as true are passed to the command line as a standalone flag with no value
