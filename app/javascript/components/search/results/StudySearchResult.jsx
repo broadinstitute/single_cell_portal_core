@@ -170,6 +170,55 @@ function studyTypeBadge(study) {
   }
 }
 
+// show list of metadata values as badges, truncating as needed
+function metadataList(values, accession, header) {
+  const moreValues = values.splice(4)
+  const list = values.map((val, i) => {
+    return <span key={`${accession}-${header}-entry-${i}-val`}
+                 className="label label-primary study-metadata-entry">{val}</span>
+  })
+  if (moreValues.length > 0) {
+    list.push(<span key={`${accession}-${header}-entry-extra`}
+                    className="label label-primary study-metadata-entry"
+                    data-toggle="tooltip"
+                    data-original-title={`${moreValues.join(', ')}`}
+    >{moreValues.length} more...</span>)
+  }
+  if (list.length === 0) {
+    list.push(<span key={`${accession}-${header}-entry-unspecified-val`}
+                    className="badge study-metadata-entry">unspecified</span>)
+  }
+  return list
+}
+
+// return a table with the 5 top-level metadata entries and their values for a SCP study
+function cohortMetadataTable(study) {
+  let headers = []
+  let studyValues = []
+  Object.entries(study.metadata).map((entry, index) => {
+    const header = entry[0]
+    const data = entry[1]
+    const values = metadataList(data, study.accession, header)
+    headers.push(<th className="cohort-th" key={`${study.accession}-${header}-th`}>{header}</th>)
+    studyValues.push(<td key={`${study.accession}-${header}-metadata-${index}-td`}>{values}</td>)
+  })
+
+  return <div className="table-responsive">
+    <table className="table table-condensed">
+      <thead>
+      <tr>
+        {headers}
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        {studyValues}
+      </tr>
+      </tbody>
+    </table>
+  </div>
+}
+
 /** Displays a brief summary of a study, with a link to the study page */
 export default function StudySearchResult({ study, logProps }) {
   const termMatches = study.term_matches
@@ -180,7 +229,9 @@ export default function StudySearchResult({ study, logProps }) {
     <a
       href={study.study_url}
       dangerouslySetInnerHTML={displayStudyTitle}
-      onClick={() => {logSelectSearchResult(study, logProps)}}
+      onClick={() => {
+        logSelectSearchResult(study, logProps)
+      }}
     ></a>
   if (study.study_source !== 'SCP') {
     studyLink = <a
@@ -205,6 +256,7 @@ export default function StudySearchResult({ study, logProps }) {
           {facetMatchBadges(study)}
         </div>
         {studyDescription}
+        {cohortMetadataTable(study)}
       </div>
     </>
   )
