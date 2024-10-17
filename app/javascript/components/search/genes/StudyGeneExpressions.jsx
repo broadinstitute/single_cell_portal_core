@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import _clone from 'lodash/clone'
 
 import StudySearchResult, { getByline, inferredBadge } from '~/components/search/results/StudySearchResult'
+import ResultMetadataTable from '~/components/search/results/ResultMetadataTable'
 import DotPlot from '~/components/visualization/DotPlot'
 import StudyViolinPlot from '~/components/visualization/StudyViolinPlot'
 import ScatterPlot from '~/components/visualization/ScatterPlot'
@@ -103,6 +104,7 @@ export default function StudyGeneExpressions({ study }) {
           })
         }
       </div>
+      <ResultMetadataTable study={study} />
       <div className="row graph-container">
         <div className={study.can_visualize_clusters ? 'col-md-10' : 'col-md-12'}>
           { studyRenderComponent }

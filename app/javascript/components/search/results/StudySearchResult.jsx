@@ -1,6 +1,7 @@
 /* eslint-disable require-jsdoc */
 import React from 'react'
 
+import ResultMetadataTable from '~/components/search/results/ResultMetadataTable'
 import { getDisplayNameForFacet } from '~/providers/SearchFacetProvider'
 import { logSelectSearchResult } from '~/lib/search-metrics'
 
@@ -8,9 +9,6 @@ export const descriptionCharacterLimit = 750
 export const summaryWordLimit = 150
 
 const lengthOfHighlightTag = 21
-
-// number of values to show in study metadata table before hiding in `{n} more...` badge
-const maxMetadataEntities = 2
 
 /* converts description into text snippet */
 export function formatDescription(rawDescription, term) {
@@ -173,71 +171,6 @@ function studyTypeBadge(study) {
   }
 }
 
-// strip off redundant information like '(disease)' from the end of labels
-// also accounts for array-based labels with pipes |
-function sanitizeMetadataLabel(label) {
-  const allLabels = label.match('|') ? label.split('|') : [label]
-  const returnLabels = []
-  allLabels.map(subLabel => {
-    if (subLabel.endsWith('(disease)')) {
-      returnLabels.push(subLabel.split(' (disease)')[0])
-    } else {
-      returnLabels.push(subLabel)
-    }
-  })
-  return returnLabels.join('|')
-}
-
-// show list of metadata values as badges, truncating as needed
-function metadataList(values, accession, header) {
-  const moreValues = values.splice(maxMetadataEntities)
-  const list = values.map((val, i) => {
-    return <span key={`${accession}-${header}-entry-${i}-val`}
-                 className="label label-primary study-metadata-entry">{sanitizeMetadataLabel(val)}</span>
-  })
-  if (moreValues.length > 0) {
-    list.push(<span key={`${accession}-${header}-entry-extra`}
-                    className="label label-primary study-metadata-entry"
-                    data-toggle="tooltip"
-                    data-original-title={`${moreValues.map(v => {return sanitizeMetadataLabel(v)}).join(', ')}`}
-    >{moreValues.length} more...</span>)
-  }
-  if (list.length === 0) {
-    list.push(<span key={`${accession}-${header}-entry-unspecified-val`}
-                    className="label label-default study-metadata-entry">unspecified</span>)
-  }
-  return list
-}
-
-// return a table with the 5 top-level metadata entries and their values for a SCP study
-function cohortMetadataTable(study) {
-  let headers = []
-  let studyValues = []
-
-  Object.entries(study.metadata).map((entry, index) => {
-    const header = entry[0].replace(/_/g, ' ')
-    const data = entry[1]
-    const values = metadataList(data, study.accession, header)
-    headers.push(<th className="cohort-th" key={`${study.accession}-${header}-th`}>{header}</th>)
-    studyValues.push(<td className="cohort-td" key={`${study.accession}-${header}-metadata-${index}-td`}>{values}</td>)
-  })
-
-  return <div className="table-responsive">
-    <table className="table table-condensed cohort-metadata-table" id={`${study.accession}-cohort-metadata`}>
-      <thead>
-      <tr>
-        {headers}
-      </tr>
-      </thead>
-      <tbody>
-      <tr>
-        {studyValues}
-      </tr>
-      </tbody>
-    </table>
-  </div>
-}
-
 /** Displays a brief summary of a study, with a link to the study page */
 export default function StudySearchResult({ study, logProps }) {
   const termMatches = study.term_matches
@@ -275,7 +208,7 @@ export default function StudySearchResult({ study, logProps }) {
           {facetMatchBadges(study)}
         </div>
         {studyDescription}
-        {cohortMetadataTable(study)}
+        <ResultMetadataTable study={study} />
       </div>
     </>
   )
