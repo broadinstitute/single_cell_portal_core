@@ -67,6 +67,12 @@ class AzulSearchServiceTest < ActiveSupport::TestCase
       # will always be project manifest file
       manifest = project[:file_information].detect { |f| f[:file_type] == 'Project Manifest' }
       assert manifest.present?
+      # check metadata content
+      assert_equal %w[hypertension normal], project.dig(:metadata, :disease)
+      assert_equal ['blood', 'hematopoietic system', 'lung', 'mediastinal lymph node'], project.dig(:metadata, :organ)
+      assert_equal %w[male], project.dig(:metadata, :sex)
+      assert_equal ["10X 3' V2 sequencing"], project.dig(:metadata, :library_preparation_protocol)
+      assert_equal ["Homo sapiens"], project.dig(:metadata, :species)
     end
   end
 

@@ -11,6 +11,15 @@ class AzulSearchService
   # each Azul result entry under 'hits' will have these keys, whether project- or file-based
   RESULT_FACET_FIELDS = %w[protocols samples specimens cellLines donorOrganisms organoids cellSuspensions].freeze
 
+  # mapping names of common SCP metadata to values from Azul
+  # this is different from FacetNameConverter as the locations/names are slightly different
+  COHORT_METADATA_MAPPING = {
+    disease: :disease,
+    species: :genusSpecies,
+    organ: :organ,
+    sex: :biologicalSex
+  }.freeze
+
   def self.append_results_to_studies(existing_studies, selected_facets:, terms:, facet_map: nil, results_matched_by_data: nil)
     # set facet_map to {}, even if facet_map is explicitly passed in as nil
     facet_map ||= {}
@@ -59,6 +68,7 @@ class AzulSearchService
         facet_matches: {},
         term_matches: [],
         term_search_weight: 0,
+        metadata: get_cohort_hca_metadata(entry_hash),
         file_information: [
           {
             project_id: project_id,
@@ -260,5 +270,28 @@ class AzulSearchService
       result[:studyFiles] += project_file_info if project_file_info.any?
       result
     end
+  end
+
+  # extract top-level metadata for HCA project to append to search results view
+  def self.get_cohort_hca_metadata(entry)
+    metadata = {
+      disease: [],
+      organ: [],
+      species: [],
+      sex: []
+    }
+    %i[samples specimens donorOrganisms cellLines organoids].each do |field|
+      entry[field].map do |sub_entry|
+        COHORT_METADATA_MAPPING.each do |scp_name, azul_name|
+          values = sub_entry[azul_name]
+          if values.is_a?(Array)
+            values.each { |val| metadata[scp_name] << val unless val.blank? || metadata[scp_name].include?(val)}
+          end
+        end
+      end
+    end
+
+    metadata[:library_preparation_protocol] = entry[:protocols].map {|e| e[:libraryConstructionApproach]}.flatten.compact
+    metadata
   end
 end

@@ -8,6 +8,11 @@ const facetMatchedStudy = {
   name: 'Tuberculosis subtypes in human male blood',
   description: 'stuff and things',
   cell_count: 130,
+  metadata: {
+    'species': ['Homo sapiens'],
+    'disease': ['tuberculosis'],
+    'organ': ['lung', 'blood']
+  },
   facet_matches: {
     facet_search_weight: 1,
     organ: [{ id: 'id1', name: 'blood' }]
@@ -18,6 +23,11 @@ const complexFacetMatchedStudy = {
   name: 'Tuberculosis subtypes in human male blood',
   description: 'stuff and things',
   cell_count: 130,
+  metadata: {
+    'species': ['Homo sapiens'],
+    'disease': ['tuberculosis'],
+    'organ': ['lung', 'blood']
+  },
   facet_matches: {
     facet_search_weight: 1,
     organ: [{ id: 'id1', name: 'blood' }],
@@ -29,6 +39,11 @@ const numericFacetMatchedStudy = {
   name: 'Tuberculosis subtypes in human male blood',
   description: 'stuff and things',
   cell_count: 130,
+  metadata: {
+    'species': ['Homo sapiens'],
+    'disease': ['tuberculosis'],
+    'organ': ['lung', 'blood']
+  },
   facet_matches: {
     facet_search_weight: 1,
     organism_age: [{ min: 30, max: 50, unit: 'years' }]
@@ -38,6 +53,11 @@ const numericFacetMatchedStudy = {
 const numericFacetMatchedRange0Study = {
   name: 'Tuberculosis subtypes in human male blood',
   description: 'stuff and things',
+  metadata: {
+    'species': ['Homo sapiens'],
+    'disease': ['tuberculosis'],
+    'organ': ['lung', 'blood']
+  },
   cell_count: 130,
   facet_matches: {
     facet_search_weight: 1,
@@ -47,7 +67,8 @@ const numericFacetMatchedRange0Study = {
 
 const facetUnmatchedStudy = {
   name: 'Tuberculosis subtypes in human male blood',
-  description: 'stuff and things'
+  description: 'stuff and things',
+  metadata: {}
 }
 
 describe('Facet match badges', () => {

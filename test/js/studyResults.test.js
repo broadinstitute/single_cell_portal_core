@@ -15,7 +15,11 @@ describe('<StudyResults/> rendering>', () => {
         'name': 'Study: Single nucleus RNA-seq of ',
         'cell_count': 0,
         'gene_count': 0,
-        'study_url': '/single_cell/study/SCP1/study-single-nucleus'
+        'study_url': '/single_cell/study/SCP1/study-single-nucleus',
+        'metadata': {
+          'species': ['Homo sapiens'],
+          'disease': ['tuberculosis']
+        }
       }]
     }
   }
@@ -23,6 +27,7 @@ describe('<StudyResults/> rendering>', () => {
     const { container } = render(<StudyResults changePage ={props.changePage} results={props.results} StudyComponent={StudySearchResult}/>)
     expect(container.getElementsByClassName('pagination')).toHaveLength(2)
     expect(container.getElementsByClassName('study-label')).toHaveLength(props.results.studies.length)
+    expect(container.getElementsByClassName('cohort-metadata-table')).toHaveLength(props.results.studies.length)
   })
 
   it('should render the custom study component element', () => {
