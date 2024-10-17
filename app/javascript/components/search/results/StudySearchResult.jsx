@@ -9,6 +9,8 @@ export const summaryWordLimit = 150
 
 const lengthOfHighlightTag = 21
 
+const maxMetadataEntities = 2
+
 /* converts description into text snippet */
 export function formatDescription(rawDescription, term) {
   const textDescription = stripTags(rawDescription)
@@ -172,7 +174,7 @@ function studyTypeBadge(study) {
 
 // show list of metadata values as badges, truncating as needed
 function metadataList(values, accession, header) {
-  const moreValues = values.splice(4)
+  const moreValues = values.splice(maxMetadataEntities)
   const list = values.map((val, i) => {
     return <span key={`${accession}-${header}-entry-${i}-val`}
                  className="label label-primary study-metadata-entry">{val}</span>
@@ -186,7 +188,7 @@ function metadataList(values, accession, header) {
   }
   if (list.length === 0) {
     list.push(<span key={`${accession}-${header}-entry-unspecified-val`}
-                    className="badge study-metadata-entry">unspecified</span>)
+                    className="label label-default study-metadata-entry">unspecified</span>)
   }
   return list
 }
@@ -195,16 +197,17 @@ function metadataList(values, accession, header) {
 function cohortMetadataTable(study) {
   let headers = []
   let studyValues = []
+
   Object.entries(study.metadata).map((entry, index) => {
     const header = entry[0]
     const data = entry[1]
     const values = metadataList(data, study.accession, header)
     headers.push(<th className="cohort-th" key={`${study.accession}-${header}-th`}>{header}</th>)
-    studyValues.push(<td key={`${study.accession}-${header}-metadata-${index}-td`}>{values}</td>)
+    studyValues.push(<td className="cohort-td" key={`${study.accession}-${header}-metadata-${index}-td`}>{values}</td>)
   })
 
   return <div className="table-responsive">
-    <table className="table table-condensed">
+    <table className="table table-condensed cohort-metadata-table" id={`${study.accession}-cohort-metadata`}>
       <thead>
       <tr>
         {headers}
