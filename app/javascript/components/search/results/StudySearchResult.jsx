@@ -9,6 +9,7 @@ export const summaryWordLimit = 150
 
 const lengthOfHighlightTag = 21
 
+// number of values to show in study metadata table before hiding in `{n} more...` badge
 const maxMetadataEntities = 2
 
 /* converts description into text snippet */
@@ -172,18 +173,33 @@ function studyTypeBadge(study) {
   }
 }
 
+// strip off redundant information like '(disease)' from the end of labels
+// also accounts for array-based labels with pipes |
+function sanitizeMetadataLabel(label) {
+  const allLabels = label.match('|') ? label.split('|') : [label]
+  const returnLabels = []
+  allLabels.map(subLabel => {
+    if (subLabel.endsWith('(disease)')) {
+      returnLabels.push(subLabel.split(' (disease)')[0])
+    } else {
+      returnLabels.push(subLabel)
+    }
+  })
+  return returnLabels.join('|')
+}
+
 // show list of metadata values as badges, truncating as needed
 function metadataList(values, accession, header) {
   const moreValues = values.splice(maxMetadataEntities)
   const list = values.map((val, i) => {
     return <span key={`${accession}-${header}-entry-${i}-val`}
-                 className="label label-primary study-metadata-entry">{val}</span>
+                 className="label label-primary study-metadata-entry">{sanitizeMetadataLabel(val)}</span>
   })
   if (moreValues.length > 0) {
     list.push(<span key={`${accession}-${header}-entry-extra`}
                     className="label label-primary study-metadata-entry"
                     data-toggle="tooltip"
-                    data-original-title={`${moreValues.join(', ')}`}
+                    data-original-title={`${moreValues.map(v => {return sanitizeMetadataLabel(v)}).join(', ')}`}
     >{moreValues.length} more...</span>)
   }
   if (list.length === 0) {
@@ -199,7 +215,7 @@ function cohortMetadataTable(study) {
   let studyValues = []
 
   Object.entries(study.metadata).map((entry, index) => {
-    const header = entry[0]
+    const header = entry[0].replace(/_/g, ' ')
     const data = entry[1]
     const values = metadataList(data, study.accession, header)
     headers.push(<th className="cohort-th" key={`${study.accession}-${header}-th`}>{header}</th>)
