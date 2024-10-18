@@ -107,6 +107,71 @@ export function validateUniqueCellNamesWithinFile(line, isLastLine, dataObj) {
   return issues
 }
 
+/** Validate author's annotation labels and IDs match those in ontologies */
+async function checkOntologyLabelsAndIds(
+  headers, line, isLastLine, dataObj,
+  key, ontologies, groups
+) {
+  const issues = []
+  const excludedColumns = ['NAME']
+  // if this is the first time through, identify the columns to check, and
+  // initialize data structures to track mismatches
+  if (!dataObj.dragCheckColumns) {
+    dataObj.dragCheckColumns = headers[0].map((colName, index) => {
+      const labelColumnIndex = headers[0].indexOf(`${colName}__ontology_label`)
+      if (excludedColumns.includes(colName) ||
+        colName.endsWith('ontology_label') ||
+        headers[1][index] === 'numeric' ||
+        labelColumnIndex === -1) {
+        return null
+      }
+      // for each column, track a hash of label=>value,
+      // and also a set of mismatched values -- where the same label is used for different ids
+      return { colName, index, labelColumnIndex, labelValueMap: {}, mismatchedVals: new Set() }
+    }).filter(c => c)
+  }
+
+  // const [ids, idIndexes, labels, labelIndexes] = groups
+
+  // Determine unique (ontology ID, ontology label) pairs
+  const labelIdPairs = new Set()
+  for (let i = 0; i < idIndexes.length; i++) {
+    const id = ids[idIndexes[i]]
+    const label = labels[labelIndexes[i]]
+    labelIdPairs.add(`${id} || ${label}`)
+  }
+  const rawUniques = Array.from(labelIdPairs)
+
+  rawUniques.map(r => {
+    const [id, label] = r.split(' || ')
+    const ontologyShortNameLc = id.split(/[_:]/)[0].toLowerCase()
+    const ontology = ontologies[ontologyShortNameLc]
+
+    if (!(id in ontology)) {
+      // Register invalid ontology ID
+      const msg = `Invalid ontology ID: ${id}`
+      issues.push([
+        'error', 'ontology:label-lookup-error', msg,
+        { subtype: 'ontology:invalid-id' }
+      ])
+    } else {
+      const validLabels = ontology[id]
+
+      if (!(validLabels.includes(label))) {
+        // Register invalid ontology label
+        const prettyLabels = validLabels.join(', ')
+        const validLabelsClause = `Valid labels for ${id}: ${prettyLabels}`
+        const msg = `Invalid ${key} label "${label}".  ${validLabelsClause}`
+        issues.push([
+          'error', 'ontology:label-lookup-error', msg,
+          { subtype: 'ontology:invalid-label' }
+        ])
+      }
+    }
+  })
+
+  return issues
+}
 
 /**
  * Verify that, for id columns with a corresponding label column, no label is
@@ -129,7 +194,7 @@ export function validateMetadataLabelMatches(headers, line, isLastLine, dataObj)
         return null
       }
       // for each column, track a hash of label=>value,
-      // and also a set of mismatched values--where the same label is used for different ids
+      // and also a set of mismatched values -- where the same label is used for different ids
       return { colName, index, labelColumnIndex, labelValueMap: {}, mismatchedVals: new Set() }
     }).filter(c => c)
   }

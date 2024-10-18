@@ -22,6 +22,7 @@ import {
 } from './shared-validation'
 import { parseDifferentialExpressionFile } from './validate-differential-expression'
 import { parseAnnDataFile } from './validate-anndata'
+import { fetchOntologies } from './ontology-validation'
 
 
 /**
@@ -220,8 +221,9 @@ export async function parseMetadataFile(chunker, mimeType, fileOptions) {
     issues = issues.concat(validateRequiredMetadataColumns(headers))
   }
 
-  // add other header validations here
+  const ontologies = fetchOntologies()
 
+  // add other header validations here
   const dataObj = {} // object to track multi-line validation concerns
   await chunker.iterateLines({
     func: (rawline, lineNum, isLastLine) => {
