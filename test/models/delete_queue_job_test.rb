@@ -249,6 +249,7 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
 
     cloned_matrix = matrix.clone
     DeleteQueueJob.prepare_file_for_deletion(matrix.id)
+    assert matrix.is_deleting?
     assert cloned_matrix.valid?
     cloned_matrix.save!
     assert cloned_matrix.persisted?
