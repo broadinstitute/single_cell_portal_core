@@ -147,11 +147,15 @@ class StudyFileTest < ActiveSupport::TestCase
   end
 
   test 'should not enforce raw counts associations' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Raw Counts Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
     raw_counts_required = FeatureFlag.find_or_create_by(name: 'raw_counts_required_backend')
     raw_counts_required.update(default_value: true)
     matrix = FactoryBot.create(:ann_data_file,
                                name: 'matrix.h5ad',
-                               study: @study,
+                               study:,
                                cell_input: %w[A B C D],
                                annotation_input: [
                                  { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
