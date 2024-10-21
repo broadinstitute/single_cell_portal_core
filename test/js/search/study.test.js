@@ -83,7 +83,7 @@ describe('Facet match badges', () => {
     const { container } = render((
       <StudySearchResult study={facetMatchedStudy}/>
     ))
-    expect(container.getElementsByClassName('facet-match')).toHaveLength(1)
+    expect(container.getElementsByClassName('facet-match')).toHaveLength(5)
     expect(container.getElementsByClassName('facet-match')[0].textContent.trim()).toEqual('blood')
   })
 
@@ -91,7 +91,7 @@ describe('Facet match badges', () => {
     const { container } = render((
       <StudySearchResult study={complexFacetMatchedStudy}/>
     ))
-    expect(container.getElementsByClassName('facet-match')).toHaveLength(2)
+    expect(container.getElementsByClassName('facet-match')).toHaveLength(6)
     expect(container.getElementsByClassName('facet-match')[0].textContent.trim()).toEqual('blood')
     expect(container.getElementsByClassName('facet-match')[1].textContent.trim()).toEqual('mouse, human')
   })
@@ -100,12 +100,12 @@ describe('Facet match badges', () => {
     const { container } = render((
       <StudySearchResult study={numericFacetMatchedStudy}/>
     ))
-    expect(container.getElementsByClassName('facet-match')).toHaveLength(1)
+    expect(container.getElementsByClassName('facet-match')).toHaveLength(5)
     expect(container.getElementsByClassName('facet-match')[0].textContent.trim()).toEqual('organism age 30-50 years')
     const { container: container2 } = render((
       <StudySearchResult study={numericFacetMatchedRange0Study}/>
     ))
-    expect(container2.getElementsByClassName('facet-match')).toHaveLength(1)
+    expect(container2.getElementsByClassName('facet-match')).toHaveLength(5)
     expect(container2.getElementsByClassName('facet-match')[0].textContent.trim()).toEqual('organism age 0-50 years')
   })
 })

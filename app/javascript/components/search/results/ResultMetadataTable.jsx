@@ -1,4 +1,5 @@
 import React from 'react'
+import { parseAnnotationName } from '~/components/explore/FacetComponents'
 
 const maxMetadataEntities = 2
 
@@ -22,18 +23,18 @@ function metadataList(values, accession, header) {
   const moreValues = values.splice(maxMetadataEntities)
   const list = values.map((val, i) => {
     return <span key={`${accession}-${header}-entry-${i}-val`}
-                 className="label label-primary study-metadata-entry">{sanitizeMetadataLabel(val)}</span>
+                 className="badge badge-secondary facet-match study-metadata-entry">{sanitizeMetadataLabel(val)}</span>
   })
   if (moreValues.length > 0) {
     list.push(<span key={`${accession}-${header}-entry-extra`}
-                    className="label label-primary study-metadata-entry more-metadata-entries"
+                    className="badge badge-secondary facet-match study-metadata-entry more-metadata-entries"
                     data-toggle="tooltip"
                     data-original-title={`${moreValues.map(v => {return sanitizeMetadataLabel(v)}).join(', ')}`}
     >{moreValues.length} more...</span>)
   }
   if (list.length === 0) {
     list.push(<span key={`${accession}-${header}-entry-unspecified-val`}
-                    className="label label-default study-metadata-entry unspecified-entry">unspecified</span>)
+                    className="badge study-metadata-entry unspecified-entry">unspecified</span>)
   }
   return list
 }
@@ -45,7 +46,7 @@ export default function ResultMetadataTable({study}) {
   const tableId = `${study.accession}-cohort-metadata`
 
   Object.entries(study.metadata).map((entry, index) => {
-    const header = entry[0].replace(/_/g, ' ')
+    const header = parseAnnotationName(entry[0])[0]
     const data = entry[1]
     const values = metadataList(data, study.accession, header)
     headers.push(<th className="cohort-th" key={`${study.accession}-${header}-th`}>{header}</th>)

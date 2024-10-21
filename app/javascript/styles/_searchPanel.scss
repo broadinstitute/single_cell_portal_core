@@ -29,8 +29,11 @@
 }
 
 .study-metadata-entry {
-  margin-right: 3px;
-  border-radius: 1em;
-  font-size: 12px;
-  line-height: 2em;
+  background-color: rgba(76, 132, 31, .85) !important;
+  color: white !important;
+}
+
+.unspecified-entry {
+  background-color: #777 !important;
+  font-weight: normal;
 }
