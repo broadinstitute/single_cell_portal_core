@@ -405,7 +405,9 @@ class IngestJob
         new_machine = params_object.next_machine_type
         params_object.machine_type = new_machine
         cloned_file = study_file.clone
-        # free up filename and other values so cloned_file can save properly
+        # free up filename and other values so cloned_file can save properly, including deleting nested documents
+        # this prevents Frozen BSON::Document error
+        study_file = DeleteQueueJob.delete_nested_associations(study_file)
         DeleteQueueJob.prepare_file_for_deletion(study_file.id)
         cloned_file.update!(parse_status: 'parsing')
         file_identifier = "#{cloned_file.upload_file_name}:#{cloned_file.id} (#{study.accession})"

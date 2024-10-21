@@ -1061,6 +1061,11 @@ class StudyFile
     is_anndata? && !is_reference_anndata?
   end
 
+  # shorthand for when a file is in the deletion queue (for skipping some validations)
+  def is_deleting?
+    queued_for_deletion || file_type == 'DELETE'
+  end
+
   # helper to reduce duplicates when reporting anndata ingest summaries to Mixpanel
   def has_anndata_summary?
     is_viz_anndata? && !!options[:anndata_summary]

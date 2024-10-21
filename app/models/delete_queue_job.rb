@@ -33,6 +33,7 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
       # e.g. { "expression_file_info_attributes"=>"expression_file_info_attributes=", ... }
       StudyFile.nested_attributes.keys.map { |key| key.chomp('_attributes') }.each do |nested_association|
         object.send(nested_association)&.destroy
+        object.reload # prevent state references throwing FrozenError
       end
 
       # now remove all child objects first to free them up to be re-used.
@@ -161,6 +162,11 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
     new_name = "DELETE-#{SecureRandom.uuid}"
     file_reference = StudyFile.find(study_file_id)
     return false unless file_reference
+
+    StudyFile.nested_attributes.keys.map { |key| key.chomp('_attributes') }.each do |nested_association|
+      file_reference.send(nested_association)&.destroy
+      file_reference.reload # prevent state references throwing FrozenError
+    end
 
     file_reference.update!(queued_for_deletion: true,
                            upload_file_name: new_name,
