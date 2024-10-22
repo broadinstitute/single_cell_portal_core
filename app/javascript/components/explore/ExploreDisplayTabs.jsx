@@ -199,7 +199,7 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
 }
 
 /** Determine whether to enable cell filtering tab for ATAC data */
-function allowIgvFiltering(shownTab, exploreInfo) {
+function shouldAllowIgvFiltering(shownTab, exploreInfo) {
   const flags = getFeatureFlagsWithDefaults()
 
   // Consider refining upload UI or processing to more specifically
@@ -319,13 +319,15 @@ export default function ExploreDisplayTabs({
 
   const isCorrelatedScatter = enabledTabs.includes('correlatedScatter')
 
+  const allowIgvFiltering = shouldAllowIgvFiltering(shownTab, exploreInfo)
+
   // decide whether or not to allow the cell filtering UX
   // must be in the scatter or distribution tab with less than 2 genes, or using consensus metric,
   // or in genome tab with IGV multiome enabled
   const allowCellFiltering =
     (exploreParams?.genes?.length <= 1 || exploreParams?.consensus !== null) &&
     (
-      allowIgvFiltering(shownTab, exploreInfo) ||
+      allowIgvFiltering ||
       ['scatter', 'distribution'].includes(shownTab)
     )
 
