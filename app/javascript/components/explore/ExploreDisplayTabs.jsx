@@ -198,6 +198,23 @@ function getCellFacetingData(cluster, annotation, setterFunctions, context, prev
   }
 }
 
+/** Determine whether to enable cell filtering tab for ATAC data */
+function shouldAllowIgvFiltering(shownTab, exploreInfo) {
+  const flags = getFeatureFlagsWithDefaults()
+
+  // Consider refining upload UI or processing to more specifically
+  // determine if BED file is for _multiome_.  Users could theoretically
+  // upload non-multiome BED, though that's unlikely and showing this
+  // functionality in that case is low impact.
+  const hasBedGenomeFiles = exploreInfo && exploreInfo?.bedBundleList?.length > 0
+
+  const allowIgvFiltering =
+    shownTab === 'genome' &&
+    (flags?.show_igv_multiome && flags.show_cell_facet_filtering) &&
+    hasBedGenomeFiles
+  return allowIgvFiltering
+}
+
 /**
  * Renders the gene search box and the tab selection
  * Responsible for determining which tabs are available for a given view of the study
@@ -302,10 +319,17 @@ export default function ExploreDisplayTabs({
 
   const isCorrelatedScatter = enabledTabs.includes('correlatedScatter')
 
+  const allowIgvFiltering = shouldAllowIgvFiltering(shownTab, exploreInfo)
+
   // decide whether or not to allow the cell filtering UX
-  // must be in the scatter or distribution tab with less than 2 genes, or using consensus metric
-  const allowCellFiltering = (exploreParams?.genes?.length <= 1 || exploreParams?.consensus !== null) &&
-    ['scatter', 'distribution'].includes(shownTab)
+  // must be in the scatter or distribution tab with less than 2 genes, or using consensus metric,
+  // or in genome tab with IGV multiome enabled
+  const allowCellFiltering =
+    (exploreParams?.genes?.length <= 1 || exploreParams?.consensus !== null) &&
+    (
+      allowIgvFiltering ||
+      ['scatter', 'distribution'].includes(shownTab)
+    )
 
   // hide cell filtering panel in non-applicable settings, but remember state
   // will reload if user returns to a scenario where cell filtering can be re-applied

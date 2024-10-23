@@ -2,15 +2,11 @@
 
 // mock various modules from genome tab as these aren't being used, and throw compilation errors from jest
 jest.mock('components/explore/GenomeView', () => {
-  return {
-    igv: jest.fn(() => mockPromise)
-  }
+  return jest.fn(() => <div>Mocked GenomeView</div>)
 })
 
 jest.mock('components/visualization/RelatedGenesIdeogram', () => {
-  return {
-    Ideogram: jest.fn(() => mockPromise)
-  }
+  return jest.fn(() => <div>Mocked RelatedGenesIdeogram</div>)
 })
 
 jest.mock('components/visualization/InferCNVIdeogram', () => {
@@ -457,6 +453,47 @@ describe('explore tabs are activated based on study info and parameters', () => 
       />
     ))
     expect(screen.getByTestId('cell-filtering-button-disabled')).toHaveTextContent('Filtering unavailable')
+  })
+
+  it('shows cell filtering for IGV multiome', async () => {
+    jest
+      .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
+      .mockReturnValue({
+        show_cell_facet_filtering: true,
+        show_igv_multiome: true
+      })
+
+    const bedBundleList = [
+      { 'name': 'pbmc_3k_atac_fragments.possorted.bed.gz', 'file_type': 'BED' },
+      { 'name': 'pbmc_3k_atac_fragments.possorted.bed.gz.tbi', 'file_type': 'Tab Index' }
+    ]
+
+    const exploreInfoIgv = Object.assign({ bedBundleList }, exploreInfoDe)
+
+
+    const newExplore = {
+      'cluster': 'All Cells UMAP',
+      'annotation': {
+        'name': 'biosample_id',
+        'type': 'group',
+        'scope': 'study'
+      },
+      'consensus': null,
+      'genes': ['A1BG'],
+      'facets': '',
+      'tab': 'genome'
+    }
+
+    render((
+      <ExploreDisplayTabs
+        studyAccession={'SCP123'}
+        exploreParams={newExplore}
+        exploreParamsWithDefaults={newExplore}
+        exploreInfo={exploreInfoIgv}
+      />
+    ))
+
+    expect(screen.getByTestId('cell-filtering-button')).toHaveTextContent('Filter plotted cells')
   })
 
   it('shows cell filtering when using consensus metric', async () => {
