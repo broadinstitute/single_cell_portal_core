@@ -14,3 +14,26 @@
 .search {
   display: inline-block;
 }
+
+.cohort-metadata-table {
+  table-layout: fixed;
+}
+
+.cohort-th {
+  width: 20%;
+}
+
+.cohort-td {
+  display: table-cell;
+  word-wrap: anywhere;
+}
+
+.study-metadata-entry {
+  background-color: rgba(76, 132, 31, .85) !important;
+  color: white !important;
+}
+
+.unspecified-entry {
+  background-color: #777 !important;
+  font-weight: normal;
+}

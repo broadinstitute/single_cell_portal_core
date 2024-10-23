@@ -113,7 +113,7 @@ function includesSortIconClass(domClasses) {
 }
 
 /** Convert e.g. "cell_type__ontology_label" to "Cell type" */
-function parseAnnotationName(annotationIdentifier) {
+export function parseAnnotationName(annotationIdentifier) {
   const rawName = annotationIdentifier.split('--')[0]
   const sansOntologyName = rawName.replace('__ontology_label', '')
   const sentenceCased = sansOntologyName[0].toUpperCase() + sansOntologyName.slice(1)

@@ -33,6 +33,7 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
       # e.g. { "expression_file_info_attributes"=>"expression_file_info_attributes=", ... }
       StudyFile.nested_attributes.keys.map { |key| key.chomp('_attributes') }.each do |nested_association|
         object.send(nested_association)&.destroy
+        object.reload # prevent state references throwing FrozenError
       end
 
       # now remove all child objects first to free them up to be re-used.
@@ -119,15 +120,8 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
       # delete any "orphaned" DataArray that might have persisted due to some kind of earlier error
       delete_orphaned_arrays(study.id)
 
-      # overwrite attributes to allow their immediate reuse
-      # this must be done with a fresh StudyFile reference, otherwise upload_file_name may not overwrite
-      new_name = "DELETE-#{SecureRandom.uuid}"
-      file_reference = StudyFile.find(object.id)
-      file_reference.update!(queued_for_deletion: true,
-                             upload_file_name: new_name,
-                             remote_location: new_name,
-                             name: new_name,
-                             file_type: 'DELETE')
+      # enqueue StudyFile for actual deletion
+      self.class.prepare_file_for_deletion(object.id)
 
       # reset initialized if needed
       if study.cluster_groups.empty? || study.genes.empty? || study.cell_metadata.empty?
@@ -160,7 +154,25 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
       study_file = StudyFile.find(study_file_id)
       delete_parsed_anndata_entries(study_file_id, study_file.study._id, object)
     end
+  end
 
+  # prepare a StudyFile for permanent deletion by unsetting attributes with uniqueness constraints
+  # this allows these values to be immediately reused, like when retrying a failed upload/ingest
+  def self.prepare_file_for_deletion(study_file_id)
+    new_name = "DELETE-#{SecureRandom.uuid}"
+    file_reference = StudyFile.find(study_file_id)
+    return false unless file_reference
+
+    StudyFile.nested_attributes.keys.map { |key| key.chomp('_attributes') }.each do |nested_association|
+      file_reference.send(nested_association)&.destroy
+      file_reference.reload # prevent state references throwing FrozenError
+    end
+
+    file_reference.update!(queued_for_deletion: true,
+                           upload_file_name: new_name,
+                           remote_location: new_name,
+                           name: new_name,
+                           file_type: 'DELETE')
   end
 
   private
