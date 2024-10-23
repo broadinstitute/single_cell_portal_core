@@ -1247,11 +1247,6 @@ class StudyFile
     "container-#{self.id}"
   end
 
-  # DOM ID for use in Selenium for accessing difference elements
-  def name_as_id
-    self.upload_file_name.gsub(/\./, '_')
-  end
-
   def generate_expression_matrix_cells
     begin
       study = self.study
