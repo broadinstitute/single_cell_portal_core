@@ -88,7 +88,6 @@ SecureHeaders::Configuration.default do |config|
     img_src: %w('self' data: blob: https://www.google-analytics.com https://online.swagger.io res.cloudinary.com twemoji.maxcdn.com),
     manifest_src: %w('self'),
     object_src: %w('none'),
-    worker_src: %w('self' blob:),
     script_src: %w('self' blob: 'unsafe-eval' 'unsafe-inline' 'strict-dynamic' https://cdn.plot.ly https://cdn.datatables.net
                      https://www.google-analytics.com https://cdnjs.cloudflare.com https://maxcdn.bootstrapcdn.com
                      https://use.fontawesome.com https://js-agent.newrelic.com https://bam.nr-data.net
