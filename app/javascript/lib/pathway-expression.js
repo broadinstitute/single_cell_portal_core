@@ -145,31 +145,72 @@ export async function renderBackgroundDotPlot(
 /** Get unique genes in pathway diagram, ranked by global interest */
 export function getPathwayGenes(ranks) {
   const dataNodes = Array.from(document.querySelectorAll('#_ideogramPathwayContainer g.DataNode'))
-  const geneNodes = dataNodes.filter(
-    dataNode => Array.from(dataNode.classList).some(cls => cls.startsWith('Ensembl_ENS'))
-  )
+  console.log('dataNodes.length', dataNodes.length)
+  const t0 = performance.now()
+  let classListTime = 0
+  let innerLoopTime = 0
+  let numInnerLoopIterations = 0
+  const geneNodes = []
+  for (let i = 0; i < dataNodes.length; i++) {
+    const dataNode = dataNodes[i]
+    const t0a = performance.now()
+    const classes = dataNode.classList
+    const t1a = performance.now()
+    classListTime += t1a - t0a
+
+    const t0b = performance.now()
+    for (let j = 0; j < classes.length; j++) {
+      numInnerLoopIterations += 1
+      const cls = classes[j]
+      const isGene = ['geneproduct', 'rna', 'protein'].includes(cls.toLowerCase())
+      if (isGene) {
+        geneNodes.push(dataNode)
+        break
+      }
+    }
+    const t1b = performance.now()
+    innerLoopTime += t1b - t0b
+  }
+  // const geneNodes = dataNodes.filter(
+  //   dataNode => Array.from(dataNode.classList).some(
+  //     cls => ['geneproduct', 'rna', 'protein'].includes(cls.toLowerCase())
+  //   )
+  // )
+  console.log('geneNodes', geneNodes)
+  const t1 = Date.now()
+  console.log('Time to get geneNodes:', (t1-t0)/1000)
+  console.log('Time to get geneNodes, classListTime:', classListTime/1000)
+  console.log('Time to get geneNodes, innerLoopTime:', innerLoopTime/1000)
+  console.log('numInnerLoopIterations:', numInnerLoopIterations)
   const genes = geneNodes.map(
     node => {return { domId: node.id, name: node.querySelector('text').textContent }}
   )
+  console.log('genes', genes)
   const rankedGenes = genes
     .filter(gene => ranks.includes(gene.name))
     .sort((a, b) => ranks.indexOf(a.name) - ranks.indexOf(b.name))
+
+  console.log('rankedGenes', rankedGenes)
   return rankedGenes
 }
 
-/** Get up to 50 genes from pathway, including searched gene and interacting gene */
-function getDotPlotGenes(searchedGene, interactingGene, pathwayGenes) {
+/** Slice array into batches of a given size */
+function sliceIntoBatches(arr, batchSize) {
+  const result = []
+  for (let i = 0; i < arr.length; i += batchSize) {
+    result.push(arr.slice(i, i + batchSize))
+  }
+  return result
+}
+
+/** Get genes from pathway, in batches of up to 50 genes */
+function getDotPlotGeneBatches(pathwayGenes) {
   const genes = pathwayGenes.map(g => g.name)
   const uniqueGenes = Array.from(new Set(genes))
-  const dotPlotGenes = uniqueGenes.slice(0, 50)
-  if (!dotPlotGenes.includes(searchedGene)) {
-    dotPlotGenes[dotPlotGenes.length - 2] = searchedGene
-  }
-  if (!dotPlotGenes.includes(interactingGene)) {
-    dotPlotGenes[dotPlotGenes.length - 1] = interactingGene
-  }
 
-  return dotPlotGenes
+  const dotPlotGeneBatches = sliceIntoBatches(uniqueGenes, 50)
+
+  return dotPlotGeneBatches
 }
 
 /**
@@ -307,18 +348,41 @@ function writeLoadingIndicator(loadingCls) {
   headerLink.insertAdjacentHTML('afterend', loading)
 }
 
+/** Merge new and old dot plots metrics */
+function mergeDotPlotMetrics(newMetrics, oldMetrics) {
+  Object.entries(oldMetrics).map(([label, oldGeneMetrics]) => {
+    const newGeneMetrics = newMetrics[label]
+    if (!newGeneMetrics) {
+      return
+    }
+    newMetrics[label] = Object.assign(newGeneMetrics, oldGeneMetrics)
+  })
+
+  return newMetrics
+}
+
 /** Color pathway gene nodes by expression */
-function renderPathwayExpression(
+async function renderPathwayExpression(
   searchedGene, interactingGene,
   ideogram, dotPlotParams
 ) {
+  let allDotPlotMetrics = {}
+
   const ranks = ideogram.geneCache.interestingNames
+  const t0 = Date.now()
   const pathwayGenes = getPathwayGenes(ranks)
-  const dotPlotGenes = getDotPlotGenes(searchedGene, interactingGene, pathwayGenes, ideogram)
+  const t1 = Date.now()
+  console.log('Time in getPathwayGenes:' + (t1 - t0))
+  console.log('pathwayGenes', pathwayGenes)
+  const dotPlotGeneBatches = getDotPlotGeneBatches(pathwayGenes)
+  const t2 = Date.now()
+  console.log('Time in getDotPlotGeneBatches:' + (t2 - t1))
+
 
   const { studyAccession, cluster, annotation } = dotPlotParams
 
   let numDraws = 0
+  let numRenders = 0
 
   const annotationLabels = getEligibleLabels()
 
@@ -329,28 +393,75 @@ function renderPathwayExpression(
   function backgroundDotPlotDrawCallback(dotPlot) {
     // The first render is for uncollapsed cell-x-gene metrics (heatmap),
     // the second render is for collapsed label-x-gene metrics (dotplot)
+
     numDraws += 1
     if (numDraws === 1) {return}
 
+    const t3 = Date.now()
     const dotPlotMetrics = getDotPlotMetrics(dotPlot)
+    const t4 = Date.now()
+    console.log('Time in getDotPlotGeneBatches:' + (t4 - t3))
+
+
     if (!dotPlotMetrics) {
       // Occurs upon resizing window, artifact of internal Morpheus handling
       // of pre-dot-plot heatmap matrix.  No user-facing impact.
       return
     }
-    writePathwayExpressionHeader(loadingCls, dotPlotMetrics, annotationLabels, pathwayGenes)
+
+    if (!annotationLabels.includes(Object.keys(dotPlotMetrics)[0])) {
+      // Another protection for computing only for dot plots, not heatmaps
+      return
+    }
+
+    allDotPlotMetrics = mergeDotPlotMetrics(dotPlotMetrics, allDotPlotMetrics)
+
+    writePathwayExpressionHeader(loadingCls, allDotPlotMetrics, annotationLabels, pathwayGenes)
 
     const annotationLabel = annotationLabels[0]
-    colorPathwayGenesByExpression(pathwayGenes, dotPlotMetrics, annotationLabel)
+    colorPathwayGenesByExpression(pathwayGenes, allDotPlotMetrics, annotationLabel)
+
+    if (numRenders <= dotPlotGeneBatches.length) {
+      numRenders += 1
+      // Future optimization: render background dot plot one annotation at a time.  This would
+      // speed up initial pathway expression overlay rendering, and increase the practical limit
+      // on number of genes that could be retrieved via SCP API Morpheus endpoint.
+      renderBackgroundDotPlot(
+        studyAccession, dotPlotGeneBatches[numRenders], cluster, annotation,
+        'All', annotationLabels, backgroundDotPlotDrawCallback,
+        '#related-genes-ideogram-container'
+      )
+    }
   }
 
   // Future optimization: render background dot plot one annotation at a time.  This would
   // speed up initial pathway expression overlay rendering, and increase the practical limit
   // on number of genes that could be retrieved via SCP API Morpheus endpoint.
   renderBackgroundDotPlot(
-    studyAccession, dotPlotGenes, cluster, annotation,
+    studyAccession, dotPlotGeneBatches[0], cluster, annotation,
     'All', annotationLabels, backgroundDotPlotDrawCallback,
     '#related-genes-ideogram-container'
+  )
+}
+
+/** Draw pathway diagram */
+function drawPathway(event, dotPlotParams, ideogram) {
+  // Hide popover instantly upon drawing pathway; don't wait ~2 seconds
+  const ideoTooltip = document.querySelector('._ideogramTooltip')
+  ideoTooltip.style.opacity = 0
+  ideoTooltip.style.pointerEvents = 'none'
+
+  // Ensure popover for pathway diagram doesn't appear over gene search autocomplete,
+  // while still appearing over default visualizations.
+  const container = document.querySelector('#_ideogramPathwayContainer')
+  container.style.zIndex = 2
+
+  const details = event.detail
+  const searchedGene = details.sourceGene
+  const interactingGene = details.destGene
+  renderPathwayExpression(
+    searchedGene, interactingGene, ideogram,
+    dotPlotParams
   )
 }
 
@@ -360,32 +471,14 @@ function renderPathwayExpression(
  * This sets up the pathway expression overlay
  */
 export function manageDrawPathway(studyAccession, cluster, annotation, ideogram) {
-
   const flags = getFeatureFlagsWithDefaults()
   if (!flags?.show_pathway_expression) {return}
 
   const dotPlotParams = { studyAccession, cluster, annotation }
   if (annotation.type === 'group') {
-    document.removeEventListener('ideogramDrawPathway')
+    document.removeEventListener('ideogramDrawPathway', drawPathway)
     document.addEventListener('ideogramDrawPathway', event => {
-
-      // Hide popover instantly upon drawing pathway; don't wait ~2 seconds
-      const ideoTooltip = document.querySelector('._ideogramTooltip')
-      ideoTooltip.style.opacity = 0
-      ideoTooltip.style.pointerEvents = 'none'
-
-      // Ensure popover for pathway diagram doesn't appear over gene search autocomplete,
-      // while still appearing over default visualizations.
-      const container = document.querySelector('#_ideogramPathwayContainer')
-      container.style.zIndex = 2
-
-      const details = event.detail
-      const searchedGene = details.sourceGene
-      const interactingGene = details.destGene
-      renderPathwayExpression(
-        searchedGene, interactingGene, ideogram,
-        dotPlotParams
-      )
+      drawPathway(event, dotPlotParams, ideogram)
     })
   }
 }

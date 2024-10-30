@@ -13,7 +13,7 @@ const version = readFileSync('version.txt', { encoding: 'utf8' })
 // DISABLE_SENTRY=true bin/vite dev
 //
 // otherwise, this evaluates to false and leaves plugin enabled in all other scenarios
-const disableSentry = typeof process.env.DISABLE_SENTRY !== 'undefined' && process.env.DISABLE_SENTRY === 'true'
+const disableSentry = true // typeof process.env.DISABLE_SENTRY !== 'undefined' && process.env.DISABLE_SENTRY === 'true'
 
 export default defineConfig({
   'define': {

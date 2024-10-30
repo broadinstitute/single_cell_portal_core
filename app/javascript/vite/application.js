@@ -29,7 +29,7 @@ import * as ScpApi from '~/lib/scp-api'
 window.SCP = window.SCP ? window.SCP : {}
 
 // Set up the context for Sentry to log front-end errors
-setupSentry()
+// setupSentry()
 
 // On each page load, check for old SCP caches, delete any found
 clearOldServiceWorkerCaches()
