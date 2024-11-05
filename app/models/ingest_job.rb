@@ -398,8 +398,8 @@ class IngestJob
       log_to_mixpanel # log before queuing file for deletion to preserve properties
       # don't delete files or notify users if this is a 'special action', like DE or image pipeline jobs
       subject = "Error: #{study_file.file_type} file: '#{study_file.upload_file_name}' parse has failed"
-      retry_job = should_retry?
-      handle_ingest_failure(subject) unless special_action? || retry_job
+      handle_ingest_failure(subject) unless (special_action? || should_retry?)
+
       admin_email_content = generate_error_email_body(email_type: :dev)
       if retry_job && params_object&.next_machine_type
         new_machine = params_object.next_machine_type
