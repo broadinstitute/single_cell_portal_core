@@ -401,7 +401,7 @@ class IngestJob
       handle_ingest_failure(subject) unless (special_action? || should_retry?)
 
       admin_email_content = generate_error_email_body(email_type: :dev)
-      if retry_job && params_object&.next_machine_type
+      if should_retry? && params_object&.next_machine_type
         new_machine = params_object.next_machine_type
         params_object.machine_type = new_machine
         # run a selective cleanup to allow file to retry ingest on the next machine type
