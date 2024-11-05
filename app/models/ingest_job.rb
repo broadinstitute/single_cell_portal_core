@@ -399,7 +399,7 @@ class IngestJob
       # don't delete files or notify users if this is a 'special action', like DE or image pipeline jobs
       subject = "Error: #{study_file.file_type} file: '#{study_file.upload_file_name}' parse has failed"
       retry_job = should_retry?
-      handle_ingest_failure(subject, retry_job:) unless special_action?
+      handle_ingest_failure(subject) unless special_action? || retry_job
       admin_email_content = generate_error_email_body(email_type: :dev)
       if retry_job && params_object&.next_machine_type
         new_machine = params_object.next_machine_type
@@ -427,7 +427,7 @@ class IngestJob
   # will automatically clean up data and notify user
   # in case of subsampling, only subsampled data cleanup is run and all other data is left in place
   # this reduces churn for study owners as full-resolution data is still valid
-  def handle_ingest_failure(email_subject, retry_job: false)
+  def handle_ingest_failure(email_subject)
     if action.to_sym == :ingest_subsample
       study_file.update(parse_status: 'parsed') # reset parse flag
       cluster_name = cluster_name_by_file_type
@@ -438,17 +438,15 @@ class IngestJob
       create_study_file_copy
       study_file.update(parse_status: 'failed')
       DeleteQueueJob.new(study_file).delay.perform
-      unless persist_on_fail || retry_job
+      unless persist_on_fail
         ApplicationController.firecloud_client.delete_workspace_file(study.bucket_id, study_file.bucket_location)
         study_file.bundled_files.each do |bundled_file|
           ApplicationController.firecloud_client.delete_workspace_file(study.bucket_id, bundled_file.bucket_location)
         end
       end
     end
-    unless retry_job
-      user_email_content = generate_error_email_body
-      SingleCellMailer.notify_user_parse_fail(user.email, email_subject, user_email_content, study).deliver_now
-    end
+    user_email_content = generate_error_email_body
+    SingleCellMailer.notify_user_parse_fail(user.email, email_subject, user_email_content, study).deliver_now
   end
 
   # TODO (SCP-4709, SCP-4710) Processed and Raw expression files
