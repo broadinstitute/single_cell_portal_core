@@ -404,14 +404,13 @@ class IngestJob
       if retry_job && params_object&.next_machine_type
         new_machine = params_object.next_machine_type
         params_object.machine_type = new_machine
-        cloned_file = study_file.clone
-        # free up filename and other values so cloned_file can save properly, including deleting nested documents
-        # this prevents Frozen BSON::Document error
-        DeleteQueueJob.prepare_file_for_deletion(study_file.id)
-        cloned_file.update!(parse_status: 'parsing')
-        file_identifier = "#{cloned_file.upload_file_name}:#{cloned_file.id} (#{study.accession})"
+        # run a selective cleanup to allow file to retry ingest on the next machine type
+        # this leaves any prior ingested valid data in place, and only removes data associated with this exact run
+        DeleteQueueJob.prepare_file_for_retry(study_file.id, action, cluster_name: params_object.try(:name))
+        study_file.update!(parse_status: 'parsing')
+        file_identifier = "#{study_file.upload_file_name}:#{study_file.id} (#{study.accession})"
         Rails.logger.info "Retrying #{action} after #{exit_code} failure for #{file_identifier} with machine_type: #{new_machine}"
-        retry_job = IngestJob.new(study:, study_file: cloned_file, user:, params_object:, action:, persist_on_fail:)
+        retry_job = IngestJob.new(study:, study_file:, user:, params_object:, action:, persist_on_fail:)
         retry_job.push_remote_and_launch_ingest
         # notify admins that the parse failed for visibility purposes
         SingleCellMailer.notify_admin_parse_fail(user.email, subject, admin_email_content).deliver_now

@@ -947,7 +947,7 @@ class IngestJobTest < ActiveSupport::TestCase
     # also prevents mock 'unexpected arguments' errors that can happen
     client_mock.expect :run_pipeline, new_op do |args|
       args[:study_file].upload_file_name == study_file.upload_file_name &&
-        args[:study_file].id.to_s != study_file.id.to_s && # this should be a new file with the same name
+        args[:study_file].id.to_s == study_file.id.to_s && # this should be the exact same file
         args[:action] == :ingest_anndata &&
         args[:params_object].machine_type == 'n2d-highmem-16'
     end
