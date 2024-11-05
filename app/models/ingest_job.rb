@@ -406,7 +406,7 @@ class IngestJob
         params_object.machine_type = new_machine
         # run a selective cleanup to allow file to retry ingest on the next machine type
         # this leaves any prior ingested valid data in place, and only removes data associated with this exact run
-        DeleteQueueJob.prepare_file_for_retry(study_file.id, action, cluster_name: params_object.try(:name))
+        DeleteQueueJob.prepare_file_for_retry(study_file, action, cluster_name: params_object.try(:name))
         study_file.update!(parse_status: 'parsing')
         file_identifier = "#{study_file.upload_file_name}:#{study_file.id} (#{study.accession})"
         Rails.logger.info "Retrying #{action} after #{exit_code} failure for #{file_identifier} with machine_type: #{new_machine}"
