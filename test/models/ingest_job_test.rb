@@ -929,12 +929,12 @@ class IngestJobTest < ActiveSupport::TestCase
     }.with_indifferent_access
     # first pipeline mock represents the failed OOM job
     pipeline_mock = Minitest::Mock.new
-    8.times { pipeline_mock.expect :metadata, mock_metadata }
-    5.times { pipeline_mock.expect :done?, true }
+    9.times { pipeline_mock.expect :metadata, mock_metadata }
+    6.times { pipeline_mock.expect :done?, true }
     3.times { pipeline_mock.expect :error, { code: 137, message: 'OOM exception' } }
     # must mock life_sciences_api_client getting pipeline metadata
     client_mock = Minitest::Mock.new
-    16.times { client_mock.expect :get_pipeline, pipeline_mock, [{ name: pipeline_name }] }
+    18.times { client_mock.expect :get_pipeline, pipeline_mock, [{ name: pipeline_name }] }
     # new pipeline mock is resubmitted job with larger machine_type
     new_pipeline = Minitest::Mock.new
     new_op = Google::Apis::LifesciencesV2beta::Operation.new(name: 'oom-retry')
@@ -947,7 +947,7 @@ class IngestJobTest < ActiveSupport::TestCase
     # also prevents mock 'unexpected arguments' errors that can happen
     client_mock.expect :run_pipeline, new_op do |args|
       args[:study_file].upload_file_name == study_file.upload_file_name &&
-        args[:study_file].id.to_s != study_file.id.to_s && # this should be a new file with the same name
+        args[:study_file].id.to_s == study_file.id.to_s && # this should be the exact same file
         args[:action] == :ingest_anndata &&
         args[:params_object].machine_type == 'n2d-highmem-16'
     end
@@ -955,9 +955,6 @@ class IngestJobTest < ActiveSupport::TestCase
     terra_mock.expect :get_workspace_file,
                       Google::Cloud::Storage::File.new,
                       [bucket, study_file.bucket_location]
-    terra_mock.expect :execute_gcloud_method,
-                      Google::Cloud::Storage::File.new,
-                      [:copy_workspace_file, 0, bucket, study_file.bucket_location, study_file.parse_fail_bucket_location]
     terra_mock.expect :workspace_file_exists?,
                       false,
                       [bucket, String]

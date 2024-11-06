@@ -228,9 +228,9 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
     assert_not DataArray.where(study_id: @basic_study.id, name: 'All Cells').exists?
   end
 
-  test 'should prepare file for deletion to allow cloning' do
+  test 'should prepare file for deletion' do
     study = FactoryBot.create(:detached_study,
-                              name_prefix: 'Clone Test',
+                              name_prefix: 'Deletion Prepare Test',
                               user: @user,
                               test_array: @@studies_to_clean)
     matrix = FactoryBot.create(:ann_data_file,
@@ -247,12 +247,43 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
                                  'phex' => [['A', 0.3], ['B', 1.0], ['C', 0.5], ['D', 0.1]]
                                })
 
-    cloned_matrix = matrix.clone
     DeleteQueueJob.prepare_file_for_deletion(matrix.id)
     matrix.reload
     assert matrix.is_deleting?
-    assert cloned_matrix.valid?
-    cloned_matrix.save!
-    assert cloned_matrix.persisted?
+  end
+
+  test 'should prepare file for retry' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Retry Prepare Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    matrix = FactoryBot.create(:ann_data_file,
+                               name: 'matrix.h5ad',
+                               study:,
+                               cell_input: %w[A B C D],
+                               annotation_input: [
+                                 { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                               ],
+                               coordinate_input: [
+                                 { tsne: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                               ],
+                               expression_input: {
+                                 'phex' => [['A', 0.3], ['B', 1.0], ['C', 0.5], ['D', 0.1]]
+                               })
+    assert_equal 1, study.cell_metadata.count
+    assert_equal 1, study.genes.count
+    assert_equal 1, study.cluster_groups.count
+    DeleteQueueJob.prepare_file_for_retry(matrix, :ingest_cell_metadata)
+    assert_empty CellMetadatum.where(study:, study_file: matrix)
+    assert_empty CellMetadatum.where(study:, study_file: matrix, linear_data_type: 'CellMetadatum')
+    DeleteQueueJob.prepare_file_for_retry(matrix, :ingest_expression)
+    assert_empty Gene.where(study:, study_file: matrix)
+    assert_empty CellMetadatum.where(study:, study_file: matrix, linear_data_type: 'Gene')
+    DeleteQueueJob.prepare_file_for_retry(matrix, :ingest_cluster, cluster_name: 'tsne')
+    assert_empty ClusterGroup.where(study:, study_file: matrix, name: 'tsne')
+    assert_empty CellMetadatum.where(study:, study_file: matrix, linear_data_type: 'ClusterGroup')
+    DeleteQueueJob.prepare_file_for_retry(matrix, :ingest_anndata)
+    study.reload
+    assert_empty study.expression_matrix_cells(matrix, matrix_type: 'raw')
   end
 end
