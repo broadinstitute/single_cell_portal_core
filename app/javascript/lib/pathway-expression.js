@@ -145,7 +145,6 @@ export async function renderBackgroundDotPlot(
 /** Get unique genes in pathway diagram, ranked by global interest */
 export function getPathwayGenes(ranks) {
   const dataNodes = Array.from(document.querySelectorAll('#_ideogramPathwayContainer g.DataNode'))
-  console.log('dataNodes.length', dataNodes.length)
   const t0 = performance.now()
   let classListTime = 0
   let innerLoopTime = 0
@@ -171,26 +170,15 @@ export function getPathwayGenes(ranks) {
     const t1b = performance.now()
     innerLoopTime += t1b - t0b
   }
-  // const geneNodes = dataNodes.filter(
-  //   dataNode => Array.from(dataNode.classList).some(
-  //     cls => ['geneproduct', 'rna', 'protein'].includes(cls.toLowerCase())
-  //   )
-  // )
-  console.log('geneNodes', geneNodes)
-  const t1 = Date.now()
-  console.log('Time to get geneNodes:', (t1-t0)/1000)
-  console.log('Time to get geneNodes, classListTime:', classListTime/1000)
-  console.log('Time to get geneNodes, innerLoopTime:', innerLoopTime/1000)
-  console.log('numInnerLoopIterations:', numInnerLoopIterations)
+
   const genes = geneNodes.map(
     node => {return { domId: node.id, name: node.querySelector('text').textContent }}
   )
-  console.log('genes', genes)
+
   const rankedGenes = genes
     .filter(gene => ranks.includes(gene.name))
     .sort((a, b) => ranks.indexOf(a.name) - ranks.indexOf(b.name))
 
-  console.log('rankedGenes', rankedGenes)
   return rankedGenes
 }
 
@@ -369,16 +357,8 @@ async function renderPathwayExpression(
   let allDotPlotMetrics = {}
 
   const ranks = ideogram.geneCache.interestingNames
-  const t0 = Date.now()
   const pathwayGenes = getPathwayGenes(ranks)
-  const t1 = Date.now()
-  console.log('Time in getPathwayGenes:' + (t1 - t0))
-  console.log('pathwayGenes', pathwayGenes)
   const dotPlotGeneBatches = getDotPlotGeneBatches(pathwayGenes)
-  const t2 = Date.now()
-  console.log('Time in getDotPlotGeneBatches:' + (t2 - t1))
-
-
   const { studyAccession, cluster, annotation } = dotPlotParams
 
   let numDraws = 0
@@ -397,11 +377,7 @@ async function renderPathwayExpression(
     numDraws += 1
     if (numDraws === 1) {return}
 
-    const t3 = Date.now()
     const dotPlotMetrics = getDotPlotMetrics(dotPlot)
-    const t4 = Date.now()
-    console.log('Time in getDotPlotGeneBatches:' + (t4 - t3))
-
 
     if (!dotPlotMetrics) {
       // Occurs upon resizing window, artifact of internal Morpheus handling
