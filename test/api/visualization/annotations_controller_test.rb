@@ -212,10 +212,16 @@ class AnnotationsControllerTest < ActionDispatch::IntegrationTest
 
   test 'should reject bogus requests' do
     sign_in_and_update @user
-    execute_http_request(:get, api_v1_study_annotations_facets_path(
-      @basic_study, cluster: 'xssdetected', annotations: 'not-found--group--study'
-    ))
-    assert_response :bad_request
+    %w[xssdetected UPDATEXML CODE_POINTS_TO_STRING .git].each do |bogus|
+      execute_http_request(:get, api_v1_study_annotations_facets_path(
+        @basic_study, cluster: bogus, annotations: 'not-found--group--study'
+      ))
+      assert_response :bad_request
+      execute_http_request(:get, api_v1_study_annotations_facets_path(
+        @basic_study, cluster: 'clusterA.txt', annotations: "#{bogus}--group--study"
+      ))
+      assert_response :bad_request
+    end
   end
 
   test 'should not reject legit requests' do

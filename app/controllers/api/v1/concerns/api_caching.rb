@@ -3,7 +3,11 @@ module Api
     module Concerns
       module ApiCaching
         extend ActiveSupport::Concern
+
+        # regexes for blocker types of malicious requests
+        # this prevents the app from being flooded during security scans that can cause runaway viz caching
         XSS_MATCHER = /(xssdetected|script3E)/
+        SCAN_MATCHER = /(\.(git|svn|php)|NULL(%20|\+)OR(%20|\+)1|CODE_POINTS_TO_STRING|UPDATEXML|\$%7Benv)/
 
         # check Rails cache for JSON response based off url/params
         # cache expiration is still handled by CacheRemovalJob
@@ -39,7 +43,7 @@ module Api
 
         # ignore obvious malicious/bogus requests that can lead to invalid cache path entries
         def validate_cache_request
-          if request.fullpath =~ XSS_MATCHER
+          if request.fullpath =~ XSS_MATCHER || request.fullpath =~ SCAN_MATCHER
             head 400 and return
           end
         end
