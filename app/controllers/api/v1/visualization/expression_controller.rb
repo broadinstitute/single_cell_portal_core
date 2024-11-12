@@ -105,6 +105,10 @@ module Api
             }, status: :bad_request and return
           end
 
+          if @annotation.nil?
+            render json: { error: 'Requested annotation not found' }, status: :not_found and return
+          end
+
           data_type = params[:data_type]
           case data_type
           when 'violin'
@@ -161,10 +165,6 @@ module Api
         def render_morpheus_json
           if @cluster.nil?
             render json: { error: 'Requested cluster not found' }, status: :not_found and return
-          end
-
-          if @annotation.nil?
-            render json: { error: 'Requested annotation not found' }, status: :not_found and return
           end
 
           expression_data = ExpressionVizService.get_morpheus_json_data(

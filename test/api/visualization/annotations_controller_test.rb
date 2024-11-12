@@ -112,8 +112,7 @@ class AnnotationsControllerTest < ActionDispatch::IntegrationTest
                                                                cluster: 'clusterA.txt'}))
     assert_equal json['name'], 'foo'
     execute_http_request(:get, api_v1_study_annotation_path(@basic_study, 'nonExistentAnnotation'))
-    # returns the default annotation if it's not found by name/type
-    assert_equal 'species', json['name']
+    assert_response :not_found
   end
 
   test 'cell_values should return visualization tsv' do

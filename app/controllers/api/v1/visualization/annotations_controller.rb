@@ -100,6 +100,10 @@ module Api
 
         def show
           annotation = self.class.get_selected_annotation(@study, params)
+          if annotation.nil?
+            head :not_found and return
+          end
+
           render json: annotation
         end
 
@@ -148,6 +152,10 @@ module Api
 
         def cell_values
           annotation = self.class.get_selected_annotation(@study, params)
+          if annotation.nil?
+            head :not_found and return
+          end
+
           cell_cluster = @study.cluster_groups.by_name(params[:cluster])
           if cell_cluster.nil?
             cell_cluster = @study.default_cluster
@@ -364,9 +372,6 @@ module Api
         # parses the url params to identify the selected cluster
         def self.get_selected_annotation(study, params)
           annot_params = get_annotation_params(params)
-          if annot_params[:name] == '_default'
-            annot_params[:name] = nil
-          end
           cluster = nil
           if annot_params[:scope] == 'cluster'
             if params[:cluster].blank?
@@ -384,7 +389,7 @@ module Api
         def self.get_facet_annotations(study, cluster, annot_param)
           annotations = annot_param.split(',').map { |annot| convert_annotation_param(annot) }
           annotations.map do |annotation|
-            AnnotationVizService.get_selected_annotation(study, cluster:, fallback: false, **annotation)
+            AnnotationVizService.get_selected_annotation(study, cluster:, **annotation)
           end.compact
         end
 

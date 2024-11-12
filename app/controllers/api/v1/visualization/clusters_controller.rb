@@ -156,7 +156,7 @@ module Api
                                                        annot_type: annot_params[:type],
                                                        annot_scope: annot_params[:scope])
           if !annotation
-            raise ArgumentError, "Annotation \"#{annot_params[:annot_name]}\" could not be found"
+            raise ArgumentError, "Annotation \"#{annot_params[:name]}\" could not be found"
           end
 
           subsample = get_selected_subsample_threshold(url_params[:subsample], cluster)
