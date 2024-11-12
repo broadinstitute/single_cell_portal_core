@@ -266,6 +266,7 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     ann_data.reload
     assert_equal 'updated', ann_data.description
+    assert_equal 'log(TPM) expression', ann_data.ann_data_file_info.expression_axis_label
     ann_data.ann_data_file_info.data_fragments.each do |fragment|
       assert_equal 'updated', fragment[:description]
     end

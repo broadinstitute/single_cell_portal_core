@@ -154,6 +154,14 @@ class AnnDataFileInfo
     exp_info.assign_attributes(**info_update) if info_update
   end
 
+  # extract description field from expression fragment to use as axis label
+  def expression_axis_label
+    exp_fragment = find_fragment(data_type: :expression) || fragments_by_type(:expression).first
+    return nil if exp_fragment.nil?
+
+    exp_fragment.with_indifferent_access[:y_axis_label]&.to_s
+  end
+
   private
 
   # select out keys from source hash and return new one, rejecting blank values
