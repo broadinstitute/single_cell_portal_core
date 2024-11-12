@@ -44,7 +44,7 @@ module Api
         # ignore obvious malicious/bogus requests that can lead to invalid cache path entries
         def validate_cache_request
           if request.fullpath =~ XSS_MATCHER || request.fullpath =~ SCAN_MATCHER
-            head 400 and return
+            render json: { error: 'Bad request' }, status: 400 and return
           end
         end
       end
