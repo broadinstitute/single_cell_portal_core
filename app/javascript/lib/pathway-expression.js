@@ -145,21 +145,13 @@ export async function renderBackgroundDotPlot(
 /** Get unique genes in pathway diagram, ranked by global interest */
 export function getPathwayGenes(ranks) {
   const dataNodes = Array.from(document.querySelectorAll('#_ideogramPathwayContainer g.DataNode'))
-  const t0 = performance.now()
-  let classListTime = 0
-  let innerLoopTime = 0
-  let numInnerLoopIterations = 0
   const geneNodes = []
   for (let i = 0; i < dataNodes.length; i++) {
     const dataNode = dataNodes[i]
-    const t0a = performance.now()
     const classes = dataNode.classList
-    const t1a = performance.now()
-    classListTime += t1a - t0a
 
     const t0b = performance.now()
     for (let j = 0; j < classes.length; j++) {
-      numInnerLoopIterations += 1
       const cls = classes[j]
       const isGene = ['geneproduct', 'rna', 'protein'].includes(cls.toLowerCase())
       if (isGene) {
@@ -167,8 +159,6 @@ export function getPathwayGenes(ranks) {
         break
       }
     }
-    const t1b = performance.now()
-    innerLoopTime += t1b - t0b
   }
 
   const genes = geneNodes.map(
