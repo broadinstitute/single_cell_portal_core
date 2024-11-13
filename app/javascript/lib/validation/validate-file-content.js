@@ -337,7 +337,7 @@ export async function validateGzipEncoding(file, fileType) {
  */
 async function parseFile(
   file, fileType, fileOptions={},
-  sizeProps={}, remoteProps={}, isAnnDataExperience=false
+  sizeProps={}, remoteProps={}, isAnnDataExperience
 ) {
   const startTime = performance.now()
 
