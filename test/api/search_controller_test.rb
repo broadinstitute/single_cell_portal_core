@@ -28,7 +28,17 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
                                initialized: true,
                                test_array: @@studies_to_clean)
     @author = FactoryBot.create(:author, study: @study, last_name: 'Doe', first_name: 'john', institution: 'MIT')
-    FactoryBot.create(:metadata_file, name: 'metadata.txt', study: @study, use_metadata_convention: true)
+    # add top-level metadata for results
+    annotation_input = [
+      { name: 'disease__ontology_label', type: 'group', values: Array.new(5, "disease or disorder") },
+      { name: 'species__ontology_label', type: 'group', values: Array.new(5, "Homo sapiens") },
+      { name: 'library_preparation_protocol__ontology_label', type: 'group', values: Array.new(5, "Seq-Well") },
+      { name: 'organ__ontology_label', type: 'group', values: Array.new(5, "milk") },
+      { name: 'sex', type: 'group', values: Array.new(5, "female") },
+    ]
+    FactoryBot.create(:metadata_file, name: 'metadata.txt', study: @study, use_metadata_convention: true,
+                      cell_input: %w[cellA cellB cellC cellD cellE],
+                      annotation_input: )
     seed_example_bq_data(@study)
     FactoryBot.create(:cluster_file, name: 'cluster_example.txt', study: @study)
     @other_study = FactoryBot.create(:detached_study,
@@ -154,6 +164,14 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
 
     source_facets = %w(disease species)
     assert_equal source_facets, matched_facets, "Did not match on correct facets; expected #{source_facets} but found #{matched_facets}"
+
+    # check top-level metadata results
+    source_study = Study.find_by(accession: result_accession)
+    result_study = json['studies'].first
+    source_study.cell_metadata.each do |meta|
+      truncated_name = meta.name.chomp('__ontology_label')
+      assert_equal meta.values, result_study.dig('metadata', truncated_name)
+    end
   end
 
   test 'should not query azul when collection is present' do

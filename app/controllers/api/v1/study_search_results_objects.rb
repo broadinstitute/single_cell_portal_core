@@ -4,9 +4,14 @@ module Api
     # for returning as json
     # intended to be used as an include in controllers which use them, as they rely on instance variables
     module StudySearchResultsObjects
+
+      # list of metadata names to include in cohort responses
+      COHORT_METADATA = %w[disease__ontology_label organ__ontology_label species__ontology_label sex
+                           library_preparation_protocol__ontology_label].freeze
+
       def search_results_obj
         response_obj = {
-          type: params[:type],
+          type: @search_type,
           terms: params[:terms],
           term_list: @term_list,
           current_page: @results.current_page.to_i,
@@ -36,7 +41,8 @@ module Api
             cell_count: study.cell_count,
             gene_count: study.gene_count,
             study_url: view_study_path(accession: study.accession, study_name: study.url_safe_name) +
-              (params[:scpbr].present? ? "?scpbr=#{params[:scpbr]}" : '')
+              (params[:scpbr].present? ? "?scpbr=#{params[:scpbr]}" : ''),
+            metadata: cohort_metadata(study)
           }
           if @studies_by_facet.present? && @studies_by_facet[study.accession].present?
             # faceted search was run, so append filter matches after merging
@@ -82,6 +88,7 @@ module Api
             hca_project_id: study[:hca_project_id],
             cell_count: 0,
             gene_count: 0,
+            metadata: study[:metadata],
             study_url: '#',
             file_information: study[:file_information],
             term_matches: study[:term_matches],
@@ -93,6 +100,16 @@ module Api
           end
         end
         study_obj
+      end
+
+      def cohort_metadata(study)
+        cohort_entries = {}
+        COHORT_METADATA.each do |name|
+          metadatum = study.cell_metadata.by_name_and_type(name, 'group')
+          display_name = name.chomp('__ontology_label').to_sym
+          cohort_entries[display_name] = metadatum&.values&.sort || []
+        end
+        cohort_entries
       end
 
       # merge in multiple facet match data objects into a single merged entity for a given study

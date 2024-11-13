@@ -1,6 +1,7 @@
 /* eslint-disable require-jsdoc */
 import React from 'react'
 
+import ResultMetadataTable from '~/components/search/results/ResultMetadataTable'
 import { getDisplayNameForFacet } from '~/providers/SearchFacetProvider'
 import { logSelectSearchResult } from '~/lib/search-metrics'
 
@@ -180,7 +181,9 @@ export default function StudySearchResult({ study, logProps }) {
     <a
       href={study.study_url}
       dangerouslySetInnerHTML={displayStudyTitle}
-      onClick={() => {logSelectSearchResult(study, logProps)}}
+      onClick={() => {
+        logSelectSearchResult(study, logProps)
+      }}
     ></a>
   if (study.study_source !== 'SCP') {
     studyLink = <a
@@ -205,6 +208,7 @@ export default function StudySearchResult({ study, logProps }) {
           {facetMatchBadges(study)}
         </div>
         {studyDescription}
+        <ResultMetadataTable study={study} />
       </div>
     </>
   )

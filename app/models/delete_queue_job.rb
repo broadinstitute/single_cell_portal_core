@@ -33,6 +33,7 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
       # e.g. { "expression_file_info_attributes"=>"expression_file_info_attributes=", ... }
       StudyFile.nested_attributes.keys.map { |key| key.chomp('_attributes') }.each do |nested_association|
         object.send(nested_association)&.destroy
+        object.reload # prevent state references throwing FrozenError
       end
 
       # now remove all child objects first to free them up to be re-used.
@@ -162,11 +163,60 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
     file_reference = StudyFile.find(study_file_id)
     return false unless file_reference
 
+    StudyFile.nested_attributes.keys.map { |key| key.chomp('_attributes') }.each do |nested_association|
+      file_reference.send(nested_association)&.destroy
+      file_reference.reload # prevent state references throwing FrozenError
+    end
+
     file_reference.update!(queued_for_deletion: true,
                            upload_file_name: new_name,
                            remote_location: new_name,
                            name: new_name,
                            file_type: 'DELETE')
+  end
+
+  # do a targeted cleanup of data to allow a file to retry ingest after OOM failure
+  def self.prepare_file_for_retry(study_file, action, cluster_name: nil)
+    study_file.reload
+    return false if study_file.queued_for_deletion
+
+    study = study_file.study
+    case action.to_sym
+    when :ingest_anndata
+      # delete raw counts 'all cells' array since this may be extracted during this phase
+      query = {
+        name: 'h5ad_frag.matrix.raw.mtx.gz Cells', array_type: 'cells', linear_data_type: 'Study',
+        linear_data_id: study.id, study_id: study.id, study_file_id: study_file.id, cluster_group_id: nil,
+        subsample_annotation: nil, subsample_threshold: nil
+      }
+      DataArray.where(query).delete_all
+    when :ingest_cell_metadata
+      metadata = CellMetadatum.where(study:, study_file:)
+      delete_arrays_by_query(study, study_file, 'CellMetadatum', metadata.pluck(:id))
+      metadata.delete_all
+      # now delete 'all cells' array
+      query = {
+        name: 'All Cells', array_type: 'cells', linear_data_type: 'Study', linear_data_id: study.id,
+        study_id: study.id, study_file_id: study_file.id, cluster_group_id: nil, subsample_annotation: nil,
+        subsample_threshold: nil
+      }
+      DataArray.where(query).delete_all
+    when :ingest_expression
+      genes = Gene.where(study:, study_file:)
+      delete_arrays_by_query(study, study_file, 'Gene', genes.pluck(:id))
+      genes.delete_all
+    when :ingest_cluster
+      cluster_group = study.cluster_groups.by_name(cluster_name)
+      delete_arrays_by_query(study, study_file, 'ClusterGroup', [cluster_group.id])
+      cluster_group.delete
+    else
+      # ingest_subsample and differential_expression require no extra data cleanup
+      return false
+    end
+  end
+
+  def self.delete_arrays_by_query(study, study_file, linear_data_type, ids = [])
+    DataArray.where(study:, study_file:, linear_data_type:, :linear_data_id.in => ids).delete_all
   end
 
   private

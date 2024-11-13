@@ -1322,7 +1322,8 @@ class Study
 
   # get all unique gene names for a study; leverage index on Gene model to improve performance
   def unique_genes
-    Gene.where(study_id: self.id, :study_file_id.in => self.expression_matrix_files.map(&:id)).pluck(:name).uniq
+    Gene.where(study_id: self.id, :study_file_id.in => self.expression_matrix_files.map(&:id))
+        .pluck(:name, :gene_id).flatten.compact.uniq
   end
 
   # List unique scientific names of species for all expression matrices in study

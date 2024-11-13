@@ -228,7 +228,7 @@
                   <%= study_file.species_name %> <%= study_file.genome_assembly.present? ? " (#{study_file.genome_assembly_name})" : nil %>
                 <% end %>
               </td>
-              <td class="study-file-parsed" id="<%= study_file.name_as_id %>-parse-status" data-parsed="<%= study_file.parsed? %>"><%= study_file.parseable? ? get_parse_label(study_file.parse_status) : get_na_label %></td>
+              <td class="study-file-parsed" id="<%= study_file.id %>-parse-status" data-parsed="<%= study_file.parsed? %>"><%= study_file.parseable? ? get_parse_label(study_file.parse_status) : get_na_label %></td>
               <td><%= render partial: '/layouts/download_link', locals: {study: @study, study_file: study_file} %></td>
             </tr>
           <% end %>

@@ -146,6 +146,29 @@ class StudyFileTest < ActiveSupport::TestCase
     assert matrix.valid?
   end
 
+  test 'should not enforce raw counts associations' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Raw Counts Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    raw_counts_required = FeatureFlag.find_or_create_by(name: 'raw_counts_required_backend')
+    raw_counts_required.update(default_value: true)
+    matrix = FactoryBot.create(:ann_data_file,
+                               name: 'matrix.h5ad',
+                               study:,
+                               cell_input: %w[A B C D],
+                               annotation_input: [
+                                 { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                               ],
+                               coordinate_input: [
+                                 { tsne: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                               ],
+                               expression_input: {
+                                 'phex' => [['A', 0.3], ['B', 1.0], ['C', 0.5], ['D', 0.1]]
+                               })
+    assert matrix.valid? # will fail here if raw counts are being enforced
+  end
+
   test 'should enforce metadata convention' do
     convention_required = FeatureFlag.find_or_create_by(name: 'convention_required')
     convention_required.update(default_value: true)

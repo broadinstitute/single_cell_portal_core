@@ -1061,6 +1061,11 @@ class StudyFile
     is_anndata? && !is_reference_anndata?
   end
 
+  # shorthand for when a file is in the deletion queue (for skipping some validations)
+  def is_deleting?
+    queued_for_deletion || file_type == 'DELETE'
+  end
+
   # helper to reduce duplicates when reporting anndata ingest summaries to Mixpanel
   def has_anndata_summary?
     is_viz_anndata? && !!options[:anndata_summary]
@@ -1240,11 +1245,6 @@ class StudyFile
   # DOM ID of the parent div holding the form for this file, used in upload wizard and sync page
   def form_container_id
     "container-#{self.id}"
-  end
-
-  # DOM ID for use in Selenium for accessing difference elements
-  def name_as_id
-    self.upload_file_name.gsub(/\./, '_')
   end
 
   def generate_expression_matrix_cells

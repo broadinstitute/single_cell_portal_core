@@ -30,7 +30,8 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
   test 'should allow deletion of legacy expression matrices' do
     assert @basic_study_exp_file.valid?,
            "Expression file should be valid but is not: #{@basic_study_exp_file.errors.full_messages}"
-    assert @basic_study.genes.count == 1,
+    gene_count = Gene.where(study: @basic_study, study_file: @basic_study_exp_file).count
+    assert_equal 1, gene_count,
            "Did not find correct number of genes, expected 1 but found #{@basic_study.genes.count}"
 
     # manually unset an attribute for expression_file_info to simulate "legacy" data
@@ -225,5 +226,64 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
     # metadata delete should remove any instance of "all cells" DataArray for this study
     DeleteQueueJob.new(metadata_file).perform
     assert_not DataArray.where(study_id: @basic_study.id, name: 'All Cells').exists?
+  end
+
+  test 'should prepare file for deletion' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Deletion Prepare Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    matrix = FactoryBot.create(:ann_data_file,
+                               name: 'matrix.h5ad',
+                               study:,
+                               cell_input: %w[A B C D],
+                               annotation_input: [
+                                 { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                               ],
+                               coordinate_input: [
+                                 { tsne: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                               ],
+                               expression_input: {
+                                 'phex' => [['A', 0.3], ['B', 1.0], ['C', 0.5], ['D', 0.1]]
+                               })
+
+    DeleteQueueJob.prepare_file_for_deletion(matrix.id)
+    matrix.reload
+    assert matrix.is_deleting?
+  end
+
+  test 'should prepare file for retry' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Retry Prepare Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    matrix = FactoryBot.create(:ann_data_file,
+                               name: 'matrix.h5ad',
+                               study:,
+                               cell_input: %w[A B C D],
+                               annotation_input: [
+                                 { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                               ],
+                               coordinate_input: [
+                                 { tsne: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                               ],
+                               expression_input: {
+                                 'phex' => [['A', 0.3], ['B', 1.0], ['C', 0.5], ['D', 0.1]]
+                               })
+    assert_equal 1, study.cell_metadata.count
+    assert_equal 1, study.genes.count
+    assert_equal 1, study.cluster_groups.count
+    DeleteQueueJob.prepare_file_for_retry(matrix, :ingest_cell_metadata)
+    assert_empty CellMetadatum.where(study:, study_file: matrix)
+    assert_empty CellMetadatum.where(study:, study_file: matrix, linear_data_type: 'CellMetadatum')
+    DeleteQueueJob.prepare_file_for_retry(matrix, :ingest_expression)
+    assert_empty Gene.where(study:, study_file: matrix)
+    assert_empty CellMetadatum.where(study:, study_file: matrix, linear_data_type: 'Gene')
+    DeleteQueueJob.prepare_file_for_retry(matrix, :ingest_cluster, cluster_name: 'tsne')
+    assert_empty ClusterGroup.where(study:, study_file: matrix, name: 'tsne')
+    assert_empty CellMetadatum.where(study:, study_file: matrix, linear_data_type: 'ClusterGroup')
+    DeleteQueueJob.prepare_file_for_retry(matrix, :ingest_anndata)
+    study.reload
+    assert_empty study.expression_matrix_cells(matrix, matrix_type: 'raw')
   end
 end
