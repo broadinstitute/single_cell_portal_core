@@ -6,6 +6,7 @@ class SetAnnDataExpressionLabel < Mongoid::Migration
       next if expression_label.blank?
 
       study = study_file.study
+      Rails.logger.info "Setting expression axis label to #{expression_label} in #{study.accession}"
       study.default_options[:expression_label] = expression_label
       study.save
     end
