@@ -50,7 +50,9 @@ function validateFileName(file, studyFile, allStudyFiles, allowedFileExts=['*'])
  * @param allStudyFiles {StudyFile[]} the array of all files for the study, used for name uniqueness checks
  * @param allowedFileExts { String[] } array of allowable extensions, ['*'] for all
  */
-async function validateLocalFile(file, studyFile, allStudyFiles=[], allowedFileExts=['*']) {
+async function validateLocalFile(
+  file, studyFile, allStudyFiles=[], allowedFileExts=['*'], isAnnDataExperience=false
+) {
   // if clientside file validation feature flag is false skip validation
   const flags = getFeatureFlagsWithDefaults()
   if (flags && flags.clientside_validation === false) {
@@ -143,7 +145,7 @@ function getSizeProps(contentRange, contentLength, file) {
 *   - `summary` is a message like "Your file had 2 errors"
 */
 async function validateRemoteFile(
-  bucketName, fileName, fileType, fileOptions
+  bucketName, fileName, fileType, fileOptions, isAnnDataExperience=false
 ) {
   const startTime = performance.now()
 
