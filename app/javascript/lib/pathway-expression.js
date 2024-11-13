@@ -181,8 +181,8 @@ function sliceIntoBatches(arr, batchSize) {
   return result
 }
 
-/** Get genes from pathway, in batches of up to 50 genes */
-function getDotPlotGeneBatches(pathwayGenes) {
+/** Get genes from pathway, in batches of up to 50 genes, eliminating duplicates */
+export function getDotPlotGeneBatches(pathwayGenes) {
   const genes = pathwayGenes.map(g => g.name)
   const uniqueGenes = Array.from(new Set(genes))
 
