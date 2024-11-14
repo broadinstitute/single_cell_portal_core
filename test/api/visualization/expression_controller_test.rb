@@ -120,10 +120,17 @@ class ExpressionControllerTest < ActionDispatch::IntegrationTest
 
   test 'should reject bogus requests' do
     sign_in_and_update @user
-    execute_http_request(:get, api_v1_study_expression_path(@basic_study, 'violin', {
-      cluster: 'xssdetected',
-      genes: 'PTEN'
-    }), user: @user)
-    assert_response :bad_request
+    %w[xssdetected UPDATEXML CODE_POINTS_TO_STRING .git].each do |bogus|
+      execute_http_request(:get, api_v1_study_expression_path(@basic_study, 'violin', {
+        cluster: bogus,
+        genes: 'PTEN'
+      }), user: @user)
+      assert_response :bad_request
+      execute_http_request(:get, api_v1_study_expression_path(@basic_study, 'violin', {
+        cluster: 'clusterA.txt',
+        genes: bogus
+      }), user: @user)
+      assert_response :bad_request
+    end
   end
 end

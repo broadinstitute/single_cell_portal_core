@@ -175,8 +175,11 @@ function RawScatterPlot({
   /** Update layout, without recomputing traces */
   function resizePlot() {
     const scatter = updateScatterLayout()
-    Plotly.relayout(graphElementId, scatter.layout)
-    setScatterData(scatter)
+    // in cases where an annotation wasn't found, skip calling Plotly.relayout before plot is instantiated
+    if (document.getElementById(graphElementId).data) {
+      Plotly.relayout(graphElementId, scatter.layout)
+      setScatterData(scatter)
+    }
   }
 
   /** Update legend counts and recompute traces, without recomputing layout */
@@ -604,7 +607,7 @@ function RawScatterPlot({
         correlation={bulkCorrelation}/>
       { hasMissingAnnot &&
         <div className="alert-warning text-center error-boundary">
-          "{cluster}" does not have the requested annotation "{loadedAnnotation}"
+          "{cluster}" does not have the requested annotation {loadedAnnotation !== '----' && loadedAnnotation}
         </div>
       }
       <div
