@@ -89,19 +89,19 @@ module Api
               key :type, :string
             end
             parameter do
-              key :name, :annot_name
+              key :name, :annotation_name
               key :in, :query
               key :description, 'Name of the annotation to categorize the cluster data.  Blank for default annotation.'
               key :type, :string
             end
             parameter do
-              key :name, :annot_type
+              key :name, :annotation_type
               key :in, :query
               key :description, 'Type of the annotation to retrieve--numeric or category.  Blank for default annotation.'
               key :type, :string
             end
             parameter do
-              key :name, :annot_scope
+              key :name, :annotation_scope
               key :in, :query
               key :description, 'Scope of the annotation to retrieve--study or cluster.  Blank for default annotation.'
               key :type, :string
@@ -156,7 +156,8 @@ module Api
                                                        annot_type: annot_params[:type],
                                                        annot_scope: annot_params[:scope])
           if !annotation
-            raise ArgumentError, "Annotation \"#{annot_params[:name]}\" could not be found"
+            annot_identifier = annot_params.values.compact.join('--')
+            raise ArgumentError, "Annotation \"#{annot_identifier}\" could not be found for \"#{cluster.name}\""
           end
 
           subsample = get_selected_subsample_threshold(url_params[:subsample], cluster)
