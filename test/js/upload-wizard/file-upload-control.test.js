@@ -242,6 +242,41 @@ describe('file upload control validates the selected file', () => {
       .toHaveTextContent('First row, first column must be "NAME" (case insensitive). Your value was "notNAME')
   })
 
+  it('skips validating reference AnnData files', async () => {
+    const file = {
+      _id: '123',
+      name: '',
+      status: 'new',
+      file_type: 'AnnData'
+    }
+
+    const updateFileHolder = { updateFile: () => {} }
+    const updateFileSpy = jest.spyOn(updateFileHolder, 'updateFile')
+
+    render((
+      <StudyContext.Provider value={{ accession: 'SCP123' }}>
+        <FileUploadControl
+          file={file}
+          allFiles={[file]}
+          updateFile={updateFileHolder.updateFile}
+          allowedFileExts={['.h5ad']}
+          validationMessages={{}}
+          isAnnDataExperience={false}/>
+      </StudyContext.Provider>
+    ))
+
+    const fileObj = fireFileSelectionEvent(screen.getByTestId('file-input'), {
+      fileName: 'data.h5ad'
+    }, true)
+    await waitForElementToBeRemoved(() => screen.getByTestId('file-validation-spinner'))
+    expect(updateFileSpy).toHaveBeenLastCalledWith('123', {
+      uploadSelection: fileObj,
+      name: 'data.h5ad',
+      upload_file_name: 'data.h5ad'
+    })
+    expect(screen.queryByTestId('validation-error')).not.toBeInTheDocument()
+  })
+
   it('renders multiple content errors', async () => {
     const file = {
       _id: '123',
