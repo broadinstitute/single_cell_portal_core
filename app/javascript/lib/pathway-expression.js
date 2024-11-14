@@ -150,7 +150,6 @@ export function getPathwayGenes(ranks) {
     const dataNode = dataNodes[i]
     const classes = dataNode.classList
 
-    const t0b = performance.now()
     for (let j = 0; j < classes.length; j++) {
       const cls = classes[j]
       const isGene = ['geneproduct', 'rna', 'protein'].includes(cls.toLowerCase())
