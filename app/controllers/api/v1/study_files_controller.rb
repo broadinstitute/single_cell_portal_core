@@ -392,9 +392,14 @@ module Api
 
         if ['Expression Matrix', 'MM Coordinate Matrix'].include?(study_file.file_type) && !safe_file_params[:y_axis_label].blank?
           # if user is supplying an expression axis label, update default options hash
-          options = study.default_options.dup
-          options.merge!(expression_label: safe_file_params[:y_axis_label])
-          study.update(default_options: options)
+          study.default_options[:expression_label] = safe_file_params[:y_axis_label]
+          study.save
+        elsif study_file.is_viz_anndata?
+          expression_label = study_file.ann_data_file_info.expression_axis_label
+          if expression_label
+            study.default_options[:expression_label] = expression_label
+            study.save
+          end
         end
 
         if safe_file_params[:upload].present? && !is_chunked || safe_file_params[:remote_location].present?

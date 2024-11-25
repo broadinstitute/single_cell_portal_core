@@ -43,9 +43,13 @@ class AnnotationVizServiceTest < ActiveSupport::TestCase
     assert_equal 'Category', annotation[:name]
     assert_equal %w[bar baz], annotation[:values]
 
-    annotation = AnnotationVizService.get_selected_annotation(@basic_study, annot_scope: 'study')
-    assert_equal 'species', annotation[:name]
-    assert_equal %w[dog cat], annotation[:values]
+    # explicit request for default
+    annotation = AnnotationVizService.get_selected_annotation(@basic_study, annot_name: '_default')
+    assert_equal 'Category', annotation[:name]
+    assert_equal %w[bar baz], annotation[:values]
+
+    # partial specifications result in nil responses, only empty or "_default" requests load the default annotation
+    assert_nil AnnotationVizService.get_selected_annotation(@basic_study, annot_scope: 'study')
 
     fizz_cluster = @basic_study.cluster_groups.find_by(name: 'cluster_2.txt')
     annotation = AnnotationVizService.get_selected_annotation(@basic_study, cluster: fizz_cluster)
@@ -69,12 +73,10 @@ class AnnotationVizServiceTest < ActiveSupport::TestCase
     assert_equal [1.1, 2.2, 3.3], annotation[:values]
   end
 
-  test 'returns first study/cluster annotation if no matching annotation is found' do
-    annotation = AnnotationVizService.get_selected_annotation(@basic_study, annot_name: 'foobar', annot_scope: 'group', annot_type: 'study')
-    assert_equal 'species', annotation[:name]
+  test 'returns nothing if no matching annotation is found' do
+    assert_nil AnnotationVizService.get_selected_annotation(@basic_study, annot_name: 'foobar', annot_scope: 'group', annot_type: 'study')
     cluster = @basic_study.cluster_groups.first
-    annotation = AnnotationVizService.get_selected_annotation(@basic_study, cluster: cluster, annot_name: 'foobar', annot_type: 'group', annot_scope: 'cluster')
-    assert_equal 'Category', annotation[:name]
+    assert_nil AnnotationVizService.get_selected_annotation(@basic_study, cluster: cluster, annot_name: 'foobar', annot_type: 'group', annot_scope: 'cluster')
   end
 
   test 'available annotations returns the available annotations' do

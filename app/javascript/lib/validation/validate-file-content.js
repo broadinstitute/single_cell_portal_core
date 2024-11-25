@@ -337,7 +337,7 @@ export async function validateGzipEncoding(file, fileType) {
  */
 async function parseFile(
   file, fileType, fileOptions={},
-  sizeProps={}, remoteProps={}
+  sizeProps={}, remoteProps={}, isAnnDataExperience
 ) {
   const startTime = performance.now()
 
@@ -354,6 +354,12 @@ async function parseFile(
   }
 
   const parseResult = { fileInfo, issues: [] }
+
+  // bypass validation for reference AnnData files
+  if (fileType === 'AnnData' && !isAnnDataExperience) {
+    parseResult.perfTime = Math.round(performance.now() - startTime)
+    return parseResult
+  }
 
   try {
     fileInfo.isGzipped = await validateGzipEncoding(file, fileType)

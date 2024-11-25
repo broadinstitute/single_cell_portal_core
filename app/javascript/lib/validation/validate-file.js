@@ -49,8 +49,11 @@ function validateFileName(file, studyFile, allStudyFiles, allowedFileExts=['*'])
  * @param studyFile {StudyFile} the JS object corresponding to the StudyFile
  * @param allStudyFiles {StudyFile[]} the array of all files for the study, used for name uniqueness checks
  * @param allowedFileExts { String[] } array of allowable extensions, ['*'] for all
+ * @param isAnnDataExperience {Boolean} controls finding nested AnnData data fragments
  */
-async function validateLocalFile(file, studyFile, allStudyFiles=[], allowedFileExts=['*']) {
+async function validateLocalFile(
+  file, studyFile, allStudyFiles=[], allowedFileExts=['*'], isAnnDataExperience
+) {
   // if clientside file validation feature flag is false skip validation
   const flags = getFeatureFlagsWithDefaults()
   if (flags && flags.clientside_validation === false) {
@@ -70,7 +73,7 @@ async function validateLocalFile(file, studyFile, allStudyFiles=[], allowedFileE
       use_metadata_convention: studyFile.use_metadata_convention
     }
     const { fileInfo, issues, perfTime, notes } =
-      await ValidateFileContent.parseFile(file, studyFileType, fileOptions)
+      await ValidateFileContent.parseFile(file, studyFileType, fileOptions,  {}, {}, isAnnDataExperience)
     const allIssues = issues.concat(nameIssues)
     issuesObj = formatIssues(allIssues)
     notesObj = notes
@@ -136,6 +139,7 @@ function getSizeProps(contentRange, contentLength, file) {
 *  @param {String} fileName Name of file object in GCS bucket
 *  @param {String} fileType SCP file type
 *  @param {Object} [fileOptions]
+*  @param isAnnDataExperience {Boolean} controls finding nested AnnData data fragments
 *
 * @return {Object} issueObj Validation results, where:
 *   - `errors` is an array of errors,
@@ -143,7 +147,7 @@ function getSizeProps(contentRange, contentLength, file) {
 *   - `summary` is a message like "Your file had 2 errors"
 */
 async function validateRemoteFile(
-  bucketName, fileName, fileType, fileOptions
+  bucketName, fileName, fileType, fileOptions, isAnnDataExperience
 ) {
   const startTime = performance.now()
 
@@ -178,7 +182,7 @@ async function validateRemoteFile(
 
     // Equivalent block exists in validateFileContent
     const parseResults = await ValidateFileContent.parseFile(
-      file, fileType, fileOptions, sizeProps, remoteProps
+      file, fileType, fileOptions, sizeProps, remoteProps, isAnnDataExperience
     )
     fileInfo = parseResults['fileInfo']
     issues = parseResults['issues']

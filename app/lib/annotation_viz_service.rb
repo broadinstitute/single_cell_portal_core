@@ -17,12 +17,13 @@ class AnnotationVizService
   # - annot_name: string name of the annotation
   # - annot_type: string type (group or numeric)
   # - annot_scope: string scope (study, cluster, or user)
-  # - fallback: allow rescue to select first available or default annotation
   # Returns:
   # - See populate_annotation_by_class for the object structure
-  def self.get_selected_annotation(study, cluster: nil, annot_name: nil, annot_type: nil, annot_scope: nil, fallback: true)
+  def self.get_selected_annotation(study, cluster: nil, annot_name: nil, annot_type: nil, annot_scope: nil)
+    # override default on an empty request
+    annot_name = '_default' if annot_name.blank? && annot_type.blank? && annot_scope.blank?
     # construct object based on name, type & scope
-    if annot_name.blank? && fallback
+    if annot_name == '_default'
       # get the default annotation
       default_annot = nil
       if annot_scope == 'study'
@@ -47,19 +48,14 @@ class AnnotationVizService
     case annot_scope
     when 'cluster'
       annotation_source = cluster.cell_annotations.find {|ca| ca[:name] == annot_name && ca[:type] == annot_type}
-      if annotation_source.nil?
-        # if there's no match, default to the first annotation
-        annotation_source = cluster.cell_annotations.first
-      end
     when 'user'
       annotation_source = UserAnnotation.find(annot_name)
     else
       annotation_source = study.cell_metadata.by_name_and_type(annot_name, annot_type)
     end
-    # rescue from an invalid annotation request by defaulting to the first cell metadatum present
-    if annotation_source.nil? && fallback
-      annotation_source = study.cell_metadata.first
-    end
+
+    return nil if annotation_source.nil?
+
     populate_annotation_by_class(source: annotation_source, scope: annot_scope, type: annot_type)
   end
 
@@ -98,7 +94,7 @@ class AnnotationVizService
     ]
     {
       default_cluster: study.default_cluster&.name,
-      default_annotation: AnnotationVizService.get_selected_annotation(study),
+      default_annotation: AnnotationVizService.get_selected_annotation(study, annot_name: '_default'),
       annotations: AnnotationVizService.available_annotations(study, cluster: nil, current_user: user),
       clusters: study.cluster_groups.pluck(:name),
       subsample_thresholds: subsample_thresholds

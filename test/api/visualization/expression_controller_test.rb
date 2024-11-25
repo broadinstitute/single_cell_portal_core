@@ -37,6 +37,7 @@ class ExpressionControllerTest < ActionDispatch::IntegrationTest
                                               study: @basic_study)
     @pten_gene = FactoryBot.create(:gene_with_expression,
                                    name: 'PTEN',
+                                   gene_id: 'ENSG00000171862',
                                    study_file: @basic_study_exp_file,
                                    expression_input: [['A', 0],['B', 3],['C', 1.5]])
 
@@ -96,6 +97,18 @@ class ExpressionControllerTest < ActionDispatch::IntegrationTest
     assert_equal 400, response.status # 400 since study is not visualizable
   end
 
+  test 'should query by gene ID' do
+    gene_id = @basic_study.genes.first.gene_id
+    sign_in_and_update @user
+    execute_http_request(:get, api_v1_study_expression_path(@basic_study, 'heatmap', {
+      cluster: 'clusterA.txt',
+      genes: gene_id
+    }), user: @user)
+    assert_equal 200, response.status
+    # will still use gene symbol in response body
+    assert_equal "#1.2\n1\t3\nName\tDescription\tA\tB\tC\nPTEN\t\t0.0\t3.0\t1.5", response.body
+  end
+
   test "should prevent searches over #{StudySearchService::MAX_GENE_SEARCH} genes" do
     genes = 1.upto(100).map { |i| "Gene_#{i}" }.join(',')
     sign_in_and_update @user
@@ -107,10 +120,17 @@ class ExpressionControllerTest < ActionDispatch::IntegrationTest
 
   test 'should reject bogus requests' do
     sign_in_and_update @user
-    execute_http_request(:get, api_v1_study_expression_path(@basic_study, 'violin', {
-      cluster: 'xssdetected',
-      genes: 'PTEN'
-    }), user: @user)
-    assert_response :bad_request
+    %w[xssdetected UPDATEXML CODE_POINTS_TO_STRING .git].each do |bogus|
+      execute_http_request(:get, api_v1_study_expression_path(@basic_study, 'violin', {
+        cluster: bogus,
+        genes: 'PTEN'
+      }), user: @user)
+      assert_response :bad_request
+      execute_http_request(:get, api_v1_study_expression_path(@basic_study, 'violin', {
+        cluster: 'clusterA.txt',
+        genes: bogus
+      }), user: @user)
+      assert_response :bad_request
+    end
   end
 end

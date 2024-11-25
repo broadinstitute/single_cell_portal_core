@@ -1,7 +1,12 @@
-import { getPathwayGenes, colorPathwayGenesByExpression } from '~/lib/pathway-expression'
+import {
+  getPathwayGenes, colorPathwayGenesByExpression,
+  getDotPlotGeneBatches
+} from '~/lib/pathway-expression'
 import * as UserProvider from '~/providers/UserProvider'
 
-import { pathwayContainerHtml, dotPlotMetrics } from './pathway-expression.test-data.js'
+import {
+  pathwayContainerHtml, dotPlotMetrics, manyPathwayGenes
+} from './pathway-expression.test-data.js'
 
 describe('Expression overlay for pathway diagram', () => {
   it('gets objects containing e.g. DOM ID for genes in pathway ', () => {
@@ -47,7 +52,26 @@ describe('Expression overlay for pathway diagram', () => {
     // See color-mix() on MDN:
     // https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix
     expect(egfrColor).toBe('color-mix(in oklab, #6800a1 12.350979804992676%, white)')
-
-    expect(1).toBe(1)
   })
+
+  it('splits big lists of dot plot genes in batches of 50 or less', () => {
+    jest
+      .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
+      .mockReturnValue({
+        show_pathway_expression: true
+      })
+
+    expect(manyPathwayGenes).toHaveLength(275)
+    const dotPlotGeneBatches = getDotPlotGeneBatches(manyPathwayGenes)
+
+    expect(dotPlotGeneBatches).toHaveLength(6)
+    expect(dotPlotGeneBatches[0]).toHaveLength(50)
+
+    // N.B.: Not 25, because there are 18 duplicate gene names in manyPathwayGenes.
+    // That's because manyPathwayGenes represents _graphical_ nodes in the diagram,
+    // whereas entries in dotPlotGeneBatches represent _genes we want metrics for_,
+    // and those are unique by gene name.
+    expect(dotPlotGeneBatches.slice(-1)[0]).toHaveLength(7)
+  })
+
 })

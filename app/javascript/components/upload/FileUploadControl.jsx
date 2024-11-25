@@ -72,7 +72,7 @@ export default function FileUploadControl({
     }
 
     setFileValidation({ validating: true, issues: {}, fileName: selectedFile.name })
-    const [issues, notes] = await ValidateFile.validateLocalFile(selectedFile, file, allFiles, allowedFileExts)
+    const [issues, notes] = await ValidateFile.validateLocalFile(selectedFile, file, allFiles, allowedFileExts, isAnnDataExperience)
     setFileValidation({ validating: false, issues, fileName: selectedFile.name, notes })
     if (issues.errors.length === 0) {
       updateFile(file._id, {
@@ -133,7 +133,7 @@ export default function FileUploadControl({
     setFileValidation({ validating: true, issues: {}, fileName: trimmedPath })
     try {
       const issues = await ValidateFile.validateRemoteFile(
-        bucketName, trimmedPath, fileType, fileOptions
+        bucketName, trimmedPath, fileType, fileOptions, isAnnDataExperience
       )
       setFileValidation({ validating: false, issues, fileName: trimmedPath })
 
