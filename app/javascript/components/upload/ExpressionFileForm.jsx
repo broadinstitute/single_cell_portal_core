@@ -39,13 +39,13 @@ export default function ExpressionFileForm({
   const speciesOptions = fileMenuOptions.species.map(spec => ({ label: spec.common_name, value: spec.id }))
   const selectedSpecies = speciesOptions.find(opt => opt.value === file.taxon_id)
   const isMtxFile = file.file_type === 'MM Coordinate Matrix'
-const rawCountsInfo = file.expression_file_info.is_raw_counts
-const isRawCountsFile = rawCountsInfo === 'true' || rawCountsInfo
+  const rawCountsInfo = file.expression_file_info.is_raw_counts
+  const isRawCountsFile = rawCountsInfo === 'true' || rawCountsInfo
   const [showRawCountsUnits, setShowRawCountsUnits] = useState(isRawCountsFile)
 
   const allowedFileExts = isMtxFile ? FileTypeExtensions.mtx : FileTypeExtensions.plainText
   let requiredFields = showRawCountsUnits ? RAW_COUNTS_REQUIRED_FIELDS : REQUIRED_FIELDS
-  const rawCountsRequired = featureFlagState && featureFlagState.raw_counts_required_frontend
+  const rawCountsRequired = featureFlagState && featureFlagState.raw_counts_required_frontend && !isAnnDataExperience
   if (rawCountsRequired && !isRawCountsFile ) {
     requiredFields = requiredFields.concat(PROCESSED_ASSOCIATION_FIELD)
   }

@@ -153,7 +153,6 @@ FactoryBot.define do
       file_type { 'AnnData' }
       parse_status { 'parsed' }
       transient do
-        reference_file { true }
         # cell_input is an array of all cell names
         # e.g.  ['cellA', 'cellB', 'cellC']
         cell_input { [] }
@@ -173,7 +172,8 @@ FactoryBot.define do
         #   phex: [['cellA', 0.6],['cellB', 6.1], ['cellC', 4.5]]
         # }
         expression_input { {} }
-        has_raw_counts { true }
+        has_raw_counts { expression_input.any? && cell_input.any? }
+        reference_file { cell_input.empty? && coordinate_input.empty? && annotation_input.empty? && expression_input.empty? }
       end
       after(:create) do |file, evaluator|
         file.build_ann_data_file_info
@@ -194,9 +194,13 @@ FactoryBot.define do
         end
         if evaluator.expression_input.any?
           file.build_expression_file_info(library_preparation_protocol: "10x 5' v3")
-          file.expression_file_info.save
           file.ann_data_file_info.has_expression = true
-          file.ann_data_file_info.has_raw_counts = evaluator.has_raw_counts
+          if evaluator.has_raw_counts
+            file.expression_file_info.is_raw_counts = evaluator.has_raw_counts
+            file.expression_file_info.units = 'raw counts'
+            file.ann_data_file_info.has_raw_counts = evaluator.has_raw_counts
+          end
+          file.expression_file_info.save
           %w[raw processed].each do |matrix_type|
             FactoryBot.create(:data_array,
                               array_type: 'cells',

@@ -191,6 +191,7 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
     ann_data_file = FactoryBot.create(:ann_data_file,
                                       name: 'test.h5ad',
                                       study:,
+                                      has_raw_counts: false,
                                       cell_input: %w[bar bing],
                                       expression_input: {
                                         'foo' => [['bar', 0.3], ['bing', 1.0]]

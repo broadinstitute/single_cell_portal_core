@@ -798,7 +798,21 @@ class IngestJobTest < ActiveSupport::TestCase
     assert_equal 1, study.cell_metadata.count
     assert_equal 1, study.genes.count
 
-    job = IngestJob.new(pipeline_name: SecureRandom.uuid, study:, study_file:, user: @user, action: :ingest_subsample)
+    study_file.set_anndata_summary!
+    study_file.reload
+    safe_fragment = study_file.ann_data_file_info.fragments_by_type(:cluster).first.with_indifferent_access
+    cluster = study.cluster_groups.first
+    cluster_file = RequestUtils.data_fragment_url(
+      study_file, 'cluster', file_type_detail: safe_fragment[:obsm_key_name]
+    )
+    cell_metadata_file = RequestUtils.data_fragment_url(study_file, 'metadata')
+    params_object = AnnDataIngestParameters.new(
+      subsample: true, ingest_anndata: false, extract: nil, obsm_keys: nil, name: cluster.name,
+      cluster_file:, cell_metadata_file:
+    )
+    job = IngestJob.new(
+      pipeline_name: SecureRandom.uuid, study:, study_file:, user: @user, action: :ingest_subsample, params_object:
+    )
     mock = Minitest::Mock.new
     2.times do
       mock.expect :error, nil

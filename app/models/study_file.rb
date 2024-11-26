@@ -1047,6 +1047,11 @@ class StudyFile
     !!expression_file_info&.is_raw_counts || !!ann_data_file_info&.has_raw_counts
   end
 
+  # check for when a user comes back to indicate an AnnData file has raw counts data
+  def needs_raw_counts_extraction?
+    is_viz_anndata? && is_raw_counts_file? && parsed? && study.expression_matrix_cells(self, matrix_type: 'raw').empty?
+  end
+
   def is_anndata?
     file_type == 'AnnData'
   end
