@@ -841,6 +841,7 @@ class IngestJob
       # if this was only a raw counts extraction, update parse status
       if params_object.extract == %w[raw_counts]
         study_file.update(parse_status: 'parsed')
+        launch_differential_expression_jobs
       else
         # unset anndata_summary flag to allow reporting summary later unless this is only a raw counts extraction
         study_file.unset_anndata_summary!
