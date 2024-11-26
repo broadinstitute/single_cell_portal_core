@@ -112,8 +112,8 @@ class FileParseService
             )
           elsif study_file.needs_raw_counts_extraction?
             params_object = AnnDataIngestParameters.new(
-              anndata_file: study_file.gs_url, extract: %w[raw_counts], extract_raw_counts: true,
-              obsm_keys: nil, file_size: study_file.upload_file_size
+              anndata_file: study_file.gs_url, extract: %w[raw_counts], obsm_keys: nil,
+              file_size: study_file.upload_file_size
             )
           else
             params_object = AnnDataIngestParameters.new(
