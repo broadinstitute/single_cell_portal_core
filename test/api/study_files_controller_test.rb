@@ -291,4 +291,65 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
     assert_equal description, study_file.description
     assert study_file.parsed?
   end
+
+  test 'should extract only raw counts from existing AnnData uploads' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'AnnData Raw Counts Study',
+                              public: true,
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    ann_data_file = FactoryBot.create(:ann_data_file,
+                                      name: 'matrix.h5ad',
+                                      study:,
+                                      upload_file_size: 1.megabyte,
+                                      cell_input: %w[A B C D],
+                                      has_raw_counts: false,
+                                      reference_file: false,
+                                      annotation_input: [
+                                        { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                                      ],
+                                      coordinate_input: [
+                                        { umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                      ],
+                                      expression_input: {
+                                        'phex' => [['A', 0.3], ['B', 1.0], ['C', 0.5], ['D', 0.1]]
+                                      })
+
+    assert_not ann_data_file.is_raw_counts_file?
+    assert_not ann_data_file.needs_raw_counts_extraction?
+
+    # test for normal uploads
+    study_file_attributes = {
+      study_file: {
+        expression_file_info_attributes: {
+          is_raw_counts: true,
+          units: 'raw counts'
+        }
+      }
+    }
+    FileParseService.stub :run_parse_job, true do
+      execute_http_request(:patch, api_v1_study_study_file_path(study_id: study.id, id: ann_data_file.id),
+                           request_payload: study_file_attributes)
+      assert_response :success
+      ann_data_file.reload
+      assert ann_data_file.is_raw_counts_file?
+      assert ann_data_file.needs_raw_counts_extraction?
+    end
+
+    # test for bucket path uploads, resetting flags first
+    ann_data_file.expression_file_info.update(is_raw_counts: false)
+    ann_data_file.ann_data_file_info.update(has_raw_counts: false)
+    ann_data_file.update(remote_location: 'matrix.h5ad')
+    assert_not ann_data_file.is_raw_counts_file?
+    assert_not ann_data_file.needs_raw_counts_extraction?
+
+    FileParseService.stub :run_parse_job, true do
+      execute_http_request(:patch, api_v1_study_study_file_path(study_id: study.id, id: ann_data_file.id),
+                           request_payload: study_file_attributes)
+      assert_response :success
+      ann_data_file.reload
+      assert ann_data_file.is_raw_counts_file?
+      assert ann_data_file.needs_raw_counts_extraction?
+    end
+  end
 end

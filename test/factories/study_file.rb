@@ -201,7 +201,9 @@ FactoryBot.define do
             file.ann_data_file_info.has_raw_counts = evaluator.has_raw_counts
           end
           file.expression_file_info.save
-          %w[raw processed].each do |matrix_type|
+          matrix_types = %w[processed]
+          matrix_types << 'raw' if evaluator.has_raw_counts
+          matrix_types.each do |matrix_type|
             FactoryBot.create(:data_array,
                               array_type: 'cells',
                               array_index: 0,

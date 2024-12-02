@@ -402,7 +402,9 @@ module Api
           end
         end
 
-        if safe_file_params[:upload].present? && !is_chunked || safe_file_params[:remote_location].present?
+        if safe_file_params[:upload].present? && !is_chunked ||
+          safe_file_params[:remote_location].present? ||
+          study_file.needs_raw_counts_extraction?
           complete_upload_process(study_file, parse_on_upload)
         end
       end
