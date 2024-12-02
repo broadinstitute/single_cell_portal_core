@@ -1071,6 +1071,11 @@ class Study
     feature_flag_for('differential_expression_frontend')
   end
 
+  # check to see if study has any registered files
+  def has_files?
+    study_files.any? || directory_listings.are_synced.any?
+  end
+
   # quick getter to return any cell metadata that can_visualize?
   def viewable_metadata
     viewable = []
@@ -1661,7 +1666,7 @@ class Study
     all_locations.each do |file_location|
       match = self.verify_remote_file(remotes: remotes, file_location: file_location)
       if match.nil?
-        missing << {filename: file_location, study: self.name, owner: self.user.email, reason: "File missing from bucket: #{self.bucket_id}"}
+        missing << {filename: file_location, study: self.accession, owner: self.user.email, reason: "File missing from bucket: #{self.bucket_id}"}
       end
     end
     missing

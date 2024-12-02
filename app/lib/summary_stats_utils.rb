@@ -5,6 +5,17 @@
 ##
 class SummaryStatsUtils
   include Sys
+
+  # amount of time where a study is considered 'defunct' if there is no file activity
+  DEFUNCT_STUDY_CUTOFF = 1.year.ago.to_date.freeze
+
+  # minumum amount of "defunct" data in GB before we consider cleanup, i.e. 1/2 TB
+  # this equates to $60/year, or $5/month
+  MINIMUM_GB_FOR_CLEANUP = 0.01.freeze
+
+  # price in $ per GB/YR of GCS bucket storage
+  YEARLY_COST_PER_GB = 0.24.freeze
+
   # get a snapshot of user counts/activity up to a given date
   # will give count of users as of that date, and number of active users on that date
   def self.daily_total_and_active_user_counts(end_date: Time.zone.today)
@@ -70,6 +81,71 @@ class SummaryStatsUtils
       end
     end
     missing_files
+  end
+
+  # gives information on studies that have data in their associated buckets but nothing available for download
+  # after a certain period
+  def self.defunct_study_info
+    start_time = Time.now
+    defunct_studies = {}
+    studies = Study.where(
+      :created_at.lte => DEFUNCT_STUDY_CUTOFF, detached: false, firecloud_project: FireCloudClient::PORTAL_NAMESPACE
+    ).reject do |study|
+      study.public && (study.can_visualize?)
+    end
+    Parallel.map(studies, in_threads: 20) do |study|
+      puts "checking #{study.accession}"
+      client = FireCloudClient.new
+      begin
+        bucket = client.get_workspace_bucket(study.bucket_id)
+        next if bucket.nil?
+
+        remotes = bucket.files
+        next if remotes.empty?
+
+        batches = 0
+        bytes, last_created = bytes_and_last_created_for(remotes)
+        while remotes.next? && batches <= 9
+          batches += 1
+          remotes = remotes.next
+          bytes, last_created = bytes_and_last_created_for(remotes, bytes:, last_created:)
+        end
+
+        total_gb = (bytes / 1024 / 1024 / 1024.0).floor(2)
+        more_files = batches == 10 && remotes.next?
+        if total_gb > MINIMUM_GB_FOR_CLEANUP || more_files
+          puts "#{study.accession} candidate for removal"
+          defunct_studies[study.id] = {
+            accession: study.accession,
+            name: study.name,
+            owner: study.user&.email,
+            created_at: study.created_at,
+            public: study.public,
+            has_files: study.study_files.any? || study.directory_listings.are_synced.any?,
+            visualizations: study.can_visualize?,
+            last_created:,
+            total_gb:,
+            total_cost: (total_gb * YEARLY_COST_PER_GB).floor(2),
+            more_files:
+          }
+        end
+        defunct_studies
+      rescue Google::Cloud::PermissionDeniedError => error
+        ErrorTracker.report_exception(error, nil, {study:})
+      end
+    end
+    end_time = Time.now
+    puts "Completed, #{studies.count} evaluated, total runtime: #{TimeDifference.between(start_time, end_time).humanize}"
+    defunct_studies
+  end
+
+  def self.bytes_and_last_created_for(remotes, bytes: 0, last_created: nil)
+    created = last_created || remotes.first.created_at
+    remotes.map do |remote|
+      bytes += remote.size
+      created = created >= remote.created_at ? created : remote.created_at
+    end
+    [bytes, created.in_time_zone]
   end
 
   # disk usage stats
