@@ -838,8 +838,14 @@ class IngestJob
         job.delay.push_remote_and_launch_ingest
       end
 
-      # unset anndata_summary flag to allow reporting summary later
-      study_file.unset_anndata_summary!
+      # if this was only a raw counts extraction, update parse status
+      if params_object.extract == %w[raw_counts]
+        study_file.update(parse_status: 'parsed')
+        launch_differential_expression_jobs
+      else
+        # unset anndata_summary flag to allow reporting summary later unless this is only a raw counts extraction
+        study_file.unset_anndata_summary!
+      end
     end
   end
 
@@ -1017,7 +1023,7 @@ class IngestJob
     mixpanel_log_props = get_job_analytics
     # log job properties to Mixpanel
     MetricsService.log(mixpanel_event_name, mixpanel_log_props, user)
-    report_anndata_summary if study_file.is_viz_anndata? && action != :ingest_anndata
+    report_anndata_summary if study_file.is_viz_anndata? && !%i[ingest_anndata differential_expression].include?(action)
   end
 
   # set a mixpanel event name based on action

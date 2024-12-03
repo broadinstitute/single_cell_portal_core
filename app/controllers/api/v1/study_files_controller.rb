@@ -402,7 +402,9 @@ module Api
           end
         end
 
-        if safe_file_params[:upload].present? && !is_chunked || safe_file_params[:remote_location].present?
+        if safe_file_params[:upload].present? && !is_chunked ||
+          safe_file_params[:remote_location].present? ||
+          study_file.needs_raw_counts_extraction?
           complete_upload_process(study_file, parse_on_upload)
         end
       end
@@ -445,7 +447,7 @@ module Api
       def complete_upload_process(study_file, parse_on_upload)
         # set status to uploaded on full create, unless file is parsed and this is just an update
         study_file.update!(status: 'uploaded', parse_status: 'unparsed') unless study_file.parsed?
-        if parse_on_upload
+        if parse_on_upload || study_file.needs_raw_counts_extraction?
           if study_file.parseable?
             persist_on_fail = study_file.remote_location.present?
             FileParseService.run_parse_job(@study_file, @study, current_api_user, persist_on_fail:)

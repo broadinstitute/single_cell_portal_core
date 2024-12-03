@@ -110,6 +110,11 @@ class FileParseService
               anndata_file: study_file.gs_url, extract: %w[cluster], obsm_keys: [obsm_key],
               file_size: study_file.upload_file_size
             )
+          elsif study_file.needs_raw_counts_extraction?
+            params_object = AnnDataIngestParameters.new(
+              anndata_file: study_file.gs_url, extract: %w[raw_counts], obsm_keys: nil,
+              file_size: study_file.upload_file_size
+            )
           else
             params_object = AnnDataIngestParameters.new(
               anndata_file: study_file.gs_url, obsm_keys: study_file.ann_data_file_info.obsm_key_names,

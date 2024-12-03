@@ -205,4 +205,45 @@ class FileParseServiceTest < ActiveSupport::TestCase
       end
     end
   end
+
+  test 'should extract raw counts from AnnData file after initial ingest' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'AnnData Raw Counts Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    study_file = FactoryBot.create(:ann_data_file,
+                                   name: 'data.h5ad',
+                                   reference_file: false,
+                                   study:,
+                                   cell_input: %w[A B C D],
+                                   annotation_input: [
+                                     { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                                   ],
+                                   coordinate_input: [
+                                     { tsne: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                   ],
+                                   expression_input: {
+                                     'phex' => [['A', 0.3], ['B', 1.0], ['C', 0.5], ['D', 0.1]]
+                                   })
+    assert study.expression_matrix_cells(study_file, matrix_type: 'raw').any?
+    # remove cells and re-run ingest to confirm job is launched
+    filename = "h5ad_frag.matrix.raw.mtx.gz"
+    query = {
+      name: "#{filename} Cells", cluster_name: filename, array_type: 'cells', linear_data_type: 'Study',
+      linear_data_id: study.id, study_file_id: study_file.id, cluster_group_id: nil, subsample_annotation: nil,
+      subsample_threshold: nil
+    }
+    DataArray.where(query).delete_all
+    study.reload
+    assert_empty study.expression_matrix_cells(study_file, matrix_type: 'raw')
+    job_mock = Minitest::Mock.new
+    job_mock.expect :push_remote_and_launch_ingest, nil
+    delay_mock = Minitest::Mock.new
+    delay_mock.expect :delay, job_mock
+    IngestJob.stub :new, delay_mock do
+      FileParseService.run_parse_job(study_file, study, study.user)
+      delay_mock.verify
+      job_mock.verify
+    end
+  end
 end
