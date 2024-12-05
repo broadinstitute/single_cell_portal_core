@@ -5,6 +5,8 @@ import { Slider, Rail, Handles, Tracks, Ticks } from 'react-compound-slider'
 import Select from '~/lib/InstrumentedSelect'
 import { Handle, Track, Tick } from '~/components/search/controls/slider/components'
 import PlotOptions from './plot-options'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 const {
   SCATTER_COLOR_OPTIONS, defaultScatterColor, DISTRIBUTION_PLOT_OPTIONS, DISTRIBUTION_POINTS_OPTIONS,
   ROW_CENTERING_OPTIONS, FIT_OPTIONS
@@ -28,7 +30,7 @@ const railStyle = {
 // the code is in because it allows easier testing of the trace filtering logic implemented in plot.js
 const ENABLE_EXPRESSION_FILTER = false
 
-
+const EXPRESSION_SORT_OPTIONS = ['max', 'min', 'none']
 /** the graph customization controls for the exlore tab */
 export default function RenderControls({ shownTab, exploreParams, updateExploreParams, allGenes }) {
   const scatterColorValue = exploreParams.scatterColor ? exploreParams.scatterColor : defaultScatterColor
@@ -57,6 +59,8 @@ export default function RenderControls({ shownTab, exploreParams, updateExploreP
   const showColorScale = !!(showScatter && (exploreParams.annotation.type === 'numeric' || exploreParams.genes.length))
   const filterValues = exploreParams.expressionFilter ?? [0, 1]
   const showExpressionFilter = ENABLE_EXPRESSION_FILTER && exploreParams.genes.length && showScatter
+  const expressionSort = exploreParams?.expressionSort || 'max'
+  const showExpressionSort = exploreParams.genes.length > 0 && showScatter
 
   return (
     <div>
@@ -65,13 +69,40 @@ export default function RenderControls({ shownTab, exploreParams, updateExploreP
           <span className="detail"> (for numeric data)</span>
           <Select
             data-analytics-name="scatter-color-picker"
-            options={SCATTER_COLOR_OPTIONS.map(opt => ({ label: opt, value: opt }))}
-            value={{ label: scatterColorValue, value: scatterColorValue }}
+            options={SCATTER_COLOR_OPTIONS.map(opt => ({
+              label: opt,
+              value: opt
+            }))}
+            value={{
+              label: scatterColorValue,
+              value: scatterColorValue
+            }}
             clearable={false}
             onChange={option => updateExploreParams({ scatterColor: option.value })}/>
         </label>
-      </div> }
-      { showExpressionFilter && <div className="render-controls">
+      </div>}
+      {showExpressionSort && <div className="render-controls">
+        <label className="labeled-select">Order expression by&nbsp;
+          <a className="action help-icon"
+             data-toggle="tooltip"
+             data-original-title="Brings cells to the front of plots by value.  Use 'none' to disable ordering.">
+            <FontAwesomeIcon icon={faInfoCircle}/>
+          </a>
+          <Select
+            data-analytics-name="expression-sort-select"
+            options={EXPRESSION_SORT_OPTIONS.map(opt => ({
+              label: opt,
+              value: opt
+            }))}
+            value={{
+              label: expressionSort,
+              value: expressionSort
+            }}
+            clearable={false}
+            onChange={option => updateExploreParams({ expressionSort: option.value })}/>
+        </label>
+      </div>}
+      {showExpressionFilter && <div className="render-controls">
         <label>Expression filter</label>
         <Slider
           mode={1}

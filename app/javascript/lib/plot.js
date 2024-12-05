@@ -245,8 +245,15 @@ PlotUtils.sortTraces = function(traces, activeTraceLabel) {
   return traces.sort(traceCountsSort)
 }
 
-/** sort the passsed in trace by expression value */
-PlotUtils.sortTraceByExpression = function(trace) {
+/**
+ * sort the passed in trace by expression value
+ *
+ * @param trace {Object} Plotly trace data
+ * @param sortType {String} type of sort to perform (max, min, or none)
+ *
+ * */
+PlotUtils.sortTraceByExpression = function(trace, sortType) {
+  if (sortType === 'none') { return trace }
   const hasZ = !!trace.z
   const traceLength = trace.x.length
   const sortedTrace = {
@@ -258,7 +265,19 @@ PlotUtils.sortTraceByExpression = function(trace) {
   for (let i = 0; i < traceLength; i++) {
     expressionsWithIndices[i] = [trace.expression[i], i]
   }
-  expressionsWithIndices.sort((a, b) => a[0] - b[0])
+  let compareFn
+  switch (sortType) {
+    case 'max':
+      compareFn = function(a,b) { return a[0] - b[0] }
+      break
+    case 'min':
+      compareFn = function(a,b) { return b[0] - a[0] }
+      break
+    default:
+      compareFn = function(a,b) { return a[0] - b[0] }
+      break
+  }
+  expressionsWithIndices.sort(compareFn)
 
   // initialize the other arrays with their size
   // (see https://codeabitwiser.com/2015/01/high-performance-javascript-arrays-pt1/ for performance rationale)

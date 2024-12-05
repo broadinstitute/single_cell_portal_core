@@ -25,6 +25,8 @@ export default function ScatterTab({
     updateExploreParamsWithDefaults({ scatterColor: color }, false)
   }
 
+  const expressionSort = exploreParamsWithDefaults?.expressionSort
+
   // identify any repeat graphs
   const newContextMap = getNewContextMap(scatterParams, plotlyContextMap.current)
 
@@ -55,6 +57,7 @@ export default function ScatterTab({
               canEdit={exploreInfo.canEdit}
               bucketId={exploreInfo.bucketId}
               filteredCells={filteredCells}
+              expressionSort={expressionSort}
               dimensionProps={{
                 isMultiRow,
                 isTwoColumn: isTwoColRow,
