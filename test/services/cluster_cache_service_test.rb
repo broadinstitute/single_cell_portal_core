@@ -90,9 +90,11 @@ class ClusterCacheServiceTest < ActiveSupport::TestCase
     FactoryBot.create(
       :cluster_file, name: 'cluster.txt', study:, cell_input: { x: [1, 4 ,6], y: [7, 5, 3], cells: %w[A B C] }
     )
-    study.default_options[:annotation] = { name: 'foo', scope: 'study', type: 'group' }
+    study.default_options[:annotation] = 'foo--group--study'
     study.save
+    study.reload
     annotation = study.default_annotation
+    cluster = study.default_cluster
     annotation_name, annotation_type, annotation_scope = annotation.split('--')
     default_params = { cluster_name: '_default', fields: 'coordinates,cells,annotation' }.with_indifferent_access
     expected_default_path = RequestUtils.get_cache_path(
