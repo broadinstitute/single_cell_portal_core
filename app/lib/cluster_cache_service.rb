@@ -40,6 +40,10 @@ class ClusterCacheService
   #   - (JSON) => ActionDispatch::Cache entry of JSON viz data
   def self.cache_study_defaults(study)
     Rails.logger.info "Checking defaults on #{study.accession} for pre-caching"
+    unless study.can_visualize_clusters?
+      Rails.logger.info "#{study.accession} cannot visualize clusters, skipping"
+      return nil
+    end
     begin
       cluster = study.default_cluster
       annotation = study.default_annotation

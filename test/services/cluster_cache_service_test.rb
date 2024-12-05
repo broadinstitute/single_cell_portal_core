@@ -81,4 +81,35 @@ class ClusterCacheServiceTest < ActiveSupport::TestCase
     assert Rails.cache.exist?(expected_default_path), "did not find default cache entry at #{expected_default_path}"
     assert Rails.cache.exist?(expected_named_path), "did not find named cache entry at #{expected_named_path}"
   end
+
+  test 'should skip studies that cannot visualize clusters' do
+    study = FactoryBot.create(:detached_study,
+                                    name_prefix: 'Empty Cache Study',
+                                    user: @user,
+                                    test_array: @@studies_to_clean)
+    FactoryBot.create(
+      :cluster_file, name: 'cluster.txt', study:, cell_input: { x: [1, 4 ,6], y: [7, 5, 3], cells: %w[A B C] }
+    )
+    study.default_options[:annotation] = 'foo--group--study'
+    study.save
+    study.reload
+    annotation = study.default_annotation
+    cluster = study.default_cluster
+    annotation_name, annotation_type, annotation_scope = annotation.split('--')
+    default_params = { cluster_name: '_default', fields: 'coordinates,cells,annotation' }.with_indifferent_access
+    expected_default_path = RequestUtils.get_cache_path(
+      "/single_cell/api/v1/studies/#{study.accession}/clusters/_default",
+      default_params
+    )
+    named_params = { cluster_name: cluster.name, fields: 'coordinates,cells,annotation',
+                     annotation_name: annotation_name, annotation_type: annotation_type,
+                     annotation_scope: annotation_scope, subsample: 'all' }.with_indifferent_access
+    expected_named_path = RequestUtils.get_cache_path(
+      "/single_cell/api/v1/studies/#{study.accession}/clusters/#{cluster.name}",
+      named_params
+    )
+    ClusterCacheService.cache_study_defaults(study)
+    assert_not Rails.cache.exist?(expected_default_path)
+    assert_not Rails.cache.exist?(expected_named_path)
+  end
 end
