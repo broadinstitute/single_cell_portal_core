@@ -108,6 +108,24 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
       mock.verify
       job_mock.verify
     end
+
+    # test pairwise job
+    @job_params[:de_type] = 'pairwise'
+    @job_params[:group1] = 'dog'
+    @job_params[:group2] = 'cat'
+
+    job_mock = Minitest::Mock.new
+    job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
+    mock = Minitest::Mock.new
+    mock.expect(:delay, job_mock)
+    IngestJob.stub :new, mock do
+      job_launched = DifferentialExpressionService.run_differential_expression_job(
+        @cluster_group, @basic_study, @user, **@job_params
+      )
+      assert job_launched
+      mock.verify
+      job_mock.verify
+    end
   end
 
   test 'should run differential expression job with sparse matrix' do

@@ -47,7 +47,7 @@ class DifferentialExpressionResult
   validate :annotation_exists?
 
   before_validation :set_cluster_name
-  before_validation :set_one_vs_rest_comparisons, unless: proc { study_file.present? }
+  before_validation :set_automated_comparisons, unless: proc { study_file.present? }
   before_destroy :remove_output_files
 
   ## STUDY FILE GETTERS
@@ -168,6 +168,11 @@ class DifferentialExpressionResult
     pairwise_comparisons.values.map(&:count).reduce(0, &:+)
   end
 
+  # check if a particular a vs. b comparison exists
+  def has_pairwise_comparison?(group1, group2)
+    !!pairwise_comparisons&.[](group1)&.include?(group2)
+  end
+
   # initialize one-vs-rest and pairwise comparisons from manifest contents
   # will clobber any previous values and save in place once completed, so only use with new instances
   #
@@ -186,16 +191,21 @@ class DifferentialExpressionResult
     save!
   end
 
-  private
-
-  # find the intersection of annotation values from the source, filtered for cells observed in cluster
-  def set_one_vs_rest_comparisons
-    cells_by_label = ClusterVizService.cells_by_annotation_label(cluster_group,
-                                                                 annotation_name,
-                                                                 annotation_scope)
-    observed = cells_by_label.keys.reject { |label| cells_by_label[label].count < MIN_OBSERVED_VALUES }
-    self.one_vs_rest_comparisons = observed
+  # set the one-vs-rest or pairwise comparisons from an automated DE run
+  def set_automated_comparisons(group1: nil, group2: nil)
+    if group1.present? && group2.present?
+      self.pairwise_comparisons[group1] ||= []
+      self.pairwise_comparisons[group1] << group2
+    else
+      cells_by_label = ClusterVizService.cells_by_annotation_label(cluster_group,
+                                                                   annotation_name,
+                                                                   annotation_scope)
+      observed = cells_by_label.keys.reject { |label| cells_by_label[label].count < MIN_OBSERVED_VALUES }
+      self.one_vs_rest_comparisons = observed
+    end
   end
+
+  private
 
   def set_cluster_name
     self.cluster_name = cluster_group.name

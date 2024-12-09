@@ -15,6 +15,9 @@ class DifferentialExpressionParameters
   # annotation_file: source file for above annotation
   # cluster_file: clustering file with cells to use as control list for DE
   # cluster_name: name of associated ClusterGroup object
+  # de_type: type of differential expression calculation: 'rest' (one-vs-rest) or 'pairwise'
+  # group1: first group for pairwise comparison
+  # group2: second group for pairwise comparison
   # matrix_file_path: raw counts matrix with source expression data
   # matrix_file_type: type of raw counts matrix (dense, sparse)
   # gene_file (optional): genes/features file for sparse matrix
@@ -28,6 +31,9 @@ class DifferentialExpressionParameters
     annotation_file: nil,
     cluster_file: nil,
     cluster_name: nil,
+    de_type: 'rest',
+    group1: nil,
+    group2: nil,
     matrix_file_path: nil,
     matrix_file_type: nil,
     gene_file: nil,
@@ -46,6 +52,8 @@ class DifferentialExpressionParameters
   validates :annotation_file, :cluster_file, :matrix_file_path,
             format: { with: Parameterizable::GS_URL_REGEXP, message: 'is not a valid GS url' }
   validates :annotation_scope, inclusion: %w[cluster study]
+  validates :de_type, inclusion: %w[rest pairwise]
+  validates :group1, :group2, presence: true, if: -> { de_type == 'pairwise' }
   validates :matrix_file_type, inclusion: %w[dense mtx h5ad]
   validates :machine_type, inclusion: Parameterizable::GCE_MACHINE_TYPES
   validates :gene_file, :barcode_file,

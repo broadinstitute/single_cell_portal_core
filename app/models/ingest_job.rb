@@ -722,11 +722,12 @@ class IngestJob
     matrix_file = StudyFile.where(study: study, 'expression_file_info.is_raw_counts' => true).any_of(
       { upload_file_name: matrix_filename }, { remote_location: matrix_filename }
     ).first
-    de_result = DifferentialExpressionResult.new(
+    de_result = DifferentialExpressionResult.find_or_initialize_by(
       study: study, cluster_group: cluster, cluster_name: cluster.name,
       annotation_name: params_object.annotation_name, annotation_scope: params_object.annotation_scope,
       matrix_file_id: matrix_file.id
     )
+    de_result.set_automated_comparisons(group1: params_object.group1, group2: params_object.group2)
     de_result.save
   end
 
