@@ -290,4 +290,23 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
       assert_equal de_file.id, result.study_file_id
     end
   end
+
+  test 'should set observations on results' do
+    cell_type = DifferentialExpressionResult.new(
+      study: @study, cluster_group: @cluster_file.cluster_groups.first, annotation_name: 'cell_type__ontology_label',
+      annotation_scope: 'study', matrix_file_id: @raw_matrix.id
+    )
+    cell_type.set_automated_comparisons
+    assert_equal ['B cell', 'T cell'], cell_type.one_vs_rest_comparisons
+    assert_empty cell_type.pairwise_comparisons
+
+    custom = DifferentialExpressionResult.new(
+      study: @study, cluster_group: @cluster_file.cluster_groups.first, annotation_name: 'cell_type__custom',
+      annotation_scope: 'study', matrix_file_id: @raw_matrix.id
+    )
+    types = @custom_cell_types.uniq
+    custom.set_automated_comparisons(group1: types.first, group2: types.last)
+    assert_equal ['Custom 10'], custom.pairwise_comparisons['Custom 2']
+    assert_empty custom.one_vs_rest_comparisons
+  end
 end
