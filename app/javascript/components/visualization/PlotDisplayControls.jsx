@@ -30,7 +30,7 @@ const railStyle = {
 // the code is in because it allows easier testing of the trace filtering logic implemented in plot.js
 const ENABLE_EXPRESSION_FILTER = false
 
-const EXPRESSION_SORT_OPTIONS = ['max', 'min', 'none']
+const EXPRESSION_SORT_OPTIONS = ['high', 'low', 'unsorted']
 /** the graph customization controls for the exlore tab */
 export default function RenderControls({ shownTab, exploreParams, updateExploreParams, allGenes }) {
   const scatterColorValue = exploreParams.scatterColor ? exploreParams.scatterColor : defaultScatterColor
@@ -85,7 +85,7 @@ export default function RenderControls({ shownTab, exploreParams, updateExploreP
         <label className="labeled-select">Order expression by&nbsp;
           <a className="action help-icon"
              data-toggle="tooltip"
-             data-original-title="Brings cells to the front of scatter plots by expression value.  Use 'none' to disable ordering.">
+             data-original-title="Brings cells to the front of scatter plots by expression value.  Use 'unsorted' to disable ordering.">
             <FontAwesomeIcon icon={faInfoCircle}/>
           </a>
           <Select

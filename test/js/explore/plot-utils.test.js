@@ -126,7 +126,7 @@ describe('Plot grouping function cache', () => {
     expect(traces).toHaveLength(1)
     expect(traces[0].x).toEqual([1, 2, 3, 4, 5])
 
-    const sortedTraceMax = PlotUtils.sortTraceByExpression(traces[0], 'max')
+    const sortedTraceMax = PlotUtils.sortTraceByExpression(traces[0], 'high')
     expect(sortedTraceMax).toEqual({
       x: [1, 5, 3, 2, 4],
       y: [4, 8, 6, 5, 7],
@@ -135,7 +135,7 @@ describe('Plot grouping function cache', () => {
       expression: [0, 0, 1, 4, 5.5]
     })
 
-    const sortedTraceMin = PlotUtils.sortTraceByExpression(traces[0], 'min')
+    const sortedTraceMin = PlotUtils.sortTraceByExpression(traces[0], 'low')
     expect(sortedTraceMin).toEqual({
       annotations: ["a", "b", "c", "a", "b"],
       cells: ["c4", "c2", "c3", "c1", "c5"],
@@ -144,7 +144,7 @@ describe('Plot grouping function cache', () => {
       y: [7, 5, 6, 4, 8]
     })
 
-    const sortedTraceNone = PlotUtils.sortTraceByExpression(traces[0], 'none')
+    const sortedTraceNone = PlotUtils.sortTraceByExpression(traces[0], 'unsorted')
     expect(sortedTraceNone).toEqual(data)
   })
 

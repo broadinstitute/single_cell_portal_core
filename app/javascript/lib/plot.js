@@ -253,7 +253,7 @@ PlotUtils.sortTraces = function(traces, activeTraceLabel) {
  *
  * */
 PlotUtils.sortTraceByExpression = function(trace, sortType) {
-  if (sortType === 'none') { return trace }
+  if (sortType === 'unsorted') { return trace }
   const hasZ = !!trace.z
   const traceLength = trace.x.length
   const sortedTrace = {
@@ -267,10 +267,10 @@ PlotUtils.sortTraceByExpression = function(trace, sortType) {
   }
   let compareFn
   switch (sortType) {
-    case 'max':
+    case 'high':
       compareFn = function(a,b) { return a[0] - b[0] }
       break
-    case 'min':
+    case 'low':
       compareFn = function(a,b) { return b[0] - a[0] }
       break
     default:
