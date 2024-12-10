@@ -59,7 +59,7 @@ export default function RenderControls({ shownTab, exploreParams, updateExploreP
   const showColorScale = !!(showScatter && (exploreParams.annotation.type === 'numeric' || exploreParams.genes.length))
   const filterValues = exploreParams.expressionFilter ?? [0, 1]
   const showExpressionFilter = ENABLE_EXPRESSION_FILTER && exploreParams.genes.length && showScatter
-  const expressionSort = exploreParams?.expressionSort || 'max'
+  const expressionSort = exploreParams?.expressionSort || 'high'
   const showExpressionSort = exploreParams.genes.length > 0 && showScatter
 
   return (
