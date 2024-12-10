@@ -85,7 +85,7 @@ export default function RenderControls({ shownTab, exploreParams, updateExploreP
         <label className="labeled-select">Order expression by&nbsp;
           <a className="action help-icon"
              data-toggle="tooltip"
-             data-original-title="Brings cells to the front of plots by value.  Use 'none' to disable ordering.">
+             data-original-title="Brings cells to the front of scatter plots by expression value.  Use 'none' to disable ordering.">
             <FontAwesomeIcon icon={faInfoCircle}/>
           </a>
           <Select
