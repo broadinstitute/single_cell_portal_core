@@ -6,7 +6,8 @@ import Select from '~/lib/InstrumentedSelect'
 import { Handle, Track, Tick } from '~/components/search/controls/slider/components'
 import PlotOptions from './plot-options'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
+import { faExternalLinkSquareAlt, faInfoCircle } from '@fortawesome/free-solid-svg-icons'
+import { Popover, OverlayTrigger } from 'react-bootstrap'
 const {
   SCATTER_COLOR_OPTIONS, defaultScatterColor, DISTRIBUTION_PLOT_OPTIONS, DISTRIBUTION_POINTS_OPTIONS,
   ROW_CENTERING_OPTIONS, FIT_OPTIONS
@@ -61,6 +62,15 @@ export default function RenderControls({ shownTab, exploreParams, updateExploreP
   const showExpressionFilter = ENABLE_EXPRESSION_FILTER && exploreParams.genes.length && showScatter
   const showExpressionSort = exploreParams.genes.length > 0 && showScatter
 
+  const expressionSortPopover = <Popover id={`expression-sort-popover`}>
+    Specify which cells to bring to the front of expression-based scatter plots based on expression value.&nbsp;
+    <a href="https://singlecell.zendesk.com/hc/en-us/articles/31772258040475" target="_blank">Learn more</a>.
+  </Popover>
+  const sortDocumentationLink =
+    <OverlayTrigger trigger={['hover', 'focus']} rootClose placement="left" overlay={expressionSortPopover} delayHide={1500}>
+        <a className="action help-icon"><FontAwesomeIcon icon={faInfoCircle}/></a>
+    </OverlayTrigger>
+
   return (
     <div>
       { showColorScale && <div className="render-controls">
@@ -82,11 +92,7 @@ export default function RenderControls({ shownTab, exploreParams, updateExploreP
       </div>}
       {showExpressionSort && <div className="render-controls">
         <label className="labeled-select">Order expression by&nbsp;
-          <a className="action help-icon"
-             data-toggle="tooltip"
-             data-original-title="Brings cells to the front of scatter plots by expression value.  Use 'unsorted' to disable ordering.">
-            <FontAwesomeIcon icon={faInfoCircle}/>
-          </a>
+          {sortDocumentationLink}
           <Select
             data-analytics-name="expression-sort-select"
             options={EXPRESSION_SORT_OPTIONS.map(opt => ({
