@@ -126,7 +126,7 @@ class DifferentialExpressionService
   def self.run_differential_expression_job(cluster_group, study, user, annotation_name:, annotation_scope:,
                                            de_type: 'rest', group1: nil, group2: nil, machine_type: nil, dry_run: nil)
     validate_study(study)
-    validate_annotation(cluster_group, study, annotation_name, annotation_scope)
+    validate_annotation(cluster_group, study, annotation_name, annotation_scope, group1:, group2:)
     cluster_url = cluster_file_url(cluster_group)
     study_file = cluster_group.study_file
     metadata_url = study_file.is_viz_anndata? ?

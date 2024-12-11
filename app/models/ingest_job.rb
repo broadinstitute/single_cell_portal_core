@@ -1189,6 +1189,9 @@ class IngestJob
     when :differential_expression
       message << "Differential expression calculations for #{params_object.cluster_name} have completed"
       message << "Selected annotation: #{params_object.annotation_name} (#{params_object.annotation_scope})"
+      if params_object.de_type == 'pairwise'
+        message << "Pairwise selections: #{params_object.group1} vs. #{params_object.group2}"
+      end
     when :render_expression_arrays
       matrix_name = params_object.matrix_file_path.split('/').last
       matrix = study.expression_matrices.find_by(name: matrix_name)
