@@ -158,6 +158,7 @@ module Api
             differentialExpression: AnnotationVizService.differential_expression_menu_opts(study),
             hasImageCache: study.cluster_groups.where(has_image_cache: true).pluck(:name),
             clusterPointAlpha: study.default_cluster_point_alpha,
+            expressionSort: study.default_expression_sort,
             colorProfile: study.default_color_profile,
             bucketId: study.bucket_id,
             isPublic: study.public

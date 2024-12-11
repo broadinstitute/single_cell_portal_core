@@ -21,6 +21,7 @@ import DifferentialExpressionModal from '~/components/explore/DifferentialExpres
 import CellFilteringModal from '~/components/explore/CellFilteringModal'
 import { CellFilteringPanel, CellFilteringPanelHeader } from './CellFilteringPanel'
 import BookmarkManager from '~/components/bookmarks/BookmarkManager'
+import { EXPRESSION_SORT_OPTIONS } from '~/components/visualization/PlotDisplayControls'
 
 /** Get the selected clustering and annotation, or their defaults */
 function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
@@ -185,6 +186,11 @@ function getIsAuthorDe(exploreInfo, exploreParams) {
   return isAuthorDe
 }
 
+// get the current value for expression sorting (or study default, if present)
+function getExpressionSort(exploreInfo, exploreParams) {
+  return exploreParams?.expressionSort || exploreInfo?.expressionSort || EXPRESSION_SORT_OPTIONS[0]
+}
+
 /**
  * Manages the right panel section of the explore view of a study. We have three options for the right side
  * panel with different controls to adjust the plots: Options (or default), Differential Expression, and
@@ -226,6 +232,7 @@ export default function ExploreDisplayPanelManager({
   const hasPairwiseDe = getHasComparisonDe(exploreInfo, exploreParams, 'pairwise')
   const deHeaders = getDeHeaders(exploreInfo, exploreParams)
   const isAuthorDe = getIsAuthorDe(exploreInfo, exploreParams)
+  const expressionSort = getExpressionSort(exploreInfo, exploreParams)
 
   // exploreParams object without genes specified, to pass to cluster comparison plots
   const referencePlotDataParams = _clone(exploreParams)
@@ -514,6 +521,7 @@ export default function ExploreDisplayPanelManager({
               shownTab={shownTab}
               exploreParams={exploreParamsWithDefaults}
               updateExploreParams={updateExploreParams}
+              expressionSort={expressionSort}
               allGenes={exploreInfo ? exploreInfo.uniqueGenes : []}/>
             <div id={useBookmarkContainer ? 'bookmark-container' : ''} className={useRowClass ? 'row' : ''}>
               <div className={useRowClass ? 'col-xs-12' : ''}>

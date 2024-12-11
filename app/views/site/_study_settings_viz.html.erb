@@ -46,7 +46,14 @@
         </div>
       </div>
       <div class="form-group row">
-        <div class="col-sm-12">
+        <div class="col-sm-3">
+          <%= opts.label :expression_sort, 'Expression ordering' %>&nbsp
+          <span class="fas fa-question-circle" data-toggle="popover" data-placement="right" data-html="true"
+                data-content='Specify which cells to bring to the front of expression-based scatter plots based on expression value.  <a href="https://singlecell.zendesk.com/hc/en-us/articles/31772258040475" target="_blank">Learn more</a>.'>
+          </span> <br />
+          <%= opts.select :expression_sort, options_for_select(%w[high low unsorted], @study.default_expression_sort), { include_blank: true }, class: 'form-control' %>
+        </div>
+        <div class="col-sm-9">
           <%= opts.label :expression_label, 'Expression axis label' %>&nbsp;<span class="fas fa-question-circle" data-toggle="tooltip" data-placement="right" title='This is displayed as the axis label for box & scatter plots showing expression values.  This label is global to all expression values.'></span> <br />
           <%= opts.text_field :expression_label, value: @study.default_options[:expression_label], placeholder: @study.default_expression_label, class: 'form-control' %>
         </div>

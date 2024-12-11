@@ -25,7 +25,7 @@ export default function ScatterTab({
     updateExploreParamsWithDefaults({ scatterColor: color }, false)
   }
 
-  const expressionSort = exploreParamsWithDefaults?.expressionSort
+  const expressionSort = exploreParamsWithDefaults?.expressionSort || exploreInfo?.expressionSort
 
   // identify any repeat graphs
   const newContextMap = getNewContextMap(scatterParams, plotlyContextMap.current)

@@ -1041,7 +1041,8 @@ class StudiesController < ApplicationController
   def default_options_params
     params.require(:study_default_options).permit(:cluster, :annotation, :color_profile, :expression_label,
                                                   :cluster_point_size, :cluster_point_alpha, :cluster_point_border,
-                                                  :precomputed_heatmap_label, override_viz_limit_annotations: [])
+                                                  :precomputed_heatmap_label, :expression_sort,
+                                                  override_viz_limit_annotations: [])
   end
 
   def set_file_types

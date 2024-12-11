@@ -30,9 +30,9 @@ const railStyle = {
 // the code is in because it allows easier testing of the trace filtering logic implemented in plot.js
 const ENABLE_EXPRESSION_FILTER = false
 
-const EXPRESSION_SORT_OPTIONS = ['high', 'low', 'unsorted']
+export const EXPRESSION_SORT_OPTIONS = ['high', 'low', 'unsorted']
 /** the graph customization controls for the exlore tab */
-export default function RenderControls({ shownTab, exploreParams, updateExploreParams, allGenes }) {
+export default function RenderControls({ shownTab, exploreParams, updateExploreParams, expressionSort, allGenes }) {
   const scatterColorValue = exploreParams.scatterColor ? exploreParams.scatterColor : defaultScatterColor
   let distributionPlotValue = DISTRIBUTION_PLOT_OPTIONS.find(opt => opt.value === exploreParams.distributionPlot)
   if (!distributionPlotValue) {
@@ -59,7 +59,6 @@ export default function RenderControls({ shownTab, exploreParams, updateExploreP
   const showColorScale = !!(showScatter && (exploreParams.annotation.type === 'numeric' || exploreParams.genes.length))
   const filterValues = exploreParams.expressionFilter ?? [0, 1]
   const showExpressionFilter = ENABLE_EXPRESSION_FILTER && exploreParams.genes.length && showScatter
-  const expressionSort = exploreParams?.expressionSort || 'high'
   const showExpressionSort = exploreParams.genes.length > 0 && showScatter
 
   return (
