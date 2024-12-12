@@ -86,12 +86,7 @@ class DifferentialExpressionResult
   # will convert non-word characters to underscores "_", except plus signs "+" which are changed to "pos"
   # this is to handle cases where + or - are the only difference in labels, such as CD4+ and CD4-
   def filename_for(label, comparison_group: nil)
-    if comparison_group.present?
-      first_label, second_label = Naturally.sort([label, comparison_group]) # comparisons must be sorted
-      values = [cluster_name, annotation_name, first_label, second_label, annotation_scope, computational_method]
-    else
-      values = [cluster_name, annotation_name, label, annotation_scope, computational_method]
-    end
+    values = [cluster_name, annotation_name, label, comparison_group, annotation_scope, computational_method].compact
     basename = DifferentialExpressionService.encode_filename(values)
     "#{basename}.tsv"
   end
