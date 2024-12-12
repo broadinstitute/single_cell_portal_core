@@ -999,4 +999,73 @@ class IngestJobTest < ActiveSupport::TestCase
     cluster.reload
     assert_not cluster.is_subsampling
   end
+
+  test 'should create differential expression result on completion' do
+    study = FactoryBot.create(:detached_study,
+                               name_prefix: 'DifferentialExpressionResult Test',
+                               user: @user,
+                               test_array: @@studies_to_clean)
+
+    cells = %w[A B C D E]
+    matrix = FactoryBot.create(:expression_file,
+                                name: 'raw.txt',
+                                study:,
+                                expression_file_info: {
+                                  is_raw_counts: true,
+                                  units: 'raw counts',
+                                  library_preparation_protocol: 'Drop-seq',
+                                  biosample_input_type: 'Whole cell',
+                                  modality: 'Proteomic'
+                                })
+    cluster_file = FactoryBot.create(:cluster_file,
+                                     name: 'cluster_diffexp.txt',
+                                     study:,
+                                     cell_input: {
+                                       x: [1, 4, 6, 8, 9],
+                                       y: [7, 5, 3, 2, 1],
+                                       cells:
+                                     }
+    )
+    cluster_group = study.cluster_groups.by_name('cluster_diffexp.txt')
+    FactoryBot.create(:metadata_file,
+                      name: 'metadata.txt',
+                      study:,
+                      cell_input: cells,
+                      annotation_input: [
+                        {
+                          name: 'cell_type__ontology_label',
+                          type: 'group',
+                          values: ['B cell', 'B cell', 'T cell', 'B cell', 'T cell']
+                        }
+                      ]
+    )
+
+    # one vs rest test
+    one_vs_rest = DifferentialExpressionParameters.new(
+      annotation_name: 'cell_type__ontology_label', annotation_scope: 'study', cluster_name: 'cluster_diffexp.txt',
+      matrix_file_path: "gs://#{study.bucket_id}/raw.txt"
+    )
+    job = IngestJob.new(study:, study_file: cluster_file, action: :differential_expression, params_object: one_vs_rest)
+    job.create_differential_expression_results
+
+    result = DifferentialExpressionResult.find_by(
+      study:, annotation_name: 'cell_type__ontology_label', annotation_scope: 'study', matrix_file_id: matrix.id,
+      cluster_group:
+    )
+    assert result.present?
+    assert_equal ['B cell', 'T cell'], result.one_vs_rest_comparisons
+
+    # pairwise test
+    pairwise = DifferentialExpressionParameters.new(
+      annotation_name: 'cell_type__ontology_label', annotation_scope: 'study', cluster_name: 'cluster_diffexp.txt',
+      matrix_file_path: "gs://#{study.bucket_id}/raw.txt", de_type: 'pairwise', group1: 'B cell', group2: 'T cell'
+    )
+    job = IngestJob.new(study:, study_file: cluster_file, action: :differential_expression, params_object: pairwise)
+    job.create_differential_expression_results
+
+    # should be the same DE result with existing one vs. rest results
+    result.reload
+    assert_equal ['T cell'], result.pairwise_comparisons['B cell']
+    assert_equal ['B cell', 'T cell'], result.one_vs_rest_comparisons
+  end
 end

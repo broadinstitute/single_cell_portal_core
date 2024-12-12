@@ -47,7 +47,7 @@ class DifferentialExpressionResult
   validate :annotation_exists?
 
   before_validation :set_cluster_name
-  before_validation :set_one_vs_rest_comparisons, unless: proc { study_file.present? }
+  before_validation :set_automated_comparisons, unless: proc { study_file.present? }
   before_destroy :remove_output_files
 
   ## STUDY FILE GETTERS
@@ -86,12 +86,7 @@ class DifferentialExpressionResult
   # will convert non-word characters to underscores "_", except plus signs "+" which are changed to "pos"
   # this is to handle cases where + or - are the only difference in labels, such as CD4+ and CD4-
   def filename_for(label, comparison_group: nil)
-    if comparison_group.present?
-      first_label, second_label = Naturally.sort([label, comparison_group]) # comparisons must be sorted
-      values = [cluster_name, annotation_name, first_label, second_label, annotation_scope, computational_method]
-    else
-      values = [cluster_name, annotation_name, label, annotation_scope, computational_method]
-    end
+    values = [cluster_name, annotation_name, label, comparison_group, annotation_scope, computational_method].compact
     basename = DifferentialExpressionService.encode_filename(values)
     "#{basename}.tsv"
   end
@@ -168,6 +163,11 @@ class DifferentialExpressionResult
     pairwise_comparisons.values.map(&:count).reduce(0, &:+)
   end
 
+  # check if a particular a vs. b comparison exists
+  def has_pairwise_comparison?(group1, group2)
+    !!pairwise_comparisons&.[](group1)&.include?(group2)
+  end
+
   # initialize one-vs-rest and pairwise comparisons from manifest contents
   # will clobber any previous values and save in place once completed, so only use with new instances
   #
@@ -186,16 +186,21 @@ class DifferentialExpressionResult
     save!
   end
 
-  private
-
-  # find the intersection of annotation values from the source, filtered for cells observed in cluster
-  def set_one_vs_rest_comparisons
-    cells_by_label = ClusterVizService.cells_by_annotation_label(cluster_group,
-                                                                 annotation_name,
-                                                                 annotation_scope)
-    observed = cells_by_label.keys.reject { |label| cells_by_label[label].count < MIN_OBSERVED_VALUES }
-    self.one_vs_rest_comparisons = observed
+  # set the one-vs-rest or pairwise comparisons from an automated DE run
+  def set_automated_comparisons(group1: nil, group2: nil)
+    if group1.present? && group2.present?
+      self.pairwise_comparisons[group1] ||= []
+      self.pairwise_comparisons[group1] << group2
+    else
+      cells_by_label = ClusterVizService.cells_by_annotation_label(cluster_group,
+                                                                   annotation_name,
+                                                                   annotation_scope)
+      observed = cells_by_label.keys.reject { |label| cells_by_label[label].count < MIN_OBSERVED_VALUES }
+      self.one_vs_rest_comparisons = observed
+    end
   end
+
+  private
 
   def set_cluster_name
     self.cluster_name = cluster_group.name

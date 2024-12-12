@@ -111,6 +111,7 @@ class DifferentialExpressionService
   #   - +user+             (User) => User initiating parse action (for email delivery)
   #   - +annotation_name+  (String) => Name of requested annotation
   #   - +annotation_scope+ (String) => Scope of requested annotation ('study' or 'cluster')
+  #   - +de_type+          (String) => Type of differential expression calculation: 'rest' (one-vs-rest) or 'pairwise'
   #   - +machine_type+     (String) => Override default VM machine type
   #   - +dry_run+          (Boolean) => Indication of whether or not this is a pre-flight check
   #
@@ -123,9 +124,9 @@ class DifferentialExpressionService
   # * *raises*
   #   - (ArgumentError) => if requested parameters do not validate
   def self.run_differential_expression_job(cluster_group, study, user, annotation_name:, annotation_scope:,
-                                           machine_type: nil, dry_run: nil)
+                                           de_type: 'rest', group1: nil, group2: nil, machine_type: nil, dry_run: nil)
     validate_study(study)
-    validate_annotation(cluster_group, study, annotation_name, annotation_scope)
+    validate_annotation(cluster_group, study, annotation_name, annotation_scope, group1:, group2:)
     cluster_url = cluster_file_url(cluster_group)
     study_file = cluster_group.study_file
     metadata_url = study_file.is_viz_anndata? ?
@@ -133,8 +134,11 @@ class DifferentialExpressionService
                      study.metadata_file.gs_url
     # begin assembling parameters
     de_params = {
-      annotation_name: annotation_name,
-      annotation_scope: annotation_scope,
+      annotation_name:,
+      annotation_scope:,
+      de_type:,
+      group1:,
+      group2:,
       annotation_file: annotation_scope == 'cluster' ? cluster_url : metadata_url,
       cluster_file: cluster_url,
       cluster_name: cluster_group.name
@@ -321,16 +325,26 @@ class DifferentialExpressionService
   #   - +study+            (Study) => Study to which StudyFile belongs
   #   - +annotation_name+  (String) => Name of requested annotation
   #   - +annotation_scope+ (String) => Scope of requested annotation ('study' or 'cluster')
+  #   - +group1+           (String) => first annotation label for pairwise
+  #   - +group2+           (String) => second annotation label for pairwise
   #
   # * *raises*
   #   - (ArgumentError) => if requested parameters do not validate
-  def self.validate_annotation(cluster_group, study, annotation_name, annotation_scope)
+  def self.validate_annotation(cluster_group, study, annotation_name, annotation_scope, group1: nil, group2: nil)
+    pairwise = group1.present? || group2.present?
+    validate_pairwise(group1, group2) if pairwise
+
     result = DifferentialExpressionResult.find_by(study:, cluster_group:, annotation_name:, annotation_scope:)
-    if result.present?
+    if result.present? && !pairwise
       raise ArgumentError,
             "#{annotation_name} already exists for #{study.accession}:#{cluster_group.name}, " \
             "please delete result #{result.id} before retrying"
+    elsif pairwise && result.present? && result.has_pairwise_comparison?(group1, group2)
+      raise ArgumentError,
+            "#{group1} vs. #{group2} pairwise already exists for #{annotation_name} on " \
+              "#{study.accession}:#{cluster_group.name}, you must remove that entry from #{result.id} before retrying"
     end
+
     can_visualize = false
     if annotation_scope == 'cluster'
       annotation = cluster_group.cell_annotations&.detect do |annot|
@@ -348,8 +362,15 @@ class DifferentialExpressionService
     # last, validate that the requested annotation & cluster will provide a valid intersection of annotation values
     # specifically, discard any annotation/cluster combos that only result in one distinct label
     cells_by_label = ClusterVizService.cells_by_annotation_label(cluster_group, annotation_name, annotation_scope)
-    if cells_by_label.keys.count < 2
+    if !pairwise && cells_by_label.keys.count < 2
       raise ArgumentError, "#{identifier} does not have enough labels represented in #{cluster_group.name}"
+    elsif pairwise
+      missing = {
+        "#{group1}" => cells_by_label[group1].count,
+        "#{group2}" => cells_by_label[group2].count
+      }.keep_if { |_, c| c < 2 }
+      raise ArgumentError,
+            "#{missing.keys.join(', ')} does not have enough cells represented in #{identifier}" if missing.any?
     end
   end
 
@@ -363,6 +384,19 @@ class DifferentialExpressionService
   def self.validate_study(study)
     raise ArgumentError, 'Requested study does not exist' if study.nil?
     raise ArgumentError, "#{study.accession} cannot view cluster plots" unless study.can_visualize_clusters?
+  end
+
+  # ensure both group1 and group2 are provided for pairwise calculations
+  #
+  # * *params*
+  #   - +group1+ (String) => first annotation label for pairwise
+  #   - +group2+ (String) => second annotation label for pairwise
+  #
+  # * *raises*
+  #   - (ArgumentError) => If requested study is not eligible for DE
+  def self.validate_pairwise(group1, group2)
+    missing = { group1:, group2: }.keep_if { |_, v| v.blank? }
+    raise ArgumentError, "must provide #{missing.keys.join(', ')} for pairwise calculation" unless missing.empty?
   end
 
   # determine if a study has author-uploaded DE results
