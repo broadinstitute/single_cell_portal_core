@@ -380,7 +380,11 @@ class IngestJob
         set_study_state_after_ingest
         study_file.invalidate_cache_by_file_type # clear visualization caches for file
         log_to_mixpanel
-        subject = "#{study_file.file_type} file: '#{study_file.upload_file_name}' has completed parsing"
+        if action == :differential_expression
+          subject = "Differential expression analysis for #{study_file.file_type} file: '#{study_file.upload_file_name}' has completed processing"
+        else
+          subject = "#{study_file.file_type} file: '#{study_file.upload_file_name}' has completed parsing"
+        end
         message = generate_success_email_array
         if special_action?
           # don't email users for 'special actions' like DE or image pipeline, instead notify admins
@@ -397,7 +401,11 @@ class IngestJob
       log_error_messages
       log_to_mixpanel # log before queuing file for deletion to preserve properties
       # don't delete files or notify users if this is a 'special action', like DE or image pipeline jobs
-      subject = "Error: #{study_file.file_type} file: '#{study_file.upload_file_name}' parse has failed"
+      if action == :differential_expression
+        subject = "Error: Differential expression analysis for #{study_file.file_type} file: '#{study_file.upload_file_name}' has failed processing"
+      else
+        subject = "Error: #{study_file.file_type} file: '#{study_file.upload_file_name}' parse has failed"
+      end
       handle_ingest_failure(subject) unless (special_action? || should_retry?)
 
       admin_email_content = generate_error_email_body(email_type: :dev)
