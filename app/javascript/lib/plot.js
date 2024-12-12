@@ -261,13 +261,11 @@ PlotUtils.weightedZeroSort = function(a, b, sortOrder) {
     return 1
   }
 
-  if (sortOrder === 'high') {
-    return a - b
-  } else if (sortOrder === 'low') {
+  if (sortOrder === 'low') {
     return b - a
   } else {
     return a - b
-  }
+  } 
 }
 
 /**
