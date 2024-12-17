@@ -5,6 +5,9 @@ import { Slider, Rail, Handles, Tracks, Ticks } from 'react-compound-slider'
 import Select from '~/lib/InstrumentedSelect'
 import { Handle, Track, Tick } from '~/components/search/controls/slider/components'
 import PlotOptions from './plot-options'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faExternalLinkSquareAlt, faInfoCircle } from '@fortawesome/free-solid-svg-icons'
+import { Popover, OverlayTrigger } from 'react-bootstrap'
 const {
   SCATTER_COLOR_OPTIONS, defaultScatterColor, DISTRIBUTION_PLOT_OPTIONS, DISTRIBUTION_POINTS_OPTIONS,
   ROW_CENTERING_OPTIONS, FIT_OPTIONS
@@ -28,9 +31,9 @@ const railStyle = {
 // the code is in because it allows easier testing of the trace filtering logic implemented in plot.js
 const ENABLE_EXPRESSION_FILTER = false
 
-
+export const EXPRESSION_SORT_OPTIONS = ['high', 'low', 'unsorted']
 /** the graph customization controls for the exlore tab */
-export default function RenderControls({ shownTab, exploreParams, updateExploreParams, allGenes }) {
+export default function RenderControls({ shownTab, exploreParams, updateExploreParams, expressionSort, allGenes }) {
   const scatterColorValue = exploreParams.scatterColor ? exploreParams.scatterColor : defaultScatterColor
   let distributionPlotValue = DISTRIBUTION_PLOT_OPTIONS.find(opt => opt.value === exploreParams.distributionPlot)
   if (!distributionPlotValue) {
@@ -57,6 +60,16 @@ export default function RenderControls({ shownTab, exploreParams, updateExploreP
   const showColorScale = !!(showScatter && (exploreParams.annotation.type === 'numeric' || exploreParams.genes.length))
   const filterValues = exploreParams.expressionFilter ?? [0, 1]
   const showExpressionFilter = ENABLE_EXPRESSION_FILTER && exploreParams.genes.length && showScatter
+  const showExpressionSort = exploreParams.genes.length > 0 && showScatter
+
+  const expressionSortPopover = <Popover id={`expression-sort-popover`}>
+    Specify which cells to bring to the front of expression-based scatter plots based on expression value.&nbsp;
+    <a href="https://singlecell.zendesk.com/hc/en-us/articles/31772258040475" target="_blank">Learn more</a>.
+  </Popover>
+  const sortDocumentationLink =
+    <OverlayTrigger trigger={['hover', 'focus']} rootClose placement="left" overlay={expressionSortPopover} delayHide={1500}>
+        <a className="action help-icon"><FontAwesomeIcon icon={faInfoCircle}/></a>
+    </OverlayTrigger>
 
   return (
     <div>
@@ -65,13 +78,36 @@ export default function RenderControls({ shownTab, exploreParams, updateExploreP
           <span className="detail"> (for numeric data)</span>
           <Select
             data-analytics-name="scatter-color-picker"
-            options={SCATTER_COLOR_OPTIONS.map(opt => ({ label: opt, value: opt }))}
-            value={{ label: scatterColorValue, value: scatterColorValue }}
+            options={SCATTER_COLOR_OPTIONS.map(opt => ({
+              label: opt,
+              value: opt
+            }))}
+            value={{
+              label: scatterColorValue,
+              value: scatterColorValue
+            }}
             clearable={false}
             onChange={option => updateExploreParams({ scatterColor: option.value })}/>
         </label>
-      </div> }
-      { showExpressionFilter && <div className="render-controls">
+      </div>}
+      {showExpressionSort && <div className="render-controls">
+        <label className="labeled-select">Order expression by&nbsp;
+          {sortDocumentationLink}
+          <Select
+            data-analytics-name="expression-sort-select"
+            options={EXPRESSION_SORT_OPTIONS.map(opt => ({
+              label: opt,
+              value: opt
+            }))}
+            value={{
+              label: expressionSort,
+              value: expressionSort
+            }}
+            clearable={false}
+            onChange={option => updateExploreParams({ expressionSort: option.value })}/>
+        </label>
+      </div>}
+      {showExpressionFilter && <div className="render-controls">
         <label>Expression filter</label>
         <Slider
           mode={1}

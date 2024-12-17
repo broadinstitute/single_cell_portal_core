@@ -728,7 +728,7 @@ class SiteController < ApplicationController
                                   :default_options => [:cluster, :annotation, :color_profile, :expression_label,
                                                        :deliver_emails, :cluster_point_size, :cluster_point_alpha,
                                                        :cluster_point_border, :precomputed_heatmap_label,
-                                                       override_viz_limit_annotations: []],
+                                                       :expression_sort, override_viz_limit_annotations: []],
                                   study_shares_attributes: [:id, :_destroy, :email, :permission],
                                   study_detail_attributes: [:id, :full_description],
                                   reviewer_access_attributes: [:id, :expires_at],

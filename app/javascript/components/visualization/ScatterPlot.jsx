@@ -46,7 +46,7 @@ window.Plotly = Plotly
 function RawScatterPlot({
   studyAccession, cluster, annotation, subsample, consensus, genes, scatterColor, dimensionProps,
   isAnnotatedScatter=false, isCorrelatedScatter=false, isCellSelecting=false, plotPointsSelected, dataCache,
-  canEdit, bucketId, expressionFilter=[0, 1], setCountsByLabelForDe, hiddenTraces=[],
+  canEdit, bucketId, expressionFilter=[0, 1], expressionSort, setCountsByLabelForDe, hiddenTraces=[],
   isSplitLabelArrays, updateExploreParams, filteredCells
 }) {
   const [countsByLabel, setCountsByLabel] = useState(null)
@@ -199,6 +199,7 @@ function RawScatterPlot({
       scatter,
       activeTraceLabel,
       expressionFilter,
+      expressionSort,
       isSplitLabelArrays: isSplitLabelArrays ?? scatter.isSplitLabelArrays,
       isRefGroup: isRG,
       originalLabels,
@@ -501,7 +502,7 @@ function RawScatterPlot({
     fetchData()
   }, [
     cluster, loadedAnnotation, subsample, genes.join(','), isAnnotatedScatter, consensus,
-    filteredCells?.join(',')
+    filteredCells?.join(','), expressionSort
   ])
 
   useUpdateEffect(() => {
@@ -721,6 +722,7 @@ function getPlotlyTraces({
   },
   activeTraceLabel,
   expressionFilter,
+  expressionSort,
   isSplitLabelArrays,
   isRefGroup,
   originalLabels,
@@ -777,7 +779,7 @@ function getPlotlyTraces({
     let workingTrace = traces[0]
     let colors
     if (isGeneExpressionForColor) {
-      workingTrace = sortTraceByExpression(workingTrace)
+      workingTrace = sortTraceByExpression(workingTrace, expressionSort)
       colors = workingTrace.expression
     } else {
       colors = isGeneExpressionForColor ? workingTrace.expression : workingTrace.annotations
