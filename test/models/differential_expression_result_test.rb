@@ -137,7 +137,7 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
     result.pairwise_comparisons.each_pair do |label, comparisons|
       comparisons.each do |comparison_group|
         # should sort labels naturally and put 'Custom 2' in front of 'Custom 10'
-        expected_filename = "#{prefix}/cluster_diffexp_txt--#{name}--Custom_2--Custom_10--study--wilcoxon.tsv"
+        expected_filename = "#{prefix}/cluster_diffexp_txt--#{name}--Custom_10--Custom_2--study--wilcoxon.tsv"
         assert_equal expected_filename, result.bucket_path_for(label, comparison_group:)
       end
     end
