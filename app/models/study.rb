@@ -1226,6 +1226,11 @@ class Study
     self.default_options[:color_profile].presence
   end
 
+  # default sorting direction for expression-based scatter plots
+  def default_expression_sort
+    default_options[:expression_sort]
+  end
+
   # array of names of annotations to ignore the unique values limit for visualizing
   def override_viz_limit_annotations
     self.default_options[:override_viz_limit_annotations] || []

@@ -126,14 +126,42 @@ describe('Plot grouping function cache', () => {
     expect(traces).toHaveLength(1)
     expect(traces[0].x).toEqual([1, 2, 3, 4, 5])
 
-    const sortedTrace = PlotUtils.sortTraceByExpression(traces[0])
-    expect(sortedTrace).toEqual({
-      x: [1, 5, 3, 2, 4],
-      y: [4, 8, 6, 5, 7],
-      annotations: ['a', 'b', 'c', 'b', 'a'],
-      cells: ['c1', 'c5', 'c3', 'c2', 'c4'],
+    // zero expression points are always returned first now
+    const sortedTraceMax = PlotUtils.sortTraceByExpression(traces[0], 'high')
+    expect(sortedTraceMax).toEqual({
+      x: [5, 1, 3, 2, 4],
+      y: [8, 4, 6, 5, 7],
+      annotations: ['b', 'a', 'c', 'b', 'a'],
+      cells: ['c5', 'c1', 'c3', 'c2', 'c4'],
       expression: [0, 0, 1, 4, 5.5]
     })
+
+    const sortedTraceMin = PlotUtils.sortTraceByExpression(traces[0], 'low')
+    expect(sortedTraceMin).toEqual({
+      x: [ 5, 1, 4, 2, 3 ],
+      y: [ 8, 4, 7, 5, 6 ],
+      annotations: [ 'b', 'a', 'a', 'b', 'c' ],
+      cells: [ 'c5', 'c1', 'c4', 'c2', 'c3' ],
+      expression: [ 0, 0, 5.5, 4, 1 ]
+    })
+
+    const sortedTraceNone = PlotUtils.sortTraceByExpression(traces[0], 'unsorted')
+    expect(sortedTraceNone).toEqual(data)
+  })
+
+  it('sorts values but prioritizes zeros', async () => {
+    // confirm that 0 is always prioritized even when comparison is less
+    expect(PlotUtils.weightedZeroSort(0, -1, 'high')).toEqual(-1)
+    expect(PlotUtils.weightedZeroSort(-1,0, 'high')).toEqual(1)
+    expect(PlotUtils.weightedZeroSort(0, -1, 'low')).toEqual(-1)
+    expect(PlotUtils.weightedZeroSort(-1,0, 'low')).toEqual(1)
+    // testing sort direction
+    expect(PlotUtils.weightedZeroSort(1, 1, 'high')).toEqual(0)
+    expect(PlotUtils.weightedZeroSort(1, 2, 'high')).toEqual(-1)
+    expect(PlotUtils.weightedZeroSort(2, 1, 'high')).toEqual(1)
+    expect(PlotUtils.weightedZeroSort(1, 1, 'low')).toEqual(0)
+    expect(PlotUtils.weightedZeroSort(1, 2, 'low')).toEqual(1)
+    expect(PlotUtils.weightedZeroSort(2, 1, 'low')).toEqual(-1)
   })
 
   it('filters on expression data ', async () => {

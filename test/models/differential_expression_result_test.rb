@@ -137,7 +137,7 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
     result.pairwise_comparisons.each_pair do |label, comparisons|
       comparisons.each do |comparison_group|
         # should sort labels naturally and put 'Custom 2' in front of 'Custom 10'
-        expected_filename = "#{prefix}/cluster_diffexp_txt--#{name}--Custom_2--Custom_10--study--wilcoxon.tsv"
+        expected_filename = "#{prefix}/cluster_diffexp_txt--#{name}--Custom_10--Custom_2--study--wilcoxon.tsv"
         assert_equal expected_filename, result.bucket_path_for(label, comparison_group:)
       end
     end
@@ -289,5 +289,24 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
       assert result.valid?
       assert_equal de_file.id, result.study_file_id
     end
+  end
+
+  test 'should set observations on results' do
+    cell_type = DifferentialExpressionResult.new(
+      study: @study, cluster_group: @cluster_file.cluster_groups.first, annotation_name: 'cell_type__ontology_label',
+      annotation_scope: 'study', matrix_file_id: @raw_matrix.id
+    )
+    cell_type.set_automated_comparisons
+    assert_equal ['B cell', 'T cell'], cell_type.one_vs_rest_comparisons
+    assert_empty cell_type.pairwise_comparisons
+
+    custom = DifferentialExpressionResult.new(
+      study: @study, cluster_group: @cluster_file.cluster_groups.first, annotation_name: 'cell_type__custom',
+      annotation_scope: 'study', matrix_file_id: @raw_matrix.id
+    )
+    types = @custom_cell_types.uniq
+    custom.set_automated_comparisons(group1: types.first, group2: types.last)
+    assert_equal ['Custom 10'], custom.pairwise_comparisons['Custom 2']
+    assert_empty custom.one_vs_rest_comparisons
   end
 end

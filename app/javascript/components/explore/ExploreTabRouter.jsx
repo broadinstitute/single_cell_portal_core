@@ -117,7 +117,7 @@ function buildExploreParamsFromQuery(query) {
       exploreParams.expressionFilter = filterArray
     }
   }
-
+  exploreParams.expressionSort = queryParams.expressionSort
   exploreParams.hiddenTraces = queryParams.hiddenTraces ? queryParams.hiddenTraces.split(',') : []
   exploreParams.isSplitLabelArrays = queryParams.isSplitLabelArrays === 'true' ? true : null
 
@@ -145,6 +145,7 @@ function buildQueryFromParams(exploreParams) {
     trackFileName: exploreParams.trackFileName,
     ideogramFileId: exploreParams.ideogramFileId,
     expressionFilter: exploreParams.expressionFilter ? exploreParams.expressionFilter.join(FILTER_RANGE_DELIMITER) : undefined,
+    expressionSort: exploreParams.expressionSort,
     hiddenTraces: exploreParams.hiddenTraces.join(','),
     isSplitLabelArrays: exploreParams.isSplitLabelArrays ? 'true' : undefined,
     facets: exploreParams.facets
@@ -166,7 +167,7 @@ function buildQueryFromParams(exploreParams) {
 const PARAM_LIST_ORDER = [
   'geneList', 'genes', 'cluster', 'spatialGroups', 'annotation', 'subsample', 'consensus',
   'tab', 'scatterColor', 'distributionPlot', 'distributionPoints',
-  'heatmapFit', 'heatmapRowCentering', 'trackFileName', 'ideogramFileId', 'expressionFilter',
+  'heatmapFit', 'heatmapRowCentering', 'trackFileName', 'ideogramFileId', 'expressionFilter', 'expressionSort',
   'isSplitLabelArrays', 'hiddenTraces', 'facets'
 ]
 /** sort function for passing to stringify to ensure url params are specified in a user-friendly order */

@@ -245,8 +245,38 @@ PlotUtils.sortTraces = function(traces, activeTraceLabel) {
   return traces.sort(traceCountsSort)
 }
 
-/** sort the passsed in trace by expression value */
-PlotUtils.sortTraceByExpression = function(trace) {
+/**
+ * sorting algorithm that prepends zero values before applying sort logic
+ * this causes non-zero expression to be plotted on top of zeros in specified order
+ *
+ * @param a first element to compare
+ * @param b second element to compare
+ * @param sortOrder order of sorting preference (high, low)
+ * @returns {number}
+ */
+PlotUtils.weightedZeroSort = function(a, b, sortOrder) {
+  if (a === 0) {
+    return -1
+  } else if (b === 0) {
+    return 1
+  }
+
+  if (sortOrder === 'low') {
+    return b - a
+  } else {
+    return a - b
+  } 
+}
+
+/**
+ * sort the passed in trace by expression value
+ *
+ * @param trace {Object} Plotly trace data
+ * @param sortOrder {String} order of sorting preference (high, low, or unsorted)
+ *
+ * */
+PlotUtils.sortTraceByExpression = function(trace, sortOrder) {
+  if (sortOrder === 'unsorted') { return trace }
   const hasZ = !!trace.z
   const traceLength = trace.x.length
   const sortedTrace = {
@@ -258,7 +288,7 @@ PlotUtils.sortTraceByExpression = function(trace) {
   for (let i = 0; i < traceLength; i++) {
     expressionsWithIndices[i] = [trace.expression[i], i]
   }
-  expressionsWithIndices.sort((a, b) => a[0] - b[0])
+  expressionsWithIndices.sort(function(a,b) { return PlotUtils.weightedZeroSort(a[0], b[0], sortOrder) })
 
   // initialize the other arrays with their size
   // (see https://codeabitwiser.com/2015/01/high-performance-javascript-arrays-pt1/ for performance rationale)

@@ -47,6 +47,11 @@ class ExploreControllerTest < ActionDispatch::IntegrationTest
     }
     UserAnnotationService.create_user_annotation(@public_study, 'user_annot',
       user_annot_data, 'clusterP.txt', 'foo--group--cluster', nil, @user)
+    @basic_study.update(default_options: {
+      cluster: 'clusterA.txt',
+      annotation: 'foo--group--cluster',
+      expression_sort: 'low'
+    })
   end
 
   teardown do
@@ -79,9 +84,13 @@ class ExploreControllerTest < ActionDispatch::IntegrationTest
     assert_equal [cluster_name], json['clusterGroupNames']
     assert_equal [{"name" => 'spatialA.txt', "associated_clusters" => []}], json['spatialGroups']
     assert_includes json['hasImageCache'], cluster_name
+    assert_equal @basic_study.default_cluster.name, json.dig('annotationList', 'default_cluster')
+    assert_equal @basic_study.default_annotation, json.dig('annotationList', 'default_annotation', 'identifier')
+    assert_equal @basic_study.default_expression_sort, json['expressionSort']
 
     execute_http_request(:get, api_v1_study_explore_path(@empty_study))
     assert_equal [], json['clusterGroupNames']
+
   end
 
   test 'should get annotation listings' do

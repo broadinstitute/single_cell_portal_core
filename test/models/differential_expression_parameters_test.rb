@@ -35,6 +35,19 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
       matrix_file_type: 'h5ad',
       file_size: 10.gigabytes
     }
+
+    @pairwise_options = {
+      annotation_name: 'Category',
+      annotation_scope: 'cluster',
+      de_type: 'pairwise',
+      group1: 'foo',
+      group2: 'bar',
+      annotation_file: 'gs://test_bucket/metadata.tsv',
+      cluster_file: 'gs://test_bucket/cluster.tsv',
+      cluster_name: 'UMAP',
+      matrix_file_path: 'gs://test_bucket/dense.tsv',
+      matrix_file_type: 'dense'
+    }
   end
 
   test 'should instantiate and validate parameters' do
@@ -44,6 +57,8 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
     assert sparse_params.valid?
     anndata_params = DifferentialExpressionParameters.new(@anndata_options)
     assert anndata_params.valid?
+    pairwise_params = DifferentialExpressionParameters.new(@pairwise_options)
+    assert pairwise_params.valid?
 
     # test conditional validations
     dense_params.annotation_file = ''
@@ -56,13 +71,15 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
     sparse_params.machine_type = 'foo'
     assert_not sparse_params.valid?
     assert_equal [:machine_type, :gene_file], sparse_params.errors.attribute_names
+    pairwise_params.group1 = ''
+    assert_not pairwise_params.valid?
   end
 
   test 'should format differential expression parameters for python cli' do
     dense_params = DifferentialExpressionParameters.new(@dense_options)
     options_array = dense_params.to_options_array
     dense_params.attributes.each do |name, value|
-      next if value.blank? # gene_file and barcode_file will not be set
+      next if value.blank? # some values will not be set
 
       expected_name = Parameterizable.to_cli_opt(name)
       assert_includes options_array, expected_name
@@ -73,6 +90,8 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
     sparse_params = DifferentialExpressionParameters.new(@sparse_options)
     options_array = sparse_params.to_options_array
     sparse_params.attributes.each do |name, value|
+      next if value.blank?
+
       expected_name = Parameterizable.to_cli_opt(name)
       assert_includes options_array, expected_name
       assert_includes options_array, value
@@ -82,7 +101,18 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
     anndata_params = DifferentialExpressionParameters.new(@anndata_options)
     options_array = anndata_params.to_options_array
     anndata_params.attributes.each do |name, value|
-      next if value.blank? # gene_file and barcode_file will not be set
+      next if value.blank?
+
+      expected_name = Parameterizable.to_cli_opt(name)
+      assert_includes options_array, expected_name
+      assert_includes options_array, value
+    end
+    assert_includes options_array, DifferentialExpressionParameters::PARAMETER_NAME
+
+    pairwise_params = DifferentialExpressionParameters.new(@pairwise_options)
+    options_array = pairwise_params.to_options_array
+    pairwise_params.attributes.each do |name, value|
+      next if value.blank?
 
       expected_name = Parameterizable.to_cli_opt(name)
       assert_includes options_array, expected_name

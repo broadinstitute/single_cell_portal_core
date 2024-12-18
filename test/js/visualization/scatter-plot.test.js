@@ -212,11 +212,13 @@ describe('getPlotlyTraces handles expression graphs', () => {
     // should return just a single trace, since we are plotting by expression rather than annotation
     expect(traces).toHaveLength(1)
     const trace = traces[0]
+    console.log(trace)
     expect(trace.type).toEqual('scattergl')
-    expect(trace.x).toEqual([2, 5, 7, 1, 3, 8, 4, 6])
-    expect(trace.y).toEqual([2, 5, 7, 1, 3, 8, 4, 6])
+    expect(trace.x).toEqual([7, 5, 2, 1, 3, 8, 4, 6])
+    expect(trace.y).toEqual([7, 5, 2, 1, 3, 8, 4, 6])
+    expect(trace.expression).toEqual([0, 0, 0, 0.1, 2, 3.1, 4.5, 6.5])
     expect(trace.marker.color).toEqual([0, 0, 0.0, 0.1, 2, 3.1, 4.5, 6.5])
-    expect(trace.cells).toEqual(['B', 'E', 'G', 'A', 'C', 'H', 'D', 'F'])
+    expect(trace.cells).toEqual(['G', 'E', 'B', 'A', 'C', 'H', 'D', 'F'])
     expect(trace.annotations).toEqual(['s1', 's2', 's1', 's1', 's1', 's2', 's1', 's2'])
     expect(trace.hovertemplate).toEqual('(%{x}, %{y})<br>%{text} (%{meta})<br>Expression: %{marker.color}<extra></extra>')
   })
