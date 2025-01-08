@@ -30,6 +30,7 @@ class Study
   ASSOCIATED_MODEL_DISPLAY_METHOD = %w(name url_safe_name bucket_id firecloud_project firecloud_workspace workspace_url google_bucket_url gs_url)
   OUTPUT_ASSOCIATION_ATTRIBUTE = %w(id)
 
+  MAX_EMBARGO = 2.years.freeze
   ###
   #
   # SETTINGS, ASSOCIATIONS AND SCOPES
@@ -744,6 +745,7 @@ class Study
   validates_presence_of :firecloud_project, :firecloud_workspace
   validates_uniqueness_of :external_identifier, allow_blank: true
   validates :cell_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validate :enforce_embargo_max_length
 
   # callbacks
   before_validation :set_url_safe_name
@@ -1678,6 +1680,17 @@ class Study
     remotes.any? ? remotes.detect {|remote| remote.name == file_location} : ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, self.bucket_id, file_location)
   end
 
+  # get the max date for a data embargo
+  def max_embargo
+    start_date = persisted? ? created_at.to_date : Date.today
+    start_date + MAX_EMBARGO
+  end
+
+  # get the max embargo duration as text, e.g. '2 years'
+  def self.max_embargo_text
+    MAX_EMBARGO.parts.map { |k, v| "#{v} #{k}" }.join(', ')
+  end
+
   ###
   #
   # FIRECLOUD FILE METHODS
@@ -1869,6 +1882,14 @@ class Study
   # CUSTOM VALIDATIONS
   #
   ###
+
+  def enforce_embargo_max_length
+    return true if embargo.blank?
+
+    unless embargo <= created_at + MAX_EMBARGO
+      errors.add(:embargo, "cannot be longer than two years from date of creation (#{created_at.to_date.strftime('%m/%d/%Y')})")
+    end
+  end
 
   # automatically create a FireCloud workspace on study creation after validating name & url_safe_name
   # will raise validation errors if creation, bucket or ACL assignment fail for any reason and deletes workspace on validation fail
