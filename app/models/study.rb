@@ -1884,10 +1884,10 @@ class Study
   ###
 
   def enforce_embargo_max_length
-    return true if embargo.blank?
+    return true if embargo.blank? || !public
 
     unless embargo <= created_at + MAX_EMBARGO
-      errors.add(:embargo, "cannot be longer than two years from date of creation (#{created_at.to_date.strftime('%m/%d/%Y')})")
+      errors.add(:embargo, "cannot be longer than two years from date of creation (#{created_at.to_date.strftime('%m/%d/%Y')}) for public studies")
     end
   end
 

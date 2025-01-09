@@ -208,5 +208,7 @@ class StudyTest < ActiveSupport::TestCase
     study.embargo = study.max_embargo + 1.day
     assert_not study.valid?
     assert study.errors.has_key?(:embargo)
+    study.public = false
+    assert study.valid?
   end
 end

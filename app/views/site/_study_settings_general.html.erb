@@ -14,7 +14,7 @@
     <span class='fas fa-question-circle' data-toggle='tooltip' data-placement='right'
           title='Setting a data release date will prevent downloads for everyone except study owners & shared users,
           and will expire at 12AM on the date specified (leave blank to allow downloads).  This has a maximum length of
-          <%= Study.max_embargo_text %>.'>
+          <%= Study.max_embargo_text %> from date of creation for public studies.'>
     </span><br />
     <%= f.date_field :embargo, class: 'form-control', max: f.object.max_embargo %>
   </div>
