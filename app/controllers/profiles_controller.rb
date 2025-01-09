@@ -96,7 +96,11 @@ class ProfilesController < ApplicationController
     end
   end
 
-  def accept_tos; end
+  def accept_tos
+    @previous_acceptance = TosAcceptance.where(
+      email: @user.email, :version.ne => TosAcceptance::CURRENT_VERSION
+    ).order_by(&:version).last
+  end
 
   def record_tos_action
     user_accepted = tos_params[:action] == 'accept'

@@ -22,7 +22,8 @@ class ApplicationController < ActionController::Base
   before_action :get_download_quota
   before_action :get_deployment_notification
   before_action :set_selected_branding_group
-  before_action :check_tos_acceptance
+  # allow users to view privacy policy even if they haven't accepted the ToS yet
+  before_action :check_tos_acceptance, except: :privacy_policy
   before_action :set_ab_test_assignments
 
   rescue_from ActionController::InvalidAuthenticityToken, with: :invalid_csrf

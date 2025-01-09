@@ -1,5 +1,13 @@
 <h1 id="tos-title">Terms of service, revised [<%= TosAcceptance.current_version %>]</h1>
 <div id="tos-content">
+  <% if @previous_acceptance %>
+    <div class="bs-callout bs-callout-primary">
+      <p>
+        Our terms have updated since the last version on <%= @previous_acceptance.version %>.  Please review carefully
+        the terms in their entirety by scrolling to the bottom of the page.
+      </p>
+    </div>
+  <% end %>
   <%= render :partial => '/site/tos_content' %>
 </div>
 <%= form_for :tos, url: record_tos_action_path, html: {class: 'form', id: 'tos-form'} do |f| %>
