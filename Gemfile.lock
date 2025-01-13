@@ -186,6 +186,8 @@ GEM
     gibberish (2.1.1)
     globalid (1.2.1)
       activesupport (>= 6.1)
+    google-apis-batch_v1 (0.27.0)
+      google-apis-core (>= 0.11.0, < 2.a)
     google-apis-bigquery_v2 (0.54.0)
       google-apis-core (>= 0.11.0, < 2.a)
     google-apis-core (0.11.0)
@@ -558,6 +560,7 @@ DEPENDENCIES
   flamegraph
   font-awesome-sass!
   gibberish
+  google-apis-batch_v1
   google-apis-lifesciences_v2beta
   google-cloud-bigquery
   google-cloud-storage

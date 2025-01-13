@@ -31,6 +31,10 @@ class ApplicationController < ActionController::Base
     @@life_sciences_api_client ||= LifeSciencesApiClient.new
   end
 
+  def self.batch_api_client
+    @@batch_api_client ||= BatchApiClient.new
+  end
+
   def self.big_query_client
     @@big_query_client ||= BigQueryClient.new.client
   end

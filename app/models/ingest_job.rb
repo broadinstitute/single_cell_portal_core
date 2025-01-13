@@ -97,7 +97,7 @@ class IngestJob
       else
         if can_launch_ingest?
           Rails.logger.info "Remote found for #{file_identifier}, launching Ingest job"
-          submission = ApplicationController.life_sciences_api_client.run_pipeline(
+          submission = ApplicationController.batch_api_client.run_batch_job(
             study_file:, user:, action:, params_object:
           )
           Rails.logger.info "Ingest run initiated: #{submission.name}, queueing Ingest poller"
@@ -111,7 +111,8 @@ class IngestJob
         end
       end
     rescue => e
-      Rails.logger.error "Error in launching ingest of #{file_identifier}: #{e.class.name}:#{e.message}"
+      error_message = ApplicationController.batch_api_client.parse_error_message(e)
+      Rails.logger.error "Error in launching ingest of #{file_identifier}: #{error_message}"
       ErrorTracker.report_exception(e, user, study, study_file, { action: action})
       # notify admins of failure, and notify user that admins are looking into the issue
       SingleCellMailer.notify_admin_parse_launch_fail(study, study_file, user, action, e).deliver_now
@@ -213,7 +214,7 @@ class IngestJob
   # * *returns*
   #   - (Google::Apis::LifesciencesV2beta::Operation)
   def get_ingest_run
-    ApplicationController.life_sciences_api_client.get_pipeline(name: pipeline_name)
+    ApplicationController.batch_api_client.get_batch_job(pipeline_name)
   end
 
   # Determine if this ingest run has done by checking current status
@@ -644,8 +645,7 @@ class IngestJob
         cluster.update(is_subsampling: true)
         file_identifier = "#{study_file.bucket_location}:#{study_file.id}"
         Rails.logger.info "Launching subsampling ingest run for #{file_identifier} after #{action}"
-        submission = ApplicationController.life_sciences_api_client.run_pipeline(study_file: study_file, user: user,
-                                                                                 action: :ingest_subsample)
+        submission = ApplicationController.batch_api_client.run_batch_job(study_file:, user:, action: :ingest_subsample)
         Rails.logger.info "Subsampling run initiated: #{submission.name}, queueing Ingest poller"
         IngestJob.new(pipeline_name: submission.name, study: study, study_file: study_file,
                       user: user, action: :ingest_subsample, reparse: false,
@@ -662,8 +662,8 @@ class IngestJob
           cluster.update(is_subsampling: true)
           file_identifier = "#{cluster_file.bucket_location}:#{cluster_file.id}"
           Rails.logger.info "Launching subsampling ingest run for #{file_identifier} after #{action} of #{metadata_identifier}"
-          submission = ApplicationController.life_sciences_api_client.run_pipeline(study_file: cluster_file, user: user,
-                                                                                   action: :ingest_subsample)
+          submission = ApplicationController.batch_api_client.run_batch_job(study_file: cluster_file, user:,
+                                                                            action: :ingest_subsample)
           Rails.logger.info "Subsampling run initiated: #{submission.name}, queueing Ingest poller"
           IngestJob.new(pipeline_name: submission.name, study: study, study_file: cluster_file,
                         user: user, action: :ingest_subsample, reparse: reparse,
@@ -690,7 +690,7 @@ class IngestJob
             cluster_file:, cell_metadata_file:
           )
           Rails.logger.info "Launching subsampling ingest run for #{file_identifier} after #{action}"
-          submission = ApplicationController.life_sciences_api_client.run_pipeline(
+          submission = ApplicationController.batch_api_client.run_batch_job(
             study_file:, user:, action: :ingest_subsample, params_object: subsample_params
           )
           IngestJob.new(
@@ -1042,7 +1042,7 @@ class IngestJob
   end
 
   def anndata_summary_props
-    pipelines = ApplicationController.life_sciences_api_client.list_pipelines
+    pipelines = ApplicationController.batch_api_client.list_pipelines
     previous_jobs = pipelines.operations.select do |op|
       pipeline_args = op.metadata.dig('pipeline', 'actions').first['commands']
       op.done? &&
