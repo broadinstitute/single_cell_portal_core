@@ -36,6 +36,10 @@ class BatchApiClient
   # alphanumeric plus - and _
   LABEL_SANITIZER = /[^a-zA-Z\d\-_]/
 
+  # Enums for handling jobs
+  COMPLETED_STATES = %w(SUCCEEDED FAILED DELETION_IN_PROGRESS)
+  RUNNING_STATES = %w(STATE_UNSPECIFIED QUEUED SCHEDULED RUNNING)
+
   # Default constructor for BatchApiClient
   #
   # * *params*
@@ -88,7 +92,7 @@ class BatchApiClient
   #   - (Google::Apis::ClientError) =>  The request is invalid and should not be retried without modification
   #   - (Google::Apis::AuthorizationError) => Authorization is required
   def list_jobs(page_token: nil)
-    service.list_project_location_operations(project_location, page_token:)
+    service.list_project_location_jobs(project_location, page_token:)
   end
 
   # main handler to create and run a Batch API job
@@ -108,50 +112,122 @@ class BatchApiClient
   #   - [Google::Apis::ServerError] An error occurred on the server and the request can be retried
   #   - [Google::Apis::ClientError] The request is invalid and should not be retried without modification
   #   - [Google::Apis::AuthorizationError] Authorization is required
-  def run_batch_job(study_file:, user:, action:, params_object: nil)
+  def run_job(study_file:, user:, action:, params_object: nil)
     study = study_file.study
     labels = job_labels(action:, study:, study_file:, user:, params_object:)
-    instance_policy = create_instance_policy(machine_type: job_machine_type(params_object))
+    machine_type = job_machine_type(params_object)
+    instance_policy = create_instance_policy(machine_type:)
     allocation_policy = create_allocation_policy(instance_policy:, labels:)
-    container = create_container(study_file:, user_metrics_uuid: user.metrics_uuid, action:, params_object: nil)
-    task_group = create_task(action:, container:, labels: {})
-    job = create_batch_job(study_file:, task_group:, allocation_policy:, labels:)
+    container = create_container(study_file:, user_metrics_uuid: user.metrics_uuid, action:, params_object:)
+    task_group = create_task_group(action:, machine_type:, container:, labels: {})
+    job = create_job(task_group:, allocation_policy:, labels:)
     Rails.logger.info "Request object sent to Google Batch API, excluding 'environment' parameters:"
     Rails.logger.info log_params(job).to_yaml
     service.create_project_location_job(project_location, job, quota_user: user.id.to_s)
   end
 
+  # create a job object to pass to a request
+  #
+  # * *params*
+  #   - +task_group+ (Google::Apis::BatchV1::TaskGroup)
+  #   - +allocation_policy+ (Google::Apis::BatchV1::AllocationPolicy)
+  #   - +labels+ (Hash) => labels to apply to job and all compute resources
+  #
+  # * *returns*
+  #   - (Google::Apis::BatchV1::Job)
+  def create_job(task_group:, allocation_policy:, labels: {})
+    Google::Apis::BatchV1::Job.new(
+      task_groups: [task_group],
+      allocation_policy:,
+      labels:
+    )
+  end
+
   # Get an existing batch job
   #
   # * *params*
-  #   - +name+ () => Operation corresponding with a submission of ingest
+  #   - +name+ () => Name of existing Batch API job
   #   - +fields+ (String) => Selector specifying which fields to include in a partial response.
   #   - +user+ (User) => User that originally submitted pipeline
   #
   # * *return*
   #   - (Google::Apis::BatchV1::Job)
-  def get_batch_job(job_name, fields: nil, user: nil)
-    service.get_project_location_job(job_name, fields:, quota_user: user&.id.to_s)
+  def get_job(name, fields: nil, user: nil)
+    service.get_project_location_job(name, fields:, quota_user: user&.id.to_s)
   end
 
-  # create the name of a Batch job
+  # Get the task from an existing batch job
+  # This contains more status/error information that job status object itself
   #
   # * *params*
-  #   - +study_file+ (StudyFile) => associated StudyFile
+  #   - +name+ () => Name of existing Batch API job
+  #   - +fields+ (String) => Selector specifying which fields to include in a partial response.
+  #   - +user+ (User) => User that originally submitted pipeline
+  #
+  # * *return*
+  #   - (Google::Apis::BatchV1::Task)
+  def get_job_task(name, fields: nil, user: nil)
+    task_name = "#{name}/taskGroups/group0/tasks/0" # only ever 1 task group with 1 task
+    service.get_project_location_job_task_group_task(task_name, fields:, quota_user: user&.id.to_s)
+  end
+
+  # get a task specification from either a job, or look up by job name
+  # TaskSpec objects contain information about compute resources/environment and Docker container
+  #
+  # * *params*
+  #   - +name+ () => Name of existing Batch API job (optional)
+  #   - +job+ (Google::Apis::BatchV1::Job) => Batch job object (optional)
+  #
+  # * *return*
+  #   - (Google::Apis::BatchV1::TaskSpec)
+  def get_job_task_spec(name: nil, job: nil)
+    batch_job = job || get_job(name)
+    batch_job.task_groups.first.task_spec
+  end
+
+  # get the command line from the Docker container in the Batch job
+  #
+  # * *params*
+  #   - +name+ () => Name of existing Batch API job (optional)
+  #   - +job+ (Google::Apis::BatchV1::Job) => Batch job object (optional)
+  #
+  # * *return*
+  #   - (Array<String>) => CLI arguments as array
+  def get_job_command_line(name: nil, job: nil)
+    get_job_task_spec(name:, job:).runnables.first.container.commands
+  end
+
+  # get resource information about a Batch job
+  #
+  # * *params*
+  #   - +name+ () => Name of existing Batch API job (optional)
+  #   - +job+ (Google::Apis::BatchV1::Job) => Batch job object (optional)
   #
   # * *returns*
-  #   - (String) => formatted job name with study accession & UUID
-  def create_job_name(study_file)
-    study_accession = study_file.study.accession
-    job_id = "#{study_file.id}-#{SecureRandom.uuid}"
-    "#{project_location}/jobs/#{study_accession}/#{job_id}"
+  #   - (Hash) => vm information (machine_type, disk size) and task allocations (cpu_milli & memory)
+  def get_job_resources(name: nil, job: nil)
+    batch_job = job || get_job(name)
+    task_spec = get_job_task_spec(job: batch_job)
+    compute = task_spec.compute_resource
+    vm_info = batch_job.allocation_policy.instances.first.policy
+    {
+      cpu_milli: compute.cpu_milli,
+      memory_mib: compute.memory_mib,
+      machine_type: vm_info.machine_type,
+      boot_disk_size_gb: vm_info.boot_disk.size_gb
+    }
   end
 
   # get loggable parameters for reporting
+  #
+  # * *params*
+  #   - +job+ (Google::Apis::BatchV1::Job)
+  #
+  # * *returns*
+  #   - (Hash) => metadata about job run, including command line and VM stats
   def log_params(job)
-    task = job.task_groups.first.task_spec.runnables.first
-    commands = task.container.commands
-    vm_instance = job.allocation_policy.instances.first.policy
+    commands = get_job_command_line(job:)
+    vm_instance = get_job_resources(job:)
     {
       task: {
         commands:,
@@ -159,8 +235,8 @@ class BatchApiClient
           regions: DEFAULT_COMPUTE_REGION,
           labels: job.allocation_policy.labels,
           virtual_machine: {
-            boot_disk_size_gb: vm_instance.boot_disk.size_gb.to_s,
-            machine_type: vm_instance.machine_type
+            boot_disk_size_gb: vm_instance[:boot_disk_size_gb],
+            machine_type: vm_instance[:machine_type]
           },
           service_account: issuer,
           network: GCP_NETWORK_NAME
@@ -169,35 +245,18 @@ class BatchApiClient
     }
   end
 
-  # create a job object to pass to a request
-  #
-  # * *params*
-  #   - +study_file+ (StudyFile) => associated StudyFile
-  #   - +task_group+ (Google::Apis::BatchV1::TaskGroup)
-  #   - +allocation_policy+ (Google::Apis::BatchV1::AllocationPolicy)
-  #   - +labels+ (Hash) => labels to apply to job and all compute resources
-  #
-  # * *returns*
-  #   - (Google::Apis::BatchV1::Job)
-  def create_batch_job(study_file:, task_group:, allocation_policy:, labels: {})
-    Google::Apis::BatchV1::Job.new(
-      name: create_job_name(study_file),
-      task_groups: [task_group],
-      allocation_policy:,
-      labels:
-    )
-  end
-
-  # create a task specification that represents entire Batch job
+  # create a task group that represents entire Batch job
+  # includes GCE resources, environment, Docker info, etc.
   #
   # * *params*
   #   - +action+ (String/Symbol) => Action to perform on ingest
+  #   - +machine_type+ (String) => GCP VM machine type (defaults to 'n2d-highmem-4': 4 CPU, 32GB RAM)
   #   - +container+ (Google::Apis::BatchV1::Container)
   #   - +labels+ (Hash) => labels to apply to job and all compute resources
   #
   # * *returns*
   #   - (Google::Apis::BatchV1::TaskGroup)
-  def create_task(action:, container:, labels: {})
+  def create_task_group(action:, machine_type:, container:, labels: {})
     runnable = Google::Apis::BatchV1::Runnable.new(
       container:,
       environment: Google::Apis::BatchV1::Environment.new(
@@ -207,7 +266,8 @@ class BatchApiClient
     )
     task = Google::Apis::BatchV1::TaskSpec.new(
       max_retry_count: 0,
-      runnables: [runnable]
+      runnables: [runnable],
+      compute_resource: create_compute_resource(machine_type)
     )
     Google::Apis::BatchV1::TaskGroup.new(
       task_count: 1,
@@ -227,7 +287,7 @@ class BatchApiClient
   #   - (Google::Apis::BatchV1::Container)
   def create_container(study_file:, action:, user_metrics_uuid:, params_object: nil)
     Google::Apis::BatchV1::Container.new(
-      commands: get_command_line(study_file:, action:, user_metrics_uuid:, params_object:),
+      commands: format_command_line(study_file:, action:, user_metrics_uuid:, params_object:),
       image_uri: image_uri_for_job(params_object)
     )
   end
@@ -245,6 +305,22 @@ class BatchApiClient
     else
       AdminConfiguration.get_ingest_docker_image
     end
+  end
+
+  # create a compute resource for a task spec
+  # this will ensure that all available CPU/RAM are utilized for each task
+  # see https://cloud.google.com/batch/docs/reference/rest/v1/projects.locations.jobs#ComputeResource for more info
+  #
+  # * *params*
+  #   - +machine_type+ (String) => GCP VM machine type (defaults to 'n2d-highmem-4': 4 CPU, 32GB RAM)
+  #
+  # * *returns*
+  #   - (Google::Apis::BatchV1::ComputeResource)
+  def create_compute_resource(machine_type)
+    cores = machine_type.split('-').last.to_i
+    Google::Apis::BatchV1::ComputeResource.new(
+      cpu_milli: cores * 1000, memory_mib: cores * 8 * 1024
+    )
   end
 
   # create an allocation policy to manage all instances in a job
@@ -343,7 +419,7 @@ class BatchApiClient
   #
   # * *raises*
   #   - (ArgumentError) => The requested StudyFile and action do not correspond with each other, or cannot be run yet
-  def get_command_line(study_file:, action:, user_metrics_uuid:, params_object: nil)
+  def format_command_line(study_file:, action:, user_metrics_uuid:, params_object: nil)
     validate_action_by_file(action, study_file)
     study = study_file.study
     # Docker accepts command line in array form for better tokenization of parameters
@@ -423,7 +499,7 @@ class BatchApiClient
   #   - +action+ (String/Symbol) => Action being performed on file
   #
   # * *returns*
-  #   (Array) => Array representation of optional arguments (Docker exec form), based on file type
+  #   - (Array) => Array representation of optional arguments (Docker exec form), based on file type
   def get_command_line_options(study_file, action)
     opts = []
     case study_file.file_type
