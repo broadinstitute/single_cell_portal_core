@@ -25,8 +25,19 @@ function main {
   # upcoming release, e.g. 1.20.0.
   # More context: https://github.com/broadinstitute/single_cell_portal_core/pull/1552#discussion_r910424433
   # TODO: (SCP-4496): Move production-related GCR images out of staging project
+
+  # Google Artifact Registry (GAR) formats Docker image names differently than the canonical Container Registry format
+  # both refer to the same image digest and will work with 'docker pull', but the GCR names do not work with any
+  # 'gcloud artifacts docker' commands
+  # for example:
+  # GCR name: gcr.io/broad-singlecellportal-staging/single-cell-portal
+  # GAR name: us-docker.pkg.dev/broad-singlecellportal-staging/gcr.io/single-cell-portal
   VERSION_TAG=$(extract_release_tag "0")
-  IMAGE_NAME='gcr.io/broad-singlecellportal-staging/single-cell-portal'
+  REPO='gcr.io'
+  PROJECT='broad-singlecellportal-staging'
+  IMAGE='single-cell-portal'
+  GAR_NAME="us-docker.pkg.dev/$PROJECT/$REPO/$IMAGE"
+  IMAGE_NAME="$REPO/$PROJECT/$IMAGE"
   GCLOUD_ALIAS='gcloud'
   while getopts "v:g:h" OPTION; do
     case $OPTION in
@@ -50,7 +61,7 @@ function main {
   done
 
   # skip building a tagged release if it already exists, unless this is the development branch
-  EXISTING_DIGEST=$($GCLOUD_ALIAS container images list-tags $IMAGE_NAME --filter="tags:$VERSION_TAG" --format='get(digest)')
+  EXISTING_DIGEST=$($GCLOUD_ALIAS artifacts docker images list $GAR_NAME --include-tags --filter="tags=$VERSION_TAG" --format='get(version)')
   if [[ "$VERSION_TAG" != 'development' ]] && [[ -n "$EXISTING_DIGEST" ]]; then
     exit_with_error_message "unable to build $VERSION_TAG as it already exists with digest $EXISTING_DIGEST"
   fi
@@ -63,10 +74,10 @@ function main {
   echo "*** PUSH COMPLETE ***"
   # pushing an image with the same tag as an existing one (which will happen each time with 'development') can leave
   # behind an untagged image that needs to be deleted - these can be found with --filter='-tags:*'
-  UNTAGGED=$($GCLOUD_ALIAS container images list-tags $IMAGE_NAME --filter="-tags:*" --format="get(digest)")
+  UNTAGGED=$($GCLOUD_ALIAS artifacts docker images list $GAR_NAME --include-tags --filter="-tags:*" --format="get(version)")
   if [[ -n "$UNTAGGED" ]]; then
     echo "*** DELETING UNTAGGED IMAGE DIGEST $UNTAGGED ***"
-    $GCLOUD_ALIAS container images delete $IMAGE_NAME@$UNTAGGED --quiet || exit_with_error_message "could not delete image $UNTAGGED"
+    $GCLOUD_ALIAS artifacts docker images delete $GAR_NAME@$UNTAGGED --quiet || exit_with_error_message "could not delete image $UNTAGGED"
     echo "*** UNTAGGED IMAGE $UNTAGGED SUCCESSFULLY DELETED ***"
   fi
 }
