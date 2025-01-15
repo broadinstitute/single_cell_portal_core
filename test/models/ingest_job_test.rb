@@ -112,33 +112,35 @@ class IngestJobTest < ActiveSupport::TestCase
                                          biosample_input_type: 'Whole cell')
     study_file.upload_file_size = 1.megabyte
     study_file.save!
-    job = IngestJob.new(study:, study_file:, user: @user, action: :ingest_expression)
+    pipeline_name = SecureRandom.uuid
+    job = IngestJob.new(pipeline_name:, study:, study_file:, user: @user, action: :ingest_expression)
     mock = Minitest::Mock.new
     now = DateTime.now.in_time_zone
-    mock_metadata = {
-      events: [
-        { timestamp: now.to_s }.with_indifferent_access,
-        { timestamp: (now + 1.minute).to_s, containerStopped: { exitStatus: 0 } }.with_indifferent_access
-      ],
-      pipeline: {
-        resources: {
-          virtualMachine: {
-            machineType: 'n2d-highmem-4',
-            bootDiskSizeGb: 300
-          }
-        }
-      }
+    vm_info = {
+      cpu_milli: 4000,
+      memory_mib: 32768,
+      machine_type: 'n2d-highmem-4',
+      boot_disk_size_gb: 300
     }.with_indifferent_access
-    mock.expect :metadata, mock_metadata
-    mock.expect :metadata, mock_metadata
-    mock.expect :metadata, mock_metadata
-    mock.expect :error, nil
-    mock.expect :done?, true
+
+    dummy_job = Google::Apis::BatchV1::Job.new(
+      status: Google::Apis::BatchV1::JobStatus.new(
+        state: 'SUCCEEDED',
+        status_events: [
+          Google::Apis::BatchV1::StatusEvent.new(event_time: now.to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (now + 1.minute).to_s)
+        ]
+      )
+    )
+
+    4.times { mock.expect :get_job, dummy_job, [pipeline_name] }
+    mock.expect :get_job_resources, vm_info, [{ job: dummy_job }]
+    mock.expect :get_exit_code_from_task, 0, [pipeline_name]
 
     cells = study.expression_matrix_cells(study_file)
     num_cells = cells.count
 
-    ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
+    ApplicationController.stub :batch_api_client, mock do
       expected_outputs = {
         perfTime: 60000,
         fileType: study_file.file_type,
@@ -170,29 +172,35 @@ class IngestJobTest < ActiveSupport::TestCase
                                           modality: 'Transcriptomic: unbiased', biosample_input_type: 'Whole cell')
     other_file.upload_file_size = 2048
     other_file.save!
-    job = IngestJob.new(study:, study_file: other_file, user: @user, action: :ingest_expression)
+    failed_pipeline = SecureRandom.uuid
+    job = IngestJob.new(
+      pipeline_name: failed_pipeline, study:, study_file: other_file, user: @user, action: :ingest_expression
+    )
     mock = Minitest::Mock.new
     now = DateTime.now.in_time_zone
-    mock_metadata = {
-      events: [
-        { timestamp: now.to_s },
-        { timestamp: (now + 2.minutes).to_s, containerStopped: { exitStatus: 1 } }
-      ],
-      pipeline: {
-        resources: {
-          virtualMachine: {
-            machineType: 'n2d-highmem-4',
-            bootDiskSizeGb: 300
-          }
-        }
-      }
+
+    vm_info = {
+      cpu_milli: 4000,
+      memory_mib: 32768,
+      machine_type: 'n2d-highmem-4',
+      boot_disk_size_gb: 300
     }.with_indifferent_access
-    3.times {mock.expect :metadata, mock_metadata  }
-    mock.expect :error, { code: 1, message: 'mock message' } # simulate error
-    mock.expect :done?, true
 
+    failed_job = Google::Apis::BatchV1::Job.new(
+      status: Google::Apis::BatchV1::JobStatus.new(
+        state: 'FAILED',
+        status_events: [
+          Google::Apis::BatchV1::StatusEvent.new(event_time: now.to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (now + 2.minute).to_s)
+        ]
+      )
+    )
 
-    ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
+    4.times { mock.expect :get_job, failed_job, [failed_pipeline] }
+    mock.expect :get_job_resources, vm_info, [{ job: failed_job }]
+    mock.expect :get_exit_code_from_task, 1, [failed_pipeline]
+
+    ApplicationController.stub :batch_api_client, mock do
       expected_outputs = {
         perfTime: 120000,
         fileType: other_file.file_type,
@@ -239,30 +247,33 @@ class IngestJobTest < ActiveSupport::TestCase
       file_size: ann_data_file.upload_file_size, extract_raw_counts: true
     )
     assert params_object.extract.include?('raw_counts')
+    job_name = SecureRandom.uuid
     job = IngestJob.new(
-      study: @basic_study, study_file: ann_data_file, user: @user, action: :ingest_anndata, params_object:
+      pipeline_name: job_name, study: @basic_study, study_file: ann_data_file, user: @user,
+      action: :ingest_anndata, params_object:
     )
     mock = Minitest::Mock.new
     now = DateTime.now.in_time_zone
-    mock_metadata = {
-      events: [
-        { timestamp: now.to_s }.with_indifferent_access,
-        { timestamp: (now + 1.minute).to_s, containerStopped: { exitStatus: 0 } }.with_indifferent_access
-      ],
-      pipeline: {
-        resources: {
-          virtualMachine: {
-            machineType: 'n2d-highmem-4',
-            bootDiskSizeGb: 300
-          }
-        }
-      }
+    vm_info = {
+      cpu_milli: 4000,
+      memory_mib: 32768,
+      machine_type: 'n2d-highmem-4',
+      boot_disk_size_gb: 300
     }.with_indifferent_access
-    3.times {mock.expect :metadata, mock_metadata  }
-    mock.expect :error, nil
-    mock.expect :done?, true
+    mock_job = Google::Apis::BatchV1::Job.new(
+      status: Google::Apis::BatchV1::JobStatus.new(
+        state: 'SUCCEEDED',
+        status_events: [
+          Google::Apis::BatchV1::StatusEvent.new(event_time: now.to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (now + 1.minute).to_s)
+        ]
+      )
+    )
+    4.times { mock.expect :get_job, mock_job, [job_name] }
+    mock.expect :get_job_resources, vm_info, [{job: mock_job}]
+    mock.expect :exit_code_from_task, 0, [job_name]
 
-    ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
+    ApplicationController.stub :batch_api_client, mock do
       expected_outputs = {
         perfTime: 60000,
         fileType: ann_data_file.file_type,
@@ -291,30 +302,33 @@ class IngestJobTest < ActiveSupport::TestCase
     params_object = AnnDataIngestParameters.new(
       anndata_file: reference_file.gs_url, extract: nil, obsm_keys: nil, file_size: reference_file.upload_file_size
     )
+    reference_pipeline = SecureRandom.uuid
     job = IngestJob.new(
-      study: @basic_study, study_file: reference_file, user: @user, action: :ingest_anndata, params_object:
+      pipeline_name: reference_pipeline, study: @basic_study, study_file: reference_file, user: @user,
+      action: :ingest_anndata, params_object:
     )
     mock = Minitest::Mock.new
     now = DateTime.now.in_time_zone
-    mock_metadata = {
-      events: [
-        { timestamp: now.to_s }.with_indifferent_access,
-        { timestamp: (now + 1.minute).to_s, containerStopped: { exitStatus: 0 } }.with_indifferent_access
-      ],
-      pipeline: {
-        resources: {
-          virtualMachine: {
-            machineType: 'n2d-highmem-4',
-            bootDiskSizeGb: 300
-          }
-        }
-      }
+    vm_info = {
+      cpu_milli: 4000,
+      memory_mib: 32768,
+      machine_type: 'n2d-highmem-4',
+      boot_disk_size_gb: 300
     }.with_indifferent_access
-    3.times {mock.expect :metadata, mock_metadata  }
-    mock.expect :error, nil
-    mock.expect :done?, true
+    mock_job = Google::Apis::BatchV1::Job.new(
+      status: Google::Apis::BatchV1::JobStatus.new(
+        state: 'SUCCEEDED',
+        status_events: [
+          Google::Apis::BatchV1::StatusEvent.new(event_time: now.to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (now + 1.minute).to_s)
+        ]
+      )
+    )
+    4.times { mock.expect :get_job, mock_job, [reference_pipeline] }
+    mock.expect :get_job_resources, vm_info, [{job: mock_job}]
+    mock.expect :exit_code_from_task, 0, [reference_pipeline]
 
-    ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
+    ApplicationController.stub :batch_api_client, mock do
       expected_outputs = {
         perfTime: 60000,
         fileType: reference_file.file_type,
@@ -351,36 +365,40 @@ class IngestJobTest < ActiveSupport::TestCase
       ingest_cluster: true, name: 'UMAP', cluster_file:, domain_ranges: {}, ingest_anndata: false,
       extract: nil, obsm_keys: nil
     )
+    pipeline_name = SecureRandom.uuid
     job = IngestJob.new(
-      study: @basic_study, study_file: ann_data_file, user: @user, action: :ingest_cluster, params_object:
+      pipeline_name:, study: @basic_study, study_file: ann_data_file, user: @user, action: :ingest_cluster, params_object:
     )
     now = DateTime.now
-    metadata_mock = {
-      pipeline: {
-        actions: [
-          {
-            commands: [
-              'python', 'ingest_pipeline.py', '--study-id', @basic_study.id.to_s, '--study-file-id',
-              ann_data_file.id.to_s, 'ingest_cluster', '--ingest-cluster', '--cluster-file', cluster_file,
-              '--name', 'UMAP', '--domain-ranges', '{}'
-            ]
-          }
+    dummy_job = Google::Apis::BatchV1::Job.new(
+      name: pipeline_name,
+      create_time: now.to_s,
+      update_time: (now + 1.minute).to_s,
+      status: Google::Apis::BatchV1::JobStatus.new(
+        state: 'SUCCEEDED',
+        status_events: [
+          Google::Apis::BatchV1::StatusEvent.new(event_time: now.to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (now + 1.minute).to_s)
         ]
-      },
-      createTime: (now - 1.minutes).to_s,
-      startTime: (now - 1.minutes).to_s,
-      endTime: now.to_s
-    }.with_indifferent_access
+      )
+    )
 
-    pipeline_mock = MiniTest::Mock.new
-    5.times {pipeline_mock.expect :metadata, metadata_mock }
-    2.times {pipeline_mock.expect :error, nil  }
-    pipeline_mock.expect :done?, true
+    mock_commands = [
+      'python', 'ingest_pipeline.py', '--study-id', @basic_study.id.to_s, '--study-file-id',
+      ann_data_file.id.to_s, 'ingest_cluster', '--ingest-cluster', '--cluster-file', cluster_file,
+      '--name', 'UMAP', '--domain-ranges', '{}'
+    ]
 
-    operations_mock = Minitest::Mock.new
-    operations_mock.expect :operations, [pipeline_mock]
+    list_mock = Minitest::Mock.new
+    list_mock.expect :jobs, [dummy_job]
 
-    ApplicationController.life_sciences_api_client.stub :list_pipelines, operations_mock do
+    mock = Minitest::Mock.new
+    mock.expect :list_jobs, list_mock
+    mock.expect :job_done?, true, [dummy_job]
+    3.times { mock.expect :get_job_command_line, mock_commands, [{ job: dummy_job }] }
+    2.times { mock.expect :job_error, false, [pipeline_name] }
+
+    ApplicationController.stub :batch_api_client, mock do
       expected_job_props = {
         perfTime: 60000,
         fileName: ann_data_file.name,
@@ -396,8 +414,7 @@ class IngestJobTest < ActiveSupport::TestCase
       }
       job_props = job.anndata_summary_props
       assert_equal expected_job_props, job_props
-      operations_mock.verify
-      pipeline_mock.verify
+      mock.verify
     end
   end
 
@@ -432,12 +449,12 @@ class IngestJobTest < ActiveSupport::TestCase
     2.times { job_mock.expect :object, cluster_job }
 
     pipeline_mock = Minitest::Mock.new
-    pipeline_mock.expect :done?, false
+    pipeline_mock.expect :job_done?, false
 
     # negative test
     DelayedJobAccessor.stub :find_jobs_by_handler_type, [Delayed::Job.new] do
       DelayedJobAccessor.stub :dump_job_handler, job_mock do
-        ApplicationController.life_sciences_api_client.stub :get_pipeline, pipeline_mock do
+        ApplicationController.batch_api_client.stub :get_job, pipeline_mock do
           metadata_job.report_anndata_summary
           job_mock.verify
           pipeline_mock.verify
@@ -479,27 +496,42 @@ class IngestJobTest < ActiveSupport::TestCase
   test 'should report failure step in ingestSummary' do
     ann_data_file = FactoryBot.create(:ann_data_file, name: 'failed.h5ad', study: @basic_study)
     now = DateTime.now.in_time_zone
-    actions = [
-      { commands: ['python', 'ingest_pipeline.py', '--study-file-id', ann_data_file.id.to_s, 'ingest_cell_metadata'] }
-    ]
-    events = [{ timestamp: now.to_s, containerStopped: { exitStatus: 65 } }.with_indifferent_access]
-    pipeline = { actions: }
-    failed_metadata = { pipeline:, events:, startTime: (now - 1.hour).to_s, endTime: now.to_s }.with_indifferent_access
-    failed_pipeline = Minitest::Mock.new
-    7.times { failed_pipeline.expect(:metadata, failed_metadata) }
-    3.times { failed_pipeline.expect(:error, true) }
-    failed_pipeline.expect :done?, true
-    operations_mock = Minitest::Mock.new
-    operations_mock.expect :operations, [failed_pipeline]
-    client_mock = Minitest::Mock.new
-    client_mock.expect :list_pipelines, operations_mock
-    ApplicationController.stub :life_sciences_api_client, client_mock do
+    pipeline_name = SecureRandom.uuid
+    dummy_job = Google::Apis::BatchV1::Job.new(
+      name: pipeline_name,
+      create_time: (now - 1.hour).to_s,
+      update_time: now.to_s,
+      status: Google::Apis::BatchV1::JobStatus.new(
+        state: 'FAILED',
+        status_events: [
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (now - 1.hour).to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: now.to_s)
+        ]
+      )
+    )
+
+    mock_commands = ['python', 'ingest_pipeline.py', '--study-file-id', ann_data_file.id.to_s, 'ingest_cell_metadata']
+
+    list_mock = Minitest::Mock.new
+    list_mock.expect :jobs, [dummy_job]
+    job_error = Google::Apis::BatchV1::StatusEvent.new(
+      event_time: now.to_s,
+      task_state: 'FAILED',
+      task_execution: Google::Apis::BatchV1::TaskExecution.new(exit_code: 65)
+    )
+    mock = Minitest::Mock.new
+    mock.expect :list_jobs, list_mock
+    mock.expect :job_done?, true, [dummy_job]
+    mock.expect :exit_code_from_task, 65, [pipeline_name]
+    4.times { mock.expect :get_job_command_line, mock_commands, [{ job: dummy_job }] }
+    3.times { mock.expect :job_error, job_error, [pipeline_name] }
+    ApplicationController.stub :batch_api_client, mock do
       cell_metadata_file = RequestUtils.data_fragment_url(ann_data_file, 'metadata')
       metadata_params = AnnDataIngestParameters.new(
         ingest_cell_metadata: true, cell_metadata_file:, ingest_anndata: false, extract: nil, obsm_keys: nil,
         study_accession: @basic_study.accession
       )
-      metadata_job = IngestJob.new(study: @basic_study, study_file: ann_data_file, user: @user,
+      metadata_job = IngestJob.new(pipeline_name:, study: @basic_study, study_file: ann_data_file, user: @user,
                                    action: :ingest_metadata, params_object: metadata_params)
       props = metadata_job.anndata_summary_props.with_indifferent_access
       assert_equal 3_600_000, props[:perfTime]
@@ -722,12 +754,11 @@ class IngestJobTest < ActiveSupport::TestCase
     mock.expect :execute_gcloud_method, true,
                 [:delete_workspace_file, 0, study.bucket_id, error_log]
 
-    pipeline_mock = Minitest::Mock.new
-    pipeline_mock.expect :metadata, metadata
-    ls_mock = Minitest::Mock.new
-    ls_mock.expect :get_pipeline, pipeline_mock, [{ name: pipeline_name }]
+    batch_mock = Minitest::Mock.new
+    batch_mock.expect :get_job, Google::Apis::BatchV1::Job, [pipeline_name]
+    batch_mock.expect :get_job_command_line, %w[foo bar bing baz], [{job: Google::Apis::BatchV1::Job}]
     ApplicationController.stub :firecloud_client, mock do
-      ApplicationController.stub :life_sciences_api_client, ls_mock do
+      ApplicationController.stub :batch_api_client, batch_mock do
         job.handle_ingest_failure('parse failure')
         cluster_file.reload
         study.reload
@@ -763,12 +794,11 @@ class IngestJobTest < ActiveSupport::TestCase
     mock.expect :execute_gcloud_method, true,
                 [:delete_workspace_file, 0, study.bucket_id, error_log]
 
-    pipeline_mock = Minitest::Mock.new
-    pipeline_mock.expect :metadata, metadata
-    ls_mock = Minitest::Mock.new
-    ls_mock.expect :get_pipeline, pipeline_mock, [{ name: pipeline_name }]
+    batch_mock = Minitest::Mock.new
+    batch_mock.expect :get_job, Google::Apis::BatchV1::Job, [pipeline_name]
+    batch_mock.expect :get_job_command_line, %w[foo bar bing baz], [{job: Google::Apis::BatchV1::Job}]
     ApplicationController.stub :firecloud_client, mock do
-      ApplicationController.stub :life_sciences_api_client, ls_mock do
+      ApplicationController.stub :batch_api_client, batch_mock do
         failed_job.handle_ingest_failure('parse failure')
         mock.verify
       end
@@ -818,7 +848,7 @@ class IngestJobTest < ActiveSupport::TestCase
       mock.expect :error, nil
       mock.expect :done?, true
     end
-    ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
+    ApplicationController.batch_api_client.stub :get_job, mock do
       study_file.update(queued_for_deletion: true)
       job.poll_for_completion
       study.reload
@@ -839,16 +869,20 @@ class IngestJobTest < ActiveSupport::TestCase
                                    study:,
                                    upload_file_size: 1.megabyte,
                                    cell_input: %w[A B C D],
+                                   expression_input: {
+                                     'phex' => [['A', 0.3], ['B', 1.0], ['C', 0.5], ['D', 0.1]]
+                                   },
                                    annotation_input: [
                                      { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
                                    ],
                                    coordinate_input: [
                                      { umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
                                    ])
-    annotation_file = 'gs://test_bucket/anndata/h5ad_frag.metadata.tsv'
-    cluster_file = 'gs://test_bucket/anndata/h5ad_frag.cluster.X_umap.tsv'
+    bucket = study.bucket_id
+    annotation_file = "gs://#{bucket}/anndata/h5ad_frag.metadata.tsv"
+    cluster_file = "gs://#{bucket}/anndata/h5ad_frag.cluster.X_umap.tsv"
     params_object = DifferentialExpressionParameters.new(
-      matrix_file_path: 'gs://test_bucket/matrix.h5ad', matrix_file_type: 'h5ad', file_size: study_file.upload_file_size,
+      matrix_file_path: "gs://#{bucket}/matrix.h5ad", matrix_file_type: 'h5ad', file_size: study_file.upload_file_size,
       annotation_file:, cluster_file:, cluster_name: 'umap', annotation_name: 'disease', annotation_scope: 'study'
     )
     pipeline_name = SecureRandom.uuid
@@ -856,41 +890,37 @@ class IngestJobTest < ActiveSupport::TestCase
       pipeline_name:, study:, study_file:, user: @user, action: :differential_expression, params_object:
     )
     now = DateTime.now.in_time_zone
-    mock_metadata = {
-      events: [
-        { timestamp: now.to_s },
-        { timestamp: (now + 2.minutes).to_s, containerStopped: { exitStatus: 1 } }
-      ],
-      pipeline: {
-        actions: [
-          {
-            commands: [
-              'python', 'ingest_pipeline.py', '--study-id', study.id.to_s, '--study-file-id',
-              study_file.id.to_s, 'differential_expression', '--differential-expression', '--cluster-file', cluster_file,
-              '--annotation-file', annotation_file, '--cluster-name', 'umap', '--annotation-name', 'disease',
-              '--annotation-scope', 'study'
-            ]
-          }
-        ],
-        resources: {
-          virtualMachine: {
-            machineType: 'n2d-highmem-8',
-            bootDiskSizeGb: 300
-          }
-        }
-      },
-      createTime: (now - 3.minutes).to_s,
-      startTime: now.to_s,
-      endTime: now.to_s
+    dummy_job = Google::Apis::BatchV1::Job.new(
+      status: Google::Apis::BatchV1::JobStatus.new(
+        state: 'FAILED',
+        status_events: [
+          Google::Apis::BatchV1::StatusEvent.new(event_time: now.to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (now + 2.minute).to_s)
+        ]
+      )
+    )
+    mock_commands = [
+      'python', 'ingest_pipeline.py', '--study-id', study.id.to_s, '--study-file-id',
+      study_file.id.to_s, 'differential_expression', '--differential-expression', '--cluster-file', cluster_file,
+      '--annotation-file', annotation_file, '--cluster-name', 'umap', '--annotation-name', 'disease',
+      '--annotation-scope', 'study'
+    ]
+    vm_info = {
+      cpu_milli: 4000,
+      memory_mib: 32768,
+      machine_type: 'n2d-highmem-4',
+      boot_disk_size_gb: 300
     }.with_indifferent_access
+
     mock = Minitest::Mock.new
-    7.times { mock.expect :metadata, mock_metadata }
-    3.times { mock.expect :error, { code: 1, message: 'mock message' } }
-    4.times { mock.expect :done?, true }
+    mock.expect :get_job_resources, vm_info, [{ job: dummy_job }]
+    mock.expect :get_job_command_line, mock_commands, [{ job: dummy_job }]
+    12.times { mock.expect :get_job, dummy_job, [pipeline_name] }
+    2.times { mock.expect :get_exit_code_from_task, 1, [pipeline_name] }
 
     email_mock = Minitest::Mock.new
     email_mock.expect :deliver_now, true
-    ApplicationController.life_sciences_api_client.stub :get_pipeline, mock do
+    ApplicationController.stub :batch_api_client, mock do
       SingleCellMailer.stub :notify_admin_parse_fail, email_mock do
         job.poll_for_completion
         mock.verify
@@ -913,7 +943,7 @@ class IngestJobTest < ActiveSupport::TestCase
                                      { umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
                                    ])
     params_object = AnnDataIngestParameters.new(
-      anndata_file: 'gs://test_bucket/matrix.h5ad', file_size: study_file.upload_file_size
+      anndata_file: "gs://#{study.bucket_id}/matrix.h5ad", file_size: study_file.upload_file_size
     )
     pipeline_name = SecureRandom.uuid
     job = IngestJob.new(
@@ -921,45 +951,52 @@ class IngestJobTest < ActiveSupport::TestCase
     )
     bucket = study.bucket_id
     now = DateTime.now.in_time_zone
-    mock_metadata = {
-      events: [
-        { timestamp: now.to_s },
-        { timestamp: (now + 2.minutes).to_s, containerStopped: { exitStatus: 137 } }
-      ],
-      pipeline: {
-        actions: [
-          {
-            commands: [
-              'python', 'ingest_pipeline.py', '--study-id', study.id.to_s, '--study-file-id',
-              study_file.id.to_s, 'ingest_anndata', '--ingest-anndata', '--anndata-file', params_object.anndata_file,
-              '--obsm-keys', '["X_umap"]', '--extract', '["cluster", "metadata", "processed_expression", "raw_counts"]'
-            ]
-          }
-        ],
-        resources: { virtualMachine: { machineType: 'n2d-highmem-8', bootDiskSizeGb: 300 } } },
-      createTime: (now - 3.minutes).to_s,
-      startTime: now.to_s,
-      endTime: now.to_s
+
+    commands = [
+      'python', 'ingest_pipeline.py', '--study-id', study.id.to_s, '--study-file-id',
+      study_file.id.to_s, 'ingest_anndata', '--ingest-anndata', '--anndata-file', params_object.anndata_file,
+      '--obsm-keys', '["X_umap"]', '--extract', '["cluster", "metadata", "processed_expression", "raw_counts"]'
+    ]
+
+    dummy_job = Google::Apis::BatchV1::Job.new(
+      name: pipeline_name,
+      create_time: (now - 3.minutes).to_s,
+      update_time: now.to_s,
+      status: Google::Apis::BatchV1::JobStatus.new(
+        state: 'FAILED',
+        status_events: [
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (now - 3.minutes).to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: now.to_s)
+        ]
+      )
+    )
+
+    vm_info = {
+      cpu_milli: 8000,
+      memory_mib: 131072,
+      machine_type: 'n2d-highmem-8',
+      boot_disk_size_gb: 300
     }.with_indifferent_access
-    # first pipeline mock represents the failed OOM job
-    pipeline_mock = Minitest::Mock.new
-    9.times { pipeline_mock.expect :metadata, mock_metadata }
-    6.times { pipeline_mock.expect :done?, true }
-    3.times { pipeline_mock.expect :error, { code: 137, message: 'OOM exception' } }
-    # must mock life_sciences_api_client getting pipeline metadata
+
+    # must mock batch_api_client getting pipeline metadata
     client_mock = Minitest::Mock.new
-    18.times { client_mock.expect :get_pipeline, pipeline_mock, [{ name: pipeline_name }] }
+    4.times { client_mock.expect :get_exit_code_from_task, 137, [pipeline_name] }
+    client_mock.expect :get_job_resources, vm_info, [{job: dummy_job}]
+    client_mock.expect :get_job_command_line, commands, [{ job: dummy_job }]
     # new pipeline mock is resubmitted job with larger machine_type
     new_pipeline = Minitest::Mock.new
-    new_op = Google::Apis::LifesciencesV2beta::Operation.new(name: 'oom-retry')
+    new_op = Google::Apis::BatchV1::Job.new(
+      name: 'oom-retry',
+      status: Google::Apis::BatchV1::JobStatus.new(state:'RUNNING')
+    )
     2.times do
-      client_mock.expect :get_pipeline, new_pipeline, [{ name: new_op.name }]
-      new_pipeline.expect :done?, false
+      client_mock.expect :get_job, new_op, [new_op.name]
+      new_pipeline.expect :done?, false, []
       new_pipeline.expect :failed?, false
     end
     # block for keyword arguments allows better control of assertions
     # also prevents mock 'unexpected arguments' errors that can happen
-    client_mock.expect :run_pipeline, new_op do |args|
+    client_mock.expect :run_job, new_op do |args|
       args[:study_file].upload_file_name == study_file.upload_file_name &&
         args[:study_file].id.to_s == study_file.id.to_s && # this should be the exact same file
         args[:action] == :ingest_anndata &&
@@ -972,12 +1009,13 @@ class IngestJobTest < ActiveSupport::TestCase
     terra_mock.expect :workspace_file_exists?,
                       false,
                       [bucket, String]
-    ApplicationController.stub :life_sciences_api_client, client_mock do
-      ApplicationController.stub :firecloud_client, terra_mock do
-        job.poll_for_completion
-        pipeline_mock.verify
-        terra_mock.verify
-        client_mock.verify
+    job.stub :get_ingest_run, dummy_job do
+      ApplicationController.stub :batch_api_client, client_mock do
+        ApplicationController.stub :firecloud_client, terra_mock do
+          job.poll_for_completion
+          terra_mock.verify
+          client_mock.verify
+        end
       end
     end
   end

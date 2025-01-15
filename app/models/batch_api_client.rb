@@ -183,6 +183,22 @@ class BatchApiClient
     service.get_project_location_job_task_group_task(task_name, fields:, quota_user: user&.id.to_s)
   end
 
+  # retrieve an exit code directly from a task object
+  #
+  # * *params*
+  #   - +name+ () => Name of existing Batch API job
+  #
+  # * *returns*
+  #   - (Integer or Nil::NilClass)
+  def exit_code_from_task(name)
+    task = get_job_task(name)
+    task.status.status_events.each do |event|
+      code = event.task_execution&.exit_code
+      return code.to_i if code
+    end
+    nil
+  end
+
   # extract an error from the task object
   #
   # * *params*
@@ -586,6 +602,7 @@ class BatchApiClient
       user_id: user.id.to_s,
       filename: sanitize_label(study_file.upload_file_name),
       action: label_for_action(action),
+      ingest_action: action,
       docker_image: sanitize_label(docker_image),
       docker_tag: sanitize_label(docker_tag),
       environment: Rails.env.to_s,

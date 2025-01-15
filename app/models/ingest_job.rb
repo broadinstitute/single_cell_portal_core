@@ -306,11 +306,7 @@ class IngestJob
   def exit_code
     return nil unless done?
 
-    task_object.status.status_events.each do |event|
-      code = event.task_execution&.exit_code
-      return code.to_i if code
-    end
-    nil # catch-all
+    ApplicationController.batch_api_client.get_exit_code_from_task(pipeline_name)
   end
 
   # determine if this job should automatically retry due to OOM exception
@@ -951,7 +947,6 @@ class IngestJob
 
     # retrieve pipeline metadata for VM information
     vm_info = ApplicationController.batch_api_client.get_job_resources(job: get_ingest_run)
-
     job_perftime = get_total_runtime_ms
     # Event properties to log to Mixpanel.
     # Mixpanel uses camelCase for props; snake_case would degrade Mixpanel UX.
@@ -1086,7 +1081,7 @@ class IngestJob
       first_failure = previous_jobs.reverse.detect { |job| client.job_error(job.name).present? }
       args = client.get_job_command_line(job: first_failure)
       error_action = args.detect {|c| BatchApiClient::FILE_TYPES_BY_ACTION.keys.include?(c.to_sym) }
-      code = IngestJob.new(pipeline_name: first_failure.pipeline_name).exit_code
+      code = client.exit_code_from_task(first_failure.name)
     end
     # count total number of files extracted
     num_files_extracted = previous_jobs.reject do |job|
