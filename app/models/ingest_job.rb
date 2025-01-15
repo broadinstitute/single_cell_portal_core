@@ -246,7 +246,7 @@ class IngestJob
   # * *returns*
   #   - (Google::Apis::BatchV1::Task)
   def error
-    return nil if !failed?
+    return nil unless failed?
 
     task_object.status.status_events.detect { |event| event.task_state == 'FAILED' }
   end
@@ -345,7 +345,7 @@ class IngestJob
   # * *returns*
   #   - (DateTime)
   def event_timestamp(entry)
-    date = entry['timestamp'] || entry
+    date = entry.try(:event_time) || entry
     DateTime.parse(date)
   end
 
@@ -1060,41 +1060,40 @@ class IngestJob
   end
 
   def anndata_summary_props
-    pipelines = ApplicationController.batch_api_client.list_pipelines
-    previous_jobs = pipelines.operations.select do |op|
-      pipeline_args = op.status.dig('pipeline', 'actions').first['commands']
-      op.done? &&
+    client = ApplicationController.batch_api_client
+    jobs = ApplicationController.batch_api_client.list_jobs
+    previous_jobs = jobs.jobs.select do |job|
+      pipeline_args = client.get_job_command_line(job:)
+      client.job_done?(job) &&
         pipeline_args.detect { |c| c == study_file.id.to_s } &&
         (pipeline_args & CORE_ACTIONS).any?
     end
     # get total runtime from initial extract to final parse
     initial_extract = previous_jobs.last
     final_parse = previous_jobs.first
-    start_time = event_timestamp(initial_extract.status['startTime'])
-    end_time = event_timestamp(final_parse.status['endTime'])
+    start_time = event_timestamp(initial_extract.create_time)
+    end_time = event_timestamp(final_parse.update_time) # update_time is a proxy for last event timestamp
     job_perftime = (TimeDifference.between(start_time, end_time).in_seconds * 1000).to_i
 
     file_type = study_file.file_type
     trigger = study_file.upload_trigger
-    job_status = previous_jobs.map(&:error).compact.any? ? 'failed' : 'success'
+    job_status = previous_jobs.map do |job|
+      client.job_error(job.name).present?
+    end.compact.any? ? 'failed' : 'success'
     error_action = nil
     code = 0
     if job_status == 'failed'
-      first_failure = previous_jobs.reverse.detect { |p| p.error.present? }
-      args = first_failure.status.dig('pipeline', 'actions').first['commands']
+      first_failure = previous_jobs.reverse.detect { |job| client.job_error(job.name).present? }
+      args = client.get_job_command_line(job: first_failure)
       error_action = args.detect {|c| BatchApiClient::FILE_TYPES_BY_ACTION.keys.include?(c.to_sym) }
-      failure_events = first_failure.status['events'].sort_by! { |event| event['timestamp'] }
-      stopped_msg = failure_events.detect do |event|
-        event.dig('containerStopped', 'exitStatus').present?
-      end
-      code = stopped_msg.dig('containerStopped', 'exitStatus').to_i
+      code = IngestJob.new(pipeline_name: first_failure.pipeline_name).exit_code
     end
     # count total number of files extracted
-    num_files_extracted = previous_jobs.reject do |op|
-      op.status.dig('pipeline', 'actions').first['commands'].detect { |c| c == '--extract' } ||
-        op.error.present?
+    num_files_extracted = previous_jobs.reject do |job|
+      commands = client.get_job_command_line(job:)
+      commands.detect { |c| c == '--extract' } || client.job_error(job.name).present?
     end.count
-    num_files_extracted += 1 if extracted_raw_counts?(initial_extract.status)
+    num_files_extracted += 1 if extracted_raw_counts?(initial_extract)
     # event properties for Mixpanel summary event
     {
       perfTime: job_perftime,
@@ -1113,8 +1112,8 @@ class IngestJob
 
   # determine if an ingest_anndata job extracted raw counts data
   # reads from the --extract parameter to avoid counting filenames that include 'raw_counts'
-  def extracted_raw_counts?(pipeline_metadata)
-    commands = pipeline_metadata.dig('pipeline', 'actions').first['commands']
+  def extracted_raw_counts?(job)
+    commands = ApplicationController.batch_api_client.get_job_command_line(job:)
     extract_idx = commands.index('--extract')
     return false if extract_idx.nil?
 

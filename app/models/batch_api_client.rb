@@ -139,7 +139,8 @@ class BatchApiClient
     Google::Apis::BatchV1::Job.new(
       task_groups: [task_group],
       allocation_policy:,
-      labels:
+      labels:,
+      logs_policy: Google::Apis::BatchV1::LogsPolicy.new(destination: 'CLOUD_LOGGING')
     )
   end
 
@@ -156,6 +157,17 @@ class BatchApiClient
     service.get_project_location_job(name, fields:, quota_user: user&.id.to_s)
   end
 
+  # helper to determine if a job is done
+  #
+  # * *params*
+  #   - +job+ (Google::Apis::BatchV1::Job) => Batch job object (optional)
+  #
+  # * *returns*
+  #   - (Boolean)
+  def job_done?(job)
+    COMPLETED_STATES.include?(job.status.state)
+  end
+
   # Get the task from an existing batch job
   # This contains more status/error information that job status object itself
   #
@@ -169,6 +181,18 @@ class BatchApiClient
   def get_job_task(name, fields: nil, user: nil)
     task_name = "#{name}/taskGroups/group0/tasks/0" # only ever 1 task group with 1 task
     service.get_project_location_job_task_group_task(task_name, fields:, quota_user: user&.id.to_s)
+  end
+
+  # extract an error from the task object
+  #
+  # * *params*
+  #   - +name+ () => Name of existing Batch API job
+  #
+  # * *returns*
+  #   - (Google::Apis::BatchV1::TaskStatus or Nil::NilClass)
+  def job_error(name)
+    task = get_job_task(name)
+    task.status.status_events.detect { |event| event.task_state == 'FAILED' }
   end
 
   # get a task specification from either a job, or look up by job name
