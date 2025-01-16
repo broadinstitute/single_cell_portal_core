@@ -25,7 +25,8 @@ import {
 
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
 import {
-  OneVsRestDifferentialExpressionGroupPicker, PairwiseDifferentialExpressionGroupPicker
+  OneVsRestDifferentialExpressionGroupPicker, PairwiseDifferentialExpressionGroupPicker,
+  PairwiseDifferentialExpressionGroupLists
 } from '~/components/visualization/controls/DifferentialExpressionGroupPicker'
 
 import {
@@ -727,44 +728,24 @@ export default function DifferentialExpressionPanel({
 
   return (
     <>
-      {!hasPairwiseDe &&
-        <OneVsRestDifferentialExpressionGroupPicker
-          bucketId={bucketId}
-          clusterName={clusterName}
-          annotation={annotation}
-          setShowDeGroupPicker={setShowDeGroupPicker}
-          deGenes={deGenes}
-          setDeGenes={setDeGenes}
-          deGroup={deGroup}
-          setDeGroup={setDeGroup}
-          countsByLabelForDe={countsByLabelForDe}
-          deObjects={deObjects}
-          setDeFilePath={setDeFilePath}
-          isAuthorDe={isAuthorDe}
-          sizeMetric={sizeMetric}
-          significanceMetric={significanceMetric}
-        />
-      }
-      {hasPairwiseDe &&
-        <PairwiseDifferentialExpressionGroupPicker
-          bucketId={bucketId}
-          clusterName={clusterName}
-          annotation={annotation}
-          setShowDeGroupPicker={setShowDeGroupPicker}
-          deGenes={deGenes}
-          setDeGenes={setDeGenes}
-          deGroup={deGroup}
-          setDeGroup={setDeGroup}
-          countsByLabelForDe={countsByLabelForDe}
-          deObjects={deObjects}
-          setDeFilePath={setDeFilePath}
-          deGroupB={deGroupB}
-          setDeGroupB={setDeGroupB}
-          hasOneVsRestDe={hasOneVsRestDe}
-          sizeMetric={sizeMetric}
-          significanceMetric={significanceMetric}
-        />
-      }
+      <PairwiseDifferentialExpressionGroupLists
+        bucketId={bucketId}
+        clusterName={clusterName}
+        annotation={annotation}
+        setShowDeGroupPicker={setShowDeGroupPicker}
+        deGenes={deGenes}
+        setDeGenes={setDeGenes}
+        deGroup={deGroup}
+        setDeGroup={setDeGroup}
+        countsByLabelForDe={countsByLabelForDe}
+        deObjects={deObjects}
+        setDeFilePath={setDeFilePath}
+        deGroupB={deGroupB}
+        setDeGroupB={setDeGroupB}
+        hasOneVsRestDe={hasOneVsRestDe}
+        sizeMetric={sizeMetric}
+        significanceMetric={significanceMetric}
+      />
 
       {
         (

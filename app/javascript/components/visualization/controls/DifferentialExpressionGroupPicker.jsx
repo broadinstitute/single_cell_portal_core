@@ -43,7 +43,7 @@ export function parseDeFile(tsvText, isAuthorDe=false) {
       //
       // TODO: There are usually more columns than size (e.g. logfoldchanges)
       // and significance (e.g. pvals_adj) that may well be of interest.
-      // However, we don't parse those here before there is no UI for them.
+      // However, we don't parse those here because there is no UI for them.
       // If we opt to build a UI for further metrics (e.g. pctNzGroup in Scanpy
       // / pct.1 in Seurat, etc.), we would need to order them canonically
       // across SCP-computed DE results and (Ingest Pipeline-processed) author
@@ -142,6 +142,99 @@ function getMatchingDeOption(
   })
 
   return matchingDeOption
+}
+
+/** Pick groups of cells for pairwise differential expression (DE) */
+export function PairwiseDifferentialExpressionGroupLists({
+  bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup,
+  setDeGenes, countsByLabelForDe, deObjects, setDeFilePath,
+  deGroupB, setDeGroupB, hasOneVsRestDe, significanceMetric
+}) {
+  const groups = getLegendSortedLabels(countsByLabelForDe)
+  console.log('groups', groups)
+
+  const defaultGroupsB = []
+  const [deGroupsB, setDeGroupsB] = useState(defaultGroupsB)
+  console.log('deGroupsB', deGroupsB)
+
+  /** Update table based on new group selection */
+  async function updateTable(groupA, groupB) {
+    let deOption
+    let deFileName
+    if (groupB === 'rest') {
+      deOption = getMatchingDeOption(deObjects, groupA, clusterName, annotation)
+      deFileName = deOption[1]
+    } else {
+      deOption = getMatchingDeOption(deObjects, groupA, clusterName, annotation, 'pairwise', groupB)
+      deFileName = deOption[2]
+    }
+
+    const deFilePath = basePath + deFileName
+
+    setDeFilePath(deFilePath)
+
+    const isAuthorDe = true // SCP doesn't currently automatically compute pairwise DE
+    const deGenes = await fetchDeGenes(bucketId, deFilePath, isAuthorDe)
+    setDeGenes(deGenes)
+  }
+
+  /** Update group in differential expression picker */
+  async function updateDeGroupA(newGroup) {
+    setDeGroup(newGroup)
+    const newGroupsB = groups.filter(group => {
+      const deOption = getMatchingDeOption(deObjects, newGroup, clusterName, annotation, 'pairwise', group)
+      return deOption !== undefined && deOption !== newGroup
+    })
+    let groupHasRest = false
+    if (hasOneVsRestDe) {
+      groupHasRest = getMatchingDeOption(deObjects, newGroup, clusterName, annotation)
+      if (groupHasRest) {
+        newGroupsB.unshift('rest')
+      }
+    }
+    setDeGroupsB(newGroupsB)
+
+    if (newGroup === deGroupB || deGroupB && deGroupB === 'rest' && !groupHasRest) {
+      setDeGroupB(null) // Clear group B upon changing group A, if A === B
+      setDeGenes(null)
+      return
+    }
+
+    if (deGroupB) {
+      updateTable(newGroup, deGroupB)
+    }
+  }
+
+  /** Update group in differential expression picker */
+  async function updateDeGroupB(newGroup) {
+    setDeGroupB(newGroup)
+
+    updateTable(deGroup, newGroup)
+  }
+
+  return (
+    <>
+      <div className="differential-expression-picker">
+        {!deGenes && <p>Pick groups to compare.</p>}
+        <div className="pairwise-select">
+          <ul>
+            {groups.map(group => {
+              return <li>{group}</li>
+            })}
+          </ul>
+        </div>
+        <span className="vs-note">vs. </span>
+        <div className="pairwise-select pairwise-select-b">
+          <ul>
+            {groups.map(group => {
+              return <li>{group}</li>
+            })}
+          </ul>
+        </div>
+      </div>
+      {deGenes && <><br/><br/></>}
+    </>
+  )
 }
 
 /** Pick groups of cells for pairwise differential expression (DE) */
