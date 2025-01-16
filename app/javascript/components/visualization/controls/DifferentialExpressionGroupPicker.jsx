@@ -145,22 +145,43 @@ function getMatchingDeOption(
 }
 
 /** List menu of groups available to select for DE comparison */
-function GroupListMenu({ groups, includeRest=false }) {
+function GroupListMenu({
+  groups, selectedGroups, updateSelectedGroups, isMenuB=false
+}) {
+  if (isMenuB) {
+    groups.unshift('Rest')
+  }
+
+  console.log('isMenuB, selectedGroups', isMenuB, selectedGroups)
+
   return (
     <>
-      {includeRest &&
-      <div>
-        <label style={{ fontWeight: 'normal' }}>
-          <input type="checkbox" style={{ marginRight: '4px' }}></input>
-          <i>Rest</i>
-        </label>
-      </div>
-      }
       {groups.map(group => {
+        // If this menu has a selected group and this group isn't it,
+        // then disable this group
+        const groupsIndex = isMenuB ? 1 : 0
+        const selected = selectedGroups[groupsIndex]
+        const isDisabled = selected && group !== selected
+
         return (
           <div>
             <label style={{ fontWeight: 'normal' }}>
-              <input type="checkbox" style={{ marginRight: '4px' }}></input>
+              <input
+                type="checkbox"
+                style={{ marginRight: '4px' }}
+                onChange={event => {
+                  const checkbox = event.target
+                  const isChecked = checkbox.checked
+                  const groupName = checkbox.parentElement.innerText
+                  const newSelectedGroups = selectedGroups
+
+                  newSelectedGroups[groupsIndex] = isChecked ? groupName : null
+                  console.log('newSelectedGroups', newSelectedGroups)
+
+                  updateSelectedGroups(newSelectedGroups)
+                }}
+                disabled={isDisabled}
+              ></input>
               {group}
             </label>
           </div>
@@ -177,65 +198,14 @@ export function PairwiseDifferentialExpressionGroupLists({
   deGroupB, setDeGroupB, hasOneVsRestDe, significanceMetric
 }) {
   const groups = getLegendSortedLabels(countsByLabelForDe)
-  console.log('groups', groups)
 
-  const defaultGroupsB = []
-  const [deGroupsB, setDeGroupsB] = useState(defaultGroupsB)
-  console.log('deGroupsB', deGroupsB)
 
-  /** Update table based on new group selection */
-  async function updateTable(groupA, groupB) {
-    let deOption
-    let deFileName
-    if (groupB === 'rest') {
-      deOption = getMatchingDeOption(deObjects, groupA, clusterName, annotation)
-      deFileName = deOption[1]
-    } else {
-      deOption = getMatchingDeOption(deObjects, groupA, clusterName, annotation, 'pairwise', groupB)
-      deFileName = deOption[2]
-    }
+  const [selectedGroups, setSelectedGroups] = useState([null, null])
 
-    const deFilePath = basePath + deFileName
-
-    setDeFilePath(deFilePath)
-
-    const isAuthorDe = true // SCP doesn't currently automatically compute pairwise DE
-    const deGenes = await fetchDeGenes(bucketId, deFilePath, isAuthorDe)
-    setDeGenes(deGenes)
-  }
-
-  /** Update group in differential expression picker */
-  async function updateDeGroupA(newGroup) {
-    setDeGroup(newGroup)
-    const newGroupsB = groups.filter(group => {
-      const deOption = getMatchingDeOption(deObjects, newGroup, clusterName, annotation, 'pairwise', group)
-      return deOption !== undefined && deOption !== newGroup
-    })
-    let groupHasRest = false
-    if (hasOneVsRestDe) {
-      groupHasRest = getMatchingDeOption(deObjects, newGroup, clusterName, annotation)
-      if (groupHasRest) {
-        newGroupsB.unshift('rest')
-      }
-    }
-    setDeGroupsB(newGroupsB)
-
-    if (newGroup === deGroupB || deGroupB && deGroupB === 'rest' && !groupHasRest) {
-      setDeGroupB(null) // Clear group B upon changing group A, if A === B
-      setDeGenes(null)
-      return
-    }
-
-    if (deGroupB) {
-      updateTable(newGroup, deGroupB)
-    }
-  }
-
-  /** Update group in differential expression picker */
-  async function updateDeGroupB(newGroup) {
-    setDeGroupB(newGroup)
-
-    updateTable(deGroup, newGroup)
+  /** Set new selection for DE groups to compare */
+  function updateSelectedGroups(newSelectedGroups) {
+    console.log('in updateSelectedGroups, newSelectedGroups', newSelectedGroups)
+    setSelectedGroups(newSelectedGroups)
   }
 
   return (
@@ -243,11 +213,20 @@ export function PairwiseDifferentialExpressionGroupLists({
       <div className="differential-expression-picker">
         {!deGenes && <p>Pick groups to compare.</p>}
         <div className="pairwise-select">
-          <GroupListMenu groups={groups} />
+          <GroupListMenu
+            groups={groups}
+            selectedGroups={selectedGroups}
+            updateSelectedGroups={updateSelectedGroups}
+          />
         </div>
         <span className="vs-note">vs. </span>
         <div className="pairwise-select pairwise-select-b">
-          <GroupListMenu groups={groups} includeRest={true} />
+          <GroupListMenu
+            groups={groups}
+            selectedGroups={selectedGroups}
+            updateSelectedGroups={updateSelectedGroups}
+            isMenuB={true}
+          />
         </div>
       </div>
       {deGenes && <><br/><br/></>}
