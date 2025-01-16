@@ -73,6 +73,23 @@ class BatchApiClientTest < ActiveSupport::TestCase
     assert job.is_a?(Google::Apis::BatchV1::Job)
   end
 
+  test 'should create and submit Batch API job' do
+    action = :ingest_anndata
+    params_object = AnnDataIngestParameters.new(anndata_file: @ann_data_file.gs_url)
+    mock = Minitest::Mock.new
+    mock.expect :create_project_location_job,
+                Google::Apis::BatchV1::Job,
+                [@client.project_location, Google::Apis::BatchV1::Job, quota_user: @user.id.to_s]
+    mock.expect :authorization=, Google::Auth::ServiceAccountCredentials.new, [
+      Google::Auth::ServiceAccountCredentials
+    ]
+    mock.expect :authorization, Google::Auth::ServiceAccountCredentials.new, []
+    @client.stub :service, mock do
+      @client.run_job(study_file: @ann_data_file, user: @user, action:, params_object:)
+      mock.verify
+    end
+  end
+
   test 'should indicate if job is done' do
     running_job = Google::Apis::BatchV1::Job.new(status: Google::Apis::BatchV1::JobStatus.new(state: 'RUNNING'))
     success_job = Google::Apis::BatchV1::Job.new(status: Google::Apis::BatchV1::JobStatus.new(state: 'SUCCEEDED'))
@@ -183,6 +200,19 @@ class BatchApiClientTest < ActiveSupport::TestCase
     assert commands_from_job.any?
     assert commands_from_job.include? 'ingest_pipeline.py'
     assert_equal commands_from_name, commands_from_job
+  end
+
+  test 'should get job environment' do
+    jobs = @client.list_jobs
+    skip 'no jobs in service' if jobs.jobs.blank?
+    job = jobs.jobs.sample
+    env_from_name = @client.get_job_environment(name: job.name)
+    env_from_job = @client.get_job_environment(job:)
+    assert env_from_name.any?
+    assert_equal @client.project, env_from_name['GOOGLE_PROJECT_ID']
+    assert env_from_job.any?
+    assert @client.project, env_from_job['GOOGLE_PROJECT_ID']
+    assert_equal env_from_name, env_from_job
   end
 
   test 'should get job resources' do

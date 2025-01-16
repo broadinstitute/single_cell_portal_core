@@ -22,7 +22,7 @@ class SubsampleAnnDataFiles < Mongoid::Migration
           cluster_file:, cell_metadata_file:
         )
         Rails.logger.info "Launching subsampling ingest run for #{job_identifier} via migration"
-        submission = ApplicationController.life_sciences_api_client.run_pipeline(
+        submission = ApplicationController.batch_api_client.run_job(
           study_file:, user:, action: :ingest_subsample, params_object: subsample_params
         )
         job = IngestJob.new(

@@ -237,6 +237,18 @@ class BatchApiClient
     get_job_task_spec(name:, job:).runnables.first.container.commands
   end
 
+  # get the environment from the Batch job
+  #
+  # * *params*
+  #   - +name+ () => Name of existing Batch API job (optional)
+  #   - +job+ (Google::Apis::BatchV1::Job) => Batch job object (optional)
+  #
+  # * *return*
+  #   - (Hash)
+  def get_job_environment(name: nil, job: nil)
+    get_job_task_spec(name:, job:).runnables.first.environment.variables
+  end
+
   # get resource information about a Batch job
   #
   # * *params*

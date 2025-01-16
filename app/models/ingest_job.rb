@@ -40,7 +40,7 @@ class IngestJob
     differential_expression render_expression_arrays image_pipeline ingest_anndata
   ].freeze
 
-  # Name of pipeline submission running in GCP (from [LifeSciencesApiClient#run_pipeline])
+  # Name of pipeline submission running in GCP (from [BatchApiClient#run_job])
   attr_accessor :pipeline_name
   # Study object where file is being ingested
   attr_accessor :study
