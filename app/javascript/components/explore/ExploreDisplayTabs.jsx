@@ -250,7 +250,7 @@ export default function ExploreDisplayTabs({
   const [, setShowDeGroupPicker] = useState(false)
   const [deGenes, setDeGenes] = useState(null)
   const [showDifferentialExpressionPanel, setShowDifferentialExpressionPanel] = useState(deGenes !== null)
-  const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(deGenes !== null)
+  const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(true)
 
   let initialPanel = 'options'
   if (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel) {
@@ -478,8 +478,7 @@ export default function ExploreDisplayTabs({
     let side
     if (showViewOptionsControls) {
       if (
-        (deGenes !== null) ||
-          (hasPairwiseDe && (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel))
+        panelToShow === 'differential-expression'
       ) {
         // DE table is shown, or pairwise DE is available.  Least horizontal space for plots.
         main = 'col-md-9'
