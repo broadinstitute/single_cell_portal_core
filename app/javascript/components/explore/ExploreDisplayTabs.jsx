@@ -480,9 +480,14 @@ export default function ExploreDisplayTabs({
       if (
         panelToShow === 'differential-expression'
       ) {
-        // DE table is shown, or pairwise DE is available.  Least horizontal space for plots.
-        main = 'col-md-9'
-        side = 'col-md-3 right-panel'
+        if (deGenes === null) {
+          main = 'col-md-8'
+          side = 'col-md-4 right-panel'
+        } else {
+          // DE table is shown, or pairwise DE is available.  Least horizontal space for plots.
+          main = 'col-md-9'
+          side = 'col-md-3 right-panel'
+        }
       } else if (panelToShow === 'cell-filtering') {
         main = 'col-md-10-5'
         side = 'col-md-2-5 right-panel'

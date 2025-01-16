@@ -144,6 +144,24 @@ function getMatchingDeOption(
   return matchingDeOption
 }
 
+/** List menu of groups available to select for DE comparison */
+function GroupListMenu({groups}) {
+  return (
+    <>
+      {groups.map(group => {
+        return (
+          <div>
+            <label style={{ fontWeight: 'normal' }}>
+              <input type="checkbox" style={{ marginRight: '4px' }}></input>
+              {group}
+            </label>
+          </div>
+        )
+      })}
+    </>
+  )
+}
+
 /** Pick groups of cells for pairwise differential expression (DE) */
 export function PairwiseDifferentialExpressionGroupLists({
   bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup,
@@ -217,19 +235,11 @@ export function PairwiseDifferentialExpressionGroupLists({
       <div className="differential-expression-picker">
         {!deGenes && <p>Pick groups to compare.</p>}
         <div className="pairwise-select">
-          <ul>
-            {groups.map(group => {
-              return <li>{group}</li>
-            })}
-          </ul>
+          <GroupListMenu groups={groups} />
         </div>
         <span className="vs-note">vs. </span>
         <div className="pairwise-select pairwise-select-b">
-          <ul>
-            {groups.map(group => {
-              return <li>{group}</li>
-            })}
-          </ul>
+          <GroupListMenu groups={groups} />
         </div>
       </div>
       {deGenes && <><br/><br/></>}
