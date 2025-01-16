@@ -34,6 +34,7 @@ class IngestJobTest < ActiveSupport::TestCase
     @other_matrix.upload_file_size = 2048
     @other_matrix.save!
     @basic_study.reload
+    @now = DateTime.now.in_time_zone
   end
 
   teardown do
@@ -115,7 +116,6 @@ class IngestJobTest < ActiveSupport::TestCase
     pipeline_name = SecureRandom.uuid
     job = IngestJob.new(pipeline_name:, study:, study_file:, user: @user, action: :ingest_expression)
     mock = Minitest::Mock.new
-    now = DateTime.now.in_time_zone
     vm_info = {
       cpu_milli: 4000,
       memory_mib: 32768,
@@ -127,15 +127,15 @@ class IngestJobTest < ActiveSupport::TestCase
       status: Google::Apis::BatchV1::JobStatus.new(
         state: 'SUCCEEDED',
         status_events: [
-          Google::Apis::BatchV1::StatusEvent.new(event_time: now.to_s),
-          Google::Apis::BatchV1::StatusEvent.new(event_time: (now + 1.minute).to_s)
+          Google::Apis::BatchV1::StatusEvent.new(event_time: @now.to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (@now + 1.minute).to_s)
         ]
       )
     )
 
     4.times { mock.expect :get_job, dummy_job, [pipeline_name] }
     mock.expect :get_job_resources, vm_info, [{ job: dummy_job }]
-    mock.expect :get_exit_code_from_task, 0, [pipeline_name]
+    mock.expect :exit_code_from_task, 0, [pipeline_name]
 
     cells = study.expression_matrix_cells(study_file)
     num_cells = cells.count
@@ -177,7 +177,6 @@ class IngestJobTest < ActiveSupport::TestCase
       pipeline_name: failed_pipeline, study:, study_file: other_file, user: @user, action: :ingest_expression
     )
     mock = Minitest::Mock.new
-    now = DateTime.now.in_time_zone
 
     vm_info = {
       cpu_milli: 4000,
@@ -190,15 +189,15 @@ class IngestJobTest < ActiveSupport::TestCase
       status: Google::Apis::BatchV1::JobStatus.new(
         state: 'FAILED',
         status_events: [
-          Google::Apis::BatchV1::StatusEvent.new(event_time: now.to_s),
-          Google::Apis::BatchV1::StatusEvent.new(event_time: (now + 2.minute).to_s)
+          Google::Apis::BatchV1::StatusEvent.new(event_time: @now.to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (@now + 2.minute).to_s)
         ]
       )
     )
 
     4.times { mock.expect :get_job, failed_job, [failed_pipeline] }
     mock.expect :get_job_resources, vm_info, [{ job: failed_job }]
-    mock.expect :get_exit_code_from_task, 1, [failed_pipeline]
+    mock.expect :exit_code_from_task, 1, [failed_pipeline]
 
     ApplicationController.stub :batch_api_client, mock do
       expected_outputs = {
@@ -253,7 +252,6 @@ class IngestJobTest < ActiveSupport::TestCase
       action: :ingest_anndata, params_object:
     )
     mock = Minitest::Mock.new
-    now = DateTime.now.in_time_zone
     vm_info = {
       cpu_milli: 4000,
       memory_mib: 32768,
@@ -264,8 +262,8 @@ class IngestJobTest < ActiveSupport::TestCase
       status: Google::Apis::BatchV1::JobStatus.new(
         state: 'SUCCEEDED',
         status_events: [
-          Google::Apis::BatchV1::StatusEvent.new(event_time: now.to_s),
-          Google::Apis::BatchV1::StatusEvent.new(event_time: (now + 1.minute).to_s)
+          Google::Apis::BatchV1::StatusEvent.new(event_time: @now.to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (@now + 1.minute).to_s)
         ]
       )
     )
@@ -308,7 +306,6 @@ class IngestJobTest < ActiveSupport::TestCase
       action: :ingest_anndata, params_object:
     )
     mock = Minitest::Mock.new
-    now = DateTime.now.in_time_zone
     vm_info = {
       cpu_milli: 4000,
       memory_mib: 32768,
@@ -319,8 +316,8 @@ class IngestJobTest < ActiveSupport::TestCase
       status: Google::Apis::BatchV1::JobStatus.new(
         state: 'SUCCEEDED',
         status_events: [
-          Google::Apis::BatchV1::StatusEvent.new(event_time: now.to_s),
-          Google::Apis::BatchV1::StatusEvent.new(event_time: (now + 1.minute).to_s)
+          Google::Apis::BatchV1::StatusEvent.new(event_time: @now.to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (@now + 1.minute).to_s)
         ]
       )
     )
@@ -369,16 +366,15 @@ class IngestJobTest < ActiveSupport::TestCase
     job = IngestJob.new(
       pipeline_name:, study: @basic_study, study_file: ann_data_file, user: @user, action: :ingest_cluster, params_object:
     )
-    now = DateTime.now
     dummy_job = Google::Apis::BatchV1::Job.new(
       name: pipeline_name,
-      create_time: now.to_s,
-      update_time: (now + 1.minute).to_s,
+      create_time: @now.to_s,
+      update_time: (@now + 1.minute).to_s,
       status: Google::Apis::BatchV1::JobStatus.new(
         state: 'SUCCEEDED',
         status_events: [
-          Google::Apis::BatchV1::StatusEvent.new(event_time: now.to_s),
-          Google::Apis::BatchV1::StatusEvent.new(event_time: (now + 1.minute).to_s)
+          Google::Apis::BatchV1::StatusEvent.new(event_time: @now.to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (@now + 1.minute).to_s)
         ]
       )
     )
@@ -447,14 +443,15 @@ class IngestJobTest < ActiveSupport::TestCase
     )
     job_mock = Minitest::Mock.new
     2.times { job_mock.expect :object, cluster_job }
+    dummy_job = Google::Apis::BatchV1::Job.new(status: Google::Apis::BatchV1::JobStatus.new(state: 'RUNNING'))
 
     pipeline_mock = Minitest::Mock.new
-    pipeline_mock.expect :job_done?, false
+    pipeline_mock.expect :get_job, dummy_job, [pipeline_name]
 
     # negative test
     DelayedJobAccessor.stub :find_jobs_by_handler_type, [Delayed::Job.new] do
       DelayedJobAccessor.stub :dump_job_handler, job_mock do
-        ApplicationController.batch_api_client.stub :get_job, pipeline_mock do
+        ApplicationController.stub :batch_api_client, pipeline_mock do
           metadata_job.report_anndata_summary
           job_mock.verify
           pipeline_mock.verify
@@ -495,17 +492,16 @@ class IngestJobTest < ActiveSupport::TestCase
 
   test 'should report failure step in ingestSummary' do
     ann_data_file = FactoryBot.create(:ann_data_file, name: 'failed.h5ad', study: @basic_study)
-    now = DateTime.now.in_time_zone
     pipeline_name = SecureRandom.uuid
     dummy_job = Google::Apis::BatchV1::Job.new(
       name: pipeline_name,
-      create_time: (now - 1.hour).to_s,
-      update_time: now.to_s,
+      create_time: (@now - 1.hour).to_s,
+      update_time: @now.to_s,
       status: Google::Apis::BatchV1::JobStatus.new(
         state: 'FAILED',
         status_events: [
-          Google::Apis::BatchV1::StatusEvent.new(event_time: (now - 1.hour).to_s),
-          Google::Apis::BatchV1::StatusEvent.new(event_time: now.to_s)
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (@now - 1.hour).to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: @now.to_s)
         ]
       )
     )
@@ -515,7 +511,7 @@ class IngestJobTest < ActiveSupport::TestCase
     list_mock = Minitest::Mock.new
     list_mock.expect :jobs, [dummy_job]
     job_error = Google::Apis::BatchV1::StatusEvent.new(
-      event_time: now.to_s,
+      event_time: @now.to_s,
       task_state: 'FAILED',
       task_execution: Google::Apis::BatchV1::TaskExecution.new(exit_code: 65)
     )
@@ -840,15 +836,22 @@ class IngestJobTest < ActiveSupport::TestCase
       subsample: true, ingest_anndata: false, extract: nil, obsm_keys: nil, name: cluster.name,
       cluster_file:, cell_metadata_file:
     )
+
     job = IngestJob.new(
       pipeline_name: SecureRandom.uuid, study:, study_file:, user: @user, action: :ingest_subsample, params_object:
     )
+    batch_job = Google::Apis::BatchV1::Job.new(
+      status: Google::Apis::BatchV1::JobStatus.new(
+        state: 'SUCCEEDED',
+        status_events: [
+          Google::Apis::BatchV1::StatusEvent.new(event_time: @now.to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (@now + 1.minute).to_s)
+        ]
+      )
+    )
     mock = Minitest::Mock.new
-    2.times do
-      mock.expect :error, nil
-      mock.expect :done?, true
-    end
-    ApplicationController.batch_api_client.stub :get_job, mock do
+    3.times { mock.expect :get_job, batch_job, [job.pipeline_name] }
+    ApplicationController.stub :batch_api_client, mock do
       study_file.update(queued_for_deletion: true)
       job.poll_for_completion
       study.reload
@@ -889,13 +892,12 @@ class IngestJobTest < ActiveSupport::TestCase
     job = IngestJob.new(
       pipeline_name:, study:, study_file:, user: @user, action: :differential_expression, params_object:
     )
-    now = DateTime.now.in_time_zone
     dummy_job = Google::Apis::BatchV1::Job.new(
       status: Google::Apis::BatchV1::JobStatus.new(
         state: 'FAILED',
         status_events: [
-          Google::Apis::BatchV1::StatusEvent.new(event_time: now.to_s),
-          Google::Apis::BatchV1::StatusEvent.new(event_time: (now + 2.minute).to_s)
+          Google::Apis::BatchV1::StatusEvent.new(event_time: @now.to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (@now + 2.minute).to_s)
         ]
       )
     )
@@ -916,7 +918,7 @@ class IngestJobTest < ActiveSupport::TestCase
     mock.expect :get_job_resources, vm_info, [{ job: dummy_job }]
     mock.expect :get_job_command_line, mock_commands, [{ job: dummy_job }]
     12.times { mock.expect :get_job, dummy_job, [pipeline_name] }
-    2.times { mock.expect :get_exit_code_from_task, 1, [pipeline_name] }
+    2.times { mock.expect :exit_code_from_task, 1, [pipeline_name] }
 
     email_mock = Minitest::Mock.new
     email_mock.expect :deliver_now, true
@@ -950,7 +952,6 @@ class IngestJobTest < ActiveSupport::TestCase
       pipeline_name:, study:, study_file:, user: @user, action: :ingest_anndata, params_object:
     )
     bucket = study.bucket_id
-    now = DateTime.now.in_time_zone
 
     commands = [
       'python', 'ingest_pipeline.py', '--study-id', study.id.to_s, '--study-file-id',
@@ -960,13 +961,13 @@ class IngestJobTest < ActiveSupport::TestCase
 
     dummy_job = Google::Apis::BatchV1::Job.new(
       name: pipeline_name,
-      create_time: (now - 3.minutes).to_s,
-      update_time: now.to_s,
+      create_time: (@now - 3.minutes).to_s,
+      update_time: @now.to_s,
       status: Google::Apis::BatchV1::JobStatus.new(
         state: 'FAILED',
         status_events: [
-          Google::Apis::BatchV1::StatusEvent.new(event_time: (now - 3.minutes).to_s),
-          Google::Apis::BatchV1::StatusEvent.new(event_time: now.to_s)
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (@now - 3.minutes).to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: @now.to_s)
         ]
       )
     )
@@ -980,7 +981,7 @@ class IngestJobTest < ActiveSupport::TestCase
 
     # must mock batch_api_client getting pipeline metadata
     client_mock = Minitest::Mock.new
-    4.times { client_mock.expect :get_exit_code_from_task, 137, [pipeline_name] }
+    4.times { client_mock.expect :exit_code_from_task, 137, [pipeline_name] }
     client_mock.expect :get_job_resources, vm_info, [{job: dummy_job}]
     client_mock.expect :get_job_command_line, commands, [{ job: dummy_job }]
     # new pipeline mock is resubmitted job with larger machine_type

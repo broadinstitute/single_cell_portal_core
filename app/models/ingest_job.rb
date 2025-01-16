@@ -306,7 +306,7 @@ class IngestJob
   def exit_code
     return nil unless done?
 
-    ApplicationController.batch_api_client.get_exit_code_from_task(pipeline_name)
+    ApplicationController.batch_api_client.exit_code_from_task(pipeline_name)
   end
 
   # determine if this job should automatically retry due to OOM exception
