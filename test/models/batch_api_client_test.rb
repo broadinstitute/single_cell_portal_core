@@ -77,15 +77,49 @@ class BatchApiClientTest < ActiveSupport::TestCase
     action = :ingest_anndata
     params_object = AnnDataIngestParameters.new(anndata_file: @ann_data_file.gs_url)
     mock = Minitest::Mock.new
-    mock.expect :create_project_location_job,
-                Google::Apis::BatchV1::Job,
-                [@client.project_location, Google::Apis::BatchV1::Job, quota_user: @user.id.to_s]
     mock.expect :authorization=, Google::Auth::ServiceAccountCredentials.new, [
       Google::Auth::ServiceAccountCredentials
     ]
-    mock.expect :authorization, Google::Auth::ServiceAccountCredentials.new, []
-    @client.stub :service, mock do
-      @client.run_job(study_file: @ann_data_file, user: @user, action:, params_object:)
+    2.times do
+      mock.expect :authorization, Google::Auth::ServiceAccountCredentials.new, []
+    end
+    mock.expect :create_project_location_job,
+                Google::Apis::BatchV1::Job,
+                [@client.project_location, Google::Apis::BatchV1::Job, quota_user: @user.id.to_s]
+    Google::Apis::BatchV1::BatchService.stub :new, mock do
+      client = BatchApiClient.new
+      client.run_job(study_file: @ann_data_file, user: @user, action:, params_object:)
+      mock.verify
+    end
+  end
+
+  test 'should create and submit DE Batch API job' do
+    action = :differential_expression
+    bucket_dir = "_scp_internal/anndata_ingest/#{@ann_data_study.accession}_#{@ann_data_file.id}"
+    anndata_options = {
+      annotation_name: 'disease',
+      annotation_scope: 'study',
+      annotation_file: "gs://#{@ann_data_study.bucket_id}/#{bucket_dir}/h5ad_frag.metadata.tsv.gz",
+      cluster_file: "gs://#{@ann_data_study.bucket_id}/#{bucket_dir}/h5ad_frag.cluster.X_umap.tsv.gz",
+      cluster_name: 'umap',
+      matrix_file_path: @ann_data_file.gs_url,
+      matrix_file_type: 'h5ad',
+      file_size: @ann_data_file.upload_file_size
+    }
+    params_object = DifferentialExpressionParameters.new(**anndata_options)
+    mock = Minitest::Mock.new
+    mock.expect :authorization=, Google::Auth::ServiceAccountCredentials.new, [
+      Google::Auth::ServiceAccountCredentials
+    ]
+    2.times do
+      mock.expect :authorization, Google::Auth::ServiceAccountCredentials.new, []
+    end
+    mock.expect :create_project_location_job,
+                Google::Apis::BatchV1::Job,
+                [@client.project_location, Google::Apis::BatchV1::Job, quota_user: @user.id.to_s]
+    Google::Apis::BatchV1::BatchService.stub :new, mock do
+      client = BatchApiClient.new
+      client.run_job(study_file: @ann_data_file, user: @user, action:, params_object:)
       mock.verify
     end
   end
