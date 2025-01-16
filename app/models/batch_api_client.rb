@@ -339,7 +339,7 @@ class BatchApiClient
   #
   # * *returns*
   #   - (String) Docker image URI
-  def image_uri_for_job(params_object)
+  def image_uri_for_job(params_object = nil)
     if params_object && params_object.respond_to?(:docker_image)
       params_object.docker_image
     else
