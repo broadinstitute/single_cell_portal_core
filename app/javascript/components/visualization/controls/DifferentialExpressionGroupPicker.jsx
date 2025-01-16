@@ -145,9 +145,17 @@ function getMatchingDeOption(
 }
 
 /** List menu of groups available to select for DE comparison */
-function GroupListMenu({groups}) {
+function GroupListMenu({ groups, includeRest=false }) {
   return (
     <>
+      {includeRest &&
+      <div>
+        <label style={{ fontWeight: 'normal' }}>
+          <input type="checkbox" style={{ marginRight: '4px' }}></input>
+          <i>Rest</i>
+        </label>
+      </div>
+      }
       {groups.map(group => {
         return (
           <div>
@@ -239,7 +247,7 @@ export function PairwiseDifferentialExpressionGroupLists({
         </div>
         <span className="vs-note">vs. </span>
         <div className="pairwise-select pairwise-select-b">
-          <GroupListMenu groups={groups} />
+          <GroupListMenu groups={groups} includeRest={true} />
         </div>
       </div>
       {deGenes && <><br/><br/></>}
