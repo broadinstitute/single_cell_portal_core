@@ -80,6 +80,7 @@ gem 'net-smtp'
 gem 'net-imap'
 gem 'net-pop'
 gem 'exponential-backoff'
+gem 'concurrent-ruby', '1.3.4'
 
 group :development, :test do
   # Access an IRB console on exception pages or by using <%= console %> in views
