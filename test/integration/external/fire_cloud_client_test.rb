@@ -270,22 +270,23 @@ class FireCloudClientTest < ActiveSupport::TestCase
   end
 
   # get available workflows
-  def test_get_methods
-    skip if @smoke_test
-    # get all available methods
-    workflow_methods = @fire_cloud_client.get_methods(entityType: 'workflow')
-    assert workflow_methods.any?, 'Did not find any workflow methods'
-
-    # get a single method
-    method_params = workflow_methods.sample
-    method = @fire_cloud_client.get_method(method_params['namespace'], method_params['name'], method_params['snapshotId'])
-    assert method.present?, "Did not retrieve requested method: '#{method_params['namespace']}/#{method_params['name']}/#{method_params['snapshotId']}'"
-
-    # get a method payload
-    method_payload = @fire_cloud_client.get_method(method_params['namespace'], method_params['name'], method_params['snapshotId'], true)
-    assert method_payload.present?, "Did not retrieve requested method payload: '#{method_params['namespace']}/#{method_params['name']}/#{method_params['snapshotId']}'"
-    assert method_payload.is_a?(String), "Method payload is wrong type, expected String but found #{method_payload.class}"
-  end
+  # These tests are disabled because they sometimes throw false positives, and SCP hasn't support workflows for a long time
+  # def test_get_methods
+  #   skip if @smoke_test
+  #   # get all available methods
+  #   workflow_methods = @fire_cloud_client.get_methods(entityType: 'workflow')
+  #   assert workflow_methods.any?, 'Did not find any workflow methods'
+  #
+  #   # get a single method
+  #   method_params = workflow_methods.sample
+  #   method = @fire_cloud_client.get_method(method_params['namespace'], method_params['name'], method_params['snapshotId'])
+  #   assert method.present?, "Did not retrieve requested method: '#{method_params['namespace']}/#{method_params['name']}/#{method_params['snapshotId']}'"
+  #
+  #   # get a method payload
+  #   method_payload = @fire_cloud_client.get_method(method_params['namespace'], method_params['name'], method_params['snapshotId'], true)
+  #   assert method_payload.present?, "Did not retrieve requested method payload: '#{method_params['namespace']}/#{method_params['name']}/#{method_params['snapshotId']}'"
+  #   assert method_payload.is_a?(String), "Method payload is wrong type, expected String but found #{method_payload.class}"
+  # end
 
   # get method configurations
   def test_get_configurations

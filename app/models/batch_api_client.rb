@@ -1,14 +1,10 @@
-##
-# LifeSciencesApiClient: a lightweight wrapper around the Google Cloud Life Sciences V2 beta API for submitting/reporting
-# scp-ingest-service jobs to ingest user-uploaded data
+# frozen_string_literal: true
 #
-# requires: googleauth, google-apis-ruby-client, FireCloudClient class (for bucket access)
-#
-# Author::  Jon Bistline  (mailto:bistline@broadinstitute.org)
-class LifeSciencesApiClient
+# Wrapper around Google Batch API for submitting for submitting/reporting scp-ingest-service jobs
+class BatchApiClient
   extend ServiceAccountManager
 
-  attr_accessor :project, :project_number, :service_account_credentials, :service
+  attr_accessor :project, :service_account_credentials, :service
 
   # Google authentication scopes necessary for running pipelines
   GOOGLE_SCOPES = %w(https://www.googleapis.com/auth/cloud-platform)
@@ -30,9 +26,6 @@ class LifeSciencesApiClient
     ingest_anndata: %w[AnnData]
   }.freeze
 
-  # jobs that require custom virtual machine types (e.g. more RAM, CPU)
-  CUSTOM_VM_ACTIONS = %i[differential_expression render_expression_arrays image_pipeline ingest_anndata].freeze
-
   # default GCE machine_type
   DEFAULT_MACHINE_TYPE = 'n2d-highmem-4'.freeze
 
@@ -43,29 +36,30 @@ class LifeSciencesApiClient
   # alphanumeric plus - and _
   LABEL_SANITIZER = /[^a-zA-Z\d\-_]/
 
-  # Default constructor for LifeSciencesApiClient
+  # Enums for handling jobs
+  COMPLETED_STATES = %w(SUCCEEDED FAILED DELETION_IN_PROGRESS)
+  RUNNING_STATES = %w(STATE_UNSPECIFIED QUEUED SCHEDULED RUNNING)
+
+  # Default constructor for BatchApiClient
   #
   # * *params*
   #   - +project+: (String) => GCP Project number to use (can be overridden by other parameters)
   #   - +service_account_credentials+: (Path) => Absolute filepath to service account credentials
   # * *return*
-  #   - +LifeSciencesApiClient+
-  def initialize(project = self.class.compute_project,
-                 project_number = self.class.gcp_project_number,
-                 service_account_credentials = self.class.get_primary_keyfile)
+  #   - +BatchApiClient+
+  def initialize(project = self.class.compute_project, service_account_credentials = self.class.get_primary_keyfile)
     credentials = {
       scope: GOOGLE_SCOPES,
       json_key_io: File.open(service_account_credentials)
     }
 
     authorizer = Google::Auth::ServiceAccountCredentials.make_creds(credentials)
-    genomics_service = Google::Apis::LifesciencesV2beta::CloudLifeSciencesService.new
-    genomics_service.authorization = authorizer
+    batch_service = Google::Apis::BatchV1::BatchService.new
+    batch_service.authorization = authorizer
 
     self.project = project
-    self.project_number = project_number
     self.service_account_credentials = service_account_credentials
-    self.service = genomics_service
+    self.service = batch_service
   end
 
   # Return the service account email
@@ -81,7 +75,7 @@ class LifeSciencesApiClient
   # * *return*
   #   - (String) the GCP project number and default compute region
   def project_location
-    "projects/#{project_number}/locations/#{DEFAULT_COMPUTE_REGION}"
+    "projects/#{project}/locations/#{DEFAULT_COMPUTE_REGION}"
   end
 
   # Returns a list of all pipelines run in this project
@@ -91,130 +85,337 @@ class LifeSciencesApiClient
   #   - +page_token+ (String) => Request next page of results using token
   #
   # * *return*
-  #   - (Google::Apis::LifesciencesV2beta::ListOperationsResponse)
+  #   - (Google::Apis::BatchV1::ListJobsResponse)
   #
   # * *raises*
   #   - (Google::Apis::ServerError) => An error occurred on the server and the request can be retried
   #   - (Google::Apis::ClientError) =>  The request is invalid and should not be retried without modification
   #   - (Google::Apis::AuthorizationError) => Authorization is required
-  def list_pipelines(page_token: nil)
-    service.list_project_location_operations(project_location, page_token:)
+  def list_jobs(page_token: nil)
+    service.list_project_location_jobs(project_location, page_token:)
   end
 
-  # Runs a pipeline.  Will call sub-methods to instantiate required objects to pass to
-  # Google::Apis::LifesciencesV2beta::CloudLifeSciencesService.run_pipeline
+  # main handler to create and run a Batch API job
   #
   # * *params*
   #   - +study_file+ (StudyFile) => File to be ingested
   #   - +user+ (User) => User performing ingest action
   #   - +action+ (String) => Action that is being performed, maps to Ingest pipeline action
   #     (e.g. 'ingest_cell_metadata', 'subsample')
-  #   - +params_object+ (Class) => Class containing parameters for PAPI job (like DifferentialExpressionParameters)
+  #   - +params_object+ (Class) => Class containing parameters for Batch job (like DifferentialExpressionParameters)
   #                                must include Parameterizable concern for to_options_array support
   #
-  # * *return*
-  #   - (Google::Apis::LifesciencesV2beta::Operation)
+  # * *returns*
+  #   - (Google::Apis::BatchV1::Job)
   #
   # * *raises*
-  #   - (Google::Apis::ServerError) => An error occurred on the server and the request can be retried
-  #   - (Google::Apis::ClientError) =>  The request is invalid and should not be retried without modification
-  #   - (Google::Apis::AuthorizationError) => Authorization is required
-  def run_pipeline(study_file:, user:, action:, params_object: nil)
+  #   - [Google::Apis::ServerError] An error occurred on the server and the request can be retried
+  #   - [Google::Apis::ClientError] The request is invalid and should not be retried without modification
+  #   - [Google::Apis::AuthorizationError] Authorization is required
+  def run_job(study_file:, user:, action:, params_object: nil)
     study = study_file.study
     labels = job_labels(action:, study:, study_file:, user:, params_object:)
-    # override default VM if required for this action
-    if needs_custom_vm?(action)
-      custom_vm = create_virtual_machine_object(machine_type: params_object.machine_type, labels:)
-      resources = create_resources_object(regions: [DEFAULT_COMPUTE_REGION], vm: custom_vm)
-    else
-      resources = create_resources_object(regions: [DEFAULT_COMPUTE_REGION], labels:)
-    end
-
-    user_metrics_uuid = user.metrics_uuid
-    command_line = get_command_line(study_file:, action:, user_metrics_uuid:, params_object:)
-
-    environment = set_environment_variables(action:)
-    if params_object.respond_to?(:docker_image) && params_object.docker_image
-      action = create_actions_object(
-        commands: command_line, environment:, image_uri: params_object.docker_image
-      )
-    else
-      action = create_actions_object(commands: command_line, environment:)
-    end
-    pipeline = create_pipeline_object(actions: [action], environment:, resources:)
-    pipeline_request = create_run_pipeline_request_object(pipeline:, labels:)
-    Rails.logger.info "Request object sent to Google Life Sciences API, excluding 'environment' parameters:"
-    sanitized_pipeline_request = pipeline_request.to_h[:pipeline].except(:environment)
-    sanitized_pipeline_request[:actions] = sanitized_pipeline_request[:actions][0].except(:environment)
-    Rails.logger.info sanitized_pipeline_request.to_yaml
-    service.run_pipeline(project_location, pipeline_request, quota_user: user.id.to_s)
+    machine_type = job_machine_type(params_object)
+    instance_policy = create_instance_policy(machine_type:)
+    allocation_policy = create_allocation_policy(instance_policy:, labels:)
+    container = create_container(study_file:, user_metrics_uuid: user.metrics_uuid, action:, params_object:)
+    task_group = create_task_group(action:, machine_type:, container:, labels: {})
+    job = create_job(task_group:, allocation_policy:, labels:)
+    Rails.logger.info "Request object sent to Google Batch API, excluding 'environment' parameters:"
+    Rails.logger.info log_params(job).to_yaml
+    service.create_project_location_job(project_location, job, quota_user: user.id.to_s)
   end
 
-  # Get an existing pipeline run
+  # create a job object to pass to a request
   #
   # * *params*
-  #   - +name+ () => Operation corresponding with a submission of ingest
+  #   - +task_group+ (Google::Apis::BatchV1::TaskGroup)
+  #   - +allocation_policy+ (Google::Apis::BatchV1::AllocationPolicy)
+  #   - +labels+ (Hash) => labels to apply to job and all compute resources
+  #
+  # * *returns*
+  #   - (Google::Apis::BatchV1::Job)
+  def create_job(task_group:, allocation_policy:, labels: {})
+    Google::Apis::BatchV1::Job.new(
+      task_groups: [task_group],
+      allocation_policy:,
+      labels:,
+      logs_policy: Google::Apis::BatchV1::LogsPolicy.new(destination: 'CLOUD_LOGGING')
+    )
+  end
+
+  # Get an existing batch job
+  #
+  # * *params*
+  #   - +name+ () => Name of existing Batch API job
   #   - +fields+ (String) => Selector specifying which fields to include in a partial response.
   #   - +user+ (User) => User that originally submitted pipeline
   #
   # * *return*
-  #   - (Google::Apis::LifesciencesV2beta::Operation)
-  def get_pipeline(name:, fields: nil, user: nil)
-    quota_user = user.present? ? user.id.to_s : nil
-    service.get_project_location_operation(name, fields:, quota_user:)
+  #   - (Google::Apis::BatchV1::Job)
+  def get_job(name, fields: nil, user: nil)
+    service.get_project_location_job(name, fields:, quota_user: user&.id.to_s)
   end
 
-  # Create a run pipeline request object to send to service.run_pipeline
+  # helper to determine if a job is done
   #
   # * *params*
-  #   - +pipeline+ (Google::Apis::LifesciencesV2beta::Pipeline) => Pipeline object from create_pipeline_object
-  #   - +labels+ (Hash) => Hash of key/value pairs to set as the pipeline labels
+  #   - +job+ (Google::Apis::BatchV1::Job) => Batch job object (optional)
+  #
+  # * *returns*
+  #   - (Boolean)
+  def job_done?(job)
+    COMPLETED_STATES.include?(job.status.state)
+  end
+
+  # Get the task from an existing batch job
+  # This contains more status/error information that job status object itself
+  #
+  # * *params*
+  #   - +name+ () => Name of existing Batch API job
+  #   - +fields+ (String) => Selector specifying which fields to include in a partial response.
+  #   - +user+ (User) => User that originally submitted pipeline
   #
   # * *return*
-  #   - (Google::Apis::LifesciencesV2beta::RunPipelineRequest)
-  def create_run_pipeline_request_object(pipeline:, labels: {})
-    Google::Apis::LifesciencesV2beta::RunPipelineRequest.new(pipeline:, labels:)
+  #   - (Google::Apis::BatchV1::Task)
+  def get_job_task(name, fields: nil, user: nil)
+    task_name = "#{name}/taskGroups/group0/tasks/0" # only ever 1 task group with 1 task
+    service.get_project_location_job_task_group_task(task_name, fields:, quota_user: user&.id.to_s)
   end
 
-  # Create a pipeline object detailing all required information in order to run an ingest job
+  # retrieve an exit code directly from a task object
   #
   # * *params*
-  #   - +actions+ (Array<Google::Apis::LifesciencesV2beta::Action>) => actions to perform, from create_actions_object
-  #   - +environment+ (Hash) => Hash of key/value pairs to set as the container env
-  #   - +resources+ (Google::Apis::LifesciencesV2beta::Resources) => Resources object from create_resources_object
-  #   - +timeout+ (String) => Maximum runtime of pipeline (defaults to 1 week)
+  #   - +name+ () => Name of existing Batch API job
+  #
+  # * *returns*
+  #   - (Integer or Nil::NilClass)
+  def exit_code_from_task(name)
+    task = get_job_task(name)
+    task.status.status_events.each do |event|
+      code = event.task_execution&.exit_code
+      return code.to_i if code
+    end
+    nil
+  end
+
+  # extract an error from the task object
+  #
+  # * *params*
+  #   - +name+ () => Name of existing Batch API job
+  #
+  # * *returns*
+  #   - (Google::Apis::BatchV1::TaskStatus or Nil::NilClass)
+  def job_error(name)
+    task = get_job_task(name)
+    task.status.status_events.detect { |event| event.task_state == 'FAILED' }
+  end
+
+  # get a task specification from either a job, or look up by job name
+  # TaskSpec objects contain information about compute resources/environment and Docker container
+  #
+  # * *params*
+  #   - +name+ () => Name of existing Batch API job (optional)
+  #   - +job+ (Google::Apis::BatchV1::Job) => Batch job object (optional)
   #
   # * *return*
-  #   - (Google::Apis::LifesciencesV2beta::Pipeline)
-  def create_pipeline_object(actions:, environment:, resources:, timeout: nil)
-    Google::Apis::LifesciencesV2beta::Pipeline.new(actions:, environment:, resources:, timeout:)
+  #   - (Google::Apis::BatchV1::TaskSpec)
+  def get_job_task_spec(name: nil, job: nil)
+    batch_job = job || get_job(name)
+    batch_job.task_groups.first.task_spec
   end
 
-  # Instantiate actions for pipeline, which holds command line actions, docker information,
-  # and information that is passed to run_pipeline.  The Docker image that is pulled for this
-  # is referenced from AdminConfiguration.get_ingest_docker_image, which will pull either from
-  # and existing configuration object (for non-production environments) or fall back to
-  # Rails.application.config.ingest_docker_image
+  # get the command line from the Docker container in the Batch job
   #
   # * *params*
-  #   - +commands+: (Array<String>) => An array of commands to run inside the container
-  #   - +environment+: (Hash) => Hash of key/value pairs to set as the container env
-  #   - +flags+: (Array<String>) => An array of flags to apply to the action
-  #   - +image_uri+: (String) => GCR Docker image to pull, defaults to AdminConfiguration.get_ingest_docker_image
-  #   - +labels+: (Hash) => Hash of labels to associate with the action
-  #   - +timeout+: (String) => Maximum runtime of action
-  #   - +image_uri+: (String) => Override for docker image URI
+  #   - +name+ () => Name of existing Batch API job (optional)
+  #   - +job+ (Google::Apis::BatchV1::Job) => Batch job object (optional)
   #
-  #  * *return*
-  #   - (Google::Apis::LifesciencesV2beta::Action)
-  def create_actions_object(commands: [], environment: {}, flags: [], labels: {}, timeout: nil, image_uri: nil)
-    Google::Apis::LifesciencesV2beta::Action.new(
-      commands: commands,
-      environment: environment,
-      flags: flags,
-      image_uri: image_uri || AdminConfiguration.get_ingest_docker_image,
-      labels: labels,
-      timeout: timeout
+  # * *return*
+  #   - (Array<String>) => CLI arguments as array
+  def get_job_command_line(name: nil, job: nil)
+    get_job_task_spec(name:, job:).runnables.first.container.commands
+  end
+
+  # get the environment from the Batch job
+  #
+  # * *params*
+  #   - +name+ () => Name of existing Batch API job (optional)
+  #   - +job+ (Google::Apis::BatchV1::Job) => Batch job object (optional)
+  #
+  # * *return*
+  #   - (Hash)
+  def get_job_environment(name: nil, job: nil)
+    get_job_task_spec(name:, job:).runnables.first.environment.variables
+  end
+
+  # get resource information about a Batch job
+  #
+  # * *params*
+  #   - +name+ () => Name of existing Batch API job (optional)
+  #   - +job+ (Google::Apis::BatchV1::Job) => Batch job object (optional)
+  #
+  # * *returns*
+  #   - (Hash) => vm information (machine_type, disk size) and task allocations (cpu_milli & memory)
+  def get_job_resources(name: nil, job: nil)
+    batch_job = job || get_job(name)
+    task_spec = get_job_task_spec(job: batch_job)
+    compute = task_spec.compute_resource
+    vm_info = batch_job.allocation_policy.instances.first.policy
+    {
+      cpu_milli: compute.cpu_milli,
+      memory_mib: compute.memory_mib,
+      machine_type: vm_info.machine_type,
+      boot_disk_size_gb: vm_info.boot_disk.size_gb
+    }
+  end
+
+  # get loggable parameters for reporting
+  #
+  # * *params*
+  #   - +job+ (Google::Apis::BatchV1::Job)
+  #
+  # * *returns*
+  #   - (Hash) => metadata about job run, including command line and VM stats
+  def log_params(job)
+    commands = get_job_command_line(job:)
+    vm_instance = get_job_resources(job:)
+    {
+      task: {
+        commands:,
+        resources: {
+          regions: DEFAULT_COMPUTE_REGION,
+          labels: job.allocation_policy.labels,
+          virtual_machine: {
+            boot_disk_size_gb: vm_instance[:boot_disk_size_gb],
+            machine_type: vm_instance[:machine_type]
+          },
+          service_account: issuer,
+          network: GCP_NETWORK_NAME
+        }
+      }
+    }
+  end
+
+  # create a task group that represents entire Batch job
+  # includes GCE resources, environment, Docker info, etc.
+  #
+  # * *params*
+  #   - +action+ (String/Symbol) => Action to perform on ingest
+  #   - +machine_type+ (String) => GCP VM machine type (defaults to 'n2d-highmem-4': 4 CPU, 32GB RAM)
+  #   - +container+ (Google::Apis::BatchV1::Container)
+  #   - +labels+ (Hash) => labels to apply to job and all compute resources
+  #
+  # * *returns*
+  #   - (Google::Apis::BatchV1::TaskGroup)
+  def create_task_group(action:, machine_type:, container:, labels: {})
+    runnable = Google::Apis::BatchV1::Runnable.new(
+      container:,
+      environment: Google::Apis::BatchV1::Environment.new(
+        variables: set_environment_variables(action:)
+      ),
+      labels:
+    )
+    task = Google::Apis::BatchV1::TaskSpec.new(
+      max_retry_count: 0,
+      runnables: [runnable],
+      compute_resource: create_compute_resource(machine_type)
+    )
+    Google::Apis::BatchV1::TaskGroup.new(
+      task_count: 1,
+      task_spec: task
+    )
+  end
+
+  # configure associated Docker container that runs inside job
+  #
+  # * *params*
+  #   - +study_file+ (StudyFile) => StudyFile to be ingested
+  #   - +action+ (String/Symbol) => Action to perform on ingest
+  #   - +params_object+ (Class) => Class containing parameters for Batch job (like DifferentialExpressionParameters)
+  #                                must implement :to_options_array method
+  #
+  # * *returns*
+  #   - (Google::Apis::BatchV1::Container)
+  def create_container(study_file:, action:, user_metrics_uuid:, params_object: nil)
+    Google::Apis::BatchV1::Container.new(
+      commands: format_command_line(study_file:, action:, user_metrics_uuid:, params_object:),
+      image_uri: image_uri_for_job(params_object)
+    )
+  end
+
+  # set which Docker image to pull
+  #
+  # * *params*
+  #   - +params_object+ (Class) => Class containing parameters for Batch job (like DifferentialExpressionParameters)
+  #
+  # * *returns*
+  #   - (String) Docker image URI
+  def image_uri_for_job(params_object = nil)
+    if params_object && params_object.respond_to?(:docker_image)
+      params_object.docker_image
+    else
+      AdminConfiguration.get_ingest_docker_image
+    end
+  end
+
+  # create a compute resource for a task spec
+  # this will ensure that all available CPU/RAM are utilized for each task
+  # see https://cloud.google.com/batch/docs/reference/rest/v1/projects.locations.jobs#ComputeResource for more info
+  #
+  # * *params*
+  #   - +machine_type+ (String) => GCP VM machine type (defaults to 'n2d-highmem-4': 4 CPU, 32GB RAM)
+  #
+  # * *returns*
+  #   - (Google::Apis::BatchV1::ComputeResource)
+  def create_compute_resource(machine_type)
+    cores = machine_type.split('-').last.to_i
+    Google::Apis::BatchV1::ComputeResource.new(
+      cpu_milli: cores * 1000, memory_mib: cores * 8 * 1024
+    )
+  end
+
+  # create an allocation policy to manage all instances in a job
+  #
+  # * *params*
+  #   - +instance_policy+ (Google::Apis::BatchV1::InstancePolicy)
+  #   - +labels+ (Hash) => labels to apply to job and all compute resources
+  #
+  # * *returns*
+  #   - (Google::Apis::BatchV1::AllocationPolicy)
+  def create_allocation_policy(instance_policy:, labels: {})
+    instances = Google::Apis::BatchV1::InstancePolicyOrTemplate.new(
+      policy: instance_policy,
+      location: Google::Apis::BatchV1::LocationPolicy.new(
+        allowed_locations: ["regions/#{DEFAULT_COMPUTE_REGION}"]
+      )
+    )
+    Google::Apis::BatchV1::AllocationPolicy.new(
+      labels:,
+      instances: [instances],
+      network: Google::Apis::BatchV1::NetworkPolicy.new(
+        network_interfaces: [
+          Google::Apis::BatchV1::NetworkInterface.new(
+            network: "projects/#{project}/global/networks/#{GCP_NETWORK_NAME}",
+            subnetwork: "projects/#{project}/regions/#{DEFAULT_COMPUTE_REGION}/subnetworks/#{GCP_SUB_NETWORK_NAME}")
+        ]
+      ),
+      service_account: Google::Apis::BatchV1::ServiceAccount.new(email: issuer, scopes: GOOGLE_SCOPES)
+    )
+  end
+
+  # create an instance policy that defines what types of VMs to create for this batch job
+  #
+  # * *params*
+  #   - +machine_type+ (String) => GCP VM machine type (defaults to 'n2d-highmem-4': 4 CPU, 32GB RAM)
+  #   - +boot_disk_size_gb+ (Integer) => Size of boot disk for VM, in gigabytes (defaults to 100GB)
+  #
+  # * *return*
+  #   - (Google::Apis::BatchV1::InstancePolicy)
+  def create_instance_policy(machine_type: DEFAULT_MACHINE_TYPE, boot_disk_size_gb: 300)
+    Google::Apis::BatchV1::InstancePolicy.new(
+      machine_type:,
+      boot_disk: Google::Apis::BatchV1::Disk.new(size_gb: boot_disk_size_gb),
     )
   end
 
@@ -224,7 +425,6 @@ class LifeSciencesApiClient
   #   - +MONGODB_PASSWORD+: Password for above MongoDB user
   #   - +DATABASE_NAME+: Name of current MongoDB schema as defined by Rails environment
   #   - +GOOGLE_PROJECT_ID+: Name of the GCP project this pipeline is running in
-  #   - +GOOGLE_PROJECT_NUMBER+: Number of the GCP project this pipeline is running in
   #   - +SENTRY_DSN+: Sentry Data Source Name (DSN); URL to send Sentry logs to
   #   - +BARD_HOST_URL+: URL for Bard host that proxies Mixpanel
   #   - +NODE_TLS_REJECT_UNAUTHORIZED+: Configure node behavior for self-signed certificates (for :image_pipeline)
@@ -241,68 +441,21 @@ class LifeSciencesApiClient
       'MONGODB_PASSWORD' => ENV['PROD_DATABASE_PASSWORD'],
       'DATABASE_NAME' => Mongoid::Config.clients["default"]["database"],
       'GOOGLE_PROJECT_ID' => project,
-      'GOOGLE_PROJECT_NUMBER' => project_number,
       'SENTRY_DSN' => ENV['SENTRY_DSN'],
       'BARD_HOST_URL' => Rails.application.config.bard_host_url
     }
     if action == :image_pipeline
       vars.merge({
-        # For staging runs
-        'NODE_TLS_REJECT_UNAUTHORIZED' => '0',
+                   # For staging runs
+                   'NODE_TLS_REJECT_UNAUTHORIZED' => '0',
 
-        # For staging runs.  More context is in "Networking" section at:
-        # https://github.com/broadinstitute/single_cell_portal_core/pull/1632
-        'STAGING_INTERNAL_IP' => ENV['APP_INTERNAL_IP']
-      })
+                   # For staging runs.  More context is in "Networking" section at:
+                   # https://github.com/broadinstitute/single_cell_portal_core/pull/1632
+                   'STAGING_INTERNAL_IP' => ENV['APP_INTERNAL_IP']
+                 })
     else
       vars
     end
-  end
-
-  # Instantiate a resources object to tell where to run a pipeline
-  #
-  # * *params*
-  #   - +regions+: (Array<String>) => An array of GCP regions allowed for VM allocation
-  #   - +vm+: (Google::Apis::LifesciencesV2beta::VirtualMachine) => Existing VM config to use, other than default
-  #   - +labels+ (Hash) => Key/value pairs of labels for VM
-  #
-  # * *return*
-  #   - (Google::Apis::LifesciencesV2beta::Resources)
-  def create_resources_object(regions:, vm: nil, labels: {})
-    Google::Apis::LifesciencesV2beta::Resources.new(
-      regions:,
-      virtual_machine: vm.nil? ? create_virtual_machine_object(labels:) : vm
-    )
-  end
-
-  # Instantiate a VM object to specify in resources.  Assigns the portal service account to the VM
-  # to manage permissions.  If GCP_NETWORK_NAME and GCP_SUBNETWORK_NAME have been set, it will also
-  # assign the VM to the corresponding project network.  Otherwise, the VM uses the default network.
-  #
-  # * *params*
-  #   - +machine_type+ (String) => GCP VM machine type (defaults to 'n2d-highmem-4': 4 CPU, 32GB RAM)
-  #   - +boot_disk_size_gb+ (Integer) => Size of boot disk for VM, in gigabytes (defaults to 100GB)
-  #   - +preemptible+ (Boolean) => Indication of whether VM can be preempted (defaults to false)
-  #   - +labels+ (Hash) => Key/value pairs of labels for VM
-  # * *return*
-  #   - (Google::Apis::LifesciencesV2beta::VirtualMachine)
-  def create_virtual_machine_object(machine_type: DEFAULT_MACHINE_TYPE,
-                                    boot_disk_size_gb: 300,
-                                    preemptible: false,
-                                    labels: {})
-    virtual_machine = Google::Apis::LifesciencesV2beta::VirtualMachine.new(
-      machine_type: machine_type,
-      preemptible: preemptible,
-      boot_disk_size_gb: boot_disk_size_gb,
-      labels: labels,
-      service_account: Google::Apis::LifesciencesV2beta::ServiceAccount.new(email: issuer, scopes: GOOGLE_SCOPES)
-    )
-    # assign correct network/sub-network if specified
-    if GCP_NETWORK_NAME.present? && GCP_SUB_NETWORK_NAME.present?
-      virtual_machine.network = Google::Apis::LifesciencesV2beta::Network.new(name: GCP_NETWORK_NAME,
-                                                                            subnetwork: GCP_SUB_NETWORK_NAME)
-    end
-    virtual_machine
   end
 
   # Determine command line to pass to ingest based off of file & action requested
@@ -318,7 +471,7 @@ class LifeSciencesApiClient
   #
   # * *raises*
   #   - (ArgumentError) => The requested StudyFile and action do not correspond with each other, or cannot be run yet
-  def get_command_line(study_file:, action:, user_metrics_uuid:, params_object: nil)
+  def format_command_line(study_file:, action:, user_metrics_uuid:, params_object: nil)
     validate_action_by_file(action, study_file)
     study = study_file.study
     # Docker accepts command line in array form for better tokenization of parameters
@@ -398,7 +551,7 @@ class LifeSciencesApiClient
   #   - +action+ (String/Symbol) => Action being performed on file
   #
   # * *returns*
-  #   (Array) => Array representation of optional arguments (Docker exec form), based on file type
+  #   - (Array) => Array representation of optional arguments (Docker exec form), based on file type
   def get_command_line_options(study_file, action)
     opts = []
     case study_file.file_type
@@ -425,6 +578,17 @@ class LifeSciencesApiClient
     opts
   end
 
+  # get the machine type for this Batch job
+  #
+  # * *params*
+  #   - +params_object+ (Multiple) => Job parameters object, e.g. ImagePipelineParameters
+  #
+  # * *returns*
+  #   - (String) => GCE machine type, e.g. n2d-highmem-4
+  def job_machine_type(params_object = nil)
+    params_object.respond_to?(:machine_type) ? params_object&.machine_type : DEFAULT_MACHINE_TYPE
+  end
+
   # set labels for pipeline request/virtual machine
   #
   # * *params*
@@ -441,7 +605,6 @@ class LifeSciencesApiClient
     ingest_attributes = AdminConfiguration.get_ingest_docker_image_attributes
     docker_image = ingest_attributes[:image_name]
     docker_tag = ingest_attributes[:tag]
-    machine_type = params_object.respond_to?(:machine_type) ? params_object&.machine_type : DEFAULT_MACHINE_TYPE
     if params_object && params_object.respond_to?(:docker_image)
       image_attributes = params_object.docker_image.split('/').last
       docker_image, docker_tag = image_attributes.split(':')
@@ -451,11 +614,12 @@ class LifeSciencesApiClient
       user_id: user.id.to_s,
       filename: sanitize_label(study_file.upload_file_name),
       action: label_for_action(action),
+      ingest_action: action,
       docker_image: sanitize_label(docker_image),
       docker_tag: sanitize_label(docker_tag),
       environment: Rails.env.to_s,
       file_type: sanitize_label(study_file.file_type),
-      machine_type: machine_type,
+      machine_type: job_machine_type(params_object),
       boot_disk_size_gb: sanitize_label(boot_disk_size_gb)
     }
   end
@@ -492,6 +656,22 @@ class LifeSciencesApiClient
     label.to_s.gsub(LABEL_SANITIZER, '_').downcase[0...63]
   end
 
+  # pull out actionable info from error HTTP response
+  #
+  # * *params*
+  #   - +error+ (Google::Apis::Error) => error object
+  #
+  # * *returns*
+  #   - (String) => formatted error message
+  def parse_error_message(error)
+    if error.respond_to?(:body)
+      error_contents = JSON.parse(error.body)['error']
+      "#{error.message} (#{error_contents['code']}): #{error_contents['message']}"
+    else
+      "#{error.class}: #{error.message}"
+    end
+  end
+
   private
 
   # Validate ingest action against file type
@@ -519,14 +699,6 @@ class LifeSciencesApiClient
   #   - (JSON) => Sanitized JSON object with escaped double quotes
   def sanitize_json(json)
     json.gsub("\"", "'")
-  end
-
-  # helper to determine which actions need custom GCP vms
-  #
-  # * *params*
-  #   - +action_name+ (String, Symbol) => name of action to run, from IngestJob::VALID_ACTIONS
-  def needs_custom_vm?(action_name)
-    CUSTOM_VM_ACTIONS.include?(action_name.to_sym)
   end
 
   # determine if an external parameters object is valid (e.g. DifferentialExpressionParameters)
