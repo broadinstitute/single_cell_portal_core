@@ -270,6 +270,7 @@ class FireCloudClientTest < ActiveSupport::TestCase
   end
 
   # get available workflows
+  # These tests are disabled because they sometimes throw false positives, and SCP hasn't support workflows for a long time
   # def test_get_methods
   #   skip if @smoke_test
   #   # get all available methods

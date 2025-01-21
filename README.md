@@ -122,7 +122,7 @@ about service accounts.  To export the credentials:
 	  * Editor (project level)
 	  * Cloud Datastore Owner
 	  * Storage Object Viewer
-	  * Genomics Service Agent
+	  * Batch Administrator
 	*  Select 'JSON' and export and save the key locally
 	*  Additionally, a 'read-only' service account is now used for streaming GCS assets to the client in some instances,
 	so create a second service account and set the role to 'Storage Object Viewer' (see READ-ONLY SERVICE ACCOUNT at the
@@ -134,7 +134,7 @@ about service accounts.  To export the credentials:
 	* Google Cloud APIs
 	* Google Cloud Billing API
 	* Google Cloud Storage JSON API
-	* Google Cloud Genomics API
+	* Google Cloud Batch API
 
 * **Registering your Service Account as a Terra user**: Once you have configured and booted your instance of the portal,
 you will need to register your service account as a Terra user in order to create a billing project and create studies.
@@ -279,8 +279,8 @@ OAUTH_CLIENT_SECRET variables are necessary for allowing Google user authenticat
 
 ### INGEST PIPELINE AND NETWORK ENVIRONMENT VARIABLES
 The Single Cell Portal handles ingesting data into MongoDB via an [ingest pipeline](https://github.com/broadinstitute/scp-ingest-pipeline)
-that runs via the Google Genomics API (also known as the Pipelines API, or PAPI).  This API should have been enabled as
-a previous step to this (see [DEPLOYING A PRIVATE INSTANCE](#local-development-or-deploying-a-private-instance)).
+that runs via the Google Batch API.  This API should have been enabled as a previous step to this (see 
+[DEPLOYING A PRIVATE INSTANCE](#local-development-or-deploying-a-private-instance)).
 
 In order for the ingest pipeline to connect to MongoDB, and in addition to the variables relating to MongoDB as described
 in [DOCKER RUN COMMAND ENVIRONMENT VARIABLES](#docker-run-command-environment-variables), there are two further environment
