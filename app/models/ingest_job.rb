@@ -1236,6 +1236,16 @@ class IngestJob
     '<a href="' + link + '">' + link + '</a>'
   end
 
+  # generate a link to the Batch API logs viewer for this job
+  def batch_api_logs_tag
+    region = BatchApiClient::DEFAULT_COMPUTE_REGION
+    project = ENV['GOOGLE_CLOUD_PROJECT']
+    short_name = pipeline_name.split('/').last
+    link = "https://console.cloud.google.com/batch/jobsDetail/regions/" \
+           "#{region}/jobs/#{short_name}/logs?project=#{project}"
+    '<a href="' + link + '">' + link + '</a>'
+  end
+
   # format an error email message body for users
   #
   # * *params*
@@ -1255,7 +1265,9 @@ class IngestJob
       error_contents = read_parse_logfile(dev_error_filepath, delete_on_read: false, range: 0..1.megabyte)
       message_body = "<p>The file '#{study_file.upload_file_name}' uploaded by #{user.email} to #{study.accession} failed to ingest.</p>"
       message_body += "<p>A copy of this file can be found at #{generate_bucket_browser_tag}</p>"
-      message_body += "<p>Detailed logs and PAPI events as follows:"
+      message_body += "<p>Detailed logs and Batch API events as follows:"
+      message_body += "<h3>Logs viewer</h3>"
+      message_body += "<p>#{batch_api_logs_tag}</p>"
     else
       error_contents = read_parse_logfile(user_error_filepath, range: 0..1.megabyte)
       message_body = "<p>'#{study_file.upload_file_name}' has failed during parsing.</p>"
