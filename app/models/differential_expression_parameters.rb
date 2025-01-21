@@ -10,6 +10,9 @@ class DifferentialExpressionParameters
   # RAM scaling coefficient for auto-selecting machine_type
   RAM_SCALING = 3.5
 
+  # largest machine to use for auto-scaling (equates to n2d-highmem-16)
+  MAX_MACHINE_CORES = 16
+
   # annotation_name: name of annotation to use for DE
   # annotation_scope: scope of annotation (study, cluster)
   # annotation_file: source file for above annotation
