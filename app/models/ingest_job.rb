@@ -40,9 +40,6 @@ class IngestJob
     differential_expression render_expression_arrays image_pipeline ingest_anndata
   ].freeze
 
-  # normal ingest VMs to use for "classic" file OOM retries
-  STANDARD_MACHINE_TYPES = %w[n2d-highmem-4 n2d-highmem-8 n2d-highmem-16]
-
   # Name of pipeline submission running in GCP (from [BatchApiClient#run_job])
   attr_accessor :pipeline_name
   # Study object where file is being ingested
@@ -334,17 +331,6 @@ class IngestJob
   #   - (String) => machine_type name, e.g. n2d-highmem-4
   def machine_type
     params_object&.machine_type || get_ingest_run.allocation_policy.instances.first.policy.machine_type
-  end
-
-  # helper for getting the next available GCE machine type, if possible
-  #
-  # * *returns*
-  #   - (String) => machine_type name, e.g. n2d-highmem-8
-  def next_machine_type
-    return params_object.next_machine_type if params_object.present?
-
-    current_machine = STANDARD_MACHINE_TYPES.index(machine_type)
-    current_machine && STANDARD_MACHINE_TYPES[current_machine + 1]
   end
 
   # Get a timestamp from a metadata event or datetime string

@@ -132,11 +132,12 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
     assert_equal 'n2d-highmem-8', params.machine_type
   end
 
-  test 'should scale machine type for h5ad files' do
+  test 'should scale machine type for h5ad files up to limit' do
     params = DifferentialExpressionParameters.new(
-      matrix_file_path: 'gs://test_bucket/matrix.h5ad', matrix_file_type: 'h5ad', file_size: 64.gigabytes
+      matrix_file_path: 'gs://test_bucket/matrix.h5ad', matrix_file_type: 'h5ad', file_size: 32.gigabytes
     )
-    assert_equal 'n2d-highmem-32', params.machine_type
+    assert_equal 'n2d-highmem-16', params.machine_type
+    assert_nil params.next_machine_type
   end
 
   test 'should remove non-attribute values from attribute hash' do
