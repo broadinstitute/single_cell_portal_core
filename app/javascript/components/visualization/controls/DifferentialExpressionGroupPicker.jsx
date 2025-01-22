@@ -152,35 +152,37 @@ function GroupListMenu({
     groups.unshift('Rest')
   }
 
-  console.log('isMenuB, selectedGroups', isMenuB, selectedGroups)
+
+  const groupsIndex = isMenuB ? 1 : 0
+  const otherGroupsIndex = isMenuB ? 0 : 1
+  const otherMenuSelection = selectedGroups[otherGroupsIndex]
 
   return (
     <>
-      {groups.map(group => {
+      {groups.map((group, i) => {
         // If this menu has a selected group and this group isn't it,
         // then disable this group
-        const groupsIndex = isMenuB ? 1 : 0
-        const selected = selectedGroups[groupsIndex]
-        const isDisabled = selected && group !== selected
+        const isDisabled = group === otherMenuSelection
+        const labelClass = isDisabled ? 'disabled' : ''
 
         return (
-          <div>
-            <label style={{ fontWeight: 'normal' }}>
+          <div key={i}>
+            <label className={labelClass} style={{ fontWeight: 'normal' }}>
               <input
-                type="checkbox"
+                type="radio"
+                name={`pairwise-menu${isMenuB && '-b'}`}
                 style={{ marginRight: '4px' }}
+                disabled={isDisabled}
                 onChange={event => {
-                  const checkbox = event.target
-                  const isChecked = checkbox.checked
-                  const groupName = checkbox.parentElement.innerText
-                  const newSelectedGroups = selectedGroups
+                  const radio = event.target
+                  const isChecked = radio.checked
+                  const groupName = radio.parentElement.innerText
+                  const newSelectedGroups = [...selectedGroups]
 
                   newSelectedGroups[groupsIndex] = isChecked ? groupName : null
-                  console.log('newSelectedGroups', newSelectedGroups)
 
                   updateSelectedGroups(newSelectedGroups)
                 }}
-                disabled={isDisabled}
               ></input>
               {group}
             </label>
@@ -199,7 +201,6 @@ export function PairwiseDifferentialExpressionGroupLists({
 }) {
   const groups = getLegendSortedLabels(countsByLabelForDe)
 
-
   const [selectedGroups, setSelectedGroups] = useState([null, null])
 
   /** Set new selection for DE groups to compare */
@@ -212,7 +213,7 @@ export function PairwiseDifferentialExpressionGroupLists({
     <>
       <div className="differential-expression-picker">
         {!deGenes && <p>Pick groups to compare.</p>}
-        <div className="pairwise-select">
+        <div className="pairwise-menu" style={{background: '#eff2f5', paddingLeft: '8px', paddingTop: '3px'}}>
           <GroupListMenu
             groups={groups}
             selectedGroups={selectedGroups}
@@ -220,7 +221,7 @@ export function PairwiseDifferentialExpressionGroupLists({
           />
         </div>
         <span className="vs-note">vs. </span>
-        <div className="pairwise-select pairwise-select-b">
+        <div className="pairwise-menu pairwise-menu-b" style={{background: '#eff2f5', paddingLeft: '8px', paddingTop: '3px'}}>
           <GroupListMenu
             groups={groups}
             selectedGroups={selectedGroups}

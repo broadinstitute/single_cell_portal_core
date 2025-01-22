@@ -184,6 +184,27 @@
     float: right;
   }
 
+  .pairwise-menu {
+    display: inline-block;
+    background: '#EFF2F5';
+    padding-left: 8px;
+    padding-top: 3px;
+    width: calc(45%); // leave room for vs-note, other menu
+    border-radius: 8px;
+  }
+  .pairwise-menu-b {
+    float: right;
+  }
+  .pairwise-menu label {
+    cursor: pointer;
+  }
+
+  .pairwise-menu label.disabled {
+    cursor: not-allowed;
+    color: #AAA;
+  }
+
+
   .vs-note {
     position: relative;
     top: 10px;
