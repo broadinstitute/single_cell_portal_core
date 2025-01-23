@@ -170,6 +170,7 @@
 
 .differential-expression-picker {
   margin-bottom: 20px;
+  display: flex;
 
   .one-vs-rest-select {
     float: left;
@@ -186,8 +187,6 @@
 
   .pairwise-menu {
     display: inline-block;
-    background: '#EFF2F5';
-    padding-left: 8px;
     padding-top: 3px;
     width: calc(45%); // leave room for vs-note, other menu
     border-radius: 8px;
@@ -204,14 +203,37 @@
     color: #AAA;
   }
 
+  .de-group-menu-item {
+    padding-left: 8px;
+    border-radius: 8px;
+  }
+
+  .de-group-menu-item {
+    border: 1px solid #FFF;
+  }
+
+  .de-group-menu-item.available {
+    background: #F8FEF8;
+    border: 1px solid #ADA;
+  }
+
+  .de-group-menu-item.not-yet-available {
+    background: #FCFCFF;
+    border: 1px solid #CCF;
+  }
+
+  .pairwise-menu-input {
+    position: relative;
+    top: 1px;
+  }
 
   .vs-note {
     position: relative;
     top: 10px;
     margin-left: 5px;
+    margin-right: 15px;
   }
 }
-
 
 .de-slider-container {
   margin-bottom: 40px;

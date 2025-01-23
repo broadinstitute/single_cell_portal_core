@@ -7,6 +7,7 @@ import { fetchBucketFile } from '~/lib/scp-api'
 import PlotUtils from '~/lib/plot'
 const { getLegendSortedLabels } = PlotUtils
 
+
 const basePath = '_scp_internal/differential_expression/'
 
 // Value to show in menu if user has not selected a group for DE
@@ -152,7 +153,6 @@ function GroupListMenu({
     groups.unshift('Rest')
   }
 
-
   const groupsIndex = isMenuB ? 1 : 0
   const otherGroupsIndex = isMenuB ? 0 : 1
   const otherMenuSelection = selectedGroups[otherGroupsIndex]
@@ -162,14 +162,23 @@ function GroupListMenu({
       {groups.map((group, i) => {
         // If this menu has a selected group and this group isn't it,
         // then disable this group
-        const isDisabled = group === otherMenuSelection
+        const isDisabled = group === otherMenuSelection && isMenuB
         const labelClass = isDisabled ? 'disabled' : ''
+        let itemClass
+        if (!isMenuB) {
+          itemClass = ''
+        } else if (group === 'Rest') {
+          itemClass = 'available'
+        } else {
+          itemClass = 'not-yet-available'
+        }
 
         return (
-          <div key={i}>
+          <div className={`de-group-menu-item ${itemClass}`} key={i}>
             <label className={labelClass} style={{ fontWeight: 'normal' }}>
               <input
                 type="radio"
+                className="pairwise-menu-input"
                 name={`pairwise-menu${isMenuB && '-b'}`}
                 style={{ marginRight: '4px' }}
                 disabled={isDisabled}
@@ -211,17 +220,17 @@ export function PairwiseDifferentialExpressionGroupLists({
 
   return (
     <>
+      <p>Pick groups to compare.</p>
       <div className="differential-expression-picker">
-        {!deGenes && <p>Pick groups to compare.</p>}
-        <div className="pairwise-menu" style={{background: '#eff2f5', paddingLeft: '8px', paddingTop: '3px'}}>
+        <div className="pairwise-menu">
           <GroupListMenu
             groups={groups}
             selectedGroups={selectedGroups}
             updateSelectedGroups={updateSelectedGroups}
           />
         </div>
-        <span className="vs-note">vs. </span>
-        <div className="pairwise-menu pairwise-menu-b" style={{background: '#eff2f5', paddingLeft: '8px', paddingTop: '3px'}}>
+        <div className="vs-note">vs. </div>
+        <div className="pairwise-menu pairwise-menu-b">
           <GroupListMenu
             groups={groups}
             selectedGroups={selectedGroups}
