@@ -147,7 +147,7 @@ function getMatchingDeOption(
 
 /** List menu of groups available to select for DE comparison */
 function GroupListMenu({
-  groups, selectedGroups, updateSelectedGroups, isMenuB=false
+  groups, selectedGroups, updateSelectedGroups, setNoteVisibility, isMenuB=false
 }) {
   if (isMenuB) {
     groups.unshift('Rest')
@@ -165,9 +165,10 @@ function GroupListMenu({
         const isDisabled = group === otherMenuSelection && isMenuB
         const labelClass = isDisabled ? 'disabled' : ''
         let itemClass
+        const isAvailable = group === 'Rest'
         if (!isMenuB) {
           itemClass = ''
-        } else if (group === 'Rest') {
+        } else if (isAvailable) {
           itemClass = 'available'
         } else {
           itemClass = 'not-yet-available'
@@ -175,7 +176,12 @@ function GroupListMenu({
 
         return (
           <div className={`de-group-menu-item ${itemClass}`} key={i}>
-            <label className={labelClass} style={{ fontWeight: 'normal' }}>
+            <label
+              className={labelClass}
+              style={{ fontWeight: 'normal' }}
+              onMouseEnter={() => {if (isMenuB && !isAvailable) {setNoteVisibility('visible')}}}
+              onMouseLeave={() => {setNoteVisibility('hidden')}}
+            >
               <input
                 type="radio"
                 className="pairwise-menu-input"
@@ -211,6 +217,7 @@ export function PairwiseDifferentialExpressionGroupLists({
   const groups = getLegendSortedLabels(countsByLabelForDe)
 
   const [selectedGroups, setSelectedGroups] = useState([null, null])
+  const [noteVisibility, setNoteVisibility] = useState('hidden')
 
   /** Set new selection for DE groups to compare */
   function updateSelectedGroups(newSelectedGroups) {
@@ -220,9 +227,9 @@ export function PairwiseDifferentialExpressionGroupLists({
 
   return (
     <>
-      <p>Pick groups to compare.</p>
       <div className="differential-expression-picker">
         <div className="pairwise-menu">
+          <p>Pick groups to compare.</p>
           <GroupListMenu
             groups={groups}
             selectedGroups={selectedGroups}
@@ -231,10 +238,12 @@ export function PairwiseDifferentialExpressionGroupLists({
         </div>
         <div className="vs-note">vs. </div>
         <div className="pairwise-menu pairwise-menu-b">
+          <p style={{ visibility: noteVisibility }}><i>Not yet available, select to enable</i></p>
           <GroupListMenu
             groups={groups}
             selectedGroups={selectedGroups}
             updateSelectedGroups={updateSelectedGroups}
+            setNoteVisibility={setNoteVisibility}
             isMenuB={true}
           />
         </div>
