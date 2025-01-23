@@ -196,6 +196,7 @@
   }
 
   .pairwise-menu label {
+    width: 100%;
     cursor: pointer;
   }
 
@@ -218,9 +219,19 @@
     border: 1px solid #ADA;
   }
 
+  .de-group-menu-item.available:hover {
+    background: #F8FEF8;
+    border: 1px solid #5A5;
+  }
+
   .de-group-menu-item.not-yet-available {
     background: #FCFCFF;
     border: 1px solid #CCF;
+  }
+
+  .de-group-menu-item.not-yet-available:hover {
+    background: #FCFCFF;
+    border: 1px solid #88C;
   }
 
   .pairwise-menu-input {

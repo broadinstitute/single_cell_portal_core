@@ -163,45 +163,51 @@ function GroupListMenu({
         // If this menu has a selected group and this group isn't it,
         // then disable this group
         const isDisabled = group === otherMenuSelection && isMenuB
-        const labelClass = isDisabled ? 'disabled' : ''
-        let itemClass
+        const disabledClass = isDisabled ? 'disabled' : ''
+        let noteClass
         const isAvailable = group === 'Rest'
         if (!isMenuB) {
-          itemClass = ''
+          noteClass = ''
         } else if (isAvailable) {
-          itemClass = 'available'
+          noteClass = 'available'
         } else {
-          itemClass = 'not-yet-available'
+          noteClass = 'not-yet-available'
         }
 
+        const labelClass = `de-group-menu-item ${noteClass} ${disabledClass}`
+
+        const menuName = `pairwise-menu${isMenuB && '-b'}`
+        const id = `${menuName}-${i}`
+
         return (
-          <div className={`de-group-menu-item ${itemClass}`} key={i}>
-            <label
-              className={labelClass}
-              style={{ fontWeight: 'normal' }}
-              onMouseEnter={() => {if (isMenuB && !isAvailable) {setNoteVisibility('visible')}}}
-              onMouseLeave={() => {setNoteVisibility('hidden')}}
-            >
-              <input
-                type="radio"
-                className="pairwise-menu-input"
-                name={`pairwise-menu${isMenuB && '-b'}`}
-                style={{ marginRight: '4px' }}
-                disabled={isDisabled}
-                onChange={event => {
-                  const radio = event.target
-                  const isChecked = radio.checked
-                  const groupName = radio.parentElement.innerText
-                  const newSelectedGroups = [...selectedGroups]
+          <label
+            htmlFor={id}
+            className={labelClass}
+            style={{ fontWeight: 'normal' }}
+            onMouseEnter={() => {if (isMenuB && !isAvailable) {setNoteVisibility('visible')}}}
+            onMouseLeave={() => {setNoteVisibility('hidden')}}
+            key={i}
+          >
+            <input
+              id={id}
+              type="radio"
+              className="pairwise-menu-input"
+              name={menuName}
+              style={{ marginRight: '4px' }}
+              disabled={isDisabled}
+              onChange={event => {
+                const radio = event.target
+                const isChecked = radio.checked
+                const groupName = radio.parentElement.innerText
+                const newSelectedGroups = [...selectedGroups]
 
-                  newSelectedGroups[groupsIndex] = isChecked ? groupName : null
+                newSelectedGroups[groupsIndex] = isChecked ? groupName : null
 
-                  updateSelectedGroups(newSelectedGroups)
-                }}
-              ></input>
-              {group}
-            </label>
-          </div>
+                updateSelectedGroups(newSelectedGroups)
+              }}
+            ></input>
+            {group}
+          </label>
         )
       })}
     </>
