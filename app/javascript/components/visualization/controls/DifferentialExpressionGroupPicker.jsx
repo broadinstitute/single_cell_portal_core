@@ -8,6 +8,9 @@ import PlotUtils from '~/lib/plot'
 const { getLegendSortedLabels } = PlotUtils
 
 
+// https://stackoverflow.com/questions/37909134/nbsp-jsx-not-working
+const blankSpace = '\u00A0' // How React JSX does &nbsp;
+
 const basePath = '_scp_internal/differential_expression/'
 
 // Value to show in menu if user has not selected a group for DE
@@ -147,7 +150,7 @@ function getMatchingDeOption(
 
 /** List menu of groups available to select for DE comparison */
 function GroupListMenu({
-  groups, selectedGroups, updateSelectedGroups, setNoteVisibility, isMenuB=false
+  groups, selectedGroups, updateSelectedGroups, setNote, isMenuB=false
 }) {
   if (isMenuB) {
     groups.unshift('Rest')
@@ -164,17 +167,31 @@ function GroupListMenu({
         // then disable this group
         const isDisabled = group === otherMenuSelection && isMenuB
         const disabledClass = isDisabled ? 'disabled' : ''
-        let noteClass
-        const isAvailable = group === 'Rest'
-        if (!isMenuB) {
-          noteClass = ''
-        } else if (isAvailable) {
-          noteClass = 'available'
-        } else {
-          noteClass = 'not-yet-available'
+        let noteClass = ''
+        let noteText = ''
+
+        const isRest = group === 'Rest'
+
+        // TODO (SCP-): SCP API: Add DE availability status for annotation groups
+        const isAvailable = isRest
+
+        if (isMenuB) {
+          if (isAvailable) {
+            noteText = blankSpace
+            noteClass = 'available'
+          } else {
+            noteText = 'Not yet available, pick to enable'
+            noteClass = 'not-yet-available'
+          }
+
+          if (isDisabled) {
+            noteText = 'Group picked in other menu'
+            noteClass += ' already-picked'
+          }
         }
 
-        const labelClass = `de-group-menu-item ${noteClass} ${disabledClass}`
+        const bold = isMenuB && isRest ? 'bold' : ''
+        const labelClass = `de-group-menu-item ${noteClass} ${disabledClass} ${bold}`
 
         const menuName = `pairwise-menu${isMenuB && '-b'}`
         const id = `${menuName}-${i}`
@@ -184,8 +201,8 @@ function GroupListMenu({
             htmlFor={id}
             className={labelClass}
             style={{ fontWeight: 'normal' }}
-            onMouseEnter={() => {if (isMenuB && !isAvailable) {setNoteVisibility('visible')}}}
-            onMouseLeave={() => {setNoteVisibility('hidden')}}
+            onMouseEnter={() => {if (isMenuB) {setNote(noteText)}}}
+            onMouseLeave={() => {if (isMenuB) {setNote(blankSpace)}}}
             key={i}
           >
             <input
@@ -201,7 +218,12 @@ function GroupListMenu({
                 const groupName = radio.parentElement.innerText
                 const newSelectedGroups = [...selectedGroups]
 
-                newSelectedGroups[groupsIndex] = isChecked ? groupName : null
+                const newGroup = isChecked ? groupName : null
+                if (groupsIndex === 0 && newGroup === selectedGroups[1]) {
+                  newSelectedGroups[1] === null
+                }
+
+                newSelectedGroups[groupsIndex] = newGroup
 
                 updateSelectedGroups(newSelectedGroups)
               }}
@@ -223,7 +245,7 @@ export function PairwiseDifferentialExpressionGroupLists({
   const groups = getLegendSortedLabels(countsByLabelForDe)
 
   const [selectedGroups, setSelectedGroups] = useState([null, null])
-  const [noteVisibility, setNoteVisibility] = useState('hidden')
+  const [note, setNote] = useState(blankSpace)
 
   /** Set new selection for DE groups to compare */
   function updateSelectedGroups(newSelectedGroups) {
@@ -244,12 +266,12 @@ export function PairwiseDifferentialExpressionGroupLists({
         </div>
         <div className="vs-note">vs. </div>
         <div className="pairwise-menu pairwise-menu-b">
-          <p style={{ visibility: noteVisibility }}><i>Not yet available, select to enable</i></p>
+          <p style={{ visibility: 'visible' }}><i>{note}</i></p>
           <GroupListMenu
             groups={groups}
             selectedGroups={selectedGroups}
             updateSelectedGroups={updateSelectedGroups}
-            setNoteVisibility={setNoteVisibility}
+            setNote={setNote}
             isMenuB={true}
           />
         </div>
