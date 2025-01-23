@@ -2,12 +2,15 @@
 module ComputeScaling
   extend ActiveSupport::Concern
 
+  # default for maximum number of cores allowed
+  MAX_MACHINE_CORES = 64
+
   # GCE machine types and file size ranges
   # produces a hash with entries like { 'n2-highmem-4' => 0..16.gigabytes }
   # change RAM_SCALING in parent class to adjust scaling (1-8, lower number means faster scaling relative to file size)
   def scaled_machine_types
     gb_per_core = defined?(self.class::RAM_SCALING) && self.class::RAM_SCALING || 4
-    num_cores = [4, 8, 16, 32, 48, 64]
+    num_cores = [4, 8, 16, 32, 48, 64].keep_if { |cores| cores <= self.class::MAX_MACHINE_CORES }
     ram_per_core = num_cores.map { |core| (core * gb_per_core).gigabytes }
     num_cores.map.with_index do |cores, index|
       floor = index == 0 ? 0 : ram_per_core[index - 1]

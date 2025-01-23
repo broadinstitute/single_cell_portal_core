@@ -121,4 +121,13 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     params = AnnDataIngestParameters.new(anndata_file: 'gs://bucket_id/test.h5ad', file_size: 100.gigabytes)
     assert_equal AnnDataIngestParameters::PARAM_DEFAULTS[:extract], params.extract
   end
+
+  test 'should set next machine type' do
+    params = AnnDataIngestParameters.new(@extract_params)
+    assert_equal 'n2d-highmem-32', params.machine_type
+    new_machine = params.next_machine_type
+    assert_equal 'n2d-highmem-48', new_machine
+    params.machine_type = 'n2d-highmem-64'
+    assert_nil params.next_machine_type
+  end
 end
