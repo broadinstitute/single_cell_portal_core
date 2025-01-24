@@ -153,7 +153,7 @@ function GroupListMenu({
   groups, selectedGroups, updateSelectedGroups, setNote, isMenuB=false
 }) {
   if (isMenuB) {
-    groups.unshift('Rest')
+    groups.unshift('rest')
   }
 
   const groupsIndex = isMenuB ? 1 : 0
@@ -165,12 +165,18 @@ function GroupListMenu({
       {groups.map((group, i) => {
         // If this menu has a selected group and this group isn't it,
         // then disable this group
-        const isDisabled = group === otherMenuSelection && isMenuB
+        const isInvalid = group === otherMenuSelection && isMenuB
+
+        if (isInvalid) {return ''}
+
+        const isMenuANull = selectedGroups[0] === null
+
+        const isDisabled = isMenuANull && isMenuB
         const disabledClass = isDisabled ? 'disabled' : ''
         let noteClass = ''
         let noteText = ''
 
-        const isRest = group === 'Rest'
+        const isRest = group === 'rest'
 
         // TODO (SCP-): SCP API: Add DE availability status for annotation groups
         const isAvailable = isRest
@@ -185,13 +191,12 @@ function GroupListMenu({
           }
 
           if (isDisabled) {
-            noteText = 'Group picked in other menu'
-            noteClass += ' already-picked'
+            noteText = 'Select a group in other menu'
+            noteClass += 'pick-in-menu-a'
           }
         }
 
-        const bold = isMenuB && isRest ? 'bold' : ''
-        const labelClass = `de-group-menu-item ${noteClass} ${disabledClass} ${bold}`
+        const labelClass = `de-group-menu-item ${noteClass} ${disabledClass}`
 
         const menuName = `pairwise-menu${isMenuB && '-b'}`
         const id = `${menuName}-${i}`
@@ -200,7 +205,6 @@ function GroupListMenu({
           <label
             htmlFor={id}
             className={labelClass}
-            style={{ fontWeight: 'normal' }}
             onMouseEnter={() => {if (isMenuB) {setNote(noteText)}}}
             onMouseLeave={() => {if (isMenuB) {setNote(blankSpace)}}}
             key={i}
