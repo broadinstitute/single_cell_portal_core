@@ -150,8 +150,10 @@ function getMatchingDeOption(
 
 /** List menu of groups available to select for DE comparison */
 function GroupListMenu({
-  groups, selectedGroups, updateSelectedGroups, setNote, isMenuB=false
+  groups, selectedGroups, updateSelectedGroups, setNote, isMenuB=false,
+  hoverAllOthers, setHoverAllOthers
 }) {
+
   if (isMenuB) {
     groups.unshift('rest')
   }
@@ -175,6 +177,7 @@ function GroupListMenu({
         const disabledClass = isDisabled ? 'disabled' : ''
         let noteClass = ''
         let noteText = ''
+        let hoverClass = ''
 
         const isRest = group === 'rest'
 
@@ -194,9 +197,13 @@ function GroupListMenu({
             noteText = 'Select a group in other menu'
             noteClass += 'pick-in-menu-a'
           }
+
+          if (hoverAllOthers) {
+            hoverClass = 'hover'
+          }
         }
 
-        const labelClass = `de-group-menu-item ${noteClass} ${disabledClass}`
+        const labelClass = `de-group-menu-item ${noteClass} ${disabledClass} ${hoverClass}`
 
         const menuName = `pairwise-menu${isMenuB && '-b'}`
         const id = `${menuName}-${i}`
@@ -205,8 +212,18 @@ function GroupListMenu({
           <label
             htmlFor={id}
             className={labelClass}
-            onMouseEnter={() => {if (isMenuB) {setNote(noteText)}}}
-            onMouseLeave={() => {if (isMenuB) {setNote(blankSpace)}}}
+            onMouseEnter={() => {
+              if (isMenuB) {
+                setNote(noteText)
+                if (isRest) {setHoverAllOthers(true)}
+              }
+            }}
+            onMouseLeave={() => {
+              if (isMenuB) {
+                setNote(blankSpace)
+                if (isRest) {setHoverAllOthers(false)}
+              }
+            }}
             key={i}
           >
             <input
@@ -250,6 +267,7 @@ export function PairwiseDifferentialExpressionGroupLists({
 
   const [selectedGroups, setSelectedGroups] = useState([null, null])
   const [note, setNote] = useState(blankSpace)
+  const [hoverAllOthers, setHoverAllOthers] = useState(false)
 
   /** Set new selection for DE groups to compare */
   function updateSelectedGroups(newSelectedGroups) {
@@ -266,6 +284,8 @@ export function PairwiseDifferentialExpressionGroupLists({
             groups={groups}
             selectedGroups={selectedGroups}
             updateSelectedGroups={updateSelectedGroups}
+            hoverAllOthers={hoverAllOthers}
+            setHoverAllOthers={setHoverAllOthers}
           />
         </div>
         <div className="vs-note">vs. </div>
@@ -277,6 +297,8 @@ export function PairwiseDifferentialExpressionGroupLists({
             updateSelectedGroups={updateSelectedGroups}
             setNote={setNote}
             isMenuB={true}
+            hoverAllOthers={hoverAllOthers}
+            setHoverAllOthers={setHoverAllOthers}
           />
         </div>
       </div>

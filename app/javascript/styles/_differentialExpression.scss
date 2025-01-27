@@ -221,23 +221,23 @@
   }
 
   .de-group-menu-item.available:hover {
-    background: #F8FEF8;
     border: 1px solid #5A5;
   }
 
   .de-group-menu-item.not-yet-available {
-    background: #FCFCFF;
-    border: 1px solid #CCF;
+    background: #FFE;
+    border: 1px solid #CC8;
   }
 
-  .de-group-menu-item.not-yet-available:hover {
-    background: #FCFCFF;
-    border: 1px solid #88C;
+  .de-group-menu-item.not-yet-available:hover,
+  .de-group-menu-item.not-yet-available.hover {
+    border: 1px solid #AA6;
   }
 
   .pairwise-menu-input {
     position: relative;
     top: 1px;
+    cursor: pointer;
   }
 
   .vs-note {
