@@ -12,7 +12,7 @@ import {
   getCanonicalSize, getCanonicalSignificance
 } from '~/lib/validation/validate-differential-expression'
 import { contactUsLink } from '~/lib/error-utils'
-
+import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
 import {
   createColumnHelper,
@@ -726,26 +726,71 @@ export default function DifferentialExpressionPanel({
     setUnfoundGenes(unfoundNames)
   }, [deGenes, searchedGenes, findMode])
 
+  const flags = getFeatureFlagsWithDefaults()
+  window.flags = flags
+  const isPairwiseUi = flags?.default_pairwise_de_ui === true
+
   return (
     <>
-      <PairwiseDifferentialExpressionGroupLists
-        bucketId={bucketId}
-        clusterName={clusterName}
-        annotation={annotation}
-        setShowDeGroupPicker={setShowDeGroupPicker}
-        deGenes={deGenes}
-        setDeGenes={setDeGenes}
-        deGroup={deGroup}
-        setDeGroup={setDeGroup}
-        countsByLabelForDe={countsByLabelForDe}
-        deObjects={deObjects}
-        setDeFilePath={setDeFilePath}
-        deGroupB={deGroupB}
-        setDeGroupB={setDeGroupB}
-        hasOneVsRestDe={hasOneVsRestDe}
-        sizeMetric={sizeMetric}
-        significanceMetric={significanceMetric}
-      />
+      {!isPairwiseUi && !hasPairwiseDe &&
+        <OneVsRestDifferentialExpressionGroupPicker
+          bucketId={bucketId}
+          clusterName={clusterName}
+          annotation={annotation}
+          setShowDeGroupPicker={setShowDeGroupPicker}
+          deGenes={deGenes}
+          setDeGenes={setDeGenes}
+          deGroup={deGroup}
+          setDeGroup={setDeGroup}
+          countsByLabelForDe={countsByLabelForDe}
+          deObjects={deObjects}
+          setDeFilePath={setDeFilePath}
+          isAuthorDe={isAuthorDe}
+          sizeMetric={sizeMetric}
+          significanceMetric={significanceMetric}
+        />
+      }
+      {!isPairwiseUi && hasPairwiseDe &&
+        <PairwiseDifferentialExpressionGroupPicker
+          bucketId={bucketId}
+          clusterName={clusterName}
+          annotation={annotation}
+          setShowDeGroupPicker={setShowDeGroupPicker}
+          deGenes={deGenes}
+          setDeGenes={setDeGenes}
+          deGroup={deGroup}
+          setDeGroup={setDeGroup}
+          countsByLabelForDe={countsByLabelForDe}
+          deObjects={deObjects}
+          setDeFilePath={setDeFilePath}
+          deGroupB={deGroupB}
+          setDeGroupB={setDeGroupB}
+          hasOneVsRestDe={hasOneVsRestDe}
+          sizeMetric={sizeMetric}
+          significanceMetric={significanceMetric}
+        />
+      }
+
+      {isPairwiseUi &&
+        <PairwiseDifferentialExpressionGroupLists
+          bucketId={bucketId}
+          clusterName={clusterName}
+          annotation={annotation}
+          setShowDeGroupPicker={setShowDeGroupPicker}
+          deGenes={deGenes}
+          setDeGenes={setDeGenes}
+          deGroup={deGroup}
+          setDeGroup={setDeGroup}
+          countsByLabelForDe={countsByLabelForDe}
+          deObjects={deObjects}
+          setDeFilePath={setDeFilePath}
+          deGroupB={deGroupB}
+          setDeGroupB={setDeGroupB}
+          hasOneVsRestDe={hasOneVsRestDe}
+          sizeMetric={sizeMetric}
+          significanceMetric={significanceMetric}
+        />
+      }
 
       {
         (

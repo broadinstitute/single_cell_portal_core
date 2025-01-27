@@ -271,7 +271,6 @@ export function PairwiseDifferentialExpressionGroupLists({
 
   /** Set new selection for DE groups to compare */
   function updateSelectedGroups(newSelectedGroups) {
-    console.log('in updateSelectedGroups, newSelectedGroups', newSelectedGroups)
     setSelectedGroups(newSelectedGroups)
   }
 
@@ -391,7 +390,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
             styles={clusterSelectStyle}
           />
         </div>
-        <span className="vs-note">vs. </span>
+        <span className="vs-note pairwise-lists">vs. </span>
         <div className="pairwise-select pairwise-select-b">
           <Select
             options={getSimpleOptions(deGroupsB)}

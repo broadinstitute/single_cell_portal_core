@@ -242,8 +242,12 @@
 
   .vs-note {
     position: relative;
-    top: 36px;
+    top: 10px;
     margin-left: 5px;
+  }
+
+  .vs-note.pairwise-lists  {
+    top: 36px;
     margin-right: 15px;
   }
 }
