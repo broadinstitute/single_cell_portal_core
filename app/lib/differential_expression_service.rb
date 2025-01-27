@@ -163,7 +163,16 @@ class DifferentialExpressionService
     params_object.machine_type = machine_type if machine_type.present? # override :machine_type if specified
     return true if dry_run # exit before submission if specified as annotation was already validated
 
-    if params_object.valid?
+    # check if there's already a job running using these parameters and exit if so
+    job_params = ['--study-file-id', study_file.id.to_s] + params_object.to_options_array
+    running = ApplicationController.batch_api_client.find_matching_jobs(
+      params: job_params, job_states: BatchApiClient::RUNNING_STATES
+    )
+    if running.any?
+      log_message "Found #{running.count} running DE jobs using these params: #{running.map(&:name).join(', ')}"
+      log_message "Params: #{job_params.join(' ')}"
+      log_message "Exiting without queuing new job"
+    elsif params_object.valid?
       # launch DE job
       job = IngestJob.new(study:, study_file:, user:, action: :differential_expression, params_object:)
       job.delay.push_remote_and_launch_ingest

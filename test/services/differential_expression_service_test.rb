@@ -100,13 +100,15 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
     mock = Minitest::Mock.new
     mock.expect(:delay, job_mock)
-    IngestJob.stub :new, mock do
-      job_launched = DifferentialExpressionService.run_differential_expression_job(
-        @cluster_group, @basic_study, @user, **@job_params
-      )
-      assert job_launched
-      mock.verify
-      job_mock.verify
+    ApplicationController.batch_api_client.stub :find_matching_jobs, [] do
+      IngestJob.stub :new, mock do
+        job_launched = DifferentialExpressionService.run_differential_expression_job(
+          @cluster_group, @basic_study, @user, **@job_params
+        )
+        assert job_launched
+        mock.verify
+        job_mock.verify
+      end
     end
 
     # test pairwise job
@@ -118,13 +120,15 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
     mock = Minitest::Mock.new
     mock.expect(:delay, job_mock)
-    IngestJob.stub :new, mock do
-      job_launched = DifferentialExpressionService.run_differential_expression_job(
-        @cluster_group, @basic_study, @user, **@job_params
-      )
-      assert job_launched
-      mock.verify
-      job_mock.verify
+    ApplicationController.batch_api_client.stub :find_matching_jobs, [] do
+      IngestJob.stub :new, mock do
+        job_launched = DifferentialExpressionService.run_differential_expression_job(
+          @cluster_group, @basic_study, @user, **@job_params
+        )
+        assert job_launched
+        mock.verify
+        job_mock.verify
+      end
     end
   end
 
@@ -197,13 +201,15 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
     mock = Minitest::Mock.new
     mock.expect(:delay, job_mock)
-    IngestJob.stub :new, mock do
-      job_launched = DifferentialExpressionService.run_differential_expression_job(
-        cluster_group, study, @user, **annotation
-      )
-      assert job_launched
-      mock.verify
-      job_mock.verify
+    ApplicationController.batch_api_client.stub :find_matching_jobs, [] do
+      IngestJob.stub :new, mock do
+        job_launched = DifferentialExpressionService.run_differential_expression_job(
+          cluster_group, study, @user, **annotation
+        )
+        assert job_launched
+        mock.verify
+        job_mock.verify
+      end
     end
   end
 
@@ -220,11 +226,13 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
     mock = Minitest::Mock.new
     mock.expect(:delay, job_mock)
-    IngestJob.stub :new, mock do
-      job_launched = DifferentialExpressionService.run_differential_expression_on_default(@basic_study.accession)
-      assert job_launched
-      mock.verify
-      job_mock.verify
+    ApplicationController.batch_api_client.stub :find_matching_jobs, [] do
+      IngestJob.stub :new, mock do
+        job_launched = DifferentialExpressionService.run_differential_expression_on_default(@basic_study.accession)
+        assert job_launched
+        mock.verify
+        job_mock.verify
+      end
     end
   end
 
@@ -253,12 +261,14 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     mock.expect(:delay, job_mock_one)
     mock.expect(:delay, job_mock_two)
     # cell_type__ontology_label and seurat_clusters should be marked as eligible
-    IngestJob.stub :new, mock do
-      jobs_launched = DifferentialExpressionService.run_differential_expression_on_all(@basic_study.accession)
-      assert_equal 2, jobs_launched
-      mock.verify
-      job_mock_one.verify
-      job_mock_two.verify
+    ApplicationController.batch_api_client.stub :find_matching_jobs, [] do
+      IngestJob.stub :new, mock do
+        jobs_launched = DifferentialExpressionService.run_differential_expression_on_all(@basic_study.accession)
+        assert_equal 2, jobs_launched
+        mock.verify
+        job_mock_one.verify
+        job_mock_two.verify
+      end
     end
   end
 
@@ -340,13 +350,15 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
     mock = Minitest::Mock.new
     mock.expect(:delay, job_mock)
-    IngestJob.stub :new, mock do
-      # restrict to this study to prevent any dangling studies being picked up
-      stats = DifferentialExpressionService.backfill_new_results(study_accessions: [@basic_study.accession])
-      assert_equal 1, stats[:total_jobs]
-      assert_equal 1, stats[@basic_study.accession]
-      mock.verify
-      job_mock.verify
+    ApplicationController.batch_api_client.stub :find_matching_jobs, [] do
+      IngestJob.stub :new, mock do
+        # restrict to this study to prevent any dangling studies being picked up
+        stats = DifferentialExpressionService.backfill_new_results(study_accessions: [@basic_study.accession])
+        assert_equal 1, stats[:total_jobs]
+        assert_equal 1, stats[@basic_study.accession]
+        mock.verify
+        job_mock.verify
+      end
     end
   end
 
@@ -380,11 +392,13 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     mock = Minitest::Mock.new
     mock.expect(:delay, job_mock)
     # cell_type__ontology_label and seurat_clusters should be marked as eligible
-    IngestJob.stub :new, mock do
-      jobs_launched = DifferentialExpressionService.run_differential_expression_on_all(study.accession)
-      assert_equal 1, jobs_launched
-      mock.verify
-      job_mock.verify
+    ApplicationController.batch_api_client.stub :find_matching_jobs, [] do
+      IngestJob.stub :new, mock do
+        jobs_launched = DifferentialExpressionService.run_differential_expression_on_all(study.accession)
+        assert_equal 1, jobs_launched
+        mock.verify
+        job_mock.verify
+      end
     end
   end
 end

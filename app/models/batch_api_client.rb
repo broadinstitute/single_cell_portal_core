@@ -95,6 +95,22 @@ class BatchApiClient
     service.list_project_location_jobs(project_location, page_token:)
   end
 
+  # find any existing jobs using command line parameters & job states
+  #
+  # * *params*
+  #   - +params+ (Array<String>) => array of params sent to job to match on
+  #   - +job_state+ (Array<String>) => optional states to filter on (defaults to completed jobs)
+  #
+  # * *returns*
+  #   - (Array<Google::Apis::BatchV1::Job>)
+  def find_matching_jobs(params: [], job_states: COMPLETED_STATES)
+    jobs = list_jobs.jobs
+    jobs.select do |job|
+      commands = get_job_command_line(job:)
+      (params & commands).sort == params.sort && job_states.include?(job.status.state)
+    end
+  end
+
   # main handler to create and run a Batch API job
   #
   # * *params*
