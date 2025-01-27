@@ -169,9 +169,10 @@ class DifferentialExpressionService
       params: job_params, job_states: BatchApiClient::RUNNING_STATES
     )
     if running.any?
-      log_message "Found #{running.count} running DE jobs using these params: #{running.map(&:name).join(', ')}"
-      log_message "Params: #{job_params.join(' ')}"
+      log_message "Found #{running.count} running DE jobs: #{running.map(&:name).join(', ')}"
+      log_message "Matching these parameters: #{job_params.join(' ')}"
       log_message "Exiting without queuing new job"
+      false
     elsif params_object.valid?
       # launch DE job
       job = IngestJob.new(study:, study_file:, user:, action: :differential_expression, params_object:)

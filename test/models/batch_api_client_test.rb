@@ -73,6 +73,27 @@ class BatchApiClientTest < ActiveSupport::TestCase
     assert job.is_a?(Google::Apis::BatchV1::Job)
   end
 
+  test 'should find matching jobs based on params/state' do
+    action = :ingest_anndata
+    params_object = AnnDataIngestParameters.new(anndata_file: @ann_data_file.gs_url)
+    container = @client.create_container(
+      study_file: @ann_data_file, action:, user_metrics_uuid: @user.metrics_uuid, params_object:
+    )
+    task = @client.create_task_group(action:, machine_type: params_object.machine_type, container:)
+    running_job = Google::Apis::BatchV1::Job.new(
+      status: Google::Apis::BatchV1::JobStatus.new(state: 'RUNNING'),
+      task_groups: [task]
+    )
+    mock = Minitest::Mock.new
+    2.times { mock.expect :jobs, [running_job] }
+    @client.stub :list_jobs, mock do
+      assert_empty @client.find_matching_jobs(params: params_object.to_options_array) # default is completed states
+      found = @client.find_matching_jobs(params: params_object.to_options_array, job_states: BatchApiClient::RUNNING_STATES)
+      assert found.size == 1
+      assert_equal task, found.first.task_groups.first
+    end
+  end
+
   test 'should create and submit Batch API job' do
     action = :ingest_anndata
     params_object = AnnDataIngestParameters.new(anndata_file: @ann_data_file.gs_url)

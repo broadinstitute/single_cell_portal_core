@@ -401,4 +401,17 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
       end
     end
   end
+
+  test 'should skip launching DE job if matching running job found' do
+    running_job = Google::Apis::BatchV1::Job.new(
+      name: 'running-de-job',
+      status: Google::Apis::BatchV1::JobStatus.new(state: 'RUNNING')
+    )
+    DataArray.create!(@all_cells_array_params)
+    ApplicationController.batch_api_client.stub :find_matching_jobs, [running_job] do
+      assert_not DifferentialExpressionService.run_differential_expression_job(
+        @cluster_group, @basic_study, @user, **@job_params
+      )
+    end
+  end
 end
