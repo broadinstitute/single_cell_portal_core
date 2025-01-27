@@ -287,7 +287,7 @@ export function PairwiseDifferentialExpressionGroupLists({
             setHoverAllOthers={setHoverAllOthers}
           />
         </div>
-        <div className="vs-note">vs. </div>
+        <div className="vs-note pairwise-lists">vs. </div>
         <div className="pairwise-menu pairwise-menu-b">
           <p style={{ visibility: 'visible' }}><i>{note}</i></p>
           <GroupListMenu
@@ -390,7 +390,7 @@ export function PairwiseDifferentialExpressionGroupPicker({
             styles={clusterSelectStyle}
           />
         </div>
-        <span className="vs-note pairwise-lists">vs. </span>
+        <span className="vs-note">vs. </span>
         <div className="pairwise-select pairwise-select-b">
           <Select
             options={getSimpleOptions(deGroupsB)}

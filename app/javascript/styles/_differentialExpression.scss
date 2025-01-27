@@ -222,6 +222,7 @@
 
   .de-group-menu-item.available:hover {
     border: 1px solid #5A5;
+    background: #F8FDF8;
   }
 
   .de-group-menu-item.not-yet-available {
@@ -231,6 +232,7 @@
 
   .de-group-menu-item.not-yet-available:hover,
   .de-group-menu-item.not-yet-available.hover {
+    background: #FFD;
     border: 1px solid #BB6;
   }
 

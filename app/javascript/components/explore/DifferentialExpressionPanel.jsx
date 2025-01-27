@@ -727,7 +727,6 @@ export default function DifferentialExpressionPanel({
   }, [deGenes, searchedGenes, findMode])
 
   const flags = getFeatureFlagsWithDefaults()
-  window.flags = flags
   const isPairwiseUi = flags?.default_pairwise_de_ui === true
 
   return (

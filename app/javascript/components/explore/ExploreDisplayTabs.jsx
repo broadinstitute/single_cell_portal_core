@@ -250,7 +250,10 @@ export default function ExploreDisplayTabs({
   const [, setShowDeGroupPicker] = useState(false)
   const [deGenes, setDeGenes] = useState(null)
   const [showDifferentialExpressionPanel, setShowDifferentialExpressionPanel] = useState(deGenes !== null)
-  const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(true)
+
+  const [
+    showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel
+  ] = useState(deGenes !== null)
 
   let initialPanel = 'options'
   if (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel) {
@@ -262,6 +265,9 @@ export default function ExploreDisplayTabs({
 
   // Hash of trace label names to the number of points in that trace
   const [countsByLabelForDe, setCountsByLabelForDe] = useState(null)
+  const showDifferentialExpressionPicker = (
+    showViewOptionsControls && initialPanel === 'differential-expression' && deGenes === null
+  )
   const showDifferentialExpressionTable = (showViewOptionsControls && deGenes !== null)
   const plotContainerClass = 'explore-plot-tab-content'
 
@@ -472,6 +478,9 @@ export default function ExploreDisplayTabs({
     setRenderForcer({})
   }, 300)
 
+  const flags = getFeatureFlagsWithDefaults()
+  const hasDefaultPairwiseDeUi = flags?.default_pairwise_de_ui === true
+
   /** Get widths for main (plots) and side (options, DE, or FF) panels, for current Explore state */
   function getPanelWidths() {
     let main
@@ -480,7 +489,7 @@ export default function ExploreDisplayTabs({
       if (
         panelToShow === 'differential-expression'
       ) {
-        if (deGenes === null) {
+        if (deGenes === null || hasDefaultPairwiseDeUi) {
           main = 'col-md-8'
           side = 'col-md-4 right-panel'
         } else {
@@ -608,6 +617,7 @@ export default function ExploreDisplayTabs({
                     plotPointsSelected,
                     showRelatedGenesIdeogram,
                     showViewOptionsControls,
+                    showDifferentialExpressionPicker,
                     showDifferentialExpressionTable,
                     scatterColor: exploreParamsWithDefaults.scatterColor,
                     setCountsByLabelForDe,
@@ -623,7 +633,8 @@ export default function ExploreDisplayTabs({
                   studyAccession={studyAccession}
                   updateDistributionPlot={distributionPlot => updateExploreParams({ distributionPlot }, false)}
                   dimensions={getPlotDimensions({
-                    showRelatedGenesIdeogram, showViewOptionsControls, showDifferentialExpressionTable
+                    showRelatedGenesIdeogram, showViewOptionsControls,
+                    showDifferentialExpressionPicker, showDifferentialExpressionTable
                   })}
                   cellFaceting={cellFaceting}
                   filteredCells={filteredCells}
