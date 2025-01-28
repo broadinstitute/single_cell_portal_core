@@ -233,6 +233,9 @@ export default function ExploreDisplayTabs({
   studyAccession, exploreInfo, setExploreInfo, exploreParams, updateExploreParams,
   clearExploreParams, exploreParamsWithDefaults, routerLocation
 }) {
+  const flags = getFeatureFlagsWithDefaults()
+  const hasDefaultPairwiseDeUi = flags?.default_pairwise_de_ui === true
+
   const [, setRenderForcer] = useState({})
   const [dataCache] = useState(createCache())
   // tracks whether the view options controls are open or closed
@@ -266,6 +269,7 @@ export default function ExploreDisplayTabs({
   // Hash of trace label names to the number of points in that trace
   const [countsByLabelForDe, setCountsByLabelForDe] = useState(null)
   const showDifferentialExpressionPicker = (
+    hasDefaultPairwiseDeUi &&
     showViewOptionsControls && initialPanel === 'differential-expression' && deGenes === null
   )
   const showDifferentialExpressionTable = (showViewOptionsControls && deGenes !== null)
@@ -478,9 +482,6 @@ export default function ExploreDisplayTabs({
     setRenderForcer({})
   }, 300)
 
-  const flags = getFeatureFlagsWithDefaults()
-  const hasDefaultPairwiseDeUi = flags?.default_pairwise_de_ui === true
-
   /** Get widths for main (plots) and side (options, DE, or FF) panels, for current Explore state */
   function getPanelWidths() {
     let main
@@ -489,11 +490,11 @@ export default function ExploreDisplayTabs({
       if (
         panelToShow === 'differential-expression'
       ) {
-        if (deGenes === null || hasDefaultPairwiseDeUi) {
+        if (hasDefaultPairwiseDeUi && deGenes === null) {
           main = 'col-md-8'
           side = 'col-md-4 right-panel'
         } else {
-          // DE table is shown, or pairwise DE is available.  Least horizontal space for plots.
+          // DE table is shown
           main = 'col-md-9'
           side = 'col-md-3 right-panel'
         }
