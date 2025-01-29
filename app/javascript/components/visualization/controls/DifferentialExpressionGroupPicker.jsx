@@ -186,7 +186,11 @@ function GroupListMenu({
 
         if (isMenuB) {
           if (isAvailable) {
-            noteText = blankSpace
+            if (isRest) {
+              noteText = 'All other groups'
+            } else {
+              noteText = blankSpace
+            }
             noteClass = 'available'
           } else {
             noteText = 'Not yet available, pick to enable'
@@ -203,6 +207,10 @@ function GroupListMenu({
           }
         }
 
+        let ariaLabel = ''
+        if (isMenuB) {
+          ariaLabel = (noteText[0].toUpperCase() + noteText.slice(1)).replaceAll('-', ' ')
+        }
         const labelClass = `de-group-menu-item ${noteClass} ${disabledClass} ${hoverClass}`
 
         const menuName = `pairwise-menu${isMenuB && '-b'}`
@@ -212,6 +220,7 @@ function GroupListMenu({
           <label
             htmlFor={id}
             className={labelClass}
+            aria-label={ariaLabel}
             onMouseEnter={() => {
               if (isMenuB) {
                 setNote(noteText)
