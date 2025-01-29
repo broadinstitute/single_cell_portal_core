@@ -194,7 +194,7 @@ function GroupListMenu({
               }
               noteClass = 'available'
             } else {
-              noteText = 'Not yet available, pick to enable'
+              noteText = 'Pick to enable'
               noteClass = 'not-yet-available'
             }
           }
