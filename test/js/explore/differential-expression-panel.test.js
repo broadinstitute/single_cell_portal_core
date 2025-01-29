@@ -58,9 +58,9 @@ describe('Differential expression panel', () => {
     const pairwiseMenuA = container.querySelector('.pairwise-menu')
     expect(pairwiseMenuA).toHaveTextContent('CSN1S1 macrophages')
 
-    const pairwiseMenuB = container.querySelector('.pairwise-menu-b')
-    const pairwise
-    expect(pairwiseMenub).toHaveTextContent('CSN1S1 macrophages')
+    const restItem = container.querySelector('#pairwise-menu-b-0').parentElement
+    const restIsDisabled = Array.from(restItem.classList).includes('disabled')
+    expect(restIsDisabled).toBe(true)
   })
 
   it('renders DE genes table', async () => {
