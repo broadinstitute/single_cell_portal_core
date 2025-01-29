@@ -516,6 +516,7 @@ class IngestJob
       set_has_image_cache
     when :ingest_anndata
       launch_anndata_subparse_jobs if study_file.is_viz_anndata?
+      launch_differential_expression_jobs if study_file.is_viz_anndata?
       set_anndata_file_info
     end
     set_study_initialized
