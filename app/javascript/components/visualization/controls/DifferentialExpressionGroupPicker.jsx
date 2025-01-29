@@ -181,7 +181,7 @@ function GroupListMenu({
 
         const isRest = group === 'rest'
 
-        // TODO (SCP-): SCP API: Add DE availability status for annotation groups
+        // TODO (SCP-5912): Integrate DE pairwise comparison availability
         const isAvailable = isRest
 
         if (isMenuB) {
@@ -245,6 +245,7 @@ function GroupListMenu({
               style={{ marginRight: '4px' }}
               disabled={isDisabled}
               onChange={event => {
+                // TODO (SCP-5913): Add downstream views for updated DE picker
                 const radio = event.target
                 const isChecked = radio.checked
                 const groupName = radio.parentElement.innerText
