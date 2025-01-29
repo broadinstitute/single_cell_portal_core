@@ -4,7 +4,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby '3.2.2'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '6.1.7.8'
+gem 'rails', '6.1.7.9'
 # Use SCSS for stylesheets
 gem 'sass-rails', '>= 6'
 # Use CoffeeScript for .coffee assets and views
@@ -40,6 +40,7 @@ gem 'googleauth'
 gem 'google-cloud-storage', require: 'google/cloud/storage'
 gem 'google-cloud-bigquery', require: 'google/cloud/bigquery'
 gem 'google-apis-lifesciences_v2beta', require: 'google/apis/lifesciences_v2beta'
+gem 'google-apis-batch_v1', require: 'google/apis/batch_v1'
 gem 'bootstrap-sass', :git => 'https://github.com/twbs/bootstrap-sass'
 gem 'font-awesome-sass', git: 'https://github.com/FortAwesome/font-awesome-sass'
 gem 'mongoid'
@@ -79,6 +80,7 @@ gem 'net-smtp'
 gem 'net-imap'
 gem 'net-pop'
 gem 'exponential-backoff'
+gem 'concurrent-ruby', '1.3.4'
 
 group :development, :test do
   # Access an IRB console on exception pages or by using <%= console %> in views

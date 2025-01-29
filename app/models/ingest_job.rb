@@ -40,7 +40,7 @@ class IngestJob
     differential_expression render_expression_arrays image_pipeline ingest_anndata
   ].freeze
 
-  # Name of pipeline submission running in GCP (from [LifeSciencesApiClient#run_pipeline])
+  # Name of pipeline submission running in GCP (from [BatchApiClient#run_job])
   attr_accessor :pipeline_name
   # Study object where file is being ingested
   attr_accessor :study
@@ -97,7 +97,7 @@ class IngestJob
       else
         if can_launch_ingest?
           Rails.logger.info "Remote found for #{file_identifier}, launching Ingest job"
-          submission = ApplicationController.life_sciences_api_client.run_pipeline(
+          submission = ApplicationController.batch_api_client.run_job(
             study_file:, user:, action:, params_object:
           )
           Rails.logger.info "Ingest run initiated: #{submission.name}, queueing Ingest poller"
@@ -111,7 +111,8 @@ class IngestJob
         end
       end
     rescue => e
-      Rails.logger.error "Error in launching ingest of #{file_identifier}: #{e.class.name}:#{e.message}"
+      error_message = ApplicationController.batch_api_client.parse_error_message(e)
+      Rails.logger.error "Error in launching ingest of #{file_identifier}: #{error_message}"
       ErrorTracker.report_exception(e, user, study, study_file, { action: action})
       # notify admins of failure, and notify user that admins are looking into the issue
       SingleCellMailer.notify_admin_parse_launch_fail(study, study_file, user, action, e).deliver_now
@@ -213,7 +214,7 @@ class IngestJob
   # * *returns*
   #   - (Google::Apis::LifesciencesV2beta::Operation)
   def get_ingest_run
-    ApplicationController.life_sciences_api_client.get_pipeline(name: pipeline_name)
+    ApplicationController.batch_api_client.get_job(pipeline_name)
   end
 
   # Determine if this ingest run has done by checking current status
@@ -221,15 +222,33 @@ class IngestJob
   # * *returns*
   #   - (Boolean) => Indication of whether or not job has completed
   def done?
-    get_ingest_run.done?
+    BatchApiClient::COMPLETED_STATES.include?(get_ingest_run.status.state)
+  end
+
+  # get the job TaskSpec object (contains compute & Docker info)
+  #
+  # * *returns*
+  #   - (Google::Apis::BatchV1::TaskSpec)
+  def job_task_spec
+    ApplicationController.batch_api_client.get_job_task_spec(job: get_ingest_run)
+  end
+
+  # get the Docker container object (command line and image uri)
+  #
+  # * *returns*
+  #   - (Google::Apis::BatchV1::Container)
+  def job_container
+    job_task_spec.runnables.first.container
   end
 
   # Get all errors for ingest job
   #
   # * *returns*
-  #   - (Google::Apis::LifesciencesV2beta::Status)
+  #   - (Google::Apis::BatchV1::Task)
   def error
-    get_ingest_run.error
+    return nil unless failed?
+
+    task_object.status.status_events.detect { |event| event.task_state == 'FAILED' }
   end
 
   # Determine if a job failed by checking for errors
@@ -237,7 +256,7 @@ class IngestJob
   # * *returns*
   #   - (Boolean) => Indication of whether or not job failed via an unrecoverable error
   def failed?
-    error.present?
+    get_ingest_run.status.state == "FAILED"
   end
 
   # Get a status label for current state of job
@@ -245,27 +264,31 @@ class IngestJob
   # * *returns*
   #   - (String) => Status label
   def current_status
-    if done?
-      failed? ? 'Error' : 'Completed'
-    else
-      'Running'
-    end
+    status.state
   end
 
-  # Get the PAPI job metadata
+  # Get the Batch job status object
   #
   # * *returns*
-  #   - (Hash) => Metadata of PAPI job, including events, environment, labels, etc.
-  def metadata
-    get_ingest_run.metadata
+  #   - (Google::Apis::BatchV1::JobStatus) => status object of Batch job
+  def status
+    get_ingest_run.status
+  end
+
+  # get the task object from a batch job (has more status information)
+  #
+  # * *returns*
+  #   - (Google::Apis::BatchV1::Task) => task object of Batch job
+  def task_object
+    ApplicationController.batch_api_client.get_job_task(pipeline_name)
   end
 
   # Get all the events for a given ingest job in chronological order
   #
   # * *returns*
-  #   - (Array<Google::Apis::LifesciencesV2beta::Event>) => Array of pipeline events, sorted by timestamp
+  #   - (Array<Google::Apis::BatchV1::StatusEvent>) => Array of job events, sorted by timestamp
   def events
-    metadata['events'].sort_by! { |event| event['timestamp'] }
+    status.status_events.sort_by!(&:event_time)
   end
 
   # Get all messages from all events
@@ -273,7 +296,7 @@ class IngestJob
   # * *returns*
   #   - (Array<String>) => Array of all messages in chronological order
   def event_messages
-    events.map { |event| event['description'] }
+    events.map(&:description)
   end
 
   # Get the exit code for the pipeline, if present
@@ -283,11 +306,7 @@ class IngestJob
   def exit_code
     return nil unless done?
 
-    events.each do |event|
-      status = event.dig('containerStopped', 'exitStatus')
-      return status.to_i if status
-    end
-    nil # catch-all
+    ApplicationController.batch_api_client.exit_code_from_task(pipeline_name)
   end
 
   # determine if this job should automatically retry due to OOM exception
@@ -303,11 +322,7 @@ class IngestJob
   # * *returns*
   #   - (String) => Deserialized command line
   def command_line
-    command_line = ""
-    metadata['pipeline']['actions'].each do |action|
-      command_line += action['commands'].join(' ') + "\n"
-    end
-    command_line.chomp("\n")
+    ApplicationController.batch_api_client.get_job_command_line(job: get_ingest_run)
   end
 
   # return the currently assigned machine_type for this ingest run
@@ -315,7 +330,7 @@ class IngestJob
   # * *returns*
   #   - (String) => machine_type name, e.g. n2d-highmem-4
   def machine_type
-    params_object&.machine_type || metadata.dig('pipeline', 'resources', 'virtualMachine', 'machineType')
+    params_object&.machine_type || get_ingest_run.allocation_policy.instances.first.policy.machine_type
   end
 
   # Get a timestamp from a metadata event or datetime string
@@ -326,7 +341,7 @@ class IngestJob
   # * *returns*
   #   - (DateTime)
   def event_timestamp(entry)
-    date = entry['timestamp'] || entry
+    date = entry.try(:event_time) || entry
     DateTime.parse(date)
   end
 
@@ -644,8 +659,7 @@ class IngestJob
         cluster.update(is_subsampling: true)
         file_identifier = "#{study_file.bucket_location}:#{study_file.id}"
         Rails.logger.info "Launching subsampling ingest run for #{file_identifier} after #{action}"
-        submission = ApplicationController.life_sciences_api_client.run_pipeline(study_file: study_file, user: user,
-                                                                                 action: :ingest_subsample)
+        submission = ApplicationController.batch_api_client.run_job(study_file:, user:, action: :ingest_subsample)
         Rails.logger.info "Subsampling run initiated: #{submission.name}, queueing Ingest poller"
         IngestJob.new(pipeline_name: submission.name, study: study, study_file: study_file,
                       user: user, action: :ingest_subsample, reparse: false,
@@ -662,8 +676,8 @@ class IngestJob
           cluster.update(is_subsampling: true)
           file_identifier = "#{cluster_file.bucket_location}:#{cluster_file.id}"
           Rails.logger.info "Launching subsampling ingest run for #{file_identifier} after #{action} of #{metadata_identifier}"
-          submission = ApplicationController.life_sciences_api_client.run_pipeline(study_file: cluster_file, user: user,
-                                                                                   action: :ingest_subsample)
+          submission = ApplicationController.batch_api_client.run_job(study_file: cluster_file, user:,
+                                                                      action: :ingest_subsample)
           Rails.logger.info "Subsampling run initiated: #{submission.name}, queueing Ingest poller"
           IngestJob.new(pipeline_name: submission.name, study: study, study_file: cluster_file,
                         user: user, action: :ingest_subsample, reparse: reparse,
@@ -690,7 +704,7 @@ class IngestJob
             cluster_file:, cell_metadata_file:
           )
           Rails.logger.info "Launching subsampling ingest run for #{file_identifier} after #{action}"
-          submission = ApplicationController.life_sciences_api_client.run_pipeline(
+          submission = ApplicationController.batch_api_client.run_job(
             study_file:, user:, action: :ingest_subsample, params_object: subsample_params
           )
           IngestJob.new(
@@ -932,8 +946,7 @@ class IngestJob
     trigger = study_file.upload_trigger
 
     # retrieve pipeline metadata for VM information
-    vm_info = metadata.dig('pipeline', 'resources', 'virtualMachine')
-
+    vm_info = ApplicationController.batch_api_client.get_job_resources(job: get_ingest_run)
     job_perftime = get_total_runtime_ms
     # Event properties to log to Mixpanel.
     # Mixpanel uses camelCase for props; snake_case would degrade Mixpanel UX.
@@ -946,8 +959,8 @@ class IngestJob
       studyAccession: study.accession,
       trigger:,
       jobStatus: failed? ? 'failed' : 'success',
-      machineType: vm_info['machineType'],
-      bootDiskSizeGb: vm_info['bootDiskSizeGb'],
+      machineType: vm_info['machine_type'],
+      bootDiskSizeGb: vm_info['boot_disk_size_gb'],
       exitStatus: exit_code # integer exit code from PAPI, e.g. `137` for out of memory (OOM)
     }
 
@@ -1042,41 +1055,40 @@ class IngestJob
   end
 
   def anndata_summary_props
-    pipelines = ApplicationController.life_sciences_api_client.list_pipelines
-    previous_jobs = pipelines.operations.select do |op|
-      pipeline_args = op.metadata.dig('pipeline', 'actions').first['commands']
-      op.done? &&
+    client = ApplicationController.batch_api_client
+    jobs = ApplicationController.batch_api_client.list_jobs
+    previous_jobs = jobs.jobs.select do |job|
+      pipeline_args = client.get_job_command_line(job:)
+      client.job_done?(job) &&
         pipeline_args.detect { |c| c == study_file.id.to_s } &&
         (pipeline_args & CORE_ACTIONS).any?
     end
     # get total runtime from initial extract to final parse
     initial_extract = previous_jobs.last
     final_parse = previous_jobs.first
-    start_time = event_timestamp(initial_extract.metadata['startTime'])
-    end_time = event_timestamp(final_parse.metadata['endTime'])
+    start_time = event_timestamp(initial_extract.create_time)
+    end_time = event_timestamp(final_parse.update_time) # update_time is a proxy for last event timestamp
     job_perftime = (TimeDifference.between(start_time, end_time).in_seconds * 1000).to_i
 
     file_type = study_file.file_type
     trigger = study_file.upload_trigger
-    job_status = previous_jobs.map(&:error).compact.any? ? 'failed' : 'success'
+    job_status = previous_jobs.map do |job|
+      client.job_error(job.name).present?
+    end.compact.any? ? 'failed' : 'success'
     error_action = nil
     code = 0
     if job_status == 'failed'
-      first_failure = previous_jobs.reverse.detect { |p| p.error.present? }
-      args = first_failure.metadata.dig('pipeline', 'actions').first['commands']
-      error_action = args.detect {|c| LifeSciencesApiClient::FILE_TYPES_BY_ACTION.keys.include?(c.to_sym) }
-      failure_events = first_failure.metadata['events'].sort_by! { |event| event['timestamp'] }
-      stopped_msg = failure_events.detect do |event|
-        event.dig('containerStopped', 'exitStatus').present?
-      end
-      code = stopped_msg.dig('containerStopped', 'exitStatus').to_i
+      first_failure = previous_jobs.reverse.detect { |job| client.job_error(job.name).present? }
+      args = client.get_job_command_line(job: first_failure)
+      error_action = args.detect {|c| BatchApiClient::FILE_TYPES_BY_ACTION.keys.include?(c.to_sym) }
+      code = client.exit_code_from_task(first_failure.name)
     end
     # count total number of files extracted
-    num_files_extracted = previous_jobs.reject do |op|
-      op.metadata.dig('pipeline', 'actions').first['commands'].detect { |c| c == '--extract' } ||
-        op.error.present?
+    num_files_extracted = previous_jobs.reject do |job|
+      commands = client.get_job_command_line(job:)
+      commands.detect { |c| c == '--extract' } || client.job_error(job.name).present?
     end.count
-    num_files_extracted += 1 if extracted_raw_counts?(initial_extract.metadata)
+    num_files_extracted += 1 if extracted_raw_counts?(initial_extract)
     # event properties for Mixpanel summary event
     {
       perfTime: job_perftime,
@@ -1095,8 +1107,8 @@ class IngestJob
 
   # determine if an ingest_anndata job extracted raw counts data
   # reads from the --extract parameter to avoid counting filenames that include 'raw_counts'
-  def extracted_raw_counts?(pipeline_metadata)
-    commands = pipeline_metadata.dig('pipeline', 'actions').first['commands']
+  def extracted_raw_counts?(job)
+    commands = ApplicationController.batch_api_client.get_job_command_line(job:)
     extract_idx = commands.index('--extract')
     return false if extract_idx.nil?
 
@@ -1224,6 +1236,16 @@ class IngestJob
     '<a href="' + link + '">' + link + '</a>'
   end
 
+  # generate a link to the Batch API logs viewer for this job
+  def batch_api_logs_tag
+    region = BatchApiClient::DEFAULT_COMPUTE_REGION
+    project = ENV['GOOGLE_CLOUD_PROJECT']
+    short_name = pipeline_name.split('/').last
+    link = "https://console.cloud.google.com/batch/jobsDetail/regions/" \
+           "#{region}/jobs/#{short_name}/logs?project=#{project}"
+    '<a href="' + link + '">' + link + '</a>'
+  end
+
   # format an error email message body for users
   #
   # * *params*
@@ -1243,7 +1265,9 @@ class IngestJob
       error_contents = read_parse_logfile(dev_error_filepath, delete_on_read: false, range: 0..1.megabyte)
       message_body = "<p>The file '#{study_file.upload_file_name}' uploaded by #{user.email} to #{study.accession} failed to ingest.</p>"
       message_body += "<p>A copy of this file can be found at #{generate_bucket_browser_tag}</p>"
-      message_body += "<p>Detailed logs and PAPI events as follows:"
+      message_body += "<p>Detailed logs and Batch API events as follows:"
+      message_body += "<h3>Logs viewer</h3>"
+      message_body += "<p>#{batch_api_logs_tag}</p>"
     else
       error_contents = read_parse_logfile(user_error_filepath, range: 0..1.megabyte)
       message_body = "<p>'#{study_file.upload_file_name}' has failed during parsing.</p>"

@@ -1,5 +1,5 @@
 # handle converting ActiveModel attributes into a command line string
-# used in PAPI jobs via LifeSciencesApiClient and IngestJob
+# used in PAPI jobs via BatchApiClient and IngestJob
 module Parameterizable
   extend ActiveSupport::Concern
 

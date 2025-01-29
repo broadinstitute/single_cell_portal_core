@@ -85,25 +85,25 @@ class SummaryStatsUtils
   end
 
   # find out all ingest jobs run in a given time period
-  # since the "filter" parameter for list_project_operations doesn't work, check dates manually.
+  # since the "filter" parameter for list_project_location_jobs doesn't work, check dates manually.
   # defaults to current day
   def self.ingest_run_count(start_date: Time.zone.today, end_date: Time.zone.today + 1.day)
     # make sure we only look at instances of runs for this schema (e.g. exclude test from staging/prod)
     schema = Mongoid::Config.clients.dig('default', 'database')
     ingest_jobs = 0
-    jobs = ApplicationController.life_sciences_api_client.list_pipelines
-    return ingest_jobs if jobs.operations.blank?
+    client = ApplicationController.batch_api_client
+    jobs = client.list_jobs
+    return ingest_jobs if jobs.jobs.blank?
 
     all_from_range = false
     date_range = start_date..end_date
     until all_from_range
-      jobs.operations.each do |job|
-        if job.metadata['startTime'].nil?
+      jobs.jobs.each do |job|
+        if job.create_time.nil?
           next
         end
-        submission_date = Time.zone.parse(job.metadata['startTime']).to_date
-        # use `dig` to avoid NoMethodError
-        database_name = job.metadata.dig('pipeline', 'environment', 'DATABASE_NAME')
+        submission_date = Time.zone.parse(job.create_time).to_date
+        database_name = client.get_job_environment(job:)&.[]('DATABASE_NAME')
         if submission_date > end_date && submission_date > start_date
           next
         elsif date_range === submission_date
@@ -116,7 +116,7 @@ class SummaryStatsUtils
       if all_from_range || jobs.next_page_token.blank?
         break
       else
-        jobs = ApplicationController.life_sciences_api_client.list_pipelines(page_token: jobs.next_page_token)
+        jobs = client.list_jobs(page_token: jobs.next_page_token)
       end
     end
     ingest_jobs
