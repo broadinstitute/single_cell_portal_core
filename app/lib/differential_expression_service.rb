@@ -164,7 +164,9 @@ class DifferentialExpressionService
     return true if dry_run # exit before submission if specified as annotation was already validated
 
     # check if there's already a job running using these parameters and exit if so
-    job_params = ['--study-file-id', study_file.id.to_s] + params_object.to_options_array
+    job_params = ApplicationController.batch_api_client.format_command_line(
+      study_file:, action: :differential_expression, user_metrics_uuid: user.metrics_uuid, params_object:
+    )
     running = ApplicationController.batch_api_client.find_matching_jobs(
       params: job_params, job_states: BatchApiClient::RUNNING_STATES
     )
