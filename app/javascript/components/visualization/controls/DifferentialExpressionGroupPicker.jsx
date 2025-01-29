@@ -174,7 +174,7 @@ function GroupListMenu({
         const isMenuANull = selectedGroups[0] === null
 
         const isDisabled = isMenuANull && isMenuB
-        const disabledClass = isDisabled ? 'disabled' : ''
+        const disabledClass = ''
         let noteClass = ''
         let noteText = ''
         let hoverClass = ''
@@ -185,21 +185,23 @@ function GroupListMenu({
         const isAvailable = isRest
 
         if (isMenuB) {
-          if (isAvailable) {
-            if (isRest) {
-              noteText = 'All other groups'
+          if (!isDisabled) {
+            if (isAvailable) {
+              if (isRest) {
+                noteText = 'All other groups'
+              } else {
+                noteText = blankSpace
+              }
+              noteClass = 'available'
             } else {
-              noteText = blankSpace
+              noteText = 'Not yet available, pick to enable'
+              noteClass = 'not-yet-available'
             }
-            noteClass = 'available'
-          } else {
-            noteText = 'Not yet available, pick to enable'
-            noteClass = 'not-yet-available'
           }
 
           if (isDisabled) {
             noteText = 'Select a group in other menu'
-            noteClass += 'pick-in-menu-a'
+            noteClass = 'disabled'
           }
 
           if (hoverAllOthers) {
@@ -268,9 +270,7 @@ function GroupListMenu({
 
 /** Pick groups of cells for pairwise differential expression (DE) */
 export function PairwiseDifferentialExpressionGroupLists({
-  bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup,
-  setDeGenes, countsByLabelForDe, deObjects, setDeFilePath,
-  deGroupB, setDeGroupB, hasOneVsRestDe, significanceMetric
+  deGenes, countsByLabelForDe
 }) {
   const groups = getLegendSortedLabels(countsByLabelForDe)
 
@@ -298,7 +298,7 @@ export function PairwiseDifferentialExpressionGroupLists({
         </div>
         <div className="vs-note pairwise-lists">vs. </div>
         <div className="pairwise-menu pairwise-menu-b">
-          <p style={{ visibility: 'visible' }}><i>{note}</i></p>
+          <p><i>{note}</i></p>
           <GroupListMenu
             groups={groups}
             selectedGroups={selectedGroups}
