@@ -6,6 +6,6 @@ class AddFlagForDefaultPairwiseDeUi < Mongoid::Migration
   end
 
   def self.down
-    FeatureFlag.find_by(name: 'default_pairwise_de_ui')&.destroy
+    FeatureFlag.retire_feature_flag('default_pairwise_de_ui')
   end
 end
