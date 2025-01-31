@@ -666,7 +666,7 @@ class SiteController < ApplicationController
       if api_status.is_a?(Hash)
         system_status = api_status['systems']
         sam_ok = system_status.dig(FireCloudClient::SAM_SERVICE, 'ok') == true # do equality check in case 'ok' node isn't present
-        #  2025-01-31 quick and dirty workaround for false negative Rawls availability issue
+        #  2025-01-31 quick and dirty workaround for false positive Rawls availability issue
         #  long term mitigation exploration in SCP-5647        
         # rawls_ok = system_status.dig(FireCloudClient::RAWLS_SERVICE, 'ok') == true
         rawls_ok = true
