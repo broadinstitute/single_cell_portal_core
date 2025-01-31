@@ -1148,7 +1148,10 @@ class StudiesController < ApplicationController
 
   # check on FireCloud API status and respond accordingly
   def check_firecloud_status
-    unless ApplicationController.firecloud_client.services_available?(FireCloudClient::SAM_SERVICE, FireCloudClient::RAWLS_SERVICE)
+    #  2025-01-31 quick and dirty workaround for false negative Rawls availability issue
+    #  long term mitigation exploration in SCP-5647
+    #  unless ApplicationController.firecloud_client.services_available?(FireCloudClient::SAM_SERVICE, FireCloudClient::RAWLS_SERVICE
+    unless ApplicationController.firecloud_client.services_available?(FireCloudClient::SAM_SERVICE)
       alert = "Study workspaces are temporarily unavailable, so we cannot complete your request.  Please try again later.  #{SCP_SUPPORT_EMAIL}"
       respond_to do |format|
         format.js {render js: "$('.modal').modal('hide'); alert('#{alert}')" and return}
