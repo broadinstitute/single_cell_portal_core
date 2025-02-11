@@ -194,13 +194,13 @@ function GroupListMenu({
               }
               noteClass = 'available'
             } else {
-              noteText = 'Pick to enable'
+              noteText = 'Pick for pairwise DE'
               noteClass = 'not-yet-available'
             }
           }
 
           if (isDisabled) {
-            noteText = 'Select a group in other menu'
+            noteText = 'Select from left menu first'
             noteClass = 'disabled'
           }
 
