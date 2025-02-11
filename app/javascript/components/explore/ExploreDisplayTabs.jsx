@@ -233,6 +233,9 @@ export default function ExploreDisplayTabs({
   studyAccession, exploreInfo, setExploreInfo, exploreParams, updateExploreParams,
   clearExploreParams, exploreParamsWithDefaults, routerLocation
 }) {
+  const flags = getFeatureFlagsWithDefaults()
+  const hasDefaultPairwiseDeUi = flags?.default_pairwise_de_ui === true
+
   const [, setRenderForcer] = useState({})
   const [dataCache] = useState(createCache())
   // tracks whether the view options controls are open or closed
@@ -250,7 +253,10 @@ export default function ExploreDisplayTabs({
   const [, setShowDeGroupPicker] = useState(false)
   const [deGenes, setDeGenes] = useState(null)
   const [showDifferentialExpressionPanel, setShowDifferentialExpressionPanel] = useState(deGenes !== null)
-  const [showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel] = useState(deGenes !== null)
+
+  const [
+    showUpstreamDifferentialExpressionPanel, setShowUpstreamDifferentialExpressionPanel
+  ] = useState(deGenes !== null)
 
   let initialPanel = 'options'
   if (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel) {
@@ -262,6 +268,10 @@ export default function ExploreDisplayTabs({
 
   // Hash of trace label names to the number of points in that trace
   const [countsByLabelForDe, setCountsByLabelForDe] = useState(null)
+  const showDifferentialExpressionPicker = (
+    hasDefaultPairwiseDeUi &&
+    showViewOptionsControls && initialPanel === 'differential-expression' && deGenes === null
+  )
   const showDifferentialExpressionTable = (showViewOptionsControls && deGenes !== null)
   const plotContainerClass = 'explore-plot-tab-content'
 
@@ -478,12 +488,16 @@ export default function ExploreDisplayTabs({
     let side
     if (showViewOptionsControls) {
       if (
-        (deGenes !== null) ||
-          (hasPairwiseDe && (showDifferentialExpressionPanel || showUpstreamDifferentialExpressionPanel))
+        panelToShow === 'differential-expression'
       ) {
-        // DE table is shown, or pairwise DE is available.  Least horizontal space for plots.
-        main = 'col-md-9'
-        side = 'col-md-3 right-panel'
+        if (hasDefaultPairwiseDeUi && deGenes === null) {
+          main = 'col-md-8'
+          side = 'col-md-4 right-panel'
+        } else {
+          // DE table is shown
+          main = 'col-md-9'
+          side = 'col-md-3 right-panel'
+        }
       } else if (panelToShow === 'cell-filtering') {
         main = 'col-md-10-5'
         side = 'col-md-2-5 right-panel'
@@ -604,6 +618,7 @@ export default function ExploreDisplayTabs({
                     plotPointsSelected,
                     showRelatedGenesIdeogram,
                     showViewOptionsControls,
+                    showDifferentialExpressionPicker,
                     showDifferentialExpressionTable,
                     scatterColor: exploreParamsWithDefaults.scatterColor,
                     setCountsByLabelForDe,
@@ -619,7 +634,8 @@ export default function ExploreDisplayTabs({
                   studyAccession={studyAccession}
                   updateDistributionPlot={distributionPlot => updateExploreParams({ distributionPlot }, false)}
                   dimensions={getPlotDimensions({
-                    showRelatedGenesIdeogram, showViewOptionsControls, showDifferentialExpressionTable
+                    showRelatedGenesIdeogram, showViewOptionsControls,
+                    showDifferentialExpressionPicker, showDifferentialExpressionTable
                   })}
                   cellFaceting={cellFaceting}
                   filteredCells={filteredCells}

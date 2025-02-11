@@ -12,7 +12,7 @@ import {
   getCanonicalSize, getCanonicalSignificance
 } from '~/lib/validation/validate-differential-expression'
 import { contactUsLink } from '~/lib/error-utils'
-
+import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
 import {
   createColumnHelper,
@@ -25,7 +25,8 @@ import {
 
 import DifferentialExpressionModal from '~/components/explore/DifferentialExpressionModal'
 import {
-  OneVsRestDifferentialExpressionGroupPicker, PairwiseDifferentialExpressionGroupPicker
+  OneVsRestDifferentialExpressionGroupPicker, PairwiseDifferentialExpressionGroupPicker,
+  PairwiseDifferentialExpressionGroupLists
 } from '~/components/visualization/controls/DifferentialExpressionGroupPicker'
 
 import {
@@ -725,9 +726,12 @@ export default function DifferentialExpressionPanel({
     setUnfoundGenes(unfoundNames)
   }, [deGenes, searchedGenes, findMode])
 
+  const flags = getFeatureFlagsWithDefaults()
+  const isPairwiseUi = flags?.default_pairwise_de_ui === true
+
   return (
     <>
-      {!hasPairwiseDe &&
+      {!isPairwiseUi && !hasPairwiseDe &&
         <OneVsRestDifferentialExpressionGroupPicker
           bucketId={bucketId}
           clusterName={clusterName}
@@ -745,8 +749,29 @@ export default function DifferentialExpressionPanel({
           significanceMetric={significanceMetric}
         />
       }
-      {hasPairwiseDe &&
+      {!isPairwiseUi && hasPairwiseDe &&
         <PairwiseDifferentialExpressionGroupPicker
+          bucketId={bucketId}
+          clusterName={clusterName}
+          annotation={annotation}
+          setShowDeGroupPicker={setShowDeGroupPicker}
+          deGenes={deGenes}
+          setDeGenes={setDeGenes}
+          deGroup={deGroup}
+          setDeGroup={setDeGroup}
+          countsByLabelForDe={countsByLabelForDe}
+          deObjects={deObjects}
+          setDeFilePath={setDeFilePath}
+          deGroupB={deGroupB}
+          setDeGroupB={setDeGroupB}
+          hasOneVsRestDe={hasOneVsRestDe}
+          sizeMetric={sizeMetric}
+          significanceMetric={significanceMetric}
+        />
+      }
+
+      {isPairwiseUi &&
+        <PairwiseDifferentialExpressionGroupLists
           bucketId={bucketId}
           clusterName={clusterName}
           annotation={annotation}

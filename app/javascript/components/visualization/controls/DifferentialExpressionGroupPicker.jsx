@@ -7,6 +7,10 @@ import { fetchBucketFile } from '~/lib/scp-api'
 import PlotUtils from '~/lib/plot'
 const { getLegendSortedLabels } = PlotUtils
 
+
+// https://stackoverflow.com/questions/37909134/nbsp-jsx-not-working
+const blankSpace = '\u00A0' // How React JSX does &nbsp;
+
 const basePath = '_scp_internal/differential_expression/'
 
 // Value to show in menu if user has not selected a group for DE
@@ -43,7 +47,7 @@ export function parseDeFile(tsvText, isAuthorDe=false) {
       //
       // TODO: There are usually more columns than size (e.g. logfoldchanges)
       // and significance (e.g. pvals_adj) that may well be of interest.
-      // However, we don't parse those here before there is no UI for them.
+      // However, we don't parse those here because there is no UI for them.
       // If we opt to build a UI for further metrics (e.g. pctNzGroup in Scanpy
       // / pct.1 in Seurat, etc.), we would need to order them canonically
       // across SCP-computed DE results and (Ingest Pipeline-processed) author
@@ -142,6 +146,174 @@ function getMatchingDeOption(
   })
 
   return matchingDeOption
+}
+
+/** List menu of groups available to select for DE comparison */
+function GroupListMenu({
+  groups, selectedGroups, updateSelectedGroups, setNote, isMenuB=false,
+  hoverAllOthers, setHoverAllOthers
+}) {
+
+  if (isMenuB) {
+    groups.unshift('rest')
+  }
+
+  const groupsIndex = isMenuB ? 1 : 0
+  const otherGroupsIndex = isMenuB ? 0 : 1
+  const otherMenuSelection = selectedGroups[otherGroupsIndex]
+
+  return (
+    <>
+      {groups.map((group, i) => {
+        // If this menu has a selected group and this group isn't it,
+        // then disable this group
+        const isInvalid = group === otherMenuSelection && isMenuB
+
+        if (isInvalid) {return ''}
+
+        const isMenuANull = selectedGroups[0] === null
+
+        const isDisabled = isMenuANull && isMenuB
+        const disabledClass = ''
+        let noteClass = ''
+        let noteText = ''
+        let hoverClass = ''
+
+        const isRest = group === 'rest'
+
+        // TODO (SCP-5912): Integrate DE pairwise comparison availability
+        const isAvailable = isRest
+
+        if (isMenuB) {
+          if (!isDisabled) {
+            if (isAvailable) {
+              if (isRest) {
+                noteText = 'All other groups'
+              } else {
+                noteText = blankSpace
+              }
+              noteClass = 'available'
+            } else {
+              noteText = 'Pick for pairwise DE'
+              noteClass = 'not-yet-available'
+            }
+          }
+
+          if (isDisabled) {
+            noteText = 'Select from left menu first'
+            noteClass = 'disabled'
+          }
+
+          if (hoverAllOthers) {
+            hoverClass = 'hover'
+          }
+        }
+
+        let ariaLabel = ''
+        if (isMenuB) {
+          ariaLabel = (noteText[0].toUpperCase() + noteText.slice(1)).replaceAll('-', ' ')
+        }
+        const labelClass = `de-group-menu-item ${noteClass} ${disabledClass} ${hoverClass}`
+
+        const menuName = `pairwise-menu${isMenuB && '-b'}`
+        const id = `${menuName}-${i}`
+
+        return (
+          <label
+            htmlFor={id}
+            className={labelClass}
+            aria-label={ariaLabel}
+            onMouseEnter={() => {
+              if (isMenuB) {
+                setNote(noteText)
+                if (isRest) {setHoverAllOthers(true)}
+              }
+            }}
+            onMouseLeave={() => {
+              if (isMenuB) {
+                setNote(blankSpace)
+                if (isRest) {setHoverAllOthers(false)}
+              }
+            }}
+            key={i}
+          >
+            <input
+              id={id}
+              type="radio"
+              className="pairwise-menu-input"
+              name={menuName}
+              style={{ marginRight: '4px' }}
+              disabled={isDisabled}
+              onChange={event => {
+                // TODO (SCP-5913): Add downstream views for updated DE picker
+                const radio = event.target
+                const isChecked = radio.checked
+                const groupName = radio.parentElement.innerText
+                const newSelectedGroups = [...selectedGroups]
+
+                const newGroup = isChecked ? groupName : null
+                if (groupsIndex === 0 && newGroup === selectedGroups[1]) {
+                  newSelectedGroups[1] === null
+                }
+
+                newSelectedGroups[groupsIndex] = newGroup
+
+                updateSelectedGroups(newSelectedGroups)
+              }}
+            ></input>
+            {group}
+          </label>
+        )
+      })}
+    </>
+  )
+}
+
+/** Pick groups of cells for pairwise differential expression (DE) */
+export function PairwiseDifferentialExpressionGroupLists({
+  deGenes, countsByLabelForDe
+}) {
+  const groups = getLegendSortedLabels(countsByLabelForDe)
+
+  const [selectedGroups, setSelectedGroups] = useState([null, null])
+  const [note, setNote] = useState(blankSpace)
+  const [hoverAllOthers, setHoverAllOthers] = useState(false)
+
+  /** Set new selection for DE groups to compare */
+  function updateSelectedGroups(newSelectedGroups) {
+    setSelectedGroups(newSelectedGroups)
+  }
+
+  return (
+    <>
+      <div className="differential-expression-picker">
+        <div className="pairwise-menu">
+          <p>Pick groups to compare.</p>
+          <GroupListMenu
+            groups={groups}
+            selectedGroups={selectedGroups}
+            updateSelectedGroups={updateSelectedGroups}
+            hoverAllOthers={hoverAllOthers}
+            setHoverAllOthers={setHoverAllOthers}
+          />
+        </div>
+        <div className="vs-note pairwise-lists">vs. </div>
+        <div className="pairwise-menu pairwise-menu-b">
+          <p><i>{note}</i></p>
+          <GroupListMenu
+            groups={groups}
+            selectedGroups={selectedGroups}
+            updateSelectedGroups={updateSelectedGroups}
+            setNote={setNote}
+            isMenuB={true}
+            hoverAllOthers={hoverAllOthers}
+            setHoverAllOthers={setHoverAllOthers}
+          />
+        </div>
+      </div>
+      {deGenes && <><br/><br/></>}
+    </>
+  )
 }
 
 /** Pick groups of cells for pairwise differential expression (DE) */
