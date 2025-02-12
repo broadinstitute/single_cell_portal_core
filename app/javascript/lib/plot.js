@@ -265,7 +265,7 @@ PlotUtils.weightedZeroSort = function(a, b, sortOrder) {
     return b - a
   } else {
     return a - b
-  } 
+  }
 }
 
 /**
@@ -405,12 +405,18 @@ PlotUtils.getPlotDimensions = function({
   hasDescription=false,
   showRelatedGenesIdeogram=false,
   showViewOptionsControls=true,
+  showDifferentialExpressionPicker=false,
   showDifferentialExpressionTable=false
 }) {
   // Account for options panel and DE table
   let baseWidth = $(window).width()
   if (showViewOptionsControls) {
-    const unitWidth = showDifferentialExpressionTable ? 9 : 10
+    let unitWidth = 10
+    if (showDifferentialExpressionTable) {
+      unitWidth = 9
+    } else if (showDifferentialExpressionPicker) {
+      unitWidth = 8
+    }
     baseWidth = Math.round(baseWidth * unitWidth / 12)
   }
   if (hasLabelLegend) {

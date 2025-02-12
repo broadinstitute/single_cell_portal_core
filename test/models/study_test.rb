@@ -201,4 +201,14 @@ class StudyTest < ActiveSupport::TestCase
     assert_equal cells, @study.expression_matrix_cells(ann_data_file, matrix_type: 'processed')
     assert_equal cells, @study.expression_matrix_cells(ann_data_file, matrix_type: 'raw')
   end
+
+  test 'should prevent data embargo longer than max' do
+    study = FactoryBot.create(:detached_study, user: @user, name_prefix: 'Embargo Test', test_array: @@studies_to_clean)
+    assert study.valid?
+    study.embargo = study.max_embargo + 1.day
+    assert_not study.valid?
+    assert study.errors.has_key?(:embargo)
+    study.public = false
+    assert study.valid?
+  end
 end

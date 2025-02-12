@@ -2,7 +2,7 @@ class TosAcceptance
   include Mongoid::Document
   include Mongoid::Timestamps
 
-  CURRENT_VERSION = Date.parse('2018-08-29') # current revision of ToS
+  CURRENT_VERSION = Date.parse('2025-01-15') # current revision of ToS
 
   field :email, type: String
   field :version, type: Date, default: CURRENT_VERSION

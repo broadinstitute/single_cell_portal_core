@@ -9,31 +9,63 @@ import '@testing-library/jest-dom/extend-expect'
 
 import DifferentialExpressionPanel from 'components/explore/DifferentialExpressionPanel'
 import {
-  PairwiseDifferentialExpressionGroupPicker, parseDeFile
+  PairwiseDifferentialExpressionGroupPicker, parseDeFile,
+  PairwiseDifferentialExpressionGroupLists
 } from 'components/visualization/controls/DifferentialExpressionGroupPicker'
 import { exploreInfo, deObjects } from './differential-expression-panel.test-data'
 
+const countsByLabelForDe = {
+  'LC2': 35398,
+  'GPMNB macrophages': 5318,
+  'LC1': 4427,
+  'neutrophils': 835,
+  'B cells': 52,
+  'T cells': 792,
+  'dendritic cells': 425,
+  'CSN1S1 macrophages': 1066,
+  'eosinophils': 25,
+  'fibroblasts': 140
+}
+
+const deGenes = [
+  {
+    'size': 4.138,
+    'significance': 1.547e-26,
+    'name': 'CD74'
+  },
+  {
+    'size': 3.753,
+    'significance': 2.778e-24,
+    'name': 'HLA-DPA1'
+  },
+  {
+    'size': 3.753,
+    'significance': 2.778e-24,
+    'name': 'HLA-FOOBAR'
+  }
+]
+
 describe('Differential expression panel', () => {
+  it('renders pairwise DE picker lists', async () => {
+    const { container } = render((
+      <PairwiseDifferentialExpressionGroupLists
+        deGenes={deGenes}
+        countsByLabelForDe={countsByLabelForDe}
+      />
+    ))
+
+    // Ensure items in menu A display by default
+    const pairwiseMenuA = container.querySelector('.pairwise-menu')
+    expect(pairwiseMenuA).toHaveTextContent('CSN1S1 macrophages')
+
+    const restItem = container.querySelector('#pairwise-menu-b-0').parentElement
+    const restIsDisabled = Array.from(restItem.classList).includes('disabled')
+    expect(restIsDisabled).toBe(true)
+  })
+
   it('renders DE genes table', async () => {
     // const deGroup = 'KRT high lactocytes 1'
     const deGroup = 'B cells'
-    const deGenes = [
-      {
-        'size': 4.138,
-        'significance': 1.547e-26,
-        'name': 'CD74'
-      },
-      {
-        'size': 3.753,
-        'significance': 2.778e-24,
-        'name': 'HLA-DPA1'
-      },
-      {
-        'size': 3.753,
-        'significance': 2.778e-24,
-        'name': 'HLA-FOOBAR'
-      }
-    ]
 
     const searchGenes = jest.fn()
 
@@ -59,19 +91,6 @@ describe('Differential expression panel', () => {
     const setShowDeGroupPicker = function() {}
     const setDeGenes = function() {}
     const setDeGroup = function() {}
-
-    const countsByLabelForDe = {
-      'LC2': 35398,
-      'GPMNB macrophages': 5318,
-      'LC1': 4427,
-      'neutrophils': 835,
-      'B cells': 52,
-      'T cells': 792,
-      'dendritic cells': 425,
-      'CSN1S1 macrophages': 1066,
-      'eosinophils': 25,
-      'fibroblasts': 140
-    }
 
     const deHeaders = deObjects[0].select_options.headers
 
@@ -173,20 +192,6 @@ describe('Differential expression panel', () => {
     const setDeGroup = function() {}
     const setDeFilePath = function() {}
     const setDeGroupB = function() {}
-
-    const countsByLabelForDe = {
-      'LC2': 35398,
-      'GPMNB macrophages': 5318,
-      'LC1': 4427,
-      'neutrophils': 835,
-      'B cells': 52,
-      'T cells': 792,
-      'dendritic cells': 425,
-      'CSN1S1 macrophages': 1066,
-      'eosinophils': 25,
-      'fibroblasts': 140
-    }
-
 
     const bucketId = 'fc-febd4c65-881d-497f-b101-01a7ec427e6a'
 

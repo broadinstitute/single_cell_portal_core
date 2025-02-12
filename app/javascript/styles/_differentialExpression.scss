@@ -170,6 +170,7 @@
 
 .differential-expression-picker {
   margin-bottom: 20px;
+  display: flex;
 
   .one-vs-rest-select {
     float: left;
@@ -184,13 +185,74 @@
     float: right;
   }
 
+  .pairwise-menu {
+    display: inline-block;
+    padding-top: 3px;
+    width: calc(45%); // leave room for vs-note, other menu
+    border-radius: 8px;
+  }
+  .pairwise-menu-b {
+    float: right;
+  }
+
+  .pairwise-menu label {
+    width: 100%;
+    cursor: pointer;
+    font-weight: normal;
+  }
+
+  .pairwise-menu label.disabled {
+    cursor: not-allowed;
+    color: #AAA;
+  }
+
+  .de-group-menu-item {
+    padding-left: 8px;
+    border-radius: 8px;
+  }
+
+  .de-group-menu-item {
+    border: 1px solid #FFF;
+  }
+
+  .de-group-menu-item.available {
+    background: #F8FEF8;
+    border: 1px solid #ADA;
+  }
+
+  .de-group-menu-item.available:hover {
+    border: 1px solid #5A5;
+    background: #F8FDF8;
+  }
+
+  .de-group-menu-item.not-yet-available {
+    background: #FFE;
+    border: 1px solid #CC8;
+  }
+
+  .de-group-menu-item.not-yet-available:hover,
+  .de-group-menu-item.not-yet-available.hover {
+    background: #FFD;
+    border: 1px solid #BB6;
+  }
+
+  .pairwise-menu-input {
+    position: relative;
+    top: 1px;
+    cursor: pointer;
+  }
+
   .vs-note {
     position: relative;
     top: 10px;
     margin-left: 5px;
   }
-}
 
+  .vs-note.pairwise-lists  {
+    top: 36px;
+    margin-right: 15px;
+  }
+}
 
 .de-slider-container {
   margin-bottom: 40px;
