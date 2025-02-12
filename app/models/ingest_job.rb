@@ -382,10 +382,8 @@ class IngestJob
     if done? && !failed?
       Rails.logger.info "IngestJob poller: #{pipeline_name} is done!"
       Rails.logger.info "IngestJob poller: #{pipeline_name} status: #{current_status}"
-      unless special_action? || (action == :ingest_anndata && study_file.is_viz_anndata?)
-        study_file.update(parse_status: 'parsed')
-        study_file.bundled_files.each { |sf| sf.update(parse_status: 'parsed') }
-      end
+      study_file.update(parse_status: 'parsed')
+      study_file.bundled_files.each { |sf| sf.update(parse_status: 'parsed') }
       study.reload # refresh cached instance of study
       study_file.reload # refresh cached instance of study_file
       # check if another process marked file for deletion, can happen if this is an AnnData file
@@ -412,6 +410,7 @@ class IngestJob
       end
     elsif done? && failed?
       Rails.logger.error "IngestJob poller: #{pipeline_name} has failed."
+      study_file.update(parse_status: 'parsed')
       # log errors to application log for inspection
       log_error_messages
       log_to_mixpanel # log before queuing file for deletion to preserve properties
@@ -708,6 +707,7 @@ class IngestJob
           submission = ApplicationController.batch_api_client.run_job(
             study_file:, user:, action: :ingest_subsample, params_object: subsample_params
           )
+          study_file.update(parse_status: 'parsing')
           IngestJob.new(
             pipeline_name: submission.name, study:, study_file:, user:, action: :ingest_subsample,
             params_object: subsample_params, reparse:, persist_on_fail:
@@ -819,6 +819,7 @@ class IngestJob
     # reference AnnData uploads don't have extract parameter so exit immediately
     return if params_object.extract.blank?
 
+    study_file.update(parse_status: 'parsing')
     params_object.extract.each do |extract|
       case extract
       when 'cluster'
@@ -862,14 +863,8 @@ class IngestJob
         job.delay.push_remote_and_launch_ingest
       end
 
-      # if this was only a raw counts extraction, update parse status
-      if params_object.extract == %w[raw_counts]
-        study_file.update(parse_status: 'parsed')
-        launch_differential_expression_jobs
-      else
-        # unset anndata_summary flag to allow reporting summary later unless this is only a raw counts extraction
-        study_file.unset_anndata_summary!
-      end
+      # unset anndata_summary flag to allow reporting summary later unless this is only a raw counts extraction
+      study_file.unset_anndata_summary! unless params_object.extract == %w[raw_counts]
     end
   end
 
