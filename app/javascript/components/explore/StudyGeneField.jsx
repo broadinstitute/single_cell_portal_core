@@ -35,11 +35,13 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
   const [inputText, setInputText] = useState('')
 
   const rawSuggestions = getAutocompleteSuggestions(inputText, allGenes)
-  const geneOptions = getOptionsFromGenes(rawSuggestions)
+  const searchOptions = getSearchOptions(rawSuggestions)
+
+  console.log('searchOptions', searchOptions)
 
   let enteredGeneArray = []
   if (genes) {
-    enteredGeneArray = getOptionsFromGenes(genes)
+    enteredGeneArray = getSearchOptions(genes)
   }
 
   /** the search control tracks two state variables
@@ -90,7 +92,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     if (!inputTextValues.length || !inputTextValues[0].length) {
       return geneArray
     }
-    const newGeneArray = geneArray.concat(getOptionsFromGenes(inputTextValues))
+    const newGeneArray = geneArray.concat(getSearchOptions(inputTextValues))
     setInputText(' ')
     setGeneArray(newGeneArray)
     return newGeneArray
@@ -131,7 +133,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
   useEffect(() => {
     if (genes.join(',') !== geneArray.map(opt => opt.label).join(',')) {
       // the genes have been updated elsewhere -- resync
-      setGeneArray(getOptionsFromGenes(genes))
+      setGeneArray(getSearchOptions(genes))
       setInputText('')
       setNotPresentGenes(new Set([]))
     }
@@ -171,7 +173,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
             isMulti
             isValidNewOption={() => false}
             noOptionsMessage={() => (inputText.length > 1 ? 'No matching genes' : 'Type to search...')}
-            options={geneOptions}
+            options={searchOptions}
             onChange={handleSelectChange}
             onInputChange={inputValue => setInputText(inputValue)}
             onKeyDown={handleKeyDown}
@@ -236,9 +238,14 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
 }
 
 /** takes an array of gene name strings, and returns options suitable for react-select */
-function getOptionsFromGenes(genes) {
-  return genes.map(geneName => ({
-    label: geneName,
-    value: geneName
-  }))
+function getSearchOptions(rawSuggestions) {
+  return rawSuggestions.map(rawSuggestion => {
+    if (typeof rawSuggestion === 'string') {
+      const geneName = rawSuggestion
+      return { label: geneName, value: geneName }
+    } else {
+      // This is a pathway suggestion, {label: pathway name, value: pathway ID}
+      return rawSuggestion
+    }
+  })
 }

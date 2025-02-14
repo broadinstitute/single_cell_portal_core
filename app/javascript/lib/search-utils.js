@@ -43,9 +43,16 @@ function getPathwaySuggestions(inputText) {
 
   const pathwayIdsByName = getPathwayIdsByName(window.ideogram.interactionCache)
   const pathwayNames = Object.keys(pathwayIdsByName)
-  const pathwaySuggestions = pathwayNames.filter(
+  const rawSuggestions = pathwayNames.filter(
     name => name.toLowerCase().includes(inputText.toLowerCase())
   )
+  const pathwaySuggestions = rawSuggestions.map(pathwayName => {
+    const pathwayId = pathwayIdsByName[pathwayName]
+
+    // As expected by autocomplete in study gene search
+    const pathwayOption = { label: pathwayName, value: pathwayId }
+    return pathwayOption
+  })
 
   return pathwaySuggestions
 }
