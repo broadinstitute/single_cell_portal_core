@@ -10,6 +10,15 @@ import { log } from '~/lib/metrics-api'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
+/** Determine if searched gene is among available genes */
+function getIsInvalidGene(searchedGene, allGenes) {
+  const geneLowercase = getIsInvalidGene.label.toLowerCase()
+  const isInvalidGene = (
+    allGenes.length > 0 &&
+    !allGenes.find(geneOpt => geneOpt.toLowerCase() === geneLowercase)
+  )
+  return isInvalidGene
+}
 
 /**
 * Renders the gene text input
@@ -49,8 +58,8 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     if (newGeneArray) {
       newGeneArray.forEach(gene => {
         // if an entered gene is not in the valid gene options for the study
-        const geneLowercase = gene.label.toLowerCase()
-        if (allGenes.length > 0 && !allGenes.find(geneOpt => geneOpt.toLowerCase() === geneLowercase)) {
+        const isInvalidGene = getIsInvalidGene(gene, allGenes)
+        if (isInvalidGene) {
           newNotPresentGenes.add(gene.label)
         }
       })
