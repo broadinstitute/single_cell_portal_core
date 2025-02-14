@@ -5,17 +5,18 @@ import Button from 'react-bootstrap/lib/Button'
 import Modal from 'react-bootstrap/lib/Modal'
 import CreatableSelect from 'react-select/creatable'
 
-import { getAutocompleteSuggestions } from '~/lib/search-utils'
+import { getAutocompleteSuggestions, getIsPathwayName } from '~/lib/search-utils'
 import { log } from '~/lib/metrics-api'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
-/** Determine if searched gene is among available genes */
+/** Determine if searched text is among available genes */
 function getIsInvalidGene(searchedGene, allGenes) {
-  const geneLowercase = getIsInvalidGene.label.toLowerCase()
+  const geneLowercase = searchedGene.toLowerCase()
   const isInvalidGene = (
     allGenes.length > 0 &&
-    !allGenes.find(geneOpt => geneOpt.toLowerCase() === geneLowercase)
+    !allGenes.find(geneOpt => geneOpt.toLowerCase() === geneLowercase) &&
+    !getIsPathwayName(searchedGene)
   )
   return isInvalidGene
 }
@@ -56,11 +57,12 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     const newGeneArray = syncGeneArrayToInputText()
     const newNotPresentGenes = new Set([])
     if (newGeneArray) {
-      newGeneArray.forEach(gene => {
+      newGeneArray.map(g => g.label).forEach(gene => {
+        console.log('gene', gene)
         // if an entered gene is not in the valid gene options for the study
         const isInvalidGene = getIsInvalidGene(gene, allGenes)
         if (isInvalidGene) {
-          newNotPresentGenes.add(gene.label)
+          newNotPresentGenes.add(gene)
         }
       })
     }

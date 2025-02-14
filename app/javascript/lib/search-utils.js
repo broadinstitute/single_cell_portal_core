@@ -20,16 +20,32 @@ function getPathwayIdsByName(pathwayCache) {
   return pathwayIdsByName
 }
 
-/** Get pathway names that include the input text */
-function getPathwaySuggestions(inputText, targets) {
+/** Determine if input text is a pathway name */
+export function getIsPathwayName(inputText) {
   if (!window.ideogram || !window.ideogram.interactionCache) {
     return []
   }
 
   const pathwayIdsByName = getPathwayIdsByName(window.ideogram.interactionCache)
-  console.log('in getPathwaySuggestions, pathwayIdsByName', pathwayIdsByName)
   const pathwayNames = Object.keys(pathwayIdsByName)
-  const pathwaySuggestions = pathwayNames.filter(name => name.includes(inputText))
+  const isPathwayName = pathwayNames.some(
+    name => name.toLowerCase() === inputText.toLowerCase()
+  )
+
+  return isPathwayName
+}
+
+/** Get pathway names that include the input text */
+function getPathwaySuggestions(inputText) {
+  if (!window.ideogram || !window.ideogram.interactionCache) {
+    return []
+  }
+
+  const pathwayIdsByName = getPathwayIdsByName(window.ideogram.interactionCache)
+  const pathwayNames = Object.keys(pathwayIdsByName)
+  const pathwaySuggestions = pathwayNames.filter(
+    name => name.toLowerCase().includes(inputText.toLowerCase())
+  )
 
   return pathwaySuggestions
 }
