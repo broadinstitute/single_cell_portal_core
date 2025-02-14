@@ -3,6 +3,37 @@ import stringSimilarity from 'string-similarity'
 // max number of autocomplete suggestions
 export const NUM_SUGGESTIONS = 50
 
+/** Get object mapping pathway names to WikiPathways IDs */
+function getPathwayIdsByName(pathwayCache) {
+  if (window.pathwayIdsByName) {
+    return window.pathwayIdsByName
+  }
+
+  const pathwayIdsByName = {}
+  Object.values(pathwayCache).forEach(ixnObj => {
+    ixnObj.result.forEach(r => pathwayIdsByName[r.name] = r.id)
+  })
+
+  console.log('in getPathwayIdsByName, pathwayIdsByName', pathwayIdsByName)
+
+  window.pathwayIdsByName = pathwayIdsByName
+  return pathwayIdsByName
+}
+
+/** Get pathway names that include the input text */
+function getPathwaySuggestions(inputText, targets) {
+  if (!window.ideogram || !window.ideogram.interactionCache) {
+    return []
+  }
+
+  const pathwayIdsByName = getPathwayIdsByName(window.ideogram.interactionCache)
+  console.log('in getPathwaySuggestions, pathwayIdsByName', pathwayIdsByName)
+  const pathwayNames = Object.keys(pathwayIdsByName)
+  const pathwaySuggestions = pathwayNames.filter(name => name.includes(inputText))
+
+  return pathwaySuggestions
+}
+
 /**
  * Get list of autocomplete suggestions, based on input text
  *
@@ -47,5 +78,14 @@ export function getAutocompleteSuggestions(inputText, targets, numSuggestions=NU
   }
 
   if (exactMatch) {topMatches.unshift(exactMatch)} // Put any exact match first
-  return topMatches.slice(0, numSuggestions)
+
+  const pathwaySuggestions = getPathwaySuggestions(inputText, targets)
+
+  const topGeneMatches = topMatches.slice(0, numSuggestions)
+
+  topMatches = topGeneMatches.concat(pathwaySuggestions)
+
+  return topMatches
+
+
 }
