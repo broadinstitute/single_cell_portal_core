@@ -271,6 +271,20 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
   )
 }
 
+/** Ensure at least some matched pathways are glanceable */
+function filterSearchOptions(rawGeneOptions, rawPathwayOptions) {
+  const maxGenes = 4
+  const numGenes = rawGeneOptions.length
+  const numPathways = rawPathwayOptions.length
+
+  if (numPathways === 0) {
+    return [rawGeneOptions, rawPathwayOptions]
+  } else if (numGenes > maxGenes) {
+    const filteredGeneOptions = rawGeneOptions.slice(0, maxGenes)
+    return [filteredGeneOptions, rawPathwayOptions]
+  }
+}
+
 /** takes an array of gene name strings, and returns options suitable for react-select */
 function getSearchOptions(rawSuggestions) {
   const flags = getFeatureFlagsWithDefaults()
@@ -280,17 +294,21 @@ function getSearchOptions(rawSuggestions) {
       return { label: geneName, value: geneName, isGene: true }
     })
   } else {
-    const geneOptions = []
-    const pathwayOptions = []
+    const rawGeneOptions = []
+    const rawPathwayOptions = []
     rawSuggestions.forEach(rawSuggestion => {
       if (typeof rawSuggestion === 'string') {
         const geneName = rawSuggestion
-        geneOptions.push({ label: geneName, value: geneName, isGene: true })
+        rawGeneOptions.push({ label: geneName, value: geneName, isGene: true })
       } else {
         // This is a pathway suggestion, {label: pathway name, value: pathway ID}
-        pathwayOptions.push(rawSuggestion)
+        rawPathwayOptions.push(rawSuggestion)
       }
     })
+
+    const [geneOptions, pathwayOptions] =
+      filterSearchOptions(rawGeneOptions, rawPathwayOptions)
+
     const searchOptions = [
       { 'label': 'Genes', 'options': geneOptions },
       { 'label': 'Pathways', 'options': pathwayOptions }
