@@ -21,6 +21,20 @@ function getIsInvalidGene(searchedGene, allGenes) {
   return isInvalidGene
 }
 
+/** Parse gene name from heterogeneous array  */
+function getGenesFromSearchOptions(newGeneArray) {
+  let newGenes
+  const flags = getFeatureFlagsWithDefaults()
+
+  if (newGeneArray[0]?.isGene === true || !flags?.show_pathway_expression) {
+    newGenes = newGeneArray.map(g => g.value)
+  } else {
+    newGenes = newGeneArray[0].options.map(g => g.value)
+  }
+
+  return newGenes
+}
+
 /**
 * Renders the gene text input
 * This shares a lot of logic with search/genes/GeneKeyword, but is kept as a separate component for
@@ -37,8 +51,6 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
   const rawSuggestions = getAutocompleteSuggestions(inputText, allGenes)
   const searchOptions = getSearchOptions(rawSuggestions)
 
-  console.log('searchOptions', searchOptions)
-
   let enteredGeneArray = []
   if (genes) {
     enteredGeneArray = getSearchOptions(genes)
@@ -53,26 +65,44 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
   const [notPresentGenes, setNotPresentGenes] = useState(new Set([]))
   const [showNotPresentGeneChoice, setShowNotPresentGeneChoice] = useState(false)
 
+  const flags = getFeatureFlagsWithDefaults()
+
   /** Handles a user submitting a gene search */
   function handleSearch(event) {
     event.preventDefault()
     const newGeneArray = syncGeneArrayToInputText()
+    console.log('in handleSearch, newGeneArray', newGeneArray)
+
     const newNotPresentGenes = new Set([])
     if (newGeneArray) {
-      newGeneArray.map(g => g.label).forEach(gene => {
-        console.log('gene', gene)
-        // if an entered gene is not in the valid gene options for the study
-        const isInvalidGene = getIsInvalidGene(gene, allGenes)
-        if (isInvalidGene) {
-          newNotPresentGenes.add(gene)
-        }
-      })
+      if (!flags?.show_pathway_expression) {
+        newGeneArray.map(g => g.value).forEach(gene => {
+          // if an entered gene is not in the valid gene options for the study
+          const isInvalidGene = getIsInvalidGene(gene, allGenes)
+          if (isInvalidGene) {
+            newNotPresentGenes.add(gene)
+          }
+        })
+      } else {
+        const newGenes = getGenesFromSearchOptions(newGeneArray)
+        console.log('in handleSearch, newGenes', newGenes)
+        newGenes.forEach(gene => {
+          // if an entered gene is not in the valid gene options for the study
+          const isInvalidGene = getIsInvalidGene(gene, allGenes)
+          if (isInvalidGene) {
+            newNotPresentGenes.add(gene)
+          }
+        })
+      }
     }
     setNotPresentGenes(newNotPresentGenes)
+
     if (newNotPresentGenes.size > 0) {
       setShowNotPresentGeneChoice(true)
     } else if (newGeneArray && newGeneArray.length) {
-      const genesToSearch = newGeneArray.map(g => g.value)
+      const newGenes = getGenesFromSearchOptions(newGeneArray)
+      const genesToSearch = newGenes
+      console.log('in handleSearch, genesToSearch', genesToSearch)
       if (genesToSearch.length > window.MAX_GENE_SEARCH) {
         log('search-too-many-genes', { numGenes: genesToSearch.length })
         setShowTooManyGenesModal(true)
@@ -92,7 +122,11 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     if (!inputTextValues.length || !inputTextValues[0].length) {
       return geneArray
     }
-    const newGeneArray = geneArray.concat(getSearchOptions(inputTextValues))
+    const searchOptions = getSearchOptions(inputTextValues)
+    const geneSearchOptions = searchOptions[0].options
+    console.log('in syncGeneArrayToInputText, geneArray', geneArray)
+    console.log('in syncGeneArrayToInputText, geneSearchOptions', geneSearchOptions)
+    const newGeneArray = geneArray.concat(geneSearchOptions)
     setInputText(' ')
     setGeneArray(newGeneArray)
     return newGeneArray
@@ -239,13 +273,29 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
 
 /** takes an array of gene name strings, and returns options suitable for react-select */
 function getSearchOptions(rawSuggestions) {
-  return rawSuggestions.map(rawSuggestion => {
-    if (typeof rawSuggestion === 'string') {
+  const flags = getFeatureFlagsWithDefaults()
+  if (!flags?.show_pathway_expression) {
+    return rawSuggestions.map(rawSuggestion => {
       const geneName = rawSuggestion
-      return { label: geneName, value: geneName }
-    } else {
-      // This is a pathway suggestion, {label: pathway name, value: pathway ID}
-      return rawSuggestion
-    }
-  })
+      return { label: geneName, value: geneName, isGene: true }
+    })
+  } else {
+    const geneOptions = []
+    const pathwayOptions = []
+    rawSuggestions.forEach(rawSuggestion => {
+      if (typeof rawSuggestion === 'string') {
+        const geneName = rawSuggestion
+        geneOptions.push({ label: geneName, value: geneName, isGene: true })
+      } else {
+        // This is a pathway suggestion, {label: pathway name, value: pathway ID}
+        pathwayOptions.push(rawSuggestion)
+      }
+    })
+    const searchOptions = [
+      { 'label': 'Genes', 'options': geneOptions },
+      { 'label': 'Pathways', 'options': pathwayOptions }
+    ]
+
+    return searchOptions
+  }
 }

@@ -1,4 +1,5 @@
 import stringSimilarity from 'string-similarity'
+import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
 // max number of autocomplete suggestions
 export const NUM_SUGGESTIONS = 50
@@ -10,7 +11,8 @@ function getPathwayIdsByName(pathwayCache) {
   }
 
   const pathwayIdsByName = {}
-  Object.values(pathwayCache).forEach(ixnObj => {
+  const genesByPathwayId = {}
+  Object.entries(pathwayCache).forEach(([gene, ixnObj]) => {
     ixnObj.result.forEach(r => pathwayIdsByName[r.name] = r.id)
   })
 
@@ -37,7 +39,11 @@ export function getIsPathwayName(inputText) {
 
 /** Get pathway names that include the input text */
 function getPathwaySuggestions(inputText) {
-  if (!window.ideogram || !window.ideogram.interactionCache) {
+  const flags = getFeatureFlagsWithDefaults()
+  if (
+    !window.ideogram || !window.ideogram.interactionCache ||
+    !flags?.show_pathway_expression
+  ) {
     return []
   }
 
@@ -50,7 +56,7 @@ function getPathwaySuggestions(inputText) {
     const pathwayId = pathwayIdsByName[pathwayName]
 
     // As expected by autocomplete in study gene search
-    const pathwayOption = { label: pathwayName, value: pathwayId }
+    const pathwayOption = { label: pathwayName, value: pathwayId, isGene: false }
     return pathwayOption
   })
 
