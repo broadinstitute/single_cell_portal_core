@@ -13,6 +13,7 @@ import ScatterPlot from '~/components/visualization/ScatterPlot'
 import StudyViolinPlot from '~/components/visualization/StudyViolinPlot'
 import DotPlot from '~/components/visualization/DotPlot'
 import Heatmap from '~/components/visualization/Heatmap'
+import Pathway from '~/components/visualization/Pathway'
 import GeneListHeatmap from '~/components/visualization/GeneListHeatmap'
 import GenomeView from './GenomeView'
 import { getAnnotationValues, getShownAnnotation } from '~/lib/cluster-utils'
@@ -666,6 +667,15 @@ export default function ExploreDisplayTabs({
                 />
               </div>
             }
+            { enabledTabs.includes('pathway') &&
+              <div className={shownTab === 'pathway' ? '' : 'hidden'}>
+                <Pathway
+                  studyAccession={studyAccession}
+                  {... exploreParamsWithDefaults}
+                  dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
+                />
+              </div>
+            }
             { enabledTabs.includes('geneListHeatmap') &&
               <div className={shownTab === 'geneListHeatmap' ? '' : 'hidden'}>
                 <GeneListHeatmap
@@ -765,6 +775,7 @@ export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
   const numGenes = exploreParams?.genes?.length
   const isMultiGene = numGenes > 1
   const isGene = exploreParams?.genes?.length > 0
+  const isPathway = exploreParams?.genes?.length === 1 && /WP\d+$/.test(exploreParams.genes[0])
   const isConsensus = !!exploreParams.consensus
   const hasClusters = exploreInfo && exploreInfo.clusterGroupNames.length > 0
   const hasSpatialGroups = exploreParams.spatialGroups?.length > 0
@@ -783,6 +794,8 @@ export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
 
   if (isGeneList) {
     enabledTabs = ['geneListHeatmap']
+  } if (isPathway) {
+    enabledTabs = ['pathway']
   } else if (isGene) {
     if (isMultiGene) {
       if (isConsensus) {
