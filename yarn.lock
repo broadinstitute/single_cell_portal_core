@@ -5218,10 +5218,9 @@ iconv-lite@0.4, iconv-lite@0.4.24, iconv-lite@^0.4.24:
   dependencies:
     safer-buffer ">= 2.1.2 < 3"
 
-ideogram@1.48.0:
-  version "1.48.0"
-  resolved "https://registry.yarnpkg.com/ideogram/-/ideogram-1.48.0.tgz#0c4849b01854d2bd2ab784105fbe546aff022a7a"
-  integrity sha512-qza99AA6nqa+McAU0v5YTypJXleWzNLy29zeyGYL2pwG7k3fg4H0uvmCkM+EARSH1iMAevEYpxHIMqZrkeq06w==
+ideogram@eweitz/ideogram#7272fe0ab915017751561039d2dfa33760fc6e7a:
+  version "1.50.0"
+  resolved "https://codeload.github.com/eweitz/ideogram/tar.gz/7272fe0ab915017751561039d2dfa33760fc6e7a"
   dependencies:
     crossfilter2 "1.5.2"
     d3-array "^2.8.0"
