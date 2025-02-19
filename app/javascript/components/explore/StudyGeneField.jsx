@@ -5,7 +5,7 @@ import Button from 'react-bootstrap/lib/Button'
 import Modal from 'react-bootstrap/lib/Modal'
 import CreatableSelect from 'react-select/creatable'
 
-import { getAutocompleteSuggestions, getIsPathwayName } from '~/lib/search-utils'
+import { getAutocompleteSuggestions, getIsPathway } from '~/lib/search-utils'
 import { log } from '~/lib/metrics-api'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
@@ -16,7 +16,7 @@ function getIsInvalidGene(searchedGene, allGenes) {
   const isInvalidGene = (
     allGenes.length > 0 &&
     !allGenes.find(geneOpt => geneOpt.toLowerCase() === geneLowercase) &&
-    !getIsPathwayName(searchedGene)
+    !getIsPathway(searchedGene)
   )
   return isInvalidGene
 }
@@ -30,9 +30,14 @@ function getGenesFromSearchOptions(newGeneArray) {
     newGenes = newGeneArray.map(g => g.value)
   } else if (newGeneArray.length === 0) {
     newGenes = []
-  } else {
-    newGenes = newGeneArray[0].options.map(g => g.value)
+  } else if (newGeneArray[0].isGene === false) {
+    // Selected pathway
+    newGenes = [newGeneArray[0].value]
   }
+  // else {
+  //   // Autocomplete pathway
+  //   newGenes = newGeneArray[0].options.map(g => g.value)
+  // }
 
   return newGenes
 }

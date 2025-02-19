@@ -11,31 +11,38 @@ function getPathwayIdsByName(pathwayCache) {
   }
 
   const pathwayIdsByName = {}
-  const genesByPathwayId = {}
   const pathwayEntries = Object.entries(pathwayCache)
-  console.log('in getPathwayIdsByName, pathwayEntries', pathwayEntries)
   pathwayEntries.forEach(([gene, ixnObj]) => {
-    ixnObj.result.forEach(r => pathwayIdsByName[r.name] = r.id)
+    ixnObj.result?.forEach(r => pathwayIdsByName[r.name] = r.id)
   })
-
-  console.log('in getPathwayIdsByName, pathwayIdsByName', pathwayIdsByName)
 
   window.pathwayIdsByName = pathwayIdsByName
   return pathwayIdsByName
 }
 
 /** Determine if input text is a pathway name */
-export function getIsPathwayName(inputText) {
-  console.log('in getIsPathwayName')
+export function getIsPathway(inputText) {
   if (!window.Ideogram || !window.Ideogram.interactionCache) {
-    console.log('in getIsPathwayName, early return')
     return []
   }
 
+  console.log('inputText', inputText)
+
   const pathwayIdsByName = getPathwayIdsByName(window.Ideogram.interactionCache)
+
+  const pathwayIds = Object.values(pathwayIdsByName)
+  const inputTextUpperCase = inputText.toUpperCase()
+  const isPathwayId = pathwayIds.some(
+    id => id === inputTextUpperCase
+  )
+  if (isPathwayId) {
+    return true
+  }
+
   const pathwayNames = Object.keys(pathwayIdsByName)
+  const inputTextLowerCase = inputText.toLowerCase()
   const isPathwayName = pathwayNames.some(
-    name => name.toLowerCase() === inputText.toLowerCase()
+    name => name.toLowerCase() === inputTextLowerCase
   )
 
   return isPathwayName
@@ -43,21 +50,16 @@ export function getIsPathwayName(inputText) {
 
 /** Get pathway names that include the input text */
 function getPathwaySuggestions(inputText) {
-  console.log('in getPathwaySuggestions')
   const flags = getFeatureFlagsWithDefaults()
   if (
     !window.Ideogram || !window.Ideogram.interactionCache ||
     !flags?.show_pathway_expression
   ) {
-    console.log('in getPathwaySuggestions, early return')
-    console.log('in getPathwaySuggestions, window.Ideogram', window.Ideogram)
-    console.log('in getPathwaySuggestions, window.Ideogram.interactionCache', window.Ideogram.interactionCache)
     return []
   }
 
   const pathwayIdsByName = getPathwayIdsByName(window.Ideogram.interactionCache)
   const pathwayNames = Object.keys(pathwayIdsByName)
-  console.log('in getPathwaySuggestions, pathwayNames', pathwayNames)
   const rawSuggestions = pathwayNames.filter(
     name => name.toLowerCase().includes(inputText.toLowerCase())
   )
