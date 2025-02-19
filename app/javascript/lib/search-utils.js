@@ -12,7 +12,9 @@ function getPathwayIdsByName(pathwayCache) {
 
   const pathwayIdsByName = {}
   const genesByPathwayId = {}
-  Object.entries(pathwayCache).forEach(([gene, ixnObj]) => {
+  const pathwayEntries = Object.entries(pathwayCache)
+  console.log('in getPathwayIdsByName, pathwayEntries', pathwayEntries)
+  pathwayEntries.forEach(([gene, ixnObj]) => {
     ixnObj.result.forEach(r => pathwayIdsByName[r.name] = r.id)
   })
 
@@ -24,11 +26,13 @@ function getPathwayIdsByName(pathwayCache) {
 
 /** Determine if input text is a pathway name */
 export function getIsPathwayName(inputText) {
-  if (!window.ideogram || !window.ideogram.interactionCache) {
+  console.log('in getIsPathwayName')
+  if (!window.Ideogram || !window.Ideogram.interactionCache) {
+    console.log('in getIsPathwayName, early return')
     return []
   }
 
-  const pathwayIdsByName = getPathwayIdsByName(window.ideogram.interactionCache)
+  const pathwayIdsByName = getPathwayIdsByName(window.Ideogram.interactionCache)
   const pathwayNames = Object.keys(pathwayIdsByName)
   const isPathwayName = pathwayNames.some(
     name => name.toLowerCase() === inputText.toLowerCase()
@@ -39,16 +43,21 @@ export function getIsPathwayName(inputText) {
 
 /** Get pathway names that include the input text */
 function getPathwaySuggestions(inputText) {
+  console.log('in getPathwaySuggestions')
   const flags = getFeatureFlagsWithDefaults()
   if (
-    !window.ideogram || !window.ideogram.interactionCache ||
+    !window.Ideogram || !window.Ideogram.interactionCache ||
     !flags?.show_pathway_expression
   ) {
+    console.log('in getPathwaySuggestions, early return')
+    console.log('in getPathwaySuggestions, window.Ideogram', window.Ideogram)
+    console.log('in getPathwaySuggestions, window.Ideogram.interactionCache', window.Ideogram.interactionCache)
     return []
   }
 
-  const pathwayIdsByName = getPathwayIdsByName(window.ideogram.interactionCache)
+  const pathwayIdsByName = getPathwayIdsByName(window.Ideogram.interactionCache)
   const pathwayNames = Object.keys(pathwayIdsByName)
+  console.log('in getPathwaySuggestions, pathwayNames', pathwayNames)
   const rawSuggestions = pathwayNames.filter(
     name => name.toLowerCase().includes(inputText.toLowerCase())
   )

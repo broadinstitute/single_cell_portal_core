@@ -345,7 +345,7 @@ async function renderPathwayExpression(
 ) {
   let allDotPlotMetrics = {}
 
-  const ranks = ideogram.geneCache.interestingNames
+  const ranks = window.Ideogram.geneCache.interestingNames
   const pathwayGenes = getPathwayGenes(ranks)
   const dotPlotGeneBatches = getDotPlotGeneBatches(pathwayGenes)
   const { studyAccession, cluster, annotation } = dotPlotParams
