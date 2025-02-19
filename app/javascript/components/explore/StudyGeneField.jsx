@@ -28,6 +28,8 @@ function getGenesFromSearchOptions(newGeneArray) {
 
   if (newGeneArray[0]?.isGene === true || !flags?.show_pathway_expression) {
     newGenes = newGeneArray.map(g => g.value)
+  } else if (newGeneArray.length === 0) {
+    newGenes = []
   } else {
     newGenes = newGeneArray[0].options.map(g => g.value)
   }
@@ -120,7 +122,12 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
   function syncGeneArrayToInputText() {
     const inputTextValues = inputText.trim().split(/[\s,]+/)
     if (!inputTextValues.length || !inputTextValues[0].length) {
-      return geneArray
+      console.log('in syncGeneArrayToInputText if, geneArray', geneArray)
+      if (geneArray.length === 2 && geneArray[0].label === 'Genes') {
+        return []
+      } else {
+        return geneArray
+      }
     }
     const searchOptions = getSearchOptions(inputTextValues)
     const geneSearchOptions = searchOptions[0].options
@@ -167,6 +174,8 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
   useEffect(() => {
     if (genes.join(',') !== geneArray.map(opt => opt.label).join(',')) {
       // the genes have been updated elsewhere -- resync
+      console.log('in useEffect, geneArray', geneArray)
+      console.log('in useEffect, genes', genes)
       setGeneArray(getSearchOptions(genes))
       setInputText('')
       setNotPresentGenes(new Set([]))
@@ -177,11 +186,15 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
   useEffect(() => {
     if (genes.join(',') !== geneArray.map(opt => opt.label).join(',')) {
       const selectEvent = new Event('change:multiselect')
+      console.log('in useEffect, geneArray', geneArray)
       handleSearch(selectEvent)
     }
   }, [geneArray])
 
   const searchDisabled = !isLoading && !allGenes?.length
+
+  console.log('in render before return, inputText', inputText)
+  console.log('in render before return, geneArray', geneArray)
 
   return (
     <form className="gene-keyword-search gene-study-keyword-search form-horizontal" onSubmit={handleSearch}>
