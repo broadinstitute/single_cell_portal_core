@@ -27,17 +27,21 @@ function getGenesFromSearchOptions(newGeneArray) {
   const flags = getFeatureFlagsWithDefaults()
 
   if (newGeneArray[0]?.isGene === true || !flags?.show_pathway_expression) {
+    console.log('in getGenesFromSearchOptions, case 1')
     newGenes = newGeneArray.map(g => g.value)
   } else if (newGeneArray.length === 0) {
+    console.log('in getGenesFromSearchOptions, case 2')
     newGenes = []
   } else if (newGeneArray[0].isGene === false) {
+    console.log('in getGenesFromSearchOptions, case 3')
     // Selected pathway
     newGenes = [newGeneArray[0].value]
   }
-  // else {
-  //   // Autocomplete pathway
-  //   newGenes = newGeneArray[0].options.map(g => g.value)
-  // }
+  else {
+    console.log('in getGenesFromSearchOptions, case 4')
+    // Accounts for clearing genes
+    newGenes = newGeneArray[0].options.map(g => g.value)
+  }
 
   return newGenes
 }

@@ -287,7 +287,7 @@ export default function ExploreDisplayTabs({
   const [filterErrorText, setFilterErrorText] = useState(null)
 
   const {
-    enabledTabs, disabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs
+    enabledTabs, disabledTabs, isGeneList, isGene, isPathway, isMultiGene, hasIdeogramOutputs
   } = getEnabledTabs(exploreInfo, exploreParamsWithDefaults, cellFaceting)
 
   // exploreParams object without genes specified, to pass to cluster comparison plots
@@ -672,6 +672,7 @@ export default function ExploreDisplayTabs({
                 <Pathway
                   studyAccession={studyAccession}
                   {... exploreParamsWithDefaults}
+
                   dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
                 />
               </div>
@@ -851,5 +852,5 @@ export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
     disabledTabs = []
   }
 
-  return { enabledTabs, disabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs }
+  return { enabledTabs, disabledTabs, isGeneList, isGene, isPathway, isMultiGene, hasIdeogramOutputs }
 }
