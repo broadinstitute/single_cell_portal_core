@@ -41,6 +41,19 @@ export function validateEmbargo(embargoInput) {
   return issues
 }
 
+/** Add or remove error classes from field elements around given element */
+function updateErrorState(element, addOrRemove) {
+  const parent = element.parentElement
+
+  if (addOrRemove === 'add') {
+    parent.querySelector('label').classList.add('text-danger')
+    parent.classList.add('has-error', 'has-feedback')
+  } else {
+    parent.querySelector('label').classList.remove('text-danger')
+    parent.classList.remove('has-error', 'has-feedback')
+  }
+}
+
 /** Render messages for any validation issue for given input element */
 function writeValidationMessage(input, issues) {
   if (issues.length === 0) {return}
@@ -56,6 +69,7 @@ function writeValidationMessage(input, issues) {
 
   const messageHtml = `<div class="validation-error">${message}</div>`
 
+  updateErrorState(input, 'add')
   input.insertAdjacentHTML('afterend', messageHtml)
 }
 
@@ -64,7 +78,10 @@ export function validateStudy(studyForm) {
   let issues = []
 
   // Clear any prior error messages
-  document.querySelectorAll('.validation-error').forEach(error => error.remove())
+  document.querySelectorAll('.validation-error').forEach(error => {
+    updateErrorState(error, 'remove')
+    error.remove()
+  })
 
   const embargoInput = studyForm.querySelector('#study_embargo')
   const embargoIssues = validateEmbargo(embargoInput)
