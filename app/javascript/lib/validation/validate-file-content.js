@@ -35,7 +35,7 @@ import { parseAnnDataFile } from './validate-anndata'
 const MAX_GZIP_FILESIZE = 50 * oneMiB
 
 /** File extensions / suffixes that indicate content must be gzipped */
-const EXTENSIONS_MUST_GZIP = ['gz', 'bam', 'tbi']
+const EXTENSIONS_MUST_GZIP = ['gz', 'bam', 'tbi', 'csi']
 
 
 /**
