@@ -15,7 +15,7 @@ import ClusterAssociationSelect from '~/components/upload/ClusterAssociationSele
 import RawAssociationSelect from '~/components/upload/RawAssociationSelect'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 import ValidateFile from '~/lib/validation/validate-file'
-import { validateEmbargo } from '~/lib/validation/validate-study-creation'
+import { validateStudy } from '~/lib/validation/validate-study'
 import { setupSentry } from '~/lib/sentry-logging'
 import { adjustGlobalHeader, mitigateStudyOverviewTitleTruncation } from '~/lib/layout-utils'
 import { clearOldServiceWorkerCaches } from '~/lib/service-worker-cache'
@@ -133,7 +133,7 @@ window.SCP.eventsToLog.forEach(eventToLog => {
 
 window.SCP.getFeatureFlagsWithDefaults = getFeatureFlagsWithDefaults
 window.SCP.validateRemoteFile = validateRemoteFile
-window.SCP.validateEmbargo = validateEmbargo
+window.SCP.validateStudy = validateStudy
 window.SCP.API = ScpApi
 
 window.Spinner = Spinner

@@ -112,14 +112,16 @@
 
     $('#save-study').click(function() {
         const project = $('#study_firecloud_workspace');
-        const [embargoIsValid, embargoValidationMessage] = window.SCP.validateEmbargo();
+
+        const newStudyForm = document.querySelector('#new_study')
+        const issues = window.SCP.validateStudy(newStudyForm);
+        const isValid = issues.every(issue => issue[0] !== 'error')
 
         if (project.val() === 1) {
             alert('You must select a billing project first before continuing.');
             project.parent().addClass('has-error has-feedback');
             return false;
-        } else if (embargoIsValid === false) {
-            alert(embargoValidationMessage);
+        } else if (!isValid) {
             return false;
         } else {
             launchModalSpinner('#create-study-spinner', '#create-modal', function () {
