@@ -33,7 +33,7 @@
       <%= f.label :embargo, 'Data release date' %>&nbsp;
       <span class='fas fa-question-circle' data-toggle='tooltip' data-placement='right'
             title='Setting a data release date will prevent downloads for everyone except study owners & shared users,
-            and will expire at 12AM on the date specified (leave blank to allow downloads).  This has a maximum length
+            and will expire at 12 AM on the date specified (leave blank to allow downloads).  This has a maximum length
             of <%= Study.max_embargo_text %> from date of creation for public studies.'
       ></span>
       <br />
@@ -111,17 +111,10 @@
     });
 
     $('#save-study').click(function() {
-        const project = $('#study_firecloud_workspace');
-
         const newStudyForm = document.querySelector('#new_study')
         const issues = window.SCP.validateStudy(newStudyForm);
-        const isValid = issues.every(issue => issue[0] !== 'error')
 
-        if (project.val() === 1) {
-            alert('You must select a billing project first before continuing.');
-            project.parent().addClass('has-error has-feedback');
-            return false;
-        } else if (!isValid) {
+        if (issues.length > 1) {
             return false;
         } else {
             launchModalSpinner('#create-study-spinner', '#create-modal', function () {

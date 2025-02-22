@@ -1,3 +1,16 @@
+/** Ensure a name is provided for the study */
+function validateName(input) {
+  const issues = []
+
+  const name = input.value
+  if (name === '') {
+    const msg = 'Enter a name for your study.'
+    issues.push(['error', 'missing-name', msg])
+  }
+
+  return issues
+}
+
 /** Convert Date string to string format in "Data release date" UI */
 function dateToMMDDYYYY(dateString) {
   const date = new Date(dateString)
@@ -31,11 +44,40 @@ export function validateEmbargo(embargoInput) {
     const tomorrowFormatted = dateToMMDDYYYY(tomorrow)
     const maxDateFormatted = dateToMMDDYYYY(maxDate)
 
-    const message =
+    const msg =
       `If embargoed, date must be between ` +
       `tomorrow (${tomorrowFormatted}) and ${maxDateFormatted}.`
 
-    issues.push(['error', 'invalid-embargo', message])
+    issues.push(['error', 'invalid-embargo', msg])
+  }
+
+  return issues
+}
+
+/** Ensure a billing project is selected */
+function validateBillingProject(input) {
+  const issues = []
+
+  const billingProject = input.value
+  if (billingProject === '') {
+    const msg = 'Pick a billing project from above menu.'
+    issues.push(['error', 'missing-billing-project', msg])
+  }
+
+  return issues
+}
+
+/** Ensure a workspace is selected, if using existing workspace */
+function validateWorkspace(input) {
+  const issues = []
+
+  const workspace = input.value
+  const useExistingWorkspace =
+    document.querySelector('#study_use_existing_workspace').value === '1'
+
+  if (useExistingWorkspace && workspace === '') {
+    const msg = 'Enter a workspace name, or set "Use an existing workspace" to "No".'
+    issues.push(['error', 'missing-workspace', msg])
   }
 
   return issues
@@ -43,14 +85,14 @@ export function validateEmbargo(embargoInput) {
 
 /** Add or remove error classes from field elements around given element */
 function updateErrorState(element, addOrRemove) {
-  const parent = element.parentElement
+  const fieldDiv = element.closest('[class^="col-md"]')
 
   if (addOrRemove === 'add') {
-    parent.querySelector('label').classList.add('text-danger')
-    parent.classList.add('has-error', 'has-feedback')
+    fieldDiv.querySelector('label').classList.add('text-danger')
+    fieldDiv.classList.add('has-error', 'has-feedback')
   } else {
-    parent.querySelector('label').classList.remove('text-danger')
-    parent.classList.remove('has-error', 'has-feedback')
+    fieldDiv.querySelector('label').classList.remove('text-danger')
+    fieldDiv.classList.remove('has-error', 'has-feedback')
   }
 }
 
@@ -73,6 +115,16 @@ function writeValidationMessage(input, issues) {
   input.insertAdjacentHTML('afterend', messageHtml)
 }
 
+/** Validate given field, get issues, write any messages */
+function checkField(studyForm, field, validateFns, issues) {
+  const input = studyForm.querySelector(`#study_${field}`)
+  const fieldIssues = validateFns[field](input)
+  issues = issues.concat(fieldIssues)
+  writeValidationMessage(input, fieldIssues)
+
+  return issues
+}
+
 /** Validation form in "Create study" page */
 export function validateStudy(studyForm) {
   let issues = []
@@ -83,10 +135,17 @@ export function validateStudy(studyForm) {
     error.remove()
   })
 
-  const embargoInput = studyForm.querySelector('#study_embargo')
-  const embargoIssues = validateEmbargo(embargoInput)
-  issues = issues.concat(embargoIssues)
-  writeValidationMessage(embargoInput, embargoIssues)
+  const validateFns = {
+    'name': validateName,
+    'firecloud_project': validateBillingProject, // "Terra billing project"
+    'embargo': validateEmbargo, // "Data release date"
+    'firecloud_workspace': validateWorkspace // "Existing Terra workspace"
+  }
+
+  const fields = Object.keys(validateFns)
+  fields.forEach(field => {
+    issues = checkField(studyForm, field, validateFns, issues)
+  })
 
   return issues
 }
