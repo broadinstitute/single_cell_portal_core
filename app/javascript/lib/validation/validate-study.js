@@ -68,12 +68,12 @@ function validateBillingProject(input) {
 }
 
 /** Ensure a workspace is selected, if using existing workspace */
-function validateWorkspace(input) {
+function validateWorkspace(input, studyForm) {
   const issues = []
 
   const workspace = input.value
   const useExistingWorkspace =
-    document.querySelector('#study_use_existing_workspace').value === '1'
+    studyForm.querySelector('#study_use_existing_workspace').value === '1'
 
   if (useExistingWorkspace && workspace === '') {
     const msg = 'Enter a workspace name, or set "Use an existing workspace" to "No".'
@@ -118,7 +118,12 @@ function writeValidationMessage(input, issues) {
 /** Validate given field, get issues, write any messages */
 function checkField(studyForm, field, validateFns, issues) {
   const input = studyForm.querySelector(`#study_${field}`)
-  const fieldIssues = validateFns[field](input)
+  let fieldIssues
+  if (field === 'firecloud_workspace') {
+    fieldIssues = validateFns[field](input, studyForm)
+  } else {
+    fieldIssues = validateFns[field](input)
+  }
   issues = issues.concat(fieldIssues)
   writeValidationMessage(input, fieldIssues)
 
