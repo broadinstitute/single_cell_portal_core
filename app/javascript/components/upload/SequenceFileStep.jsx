@@ -5,7 +5,7 @@ import { findBundleChildren } from './upload-utils'
 import { AddFileButton } from './form-components'
 
 const DEFAULT_NEW_SEQUENCE_FILE = {
-  file_type: 'BED',
+  file_type: 'Fastq',
   human_fastq_url: '',
   human_data: false,
   options: {}

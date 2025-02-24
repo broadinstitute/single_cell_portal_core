@@ -67,7 +67,7 @@ export default function SequenceFileForm({
             <input type="radio"
               name={`sequenceHuman-${file._id}`}
               value="true" checked={file.human_data}
-              onChange={e => updateFile(file._id, { human_data: true, file_type: 'BED', uploadSelection: null, taxon_id: humanTaxon.value })}/>
+              onChange={e => updateFile(file._id, { human_data: true, file_type: 'Fastq', uploadSelection: null, taxon_id: humanTaxon.value })}/>
               &nbsp;Yes
           </label>
         </div>
