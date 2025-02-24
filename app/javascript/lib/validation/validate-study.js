@@ -1,3 +1,6 @@
+import { getWarningAndErrorProps } from '~/lib/validation/log-validation'
+import { log } from '~/lib/metrics-api'
+
 /** Ensure a name is provided for the study */
 function validateName(input) {
   const issues = []
@@ -130,6 +133,21 @@ function checkField(studyForm, field, validateFns, issues) {
   return issues
 }
 
+/** Get event data to log to Bard / Mixpanel */
+function getLogProps(issues) {
+  const warnings = issues.filter(issue => issue[0] === 'warn')
+  const errors = issues.filter(issue => issue[0] === 'error')
+
+  const issueProps = getWarningAndErrorProps(errors, warnings)
+  const status = errors.length === 0 ? 'success' : 'failure'
+
+  const logProps = Object.assign(issueProps, {
+    status
+  })
+
+  return logProps
+}
+
 /** Validation form in "Create study" page */
 export function validateStudy(studyForm) {
   let issues = []
@@ -151,6 +169,10 @@ export function validateStudy(studyForm) {
   fields.forEach(field => {
     issues = checkField(studyForm, field, validateFns, issues)
   })
+
+  const logProps = getLogProps(issues)
+
+  log('study-validation', logProps)
 
   return issues
 }
