@@ -159,7 +159,7 @@ describe('Validation of new studies, using client-side functions', () => {
     validateStudy(studyForm)
     const errors = studyForm.querySelectorAll('.validation-error')
     expect(errors).toHaveLength(1)
-    const expectedMessage = 'Enter a workspace name, or set "Use an existing workspace" to "No".'
+    const expectedMessage = 'Enter a workspace name, or set "Use existing workspace?" to "No".'
     expect(errors[0].innerHTML).toEqual(expectedMessage)
   })
 

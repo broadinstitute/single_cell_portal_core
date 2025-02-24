@@ -45,7 +45,7 @@
 		</div>
       <% if @study.new_record? %>
       <div class="col-md-3">
-        <%= f.label :use_existing_workspace, 'Use an existing workspace?' %><br/>
+        <%= f.label :use_existing_workspace, 'Use existing workspace?' %><br/>
         <%= f.select :use_existing_workspace, options_for_select([['Yes',1],['No',0]],
                                                                  @study.use_existing_workspace ? ['Yes', 1] : ['No', 0]),
                      {}, {class: 'form-control'} %>

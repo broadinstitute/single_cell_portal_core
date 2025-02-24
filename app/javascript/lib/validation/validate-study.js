@@ -76,7 +76,7 @@ function validateWorkspace(input, studyForm) {
     studyForm.querySelector('#study_use_existing_workspace').value === '1'
 
   if (useExistingWorkspace && workspace === '') {
-    const msg = 'Enter a workspace name, or set "Use an existing workspace" to "No".'
+    const msg = 'Enter a workspace name, or set "Use existing workspace?" to "No".'
     issues.push(['error', 'missing-workspace', msg])
   }
 
