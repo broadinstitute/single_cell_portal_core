@@ -18,7 +18,6 @@ function createStudyFormElement(tag, displayLabel, id, value, attrs={}) {
   attrs.value = value
   label.innerText = displayLabel
   const element = document.createElement(tag)
-  // console.log('in createStudyFormElement, attrs', attrs)
   Object.entries(attrs).forEach(([attrName, attrValue]) => {
     element.setAttribute(attrName, attrValue)
   })
@@ -47,8 +46,12 @@ function createTextInput(displayLabel, id, value, attrs={}) {
 
 /** Create select menu DOM element with given attributes, and related elements */
 function createSelect(displayLabel, id, value, attrs={}) {
-  const select = createStudyFormElement('select', displayLabel, id, value, attrs)
-  return select
+  const selectDiv = createStudyFormElement('select', displayLabel, id, value, attrs)
+  const option = document.createElement('option')
+  option.setAttribute('value', value)
+  option.setAttribute('selected', 'selected')
+  selectDiv.querySelector('select').appendChild(option)
+  return selectDiv
 }
 
 /** Create new study form DOM elements */
@@ -89,14 +92,92 @@ describe('Validation of new studies, using client-side functions', () => {
     const embargo = ''
     const studyForm = createStudyForm(name, project, workspace, useExistingWorkspace, isPublic, embargo)
 
-    // console.log('in it, studyForm', studyForm)
-    console.log('in it, studyForm.innerHTML', studyForm.innerHTML)
+    // Helpful debug (keep uncommented, but don't remove):
+    // console.log('studyForm.innerHTML', studyForm.innerHTML)
 
     validateStudy(studyForm)
     const errors = document.querySelectorAll('.validation-error')
-    console.log('errors', errors)
     expect(errors).toHaveLength(0)
   })
 
+  it('shows error for embargo beyond 2 years from now', () => {
+    const today = new Date()
+    const futureDate = new Date()
+    futureDate.setFullYear(today.getFullYear() + 3)
+    const excessiveDate = futureDate.toISOString().split('T')[0] // 3 years from today
+
+    const name = 'Test study'
+    const project = 'Default project'
+    const workspace = ''
+    const useExistingWorkspace = '0'
+    const isPublic = '1'
+    const embargo = excessiveDate
+    const studyForm = createStudyForm(name, project, workspace, useExistingWorkspace, isPublic, embargo)
+
+    // Helpful debug (keep uncommented, but don't remove):
+    // console.log('studyForm.innerHTML', studyForm.innerHTML)
+
+    validateStudy(studyForm)
+    const errors = studyForm.querySelectorAll('.validation-error')
+    expect(errors).toHaveLength(1)
+    expect(errors[0].innerHTML.includes('If embargoed, date must be')).toEqual(true)
+  })
+
+  it('shows error for same-day embargo date', () => {
+    const today = new Date()
+    const sameDay = today.toISOString().split('T')[0] // 3 years from today
+
+    const name = 'Test study'
+    const project = 'Default project'
+    const workspace = ''
+    const useExistingWorkspace = '0'
+    const isPublic = '1'
+    const embargo = sameDay
+    const studyForm = createStudyForm(name, project, workspace, useExistingWorkspace, isPublic, embargo)
+
+    // Helpful debug (keep uncommented, but don't remove):
+    // console.log('studyForm.innerHTML', studyForm.innerHTML)
+
+    validateStudy(studyForm)
+    const errors = studyForm.querySelectorAll('.validation-error')
+    expect(errors).toHaveLength(1)
+    expect(errors[0].innerHTML.includes('If embargoed, date must be')).toEqual(true)
+  })
+
+  it('shows error when using existing workspace, but no workspace provided', () => {
+    const name = 'Test study'
+    const project = 'Default project'
+    const workspace = ''
+    const useExistingWorkspace = '1' // "Yes"
+    const isPublic = '1'
+    const embargo = ''
+    const studyForm = createStudyForm(name, project, workspace, useExistingWorkspace, isPublic, embargo)
+
+    // Helpful debug (keep uncommented, but don't remove):
+    // console.log('studyForm.innerHTML', studyForm.innerHTML)
+
+    validateStudy(studyForm)
+    const errors = studyForm.querySelectorAll('.validation-error')
+    expect(errors).toHaveLength(1)
+    const expectedMessage = 'Enter a workspace name, or set "Use an existing workspace" to "No".'
+    expect(errors[0].innerHTML).toEqual(expectedMessage)
+  })
+
+  it('shows multiple errors when warranted', () => {
+    const name = '' // Error: no study name
+    const project = 'Default project'
+    const workspace = '' // Error: need workspace when using existing workspace
+    const useExistingWorkspace = '1'
+    const isPublic = '1'
+    const embargo = ''
+    const studyForm = createStudyForm(name, project, workspace, useExistingWorkspace, isPublic, embargo)
+
+    // Helpful debug (keep uncommented, but don't remove):
+    // console.log('studyForm.innerHTML', studyForm.innerHTML)
+
+    validateStudy(studyForm)
+    const errors = studyForm.querySelectorAll('.validation-error')
+    expect(errors).toHaveLength(2)
+  })
 
 })
