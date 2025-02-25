@@ -26,14 +26,14 @@ export function getWarningAndErrorProps(errors, warnings) {
   const errorTypes = Array.from(new Set(errors.map(columns => columns[1])))
   const warningTypes = Array.from(new Set(warnings.map(columns => columns[1])))
 
-  const numErrors = errors.length
-  const numWarnings = warnings.length
-
   return {
-    errors, warnings,
-    errorMessages, warningMessages,
+    errors: errorMessages,
+    warnings: warningMessages,
     errorTypes, warningTypes,
-    numErrors, numWarnings
+    numErrors: errors.length,
+    numWarnings: warnings.length,
+    numErrorTypes: errorTypes.length,
+    numWarningTypes: warningTypes.length
   }
 }
 
