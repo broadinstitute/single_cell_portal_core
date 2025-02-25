@@ -5218,9 +5218,9 @@ iconv-lite@0.4, iconv-lite@0.4.24, iconv-lite@^0.4.24:
   dependencies:
     safer-buffer ">= 2.1.2 < 3"
 
-ideogram@eweitz/ideogram#7272fe0ab915017751561039d2dfa33760fc6e7a:
+ideogram@eweitz/ideogram#4fe5487a88500981383687c3cf8c292e70747aa7:
   version "1.50.0"
-  resolved "https://codeload.github.com/eweitz/ideogram/tar.gz/7272fe0ab915017751561039d2dfa33760fc6e7a"
+  resolved "https://codeload.github.com/eweitz/ideogram/tar.gz/4fe5487a88500981383687c3cf8c292e70747aa7"
   dependencies:
     crossfilter2 "1.5.2"
     d3-array "^2.8.0"

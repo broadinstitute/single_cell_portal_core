@@ -321,7 +321,7 @@ export default function ExploreDisplayTabs({
     exploreInfo &&
     exploreInfo.taxonNames.length === 1 &&
     exploreParams.genes.length === 1 &&
-    !isGeneList
+    !isGeneList && !isPathway
   ) {
     showRelatedGenesIdeogram = true
     currentTaxon = exploreInfo.taxonNames[0]
@@ -797,6 +797,8 @@ export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
     enabledTabs = ['geneListHeatmap']
   } if (isPathway) {
     enabledTabs = ['pathway']
+    // console.log('in render before return, inputText', inputText)
+    // console.log('in render before return, geneArray', geneArray)
   } else if (isGene) {
     if (isMultiGene) {
       if (isConsensus) {

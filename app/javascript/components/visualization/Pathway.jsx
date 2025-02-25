@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { manageDrawPathway } from '~/lib/pathway-expression'
 
 /**  */
 export default function Pathway({
@@ -7,13 +8,19 @@ export default function Pathway({
   const pathwayId = genes[0]
   const pwDimensions = Object.assign({}, dimensions)
 
-  pwDimensions.height -= 160
+  pwDimensions.height -= 80
+  pwDimensions.width -= 200
+
+  console.log('cluster, annotation', cluster, annotation)
+
+  manageDrawPathway(studyAccession, cluster, annotation)
+
   console.log('dimensions', dimensions)
   useEffect(() => {
-    window.Ideogram.drawPathway(pathwayId, '', '', '.pathway', pwDimensions)
-  }, [genes.join(',')])
+    window.Ideogram.drawPathway(pathwayId, '', '', '.pathway', pwDimensions, false)
+  }, [cluster, annotation, genes.join(',')])
 
-  const style = { width: dimensions.width, height: pwDimensions.height + 40 }
+  const style = { width: pwDimensions.width, height: pwDimensions.height + 600 }
 
   return (
     <div className="pathway" style={style}>

@@ -341,7 +341,7 @@ function mergeDotPlotMetrics(newMetrics, oldMetrics) {
 /** Color pathway gene nodes by expression */
 async function renderPathwayExpression(
   searchedGene, interactingGene,
-  ideogram, dotPlotParams
+  dotPlotParams
 ) {
   let allDotPlotMetrics = {}
 
@@ -410,11 +410,13 @@ async function renderPathwayExpression(
 }
 
 /** Draw pathway diagram */
-function drawPathway(event, dotPlotParams, ideogram) {
+function drawPathway(event, dotPlotParams) {
   // Hide popover instantly upon drawing pathway; don't wait ~2 seconds
   const ideoTooltip = document.querySelector('._ideogramTooltip')
-  ideoTooltip.style.opacity = 0
-  ideoTooltip.style.pointerEvents = 'none'
+  if (ideoTooltip) {
+    ideoTooltip.style.opacity = 0
+    ideoTooltip.style.pointerEvents = 'none'
+  }
 
   // Ensure popover for pathway diagram doesn't appear over gene search autocomplete,
   // while still appearing over default visualizations.
@@ -424,8 +426,9 @@ function drawPathway(event, dotPlotParams, ideogram) {
   const details = event.detail
   const searchedGene = details.sourceGene
   const interactingGene = details.destGene
+
   renderPathwayExpression(
-    searchedGene, interactingGene, ideogram,
+    searchedGene, interactingGene,
     dotPlotParams
   )
 }
@@ -435,7 +438,7 @@ function drawPathway(event, dotPlotParams, ideogram) {
  *
  * This sets up the pathway expression overlay
  */
-export function manageDrawPathway(studyAccession, cluster, annotation, ideogram) {
+export function manageDrawPathway(studyAccession, cluster, annotation) {
   const flags = getFeatureFlagsWithDefaults()
   if (!flags?.show_pathway_expression) {return}
 
@@ -443,7 +446,7 @@ export function manageDrawPathway(studyAccession, cluster, annotation, ideogram)
   if (annotation.type === 'group') {
     document.removeEventListener('ideogramDrawPathway', drawPathway)
     document.addEventListener('ideogramDrawPathway', event => {
-      drawPathway(event, dotPlotParams, ideogram)
+      drawPathway(event, dotPlotParams)
     })
   }
 }

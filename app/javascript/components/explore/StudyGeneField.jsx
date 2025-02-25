@@ -9,6 +9,7 @@ import { getAutocompleteSuggestions, getIsPathway } from '~/lib/search-utils'
 import { log } from '~/lib/metrics-api'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
+import { manageDrawPathway } from '~/lib/pathway-expression'
 
 /** Determine if searched text is among available genes */
 function getIsInvalidGene(searchedGene, allGenes) {
@@ -201,9 +202,6 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
   }, [geneArray])
 
   const searchDisabled = !isLoading && !allGenes?.length
-
-  console.log('in render before return, inputText', inputText)
-  console.log('in render before return, geneArray', geneArray)
 
   return (
     <form className="gene-keyword-search gene-study-keyword-search form-horizontal" onSubmit={handleSearch}>
