@@ -394,7 +394,7 @@ async function renderPathwayExpression(
       renderBackgroundDotPlot(
         studyAccession, dotPlotGeneBatches[numRenders], cluster, annotation,
         'All', annotationLabels, backgroundDotPlotDrawCallback,
-        '#related-genes-ideogram-container'
+        '#_ideogramPathwayContainer'
       )
     }
   }
@@ -405,7 +405,7 @@ async function renderPathwayExpression(
   renderBackgroundDotPlot(
     studyAccession, dotPlotGeneBatches[0], cluster, annotation,
     'All', annotationLabels, backgroundDotPlotDrawCallback,
-    '#related-genes-ideogram-container'
+    '#_ideogramPathwayContainer'
   )
 }
 

@@ -44,6 +44,8 @@ function getGenesFromSearchOptions(newGeneArray) {
     newGenes = newGeneArray[0].options.map(g => g.value)
   }
 
+  console.log('in getGenesFromSearchOptions, newGenes', newGenes)
+
   return newGenes
 }
 
@@ -114,7 +116,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     } else if (newGeneArray && newGeneArray.length) {
       const newGenes = getGenesFromSearchOptions(newGeneArray)
       const genesToSearch = newGenes
-      console.log('in handleSearch, genesToSearch', genesToSearch)
+      // console.log('in handleSearch, genesToSearch', genesToSearch)
       if (genesToSearch.length > window.MAX_GENE_SEARCH) {
         log('search-too-many-genes', { numGenes: genesToSearch.length })
         setShowTooManyGenesModal(true)
@@ -132,7 +134,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
   function syncGeneArrayToInputText() {
     const inputTextValues = inputText.trim().split(/[\s,]+/)
     if (!inputTextValues.length || !inputTextValues[0].length) {
-      console.log('in syncGeneArrayToInputText if, geneArray', geneArray)
+      // console.log('in syncGeneArrayToInputText if, geneArray', geneArray)
       if (geneArray.length === 2 && geneArray[0].label === 'Genes') {
         return []
       } else {
@@ -141,8 +143,8 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
     }
     const searchOptions = getSearchOptions(inputTextValues)
     const geneSearchOptions = searchOptions[0].options
-    console.log('in syncGeneArrayToInputText, geneArray', geneArray)
-    console.log('in syncGeneArrayToInputText, geneSearchOptions', geneSearchOptions)
+    // console.log('in syncGeneArrayToInputText, geneArray', geneArray)
+    // console.log('in syncGeneArrayToInputText, geneSearchOptions', geneSearchOptions)
     const newGeneArray = geneArray.concat(geneSearchOptions)
     setInputText(' ')
     setGeneArray(newGeneArray)
@@ -184,8 +186,8 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
   useEffect(() => {
     if (genes.join(',') !== geneArray.map(opt => opt.label).join(',')) {
       // the genes have been updated elsewhere -- resync
-      console.log('in useEffect, geneArray', geneArray)
-      console.log('in useEffect, genes', genes)
+      // console.log('in useEffect, geneArray', geneArray)
+      // console.log('in useEffect, genes', genes)
       setGeneArray(getSearchOptions(genes))
       setInputText('')
       setNotPresentGenes(new Set([]))
@@ -194,7 +196,9 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
 
 
   useEffect(() => {
-    if (genes.join(',') !== geneArray.map(opt => opt.label).join(',')) {
+    if (
+      genes.join(',') !== geneArray.map(opt => opt.label).join(',')
+    ) {
       const selectEvent = new Event('change:multiselect')
       console.log('in useEffect, geneArray', geneArray)
       handleSearch(selectEvent)
@@ -202,6 +206,11 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
   }, [geneArray])
 
   const searchDisabled = !isLoading && !allGenes?.length
+
+  let searchTermsArray = geneArray
+  if (!(genes[0] && typeof genes[0] === 'object' && 'options' in genes[0] === false)) {
+    searchTermsArray = []
+  }
 
   return (
     <form className="gene-keyword-search gene-study-keyword-search form-horizontal" onSubmit={handleSearch}>
@@ -221,7 +230,7 @@ export default function StudyGeneField({ genes, searchGenes, allGenes, speciesLi
           <CreatableSelect
             components={{ DropdownIndicator: null }}
             inputValue={inputText}
-            value={geneArray}
+            value={searchTermsArray}
             className={searchDisabled ? 'gene-keyword-search-input disabled' : 'gene-keyword-search-input'}
             isClearable
             isMulti

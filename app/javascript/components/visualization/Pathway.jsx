@@ -11,11 +11,8 @@ export default function Pathway({
   pwDimensions.height -= 80
   pwDimensions.width -= 200
 
-  console.log('cluster, annotation', cluster, annotation)
-
   manageDrawPathway(studyAccession, cluster, annotation)
 
-  console.log('dimensions', dimensions)
   useEffect(() => {
     window.Ideogram.drawPathway(pathwayId, '', '', '.pathway', pwDimensions, false)
   }, [cluster, annotation, genes.join(',')])
