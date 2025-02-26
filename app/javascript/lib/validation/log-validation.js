@@ -18,6 +18,25 @@ function getTrimmedIssueMessages(issues) {
   }).slice(0, 20) // Show <= 20 messages
 }
 
+/** Get shared issue props for file-validation and study-validation */
+export function getWarningAndErrorProps(errors, warnings) {
+  const errorMessages = getTrimmedIssueMessages(errors)
+  const warningMessages = getTrimmedIssueMessages(warnings)
+
+  const errorTypes = Array.from(new Set(errors.map(columns => columns[1])))
+  const warningTypes = Array.from(new Set(warnings.map(columns => columns[1])))
+
+  return {
+    errors: errorMessages,
+    warnings: warningMessages,
+    errorTypes, warningTypes,
+    numErrors: errors.length,
+    numWarnings: warnings.length,
+    numErrorTypes: errorTypes.length,
+    numWarningTypes: warningTypes.length
+  }
+}
+
 /** Get properties about this validation run to log to Mixpanel */
 export function getLogProps(fileInfo, issueObj, perfTimes) {
   const { errors, warnings, summary } = issueObj
@@ -45,23 +64,13 @@ export function getLogProps(fileInfo, issueObj, perfTimes) {
     }
     return Object.assign({ status: 'success' }, defaultProps)
   } else {
-    const errorMessages = getTrimmedIssueMessages(errors)
-    const warningMessages = getTrimmedIssueMessages(warnings)
+    const issueProps = getWarningAndErrorProps(errors, warnings)
 
-    const errorTypes = Array.from(new Set(errors.map(columns => columns[1])))
-    const warningTypes = Array.from(new Set(warnings.map(columns => columns[1])))
+    const withIssueProps = Object.assign(defaultProps, issueProps)
 
-    return Object.assign(defaultProps, {
+    return Object.assign(withIssueProps, {
       status: 'failure',
-      summary,
-      numErrors: errors.length,
-      numWarnings: warnings.length,
-      errors: errorMessages,
-      warnings: warningMessages,
-      numErrorTypes: errorTypes.length,
-      numWarningTypes: warningTypes.length,
-      errorTypes,
-      warningTypes
+      summary
     })
   }
 }

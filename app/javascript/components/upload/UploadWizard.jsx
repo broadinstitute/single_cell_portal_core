@@ -55,8 +55,8 @@ const ALL_POSSIBLE_STEPS = [
   AnnDataUploadStep,
   DifferentialExpressionStep,
   SpatialStep,
-  CoordinateLabelStep,
   SequenceFileStep,
+  CoordinateLabelStep,
   GeneListStep,
   MiscellaneousStep,
   SeuratStep,
@@ -101,7 +101,7 @@ export function RawUploadWizard({ studyAccession, name }) {
   // set the additional steps to display, based on classic or AnnData experience
   if (isAnnDataExperience) {
     MAIN_STEPS = MAIN_STEPS_ANNDATA
-    SUPPLEMENTAL_STEPS = ALL_POSSIBLE_STEPS.slice(6, 7)
+    SUPPLEMENTAL_STEPS = ALL_POSSIBLE_STEPS.slice(6, 8)
     // SUPPLEMENTAL_STEPS.splice(1, 0, DifferentialExpressionStep)
     // TODO enable after raw counts are sorted for AnnData (SCP-5110)
     NON_VISUALIZABLE_STEPS = ALL_POSSIBLE_STEPS.slice(10, 12)

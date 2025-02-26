@@ -33,7 +33,7 @@
       <%= f.label :embargo, 'Data release date' %>&nbsp;
       <span class='fas fa-question-circle' data-toggle='tooltip' data-placement='right'
             title='Setting a data release date will prevent downloads for everyone except study owners & shared users,
-            and will expire at 12AM on the date specified (leave blank to allow downloads).  This has a maximum length
+            and will expire at 12 AM on the date specified (leave blank to allow downloads).  This has a maximum length
             of <%= Study.max_embargo_text %> from date of creation for public studies.'
       ></span>
       <br />
@@ -41,11 +41,11 @@
 		</div>
 		<div class="col-md-2">
 			<%= f.label :public %><br />
-			<%= f.select :public, options_for_select([['Yes',1],['No',0]], @study.public? ? 1: 0), {}, {class: 'form-control'} %>
+			<%= f.select :public, options_for_select([['Yes', 1],['No', 0]], @study.public? ? 1: 0), {}, {class: 'form-control'} %>
 		</div>
       <% if @study.new_record? %>
       <div class="col-md-3">
-        <%= f.label :use_existing_workspace, 'Use an existing workspace?' %><br/>
+        <%= f.label :use_existing_workspace, 'Use existing workspace?' %><br/>
         <%= f.select :use_existing_workspace, options_for_select([['Yes',1],['No',0]],
                                                                  @study.use_existing_workspace ? ['Yes', 1] : ['No', 0]),
                      {}, {class: 'form-control'} %>
@@ -56,7 +56,7 @@
       </div>
       <% else %>
         <div class="col-md-4">
-          <%= f.label :firecloud_workspace, 'Terra Workspace' %><br />
+          <%= f.label :firecloud_workspace, 'Terra workspace' %><br />
           <%= f.text_field :firecloud_workspace, class: 'form-control', readonly: true, title: 'You may not change the workspace of an existing study', data: {toggle: 'tooltip'} %>
         </div>
       <% end %>
@@ -111,10 +111,15 @@
     });
 
     $('#save-study').click(function() {
-        var project = $('#study_firecloud_workspace');
-        if (project.val() === 1) {
-            alert('You must select a billing project first before continuing');
-            project.parent().addClass('has-error has-feedback');
+        const newStudyForm = document.querySelector('#new_study')
+        const issues = window.SCP.validateStudy(newStudyForm);
+
+        if (issues.length > 0) {
+            const rect = newStudyForm.getBoundingClientRect();
+            window.scrollTo({
+                top: window.scrollY + rect.top - 60,
+                behavior: "smooth"
+            });
             return false;
         } else {
             launchModalSpinner('#create-study-spinner', '#create-modal', function () {

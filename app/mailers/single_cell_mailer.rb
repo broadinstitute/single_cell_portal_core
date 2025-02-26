@@ -282,16 +282,6 @@ class SingleCellMailer < ApplicationMailer
     end
   end
 
-  # nightly sanity check email looking for missing files
-  def sanity_check(missing_files)
-    @missing_files = missing_files
-    @admins = User.where(admin: true).map(&:email)
-
-    mail(to: @admins, subject: "[Single Cell Portal Admin Notification #{Rails.env != 'production' ? " (#{Rails.env})" : nil}]: Sanity check results: #{@missing_files.size} files missing") do |format|
-      format.html
-    end
-  end
-
   # collect usage statistics for the given day and email admins
   def nightly_admin_report
     @admins = User.where(admin: true).map(&:email)
@@ -323,9 +313,6 @@ class SingleCellMailer < ApplicationMailer
 
     # disk usage
     @disk_stats = SummaryStatsUtils.disk_usage
-
-    # storage sanity check
-    @missing_files = SummaryStatsUtils.storage_sanity_check
 
     mail(to: @admins, subject: "[Single Cell Portal Admin Notification#{Rails.env != 'production' ? " (#{Rails.env})" : nil}]: Nightly Server Report for #{@today}") do |format|
       format.html { render layout: 'nightly_admin_report' }
