@@ -1,27 +1,4 @@
 <h1>Nightly server report for <%= @today %></h1>
-<% if @missing_files.any? %>
-  <h3>Storage Integrity</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Study</th>
-        <th>Owner</th>
-        <th>Filename</th>
-        <th>Issue</th>
-      </tr>
-    </thead>
-    <tbody>
-    <% @missing_files.each do |missing_file| %>
-      <tr>
-        <td><%= truncate(missing_file[:study], length: 30) %></td>
-        <td><%= missing_file[:owner] %></td>
-        <td><%= missing_file[:filename] %></td>
-        <td><%= missing_file[:reason] %></td>
-      </tr>
-    <% end %>
-    </tbody>
-  </table>
-<% end %>
 <div class="stats">
   <h3>Portal stats</h3>
   <table>
@@ -145,8 +122,3 @@
   </table>
 </div>
 <div class="clear"></div>
-
-<% if @missing_files.empty? %>
-  <h3>Storage integrity</h3>
-  <span class="detail">All files accounted for</span>
-<% end %>
