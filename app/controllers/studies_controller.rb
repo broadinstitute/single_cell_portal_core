@@ -22,9 +22,6 @@ class StudiesController < ApplicationController
     authenticate_user!
     check_access_settings
   end
-  # special before_action to make sure FireCloud is available and pre-empt any calls when down
-  before_action :check_firecloud_status, except: [:index, :do_upload, :resume_upload, :update_status,
-                                                  :retrieve_wizard_upload, :parse]
   before_action :check_study_detached, only: [:edit, :update, :initialize_study, :sync_study, :sync_submission_outputs]
   helper_method :visible_unsynced_files, :hidden_unsynced_files
   ###
@@ -1142,19 +1139,6 @@ class StudiesController < ApplicationController
         format.js {render js: "alert('#{alert}')" and return}
         format.html {redirect_to merge_default_redirect_params(studies_path, scpbr: params[:scpbr]),
                                  alert: alert and return}
-      end
-    end
-  end
-
-  # check on FireCloud API status and respond accordingly
-  def check_firecloud_status
-    unless ApplicationController.firecloud_client.services_available?(FireCloudClient::SAM_SERVICE, FireCloudClient::RAWLS_SERVICE)
-      alert = "Study workspaces are temporarily unavailable, so we cannot complete your request.  Please try again later.  #{SCP_SUPPORT_EMAIL}"
-      respond_to do |format|
-        format.js {render js: "$('.modal').modal('hide'); alert('#{alert}')" and return}
-        format.html {redirect_to merge_default_redirect_params(studies_path, scpbr: params[:scpbr]),
-                                 alert: alert and return}
-        format.json {head 503}
       end
     end
   end

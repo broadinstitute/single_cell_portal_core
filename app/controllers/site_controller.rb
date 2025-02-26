@@ -748,21 +748,12 @@ class SiteController < ApplicationController
 
   # check compute permissions for study
   def check_compute_permissions
-    if ApplicationController.firecloud_client.services_available?(FireCloudClient::SAM_SERVICE, FireCloudClient::RAWLS_SERVICE)
-      if !user_signed_in? || !@study.can_compute?(current_user)
-        @alert = "You do not have permission to perform that action.  #{SCP_SUPPORT_EMAIL}"
-        respond_to do |format|
-          format.js {render action: :notice}
-          format.html {redirect_to merge_default_redirect_params(site_path, scpbr: params[:scpbr]), alert: @alert and return}
-          format.json {head 403}
-        end
-      end
-    else
-      @alert = "Compute services are currently unavailable - please check back later.  #{SCP_SUPPORT_EMAIL}"
+    if !user_signed_in? || !@study.can_compute?(current_user)
+      @alert = "You do not have permission to perform that action.  #{SCP_SUPPORT_EMAIL}"
       respond_to do |format|
         format.js {render action: :notice}
         format.html {redirect_to merge_default_redirect_params(site_path, scpbr: params[:scpbr]), alert: @alert and return}
-        format.json {head 503}
+        format.json {head 403}
       end
     end
   end
