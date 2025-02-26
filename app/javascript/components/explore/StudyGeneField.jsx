@@ -183,6 +183,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
     // react-select doesn't expose the actual click events, so we deduce the kind
     // of operation based on whether it lengthened or shortened the list
     const newValue = value ? value : []
+    console.log('in handleSelectChange, value', value)
     setNotPresentQueries(new Set([]))
     setQueryArray(newValue)
   }
@@ -212,12 +213,16 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   const searchDisabled = !isLoading && !allGenes?.length
 
   let searchTermsArray = queryArray
-  if (
-    !queries[0] ||
-    (queries[0] === 'object' && 'options' in queries[0] === false)
-  ) {
-    searchTermsArray = []
+
+  console.log('queries 2', queries)
+  console.log('queryArray', queryArray)
+
+  if (typeof queryArray[0] === 'object' && queryArray[1]?.options.length > 0) {
+    const rawPathwayLabel = queryArray[1].options[0].label
+    searchTermsArray = [queryArray[1].options[0].label]
   }
+
+  console.log('searchTermsArray', searchTermsArray)
 
   return (
     <form className="gene-keyword-search gene-study-keyword-search form-horizontal" onSubmit={handleSearch}>
@@ -318,6 +323,8 @@ function filterSearchOptions(rawGeneOptions, rawPathwayOptions) {
   } else if (numGenes > maxGenes) {
     const filteredGeneOptions = rawGeneOptions.slice(0, maxGenes)
     return [filteredGeneOptions, rawPathwayOptions]
+  } else {
+    return [rawGeneOptions, rawPathwayOptions]
   }
 }
 
@@ -333,7 +340,7 @@ function getSearchOptions(rawSuggestions) {
     const rawGeneOptions = []
     const rawPathwayOptions = []
     rawSuggestions.forEach(rawSuggestion => {
-      if (typeof rawSuggestion === 'string') {
+      if (typeof rawSuggestion === 'string' && !getIsPathway(rawSuggestion)) {
         const geneName = rawSuggestion
         rawGeneOptions.push({ label: geneName, value: geneName, isGene: true })
       } else {
@@ -341,6 +348,9 @@ function getSearchOptions(rawSuggestions) {
         rawPathwayOptions.push(rawSuggestion)
       }
     })
+
+    console.log('rawGeneOptions', rawGeneOptions)
+    console.log('rawPathwayOptions', rawPathwayOptions)
 
     const [geneOptions, pathwayOptions] =
       filterSearchOptions(rawGeneOptions, rawPathwayOptions)

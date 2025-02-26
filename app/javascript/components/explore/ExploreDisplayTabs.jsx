@@ -308,8 +308,11 @@ export default function ExploreDisplayTabs({
     const newParams = { geneList: '', ideogramFileId: '' }
     if (isPathway) {
       newParams.pathway = queries[0]
+      delete newParams['genes']
     } else {
       newParams.genes = queries
+      delete newParams['pathway']
+
       if (queries.length < 2) {
         // and unset the consensus if there are no longer 2+ genes
         newParams.consensus = ''
@@ -526,6 +529,13 @@ export default function ExploreDisplayTabs({
     return { main, side }
   }
 
+  let queries
+  if (exploreParams.pathway !== '') {
+    queries = [exploreParams.pathway]
+  } else {
+    queries = exploreParams.genes
+  }
+
   return (
     <>
       {/* Render top content for Explore view, i.e. gene search box and plot tabs */}
@@ -533,7 +543,7 @@ export default function ExploreDisplayTabs({
         <div className="col-md-5">
           <div className="flexbox">
             <StudyGeneField
-              queries={exploreParams.genes}
+              queries={queries}
               queryFn={queryFn}
               allGenes={exploreInfo ? exploreInfo.uniqueGenes : []}
               isLoading={!exploreInfo}

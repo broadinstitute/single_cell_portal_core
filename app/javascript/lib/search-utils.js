@@ -4,11 +4,26 @@ import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 // max number of autocomplete suggestions
 export const NUM_SUGGESTIONS = 50
 
+/** Get pathway name given pathway ID */
+export function getPathwayName(pathwayId) {
+  let pathwayNamesById = {}
+  if (window.pathwayNamesById) {
+    return window.pathwayNamesById[pathwayId]
+  } else {
+    const pathwayIdsByName = getPathwayIdsByName()
+    Object.entries(pathwayIdsByName).forEach(([name, id]) => {
+      pathwayNamesById
+    })
+  }
+}
+
 /** Get object mapping pathway names to WikiPathways IDs */
-function getPathwayIdsByName(pathwayCache) {
+function getPathwayIdsByName() {
   if (window.pathwayIdsByName) {
     return window.pathwayIdsByName
   }
+
+  const pathwayCache = window.Ideogram.interactionCache
 
   const pathwayIdsByName = {}
   const pathwayEntries = Object.entries(pathwayCache)
@@ -23,12 +38,13 @@ function getPathwayIdsByName(pathwayCache) {
 /** Determine if input text is a pathway name */
 export function getIsPathway(inputText) {
   if (!window.Ideogram || !window.Ideogram.interactionCache) {
+    console.log('exiting getIsPathway early')
     return []
   }
 
-  console.log('inputText', inputText)
+  // console.log('inputText', inputText)
 
-  const pathwayIdsByName = getPathwayIdsByName(window.Ideogram.interactionCache)
+  const pathwayIdsByName = getPathwayIdsByName()
 
   const pathwayIds = Object.values(pathwayIdsByName)
   const inputTextUpperCase = inputText.toUpperCase()
@@ -58,7 +74,7 @@ function getPathwaySuggestions(inputText) {
     return []
   }
 
-  const pathwayIdsByName = getPathwayIdsByName(window.Ideogram.interactionCache)
+  const pathwayIdsByName = getPathwayIdsByName()
   const pathwayNames = Object.keys(pathwayIdsByName)
   const rawSuggestions = pathwayNames.filter(
     name => name.toLowerCase().includes(inputText.toLowerCase())
