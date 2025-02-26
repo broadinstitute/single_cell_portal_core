@@ -46,7 +46,7 @@ class StudiesController < ApplicationController
     @directories = @study.directory_listings.are_synced
     @primary_data = @study.directory_listings.primary_data
     @other_data = @study.directory_listings.non_primary_data
-    @allow_downloads = ApplicationController.firecloud_client.services_available?(FireCloudClient::BUCKETS_SERVICE) && !@study.detached
+    @allow_downloads = !@study.detached
     @analysis_metadata = @study.analysis_metadata.to_a
     # load study default options
     set_study_default_options

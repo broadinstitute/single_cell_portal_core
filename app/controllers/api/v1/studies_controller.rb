@@ -1,8 +1,6 @@
 module Api
   module V1
     class StudiesController < ApiBaseController
-      include Concerns::FireCloudStatus
-
       def firecloud_independent_methods
         # add file_info is essentially a more extensive 'show' method
         [:index, :show, :file_info]
