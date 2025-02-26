@@ -118,6 +118,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
       setShowNotPresentGeneChoice(true)
     } else if (newQueryArray && newQueryArray.length) {
       const newQueries = getQueriesFromSearchOptions(newQueryArray)
+      console.log('in StudyGeneField, newQueries', newQueries)
       const queries = newQueries
       // console.log('in handleSearch, genesToSearch', genesToSearch)
       if (queries.length > window.MAX_GENE_SEARCH) {

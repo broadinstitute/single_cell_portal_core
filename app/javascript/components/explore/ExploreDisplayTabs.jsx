@@ -302,13 +302,14 @@ export default function ExploreDisplayTabs({
 
   /** helper function so that StudyGeneField doesn't have to see the full exploreParams object */
   function queryFn(queries) {
+    console.log('in queryFn, queries', queries)
     const isPathway = getIsPathway(queries[0])
     // also unset any selected gene lists or ideogram files
     const newParams = { geneList: '', ideogramFileId: '' }
     if (isPathway) {
-      newParams.pathway = queries
+      newParams.pathway = queries[0]
     } else {
-      newParams.gene = queries
+      newParams.genes = queries
       if (queries.length < 2) {
         // and unset the consensus if there are no longer 2+ genes
         newParams.consensus = ''

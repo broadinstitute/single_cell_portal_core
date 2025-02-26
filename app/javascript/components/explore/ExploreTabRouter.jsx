@@ -98,6 +98,8 @@ function buildExploreParamsFromQuery(query) {
     exploreParams.spatialGroups = queryParams.spatialGroups ? queryParams.spatialGroups.split(',') : []
   }
   exploreParams.genes = geneParamToArray(queryParams.genes)
+  exploreParams.pathway = queryParams.pathway ? queryParams.pathway : ''
+
   exploreParams.geneList = queryParams.geneList ? queryParams.geneList : ''
   exploreParams.heatmapRowCentering = queryParams.heatmapRowCentering ?
     queryParams.heatmapRowCentering :
@@ -133,6 +135,7 @@ function buildQueryFromParams(exploreParams) {
     annotation: getIdentifierForAnnotation(exploreParams.annotation),
     subsample: exploreParams.subsample,
     genes: geneArrayToParam(exploreParams.genes),
+    pathway: exploreParams.pathway,
     consensus: exploreParams.consensus,
     geneList: exploreParams.geneList,
     spatialGroups: exploreParams.spatialGroups.join(','),
@@ -165,7 +168,7 @@ function buildQueryFromParams(exploreParams) {
 
 /** controls list in which query string params are rendered into URL bar */
 const PARAM_LIST_ORDER = [
-  'geneList', 'genes', 'cluster', 'spatialGroups', 'annotation', 'subsample', 'consensus',
+  'geneList', 'genes', 'pathway', 'cluster', 'spatialGroups', 'annotation', 'subsample', 'consensus',
   'tab', 'scatterColor', 'distributionPlot', 'distributionPoints',
   'heatmapFit', 'heatmapRowCentering', 'trackFileName', 'ideogramFileId', 'expressionFilter', 'expressionSort',
   'isSplitLabelArrays', 'hiddenTraces', 'facets'
