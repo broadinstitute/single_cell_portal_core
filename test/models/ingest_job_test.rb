@@ -855,7 +855,7 @@ class IngestJobTest < ActiveSupport::TestCase
     end
   end
 
-  test 'should ensure email delivery on special action failures' do
+  test 'should ensure email delivery and parse_status reset on special action failures' do
     study = FactoryBot.create(:detached_study,
                               name_prefix: 'Special Action Email',
                               user: @user,
