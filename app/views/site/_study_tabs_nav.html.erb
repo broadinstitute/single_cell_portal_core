@@ -45,19 +45,9 @@
       <a href="#study-analysis" data-toggle="tab">Analysis <i class="fas fa-fw fa-tasks"></i></a>
     </li>
     <% if @allow_firecloud_access && @user_can_edit %>
-      <% if @allow_edits %>
-        <li role="presentation" class="study-nav" id="study-settings-nav">
-          <a href="#study-settings" data-toggle="tab">Settings <i class="fas fa-fw fa-cogs"></i></a>
-        </li>
-      <% else %>
-        <li role="presentation" class="study-nav disabled" id="study-settings-nav">
-          <a href="#study-settings" data-toggle="tooltip"
-             title="Study workspaces are currently unavailable - please try again later.">
-            Settings <i class="fas fa-fw fa-cogs"></i>
-          </a>
-        </li>
-
-      <% end %>
+      <li role="presentation" class="study-nav" id="study-settings-nav">
+        <a href="#study-settings" data-toggle="tab">Settings <i class="fas fa-fw fa-cogs"></i></a>
+      </li>
     <% end %>
     <li role="presentation" class="study-badges">
       <span class="badge" id="cell-count"> <%= @study.cell_count %> cells</span>

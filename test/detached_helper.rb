@@ -28,7 +28,6 @@ end
 def generate_download_file_mock(study_files, parent_study: nil, private: false)
   download_file_mock = Minitest::Mock.new
   study_files.each do |file|
-    assign_services_mock!(download_file_mock, private)
     assign_get_file_mock!(download_file_mock)
     assign_url_mock!(download_file_mock, file, parent_study:)
   end
@@ -52,14 +51,6 @@ def assign_get_file_mock!(mock)
   file_mock.expect :present?, true
   file_mock.expect :size, 1.megabyte
   mock.expect :execute_gcloud_method, file_mock, [:get_workspace_file, 0, String, String]
-end
-
-def assign_services_mock!(mock, private)
-  if private
-    # private file downloads have an extra call to :services_available? for Sam and Rawls in addition to GoogleBuckets
-    mock.expect :services_available?, true, [String, String]
-  end
-  mock.expect :services_available?, true, [String]
 end
 
 # helper to mock all calls to Terra orchestration API when saving a new study & creating workspace

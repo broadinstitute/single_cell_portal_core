@@ -269,10 +269,10 @@
               </td>
               </td>
               <td>
-                <% if @allow_downloads %>
+                <% if !@study.detached %>
                   <%= render partial: '/layouts/download_link', locals: {study: @study, study_file: file} %>
                 <% else %>
-                  <%= button_to 'Currently Unavailable', '#/', class: 'btn btn-danger disabled-download', disabled: true %>
+                  <%= button_to 'Workspace unavailable', '#/', class: 'btn btn-danger disabled-download', disabled: true %>
                 <% end %>
               </td>
             </tr>

@@ -4,10 +4,9 @@
   <div class="col-xs-12">
     <h2>Study Files
       <span class="badge"><%= @study_files.count %></span>
-      <%= link_to "<i class='fas fa-question-circle'></i> Bulk download".html_safe, '#/', class: "btn btn-default pull-right #{!@allow_downloads ? 'disabled' : nil}", id: 'download-help' %>
+      <%= link_to "<i class='fas fa-question-circle'></i> Bulk download".html_safe, '#/', class: "btn btn-default pull-right", id: 'download-help' %>
     </h2>
 
-    <% if @allow_downloads %>
     <div class="modal fade" id="download-help-modal" role="dialog" aria-labelledby="download-help-modal" aria-hidden="true">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -194,7 +193,6 @@
           writeDownloadCommand(downloadObject, fileTypes);
         });
     </script>
-    <% end %>
   </div>
 </div>
 <div class="table-responsive">
@@ -224,11 +222,7 @@
           <% end %>
         </td>
         <td>
-          <% if @allow_downloads && @allow_firecloud_access %>
-            <%= render partial: '/layouts/download_link', locals: {study: @study, study_file: study_file} %>
-          <% else %>
-            <%= link_to 'Currently Unavailable', '#/', class: 'btn btn-danger disabled-download', disabled: true %>
-          <% end %>
+          <%= render partial: '/layouts/download_link', locals: {study: @study, study_file: study_file} %>
         </td>
       </tr>
     <% end %>
@@ -271,11 +265,7 @@
                 <% end %>
               </td>
               <td>
-                <% if @allow_downloads %>
-                  <%= render partial: '/layouts/download_link', locals: {study: @study, study_file: file} %>
-                <% else %>
-                  <%= link_to 'Currently Unavailable', '#/', class: 'btn btn-danger disabled-download', disabled: true %>
-                <% end %>
+                <%= render partial: '/layouts/download_link', locals: {study: @study, study_file: file} %>
               </td>
             </tr>
           <% end %>
