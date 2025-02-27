@@ -6,21 +6,34 @@ export const NUM_SUGGESTIONS = 50
 
 /** Get pathway name given pathway ID */
 export function getPathwayName(pathwayId) {
-  let pathwayNamesById = {}
+  console.log('pathwayId', pathwayId)
   if (window.pathwayNamesById) {
     return window.pathwayNamesById[pathwayId]
-  } else {
-    const pathwayIdsByName = getPathwayIdsByName()
-    Object.entries(pathwayIdsByName).forEach(([name, id]) => {
-      pathwayNamesById
-    })
   }
+
+  const pathwayNamesById = {}
+
+  const pathwayIdsByName = getPathwayIdsByName()
+  Object.entries(pathwayIdsByName).forEach(([name, id]) => {
+    pathwayNamesById[id] = name
+  })
+
+  window.pathwayNamesById = pathwayNamesById
+
+  const pathwayName = pathwayNamesById[pathwayId]
+
+  return pathwayName
 }
 
 /** Get object mapping pathway names to WikiPathways IDs */
 function getPathwayIdsByName() {
   if (window.pathwayIdsByName) {
     return window.pathwayIdsByName
+  }
+
+  if (!window.Ideogram || !window.Ideogram.interactionCache) {
+    console.log('exiting getPathwayIdsByName early')
+    return ''
   }
 
   const pathwayCache = window.Ideogram.interactionCache

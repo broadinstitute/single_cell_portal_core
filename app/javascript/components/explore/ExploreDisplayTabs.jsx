@@ -796,7 +796,7 @@ export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
   const numGenes = exploreParams?.genes?.length
   const isMultiGene = numGenes > 1
   const isGene = exploreParams?.genes?.length > 0
-  const isPathway = exploreParams?.genes?.length === 1 && /WP\d+$/.test(exploreParams.genes[0])
+  const isPathway = exploreParams?.pathway !== ''
   const isConsensus = !!exploreParams.consensus
   const hasClusters = exploreInfo && exploreInfo.clusterGroupNames.length > 0
   const hasSpatialGroups = exploreParams.spatialGroups?.length > 0

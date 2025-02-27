@@ -43,6 +43,11 @@ function updateExploreParams(newOptions, wasUserSpecified=true) {
   const search = location.search
   const currentParams = buildExploreParamsFromQuery(search)
   const mergedOpts = Object.assign({}, currentParams, newOptions)
+
+  if (mergedOpts.pathway !== '') {
+    mergedOpts.genes = []
+  }
+
   if (wasUserSpecified) {
     // this is just default params being fetched from the server, so don't change the url
     Object.keys(newOptions).forEach(key => {

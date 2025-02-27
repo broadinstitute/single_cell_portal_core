@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { manageDrawPathway } from '~/lib/pathway-expression'
+// import { getPathwayName, getPathwayIdsByName } from '~/lib/search-utils'
 
 /**  */
 export default function Pathway({
-  studyAccession, cluster, annotation, genes, dimensions
+  studyAccession, cluster, annotation, pathway, dimensions
 }) {
-  const pathwayId = genes[0]
+  const pathwayId = pathway
   const pwDimensions = Object.assign({}, dimensions)
 
   pwDimensions.height -= 80
@@ -15,7 +16,7 @@ export default function Pathway({
 
   useEffect(() => {
     window.Ideogram.drawPathway(pathwayId, '', '', '.pathway', pwDimensions, false)
-  }, [cluster, annotation, genes.join(',')])
+  }, [cluster, annotation, pathway])
 
   const style = { width: pwDimensions.width, height: pwDimensions.height + 600 }
 

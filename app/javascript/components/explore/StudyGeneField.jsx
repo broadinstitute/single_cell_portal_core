@@ -5,7 +5,7 @@ import Button from 'react-bootstrap/lib/Button'
 import Modal from 'react-bootstrap/lib/Modal'
 import CreatableSelect from 'react-select/creatable'
 
-import { getAutocompleteSuggestions, getIsPathway } from '~/lib/search-utils'
+import { getAutocompleteSuggestions, getIsPathway, getPathwayName } from '~/lib/search-utils'
 import { log } from '~/lib/metrics-api'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
@@ -137,6 +137,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   /** Converts any current typed free text to a gene array entry */
   function syncQueryArrayToInputText() {
     const inputTextValues = inputText.trim().split(/[\s,]+/)
+    console.log('inputTextValues', inputTextValues)
     if (!inputTextValues.length || !inputTextValues[0].length) {
       // console.log('in syncQueryArrayToInputText if, queryArray', queryArray)
       if (queryArray.length === 2 && queryArray[0].label === 'Genes') {
@@ -147,10 +148,10 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
     }
     const searchOptions = getSearchOptions(inputTextValues)
     const queryOptions = searchOptions[0].options
-    // console.log('in syncQueryArrayToInputText, queryArray', queryArray)
-    // console.log('in syncQueryArrayToInputText, queryOptions', queryOptions)
+    console.log('in syncQueryArrayToInputText, queryArray', queryArray)
+    console.log('in syncQueryArrayToInputText, queryOptions', queryOptions)
     const newQueryArray = queryArray.concat(queryOptions)
-    setInputText(' ')
+    setInputText('')
     setQueryArray(newQueryArray)
     return newQueryArray
   }
@@ -189,10 +190,10 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   }
 
   useEffect(() => {
-    if (queries.join(',') !== queryArray.map(opt => opt.label).join(',')) {
+    if (queries.join(',') !== queryArray.map(opt => opt.value).join(',')) {
       // the genes have been updated elsewhere -- resync
-      // console.log('in useEffect, queryArray', queryArray)
-      // console.log('in useEffect, genes', genes)
+      console.log('in useEffect, queryArray', queryArray)
+      console.log('in useEffect, queries', queries)
       setQueryArray(getSearchOptions(queries))
       setInputText('')
       setNotPresentQueries(new Set([]))
@@ -218,11 +219,14 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   console.log('queryArray', queryArray)
 
   if (typeof queryArray[0] === 'object' && queryArray[1]?.options.length > 0) {
-    const rawPathwayLabel = queryArray[1].options[0].label
-    searchTermsArray = [queryArray[1].options[0].label]
+    const pathwayId = queryArray[1].options[0]
+    const pathwayName = getPathwayName(pathwayId)
+    // searchTermsArray = [{ label: pathwayName, value: pathwayId }]
+    searchTermsArray = [pathwayName]
   }
 
   console.log('searchTermsArray', searchTermsArray)
+  console.log('inputText', inputText)
 
   return (
     <form className="gene-keyword-search gene-study-keyword-search form-horizontal" onSubmit={handleSearch}>
@@ -349,8 +353,8 @@ function getSearchOptions(rawSuggestions) {
       }
     })
 
-    console.log('rawGeneOptions', rawGeneOptions)
-    console.log('rawPathwayOptions', rawPathwayOptions)
+    // console.log('rawGeneOptions', rawGeneOptions)
+    // console.log('rawPathwayOptions', rawPathwayOptions)
 
     const [geneOptions, pathwayOptions] =
       filterSearchOptions(rawGeneOptions, rawPathwayOptions)
