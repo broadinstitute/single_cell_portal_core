@@ -1,7 +1,78 @@
 import stringSimilarity from 'string-similarity'
+import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
 // max number of autocomplete suggestions
 export const NUM_SUGGESTIONS = 50
+
+/** Get object mapping pathway names to WikiPathways IDs */
+function getPathwayIdsByName(pathwayCache) {
+  if (window.pathwayIdsByName) {
+    return window.pathwayIdsByName
+  }
+
+  const pathwayIdsByName = {}
+  const pathwayEntries = Object.entries(pathwayCache)
+  pathwayEntries.forEach(([gene, ixnObj]) => {
+    ixnObj.result?.forEach(r => pathwayIdsByName[r.name] = r.id)
+  })
+
+  window.pathwayIdsByName = pathwayIdsByName
+  return pathwayIdsByName
+}
+
+/** Determine if input text is a pathway name */
+export function getIsPathway(inputText) {
+  if (!window.Ideogram || !window.Ideogram.interactionCache) {
+    return []
+  }
+
+  console.log('inputText', inputText)
+
+  const pathwayIdsByName = getPathwayIdsByName(window.Ideogram.interactionCache)
+
+  const pathwayIds = Object.values(pathwayIdsByName)
+  const inputTextUpperCase = inputText.toUpperCase()
+  const isPathwayId = pathwayIds.some(
+    id => id === inputTextUpperCase
+  )
+  if (isPathwayId) {
+    return true
+  }
+
+  const pathwayNames = Object.keys(pathwayIdsByName)
+  const inputTextLowerCase = inputText.toLowerCase()
+  const isPathwayName = pathwayNames.some(
+    name => name.toLowerCase() === inputTextLowerCase
+  )
+
+  return isPathwayName
+}
+
+/** Get pathway names that include the input text */
+function getPathwaySuggestions(inputText) {
+  const flags = getFeatureFlagsWithDefaults()
+  if (
+    !window.Ideogram || !window.Ideogram.interactionCache ||
+    !flags?.show_pathway_expression
+  ) {
+    return []
+  }
+
+  const pathwayIdsByName = getPathwayIdsByName(window.Ideogram.interactionCache)
+  const pathwayNames = Object.keys(pathwayIdsByName)
+  const rawSuggestions = pathwayNames.filter(
+    name => name.toLowerCase().includes(inputText.toLowerCase())
+  )
+  const pathwaySuggestions = rawSuggestions.map(pathwayName => {
+    const pathwayId = pathwayIdsByName[pathwayName]
+
+    // As expected by autocomplete in study gene search
+    const pathwayOption = { label: pathwayName, value: pathwayId, isGene: false }
+    return pathwayOption
+  })
+
+  return pathwaySuggestions
+}
 
 /**
  * Get list of autocomplete suggestions, based on input text
@@ -47,5 +118,14 @@ export function getAutocompleteSuggestions(inputText, targets, numSuggestions=NU
   }
 
   if (exactMatch) {topMatches.unshift(exactMatch)} // Put any exact match first
-  return topMatches.slice(0, numSuggestions)
+
+  const pathwaySuggestions = getPathwaySuggestions(inputText, targets)
+
+  const topGeneMatches = topMatches.slice(0, numSuggestions)
+
+  topMatches = topGeneMatches.concat(pathwaySuggestions)
+
+  return topMatches
+
+
 }

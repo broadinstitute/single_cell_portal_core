@@ -13,6 +13,7 @@ import ScatterPlot from '~/components/visualization/ScatterPlot'
 import StudyViolinPlot from '~/components/visualization/StudyViolinPlot'
 import DotPlot from '~/components/visualization/DotPlot'
 import Heatmap from '~/components/visualization/Heatmap'
+import Pathway from '~/components/visualization/Pathway'
 import GeneListHeatmap from '~/components/visualization/GeneListHeatmap'
 import GenomeView from './GenomeView'
 import { getAnnotationValues, getShownAnnotation } from '~/lib/cluster-utils'
@@ -286,7 +287,7 @@ export default function ExploreDisplayTabs({
   const [filterErrorText, setFilterErrorText] = useState(null)
 
   const {
-    enabledTabs, disabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs
+    enabledTabs, disabledTabs, isGeneList, isGene, isPathway, isMultiGene, hasIdeogramOutputs
   } = getEnabledTabs(exploreInfo, exploreParamsWithDefaults, cellFaceting)
 
   // exploreParams object without genes specified, to pass to cluster comparison plots
@@ -320,7 +321,7 @@ export default function ExploreDisplayTabs({
     exploreInfo &&
     exploreInfo.taxonNames.length === 1 &&
     exploreParams.genes.length === 1 &&
-    !isGeneList
+    !isGeneList && !isPathway
   ) {
     showRelatedGenesIdeogram = true
     currentTaxon = exploreInfo.taxonNames[0]
@@ -666,6 +667,16 @@ export default function ExploreDisplayTabs({
                 />
               </div>
             }
+            { enabledTabs.includes('pathway') &&
+              <div className={shownTab === 'pathway' ? '' : 'hidden'}>
+                <Pathway
+                  studyAccession={studyAccession}
+                  {... exploreParamsWithDefaults}
+
+                  dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
+                />
+              </div>
+            }
             { enabledTabs.includes('geneListHeatmap') &&
               <div className={shownTab === 'geneListHeatmap' ? '' : 'hidden'}>
                 <GeneListHeatmap
@@ -765,6 +776,7 @@ export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
   const numGenes = exploreParams?.genes?.length
   const isMultiGene = numGenes > 1
   const isGene = exploreParams?.genes?.length > 0
+  const isPathway = exploreParams?.genes?.length === 1 && /WP\d+$/.test(exploreParams.genes[0])
   const isConsensus = !!exploreParams.consensus
   const hasClusters = exploreInfo && exploreInfo.clusterGroupNames.length > 0
   const hasSpatialGroups = exploreParams.spatialGroups?.length > 0
@@ -783,6 +795,10 @@ export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
 
   if (isGeneList) {
     enabledTabs = ['geneListHeatmap']
+  } if (isPathway) {
+    enabledTabs = ['pathway']
+    // console.log('in render before return, inputText', inputText)
+    // console.log('in render before return, geneArray', geneArray)
   } else if (isGene) {
     if (isMultiGene) {
       if (isConsensus) {
@@ -838,5 +854,5 @@ export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
     disabledTabs = []
   }
 
-  return { enabledTabs, disabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs }
+  return { enabledTabs, disabledTabs, isGeneList, isGene, isPathway, isMultiGene, hasIdeogramOutputs }
 }

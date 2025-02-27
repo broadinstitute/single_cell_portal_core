@@ -62,7 +62,7 @@ function updateExploreParams(newOptions, wasUserSpecified=true) {
   // view options settings should not add history entries
   // e.g. when a user hits 'back', it shouldn't undo their cluster selection,
   // it should take them to the page they were on before they came to the explore tab
-  navigate(`${query}#study-visualize`, { replace: true })
+  navigate(query, { replace: true })
 }
 
 /** converts query string parameters into the dataParams object */
