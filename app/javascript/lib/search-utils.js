@@ -31,9 +31,11 @@ function getPathwayIdsByName() {
     return window.pathwayIdsByName
   }
 
-  if (!window.Ideogram || !window.Ideogram.interactionCache) {
-    console.log('exiting getPathwayIdsByName early')
-    return ''
+  if (
+    !window.Ideogram || !window.Ideogram.interactionCache ||
+    Object.keys(window.Ideogram.interactionCache).length === 0
+  ) {
+    return {}
   }
 
   const pathwayCache = window.Ideogram.interactionCache
@@ -51,11 +53,8 @@ function getPathwayIdsByName() {
 /** Determine if input text is a pathway name */
 export function getIsPathway(inputText) {
   if (!window.Ideogram || !window.Ideogram.interactionCache || !inputText) {
-    console.log('exiting getIsPathway early')
     return false
   }
-
-  // console.log('inputText', inputText)
 
   const pathwayIdsByName = getPathwayIdsByName()
 
@@ -88,6 +87,7 @@ function getPathwaySuggestions(inputText) {
   }
 
   const pathwayIdsByName = getPathwayIdsByName()
+
   const pathwayNames = Object.keys(pathwayIdsByName)
   const rawSuggestions = pathwayNames.filter(
     name => name.toLowerCase().includes(inputText.toLowerCase())

@@ -13,6 +13,7 @@ import { manageDrawPathway } from '~/lib/pathway-expression'
 
 /** Determine if searched text is among available genes */
 function getIsInvalidQuery(query, allGenes) {
+  console.log('in getIsInvalidQuery, query', query)
   const queryLowercase = query.toLowerCase()
   const isInvalidQuery = (
     allGenes.length > 0 &&
@@ -25,7 +26,6 @@ function getIsInvalidQuery(query, allGenes) {
 /** Parse gene name from heterogeneous array  */
 function getQueriesFromSearchOptions(newQueryArray) {
   let newQueries
-  let isGene = true
   const flags = getFeatureFlagsWithDefaults()
 
   if (newQueryArray[0]?.isGene === true || !flags?.show_pathway_expression) {
@@ -40,13 +40,14 @@ function getQueriesFromSearchOptions(newQueryArray) {
     console.log('in getQueriesFromSearchOptions, case 3')
     // Query is a pathway
     newQueries = [newQueryArray[0].value]
-  } else {
+  } else if (typeof newQueryArray[0] === 'object') {
     console.log('in getQueriesFromSearchOptions, case 4')
     // Accounts for clearing genes
-    // newQueries = newQueryArray[0].options.map(g => g.value)
-    console.log('in getQueriesFromSearchOptions, newQueryArray', newQueryArray)
     newQueries = newQueryArray.map(g => g.value)
-    isGene = false
+  } else {
+    // Query is a gene, passed via URL
+    console.log('in getQueriesFromSearchOptions, case 5')
+    newQueries = newQueryArray
   }
 
   console.log('in getQueriesFromSearchOptions, newQueryArray', newQueryArray)
@@ -60,7 +61,7 @@ function getQueryArrayFromSearchOptions(searchOptions) {
   let queryArray = []
 
   searchOptions.map(optionsObj => {
-    const labels = optionsObj.options.map(option => option.label)
+    const labels = optionsObj.options
     queryArray = queryArray.concat(labels)
   })
 
@@ -82,6 +83,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
 
   const rawSuggestions = getAutocompleteSuggestions(inputText, allGenes)
   const searchOptions = getSearchOptions(rawSuggestions)
+  console.log('searchOptions', searchOptions)
 
   let enteredQueryArray = []
   if (queries) {
@@ -155,7 +157,8 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   /** Converts any current typed free text to a gene array entry */
   function syncQueryArrayToInputText() {
     const inputTextValues = inputText.trim().split(/[\s,]+/)
-    console.log('inputTextValues', inputTextValues)
+    console.log('in syncQueryArrayToInputText, inputTextValues', inputTextValues)
+    console.log('in syncQueryArrayToInputText, queryArray', queryArray)
     if (!inputTextValues.length || !inputTextValues[0].length) {
       // console.log('in syncQueryArrayToInputText if, queryArray', queryArray)
       if (queryArray.length === 2 && queryArray[0].label === 'Genes') {
@@ -166,9 +169,9 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
     }
     const searchOptions = getSearchOptions(inputTextValues)
     const queryOptions = searchOptions[0].options
-    console.log('in syncQueryArrayToInputText, queryArray', queryArray)
     console.log('in syncQueryArrayToInputText, queryOptions', queryOptions)
     const newQueryArray = queryArray.concat(queryOptions)
+    console.log('in syncQueryArrayToInputText, newQueryArray', newQueryArray)
     setInputText('')
     setQueryArray(newQueryArray)
     return newQueryArray
@@ -234,8 +237,6 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
 
   const searchDisabled = !isLoading && !allGenes?.length
 
-  let searchTermsArray = queryArray
-
   // // console.log('queries 2', queries)
   // // console.log('queryArray', queryArray)
 
@@ -252,7 +253,8 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   // // }
 
   // console.log('searchTermsArray', searchTermsArray)
-  console.log('inputText', inputText)
+  console.log('before render, inputText', inputText)
+  console.log('before render queryArray', queryArray)
 
   return (
     <form className="gene-keyword-search gene-study-keyword-search form-horizontal" onSubmit={handleSearch}>
@@ -272,7 +274,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
           <CreatableSelect
             components={{ DropdownIndicator: null }}
             inputValue={inputText}
-            value={searchTermsArray}
+            value={queryArray}
             className={searchDisabled ? 'gene-keyword-search-input disabled' : 'gene-keyword-search-input'}
             isClearable
             isMulti
