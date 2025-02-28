@@ -237,20 +237,13 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
 
   const searchDisabled = !isLoading && !allGenes?.length
 
-  // // console.log('queries 2', queries)
-  // // console.log('queryArray', queryArray)
-
-  // // if (typeof queryArray[0] === 'object') {
-  // //   const [genesObj, pathwaysObj] = queryArray
-  // //   if (pathwaysObj?.options.length > 0) {
-  // //     const pathwayId = queryArray[1].options[0]
-  // //     const pathwayName = getPathwayName(pathwayId)
-  // //     // searchTermsArray = [{ label: pathwayName, value: pathwayId }]
-  // //     searchTermsArray = [pathwayName]
-  // //   } else if (genesObj?.options?.length === 0) {
-  // //     searchTermsArray = []
-  // //   }
-  // // }
+  if (typeof queryArray[0] === 'object' && getIsPathway(queryArray[0].label)) {
+    const pathwayObj = queryArray[0]
+    if (pathwayObj.value === pathwayObj.label) {
+      pathwayObj.label = getPathwayName(pathwayObj.label)
+    }
+    queryArray[0] = pathwayObj
+  }
 
   // console.log('searchTermsArray', searchTermsArray)
   console.log('before render, inputText', inputText)

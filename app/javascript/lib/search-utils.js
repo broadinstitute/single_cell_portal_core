@@ -27,6 +27,7 @@ export function getPathwayName(pathwayId) {
 
 /** Get object mapping pathway names to WikiPathways IDs */
 function getPathwayIdsByName() {
+  console.log('in getPathwayIdsByName')
   if (window.pathwayIdsByName) {
     return window.pathwayIdsByName
   }
@@ -35,6 +36,7 @@ function getPathwayIdsByName() {
     !window.Ideogram || !window.Ideogram.interactionCache ||
     Object.keys(window.Ideogram.interactionCache).length === 0
   ) {
+    console.log('exiting getPathwayIdsByName early')
     return {}
   }
 
@@ -46,15 +48,23 @@ function getPathwayIdsByName() {
     ixnObj.result?.forEach(r => pathwayIdsByName[r.name] = r.id)
   })
 
+  console.log('in getPathwayIdsByName, pathwayIdsByName', pathwayIdsByName)
   window.pathwayIdsByName = pathwayIdsByName
   return pathwayIdsByName
 }
 
 /** Determine if input text is a pathway name */
 export function getIsPathway(inputText) {
+
+  console.log('in getIsPathway, !window.Ideogram', !window.Ideogram)
+  console.log('in getIsPathway, !window.Ideogram.interactionCache', !window.Ideogram.interactionCache)
+  console.log('in getIsPathway, !inputText', !inputText)
   if (!window.Ideogram || !window.Ideogram.interactionCache || !inputText) {
+    console.log('exiting getIsPathway early')
     return false
   }
+
+  // console.log('inputText', inputText)
 
   const pathwayIdsByName = getPathwayIdsByName()
 
@@ -78,15 +88,21 @@ export function getIsPathway(inputText) {
 
 /** Get pathway names that include the input text */
 function getPathwaySuggestions(inputText) {
+  console.log('in getPathwaySuggestions, inputText', inputText)
+  console.log('in getPathwaySuggestions, window.Ideogram', window.Ideogram)
+  console.log('in getPathwaySuggestions, window.Ideogram.interactionCache', window.Ideogram.interactionCache)
   const flags = getFeatureFlagsWithDefaults()
   if (
     !window.Ideogram || !window.Ideogram.interactionCache ||
     !flags?.show_pathway_expression
   ) {
+    console.log('exiting getPathwaySuggestions early')
     return []
   }
 
   const pathwayIdsByName = getPathwayIdsByName()
+
+  console.log('getPathwaySuggestions, pathwayIdsByName', pathwayIdsByName)
 
   const pathwayNames = Object.keys(pathwayIdsByName)
   const rawSuggestions = pathwayNames.filter(
