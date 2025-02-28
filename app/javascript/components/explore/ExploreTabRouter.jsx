@@ -44,8 +44,12 @@ function updateExploreParams(newOptions, wasUserSpecified=true) {
   const currentParams = buildExploreParamsFromQuery(search)
   const mergedOpts = Object.assign({}, currentParams, newOptions)
 
-  if (mergedOpts.pathway !== '') {
+  if (newOptions.pathway && newOptions.pathway !== '') {
     mergedOpts.genes = []
+  }
+
+  if (newOptions.genes?.length > 0) {
+    mergedOpts.pathway = ''
   }
 
   if (wasUserSpecified) {

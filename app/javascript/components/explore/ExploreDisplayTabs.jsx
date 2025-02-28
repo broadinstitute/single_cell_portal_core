@@ -318,6 +318,7 @@ export default function ExploreDisplayTabs({
         newParams.consensus = ''
       }
     }
+    console.log('in queryFn, newParams', newParams)
 
     updateExploreParams(newParams)
   }

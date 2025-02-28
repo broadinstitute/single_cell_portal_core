@@ -43,10 +43,13 @@ function getQueriesFromSearchOptions(newQueryArray) {
   } else {
     console.log('in getQueriesFromSearchOptions, case 4')
     // Accounts for clearing genes
-    newQueries = newQueryArray[0].options.map(g => g.value)
+    // newQueries = newQueryArray[0].options.map(g => g.value)
+    console.log('in getQueriesFromSearchOptions, newQueryArray', newQueryArray)
+    newQueries = newQueryArray.map(g => g.value)
     isGene = false
   }
 
+  console.log('in getQueriesFromSearchOptions, newQueryArray', newQueryArray)
   console.log('in getQueriesFromSearchOptions, newQueries', newQueries)
 
   return newQueries
@@ -70,8 +73,12 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
 
   let enteredQueryArray = []
   if (queries) {
-    enteredQueryArray = getSearchOptions(queries)
+    getSearchOptions(queries).map(optionsObj => {
+      const labels = optionsObj.options.map(option => option.label)
+      enteredQueryArray = enteredQueryArray.concat(labels)
+    })
   }
+  console.log('enteredQueryArray', enteredQueryArray)
 
   /** the search control tracks two state variables
     * an array of already entered queries (queryArray),
@@ -114,11 +121,13 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
     }
     setNotPresentQueries(newNotPresentQueries)
 
+    console.log('in handleSearch, newNotPresentQueries', newNotPresentQueries)
+
     if (newNotPresentQueries.size > 0) {
       setShowNotPresentGeneChoice(true)
     } else if (newQueryArray && newQueryArray.length) {
       const newQueries = getQueriesFromSearchOptions(newQueryArray)
-      console.log('in StudyGeneField, newQueries', newQueries)
+      console.log('in handleSearch, newQueries', newQueries)
       const queries = newQueries
       // console.log('in handleSearch, genesToSearch', genesToSearch)
       if (queries.length > window.MAX_GENE_SEARCH) {
@@ -194,7 +203,9 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
       // the genes have been updated elsewhere -- resync
       console.log('in useEffect, queryArray', queryArray)
       console.log('in useEffect, queries', queries)
-      setQueryArray(getSearchOptions(queries))
+      const newQueryArray = getSearchOptions(queries)
+      console.log('in useEffect, newQueryArray', newQueryArray)
+      setQueryArray(newQueryArray)
       setInputText('')
       setNotPresentQueries(new Set([]))
     }
@@ -206,26 +217,31 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
       queries.join(',') !== queryArray.map(opt => opt.label).join(',')
     ) {
       const selectEvent = new Event('change:multiselect')
-      console.log('in useEffect, queryArray', queryArray)
+      console.log('in queryArray useEffect, queryArray', queryArray)
       handleSearch(selectEvent)
     }
-  }, [queryArray])
+  }, [queryArray.join(',')])
 
   const searchDisabled = !isLoading && !allGenes?.length
 
   let searchTermsArray = queryArray
 
-  console.log('queries 2', queries)
-  console.log('queryArray', queryArray)
+  // // console.log('queries 2', queries)
+  // // console.log('queryArray', queryArray)
 
-  if (typeof queryArray[0] === 'object' && queryArray[1]?.options.length > 0) {
-    const pathwayId = queryArray[1].options[0]
-    const pathwayName = getPathwayName(pathwayId)
-    // searchTermsArray = [{ label: pathwayName, value: pathwayId }]
-    searchTermsArray = [pathwayName]
-  }
+  // // if (typeof queryArray[0] === 'object') {
+  // //   const [genesObj, pathwaysObj] = queryArray
+  // //   if (pathwaysObj?.options.length > 0) {
+  // //     const pathwayId = queryArray[1].options[0]
+  // //     const pathwayName = getPathwayName(pathwayId)
+  // //     // searchTermsArray = [{ label: pathwayName, value: pathwayId }]
+  // //     searchTermsArray = [pathwayName]
+  // //   } else if (genesObj?.options?.length === 0) {
+  // //     searchTermsArray = []
+  // //   }
+  // // }
 
-  console.log('searchTermsArray', searchTermsArray)
+  // console.log('searchTermsArray', searchTermsArray)
   console.log('inputText', inputText)
 
   return (
