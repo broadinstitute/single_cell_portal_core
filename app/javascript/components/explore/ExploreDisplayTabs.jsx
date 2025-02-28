@@ -308,10 +308,10 @@ export default function ExploreDisplayTabs({
     const newParams = { geneList: '', ideogramFileId: '' }
     if (isPathway) {
       newParams.pathway = queries[0]
-      delete newParams['genes']
+      newParams['genes'] = []
     } else {
       newParams.genes = queries
-      delete newParams['pathway']
+      newParams['pathway'] = ''
 
       if (queries.length < 2) {
         // and unset the consensus if there are no longer 2+ genes

@@ -55,6 +55,18 @@ function getQueriesFromSearchOptions(newQueryArray) {
   return newQueries
 }
 
+/** Collapse search options to query array */
+function getQueryArrayFromSearchOptions(searchOptions) {
+  let queryArray = []
+
+  searchOptions.map(optionsObj => {
+    const labels = optionsObj.options.map(option => option.label)
+    queryArray = queryArray.concat(labels)
+  })
+
+  return queryArray
+}
+
 /**
 * Renders the gene text input
 * This shares a lot of logic with search/genes/GeneKeyword, but is kept as a separate component for
@@ -73,12 +85,9 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
 
   let enteredQueryArray = []
   if (queries) {
-    getSearchOptions(queries).map(optionsObj => {
-      const labels = optionsObj.options.map(option => option.label)
-      enteredQueryArray = enteredQueryArray.concat(labels)
-    })
+    const queriesSearchOptions = getSearchOptions(queries)
+    enteredQueryArray = getQueryArrayFromSearchOptions(queriesSearchOptions)
   }
-  console.log('enteredQueryArray', enteredQueryArray)
 
   /** the search control tracks two state variables
     * an array of already entered queries (queryArray),
@@ -203,7 +212,8 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
       // the genes have been updated elsewhere -- resync
       console.log('in useEffect, queryArray', queryArray)
       console.log('in useEffect, queries', queries)
-      const newQueryArray = getSearchOptions(queries)
+      const queriesSearchOptions = getSearchOptions(queries)
+      const newQueryArray = getQueryArrayFromSearchOptions(queriesSearchOptions)
       console.log('in useEffect, newQueryArray', newQueryArray)
       setQueryArray(newQueryArray)
       setInputText('')
