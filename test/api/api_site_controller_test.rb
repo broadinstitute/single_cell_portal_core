@@ -159,10 +159,8 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'should submit differential expression request' do
-    study = FactoryBot.create(:detached_study,
-                               name_prefix: 'DiffExp Submit Test',
-                               user: @user,
-                               test_array: @@studies_to_clean)
+    user = FactoryBot.create(:api_user, test_array: @@users_to_clean)
+    study = FactoryBot.create(:detached_study, name_prefix: 'DiffExp Submit Test', user:, test_array: @@studies_to_clean)
     cells = %w[A B C D E F G]
     coordinates = 1.upto(7).to_a
     species = %w[dog cat dog dog cat cat cat]
@@ -191,7 +189,7 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
       pairwise_comparisons: { dog: %w[cat]}
     )
     mock_not_detached study, :find_by do
-      sign_in_and_update @user
+      sign_in_and_update user
 
       # stub :raw_matrix_for_cluster_cells to avoid having to create cell arrays manually
       ClusterVizService.stub :raw_matrix_for_cluster_cells, raw_matrix do
@@ -212,9 +210,10 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
           delay_mock = Minitest::Mock.new
           delay_mock.expect :delay, job_mock
           IngestJob.stub :new, delay_mock do
-            execute_http_request :post,
+            execute_http_request(:post,
                                  api_v1_site_study_submit_differential_expression_path(accession: study.accession),
-                                 request_payload: job_params
+                                 request_payload: job_params,
+                                 user:)
             assert_response 204
             delay_mock.verify
           end
@@ -224,35 +223,40 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
           cluster_name: 'umap', annotation_name: 'species',
           annotation_scope: 'study', de_type: 'pairwise', group1: 'dog', group2: 'cat'
         }
-        execute_http_request :post,
+        execute_http_request(:post,
                              api_v1_site_study_submit_differential_expression_path(accession: study.accession),
-                             request_payload: existing_params
+                             request_payload: existing_params,
+                             user:)
         assert_response 409
         # request parameter validations
-        execute_http_request :post,
+        execute_http_request(:post,
                              api_v1_site_study_submit_differential_expression_path(accession: study.accession),
-                             request_payload: { cluster_name: 'foo'}
+                             request_payload: { cluster_name: 'foo'},
+                             user:)
         assert_response :not_found
-        execute_http_request :post,
+        execute_http_request(:post,
                              api_v1_site_study_submit_differential_expression_path(accession: study.accession),
                              request_payload: {
                                cluster_name: 'umap', annotation_name: 'foo', annotation_scope: 'study'
-                             }
+                             },
+                             user:)
         assert_response :not_found
 
-        execute_http_request :post,
+        execute_http_request(:post,
                              api_v1_site_study_submit_differential_expression_path(accession: study.accession),
                              request_payload: {
                                cluster_name: 'umap', annotation_name: 'cell_type__ontology_label',
                                annotation_scope: 'study', de_type: 'foo'
-                             }
+                             },
+                             user:)
         assert_response 422
-        execute_http_request :post,
+        execute_http_request(:post,
                              api_v1_site_study_submit_differential_expression_path(accession: study.accession),
                              request_payload: {
                                cluster_name: 'umap', annotation_name: 'cell_type__ontology_label',
                                annotation_scope: 'study', de_type: 'pairwise'
-                             }
+                             },
+                             user:)
         assert_response 422
         # check for author results
         study.differential_expression_results.delete_all
@@ -273,9 +277,10 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
           cluster_name: 'umap', annotation_name: 'cell_type__ontology_label',
           annotation_scope: 'study', de_type: 'rest'
         }
-        execute_http_request :post,
+        execute_http_request(:post,
                              api_v1_site_study_submit_differential_expression_path(accession: study.accession),
-                             request_payload: params
+                             request_payload: params,
+                             user:)
         assert_response :forbidden
         assert json['error'].starts_with? 'User requests are disabled'
       end
