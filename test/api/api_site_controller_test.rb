@@ -38,6 +38,7 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
   end
 
   teardown do
+    DifferentialExpressionResult.delete_all
     OmniAuth.config.mock_auth[:google_oauth2] = nil
     reset_user_tokens
     @study.update(public: true)
