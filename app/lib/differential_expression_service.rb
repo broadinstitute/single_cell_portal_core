@@ -163,25 +163,27 @@ class DifferentialExpressionService
     params_object.machine_type = machine_type if machine_type.present? # override :machine_type if specified
     return true if dry_run # exit before submission if specified as annotation was already validated
 
-    # check if there's already a job running using these parameters and exit if so
-    job_params = ApplicationController.batch_api_client.format_command_line(
-      study_file:, action: :differential_expression, user_metrics_uuid: user.metrics_uuid, params_object:
-    )
-    running = ApplicationController.batch_api_client.find_matching_jobs(
-      params: job_params, job_states: BatchApiClient::RUNNING_STATES
-    )
-    if running.any?
-      log_message "Found #{running.count} running DE jobs: #{running.map(&:name).join(', ')}"
-      log_message "Matching these parameters: #{job_params.join(' ')}"
-      log_message "Exiting without queuing new job"
-      false
-    elsif params_object.valid?
-      # launch DE job
-      job = IngestJob.new(study:, study_file:, user:, action: :differential_expression, params_object:)
-      job.delay.push_remote_and_launch_ingest
-      true
+    if params_object.valid?
+      # check if there's already a job running using these parameters and exit if so
+      job_params = ApplicationController.batch_api_client.format_command_line(
+        study_file:, action: :differential_expression, user_metrics_uuid: user.metrics_uuid, params_object:
+      )
+      running = ApplicationController.batch_api_client.find_matching_jobs(
+        params: job_params, job_states: BatchApiClient::RUNNING_STATES
+      )
+      if running.any?
+        log_message "Found #{running.count} running DE jobs: #{running.map(&:name).join(', ')}"
+        log_message "Matching these parameters: #{job_params.join(' ')}"
+        log_message "Exiting without queuing new job"
+        false
+      else
+        # launch DE job
+        job = IngestJob.new(study:, study_file:, user:, action: :differential_expression, params_object:)
+        job.delay.push_remote_and_launch_ingest
+        true
+      end
     else
-      raise ArgumentError, "job parameters failed to validate: #{params_object.errors.full_messages}"
+      raise ArgumentError, "job parameters failed to validate: #{params_object.errors.full_messages.join(', ')}"
     end
   end
 

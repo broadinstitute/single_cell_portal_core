@@ -483,6 +483,11 @@ module Api
       end
 
       def submit_differential_expression
+        # disallow DE calculation requests for studies with author DE
+        if @study.differential_expression_results.where(is_author_de: true).any?
+          render json: { error: 'User requests are disabled for this study as it contains author-supplied differential expression results' }, status: 403 and return
+        end
+
         cluster = nil
         if params[:cluster_name] == '_default' || params[:cluster_name].empty?
           cluster = @study.default_cluster
@@ -526,7 +531,7 @@ module Api
         # check if these results already exist
         # for pairwise, also check if requested comparisons exist
         result = DifferentialExpressionResult.find_by(
-          study: @study, cluster_group: cluster, annotation_name:, annotation_scope:
+          study: @study, cluster_group: cluster, annotation_name:, annotation_scope:, is_author_de: false
         )
         if result && (!pairwise || (pairwise && result.has_pairwise_comparison?(group1, group2)))
           render json: { error: "Requested results already exist" }, status: 409 and return

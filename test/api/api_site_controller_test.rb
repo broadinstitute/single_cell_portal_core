@@ -166,6 +166,7 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
     coordinates = 1.upto(7).to_a
     species = %w[dog cat dog dog cat cat cat]
     cell_types = ['B cell', 'T cell', 'B cell', 'T cell', 'T cell', 'B cell', 'B cell']
+    custom_cell_types = ['Custom 1', 'Custom 2', 'Custom 1', 'Custom 2', 'Custom 1', 'Custom 2', 'Custom 2']
     raw_matrix = FactoryBot.create(
       :expression_file, name: 'raw.txt', study:, expression_file_info: {
       is_raw_counts: true, units: 'raw counts', library_preparation_protocol: 'Drop-seq',
@@ -180,7 +181,8 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
     FactoryBot.create(
       :metadata_file, name: 'metadata.txt', study:, cell_input: cells, annotation_input: [
         { name: 'species', type: 'group', values: species },
-        { name: 'cell_type__ontology_label', type: 'group', values: cell_types }]
+        { name: 'cell_type__ontology_label', type: 'group', values: cell_types },
+        { name: 'cell_type__custom', type: 'group', values: custom_cell_types }]
     )
 
     DifferentialExpressionResult.create(
@@ -244,6 +246,7 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
                                annotation_scope: 'study', de_type: 'foo'
                              }
         assert_response :bad_request
+        assert json['error'].starts_with? 'job parameters failed to validate'
         execute_http_request :post,
                              api_v1_site_study_submit_differential_expression_path(accession: study.accession),
                              request_payload: {
@@ -251,6 +254,31 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
                                annotation_scope: 'study', de_type: 'pairwise'
                              }
         assert_response :bad_request
+        assert json['error'] == 'Must supply group1 and group2 for pairwise calculations'
+        # check for author results
+        study.differential_expression_results.delete_all
+        de_file = FactoryBot.create(:differential_expression_file,
+                                    study:,
+                                    name: 'user_de.txt',
+                                    annotation_name: 'cell_type__custom',
+                                    annotation_scope: 'study',
+                                    cluster_group:,
+                                    computational_method: 'custom'
+        )
+        author_result = DifferentialExpressionResult.create(
+          study:, cluster_group:, annotation_name: 'cell_type__custom', annotation_scope: 'study',
+          study_file: de_file, is_author_de: true, one_vs_rest_comparisons: ['Custom 1', 'Custom 2']
+        )
+        assert author_result.persisted?
+        params = {
+          cluster_name: 'umap', annotation_name: 'cell_type__ontology_label',
+          annotation_scope: 'study', de_type: 'rest'
+        }
+        execute_http_request :post,
+                             api_v1_site_study_submit_differential_expression_path(accession: study.accession),
+                             request_payload: params
+        assert_response :forbidden
+        assert json['error'].starts_with? 'User requests are disabled'
       end
     end
   end

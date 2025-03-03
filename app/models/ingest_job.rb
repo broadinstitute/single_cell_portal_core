@@ -1011,9 +1011,13 @@ class IngestJob
       job_props.merge!(
         {
           numCells: cluster&.points,
-          numAnnotationValues: annotation[:values]&.size
+          numAnnotationValues: annotation[:values]&.size,
+          deType: params_object.de_type
         }
       )
+      if params_object.de_type == 'pairwise'
+        job_props.merge!( { pairwiseGroups: [params_object.group1, params_object.group2]})
+      end
     when :image_pipeline
       data_cache_perftime =  params_object.data_cache_perftime
       job_props.merge!(
