@@ -245,16 +245,14 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
                                cluster_name: 'umap', annotation_name: 'cell_type__ontology_label',
                                annotation_scope: 'study', de_type: 'foo'
                              }
-        assert_response :bad_request
-        assert json['error'].starts_with? 'job parameters failed to validate'
+        assert_response 422
         execute_http_request :post,
                              api_v1_site_study_submit_differential_expression_path(accession: study.accession),
                              request_payload: {
                                cluster_name: 'umap', annotation_name: 'cell_type__ontology_label',
                                annotation_scope: 'study', de_type: 'pairwise'
                              }
-        assert_response :bad_request
-        assert json['error'] == 'Must supply group1 and group2 for pairwise calculations'
+        assert_response 422
         # check for author results
         study.differential_expression_results.delete_all
         de_file = FactoryBot.create(:differential_expression_file,

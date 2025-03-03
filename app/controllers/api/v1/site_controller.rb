@@ -458,9 +458,6 @@ module Api
           response 204 do
             key :description, 'Job successfully submitted'
           end
-          response 400 do
-            key :description, 'Invalid job parameters'
-          end
           response 401 do
             key :description, ApiBaseController.unauthorized
           end
@@ -478,6 +475,9 @@ module Api
           end
           response 410 do
             key :description, ApiBaseController.resource_gone
+          end
+          response 422 do
+            key :description, "Job parameters failed validation"
           end
         end
       end
