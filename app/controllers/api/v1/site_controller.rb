@@ -485,46 +485,25 @@ module Api
       def submit_differential_expression
         # disallow DE calculation requests for studies with author DE
         if @study.differential_expression_results.where(is_author_de: true).any?
-          render json: { error: 'User requests are disabled for this study as it contains author-supplied differential expression results' }, status: 403 and return
+          render json: {
+            error: 'User requests are disabled for this study as it contains author-supplied differential expression results'
+          }, status: 403 and return
         end
 
-        cluster = nil
-        if params[:cluster_name] == '_default' || params[:cluster_name].empty?
-          cluster = @study.default_cluster
-          if cluster.nil?
-            render json: { error: 'No default cluster exists' }, status: 404 and return
-          end
-        else
-          cluster_name = params[:cluster_name]
-          cluster = @study.cluster_groups.find_by(name: cluster_name)
-          if cluster.nil?
-            render json: { error: "No cluster named #{cluster_name} could be found"}, status: 404 and return
-          end
-        end
+        cluster_name = params[:cluster_name]
+        cluster = cluster_name == '_default' ? @study.default_cluster : @study.cluster_groups.by_name(cluster_name)
+        render json: { error: "Requested cluster #{cluster_name} not found" }, status: 404 and return if cluster.nil?
+
         annotation_name = params[:annotation_name]
         annotation_scope = params[:annotation_scope]
+        de_type = params[:de_type]
+        pairwise = de_type == 'pairwise'
         group1 = params[:group1]
         group2 = params[:group2]
         annotation = AnnotationVizService.get_selected_annotation(
           @study, cluster:, annot_name: annotation_name, annot_type: 'group', annot_scope: annotation_scope
         )
-        if annotation.nil?
-          render json: { error: 'No matching annotation found' }, status: 404 and return
-        end
-
-        de_type = params[:de_type]
-        render json: { error: 'Must specify calculation type: rest or pairwise' }, status: 400 and return if de_type.blank?
-
-        pairwise = de_type == 'pairwise'
-
-        if pairwise
-          render json: { error: 'Must supply group1 and group2 for pairwise calculations' },
-                 status: 400 and return if group1.blank? && group2.blank?
-
-          missing = [group1, group2] - annotation[:values]
-          render json: { error: "#{annotation_name} does not contain #{missing.join(',')}" },
-                 status: 400 and return if missing.any?
-        end
+        render json: { error: 'No matching annotation found' }, status: 404 and return if annotation.nil?
 
         de_params = { annotation_name:, annotation_scope:, de_type:, group1:, group2: }
 
@@ -549,7 +528,7 @@ module Api
           end
         rescue ArgumentError => e
           # job parameters failed to validate
-          render json: { error: e.message}, status: 400 and return
+          render json: { error: e.message}, status: 422 and return
         end
       end
 

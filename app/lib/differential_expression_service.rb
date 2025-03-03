@@ -379,12 +379,14 @@ class DifferentialExpressionService
     if !pairwise && cells_by_label.keys.count < 2
       raise ArgumentError, "#{identifier} does not have enough labels represented in #{cluster_group.name}"
     elsif pairwise
-      missing = {
+      missing = [group1, group2] - annotation[:values]
+      raise ArgumentError, "#{annotation_name} does not contain '#{missing.join(', ')}'" if missing.any?
+      cell_count = {
         "#{group1}" => cells_by_label[group1].count,
         "#{group2}" => cells_by_label[group2].count
       }.keep_if { |_, c| c < 2 }
       raise ArgumentError,
-            "#{missing.keys.join(', ')} does not have enough cells represented in #{identifier}" if missing.any?
+            "#{cell_count.keys.join(', ')} does not have enough cells represented in #{identifier}" if cell_count.any?
     end
   end
 
