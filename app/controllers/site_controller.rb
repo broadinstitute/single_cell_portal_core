@@ -118,12 +118,7 @@ class SiteController < ApplicationController
             @cluster_annotations = ClusterVizService.load_cluster_group_annotations(@study, @cluster, current_user)
             set_selected_annotation
           end
-
-          # double check on download availability: first, check if administrator has disabled downloads
-          # then check if FireCloud is available and disable download links if either is true
-          @allow_downloads = ApplicationController.firecloud_client.services_available?(FireCloudClient::BUCKETS_SERVICE)
         end
-        set_firecloud_permissions(@study.detached?)
         set_study_permissions(@study.detached?)
         set_study_default_options
         set_study_download_options
@@ -156,7 +151,6 @@ class SiteController < ApplicationController
     # double check on download availability: first, check if administrator has disabled downloads
     # then check individual statuses to see what to enable/disable
     # if the study is 'detached', then everything is set to false by default
-    set_firecloud_permissions(@study.detached?)
     set_study_permissions(@study.detached?)
     set_study_default_options
     set_study_download_options
@@ -652,46 +646,19 @@ class SiteController < ApplicationController
     end
   end
 
-  # check various firecloud statuses/permissions, but only if a study is not 'detached'
-  def set_firecloud_permissions(study_detached)
-    @allow_firecloud_access = false
-    @allow_downloads = false
-    @allow_edits = false
-    return if study_detached
-    begin
-      @allow_firecloud_access = AdminConfiguration.firecloud_access_enabled?
-      api_status = ApplicationController.firecloud_client.api_status
-      # reuse status object because firecloud_client.services_available? each makes a separate status call
-      # calling Hash#dig will gracefully handle any key lookup errors in case of a larger outage
-      if api_status.is_a?(Hash)
-        system_status = api_status['systems']
-        sam_ok = system_status.dig(FireCloudClient::SAM_SERVICE, 'ok') == true # do equality check in case 'ok' node isn't present
-        rawls_ok = system_status.dig(FireCloudClient::RAWLS_SERVICE, 'ok') == true
-        buckets_ok = system_status.dig(FireCloudClient::BUCKETS_SERVICE, 'ok') == true
-        @allow_downloads = buckets_ok
-        @allow_edits = sam_ok && rawls_ok
-      end
-    rescue => e
-      logger.error "Error checking FireCloud API status: #{e.class.name} -- #{e.message}"
-      ErrorTracker.report_exception(e, current_user, @study, { firecloud_status: api_status})
-      MetricsService.report_error(e, request, current_user, @study)
-    end
-  end
-
   # set various study permissions based on the results of the above FC permissions
   def set_study_permissions(study_detached)
     @user_can_edit = false
     @user_can_compute = false
     @user_can_download = false
     @user_embargoed = false
+    @allow_firecloud_access = AdminConfiguration.firecloud_access_enabled?
 
     return if study_detached || !@allow_firecloud_access
     begin
       @user_can_edit = @study.can_edit?(current_user)
-      if @allow_downloads
-        @user_can_download = @user_can_edit ? true : @study.can_download?(current_user)
-        @user_embargoed = @user_can_edit ? false : @study.embargoed?(current_user)
-      end
+      @user_can_download = @user_can_edit ? true : @study.can_download?(current_user)
+      @user_embargoed = @user_can_edit ? false : @study.embargoed?(current_user)
     rescue => e
       logger.error "Error setting study permissions: #{e.class.name} -- #{e.message}"
       ErrorTracker.report_exception(e, current_user, @study)
@@ -781,21 +748,12 @@ class SiteController < ApplicationController
 
   # check compute permissions for study
   def check_compute_permissions
-    if ApplicationController.firecloud_client.services_available?(FireCloudClient::SAM_SERVICE, FireCloudClient::RAWLS_SERVICE)
-      if !user_signed_in? || !@study.can_compute?(current_user)
-        @alert = "You do not have permission to perform that action.  #{SCP_SUPPORT_EMAIL}"
-        respond_to do |format|
-          format.js {render action: :notice}
-          format.html {redirect_to merge_default_redirect_params(site_path, scpbr: params[:scpbr]), alert: @alert and return}
-          format.json {head 403}
-        end
-      end
-    else
-      @alert = "Compute services are currently unavailable - please check back later.  #{SCP_SUPPORT_EMAIL}"
+    if !user_signed_in? || !@study.can_compute?(current_user)
+      @alert = "You do not have permission to perform that action.  #{SCP_SUPPORT_EMAIL}"
       respond_to do |format|
         format.js {render action: :notice}
         format.html {redirect_to merge_default_redirect_params(site_path, scpbr: params[:scpbr]), alert: @alert and return}
-        format.json {head 503}
+        format.json {head 403}
       end
     end
   end

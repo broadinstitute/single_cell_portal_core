@@ -7,16 +7,9 @@
     <li role="presentation" class="profile-nav active" id="profile-emails-nav">
       <a href="#profile-emails" data-toggle="tab">Preferences</a>
     </li>
-    <% if @profiles_available %>
-      <li role="presentation" class="profile-nav" id="profile-terra-nav">
-        <a href="#profile-terra" data-toggle="tab">Terra Profile</a>
-      </li>
-    <% else %>
-      <li role="presentation" class="profile-nav disabled" id="profile-terra-nav">
-        <a href="#profile-terra" data-toggle="tooltip"
-           title="Terra profiles are currently unavailable, please check back later.">Terra Profile</a>
-      </li>
-    <% end %>
+    <li role="presentation" class="profile-nav" id="profile-terra-nav">
+      <a href="#profile-terra" data-toggle="tab">Terra Profile</a>
+    </li>
   </ul>
 
   <div class="tab-content top-pad">
@@ -144,28 +137,26 @@
         </tbody>
       </table>
     </div>
-    <% if @profiles_available %>
-      <div class="tab-pane" id="profile-terra" role="tabpanel">
-        <% if current_user.registered_for_firecloud %>
-          <%= render partial: 'user_firecloud_profile' %>
-        <% else %>
-          <div class="container">
-            <div class="bs-callout bs-callout-danger">
-              <h4>Please complete your Terra registration</h4>
-              <p>
-                You may not update your Terra profile until you have registered with Terra and accepted the terms of service.
-                Please <%= link_to 'visit Terra', 'https://app.terra.bio', target: :_blank, rel: 'noopener noreferrer' %>,
-                select 'Sign in with Google' from the top-lefthand nav menu, and complete the sign in and registration process.
-              </p>
-              <p class="text-center">
-                <%= link_to "Complete Registration Now <i class='fas fa-external-link-alt'></i>".html_safe, 'https://app.terra.bio',
-                            target: :_blank, rel: 'noopener noreferrer', class: 'btn btn-lg btn-default' %>
-              </p>
-            </div>
+    <div class="tab-pane" id="profile-terra" role="tabpanel">
+      <% if current_user.registered_for_firecloud %>
+        <%= render partial: 'user_firecloud_profile' %>
+      <% else %>
+        <div class="container">
+          <div class="bs-callout bs-callout-danger">
+            <h4>Please complete your Terra registration</h4>
+            <p>
+              You may not update your Terra profile until you have registered with Terra and accepted the terms of service.
+              Please <%= link_to 'visit Terra', 'https://app.terra.bio', target: :_blank, rel: 'noopener noreferrer' %>,
+              select 'Sign in with Google' from the top-lefthand nav menu, and complete the sign in and registration process.
+            </p>
+            <p class="text-center">
+              <%= link_to "Complete Registration Now <i class='fas fa-external-link-alt'></i>".html_safe, 'https://app.terra.bio',
+                          target: :_blank, rel: 'noopener noreferrer', class: 'btn btn-lg btn-default' %>
+            </p>
           </div>
-        <% end %>
-      </div>
-    <% end %>
+        </div>
+      <% end %>
+    </div>
   </div>
 </div>
 
