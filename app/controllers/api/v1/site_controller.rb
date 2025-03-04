@@ -462,7 +462,7 @@ module Api
             key :description, ApiBaseController.unauthorized
           end
           response 403 do
-            key :description, ApiBaseController.forbidden('view study')
+            key :description, ApiBaseController.forbidden('view study, study has author DE')
           end
           response 404 do
             key :description, ApiBaseController.not_found(Study, 'Cluster', 'Annotation')
@@ -479,6 +479,9 @@ module Api
           response 422 do
             key :description, "Job parameters failed validation"
           end
+          response 429 do
+            key :description, 'Weekly user quota exceeded'
+          end
         end
       end
 
@@ -488,6 +491,13 @@ module Api
           render json: {
             error: 'User requests are disabled for this study as it contains author-supplied differential expression results'
           }, status: 403 and return
+        end
+
+        # check user quota before proceeding
+        if DifferentialExpressionService.job_exceeds_quota?(current_api_user)
+          current_quota = DifferentialExpressionService.get_weekly_user_quota
+          render json: { error: "You have exceeded your weekly quota of #{current_quota} requests" },
+                 status: 429 and return
         end
 
         cluster_name = params[:cluster_name]
@@ -521,6 +531,7 @@ module Api
             cluster, @study, current_api_user, **de_params
           )
           if submitted
+            DifferentialExpressionService.increment_user_quota(current_api_user)
             head 204
           else
             # submitted: false here means that there is a matching running DE job

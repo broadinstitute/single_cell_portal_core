@@ -258,6 +258,16 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
                              },
                              user:)
         assert_response 422
+        # check rate limit
+        user.update(weekly_de_quota: DifferentialExpressionService::DEFAULT_USER_QUOTA)
+        execute_http_request(:post,
+                             api_v1_site_study_submit_differential_expression_path(accession: study.accession),
+                             request_payload: {
+                               cluster_name: 'umap', annotation_name: 'cell_type__ontology_label',
+                               annotation_scope: 'study', de_type: 'pairwise', group1: 'T cell', group2: 'B cell'
+                             },
+                             user:)
+        assert_response 429
         # check for author results
         study.differential_expression_results.delete_all
         de_file = FactoryBot.create(:differential_expression_file,

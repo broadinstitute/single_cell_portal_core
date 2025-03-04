@@ -9,6 +9,8 @@ class DifferentialExpressionService
   ALLOWED_ANNOTS = Regexp.union(CELL_TYPE_MATCHER, CLUSTERING_MATCHER)
   # specific annotations to exclude from automation
   EXCLUDED_ANNOTS = /(enrichment__cell_type)/i
+  # default quota for user-requested DE jobs
+  DEFAULT_USER_QUOTA = 5
 
   # run a differential expression job for a given study on the default cluster/annotation
   #
@@ -454,5 +456,40 @@ class DifferentialExpressionService
     else
       study_file.gs_url
     end
+  end
+
+  # retrieve the weekly user quota value
+  #
+  # * *returns*
+  #   - (Integer)
+  def self.get_weekly_user_quota
+    config = AdminConfiguration.find_by(config_type: 'Weekly User DE Quota')
+    config ? config.value.to_i : DEFAULT_USER_QUOTA
+  end
+
+  # check if a user has exceeded their weekly quota
+  #
+  # * *params*
+  #   - +user+ (User) => user requesting DE job
+  #
+  # * *returns*
+  #   - (Boolean)
+  def self.job_exceeds_quota?(user)
+    user.weekly_de_quota.to_i >= get_weekly_user_quota
+  end
+
+  # increment a given user's weekly quota
+  #
+  # * *params*
+  #   - +user+ (User) => user requesting DE job
+  def self.increment_user_quota(user)
+    current_quota = user.weekly_de_quota.to_i
+    current_quota += 1
+    user.update(weekly_de_quota: current_quota)
+  end
+
+  # reset all user-requested DE quotas on a weekly basis
+  def self.reset_all_user_quotas
+    User.update_all(weekly_de_quota: 0)
   end
 end
