@@ -237,7 +237,9 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
 
   const searchDisabled = !isLoading && !allGenes?.length
 
+  let isPathway = false
   if (typeof queryArray[0] === 'object' && getIsPathway(queryArray[0].label)) {
+    isPathway = true
     const pathwayObj = queryArray[0]
     if (pathwayObj.value === pathwayObj.label) {
       pathwayObj.label = getPathwayName(pathwayObj.label)
@@ -298,7 +300,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
             }}
           />
         </div>
-        {!searchDisabled && <label htmlFor="gene-list-upload"
+        {!searchDisabled && !isPathway && <label htmlFor="gene-list-upload"
           data-toggle="tooltip"
           className="icon-button"
           title="Upload a list of genes to search from a file">

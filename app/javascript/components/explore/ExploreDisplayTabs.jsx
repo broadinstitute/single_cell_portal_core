@@ -550,7 +550,7 @@ export default function ExploreDisplayTabs({
               isLoading={!exploreInfo}
               speciesList={exploreInfo ? exploreInfo.taxonNames : []}/>
             { // show if this is gene search || gene list
-              (isGene || isGeneList || hasIdeogramOutputs) &&
+              (isGene || isGeneList || hasIdeogramOutputs || isPathway) &&
                 <OverlayTrigger placement="top" overlay={
                   <Tooltip id="back-to-cluster-view">{'Return to cluster view'}</Tooltip>
                 }>
