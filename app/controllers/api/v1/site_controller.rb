@@ -495,6 +495,11 @@ module Api
 
         # check user quota before proceeding
         if DifferentialExpressionService.job_exceeds_quota?(current_api_user)
+          # minimal log props to help gauge overall user interest, as well as annotation/de types
+          log_props = {
+            studyAccession: @study.accession, annotationName: params[:annotation_name], de_type: params[:de_type]
+          }
+          MetricsService.log('quota-exceeded-de', log_props, current_api_user, request:)
           current_quota = DifferentialExpressionService.get_weekly_user_quota
           render json: { error: "You have exceeded your weekly quota of #{current_quota} requests" },
                  status: 429 and return
