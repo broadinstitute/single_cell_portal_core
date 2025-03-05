@@ -24,18 +24,16 @@ export default function Pathway({
   }, [cluster, annotationId, pathway])
 
   const diagramHeight = pwDimensions.height
-  const pathwayDescriptionHeight = 600
+  const pathwayDescriptionHeight = 500
 
   const diagramStyle = {
-    width: pwDimensions.width,
-    height: diagramHeight + pathwayDescriptionHeight,
-    position: 'absolute'
+    height: diagramHeight + pathwayDescriptionHeight
   }
 
   const legendStyle = {
-    float: 'right',
-    width: '350px',
-    marginRight: '50px'
+    // float: 'right',
+    // width: '350px',
+    // marginRight: '50px'
   }
 
   const scaledMeanHelpText =
@@ -44,12 +42,18 @@ export default function Pathway({
 
   return (
     <>
-      <div className="pathway" style={diagramStyle}></div>
-      <svg className="pathway-legend-container" style={legendStyle}>
-        <ScaledMeanExpressionLegend
-          helpText={scaledMeanHelpText}
-        />
-      </svg>
+      <div className="pathway col-md-8" style={diagramStyle}></div>
+      <div className="pathway-legend-container col-md-3" style={{float: 'right'}}>
+        <svg style={legendStyle}>
+          <ScaledMeanExpressionLegend
+            helpText={scaledMeanHelpText}
+            horizontalTransform=''
+            verticalTransform='up-3'
+            popoverPlacement='bottom'
+            translateX='100'
+          />
+        </svg>
+      </div>
     </>
   )
 }

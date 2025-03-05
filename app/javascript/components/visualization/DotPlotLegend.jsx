@@ -33,7 +33,13 @@ function DotPercentExpressingLegend() {
 }
 
 /** Scaled mean expression legend component, fot dot plot or pathway */
-export function ScaledMeanExpressionLegend({ helpText=dotPlotScaledHelpText }) {
+export function ScaledMeanExpressionLegend({
+  helpText=dotPlotScaledHelpText,
+  horizontalTransform='left-10',
+  verticalTransform='down-3',
+  popoverPlacement='right',
+  translateX='200'
+}) {
   const gradientId = _uniqueId('dotPlotGrad-')
   const colorBarWidth = 100
 
@@ -45,7 +51,7 @@ export function ScaledMeanExpressionLegend({ helpText=dotPlotScaledHelpText }) {
   )
 
   return (
-    <g className="dp-legend-color" transform="translate(200, 0)">
+    <g className="dp-legend-color" transform={`translate(${translateX}, 0)`}>
       <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
         {
           dotPlotColorScheme.colors.map((color, i) => {
@@ -61,12 +67,12 @@ export function ScaledMeanExpressionLegend({ helpText=dotPlotScaledHelpText }) {
       <text x={colorBarWidth - 5} y={numberYPos}>1</text>
       <rect fill="#CC0088" width="3" height="10" x={colorBarWidth / 2} y={numberYPos - 20} ry="2"/>
       <text x="-22" y={labelTextYPos}>Scaled mean expression</text>
-      <OverlayTrigger trigger="hover" rootClose placement="right" overlay={scaledPopover}>
+      <OverlayTrigger rootClose placement={popoverPlacement} overlay={scaledPopover}>
         <FontAwesomeIcon
           data-analytics-name="scaled-mean-expression-help-icon"
           className="action log-click help-icon"
           icon={faInfoCircle}
-          transform="shrink-12 left-16 down-3" />
+          transform={`shrink-14.4 ${verticalTransform} ${horizontalTransform}`} />
       </OverlayTrigger>
     </g>
   )
