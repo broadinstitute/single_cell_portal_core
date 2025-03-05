@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { manageDrawPathway } from '~/lib/pathway-expression'
 // import { getPathwayName, getPathwayIdsByName } from '~/lib/search-utils'
 import { getIdentifierForAnnotation } from '~/lib/cluster-utils'
+import { ScaledMeanExpressionLegend } from '~/components/visualization/DotPlotLegend'
 
 /**  */
 export default function Pathway({
@@ -22,10 +23,27 @@ export default function Pathway({
     window.Ideogram.drawPathway(pathwayId, '', '', '.pathway', pwDimensions, false)
   }, [cluster, annotationId, pathway])
 
-  const style = { width: pwDimensions.width, height: pwDimensions.height + 600 }
+  const diagramHeight = pwDimensions.height
+  const pathwayDescriptionHeight = 600
+
+  const diagramStyle = {
+    width: pwDimensions.width,
+    height: diagramHeight + pathwayDescriptionHeight,
+    position: 'absolute'
+  }
+
+  const legendStyle = {
+    float: 'right',
+    width: '350px',
+    marginRight: '50px'
+  }
 
   return (
-    <div className="pathway" style={style}>
-    </div>
+    <>
+      <div className="pathway" style={diagramStyle}></div>
+      <svg className="pathway-legend-container" style={legendStyle}>
+        <ScaledMeanExpressionLegend />
+      </svg>
+    </>
   )
 }
