@@ -6,13 +6,10 @@ import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import _uniqueId from 'lodash/uniqueId'
 
-const scaledPopover = (
-  <Popover id="scaled-mean-expression-helptext">
-    Scaling is relative to each gene&apos;s expression across all cells in a given
-    annotation selection, i.e. cells associated with each column label in
-    the dot plot.
-  </Popover>
-)
+const dotPlotScaledHelpText =
+  'Scaling is relative to each gene\'s expression across all cells in this ' +
+  'annotation, i.e. cells associated with each column label in ' +
+  'the dot plot.'
 
 const numberYPos = 30
 const labelTextYPos = 52
@@ -36,9 +33,16 @@ function DotPercentExpressingLegend() {
 }
 
 /** Scaled mean expression legend component, fot dot plot or pathway */
-export function ScaledMeanExpressionLegend() {
+export function ScaledMeanExpressionLegend({ helpText=dotPlotScaledHelpText }) {
   const gradientId = _uniqueId('dotPlotGrad-')
   const colorBarWidth = 100
+
+
+  const scaledPopover = (
+    <Popover id="scaled-mean-expression-helptext">
+      {helpText}
+    </Popover>
+  )
 
   return (
     <g className="dp-legend-color" transform="translate(200, 0)">
@@ -57,7 +61,7 @@ export function ScaledMeanExpressionLegend() {
       <text x={colorBarWidth - 5} y={numberYPos}>1</text>
       <rect fill="#CC0088" width="3" height="10" x={colorBarWidth / 2} y={numberYPos - 20} ry="2"/>
       <text x="-22" y={labelTextYPos}>Scaled mean expression</text>
-      <OverlayTrigger trigger="click" rootClose placement="right" overlay={scaledPopover}>
+      <OverlayTrigger trigger="hover" rootClose placement="right" overlay={scaledPopover}>
         <FontAwesomeIcon
           data-analytics-name="scaled-mean-expression-help-icon"
           className="action log-click help-icon"

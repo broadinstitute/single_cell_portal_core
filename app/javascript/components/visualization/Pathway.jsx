@@ -38,11 +38,17 @@ export default function Pathway({
     marginRight: '50px'
   }
 
+  const scaledMeanHelpText =
+    'Scaling is relative to each gene\'s expression across all cells in this ' +
+    'annotation, i.e. cells associated with each annotation group.'
+
   return (
     <>
       <div className="pathway" style={diagramStyle}></div>
       <svg className="pathway-legend-container" style={legendStyle}>
-        <ScaledMeanExpressionLegend />
+        <ScaledMeanExpressionLegend
+          helpText={scaledMeanHelpText}
+        />
       </svg>
     </>
   )
