@@ -55,16 +55,9 @@ function getPathwayIdsByName() {
 
 /** Determine if input text is a pathway name */
 export function getIsPathway(inputText) {
-
-  console.log('in getIsPathway, !window.Ideogram', !window.Ideogram)
-  console.log('in getIsPathway, !window.Ideogram.interactionCache', !window.Ideogram.interactionCache)
-  console.log('in getIsPathway, !inputText', !inputText)
   if (!window.Ideogram || !window.Ideogram.interactionCache || !inputText) {
-    console.log('exiting getIsPathway early')
     return false
   }
-
-  // console.log('inputText', inputText)
 
   const pathwayIdsByName = getPathwayIdsByName()
 

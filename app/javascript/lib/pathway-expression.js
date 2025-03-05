@@ -290,20 +290,25 @@ function writePathwayAnnotationLabelMenu(labels, pathwayGenes, dotPlotMetrics) {
 }
 
 /**
- * Get annotation labels that have > 1 cell in the labeled group
- *
- * TODO (SCP-5760): Propagate these window.SCP values via React
+ * Get annotation labels that have > 1 cell in the labeled group, if possible
  */
 function getEligibleLabels() {
   const exploreParamsWithDefaults = window.SCP.exploreParamsWithDefaults
   const exploreInfo = window.SCP.exploreInfo
-  const countsByLabel = window.SCP.countsByLabel
 
   const rawAnnotLabels = getAnnotationValues(
     exploreParamsWithDefaults?.annotation,
     exploreInfo?.annotationList
   )
-  const annotationLabels = rawAnnotLabels.filter(label => countsByLabel[label] > 0)
+
+  let annotationLabels = rawAnnotLabels
+
+  /** TODO (SCP-5760): Propagate these window.SCP values via React */
+  const countsByLabel = window.SCP.countsByLabel
+  if (countsByLabel) {
+    annotationLabels = annotationLabels.filter(label => countsByLabel[label] > 0)
+  }
+
   return annotationLabels
 }
 
