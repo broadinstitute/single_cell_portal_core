@@ -147,11 +147,14 @@ module ImportServiceConfig
   end
 
   # get a value for library_preparation_protocol
-  def find_library_prep(lib)
-    sanitized_lib = lib.gsub(/(\schromium|\ssequencing)/, '')
-    ExpressionFileInfo::LIBRARY_PREPARATION_VALUES.detect do |lib_prep|
-      lib_prep.casecmp(sanitized_lib) == 0
-    end
+  def find_library_prep(libs)
+    sanitized_libs = libs.map {|lib| lib.gsub(/(\schromium|\ssequencing)/, '') }
+    libraries = sanitized_libs.map do |sanitized_lib|
+      ExpressionFileInfo::LIBRARY_PREPARATION_VALUES.detect do |lib_prep|
+        lib_prep.casecmp(sanitized_lib) == 0
+      end
+    end.compact
+    libraries.first # in case of multiple, first matching value
   end
 
   # default cluster embedding data fragments, assuming X_umap slot
