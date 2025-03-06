@@ -414,8 +414,8 @@ async function renderPathwayExpression(
   )
 }
 
-/** Draw pathway diagram */
-function drawPathway(event, dotPlotParams) {
+/** Draw expression overlay in pathway diagram */
+function drawPathwayOverlay(event, dotPlotParams) {
   // Hide popover instantly upon drawing pathway; don't wait ~2 seconds
   const ideoTooltip = document.querySelector('._ideogramTooltip')
   if (ideoTooltip) {
@@ -449,9 +449,9 @@ export function manageDrawPathway(studyAccession, cluster, annotation) {
 
   const dotPlotParams = { studyAccession, cluster, annotation }
   if (annotation.type === 'group') {
-    document.removeEventListener('ideogramDrawPathway', drawPathway)
+    document.removeEventListener('ideogramDrawPathway', drawPathwayOverlay)
     document.addEventListener('ideogramDrawPathway', event => {
-      drawPathway(event, dotPlotParams)
+      drawPathwayOverlay(event, dotPlotParams)
     })
   }
 }

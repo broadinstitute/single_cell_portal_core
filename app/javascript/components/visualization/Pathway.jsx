@@ -26,7 +26,7 @@ function GradientRect({color}) {
         <stop offset="0%" stopColor="#FFF" key={1}/>
         <stop offset="100%" stopColor={hexColor} key={2}/>
       </linearGradient>
-      <rect stroke="#AAA" fill={`url(#${gradientId})`} width="100" y={`${i * 18}`} height="14" rx="10" />
+      <rect stroke="#AAA" fill={`url(#${gradientId})`} width="100" y={`${i * 14}`} height="10" rx="6" />
     </>
   )
 }
@@ -41,7 +41,7 @@ function PercentExpressingLegend() {
       <GradientRect color="red" />
       <GradientRect color="purple" />
       <GradientRect color="blue" />
-      <g transform="translate(0, 40)">
+      <g transform="translate(0, 30)">
         <text x="12" y={numberYPos}>0</text>
         <text x="45" y={numberYPos}>38</text>
         <text x="78" y={numberYPos}>75</text>
@@ -51,23 +51,33 @@ function PercentExpressingLegend() {
   )
 }
 
-/**  */
+/** Rearrange description from below diagram to right of diagram */
+function moveDescription() {
+  const description = document.querySelector('._ideoPathwayFooter')
+  const infoContainer = document.querySelector('.pathway-info-container')
+  infoContainer.insertAdjacentElement('beforeend', description)
+}
+
+/** Draw a pathway diagram with an expression overlay */
 export default function Pathway({
   studyAccession, cluster, annotation, pathway, dimensions
 }) {
   const pathwayId = pathway
   const pwDimensions = Object.assign({}, dimensions)
 
-  pwDimensions.height -= 80
-  pwDimensions.width -= 200
+  pwDimensions.height -= 20
+  pwDimensions.width -= 300
 
   manageDrawPathway(studyAccession, cluster, annotation)
 
   // Stringify object, to enable tracking state change
   const annotationId = getIdentifierForAnnotation(annotation)
 
+  document.removeEventListener('ideogramDrawPathway', moveDescription)
+  document.addEventListener('ideogramDrawPathway', moveDescription)
+
   useEffect(() => {
-    window.Ideogram.drawPathway(pathwayId, '', '', '.pathway', pwDimensions, false)
+    window.Ideogram.drawPathway(pathwayId, '', '', '.pathway-diagram', pwDimensions, false)
   }, [cluster, annotationId, pathway])
 
   const diagramHeight = pwDimensions.height
@@ -87,14 +97,14 @@ export default function Pathway({
 
   return (
     <>
-      <div className="pathway col-md-8" style={diagramStyle}></div>
-      <div className="pathway-legend-container col-md-3" style={{ float: 'right' }}>
+      <div className="pathway-diagram col-md-8" style={diagramStyle}></div>
+      <div className="pathway-info-container col-md-3" style={{ float: 'right' }}>
         <svg style={legendStyle}>
           <ScaledMeanExpressionLegend
             helpText={scaledMeanHelpText}
             transform={'shrink-14.8 up-4.2 left-0.5'}
             popoverPlacement='bottom'
-            translateX='100'
+            translateX='0'
           />
           <PercentExpressingLegend />
         </svg>

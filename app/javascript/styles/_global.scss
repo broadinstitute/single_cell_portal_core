@@ -800,14 +800,10 @@ ul.pager li.dimmed {
 	border-radius: 5px;
 }
 
-.dot-plot-legend-container,
-.pathway-legend-container {
-  margin-top: 1em;
-  height: 70px;
-}
-
 .dot-plot-legend-container {
   width: 400px;
+  margin-top: 1em;
+  height: 70px;
 
   text {
     font-size: 0.9em;
