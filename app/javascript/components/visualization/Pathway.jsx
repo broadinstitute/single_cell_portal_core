@@ -26,7 +26,7 @@ function GradientRect({color}) {
         <stop offset="0%" stopColor="#FFF" key={1}/>
         <stop offset="100%" stopColor={hexColor} key={2}/>
       </linearGradient>
-      <rect stroke="#888" fill={`url(#${gradientId})`} width="100" y={`${i * 20}`} height="14" rx="10" />
+      <rect stroke="#AAA" fill={`url(#${gradientId})`} width="100" y={`${i * 18}`} height="14" rx="10" />
     </>
   )
 }
@@ -41,16 +41,12 @@ function PercentExpressingLegend() {
       <GradientRect color="red" />
       <GradientRect color="purple" />
       <GradientRect color="blue" />
-      <circle cx="20" cy="8" r="1"/>
-      <circle cx="57.5" cy="8" r="3"/>
-      <circle cx="90" cy="8" r="7"/>
-      <circle cx="57.5" cy="8" r="3"/>
-
-      <text x="17" y={numberYPos}>0</text>
-      <text x="50" y={numberYPos}>38</text>
-      <text x="83" y={numberYPos}>75</text>
-
-      <text x="15" y={labelTextYPos}>% expressing</text>
+      <g transform="translate(0, 40)">
+        <text x="12" y={numberYPos}>0</text>
+        <text x="45" y={numberYPos}>38</text>
+        <text x="78" y={numberYPos}>75</text>
+        <text x="10" y={labelTextYPos}>% expressing</text>
+      </g>
     </g>
   )
 }
