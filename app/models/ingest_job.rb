@@ -514,9 +514,9 @@ class IngestJob
     when :image_pipeline
       set_has_image_cache
     when :ingest_anndata
+      set_anndata_file_info
       launch_anndata_subparse_jobs if study_file.is_viz_anndata?
       launch_differential_expression_jobs if study_file.is_viz_anndata?
-      set_anndata_file_info
     end
     set_study_initialized
   end
@@ -741,10 +741,10 @@ class IngestJob
     Rails.logger.info "Creating differential expression result object for annotation: #{annotation_identifier}"
     cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: params_object.cluster_name)
     matrix_url = params_object.matrix_file_path
-    matrix_filename = matrix_url.split("gs://#{study.bucket_id}/").last
-    matrix_file = StudyFile.where(study: study, 'expression_file_info.is_raw_counts' => true).any_of(
-      { upload_file_name: matrix_filename }, { remote_location: matrix_filename }
-    ).first
+    bucket_path = matrix_url.split("gs://#{study.bucket_id}/").last
+    matrix_file = StudyFile.where(
+      study:, :upload_file_name.in => [bucket_path, bucket_path.split('/').last]
+    ).detect(&:is_raw_counts_file?)
     de_result = DifferentialExpressionResult.find_or_initialize_by(
       study: study, cluster_group: cluster, cluster_name: cluster.name,
       annotation_name: params_object.annotation_name, annotation_scope: params_object.annotation_scope,
