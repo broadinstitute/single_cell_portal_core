@@ -35,8 +35,7 @@ function DotPercentExpressingLegend() {
 /** Scaled mean expression legend component, fot dot plot or pathway */
 export function ScaledMeanExpressionLegend({
   helpText=dotPlotScaledHelpText,
-  horizontalTransform='left-10',
-  verticalTransform='down-3',
+  transform='shrink-12 down-3 left-10',
   popoverPlacement='right',
   translateX='200'
 }) {
@@ -72,7 +71,7 @@ export function ScaledMeanExpressionLegend({
           data-analytics-name="scaled-mean-expression-help-icon"
           className="action log-click help-icon"
           icon={faInfoCircle}
-          transform={`shrink-14.4 ${verticalTransform} ${horizontalTransform}`} />
+          transform={transform} />
       </OverlayTrigger>
     </g>
   )

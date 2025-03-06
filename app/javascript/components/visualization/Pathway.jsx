@@ -36,7 +36,7 @@ function PercentExpressingLegend() {
   return (
     <g
       className="pathway-legend-percent-expressing"
-      transform="translate(90,80)"
+      transform="translate(100,80)"
     >
       <GradientRect color="red" />
       <GradientRect color="purple" />
@@ -78,9 +78,7 @@ export default function Pathway({
   }
 
   const legendStyle = {
-    // float: 'right',
-    // width: '350px',
-    // marginRight: '50px'
+    height: '200px'
   }
 
   const scaledMeanHelpText =
@@ -90,12 +88,11 @@ export default function Pathway({
   return (
     <>
       <div className="pathway col-md-8" style={diagramStyle}></div>
-      <div className="pathway-legend-container col-md-3" style={{float: 'right'}}>
+      <div className="pathway-legend-container col-md-3" style={{ float: 'right' }}>
         <svg style={legendStyle}>
           <ScaledMeanExpressionLegend
             helpText={scaledMeanHelpText}
-            horizontalTransform=''
-            verticalTransform='up-3'
+            transform={'shrink-14.8 up-4.2 left-0.5'}
             popoverPlacement='bottom'
             translateX='100'
           />
