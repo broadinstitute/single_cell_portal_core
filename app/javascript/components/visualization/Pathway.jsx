@@ -7,6 +7,9 @@ import PlotUtils from '~/lib/plot'
 const { dotPlotColorScheme } = PlotUtils
 import _uniqueId from 'lodash/uniqueId'
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
+
 const numberYPos = 30
 const labelTextYPos = 52
 
@@ -48,6 +51,33 @@ function PercentExpressingLegend() {
         <text x="10" y={labelTextYPos}>% expressing</text>
       </g>
     </g>
+  )
+}
+
+/** Get average expression legend for pathway diagram */
+function PathwayScaledMeanExpressionLegend() {
+  const gradientBarStyle = {
+    width: '100px',
+    height: '14px',
+    borderRadius: '3px',
+    background: 'linear-gradient(to right, #0000BB, #CC0088, #FF0000)'
+  }
+
+  const tickStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    width: '100px'
+  }
+
+  return (
+    <>
+      <div className="gradient-bar" style={gradientBarStyle}></div>
+      <div className="tick" style={tickStyle}>
+        <span>0</span><span>0.5</span><span>1</span>
+      </div>
+      <div>Scaled mean expression</div>
+      <FontAwesomeIcon className="action help-icon" icon={faInfoCircle} />
+    </>
   )
 }
 
@@ -99,13 +129,14 @@ export default function Pathway({
     <>
       <div className="pathway-diagram col-md-8" style={diagramStyle}></div>
       <div className="pathway-info-container col-md-3" style={{ float: 'right' }}>
+        <PathwayScaledMeanExpressionLegend />
         <svg style={legendStyle}>
-          <ScaledMeanExpressionLegend
+          {/* <ScaledMeanExpressionLegend
             helpText={scaledMeanHelpText}
             transform={'shrink-14.8 up-4.2 left-0.5'}
             popoverPlacement='bottom'
             translateX='0'
-          />
+          /> */}
           <PercentExpressingLegend />
         </svg>
       </div>
