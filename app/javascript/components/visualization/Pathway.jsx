@@ -34,23 +34,58 @@ function GradientRect({color}) {
   )
 }
 
+// /** Get legend component for percent of cells expressng, for dot plot */
+// function PercentExpressingLegend() {
+//   return (
+//     <g
+//       className="pathway-legend-percent-expressing"
+//       transform="translate(100,80)"
+//     >
+//       <GradientRect color="red" />
+//       <GradientRect color="purple" />
+//       <GradientRect color="blue" />
+//       <g transform="translate(0, 30)">
+//         <text x="12" y={numberYPos}>0</text>
+//         <text x="45" y={numberYPos}>38</text>
+//         <text x="78" y={numberYPos}>75</text>
+//         <text x="10" y={labelTextYPos}>% expressing</text>
+//       </g>
+//     </g>
+//   )
+// }
+
 /** Get legend component for percent of cells expressng, for dot plot */
 function PercentExpressingLegend() {
+
+  // const percentBarsStyle = { marginTop: '20px' }
+  // const percentBarStyle = {
+  //   width: '100px',
+  //   height: '10px',
+  //   borderRadius: '6px',
+  //   border: '1px solid #AAA'
+  // }
+  // const redStyle = {background: 'linear-gradient(to right, #FFF, #FF0000)'}
+  // const purpleStyle = {background: 'linear-gradient(to right, #FFF, #CC0088)'}
+  // const blueStyle = {background: 'linear-gradient(to right, #FFF, #0000BB)'}
+
+  // const percentLabelsStyle = {
+  //   display: 'flex',
+  //   justifyContent: 'space-between',
+  //   width: '100px',
+  //   fontSize: '12px',
+  //   marginTop: '5px'
+  // }
+
   return (
-    <g
-      className="pathway-legend-percent-expressing"
-      transform="translate(100,80)"
-    >
-      <GradientRect color="red" />
-      <GradientRect color="purple" />
-      <GradientRect color="blue" />
-      <g transform="translate(0, 30)">
-        <text x="12" y={numberYPos}>0</text>
-        <text x="45" y={numberYPos}>38</text>
-        <text x="78" y={numberYPos}>75</text>
-        <text x="10" y={labelTextYPos}>% expressing</text>
-      </g>
-    </g>
+    <div className="percent-bars">
+      <div className="percent-bar bar-1"></div>
+      <div className="percent-bar bar-2"></div>
+      <div className="percent-bar bar-3"></div>
+      <div className="percent-labels">
+        <span>0</span><span>38</span><span>75</span>
+      </div>
+      <div className="label">% expressing</div>
+    </div>
   )
 }
 
@@ -71,12 +106,12 @@ function PathwayScaledMeanExpressionLegend() {
 
   return (
     <>
+      <span>Scaled mean expression &nbsp;</span>
+      <FontAwesomeIcon className="action help-icon" icon={faInfoCircle} />
       <div className="gradient-bar" style={gradientBarStyle}></div>
       <div className="tick" style={tickStyle}>
         <span>0</span><span>0.5</span><span>1</span>
       </div>
-      <div>Scaled mean expression</div>
-      <FontAwesomeIcon className="action help-icon" icon={faInfoCircle} />
     </>
   )
 }
@@ -130,15 +165,7 @@ export default function Pathway({
       <div className="pathway-diagram col-md-8" style={diagramStyle}></div>
       <div className="pathway-info-container col-md-3" style={{ float: 'right' }}>
         <PathwayScaledMeanExpressionLegend />
-        <svg style={legendStyle}>
-          {/* <ScaledMeanExpressionLegend
-            helpText={scaledMeanHelpText}
-            transform={'shrink-14.8 up-4.2 left-0.5'}
-            popoverPlacement='bottom'
-            translateX='0'
-          /> */}
-          <PercentExpressingLegend />
-        </svg>
+        <PercentExpressingLegend />
       </div>
     </>
   )
