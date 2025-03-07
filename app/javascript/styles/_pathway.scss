@@ -4,24 +4,18 @@
   border-radius: 10px;
   background: linear-gradient(to right, #0000BB, #CC0088, #FF0000);
 }
+
 .tick {
   display: flex;
   justify-content: space-between;
   width: 100px;
   font-size: 12px;
 }
-.marker {
-  width: 3px;
-  height: 10px;
-  background-color: #CC0088;
-  position: relative;
-  left: 50px;
-  border-radius: 2px;
-}
 
 .percent-bars {
   margin-top: 20px;
 }
+
 .percent-bar {
   width: 100px;
   height: 8px;
@@ -29,9 +23,10 @@
   border-radius: 3px;
   border: 1px solid #AAA;
 }
-.bar-1 { background: linear-gradient(to right, #FFF, #FF0000); }
-.bar-2 { background: linear-gradient(to right, #FFF, #CC0088); }
-.bar-3 { background: linear-gradient(to right, #FFF, #0000BB); }
+
+.red-bar { background: linear-gradient(to right, #FFF, #FF0000); }
+.blue-bar { background: linear-gradient(to right, #FFF, #0000BB); }
+
 .percent-labels {
   display: flex;
   justify-content: space-between;

@@ -78,9 +78,8 @@ function PercentExpressingLegend() {
 
   return (
     <div className="percent-bars">
-      <div className="percent-bar bar-1"></div>
-      <div className="percent-bar bar-2"></div>
-      <div className="percent-bar bar-3"></div>
+      <div className="percent-bar red-bar"></div>
+      <div className="percent-bar blue-bar"></div>
       <div className="percent-labels">
         <span>0</span><span>38</span><span>75</span>
       </div>
@@ -91,25 +90,12 @@ function PercentExpressingLegend() {
 
 /** Get average expression legend for pathway diagram */
 function PathwayScaledMeanExpressionLegend() {
-  const gradientBarStyle = {
-    width: '100px',
-    height: '14px',
-    borderRadius: '3px',
-    background: 'linear-gradient(to right, #0000BB, #CC0088, #FF0000)'
-  }
-
-  const tickStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    width: '100px'
-  }
-
   return (
     <>
       <span>Scaled mean expression &nbsp;</span>
       <FontAwesomeIcon className="action help-icon" icon={faInfoCircle} />
-      <div className="gradient-bar" style={gradientBarStyle}></div>
-      <div className="tick" style={tickStyle}>
+      <div className="gradient-bar"></div>
+      <div className="tick">
         <span>0</span><span>0.5</span><span>1</span>
       </div>
     </>
