@@ -1,5 +1,7 @@
 name: Deploy to staging SCP instance
 on:
+  schedule:
+    - cron: "15 8 * * 1-5"
   workflow_run:
     workflows: ["Build and publish single-cell-portal Docker image"]
     types:
