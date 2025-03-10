@@ -186,5 +186,6 @@ export function getShownAnnotation(annotation, annotationList) {
       shownAnnotation.id = matchedAnnotation.id
     }
   }
+
   return shownAnnotation
 }

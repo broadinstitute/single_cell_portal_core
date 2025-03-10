@@ -5,6 +5,7 @@ import { faLink, faEye, faTimes, faUndo } from '@fortawesome/free-solid-svg-icon
 
 import ClusterSelector from '~/components/visualization/controls/ClusterSelector'
 import AnnotationSelector from '~/components/visualization/controls/AnnotationSelector'
+import LabelSelector from '~/components/visualization/controls/LabelSelector'
 import SubsampleSelector from '~/components/visualization/controls/SubsampleSelector'
 import { ExploreConsensusSelector } from '~/components/visualization/controls/ConsensusSelector'
 import SpatialSelector from '~/components/visualization/controls/SpatialSelector'
@@ -411,6 +412,13 @@ export default function ExploreDisplayPanelManager({
                   cluster={exploreParamsWithDefaults.cluster}
                   shownAnnotation={shownAnnotation}
                   updateClusterParams={updateClusterParams}/>
+                { shownTab === 'pathway' &&
+                <LabelSelector
+                  exploreParamsWithDefaults={exploreParamsWithDefaults}
+                  exploreInfo={exploreInfo}
+                  updateExploreParams={updateExploreParams}
+                />
+                }
                 { shownTab === 'scatter' && <CreateAnnotation
                   isSelecting={isCellSelecting}
                   setIsSelecting={setIsCellSelecting}
