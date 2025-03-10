@@ -12,7 +12,7 @@ module ImportServiceConfig
         file_id: 'nemo:der-ah1o5qb',
         project_id: 'nemo:grn-gyy3k8j',
         study_id: 'nemo:col-hwmwd2x',
-        obsm_key_names: %w[X_tsne X_umap],
+        obsm_key_names: %w[X_umap],
         user_id: @user.id,
         branding_group_id: @branding_group.id
       }
@@ -126,8 +126,8 @@ module ImportServiceConfig
     end
 
     test 'should find library preparation protocol' do
-      assert_equal "10x 3' v3", @configuration.find_library_prep(["10x chromium 3' v3 sequencing"])
-      assert_equal 'Drop-seq', @configuration.find_library_prep(['drop-seq'])
+      assert_equal "10x 3' v3", @configuration.find_library_prep("10x chromium 3' v3 sequencing")
+      assert_equal 'Drop-seq', @configuration.find_library_prep('drop-seq')
     end
 
     # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test

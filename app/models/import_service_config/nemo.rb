@@ -108,9 +108,10 @@ module ImportServiceConfig
       study_file = to_study_file(scp_study_id, preferred_name)
       library = study_file.expression_file_info.library_preparation_protocol
       if library.blank?
-        library = load_study&.[]('techniques')
+        libs = load_study&.[]('techniques')
+        libraries = libs.map { |lib| find_library_prep(lib) }.compact
+        study_file.expression_file_info.library_preparation_protocol = libraries.first
       end
-      study_file.expression_file_info.library_preparation_protocol = find_library_prep(library)
       exp_fragment = expression_data_fragment(study_file)
       study_file.ann_data_file_info.data_fragments << exp_fragment
       http_url = file_access_info(protocol: :http)&.[]('url')
