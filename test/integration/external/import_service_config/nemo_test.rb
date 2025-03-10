@@ -153,7 +153,7 @@ module ImportServiceConfig
     end
 
     # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
-    test 'should import from service' do
+    test 'should import all from service' do
       access_url = 'https://data.nemoarchive.org/other/grant/u01_lein/lein/transcriptome/sncell/10x_v3/human/' \
                    'processed/counts/human_var_scVI_VLMC.h5ad.tar'
       file_mock = MiniTest::Mock.new
