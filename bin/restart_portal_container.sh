@@ -3,6 +3,8 @@
 # script to add to root crontab on a deployed host to check for crashed Docker containers and restart
 # crontab entry should be as follows:
 # */5 * * * * /root/restart_portal_container.sh > /dev/null 2>&1
+
+# More context: https://github.com/broadinstitute/single_cell_portal_core/pull/2216
 docker ps --filter "status=exited" | grep -e 'single_cell' | while read -r line ; do
   container_id=`echo $line | awk '{print $1}'`
   container_name=`echo $line | awk '{print $NF}'`
