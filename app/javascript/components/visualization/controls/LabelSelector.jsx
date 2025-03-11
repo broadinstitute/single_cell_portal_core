@@ -1,7 +1,7 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 import Select from '~/lib/InstrumentedSelect'
-import { getAnnotationValues, clusterSelectStyle } from '~/lib/cluster-utils'
+import { getAnnotationValues, clusterSelectStyle, naturalSort } from '~/lib/cluster-utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 
@@ -31,7 +31,7 @@ function getEligibleLabels(exploreParamsWithDefaults, exploreInfo) {
     exploreInfo?.annotationList
   )
 
-  let annotationLabels = rawAnnotLabels
+  let annotationLabels = naturalSort(rawAnnotLabels)
 
   /** TODO (SCP-5760): Propagate these window.SCP values via React */
   const countsByLabel = window.SCP.countsByLabel
@@ -50,11 +50,17 @@ export default function LabelControl({
   exploreParamsWithDefaults,
   exploreInfo,
   updateExploreParams
+  // updatePathwayExpression
 }) {
   const labels = getEligibleLabels(exploreParamsWithDefaults, exploreInfo)
-  const shownLabel = labels[0]
 
   const options = labels.map(label => {return { label, value: label }})
+
+  const defaultShownOption = options[0]
+  console.log('in LabelSelector, defaultShownOption', defaultShownOption)
+  const [shownOption, setShownOption] = useState(defaultShownOption)
+
+  console.log('in LabelSelector, shownOption', shownOption)
 
   return (
     <div className="form-group">
@@ -67,11 +73,11 @@ export default function LabelControl({
         <Select
           options={options}
           data-analytics-name="label-select"
-          value={options[0]}
-          onChange={newLabel => {
-            // setShownLabel(newLabel)
-            updateExploreParams({ label: newLabel })}
-          }
+          value={shownOption}
+          onChange={newOption => {
+            setShownOption(newOption)
+            updateExploreParams({ label: newOption.label })
+          }}
           styles={clusterSelectStyle}/>
       </label>
     </div>

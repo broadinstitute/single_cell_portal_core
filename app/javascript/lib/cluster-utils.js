@@ -96,13 +96,20 @@ export function getAnnotationForIdentifier(identifier) {
   return annotation
 }
 
+/** Intuitively order an array of strings, which might include numeric strings */
+export function naturalSort(array) {
+  const collator = new Intl.Collator(undefined, { numeric: true, ignorePunctuation: true });
+  return array.sort(collator.compare)
+}
 
 /** extracts default parameters from an annotationList of the type returned by the explore API */
 export function getDefaultClusterParams(annotationList, spatialGroups) {
   const defaultCluster = annotationList.default_cluster
+  const defaultAnnotation = annotationList.default_annotation
   const clusterParams = {
     cluster: defaultCluster,
-    annotation: annotationKeyProperties(annotationList.default_annotation),
+    annotation: defaultAnnotation,
+    label: naturalSort(defaultAnnotation.values)[0], // Consider naturally sorting labels
     subsample: getDefaultSubsampleForCluster(annotationList, annotationList.default_cluster),
     spatialGroups: getDefaultSpatialGroupsForCluster(defaultCluster, spatialGroups)
   }

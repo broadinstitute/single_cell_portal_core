@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { manageDrawPathway } from '~/lib/pathway-expression'
+import { manageDrawPathway, colorPathwayGenesByExpression } from '~/lib/pathway-expression'
 // import { getPathwayName, getPathwayIdsByName } from '~/lib/search-utils'
 import { getIdentifierForAnnotation } from '~/lib/cluster-utils'
 import PlotUtils from '~/lib/plot'
@@ -49,15 +49,17 @@ function moveDescription() {
 
 /** Draw a pathway diagram with an expression overlay */
 export default function Pathway({
-  studyAccession, cluster, annotation, pathway, dimensions
+  studyAccession, cluster, annotation, label, pathway, dimensions
 }) {
+
+  console.log('in Pathway, label', label)
   const pathwayId = pathway
   const pwDimensions = Object.assign({}, dimensions)
 
   pwDimensions.height -= 20
   pwDimensions.width -= 300
 
-  manageDrawPathway(studyAccession, cluster, annotation)
+  manageDrawPathway(studyAccession, cluster, annotation, label)
 
   // Stringify object, to enable tracking state change
   const annotationId = getIdentifierForAnnotation(annotation)
@@ -68,6 +70,13 @@ export default function Pathway({
   useEffect(() => {
     window.Ideogram.drawPathway(pathwayId, '', '', '.pathway-diagram', pwDimensions, false)
   }, [cluster, annotationId, pathway])
+
+  useEffect(() => {
+    const dotPlotMetrics = window.SCP.dotPlotMetrics
+    console.log('in Pathway label useEffect, dotPlotMetrics', dotPlotMetrics)
+    if (!dotPlotMetrics) {return}
+    colorPathwayGenesByExpression(label, dotPlotMetrics)
+  }, [label])
 
   const diagramHeight = pwDimensions.height
   const pathwayDescriptionHeight = 500

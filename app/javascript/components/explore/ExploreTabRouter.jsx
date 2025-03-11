@@ -99,6 +99,7 @@ function buildExploreParamsFromQuery(query) {
   })
   exploreParams.cluster = queryParams.cluster ? queryParams.cluster : ''
   exploreParams.annotation = annotation
+  exploreParams.label = queryParams.label ? queryParams.label : ''
   exploreParams.subsample = queryParams.subsample ? queryParams.subsample : ''
   exploreParams.consensus = queryParams.consensus ? queryParams.consensus : null
   if (queryParams.spatialGroups === SPATIAL_GROUPS_EMPTY) {
@@ -142,6 +143,7 @@ function buildQueryFromParams(exploreParams) {
   const querySafeOptions = {
     cluster: exploreParams.cluster,
     annotation: getIdentifierForAnnotation(exploreParams.annotation),
+    label: exploreParams.label,
     subsample: exploreParams.subsample,
     genes: geneArrayToParam(exploreParams.genes),
     pathway: exploreParams.pathway,

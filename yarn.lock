@@ -5218,9 +5218,9 @@ iconv-lite@0.4, iconv-lite@0.4.24, iconv-lite@^0.4.24:
   dependencies:
     safer-buffer ">= 2.1.2 < 3"
 
-ideogram@eweitz/ideogram#4fe5487a88500981383687c3cf8c292e70747aa7:
+ideogram@eweitz/ideogram#aa51e31d5b04cde796052ee2d8c567631807480d:
   version "1.50.0"
-  resolved "https://codeload.github.com/eweitz/ideogram/tar.gz/4fe5487a88500981383687c3cf8c292e70747aa7"
+  resolved "https://codeload.github.com/eweitz/ideogram/tar.gz/aa51e31d5b04cde796052ee2d8c567631807480d"
   dependencies:
     crossfilter2 "1.5.2"
     d3-array "^2.8.0"
@@ -5231,6 +5231,7 @@ ideogram@eweitz/ideogram#4fe5487a88500981383687c3cf8c292e70747aa7:
     d3-scale "^4.0.2"
     fast-kde "0.2.1"
     fflate "^0.7.3"
+    snarkdown "^2.0.0"
     tippy.js "6.3.7"
     workbox-range-requests "7.0.0"
 
@@ -8624,6 +8625,11 @@ snapdragon@^0.8.1:
     source-map "^0.5.6"
     source-map-resolve "^0.5.0"
     use "^3.1.0"
+
+snarkdown@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/snarkdown/-/snarkdown-2.0.0.tgz#b1feb4db91b9f94a8ebbd7a50f3e99aee18b1e03"
+  integrity sha512-MgL/7k/AZdXCTJiNgrO7chgDqaB9FGM/1Tvlcenenb7div6obaDATzs16JhFyHHBGodHT3B7RzRc5qk8pFhg3A==
 
 "source-map-js@>=0.6.2 <2.0.0", source-map-js@^1.2.0:
   version "1.2.0"
