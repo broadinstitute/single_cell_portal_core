@@ -1,5 +1,9 @@
+.scaled-mean-header {
+  margin-top: 4px;
+}
+
 .gradient-bar {
-  width: 100px;
+  width: 150px;
   height: 14px;
   border-radius: 10px;
   background: linear-gradient(to right, #0000BB, #CC0088, #FF0000);
@@ -8,12 +12,14 @@
 .tick {
   display: flex;
   justify-content: space-between;
-  width: 100px;
+  width: 150px;
   font-size: 12px;
 }
 
 .percent-bars {
-  margin-top: 20px;
+  float: right;
+  margin-top: -50px;
+  margin-right: 10px;
 }
 
 .percent-bar {
@@ -33,3 +39,10 @@
   width: 100px;
   font-size: 12px;
 }
+
+.pathway-overlay-legend {
+  // display: flex;
+  // justify-content: space-between;
+  height: 80px;
+}
+

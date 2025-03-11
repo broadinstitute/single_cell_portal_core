@@ -27,7 +27,6 @@ export function getPathwayName(pathwayId) {
 
 /** Get object mapping pathway names to WikiPathways IDs */
 function getPathwayIdsByName() {
-  console.log('in getPathwayIdsByName')
   if (window.pathwayIdsByName) {
     return window.pathwayIdsByName
   }
@@ -36,7 +35,6 @@ function getPathwayIdsByName() {
     !window.Ideogram || !window.Ideogram.interactionCache ||
     Object.keys(window.Ideogram.interactionCache).length === 0
   ) {
-    console.log('exiting getPathwayIdsByName early')
     return {}
   }
 

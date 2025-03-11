@@ -11,22 +11,33 @@ import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 function PercentExpressingLegend() {
   return (
     <div className="percent-bars">
+      <div className="percent-expressing-label">% expressing</div>
       <div className="percent-bar red-bar"></div>
       <div className="percent-bar blue-bar"></div>
       <div className="percent-labels">
         <span>0</span><span>38</span><span>75</span>
       </div>
-      <div className="label">% expressing</div>
     </div>
   )
 }
 
 /** Get average expression legend for pathway diagram */
 function ScaledMeanExpressionLegend() {
+  const scaledMeanHelpText =
+    'Scaling is relative to each gene\'s expression across all cells in this ' +
+    'annotation, i.e. cells associated with each annotation group.'
+
   return (
     <>
-      <span>Scaled mean expression &nbsp;</span>
-      <FontAwesomeIcon className="action help-icon" icon={faInfoCircle} />
+      <div className="scaled-mean-header">
+        Scaled mean expression &nbsp;
+        <FontAwesomeIcon
+          className="action help-icon"
+          icon={faInfoCircle}
+          data-toggle="tooltip"
+          data-original-title={scaledMeanHelpText}
+        />
+      </div>
       <div className="gradient-bar"></div>
       <div className="tick">
         <span>0</span><span>0.5</span><span>1</span>
@@ -74,7 +85,10 @@ export default function Pathway({
   useEffect(() => {
     const dotPlotMetrics = window.SCP.dotPlotMetrics
     console.log('in Pathway label useEffect, dotPlotMetrics', dotPlotMetrics)
+    console.log('in Pathway label useEffect, label', label)
     if (!dotPlotMetrics) {return}
+    document.querySelector('.pathway-label-menu').innerText = label
+
     colorPathwayGenesByExpression(label, dotPlotMetrics)
   }, [label])
 
@@ -89,16 +103,14 @@ export default function Pathway({
     height: '200px'
   }
 
-  const scaledMeanHelpText =
-    'Scaling is relative to each gene\'s expression across all cells in this ' +
-    'annotation, i.e. cells associated with each annotation group.'
-
   return (
     <>
       <div className="pathway-diagram col-md-8" style={diagramStyle}></div>
       <div className="pathway-info-container col-md-3-5" style={{ float: 'right', marginRight: '10px' }}>
-        <ScaledMeanExpressionLegend />
-        <PercentExpressingLegend />
+        <div className="pathway-overlay-legend">
+          <ScaledMeanExpressionLegend />
+          <PercentExpressingLegend />
+        </div>
         <div className="pathway-description"></div>
       </div>
     </>

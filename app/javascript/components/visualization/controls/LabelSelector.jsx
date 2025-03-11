@@ -49,14 +49,15 @@ function getEligibleLabels(exploreParamsWithDefaults, exploreInfo) {
 export default function LabelControl({
   exploreParamsWithDefaults,
   exploreInfo,
-  updateExploreParams
+  updateClusterParams
   // updatePathwayExpression
 }) {
   const labels = getEligibleLabels(exploreParamsWithDefaults, exploreInfo)
 
   const options = labels.map(label => {return { label, value: label }})
 
-  const defaultShownOption = options[0]
+  console.log('in LabelSelector, exploreParamsWithDefaults.label', exploreParamsWithDefaults.label)
+  const defaultShownOption = options.filter(o => o.value === exploreParamsWithDefaults.label)
   console.log('in LabelSelector, defaultShownOption', defaultShownOption)
   const [shownOption, setShownOption] = useState(defaultShownOption)
 
@@ -64,19 +65,14 @@ export default function LabelControl({
 
   return (
     <div className="form-group">
-      <label className="labeled-select">Label&nbsp;
-        <a className="action help-icon"
-          data-toggle="tooltip"
-          data-original-title="Select how cells are colored">
-          <FontAwesomeIcon icon={faInfoCircle}/>
-        </a>
+      <label className="labeled-select">Color by expression in&nbsp;
         <Select
           options={options}
           data-analytics-name="label-select"
           value={shownOption}
           onChange={newOption => {
             setShownOption(newOption)
-            updateExploreParams({ label: newOption.label })
+            updateClusterParams({ label: newOption.label })
           }}
           styles={clusterSelectStyle}/>
       </label>

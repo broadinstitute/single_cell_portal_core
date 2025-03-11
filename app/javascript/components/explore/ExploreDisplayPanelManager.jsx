@@ -284,7 +284,7 @@ export default function ExploreDisplayPanelManager({
     // the wrong tabs
     const updateParams = { geneList: '', ideogramFileId: '' }
 
-    const clusterParamNames = ['cluster', 'annotation', 'subsample', 'spatialGroups']
+    const clusterParamNames = ['cluster', 'annotation', 'subsample', 'label', 'spatialGroups']
     clusterParamNames.forEach(param => {
       updateParams[param] = param in newParams ? newParams[param] : exploreParamsWithDefaults[param]
     })
@@ -416,7 +416,7 @@ export default function ExploreDisplayPanelManager({
                 <LabelSelector
                   exploreParamsWithDefaults={exploreParamsWithDefaults}
                   exploreInfo={exploreInfo}
-                  updateExploreParams={updateExploreParams}
+                  updateClusterParams={updateClusterParams}
                   // updatePathwayExpression={updatePathwayExpression}
                 />
                 }

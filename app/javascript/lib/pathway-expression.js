@@ -288,11 +288,11 @@ const infoIcon = `<svg aria-hidden="true" focusable="false" data-prefix="fas" da
 // }
 
 /** Get dropdown menu of annotation labels; pick one to color genes */
-function writePathwayAnnotationLabelMenu(labels, dotPlotMetrics) {
-  const options = labels.map(label => `<option>${label}</option>`)
+function writePathwayAnnotationLabelMenu(label, dotPlotMetrics) {
+  // const options = labels.map(label => `<option>${label}</option>`)
   const menu =
     `<span class="pathway-label-menu-container" style="margin-left: 10px;">` +
-      `<label>Expression in:</label> <select class="pathway-label-menu">${options.join()}</select>` +
+      `| Colored by expression in: <span class="pathway-label-menu">${label}</span>` +
     `</span>`
   const headerLink = document.querySelector('._ideoPathwayHeader a')
   document.querySelector('.pathway-label-menu-container')?.remove()
@@ -328,12 +328,12 @@ function getEligibleLabels() {
 }
 
 /** Update pathway header with SCP label menu, info icon */
-function writePathwayExpressionHeader(loadingCls, dotPlotMetrics, annotationLabels, pathwayGenes) {
+function writePathwayExpressionHeader(loadingCls, dotPlotMetrics, label, pathwayGenes) {
   // Remove "Loading expression...", as load is done
   document.querySelector(`.${loadingCls}`)?.remove()
 
   // writePathwayExpressionLegend()
-  writePathwayAnnotationLabelMenu(annotationLabels, pathwayGenes, dotPlotMetrics)
+  writePathwayAnnotationLabelMenu(label, pathwayGenes, dotPlotMetrics)
 }
 
 /** Add "Loading expression..." to pathway header while dot plot metrics are being fetched */
@@ -408,7 +408,7 @@ async function renderPathwayExpression(studyAccession, cluster, annotation, labe
 
     window.SCP.dotPlotMetrics = allDotPlotMetrics
 
-    writePathwayExpressionHeader(loadingCls, allDotPlotMetrics, annotationLabels, pathwayGenes)
+    writePathwayExpressionHeader(loadingCls, allDotPlotMetrics, label, pathwayGenes)
 
     // const annotationLabel = annotationLabels[0]
     console.log('in backgroundDotPlotCallback, label', label)
