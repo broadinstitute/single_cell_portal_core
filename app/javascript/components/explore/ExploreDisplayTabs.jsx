@@ -16,7 +16,7 @@ import Heatmap from '~/components/visualization/Heatmap'
 import Pathway from '~/components/visualization/Pathway'
 import GeneListHeatmap from '~/components/visualization/GeneListHeatmap'
 import GenomeView from './GenomeView'
-import { getAnnotationValues, getShownAnnotation } from '~/lib/cluster-utils'
+import { getAnnotationValues, getEligibleLabels } from '~/lib/cluster-utils'
 import RelatedGenesIdeogram from '~/components/visualization/RelatedGenesIdeogram'
 import InferCNVIdeogram from '~/components/visualization/InferCNVIdeogram'
 import useResizeEffect from '~/hooks/useResizeEffect'
@@ -693,7 +693,7 @@ export default function ExploreDisplayTabs({
                 <Pathway
                   studyAccession={studyAccession}
                   {... exploreParamsWithDefaults}
-
+                  labels={getEligibleLabels(exploreParamsWithDefaults,exploreInfo)}
                   dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
                 />
               </div>

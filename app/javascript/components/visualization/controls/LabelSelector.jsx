@@ -42,6 +42,13 @@ function getEligibleLabels(exploreParamsWithDefaults, exploreInfo) {
   return annotationLabels
 }
 
+function getDefaultOption(options, exploreParamsWithDefaults) {
+  let defaultOption = options.find(o => o.value === exploreParamsWithDefaults.label)
+  if (!defaultOption) {
+    defaultOption = options[0]
+  }
+  return defaultOption
+}
 
 /**
   Renders a label selector
@@ -57,9 +64,10 @@ export default function LabelControl({
   const options = labels.map(label => {return { label, value: label }})
 
   console.log('in LabelSelector, exploreParamsWithDefaults.label', exploreParamsWithDefaults.label)
-  const defaultShownOption = options.filter(o => o.value === exploreParamsWithDefaults.label)
-  console.log('in LabelSelector, defaultShownOption', defaultShownOption)
-  const [shownOption, setShownOption] = useState(defaultShownOption)
+  const defaultOption = getDefaultOption(options, exploreParamsWithDefaults)
+
+  console.log('in LabelSelector, defaultOption', defaultOption)
+  const [shownOption, setShownOption] = useState(defaultOption)
 
   console.log('in LabelSelector, shownOption', shownOption)
 

@@ -102,6 +102,26 @@ export function naturalSort(array) {
   return array.sort(collator.compare)
 }
 
+/**
+ * Get annotation labels that have > 1 cell in the labeled group, if possible
+ */
+export function getEligibleLabels(exploreParamsWithDefaults, exploreInfo) {
+  const rawAnnotLabels = getAnnotationValues(
+    exploreParamsWithDefaults?.annotation,
+    exploreInfo?.annotationList
+  )
+
+  let annotationLabels = naturalSort(rawAnnotLabels)
+
+  /** TODO (SCP-5760): Propagate these window.SCP values via React */
+  const countsByLabel = window.SCP.countsByLabel
+  if (countsByLabel) {
+    annotationLabels = annotationLabels.filter(label => countsByLabel[label] > 0)
+  }
+
+  return annotationLabels
+}
+
 /** extracts default parameters from an annotationList of the type returned by the explore API */
 export function getDefaultClusterParams(annotationList, spatialGroups) {
   const defaultCluster = annotationList.default_cluster

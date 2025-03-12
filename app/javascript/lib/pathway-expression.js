@@ -18,7 +18,7 @@
  */
 
 import { renderDotPlot } from '~/components/visualization/DotPlot'
-import { getAnnotationValues } from '~/lib/cluster-utils'
+import { getEligibleLabels } from '~/lib/cluster-utils'
 import { fetchMorpheusJson } from '~/lib/scp-api'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
@@ -196,7 +196,6 @@ export function getDotPlotGeneBatches(pathwayGenes) {
  * set each gene's contrast by percent of cells expression
  */
 export function colorPathwayGenesByExpression(annotationLabel, dotPlotMetrics) {
-
   const genes = getPathwayGenes()
 
   const styleRulesets = []
@@ -304,29 +303,6 @@ function writePathwayAnnotationLabelMenu(label, dotPlotMetrics) {
   })
 }
 
-/**
- * Get annotation labels that have > 1 cell in the labeled group, if possible
- */
-function getEligibleLabels() {
-  const exploreParamsWithDefaults = window.SCP.exploreParamsWithDefaults
-  const exploreInfo = window.SCP.exploreInfo
-
-  const rawAnnotLabels = getAnnotationValues(
-    exploreParamsWithDefaults?.annotation,
-    exploreInfo?.annotationList
-  )
-
-  let annotationLabels = rawAnnotLabels
-
-  /** TODO (SCP-5760): Propagate these window.SCP values via React */
-  const countsByLabel = window.SCP.countsByLabel
-  if (countsByLabel) {
-    annotationLabels = annotationLabels.filter(label => countsByLabel[label] > 0)
-  }
-
-  return annotationLabels
-}
-
 /** Update pathway header with SCP label menu, info icon */
 function writePathwayExpressionHeader(loadingCls, dotPlotMetrics, label, pathwayGenes) {
   // Remove "Loading expression...", as load is done
@@ -359,7 +335,7 @@ function mergeDotPlotMetrics(newMetrics, oldMetrics) {
 }
 
 /** Color pathway gene nodes by expression */
-async function renderPathwayExpression(studyAccession, cluster, annotation, label) {
+export async function renderPathwayExpression(studyAccession, cluster, annotation, label, labels) {
   console.log('in renderPathwayExpression, label', label)
   console.log('in renderPathwayExpression, label === ""', label === "")
   let allDotPlotMetrics = {}
@@ -397,9 +373,9 @@ async function renderPathwayExpression(studyAccession, cluster, annotation, labe
       return
     }
 
-    console.log('in backgroundDotPlotCallback, annotationLabels', annotationLabels)
+    console.log('in backgroundDotPlotCallback, labels', labels)
 
-    if (!annotationLabels.includes(Object.keys(dotPlotMetrics)[0])) {
+    if (!labels.includes(Object.keys(dotPlotMetrics)[0])) {
       // Another protection for computing only for dot plots, not heatmaps
       return
     }
@@ -438,7 +414,7 @@ async function renderPathwayExpression(studyAccession, cluster, annotation, labe
 }
 
 /** Draw expression overlay in pathway diagram */
-function drawPathwayOverlay(event, studyAccession, cluster, annotation, label) {
+function drawPathwayOverlay(event, studyAccession, cluster, annotation, label, labels) {
   console.log('in drawPathwayOverlay')
 
   // Hide popover instantly upon drawing pathway; don't wait ~2 seconds
@@ -457,7 +433,7 @@ function drawPathwayOverlay(event, studyAccession, cluster, annotation, label) {
   const searchedGene = details.sourceGene
   const interactingGene = details.destGene
 
-  renderPathwayExpression(studyAccession, cluster, annotation, label)
+  renderPathwayExpression(studyAccession, cluster, annotation, label, labels)
 }
 
 /**
@@ -465,7 +441,7 @@ function drawPathwayOverlay(event, studyAccession, cluster, annotation, label) {
  *
  * This sets up the pathway expression overlay
  */
-export function manageDrawPathway(studyAccession, cluster, annotation, label) {
+export function manageDrawPathway(studyAccession, cluster, annotation, label, labels) {
   const flags = getFeatureFlagsWithDefaults()
   if (!flags?.show_pathway_expression) {return}
 
@@ -474,7 +450,7 @@ export function manageDrawPathway(studyAccession, cluster, annotation, label) {
     document.addEventListener('ideogramDrawPathway', event => {
       drawPathwayOverlay(
         event,
-        studyAccession, cluster, annotation, label
+        studyAccession, cluster, annotation, label, labels
       )
     })
   }
