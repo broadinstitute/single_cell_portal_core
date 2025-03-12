@@ -414,4 +414,35 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
       )
     end
   end
+
+  test 'should get weekly DE quota value' do
+    default_value = DifferentialExpressionService::DEFAULT_USER_QUOTA
+    assert_equal default_value, DifferentialExpressionService.get_weekly_user_quota
+    # test config override
+    config = AdminConfiguration.create!(config_type: 'Weekly User DE Quota', value_type: 'Numeric', value: '10')
+    assert_equal config.value.to_i, DifferentialExpressionService.get_weekly_user_quota
+    config.destroy
+    assert_equal default_value, DifferentialExpressionService.get_weekly_user_quota
+  end
+
+  test 'should check weekly user DE quota' do
+    user = FactoryBot.create(:api_user, test_array: @@users_to_clean)
+    assert_not DifferentialExpressionService.job_exceeds_quota?(user)
+    user.update(weekly_de_quota: DifferentialExpressionService::DEFAULT_USER_QUOTA)
+    assert DifferentialExpressionService.job_exceeds_quota?(user)
+  end
+
+  test 'should increment user DE quota' do
+    user = FactoryBot.create(:api_user, weekly_de_quota: 1, test_array: @@users_to_clean)
+    DifferentialExpressionService.increment_user_quota(user)
+    user.reload
+    assert_equal 2, user.weekly_de_quota
+  end
+
+  test 'should reset user DE quotas' do
+    user = FactoryBot.create(:api_user, weekly_de_quota: 1, test_array: @@users_to_clean)
+    DifferentialExpressionService.reset_all_user_quotas
+    user.reload
+    assert_equal 0, user.weekly_de_quota
+  end
 end

@@ -41,21 +41,15 @@ class ProfilesControllerTest < ActionDispatch::IntegrationTest
     profile_mock = Minitest::Mock.new
     profile_error = proc { raise 'user is not registered' }
     profile_mock.expect :get_profile, profile_error
-    thurloe_mock = Minitest::Mock.new
-    thurloe_mock.expect :services_available?, true, [String]
-    ApplicationController.stub :firecloud_client, thurloe_mock do
-      FireCloudClient.stub :new, profile_mock do
-        post update_user_firecloud_profile_path(@user.id, params: {fire_cloud_profile: profile.to_json})
-        assert_redirected_to view_profile_path(@user.id)
-        follow_redirect!
-        thurloe_mock.verify
-        profile_mock.verify
+    FireCloudClient.stub :new, profile_mock do
+      post update_user_firecloud_profile_path(@user.id, params: {fire_cloud_profile: profile.to_json})
+      assert_redirected_to view_profile_path(@user.id)
+      follow_redirect!
+      profile_mock.verify
 
-        # make sure user has not been registered
-        @user.reload
-        assert_not @user.registered_for_firecloud
-      end
-
+      # make sure user has not been registered
+      @user.reload
+      assert_not @user.registered_for_firecloud
     end
   end
 end

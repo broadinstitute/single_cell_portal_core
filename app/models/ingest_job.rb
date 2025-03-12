@@ -382,10 +382,8 @@ class IngestJob
     if done? && !failed?
       Rails.logger.info "IngestJob poller: #{pipeline_name} is done!"
       Rails.logger.info "IngestJob poller: #{pipeline_name} status: #{current_status}"
-      unless special_action? || (action == :ingest_anndata && study_file.is_viz_anndata?)
-        study_file.update(parse_status: 'parsed')
-        study_file.bundled_files.each { |sf| sf.update(parse_status: 'parsed') }
-      end
+      study_file.update(parse_status: 'parsed')
+      study_file.bundled_files.each { |sf| sf.update(parse_status: 'parsed') }
       study.reload # refresh cached instance of study
       study_file.reload # refresh cached instance of study_file
       # check if another process marked file for deletion, can happen if this is an AnnData file
@@ -412,6 +410,7 @@ class IngestJob
       end
     elsif done? && failed?
       Rails.logger.error "IngestJob poller: #{pipeline_name} has failed."
+      study_file.update(parse_status: 'parsed')
       # log errors to application log for inspection
       log_error_messages
       log_to_mixpanel # log before queuing file for deletion to preserve properties
@@ -515,9 +514,9 @@ class IngestJob
     when :image_pipeline
       set_has_image_cache
     when :ingest_anndata
+      set_anndata_file_info
       launch_anndata_subparse_jobs if study_file.is_viz_anndata?
       launch_differential_expression_jobs if study_file.is_viz_anndata?
-      set_anndata_file_info
     end
     set_study_initialized
   end
@@ -708,6 +707,7 @@ class IngestJob
           submission = ApplicationController.batch_api_client.run_job(
             study_file:, user:, action: :ingest_subsample, params_object: subsample_params
           )
+          study_file.update(parse_status: 'parsing')
           IngestJob.new(
             pipeline_name: submission.name, study:, study_file:, user:, action: :ingest_subsample,
             params_object: subsample_params, reparse:, persist_on_fail:
@@ -741,10 +741,10 @@ class IngestJob
     Rails.logger.info "Creating differential expression result object for annotation: #{annotation_identifier}"
     cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: params_object.cluster_name)
     matrix_url = params_object.matrix_file_path
-    matrix_filename = matrix_url.split("gs://#{study.bucket_id}/").last
-    matrix_file = StudyFile.where(study: study, 'expression_file_info.is_raw_counts' => true).any_of(
-      { upload_file_name: matrix_filename }, { remote_location: matrix_filename }
-    ).first
+    bucket_path = matrix_url.split("gs://#{study.bucket_id}/").last
+    matrix_file = StudyFile.where(
+      study:, :upload_file_name.in => [bucket_path, bucket_path.split('/').last]
+    ).detect(&:is_raw_counts_file?)
     de_result = DifferentialExpressionResult.find_or_initialize_by(
       study: study, cluster_group: cluster, cluster_name: cluster.name,
       annotation_name: params_object.annotation_name, annotation_scope: params_object.annotation_scope,
@@ -819,6 +819,7 @@ class IngestJob
     # reference AnnData uploads don't have extract parameter so exit immediately
     return if params_object.extract.blank?
 
+    study_file.update(parse_status: 'parsing')
     params_object.extract.each do |extract|
       case extract
       when 'cluster'
@@ -862,14 +863,8 @@ class IngestJob
         job.delay.push_remote_and_launch_ingest
       end
 
-      # if this was only a raw counts extraction, update parse status
-      if params_object.extract == %w[raw_counts]
-        study_file.update(parse_status: 'parsed')
-        launch_differential_expression_jobs
-      else
-        # unset anndata_summary flag to allow reporting summary later unless this is only a raw counts extraction
-        study_file.unset_anndata_summary!
-      end
+      # unset anndata_summary flag to allow reporting summary later unless this is only a raw counts extraction
+      study_file.unset_anndata_summary! unless params_object.extract == %w[raw_counts]
     end
   end
 
@@ -1016,9 +1011,13 @@ class IngestJob
       job_props.merge!(
         {
           numCells: cluster&.points,
-          numAnnotationValues: annotation[:values]&.size
+          numAnnotationValues: annotation[:values]&.size,
+          deType: params_object.de_type
         }
       )
+      if params_object.de_type == 'pairwise'
+        job_props.merge!( { pairwiseGroups: [params_object.group1, params_object.group2]})
+      end
     when :image_pipeline
       data_cache_perftime =  params_object.data_cache_perftime
       job_props.merge!(

@@ -9,6 +9,8 @@ class DifferentialExpressionService
   ALLOWED_ANNOTS = Regexp.union(CELL_TYPE_MATCHER, CLUSTERING_MATCHER)
   # specific annotations to exclude from automation
   EXCLUDED_ANNOTS = /(enrichment__cell_type)/i
+  # default quota for user-requested DE jobs
+  DEFAULT_USER_QUOTA = 5
 
   # run a differential expression job for a given study on the default cluster/annotation
   #
@@ -163,25 +165,27 @@ class DifferentialExpressionService
     params_object.machine_type = machine_type if machine_type.present? # override :machine_type if specified
     return true if dry_run # exit before submission if specified as annotation was already validated
 
-    # check if there's already a job running using these parameters and exit if so
-    job_params = ApplicationController.batch_api_client.format_command_line(
-      study_file:, action: :differential_expression, user_metrics_uuid: user.metrics_uuid, params_object:
-    )
-    running = ApplicationController.batch_api_client.find_matching_jobs(
-      params: job_params, job_states: BatchApiClient::RUNNING_STATES
-    )
-    if running.any?
-      log_message "Found #{running.count} running DE jobs: #{running.map(&:name).join(', ')}"
-      log_message "Matching these parameters: #{job_params.join(' ')}"
-      log_message "Exiting without queuing new job"
-      false
-    elsif params_object.valid?
-      # launch DE job
-      job = IngestJob.new(study:, study_file:, user:, action: :differential_expression, params_object:)
-      job.delay.push_remote_and_launch_ingest
-      true
+    if params_object.valid?
+      # check if there's already a job running using these parameters and exit if so
+      job_params = ApplicationController.batch_api_client.format_command_line(
+        study_file:, action: :differential_expression, user_metrics_uuid: user.metrics_uuid, params_object:
+      )
+      running = ApplicationController.batch_api_client.find_matching_jobs(
+        params: job_params, job_states: BatchApiClient::RUNNING_STATES
+      )
+      if running.any?
+        log_message "Found #{running.count} running DE jobs: #{running.map(&:name).join(', ')}"
+        log_message "Matching these parameters: #{job_params.join(' ')}"
+        log_message "Exiting without queuing new job"
+        false
+      else
+        # launch DE job
+        job = IngestJob.new(study:, study_file:, user:, action: :differential_expression, params_object:)
+        job.delay.push_remote_and_launch_ingest
+        true
+      end
     else
-      raise ArgumentError, "job parameters failed to validate: #{params_object.errors.full_messages}"
+      raise ArgumentError, "job parameters failed to validate: #{params_object.errors.full_messages.join(', ')}"
     end
   end
 
@@ -377,12 +381,14 @@ class DifferentialExpressionService
     if !pairwise && cells_by_label.keys.count < 2
       raise ArgumentError, "#{identifier} does not have enough labels represented in #{cluster_group.name}"
     elsif pairwise
-      missing = {
+      missing = [group1, group2] - annotation[:values]
+      raise ArgumentError, "#{annotation_name} does not contain '#{missing.join(', ')}'" if missing.any?
+      cell_count = {
         "#{group1}" => cells_by_label[group1].count,
         "#{group2}" => cells_by_label[group2].count
       }.keep_if { |_, c| c < 2 }
       raise ArgumentError,
-            "#{missing.keys.join(', ')} does not have enough cells represented in #{identifier}" if missing.any?
+            "#{cell_count.keys.join(', ')} does not have enough cells represented in #{identifier}" if cell_count.any?
     end
   end
 
@@ -450,5 +456,40 @@ class DifferentialExpressionService
     else
       study_file.gs_url
     end
+  end
+
+  # retrieve the weekly user quota value
+  #
+  # * *returns*
+  #   - (Integer)
+  def self.get_weekly_user_quota
+    config = AdminConfiguration.find_by(config_type: 'Weekly User DE Quota')
+    config ? config.value.to_i : DEFAULT_USER_QUOTA
+  end
+
+  # check if a user has exceeded their weekly quota
+  #
+  # * *params*
+  #   - +user+ (User) => user requesting DE job
+  #
+  # * *returns*
+  #   - (Boolean)
+  def self.job_exceeds_quota?(user)
+    user.weekly_de_quota.to_i >= get_weekly_user_quota
+  end
+
+  # increment a given user's weekly quota
+  #
+  # * *params*
+  #   - +user+ (User) => user requesting DE job
+  def self.increment_user_quota(user)
+    current_quota = user.weekly_de_quota.to_i
+    current_quota += 1
+    user.update(weekly_de_quota: current_quota)
+  end
+
+  # reset all user-requested DE quotas on a weekly basis
+  def self.reset_all_user_quotas
+    User.update_all(weekly_de_quota: 0)
   end
 end

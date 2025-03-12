@@ -2,8 +2,8 @@ module Api
   module V1
     class SiteController < ApiBaseController
       before_action :set_current_api_user!
-      before_action :authenticate_api_user!, only: [:download_data, :stream_data, :get_study_analysis_config,
-                                                    :submit_study_analysis, :get_study_submissions,
+      before_action :authenticate_api_user!, only: [:download_data, :stream_data, :submit_differential_expression,
+                                                    :get_study_analysis_config, :submit_study_analysis, :get_study_submissions,
                                                     :get_study_submission, :sync_submission_outputs]
       before_action :set_study, except: [:studies, :check_terra_tos_acceptance, :analyses, :get_analysis, :renew_user_access_token]
       before_action :set_analysis_configuration, only: [:get_analysis, :get_study_analysis_config]
@@ -400,6 +400,151 @@ module Api
           MetricsService.report_error(e, request, current_api_user, @study)
           logger.error "Error generating signed url for #{params[:filename]}; #{e.message}"
           render json: {error: "Error generating signed url for #{params[:filename]}; #{e.message}"}, status: 500
+        end
+      end
+
+      swagger_path '/site/studies/{accession}/differential_expression' do
+        operation :post do
+          key :tags, [
+            'Site'
+          ]
+          key :summary, 'Submit a differential expression calculation request'
+          key :description, 'Request differential expression calculations for a given cluster/annotation in a study'
+          key :operationId, 'site_study_submit_differential_expression_path'
+          parameter do
+            key :name, :accession
+            key :in, :path
+            key :description, 'Accession of Study to use'
+            key :required, true
+            key :type, :string
+          end
+          parameter do
+            key :name, :de_job
+            key :type, :object
+            key :in, :body
+            schema do
+              property :cluster_name do
+                key :description, 'Name of cluster group.  Use "_default" to use the default cluster'
+                key :required, true
+                key :type, :string
+              end
+              property :annotation_name do
+                key :description, 'Name of annotation'
+                key :required, true
+                key :type, :string
+              end
+              property :annotation_scope do
+                key :description, 'Scope of annotation.  One of "study" or "cluster".'
+                key :type, :string
+                key :required, true
+                key :enum, Api::V1::Visualization::AnnotationsController::VALID_SCOPE_VALUES
+              end
+              property :de_type do
+                key :description, 'Type of differential expression analysis. Either "rest" (one-vs-rest) or "pairwise"'
+                key :type, :string
+                key :required, true
+                key :enum, %w[rest pairwise]
+              end
+              property :group1 do
+                key :description, 'First group for pairwise analysis (optional)'
+                key :type, :string
+              end
+              property :group2 do
+                key :description, 'Second group for pairwise analysis (optional)'
+                key :type, :string
+              end
+            end
+          end
+          response 204 do
+            key :description, 'Job successfully submitted'
+          end
+          response 401 do
+            key :description, ApiBaseController.unauthorized
+          end
+          response 403 do
+            key :description, ApiBaseController.forbidden('view study, study has author DE')
+          end
+          response 404 do
+            key :description, ApiBaseController.not_found(Study, 'Cluster', 'Annotation')
+          end
+          response 406 do
+            key :description, ApiBaseController.not_acceptable
+          end
+          response 409 do
+            key :description, "Results are processing or already exist"
+          end
+          response 410 do
+            key :description, ApiBaseController.resource_gone
+          end
+          response 422 do
+            key :description, "Job parameters failed validation"
+          end
+          response 429 do
+            key :description, 'Weekly user quota exceeded'
+          end
+        end
+      end
+
+      def submit_differential_expression
+        # disallow DE calculation requests for studies with author DE
+        if @study.differential_expression_results.where(is_author_de: true).any?
+          render json: {
+            error: 'User requests are disabled for this study as it contains author-supplied differential expression results'
+          }, status: 403 and return
+        end
+
+        # check user quota before proceeding
+        if DifferentialExpressionService.job_exceeds_quota?(current_api_user)
+          # minimal log props to help gauge overall user interest, as well as annotation/de types
+          log_props = {
+            studyAccession: @study.accession, annotationName: params[:annotation_name], de_type: params[:de_type]
+          }
+          MetricsService.log('quota-exceeded-de', log_props, current_api_user, request:)
+          current_quota = DifferentialExpressionService.get_weekly_user_quota
+          render json: { error: "You have exceeded your weekly quota of #{current_quota} requests" },
+                 status: 429 and return
+        end
+
+        cluster_name = params[:cluster_name]
+        cluster = cluster_name == '_default' ? @study.default_cluster : @study.cluster_groups.by_name(cluster_name)
+        render json: { error: "Requested cluster #{cluster_name} not found" }, status: 404 and return if cluster.nil?
+
+        annotation_name = params[:annotation_name]
+        annotation_scope = params[:annotation_scope]
+        de_type = params[:de_type]
+        pairwise = de_type == 'pairwise'
+        group1 = params[:group1]
+        group2 = params[:group2]
+        annotation = AnnotationVizService.get_selected_annotation(
+          @study, cluster:, annot_name: annotation_name, annot_type: 'group', annot_scope: annotation_scope
+        )
+        render json: { error: 'No matching annotation found' }, status: 404 and return if annotation.nil?
+
+        de_params = { annotation_name:, annotation_scope:, de_type:, group1:, group2: }
+
+        # check if these results already exist
+        # for pairwise, also check if requested comparisons exist
+        result = DifferentialExpressionResult.find_by(
+          study: @study, cluster_group: cluster, annotation_name:, annotation_scope:, is_author_de: false
+        )
+        if result && (!pairwise || (pairwise && result.has_pairwise_comparison?(group1, group2)))
+          render json: { error: "Requested results already exist" }, status: 409 and return
+        end
+
+        begin
+          submitted = DifferentialExpressionService.run_differential_expression_job(
+            cluster, @study, current_api_user, **de_params
+          )
+          if submitted
+            DifferentialExpressionService.increment_user_quota(current_api_user)
+            head 204
+          else
+            # submitted: false here means that there is a matching running DE job
+            render json: { error: "Requested results are processing - please check back later" }, status: 409
+          end
+        rescue ArgumentError => e
+          # job parameters failed to validate
+          render json: { error: e.message}, status: 422 and return
         end
       end
 
@@ -1134,6 +1279,10 @@ module Api
         else
           @download_quota = config_entry.convert_value_by_type
         end
+      end
+
+      def de_job_params
+        params.require(:de_job).permit(:cluster_name, :annotation_name, :annotation_scope, :de_type, :group1, :group2)
       end
 
       # update AnalysisSubmissions when loading study analysis tab

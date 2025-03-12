@@ -731,13 +731,6 @@ class IngestJobTest < ActiveSupport::TestCase
     pipeline_name = SecureRandom.uuid
 
     job = IngestJob.new(pipeline_name:, study:, study_file: cluster_file, user: @user, action: :ingest_subsample)
-    metadata = {
-      pipeline: {
-        actions: [
-          { commands: %w[foo bar bing baz] }
-        ]
-      }
-    }.with_indifferent_access
 
     error_log = "parse_logs/#{cluster_file.id}/user_log.txt"
     mock = Minitest::Mock.new
@@ -862,7 +855,7 @@ class IngestJobTest < ActiveSupport::TestCase
     end
   end
 
-  test 'should ensure email delivery on special action failures' do
+  test 'should ensure email delivery and parse_status reset on special action failures' do
     study = FactoryBot.create(:detached_study,
                               name_prefix: 'Special Action Email',
                               user: @user,
@@ -889,6 +882,7 @@ class IngestJobTest < ActiveSupport::TestCase
       annotation_file:, cluster_file:, cluster_name: 'umap', annotation_name: 'disease', annotation_scope: 'study'
     )
     pipeline_name = SecureRandom.uuid
+    study_file.update(parse_status: 'parsing')
     job = IngestJob.new(
       pipeline_name:, study:, study_file:, user: @user, action: :differential_expression, params_object:
     )
@@ -925,6 +919,9 @@ class IngestJobTest < ActiveSupport::TestCase
     ApplicationController.stub :batch_api_client, mock do
       SingleCellMailer.stub :notify_admin_parse_fail, email_mock do
         job.poll_for_completion
+        # ensure that parse_status flag is reset after failure
+        study_file.reload
+        assert study_file.parsed?
         mock.verify
         email_mock.verify
       end

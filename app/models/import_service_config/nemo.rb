@@ -58,7 +58,7 @@ module ImportServiceConfig
 
     # return hash of file access info, like url, sizes, etc
     def file_access_info(protocol: nil)
-      urls = load_file&.[]('urls')
+      urls = load_file&.[]('manifest_file_urls')
       protocol ? urls.detect { |url| url.with_indifferent_access[:protocol] == protocol.to_s } : urls
     end
 
@@ -90,7 +90,7 @@ module ImportServiceConfig
         upload_file_size: :size,
         name: :file_name,
         expression_file_info: {
-          library_preparation_protocol: :technique
+          library_preparation_protocol: :techniques
         }
       }.with_indifferent_access
     end
@@ -108,9 +108,10 @@ module ImportServiceConfig
       study_file = to_study_file(scp_study_id, preferred_name)
       library = study_file.expression_file_info.library_preparation_protocol
       if library.blank?
-        library = load_study&.[]('technique')
+        libs = load_study&.[]('techniques')
+        libraries = libs.map { |lib| find_library_prep(lib) }.compact
+        study_file.expression_file_info.library_preparation_protocol = libraries.first
       end
-      study_file.expression_file_info.library_preparation_protocol = find_library_prep(library)
       exp_fragment = expression_data_fragment(study_file)
       study_file.ann_data_file_info.data_fragments << exp_fragment
       http_url = file_access_info(protocol: :http)&.[]('url')
