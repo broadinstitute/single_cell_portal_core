@@ -52,6 +52,7 @@ function setup_burp_cert {
 }
 
 export PASSENGER_APP_ENV=test
+export RUBYOPT=--disable-frozen-string-literal
 
 function clean_up {
   echo "Cleaning up..."
