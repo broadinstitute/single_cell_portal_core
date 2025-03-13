@@ -80,10 +80,12 @@ export default function Pathway({
   document.removeEventListener('ideogramDrawPathway', moveDescription)
   document.addEventListener('ideogramDrawPathway', moveDescription)
 
+  const dimensionString = JSON.stringify(dimensions)
+
   useEffect(() => {
     manageDrawPathway(studyAccession, cluster, annotation, label, labels)
     window.Ideogram.drawPathway(pathwayId, '', '', '.pathway-diagram', pwDimensions, false)
-  }, [cluster, annotationId, pathway])
+  }, [cluster, annotationId, pathway, dimensionString])
 
   useEffect(() => {
     renderPathwayExpression(studyAccession, cluster, annotation, label, labels)
