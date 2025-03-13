@@ -92,14 +92,9 @@ export default function Pathway({
   }, [label])
 
   const diagramHeight = pwDimensions.height
-  const pathwayDescriptionHeight = 500
 
   const diagramStyle = {
-    height: diagramHeight + pathwayDescriptionHeight
-  }
-
-  const legendStyle = {
-    height: '200px'
+    height: diagramHeight
   }
 
   return (
@@ -110,7 +105,7 @@ export default function Pathway({
           <ScaledMeanExpressionLegend />
           <PercentExpressingLegend />
         </div>
-        <div className="pathway-description"></div>
+        <div className="pathway-description" style={{ height: diagramHeight - 45 }}></div>
       </div>
     </>
   )
