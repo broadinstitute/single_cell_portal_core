@@ -99,6 +99,8 @@ GEM
       execjs
     base64 (0.2.0)
     bcrypt (3.1.16)
+    benchmark (0.4.0)
+    bigdecimal (3.1.9)
     bootsnap (1.13.0)
       msgpack (~> 1.2)
     brakeman (5.0.1)
@@ -258,6 +260,7 @@ GEM
     listen (3.5.1)
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
+    logger (1.6.6)
     loofah (2.24.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
@@ -317,6 +320,7 @@ GEM
     multi_json (1.15.0)
     multi_xml (0.6.0)
     multipart-post (2.3.0)
+    mutex_m (0.3.0)
     naturally (2.2.1)
     net-imap (0.5.6)
       date
@@ -341,6 +345,7 @@ GEM
       multi_json (~> 1.3)
       multi_xml (~> 0.5)
       rack (>= 1.2, < 3)
+    observer (0.1.2)
     omniauth (2.0.4)
       hashie (>= 3.4.6)
       rack (>= 1.6.2, < 3)
@@ -358,6 +363,7 @@ GEM
       omniauth (~> 2.0)
     orm_adapter (0.5.0)
     os (1.1.4)
+    ostruct (0.6.1)
     parallel (1.22.1)
     parser (3.1.2.1)
       ast (~> 2.4.1)
@@ -541,9 +547,12 @@ PLATFORMS
   x86_64-darwin-20
   x86_64-darwin-21
   x86_64-darwin-23
+  x86_64-darwin-24
   x86_64-linux
 
 DEPENDENCIES
+  benchmark
+  bigdecimal
   bootsnap
   bootstrap-sass!
   brakeman
@@ -573,6 +582,7 @@ DEPENDENCIES
   jquery-fileupload-rails
   jquery-rails
   listen
+  logger
   memory_profiler
   minitest (= 5.15.0)
   minitest-hooks
@@ -582,13 +592,16 @@ DEPENDENCIES
   mongoid-encrypted-fields
   mongoid-history
   mongoid_rails_migrations
+  mutex_m
   naturally
   nested_form!
   net-imap
   net-pop
   net-smtp
+  observer
   omniauth-google-oauth2
   omniauth-rails_csrf_protection
+  ostruct
   parallel
   puma
   rack-brotli
@@ -619,7 +632,7 @@ DEPENDENCIES
   will_paginate_mongoid
 
 RUBY VERSION
-   ruby 3.2.2p53
+   ruby 3.4.2p28
 
 BUNDLED WITH
-   2.6.1
+   2.6.2

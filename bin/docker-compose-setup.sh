@@ -12,6 +12,7 @@ $0 [OPTION]
 -i  {IMAGE_TAG}  override default GCR image tag of development
 -p  {PORTAL_RAM_GB}  specify as integer the amount of RAM in GB for the single_cell container
 -v  {VITE_RAM_GB}  specify as integer the amount of RAM in GB for the single_cell_vite container
+-l  use a local copy of GCR_IMAGE (for testing build updates)
 -h  print this text
 EOF
 )
@@ -19,9 +20,10 @@ EOF
 DETACHED=""
 VITE_FRONTEND_SERVICE_WORKER_CACHE="false"
 IMAGE_TAG="development"
+LOCAL="false"
 export PORTAL_RAM_GB="6"
 export VITE_RAM_GB="2"
-while getopts "dchi:p:v:" OPTION; do
+while getopts "dchi:p:v:l" OPTION; do
 case $OPTION in
   d)
     echo "### SETTING DETACHED ###"
@@ -48,6 +50,9 @@ case $OPTION in
     echo "### SETTING VITE_RAM_GB TO $OPTARG ###"
     VITE_RAM_GB="$OPTARG"
     ;;
+  l)
+    LOCAL="true"
+    ;;
   *)
     echo "unrecognized option"
     echo "$usage"
@@ -66,9 +71,11 @@ CHANGED=$(git diff "$LOCAL_BRANCH" development --name-only -- Dockerfile)
 if [[ "$CHANGED" = "Dockerfile" ]]; then
   echo "### DOCKERFILE CHANGES DETECTED, BUILDING $GCR_IMAGE LOCALLY ###"
   docker build -t "$GCR_IMAGE" .
-else
+elif [[ "$LOCAL" = "false" ]]; then
   echo "### PULLING UPDATED IMAGE FOR $GCR_IMAGE ###"
   docker pull "$GCR_IMAGE"
+else
+  echo "### USING LOCAL COPY OF $GCR_IMAGE ###"
 fi
 echo "### STARTING SERVICES ###"
 VITE_FRONTEND_SERVICE_WORKER_CACHE="$VITE_FRONTEND_SERVICE_WORKER_CACHE" \

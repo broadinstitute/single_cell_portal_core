@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '3.2.2'
+ruby '3.4.2'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '6.1.7.9'
@@ -81,6 +81,13 @@ gem 'net-imap'
 gem 'net-pop'
 gem 'exponential-backoff'
 gem 'concurrent-ruby', '1.3.4'
+# gems removed from stdlib in 3.4
+gem 'bigdecimal'
+gem 'mutex_m'
+gem 'observer'
+gem 'ostruct'
+gem 'logger'
+gem 'benchmark'
 
 group :development, :test do
   # Access an IRB console on exception pages or by using <%= console %> in views
