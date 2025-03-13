@@ -302,7 +302,6 @@ export default function ExploreDisplayTabs({
 
   /** helper function so that StudyGeneField doesn't have to see the full exploreParams object */
   function queryFn(queries) {
-    console.log('in queryFn, queries', queries)
     const isPathway = getIsPathway(queries[0])
     // also unset any selected gene lists or ideogram files
     const newParams = { geneList: '', ideogramFileId: '' }
@@ -318,7 +317,6 @@ export default function ExploreDisplayTabs({
         newParams.consensus = ''
       }
     }
-    console.log('in queryFn, newParams', newParams)
 
     updateExploreParams(newParams)
   }
@@ -693,7 +691,7 @@ export default function ExploreDisplayTabs({
                 <Pathway
                   studyAccession={studyAccession}
                   {... exploreParamsWithDefaults}
-                  labels={getEligibleLabels(exploreParamsWithDefaults,exploreInfo)}
+                  labels={getEligibleLabels(exploreParamsWithDefaults, exploreInfo)}
                   dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
                 />
               </div>

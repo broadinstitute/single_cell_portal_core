@@ -69,7 +69,9 @@ export default function AnnotationControl({
             isOptionDisabled={annotation => annotation.isDisabled}
             getOptionLabel={annotation => annotation.name}
             getOptionValue={annotation => annotation.scope + annotation.name + annotation.cluster_name}
-            onChange={newAnnotation => updateClusterParams({ annotation: newAnnotation })}
+            onChange={newAnnotation => {
+              updateClusterParams({ annotation: newAnnotation, label: '' })
+            }}
             styles={clusterSelectStyle}/>
         }
         {!hasSelection &&

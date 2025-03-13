@@ -48,13 +48,14 @@ function ScaledMeanExpressionLegend() {
 
 /** Rearrange description from below diagram to right of diagram */
 function moveDescription() {
-  console.log('in moveDescription')
   const description = document.querySelector('.pathway-description')
   const footer = document.querySelector('._ideoPathwayFooter')
 
   if (footer) {
     description.innerHTML = ''
     description.insertAdjacentElement('beforeend', footer)
+
+    document.removeEventListener('ideogramDrawPathway', moveDescription)
   }
 }
 
@@ -73,10 +74,6 @@ export default function Pathway({
     label = labels[0]
   }
 
-  console.log('in Pathway, adjusted label', label)
-
-  manageDrawPathway(studyAccession, cluster, annotation, label, labels)
-
   // Stringify object, to enable tracking state change
   const annotationId = getIdentifierForAnnotation(annotation)
 
@@ -84,6 +81,7 @@ export default function Pathway({
   document.addEventListener('ideogramDrawPathway', moveDescription)
 
   useEffect(() => {
+    manageDrawPathway(studyAccession, cluster, annotation, label, labels)
     window.Ideogram.drawPathway(pathwayId, '', '', '.pathway-diagram', pwDimensions, false)
   }, [cluster, annotationId, pathway])
 

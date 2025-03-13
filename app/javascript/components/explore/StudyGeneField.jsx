@@ -13,7 +13,6 @@ import { manageDrawPathway } from '~/lib/pathway-expression'
 
 /** Determine if searched text is among available genes */
 function getIsInvalidQuery(query, allGenes) {
-  console.log('in getIsInvalidQuery, query', query)
   const queryLowercase = query.toLowerCase()
   const isInvalidQuery = (
     allGenes.length > 0 &&
@@ -30,28 +29,28 @@ function getQueriesFromSearchOptions(newQueryArray) {
 
   if (newQueryArray[0]?.isGene === true || !flags?.show_pathway_expression) {
     // Query is a gene
-    console.log('in getQueriesFromSearchOptions, case 1')
+    // console.log('in getQueriesFromSearchOptions, case 1')
     newQueries = newQueryArray.map(g => g.value)
   } else if (newQueryArray.length === 0) {
     // Query is empty
-    console.log('in getQueriesFromSearchOptions, case 2')
+    // console.log('in getQueriesFromSearchOptions, case 2')
     newQueries = []
   } else if (newQueryArray[0].isGene === false) {
-    console.log('in getQueriesFromSearchOptions, case 3')
+    // console.log('in getQueriesFromSearchOptions, case 3')
     // Query is a pathway
     newQueries = [newQueryArray[0].value]
   } else if (typeof newQueryArray[0] === 'object') {
-    console.log('in getQueriesFromSearchOptions, case 4')
+    // console.log('in getQueriesFromSearchOptions, case 4')
     // Accounts for clearing genes
     newQueries = newQueryArray.map(g => g.value)
   } else {
     // Query is a gene, passed via URL
-    console.log('in getQueriesFromSearchOptions, case 5')
+    // console.log('in getQueriesFromSearchOptions, case 5')
     newQueries = newQueryArray
   }
 
-  console.log('in getQueriesFromSearchOptions, newQueryArray', newQueryArray)
-  console.log('in getQueriesFromSearchOptions, newQueries', newQueries)
+  // console.log('in getQueriesFromSearchOptions, newQueryArray', newQueryArray)
+  // console.log('in getQueriesFromSearchOptions, newQueries', newQueries)
 
   return newQueries
 }
@@ -83,7 +82,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
 
   const rawSuggestions = getAutocompleteSuggestions(inputText, allGenes)
   const searchOptions = getSearchOptions(rawSuggestions)
-  console.log('searchOptions', searchOptions)
+  // console.log('searchOptions', searchOptions)
 
   let enteredQueryArray = []
   if (queries) {
@@ -106,7 +105,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   function handleSearch(event) {
     event.preventDefault()
     const newQueryArray = syncQueryArrayToInputText()
-    console.log('in handleSearch, newQueryArray', newQueryArray)
+    // console.log('in handleSearch, newQueryArray', newQueryArray)
 
     const newNotPresentQueries = new Set([])
     if (newQueryArray) {
@@ -120,7 +119,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
         })
       } else {
         const newQueries = getQueriesFromSearchOptions(newQueryArray)
-        console.log('in handleSearch, newQueries', newQueries)
+        // console.log('in handleSearch, newQueries', newQueries)
         newQueries.forEach(query => {
           // if an entered gene is not in the valid gene options for the study
           const isInvalidQuery = getIsInvalidQuery(query, allGenes)
@@ -132,13 +131,13 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
     }
     setNotPresentQueries(newNotPresentQueries)
 
-    console.log('in handleSearch, newNotPresentQueries', newNotPresentQueries)
+    // console.log('in handleSearch, newNotPresentQueries', newNotPresentQueries)
 
     if (newNotPresentQueries.size > 0) {
       setShowNotPresentGeneChoice(true)
     } else if (newQueryArray && newQueryArray.length) {
       const newQueries = getQueriesFromSearchOptions(newQueryArray)
-      console.log('in handleSearch, newQueries', newQueries)
+      // console.log('in handleSearch, newQueries', newQueries)
       const queries = newQueries
       // console.log('in handleSearch, genesToSearch', genesToSearch)
       if (queries.length > window.MAX_GENE_SEARCH) {
@@ -157,8 +156,8 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   /** Converts any current typed free text to a gene array entry */
   function syncQueryArrayToInputText() {
     const inputTextValues = inputText.trim().split(/[\s,]+/)
-    console.log('in syncQueryArrayToInputText, inputTextValues', inputTextValues)
-    console.log('in syncQueryArrayToInputText, queryArray', queryArray)
+    // console.log('in syncQueryArrayToInputText, inputTextValues', inputTextValues)
+    // console.log('in syncQueryArrayToInputText, queryArray', queryArray)
     if (!inputTextValues.length || !inputTextValues[0].length) {
       // console.log('in syncQueryArrayToInputText if, queryArray', queryArray)
       if (queryArray.length === 2 && queryArray[0].label === 'Genes') {
@@ -169,9 +168,9 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
     }
     const searchOptions = getSearchOptions(inputTextValues)
     const queryOptions = searchOptions[0].options
-    console.log('in syncQueryArrayToInputText, queryOptions', queryOptions)
+    // console.log('in syncQueryArrayToInputText, queryOptions', queryOptions)
     const newQueryArray = queryArray.concat(queryOptions)
-    console.log('in syncQueryArrayToInputText, newQueryArray', newQueryArray)
+    // console.log('in syncQueryArrayToInputText, newQueryArray', newQueryArray)
     setInputText('')
     setQueryArray(newQueryArray)
     return newQueryArray
@@ -205,7 +204,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
     // react-select doesn't expose the actual click events, so we deduce the kind
     // of operation based on whether it lengthened or shortened the list
     const newValue = value ? value : []
-    console.log('in handleSelectChange, value', value)
+    // console.log('in handleSelectChange, value', value)
     setNotPresentQueries(new Set([]))
     setQueryArray(newValue)
   }
@@ -213,11 +212,11 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   useEffect(() => {
     if (queries.join(',') !== queryArray.map(opt => opt.value).join(',')) {
       // the genes have been updated elsewhere -- resync
-      console.log('in useEffect, queryArray', queryArray)
-      console.log('in useEffect, queries', queries)
+      // console.log('in useEffect, queryArray', queryArray)
+      // console.log('in useEffect, queries', queries)
       const queriesSearchOptions = getSearchOptions(queries)
       const newQueryArray = getQueryArrayFromSearchOptions(queriesSearchOptions)
-      console.log('in useEffect, newQueryArray', newQueryArray)
+      // console.log('in useEffect, newQueryArray', newQueryArray)
       setQueryArray(newQueryArray)
       setInputText('')
       setNotPresentQueries(new Set([]))
@@ -230,7 +229,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
       queries.join(',') !== queryArray.map(opt => opt.label).join(',')
     ) {
       const selectEvent = new Event('change:multiselect')
-      console.log('in queryArray useEffect, queryArray', queryArray)
+      // console.log('in queryArray useEffect, queryArray', queryArray)
       handleSearch(selectEvent)
     }
   }, [queryArray.join(',')])
@@ -248,8 +247,8 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   }
 
   // console.log('searchTermsArray', searchTermsArray)
-  console.log('before render, inputText', inputText)
-  console.log('before render queryArray', queryArray)
+  // console.log('before render, inputText', inputText)
+  // console.log('before render queryArray', queryArray)
 
   return (
     <form className="gene-keyword-search gene-study-keyword-search form-horizontal" onSubmit={handleSearch}>

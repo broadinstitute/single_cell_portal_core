@@ -79,21 +79,21 @@ export function getIsPathway(inputText) {
 
 /** Get pathway names that include the input text */
 function getPathwaySuggestions(inputText) {
-  console.log('in getPathwaySuggestions, inputText', inputText)
-  console.log('in getPathwaySuggestions, window.Ideogram', window.Ideogram)
-  console.log('in getPathwaySuggestions, window.Ideogram.interactionCache', window.Ideogram.interactionCache)
+  // console.log('in getPathwaySuggestions, inputText', inputText)
+  // console.log('in getPathwaySuggestions, window.Ideogram', window.Ideogram)
+  // console.log('in getPathwaySuggestions, window.Ideogram.interactionCache', window.Ideogram.interactionCache)
   const flags = getFeatureFlagsWithDefaults()
   if (
     !window.Ideogram || !window.Ideogram.interactionCache ||
     !flags?.show_pathway_expression
   ) {
-    console.log('exiting getPathwaySuggestions early')
+    // console.log('exiting getPathwaySuggestions early')
     return []
   }
 
   const pathwayIdsByName = getPathwayIdsByName()
 
-  console.log('getPathwaySuggestions, pathwayIdsByName', pathwayIdsByName)
+  // console.log('getPathwaySuggestions, pathwayIdsByName', pathwayIdsByName)
 
   const pathwayNames = Object.keys(pathwayIdsByName)
   const rawSuggestions = pathwayNames.filter(

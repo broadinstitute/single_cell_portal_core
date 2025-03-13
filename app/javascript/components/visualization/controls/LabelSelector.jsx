@@ -1,26 +1,7 @@
-import React, { useState } from 'react'
+import React from 'react'
 
 import Select from '~/lib/InstrumentedSelect'
 import { getAnnotationValues, clusterSelectStyle, naturalSort } from '~/lib/cluster-utils'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
-
-// /** Get dropdown menu of annotation labels; pick one to color genes */
-// function writePathwayAnnotationLabelMenu(labels, pathwayGenes, dotPlotMetrics) {
-//   const options = labels.map(label => `<option>${label}</option>`)
-//   const menu =
-//     `<span class="pathway-label-menu-container" style="margin-left: 10px;">` +
-//       `<label>Expression in:</label> <select class="pathway-label-menu">${options.join()}</select>` +
-//     `</span>`
-//   const headerLink = document.querySelector('._ideoPathwayHeader a')
-//   document.querySelector('.pathway-label-menu-container')?.remove()
-//   headerLink.insertAdjacentHTML('afterend', menu)
-//   const menuSelectDom = document.querySelector('.pathway-label-menu')
-//   menuSelectDom.addEventListener('change', () => {
-//     const newLabel = menuSelectDom.value
-//     colorPathwayGenesByExpression(pathwayGenes, dotPlotMetrics, newLabel)
-//   })
-// }
 
 /**
  * Get annotation labels that have > 1 cell in the labeled group, if possible
@@ -42,12 +23,13 @@ function getEligibleLabels(exploreParamsWithDefaults, exploreInfo) {
   return annotationLabels
 }
 
-function getDefaultOption(options, exploreParamsWithDefaults) {
-  let defaultOption = options.find(o => o.value === exploreParamsWithDefaults.label)
-  if (!defaultOption) {
-    defaultOption = options[0]
+/** Get default option for label drop-down menu */
+function getShownOption(options, exploreParamsWithDefaults) {
+  let shownOption = options.find(o => o.value === exploreParamsWithDefaults.label)
+  if (!shownOption) {
+    shownOption = options[0]
   }
-  return defaultOption
+  return shownOption
 }
 
 /**
@@ -60,14 +42,12 @@ export default function LabelControl({
   // updatePathwayExpression
 }) {
   const labels = getEligibleLabels(exploreParamsWithDefaults, exploreInfo)
+  console.log('in LabelControl, labels', labels)
 
   const options = labels.map(label => {return { label, value: label }})
 
   console.log('in LabelSelector, exploreParamsWithDefaults.label', exploreParamsWithDefaults.label)
-  const defaultOption = getDefaultOption(options, exploreParamsWithDefaults)
-
-  console.log('in LabelSelector, defaultOption', defaultOption)
-  const [shownOption, setShownOption] = useState(defaultOption)
+  const shownOption = getShownOption(options, exploreParamsWithDefaults)
 
   console.log('in LabelSelector, shownOption', shownOption)
 
@@ -79,7 +59,6 @@ export default function LabelControl({
           data-analytics-name="label-select"
           value={shownOption}
           onChange={newOption => {
-            setShownOption(newOption)
             updateClusterParams({ label: newOption.label })
           }}
           styles={clusterSelectStyle}/>
