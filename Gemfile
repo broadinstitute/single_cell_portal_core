@@ -88,6 +88,7 @@ gem 'observer'
 gem 'ostruct'
 gem 'logger'
 gem 'benchmark'
+gem 'drb'
 
 group :development, :test do
   # Access an IRB console on exception pages or by using <%= console %> in views
