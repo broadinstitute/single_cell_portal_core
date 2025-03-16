@@ -3,6 +3,7 @@ import { manageDrawPathway, renderPathwayExpression } from '~/lib/pathway-expres
 // import { getPathwayName, getPathwayIdsByName } from '~/lib/search-utils'
 import { getIdentifierForAnnotation } from '~/lib/cluster-utils'
 import PlotUtils from '~/lib/plot'
+import { round } from '~/lib/metrics-perf'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
@@ -77,14 +78,34 @@ export default function Pathway({
   // Stringify object, to enable tracking state change
   const annotationId = getIdentifierForAnnotation(annotation)
 
-  document.removeEventListener('ideogramDrawPathway', moveDescription)
-  document.addEventListener('ideogramDrawPathway', moveDescription)
-
   const dimensionString = JSON.stringify(dimensions)
+
+  moveDescription()
+
+  /** Prepare gene-specific content for node hover tooltip */
+  function handleNodeHover(event, geneName) {
+    const node = event.target
+    const rawMean = node.getAttribute('data-scaled-mean-expression');
+    const mean = round(rawMean, 2)
+    const rawPercent = node.getAttribute('data-percent-expressing');
+    const percent = round(rawPercent, 2)
+    const content =
+      `
+      <div style="padding: 5px;">
+        <div>Metrics for gene ${geneName} in ${label}:</div>
+        <div>Scaled mean expression asdf: ${mean}</div>
+        <div>Percent of cells expressing: ${percent}</div>
+      </div>
+      `
+    return content
+  }
 
   useEffect(() => {
     manageDrawPathway(studyAccession, cluster, annotation, label, labels)
-    window.Ideogram.drawPathway(pathwayId, '', '', '.pathway-diagram', pwDimensions, false)
+    window.Ideogram.drawPathway(
+      pathwayId, '', '', '.pathway-diagram', pwDimensions, false,
+      handleNodeHover
+    )
   }, [cluster, annotationId, pathway, dimensionString])
 
   useEffect(() => {
@@ -105,7 +126,8 @@ export default function Pathway({
           <ScaledMeanExpressionLegend />
           <PercentExpressingLegend />
         </div>
-        <div className="pathway-description" style={{ height: diagramHeight - 45 }}></div>
+        <div className="pathway-description" style={{ height: diagramHeight - 65 }}></div>
+        <div style={{ height: 30, background: 'red' }}></div>
       </div>
     </>
   )

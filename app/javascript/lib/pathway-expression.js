@@ -250,8 +250,8 @@ export function colorPathwayGenesByExpression(annotationLabel, dotPlotMetrics) {
 
     // In future work, consider showing these values on node hover.
     // For now they help engineers inspect nodes to confirm mean and percent.
-    rect.setAttribute('data-expression-scaled-mean', metrics.mean)
-    rect.setAttribute('data-expression-percent', percent)
+    rect.setAttribute('data-scaled-mean-expression', metrics.mean)
+    rect.setAttribute('data-percent-expressing', percent)
 
     styleRulesets.push(rulesets)
   })

@@ -34,7 +34,7 @@
     "exifreader": "4.6.0",
     "fflate": "^0.7.3",
     "hdf5-indexed-reader": "1.0.1",
-    "ideogram": "eweitz/ideogram#aa51e31d5b04cde796052ee2d8c567631807480d",
+    "ideogram": "eweitz/ideogram#05d8df6c9db46b2ee50cd506f81b98906b690c66",
     "jquery": "3.5.1",
     "jquery-ui": "1.13.2",
     "morpheus-app": "1.0.18",
