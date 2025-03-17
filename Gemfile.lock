@@ -454,7 +454,6 @@ GEM
       activesupport (>= 4.2.0)
       rack (>= 1.1)
       rubocop (>= 1.7.0, < 2.0)
-    ruby-prof (1.7.0)
     ruby-progressbar (1.11.0)
     ruby-vips (2.2.1)
       ffi (~> 1.12)
@@ -614,7 +613,6 @@ DEPENDENCIES
   rest-client
   rubocop
   rubocop-rails
-  ruby-prof
   ruby_native_statistics
   rubyzip
   sass-rails (>= 6)
