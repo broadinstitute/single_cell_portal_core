@@ -29,7 +29,7 @@ gem 'sdoc', group: :doc
 # gem 'capistrano-rails', group: :development
 
 gem 'bootsnap', require: false
-gem 'minitest', '5.15.0'
+gem 'minitest'
 gem 'minitest-rails'
 gem 'minitest-reporters'
 
@@ -101,6 +101,7 @@ group :development, :test do
   gem 'puma'
   gem 'rubocop', require: false
   gem 'rubocop-rails', require: false
+  gem 'csv'
 
   # Profiling
   gem 'rack-mini-profiler'
