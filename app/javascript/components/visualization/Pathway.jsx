@@ -91,13 +91,18 @@ export default function Pathway({
     const percent = round(rawPercent, 2)
     const content =
       `
-      <div style="padding: 5px;">
-        <div>Metrics for gene ${geneName} in ${label}:</div>
-        <div>Scaled mean expression asdf: ${mean}</div>
+      <div>
+        <div>Metrics for ${geneName}:</div>
+        <div>Scaled mean expression: ${mean}</div>
         <div>Percent of cells expressing: ${percent}</div>
+        </ul>
       </div>
       `
-    return content
+
+    node.setAttribute('data-toggle', 'tooltip')
+    node.setAttribute('data-html', 'true')
+    node.setAttribute('data-original-title', content)
+    return ''
   }
 
   useEffect(() => {
@@ -106,11 +111,7 @@ export default function Pathway({
       pathwayId, '', '', '.pathway-diagram', pwDimensions, false,
       handleNodeHover
     )
-  }, [cluster, annotationId, pathway, dimensionString])
-
-  useEffect(() => {
-    renderPathwayExpression(studyAccession, cluster, annotation, label, labels)
-  }, [label])
+  }, [cluster, annotationId, pathway, dimensionString, label])
 
   const diagramHeight = pwDimensions.height
 
