@@ -144,7 +144,7 @@ class RequestUtilsTest < ActionDispatch::IntegrationTest
     # Validates the most common scenario for client-side bucket access, e.g. a typical
     # user exploring an SCP study they learned about in a scientific journal
 
-    mock = ::MiniTest::Mock.new
+    mock = ::Minitest::Mock.new
     mock.expect :call, nil, []
 
     sign_out @user
@@ -159,7 +159,7 @@ class RequestUtilsTest < ActionDispatch::IntegrationTest
     # Validates a scenario for client-side bucket access, e.g. a particularly engaged
     # user exploring others' studies
 
-    mock = ::MiniTest::Mock.new
+    mock = ::Minitest::Mock.new
     mock.expect :call, nil, []
 
     sign_in @user
@@ -174,7 +174,7 @@ class RequestUtilsTest < ActionDispatch::IntegrationTest
     # Validates a scenario for client-side bucket access, e.g. an owner checking things
     # before publishing their SCP study
 
-    mock = ::MiniTest::Mock.new
+    mock = ::Minitest::Mock.new
     mock.expect :call, nil, [@private_study]
 
     @user.stub :token_for_storage_object, mock do

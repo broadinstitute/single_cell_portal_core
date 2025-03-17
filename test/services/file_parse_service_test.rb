@@ -81,7 +81,10 @@ class FileParseServiceTest < ActiveSupport::TestCase
     file_mock.expect :name, 'file.txt'
     file_mock.expect :delete, true
     bucket_mock = Minitest::Mock.new
-    bucket_mock.expect :execute_gcloud_method, [file_mock], [:get_workspace_files, Integer, String, Hash]
+    bucket_mock.expect :execute_gcloud_method,
+                       [file_mock],
+                       [:get_workspace_files, Integer, String],
+                       prefix: 'parse_logs'
 
     ApplicationController.stub :firecloud_client, bucket_mock do
       FileParseService.delete_ingest_artifacts(@basic_study, 30.days.ago)
