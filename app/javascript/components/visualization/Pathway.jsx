@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Popover, OverlayTrigger } from 'react-bootstrap'
 import { manageDrawPathway, renderPathwayExpression } from '~/lib/pathway-expression'
 // import { getPathwayName, getPathwayIdsByName } from '~/lib/search-utils'
 import { getIdentifierForAnnotation } from '~/lib/cluster-utils'
@@ -7,6 +8,11 @@ import { round } from '~/lib/metrics-perf'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
+
+function GeneList() {
+  const genes = window.Ideogram.getPathwayGenes()
+
+}
 
 /** Get legend component for percent of cells expressng, for dot plot */
 function PercentExpressingLegend() {
@@ -60,11 +66,37 @@ function moveDescription() {
   }
 }
 
+/** Prepare gene-specific content for node hover tooltip */
+function handleGeneNodeHover(event, geneName) {
+  const node = event.target
+  const rawMean = node.getAttribute('data-scaled-mean-expression')
+  const mean = round(rawMean, 2)
+  const rawPercent = node.getAttribute('data-percent-expressing')
+  const percent = round(rawPercent, 2)
+  const content =
+    `
+    <div>
+      <div>Metrics for ${geneName}:</div>
+      <div>Scaled mean expression: ${mean}</div>
+      <div>Percent of cells expressing: ${percent}</div>
+      </ul>
+    </div>
+    `
+
+  node.setAttribute('data-toggle', 'tooltip')
+  node.setAttribute('data-html', 'true')
+  node.setAttribute('data-original-title', content)
+  return ''
+}
+
 /** Draw a pathway diagram with an expression overlay */
 export default function Pathway({
   studyAccession, cluster, annotation, label, pathway, dimensions,
-  labels
+  labels, updateExploreParams
 }) {
+  const [geneList, setGeneList] = useState([])
+  const [showGeneList, setShowGeneList] = useState(false)
+
   const pathwayId = pathway
   const pwDimensions = Object.assign({}, dimensions)
 
@@ -82,34 +114,16 @@ export default function Pathway({
 
   moveDescription()
 
-  /** Prepare gene-specific content for node hover tooltip */
-  function handleNodeHover(event, geneName) {
-    const node = event.target
-    const rawMean = node.getAttribute('data-scaled-mean-expression');
-    const mean = round(rawMean, 2)
-    const rawPercent = node.getAttribute('data-percent-expressing');
-    const percent = round(rawPercent, 2)
-    const content =
-      `
-      <div>
-        <div>Metrics for ${geneName}:</div>
-        <div>Scaled mean expression: ${mean}</div>
-        <div>Percent of cells expressing: ${percent}</div>
-        </ul>
-      </div>
-      `
-
-    node.setAttribute('data-toggle', 'tooltip')
-    node.setAttribute('data-html', 'true')
-    node.setAttribute('data-original-title', content)
-    return ''
+  /** Upon clicking a pathway node, show new pathway and expression overlay */
+  function handlePathwayNodeClick(event, pathwayId) {
+    updateExploreParams({ pathway: pathwayId })
   }
 
   useEffect(() => {
     manageDrawPathway(studyAccession, cluster, annotation, label, labels)
     window.Ideogram.drawPathway(
       pathwayId, '', '', '.pathway-diagram', pwDimensions, false,
-      handleNodeHover
+      handleGeneNodeHover, handlePathwayNodeClick
     )
   }, [cluster, annotationId, pathway, dimensionString, label])
 
@@ -119,6 +133,11 @@ export default function Pathway({
     height: diagramHeight
   }
 
+  const GeneListPopover =
+    <Popover data-analytics-name='gene-list-popover' id='gene-list-popover'>
+      {geneList.join(', ')}
+    </Popover>
+
   return (
     <>
       <div className="pathway-diagram col-md-8" style={diagramStyle}></div>
@@ -127,8 +146,19 @@ export default function Pathway({
           <ScaledMeanExpressionLegend />
           <PercentExpressingLegend />
         </div>
-        <div className="pathway-description" style={{ height: diagramHeight - 65 }}></div>
-        <div style={{ height: 30, background: 'red' }}></div>
+        <div className="pathway-description" style={{ height: diagramHeight - 100 }}></div>
+        <div
+          className="pathway-more-details"
+          style={{ height: '65px', borderTop: '1px solid #DDD' }}
+          onClick={() => {
+            setGeneList(window.Ideogram.getPathwayGenes)
+          }}
+        >
+          <OverlayTrigger trigger={['click']} placement='top' rootClose={true}
+            overlay={GeneListPopover}>
+            <button className="btn terra-secondary-btn" style={{ marginTop: '10px' }}>Gene list</button>
+          </OverlayTrigger>
+        </div>
       </div>
     </>
   )

@@ -5,7 +5,7 @@ import Button from 'react-bootstrap/lib/Button'
 import Modal from 'react-bootstrap/lib/Modal'
 import CreatableSelect from 'react-select/creatable'
 
-import { getAutocompleteSuggestions, getIsPathway, getPathwayName } from '~/lib/search-utils'
+import { getAutocompleteSuggestions, getIsPathway, getIsInPathwayTitle, getPathwayName } from '~/lib/search-utils'
 import { log } from '~/lib/metrics-api'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
@@ -17,9 +17,24 @@ function getIsInvalidQuery(query, allGenes) {
   const isInvalidQuery = (
     allGenes.length > 0 &&
     !allGenes.find(geneOpt => geneOpt.toLowerCase() === queryLowercase) &&
-    !getIsPathway(query)
+    !getIsInPathwayTitle(query)
   )
   return isInvalidQuery
+}
+
+/** Determine if text matches incomplete part of any pathway title  */
+function getIsPartialPathwayMatch(query, allGenes) {
+  const queryLowercase = query.toLowerCase()
+  const isPartialPathwayMatch = (
+    // If it's not a gene match
+    allGenes.length > 0 &&
+    !allGenes.find(geneOpt => geneOpt.toLowerCase() === queryLowercase) &&
+
+    // And if it's _not_ a _complete_ pathway title but, but _is_ an _partial_ match
+    !getIsPathway(query) &&
+    getIsInPathwayTitle(query)
+  )
+  return isPartialPathwayMatch
 }
 
 /** Parse gene name from heterogeneous array  */
@@ -183,6 +198,11 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
     }
     switch (event.key) {
       case ' ':
+        if (!getIsPartialPathwayMatch) {
+          syncQueryArrayToInputText()
+          setTimeout(() => {setInputText(' ')}, 0)
+        }
+        break
       case ',':
         syncQueryArrayToInputText()
         setTimeout(() => {setInputText(' ')}, 0)

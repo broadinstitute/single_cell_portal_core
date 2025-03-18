@@ -77,6 +77,23 @@ export function getIsPathway(inputText) {
   return isPathwayName
 }
 
+/** Determine if text is included in part of pathway name */
+export function getIsInPathwayTitle(inputText) {
+  const isPathway = getIsPathway(inputText)
+  if (isPathway) {
+    return true
+  }
+
+  const pathwayIdsByName = getPathwayIdsByName()
+  const pathwayNames = Object.keys(pathwayIdsByName)
+  const inputTextLowerCase = inputText.toLowerCase()
+  const isInPathwayName = pathwayNames.some(
+    name => name.toLowerCase().includes(inputTextLowerCase)
+  )
+
+  return isInPathwayName
+}
+
 /** Get pathway names that include the input text */
 function getPathwaySuggestions(inputText) {
   // console.log('in getPathwaySuggestions, inputText', inputText)
