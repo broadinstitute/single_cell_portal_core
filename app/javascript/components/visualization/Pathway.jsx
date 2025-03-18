@@ -1,18 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { Popover, OverlayTrigger } from 'react-bootstrap'
-import { manageDrawPathway, renderPathwayExpression } from '~/lib/pathway-expression'
-// import { getPathwayName, getPathwayIdsByName } from '~/lib/search-utils'
-import { getIdentifierForAnnotation } from '~/lib/cluster-utils'
-import PlotUtils from '~/lib/plot'
+import { manageDrawPathway } from '~/lib/pathway-expression'
+import { getIdentifierForAnnotation, naturalSort } from '~/lib/cluster-utils'
 import { round } from '~/lib/metrics-perf'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
-
-function GeneList() {
-  const genes = window.Ideogram.getPathwayGenes()
-
-}
 
 /** Get legend component for percent of cells expressng, for dot plot */
 function PercentExpressingLegend() {
@@ -77,7 +70,7 @@ function handleGeneNodeHover(event, geneName) {
     `
     <div>
       <div>Metrics for ${geneName}:</div>
-      <div>Scaled mean expression: ${mean}</div>
+      <div>Mean expression: ${mean}</div>
       <div>Percent of cells expressing: ${percent}</div>
       </ul>
     </div>
@@ -95,7 +88,6 @@ export default function Pathway({
   labels, updateExploreParams
 }) {
   const [geneList, setGeneList] = useState([])
-  const [showGeneList, setShowGeneList] = useState(false)
 
   const pathwayId = pathway
   const pwDimensions = Object.assign({}, dimensions)
@@ -135,7 +127,7 @@ export default function Pathway({
 
   const GeneListPopover =
     <Popover data-analytics-name='gene-list-popover' id='gene-list-popover'>
-      {geneList.join(', ')}
+      {naturalSort(geneList).join(', ')}
     </Popover>
 
   return (
