@@ -29,29 +29,8 @@ RETURN_CODE=0
 THIS_DIR="$(cd "$(dirname "$BASH_SOURCE")"; pwd)"
 BASE_DIR="$(dirname $THIS_DIR)"
 
-function setup_burp_cert {
-  if [ -n "$BURP_PROXY" ]; then
-    # we will store Burp certificate here
-    local BURP_CERT="/usr/local/share/ca-certificates/burp.crt"
-
-    # fetch Burp certificate from Burp proxy localhost endpoint and store it into $BURP_CERT
-    curl -s --proxy "$BURP_PROXY" burp/cert | openssl x509 -inform DER -out "$BURP_CERT"
-
-    # update system-wide certificate store
-    update-ca-certificates
-
-    # override cacert store for httpclient package (used by Google libraries)
-    ln -sf "$BURP_CERT" /usr/local/rvm/gems/default/gems/httpclient-*/lib/httpclient/cacert.pem
-
-    # override cafile for Yarn (used during package fetching)
-    yarn config set cafile "$BURP_CERT" -g
-
-    # set http_proxy variable, which will make HTTP connections go through the Burp proxy
-    export http_proxy="$BURP_PROXY"
-  fi
-}
-
 export PASSENGER_APP_ENV=test
+export RUBYOPT=--disable-frozen-string-literal
 
 function clean_up {
   echo "Cleaning up..."
@@ -90,7 +69,6 @@ else
   rm -f "$TMP_PIDS_DIR/delayed_job.*.pid"
 fi
 
-setup_burp_cert
 clean_up
 
 echo "*** STARTING DELAYED_JOB for $PASSENGER_APP_ENV env ***"

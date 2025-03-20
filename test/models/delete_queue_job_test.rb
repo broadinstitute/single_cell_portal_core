@@ -199,7 +199,8 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
     assert_equal study_file, study.metadata_file
     assert_equal 'tsne', study.default_cluster.name
     mock = Minitest::Mock.new
-    mock.expect(:get_workspace_files, [], [String, Hash])
+    prefix = "_scp_internal/anndata_ingest/#{study.accession}_#{study_file.id}"
+    mock.expect(:get_workspace_files, [], [study.bucket_id], prefix:)
     ApplicationController.stub :firecloud_client, mock do
       DeleteQueueJob.new(study_file).perform
       study.reload

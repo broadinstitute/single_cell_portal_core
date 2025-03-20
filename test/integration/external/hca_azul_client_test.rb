@@ -227,7 +227,7 @@ class HcaAzulClientTest < ActiveSupport::TestCase
     expected_filters = expected_matches.map { |f| { id: f, name: f }.with_indifferent_access }
     expected_facets = [{ id: 'disease', filters: expected_filters, keyword_conversion: true }.with_indifferent_access]
     mock = Minitest::Mock.new
-    mock.expect :find_filter_matches, expected_matches, ['cancer', { filter_list: :filters_with_external }]
+    mock.expect :find_filter_matches, expected_matches, ['cancer'], filter_list: :filters_with_external
     mock.expect :identifier, 'disease'
     # handle :with_indifferent_access calls
     mock.expect :is_a?, true, [Class]
@@ -269,7 +269,7 @@ class HcaAzulClientTest < ActiveSupport::TestCase
     expected_matches = ['cervical cancer', 'colorectal cancer', 'lower gum cancer', 'lung cancer', 'mandibular cancer',
                         'tongue cancer']
     mock = Minitest::Mock.new
-    mock.expect :find_filter_matches, expected_matches, ['cancer', { filter_list: :filters_with_external }]
+    mock.expect :find_filter_matches, expected_matches, ['cancer'], filter_list: :filters_with_external
     mock.expect :identifier, 'disease'
     # handle :with_indifferent_access calls
     mock.expect :is_a?, true, [Class]

@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-#
 # Wrapper around Google Batch API for submitting for submitting/reporting scp-ingest-service jobs
 class BatchApiClient
   extend ServiceAccountManager

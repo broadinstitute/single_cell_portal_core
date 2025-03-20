@@ -106,7 +106,7 @@ class BatchApiClientTest < ActiveSupport::TestCase
     end
     mock.expect :create_project_location_job,
                 Google::Apis::BatchV1::Job,
-                [@client.project_location, Google::Apis::BatchV1::Job, quota_user: @user.id.to_s]
+                [@client.project_location, Google::Apis::BatchV1::Job], quota_user: @user.id.to_s
     Google::Apis::BatchV1::BatchService.stub :new, mock do
       client = BatchApiClient.new
       client.run_job(study_file: @ann_data_file, user: @user, action:, params_object:)
@@ -137,7 +137,7 @@ class BatchApiClientTest < ActiveSupport::TestCase
     end
     mock.expect :create_project_location_job,
                 Google::Apis::BatchV1::Job,
-                [@client.project_location, Google::Apis::BatchV1::Job, quota_user: @user.id.to_s]
+                [@client.project_location, Google::Apis::BatchV1::Job], quota_user: @user.id.to_s
     Google::Apis::BatchV1::BatchService.stub :new, mock do
       client = BatchApiClient.new
       client.run_job(study_file: @ann_data_file, user: @user, action:, params_object:)

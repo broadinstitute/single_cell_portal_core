@@ -41,6 +41,7 @@ class BulkDownloadServiceTest < ActiveSupport::TestCase
                                { name: '2_L1_001.fastq', size: 100, generation: '12345' },
                                { name: '2_R1_001.fastq', size: 100, generation: '12345' },
                              ], sync_status: true, study: @study)
+    @expires = { expires: 1.day.to_i }
   end
 
   test 'should update user download quota' do
@@ -127,10 +128,10 @@ class BulkDownloadServiceTest < ActiveSupport::TestCase
 
     # mock call to GCS
     mock = Minitest::Mock.new
-    mock.expect :execute_gcloud_method, signed_url, [:generate_signed_url, Integer, String, String, Hash]
+    mock.expect :execute_gcloud_method, signed_url, [:generate_signed_url, Integer, String, String], **@expires
     directory.files.each do |directory_file|
       url = "https://storage.googleapis.com/#{@study.bucket_id}/#{directory_file[:name]}"
-      mock.expect :execute_gcloud_method, url, [:generate_signed_url, Integer, String, String, Hash]
+      mock.expect :execute_gcloud_method, url, [:generate_signed_url, Integer, String, String],  **@expires
     end
 
     FireCloudClient.stub :new, mock do
@@ -170,7 +171,7 @@ class BulkDownloadServiceTest < ActiveSupport::TestCase
 
     # mock call to GCS
     mock = Minitest::Mock.new
-    mock.expect :execute_gcloud_method, signed_url, [:generate_signed_url, Integer, String, String, Hash]
+    mock.expect :execute_gcloud_method, signed_url, [:generate_signed_url, Integer, String, String], **@expires
 
     FireCloudClient.stub :new, mock do
       configuration = BulkDownloadService.generate_curl_configuration(study_files: [study_file], user: @user,
