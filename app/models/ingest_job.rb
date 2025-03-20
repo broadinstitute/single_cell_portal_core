@@ -745,7 +745,9 @@ class IngestJob
     matrix_file = StudyFile.where(
       study:, :upload_file_name.in => [bucket_path, bucket_path.split('/').last]
     ).detect(&:is_raw_counts_file?)
-    de_result = DifferentialExpressionResult.find_or_initialize_by(
+    de_result = DifferentialExpressionService.find_existing_result(
+      study, cluster, params_object.annotation_name, params_object.annotation_scope
+    ) || DifferentialExpressionResult.new(
       study: study, cluster_group: cluster, cluster_name: cluster.name,
       annotation_name: params_object.annotation_name, annotation_scope: params_object.annotation_scope,
       matrix_file_id: matrix_file.id

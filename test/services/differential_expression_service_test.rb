@@ -445,4 +445,19 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     user.reload
     assert_equal 0, user.weekly_de_quota
   end
+
+  test 'should set cluster name' do
+    annotation_name = 'cell_type__ontology_label'
+    annotation_scope = 'study'
+    assert_equal @cluster_group.name, DifferentialExpressionService.set_cluster_name(
+      @basic_study, @cluster_group, annotation_name, annotation_scope
+    )
+    DifferentialExpressionResult.create(
+      study: @basic_study, cluster_group: @cluster_group, cluster_name: 'umap', annotation_name:, annotation_scope:,
+      matrix_file_id: @raw_matrix.id
+    )
+    assert_equal 'umap', DifferentialExpressionService.set_cluster_name(
+      @basic_study, @cluster_group, annotation_name, annotation_scope
+    )
+  end
 end

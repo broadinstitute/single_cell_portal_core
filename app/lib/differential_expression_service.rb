@@ -143,7 +143,7 @@ class DifferentialExpressionService
       group2:,
       annotation_file: annotation_scope == 'cluster' ? cluster_url : metadata_url,
       cluster_file: cluster_url,
-      cluster_name: cluster_group.name
+      cluster_name: set_cluster_name(study, cluster_group, annotation_name, annotation_scope)
     }
     raw_matrix = ClusterVizService.raw_matrix_for_cluster_cells(study, cluster_group)
     de_params[:matrix_file_path] = raw_matrix.gs_url
@@ -287,6 +287,21 @@ class DifferentialExpressionService
     ALLOWED_ANNOTS =~ name && EXCLUDED_ANNOTS !~ name
   end
 
+  # determine if the requested cluster/annotation has an existing result object
+  # used for setting cluster name or in pairwise DE when merging in new results
+  #
+  # * *params*
+  #   - +study+            (Study) => Study in which results exist
+  #   - +cluster_group+    (ClusterGroup) => Clustering object to source name/file from
+  #   - +annotation_name+  (String) => Name of requested annotation
+  #   - +annotation_scope+ (String) => Scope of requested annotation ('study' or 'cluster')
+  #
+  # * *returns*
+  #   - (DifferentialExpressionResult, nil)
+  def self.find_existing_result(study, cluster_group, annotation_name, annotation_scope)
+    DifferentialExpressionResult.find_by(study:, cluster_group:, annotation_name:, annotation_scope:)
+  end
+
   # determine if a study already has DE results for an annotation, taking scope into account
   # cluster-based annotations must match to the specified cluster in the annotation object
   # for study-wide annotations, return true if any results exist, regardless of cluster as this indicates that DE
@@ -307,6 +322,21 @@ class DifferentialExpressionService
       :annotation_name => annotation[:annotation_name],
       :annotation_scope => annotation[:annotation_scope]
     ).exists?
+  end
+
+  # helper to set cluster_name when existing results are present
+  # this prevents result file URLs breaking because the cluster has been renamed at some point
+  #
+  # * *params*
+  #   - +study+            (Study) => Study in which results exist
+  #   - +cluster_group+    (ClusterGroup) => Clustering object to source name/file from
+  #   - +annotation_name+  (String) => Name of requested annotation
+  #   - +annotation_scope+ (String) => Scope of requested annotation ('study' or 'cluster')
+  #
+  # * *returns*
+  #   - (String)
+  def self.set_cluster_name(study, cluster_group, annotation_name, annotation_scope)
+    find_existing_result(study, cluster_group, annotation_name, annotation_scope)&.cluster_name || cluster_group.name
   end
 
   # determine if a study meets the requirements for differential expression:
