@@ -12,7 +12,7 @@ THIS_DIR="$(cd "$(dirname -- "$0")"; pwd)"
 
 function main {
   # defaults
-  SSH_USER="jenkins"
+  SSH_USER="ubuntu"
   DESTINATION_BASE_DIR='/home/jenkins/deployments/single_cell_portal_core'
   GIT_BRANCH="main"
   PASSENGER_APP_ENV="production"
