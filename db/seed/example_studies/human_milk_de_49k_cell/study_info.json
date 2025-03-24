@@ -1,15 +1,15 @@
 {
   "study": {
-    "name": "Human milk - differential expression",
+    "name": "Human milk - differential expression Mar 2025 update",
     "description": "(Based on SCP1671) Human breast milk is a dynamic fluid that contains millions of cells, but their identities and phenotypic properties are poorly understood. We used single-cell RNA-seq (scRNA-seq) to characterize the transcriptomes of cells from human breast milk (hBM) across lactational time from 3 to 632 days postpartum in 15 donors. We find that the majority of cells in human breast milk are lactocytes, a specialized epithelial subset, and cell type frequencies shift over the course of lactation yielding greater epithelial diversity at later points. Analysis of lactocytes reveals a continuum of cell states characterized by transcriptional changes in hormone, growth factor, and milk production related pathways. Generalized additive models suggest that one sub-cluster, LC1 epithelial cells, increase as a function of time postpartum, daycare attendance, and the use of hormonal birth control. We identify several sub-clusters of macrophages in hBM that are enriched for tolerogenic functions, possibly playing a role in protecting the mammary gland during lactation. Our description of the cellular components of breast milk, their association with maternal-infant dyad metadata and quantification of alterations at the gene and pathways levels provides the first detailed longitudinal picture of human breast milk cells across lactational time. This work paves the way for future investigations of how a potential division of cellular labor and differential hormone regulation might be leveraged therapeutically to support healthy lactation and potentially aid in milk production.",
     "data_dir": "test"
   },
   "files": [
     {
       "type": "Metadata",
-      "filename": "MIT_milk_study_metadata.csv.gz",
+      "filename": "MIT_milk_study_metadata_Mar2025update.csv.gz",
       "use_metadata_convention": true,
-      "bucket_url": "gs://broad-singlecellportal-public/test/studies/SCP1671/MIT_milk_study_metadata.csv.gz"
+      "bucket_url": "gs://broad-singlecellportal-public/test/studies/SCP1671/MIT_milk_study_metadata_Mar2025update.csv.gz"
     },
     {
       "type": "Expression Matrix",
