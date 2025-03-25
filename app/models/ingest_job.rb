@@ -739,7 +739,7 @@ class IngestJob
   def create_differential_expression_results
     annotation_identifier = "#{params_object.annotation_name}--group--#{params_object.annotation_scope}"
     cluster = params_object.cluster_group
-    Rails.logger.info "Creating differential expression result object for #{annotation_identifier}" \
+    Rails.logger.info "Creating differential expression result object for #{annotation_identifier} " \
                         "(cluster: #{cluster.name} in #{study.accession})"
     matrix_url = params_object.matrix_file_path
     bucket_path = matrix_url.split("gs://#{study.bucket_id}/").last
