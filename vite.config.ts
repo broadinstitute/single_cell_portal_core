@@ -60,6 +60,7 @@ export default defineConfig({
       'host': '127.0.0.1',
       'protocol': 'ws',
       'timeout': 1.0
-    }
+    },
+    'allowedHosts' : ['vite'] // required for running inside docker-compose
   }
 })

@@ -111,7 +111,7 @@ export function findBundleChildren(file, files) {
       f.study_file_bundle_id
     ]
     return parentFields.includes(file._id) ||
-      file.study_file_bundle_id && parentFields.includes(file.study_file_bundle_id)
+      file.study_file_bundle_id && parentFields.includes(file.study_file_bundle_id) && f._id !== file._id
   })
 }
 

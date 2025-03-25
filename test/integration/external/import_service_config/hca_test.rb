@@ -153,10 +153,10 @@ module ImportServiceConfig
       skip_if_api_down
       study_name = '1-3-million-brain-cells-from-e18-mice'
       access_url = @configuration.file_access_info
-      file_mock = MiniTest::Mock.new
+      file_mock = ::Minitest::Mock.new
       file_mock.expect :generation, '123456789'
       # for study to save, we need to mock all Terra orchestration API calls for creating workspace & setting acls
-      fc_client_mock = Minitest::Mock.new
+      fc_client_mock = ::Minitest::Mock.new
       owner_group = { groupEmail: 'sa-owner-group@firecloud.org' }.with_indifferent_access
       assign_workspace_mock!(fc_client_mock, owner_group, study_name)
       AdminConfiguration.stub :find_or_create_ws_user_group!, owner_group do

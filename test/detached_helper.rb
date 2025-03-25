@@ -25,7 +25,7 @@ def generate_signed_urls_mock(study_files, parent_study: nil)
 end
 
 # adds :get_workspace_file to array of mock expects - useful for testing a user clicking download link
-def generate_download_file_mock(study_files, parent_study: nil, private: false)
+def generate_download_file_mock(study_files, parent_study: nil)
   download_file_mock = Minitest::Mock.new
   study_files.each do |file|
     assign_get_file_mock!(download_file_mock)
@@ -39,11 +39,12 @@ def assign_url_mock!(mock, study_file, parent_study: nil)
   location = study_file.try(:bucket_location) || study_file
   mock_signed_url = "https://www.googleapis.com/storage/v1/b/#{study.bucket_id}/#{location}?"
   params = []
+  expires = { expires: Integer }
   ValidationTools::SIGNED_URL_KEYS.each do |param|
     params << "#{param}=#{SecureRandom.uuid}"
   end
   mock_signed_url += params.join('&')
-  mock.expect :execute_gcloud_method, mock_signed_url, [:generate_signed_url, 0, String, String, Hash]
+  mock.expect :execute_gcloud_method, mock_signed_url, [:generate_signed_url, 0, String, String], **expires
 end
 
 def assign_get_file_mock!(mock)

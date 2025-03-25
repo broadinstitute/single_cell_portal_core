@@ -323,7 +323,7 @@ export const RAW_COUNTS_MTX_FILE = {
     ''
   ],
   'status': 'uploaded',
-  'study_file_bundle_id': 'null',
+  'study_file_bundle_id': '618bd61acc7ba038ac7cb091',
   'study_id': {
     '$oid': '60a2b9f4cc7ba082358b5448'
   },
@@ -368,7 +368,7 @@ export const BARCODES_FILE = {
   remote_location: '',
   spatial_cluster_associations: [''],
   status: 'uploaded',
-  study_file_bundle_id: { $oid: '618bd61acc7ba038ac7cb091' },
+  study_file_bundle_id: '618bd61acc7ba038ac7cb091',
   study_id: { $oid: '618aacbfcc7ba038ac7cb00f' },
   taxon_id: null,
   updated_at: '2021-11-10T09:24:57.640-05:00',
@@ -408,7 +408,7 @@ export const FEATURES_FILE = {
   remote_location: '',
   spatial_cluster_associations: [''],
   status: 'uploaded',
-  study_file_bundle_id: { $oid: '618bd61acc7ba038ac7cb091' },
+  study_file_bundle_id: '618bd61acc7ba038ac7cb091',
   study_id: { $oid: '618aacbfcc7ba038ac7cb00f' },
   taxon_id: null,
   updated_at: '2021-11-10T09:24:57.640-05:00',
@@ -428,6 +428,70 @@ export const FEATURES_FILE = {
   z_axis_max: null,
   z_axis_min: null,
   _id: { $oid: '618bd61acc7ba038ac22334' }
+}
+
+export const BED_FILE =   {
+  _id: { $oid: "668360b1fb648e9c7c7d3380" },
+  parse_status: "unparsed",
+  x_axis_label: "",
+  y_axis_label: "",
+  z_axis_label: "",
+  spatial_cluster_associations: [""],
+  remote_location: "pbmc_3k_atac_fragments.possorted.bed.gz",
+  options: { upload_trigger: "bucket" },
+  study_id: { $oid: "66835832771a5b0202fcfeae" },
+  human_data: false,
+  use_metadata_convention: false,
+  is_spatial: false,
+  queued_for_deletion: false,
+  taxon_id: { $oid: '604009b7cc7ba03e1b277a38' },
+  genome_assembly_id: { $oid: '604009b7cc7ba03e1b277a39' },
+  name: "pbmc_3k_atac_fragments.possorted.bed.gz",
+  description: "",
+  file_type: "BED",
+  human_fastq_url: "",
+  data_dir: "b2695100728ad64155d462d59e57bfd7c2200e979114dbc534c17866b935067f",
+  status: "uploaded",
+  upload_file_name: "pbmc_3k_atac_fragments.possorted.bed.gz",
+  upload_content_type: "application/x-gzip",
+  upload_file_size: 539109524,
+  generation: "1719884843494138",
+  updated_at: "2024-07-02T02:07:19.309Z",
+  created_at: "2024-07-02T02:07:07.182Z",
+  version: 2,
+  study_file_bundle_id: "668360d7771a5b0202fcff56",
+  is_complete: true
+}
+
+export const BED_INDEX_FILE = {
+  _id: { $oid: "668360bdb51a86c2885fd5e6" },
+  parse_status: "unparsed",
+  x_axis_label: "",
+  y_axis_label: "",
+  z_axis_label: "",
+  spatial_cluster_associations: [""],
+  remote_location: "pbmc_3k_atac_fragments.possorted.bed.gz.tbi",
+  options: { upload_trigger: "bucket", bed_id: "668360b1fb648e9c7c7d3380" },
+  study_id: { $oid: "66835832771a5b0202fcfeae" },
+  human_data: false,
+  use_metadata_convention: false,
+  is_spatial: false,
+  queued_for_deletion: false,
+  name: "pbmc_3k_atac_fragments.possorted.bed.gz",
+  description: "",
+  file_type: "Tab Index",
+  human_fastq_url: "",
+  data_dir: "b2695100728ad64155d462d59e57bfd7c2200e979114dbc534c17866b935067f",
+  status: "uploaded",
+  upload_file_name: "pbmc_3k_atac_fragments.possorted.bed.gz.tbi",
+  upload_content_type: null,
+  upload_file_size: 645077,
+  generation: "1719884679213326",
+  updated_at: "2024-07-02T02:07:19.316Z",
+  created_at: "2024-07-02T02:07:19.287Z",
+  version: 2,
+  study_file_bundle_id: "668360d7771a5b0202fcff56",
+  is_complete: true
 }
 
 export const IMAGE_FILE = {

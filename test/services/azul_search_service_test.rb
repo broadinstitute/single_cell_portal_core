@@ -55,10 +55,10 @@ class AzulSearchServiceTest < ActiveSupport::TestCase
   end
 
   test 'should search Azul using facets' do
-    mock = MiniTest::Mock.new
+    mock = Minitest::Mock.new
     mock.expect :format_query_from_facets, @mock_facet_query, [@facets]
     mock.expect :merge_query_objects, @mock_facet_query, [@mock_facet_query, nil]
-    mock.expect :projects, @human_tcell_response, [{ query: @mock_facet_query }]
+    mock.expect :projects, @human_tcell_response, [], query: @mock_facet_query
     ApplicationController.stub :hca_azul_client, mock do
       results = AzulSearchService.get_results(selected_facets: @facets, terms: nil)
       mock.verify
@@ -83,10 +83,10 @@ class AzulSearchServiceTest < ActiveSupport::TestCase
       }.with_indifferent_access
     ]
     mock_age_query = { organismAgeRange: { within: [[31557600, 157788000]] } }
-    mock = MiniTest::Mock.new
+    mock = Minitest::Mock.new
     mock.expect :format_query_from_facets, mock_age_query, [facets]
     mock.expect :merge_query_objects, mock_age_query, [mock_age_query, nil]
-    mock.expect :projects, @human_thymus_response, [{ query: mock_age_query }]
+    mock.expect :projects, @human_thymus_response, [], query: mock_age_query
     ApplicationController.stub :hca_azul_client, mock do
       results = AzulSearchService.get_results(selected_facets: facets, terms: nil)
       mock.verify
@@ -101,12 +101,12 @@ class AzulSearchServiceTest < ActiveSupport::TestCase
   end
 
   test 'should search Azul using terms' do
-    mock = MiniTest::Mock.new
+    mock = Minitest::Mock.new
     mock.expect :format_query_from_facets, nil, [[]]
     mock.expect :format_facet_query_from_keyword, @terms_to_facets, [@terms]
     mock.expect :format_query_from_facets, @mock_term_query, [@terms_to_facets]
     mock.expect :merge_query_objects, @mock_term_query, [nil, @mock_term_query]
-    mock.expect :projects_by_facet, @fibrosis_response, [{ query: @mock_term_query }]
+    mock.expect :projects_by_facet, @fibrosis_response, [], query: @mock_term_query
     ApplicationController.stub :hca_azul_client, mock do
       results = AzulSearchService.get_results(selected_facets: [], terms: @terms)
       mock.verify
@@ -126,12 +126,12 @@ class AzulSearchServiceTest < ActiveSupport::TestCase
     ]
     organ_query = { organ: { is: %w[lung] } }
     merged_query = @mock_term_query.merge(organ_query).with_indifferent_access
-    mock = MiniTest::Mock.new
+    mock = Minitest::Mock.new
     mock.expect :format_query_from_facets, organ_query, [facets]
     mock.expect :format_facet_query_from_keyword, @terms_to_facets, [@terms]
     mock.expect :format_query_from_facets, @mock_term_query, [@terms_to_facets]
     mock.expect :merge_query_objects, merged_query, [organ_query, @mock_term_query]
-    mock.expect :projects_by_facet, @fibrosis_response, [{ query: merged_query }]
+    mock.expect :projects_by_facet, @fibrosis_response, [], query: merged_query
     ApplicationController.stub :hca_azul_client, mock do
       results = AzulSearchService.get_results(selected_facets: facets, terms: @terms)
       mock.verify
@@ -180,13 +180,13 @@ class AzulSearchServiceTest < ActiveSupport::TestCase
       }
     }.with_indifferent_access
     initial_results = [@study]
-    mock = MiniTest::Mock.new
+    mock = Minitest::Mock.new
     mock.expect :format_query_from_facets, @mock_facet_query, [@facets]
     mock.expect :format_facet_query_from_keyword, @terms_to_facets, [@terms]
     mock.expect :format_query_from_facets, @mock_term_query, [@terms_to_facets]
     merged_query = @mock_facet_query.merge(@mock_term_query).with_indifferent_access
     mock.expect :merge_query_objects, merged_query, [@mock_facet_query, @mock_term_query]
-    mock.expect :projects_by_facet, @fibrosis_response, [{ query: merged_query }]
+    mock.expect :projects_by_facet, @fibrosis_response, [], query: merged_query
     fibrosis_shortname = 'PulmonaryFibrosisGSE135893'
     existing_match_data = { 'numResults:scp': 2, 'numResults:total': 2 }.with_indifferent_access # test merging of data
     ApplicationController.stub :hca_azul_client, mock do
