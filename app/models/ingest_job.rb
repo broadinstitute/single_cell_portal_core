@@ -738,8 +738,9 @@ class IngestJob
   # set corresponding differential expression flags on associated annotation
   def create_differential_expression_results
     annotation_identifier = "#{params_object.annotation_name}--group--#{params_object.annotation_scope}"
-    Rails.logger.info "Creating differential expression result object for annotation: #{annotation_identifier}"
-    cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: params_object.cluster_name)
+    cluster = params_object.cluster_group
+    Rails.logger.info "Creating differential expression result object for #{annotation_identifier}" \
+                        "(cluster: #{cluster.name} in #{study.accession})"
     matrix_url = params_object.matrix_file_path
     bucket_path = matrix_url.split("gs://#{study.bucket_id}/").last
     matrix_file = StudyFile.where(
@@ -1002,7 +1003,7 @@ class IngestJob
         )
       end
     when :differential_expression
-      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: params_object.cluster_name)
+      cluster = params_object.cluster_group
       annotation_params = {
         cluster: cluster,
         annot_name: params_object.annotation_name,

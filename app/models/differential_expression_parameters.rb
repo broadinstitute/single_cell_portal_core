@@ -17,7 +17,8 @@ class DifferentialExpressionParameters
   # annotation_scope: scope of annotation (study, cluster)
   # annotation_file: source file for above annotation
   # cluster_file: clustering file with cells to use as control list for DE
-  # cluster_name: name of associated ClusterGroup object
+  # cluster_name: name of associated ClusterGroup object for use in output filenames
+  # cluster_group_id: BSON ID of ClusterGroup object for associations
   # de_type: type of differential expression calculation: 'rest' (one-vs-rest) or 'pairwise'
   # group1: first group for pairwise comparison
   # group2: second group for pairwise comparison
@@ -34,6 +35,7 @@ class DifferentialExpressionParameters
     annotation_file: nil,
     cluster_file: nil,
     cluster_name: nil,
+    cluster_group_id: nil,
     de_type: 'rest',
     group1: nil,
     group2: nil,
@@ -46,12 +48,12 @@ class DifferentialExpressionParameters
   }.freeze
 
   # values that are available as methods but not as attributes (and not passed to command line)
-  NON_ATTRIBUTE_PARAMS = %i[machine_type file_size].freeze
+  NON_ATTRIBUTE_PARAMS = %i[machine_type file_size cluster_group_id].freeze
 
   attr_accessor(*PARAM_DEFAULTS.keys)
 
   validates :annotation_name, :annotation_scope, :annotation_file, :cluster_file,
-            :cluster_name, :matrix_file_path, :matrix_file_type, presence: true
+            :cluster_name, :cluster_group_id, :matrix_file_path, :matrix_file_type, presence: true
   validates :annotation_file, :cluster_file, :matrix_file_path,
             format: { with: Parameterizable::GS_URL_REGEXP, message: 'is not a valid GS url' }
   validates :annotation_scope, inclusion: %w[cluster study]
@@ -74,5 +76,9 @@ class DifferentialExpressionParameters
     if @matrix_file_type == 'h5ad'
       self.machine_type = assign_machine_type
     end
+  end
+
+  def cluster_group
+    ClusterGroup.find(cluster_group_id)
   end
 end

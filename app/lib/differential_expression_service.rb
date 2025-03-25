@@ -134,6 +134,7 @@ class DifferentialExpressionService
     metadata_url = study_file.is_viz_anndata? ?
                      RequestUtils.data_fragment_url(study_file, 'metadata') :
                      study.metadata_file.gs_url
+    cluster_group_id = cluster_group.id
     # begin assembling parameters
     de_params = {
       annotation_name:,
@@ -143,7 +144,8 @@ class DifferentialExpressionService
       group2:,
       annotation_file: annotation_scope == 'cluster' ? cluster_url : metadata_url,
       cluster_file: cluster_url,
-      cluster_name: set_cluster_name(study, cluster_group, annotation_name, annotation_scope)
+      cluster_name: set_cluster_name(study, cluster_group, annotation_name, annotation_scope),
+      cluster_group_id:
     }
     raw_matrix = ClusterVizService.raw_matrix_for_cluster_cells(study, cluster_group)
     de_params[:matrix_file_path] = raw_matrix.gs_url
@@ -413,12 +415,15 @@ class DifferentialExpressionService
     elsif pairwise
       missing = [group1, group2] - annotation[:values]
       raise ArgumentError, "#{annotation_name} does not contain '#{missing.join(', ')}'" if missing.any?
+
       cell_count = {
-        "#{group1}" => cells_by_label[group1].count,
-        "#{group2}" => cells_by_label[group2].count
+        group1.to_s => cells_by_label[group1]&.count.to_i,
+        group2.to_s => cells_by_label[group2]&.count.to_i
       }.keep_if { |_, c| c < 2 }
-      raise ArgumentError,
-            "#{cell_count.keys.join(', ')} does not have enough cells represented in #{identifier}" if cell_count.any?
+      if cell_count.any?
+        raise ArgumentError, "#{cell_count.keys.join(', ')} does not have enough cells represented in #{identifier} " \
+          "for #{cluster_group.name}"
+      end
     end
   end
 
