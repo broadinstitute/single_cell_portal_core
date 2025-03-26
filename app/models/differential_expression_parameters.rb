@@ -41,6 +41,7 @@ class DifferentialExpressionParameters
     group2: nil,
     matrix_file_path: nil,
     matrix_file_type: nil,
+    matrix_file_id: nil,
     gene_file: nil,
     barcode_file: nil,
     machine_type: 'n2d-highmem-8',
@@ -48,12 +49,12 @@ class DifferentialExpressionParameters
   }.freeze
 
   # values that are available as methods but not as attributes (and not passed to command line)
-  NON_ATTRIBUTE_PARAMS = %i[machine_type file_size cluster_group_id].freeze
+  NON_ATTRIBUTE_PARAMS = %i[machine_type file_size cluster_group_id matrix_file_id].freeze
 
   attr_accessor(*PARAM_DEFAULTS.keys)
 
-  validates :annotation_name, :annotation_scope, :annotation_file, :cluster_file,
-            :cluster_name, :cluster_group_id, :matrix_file_path, :matrix_file_type, presence: true
+  validates :annotation_name, :annotation_scope, :annotation_file, :cluster_file, :cluster_name, :cluster_group_id,
+            :matrix_file_path, :matrix_file_type, :matrix_file_id, presence: true
   validates :annotation_file, :cluster_file, :matrix_file_path,
             format: { with: Parameterizable::GS_URL_REGEXP, message: 'is not a valid GS url' }
   validates :annotation_scope, inclusion: %w[cluster study]
@@ -80,5 +81,9 @@ class DifferentialExpressionParameters
 
   def cluster_group
     ClusterGroup.find(cluster_group_id)
+  end
+
+  def matrix_file
+    StudyFile.find(matrix_file_id)
   end
 end

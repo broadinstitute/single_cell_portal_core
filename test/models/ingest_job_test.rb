@@ -880,7 +880,7 @@ class IngestJobTest < ActiveSupport::TestCase
     params_object = DifferentialExpressionParameters.new(
       matrix_file_path: "gs://#{bucket}/matrix.h5ad", matrix_file_type: 'h5ad', file_size: study_file.upload_file_size,
       annotation_file:, cluster_file:, cluster_name: 'umap', annotation_name: 'disease', annotation_scope: 'study',
-      cluster_group_id: BSON::ObjectId.new
+      cluster_group_id: BSON::ObjectId.new, matrix_file_id: study_file.id
     )
     pipeline_name = SecureRandom.uuid
     study_file.update(parse_status: 'parsing')
@@ -1080,7 +1080,7 @@ class IngestJobTest < ActiveSupport::TestCase
     # one vs rest test
     one_vs_rest = DifferentialExpressionParameters.new(
       annotation_name: 'cell_type__ontology_label', annotation_scope: 'study', cluster_name: 'cluster_diffexp.txt',
-      matrix_file_path: "gs://#{study.bucket_id}/raw.txt", cluster_group_id: cluster_group.id
+      matrix_file_path: "gs://#{study.bucket_id}/raw.txt", cluster_group_id: cluster_group.id, matrix_file_id: matrix.id
     )
     job = IngestJob.new(study:, study_file: cluster_file, action: :differential_expression, params_object: one_vs_rest)
     job.create_differential_expression_results
@@ -1096,7 +1096,7 @@ class IngestJobTest < ActiveSupport::TestCase
     pairwise = DifferentialExpressionParameters.new(
       annotation_name: 'cell_type__ontology_label', annotation_scope: 'study', cluster_name: 'cluster_diffexp.txt',
       matrix_file_path: "gs://#{study.bucket_id}/raw.txt", de_type: 'pairwise', group1: 'B cell', group2: 'T cell',
-      cluster_group_id: cluster_group.id
+      cluster_group_id: cluster_group.id, matrix_file_id: matrix.id
     )
     job = IngestJob.new(study:, study_file: cluster_file, action: :differential_expression, params_object: pairwise)
     job.create_differential_expression_results

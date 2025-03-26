@@ -149,6 +149,7 @@ class DifferentialExpressionService
     }
     raw_matrix = ClusterVizService.raw_matrix_for_cluster_cells(study, cluster_group)
     de_params[:matrix_file_path] = raw_matrix.gs_url
+    de_params[:matrix_file_id] = raw_matrix.id
     if raw_matrix.file_type == 'MM Coordinate Matrix'
       de_params[:matrix_file_type] = 'mtx'
       # we know bundle exists and is completed as :raw_matrix_for_cluster_cells will throw an exception if it isn't

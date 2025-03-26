@@ -739,13 +739,9 @@ class IngestJob
   def create_differential_expression_results
     annotation_identifier = "#{params_object.annotation_name}--group--#{params_object.annotation_scope}"
     cluster = params_object.cluster_group
+    matrix_file = params_object.matrix_file
     Rails.logger.info "Creating differential expression result object for #{annotation_identifier} " \
                         "(cluster: #{cluster.name} in #{study.accession})"
-    matrix_url = params_object.matrix_file_path
-    bucket_path = matrix_url.split("gs://#{study.bucket_id}/").last
-    matrix_file = StudyFile.where(
-      study:, :upload_file_name.in => [bucket_path, bucket_path.split('/').last]
-    ).detect(&:is_raw_counts_file?)
     de_result = DifferentialExpressionService.find_existing_result(
       study, cluster, params_object.annotation_name, params_object.annotation_scope
     ) || DifferentialExpressionResult.new(

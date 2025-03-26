@@ -117,14 +117,17 @@ class BatchApiClientTest < ActiveSupport::TestCase
   test 'should create and submit DE Batch API job' do
     action = :differential_expression
     bucket_dir = "_scp_internal/anndata_ingest/#{@ann_data_study.accession}_#{@ann_data_file.id}"
+    cluster = @ann_data_study.cluster_groups.first
     anndata_options = {
       annotation_name: 'disease',
       annotation_scope: 'study',
       annotation_file: "gs://#{@ann_data_study.bucket_id}/#{bucket_dir}/h5ad_frag.metadata.tsv.gz",
       cluster_file: "gs://#{@ann_data_study.bucket_id}/#{bucket_dir}/h5ad_frag.cluster.X_umap.tsv.gz",
       cluster_name: 'umap',
+      cluster_group_id: cluster.id,
       matrix_file_path: @ann_data_file.gs_url,
       matrix_file_type: 'h5ad',
+      matrix_file_id: @ann_data_file.id,
       file_size: @ann_data_file.upload_file_size
     }
     params_object = DifferentialExpressionParameters.new(**anndata_options)

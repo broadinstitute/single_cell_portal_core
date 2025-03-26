@@ -4,6 +4,7 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
 
   before(:all) do
     cluster_group_id = BSON::ObjectId.new
+    matrix_file_id = BSON::ObjectId.new
     @dense_options = {
       annotation_name: 'Category',
       annotation_scope: 'cluster',
@@ -12,7 +13,8 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
       cluster_name: 'UMAP',
       cluster_group_id:,
       matrix_file_path: 'gs://test_bucket/dense.tsv',
-      matrix_file_type: 'dense'
+      matrix_file_type: 'dense',
+      matrix_file_id:
     }
 
     @sparse_options = {
@@ -24,6 +26,7 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
       cluster_group_id:,
       matrix_file_path: 'gs://test_bucket/sparse.tsv',
       matrix_file_type: 'mtx',
+      matrix_file_id:,
       gene_file: 'gs://test_bucket/genes.tsv',
       barcode_file: 'gs://test_bucket/barcodes.tsv'
     }
@@ -37,6 +40,7 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
       cluster_group_id:,
       matrix_file_path: 'gs://test_bucket/matrix.h5ad',
       matrix_file_type: 'h5ad',
+      matrix_file_id:,
       file_size: 10.gigabytes
     }
 
@@ -51,7 +55,8 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
       cluster_name: 'UMAP',
       cluster_group_id:,
       matrix_file_path: 'gs://test_bucket/dense.tsv',
-      matrix_file_type: 'dense'
+      matrix_file_type: 'dense',
+      matrix_file_id:
     }
   end
 
@@ -150,12 +155,22 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
     assert_not_includes dense_params.attributes, :machine_type
   end
 
-  test 'should find cluster group' do
+  test 'should find cluster group and matrix file' do
     user = FactoryBot.create(:user, test_array: @@users_to_clean)
     study = FactoryBot.create(:detached_study,
                               name_prefix: 'DifferentialExpressionParameters Test',
                               user:,
                               test_array: @@studies_to_clean)
+    raw_matrix = FactoryBot.create(:expression_file,
+                                   name: 'raw.txt',
+                                   study:,
+                                   expression_file_info: {
+                                     is_raw_counts: true,
+                                     units: 'raw counts',
+                                     library_preparation_protocol: 'Drop-seq',
+                                     biosample_input_type: 'Whole cell',
+                                     modality: 'Proteomic'
+                                   })
 
     cells = %w[A B C D E]
     cluster_file = FactoryBot.create(:cluster_file,
@@ -175,9 +190,11 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
       cluster_name: 'cluster_diffexp.tsv',
       cluster_group_id: cluster_group.id,
       matrix_file_path: 'gs://test_bucket/dense.tsv',
-      matrix_file_type: 'dense'
+      matrix_file_type: 'dense',
+      matrix_file_id: raw_matrix.id
     }
     de_params = DifferentialExpressionParameters.new(params)
     assert_equal cluster_group, de_params.cluster_group
+    assert_equal raw_matrix, de_params.matrix_file
   end
 end
