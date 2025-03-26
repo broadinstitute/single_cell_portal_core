@@ -24,6 +24,7 @@ class DifferentialExpressionParameters
   # group2: second group for pairwise comparison
   # matrix_file_path: raw counts matrix with source expression data
   # matrix_file_type: type of raw counts matrix (dense, sparse)
+  # matrix_file_id: BSON ID of raw matrix StudyFile for associations
   # gene_file (optional): genes/features file for sparse matrix
   # barcode_file (optional): barcodes file for sparse matrix
   # machine_type (optional): override for default ingest machine type (uses 'n2d-highmem-8')
