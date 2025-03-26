@@ -134,7 +134,7 @@ class IngestJobTest < ActiveSupport::TestCase
     )
 
     4.times { mock.expect :get_job, dummy_job, [pipeline_name] }
-    mock.expect :get_job_resources, vm_info, [{ job: dummy_job }]
+    mock.expect :get_job_resources, vm_info, [], job: dummy_job
     mock.expect :exit_code_from_task, 0, [pipeline_name]
 
     cells = study.expression_matrix_cells(study_file)
@@ -196,7 +196,7 @@ class IngestJobTest < ActiveSupport::TestCase
     )
 
     4.times { mock.expect :get_job, failed_job, [failed_pipeline] }
-    mock.expect :get_job_resources, vm_info, [{ job: failed_job }]
+    mock.expect :get_job_resources, vm_info, [], job: failed_job
     mock.expect :exit_code_from_task, 1, [failed_pipeline]
 
     ApplicationController.stub :batch_api_client, mock do
@@ -268,7 +268,7 @@ class IngestJobTest < ActiveSupport::TestCase
       )
     )
     4.times { mock.expect :get_job, mock_job, [job_name] }
-    mock.expect :get_job_resources, vm_info, [{job: mock_job}]
+    mock.expect :get_job_resources, vm_info, [], job: mock_job
     mock.expect :exit_code_from_task, 0, [job_name]
 
     ApplicationController.stub :batch_api_client, mock do
@@ -322,7 +322,7 @@ class IngestJobTest < ActiveSupport::TestCase
       )
     )
     4.times { mock.expect :get_job, mock_job, [reference_pipeline] }
-    mock.expect :get_job_resources, vm_info, [{job: mock_job}]
+    mock.expect :get_job_resources, vm_info, [], job: mock_job
     mock.expect :exit_code_from_task, 0, [reference_pipeline]
 
     ApplicationController.stub :batch_api_client, mock do
@@ -391,7 +391,7 @@ class IngestJobTest < ActiveSupport::TestCase
     mock = Minitest::Mock.new
     mock.expect :list_jobs, list_mock
     mock.expect :job_done?, true, [dummy_job]
-    3.times { mock.expect :get_job_command_line, mock_commands, [{ job: dummy_job }] }
+    3.times { mock.expect :get_job_command_line, mock_commands, [], job: dummy_job }
     2.times { mock.expect :job_error, false, [pipeline_name] }
 
     ApplicationController.stub :batch_api_client, mock do
@@ -519,7 +519,7 @@ class IngestJobTest < ActiveSupport::TestCase
     mock.expect :list_jobs, list_mock
     mock.expect :job_done?, true, [dummy_job]
     mock.expect :exit_code_from_task, 65, [pipeline_name]
-    4.times { mock.expect :get_job_command_line, mock_commands, [{ job: dummy_job }] }
+    4.times { mock.expect :get_job_command_line, mock_commands, [], job: dummy_job }
     3.times { mock.expect :job_error, job_error, [pipeline_name] }
     ApplicationController.stub :batch_api_client, mock do
       cell_metadata_file = RequestUtils.data_fragment_url(ann_data_file, 'metadata')
@@ -745,7 +745,7 @@ class IngestJobTest < ActiveSupport::TestCase
 
     batch_mock = Minitest::Mock.new
     batch_mock.expect :get_job, Google::Apis::BatchV1::Job, [pipeline_name]
-    batch_mock.expect :get_job_command_line, %w[foo bar bing baz], [{job: Google::Apis::BatchV1::Job}]
+    batch_mock.expect :get_job_command_line, %w[foo bar bing baz], [], job: Google::Apis::BatchV1::Job
     ApplicationController.stub :firecloud_client, mock do
       ApplicationController.stub :batch_api_client, batch_mock do
         job.handle_ingest_failure('parse failure')
@@ -767,7 +767,7 @@ class IngestJobTest < ActiveSupport::TestCase
     )
     pipeline_name = SecureRandom.uuid
     failed_job = IngestJob.new(
-      pipeline_name: , study:, study_file: failed_file, user: @user, action: :ingest_cluster
+      pipeline_name:, study:, study_file: failed_file, user: @user, action: :ingest_cluster
     )
     error_log = "parse_logs/#{failed_file.id}/user_log.txt"
     mock = Minitest::Mock.new
@@ -785,7 +785,7 @@ class IngestJobTest < ActiveSupport::TestCase
 
     batch_mock = Minitest::Mock.new
     batch_mock.expect :get_job, Google::Apis::BatchV1::Job, [pipeline_name]
-    batch_mock.expect :get_job_command_line, %w[foo bar bing baz], [{job: Google::Apis::BatchV1::Job}]
+    batch_mock.expect :get_job_command_line, %w[foo bar bing baz], [], job: Google::Apis::BatchV1::Job
     ApplicationController.stub :firecloud_client, mock do
       ApplicationController.stub :batch_api_client, batch_mock do
         failed_job.handle_ingest_failure('parse failure')
@@ -909,8 +909,8 @@ class IngestJobTest < ActiveSupport::TestCase
     }.with_indifferent_access
 
     mock = Minitest::Mock.new
-    mock.expect :get_job_resources, vm_info, [{ job: dummy_job }]
-    mock.expect :get_job_command_line, mock_commands, [{ job: dummy_job }]
+    mock.expect :get_job_resources, vm_info, [], job: dummy_job
+    mock.expect :get_job_command_line, mock_commands, [], job: dummy_job
     12.times { mock.expect :get_job, dummy_job, [pipeline_name] }
     2.times { mock.expect :exit_code_from_task, 1, [pipeline_name] }
 
@@ -979,8 +979,8 @@ class IngestJobTest < ActiveSupport::TestCase
     # must mock batch_api_client getting pipeline metadata
     client_mock = Minitest::Mock.new
     4.times { client_mock.expect :exit_code_from_task, 137, [pipeline_name] }
-    client_mock.expect :get_job_resources, vm_info, [{job: dummy_job}]
-    client_mock.expect :get_job_command_line, commands, [{ job: dummy_job }]
+    client_mock.expect :get_job_resources, vm_info, [], job: dummy_job
+    client_mock.expect :get_job_command_line, commands, [], job: dummy_job
     # new pipeline mock is resubmitted job with larger machine_type
     new_pipeline = Minitest::Mock.new
     new_op = Google::Apis::BatchV1::Job.new(

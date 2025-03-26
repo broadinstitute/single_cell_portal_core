@@ -1,4 +1,5 @@
 require 'simplecov_helper'
+require 'rest_client_helper'
 
 ENV['RAILS_ENV'] ||= 'test'
 require_relative '../config/environment'

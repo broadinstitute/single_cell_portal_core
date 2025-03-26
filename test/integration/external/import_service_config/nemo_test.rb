@@ -156,10 +156,10 @@ module ImportServiceConfig
     test 'should import all from service' do
       access_url = 'https://data.nemoarchive.org/other/grant/u01_lein/lein/transcriptome/sncell/10x_v3/human/' \
                    'processed/counts/human_var_scVI_VLMC.h5ad.tar'
-      file_mock = MiniTest::Mock.new
+      file_mock = ::Minitest::Mock.new
       file_mock.expect :generation, '123456789'
       # for study to save, we need to mock all Terra orchestration API calls for creating workspace & setting acls
-      fc_client_mock = Minitest::Mock.new
+      fc_client_mock = ::Minitest::Mock.new
       owner_group = { groupEmail: 'sa-owner-group@firecloud.org' }.with_indifferent_access
       assign_workspace_mock!(fc_client_mock, owner_group, 'human-variation-study-10x-gru')
       AdminConfiguration.stub :find_or_create_ws_user_group!, owner_group do

@@ -123,7 +123,7 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
         public_mock.verify
       end
 
-      private_mock = generate_download_file_mock([file], private: true)
+      private_mock = generate_download_file_mock([file])
       ApplicationController.stub :firecloud_client, private_mock do
         # set to private, validate study owner/admin can still access
         # note that download_file_path and download_private_file_path both resolve to the same method and enforce the same

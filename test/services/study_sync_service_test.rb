@@ -97,7 +97,7 @@ class StudySyncServiceTest < ActiveSupport::TestCase
     gzipped_bytes = StringIO.new(StudyFile::GZIP_MAGIC_NUMBER)
     mock.expect(:name, 'cluster_1.txt')
     mock.expect(:content_type, 'text/plain')
-    mock.expect(:download, gzipped_bytes, [{ range: 0..1, skip_decompress: true }])
+    mock.expect(:download, gzipped_bytes, [], range: 0..1, skip_decompress: true)
     assert StudySyncService.gzipped?(mock)
     mock.verify
 
@@ -106,7 +106,7 @@ class StudySyncServiceTest < ActiveSupport::TestCase
     plain_bytes = StringIO.new('NA')
     mock.expect(:name, 'cluster_1.txt')
     mock.expect(:content_type, 'text/plain')
-    mock.expect(:download, plain_bytes, [{ range: 0..1, skip_decompress: true }])
+    mock.expect(:download, plain_bytes, [], range: 0..1, skip_decompress: true)
     assert_not StudySyncService.gzipped?(mock)
     mock.verify
   end
