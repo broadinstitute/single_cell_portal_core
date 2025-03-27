@@ -762,6 +762,7 @@ export default function DifferentialExpressionPanel({
           countsByLabelForDe={countsByLabelForDe}
           deObjects={deObjects}
           setDeFilePath={setDeFilePath}
+          isAuthorDe={isAuthorDe}
           deGroupB={deGroupB}
           setDeGroupB={setDeGroupB}
           hasOneVsRestDe={hasOneVsRestDe}
@@ -851,7 +852,7 @@ export default function DifferentialExpressionPanel({
           bucketId={bucketId}
           deFilePath={deFilePath}
           handleClear={handleClear}
-          isAuthorDe={hasPairwiseDe}
+          isAuthorDe={isAuthorDe}
           sizeMetric={sizeMetric}
           significanceMetric={significanceMetric}
           deFacets={deFacets}

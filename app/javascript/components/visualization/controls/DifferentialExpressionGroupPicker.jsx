@@ -320,7 +320,7 @@ export function PairwiseDifferentialExpressionGroupLists({
 export function PairwiseDifferentialExpressionGroupPicker({
   bucketId, clusterName, annotation, deGenes, deGroup, setDeGroup,
   setDeGenes, countsByLabelForDe, deObjects, setDeFilePath,
-  deGroupB, setDeGroupB, hasOneVsRestDe, significanceMetric
+  deGroupB, setDeGroupB, hasOneVsRestDe, significanceMetric, isAuthorDe
 }) {
   const groups = getLegendSortedLabels(countsByLabelForDe)
 
@@ -343,7 +343,6 @@ export function PairwiseDifferentialExpressionGroupPicker({
 
     setDeFilePath(deFilePath)
 
-    const isAuthorDe = true // SCP doesn't currently automatically compute pairwise DE
     const deGenes = await fetchDeGenes(bucketId, deFilePath, isAuthorDe)
     setDeGenes(deGenes)
   }
@@ -441,7 +440,6 @@ export function OneVsRestDifferentialExpressionGroupPicker({
     const deFilePath = basePath + deFileName
 
     setDeFilePath(deFilePath)
-
     const deGenes = await fetchDeGenes(bucketId, deFilePath, isAuthorDe)
 
     setDeGroup(newGroup)
