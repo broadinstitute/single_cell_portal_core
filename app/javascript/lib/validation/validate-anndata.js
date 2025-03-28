@@ -137,9 +137,15 @@ async function checkOntologyLabelsAndIds(key, ontologies, groups) {
   const rawUniques = Array.from(labelIdPairs)
 
   rawUniques.map(r => {
-    const [id, label] = r.split(' || ')
+    let [id, label] = r.split(' || ')
     const ontologyShortNameLc = id.split(/[_:]/)[0].toLowerCase()
     const ontology = ontologies[ontologyShortNameLc]
+
+    if (id.includes(':')) {
+      // Convert colon to underscore for ontology lookup
+      const idParts = id.split(':')
+      id = `${idParts[0]}_${idParts[1]}`
+    }
 
     if (!(id in ontology)) {
       // Register invalid ontology ID
