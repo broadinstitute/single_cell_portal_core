@@ -6,7 +6,8 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     @extract_params = {
       anndata_file: 'gs://bucket_id/test.h5ad',
       extract_raw_counts: true,
-      file_size: 50.gigabytes
+      file_size: 50.gigabytes,
+      raw_location: '.raw'
     }
 
     @file_id = BSON::ObjectId.new
@@ -57,7 +58,7 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     end
 
     cmd = '--ingest-anndata --anndata-file gs://bucket_id/test.h5ad --obsm-keys ["X_umap"] --extract ' \
-          '["cluster", "metadata", "processed_expression", "raw_counts"]'
+          '["cluster", "metadata", "processed_expression", "raw_counts"] --raw-location .raw'
     assert_equal cmd, extraction.to_options_array.join(' ')
     assert_equal 'n2d-highmem-32', extraction.machine_type
   end

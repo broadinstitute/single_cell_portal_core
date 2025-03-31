@@ -25,6 +25,7 @@ class DifferentialExpressionParameters
   # matrix_file_path: raw counts matrix with source expression data
   # matrix_file_type: type of raw counts matrix (dense, sparse)
   # matrix_file_id: BSON ID of raw matrix StudyFile for associations
+  # raw_location: slot in AnnData file where raw data resides (only needed for AnnData matrices)
   # gene_file (optional): genes/features file for sparse matrix
   # barcode_file (optional): barcodes file for sparse matrix
   # machine_type (optional): override for default ingest machine type (uses 'n2d-highmem-8')
@@ -43,6 +44,7 @@ class DifferentialExpressionParameters
     matrix_file_path: nil,
     matrix_file_type: nil,
     matrix_file_id: nil,
+    raw_location: nil,
     gene_file: nil,
     barcode_file: nil,
     machine_type: 'n2d-highmem-8',
@@ -62,6 +64,7 @@ class DifferentialExpressionParameters
   validates :de_type, inclusion: %w[rest pairwise]
   validates :group1, :group2, presence: true, if: -> { de_type == 'pairwise' }
   validates :matrix_file_type, inclusion: %w[dense mtx h5ad]
+  validates :raw_location, presence: true, if: -> { matrix_file_type == 'h5ad' }
   validates :machine_type, inclusion: Parameterizable::GCE_MACHINE_TYPES
   validates :gene_file, :barcode_file,
             presence: true,

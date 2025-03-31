@@ -161,6 +161,7 @@ class DifferentialExpressionService
     elsif raw_matrix.file_type == 'AnnData'
       de_params[:matrix_file_type] = 'h5ad'
       de_params[:file_size] = raw_matrix.upload_file_size
+      de_params[:raw_location] = raw_matrix.ann_data_file_info.raw_location
     else
       de_params[:matrix_file_type] = 'dense'
     end

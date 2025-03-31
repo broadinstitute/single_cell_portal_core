@@ -19,6 +19,9 @@ const RAW_COUNTS_REQUIRED_FIELDS = REQUIRED_FIELDS.concat([{
 const PROCESSED_ASSOCIATION_FIELD = [
   { label: 'Associated raw counts files', propertyName: 'expression_file_info.raw_counts_associations' }
 ]
+const RAW_LOCATION_FIELD = [
+  { label: 'Raw count data location', propertyName: 'raw_location' },
+]
 
 /** renders a form for editing/uploading an expression file (raw or processed) and any bundle children */
 export default function ExpressionFileForm({
@@ -48,6 +51,10 @@ export default function ExpressionFileForm({
   const rawCountsRequired = featureFlagState && featureFlagState.raw_counts_required_frontend && !isAnnDataExperience
   if (rawCountsRequired && !isRawCountsFile ) {
     requiredFields = requiredFields.concat(PROCESSED_ASSOCIATION_FIELD)
+  }
+  const requireLocation = (rawCountsRequired || isRawCountsFile) && isAnnDataExperience
+  if (requireLocation) {
+    requiredFields = requiredFields.concat(RAW_LOCATION_FIELD)
   }
   const validationMessages = validateFile({ file, allFiles, allowedFileExts, requiredFields, isAnnDataExperience })
 
@@ -123,13 +130,13 @@ export default function ExpressionFileForm({
     { isAnnDataExperience &&
       <div className="row">
         <div className="form-radio col-sm-4">
-          <label className="labeled-select">I have raw count data in the <strong>adata.raw</strong> slot</label>
+          <label className="labeled-select">I have raw count data</label>
           <label className="sublabel">
             <input type="radio"
                    name={`anndata-raw-counts-${file._id}`}
                    value="true"
                    checked={isRawCountsFile}
-                   onChange={e => toggleIsRawCounts(true) } />
+                   onChange={e => toggleIsRawCounts(true)}/>
             &nbsp;Yes
           </label>
           <label className="sublabel">
@@ -137,11 +144,18 @@ export default function ExpressionFileForm({
                    name={`anndata-raw-counts-${file._id}`}
                    value="false"
                    checked={!isRawCountsFile}
-                   onChange={e => toggleIsRawCounts(false) }/>
+                   onChange={e => toggleIsRawCounts(false)}/>
             &nbsp;No
           </label>
         </div>
-        {showRawCountsUnits && <div className="col-sm-8">
+        {requireLocation && <div className="col-sm-4">
+          <TextFormField label="Raw count data location *"
+                         fieldName="raw_location"
+                         file={file}
+                         updateFile={updateFile}
+                         placeholderText='Specify .raw or name of layer'/></div>
+        }
+        { showRawCountsUnits && <div className="col-sm-4">
           <ExpressionFileInfoSelect label="Units *"
                                     propertyName="units"
                                     rawOptions={fileMenuOptions.units}
