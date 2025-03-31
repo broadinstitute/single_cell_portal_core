@@ -41,6 +41,7 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
       matrix_file_path: 'gs://test_bucket/matrix.h5ad',
       matrix_file_type: 'h5ad',
       matrix_file_id:,
+      raw_location: '.raw',
       file_size: 10.gigabytes
     }
 
@@ -83,6 +84,8 @@ class DifferentialExpressionParametersTest < ActiveSupport::TestCase
     assert_equal [:machine_type, :gene_file], sparse_params.errors.attribute_names
     pairwise_params.group1 = ''
     assert_not pairwise_params.valid?
+    anndata_params.raw_location = nil
+    assert_not anndata_params.valid?
   end
 
   test 'should format differential expression parameters for python cli' do
