@@ -8,6 +8,9 @@ import ExpandableFileForm from './ExpandableFileForm'
 
 import { TextFormField } from './form-components'
 import { findBundleChildren, validateFile } from './upload-utils'
+import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons'
+import { OverlayTrigger, Popover } from 'react-bootstrap'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 const REQUIRED_FIELDS = [{ label: 'species', propertyName: 'taxon_id' },
   { label: 'Biosample input type', propertyName: 'expression_file_info.biosample_input_type' },
@@ -68,9 +71,45 @@ export default function ExpressionFileForm({
     setShowRawCountsUnits(rawCountsVal)
   }
 
+  /** create the tooltip and message for the .obsm key name section */
+  function rawSlotMessage() {
+    const rawSlotToolTip = <span>
+      <OverlayTrigger
+        trigger={['hover', 'focus']}
+        rootClose placement="top"
+        delayHide={1500}
+        overlay={rawSlotHelpContent()}>
+        <span> Raw count data location * <FontAwesomeIcon icon={faQuestionCircle}/></span>
+      </OverlayTrigger>
+    </span>
+
+    return <span >
+      {rawSlotToolTip}
+    </span>
+  }
+
+  /** gets the popup message to describe .obsm keys */
+  function rawSlotHelpContent() {
+    const layersLink = <a href="https://anndata.readthedocs.io/en/latest/generated/anndata.AnnData.layers.html"
+                          target="_blank">layers</a>
+    const rawLink = <a href="https://anndata.readthedocs.io/en/latest/generated/anndata.AnnData.raw.html"
+                                target="_blank">.raw</a>
+    return <Popover id="cluster-obsm-key-name-popover" className="tooltip-wide">
+      <div>
+        Location of raw count data in your AnnData file. This can be the raw slot ({rawLink}) or the name of a layer in
+        the {layersLink} section.
+      </div>
+    </Popover>
+  }
+
   return <ExpandableFileForm {...{
-    file, allFiles, updateFile, saveFile,
-    allowedFileExts, deleteFile, validationMessages, bucketName, isInitiallyExpanded, isAnnDataExperience
+    file,
+    allFiles,
+    updateFile,
+    saveFile,
+    allowedFileExts,
+    deleteFile,
+    validationMessages, bucketName, isInitiallyExpanded, isAnnDataExperience
   }}>
     {!isAnnDataExperience &&
     <div className="form-group">
@@ -149,7 +188,7 @@ export default function ExpressionFileForm({
           </label>
         </div>
         {requireLocation && <div className="col-sm-4">
-          <TextFormField label="Raw count data location *"
+          <TextFormField label={rawSlotMessage()}
                          fieldName="raw_location"
                          file={file}
                          updateFile={updateFile}
