@@ -85,7 +85,7 @@ class AnnDataFileInfo
       when :expression
         merged_data[:taxon_id] = fragment_form[:taxon_id]
         anndata_info_attributes[:raw_location] = merged_data.dig(:expression_file_info_attributes, :raw_location)
-        merged_data[:expression_file_info_attributes].delete(:raw_location) # prevent UnknownAttribute error
+        merged_data[:expression_file_info_attributes]&.delete(:raw_location) # prevent UnknownAttribute error
         merged_exp_fragment = fragment_form.merge(expression_file_info: merged_data[:expression_file_info_attributes])
         fragments << extract_form_fragment(merged_exp_fragment, key, *allowed_params)
       end
