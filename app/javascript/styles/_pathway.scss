@@ -22,6 +22,17 @@
   margin-right: 10px;
 }
 
+@media only screen and (max-width:1300px) {
+  .percent-bars {
+    margin-top: 0px;
+    float: inherit;
+  }
+
+  .pathway-description {
+    margin-top: 50px;
+  }
+}
+
 .percent-bar {
   width: 100px;
   height: 8px;

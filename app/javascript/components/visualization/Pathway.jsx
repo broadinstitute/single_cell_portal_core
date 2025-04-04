@@ -125,6 +125,9 @@ export default function Pathway({
     height: diagramHeight
   }
 
+  const descriptionPad = window.innerWidth <= 1300 ? 150 : 100
+  const descriptionHeight = diagramHeight - descriptionPad
+
   const GeneListPopover =
     <Popover data-analytics-name='gene-list-popover' id='gene-list-popover'>
       {naturalSort(geneList).join(', ')}
@@ -138,7 +141,7 @@ export default function Pathway({
           <ScaledMeanExpressionLegend />
           <PercentExpressingLegend />
         </div>
-        <div className="pathway-description" style={{ height: diagramHeight - 100 }}></div>
+        <div className="pathway-description" style={{ height: descriptionHeight }}></div>
         <div
           className="pathway-more-details"
           style={{ height: '65px', borderTop: '1px solid #DDD' }}
