@@ -83,6 +83,23 @@ function handleGeneNodeHover(event, geneName) {
   return ''
 }
 
+/**
+ * Set up tippy tooltips for pathway-type nodes within the pathway diagram
+ *
+ * Pathway diagrams contain various node types, e.g. for genes, metabolites,
+ * and pathways.  Pathway-type nodes are how pathway diagrams link to each
+ * other.
+ */
+function configurePathwayTooltips() {
+  document.querySelectorAll('g.Pathway').forEach(node => {
+    node.setAttribute('data-toggle', 'tooltip')
+    node.setAttribute('data-html', 'true')
+    node.setAttribute('data-original-title', 'Click to view expression in pathway')
+  })
+
+  document.removeEventListener('ideogramDrawPathway', configurePathwayTooltips)
+}
+
 /** Draw a pathway diagram with an expression overlay */
 export default function Pathway({
   studyAccession, cluster, annotation, label, pathway, dimensions,
@@ -107,27 +124,40 @@ export default function Pathway({
 
   moveDescription()
 
+  document.addEventListener('ideogramDrawPathway', configurePathwayTooltips)
+
   /** Upon clicking a pathway node, show new pathway and expression overlay */
   function handlePathwayNodeClick(event, pathwayId) {
     queryFn([pathwayId])
   }
 
+  const sourceGene = ''
+  const destGene = ''
+  const showClose = false
+  const showDefaultTooltips = false
+
   useEffect(() => {
     manageDrawPathway(studyAccession, cluster, annotation, label, labels)
-    const sourceGene = ''
-    const destGene = ''
-    const showClose = false
-    const showDefaultTooltips = false
-
-    const alreadyShowsDescription = document.querySelector('.pathway-description').innerText.length > 0
-    const showDescription = !alreadyShowsDescription
+    const showDescription = false
 
     window.Ideogram.drawPathway(
       pathwayId, sourceGene, destGene, '.pathway-diagram', pwDimensions, showClose,
       handleGeneNodeHover, handlePathwayNodeClick,
       showDescription, showDefaultTooltips
     )
-  }, [cluster, annotationId, pathway, dimensionString, label])
+  }, [cluster, annotationId, dimensionString, label])
+
+  useEffect(() => {
+    manageDrawPathway(studyAccession, cluster, annotation, label, labels)
+
+    const showDescription = true
+
+    window.Ideogram.drawPathway(
+      pathwayId, sourceGene, destGene, '.pathway-diagram', pwDimensions, showClose,
+      handleGeneNodeHover, handlePathwayNodeClick,
+      showDescription, showDefaultTooltips
+    )
+  }, [pathway])
 
   const diagramHeight = pwDimensions.height
 
