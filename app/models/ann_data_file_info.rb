@@ -18,7 +18,7 @@ class AnnDataFileInfo
       y_axis_max z_axis_min z_axis_max external_link_url external_link_title external_link_description
       parse_status spatial_cluster_associations
     ],
-    expression: %i[_id data_type taxon_id description expression_file_info y_axis_label]
+    expression: %i[_id data_type taxon_id description expression_file_info y_axis_label raw_location]
   }.freeze
 
   # required keys for data_fragments, by type
@@ -32,6 +32,8 @@ class AnnDataFileInfo
   field :has_expression, type: Boolean, default: false
   # controls whether or not to ingest data (true: should not ingest data, this is like an 'Other' file)
   field :reference_file, type: Boolean, default: true
+  # location of raw count data, either .raw attribute or in layers[{name}]
+  field :raw_location, type: String, default: ''
   # information from form about data contained inside AnnData file, such as names/descriptions
   # examples:
   # {
@@ -40,8 +42,8 @@ class AnnDataFileInfo
   # }
   # { _id: '6033f531e241391884633748', data_type: :expression, description: 'log(TMP) expression' }
   field :data_fragments, type: Array, default: []
-  before_validation :set_default_cluster_fragments!, :sanitize_fragments!
-  validate :validate_fragments
+  before_validation :set_default_cluster_fragments!, :set_raw_location!, :sanitize_fragments!
+  validate :validate_fragments, :enforce_raw_location
   after_validation :update_expression_file_info
 
   # collect data frame key_names for clustering data inside AnnData flle
@@ -82,6 +84,8 @@ class AnnDataFileInfo
         fragments << extract_form_fragment(fragment_form, key, *allowed_params)
       when :expression
         merged_data[:taxon_id] = fragment_form[:taxon_id]
+        anndata_info_attributes[:raw_location] = merged_data.dig(:expression_file_info_attributes, :raw_location)
+        merged_data[:expression_file_info_attributes]&.delete(:raw_location) # prevent UnknownAttribute error
         merged_exp_fragment = fragment_form.merge(expression_file_info: merged_data[:expression_file_info_attributes])
         fragments << extract_form_fragment(merged_exp_fragment, key, *allowed_params)
       end
@@ -151,7 +155,16 @@ class AnnDataFileInfo
     return nil if reference_file || exp_fragment.nil? || exp_info.nil?
 
     info_update = exp_fragment.with_indifferent_access[:expression_file_info]
+    info_update.delete(:raw_location) if info_update[:raw_location]
     exp_info.assign_attributes(**info_update) if info_update
+  end
+
+  # pull out raw_location from expression fragment and set as top-level attribute for ease of access
+  def set_raw_location!
+    exp_fragment = find_fragment(data_type: :expression) || fragments_by_type(:expression).first
+    return nil if reference_file || exp_fragment.nil?
+
+    self.raw_location = exp_fragment.with_indifferent_access[:raw_location]
   end
 
   # extract description field from expression fragment to use as axis label
@@ -218,7 +231,7 @@ class AnnDataFileInfo
     REQUIRED_FRAGMENT_KEYS.each do |data_type, keys|
       fragments = fragments_by_type(data_type)
       fragments.each do |fragment|
-        unset_units_in_exp_fragment(fragment) if data_type == :expression
+        unset_fields_in_exp_fragment(fragment) if data_type == :expression
         missing_keys = keys.map(&:to_s) - fragment.keys.map(&:to_s)
         missing_values = keys.select { |key| fragment[key].blank? }
         next if missing_keys.empty? && missing_values.empty?
@@ -239,9 +252,15 @@ class AnnDataFileInfo
     end
   end
 
-  # unset units in expression fragment since form data won't have value
+  def enforce_raw_location
+    if study_file.is_raw_counts_file? && !reference_file && raw_location.blank?
+      errors.add(:raw_location, 'must have a value for raw count matrices')
+    end
+  end
+
+  # unset units and raw_location in expression fragment since form data won't have value
   # element must be replaced by index in order to persist
-  def unset_units_in_exp_fragment(fragment)
+  def unset_fields_in_exp_fragment(fragment)
     exp_info = fragment[:expression_file_info]
     return nil unless exp_info
 
@@ -249,6 +268,7 @@ class AnnDataFileInfo
       exp_info.delete(:units)
       frag_idx = fragment_index_of(fragment)
       data_fragments[frag_idx][:expression_file_info] = exp_info
+      data_fragments[frag_idx][:raw_location] = ''
     end
   end
 end

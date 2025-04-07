@@ -128,6 +128,7 @@ class BatchApiClientTest < ActiveSupport::TestCase
       matrix_file_path: @ann_data_file.gs_url,
       matrix_file_type: 'h5ad',
       matrix_file_id: @ann_data_file.id,
+      raw_location: '.raw',
       file_size: @ann_data_file.upload_file_size
     }
     params_object = DifferentialExpressionParameters.new(**anndata_options)

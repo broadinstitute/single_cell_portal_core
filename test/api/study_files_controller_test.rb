@@ -324,6 +324,9 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
         expression_file_info_attributes: {
           is_raw_counts: true,
           units: 'raw counts'
+        },
+        ann_data_file_info_attributes: {
+          raw_location: '.raw'
         }
       }
     }

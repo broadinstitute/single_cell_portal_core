@@ -39,6 +39,7 @@ class AnnDataIngestParameters
     domain_ranges: nil,
     extract: %w[cluster metadata processed_expression],
     extract_raw_counts: false,
+    raw_location: nil,
     cell_metadata_file: nil,
     ingest_cell_metadata: false,
     study_accession: nil,
@@ -60,6 +61,7 @@ class AnnDataIngestParameters
             format: { with: Parameterizable::GS_URL_REGEXP, message: 'is not a valid GS url' },
             allow_blank: true
   validates :machine_type, inclusion: Parameterizable::GCE_MACHINE_TYPES
+  validates :raw_location, presence: true, if: proc { extract_raw_counts || extract.to_a.include?(:raw_counts) }
 
   def initialize(attributes = nil)
     super
