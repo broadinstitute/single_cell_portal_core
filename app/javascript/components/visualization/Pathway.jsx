@@ -96,8 +96,6 @@ function configurePathwayTooltips() {
     node.setAttribute('data-html', 'true')
     node.setAttribute('data-original-title', 'Click to view expression in pathway')
   })
-
-  document.removeEventListener('ideogramDrawPathway', configurePathwayTooltips)
 }
 
 /** Draw a pathway diagram with an expression overlay */
@@ -170,6 +168,8 @@ export default function Pathway({
 
   const GeneListPopover =
     <Popover data-analytics-name='gene-list-popover' id='gene-list-popover'>
+      Genes in this pathway:
+      <br/><br/>
       {naturalSort(geneList).join(', ')}
     </Popover>
 
@@ -185,13 +185,16 @@ export default function Pathway({
         <div
           className="pathway-more-details"
           style={{ height: '65px', borderTop: '1px solid #DDD' }}
-          onClick={() => {
-            setGeneList(window.Ideogram.getPathwayGenes)
-          }}
         >
           <OverlayTrigger trigger={['click']} placement='top' rootClose={true}
             overlay={GeneListPopover}>
-            <button className="btn terra-secondary-btn" style={{ marginTop: '10px' }}>Gene list</button>
+            <button
+              className="btn terra-secondary-btn"
+              style={{ marginTop: '10px' }}
+              onClick={() => {
+                setGeneList(window.Ideogram.getPathwayGenes)
+              }}
+            >Genes</button>
           </OverlayTrigger>
         </div>
       </div>
