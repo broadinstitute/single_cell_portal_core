@@ -99,6 +99,7 @@ function getQueryArrayFromSearchOptions(searchOptions) {
 */
 export default function StudyGeneField({ queries, queryFn, allGenes, speciesList, isLoading=false }) {
   const [inputText, setInputText] = useState('')
+  console.log('queries', queries)
 
   const rawSuggestions = getAutocompleteSuggestions(inputText, allGenes)
   const searchOptions = getSearchOptions(rawSuggestions)
@@ -106,8 +107,11 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   let enteredQueryArray = []
   if (queries) {
     const queriesSearchOptions = getSearchOptions(queries)
+    console.log('queriesSearchOptions', queriesSearchOptions)
     enteredQueryArray = getQueryArrayFromSearchOptions(queriesSearchOptions)
   }
+
+  console.log('enteredQueryArray', enteredQueryArray)
 
   /** the search control tracks two state variables
     * an array of already entered queries (queryArray),
@@ -222,6 +226,8 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   }
 
   useEffect(() => {
+    console.log('in queries useEffect, queries', queries)
+    console.log('in queries useEffect, queryArray', queryArray)
     if (queries.join(',') !== queryArray.map(opt => opt.value).join(',')) {
       // the genes have been updated elsewhere -- resync
       const queriesSearchOptions = getSearchOptions(queries)
@@ -234,6 +240,8 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
 
 
   useEffect(() => {
+    console.log('in queryArray useEffect, queries', queries)
+    console.log('in queryArray useEffect, queryArray', queryArray)
     if (
       queries.join(',') !== queryArray.map(opt => opt.label).join(',')
     ) {

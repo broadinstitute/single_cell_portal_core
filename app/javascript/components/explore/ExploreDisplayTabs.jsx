@@ -693,7 +693,7 @@ export default function ExploreDisplayTabs({
                   {... exploreParamsWithDefaults}
                   labels={getEligibleLabels(exploreParamsWithDefaults, exploreInfo)}
                   dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
-                  updateExploreParams={updateExploreParams}
+                  queryFn={queryFn}
                 />
               </div>
             }

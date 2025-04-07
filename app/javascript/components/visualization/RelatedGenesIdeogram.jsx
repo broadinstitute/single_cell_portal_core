@@ -36,7 +36,7 @@ function onClickAnnot(annot) {
   const trigger = 'click-related-genes'
   const speciesList = ideogram.SCP.speciesList
   logStudyGeneSearch([annot.name], trigger, speciesList, otherProps)
-  ideogram.SCP.searchGenes([annot.name])
+  ideogram.SCP.queryFn([annot.name])
 }
 
 /**
@@ -97,10 +97,17 @@ function conformAnalytics(props, ideogram) {
 }
 
 /** Log hover over related genes ideogram tooltip */
-function onWillShowAnnotTooltip(annot) {
+function onWillShowAnnotTooltip(annot, param2, param3) {
+  if (annot instanceof Promise) {
+    return null
+  }
+
   // Ideogram object; used to inspect ideogram state
   const ideogram = this // eslint-disable-line
-  let props = ideogram.getTooltipAnalytics(annot)
+  const resolvedAnnot = annot
+
+  console.log('resolvedAnnot', resolvedAnnot)
+  let props = window.ideogram.getTooltipAnalytics(annot)
 
   // `props` is null if it is merely analytics noise.
   // Accounts for quick moves from label to annot, or away then immediately
@@ -163,7 +170,7 @@ function onPlotRelatedGenes() {
  * This is only done in the context of single-gene search in Study Overview
  */
 export default function RelatedGenesIdeogram({
-  gene, taxon, target, genesInScope, searchGenes, speciesList,
+  gene, taxon, target, genesInScope, queryFn, speciesList,
   studyAccession, cluster, annotation
 }) {
   if (taxon === null) {
@@ -189,6 +196,7 @@ export default function RelatedGenesIdeogram({
       onPlotRelatedGenes,
       onWillShowAnnotTooltip,
       onDidShowAnnotTooltip,
+      showVariantInTooltip: false,
       showGeneStructureInTooltip: showAdvanced,
       showProteinInTooltip: showAdvanced,
       showParalogNeighborhoods: showAdvanced,
@@ -205,7 +213,7 @@ export default function RelatedGenesIdeogram({
     manageDrawPathway(studyAccession, cluster, annotation, ideogram)
 
     // Extend ideogram with custom SCP function to search genes
-    window.ideogram.SCP = { searchGenes, speciesList }
+    window.ideogram.SCP = { queryFn, speciesList }
   }, [gene])
 
   useEffect(() => {

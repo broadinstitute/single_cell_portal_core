@@ -57,6 +57,7 @@ function moveDescription() {
 
     document.removeEventListener('ideogramDrawPathway', moveDescription)
   }
+
 }
 
 /** Prepare gene-specific content for node hover tooltip */
@@ -85,7 +86,7 @@ function handleGeneNodeHover(event, geneName) {
 /** Draw a pathway diagram with an expression overlay */
 export default function Pathway({
   studyAccession, cluster, annotation, label, pathway, dimensions,
-  labels, updateExploreParams
+  labels, queryFn
 }) {
   const [geneList, setGeneList] = useState([])
 
@@ -108,14 +109,23 @@ export default function Pathway({
 
   /** Upon clicking a pathway node, show new pathway and expression overlay */
   function handlePathwayNodeClick(event, pathwayId) {
-    updateExploreParams({ pathway: pathwayId })
+    queryFn([pathwayId])
   }
 
   useEffect(() => {
     manageDrawPathway(studyAccession, cluster, annotation, label, labels)
+    const sourceGene = ''
+    const destGene = ''
+    const showClose = false
+    const showDefaultTooltips = false
+
+    const alreadyShowsDescription = document.querySelector('.pathway-description').innerText.length > 0
+    const showDescription = !alreadyShowsDescription
+
     window.Ideogram.drawPathway(
-      pathwayId, '', '', '.pathway-diagram', pwDimensions, false,
-      handleGeneNodeHover, handlePathwayNodeClick
+      pathwayId, sourceGene, destGene, '.pathway-diagram', pwDimensions, showClose,
+      handleGeneNodeHover, handlePathwayNodeClick,
+      showDescription, showDefaultTooltips
     )
   }, [cluster, annotationId, pathway, dimensionString, label])
 
