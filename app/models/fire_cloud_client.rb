@@ -534,19 +534,6 @@ class FireCloudClient
   ## WORKFLOW SUBMISSION METHODS
   ##
 
-  # get list of available FireCloud methods
-  #
-  # * *params*
-  #   - +opts+ (Hash) => hash of query parameter key/value pairs, see https://api.firecloud.org/#!/Method_Repository/listMethodRepositoryMethods for complete list
-  #
-  # * *return*
-  #   - +Array+ of methods
-  def get_methods(opts={})
-    query_params = self.merge_query_options(opts)
-    path = self.api_root + "/api/methods#{query_params}"
-    process_firecloud_request(:get, path)
-  end
-
   # get a FireCloud method object
   #
   # * *params*
@@ -559,20 +546,6 @@ class FireCloudClient
   #   - +Hash+ method object
   def get_method(namespace, method_name, snapshot_id, only_payload=false)
     path = self.api_root + "/api/methods/#{namespace}/#{method_name}/#{snapshot_id}?onlyPayload=#{only_payload}"
-    process_firecloud_request(:get, path)
-  end
-
-  # get all configurations for a FireCloud method object
-  #
-  # * *params*
-  #   - +namespace+ (String) => namespace of method
-  #   - +name+ (String) => name of method
-  #   - +snapshot_id+ (Integer) => snapshot ID of method
-  #
-  # * *return*
-  #   - +Hash+ method object
-  def get_method_configurations(namespace, method_name, snapshot_id)
-    path = self.api_root + "/api/methods/#{namespace}/#{method_name}/#{snapshot_id}/configurations"
     process_firecloud_request(:get, path)
   end
 
@@ -595,19 +568,6 @@ class FireCloudClient
     process_firecloud_request(:post, path, method_payload)
   end
 
-  # get list of available configurations from the repository
-  #
-  # * *params*
-  #   - +opts+ (Hash) => hash of query parameter key/value pairs, see https://api.firecloud.org/#!/Method_Repository/listMethodRepositoryConfigurations for complete list
-  #
-  # * *return*
-  #   - +Array+ of configurations
-  def get_configurations(opts={})
-    query_params = self.merge_query_options(opts)
-    path = self.api_root + "/api/configurations#{query_params}"
-    process_firecloud_request(:get, path)
-  end
-
   # get a FireCloud method configuration from the repository
   #
   # * *params*
@@ -620,63 +580,6 @@ class FireCloudClient
   #   - +Hash+ configuration object
   def get_configuration(namespace, name, snapshot_id, payload_as_object=false)
     path = self.api_root + "/api/configurations/#{namespace}/#{name}/#{snapshot_id}?payloadAsObject=#{payload_as_object}"
-    process_firecloud_request(:get, path)
-  end
-
-  # copy a FireCloud method configuration from the repository into a workspace
-  #
-  # * *params*
-  #   - +workspace_namespace+ (String) => namespace of workspace
-  #   - +workspace_name+ (String) => name of workspace
-  #   - +config_namespace+ (String) => namespace of source configuration
-  #   - +config_name+ (String) => name of source configuration
-  #   - +snapshot_id+ (Integer) => snapshot ID of source configuration
-  #   - +destination_namespace+ (String) => namespace of destination configuration (in workspace)
-  #   - +destination_name+ (String) => name of destination configuration (in workspace)
-  #
-  # * *return*
-  #   - +Hash+ configuration object
-  def copy_configuration_to_workspace(workspace_namespace, workspace_name, config_namespace, config_name, snapshot_id, destination_namespace, destination_name)
-    path = self.api_root + "/api/workspaces/#{uri_encode(workspace_namespace)}/#{uri_encode(workspace_name)}/method_configs/copyFromMethodRepo"
-    payload = {
-        configurationNamespace: config_namespace,
-        configurationName: config_name,
-        configurationSnapshotId: snapshot_id,
-        destinationNamespace: destination_namespace,
-        destinationName: destination_name
-    }.to_json
-    process_firecloud_request(:post, path, payload)
-  end
-
-  # create a method configuration template from a method
-  #
-  # * *params*
-  #   - +method_namespace+ (String) => namespace of method
-  #   - +method_name+ (String) => name of method
-  #   - +method_version+ (String) => version of method
-  #
-  # * *return*
-  #   - +Hash+ method configuration template
-  def create_configuration_template(method_namespace, method_name, method_version)
-    path = self.api_root + '/api/template'
-    payload = {
-        methodNamespace: method_namespace,
-        methodName: method_name,
-        methodVersion: method_version
-    }.to_json
-    process_firecloud_request(:post, path, payload)
-  end
-
-  # get a list of FireCloud method configurations in a specified workspace
-  #
-  # * *params*
-  #   - +workspace_namespace+ (String) => namespace of workspace
-  #   - +workspace_name+ (String) => name of requested workspace
-  #
-  # * *return*
-  #   - +Array+ of configuration objects
-  def get_workspace_configurations(workspace_namespace, workspace_name)
-    path = self.api_root + "/api/workspaces/#{uri_encode(workspace_namespace)}/#{uri_encode(workspace_name)}/methodconfigs"
     process_firecloud_request(:get, path)
   end
 
@@ -709,47 +612,6 @@ class FireCloudClient
     process_firecloud_request(:post, path, configuration.to_json)
   end
 
-  # update a FireCloud method configuration in a workspace
-  #
-  # * *params*
-  #   - +workspace_namespace+ (String) => namespace of workspace
-  #   - +workspace_name+ (String) => name of requested workspace
-  #   - +config_namespace+ (String) => namespace of configuration
-  #   - +config_name+ (String) => name of configuration
-  #		- +configuration+ (Hash) => configuration object (see https://api.firecloud.org/#!/Method_Configurations/updateWorkspaceMethodConfig for more info)
-  #
-  # * *return*
-  #   - +Hash+ configuration object
-  def update_workspace_configuration(workspace_namespace, workspace_name, config_namespace, config_name, configuration)
-    path = self.api_root + "/api/workspaces/#{uri_encode(workspace_namespace)}/#{uri_encode(workspace_name)}/method_configs/#{config_namespace}/#{config_name}"
-    process_firecloud_request(:post, path, configuration.to_json)
-  end
-
-  # overwrite an existing FireCloud method configuration in a workspace
-  #
-  # * *params*
-  #   - +workspace_namespace+ (String) => namespace of workspace
-  #   - +workspace_name+ (String) => name of requested workspace
-  #   - +config_namespace+ (String) => namespace of configuration
-  #   - +config_name+ (String) => name of configuration
-  #		- +configuration+ (Hash) => configuration object (see https://api.firecloud.org/#!/Method_Configurations/overwriteWorkspaceMethodConfig for more info)
-  #
-  # * *return*
-  #   - +Hash+ configuration object
-  def overwrite_workspace_configuration(workspace_namespace, workspace_name, config_namespace, config_name, configuration)
-    path = self.api_root + "/api/workspaces/#{uri_encode(workspace_namespace)}/#{uri_encode(workspace_name)}/method_configs/#{config_namespace}/#{config_name}"
-    process_firecloud_request(:put, path, configuration.to_json)
-  end
-
-  # get submission queue status
-  #
-  # * *return*
-  #   - +Hash+ object of current submission queue status
-  def get_submission_queue_status
-    path = self.api_root + '/api/submissions/queueStatus'
-    process_firecloud_request(:get, path)
-  end
-
   # get a list of workspace workflow queue submissions
   #
   # * *params*
@@ -761,32 +623,6 @@ class FireCloudClient
   def get_workspace_submissions(workspace_namespace, workspace_name)
     path = self.api_root + "/api/workspaces/#{uri_encode(workspace_namespace)}/#{uri_encode(workspace_name)}/submissions"
     process_firecloud_request(:get, path)
-  end
-
-  # validate a workflow submission before submitting
-  #
-  # * *params*
-  #   - +workspace_namespace+ (String) => namespace of workspace
-  #   - +workspace_name+ (String) => name of requested workspace
-  #   - +config_namespace+ (String) => namespace of requested configuration
-  #   - +config_name+ (String) => name of requested configuration
-  #   - +entity_type+ (String) => type of workspace entity (e.g. sample, participant, etc)
-  #   - +entity_name+ (String) => name of workspace entity
-  #
-  # * *return*
-  #   - +Hash+ of workflow submission details
-  def validate_workspace_submission(workspace_namespace, workspace_name, config_namespace, config_name, entity_type, entity_name)
-    path = self.api_root + "/api/workspaces/#{uri_encode(workspace_namespace)}/#{uri_encode(workspace_name)}/submissions/validate"
-    submission = {
-        methodConfigurationNamespace: config_namespace,
-        methodConfigurationName: config_name,
-        entityType: entity_type,
-        entityName: entity_name,
-        useCallCache: true,
-        workflowFailureMode: 'NoNewCalls'
-    }.to_json
-
-    process_firecloud_request(:post, path, submission)
   end
 
   # create a workflow submission
@@ -857,100 +693,9 @@ class FireCloudClient
     process_firecloud_request(:get, path)
   end
 
-  # get outputs from a single workflow submission workflow instance
-  #
-  # * *params*
-  #   - +workspace_namespace+ (String) => namespace of workspace
-  #   - +workspace_name+ (String) => name of requested workspace
-  #   - +submission_id+ (String) => id of requested submission
-  #   - +workflow_id+ (String) => id of requested workflow
-  #
-  # * *return*
-  #   - +Array+ of workflow submission outputs
-  def get_workspace_submission_outputs(workspace_namespace, workspace_name, submission_id, workflow_id)
-    path = self.api_root + "/api/workspaces/#{uri_encode(workspace_namespace)}/#{uri_encode(workspace_name)}/submissions/#{submission_id}/workflows/#{workflow_id}/outputs"
-    process_firecloud_request(:get, path)
-  end
-
-  # get permissions for a method configuration namespace
-  #
-  # * *params*
-  #   - +config_namespace+ (String) => namespace of configuraiton
-  #
-  # * *return*
-  #   - +Array+ of users & permission levels
-  def get_config_namespace_permissions(config_namespace)
-    path = self.api_root + "/api/configurations/#{config_namespace}/permissions"
-    process_firecloud_request(:get, path)
-  end
-
-  # get permissions for a method configuration namespace
-  #
-  # * *params*
-  #   - +config_namespace+ (String) => namespace of configuraiton
-  #   - +permissions+ (Array) => Array of permission objects (Hash of user & role)
-  #
-  # * *return*
-  #   - +Array+ of users & permission levels
-  def update_config_namespace_permissions(config_namespace, permissions)
-    path = self.api_root + "/api/configurations/#{config_namespace}/permissions"
-    process_firecloud_request(:post, path, permissions.to_json)
-  end
-
-  # get permissions for a method namespace
-  #
-  # * *params*
-  #   - +config_namespace+ (String) => namespace of configuraiton
-  #
-  # * *return*
-  #   - +Array+ of users & permission levels
-  def get_method_namespace_permissions(config_namespace)
-    path = self.api_root + "/api/methods/#{config_namespace}/permissions"
-    process_firecloud_request(:get, path)
-  end
-
-  # get permissions for a method namespace
-  #
-  # * *params*
-  #   - +config_namespace+ (String) => namespace of configuraiton
-  #   - +permissions+ (Array) => Array of permission objects (Hash of user & role)
-  #
-  # * *return*
-  #   - +Array+ of users & permission levels
-  def update_method_namespace_permissions(config_namespace, permissions)
-    path = self.api_root + "/api/methods/#{config_namespace}/permissions"
-    process_firecloud_request(:post, path, permissions.to_json)
-  end
-
   ##
   ## WORKSPACE ENTITY METHODS
   ##
-
-  # list workspace metadata entities with type and attribute information
-  #
-  # * *params*
-  #   - +workspace_namespace+ (String) => namespace of workspace
-  #   - +workspace_name+ (String) => name of requested workspace
-  #
-  # * *return*
-  #   - +Array+ of workspace metadata entities with type and attribute information
-  def get_workspace_entities(workspace_namespace, workspace_name)
-    path = self.api_root + "/api/workspaces/#{uri_encode(workspace_namespace)}/#{uri_encode(workspace_name)}/entities_with_type"
-    process_firecloud_request(:get, path)
-  end
-
-  # list workspace metadata entity types
-  #
-  # * *params*
-  #   - +workspace_namespace+ (String) => namespace of workspace
-  #   - +workspace_name+ (String) => name of requested workspace
-  #
-  # * *return*
-  #   - +Array+ of workspace metadata entities
-  def get_workspace_entity_types(workspace_namespace, workspace_name)
-    path = self.api_root + "/api/workspaces/#{uri_encode(workspace_namespace)}/#{uri_encode(workspace_name)}/entities"
-    process_firecloud_request(:get, path)
-  end
 
   # get a list workspace metadata entities of requested type
   #
@@ -963,60 +708,6 @@ class FireCloudClient
   #   - +Array+ of workspace metadata entities with type and attribute information
   def get_workspace_entities_by_type(workspace_namespace, workspace_name, entity_type)
     path = self.api_root + "/api/workspaces/#{uri_encode(workspace_namespace)}/#{uri_encode(workspace_name)}/entities/#{entity_type}"
-    process_firecloud_request(:get, path)
-  end
-
-  # get an individual workspace metadata entity
-  #
-  # * *params*
-  #   - +workspace_namespace+ (String) => namespace of workspace
-  #   - +workspace_name+ (String) => name of requested workspace
-  #   - +entity_type+ (String) => type of requested entity
-  #   - +entity_name+ (String) => name of requested entity
-  #
-  # * *return*
-  #   - +Array+ of workspace metadata entities with type and attribute information
-  def get_workspace_entity(workspace_namespace, workspace_name, entity_type, entity_name)
-    path = self.api_root + "/api/workspaces/#{uri_encode(workspace_namespace)}/#{uri_encode(workspace_name)}/entities/#{entity_type}/#{entity_name}"
-    process_firecloud_request(:get, path)
-  end
-
-  # update an individual workspace metadata entity
-  #
-  # * *params*
-  #   - +workspace_namespace+ (String) => namespace of workspace
-  #   - +workspace_name+ (String) => name of requested workspace
-  #   - +entity_type+ (String) => type of requested entity
-  #   - +entity_name+ (String) => name of requested entity
-  #   - +operation_type+ (String) => type of operation requested (add/update)
-  #   - +attribute_name+ (String) => name of attribute being changed
-  #   - +attribute_value+ (String) => value of attribute being changed
-  #
-  # * *return*
-  #   - +Array+ of workspace metadata entities with type and attribute information
-  def update_workspace_entity(workspace_namespace, workspace_name, entity_type, entity_name, operation_type, attribute_name, attribute_value)
-    update = {
-        op: operation_type,
-        attributeName: attribute_name,
-        addUpdateAttribute: attribute_value
-    }.to_json
-    path = self.api_root + "/api/workspaces/#{uri_encode(workspace_namespace)}/#{uri_encode(workspace_name)}/entities/#{entity_type}/#{entity_name}"
-    process_firecloud_request(:patch, path, update)
-  end
-
-  # get a tsv file of requested workspace metadata entities of requested type
-  #
-  # * *params*
-  #   - +workspace_namespace+ (String) => namespace of workspace
-  #   - +workspace_name+ (String) => name of requested workspace
-  #   - +entity_type+ (String) => type of requested entity
-  #   - +entity_names+ (String) => list of requested entities to include in file (provide each as a separate parameter)
-  #
-  # * *return*
-  #   - +Array+ of workspace metadata entities with type and attribute information
-  def get_workspace_entities_as_tsv(workspace_namespace, workspace_name, entity_type, *attribute_names)
-    attribute_list = attribute_names.join(',')
-    path = self.api_root + "/api/workspaces/#{uri_encode(workspace_namespace)}/#{uri_encode(workspace_name)}/entities/#{entity_type}/tsv#{attribute_list.blank? ? nil : '?attributeNames=' + attribute_list}"
     process_firecloud_request(:get, path)
   end
 
@@ -1095,18 +786,6 @@ class FireCloudClient
     process_firecloud_request(:post, path)
   end
 
-  # delete a user group that a user owns
-  #
-  # * *params*
-  #   - +group_name+ (String) => name of requested group
-  #
-  # * *return*
-  #   - +Boolean+ indication of group delete
-  def delete_user_group(group_name)
-    path = self.api_root + "/api/groups/#{group_name}"
-    process_firecloud_request(:delete, path)
-  end
-
   # add another user to a user group the current user owns
   #
   # * *params*
@@ -1123,36 +802,6 @@ class FireCloudClient
     else
       raise RuntimeError.new("Invalid FireCloud user group role \"#{user_role}\"; must be one of \"#{USER_GROUP_ROLES.join(', ')}\"")
     end
-  end
-
-  # remove another user to a user group the current user owns
-  #
-  # * *params*
-  #   - +group_name+ (String) => name of requested group
-  #   - +user_role+ (String) => role of user to add to group (must be member or admin)
-  #   - +user_email+ (String) => email of user to add to group
-  #
-  # * *return*
-  #   - +Boolean+ indication of user removal
-  def delete_user_from_group(group_name, user_role, user_email)
-    if USER_GROUP_ROLES.include?(user_role)
-      path = self.api_root + "/api/groups/#{group_name}/#{user_role}/#{user_email}"
-      process_firecloud_request(:delete, path)
-    else
-      raise RuntimeError.new("Invalid FireCloud user group role \"#{user_role}\"; must be one of '#{USER_GROUP_ROLES.join(', ')}\"")
-    end
-  end
-
-  # request access to a user group as the current user
-  #
-  # * *params*
-  #   - +group_name+ (String) => name of requested group
-  #
-  # * *return*
-  #   - +Boolean+ indication of request submission
-  def request_user_group(group_name)
-    path = self.api_root + "/api/groups/#{group_name}/requestAccess"
-    process_firecloud_request(:post, path)
   end
 
   ##
