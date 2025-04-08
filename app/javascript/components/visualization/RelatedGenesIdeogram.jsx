@@ -97,16 +97,17 @@ function conformAnalytics(props, ideogram) {
 }
 
 /** Log hover over related genes ideogram tooltip */
-function onWillShowAnnotTooltip(annot, param2, param3) {
-  if (annot instanceof Promise) {
-    return null
-  }
-
+async function onWillShowAnnotTooltip(annotPromisable, param2, param3) {
   // Ideogram object; used to inspect ideogram state
   const ideogram = this // eslint-disable-line
-  const resolvedAnnot = annot
+  let annot
 
-  console.log('resolvedAnnot', resolvedAnnot)
+  if (annotPromisable instanceof Promise) {
+    annot = await annotPromisable
+  } else {
+    annot = annotPromisable
+  }
+
   let props = window.ideogram.getTooltipAnalytics(annot)
 
   // `props` is null if it is merely analytics noise.
