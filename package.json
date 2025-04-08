@@ -34,7 +34,7 @@
     "exifreader": "4.6.0",
     "fflate": "^0.7.3",
     "hdf5-indexed-reader": "1.0.1",
-    "ideogram": "eweitz/ideogram#97ba036e005018e3ee8fdecb203d135cd4fd9c21",
+    "ideogram": "1.52.0",
     "jquery": "3.5.1",
     "jquery-ui": "1.13.2",
     "morpheus-app": "1.0.18",
@@ -105,7 +105,7 @@
     "prop-types": "^15.7.2",
     "react-select-event": "^5.3.0",
     "stylelint-prettier": "^1.1.2",
-    "vite": "^4.5.6",
+    "vite": "^4.5.10",
     "vite-plugin-ruby": "^3.0.5"
   }
 }

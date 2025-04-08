@@ -104,6 +104,8 @@ export default function Pathway({
   labels, queryFn
 }) {
   const [geneList, setGeneList] = useState([])
+  const [cellTypes, setCellTypes] = useState('')
+  const [diseases, setDiseases] = useState('')
 
   const pathwayId = pathway
   const pwDimensions = Object.assign({}, dimensions)
@@ -118,21 +120,33 @@ export default function Pathway({
   // Stringify object, to enable tracking state change
   const annotationId = getIdentifierForAnnotation(annotation)
 
-  const dimensionString = JSON.stringify(dimensions)
+  /** Set "Cell types" and "Diseases" pathway ontology annotations */
+  function updatePathwayOntologies() {
+    const pathwayJson = window.Ideogram.pathwayJson
+    let newCellTypes = window.Ideogram.getPathwayOntologies(pathwayJson, 'cell type')
+    newCellTypes = newCellTypes.replace('Cell type: ', '')
+    setCellTypes(newCellTypes)
+    let newDiseases = window.Ideogram.getPathwayOntologies(pathwayJson, 'disease')
+    newDiseases = newDiseases.replace('Disease: ', '')
+    setDiseases(newDiseases)
+  }
 
   moveDescription()
-
   document.addEventListener('ideogramDrawPathway', configurePathwayTooltips)
+  document.addEventListener('ideogramDrawPathway', updatePathwayOntologies)
 
   /** Upon clicking a pathway node, show new pathway and expression overlay */
   function handlePathwayNodeClick(event, pathwayId) {
     queryFn([pathwayId])
   }
 
+  const dimensionString = JSON.stringify(dimensions)
+
   const sourceGene = ''
   const destGene = ''
   const showClose = false
   const showDefaultTooltips = false
+  const showPathwayOntologies = false
 
   useEffect(() => {
     manageDrawPathway(studyAccession, cluster, annotation, label, labels)
@@ -141,7 +155,7 @@ export default function Pathway({
     window.Ideogram.drawPathway(
       pathwayId, sourceGene, destGene, '.pathway-diagram', pwDimensions, showClose,
       handleGeneNodeHover, handlePathwayNodeClick,
-      showDescription, showDefaultTooltips
+      showDescription, showPathwayOntologies, showDefaultTooltips
     )
   }, [cluster, annotationId, dimensionString, label])
 
@@ -153,7 +167,7 @@ export default function Pathway({
     window.Ideogram.drawPathway(
       pathwayId, sourceGene, destGene, '.pathway-diagram', pwDimensions, showClose,
       handleGeneNodeHover, handlePathwayNodeClick,
-      showDescription, showDefaultTooltips
+      showDescription, showPathwayOntologies, showDefaultTooltips
     )
   }, [pathway])
 
@@ -167,10 +181,28 @@ export default function Pathway({
   const descriptionHeight = diagramHeight - descriptionPad
 
   const GeneListPopover =
-    <Popover data-analytics-name='gene-list-popover' id='gene-list-popover'>
+    <Popover id="pathway-genes-popover">
       Genes in this pathway:
       <br/><br/>
       {naturalSort(geneList).join(', ')}
+    </Popover>
+
+  const CellTypesPopover =
+    <Popover id="pathway-cell-types-popover">
+      Cell types in this pathway:
+      <br/><br/>
+      <div
+        dangerouslySetInnerHTML={{ __html: cellTypes }}
+      />
+    </Popover>
+
+  const DiseasesPopover =
+    <Popover id="pathway-cell-types-popover">
+      Diseases in this pathway:
+      <br/><br/>
+      <div
+        dangerouslySetInnerHTML={{ __html: diseases }}
+      />
     </Popover>
 
   return (
@@ -196,6 +228,24 @@ export default function Pathway({
               }}
             >Genes</button>
           </OverlayTrigger>
+          {cellTypes.length > 0 &&
+          <OverlayTrigger trigger={['click']} placement='top' rootClose={true}
+            overlay={CellTypesPopover}>
+            <button
+              className="btn terra-secondary-btn"
+              style={{ marginTop: '10px', marginLeft: '10px' }}
+            >Cell types</button>
+          </OverlayTrigger>
+          }
+          {diseases.length > 0 &&
+          <OverlayTrigger trigger={['click']} placement='top' rootClose={true}
+            overlay={DiseasesPopover}>
+            <button
+              className="btn terra-secondary-btn"
+              style={{ marginTop: '10px', marginLeft: '10px' }}
+            >Diseases</button>
+          </OverlayTrigger>
+          }
         </div>
       </div>
     </>
