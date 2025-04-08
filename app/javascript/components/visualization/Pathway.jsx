@@ -94,7 +94,7 @@ function configurePathwayTooltips() {
   document.querySelectorAll('g.Pathway').forEach(node => {
     node.setAttribute('data-toggle', 'tooltip')
     node.setAttribute('data-html', 'true')
-    node.setAttribute('data-original-title', 'Click to view expression in pathway')
+    node.setAttribute('data-original-title', 'Click for expression in pathway')
   })
 }
 

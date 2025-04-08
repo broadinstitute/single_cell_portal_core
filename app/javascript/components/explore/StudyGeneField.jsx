@@ -99,7 +99,6 @@ function getQueryArrayFromSearchOptions(searchOptions) {
 */
 export default function StudyGeneField({ queries, queryFn, allGenes, speciesList, isLoading=false }) {
   const [inputText, setInputText] = useState('')
-  console.log('queries', queries)
 
   const rawSuggestions = getAutocompleteSuggestions(inputText, allGenes)
   const searchOptions = getSearchOptions(rawSuggestions)
@@ -107,11 +106,8 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   let enteredQueryArray = []
   if (queries) {
     const queriesSearchOptions = getSearchOptions(queries)
-    console.log('queriesSearchOptions', queriesSearchOptions)
     enteredQueryArray = getQueryArrayFromSearchOptions(queriesSearchOptions)
   }
-
-  console.log('enteredQueryArray', enteredQueryArray)
 
   /** the search control tracks two state variables
     * an array of already entered queries (queryArray),
@@ -240,8 +236,6 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
 
 
   useEffect(() => {
-    console.log('in queryArray useEffect, queries', queries)
-    console.log('in queryArray useEffect, queryArray', queryArray)
     if (
       queries.join(',') !== queryArray.map(opt => opt.label).join(',')
     ) {
@@ -260,11 +254,13 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
       pathwayObj.label = getPathwayName(pathwayObj.label)
     }
     queryArray[0] = pathwayObj
+  } else if (typeof queryArray[0] === 'string' && getIsPathway(queryArray[0])) {
+    // Seen when e.g. clicking pathway-type node in pathway diagram
+    isPathway = true
+    const pathwayId = queryArray[0]
+    const pathwayObj = { label: getPathwayName(pathwayId), value: pathwayId }
+    queryArray[0] = pathwayObj
   }
-
-  // console.log('searchTermsArray', searchTermsArray)
-  // console.log('before render, inputText', inputText)
-  // console.log('before render queryArray', queryArray)
 
   return (
     <form className="gene-keyword-search gene-study-keyword-search form-horizontal" onSubmit={handleSearch}>
@@ -390,9 +386,6 @@ function getSearchOptions(rawSuggestions) {
         rawPathwayOptions.push(rawSuggestion)
       }
     })
-
-    // console.log('rawGeneOptions', rawGeneOptions)
-    // console.log('rawPathwayOptions', rawPathwayOptions)
 
     const [geneOptions, pathwayOptions] =
       filterSearchOptions(rawGeneOptions, rawPathwayOptions)
