@@ -203,7 +203,7 @@ class DifferentialExpressionResult
   private
 
   def set_cluster_name
-    self.cluster_name = cluster_group.name
+    self.cluster_name = cluster_group.name unless cluster_name
   end
 
   def comparisons_available?

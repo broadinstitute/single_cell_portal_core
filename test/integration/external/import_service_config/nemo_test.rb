@@ -9,8 +9,8 @@ module ImportServiceConfig
       @user_id = @user.id
       @branding_group_id = @branding_group.id
       @attributes = {
-        file_id: 'nemo:der-ah1o5qb',
-        project_id: 'nemo:grn-gyy3k8j',
+        file_id: 'nemo:drc-jcvnj7k',
+        project_id: 'nemo:std-5jvcwm1',
         study_id: 'nemo:col-hwmwd2x',
         obsm_key_names: %w[X_umap],
         user_id: @user.id,
@@ -53,7 +53,7 @@ module ImportServiceConfig
       config = ImportServiceConfig::Nemo.new(file_id: @attributes[:file_id])
       config.traverse_associations!
       assert_equal @attributes[:study_id], config.study_id
-      assert_equal @attributes[:project_id], config.project_id
+      assert_equal 'nemo:grn-gyy3k8j', config.project_id
     end
 
     test 'should load defaults' do
@@ -103,14 +103,14 @@ module ImportServiceConfig
     # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
     test 'should load file analog' do
       file = @configuration.load_file
-      assert_equal 'human_var_scVI_VLMC.h5ad.tar', file['file_name']
+      assert_equal 'human_var_scVI_VLMC.h5ad', file['file_name']
       assert_equal 'h5ad', file['file_format']
       assert_equal 'counts', file['data_type']
     end
 
     test 'should load collection analog' do
       collection = @configuration.load_collection
-      assert_equal 'AIBS Internal', collection['short_name']
+      assert_equal 'ecker_sn_mCseq_proj', collection['short_name']
     end
 
     # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
@@ -118,7 +118,7 @@ module ImportServiceConfig
       file = @configuration.load_file
       study = @configuration.load_study
       assert_equal @attributes[:study_id], @configuration.id_from(file, :collections)
-      assert_equal @attributes[:project_id], @configuration.id_from(study, :projects)
+      assert_equal 'nemo:grn-gyy3k8j', @configuration.id_from(study, :projects)
     end
 
     test 'should load taxon common names' do
@@ -142,7 +142,7 @@ module ImportServiceConfig
       # populate StudyFile, using above study
       scp_study_file = @configuration.populate_study_file(scp_study.id)
       assert scp_study_file.use_metadata_convention
-      assert_equal 'human_var_scVI_VLMC.h5ad.tar', scp_study_file.upload_file_name
+      assert_equal 'human_var_scVI_VLMC.h5ad', scp_study_file.upload_file_name
       assert_equal "10x 3' v3", scp_study_file.expression_file_info.library_preparation_protocol
       assert_equal @configuration.service_name, scp_study_file.imported_from
       assert_not scp_study_file.ann_data_file_info.reference_file
@@ -154,8 +154,8 @@ module ImportServiceConfig
 
     # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
     test 'should import all from service' do
-      access_url = 'https://data.nemoarchive.org/other/grant/u01_lein/lein/transcriptome/sncell/10x_v3/human/' \
-                   'processed/counts/human_var_scVI_VLMC.h5ad.tar'
+      access_url = 'gs://nemo-public/other/grant/u01_lein/lein/transcriptome/sncell/10x_v3/' \
+                   'human/processed/counts/human_var_scVI_VLMC.h5ad'
       file_mock = ::Minitest::Mock.new
       file_mock.expect :generation, '123456789'
       # for study to save, we need to mock all Terra orchestration API calls for creating workspace & setting acls

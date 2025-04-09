@@ -56,6 +56,14 @@ describe('Client-side file validation for AnnData', () => {
     expect(issues).toHaveLength(0)
   })
 
+  /* TODO: Uncomment this after PR merge
+  it('Parses AnnData rows with colon ontology ID separator and detects no issues', async () => {
+    const url = `${BASE_URL}/valid_with_colon.h5ad`
+    const parseResults = await parseAnnDataFile(url)
+    expect(parseResults.issues).toHaveLength(0)
+  })
+  */
+
   it('Parses AnnData rows and reports invalid ontology IDs', async () => {
     const url = `${BASE_URL}/invalid_disease_id.h5ad`
     const parseResults = await parseAnnDataFile(url)

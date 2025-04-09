@@ -8,11 +8,10 @@ class NemoClientTest < ActiveSupport::TestCase
     @nemo_is_ok = @nemo_client.api_available?
     @skip_message = '-- skipping due to NeMO API being unavailable --'
     @identifiers = {
-      collection: 'nemo:col-pxwhesp',
-      file: 'nemo:der-ah1o5qb',
-      grant: 'nemo:grn-qwzp05p',
-      project: 'nemo:std-hoxfi7n',
-      publication: 'nemo:dat-tfmg0va',
+      collection: 'nemo:col-hwmwd2x',
+      file: 'nemo:drc-jcvnj7k',
+      grant: 'nemo:grn-gyy3k8j',
+      project: 'nemo:std-5jvcwm1',
       sample: 'nemo:smp-xmd8d0y',
       subject: 'nemo:sbj-njhfvw6'
     }
@@ -69,7 +68,7 @@ class NemoClientTest < ActiveSupport::TestCase
     identifier = @identifiers[:collection]
     collection = @nemo_client.collection(identifier)
     assert collection.present?
-    assert_equal 'adey_sciATAC_human_cortex', collection['short_name']
+    assert_equal 'human_variation_10X', collection['short_name']
   end
 
   # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
@@ -78,7 +77,7 @@ class NemoClientTest < ActiveSupport::TestCase
     identifier = @identifiers[:file]
     file = @nemo_client.file(identifier)
     assert file.present?
-    filename = 'human_var_scVI_VLMC.h5ad.tar'
+    filename = 'human_var_scVI_VLMC.h5ad'
     assert_equal filename, file['file_name']
     assert_equal 'h5ad', file['file_format']
     access_url = file['manifest_file_urls'].first['url']
@@ -91,8 +90,8 @@ class NemoClientTest < ActiveSupport::TestCase
     identifier = @identifiers[:grant]
     grant = @nemo_client.grant(identifier)
     assert grant.present?
-    assert_equal '1U01MH114825', grant.dig('grant_info','grant_number')
-    assert_equal 'NIMH', grant['funding_agency']
+    assert_equal 'Allen Institute Funder', grant.dig('grant_info','grant_number')
+    assert_equal 'Allen Institute Funder', grant['funding_agency']
   end
 
   test 'should get project' do
@@ -100,10 +99,10 @@ class NemoClientTest < ActiveSupport::TestCase
     identifier = @identifiers[:project]
     project = @nemo_client.project(identifier)
     assert project.present?
-    assert_equal 'Single-nucleus analysis of preoptic area development from late embryonic to adult stages',
+    assert_equal 'DNA methylation profiling of genomic DNA in individual mouse brain cell nuclei (RS1.1)',
                  project['title']
     assert_equal 'biccn', project['program']
-    assert_equal 'dulac_poa_dev_sn_10x_proj', project['short_name']
+    assert_equal 'ecker_sn_mCseq_proj', project['short_name']
   end
 
   # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test

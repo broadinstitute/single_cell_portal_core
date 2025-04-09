@@ -134,6 +134,7 @@ class DifferentialExpressionService
     metadata_url = study_file.is_viz_anndata? ?
                      RequestUtils.data_fragment_url(study_file, 'metadata') :
                      study.metadata_file.gs_url
+    cluster_group_id = cluster_group.id
     # begin assembling parameters
     de_params = {
       annotation_name:,
@@ -143,10 +144,12 @@ class DifferentialExpressionService
       group2:,
       annotation_file: annotation_scope == 'cluster' ? cluster_url : metadata_url,
       cluster_file: cluster_url,
-      cluster_name: cluster_group.name
+      cluster_name: set_cluster_name(study, cluster_group, annotation_name, annotation_scope),
+      cluster_group_id:
     }
     raw_matrix = ClusterVizService.raw_matrix_for_cluster_cells(study, cluster_group)
     de_params[:matrix_file_path] = raw_matrix.gs_url
+    de_params[:matrix_file_id] = raw_matrix.id
     if raw_matrix.file_type == 'MM Coordinate Matrix'
       de_params[:matrix_file_type] = 'mtx'
       # we know bundle exists and is completed as :raw_matrix_for_cluster_cells will throw an exception if it isn't
@@ -158,6 +161,7 @@ class DifferentialExpressionService
     elsif raw_matrix.file_type == 'AnnData'
       de_params[:matrix_file_type] = 'h5ad'
       de_params[:file_size] = raw_matrix.upload_file_size
+      de_params[:raw_location] = raw_matrix.ann_data_file_info.raw_location
     else
       de_params[:matrix_file_type] = 'dense'
     end
@@ -287,6 +291,21 @@ class DifferentialExpressionService
     ALLOWED_ANNOTS =~ name && EXCLUDED_ANNOTS !~ name
   end
 
+  # determine if the requested cluster/annotation has an existing result object
+  # used for setting cluster name or in pairwise DE when merging in new results
+  #
+  # * *params*
+  #   - +study+            (Study) => Study in which results exist
+  #   - +cluster_group+    (ClusterGroup) => Clustering object to source name/file from
+  #   - +annotation_name+  (String) => Name of requested annotation
+  #   - +annotation_scope+ (String) => Scope of requested annotation ('study' or 'cluster')
+  #
+  # * *returns*
+  #   - (DifferentialExpressionResult, nil)
+  def self.find_existing_result(study, cluster_group, annotation_name, annotation_scope)
+    DifferentialExpressionResult.find_by(study:, cluster_group:, annotation_name:, annotation_scope:)
+  end
+
   # determine if a study already has DE results for an annotation, taking scope into account
   # cluster-based annotations must match to the specified cluster in the annotation object
   # for study-wide annotations, return true if any results exist, regardless of cluster as this indicates that DE
@@ -307,6 +326,21 @@ class DifferentialExpressionService
       :annotation_name => annotation[:annotation_name],
       :annotation_scope => annotation[:annotation_scope]
     ).exists?
+  end
+
+  # helper to set cluster_name when existing results are present
+  # this prevents result file URLs breaking because the cluster has been renamed at some point
+  #
+  # * *params*
+  #   - +study+            (Study) => Study in which results exist
+  #   - +cluster_group+    (ClusterGroup) => Clustering object to source name/file from
+  #   - +annotation_name+  (String) => Name of requested annotation
+  #   - +annotation_scope+ (String) => Scope of requested annotation ('study' or 'cluster')
+  #
+  # * *returns*
+  #   - (String)
+  def self.set_cluster_name(study, cluster_group, annotation_name, annotation_scope)
+    find_existing_result(study, cluster_group, annotation_name, annotation_scope)&.cluster_name || cluster_group.name
   end
 
   # determine if a study meets the requirements for differential expression:
@@ -383,12 +417,15 @@ class DifferentialExpressionService
     elsif pairwise
       missing = [group1, group2] - annotation[:values]
       raise ArgumentError, "#{annotation_name} does not contain '#{missing.join(', ')}'" if missing.any?
+
       cell_count = {
-        "#{group1}" => cells_by_label[group1].count,
-        "#{group2}" => cells_by_label[group2].count
+        group1.to_s => cells_by_label[group1]&.count.to_i,
+        group2.to_s => cells_by_label[group2]&.count.to_i
       }.keep_if { |_, c| c < 2 }
-      raise ArgumentError,
-            "#{cell_count.keys.join(', ')} does not have enough cells represented in #{identifier}" if cell_count.any?
+      if cell_count.any?
+        raise ArgumentError, "#{cell_count.keys.join(', ')} does not have enough cells represented in #{identifier} " \
+          "for #{cluster_group.name}"
+      end
     end
   end
 
