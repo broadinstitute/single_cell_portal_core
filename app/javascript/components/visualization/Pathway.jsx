@@ -96,6 +96,8 @@ function configurePathwayTooltips() {
     node.setAttribute('data-html', 'true')
     node.setAttribute('data-original-title', 'Click for expression in pathway')
   })
+
+  document.querySelector('#_ideogramPathwayContainer').style.zIndex = ''
 }
 
 /** Draw a pathway diagram with an expression overlay */
