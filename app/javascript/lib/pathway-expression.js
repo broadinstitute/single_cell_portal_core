@@ -348,7 +348,8 @@ export async function renderPathwayExpression(studyAccession, cluster, annotatio
 
     const dotPlotMetrics = getDotPlotMetrics(dotPlot)
 
-    // console.log('in backgroundDotPlotCallback, dotPlotMetrics', dotPlotMetrics)
+    console.log('in backgroundDotPlotCallback, dotPlot', dotPlot)
+    console.log('in backgroundDotPlotCallback, dotPlotMetrics', dotPlotMetrics)
 
     if (!dotPlotMetrics) {
       console.log('in backgroundDotPlotDrawCallback, !dotPlotMetrics, exiting early')
@@ -361,7 +362,7 @@ export async function renderPathwayExpression(studyAccession, cluster, annotatio
 
     const dotPlotMetricsKeys = Object.keys(dotPlotMetrics)
     // console.log('in backgroundDotPlotDrawCallback, dotPlotMetricsKeys', dotPlotMetricsKeys)
-    if (!labels.includes(dotPlotMetricsKeys[0])) {
+    if (!labels || !labels.includes(dotPlotMetricsKeys[0])) {
       console.log('in backgroundDotPlotDrawCallback, !!labels.includes(Object.keys(dotPlotMetrics)[0], exiting early')
       // Another protection for computing only for dot plots, not heatmaps
       return
@@ -399,8 +400,7 @@ export async function renderPathwayExpression(studyAccession, cluster, annotatio
 }
 
 /** Draw expression overlay in pathway diagram */
-function drawPathwayOverlay(event, studyAccession, cluster, annotation, label, labels, globalCounter) {
-  console.log('in drawPathwayOverlay, globalCounter', globalCounter)
+function drawPathwayOverlay(event, studyAccession, cluster, annotation, label, labels) {
 
   // Hide popover instantly upon drawing pathway; don't wait ~2 seconds
   const ideoTooltip = document.querySelector('._ideogramTooltip')
@@ -421,6 +421,19 @@ function drawPathwayOverlay(event, studyAccession, cluster, annotation, label, l
   renderPathwayExpression(studyAccession, cluster, annotation, label, labels)
 }
 
+/** Removeable event listener */
+function callDrawPathwayOverlay(event) {
+  const {
+    studyAccession, cluster, annotation, label, labels
+  } = window.Ideogram.SCP.pathway
+
+  drawPathwayOverlay(
+    event,
+    studyAccession, cluster, annotation, label, labels
+  )
+  document.removeEventListener('ideogramDrawPathway', callDrawPathwayOverlay)
+}
+
 /**
  * Add and remove event listeners for Ideogram's `ideogramDrawPathway` event
  *
@@ -430,13 +443,11 @@ export function manageDrawPathway(studyAccession, cluster, annotation, label, la
   const flags = getFeatureFlagsWithDefaults()
   if (!flags?.show_pathway_expression) {return}
 
-  /** Removeable event listener */
-  function callDrawPathwayOverlay(event) {
-    drawPathwayOverlay(
-      event,
-      studyAccession, cluster, annotation, label, labels
-    )
-    document.removeEventListener('ideogramDrawPathway', callDrawPathwayOverlay)
+  if (!window.Ideogram.SCP) {
+    window.Ideogram.SCP = {};
+  }
+  window.Ideogram.SCP.pathway = {
+    studyAccession, cluster, annotation, label, labels
   }
 
   if (annotation.type === 'group') {

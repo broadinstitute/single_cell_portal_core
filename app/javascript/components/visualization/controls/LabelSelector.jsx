@@ -42,14 +42,14 @@ export default function LabelControl({
   // updatePathwayExpression
 }) {
   const labels = getEligibleLabels(exploreParamsWithDefaults, exploreInfo)
-  console.log('in LabelControl, labels', labels)
+  // console.log('in LabelControl, labels', labels)
 
   const options = labels.map(label => {return { label, value: label }})
 
-  console.log('in LabelSelector, exploreParamsWithDefaults.label', exploreParamsWithDefaults.label)
+  // console.log('in LabelSelector, exploreParamsWithDefaults.label', exploreParamsWithDefaults.label)
   const shownOption = getShownOption(options, exploreParamsWithDefaults)
 
-  console.log('in LabelSelector, shownOption', shownOption)
+  // console.log('in LabelSelector, shownOption', shownOption)
 
   return (
     <div className="form-group">
