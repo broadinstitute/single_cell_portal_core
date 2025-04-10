@@ -31,13 +31,13 @@ function getAnnotationOptions(annotationList, clusterName) {
 
 
 /**
-  Renders an annotation selector.
-   the cluster is changed.
-    @param annotationList: the results of a call to scpApi/fetchClusterOptions (or equivalent).
-    @param cluster: the name of the cluster selected
-    @param annotation: object specifying name, type and scope
-    @param updateClusterParams: update function that accepts changes to cluster, annotation, and/or subsample properties
-  */
+Renders an annotation selector.
+  the cluster is changed.
+  @param annotationList: the results of a call to scpApi/fetchClusterOptions (or equivalent).
+  @param cluster: the name of the cluster selected
+  @param annotation: object specifying name, type and scope
+  @param updateClusterParams: update function that accepts changes to cluster, annotation, and/or subsample properties
+*/
 export default function AnnotationControl({
   annotationList,
   cluster,
