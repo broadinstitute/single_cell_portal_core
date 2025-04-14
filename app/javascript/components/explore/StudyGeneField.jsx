@@ -38,11 +38,11 @@ function getIsPartialPathwayMatch(query, allGenes) {
 }
 
 /** Parse gene name from heterogeneous array  */
-function getQueriesFromSearchOptions(newQueryArray) {
+function getQueriesFromSearchOptions(newQueryArray, speciesList) {
   let newQueries
   const flags = getFeatureFlagsWithDefaults()
 
-  if (newQueryArray[0]?.isGene === true || !flags?.show_pathway_expression) {
+  if (newQueryArray[0]?.isGene === true || !getIsEligibleForPathwayExplore(speciesList)) {
     // Query is a gene
     // console.log('in getQueriesFromSearchOptions, case 1')
     newQueries = newQueryArray.map(g => g.value)
@@ -70,12 +70,19 @@ function getQueriesFromSearchOptions(newQueryArray) {
   return newQueries
 }
 
+/** Indicate whether pathway view should be available for this study */
+function getIsEligibleForPathwayExplore(speciesList) {
+  return (
+    speciesList.length === 0 && speciesList[0] === 'Homo sapiens' &&
+    getFeatureFlagsWithDefaults()?.show_pathway_expression
+  )
+}
+
 /** Collapse search options to query array */
-function getQueryArrayFromSearchOptions(searchOptions) {
+function getQueryArrayFromSearchOptions(searchOptions, speciesList) {
   let queryArray = []
 
-  const flags = getFeatureFlagsWithDefaults()
-  if (!flags?.show_pathway_expression) {
+  if (!getIsEligibleForPathwayExplore(speciesList)) {
     return searchOptions
   }
 
@@ -101,12 +108,12 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   const [inputText, setInputText] = useState('')
 
   const rawSuggestions = getAutocompleteSuggestions(inputText, allGenes)
-  const searchOptions = getSearchOptions(rawSuggestions)
+  const searchOptions = getSearchOptions(rawSuggestions, speciesList)
 
   let enteredQueryArray = []
   if (queries) {
-    const queriesSearchOptions = getSearchOptions(queries)
-    enteredQueryArray = getQueryArrayFromSearchOptions(queriesSearchOptions)
+    const queriesSearchOptions = getSearchOptions(queries, speciesList)
+    enteredQueryArray = getQueryArrayFromSearchOptions(queriesSearchOptions, speciesList)
   }
 
   /** the search control tracks two state variables
@@ -118,8 +125,6 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   const [notPresentQueries, setNotPresentQueries] = useState(new Set([]))
   const [showNotPresentGeneChoice, setShowNotPresentGeneChoice] = useState(false)
 
-  const flags = getFeatureFlagsWithDefaults()
-
   /** Handles a user submitting a gene search */
   function handleSearch(event) {
     event.preventDefault()
@@ -127,7 +132,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
 
     const newNotPresentQueries = new Set([])
     if (newQueryArray) {
-      if (!flags?.show_pathway_expression) {
+      if (!getIsEligibleForPathwayExplore(speciesList)) {
         newQueryArray.map(g => g.value).forEach(query => {
           // if an entered gene is not in the valid gene options for the study
           const isInvalidQuery = getIsInvalidQuery(query, allGenes)
@@ -136,7 +141,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
           }
         })
       } else {
-        const newQueries = getQueriesFromSearchOptions(newQueryArray)
+        const newQueries = getQueriesFromSearchOptions(newQueryArray, speciesList)
         newQueries.forEach(query => {
           // if an entered gene is not in the valid gene options for the study
           const isInvalidQuery = getIsInvalidQuery(query, allGenes)
@@ -151,7 +156,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
     if (newNotPresentQueries.size > 0) {
       setShowNotPresentGeneChoice(true)
     } else if (newQueryArray && newQueryArray.length) {
-      const newQueries = getQueriesFromSearchOptions(newQueryArray)
+      const newQueries = getQueriesFromSearchOptions(newQueryArray, speciesList)
       const queries = newQueries
       if (queries.length > window.MAX_GENE_SEARCH) {
         log('search-too-many-genes', { numGenes: queries.length })
@@ -176,7 +181,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
         return queryArray
       }
     }
-    const searchOptions = getSearchOptions(inputTextValues)
+    const searchOptions = getSearchOptions(inputTextValues, speciesList)
     const queryOptions = searchOptions[0].options
     const newQueryArray = queryArray.concat(queryOptions)
     setInputText('')
@@ -226,8 +231,8 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
     console.log('in queries useEffect, queryArray', queryArray)
     if (queries.join(',') !== queryArray.map(opt => opt.value).join(',')) {
       // the genes have been updated elsewhere -- resync
-      const queriesSearchOptions = getSearchOptions(queries)
-      const newQueryArray = getQueryArrayFromSearchOptions(queriesSearchOptions)
+      const queriesSearchOptions = getSearchOptions(queries, speciesList)
+      const newQueryArray = getQueryArrayFromSearchOptions(queriesSearchOptions, speciesList)
       setQueryArray(newQueryArray)
       setInputText('')
       setNotPresentQueries(new Set([]))
@@ -367,9 +372,8 @@ function filterSearchOptions(rawGeneOptions, rawPathwayOptions) {
 }
 
 /** takes an array of gene name strings, and returns options suitable for react-select */
-function getSearchOptions(rawSuggestions) {
-  const flags = getFeatureFlagsWithDefaults()
-  if (!flags?.show_pathway_expression) {
+function getSearchOptions(rawSuggestions, speciesList) {
+  if (!getIsEligibleForPathwayExplore(speciesList)) {
     return rawSuggestions.map(rawSuggestion => {
       const geneName = rawSuggestion
       return { label: geneName, value: geneName, isGene: true }

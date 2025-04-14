@@ -319,6 +319,13 @@ function mergeDotPlotMetrics(newMetrics, oldMetrics) {
 
 /** Color pathway gene nodes by expression */
 export async function renderPathwayExpression(studyAccession, cluster, annotation, label, labels) {
+  console.log('studyAccession', studyAccession)
+  console.log('cluster', cluster)
+  console.log('annotation', annotation)
+  console.log('studyAccession', studyAccession)
+  console.log('label', label)
+  console.log('labels', labels)
+
   console.log('in renderPathwayExpression, label', label)
   // console.log('in renderPathwayExpression, label === ""', label === "")
   let allDotPlotMetrics = {}
