@@ -40,8 +40,6 @@ function getIsPartialPathwayMatch(query, allGenes) {
 /** Parse gene name from heterogeneous array  */
 function getQueriesFromSearchOptions(newQueryArray, speciesList) {
   let newQueries
-  const flags = getFeatureFlagsWithDefaults()
-
   if (newQueryArray[0]?.isGene === true || !getIsEligibleForPathwayExplore(speciesList)) {
     // Query is a gene
     // console.log('in getQueriesFromSearchOptions, case 1')
@@ -72,10 +70,11 @@ function getQueriesFromSearchOptions(newQueryArray, speciesList) {
 
 /** Indicate whether pathway view should be available for this study */
 function getIsEligibleForPathwayExplore(speciesList) {
-  return (
-    speciesList.length === 0 && speciesList[0] === 'Homo sapiens' &&
+  const isEligibleForPathwayExplore = (
+    speciesList.length === 1 && speciesList[0] === 'Homo sapiens' &&
     getFeatureFlagsWithDefaults()?.show_pathway_expression
   )
+  return isEligibleForPathwayExplore
 }
 
 /** Collapse search options to query array */

@@ -318,6 +318,10 @@ export default function ExploreDisplayTabs({
       }
     }
 
+    if (exploreParams?.label !== '') {
+      newParams.label = exploreParams.label
+    }
+
     updateExploreParams(newParams)
   }
 
