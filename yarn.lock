@@ -9471,10 +9471,10 @@ vite-plugin-ruby@^3.0.5:
     debug "^4.3.4"
     fast-glob "^3.2.12"
 
-vite@^4.5.10:
-  version "4.5.10"
-  resolved "https://registry.yarnpkg.com/vite/-/vite-4.5.10.tgz#fc6823d5347fd171a25ae6379f05b0be700d303e"
-  integrity sha512-f2ueoukYTMI/5kMMT7wW+ol3zL6z6PjN28zYrGKAjnbzXhRXWXPThD3uN6muCp+TbfXaDgGvRuPsg6mwVLaWwQ==
+vite@^4.5.13:
+  version "4.5.13"
+  resolved "https://registry.yarnpkg.com/vite/-/vite-4.5.13.tgz#778534a947112c6c455e89737730fae5d458a294"
+  integrity sha512-Hgp8IF/yZDzKsN1hQWOuQZbrKiaFsbQud+07jJ8h9m9PaHWkpvZ5u55Xw5yYjWRXwRQ4jwFlJvY7T7FUJG9MCA==
   dependencies:
     esbuild "^0.18.10"
     postcss "^8.4.27"
