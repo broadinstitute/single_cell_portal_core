@@ -42,12 +42,35 @@ function getPathwayIdsByName() {
 
   const pathwayIdsByName = {}
   const pathwayEntries = Object.entries(pathwayCache)
+
+  const idsAndCountsByGene = {}
+
   pathwayEntries.forEach(([gene, ixnObj]) => {
-    ixnObj.result?.forEach(r => pathwayIdsByName[r.name] = r.id)
+    ixnObj.result?.forEach(r => {
+      pathwayIdsByName[r.name] = r.id
+      if (idsAndCountsByGene[gene] && idsAndCountsByGene[gene][r.id]) {
+        // If a pathway interaction for this gene has already been found,
+        // then increment the count of interactions in this pathway
+        idsAndCountsByGene[gene][r.id] += 1
+      } else if (gene in idsAndCountsByGene === false) {
+        idsAndCountsByGene[gene] = {}
+        idsAndCountsByGene[gene][r.id] = 1
+      } else {
+        idsAndCountsByGene[gene][r.id] = 1
+      }
+    })
   })
 
-  console.log('in getPathwayIdsByName, pathwayIdsByName', pathwayIdsByName)
+  const rankedPathwayByGene = {}
+  Object.entries(idsAndCountsByGene).forEach(([gene, idsAndCounts]) => {
+    // Result is an array of pathways, sorted by number of interactions in gene
+    const rankedPathways = Object.entries(idsAndCounts).sort((a, b) => b[1] - a[1])
+    rankedPathwayByGene[gene] = rankedPathways.map(([pw, count]) => pw)
+  })
+
+  // console.log('in getPathwayIdsByName, pathwayIdsByName', pathwayIdsByName)
   window.pathwayIdsByName = pathwayIdsByName
+  window.rankedPathwayByGene = rankedPathwayByGene
   return pathwayIdsByName
 }
 
