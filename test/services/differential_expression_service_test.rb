@@ -74,10 +74,11 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
 
   teardown do
     DataArray.find_by(@all_cells_array_params)&.destroy
-    @basic_study.differential_expression_results.destroy_all
+    DifferentialExpressionResult.delete_all
     StudyFile.where(file_type: 'Differential Expression').delete_all
     @basic_study.public = true
     @basic_study.save(validate: false) # skip callbacks for performance
+    @basic_study.reload
   end
 
   test 'should validate parameters and launch differential expression job' do
