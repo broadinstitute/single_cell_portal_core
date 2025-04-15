@@ -94,6 +94,8 @@ export async function getAnnDataHeaders(hdf5File) {
 
 /**
  * Check format of ontology IDs for key, return updated issues array
+ *
+ * TODO (SCP-5791): Move this rule to shared-validation.js, apply to classic as well
  */
 export function checkOntologyIdFormat(key, ontologyIds) {
   const issues = []
@@ -121,6 +123,7 @@ export function checkOntologyIdFormat(key, ontologyIds) {
 
 /** Validate author's annotation labels and IDs match those in ontologies */
 async function checkOntologyLabelsAndIds(key, ontologies, groups) {
+  console.log(`calling checkOntologyLabelsAndIds`)
   const [ids, idIndexes, labels, labelIndexes] = groups
 
   const issues = []
@@ -138,6 +141,7 @@ async function checkOntologyLabelsAndIds(key, ontologies, groups) {
     let [id, label] = r.split(' || ')
     const ontologyShortNameLc = getOntologyShortNameLc(id)
     const ontology = ontologies[ontologyShortNameLc]
+
     if (id.includes(':')) {
       // Convert colon to underscore for ontology lookup
       const idParts = id.split(':')
@@ -231,13 +235,11 @@ async function validateOntologyLabelsAndIds(hdf5File) {
   // Validate IDs for species, organ, disease, and library preparation protocol
   for (let i = 0; i < propNames.length; i++) {
     const column = propNames[i]
-    if (!column.endsWith('__ontology_label')) {continue}
-    const key = column.split('__ontology_label')[0]
-    const groups = await getOntologyIdsAndLabels(key, hdf5File)
+    const groups = await getOntologyIdsAndLabels(column, hdf5File)
 
     if (groups) {
       issues = issues.concat(
-        await checkOntologyLabelsAndIds(key, ontologies, groups)
+        await checkOntologyLabelsAndIds(column, ontologies, groups)
       )
     }
   }
@@ -249,17 +251,15 @@ async function validateOntologyLabelsAndIds(hdf5File) {
 /** Validate ontology IDs for required metadata columns in AnnData file */
 async function validateOntologyIdFormat(hdf5File) {
   let issues = []
+  const propNames = getOntologyBasedProps()
 
   // Validate IDs for species, organ, disease, and library preparation protocol
-  for (let i = 0; i < REQUIRED_CONVENTION_COLUMNS.length; i++) {
-    const column = REQUIRED_CONVENTION_COLUMNS[i]
-    if (!column.endsWith('__ontology_label') || !column.endsWith('__unit_label')) {continue}
-    const suffix = column.endsWith('__ontology_label') ? '__ontology_label' : '__unit_label'
-    const key = column.split(suffix)[0]
-    const ontologyIds = await getOntologyIds(key, hdf5File)
+  for (let i = 0; i < propNames.length; i++) {
+    const column = propNames[i]
+    const ontologyIds = await getOntologyIds(column, hdf5File)
 
     issues = issues.concat(
-      checkOntologyIdFormat(key, ontologyIds)
+      checkOntologyIdFormat(column, ontologyIds)
     )
   }
 
@@ -273,7 +273,6 @@ export async function parseAnnDataFile(fileOrUrl, remoteProps) {
   const hdf5File = await getHdf5File(fileOrUrl, remoteProps)
 
   const headers = await getAnnDataHeaders(hdf5File)
-  console.log(`headers: ${JSON.stringify(headers)}`)
 
   const requiredMetadataIssues = validateRequiredMetadataColumns([headers], true)
   let ontologyIdFormatIssues = []
