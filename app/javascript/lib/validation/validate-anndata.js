@@ -3,10 +3,10 @@ import { openH5File } from 'hdf5-indexed-reader'
 import { getOAuthToken } from '~/lib/scp-api'
 import {
   validateUnique, validateRequiredMetadataColumns,
-  validateAlphanumericAndUnderscores, checkOntologyIdFormat,
-  REQUIRED_CONVENTION_COLUMNS, getOntologyShortNameLc
+  validateAlphanumericAndUnderscores, getOntologyShortNameLc,
+  metadataSchema, REQUIRED_CONVENTION_COLUMNS
 } from './shared-validation'
-import { fetchOntologies, getOntologyBasedProps } from './ontology-validation'
+import { fetchOntologies, getOntologyBasedProps, getAcceptedOntologies } from './ontology-validation'
 
 /** Get ontology ID values for key in AnnData file */
 async function getOntologyIds(key, hdf5File) {
@@ -92,6 +92,33 @@ export async function getAnnDataHeaders(hdf5File) {
   return headers
 }
 
+/**
+ * Check format of ontology IDs for key, return updated issues array
+ */
+export function checkOntologyIdFormat(key, ontologyIds) {
+  const issues = []
+
+  const acceptedOntologies = getAcceptedOntologies(key, metadataSchema)
+  if (!acceptedOntologies) {return}
+
+  ontologyIds.forEach(ontologyId => {
+    const ontologyShortName = ontologyId.split(/[_:]/)[0]
+    if (!acceptedOntologies.includes(ontologyShortName)) {
+      const accepted = acceptedOntologies.join(', ')
+      const msg =
+        `Ontology ID "${ontologyId}" ` +
+        `is not among accepted ontologies (${accepted}) ` +
+        `for key "${key}"`
+
+      // Match "ontology:label-lookup-error" error type used in Ingest Pipeline, per
+      // https://github.com/broadinstitute/scp-ingest-pipeline/blob/858bb96ea7669f799d8f42d30b0b3131e2091710/ingest/validation/validate_metadata.py
+      issues.push(['error', 'ontology:label-lookup-error', msg])
+    }
+  })
+
+  return issues
+}
+
 /** Validate author's annotation labels and IDs match those in ontologies */
 async function checkOntologyLabelsAndIds(key, ontologies, groups) {
   const [ids, idIndexes, labels, labelIndexes] = groups
@@ -111,13 +138,12 @@ async function checkOntologyLabelsAndIds(key, ontologies, groups) {
     let [id, label] = r.split(' || ')
     const ontologyShortNameLc = getOntologyShortNameLc(id)
     const ontology = ontologies[ontologyShortNameLc]
-
     if (id.includes(':')) {
       // Convert colon to underscore for ontology lookup
       const idParts = id.split(':')
       id = `${idParts[0]}_${idParts[1]}`
     }
-
+    console.log(`validating ${id} ${label} in ${ontologyShortNameLc}`)
     if (!(id in ontology)) {
       // Register invalid ontology ID
       const msg = `Invalid ontology ID: ${id}`
@@ -247,6 +273,7 @@ export async function parseAnnDataFile(fileOrUrl, remoteProps) {
   const hdf5File = await getHdf5File(fileOrUrl, remoteProps)
 
   const headers = await getAnnDataHeaders(hdf5File)
+  console.log(`headers: ${JSON.stringify(headers)}`)
 
   const requiredMetadataIssues = validateRequiredMetadataColumns([headers], true)
   let ontologyIdFormatIssues = []

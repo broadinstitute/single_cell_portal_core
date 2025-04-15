@@ -596,17 +596,17 @@ describe('validates file contents against minified ontologies', () => {
     expect(errors).toHaveLength(2)
   })
 
-  it('validates single line and term from a metadata file', async() => {
+  it('validates single line or term from a metadata file', async() => {
     const ontologies = await fetchOntologies()
     const headers = [
       [ "NAME", "species", "species__ontology_label","disease", "disease__ontology_label"],
-      ["TYPE", "group", "group", "group", "group", "group"]
+      ["TYPE", "group", "group", "group", "group"]
     ]
     // validate whole line
     const line = ["CELL_0001", "NCBITaxon_9606", "Homo sapiens", "MONDO_0000001", "disease or disorder"]
     let knownErrors = {}
     let issues = validateTermsInLine(headers, line, ontologies, knownErrors)
-    expect(issues).toBeEmpty()
+    expect(issues).toHaveLength(0)
     const badLine = ["CELL_0001", "NCBITaxon_9606", "not the label","MONDO_0000001", "also not label"]
     issues = validateTermsInLine(headers, badLine, ontologies, knownErrors)
     expect(issues.length).toBe(2)
@@ -617,7 +617,19 @@ describe('validates file contents against minified ontologies', () => {
     let label = 'Seq-Well'
     knownErrors = {}
     issues = validateOntologyTerm(prop, ontologyId, label, ontologies, knownErrors)
-    expect(issues).toBeEmpty()
+    expect(issues.length).toBe(0)
+    prop = 'cell_type'
+    ontologyId = 'CL_0000066'
+    label = 'bad label'
+    issues = validateOntologyTerm(prop, ontologyId, label, ontologies, knownErrors)
+    expect(issues.length).toBe(1)
+    expect(Object.keys(knownErrors).length).toBe(1)
+    prop = 'organ'
+    ontologyId = 'foobar'
+    label = 'bad label'
+    issues = validateOntologyTerm(prop, ontologyId, label, ontologies, knownErrors)
+    expect(issues.length).toBe(1)
+    expect(Object.keys(knownErrors).length).toBe(2)
   })
 
   it('gets ontology shortname from ID', () => {

@@ -278,7 +278,17 @@ export function validateOntologyTerm(prop, ontologyId, label, ontologies, knownE
 
   let errorIdentifier
   let issue
-  if (!(ontologyId in ontology)) {
+
+  if (!ontology) {
+    errorIdentifier = `${ontologyId}-label-lookup-error`
+    const accepted = Object.keys(ontologies).join(', ')
+    const msg =
+      `Ontology ID "${ontologyId}" ` +
+      `is not among accepted ontologies (${accepted}) ` +
+      `for key "${prop}"`
+
+    issue = ['error', 'ontology:label-lookup-error', msg]
+  } else if (!(ontologyId in ontology)) {
     // Register invalid ontology ID
     const msg = `Invalid ontology ID: ${ontologyId}`
     errorIdentifier = `${ontologyId}-invalid-id`
