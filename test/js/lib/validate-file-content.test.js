@@ -1,9 +1,12 @@
 import React from 'react'
+const fetch = require('node-fetch')
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 
 import ValidateFile from 'lib/validation/validate-file'
-import { REQUIRED_CONVENTION_COLUMNS } from 'lib/validation/shared-validation'
+import {
+  REQUIRED_CONVENTION_COLUMNS, getOntologyShortNameLc, getLabelSuffixForOntology
+} from 'lib/validation/shared-validation'
 import { getLogProps } from 'lib/validation/log-validation'
 import ValidationMessage from 'components/validation/ValidationMessage'
 import * as MetricsApi from 'lib/metrics-api'
@@ -13,7 +16,20 @@ import { createMockFile } from './file-mock-utils'
 
 const validateLocalFile = ValidateFile.validateLocalFile
 
+import {
+  nodeCaches, nodeHeaders, nodeRequest, nodeResponse
+} from './node-web-api'
+
 describe('Client-side file validation', () => {
+  beforeAll(() => {
+    global.fetch = fetch
+
+    global.caches = nodeCaches;
+    global.Response = nodeResponse
+    global.Request = nodeRequest
+    global.Headers = nodeHeaders
+  })
+
   jest
     .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
     .mockReturnValue({
@@ -464,6 +480,15 @@ it('Catches disallowed characters in metadata header', async () => {
 
 // With the client side file validation feature flag set to false expect invalid files to pass
 describe('Client-side file validation feature flag is false', () => {
+  beforeAll(() => {
+    global.fetch = fetch
+
+    global.caches = nodeCaches;
+    global.Response = nodeResponse
+    global.Request = nodeRequest
+    global.Headers = nodeHeaders
+  })
+
   beforeEach(() => {
     jest
       .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
@@ -518,3 +543,53 @@ describe('Client-side file validation feature flag is false', () => {
   })
 }
 )
+
+describe('validates file contents against minified ontologies', () => {
+  beforeAll(() => {
+    global.fetch = fetch
+
+    global.caches = nodeCaches;
+    global.Response = nodeResponse
+    global.Request = nodeRequest
+    global.Headers = nodeHeaders
+  })
+
+  beforeEach(() => {
+    jest
+      .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
+      .mockReturnValue({
+        clientside_validation: true
+      })
+  })
+  it('validates classic metadata file', async () => {
+    const content = [
+      "NAME\tbiosample_id\tCellID\tdisease\tdisease__ontology_label\tdonor_id\tlibrary_preparation_protocol" +
+      "\tlibrary_preparation_protocol__ontology_label\torgan\torgan__ontology_label\tsex\tspecies\tspecies__ontology_label",
+      "TYPE\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup",
+      "CELL_0001\tid1\tcell1\tMONDO_0000001\tdisease or disorder\tdonor1\tEFO_0008919\tSeq-Well\tUBERON_0001913" +
+      "\tmilk\tfemale\tNCBITaxon_9606\tHomo sapiens"
+    ]
+    const file = createMockFile({
+      fileName: 'metadata_valid.tsv',
+      content: content.join("\n")
+    })
+    const [{ errors }] = await validateLocalFile(file, { file_type: 'Metadata', use_metadata_convention: true })
+    expect(errors).toHaveLength(0)
+  })
+
+  it('finds ontology error in classic metadata file', async () => {
+    const content = [
+      "NAME\tbiosample_id\tCellID\tdisease\tdisease__ontology_label\tdonor_id\tlibrary_preparation_protocol" +
+      "\tlibrary_preparation_protocol__ontology_label\torgan\torgan__ontology_label\tsex\tspecies\tspecies__ontology_label",
+      "TYPE\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup",
+      "CELL_0001\tid1\tcell1\tMONDO_0000001\tdisease or disorder\tdonor1\tEFO_0008919\tnot label\tUBERON_0001913" +
+      "\tmilk\tfemale\tNCBITaxon_9606\tfoo"
+    ]
+    const file = createMockFile({
+      fileName: 'metadata_valid.tsv',
+      content: content.join("\n")
+    })
+    const [{ errors }] = await validateLocalFile(file, { file_type: 'Metadata', use_metadata_convention: true })
+    expect(errors).toHaveLength(2)
+  })
+})

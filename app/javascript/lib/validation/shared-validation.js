@@ -4,6 +4,7 @@
 
 // Ultimately sourced from: scp-ingest-pipeline/schemas
 import * as _schema from 'lib/assets/metadata_schemas/alexandria_convention/alexandria_convention_schema.json';
+import { getAcceptedOntologies } from  './ontology-validation'
 
 export const metadataSchema = _schema
 export const REQUIRED_CONVENTION_COLUMNS = metadataSchema.required.filter(c => c !== 'CellID')
@@ -312,4 +313,41 @@ export function timeOutCSFV(chunker) {
       'Due to this file\'s size, it will be fully validated after upload, and any errors will be emailed to you.'])
   }
   return issues
+}
+
+/**
+ * Check format of ontology IDs for key, return updated issues array
+ */
+export function checkOntologyIdFormat(key, ontologyIds) {
+  const issues = []
+
+  const acceptedOntologies = getAcceptedOntologies(key, metadataSchema)
+  if (!acceptedOntologies) {return}
+
+  ontologyIds.forEach(ontologyId => {
+    const ontologyShortName = ontologyId.split(/[_:]/)[0]
+    if (!acceptedOntologies.includes(ontologyShortName)) {
+      const accepted = acceptedOntologies.join(', ')
+      const msg =
+        `Ontology ID "${ontologyId}" ` +
+        `is not among accepted ontologies (${accepted}) ` +
+        `for key "${key}"`
+
+      // Match "ontology:label-lookup-error" error type used in Ingest Pipeline, per
+      // https://github.com/broadinstitute/scp-ingest-pipeline/blob/858bb96ea7669f799d8f42d30b0b3131e2091710/ingest/validation/validate_metadata.py
+      issues.push(['error', 'ontology:label-lookup-error', msg])
+    }
+  })
+
+  return issues
+}
+
+/** get ontology shortname from an identifier */
+export function getOntologyShortNameLc(identifier) {
+  return identifier.split(/[_:]/)[0].toLowerCase()
+}
+
+export function getLabelSuffixForOntology(indentifier) {
+  const shortName = getOntologyShortNameLc(indentifier)
+  return shortName === 'uo' ? '_label' : '__ontology_label'
 }

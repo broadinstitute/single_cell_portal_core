@@ -3,10 +3,10 @@ import { openH5File } from 'hdf5-indexed-reader'
 import { getOAuthToken } from '~/lib/scp-api'
 import {
   validateUnique, validateRequiredMetadataColumns,
-  validateAlphanumericAndUnderscores,
-  metadataSchema, REQUIRED_CONVENTION_COLUMNS
+  validateAlphanumericAndUnderscores, checkOntologyIdFormat,
+  REQUIRED_CONVENTION_COLUMNS, getOntologyShortNameLc
 } from './shared-validation'
-import { getAcceptedOntologies, fetchOntologies } from './ontology-validation'
+import { fetchOntologies, getOntologyBasedProps } from './ontology-validation'
 
 /** Get ontology ID values for key in AnnData file */
 async function getOntologyIds(key, hdf5File) {
@@ -92,35 +92,6 @@ export async function getAnnDataHeaders(hdf5File) {
   return headers
 }
 
-/**
- * Check format of ontology IDs for key, return updated issues array
- *
- * TODO (SCP-5791): Move this rule to shared-validation.js, apply to classic as well
- */
-export function checkOntologyIdFormat(key, ontologyIds) {
-  const issues = []
-
-  const acceptedOntologies = getAcceptedOntologies(key, metadataSchema)
-  if (!acceptedOntologies) {return}
-
-  ontologyIds.forEach(ontologyId => {
-    const ontologyShortName = ontologyId.split(/[_:]/)[0]
-    if (!acceptedOntologies.includes(ontologyShortName)) {
-      const accepted = acceptedOntologies.join(', ')
-      const msg =
-        `Ontology ID "${ontologyId}" ` +
-        `is not among accepted ontologies (${accepted}) ` +
-        `for key "${key}"`
-
-      // Match "ontology:label-lookup-error" error type used in Ingest Pipeline, per
-      // https://github.com/broadinstitute/scp-ingest-pipeline/blob/858bb96ea7669f799d8f42d30b0b3131e2091710/ingest/validation/validate_metadata.py
-      issues.push(['error', 'ontology:label-lookup-error', msg])
-    }
-  })
-
-  return issues
-}
-
 /** Validate author's annotation labels and IDs match those in ontologies */
 async function checkOntologyLabelsAndIds(key, ontologies, groups) {
   const [ids, idIndexes, labels, labelIndexes] = groups
@@ -138,7 +109,7 @@ async function checkOntologyLabelsAndIds(key, ontologies, groups) {
 
   rawUniques.map(r => {
     let [id, label] = r.split(' || ')
-    const ontologyShortNameLc = id.split(/[_:]/)[0].toLowerCase()
+    const ontologyShortNameLc = getOntologyShortNameLc(id)
     const ontology = ontologies[ontologyShortNameLc]
 
     if (id.includes(':')) {
@@ -229,10 +200,11 @@ async function validateOntologyLabelsAndIds(hdf5File) {
   let issues = []
 
   const ontologies = await fetchOntologies()
+  const propNames = getOntologyBasedProps()
 
   // Validate IDs for species, organ, disease, and library preparation protocol
-  for (let i = 0; i < REQUIRED_CONVENTION_COLUMNS.length; i++) {
-    const column = REQUIRED_CONVENTION_COLUMNS[i]
+  for (let i = 0; i < propNames.length; i++) {
+    const column = propNames[i]
     if (!column.endsWith('__ontology_label')) {continue}
     const key = column.split('__ontology_label')[0]
     const groups = await getOntologyIdsAndLabels(key, hdf5File)
@@ -255,8 +227,9 @@ async function validateOntologyIdFormat(hdf5File) {
   // Validate IDs for species, organ, disease, and library preparation protocol
   for (let i = 0; i < REQUIRED_CONVENTION_COLUMNS.length; i++) {
     const column = REQUIRED_CONVENTION_COLUMNS[i]
-    if (!column.endsWith('__ontology_label')) {continue}
-    const key = column.split('__ontology_label')[0]
+    if (!column.endsWith('__ontology_label') || !column.endsWith('__unit_label')) {continue}
+    const suffix = column.endsWith('__ontology_label') ? '__ontology_label' : '__unit_label'
+    const key = column.split(suffix)[0]
     const ontologyIds = await getOntologyIds(key, hdf5File)
 
     issues = issues.concat(
