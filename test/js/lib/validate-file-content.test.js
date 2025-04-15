@@ -4,6 +4,8 @@ import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 
 import ValidateFile from 'lib/validation/validate-file'
+import { fetchOntologies } from 'lib/validation/ontology-validation'
+import { validateTermsInLine, validateOntologyTerm } from 'lib/validation/validate-file-content'
 import {
   REQUIRED_CONVENTION_COLUMNS, getOntologyShortNameLc, getLabelSuffixForOntology
 } from 'lib/validation/shared-validation'
@@ -561,6 +563,7 @@ describe('validates file contents against minified ontologies', () => {
         clientside_validation: true
       })
   })
+
   it('validates classic metadata file', async () => {
     const content = [
       "NAME\tbiosample_id\tCellID\tdisease\tdisease__ontology_label\tdonor_id\tlibrary_preparation_protocol" +
@@ -591,5 +594,41 @@ describe('validates file contents against minified ontologies', () => {
     })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Metadata', use_metadata_convention: true })
     expect(errors).toHaveLength(2)
+  })
+
+  it('validates single line and term from a metadata file', async() => {
+    const ontologies = await fetchOntologies()
+    const headers = [
+      [ "NAME", "species", "species__ontology_label","disease", "disease__ontology_label"],
+      ["TYPE", "group", "group", "group", "group", "group"]
+    ]
+    // validate whole line
+    const line = ["CELL_0001", "NCBITaxon_9606", "Homo sapiens", "MONDO_0000001", "disease or disorder"]
+    let knownErrors = {}
+    let issues = validateTermsInLine(headers, line, ontologies, knownErrors)
+    expect(issues).toBeEmpty()
+    const badLine = ["CELL_0001", "NCBITaxon_9606", "not the label","MONDO_0000001", "also not label"]
+    issues = validateTermsInLine(headers, badLine, ontologies, knownErrors)
+    expect(issues.length).toBe(2)
+    expect(Object.keys(knownErrors).length).toBe(2)
+    // validate single term
+    let prop = 'library_preparation_protocol'
+    let ontologyId = 'EFO_0008919'
+    let label = 'Seq-Well'
+    knownErrors = {}
+    issues = validateOntologyTerm(prop, ontologyId, label, ontologies, knownErrors)
+    expect(issues).toBeEmpty()
+  })
+
+  it('gets ontology shortname from ID', () => {
+    const ontologyId = "EFO_0008919"
+    expect("efo").toEqual(getOntologyShortNameLc(ontologyId))
+  })
+
+  it('gets label suffix depending on ontology', () => {
+    const efoId = "EFO_0008919"
+    expect("__ontology_label").toEqual(getLabelSuffixForOntology(efoId))
+    const uoId = "UO_0000036"
+    expect("_label").toEqual(getLabelSuffixForOntology(uoId))
   })
 })
