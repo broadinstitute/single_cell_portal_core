@@ -12,9 +12,10 @@ import {
 import {
   renderWizardWithStudy, getSelectByLabelText, saveButton, mockCreateStudyFile
 } from './upload-wizard-test-utils'
-import fetch from 'node-fetch'
+const fetch = require('node-fetch')
 import { setMetricsApiMockFlag } from 'lib/metrics-api'
 import { getTokenExpiry } from './upload-wizard-test-utils'
+import { nodeCaches, nodeHeaders, nodeRequest, nodeResponse } from '../lib/node-web-api'
 
 const processedFileName = 'example_processed_dense.txt'
 const rawCountsFileName = 'example_raw_counts.txt'
@@ -25,6 +26,11 @@ describe('creation of study files', () => {
     // This test is long--running all steps in series as if it was a user uploading a new study from scratch--so allow extra time
     jest.setTimeout(10000)
     global.fetch = fetch
+
+    global.caches = nodeCaches;
+    global.Response = nodeResponse
+    global.Request = nodeRequest
+    global.Headers = nodeHeaders
     setMetricsApiMockFlag(true)
     window.SCP = {
       readOnlyTokenObject: {
@@ -209,9 +215,20 @@ async function testMetadataUpload({ createFileSpy }) {
 
 
   const goodFileName = 'metadata-good.txt'
+  const goodContent = [
+    'NAME,cell_type,cell_type__ontology_label,organism_age,disease,disease__ontology_label,species,' +
+    'species__ontology_label,library_preparation_protocol,library_preparation_protocol__ontology_label,organ,' +
+    'organ__ontology_label,sex,is_living,organism_age__unit,organism_age__unit_label,ethnicity__ontology_label,' +
+    'ethnicity,sample_type,donor_id,biosample_id,biosample_type,preservation_method',
+    'TYPE,group,group,numeric,group,group,group,group,group,group,group,group,group,group,group,group,group,group,' +
+    'group,group,group,group,group',
+    'CELL_0001,CL_0000066,epithelial cell,1,MONDO_0000001,disease or disorder,NCBITaxon_9606,Homo sapiens,EFO_0008919,' +
+    'Seq-Well,UBERON_0001913,milk,female,yes,UO_0000036,year,European ancestry,HANCESTRO_0005,' +
+    'direct from donor - fresh,BM01,BM01_16dpp_r3,PrimaryBioSample_BodyFluid,Fresh'
+  ]
   fireFileSelectionEvent(screen.getByTestId('file-input'), {
     fileName: goodFileName,
-    content: 'NAME,cell_type,cell_type__ontology_label,organism_age,disease,disease__ontology_label,species,species__ontology_label,geographical_region,geographical_region__ontology_label,library_preparation_protocol,library_preparation_protocol__ontology_label,organ,organ__ontology_label,sex,is_living,organism_age__unit,organism_age__unit_label,ethnicity__ontology_label,ethnicity,race,race__ontology_label,sample_type,donor_id,biosample_id,biosample_type,preservation_method\nTYPE,group,group,numeric,group,group,group,group,group,group,group,group,group,group,group,group,group,group,group,group,group,group,group,group,group,group,group'
+    content: goodContent.join('\n')
   })
   await waitForElementToBeRemoved(() => screen.getByTestId('file-validation-spinner'))
   expect(screen.getByTestId('file-selection-name')).toHaveTextContent(goodFileName)
@@ -221,9 +238,9 @@ async function testMetadataUpload({ createFileSpy }) {
   await waitForElementToBeRemoved(() => screen.getByTestId('file-save-spinner'))
 
   expect(createFileSpy).toHaveBeenLastCalledWith(expect.objectContaining({
-    chunkEnd: 627,
+    chunkEnd: 801,
     chunkStart: 0,
-    fileSize: 627,
+    fileSize: 801,
     isChunked: false,
     studyAccession: 'SCP1',
     studyFileData: formData
