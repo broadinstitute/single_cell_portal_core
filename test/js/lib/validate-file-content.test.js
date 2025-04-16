@@ -603,18 +603,18 @@ describe('validates file contents against minified ontologies', () => {
     ]
     // validate whole line
     const line = ["CELL_0001", "NCBITaxon_9606", "Homo sapiens", "MONDO_0000001", "disease or disorder"]
-    let knownErrors = {}
+    let knownErrors = []
     let issues = validateConventionTerms(headers, line, ontologies, knownErrors)
     expect(issues).toHaveLength(0)
     const badLine = ["CELL_0001", "NCBITaxon_9606", "not the label","MONDO_0000001", "also not label"]
     issues = validateConventionTerms(headers, badLine, ontologies, knownErrors)
     expect(issues.length).toBe(2)
-    expect(Object.keys(knownErrors).length).toBe(2)
+    expect(knownErrors.length).toBe(2)
     // validate single term
     let prop = 'library_preparation_protocol'
     let ontologyId = 'EFO_0008919'
     let label = 'Seq-Well'
-    knownErrors = {}
+    knownErrors = []
     issues = validateOntologyTerm(prop, ontologyId, label, ontologies, knownErrors)
     expect(issues.length).toBe(0)
     prop = 'cell_type'
@@ -622,13 +622,13 @@ describe('validates file contents against minified ontologies', () => {
     label = 'bad label'
     issues = validateOntologyTerm(prop, ontologyId, label, ontologies, knownErrors)
     expect(issues.length).toBe(1)
-    expect(Object.keys(knownErrors).length).toBe(1)
+    expect(knownErrors.length).toBe(1)
     prop = 'organ'
     ontologyId = 'foobar'
     label = 'bad label'
     issues = validateOntologyTerm(prop, ontologyId, label, ontologies, knownErrors)
     expect(issues.length).toBe(1)
-    expect(Object.keys(knownErrors).length).toBe(2)
+    expect(knownErrors.length).toBe(2)
   })
 
   it('gets ontology shortname from ID', () => {

@@ -24,7 +24,7 @@ describe('creation of study files', () => {
   beforeAll(() => {
     jest.restoreAllMocks()
     // This test is long--running all steps in series as if it was a user uploading a new study from scratch--so allow extra time
-    jest.setTimeout(10000)
+    jest.setTimeout(20000)
     global.fetch = fetch
 
     global.caches = nodeCaches;
@@ -45,6 +45,9 @@ describe('creation of study files', () => {
   afterEach(() => {
     // Restores all mocks back to their original value
     jest.restoreAllMocks()
+  })
+
+  afterAll(() => {
     jest.setTimeout(5000)
   })
 
@@ -230,10 +233,7 @@ async function testMetadataUpload({ createFileSpy }) {
     fileName: goodFileName,
     content: goodContent.join('\n')
   })
-  await waitForElementToBeRemoved(
-    () => screen.getByTestId('file-validation-spinner'),
-    { timeout: 20000 } // increasing timeout to avoid errors caused by validation taking longer than expected
-  )
+  await waitForElementToBeRemoved(() => screen.getByTestId('file-validation-spinner'))
   expect(screen.getByTestId('file-selection-name')).toHaveTextContent(goodFileName)
   expect(saveButton()).not.toBeDisabled()
 

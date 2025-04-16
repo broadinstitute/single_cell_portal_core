@@ -220,7 +220,7 @@ export async function parseMetadataFile(chunker, mimeType, fileOptions) {
   issues = issues.concat(validateNoMetadataCoordinates(headers))
   let ontologies
   // keep track of a map of ontology-based errors to avoid duplications
-  const knownErrors = {}
+  const knownErrors = []
   if (fileOptions.use_metadata_convention) {
     ontologies = await fetchOntologies()
     issues = issues.concat(validateRequiredMetadataColumns(headers))
@@ -246,6 +246,7 @@ export async function parseMetadataFile(chunker, mimeType, fileOptions) {
   return { issues, delimiter, numColumns: headers[0].length }
 }
 
+/** validate all ontology-based convention terms in a given line */
 export function validateConventionTerms(headers, line, ontologies, knownErrors) {
   let issues = []
   const metadataHeaders = headers[0]
@@ -262,6 +263,7 @@ export function validateConventionTerms(headers, line, ontologies, knownErrors) 
   return issues
 }
 
+/** validate a single ontology ID against stored ontologies and return issues */
 export function validateOntologyTerm(prop, ontologyId, label, ontologies, knownErrors) {
   const issues = []
   const ontologyShortNameLc = getOntologyShortNameLc(ontologyId)
@@ -309,9 +311,9 @@ export function validateOntologyTerm(prop, ontologyId, label, ontologies, knownE
     }
   }
   // only store unique instances of errors since we're validating line by line
-  if (issue && typeof knownErrors[errorIdentifier] === 'undefined') {
+  if (issue && knownErrors.indexOf(errorIdentifier) < 0) {
     issues.push(issue)
-    knownErrors[errorIdentifier] = true
+    knownErrors.push(errorIdentifier)
   }
   return issues
 }
