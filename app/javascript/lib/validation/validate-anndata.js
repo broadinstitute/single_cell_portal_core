@@ -8,6 +8,8 @@ import {
 } from './shared-validation'
 import { fetchOntologies, getOntologyBasedProps, getAcceptedOntologies } from './ontology-validation'
 
+const ONTOLOGY_PROPS = getOntologyBasedProps()
+
 /** Get ontology ID values for key in AnnData file */
 async function getOntologyIds(key, hdf5File) {
   let ontologyIds = []
@@ -122,8 +124,7 @@ export function checkOntologyIdFormat(key, ontologyIds) {
 }
 
 /** Validate author's annotation labels and IDs match those in ontologies */
-async function checkOntologyLabelsAndIds(key, ontologies, groups) {
-  console.log(`calling checkOntologyLabelsAndIds`)
+export async function checkOntologyLabelsAndIds(key, ontologies, groups) {
   const [ids, idIndexes, labels, labelIndexes] = groups
 
   const issues = []
@@ -147,7 +148,6 @@ async function checkOntologyLabelsAndIds(key, ontologies, groups) {
       const idParts = id.split(':')
       id = `${idParts[0]}_${idParts[1]}`
     }
-    console.log(`validating ${id} ${label} in ${ontologyShortNameLc}`)
     if (!(id in ontology)) {
       // Register invalid ontology ID
       const msg = `Invalid ontology ID: ${id}`
@@ -175,9 +175,10 @@ async function checkOntologyLabelsAndIds(key, ontologies, groups) {
 }
 
 /** Get ontology ID values for key in AnnData file */
-async function getOntologyIdsAndLabels(requiredName, hdf5File) {
+export async function getOntologyIdsAndLabels(columnName, hdf5File) {
   const obs = await hdf5File.get('obs')
   const obsValues = await Promise.all(obs.values)
+  const isRequired = REQUIRED_CONVENTION_COLUMNS.includes(columnName)
 
   // Old versions of the AnnData spec used __categories as an obs.
   // However, in new versions (since before 2023-01-23) of AnnData spec,
@@ -193,11 +194,14 @@ async function getOntologyIdsAndLabels(requiredName, hdf5File) {
     return null
   }
 
-  const idKey = requiredName
-  const labelKey = `${requiredName}__ontology_label`
+  const idKey = columnName
+  const labelKey = `${columnName}__ontology_label`
 
   const idGroup = obsValues.find(o => o.name.endsWith(idKey))
   const labelGroup = obsValues.find(o => o.name.endsWith(labelKey))
+
+  // exit when optional metadata isn't found, like cell_type
+  if (!idGroup && !isRequired) { return }
 
   // AnnData organizes each "obs" annotation (e.g. disease__ontology_label,
   // sex) into a container with a `categories` frame and a `code` frame.
@@ -230,11 +234,10 @@ async function validateOntologyLabelsAndIds(hdf5File) {
   let issues = []
 
   const ontologies = await fetchOntologies()
-  const propNames = getOntologyBasedProps()
 
   // Validate IDs for species, organ, disease, and library preparation protocol
-  for (let i = 0; i < propNames.length; i++) {
-    const column = propNames[i]
+  for (let i = 0; i < ONTOLOGY_PROPS.length; i++) {
+    const column = ONTOLOGY_PROPS[i]
     const groups = await getOntologyIdsAndLabels(column, hdf5File)
 
     if (groups) {
@@ -251,11 +254,10 @@ async function validateOntologyLabelsAndIds(hdf5File) {
 /** Validate ontology IDs for required metadata columns in AnnData file */
 async function validateOntologyIdFormat(hdf5File) {
   let issues = []
-  const propNames = getOntologyBasedProps()
 
   // Validate IDs for species, organ, disease, and library preparation protocol
-  for (let i = 0; i < propNames.length; i++) {
-    const column = propNames[i]
+  for (let i = 0; i < ONTOLOGY_PROPS.length; i++) {
+    const column = ONTOLOGY_PROPS[i]
     const ontologyIds = await getOntologyIds(column, hdf5File)
 
     issues = issues.concat(

@@ -5,7 +5,7 @@ import '@testing-library/jest-dom/extend-expect'
 
 import ValidateFile from 'lib/validation/validate-file'
 import { fetchOntologies } from 'lib/validation/ontology-validation'
-import { validateTermsInLine, validateOntologyTerm } from 'lib/validation/validate-file-content'
+import { validateConventionTerms, validateOntologyTerm } from 'lib/validation/validate-file-content'
 import {
   REQUIRED_CONVENTION_COLUMNS, getOntologyShortNameLc, getLabelSuffixForOntology
 } from 'lib/validation/shared-validation'
@@ -351,7 +351,6 @@ describe('Client-side file validation', () => {
   it('does not catch gzipped RDS file without .gz extension', async () => {
     const file = createMockFile({ fileName: 'foo.rds', content: '\x1F\x2E3lkjf3' })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })
-    console.log('errors', errors)
     const hasMissingGzipExtensionError = errors.some(
       error => error[1] === 'encoding:missing-gz-extension'
     )
@@ -605,10 +604,10 @@ describe('validates file contents against minified ontologies', () => {
     // validate whole line
     const line = ["CELL_0001", "NCBITaxon_9606", "Homo sapiens", "MONDO_0000001", "disease or disorder"]
     let knownErrors = {}
-    let issues = validateTermsInLine(headers, line, ontologies, knownErrors)
+    let issues = validateConventionTerms(headers, line, ontologies, knownErrors)
     expect(issues).toHaveLength(0)
     const badLine = ["CELL_0001", "NCBITaxon_9606", "not the label","MONDO_0000001", "also not label"]
-    issues = validateTermsInLine(headers, badLine, ontologies, knownErrors)
+    issues = validateConventionTerms(headers, badLine, ontologies, knownErrors)
     expect(issues.length).toBe(2)
     expect(Object.keys(knownErrors).length).toBe(2)
     // validate single term

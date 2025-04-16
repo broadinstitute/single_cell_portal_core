@@ -231,9 +231,6 @@ export async function parseMetadataFile(chunker, mimeType, fileOptions) {
   const dataObj = {} // object to track multi-line validation concerns
   await chunker.iterateLines({
     func: (rawline, lineNum, isLastLine) => {
-      if (isLastLine) {
-        console.log(`last line found at ${lineNum}`)
-      }
       issues = issues.concat(timeOutCSFV(chunker))
 
       const line = parseLine(rawline, delimiter)
@@ -241,7 +238,7 @@ export async function parseMetadataFile(chunker, mimeType, fileOptions) {
       issues = issues.concat(validateMetadataLabelMatches(headers, line, isLastLine, dataObj))
       issues = issues.concat(validateGroupColumnCounts(headers, line, isLastLine, dataObj))
       if (fileOptions.use_metadata_convention) {
-        issues = issues.concat(validateTermsInLine(headers, line, ontologies, knownErrors))
+        issues = issues.concat(validateConventionTerms(headers, line, ontologies, knownErrors))
       }
     // add other line-by-line validations here
     }
@@ -249,7 +246,7 @@ export async function parseMetadataFile(chunker, mimeType, fileOptions) {
   return { issues, delimiter, numColumns: headers[0].length }
 }
 
-export function validateTermsInLine(headers, line, ontologies, knownErrors) {
+export function validateConventionTerms(headers, line, ontologies, knownErrors) {
   let issues = []
   const metadataHeaders = headers[0]
   for (let i = 0; i < metadataHeaders.length; i++) {
