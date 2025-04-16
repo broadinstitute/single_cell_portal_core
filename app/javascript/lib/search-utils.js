@@ -2,11 +2,10 @@ import stringSimilarity from 'string-similarity'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
 // max number of autocomplete suggestions
-export const NUM_SUGGESTIONS = 50
+export const NUM_SUGGESTIONS = 25
 
 /** Get pathway name given pathway ID */
 export function getPathwayName(pathwayId) {
-  console.log('pathwayId', pathwayId)
   if (window.pathwayNamesById) {
     return window.pathwayNamesById[pathwayId]
   }
@@ -61,16 +60,16 @@ function getPathwayIdsByName() {
     })
   })
 
-  const rankedPathwayByGene = {}
+  const rankedPathwaysByGene = {}
   Object.entries(idsAndCountsByGene).forEach(([gene, idsAndCounts]) => {
     // Result is an array of pathways, sorted by number of interactions in gene
     const rankedPathways = Object.entries(idsAndCounts).sort((a, b) => b[1] - a[1])
-    rankedPathwayByGene[gene] = rankedPathways.map(([pw, count]) => pw)
+    rankedPathwaysByGene[gene.toUpperCase()] = rankedPathways.map(([pw, count]) => pw)
   })
 
   // console.log('in getPathwayIdsByName, pathwayIdsByName', pathwayIdsByName)
   window.pathwayIdsByName = pathwayIdsByName
-  window.rankedPathwayByGene = rankedPathwayByGene
+  window.rankedPathwaysByGene = rankedPathwaysByGene
   return pathwayIdsByName
 }
 
@@ -117,11 +116,19 @@ export function getIsInPathwayTitle(inputText) {
   return isInPathwayName
 }
 
+/** Get IDs of pathways that contain the gene from input text */
+export function getPathwaysContainingGene(inputText) {
+  const rankedPathwaysByGene = window.rankedPathwaysByGene
+  if (!rankedPathwaysByGene || inputText.toUpperCase() in rankedPathwaysByGene === false) {
+    return []
+  }
+
+  const pathwayIds = rankedPathwaysByGene[inputText.toUpperCase()]
+  return pathwayIds
+}
+
 /** Get pathway names that include the input text */
-function getPathwaySuggestions(inputText) {
-  // console.log('in getPathwaySuggestions, inputText', inputText)
-  // console.log('in getPathwaySuggestions, window.Ideogram', window.Ideogram)
-  // console.log('in getPathwaySuggestions, window.Ideogram.interactionCache', window.Ideogram.interactionCache)
+function getPathwaySuggestions(inputText, maxPathwaySuggestions) {
   const flags = getFeatureFlagsWithDefaults()
   if (
     !window.Ideogram || !window.Ideogram.interactionCache ||
@@ -146,6 +153,17 @@ function getPathwaySuggestions(inputText) {
     const pathwayOption = { label: pathwayName, value: pathwayId, isGene: false }
     return pathwayOption
   })
+
+  // If we can fit more suggestions, add any matches from genes in pathway
+  const numSuggestionsLeft = maxPathwaySuggestions - pathwaySuggestions.length
+  if (numSuggestionsLeft > 0) {
+    const pathwayIds = getPathwaysContainingGene(inputText, window.rankedPathwaysByGene)
+    pathwayIds.slice(0, numSuggestionsLeft).forEach(pathwayId => {
+      const pathwayName = getPathwayName(pathwayId)
+      const pathwayOption = { label: pathwayName, value: pathwayId, isGene: false }
+      pathwaySuggestions.push(pathwayOption)
+    })
+  }
 
   return pathwaySuggestions
 }
@@ -195,13 +213,12 @@ export function getAutocompleteSuggestions(inputText, targets, numSuggestions=NU
 
   if (exactMatch) {topMatches.unshift(exactMatch)} // Put any exact match first
 
-  const pathwaySuggestions = getPathwaySuggestions(inputText, targets)
+  const maxPathwaySuggestions = numSuggestions - prefixMatches.length
+  const pathwaySuggestions = getPathwaySuggestions(inputText, maxPathwaySuggestions)
 
   const topGeneMatches = topMatches.slice(0, numSuggestions)
 
   topMatches = topGeneMatches.concat(pathwaySuggestions)
 
   return topMatches
-
-
 }

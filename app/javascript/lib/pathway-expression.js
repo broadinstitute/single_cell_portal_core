@@ -201,12 +201,7 @@ export function colorPathwayGenesByExpression(annotationLabel, dotPlotMetrics) {
   const styleRulesets = []
   const unassayedGenes = []
 
-  // console.log('in colorPathwayGenesByExpression, genes', genes)
-  // console.log('in colorPathwayGenesByExpression, dotPlotMetrics', dotPlotMetrics)
-
   const metricsByLabel = dotPlotMetrics[annotationLabel]
-  console.log('in colorPathwayGenesByExpression, annotationLabel', annotationLabel)
-  // console.log('in colorPathwayGenesByExpression, metricsByLabel', metricsByLabel)
 
   if (!metricsByLabel) {
     return
@@ -355,9 +350,6 @@ export async function renderPathwayExpression(studyAccession, cluster, annotatio
 
     const dotPlotMetrics = getDotPlotMetrics(dotPlot)
 
-    console.log('in backgroundDotPlotCallback, dotPlot', dotPlot)
-    console.log('in backgroundDotPlotCallback, dotPlotMetrics', dotPlotMetrics)
-
     if (!dotPlotMetrics) {
       console.log('in backgroundDotPlotDrawCallback, !dotPlotMetrics, exiting early')
       // Occurs upon resizing window, artifact of internal Morpheus handling
@@ -365,12 +357,8 @@ export async function renderPathwayExpression(studyAccession, cluster, annotatio
       return
     }
 
-    console.log('in backgroundDotPlotCallback, labels', labels)
-
     const dotPlotMetricsKeys = Object.keys(dotPlotMetrics)
-    // console.log('in backgroundDotPlotDrawCallback, dotPlotMetricsKeys', dotPlotMetricsKeys)
     if (!labels || !labels.includes(dotPlotMetricsKeys[0])) {
-      console.log('in backgroundDotPlotDrawCallback, !!labels.includes(Object.keys(dotPlotMetrics)[0], exiting early')
       // Another protection for computing only for dot plots, not heatmaps
       return
     }
@@ -379,8 +367,6 @@ export async function renderPathwayExpression(studyAccession, cluster, annotatio
 
     writePathwayExpressionHeader(loadingCls, allDotPlotMetrics, label, pathwayGenes)
 
-    // const annotationLabel = annotationLabels[0]
-    console.log('in backgroundDotPlotCallback, label', label)
     colorPathwayGenesByExpression(label, allDotPlotMetrics)
 
     if (numRenders <= dotPlotGeneBatches.length) {

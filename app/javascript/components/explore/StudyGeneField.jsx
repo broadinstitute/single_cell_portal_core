@@ -5,7 +5,10 @@ import Button from 'react-bootstrap/lib/Button'
 import Modal from 'react-bootstrap/lib/Modal'
 import CreatableSelect from 'react-select/creatable'
 
-import { getAutocompleteSuggestions, getIsPathway, getIsInPathwayTitle, getPathwayName } from '~/lib/search-utils'
+import {
+  getAutocompleteSuggestions, getIsPathway, getIsInPathwayTitle,
+  getPathwayName, getPathwaysContainingGene
+} from '~/lib/search-utils'
 import { log } from '~/lib/metrics-api'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
@@ -17,7 +20,8 @@ function getIsInvalidQuery(query, allGenes) {
   const isInvalidQuery = (
     allGenes.length > 0 &&
     !allGenes.find(geneOpt => geneOpt.toLowerCase() === queryLowercase) &&
-    !getIsInPathwayTitle(query)
+    !getIsInPathwayTitle(query) &&
+    !getPathwaysContainingGene(query).length > 0
   )
   return isInvalidQuery
 }
@@ -109,10 +113,13 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   const rawSuggestions = getAutocompleteSuggestions(inputText, allGenes)
   const searchOptions = getSearchOptions(rawSuggestions, speciesList)
 
+
   let enteredQueryArray = []
-  if (queries) {
+  if (inputText.length === 0 && queries && queries.length > 0) {
     const queriesSearchOptions = getSearchOptions(queries, speciesList)
     enteredQueryArray = getQueryArrayFromSearchOptions(queriesSearchOptions, speciesList)
+  } else {
+    enteredQueryArray = searchOptions
   }
 
   /** the search control tracks two state variables
@@ -195,7 +202,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
     }
     switch (event.key) {
       case ' ':
-        if (!getIsPartialPathwayMatch) {
+        if (!getIsPartialPathwayMatch(inputText, allGenes)) {
           syncQueryArrayToInputText()
           setTimeout(() => {setInputText(' ')}, 0)
         }
@@ -226,8 +233,6 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   }
 
   useEffect(() => {
-    console.log('in queries useEffect, queries', queries)
-    console.log('in queries useEffect, queryArray', queryArray)
     if (queries.join(',') !== queryArray.map(opt => opt.value).join(',')) {
       // the genes have been updated elsewhere -- resync
       const queriesSearchOptions = getSearchOptions(queries, speciesList)
@@ -291,6 +296,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
             isValidNewOption={() => false}
             noOptionsMessage={() => (inputText.length > 1 ? 'No matching genes' : 'Type to search...')}
             options={searchOptions}
+            filterOption={finalFilterOptions}
             onChange={handleSelectChange}
             onInputChange={inputValue => setInputText(inputValue)}
             onKeyDown={handleKeyDown}
@@ -352,6 +358,14 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
       </Modal>
     </form>
   )
+}
+
+/** Last filtering applied before showing selectable autocomplete options */
+function finalFilterOptions(option, rawInput) {
+  const input = rawInput.toLowerCase()
+  const label = option.label.toLowerCase()
+  const isPathway = option.data.isGene === false
+  return isPathway || label.includes(input) // partial match
 }
 
 /** Ensure at least some matched pathways are glanceable */
