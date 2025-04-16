@@ -305,7 +305,7 @@ export function validateOntologyTerm(prop, ontologyId, label, ontologies, knownE
       const validLabelsClause = `Valid labels for ${ontologyId}: ${prettyLabels}`
       const msg = `Invalid ${prop} label "${label}".  ${validLabelsClause}`
       issue = [
-        'error', 'ontology:label-lookup-error', msg,
+        'error', 'ontology:label-not-match-id', msg,
         { subtype: 'ontology:invalid-label' }
       ]
     }
