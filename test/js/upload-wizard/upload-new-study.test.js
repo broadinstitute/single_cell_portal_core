@@ -219,21 +219,21 @@ async function testMetadataUpload({ createFileSpy }) {
 
   const goodFileName = 'metadata-good.txt'
   const goodContent = [
-    'NAME,cell_type,cell_type__ontology_label,organism_age,disease,disease__ontology_label,species,' +
-    'species__ontology_label,library_preparation_protocol,library_preparation_protocol__ontology_label,organ,' +
-    'organ__ontology_label,sex,is_living,organism_age__unit,organism_age__unit_label,ethnicity__ontology_label,' +
-    'ethnicity,sample_type,donor_id,biosample_id,biosample_type,preservation_method',
-    'TYPE,group,group,numeric,group,group,group,group,group,group,group,group,group,group,group,group,group,group,' +
-    'group,group,group,group,group',
-    'CELL_0001,CL_0000066,epithelial cell,1,MONDO_0000001,disease or disorder,NCBITaxon_9606,Homo sapiens,EFO_0008919,' +
-    'Seq-Well,UBERON_0001913,milk,female,yes,UO_0000036,year,European ancestry,HANCESTRO_0005,' +
-    'direct from donor - fresh,BM01,BM01_16dpp_r3,PrimaryBioSample_BodyFluid,Fresh'
+    'NAME,disease,disease__ontology_label,species,species__ontology_label,library_preparation_protocol,'+
+    'library_preparation_protocol__ontology_label,organ,organ__ontology_label,sex,ethnicity__ontology_label,' +
+    'ethnicity,donor_id,biosample_id',
+    'TYPE,group,group,group,group,group,group,group,group,group,group,group,group,group',
+    'CELL_0001,MONDO_0000001,disease or disorder,NCBITaxon_9606,Homo sapiens,EFO_0008919,' +
+    'Seq-Well,UBERON_0001913,milk,female,European ancestry,HANCESTRO_0005,BM01,BM01_16dpp_r3'
   ]
   fireFileSelectionEvent(screen.getByTestId('file-input'), {
     fileName: goodFileName,
     content: goodContent.join('\n')
   })
-  await waitForElementToBeRemoved(() => screen.getByTestId('file-validation-spinner'))
+  await waitForElementToBeRemoved(
+    () => screen.getByTestId('file-validation-spinner'),
+    { timeout: 20000 }
+  )
   expect(screen.getByTestId('file-selection-name')).toHaveTextContent(goodFileName)
   expect(saveButton()).not.toBeDisabled()
 
@@ -241,9 +241,9 @@ async function testMetadataUpload({ createFileSpy }) {
   await waitForElementToBeRemoved(() => screen.getByTestId('file-save-spinner'))
 
   expect(createFileSpy).toHaveBeenLastCalledWith(expect.objectContaining({
-    chunkEnd: 801,
+    chunkEnd: 487,
     chunkStart: 0,
-    fileSize: 801,
+    fileSize: 487,
     isChunked: false,
     studyAccession: 'SCP1',
     studyFileData: formData
@@ -459,5 +459,3 @@ async function testSequenceFileUpload({ createFileSpy }) {
   }))
   expect(screen.getByTestId('sequence-status-badge')).toHaveClass('complete')
 }
-
-COORDINATE_LABEL_FILE

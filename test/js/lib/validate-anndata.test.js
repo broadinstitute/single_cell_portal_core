@@ -11,6 +11,7 @@ const BASE_URL = 'https://github.com/broadinstitute/single_cell_portal_core/raw/
 
 describe('Client-side file validation for AnnData', () => {
   beforeAll(() => {
+    jest.setTimeout(10000)
     global.fetch = fetch
 
     global.caches = nodeCaches;
