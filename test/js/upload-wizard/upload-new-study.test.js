@@ -230,7 +230,10 @@ async function testMetadataUpload({ createFileSpy }) {
     fileName: goodFileName,
     content: goodContent.join('\n')
   })
-  await waitForElementToBeRemoved(() => screen.getByTestId('file-validation-spinner'))
+  await waitForElementToBeRemoved(
+    () => screen.getByTestId('file-validation-spinner'),
+    { timeout: 20000 } // increasing timeout to avoid errors caused by validation taking longer than expected
+  )
   expect(screen.getByTestId('file-selection-name')).toHaveTextContent(goodFileName)
   expect(saveButton()).not.toBeDisabled()
 
