@@ -28,7 +28,7 @@ async function getOntologyIds(key, hdf5File) {
   if (internalCategories) {
     resolvedCategories = await Promise.all(internalCategories.values)
   }
-  const group = resolvedCategories.find(o => o.name.endsWith(key))
+  const group = resolvedCategories.find(o => findMatchingGroup(o, key))
   if (group) {
     let categories
     if (internalCategories) {
@@ -40,6 +40,11 @@ async function getOntologyIds(key, hdf5File) {
   }
 
   return ontologyIds
+}
+
+/** find a group in /obs based on exact name match */
+export function findMatchingGroup(category, key) {
+  return category.name.split('/').slice(-1)[0] === key
 }
 
 /** Get annotation headers for a key (e.g. obs) from an HDF5 file */
@@ -197,8 +202,8 @@ export async function getOntologyIdsAndLabels(columnName, hdf5File) {
   const idKey = columnName
   const labelKey = `${columnName}__ontology_label`
 
-  const idGroup = obsValues.find(o => o.name.endsWith(idKey))
-  const labelGroup = obsValues.find(o => o.name.endsWith(labelKey))
+  const idGroup = obsValues.find(o => findMatchingGroup(o, idKey))
+  const labelGroup = obsValues.find(o => findMatchingGroup(o, labelKey))
 
   // exit when optional metadata isn't found, like cell_type
   if (!idGroup && !isRequired) { return }
