@@ -1044,7 +1044,7 @@ class IngestJob
     mixpanel_log_props = get_job_analytics
     # log job properties to Mixpanel
     MetricsService.log(mixpanel_event_name, mixpanel_log_props, user)
-    report_anndata_summary if study_file.is_viz_anndata? && !%i[ingest_anndata differential_expression].include?(action)
+    report_anndata_summary if study_file.is_viz_anndata?
   end
 
   # set a mixpanel event name based on action
@@ -1087,7 +1087,7 @@ class IngestJob
       commands = client.get_job_command_line(job:)
       commands.detect { |c| c == '--extract' } || client.job_error(job.name).present?
     end.count
-    num_files_extracted += 1 if extracted_raw_counts?(initial_extract)
+    num_files_extracted += 1 if extracted_raw_counts?(initial_extract) && job_status == 'success'
     # event properties for Mixpanel summary event
     {
       perfTime: job_perftime,
@@ -1115,10 +1115,20 @@ class IngestJob
     extract_params.include?('raw_counts')
   end
 
+  # determine if this job qualifies for sending an ingestSummary event
+  # will return false if summary exists, this is a DE job, or
+  # a successful AnnData extract (meaning downstream jobs are running)
+  def skip_anndata_summary?
+    study_file.has_anndata_summary? ||
+      action == :differential_expression ||
+      should_retry? ||
+      (!failed? && action == :ingest_anndata)
+  end
+
   # report a summary of all AnnData extraction for this file to Mixpanel, if this is the last job
   def report_anndata_summary
     study_file.reload
-    return false if study_file.has_anndata_summary? # don't bother checking if summary is already sent
+    return false if skip_anndata_summary?
 
     file_identifier = "#{study_file.upload_file_name} (#{study_file.id})"
     Rails.logger.info "Checking AnnData summary for #{file_identifier} after #{action}"

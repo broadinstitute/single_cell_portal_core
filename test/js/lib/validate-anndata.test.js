@@ -1,5 +1,6 @@
 import {
-  getHdf5File, parseAnnDataFile, getAnnDataHeaders, checkOntologyIdFormat, getOntologyIdsAndLabels, checkOntologyLabelsAndIds
+  getHdf5File, parseAnnDataFile, getAnnDataHeaders, checkOntologyIdFormat, getOntologyIdsAndLabels,
+  checkOntologyLabelsAndIds, findMatchingGroup
 } from 'lib/validation/validate-anndata'
 import { fetchOntologies } from '~/lib/validation/ontology-validation'
 const fetch = require('node-fetch')
@@ -113,6 +114,13 @@ describe('Client-side file validation for AnnData', () => {
     const groups = await getOntologyIdsAndLabels(key, hdf5File)
     let issues = await checkOntologyLabelsAndIds(key, ontologies, groups)
     expect(issues).toHaveLength(1)
+  })
+
+  it('finds the correct obs group based on name', () => {
+    const validGroup = { name: '/obs/cell_type' }
+    const invalidGroup = { name: '/obs/author_cell_type' }
+    expect(findMatchingGroup(validGroup, 'cell_type')).toBeTruthy()
+    expect(findMatchingGroup(invalidGroup, 'cell_type')).not.toBeTruthy()
   })
 
   // TODO (SCP-5813): Uncomment this test upon completing "Enable ontology validation for remote AnnData"
