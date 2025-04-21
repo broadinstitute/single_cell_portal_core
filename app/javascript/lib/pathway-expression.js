@@ -243,8 +243,6 @@ export function colorPathwayGenesByExpression(annotationLabel, dotPlotMetrics) {
     const textRuleset = `${baseSelector} text {fill: ${textColor};}`
     const rulesets = `${rectRuleset} ${textRuleset}`
 
-    // In future work, consider showing these values on node hover.
-    // For now they help engineers inspect nodes to confirm mean and percent.
     rect.setAttribute('data-scaled-mean-expression', metrics.mean)
     rect.setAttribute('data-percent-expressing', percent)
 
@@ -314,15 +312,6 @@ function mergeDotPlotMetrics(newMetrics, oldMetrics) {
 
 /** Color pathway gene nodes by expression */
 export async function renderPathwayExpression(studyAccession, cluster, annotation, label, labels) {
-  console.log('studyAccession', studyAccession)
-  console.log('cluster', cluster)
-  console.log('annotation', annotation)
-  console.log('studyAccession', studyAccession)
-  console.log('label', label)
-  console.log('labels', labels)
-
-  console.log('in renderPathwayExpression, label', label)
-  // console.log('in renderPathwayExpression, label === ""', label === "")
   let allDotPlotMetrics = {}
 
   const pathwayGenes = getPathwayGenes()
@@ -351,7 +340,6 @@ export async function renderPathwayExpression(studyAccession, cluster, annotatio
     const dotPlotMetrics = getDotPlotMetrics(dotPlot)
 
     if (!dotPlotMetrics) {
-      console.log('in backgroundDotPlotDrawCallback, !dotPlotMetrics, exiting early')
       // Occurs upon resizing window, artifact of internal Morpheus handling
       // of pre-dot-plot heatmap matrix.  No user-facing impact.
       return
