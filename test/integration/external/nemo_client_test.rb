@@ -8,11 +8,10 @@ class NemoClientTest < ActiveSupport::TestCase
     @nemo_is_ok = @nemo_client.api_available?
     @skip_message = '-- skipping due to NeMO API being unavailable --'
     @identifiers = {
-      collection: 'nemo:col-pxwhesp',
-      file: 'nemo:der-ah1o5qb',
-      grant: 'nemo:grn-qwzp05p',
-      project: 'nemo:std-hoxfi7n',
-      publication: 'nemo:dat-tfmg0va',
+      collection: 'nemo:col-hwmwd2x',
+      file: 'nemo:drc-jcvnj7k',
+      grant: 'nemo:grn-gyy3k8j',
+      project: 'nemo:std-5jvcwm1',
       sample: 'nemo:smp-xmd8d0y',
       subject: 'nemo:sbj-njhfvw6'
     }
@@ -56,55 +55,55 @@ class NemoClientTest < ActiveSupport::TestCase
   end
 
   # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
-  # test 'should get an entity' do
-  #   skip_if_api_down
-  #   entity_type = @identifiers.keys.sample
-  #   identifier = @identifiers[entity_type]
-  #   entity = @nemo_client.fetch_entity(entity_type, identifier)
-  #   assert entity.present?
-  # end
+  test 'should get an entity' do
+    skip_if_api_down
+    entity_type = @identifiers.keys.sample
+    identifier = @identifiers[entity_type]
+    entity = @nemo_client.fetch_entity(entity_type, identifier)
+    assert entity.present?
+  end
 
-  # test 'should get collection' do
-  #   skip_if_api_down
-  #   identifier = @identifiers[:collection]
-  #   collection = @nemo_client.collection(identifier)
-  #   assert collection.present?
-  #   assert_equal 'adey_sciATAC_human_cortex', collection['short_name']
-  # end
-
-  # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
-  # test 'should get file' do
-  #   skip_if_api_down
-  #   identifier = @identifiers[:file]
-  #   file = @nemo_client.file(identifier)
-  #   assert file.present?
-  #   filename = 'human_var_scVI_VLMC.h5ad.tar'
-  #   assert_equal filename, file['file_name']
-  #   assert_equal 'h5ad', file['file_format']
-  #   access_url = file['urls'].first['url']
-  #   assert_equal filename, access_url.split('/').last
-  # end
+  test 'should get collection' do
+    skip_if_api_down
+    identifier = @identifiers[:collection]
+    collection = @nemo_client.collection(identifier)
+    assert collection.present?
+    assert_equal 'human_variation_10X', collection['short_name']
+  end
 
   # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
-  # test 'should get grant' do
-  #   skip_if_api_down
-  #   identifier = @identifiers[:grant]
-  #   grant = @nemo_client.grant(identifier)
-  #   assert grant.present?
-  #   assert_equal '1U01MH114825-01', grant['grant_number']
-  #   assert_equal 'NIMH', grant['funding_agency']
-  # end
+  test 'should get file' do
+    skip_if_api_down
+    identifier = @identifiers[:file]
+    file = @nemo_client.file(identifier)
+    assert file.present?
+    filename = 'human_var_scVI_VLMC.h5ad'
+    assert_equal filename, file['file_name']
+    assert_equal 'h5ad', file['file_format']
+    access_url = file['manifest_file_urls'].first['url']
+    assert_equal filename, access_url.split('/').last
+  end
 
-  # test 'should get project' do
-  #   skip_if_api_down
-  #   identifier = @identifiers[:project]
-  #   project = @nemo_client.project(identifier)
-  #   assert project.present?
-  #   assert_equal 'Single-nucleus analysis of preoptic area development from late embryonic to adult stages',
-  #                project['title']
-  #   assert_equal 'biccn', project['program']
-  #   assert_equal 'dulac_poa_dev_sn_10x_proj', project['short_name']
-  # end
+  # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
+  test 'should get grant' do
+    skip_if_api_down
+    identifier = @identifiers[:grant]
+    grant = @nemo_client.grant(identifier)
+    assert grant.present?
+    assert_equal 'Allen Institute Funder', grant.dig('grant_info','grant_number')
+    assert_equal 'Allen Institute Funder', grant['funding_agency']
+  end
+
+  test 'should get project' do
+    skip_if_api_down
+    identifier = @identifiers[:project]
+    project = @nemo_client.project(identifier)
+    assert project.present?
+    assert_equal 'DNA methylation profiling of genomic DNA in individual mouse brain cell nuclei (RS1.1)',
+                 project['title']
+    assert_equal 'biccn', project['program']
+    assert_equal 'ecker_sn_mCseq_proj', project['short_name']
+  end
 
   # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
   # test 'should get publication' do
@@ -118,23 +117,23 @@ class NemoClientTest < ActiveSupport::TestCase
   # end
 
   # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
-  # test 'should get sample' do
-  #   skip_if_api_down
-  #   identifier = @identifiers[:sample]
-  #   sample = @nemo_client.sample(identifier)
-  #   assert sample.present?
-  #   assert_equal 'marm028_M1', sample['source_sample_id']
-  #   assert sample['files'].any?
-  # end
+  test 'should get sample' do
+    skip_if_api_down
+    identifier = @identifiers[:sample]
+    sample = @nemo_client.sample(identifier)
+    assert sample.present?
+    assert_equal 'marm028_M1', sample['sample_name']
+    assert sample['subjects'].any?
+  end
 
   # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
-  # test 'should get subject' do
-  #   skip_if_api_down
-  #   identifier = @identifiers[:subject]
-  #   subject = @nemo_client.subject(identifier)
-  #   assert subject.present?
-  #   assert_equal 'CEMBA180911_4H', subject['source_subject_id']
-  #   assert_equal 'DNA methylation profiling of genomic DNA in individual mouse brain cell nuclei (RS1.1)',
-  #                subject['grant_title']
-  # end
+  test 'should get subject' do
+    skip_if_api_down
+    identifier = @identifiers[:subject]
+    subject = @nemo_client.subject(identifier)
+    assert subject.present?
+    assert_equal 'nonhuman-1U01MH114819', subject.dig('cohort_info', 'cohort_name')
+    assert_equal 'A Molecular and cellular atlas of the marmoset brain', subject['grant_title']
+    assert subject['samples'].any?
+  end
 end

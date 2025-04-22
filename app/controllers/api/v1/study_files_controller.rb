@@ -1,8 +1,6 @@
 module Api
   module V1
     class StudyFilesController < ApiBaseController
-      include Concerns::FireCloudStatus
-
       before_action :authenticate_api_user!
       before_action :set_study
       before_action :check_study_edit_permission
@@ -751,7 +749,7 @@ module Api
           ],
           expression_file_info_attributes: [
             :_id, :_destroy, :library_preparation_protocol, :units, :biosample_input_type, :modality, :is_raw_counts,
-            raw_counts_associations: []
+            :raw_location, raw_counts_associations: []
           ],
           heatmap_file_info_attributes: [:id, :_destroy, :custom_scaling, :color_min, :color_max, :legend_label],
           cluster_form_info_attributes: [
@@ -760,8 +758,8 @@ module Api
             :external_link_description, spatial_cluster_associations: []
           ],
           metadata_form_info_attributes: [:_id, :use_metadata_convention, :description],
-          extra_expression_form_info_attributes: [:_id, :taxon_id, :description, :y_axis_label],
-          ann_data_file_info_attributes: [:_id, :reference_file, :data_fragments],
+          extra_expression_form_info_attributes: [:_id, :taxon_id, :description, :y_axis_label, :raw_location],
+          ann_data_file_info_attributes: [:_id, :reference_file, :data_fragments, :raw_location],
           differential_expression_file_info_attributes: [
             :_id, :clustering_association, :annotation_name, :annotation_scope, :computational_method,
             :gene_header, :group_header, :comparison_group_header,

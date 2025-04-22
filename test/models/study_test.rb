@@ -86,7 +86,7 @@ class StudyTest < ActiveSupport::TestCase
       ok_status_mock.verify
     end
 
-    group_mock = MiniTest::Mock.new
+    group_mock = Minitest::Mock.new
     group_mock.expect :get_user_groups, @user_groups
     services_mock = Minitest::Mock.new
     services_mock.expect :services_available?, true, @services_args

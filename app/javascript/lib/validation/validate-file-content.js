@@ -22,7 +22,8 @@ import {
 } from './shared-validation'
 import { parseDifferentialExpressionFile } from './validate-differential-expression'
 import { parseAnnDataFile } from './validate-anndata'
-
+import { fetchOntologies, getOntologyBasedProps } from '~/lib/validation/ontology-validation'
+import { getOntologyShortNameLc, getLabelSuffixForOntology } from './shared-validation'
 
 /**
  * Gzip decompression requires reading the whole file, given the current
@@ -35,8 +36,8 @@ import { parseAnnDataFile } from './validate-anndata'
 const MAX_GZIP_FILESIZE = 50 * oneMiB
 
 /** File extensions / suffixes that indicate content must be gzipped */
-const EXTENSIONS_MUST_GZIP = ['gz', 'bam', 'tbi']
-
+const EXTENSIONS_MUST_GZIP = ['gz', 'bam', 'tbi', 'csi']
+const ONTOLOGY_PROPS = getOntologyBasedProps()
 
 /**
  * Helper function to verify first pair of headers is NAME or TYPE
@@ -217,7 +218,11 @@ export async function parseMetadataFile(chunker, mimeType, fileOptions) {
   const { headers, delimiter } = await getParsedHeaderLines(chunker, mimeType)
   let issues = validateCapFormat(headers)
   issues = issues.concat(validateNoMetadataCoordinates(headers))
+  let ontologies
+  // keep track of a map of ontology-based errors to avoid duplications
+  const knownErrors = []
   if (fileOptions.use_metadata_convention) {
+    ontologies = await fetchOntologies()
     issues = issues.concat(validateRequiredMetadataColumns(headers))
   }
 
@@ -232,10 +237,85 @@ export async function parseMetadataFile(chunker, mimeType, fileOptions) {
       issues = issues.concat(validateUniqueCellNamesWithinFile(line, isLastLine, dataObj))
       issues = issues.concat(validateMetadataLabelMatches(headers, line, isLastLine, dataObj))
       issues = issues.concat(validateGroupColumnCounts(headers, line, isLastLine, dataObj))
+      if (fileOptions.use_metadata_convention) {
+        issues = issues.concat(validateConventionTerms(headers, line, ontologies, knownErrors))
+      }
     // add other line-by-line validations here
     }
   })
   return { issues, delimiter, numColumns: headers[0].length }
+}
+
+/** validate all ontology-based convention terms in a given line */
+export function validateConventionTerms(headers, line, ontologies, knownErrors) {
+  let issues = []
+  const metadataHeaders = headers[0]
+  for (let i = 0; i < metadataHeaders.length; i++) {
+    const header = metadataHeaders[i]
+    if (ONTOLOGY_PROPS.includes(header)) {
+      const ontologyId = line[i]
+      const labelHeader = `${header}${getLabelSuffixForOntology(ontologyId)}`
+      const labelIdx = metadataHeaders.indexOf(labelHeader)
+      const label = line[labelIdx]
+      issues = issues.concat(validateOntologyTerm(header, ontologyId, label, ontologies, knownErrors))
+    }
+  }
+  return issues
+}
+
+/** validate a single ontology ID against stored ontologies and return issues */
+export function validateOntologyTerm(prop, ontologyId, label, ontologies, knownErrors) {
+  const issues = []
+  const ontologyShortNameLc = getOntologyShortNameLc(ontologyId)
+  const ontology = ontologies[ontologyShortNameLc]
+
+  if (ontologyId.includes(':')) {
+    // Convert colon to underscore for ontology lookup
+    const idParts = ontologyId.split(':')
+    ontologyId = `${idParts[0]}_${idParts[1]}`
+  }
+
+  let errorIdentifier
+  let issue
+
+  if (!ontology) {
+    errorIdentifier = `${ontologyId}-label-lookup-error`
+    const accepted = Object.keys(ontologies).join(', ')
+    const msg =
+      `Ontology ID "${ontologyId}" ` +
+      `is not among accepted ontologies (${accepted}) ` +
+      `for key "${prop}"`
+
+    issue = ['error', 'ontology:label-lookup-error', msg]
+  } else if (!(ontologyId in ontology)) {
+    // Register invalid ontology ID
+    const msg = `Invalid ontology ID: ${ontologyId}`
+    errorIdentifier = `${ontologyId}-invalid-id`
+    issue = [
+      'error', 'ontology:label-lookup-error', msg,
+      { subtype: 'ontology:invalid-id' }
+    ]
+  } else {
+    const validLabels = ontology[ontologyId]
+
+    if (!(validLabels.includes(label))) {
+      errorIdentifier = `${ontologyId}-label-lookup-error`
+      // Register invalid ontology label
+      const prettyLabels = validLabels.join(', ')
+      const validLabelsClause = `Valid labels for ${ontologyId}: ${prettyLabels}`
+      const msg = `Invalid ${prop} label "${label}".  ${validLabelsClause}`
+      issue = [
+        'error', 'ontology:label-not-match-id', msg,
+        { subtype: 'ontology:invalid-label' }
+      ]
+    }
+  }
+  // only store unique instances of errors since we're validating line by line
+  if (issue && knownErrors.indexOf(errorIdentifier) < 0) {
+    issues.push(issue)
+    knownErrors.push(errorIdentifier)
+  }
+  return issues
 }
 
 /** parse a cluster file, and return an array of issues, along with file parsing info */

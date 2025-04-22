@@ -382,10 +382,8 @@ class IngestJob
     if done? && !failed?
       Rails.logger.info "IngestJob poller: #{pipeline_name} is done!"
       Rails.logger.info "IngestJob poller: #{pipeline_name} status: #{current_status}"
-      unless special_action? || (action == :ingest_anndata && study_file.is_viz_anndata?)
-        study_file.update(parse_status: 'parsed')
-        study_file.bundled_files.each { |sf| sf.update(parse_status: 'parsed') }
-      end
+      study_file.update(parse_status: 'parsed')
+      study_file.bundled_files.each { |sf| sf.update(parse_status: 'parsed') }
       study.reload # refresh cached instance of study
       study_file.reload # refresh cached instance of study_file
       # check if another process marked file for deletion, can happen if this is an AnnData file
@@ -412,6 +410,7 @@ class IngestJob
       end
     elsif done? && failed?
       Rails.logger.error "IngestJob poller: #{pipeline_name} has failed."
+      study_file.update(parse_status: 'parsed')
       # log errors to application log for inspection
       log_error_messages
       log_to_mixpanel # log before queuing file for deletion to preserve properties
@@ -515,9 +514,9 @@ class IngestJob
     when :image_pipeline
       set_has_image_cache
     when :ingest_anndata
+      set_anndata_file_info
       launch_anndata_subparse_jobs if study_file.is_viz_anndata?
       launch_differential_expression_jobs if study_file.is_viz_anndata?
-      set_anndata_file_info
     end
     set_study_initialized
   end
@@ -708,6 +707,7 @@ class IngestJob
           submission = ApplicationController.batch_api_client.run_job(
             study_file:, user:, action: :ingest_subsample, params_object: subsample_params
           )
+          study_file.update(parse_status: 'parsing')
           IngestJob.new(
             pipeline_name: submission.name, study:, study_file:, user:, action: :ingest_subsample,
             params_object: subsample_params, reparse:, persist_on_fail:
@@ -738,14 +738,13 @@ class IngestJob
   # set corresponding differential expression flags on associated annotation
   def create_differential_expression_results
     annotation_identifier = "#{params_object.annotation_name}--group--#{params_object.annotation_scope}"
-    Rails.logger.info "Creating differential expression result object for annotation: #{annotation_identifier}"
-    cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: params_object.cluster_name)
-    matrix_url = params_object.matrix_file_path
-    matrix_filename = matrix_url.split("gs://#{study.bucket_id}/").last
-    matrix_file = StudyFile.where(study: study, 'expression_file_info.is_raw_counts' => true).any_of(
-      { upload_file_name: matrix_filename }, { remote_location: matrix_filename }
-    ).first
-    de_result = DifferentialExpressionResult.find_or_initialize_by(
+    cluster = params_object.cluster_group
+    matrix_file = params_object.matrix_file
+    Rails.logger.info "Creating differential expression result object for #{annotation_identifier} " \
+                        "(cluster: #{cluster.name} in #{study.accession})"
+    de_result = DifferentialExpressionService.find_existing_result(
+      study, cluster, params_object.annotation_name, params_object.annotation_scope
+    ) || DifferentialExpressionResult.new(
       study: study, cluster_group: cluster, cluster_name: cluster.name,
       annotation_name: params_object.annotation_name, annotation_scope: params_object.annotation_scope,
       matrix_file_id: matrix_file.id
@@ -819,6 +818,7 @@ class IngestJob
     # reference AnnData uploads don't have extract parameter so exit immediately
     return if params_object.extract.blank?
 
+    study_file.update(parse_status: 'parsing')
     params_object.extract.each do |extract|
       case extract
       when 'cluster'
@@ -862,14 +862,8 @@ class IngestJob
         job.delay.push_remote_and_launch_ingest
       end
 
-      # if this was only a raw counts extraction, update parse status
-      if params_object.extract == %w[raw_counts]
-        study_file.update(parse_status: 'parsed')
-        launch_differential_expression_jobs
-      else
-        # unset anndata_summary flag to allow reporting summary later unless this is only a raw counts extraction
-        study_file.unset_anndata_summary!
-      end
+      # unset anndata_summary flag to allow reporting summary later unless this is only a raw counts extraction
+      study_file.unset_anndata_summary! unless params_object.extract == %w[raw_counts]
     end
   end
 
@@ -1005,7 +999,7 @@ class IngestJob
         )
       end
     when :differential_expression
-      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: params_object.cluster_name)
+      cluster = params_object.cluster_group
       annotation_params = {
         cluster: cluster,
         annot_name: params_object.annotation_name,
@@ -1016,9 +1010,13 @@ class IngestJob
       job_props.merge!(
         {
           numCells: cluster&.points,
-          numAnnotationValues: annotation[:values]&.size
+          numAnnotationValues: annotation[:values]&.size,
+          deType: params_object.de_type
         }
       )
+      if params_object.de_type == 'pairwise'
+        job_props.merge!( { pairwiseGroups: [params_object.group1, params_object.group2]})
+      end
     when :image_pipeline
       data_cache_perftime =  params_object.data_cache_perftime
       job_props.merge!(
@@ -1046,7 +1044,7 @@ class IngestJob
     mixpanel_log_props = get_job_analytics
     # log job properties to Mixpanel
     MetricsService.log(mixpanel_event_name, mixpanel_log_props, user)
-    report_anndata_summary if study_file.is_viz_anndata? && !%i[ingest_anndata differential_expression].include?(action)
+    report_anndata_summary if study_file.is_viz_anndata?
   end
 
   # set a mixpanel event name based on action
@@ -1089,7 +1087,7 @@ class IngestJob
       commands = client.get_job_command_line(job:)
       commands.detect { |c| c == '--extract' } || client.job_error(job.name).present?
     end.count
-    num_files_extracted += 1 if extracted_raw_counts?(initial_extract)
+    num_files_extracted += 1 if extracted_raw_counts?(initial_extract) && job_status == 'success'
     # event properties for Mixpanel summary event
     {
       perfTime: job_perftime,
@@ -1117,10 +1115,20 @@ class IngestJob
     extract_params.include?('raw_counts')
   end
 
+  # determine if this job qualifies for sending an ingestSummary event
+  # will return false if summary exists, this is a DE job, or
+  # a successful AnnData extract (meaning downstream jobs are running)
+  def skip_anndata_summary?
+    study_file.has_anndata_summary? ||
+      action == :differential_expression ||
+      should_retry? ||
+      (!failed? && action == :ingest_anndata)
+  end
+
   # report a summary of all AnnData extraction for this file to Mixpanel, if this is the last job
   def report_anndata_summary
     study_file.reload
-    return false if study_file.has_anndata_summary? # don't bother checking if summary is already sent
+    return false if skip_anndata_summary?
 
     file_identifier = "#{study_file.upload_file_name} (#{study_file.id})"
     Rails.logger.info "Checking AnnData summary for #{file_identifier} after #{action}"

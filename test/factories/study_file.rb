@@ -199,6 +199,7 @@ FactoryBot.define do
             file.expression_file_info.is_raw_counts = evaluator.has_raw_counts
             file.expression_file_info.units = 'raw counts'
             file.ann_data_file_info.has_raw_counts = evaluator.has_raw_counts
+            file.ann_data_file_info.raw_location = '.raw'
           end
           file.expression_file_info.save
           matrix_types = %w[processed]

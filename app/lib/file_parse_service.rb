@@ -112,13 +112,15 @@ class FileParseService
             )
           elsif study_file.needs_raw_counts_extraction?
             params_object = AnnDataIngestParameters.new(
-              anndata_file: study_file.gs_url, extract: %w[raw_counts], obsm_keys: nil,
+              anndata_file: study_file.gs_url, extract: %w[raw_counts],
+              raw_location: study_file.ann_data_file_info.raw_location, obsm_keys: nil,
               file_size: study_file.upload_file_size
             )
           else
             params_object = AnnDataIngestParameters.new(
               anndata_file: study_file.gs_url, obsm_keys: study_file.ann_data_file_info.obsm_key_names,
-              file_size: study_file.upload_file_size, extract_raw_counts: study_file.is_raw_counts_file?
+              file_size: study_file.upload_file_size, extract_raw_counts: study_file.is_raw_counts_file?,
+              raw_location: study_file.ann_data_file_info.raw_location
             )
           end
           # TODO extract and parse Raw Exp Data (SCP-4710)

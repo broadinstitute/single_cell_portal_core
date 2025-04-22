@@ -1,4 +1,5 @@
-import { validateFile } from 'components/upload/upload-utils'
+import { validateFile, findBundleChildren } from 'components/upload/upload-utils'
+import { BED_FILE, BED_INDEX_FILE, RAW_COUNTS_MTX_FILE, FEATURES_FILE, BARCODES_FILE } from './file-info-responses'
 
 describe('upload file validation name checks', () => {
   it('allows files with unique names and valid extensions', async () => {
@@ -160,5 +161,20 @@ describe('it checks presence of required fields', () => {
     })
     expect(msgs['expression_file_info.units']).toEqual(undefined)
     expect(msgs['expression_file_info.biosample_input_type']).toEqual('You must specify: biosample input type')
+  })
+})
+
+describe('it finds bundled files', () => {
+  it('find sequence index files', () => {
+    const serverFiles = [BED_FILE, BED_INDEX_FILE]
+    const bundledIndex = findBundleChildren(BED_FILE, serverFiles)[0]
+    expect(bundledIndex.upload_file_name).toEqual(BED_INDEX_FILE.upload_file_name)
+  })
+
+  it('finds features/barcodes files for MTX', () => {
+    const serverFiles = [RAW_COUNTS_MTX_FILE, FEATURES_FILE, BARCODES_FILE]
+    const bundledFiles = findBundleChildren(RAW_COUNTS_MTX_FILE, serverFiles)
+    const fileNames = bundledFiles.map(f => { return f.upload_file_name })
+    expect(fileNames).toEqual([FEATURES_FILE.upload_file_name, BARCODES_FILE.upload_file_name])
   })
 })

@@ -19,22 +19,18 @@ class ProfilesController < ApplicationController
     @study_shares = StudyShare.where(email: @user.email)
     @studies = Study.where(user_id: @user.id)
     @fire_cloud_profile = FireCloudProfile.new
-    # check if profile services are available
-    @profiles_available = ApplicationController.firecloud_client.services_available?(FireCloudClient::THURLOE_SERVICE)
-    if @profiles_available
-      begin
-        user_client = FireCloudClient.new(user: current_user, project: FireCloudClient::PORTAL_NAMESPACE)
-        profile = user_client.get_profile
-        profile['keyValuePairs'].each do |attribute|
-          if @fire_cloud_profile.respond_to?("#{attribute['key']}=")
-            @fire_cloud_profile.send("#{attribute['key']}=", attribute['value'])
-          end
+    begin
+      user_client = FireCloudClient.new(user: current_user, project: FireCloudClient::PORTAL_NAMESPACE)
+      profile = user_client.get_profile
+      profile['keyValuePairs'].each do |attribute|
+        if @fire_cloud_profile.respond_to?("#{attribute['key']}=")
+          @fire_cloud_profile.send("#{attribute['key']}=", attribute['value'])
         end
-      rescue => e
-        ErrorTracker.report_exception(e, current_user, params)
-        MetricsService.report_error(e, request, current_user)
-        logger.info "#{Time.zone.now}: unable to retrieve FireCloud profile for #{current_user.email}: #{e.message}"
       end
+    rescue => e
+      ErrorTracker.report_exception(e, current_user, params)
+      MetricsService.report_error(e, request, current_user)
+      logger.info "#{Time.zone.now}: unable to retrieve FireCloud profile for #{current_user.email}: #{e.message}"
     end
   end
 

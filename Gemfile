@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '3.2.2'
+ruby '3.4.2'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '6.1.7.9'
@@ -29,7 +29,7 @@ gem 'sdoc', group: :doc
 # gem 'capistrano-rails', group: :development
 
 gem 'bootsnap', require: false
-gem 'minitest', '5.15.0'
+gem 'minitest'
 gem 'minitest-rails'
 gem 'minitest-reporters'
 
@@ -71,7 +71,6 @@ gem 'rack-brotli'
 gem 'time_difference'
 gem 'sys-filesystem', require: 'sys/filesystem'
 gem 'browser'
-gem 'ruby-prof'
 gem 'carrierwave', '~> 2.2'
 gem 'carrierwave-mongoid', :require => 'carrierwave/mongoid'
 gem 'uuid'
@@ -81,6 +80,16 @@ gem 'net-imap'
 gem 'net-pop'
 gem 'exponential-backoff'
 gem 'concurrent-ruby', '1.3.4'
+# gems removed from stdlib in 3.4
+gem 'bigdecimal'
+gem 'mutex_m'
+gem 'observer'
+gem 'ostruct'
+gem 'logger'
+gem 'benchmark'
+gem 'drb'
+gem 'reline'
+gem 'irb'
 
 group :development, :test do
   # Access an IRB console on exception pages or by using <%= console %> in views
@@ -93,6 +102,7 @@ group :development, :test do
   gem 'puma'
   gem 'rubocop', require: false
   gem 'rubocop-rails', require: false
+  gem 'csv'
 
   # Profiling
   gem 'rack-mini-profiler'

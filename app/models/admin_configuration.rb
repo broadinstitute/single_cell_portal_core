@@ -20,8 +20,9 @@ class AdminConfiguration
   API_NOTIFIER_NAME = 'API Health Check Notifier'.freeze
   INGEST_DOCKER_NAME = 'Ingest Pipeline Docker Image'.freeze
   NUMERIC_VALS = %w[byte kilobyte megabyte terabyte petabyte exabyte].freeze
-  CONFIG_TYPES = [INGEST_DOCKER_NAME, 'Daily User Download Quota', 'Portal FireCloud User Group', 'TDR Snapshot IDs',
-                  'Reference Data Workspace', 'Read-Only Access Control', 'QA Dev Email', API_NOTIFIER_NAME].freeze
+  CONFIG_TYPES = [INGEST_DOCKER_NAME, 'Daily User Download Quota', 'Weekly User DE Quota', 'Portal FireCloud User Group',
+                  'TDR Snapshot IDs', 'Reference Data Workspace', 'Read-Only Access Control', 'QA Dev Email',
+                  API_NOTIFIER_NAME].freeze
   ALL_CONFIG_TYPES = (CONFIG_TYPES.dup << FIRECLOUD_ACCESS_NAME).freeze
   VALUE_TYPES = %w[Numeric Boolean String].freeze
 

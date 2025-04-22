@@ -3,10 +3,12 @@ import { openH5File } from 'hdf5-indexed-reader'
 import { getOAuthToken } from '~/lib/scp-api'
 import {
   validateUnique, validateRequiredMetadataColumns,
-  validateAlphanumericAndUnderscores,
+  validateAlphanumericAndUnderscores, getOntologyShortNameLc,
   metadataSchema, REQUIRED_CONVENTION_COLUMNS
 } from './shared-validation'
-import { getAcceptedOntologies, fetchOntologies } from './ontology-validation'
+import { fetchOntologies, getOntologyBasedProps, getAcceptedOntologies } from './ontology-validation'
+
+const ONTOLOGY_PROPS = getOntologyBasedProps()
 
 /** Get ontology ID values for key in AnnData file */
 async function getOntologyIds(key, hdf5File) {
@@ -26,7 +28,7 @@ async function getOntologyIds(key, hdf5File) {
   if (internalCategories) {
     resolvedCategories = await Promise.all(internalCategories.values)
   }
-  const group = resolvedCategories.find(o => o.name.endsWith(key))
+  const group = resolvedCategories.find(o => findMatchingGroup(o, key))
   if (group) {
     let categories
     if (internalCategories) {
@@ -38,6 +40,11 @@ async function getOntologyIds(key, hdf5File) {
   }
 
   return ontologyIds
+}
+
+/** find a group in /obs based on exact name match */
+export function findMatchingGroup(category, key) {
+  return category.name.split('/').slice(-1)[0] === key
 }
 
 /** Get annotation headers for a key (e.g. obs) from an HDF5 file */
@@ -122,7 +129,7 @@ export function checkOntologyIdFormat(key, ontologyIds) {
 }
 
 /** Validate author's annotation labels and IDs match those in ontologies */
-async function checkOntologyLabelsAndIds(key, ontologies, groups) {
+export async function checkOntologyLabelsAndIds(key, ontologies, groups) {
   const [ids, idIndexes, labels, labelIndexes] = groups
 
   const issues = []
@@ -137,10 +144,15 @@ async function checkOntologyLabelsAndIds(key, ontologies, groups) {
   const rawUniques = Array.from(labelIdPairs)
 
   rawUniques.map(r => {
-    const [id, label] = r.split(' || ')
-    const ontologyShortNameLc = id.split(/[_:]/)[0].toLowerCase()
+    let [id, label] = r.split(' || ')
+    const ontologyShortNameLc = getOntologyShortNameLc(id)
     const ontology = ontologies[ontologyShortNameLc]
 
+    if (id.includes(':')) {
+      // Convert colon to underscore for ontology lookup
+      const idParts = id.split(':')
+      id = `${idParts[0]}_${idParts[1]}`
+    }
     if (!(id in ontology)) {
       // Register invalid ontology ID
       const msg = `Invalid ontology ID: ${id}`
@@ -168,9 +180,10 @@ async function checkOntologyLabelsAndIds(key, ontologies, groups) {
 }
 
 /** Get ontology ID values for key in AnnData file */
-async function getOntologyIdsAndLabels(requiredName, hdf5File) {
+export async function getOntologyIdsAndLabels(columnName, hdf5File) {
   const obs = await hdf5File.get('obs')
   const obsValues = await Promise.all(obs.values)
+  const isRequired = REQUIRED_CONVENTION_COLUMNS.includes(columnName)
 
   // Old versions of the AnnData spec used __categories as an obs.
   // However, in new versions (since before 2023-01-23) of AnnData spec,
@@ -186,11 +199,14 @@ async function getOntologyIdsAndLabels(requiredName, hdf5File) {
     return null
   }
 
-  const idKey = requiredName
-  const labelKey = `${requiredName}__ontology_label`
+  const idKey = columnName
+  const labelKey = `${columnName}__ontology_label`
 
-  const idGroup = obsValues.find(o => o.name.endsWith(idKey))
-  const labelGroup = obsValues.find(o => o.name.endsWith(labelKey))
+  const idGroup = obsValues.find(o => findMatchingGroup(o, idKey))
+  const labelGroup = obsValues.find(o => findMatchingGroup(o, labelKey))
+
+  // exit when optional metadata isn't found, like cell_type
+  if (!idGroup && !isRequired) { return }
 
   // AnnData organizes each "obs" annotation (e.g. disease__ontology_label,
   // sex) into a container with a `categories` frame and a `code` frame.
@@ -225,15 +241,13 @@ async function validateOntologyLabelsAndIds(hdf5File) {
   const ontologies = await fetchOntologies()
 
   // Validate IDs for species, organ, disease, and library preparation protocol
-  for (let i = 0; i < REQUIRED_CONVENTION_COLUMNS.length; i++) {
-    const column = REQUIRED_CONVENTION_COLUMNS[i]
-    if (!column.endsWith('__ontology_label')) {continue}
-    const key = column.split('__ontology_label')[0]
-    const groups = await getOntologyIdsAndLabels(key, hdf5File)
+  for (let i = 0; i < ONTOLOGY_PROPS.length; i++) {
+    const column = ONTOLOGY_PROPS[i]
+    const groups = await getOntologyIdsAndLabels(column, hdf5File)
 
     if (groups) {
       issues = issues.concat(
-        await checkOntologyLabelsAndIds(key, ontologies, groups)
+        await checkOntologyLabelsAndIds(column, ontologies, groups)
       )
     }
   }
@@ -247,14 +261,12 @@ async function validateOntologyIdFormat(hdf5File) {
   let issues = []
 
   // Validate IDs for species, organ, disease, and library preparation protocol
-  for (let i = 0; i < REQUIRED_CONVENTION_COLUMNS.length; i++) {
-    const column = REQUIRED_CONVENTION_COLUMNS[i]
-    if (!column.endsWith('__ontology_label')) {continue}
-    const key = column.split('__ontology_label')[0]
-    const ontologyIds = await getOntologyIds(key, hdf5File)
+  for (let i = 0; i < ONTOLOGY_PROPS.length; i++) {
+    const column = ONTOLOGY_PROPS[i]
+    const ontologyIds = await getOntologyIds(column, hdf5File)
 
     issues = issues.concat(
-      checkOntologyIdFormat(key, ontologyIds)
+      checkOntologyIdFormat(column, ontologyIds)
     )
   }
 

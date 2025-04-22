@@ -553,7 +553,7 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
       mock = Minitest::Mock.new
       mock.expect :format_query_from_facets, mock_azul_facets, [Array]
       mock.expect :merge_query_objects, mock_azul_facets, [Hash, nil]
-      mock.expect :projects, human_tcell_response, [Hash]
+      mock.expect :projects, human_tcell_response, [], query: Hash
       ApplicationController.stub :hca_azul_client, mock do
         facet_query = "species:#{HOMO_SAPIENS_FILTER[:id]}"
         execute_http_request(:get,

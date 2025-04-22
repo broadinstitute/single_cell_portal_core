@@ -123,7 +123,7 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
         public_mock.verify
       end
 
-      private_mock = generate_download_file_mock([file], private: true)
+      private_mock = generate_download_file_mock([file])
       ApplicationController.stub :firecloud_client, private_mock do
         # set to private, validate study owner/admin can still access
         # note that download_file_path and download_private_file_path both resolve to the same method and enforce the same
@@ -160,13 +160,6 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
     mock_not_detached @study, :find_by do
       file = @study.study_files.sample
       mock = Minitest::Mock.new
-      mock.expect :services_available?, true, [String]
-      systems = [FireCloudClient::SAM_SERVICE, FireCloudClient::RAWLS_SERVICE, FireCloudClient::BUCKETS_SERVICE]
-      ok = { ok: true }
-      api_status = {
-        systems: Hash[systems.zip(Array.new(3) { ok })]
-      }.with_indifferent_access
-      mock.expect :api_status, api_status
       file_mock = Minitest::Mock.new
       file_mock.expect :present?, true
       file_mock.expect :size, file.upload_file_size

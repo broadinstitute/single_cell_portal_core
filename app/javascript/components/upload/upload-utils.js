@@ -111,7 +111,7 @@ export function findBundleChildren(file, files) {
       f.study_file_bundle_id
     ]
     return parentFields.includes(file._id) ||
-      file.study_file_bundle_id && parentFields.includes(file.study_file_bundle_id)
+      file.study_file_bundle_id && parentFields.includes(file.study_file_bundle_id) && f._id !== file._id
   })
 }
 
@@ -332,6 +332,7 @@ const sequenceExtensions = [
 ]
 const baiExtensions = ['.bai']
 const tbiExtensions = ['.tbi']
+const csiExtensions = ['.csi'] // Like TBI, but supports larger chromosomes
 const annDataExtensions = ['.h5', '.h5ad', '.hdf5']
 const seuratExtensions = ['.Rds', '.rds', '.RDS', '.seuratdata', '.h5seurat', '.h5Seurat', '.seuratdisk', '.Rda', '.rda']
 const miscExtensions = baseMiscExtensions.concat(mtxExtensions, annDataExtensions, seuratExtensions)
@@ -342,7 +343,7 @@ export const FileTypeExtensions = {
   misc: miscExtensions.concat(miscExtensions.map(ext => `${ext}.gz`)),
   sequence: sequenceExtensions,
   bai: baiExtensions,
-  tbi: tbiExtensions,
+  tbi: tbiExtensions.concat(csiExtensions),
   annData: annDataExtensions,
   seurat: seuratExtensions
 }

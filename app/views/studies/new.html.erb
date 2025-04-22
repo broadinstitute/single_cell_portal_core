@@ -6,18 +6,17 @@
   <p>All uploaded data files for studies are stored in <%= link_to 'Terra', 'https://app.terra.bio/', target: :_blank,
                                                                    rel: 'noopener noreferrer' %> workspaces.
     If you do not already have a Terra account, you will receive an invitation email after you create your study.
-    While you can interact with your uploaded files directly through the Single Cell Portal, you must complete the Terra
-    registration process before you can see or use your files in your Terra workspace.  You will also receive an email
-    letting you know that the Single Cell Portal service account has shared the study workspace with you.</p>
-  <p>You may also create a study based on an existing workspace you already own.  To do so, select <strong>'Yes'</strong>
-    under <strong>'Use Existing Workspace'</strong> and then provide the name in the text box.</p>
+    While you can interact with your uploaded files directly through Single Cell Portal, you must register for Terra
+    before you can access files in your Terra workspace.  You will also receive an email
+    that Single Cell Portal service account has shared the study workspace with you.</p>
+  <p>You may also create a study based on an existing workspace you already own.  Simply select <strong>"Yes"</strong>
+    under <strong>"Use existing workspace?"</strong> and then provide the name in the text box.</p>
   <h4>Billing projects</h4>
   <p>You must select a billing project when creating your study.  You may use the default project, but you will not be
     allowed to run any computes in your workspace.  If you wish to run computes, then you must
     <%= scp_link_to 'create a billing project', billing_projects_path %> (using a Google billing account that you own)
-    first before creating this study.  <strong>By selecting a project for your study other than the default project, you
-    will be granting the Single Cell Portal access to your billing project</strong> (billing projects created through
-    the portal also give access to Single Cell Portal).</p>
+    before creating this study.  <strong>By selecting a project for your study other than the default project, you
+    will be granting Single Cell Portal access to your billing project</strong>.</p>
   <p class="text-danger"><strong><i class="fas fa-fw fa-exclamation-triangle"></i> You cannot change the billing project
     of a workspace once it has been created.</strong></p>
   <br/>
@@ -30,8 +29,8 @@
   <%= link_to 'designated ontologies', 'https://singlecell.zendesk.com/hc/en-us/articles/360060609852-Required-Metadata',
               target: :_blank, rel: 'noopener noreferrer' %> to adhere to
   <%= link_to 'metadata validation rules', 'https://singlecell.zendesk.com/hc/en-us/articles/360060610012-Metadata-Validation',
-              target: :_blank, rel: 'noopener noreferrer' %>.  These requirements make your study data discoverable
-  through Single Cell Portal's Advanced Search feature.
+              target: :_blank, rel: 'noopener noreferrer' %>.  This improves your study data's discoverability
+  through Single Cell Portal's search features.
 </div>
 
 <%= render 'form' %>

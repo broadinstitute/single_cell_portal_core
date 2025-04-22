@@ -38,6 +38,7 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
   end
 
   teardown do
+    DifferentialExpressionResult.delete_all
     OmniAuth.config.mock_auth[:google_oauth2] = nil
     reset_user_tokens
     @study.update(public: true)
@@ -87,7 +88,7 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
       mock_url = "https://storage.googleapis.com/#{@study.bucket_id}/#{file.upload_file_name}"
       mock = Minitest::Mock.new
       mock.expect :execute_gcloud_method, mock_url,
-                  [:generate_signed_url, 0, @study.bucket_id, file.bucket_location, Hash]
+                  [:generate_signed_url, 0, @study.bucket_id, file.bucket_location], expires: Integer
       ApplicationController.stub :firecloud_client, mock do
         execute_http_request(:get, api_v1_site_study_download_data_path(accession: @study.accession, filename: file.upload_file_name))
         assert_response 302, "Did not correctly redirect to file: #{response.code}"
@@ -154,6 +155,145 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
       external_entry = json['study_files'].detect {|file| file['name'] == external_sequence_file.name}
       assert_equal external_sequence_file.human_fastq_url, external_entry['download_url'],
                    "Did not return correct download url for external fastq; #{external_entry['download_url']} != #{external_sequence_file.human_fastq_url}"
+    end
+  end
+
+  test 'should submit differential expression request' do
+    user = FactoryBot.create(:api_user, test_array: @@users_to_clean)
+    study = FactoryBot.create(:detached_study, name_prefix: 'DiffExp Submit Test', user:, test_array: @@studies_to_clean)
+    cells = %w[A B C D E F G]
+    coordinates = 1.upto(7).to_a
+    species = %w[dog cat dog dog cat cat cat]
+    cell_types = ['B cell', 'T cell', 'B cell', 'T cell', 'T cell', 'B cell', 'B cell']
+    custom_cell_types = ['Custom 1', 'Custom 2', 'Custom 1', 'Custom 2', 'Custom 1', 'Custom 2', 'Custom 2']
+    raw_matrix = FactoryBot.create(
+      :expression_file, name: 'raw.txt', study:, expression_file_info: {
+      is_raw_counts: true, units: 'raw counts', library_preparation_protocol: 'Drop-seq',
+      biosample_input_type: 'Whole cell', modality: 'Proteomic' }
+    )
+    cluster_file = FactoryBot.create(:cluster_file,
+                                     name: 'umap',
+                                     study:,
+                                     cell_input: { x: coordinates, y: coordinates, cells: })
+    cluster_group = ClusterGroup.find_by(study:, study_file: cluster_file)
+
+    FactoryBot.create(
+      :metadata_file, name: 'metadata.txt', study:, cell_input: cells, annotation_input: [
+        { name: 'species', type: 'group', values: species },
+        { name: 'cell_type__ontology_label', type: 'group', values: cell_types },
+        { name: 'cell_type__custom', type: 'group', values: custom_cell_types }]
+    )
+
+    DifferentialExpressionResult.create(
+      study:, cluster_group:, annotation_name: 'species', annotation_scope: 'study', matrix_file_id: raw_matrix.id,
+      pairwise_comparisons: { dog: %w[cat]}
+    )
+    mock_not_detached study, :find_by do
+      sign_in_and_update user
+
+      # stub :raw_matrix_for_cluster_cells to avoid having to create cell arrays manually
+      ClusterVizService.stub :raw_matrix_for_cluster_cells, raw_matrix do
+        valid_params = [
+          {
+            cluster_name: 'umap', annotation_name: 'cell_type__ontology_label',
+            annotation_scope: 'study', de_type: 'rest'
+          },
+          {
+            cluster_name: 'umap', annotation_name: 'cell_type__ontology_label',
+            annotation_scope: 'study', de_type: 'pairwise', group1: 'B cell', group2: 'T cell'
+          }
+        ]
+        # test normal submission
+        valid_params.each do |job_params|
+          job_mock = Minitest::Mock.new
+          job_mock.expect :push_remote_and_launch_ingest, nil
+          delay_mock = Minitest::Mock.new
+          delay_mock.expect :delay, job_mock
+          IngestJob.stub :new, delay_mock do
+            execute_http_request(:post,
+                                 api_v1_site_study_submit_differential_expression_path(accession: study.accession),
+                                 request_payload: job_params,
+                                 user:)
+            assert_response 204
+            delay_mock.verify
+          end
+        end
+        # check for existing results
+        existing_params = {
+          cluster_name: 'umap', annotation_name: 'species',
+          annotation_scope: 'study', de_type: 'pairwise', group1: 'dog', group2: 'cat'
+        }
+        execute_http_request(:post,
+                             api_v1_site_study_submit_differential_expression_path(accession: study.accession),
+                             request_payload: existing_params,
+                             user:)
+        assert_response 409
+        # request parameter validations
+        execute_http_request(:post,
+                             api_v1_site_study_submit_differential_expression_path(accession: study.accession),
+                             request_payload: { cluster_name: 'foo'},
+                             user:)
+        assert_response :not_found
+        execute_http_request(:post,
+                             api_v1_site_study_submit_differential_expression_path(accession: study.accession),
+                             request_payload: {
+                               cluster_name: 'umap', annotation_name: 'foo', annotation_scope: 'study'
+                             },
+                             user:)
+        assert_response :not_found
+
+        execute_http_request(:post,
+                             api_v1_site_study_submit_differential_expression_path(accession: study.accession),
+                             request_payload: {
+                               cluster_name: 'umap', annotation_name: 'cell_type__ontology_label',
+                               annotation_scope: 'study', de_type: 'foo'
+                             },
+                             user:)
+        assert_response 422
+        execute_http_request(:post,
+                             api_v1_site_study_submit_differential_expression_path(accession: study.accession),
+                             request_payload: {
+                               cluster_name: 'umap', annotation_name: 'cell_type__ontology_label',
+                               annotation_scope: 'study', de_type: 'pairwise'
+                             },
+                             user:)
+        assert_response 422
+        # check rate limit
+        user.update(weekly_de_quota: DifferentialExpressionService::DEFAULT_USER_QUOTA)
+        execute_http_request(:post,
+                             api_v1_site_study_submit_differential_expression_path(accession: study.accession),
+                             request_payload: {
+                               cluster_name: 'umap', annotation_name: 'cell_type__ontology_label',
+                               annotation_scope: 'study', de_type: 'pairwise', group1: 'T cell', group2: 'B cell'
+                             },
+                             user:)
+        assert_response 429
+        # check for author results
+        study.differential_expression_results.delete_all
+        de_file = FactoryBot.create(:differential_expression_file,
+                                    study:,
+                                    name: 'user_de.txt',
+                                    annotation_name: 'cell_type__custom',
+                                    annotation_scope: 'study',
+                                    cluster_group:,
+                                    computational_method: 'custom'
+        )
+        author_result = DifferentialExpressionResult.create(
+          study:, cluster_group:, annotation_name: 'cell_type__custom', annotation_scope: 'study',
+          study_file: de_file, is_author_de: true, one_vs_rest_comparisons: ['Custom 1', 'Custom 2']
+        )
+        assert author_result.persisted?
+        params = {
+          cluster_name: 'umap', annotation_name: 'cell_type__ontology_label',
+          annotation_scope: 'study', de_type: 'rest'
+        }
+        execute_http_request(:post,
+                             api_v1_site_study_submit_differential_expression_path(accession: study.accession),
+                             request_payload: params,
+                             user:)
+        assert_response :forbidden
+        assert json['error'].starts_with? 'User requests are disabled'
+      end
     end
   end
 end

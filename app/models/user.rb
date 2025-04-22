@@ -87,6 +87,7 @@ class User
   field :admin, type: Boolean
   field :reporter, type: Boolean
   field :daily_download_quota, type: Integer, default: 0
+  field :weekly_de_quota, type: Integer, default: 0 # limits number of user-requested DE jobs
   field :admin_email_delivery, type: Boolean, default: true
   field :registered_for_firecloud, type: Boolean, default: false
   # {

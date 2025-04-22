@@ -9,6 +9,8 @@ class DifferentialExpressionService
   ALLOWED_ANNOTS = Regexp.union(CELL_TYPE_MATCHER, CLUSTERING_MATCHER)
   # specific annotations to exclude from automation
   EXCLUDED_ANNOTS = /(enrichment__cell_type)/i
+  # default quota for user-requested DE jobs
+  DEFAULT_USER_QUOTA = 5
 
   # run a differential expression job for a given study on the default cluster/annotation
   #
@@ -132,6 +134,7 @@ class DifferentialExpressionService
     metadata_url = study_file.is_viz_anndata? ?
                      RequestUtils.data_fragment_url(study_file, 'metadata') :
                      study.metadata_file.gs_url
+    cluster_group_id = cluster_group.id
     # begin assembling parameters
     de_params = {
       annotation_name:,
@@ -141,10 +144,12 @@ class DifferentialExpressionService
       group2:,
       annotation_file: annotation_scope == 'cluster' ? cluster_url : metadata_url,
       cluster_file: cluster_url,
-      cluster_name: cluster_group.name
+      cluster_name: set_cluster_name(study, cluster_group, annotation_name, annotation_scope),
+      cluster_group_id:
     }
     raw_matrix = ClusterVizService.raw_matrix_for_cluster_cells(study, cluster_group)
     de_params[:matrix_file_path] = raw_matrix.gs_url
+    de_params[:matrix_file_id] = raw_matrix.id
     if raw_matrix.file_type == 'MM Coordinate Matrix'
       de_params[:matrix_file_type] = 'mtx'
       # we know bundle exists and is completed as :raw_matrix_for_cluster_cells will throw an exception if it isn't
@@ -156,6 +161,7 @@ class DifferentialExpressionService
     elsif raw_matrix.file_type == 'AnnData'
       de_params[:matrix_file_type] = 'h5ad'
       de_params[:file_size] = raw_matrix.upload_file_size
+      de_params[:raw_location] = raw_matrix.ann_data_file_info.raw_location
     else
       de_params[:matrix_file_type] = 'dense'
     end
@@ -163,25 +169,27 @@ class DifferentialExpressionService
     params_object.machine_type = machine_type if machine_type.present? # override :machine_type if specified
     return true if dry_run # exit before submission if specified as annotation was already validated
 
-    # check if there's already a job running using these parameters and exit if so
-    job_params = ApplicationController.batch_api_client.format_command_line(
-      study_file:, action: :differential_expression, user_metrics_uuid: user.metrics_uuid, params_object:
-    )
-    running = ApplicationController.batch_api_client.find_matching_jobs(
-      params: job_params, job_states: BatchApiClient::RUNNING_STATES
-    )
-    if running.any?
-      log_message "Found #{running.count} running DE jobs: #{running.map(&:name).join(', ')}"
-      log_message "Matching these parameters: #{job_params.join(' ')}"
-      log_message "Exiting without queuing new job"
-      false
-    elsif params_object.valid?
-      # launch DE job
-      job = IngestJob.new(study:, study_file:, user:, action: :differential_expression, params_object:)
-      job.delay.push_remote_and_launch_ingest
-      true
+    if params_object.valid?
+      # check if there's already a job running using these parameters and exit if so
+      job_params = ApplicationController.batch_api_client.format_command_line(
+        study_file:, action: :differential_expression, user_metrics_uuid: user.metrics_uuid, params_object:
+      )
+      running = ApplicationController.batch_api_client.find_matching_jobs(
+        params: job_params, job_states: BatchApiClient::RUNNING_STATES
+      )
+      if running.any?
+        log_message "Found #{running.count} running DE jobs: #{running.map(&:name).join(', ')}"
+        log_message "Matching these parameters: #{job_params.join(' ')}"
+        log_message "Exiting without queuing new job"
+        false
+      else
+        # launch DE job
+        job = IngestJob.new(study:, study_file:, user:, action: :differential_expression, params_object:)
+        job.delay.push_remote_and_launch_ingest
+        true
+      end
     else
-      raise ArgumentError, "job parameters failed to validate: #{params_object.errors.full_messages}"
+      raise ArgumentError, "job parameters failed to validate: #{params_object.errors.full_messages.join(', ')}"
     end
   end
 
@@ -283,6 +291,21 @@ class DifferentialExpressionService
     ALLOWED_ANNOTS =~ name && EXCLUDED_ANNOTS !~ name
   end
 
+  # determine if the requested cluster/annotation has an existing result object
+  # used for setting cluster name or in pairwise DE when merging in new results
+  #
+  # * *params*
+  #   - +study+            (Study) => Study in which results exist
+  #   - +cluster_group+    (ClusterGroup) => Clustering object to source name/file from
+  #   - +annotation_name+  (String) => Name of requested annotation
+  #   - +annotation_scope+ (String) => Scope of requested annotation ('study' or 'cluster')
+  #
+  # * *returns*
+  #   - (DifferentialExpressionResult, nil)
+  def self.find_existing_result(study, cluster_group, annotation_name, annotation_scope)
+    DifferentialExpressionResult.find_by(study:, cluster_group:, annotation_name:, annotation_scope:)
+  end
+
   # determine if a study already has DE results for an annotation, taking scope into account
   # cluster-based annotations must match to the specified cluster in the annotation object
   # for study-wide annotations, return true if any results exist, regardless of cluster as this indicates that DE
@@ -303,6 +326,21 @@ class DifferentialExpressionService
       :annotation_name => annotation[:annotation_name],
       :annotation_scope => annotation[:annotation_scope]
     ).exists?
+  end
+
+  # helper to set cluster_name when existing results are present
+  # this prevents result file URLs breaking because the cluster has been renamed at some point
+  #
+  # * *params*
+  #   - +study+            (Study) => Study in which results exist
+  #   - +cluster_group+    (ClusterGroup) => Clustering object to source name/file from
+  #   - +annotation_name+  (String) => Name of requested annotation
+  #   - +annotation_scope+ (String) => Scope of requested annotation ('study' or 'cluster')
+  #
+  # * *returns*
+  #   - (String)
+  def self.set_cluster_name(study, cluster_group, annotation_name, annotation_scope)
+    find_existing_result(study, cluster_group, annotation_name, annotation_scope)&.cluster_name || cluster_group.name
   end
 
   # determine if a study meets the requirements for differential expression:
@@ -377,12 +415,17 @@ class DifferentialExpressionService
     if !pairwise && cells_by_label.keys.count < 2
       raise ArgumentError, "#{identifier} does not have enough labels represented in #{cluster_group.name}"
     elsif pairwise
-      missing = {
-        "#{group1}" => cells_by_label[group1].count,
-        "#{group2}" => cells_by_label[group2].count
+      missing = [group1, group2] - annotation[:values]
+      raise ArgumentError, "#{annotation_name} does not contain '#{missing.join(', ')}'" if missing.any?
+
+      cell_count = {
+        group1.to_s => cells_by_label[group1]&.count.to_i,
+        group2.to_s => cells_by_label[group2]&.count.to_i
       }.keep_if { |_, c| c < 2 }
-      raise ArgumentError,
-            "#{missing.keys.join(', ')} does not have enough cells represented in #{identifier}" if missing.any?
+      if cell_count.any?
+        raise ArgumentError, "#{cell_count.keys.join(', ')} does not have enough cells represented in #{identifier} " \
+          "for #{cluster_group.name}"
+      end
     end
   end
 
@@ -450,5 +493,40 @@ class DifferentialExpressionService
     else
       study_file.gs_url
     end
+  end
+
+  # retrieve the weekly user quota value
+  #
+  # * *returns*
+  #   - (Integer)
+  def self.get_weekly_user_quota
+    config = AdminConfiguration.find_by(config_type: 'Weekly User DE Quota')
+    config ? config.value.to_i : DEFAULT_USER_QUOTA
+  end
+
+  # check if a user has exceeded their weekly quota
+  #
+  # * *params*
+  #   - +user+ (User) => user requesting DE job
+  #
+  # * *returns*
+  #   - (Boolean)
+  def self.job_exceeds_quota?(user)
+    user.weekly_de_quota.to_i >= get_weekly_user_quota
+  end
+
+  # increment a given user's weekly quota
+  #
+  # * *params*
+  #   - +user+ (User) => user requesting DE job
+  def self.increment_user_quota(user)
+    current_quota = user.weekly_de_quota.to_i
+    current_quota += 1
+    user.update(weekly_de_quota: current_quota)
+  end
+
+  # reset all user-requested DE quotas on a weekly basis
+  def self.reset_all_user_quotas
+    User.update_all(weekly_de_quota: 0)
   end
 end

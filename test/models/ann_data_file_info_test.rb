@@ -36,7 +36,7 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
   end
 
   test 'should merge form data' do
-    taxon_id = BSON::ObjectId.new.to_s
+    taxon_id = generate_id
     form_params = {
       name: 'data.h5ad',
       description: 'anndata file description',
@@ -44,7 +44,8 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
         _id: generate_id,
         description: 'expression description',
         taxon_id:,
-        y_axis_label: 'log(TPM) expression'
+        y_axis_label: 'log(TPM) expression',
+        expression_file_info_attributes: { raw_location: '.raw' }
       },
       metadata_form_info_attributes: {
         use_metadata_convention: true
@@ -104,7 +105,7 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
   end
 
   test 'should extract specified data fragment from form data' do
-    taxon_id = BSON::ObjectId.new.to_s
+    taxon_id = generate_id
     description = 'this is the description'
     form_segment = { description:, taxon_id:, other_data: 'foo' }
     fragment = AnnDataFileInfo.new.extract_form_fragment(
@@ -127,62 +128,101 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
   end
 
   test 'should set default cluster fragments' do
+    study_file_mock = Minitest::Mock.new
+    study_file_mock.expect :is_raw_counts_file?, false
+    study_file_mock.expect :expression_file_info, nil
     ann_data_info = AnnDataFileInfo.new(reference_file: false)
-    assert ann_data_info.valid?
-    default_keys = AnnDataIngestParameters::PARAM_DEFAULTS[:obsm_keys]
-    default_keys.each do |obsm_key_name|
-      name = obsm_key_name.delete_prefix('X_')
-      matcher = { data_type: :cluster, name:, obsm_key_name: }.with_indifferent_access
-      assert ann_data_info.find_fragment(**matcher).present?
+    ann_data_info.stub :study_file, study_file_mock do
+      assert ann_data_info.valid?
+      default_keys = AnnDataIngestParameters::PARAM_DEFAULTS[:obsm_keys]
+      default_keys.each do |obsm_key_name|
+        name = obsm_key_name.delete_prefix('X_')
+        matcher = { data_type: :cluster, name:, obsm_key_name: }.with_indifferent_access
+        assert ann_data_info.find_fragment(**matcher).present?
+      end
     end
     # ensure non-parseable AnnData files don't create fragment
+    study_file_mock = Minitest::Mock.new
+    study_file_mock.expect :is_raw_counts_file?, false
+    study_file_mock.expect :expression_file_info, nil
     reference_anndata = AnnDataFileInfo.new
-    assert reference_anndata.valid?
-    assert_empty reference_anndata.data_fragments
-    assert_empty reference_anndata.obsm_key_names
+    reference_anndata.stub :study_file, study_file_mock do
+      assert reference_anndata.valid?
+      assert_empty reference_anndata.data_fragments
+      assert_empty reference_anndata.obsm_key_names
+    end
   end
 
   test 'should validate data fragments' do
+    study_file_mock = Minitest::Mock.new
+    4.times do
+      study_file_mock.expect :is_raw_counts_file?, true
+      study_file_mock.expect :expression_file_info, nil
+    end
     ann_data_info = AnnDataFileInfo.new(
       data_fragments: [
         { data_type: :cluster, name: 'UMAP', obsm_key_name: 'X_umap' },
         { data_type: :expression }
       ]
     )
-    assert_not ann_data_info.valid?
-    cluster_error_msg = ann_data_info.errors.messages_for(:base).first
-    assert_equal 'cluster form (X_umap) missing one or more required entries: _id', cluster_error_msg
-    exp_error_msg = ann_data_info.errors.messages_for(:base).last
-    assert_equal 'expression form missing one or more required entries: _id, taxon_id', exp_error_msg
-    ann_data_info.data_fragments = [
-      { _id: generate_id, data_type: :cluster, name: 'UMAP', obsm_key_name: 'X_umap' },
-      { _id: generate_id, data_type: :cluster, name: 'UMAP', obsm_key_name: 'X_umap' }
-    ]
-    assert_not ann_data_info.valid?
-    error_messages = ann_data_info.errors.messages_for(:base)
-    assert_equal 2, error_messages.count
-    error_messages.each do |message|
-      assert message.include?('are not unique')
+    ann_data_info.stub :study_file, study_file_mock do
+      assert_not ann_data_info.valid?
+      cluster_error_msg = ann_data_info.errors.messages_for(:base).first
+      assert_equal 'cluster form (X_umap) missing one or more required entries: _id', cluster_error_msg
+      exp_error_msg = ann_data_info.errors.messages_for(:base).last
+      assert_equal 'expression form missing one or more required entries: _id, taxon_id', exp_error_msg
+      ann_data_info.data_fragments = [
+        { _id: generate_id, data_type: :cluster, name: 'UMAP', obsm_key_name: 'X_umap' },
+        { _id: generate_id, data_type: :cluster, name: 'UMAP', obsm_key_name: 'X_umap' }
+      ]
+      assert_not ann_data_info.valid?
+      error_messages = ann_data_info.errors.messages_for(:base)
+      assert_equal 2, error_messages.count
+      error_messages.each do |message|
+        assert message.include?('are not unique')
+      end
+      ann_data_info.data_fragments = [
+        { _id: generate_id, data_type: :cluster, name: '', obsm_key_name: 'X_umap' },
+        { _id: generate_id, data_type: :cluster, name: nil, obsm_key_name: 'X_tsne' }
+      ]
+      assert_not ann_data_info.valid?
+      error_messages = ann_data_info.errors.messages_for(:base)
+      assert_equal 2, error_messages.count
+      error_messages.each do |message|
+        assert message.match(/cluster form \((X_umap|X_tsne)\) missing one or more required entries/)
+      end
+      ann_data_info.data_fragments = [
+        { _id: generate_id, data_type: :cluster, name: 'UMAP', obsm_key_name: 'X_umap' },
+        { _id: generate_id, data_type: :cluster, name: 'tSNE', obsm_key_name: 'X_tsne' },
+        {
+          _id: generate_id, data_type: :expression, y_axis_title: 'log(TPM) expression',
+          taxon_id: generate_id
+        }
+      ]
+      assert ann_data_info.valid?
     end
-    ann_data_info.data_fragments = [
-      { _id: generate_id, data_type: :cluster, name: '', obsm_key_name: 'X_umap' },
-      { _id: generate_id, data_type: :cluster, name: nil, obsm_key_name: 'X_tsne' }
-    ]
-    assert_not ann_data_info.valid?
-    error_messages = ann_data_info.errors.messages_for(:base)
-    assert_equal 2, error_messages.count
-    error_messages.each do |message|
-      assert message.match(/cluster form \((X_umap|X_tsne)\) missing one or more required entries/)
+  end
+
+  test 'should enforce raw location' do
+    study_file_mock = Minitest::Mock.new
+    2.times do
+      study_file_mock.expect :is_raw_counts_file?, true
+      study_file_mock.expect :expression_file_info, nil
     end
-    ann_data_info.data_fragments = [
-      { _id: generate_id, data_type: :cluster, name: 'UMAP', obsm_key_name: 'X_umap' },
-      { _id: generate_id, data_type: :cluster, name: 'tSNE', obsm_key_name: 'X_tsne' },
-      {
-        _id: generate_id, data_type: :expression, y_axis_title: 'log(TPM) expression',
-        taxon_id: BSON::ObjectId.new.to_s
-      }
-    ]
-    assert ann_data_info.valid?
+    ann_data_info = AnnDataFileInfo.new(
+      data_fragments: [
+        { _id: generate_id, data_type: :cluster, name: 'UMAP', obsm_key_name: 'X_umap' },
+        { _id: generate_id, data_type: :expression, taxon_id: generate_id }
+      ],
+      reference_file: false
+    )
+    ann_data_info.stub :study_file, study_file_mock do
+      assert_not ann_data_info.valid?
+      assert_equal 1, ann_data_info.errors.messages[:raw_location].count
+      ann_data_info.data_fragments[1][:raw_location] = '.raw'
+      assert ann_data_info.valid?
+      assert_equal '.raw', ann_data_info.raw_location
+    end
   end
 
   test 'should propagate expression_file_info when saving' do
@@ -208,7 +248,7 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
     }
     ann_data_file.ann_data_file_info.data_fragments = [
       { _id: generate_id, data_type: :cluster, obsm_key_name: 'X_umap', name: 'UMAP' },
-      { _id: generate_id, data_type: :expression, taxon_id: generate_id, expression_file_info: }
+      { _id: generate_id, data_type: :expression, taxon_id: generate_id, expression_file_info:, raw_location: '.raw' }
     ]
     ann_data_file.save!
     ann_data_file.reload
@@ -232,6 +272,9 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
   end
 
   test 'should unset units in expression fragment if not raw counts' do
+    study_file_mock = Minitest::Mock.new
+    study_file_mock.expect :is_raw_counts_file?, false
+    study_file_mock.expect :expression_file_info, nil
     anndata_info = AnnDataFileInfo.new(
       data_fragments: [
         {
@@ -246,8 +289,10 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
         }.with_indifferent_access
       ]
     )
-    assert anndata_info.valid? # invokes validations
-    exp_frag = anndata_info.fragments_by_type(:expression).first
-    assert_nil exp_frag.with_indifferent_access.dig(:expression_file_info, :units)
+    anndata_info.stub :study_file, study_file_mock do
+      assert anndata_info.valid? # invokes validations
+      exp_frag = anndata_info.fragments_by_type(:expression).first
+      assert_nil exp_frag.with_indifferent_access.dig(:expression_file_info, :units)
+    end
   end
 end

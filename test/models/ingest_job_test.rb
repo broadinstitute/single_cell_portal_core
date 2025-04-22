@@ -134,7 +134,7 @@ class IngestJobTest < ActiveSupport::TestCase
     )
 
     4.times { mock.expect :get_job, dummy_job, [pipeline_name] }
-    mock.expect :get_job_resources, vm_info, [{ job: dummy_job }]
+    mock.expect :get_job_resources, vm_info, [], job: dummy_job
     mock.expect :exit_code_from_task, 0, [pipeline_name]
 
     cells = study.expression_matrix_cells(study_file)
@@ -196,7 +196,7 @@ class IngestJobTest < ActiveSupport::TestCase
     )
 
     4.times { mock.expect :get_job, failed_job, [failed_pipeline] }
-    mock.expect :get_job_resources, vm_info, [{ job: failed_job }]
+    mock.expect :get_job_resources, vm_info, [], job: failed_job
     mock.expect :exit_code_from_task, 1, [failed_pipeline]
 
     ApplicationController.stub :batch_api_client, mock do
@@ -268,7 +268,7 @@ class IngestJobTest < ActiveSupport::TestCase
       )
     )
     4.times { mock.expect :get_job, mock_job, [job_name] }
-    mock.expect :get_job_resources, vm_info, [{job: mock_job}]
+    mock.expect :get_job_resources, vm_info, [], job: mock_job
     mock.expect :exit_code_from_task, 0, [job_name]
 
     ApplicationController.stub :batch_api_client, mock do
@@ -322,7 +322,7 @@ class IngestJobTest < ActiveSupport::TestCase
       )
     )
     4.times { mock.expect :get_job, mock_job, [reference_pipeline] }
-    mock.expect :get_job_resources, vm_info, [{job: mock_job}]
+    mock.expect :get_job_resources, vm_info, [], job: mock_job
     mock.expect :exit_code_from_task, 0, [reference_pipeline]
 
     ApplicationController.stub :batch_api_client, mock do
@@ -391,7 +391,7 @@ class IngestJobTest < ActiveSupport::TestCase
     mock = Minitest::Mock.new
     mock.expect :list_jobs, list_mock
     mock.expect :job_done?, true, [dummy_job]
-    3.times { mock.expect :get_job_command_line, mock_commands, [{ job: dummy_job }] }
+    3.times { mock.expect :get_job_command_line, mock_commands, [], job: dummy_job }
     2.times { mock.expect :job_error, false, [pipeline_name] }
 
     ApplicationController.stub :batch_api_client, mock do
@@ -443,7 +443,8 @@ class IngestJobTest < ActiveSupport::TestCase
     )
     job_mock = Minitest::Mock.new
     2.times { job_mock.expect :object, cluster_job }
-    dummy_job = Google::Apis::BatchV1::Job.new(status: Google::Apis::BatchV1::JobStatus.new(state: 'RUNNING'))
+    dummy_job = Google::Apis::BatchV1::Job.new(name: pipeline_name,
+                                               status: Google::Apis::BatchV1::JobStatus.new(state: 'RUNNING'))
 
     pipeline_mock = Minitest::Mock.new
     pipeline_mock.expect :get_job, dummy_job, [pipeline_name]
@@ -452,11 +453,15 @@ class IngestJobTest < ActiveSupport::TestCase
     DelayedJobAccessor.stub :find_jobs_by_handler_type, [Delayed::Job.new] do
       DelayedJobAccessor.stub :dump_job_handler, job_mock do
         ApplicationController.stub :batch_api_client, pipeline_mock do
-          metadata_job.report_anndata_summary
-          job_mock.verify
-          pipeline_mock.verify
-          ann_data_file.reload
-          assert_not ann_data_file.has_anndata_summary?
+          metadata_job.stub :failed?, false do
+            metadata_job.stub :should_retry?, false do
+              metadata_job.report_anndata_summary
+              job_mock.verify
+              pipeline_mock.verify
+              ann_data_file.reload
+              assert_not ann_data_file.has_anndata_summary?
+            end
+          end
         end
       end
     end
@@ -481,10 +486,95 @@ class IngestJobTest < ActiveSupport::TestCase
     DelayedJobAccessor.stub :find_jobs_by_handler_type, [] do
       MetricsService.stub :log, metrics_mock do
         cluster_job.stub :anndata_summary_props, mock_job_props do
-          cluster_job.report_anndata_summary
-          ann_data_file.reload
-          assert ann_data_file.has_anndata_summary?
-          metrics_mock.verify
+          cluster_job.stub :should_retry?, false do
+            cluster_job.stub :failed?, false do
+              cluster_job.report_anndata_summary
+              ann_data_file.reload
+              assert ann_data_file.has_anndata_summary?
+              metrics_mock.verify
+            end
+          end
+        end
+      end
+    end
+  end
+
+  test 'should determine when to skip AnnData summary' do
+    study = FactoryBot.create(
+      :detached_study, name_prefix: 'ingestSummary skip test', user: @user, test_array: @@studies_to_clean
+    )
+    ann_data_file = FactoryBot.create(:ann_data_file, name: 'matrix.h5ad', study:)
+    ann_data_file.ann_data_file_info.reference_file = false
+    ann_data_file.options[:anndata_summary] = false
+    ann_data_file.save
+    pipeline_name = SecureRandom.uuid
+    job = IngestJob.new(
+      pipeline_name:, study:, user: @user, study_file: ann_data_file, action: :ingest_anndata
+    )
+
+    job.stub :failed?, true do
+      job.stub :should_retry?, false do
+        assert_not job.skip_anndata_summary?
+      end
+    end
+
+    job.stub :failed?, false do
+      job.stub :should_retry?, false do
+        assert job.skip_anndata_summary?
+        job.action = :differential_expression
+        assert job.skip_anndata_summary?
+        ann_data_file.options[:anndata_summary] = true
+        job.action = :ingest_cluster
+        assert job.skip_anndata_summary?
+      end
+    end
+  end
+
+  test 'should report AnnData summary on extraction failure' do
+    study = FactoryBot.create(
+      :detached_study, name_prefix: 'ingestSummary report', user: @user, test_array: @@studies_to_clean
+    )
+    ann_data_file = FactoryBot.create(:ann_data_file, name: 'matrix.h5ad', study:)
+    ann_data_file.ann_data_file_info.reference_file = false
+    ann_data_file.upload_file_size = 1.megabyte
+    ann_data_file.options[:anndata_summary] = false
+    ann_data_file.save
+    params = AnnDataIngestParameters.new(
+      anndata_file: ann_data_file.gs_url, file_size: ann_data_file.upload_file_size,
+      extract_raw_counts: true, raw_location: '.raw'
+    )
+    pipeline_name = SecureRandom.uuid
+    job = IngestJob.new(
+      pipeline_name:, study:, user: @user, study_file: ann_data_file, action: :ingest_anndata
+    )
+    mock_job_props = {
+      perfTime: 60000,
+      fileName: ann_data_file.name,
+      fileType: 'AnnData',
+      fileSize: ann_data_file.upload_file_size,
+      studyAccession: study.accession,
+      trigger: ann_data_file.upload_trigger,
+      jobStatus: 'failed',
+      numFilesExtracted: 0,
+      machineType: params.machine_type,
+      action: :ingest_pipeline,
+      ingest_action: :ingest_anndata,
+      exitCode: 1
+    }
+    metrics_mock = Minitest::Mock.new
+    metrics_mock.expect :call, true, ['ingestSummary', mock_job_props, @user]
+
+    DelayedJobAccessor.stub :find_jobs_by_handler_type, [] do
+      MetricsService.stub :log, metrics_mock do
+        job.stub :anndata_summary_props, mock_job_props do
+          job.stub :failed?, true do
+            job.stub :should_retry?, false do
+              job.report_anndata_summary
+              ann_data_file.reload
+              assert ann_data_file.has_anndata_summary?
+              metrics_mock.verify
+            end
+          end
         end
       end
     end
@@ -519,7 +609,7 @@ class IngestJobTest < ActiveSupport::TestCase
     mock.expect :list_jobs, list_mock
     mock.expect :job_done?, true, [dummy_job]
     mock.expect :exit_code_from_task, 65, [pipeline_name]
-    4.times { mock.expect :get_job_command_line, mock_commands, [{ job: dummy_job }] }
+    4.times { mock.expect :get_job_command_line, mock_commands, [], job: dummy_job }
     3.times { mock.expect :job_error, job_error, [pipeline_name] }
     ApplicationController.stub :batch_api_client, mock do
       cell_metadata_file = RequestUtils.data_fragment_url(ann_data_file, 'metadata')
@@ -731,13 +821,6 @@ class IngestJobTest < ActiveSupport::TestCase
     pipeline_name = SecureRandom.uuid
 
     job = IngestJob.new(pipeline_name:, study:, study_file: cluster_file, user: @user, action: :ingest_subsample)
-    metadata = {
-      pipeline: {
-        actions: [
-          { commands: %w[foo bar bing baz] }
-        ]
-      }
-    }.with_indifferent_access
 
     error_log = "parse_logs/#{cluster_file.id}/user_log.txt"
     mock = Minitest::Mock.new
@@ -752,7 +835,7 @@ class IngestJobTest < ActiveSupport::TestCase
 
     batch_mock = Minitest::Mock.new
     batch_mock.expect :get_job, Google::Apis::BatchV1::Job, [pipeline_name]
-    batch_mock.expect :get_job_command_line, %w[foo bar bing baz], [{job: Google::Apis::BatchV1::Job}]
+    batch_mock.expect :get_job_command_line, %w[foo bar bing baz], [], job: Google::Apis::BatchV1::Job
     ApplicationController.stub :firecloud_client, mock do
       ApplicationController.stub :batch_api_client, batch_mock do
         job.handle_ingest_failure('parse failure')
@@ -774,7 +857,7 @@ class IngestJobTest < ActiveSupport::TestCase
     )
     pipeline_name = SecureRandom.uuid
     failed_job = IngestJob.new(
-      pipeline_name: , study:, study_file: failed_file, user: @user, action: :ingest_cluster
+      pipeline_name:, study:, study_file: failed_file, user: @user, action: :ingest_cluster
     )
     error_log = "parse_logs/#{failed_file.id}/user_log.txt"
     mock = Minitest::Mock.new
@@ -792,7 +875,7 @@ class IngestJobTest < ActiveSupport::TestCase
 
     batch_mock = Minitest::Mock.new
     batch_mock.expect :get_job, Google::Apis::BatchV1::Job, [pipeline_name]
-    batch_mock.expect :get_job_command_line, %w[foo bar bing baz], [{job: Google::Apis::BatchV1::Job}]
+    batch_mock.expect :get_job_command_line, %w[foo bar bing baz], [], job: Google::Apis::BatchV1::Job
     ApplicationController.stub :firecloud_client, mock do
       ApplicationController.stub :batch_api_client, batch_mock do
         failed_job.handle_ingest_failure('parse failure')
@@ -862,7 +945,7 @@ class IngestJobTest < ActiveSupport::TestCase
     end
   end
 
-  test 'should ensure email delivery on special action failures' do
+  test 'should ensure email delivery and parse_status reset on special action failures' do
     study = FactoryBot.create(:detached_study,
                               name_prefix: 'Special Action Email',
                               user: @user,
@@ -886,9 +969,11 @@ class IngestJobTest < ActiveSupport::TestCase
     cluster_file = "gs://#{bucket}/anndata/h5ad_frag.cluster.X_umap.tsv"
     params_object = DifferentialExpressionParameters.new(
       matrix_file_path: "gs://#{bucket}/matrix.h5ad", matrix_file_type: 'h5ad', file_size: study_file.upload_file_size,
-      annotation_file:, cluster_file:, cluster_name: 'umap', annotation_name: 'disease', annotation_scope: 'study'
+      annotation_file:, cluster_file:, cluster_name: 'umap', annotation_name: 'disease', annotation_scope: 'study',
+      cluster_group_id: BSON::ObjectId.new, matrix_file_id: study_file.id
     )
     pipeline_name = SecureRandom.uuid
+    study_file.update(parse_status: 'parsing')
     job = IngestJob.new(
       pipeline_name:, study:, study_file:, user: @user, action: :differential_expression, params_object:
     )
@@ -915,8 +1000,8 @@ class IngestJobTest < ActiveSupport::TestCase
     }.with_indifferent_access
 
     mock = Minitest::Mock.new
-    mock.expect :get_job_resources, vm_info, [{ job: dummy_job }]
-    mock.expect :get_job_command_line, mock_commands, [{ job: dummy_job }]
+    mock.expect :get_job_resources, vm_info, [], job: dummy_job
+    mock.expect :get_job_command_line, mock_commands, [], job: dummy_job
     12.times { mock.expect :get_job, dummy_job, [pipeline_name] }
     2.times { mock.expect :exit_code_from_task, 1, [pipeline_name] }
 
@@ -925,6 +1010,9 @@ class IngestJobTest < ActiveSupport::TestCase
     ApplicationController.stub :batch_api_client, mock do
       SingleCellMailer.stub :notify_admin_parse_fail, email_mock do
         job.poll_for_completion
+        # ensure that parse_status flag is reset after failure
+        study_file.reload
+        assert study_file.parsed?
         mock.verify
         email_mock.verify
       end
@@ -981,9 +1069,9 @@ class IngestJobTest < ActiveSupport::TestCase
 
     # must mock batch_api_client getting pipeline metadata
     client_mock = Minitest::Mock.new
-    4.times { client_mock.expect :exit_code_from_task, 137, [pipeline_name] }
-    client_mock.expect :get_job_resources, vm_info, [{job: dummy_job}]
-    client_mock.expect :get_job_command_line, commands, [{ job: dummy_job }]
+    5.times { client_mock.expect :exit_code_from_task, 137, [pipeline_name] }
+    client_mock.expect :get_job_resources, vm_info, [], job: dummy_job
+    client_mock.expect :get_job_command_line, commands, [], job: dummy_job
     # new pipeline mock is resubmitted job with larger machine_type
     new_pipeline = Minitest::Mock.new
     new_op = Google::Apis::BatchV1::Job.new(
@@ -1082,7 +1170,7 @@ class IngestJobTest < ActiveSupport::TestCase
     # one vs rest test
     one_vs_rest = DifferentialExpressionParameters.new(
       annotation_name: 'cell_type__ontology_label', annotation_scope: 'study', cluster_name: 'cluster_diffexp.txt',
-      matrix_file_path: "gs://#{study.bucket_id}/raw.txt"
+      matrix_file_path: "gs://#{study.bucket_id}/raw.txt", cluster_group_id: cluster_group.id, matrix_file_id: matrix.id
     )
     job = IngestJob.new(study:, study_file: cluster_file, action: :differential_expression, params_object: one_vs_rest)
     job.create_differential_expression_results
@@ -1097,7 +1185,8 @@ class IngestJobTest < ActiveSupport::TestCase
     # pairwise test
     pairwise = DifferentialExpressionParameters.new(
       annotation_name: 'cell_type__ontology_label', annotation_scope: 'study', cluster_name: 'cluster_diffexp.txt',
-      matrix_file_path: "gs://#{study.bucket_id}/raw.txt", de_type: 'pairwise', group1: 'B cell', group2: 'T cell'
+      matrix_file_path: "gs://#{study.bucket_id}/raw.txt", de_type: 'pairwise', group1: 'B cell', group2: 'T cell',
+      cluster_group_id: cluster_group.id, matrix_file_id: matrix.id
     )
     job = IngestJob.new(study:, study_file: cluster_file, action: :differential_expression, params_object: pairwise)
     job.create_differential_expression_results
