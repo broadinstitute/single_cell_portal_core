@@ -129,7 +129,7 @@ function buildExploreParamsFromQuery(query) {
       exploreParams.expressionFilter = filterArray
     }
   }
-  exploreParams.expressionSort = queryParams.expressionSort
+  exploreParams.expressionSort = queryParams.expressionSort ? queryParams.expressionSort : ''
   exploreParams.hiddenTraces = queryParams.hiddenTraces ? queryParams.hiddenTraces.split(',') : []
   exploreParams.isSplitLabelArrays = queryParams.isSplitLabelArrays === 'true' ? true : null
 

@@ -800,7 +800,7 @@ export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
   const numGenes = exploreParams?.genes?.length
   const isMultiGene = numGenes > 1
   const isGene = exploreParams?.genes?.length > 0
-  const isPathway = exploreParams?.pathway !== ''
+  const isPathway = exploreParams?.pathway && exploreParams.pathway !== ''
   const isConsensus = !!exploreParams.consensus
   const hasClusters = exploreInfo && exploreInfo.clusterGroupNames.length > 0
   const hasSpatialGroups = exploreParams.spatialGroups?.length > 0
@@ -819,10 +819,8 @@ export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
 
   if (isGeneList) {
     enabledTabs = ['geneListHeatmap']
-  } if (isPathway) {
+  } else if (isPathway) {
     enabledTabs = ['pathway']
-    // console.log('in render before return, inputText', inputText)
-    // console.log('in render before return, geneArray', geneArray)
   } else if (isGene) {
     if (isMultiGene) {
       if (isConsensus) {

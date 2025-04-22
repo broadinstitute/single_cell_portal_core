@@ -40,7 +40,7 @@ describe('dataParams are appropriately managed on the url', () => {
     expect(testObj.exploreParams.annotation).toEqual({ name: '', type: '', scope: '' })
 
     testObj.updateExploreParams({ cluster: 'foo' })
-    expect(routerNav).toHaveBeenLastCalledWith('?cluster=foo#study-visualize', { replace: true })
+    expect(routerNav).toHaveBeenLastCalledWith('?cluster=foo', { replace: true })
   })
 
   it('provides cluster params from a url with a cluster', async () => {
@@ -58,7 +58,7 @@ describe('dataParams are appropriately managed on the url', () => {
     expect(testObj.exploreParams.annotation).toEqual({ name: 'bar', type: 'group', scope: 'study' })
 
     testObj.updateExploreParams({ annotation: { name: 'bar2', type: 'numeric', scope: 'user' } })
-    expect(routerNav).toHaveBeenLastCalledWith('?cluster=foo&annotation=bar2--numeric--user#study-visualize', { replace: true })
+    expect(routerNav).toHaveBeenLastCalledWith('?cluster=foo&annotation=bar2--numeric--user', { replace: true })
   })
 
   /** This test validates that we are parsing data params on URL links in a consistent way
@@ -87,6 +87,8 @@ describe('dataParams are appropriately managed on the url', () => {
       subsample: '1000',
       spatialGroups: ['square', 'circle'],
       isSplitLabelArrays: null,
+      label: '',
+      pathway: '',
       consensus: 'mean',
       heatmapRowCentering: 'z-score',
       ideogramFileId: '604fc5c4e241391a8ff93271',
@@ -96,6 +98,7 @@ describe('dataParams are appropriately managed on the url', () => {
       scatterColor: '',
       tab: '',
       expressionFilter: [0, 1],
+      expressionSort: '',
       facets: '',
       hiddenTraces: [],
       userSpecified: {
@@ -113,7 +116,7 @@ describe('dataParams are appropriately managed on the url', () => {
     })
     testObj.updateExploreParams({ spatialGroups: ['triangle'] })
     let expectedUrlString = '?geneList=My%20List&genes=agpat2%2Capoe&cluster=foo&spatialGroups=triangle&annotation=bar--group--study&subsample=1000'
-    expectedUrlString += '&consensus=mean&heatmapRowCentering=z-score&trackFileName=sample1.bam&ideogramFileId=604fc5c4e241391a8ff93271#study-visualize'
+    expectedUrlString += '&consensus=mean&heatmapRowCentering=z-score&trackFileName=sample1.bam&ideogramFileId=604fc5c4e241391a8ff93271'
     expect(routerNav).toHaveBeenLastCalledWith(expectedUrlString, { replace: true })
   })
 })
