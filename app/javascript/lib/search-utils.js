@@ -39,6 +39,9 @@ function getPathwayIdsByName() {
 
   const pathwayCache = window.Ideogram.interactionCache
 
+  // Lower-quality pathways
+  const omittedPathways = ['WP1984', 'WP615', 'WP5096']
+
   const pathwayIdsByName = {}
   const pathwayEntries = Object.entries(pathwayCache)
 
@@ -46,6 +49,11 @@ function getPathwayIdsByName() {
 
   pathwayEntries.forEach(([gene, ixnObj]) => {
     ixnObj.result?.forEach(r => {
+
+      if (omittedPathways.includes(r.id)) {
+        return
+      }
+
       pathwayIdsByName[r.name] = r.id
       if (idsAndCountsByGene[gene] && idsAndCountsByGene[gene][r.id]) {
         // If a pathway interaction for this gene has already been found,
