@@ -1,10 +1,26 @@
 import {
-  getHdf5File, parseAnnDataFile, getAnnDataHeaders, checkOntologyIdFormat
+  getHdf5File, parseAnnDataFile, getAnnDataHeaders, checkOntologyIdFormat, getOntologyIdsAndLabels,
+  checkOntologyLabelsAndIds, findMatchingGroup
 } from 'lib/validation/validate-anndata'
+import { fetchOntologies } from '~/lib/validation/ontology-validation'
+const fetch = require('node-fetch')
+import {
+  nodeCaches, nodeHeaders, nodeRequest, nodeResponse
+} from './node-web-api'
 
 const BASE_URL = 'https://github.com/broadinstitute/single_cell_portal_core/raw/development/test/test_data/anndata'
 
 describe('Client-side file validation for AnnData', () => {
+  beforeAll(() => {
+    jest.setTimeout(10000)
+    global.fetch = fetch
+
+    global.caches = nodeCaches;
+    global.Response = nodeResponse
+    global.Request = nodeRequest
+    global.Headers = nodeHeaders
+  })
+
   it('Parses AnnData headers', async () => {
     const url = `${BASE_URL}/valid.h5ad`
     const expectedHeaders = [
@@ -76,6 +92,35 @@ describe('Client-side file validation for AnnData', () => {
       'Ontology ID "FOO_0000042" is not among accepted ontologies (MONDO, PATO) for key "disease"'
     ]
     expect(parseResults.issues[0]).toEqual(expectedIssue)
+  })
+
+  it('validates ontology ids for given column', async () => {
+    const ontologies = await fetchOntologies()
+    const url = `${BASE_URL}/valid.h5ad`
+    const remoteProps = { url }
+    const hdf5File = await getHdf5File(url, remoteProps)
+    const key = 'disease'
+    const groups = await getOntologyIdsAndLabels(key, hdf5File)
+    let issues = await checkOntologyLabelsAndIds(key, ontologies, groups)
+    expect(issues).toHaveLength(0)
+  })
+
+  it('finds invalidate ontology entries for a given column', async () => {
+    const ontologies = await fetchOntologies()
+    const url = `${BASE_URL}/invalid_disease_label.h5ad`
+    const remoteProps = { url }
+    const hdf5File = await getHdf5File(url, remoteProps)
+    const key = 'disease'
+    const groups = await getOntologyIdsAndLabels(key, hdf5File)
+    let issues = await checkOntologyLabelsAndIds(key, ontologies, groups)
+    expect(issues).toHaveLength(1)
+  })
+
+  it('finds the correct obs group based on name', () => {
+    const validGroup = { name: '/obs/cell_type' }
+    const invalidGroup = { name: '/obs/author_cell_type' }
+    expect(findMatchingGroup(validGroup, 'cell_type')).toBeTruthy()
+    expect(findMatchingGroup(invalidGroup, 'cell_type')).not.toBeTruthy()
   })
 
   // TODO (SCP-5813): Uncomment this test upon completing "Enable ontology validation for remote AnnData"

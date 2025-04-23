@@ -313,3 +313,13 @@ export function timeOutCSFV(chunker) {
   }
   return issues
 }
+
+/** get ontology shortname from an identifier */
+export function getOntologyShortNameLc(identifier) {
+  return identifier.split(/[_:]/)[0].toLowerCase()
+}
+
+export function getLabelSuffixForOntology(indentifier) {
+  const shortName = getOntologyShortNameLc(indentifier)
+  return shortName === 'uo' ? '_label' : '__ontology_label'
+}

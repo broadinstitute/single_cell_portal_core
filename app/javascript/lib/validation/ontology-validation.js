@@ -12,9 +12,7 @@
 
 import { decompressSync, strFromU8 } from 'fflate'
 
-import {
-  metadataSchema, REQUIRED_CONVENTION_COLUMNS
-} from './shared-validation'
+import { metadataSchema } from './shared-validation'
 
 // TODO: Replace "development" with "main" after next ingest release
 const ONTOLOGY_BASE_URL =
@@ -136,24 +134,32 @@ export async function fetchOntologies() {
   return ontologies
 }
 
-/** Get lowercase shortnames for all required ontologies */
-function getOntologyShortNames() {
-  let requiredOntologies = []
+/** Get lowercase shortnames for all supported ontologies */
+export function getOntologyShortNames() {
+  let supportedOntologies = []
 
-  // Validate IDs for species, organ, disease, and library preparation protocol
-  for (let i = 0; i < REQUIRED_CONVENTION_COLUMNS.length; i++) {
-    const column = REQUIRED_CONVENTION_COLUMNS[i]
-    if (!column.endsWith('__ontology_label')) {continue}
-    const key = column.split('__ontology_label')[0]
-    const ontologies = getAcceptedOntologies(key, metadataSchema)
-    requiredOntologies = requiredOntologies.concat(ontologies)
+  // get all ontology-based properties, ignoring organ_region as it isn't minified
+  const properties = getOntologyBasedProps()
+  for (let i = 0; i < properties.length; i++) {
+    const prop = properties[i]
+    const ontologies = getAcceptedOntologies(prop, metadataSchema)
+    supportedOntologies = supportedOntologies.concat(ontologies)
   }
+  return Array.from(new Set(supportedOntologies.map(o => o.toLowerCase())))
+}
 
-  requiredOntologies = Array.from(
-    new Set(requiredOntologies.map(o => o.toLowerCase()))
-  )
-
-  return requiredOntologies
+/** get all metadata properties that are ontology-based */
+export function getOntologyBasedProps() {
+  const ontologyProps = []
+  // ignore organ_region as it isn't a supported minified ontology
+  const properties = Object.keys(metadataSchema.properties).filter(p => p !== 'organ_region')
+  for (let i = 0; i < properties.length; i++) {
+    const prop = properties[i]
+    if (metadataSchema.properties[prop].ontology) {
+      ontologyProps.push(prop)
+    }
+  }
+  return ontologyProps
 }
 
 /**
@@ -168,7 +174,7 @@ export function getAcceptedOntologies(key, metadataSchema) {
   const acceptedOntologies =
     olsUrls?.split(',').map(url => url.split('/').slice(-1)[0].toUpperCase())
 
-  if (acceptedOntologies.includes('NCBITAXON')) {
+  if (acceptedOntologies && acceptedOntologies.includes('NCBITAXON')) {
     acceptedOntologies.push('NCBITaxon')
   }
 

@@ -443,7 +443,8 @@ class IngestJobTest < ActiveSupport::TestCase
     )
     job_mock = Minitest::Mock.new
     2.times { job_mock.expect :object, cluster_job }
-    dummy_job = Google::Apis::BatchV1::Job.new(status: Google::Apis::BatchV1::JobStatus.new(state: 'RUNNING'))
+    dummy_job = Google::Apis::BatchV1::Job.new(name: pipeline_name,
+                                               status: Google::Apis::BatchV1::JobStatus.new(state: 'RUNNING'))
 
     pipeline_mock = Minitest::Mock.new
     pipeline_mock.expect :get_job, dummy_job, [pipeline_name]
@@ -452,11 +453,15 @@ class IngestJobTest < ActiveSupport::TestCase
     DelayedJobAccessor.stub :find_jobs_by_handler_type, [Delayed::Job.new] do
       DelayedJobAccessor.stub :dump_job_handler, job_mock do
         ApplicationController.stub :batch_api_client, pipeline_mock do
-          metadata_job.report_anndata_summary
-          job_mock.verify
-          pipeline_mock.verify
-          ann_data_file.reload
-          assert_not ann_data_file.has_anndata_summary?
+          metadata_job.stub :failed?, false do
+            metadata_job.stub :should_retry?, false do
+              metadata_job.report_anndata_summary
+              job_mock.verify
+              pipeline_mock.verify
+              ann_data_file.reload
+              assert_not ann_data_file.has_anndata_summary?
+            end
+          end
         end
       end
     end
@@ -481,10 +486,95 @@ class IngestJobTest < ActiveSupport::TestCase
     DelayedJobAccessor.stub :find_jobs_by_handler_type, [] do
       MetricsService.stub :log, metrics_mock do
         cluster_job.stub :anndata_summary_props, mock_job_props do
-          cluster_job.report_anndata_summary
-          ann_data_file.reload
-          assert ann_data_file.has_anndata_summary?
-          metrics_mock.verify
+          cluster_job.stub :should_retry?, false do
+            cluster_job.stub :failed?, false do
+              cluster_job.report_anndata_summary
+              ann_data_file.reload
+              assert ann_data_file.has_anndata_summary?
+              metrics_mock.verify
+            end
+          end
+        end
+      end
+    end
+  end
+
+  test 'should determine when to skip AnnData summary' do
+    study = FactoryBot.create(
+      :detached_study, name_prefix: 'ingestSummary skip test', user: @user, test_array: @@studies_to_clean
+    )
+    ann_data_file = FactoryBot.create(:ann_data_file, name: 'matrix.h5ad', study:)
+    ann_data_file.ann_data_file_info.reference_file = false
+    ann_data_file.options[:anndata_summary] = false
+    ann_data_file.save
+    pipeline_name = SecureRandom.uuid
+    job = IngestJob.new(
+      pipeline_name:, study:, user: @user, study_file: ann_data_file, action: :ingest_anndata
+    )
+
+    job.stub :failed?, true do
+      job.stub :should_retry?, false do
+        assert_not job.skip_anndata_summary?
+      end
+    end
+
+    job.stub :failed?, false do
+      job.stub :should_retry?, false do
+        assert job.skip_anndata_summary?
+        job.action = :differential_expression
+        assert job.skip_anndata_summary?
+        ann_data_file.options[:anndata_summary] = true
+        job.action = :ingest_cluster
+        assert job.skip_anndata_summary?
+      end
+    end
+  end
+
+  test 'should report AnnData summary on extraction failure' do
+    study = FactoryBot.create(
+      :detached_study, name_prefix: 'ingestSummary report', user: @user, test_array: @@studies_to_clean
+    )
+    ann_data_file = FactoryBot.create(:ann_data_file, name: 'matrix.h5ad', study:)
+    ann_data_file.ann_data_file_info.reference_file = false
+    ann_data_file.upload_file_size = 1.megabyte
+    ann_data_file.options[:anndata_summary] = false
+    ann_data_file.save
+    params = AnnDataIngestParameters.new(
+      anndata_file: ann_data_file.gs_url, file_size: ann_data_file.upload_file_size,
+      extract_raw_counts: true, raw_location: '.raw'
+    )
+    pipeline_name = SecureRandom.uuid
+    job = IngestJob.new(
+      pipeline_name:, study:, user: @user, study_file: ann_data_file, action: :ingest_anndata
+    )
+    mock_job_props = {
+      perfTime: 60000,
+      fileName: ann_data_file.name,
+      fileType: 'AnnData',
+      fileSize: ann_data_file.upload_file_size,
+      studyAccession: study.accession,
+      trigger: ann_data_file.upload_trigger,
+      jobStatus: 'failed',
+      numFilesExtracted: 0,
+      machineType: params.machine_type,
+      action: :ingest_pipeline,
+      ingest_action: :ingest_anndata,
+      exitCode: 1
+    }
+    metrics_mock = Minitest::Mock.new
+    metrics_mock.expect :call, true, ['ingestSummary', mock_job_props, @user]
+
+    DelayedJobAccessor.stub :find_jobs_by_handler_type, [] do
+      MetricsService.stub :log, metrics_mock do
+        job.stub :anndata_summary_props, mock_job_props do
+          job.stub :failed?, true do
+            job.stub :should_retry?, false do
+              job.report_anndata_summary
+              ann_data_file.reload
+              assert ann_data_file.has_anndata_summary?
+              metrics_mock.verify
+            end
+          end
         end
       end
     end
@@ -979,7 +1069,7 @@ class IngestJobTest < ActiveSupport::TestCase
 
     # must mock batch_api_client getting pipeline metadata
     client_mock = Minitest::Mock.new
-    4.times { client_mock.expect :exit_code_from_task, 137, [pipeline_name] }
+    5.times { client_mock.expect :exit_code_from_task, 137, [pipeline_name] }
     client_mock.expect :get_job_resources, vm_info, [], job: dummy_job
     client_mock.expect :get_job_command_line, commands, [], job: dummy_job
     # new pipeline mock is resubmitted job with larger machine_type

@@ -1,9 +1,14 @@
 import React from 'react'
+const fetch = require('node-fetch')
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 
 import ValidateFile from 'lib/validation/validate-file'
-import { REQUIRED_CONVENTION_COLUMNS } from 'lib/validation/shared-validation'
+import { fetchOntologies } from 'lib/validation/ontology-validation'
+import { validateConventionTerms, validateOntologyTerm } from 'lib/validation/validate-file-content'
+import {
+  REQUIRED_CONVENTION_COLUMNS, getOntologyShortNameLc, getLabelSuffixForOntology
+} from 'lib/validation/shared-validation'
 import { getLogProps } from 'lib/validation/log-validation'
 import ValidationMessage from 'components/validation/ValidationMessage'
 import * as MetricsApi from 'lib/metrics-api'
@@ -13,7 +18,20 @@ import { createMockFile } from './file-mock-utils'
 
 const validateLocalFile = ValidateFile.validateLocalFile
 
+import {
+  nodeCaches, nodeHeaders, nodeRequest, nodeResponse
+} from './node-web-api'
+
 describe('Client-side file validation', () => {
+  beforeAll(() => {
+    global.fetch = fetch
+
+    global.caches = nodeCaches;
+    global.Response = nodeResponse
+    global.Request = nodeRequest
+    global.Headers = nodeHeaders
+  })
+
   jest
     .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
     .mockReturnValue({
@@ -333,7 +351,6 @@ describe('Client-side file validation', () => {
   it('does not catch gzipped RDS file without .gz extension', async () => {
     const file = createMockFile({ fileName: 'foo.rds', content: '\x1F\x2E3lkjf3' })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })
-    console.log('errors', errors)
     const hasMissingGzipExtensionError = errors.some(
       error => error[1] === 'encoding:missing-gz-extension'
     )
@@ -464,6 +481,15 @@ it('Catches disallowed characters in metadata header', async () => {
 
 // With the client side file validation feature flag set to false expect invalid files to pass
 describe('Client-side file validation feature flag is false', () => {
+  beforeAll(() => {
+    global.fetch = fetch
+
+    global.caches = nodeCaches;
+    global.Response = nodeResponse
+    global.Request = nodeRequest
+    global.Headers = nodeHeaders
+  })
+
   beforeEach(() => {
     jest
       .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
@@ -518,3 +544,102 @@ describe('Client-side file validation feature flag is false', () => {
   })
 }
 )
+
+describe('validates file contents against minified ontologies', () => {
+  beforeAll(() => {
+    global.fetch = fetch
+
+    global.caches = nodeCaches;
+    global.Response = nodeResponse
+    global.Request = nodeRequest
+    global.Headers = nodeHeaders
+  })
+
+  beforeEach(() => {
+    jest
+      .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
+      .mockReturnValue({
+        clientside_validation: true
+      })
+  })
+
+  it('validates classic metadata file', async () => {
+    const content = [
+      "NAME\tbiosample_id\tCellID\tdisease\tdisease__ontology_label\tdonor_id\tlibrary_preparation_protocol" +
+      "\tlibrary_preparation_protocol__ontology_label\torgan\torgan__ontology_label\tsex\tspecies\tspecies__ontology_label",
+      "TYPE\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup",
+      "CELL_0001\tid1\tcell1\tMONDO_0000001\tdisease or disorder\tdonor1\tEFO_0008919\tSeq-Well\tUBERON_0001913" +
+      "\tmilk\tfemale\tNCBITaxon_9606\tHomo sapiens"
+    ]
+    const file = createMockFile({
+      fileName: 'metadata_valid.tsv',
+      content: content.join("\n")
+    })
+    const [{ errors }] = await validateLocalFile(file, { file_type: 'Metadata', use_metadata_convention: true })
+    expect(errors).toHaveLength(0)
+  })
+
+  it('finds ontology error in classic metadata file', async () => {
+    const content = [
+      "NAME\tbiosample_id\tCellID\tdisease\tdisease__ontology_label\tdonor_id\tlibrary_preparation_protocol" +
+      "\tlibrary_preparation_protocol__ontology_label\torgan\torgan__ontology_label\tsex\tspecies\tspecies__ontology_label",
+      "TYPE\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup\tgroup",
+      "CELL_0001\tid1\tcell1\tMONDO_0000001\tdisease or disorder\tdonor1\tEFO_0008919\tnot label\tUBERON_0001913" +
+      "\tmilk\tfemale\tNCBITaxon_9606\tfoo"
+    ]
+    const file = createMockFile({
+      fileName: 'metadata_valid.tsv',
+      content: content.join("\n")
+    })
+    const [{ errors }] = await validateLocalFile(file, { file_type: 'Metadata', use_metadata_convention: true })
+    expect(errors).toHaveLength(2)
+  })
+
+  it('validates single line or term from a metadata file', async() => {
+    const ontologies = await fetchOntologies()
+    const headers = [
+      [ "NAME", "species", "species__ontology_label","disease", "disease__ontology_label"],
+      ["TYPE", "group", "group", "group", "group"]
+    ]
+    // validate whole line
+    const line = ["CELL_0001", "NCBITaxon_9606", "Homo sapiens", "MONDO_0000001", "disease or disorder"]
+    let knownErrors = []
+    let issues = validateConventionTerms(headers, line, ontologies, knownErrors)
+    expect(issues).toHaveLength(0)
+    const badLine = ["CELL_0001", "NCBITaxon_9606", "not the label","MONDO_0000001", "also not label"]
+    issues = validateConventionTerms(headers, badLine, ontologies, knownErrors)
+    expect(issues.length).toBe(2)
+    expect(knownErrors.length).toBe(2)
+    // validate single term
+    let prop = 'library_preparation_protocol'
+    let ontologyId = 'EFO_0008919'
+    let label = 'Seq-Well'
+    knownErrors = []
+    issues = validateOntologyTerm(prop, ontologyId, label, ontologies, knownErrors)
+    expect(issues.length).toBe(0)
+    prop = 'cell_type'
+    ontologyId = 'CL_0000066'
+    label = 'bad label'
+    issues = validateOntologyTerm(prop, ontologyId, label, ontologies, knownErrors)
+    expect(issues.length).toBe(1)
+    expect(knownErrors.length).toBe(1)
+    prop = 'organ'
+    ontologyId = 'foobar'
+    label = 'bad label'
+    issues = validateOntologyTerm(prop, ontologyId, label, ontologies, knownErrors)
+    expect(issues.length).toBe(1)
+    expect(knownErrors.length).toBe(2)
+  })
+
+  it('gets ontology shortname from ID', () => {
+    const ontologyId = "EFO_0008919"
+    expect("efo").toEqual(getOntologyShortNameLc(ontologyId))
+  })
+
+  it('gets label suffix depending on ontology', () => {
+    const efoId = "EFO_0008919"
+    expect("__ontology_label").toEqual(getLabelSuffixForOntology(efoId))
+    const uoId = "UO_0000036"
+    expect("_label").toEqual(getLabelSuffixForOntology(uoId))
+  })
+})
