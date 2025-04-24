@@ -75,9 +75,9 @@ function getPathwayIdsByName() {
     rankedPathwaysByGene[gene.toUpperCase()] = rankedPathways.map(([pw, count]) => pw)
   })
 
-  // console.log('in getPathwayIdsByName, pathwayIdsByName', pathwayIdsByName)
   window.pathwayIdsByName = pathwayIdsByName
   window.rankedPathwaysByGene = rankedPathwaysByGene
+
   return pathwayIdsByName
 }
 
@@ -127,11 +127,13 @@ export function getIsInPathwayTitle(inputText) {
 /** Get IDs of pathways that contain the gene from input text */
 export function getPathwaysContainingGene(inputText) {
   const rankedPathwaysByGene = window.rankedPathwaysByGene
+
   if (!rankedPathwaysByGene || inputText.toUpperCase() in rankedPathwaysByGene === false) {
     return []
   }
 
   const pathwayIds = rankedPathwaysByGene[inputText.toUpperCase()]
+
   return pathwayIds
 }
 
@@ -142,13 +144,10 @@ function getPathwaySuggestions(inputText, maxPathwaySuggestions) {
     !window.Ideogram || !window.Ideogram.interactionCache ||
     !flags?.show_pathway_expression
   ) {
-    // console.log('exiting getPathwaySuggestions early')
     return []
   }
 
   const pathwayIdsByName = getPathwayIdsByName()
-
-  // console.log('getPathwaySuggestions, pathwayIdsByName', pathwayIdsByName)
 
   const pathwayNames = Object.keys(pathwayIdsByName)
   const rawSuggestions = pathwayNames.filter(

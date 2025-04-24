@@ -45,28 +45,20 @@ function getQueriesFromSearchOptions(newQueryArray, speciesList) {
   let newQueries
   if (newQueryArray[0]?.isGene === true || !getIsEligibleForPathwayExplore(speciesList)) {
     // Query is a gene
-    // console.log('in getQueriesFromSearchOptions, case 1')
     newQueries = newQueryArray.map(g => g.value)
   } else if (newQueryArray.length === 0) {
     // Query is empty
-    // console.log('in getQueriesFromSearchOptions, case 2')
     newQueries = []
   } else if (newQueryArray[0].isGene === false) {
-    // console.log('in getQueriesFromSearchOptions, case 3')
     // Query is a pathway
     newQueries = [newQueryArray[0].value]
   } else if (typeof newQueryArray[0] === 'object') {
-    // console.log('in getQueriesFromSearchOptions, case 4')
     // Accounts for clearing genes
     newQueries = newQueryArray.map(g => g.value)
   } else {
     // Query is a gene, passed via URL
-    // console.log('in getQueriesFromSearchOptions, case 5')
     newQueries = newQueryArray
   }
-
-  // console.log('in getQueriesFromSearchOptions, newQueryArray', newQueryArray)
-  // console.log('in getQueriesFromSearchOptions, newQueries', newQueries)
 
   return newQueries
 }

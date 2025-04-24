@@ -3,10 +3,18 @@ import React from 'react'
 import { render, waitFor, screen, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 
-import StudyGeneField, {getIsInvalidQuery} from 'components/explore/StudyGeneField'
+import StudyGeneField, { getIsInvalidQuery } from 'components/explore/StudyGeneField'
+import * as UserProvider from '~/providers/UserProvider'
 import { interestingNames, interactionCacheCsn1s1 } from './../visualization/pathway.test-data'
 
 describe('Search query display text', () => {
+  beforeAll(() => {
+    window.Ideogram = {
+      geneCache: { interestingNames },
+      interactionCache: { 'CSN1S1': interactionCacheCsn1s1 }
+    }
+  })
+
   it('shows study result match for a valid search param', async () => {
     const { container } = render((
       <StudyGeneField queries={['PTEN']} queryFn={() => {}} allGenes={['PTEN']} speciesList={[]} />
@@ -51,21 +59,43 @@ describe('Search query display text', () => {
     })
   })
 
-  it('determines if query is valid for gene or pathway', async () => {
-    // Mock Ideogram cache of gene names ranked by global interest
-    window.Ideogram = {
-      geneCache: { interestingNames },
-      interactionCache: {"CSN1S1": interactionCacheCsn1s1},
-      drawPathway: () => {
-        document.dispatchEvent(new Event('ideogramDrawPathway'))
-      }
-    }
+  it('responds to text input and shows matching pathway options', async () => {
+    jest
+      .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
+      .mockReturnValue({
+        show_pathway_expression: true
+      })
 
-    const geneIsValid = getIsInvalidQuery('PT', ['PTEN'])
-    expect(geneIsValid).toBe(true)
+    const { container } = render(
+      <StudyGeneField queries={[]} queryFn={() => {}} allGenes={['PTEN']} speciesList={[]} />
+    )
 
-    const pathwayIsValid = getIsInvalidQuery('CSN1S1', ['PTEN'])
-    expect(pathwayIsValid).toBe(true)
+    // Find the input field inside react-select
+    const input = container.querySelector('[role="combobox"]')
+
+    fireEvent.change(input, { target: { value: 'CSN1S1' } })
+
+    expect(input).toHaveValue('PT')
+
+    // Wait for dropdown to show
+    await waitFor(() => {
+      const ptenElement = screen.getByText(/AMPK regulation of mammary milk protein synthesis/)
+      expect(ptenElement).toBeInTheDocument()
+    })
+  })
+
+  it('determines if query is valid for gene or pathway, with pathways on', async () => {
+    jest
+      .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
+      .mockReturnValue({
+        show_pathway_expression: true
+      })
+
+    const geneIsInvalid = getIsInvalidQuery('PT', ['PTEN'])
+    expect(geneIsInvalid).toBe(true)
+
+    const pathwayIsInvalid = getIsInvalidQuery('CSN1S1', ['PTEN'])
+    expect(pathwayIsInvalid).toBe(false)
   })
 })
 
