@@ -12,10 +12,9 @@ import {
 import { log } from '~/lib/metrics-api'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
-import { manageDrawPathway } from '~/lib/pathway-expression'
 
 /** Determine if searched text is among available genes */
-function getIsInvalidQuery(query, allGenes) {
+export function getIsInvalidQuery(query, allGenes) {
   const queryLowercase = query.toLowerCase()
   const isInvalidQuery = (
     allGenes.length > 0 &&
