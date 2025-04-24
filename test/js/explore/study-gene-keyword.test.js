@@ -67,7 +67,7 @@ describe('Search query display text', () => {
       })
 
     const { container } = render(
-      <StudyGeneField queries={[]} queryFn={() => {}} allGenes={['PTEN']} speciesList={[]} />
+      <StudyGeneField queries={[]} queryFn={() => {}} allGenes={['PTEN']} speciesList={['Homo sapiens']} />
     )
 
     // Find the input field inside react-select
@@ -75,7 +75,7 @@ describe('Search query display text', () => {
 
     fireEvent.change(input, { target: { value: 'CSN1S1' } })
 
-    expect(input).toHaveValue('PT')
+    expect(input).toHaveValue('CSN1S1')
 
     // Wait for dropdown to show
     await waitFor(() => {
