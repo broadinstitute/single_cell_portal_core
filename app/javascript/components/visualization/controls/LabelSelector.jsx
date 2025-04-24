@@ -11,12 +11,14 @@ function getEligibleLabels(exploreParamsWithDefaults, exploreInfo) {
     exploreParamsWithDefaults?.annotation,
     exploreInfo?.annotationList
   )
-
   let annotationLabels = naturalSort(rawAnnotLabels)
 
   /** TODO (SCP-5760): Propagate these window.SCP values via React */
   const countsByLabel = window.SCP.countsByLabel
-  if (countsByLabel) {
+  if (
+    countsByLabel &&
+    annotationLabels.includes(countsByLabel[0])
+  ) {
     annotationLabels = annotationLabels.filter(label => countsByLabel[label] > 0)
   }
 
@@ -39,17 +41,12 @@ export default function LabelControl({
   exploreParamsWithDefaults,
   exploreInfo,
   updateClusterParams
-  // updatePathwayExpression
 }) {
   const labels = getEligibleLabels(exploreParamsWithDefaults, exploreInfo)
-  // console.log('in LabelControl, labels', labels)
 
   const options = labels.map(label => {return { label, value: label }})
 
-  // console.log('in LabelSelector, exploreParamsWithDefaults.label', exploreParamsWithDefaults.label)
   const shownOption = getShownOption(options, exploreParamsWithDefaults)
-
-  // console.log('in LabelSelector, shownOption', shownOption)
 
   return (
     <div className="form-group">

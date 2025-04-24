@@ -416,9 +416,7 @@ export default function ExploreDisplayPanelManager({
                 <LabelSelector
                   exploreParamsWithDefaults={exploreParamsWithDefaults}
                   exploreInfo={exploreInfo}
-                  shownAnnotation={shownAnnotation}
                   updateClusterParams={updateClusterParams}
-                  // updatePathwayExpression={updatePathwayExpression}
                 />
                 }
                 { shownTab === 'scatter' && <CreateAnnotation
