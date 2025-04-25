@@ -19,14 +19,6 @@ const colorPathwayGenesByExpression = PathwayExpression.colorPathwayGenesByExpre
 
 describe('Pathway expression overlay library', () => {
   beforeAll(() => {
-    Element.prototype.insertAdjacentHTML = function(position, html) {
-      const temp = document.createElement('div')
-      temp.innerHTML = html
-      while (temp.firstChild) {
-        this.appendChild(temp.firstChild)
-      }
-    }
-
     // Mock pathway diagram for
     // "Mammary gland development: pregnancy and lactation - stage 3 of 4" (WP2817)
     document.body.innerHTML =
