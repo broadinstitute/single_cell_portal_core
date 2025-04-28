@@ -4,6 +4,19 @@
 # note: all instances of :start_date and :end_date are inclusive
 ##
 class SummaryStatsUtils
+  # amount of time where a private study is considered 'defunct' if there is no file activity
+  PRIVATE_STUDY_CUTOFF = 1.year.ago.to_date.freeze
+
+  # soft cap for data storage
+  DATA_STORAGE_CAP = 200.gigabytes
+
+  # minumum amount of data in GB before we consider cleanup, i.e. 1/2 TB
+  # this equates to $60/year, or $5/month
+  MINIMUM_GB_FOR_CLEANUP = 0.01.freeze
+
+  # price in $ per GB/YR of GCS bucket storage
+  YEARLY_COST_PER_GB = 0.24.freeze
+
   include Sys
   # get a snapshot of user counts/activity up to a given date
   # will give count of users as of that date, and number of active users on that date
@@ -82,6 +95,98 @@ class SummaryStatsUtils
         percent_used: (100 * (stat.bytes_used / stat.bytes_total.to_f)).round,
         mount_point: stat.path
     }
+  end
+
+  # get a list of studies that are out of compliance with the data retention policy
+  def self.data_retention_report
+    start_time = Time.now
+    non_compliant_studies = {}
+    studies = Study.where(
+      :created_at.lte => PRIVATE_STUDY_CUTOFF, detached: false, firecloud_project: FireCloudClient::PORTAL_NAMESPACE
+    )
+    Parallel.map(studies, in_threads: 20) do |study|
+      puts "checking #{study.accession}"
+      client = FireCloudClient.new
+      begin
+        bucket = client.get_workspace_bucket(study.bucket_id)
+        next if bucket.nil?
+
+        remotes = bucket.files
+        next if remotes.empty?
+
+        batches = 0
+        bytes, last_created = bytes_and_last_created_for(remotes)
+        while remotes.next? && batches <= 9
+          batches += 1
+          remotes = remotes.next
+          bytes, last_created = bytes_and_last_created_for(remotes, bytes:, last_created:)
+        end
+
+        total_gb = (bytes / 1024 / 1024 / 1024.0).floor(2)
+        more_files = remotes.next?
+        unless meets_data_retention_policy?(study, bytes, more_files:)
+          puts "#{study.accession} candidate for removal"
+          non_compliant_studies[study.accession] = {
+            accession: study.accession,
+            name: study.name,
+            owner: study.user&.email,
+            created_at: study.created_at,
+            public: study.public,
+            has_files: study.study_files.any? || study.directory_listings.are_synced.any?,
+            visualizations: study.can_visualize?,
+            last_created:,
+            total_gb:,
+            total_cost: (total_gb * YEARLY_COST_PER_GB).floor(2),
+            more_files:,
+            reason: data_retention_violation(study, bytes, more_files:)
+          }
+        end
+        non_compliant_studies
+      rescue Google::Cloud::PermissionDeniedError => e
+        ErrorTracker.report_exception(e, nil, { study: })
+      end
+    end
+    end_time = Time.now
+    puts "Completed, #{studies.count} studies evaluated, total runtime: " \
+           "#{TimeDifference.between(start_time, end_time).humanize}"
+    non_compliant_studies
+  end
+
+  # get byte count and data of last file creation for a batch of remotes
+  def self.bytes_and_last_created_for(remotes, bytes: 0, last_created: nil)
+    created = last_created || remotes.first.created_at
+    remotes.map do |remote|
+      bytes += remote.size
+      created = created >= remote.created_at ? created : remote.created_at
+    end
+    [bytes, created.in_time_zone]
+  end
+
+  # determine if a study complies the data retention policy
+  # must be less than 200GB of storage and public, or private and less than 1 year old
+  # any study with more than 10K files in the bucket will automatically be flagged as we can't accurately
+  # gauge storage costs
+  def self.meets_data_retention_policy?(study, total_bytes, more_files: false)
+    if study.public
+      total_bytes <= DATA_STORAGE_CAP && !more_files
+    else
+      study.created_at >= PRIVATE_STUDY_CUTOFF && total_bytes <= DATA_STORAGE_CAP && !more_files
+    end
+  end
+
+  # give a reason for why a study doesn't meet the data retention policy
+  def self.data_retention_violation(study, total_bytes, more_files: false)
+    return 'too many files' if more_files
+
+    if more_files
+      'file count exception'
+    elsif total_bytes >= DATA_STORAGE_CAP
+      'storage cap violation'
+    elsif !study.public && study.created_at <= PRIVATE_STUDY_CUTOFF
+      'old private study'
+    else
+      'no violation detected'
+    end
   end
 
   # find out all ingest jobs run in a given time period
