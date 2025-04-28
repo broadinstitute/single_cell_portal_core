@@ -18,7 +18,7 @@
  */
 
 import { renderDotPlot } from '~/components/visualization/DotPlot'
-import { getAnnotationValues } from '~/lib/cluster-utils'
+import { getEligibleLabels } from '~/lib/cluster-utils'
 import { fetchMorpheusJson } from '~/lib/scp-api'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 
@@ -143,7 +143,8 @@ export async function renderBackgroundDotPlot(
 }
 
 /** Get unique genes in pathway diagram, ranked by global interest */
-export function getPathwayGenes(ranks) {
+export function getPathwayGenes() {
+  const ranks = window.Ideogram.geneCache.interestingNames
   const dataNodes = Array.from(document.querySelectorAll('#_ideogramPathwayContainer g.DataNode'))
   const geneNodes = []
   for (let i = 0; i < dataNodes.length; i++) {
@@ -194,14 +195,22 @@ export function getDotPlotGeneBatches(pathwayGenes) {
  * Color each gene red/purple/blue by mean expression, and
  * set each gene's contrast by percent of cells expression
  */
-export function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationLabel) {
+export function colorPathwayGenesByExpression(annotationLabel, dotPlotMetrics) {
+  const genes = getPathwayGenes()
+
   const styleRulesets = []
   const unassayedGenes = []
+
+  const metricsByLabel = dotPlotMetrics[annotationLabel]
+
+  if (!metricsByLabel) {
+    return
+  }
 
   genes.forEach(geneObj => {
     const domId = geneObj.domId
     const gene = geneObj.name
-    const metrics = dotPlotMetrics[annotationLabel][gene]
+    const metrics = metricsByLabel[gene]
 
     if (!metrics) {
       unassayedGenes.push(gene)
@@ -234,10 +243,8 @@ export function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationL
     const textRuleset = `${baseSelector} text {fill: ${textColor};}`
     const rulesets = `${rectRuleset} ${textRuleset}`
 
-    // In future work, consider showing these values on node hover.
-    // For now they help engineers inspect nodes to confirm mean and percent.
-    rect.setAttribute('data-expression-scaled-mean', metrics.mean)
-    rect.setAttribute('data-expression-percent', percent)
+    rect.setAttribute('data-scaled-mean-expression', metrics.mean)
+    rect.setAttribute('data-percent-expressing', percent)
 
     styleRulesets.push(rulesets)
   })
@@ -254,30 +261,12 @@ export function colorPathwayGenesByExpression(genes, dotPlotMetrics, annotationL
   pathwayContainer.insertAdjacentHTML('afterbegin', style)
 }
 
-// TODO (SCP-5760): Replace this React FontAwesome Icon upon refactoring to React
-// eslint-disable-next-line max-len
-const infoIcon = `<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="info-circle" class="svg-inline--fa fa-info-circle " role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="#3D5A87" d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"></path></svg>`
-
-/** Add a small info icon ("i") in pathway header explaining color and contrast */
-function writePathwayExpressionLegend() {
-  const legendText =
-    'Color represents scaled mean expression: red is high, purple medium, blue low.  ' +
-    'Contrast represents percent of cells expressing: bold is high, faint is low.'
-  const legendAttrs =
-    `class="pathway-legend" style="margin-left: 10px;" ` +
-    `data-toggle="tooltip" data-original-title="${legendText}"`
-  const legend = `<span ${legendAttrs}>${infoIcon}</span>`
-  const headerLink = document.querySelector('._ideoPathwayHeader a')
-  document.querySelector('.pathway-legend')?.remove()
-  headerLink.insertAdjacentHTML('afterend', legend)
-}
-
 /** Get dropdown menu of annotation labels; pick one to color genes */
-function writePathwayAnnotationLabelMenu(labels, pathwayGenes, dotPlotMetrics) {
-  const options = labels.map(label => `<option>${label}</option>`)
+function writePathwayAnnotationLabelMenu(label, dotPlotMetrics) {
+  // const options = labels.map(label => `<option>${label}</option>`)
   const menu =
     `<span class="pathway-label-menu-container" style="margin-left: 10px;">` +
-      `<label>Expression in:</label> <select class="pathway-label-menu">${options.join()}</select>` +
+      `| Colored by expression in: <span class="pathway-label-menu">${label}</span>` +
     `</span>`
   const headerLink = document.querySelector('._ideoPathwayHeader a')
   document.querySelector('.pathway-label-menu-container')?.remove()
@@ -285,39 +274,22 @@ function writePathwayAnnotationLabelMenu(labels, pathwayGenes, dotPlotMetrics) {
   const menuSelectDom = document.querySelector('.pathway-label-menu')
   menuSelectDom.addEventListener('change', () => {
     const newLabel = menuSelectDom.value
-    colorPathwayGenesByExpression(pathwayGenes, dotPlotMetrics, newLabel)
+    colorPathwayGenesByExpression(newLabel, dotPlotMetrics)
   })
 }
 
-/**
- * Get annotation labels that have > 1 cell in the labeled group
- *
- * TODO (SCP-5760): Propagate these window.SCP values via React
- */
-function getEligibleLabels() {
-  const exploreParamsWithDefaults = window.SCP.exploreParamsWithDefaults
-  const exploreInfo = window.SCP.exploreInfo
-  const countsByLabel = window.SCP.countsByLabel
-
-  const rawAnnotLabels = getAnnotationValues(
-    exploreParamsWithDefaults?.annotation,
-    exploreInfo?.annotationList
-  )
-  const annotationLabels = rawAnnotLabels.filter(label => countsByLabel[label] > 0)
-  return annotationLabels
-}
-
 /** Update pathway header with SCP label menu, info icon */
-function writePathwayExpressionHeader(loadingCls, dotPlotMetrics, annotationLabels, pathwayGenes) {
+function writePathwayExpressionHeader(loadingCls, dotPlotMetrics, label, pathwayGenes) {
   // Remove "Loading expression...", as load is done
   document.querySelector(`.${loadingCls}`)?.remove()
 
-  writePathwayExpressionLegend()
-  writePathwayAnnotationLabelMenu(annotationLabels, pathwayGenes, dotPlotMetrics)
+  // writePathwayExpressionLegend()
+  writePathwayAnnotationLabelMenu(label, pathwayGenes, dotPlotMetrics)
 }
 
 /** Add "Loading expression..." to pathway header while dot plot metrics are being fetched */
 function writeLoadingIndicator(loadingCls) {
+  document.querySelector('.pathway-label-menu-container')?.remove()
   const headerLink = document.querySelector('._ideoPathwayHeader a')
   const style = 'color: #777; font-style: italic; margin-left: 10px;'
   const loading = `<span class="${loadingCls}" style="${style}">Loading expression...</span>`
@@ -339,21 +311,20 @@ function mergeDotPlotMetrics(newMetrics, oldMetrics) {
 }
 
 /** Color pathway gene nodes by expression */
-async function renderPathwayExpression(
-  searchedGene, interactingGene,
-  ideogram, dotPlotParams
-) {
+export async function renderPathwayExpression(studyAccession, cluster, annotation, label, labels) {
   let allDotPlotMetrics = {}
 
-  const ranks = ideogram.geneCache.interestingNames
-  const pathwayGenes = getPathwayGenes(ranks)
+  const pathwayGenes = getPathwayGenes()
   const dotPlotGeneBatches = getDotPlotGeneBatches(pathwayGenes)
-  const { studyAccession, cluster, annotation } = dotPlotParams
 
   let numDraws = 0
   let numRenders = 0
 
   const annotationLabels = getEligibleLabels()
+
+  if (label === '') {
+    return
+  }
 
   const loadingCls = 'pathway-loading-expression'
   writeLoadingIndicator(loadingCls)
@@ -374,17 +345,17 @@ async function renderPathwayExpression(
       return
     }
 
-    if (!annotationLabels.includes(Object.keys(dotPlotMetrics)[0])) {
+    const dotPlotMetricsKeys = Object.keys(dotPlotMetrics)
+    if (!labels || !labels.includes(dotPlotMetricsKeys[0])) {
       // Another protection for computing only for dot plots, not heatmaps
       return
     }
 
     allDotPlotMetrics = mergeDotPlotMetrics(dotPlotMetrics, allDotPlotMetrics)
 
-    writePathwayExpressionHeader(loadingCls, allDotPlotMetrics, annotationLabels, pathwayGenes)
+    writePathwayExpressionHeader(loadingCls, allDotPlotMetrics, label, pathwayGenes)
 
-    const annotationLabel = annotationLabels[0]
-    colorPathwayGenesByExpression(pathwayGenes, allDotPlotMetrics, annotationLabel)
+    colorPathwayGenesByExpression(label, allDotPlotMetrics)
 
     if (numRenders <= dotPlotGeneBatches.length) {
       numRenders += 1
@@ -394,7 +365,7 @@ async function renderPathwayExpression(
       renderBackgroundDotPlot(
         studyAccession, dotPlotGeneBatches[numRenders], cluster, annotation,
         'All', annotationLabels, backgroundDotPlotDrawCallback,
-        '#related-genes-ideogram-container'
+        '#_ideogramPathwayContainer'
       )
     }
   }
@@ -405,16 +376,19 @@ async function renderPathwayExpression(
   renderBackgroundDotPlot(
     studyAccession, dotPlotGeneBatches[0], cluster, annotation,
     'All', annotationLabels, backgroundDotPlotDrawCallback,
-    '#related-genes-ideogram-container'
+    '#_ideogramPathwayContainer'
   )
 }
 
-/** Draw pathway diagram */
-function drawPathway(event, dotPlotParams, ideogram) {
+/** Draw expression overlay in pathway diagram */
+function drawPathwayOverlay(event, studyAccession, cluster, annotation, label, labels) {
+
   // Hide popover instantly upon drawing pathway; don't wait ~2 seconds
   const ideoTooltip = document.querySelector('._ideogramTooltip')
-  ideoTooltip.style.opacity = 0
-  ideoTooltip.style.pointerEvents = 'none'
+  if (ideoTooltip) {
+    ideoTooltip.style.opacity = 0
+    ideoTooltip.style.pointerEvents = 'none'
+  }
 
   // Ensure popover for pathway diagram doesn't appear over gene search autocomplete,
   // while still appearing over default visualizations.
@@ -424,10 +398,21 @@ function drawPathway(event, dotPlotParams, ideogram) {
   const details = event.detail
   const searchedGene = details.sourceGene
   const interactingGene = details.destGene
-  renderPathwayExpression(
-    searchedGene, interactingGene, ideogram,
-    dotPlotParams
+
+  renderPathwayExpression(studyAccession, cluster, annotation, label, labels)
+}
+
+/** Removeable event listener */
+function callDrawPathwayOverlay(event) {
+  const {
+    studyAccession, cluster, annotation, label, labels
+  } = window.Ideogram.SCP.pathway
+
+  drawPathwayOverlay(
+    event,
+    studyAccession, cluster, annotation, label, labels
   )
+  document.removeEventListener('ideogramDrawPathway', callDrawPathwayOverlay)
 }
 
 /**
@@ -435,15 +420,19 @@ function drawPathway(event, dotPlotParams, ideogram) {
  *
  * This sets up the pathway expression overlay
  */
-export function manageDrawPathway(studyAccession, cluster, annotation, ideogram) {
+export function manageDrawPathway(studyAccession, cluster, annotation, label, labels) {
   const flags = getFeatureFlagsWithDefaults()
   if (!flags?.show_pathway_expression) {return}
 
-  const dotPlotParams = { studyAccession, cluster, annotation }
+  if (!window.Ideogram.SCP) {
+    window.Ideogram.SCP = {};
+  }
+  window.Ideogram.SCP.pathway = {
+    studyAccession, cluster, annotation, label, labels
+  }
+
   if (annotation.type === 'group') {
-    document.removeEventListener('ideogramDrawPathway', drawPathway)
-    document.addEventListener('ideogramDrawPathway', event => {
-      drawPathway(event, dotPlotParams, ideogram)
-    })
+    document.removeEventListener('ideogramDrawPathway', callDrawPathwayOverlay)
+    document.addEventListener('ideogramDrawPathway', callDrawPathwayOverlay)
   }
 }

@@ -13,9 +13,10 @@ import ScatterPlot from '~/components/visualization/ScatterPlot'
 import StudyViolinPlot from '~/components/visualization/StudyViolinPlot'
 import DotPlot from '~/components/visualization/DotPlot'
 import Heatmap from '~/components/visualization/Heatmap'
+import Pathway from '~/components/visualization/Pathway'
 import GeneListHeatmap from '~/components/visualization/GeneListHeatmap'
 import GenomeView from './GenomeView'
-import { getAnnotationValues, getShownAnnotation } from '~/lib/cluster-utils'
+import { getAnnotationValues, getEligibleLabels } from '~/lib/cluster-utils'
 import RelatedGenesIdeogram from '~/components/visualization/RelatedGenesIdeogram'
 import InferCNVIdeogram from '~/components/visualization/InferCNVIdeogram'
 import useResizeEffect from '~/hooks/useResizeEffect'
@@ -29,6 +30,7 @@ import PlotTabs from './PlotTabs'
 import {
   initCellFaceting, filterCells, getFacetsParam, parseFacetsParam
 } from '~/lib/cell-faceting'
+import { getIsPathway } from '~/lib/search-utils'
 
 /** Get the selected clustering and annotation, or their defaults */
 export function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
@@ -286,7 +288,7 @@ export default function ExploreDisplayTabs({
   const [filterErrorText, setFilterErrorText] = useState(null)
 
   const {
-    enabledTabs, disabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs
+    enabledTabs, disabledTabs, isGeneList, isGene, isPathway, isMultiGene, hasIdeogramOutputs
   } = getEnabledTabs(exploreInfo, exploreParamsWithDefaults, cellFaceting)
 
   // exploreParams object without genes specified, to pass to cluster comparison plots
@@ -299,13 +301,27 @@ export default function ExploreDisplayTabs({
   window.SCP.exploreInfo = exploreInfo
 
   /** helper function so that StudyGeneField doesn't have to see the full exploreParams object */
-  function searchGenes(genes) {
+  function queryFn(queries) {
+    const isPathway = getIsPathway(queries[0])
     // also unset any selected gene lists or ideogram files
-    const newParams = { genes, geneList: '', ideogramFileId: '' }
-    if (genes.length < 2) {
-      // and unset the consensus if there are no longer 2+ genes
-      newParams.consensus = ''
+    const newParams = { geneList: '', ideogramFileId: '' }
+    if (isPathway) {
+      newParams.pathway = queries[0]
+      newParams['genes'] = []
+    } else {
+      newParams.genes = queries
+      newParams['pathway'] = ''
+
+      if (queries.length < 2) {
+        // and unset the consensus if there are no longer 2+ genes
+        newParams.consensus = ''
+      }
     }
+
+    if (exploreParams?.label !== '') {
+      newParams.label = exploreParams.label
+    }
+
     updateExploreParams(newParams)
   }
 
@@ -320,7 +336,7 @@ export default function ExploreDisplayTabs({
     exploreInfo &&
     exploreInfo.taxonNames.length === 1 &&
     exploreParams.genes.length === 1 &&
-    !isGeneList
+    !isGeneList && !isPathway
   ) {
     showRelatedGenesIdeogram = true
     currentTaxon = exploreInfo.taxonNames[0]
@@ -516,25 +532,33 @@ export default function ExploreDisplayTabs({
     return { main, side }
   }
 
+  let queries
+  if (exploreParams.pathway !== '') {
+    queries = [exploreParams.pathway]
+  } else {
+    queries = exploreParams.genes
+  }
+
   return (
     <>
       {/* Render top content for Explore view, i.e. gene search box and plot tabs */}
       <div className="row position-forward">
         <div className="col-md-5">
           <div className="flexbox">
-            <StudyGeneField genes={exploreParams.genes}
-              searchGenes={searchGenes}
+            <StudyGeneField
+              queries={queries}
+              queryFn={queryFn}
               allGenes={exploreInfo ? exploreInfo.uniqueGenes : []}
               isLoading={!exploreInfo}
               speciesList={exploreInfo ? exploreInfo.taxonNames : []}/>
             { // show if this is gene search || gene list
-              (isGene || isGeneList || hasIdeogramOutputs) &&
+              (isGene || isGeneList || hasIdeogramOutputs || isPathway) &&
                 <OverlayTrigger placement="top" overlay={
                   <Tooltip id="back-to-cluster-view">{'Return to cluster view'}</Tooltip>
                 }>
                   <button className="action fa-lg"
                     aria-label="Back arrow"
-                    onClick={() => searchGenes([])}>
+                    onClick={() => queryFn([])}>
                     <FontAwesomeIcon icon={faArrowLeft}/>
                   </button>
                 </OverlayTrigger>
@@ -559,7 +583,7 @@ export default function ExploreDisplayTabs({
                 taxon={currentTaxon}
                 target={`.${plotContainerClass}`}
                 genesInScope={exploreInfo.uniqueGenes}
-                searchGenes={searchGenes}
+                queryFn={queryFn}
                 speciesList={exploreInfo.taxonNames}
 
                 studyAccession={studyAccession}
@@ -666,6 +690,17 @@ export default function ExploreDisplayTabs({
                 />
               </div>
             }
+            { enabledTabs.includes('pathway') &&
+              <div className={shownTab === 'pathway' ? '' : 'hidden'}>
+                <Pathway
+                  studyAccession={studyAccession}
+                  {... exploreParamsWithDefaults}
+                  labels={getEligibleLabels(exploreParamsWithDefaults, exploreInfo)}
+                  dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
+                  queryFn={queryFn}
+                />
+              </div>
+            }
             { enabledTabs.includes('geneListHeatmap') &&
               <div className={shownTab === 'geneListHeatmap' ? '' : 'hidden'}>
                 <GeneListHeatmap
@@ -726,7 +761,7 @@ export default function ExploreDisplayTabs({
             clearExploreParams={clearExploreParams}
             exploreParamsWithDefaults={exploreParamsWithDefaults}
             routerLocation={routerLocation}
-            searchGenes={searchGenes}
+            queryFn={queryFn}
             countsByLabelForDe={countsByLabelForDe}
             setShowUpstreamDifferentialExpressionPanel={setShowUpstreamDifferentialExpressionPanel}
             showDifferentialExpressionPanel={showDifferentialExpressionPanel}
@@ -765,6 +800,7 @@ export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
   const numGenes = exploreParams?.genes?.length
   const isMultiGene = numGenes > 1
   const isGene = exploreParams?.genes?.length > 0
+  const isPathway = exploreParams?.pathway && exploreParams.pathway !== ''
   const isConsensus = !!exploreParams.consensus
   const hasClusters = exploreInfo && exploreInfo.clusterGroupNames.length > 0
   const hasSpatialGroups = exploreParams.spatialGroups?.length > 0
@@ -783,6 +819,8 @@ export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
 
   if (isGeneList) {
     enabledTabs = ['geneListHeatmap']
+  } else if (isPathway) {
+    enabledTabs = ['pathway']
   } else if (isGene) {
     if (isMultiGene) {
       if (isConsensus) {
@@ -838,5 +876,5 @@ export function getEnabledTabs(exploreInfo, exploreParams, cellFaceting) {
     disabledTabs = []
   }
 
-  return { enabledTabs, disabledTabs, isGeneList, isGene, isMultiGene, hasIdeogramOutputs }
+  return { enabledTabs, disabledTabs, isGeneList, isGene, isPathway, isMultiGene, hasIdeogramOutputs }
 }

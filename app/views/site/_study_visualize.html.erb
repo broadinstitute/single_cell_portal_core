@@ -7,6 +7,19 @@
       window.SCP.readOnlyToken = window.SCP.readOnlyTokenObject.access_token
     }
   <% end %>
+
+  function initIdeogramCaches(retryCount=0) {
+    setTimeout(() => {
+      if (!window.Ideogram && retryCount < 50) {
+        retryCount++
+        initIdeogramCaches(retryCount)
+      } else {
+        window.Ideogram.initCaches()
+      }
+    }, 250)
+  }
+
+  initIdeogramCaches()
 </script>
 
 <% if @study.has_analysis_outputs?('infercnv', 'ideogram.js') or @study.has_track_files? %>

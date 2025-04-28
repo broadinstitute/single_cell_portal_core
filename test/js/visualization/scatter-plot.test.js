@@ -100,7 +100,7 @@ it('shows custom legend with default group scatter plot', async () => {
   // await screen.findByTestId('study-scatter-1-legend')
 
   await waitFor(() => {
-    container.querySelectorAll('#study-scatter-1-legend').length > 0
+    return container.querySelectorAll('#study-scatter-1-legend').length > 0
   })
 
   const legendRows = container.querySelectorAll('.scatter-legend-row')

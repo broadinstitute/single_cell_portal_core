@@ -8,6 +8,7 @@ const tabList = [
   { key: 'distribution', label: 'Distribution' },
   { key: 'dotplot', label: 'Dot plot' },
   { key: 'heatmap', label: 'Heatmap' },
+  { key: 'pathway', label: 'Pathway' },
   { key: 'geneListHeatmap', label: 'Precomputed heatmap' },
   { key: 'spatial', label: 'Spatial' },
   { key: 'genome', label: 'Genome' },

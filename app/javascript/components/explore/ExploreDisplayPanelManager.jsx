@@ -5,6 +5,7 @@ import { faLink, faEye, faTimes, faUndo } from '@fortawesome/free-solid-svg-icon
 
 import ClusterSelector from '~/components/visualization/controls/ClusterSelector'
 import AnnotationSelector from '~/components/visualization/controls/AnnotationSelector'
+import LabelSelector from '~/components/visualization/controls/LabelSelector'
 import SubsampleSelector from '~/components/visualization/controls/SubsampleSelector'
 import { ExploreConsensusSelector } from '~/components/visualization/controls/ConsensusSelector'
 import SpatialSelector from '~/components/visualization/controls/SpatialSelector'
@@ -283,7 +284,7 @@ export default function ExploreDisplayPanelManager({
     // the wrong tabs
     const updateParams = { geneList: '', ideogramFileId: '' }
 
-    const clusterParamNames = ['cluster', 'annotation', 'subsample', 'spatialGroups']
+    const clusterParamNames = ['cluster', 'annotation', 'subsample', 'label', 'spatialGroups']
     clusterParamNames.forEach(param => {
       updateParams[param] = param in newParams ? newParams[param] : exploreParamsWithDefaults[param]
     })
@@ -411,6 +412,13 @@ export default function ExploreDisplayPanelManager({
                   cluster={exploreParamsWithDefaults.cluster}
                   shownAnnotation={shownAnnotation}
                   updateClusterParams={updateClusterParams}/>
+                { shownTab === 'pathway' &&
+                <LabelSelector
+                  exploreParamsWithDefaults={exploreParamsWithDefaults}
+                  exploreInfo={exploreInfo}
+                  updateClusterParams={updateClusterParams}
+                />
+                }
                 { shownTab === 'scatter' && <CreateAnnotation
                   isSelecting={isCellSelecting}
                   setIsSelecting={setIsCellSelecting}
