@@ -1,0 +1,63 @@
+<h1>Data Retention Policy Report for <%= @report_date %></h1>
+<div class="stats">
+  <h3>Storage stats</h3>
+  <table>
+    <thead>
+    <th>Visibiliy</th>
+    <th>Total GB</th>
+    <th>Cost</th>
+    </thead>
+    <tbody>
+    <tr>
+      <td>Public</td>
+      <td><%= @report[:storage_gb][:public].floor(2) %></td>
+      <td><%= number_to_currency @report[:cost][:public] %></td>
+    </tr>
+    <tr>
+      <td>Private</td>
+      <td><%= @report[:storage_gb][:private].floor(2) %></td>
+      <td><%= number_to_currency @report[:cost][:private].floor(2) %></td>
+    </tr>
+    <tr>
+      <td>TOTAL</td>
+      <td><%= @report[:storage_gb][:total].floor(2) %></td>
+      <td><%= number_to_currency @report[:cost][:total].floor(2) %></td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+<div class="clear"></div>
+<div class="stats">
+  <h3>Studies</h3>
+  <table>
+    <thead>
+    <th>Accession</th>
+    <th>Owner</th>
+    <th>Public?</th>
+    <th>Age violation?</th>
+    <th>Created</th>
+    <th>Last access</th>
+    <th>Visuals</th>
+    <th>Total GB</th>
+    <th>Yearly cost</th>
+    <th>Too many files?</th>
+    </thead>
+    <tbody>
+    <% Naturally.sort(@report[:studies].keys).each do |accession| %>
+      <% study = @report[:studies][accession] %>
+      <tr>
+        <td><%= link_to accession, legacy_study_url(study[:accession]) %></td>
+        <td><%= study[:owner] %></td>
+        <td><%= study[:public] ? "Y" : "N" %></td>
+        <td class="<%= study[:age_violation] ? 'violation' : nil %>"><%= study[:age_violation] ? "Y" : "N" %></td>
+        <td><%= study[:created_at].to_s(:db) %></td>
+        <td><%= study[:last_created].to_s(:db) %></td>
+        <td class="<%= !study[:visualizations] ? 'violation' : nil %>"><%= study[:visualizations] ? "Y" : "N" %></td>
+        <td><%= study[:total_gb] %></td>
+        <td><%= number_to_currency study[:total_cost] %></td>
+        <td class="<%= study[:more_files] ? 'violation' : nil %>"><%= study[:more_files] ? "Y" : "N" %></td>
+      </tr>
+    <% end %>
+    </tbody>
+  </table>
+</div>

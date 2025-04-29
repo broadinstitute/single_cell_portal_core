@@ -161,7 +161,7 @@ class SummaryStatsUtils
             bytes = 0
             more_files = false
           end
-          total_gb = (bytes / 1024 / 1024 / 1024.0).floor(2)
+          total_gb = (bytes / 1024.0 / 1024.0 / 1024.0).floor(2)
           unless meets_data_retention_policy?(bytes, more_files:)
             puts "#{study.accession} candidate for removal"
             entry = {
