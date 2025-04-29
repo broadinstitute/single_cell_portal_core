@@ -155,4 +155,77 @@ class SummaryStatsUtilsTest < ActiveSupport::TestCase
     assert_equal updated_public, updated_stats[:public]
     assert_equal updated__compliant, updated_stats[:compliant]
   end
+
+  test 'should get data retention policy report' do
+    client_mock = Minitest::Mock.new
+    bucket_mock = Minitest::Mock.new
+    created_at = DateTime.now.in_time_zone - 1.day
+    bucket_mock.expect :nil?, false
+    file_mock = Minitest::Mock.new
+    2.times do
+      bucket_mock.expect :next?, false
+      file_mock.expect :next?, false
+    end
+    file_mock.expect :any?, true
+    bucket_mock.expect :files, file_mock
+    client_mock.expect :get_workspace_bucket, bucket_mock, [@study.bucket_id]
+    FireCloudClient.stub :new, client_mock do
+      SummaryStatsUtils.stub :bytes_and_last_created_for,
+                             [250.gigabytes, created_at],
+                             [Array] do
+        SummaryStatsUtils.stub :continue_file_fetch?, false, [Array, Integer, Integer] do
+          report = SummaryStatsUtils.data_retention_report
+          entry = report[:studies][@study.accession]
+          assert entry.present?
+          assert_equal 250.0, entry[:total_gb]
+          assert_equal created_at, entry[:last_created]
+        end
+      end
+    end
+  end
+
+  test 'should assert private study cutoff date' do
+    old_study = FactoryBot.create(:detached_study,
+                                  name_prefix: 'private study cutoff',
+                                  created_at: DateTime.now.in_time_zone - 18.months,
+                                  public: false,
+                                  user: @user,
+                                  test_array: @@studies_to_clean,)
+    assert_equal 1.year.ago.to_date, SummaryStatsUtils.private_study_cutoff
+    assert SummaryStatsUtils.old_private_study?(old_study)
+  end
+
+  test 'should control when to fetch more files' do
+    mock = Minitest::Mock.new
+    mock.expect :next?, false
+    bytes = 0
+    batch = 0
+    assert_not SummaryStatsUtils.continue_file_fetch?(mock, batch, bytes)
+    more_mock = Minitest::Mock.new
+    more_mock.expect :next?, true
+    assert SummaryStatsUtils.continue_file_fetch?(more_mock, batch, bytes)
+    too_big = Minitest::Mock.new
+    too_big.expect :next?, true
+    batch = 101
+    bytes = 250.gigabytes
+    assert_not SummaryStatsUtils.continue_file_fetch?(too_big, batch, bytes)
+  end
+
+  test 'should get bytes and last_created for' do
+    file_mock = Minitest::Mock.new
+    size = 10.gigabytes
+    file_mock.expect :size, size
+    yesterday = DateTime.now.in_time_zone - 1.day
+    file_mock.expect :created_at, yesterday
+    file_mock.expect :created_at, yesterday
+    expected = [size, yesterday]
+    assert_equal expected, SummaryStatsUtils.bytes_and_last_created_for([file_mock])
+  end
+
+  test 'should check against data retention policy' do
+    assert SummaryStatsUtils.meets_data_retention_policy?(10.gigabytes)
+    assert SummaryStatsUtils.meets_data_retention_policy?(200.gigabytes)
+    assert_not SummaryStatsUtils.meets_data_retention_policy?(300.gigabytes)
+    assert_not SummaryStatsUtils.meets_data_retention_policy?(10.gigabytes, more_files: true)
+  end
 end
