@@ -26,6 +26,9 @@ class SearchFacet
   field :min, type: Float # minimum allowed value for number-based facets
   field :max, type: Float # maximum allowed value for number-based facets
   field :visible, type: Boolean, default: true # default visibility (false will not show in UI but can be queried via API)
+  field :is_mongo_based, type: Boolean, default: false # controls whether to source data from Mongo or BQ
+  field :is_presence_facet, type: Boolean, default: true # doesn't display filter values, just Y
+  field :metadatum_name, type: String # name of CellMetadatum for mongo-based facets
 
   DATA_TYPES = %w(string number boolean)
   BQ_DATA_TYPES = %w(STRING FLOAT64 BOOL)
@@ -41,9 +44,9 @@ class SearchFacet
   }.with_indifferent_access.freeze
   TIME_UNITS = TIME_MULTIPLIERS.keys.freeze
 
-  validates_presence_of :name, :identifier, :data_type, :big_query_id_column, :big_query_name_column, :convention_name,
-                        :convention_version
-  validates_uniqueness_of :big_query_id_column, scope: [:convention_name, :convention_version]
+  validates_presence_of :name, :identifier, :data_type, :convention_name, :convention_version
+  validates :big_query_id_column, :big_query_name_column, presence: true, unless: :is_mongo_based
+  validates_uniqueness_of :big_query_id_column, scope: [:convention_name, :convention_version], unless: :is_mongo_based
   validate :ensure_ontology_url_format, if: proc {|attributes| attributes[:is_ontology_based]}
   before_validation :set_data_type_and_array, on: :create,
                     if: proc {|attr| (![true, false].include?(attr[:is_array_based]) || attr[:data_type].blank?) && attr[:big_query_id_column].present?}
@@ -369,6 +372,11 @@ class SearchFacet
     send(filter_list).map { |filter| [filter[:id], filter[:name]] }.flatten.uniq
   end
 
+  # for presence-based facets that are only checking if a study has the matching metadata column
+  def filter_for_presence
+    [{ id: identifier, name: identifier }.with_indifferent_access]
+  end
+
   # retrieve unique values from BigQuery and format an array of hashes with :name and :id values to populate :filters
   # can specify 'public only' to return filters for public studies
   def get_unique_filter_values(public_only: false)
@@ -396,6 +404,13 @@ class SearchFacet
   # will update public-only values for non-numeric facets only since numeric facets have hard-coded ranges in UI
   # can also merge in external facet values (e.g. from Azul, TDR)
   def update_filter_values!(external_facet = nil)
+    if is_presence_facet
+      update(
+        filters: filter_for_presence, public_filters: filter_for_presence, filters_with_external: filter_for_presence
+      )
+      return true
+    end
+
     external_facet ||= {} # to prevent errors later when checking external_facet attributes
     if is_numeric?
       values = get_unique_filter_values
