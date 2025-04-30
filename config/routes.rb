@@ -95,6 +95,7 @@ Rails.application.routes.draw do
           scope :search do
             get 'facets', to: 'search#facets', as: :search_facets
             get 'facet_filters', to: 'search#facet_filters', as: :search_facet_filters
+            get 'filter_counts', to: 'search#filter_counts', as: :search_filter_counts
             get '/', to: 'search#index', as: :search
           end
           scope :bulk_download do

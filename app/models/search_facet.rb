@@ -305,6 +305,24 @@ class SearchFacet
     user.present? ? filters_with_external : public_filters
   end
 
+  # return counts of filter values for a list of studies
+  #
+  def filter_counts_for_studies(study_ids = nil, user_signed_in)
+    ids = study_ids || Study.where(public: true).pluck(:id)
+    meta = CellMetadatum.where(name: identifier, annotation_type: 'group', :study_id.in => ids)
+    map = { name:, id: identifier, filters: [] }
+    filter_list = user_signed_in ? filters_with_external : public_filters
+    Parallel.map(filter_list, in_threads: 50) do |filter|
+      # account for both delimiters of ontology ids (: and _)
+      filter_parts = filter[:id].split(/[_:]/)
+      colon_id = filter_parts.join(':')
+      underscore_id = filter_parts.join('_')
+      count = meta.where(:values.in => [colon_id, underscore_id]).count
+      map[:filters] << { name: filter[:name], id: filter[:id], count: }
+    end
+    map
+  end
+
   # helper to know if column is numeric
   def is_numeric?
     data_type == 'number'

@@ -13,7 +13,7 @@ module Api
 
       before_action :set_current_api_user!
       before_action :authenticate_api_user!, only: [:create_auth_code]
-      before_action :set_search_facet, only: :facet_filters
+      before_action :set_search_facet, only: [:facet_filters, :filter_counts]
       before_action :set_search_facets_and_filters, only: :index
       before_action :set_preset_search, only: :index
       before_action :set_branding_group, only: [:index, :facets]
@@ -75,14 +75,14 @@ module Api
             key :name, :scpbr
             key :in, :query
             key :description, 'Requested branding group (to filter results on)'
-            key :reqired, false
+            key :required, false
             key :type, :string
           end
           parameter do
             key :name, :order
             key :in, :query
             key :description, 'Requested order of results'
-            key :reqired, false
+            key :required, false
             key :type, :string
             key :enum, [:recent, :popular]
           end
@@ -401,7 +401,7 @@ module Api
             key :name, :scpbr
             key :in, :query
             key :description, 'Requested branding group (to filter facets on)'
-            key :reqired, false
+            key :required, false
             key :type, :string
           end
           response 200 do
@@ -473,6 +473,47 @@ module Api
         query_matcher = /#{Regexp.escape(@query_string)}/i
         filter_list = @search_facet.filters_for_user(current_api_user)
         @matching_filters = filter_list.select { |filter| filter[:name] =~ query_matcher }
+      end
+
+      swagger_path '/search/filter_counts' do
+        operation :get do
+          key :tags, [
+            'Search'
+          ]
+          key :summary, 'Get counts of facet filters for viewable studies'
+          key :description, 'Returns a list of filters and counts for a requested search facet'
+          key :operationId, 'search_filter_counts_path'
+          parameter do
+            key :name, :facet
+            key :in, :query
+            key :description, 'Requested facet'
+            key :required, true
+            key :type, :string
+          end
+          parameter do
+            key :name, :accessions
+            key :in, :query
+            key :description, 'List of study accessions to constrain counts on'
+            key :required, false
+            key :type, :string
+          end
+          response 200 do
+            key :description, 'Search facet filter counts'
+          end
+          response 406 do
+            key :description, ApiBaseController.not_acceptable
+          end
+        end
+      end
+
+      def filter_counts
+        if params[:accessions]
+          accessions = accessions = StudyAccession.sanitize_accessions(params[:accessions].split(','))
+          study_ids = Study.viewable(current_api_user).where(:accession.in => accessions).pluck(:id)
+        else
+          study_ids = Study.viewable(current_api_user).pluck(:id)
+        end
+        render json: @search_facet.filter_counts_for_studies(study_ids, api_user_signed_in?)
       end
 
       private
@@ -718,6 +759,7 @@ module Api
             end
           end
         end
+        puts "studies_by_facet: #{matches}"
         matches
       end
 
