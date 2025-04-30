@@ -193,6 +193,8 @@ class SummaryStatsUtilsTest < ActiveSupport::TestCase
                                   test_array: @@studies_to_clean,)
     assert_equal 1.year.ago.to_date, SummaryStatsUtils.private_study_cutoff
     assert SummaryStatsUtils.old_private_study?(old_study)
+    # prevent study from breaking other tests re: counts
+    old_study.destroy
   end
 
   test 'should control when to fetch more files' do
