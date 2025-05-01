@@ -534,6 +534,8 @@ class SearchFacet
 
   # determine if this facet references array-based data in BQ as data_type will look like "ARRAY<STRING>"
   def set_data_type_and_array
+    return true if is_mongo_based
+
     column_schema = SearchFacet.get_table_schema(column_name: big_query_id_column)
     detected_type = column_schema[:data_type]
     self.is_array_based = detected_type.include?('ARRAY')

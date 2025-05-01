@@ -163,7 +163,7 @@ class StudySearchService
   def self.perform_mongo_facet_search(facet, filter_values)
     results = []
     values = filter_values.map { |entry| [convert_id_format(entry[:id]), entry[:name]] }.flatten
-    matches = facet.associated_metadata(values)
+    matches = facet.associated_metadata(values:)
     matches.each do |metadata|
       next if metadata.study.queued_for_deletion
 
