@@ -162,9 +162,8 @@ class StudySearchService
   # also accounts for presence-based facets like has_morphology
   def self.perform_mongo_facet_search(facet, filter_values)
     results = []
-    values = filter_values.map { |entry| [entry[:id], entry[:name]] }.flatten
-    matches = CellMetadatum.where(:name.in => [facet.metadatum_name])
-    matches = matches.where(:values.in => values) unless facet.is_presence_facet
+    values = filter_values.map { |entry| [convert_id_format(entry[:id]), entry[:name]] }.flatten
+    matches = facet.associated_metadata(values)
     matches.each do |metadata|
       next if metadata.study.queued_for_deletion
 
@@ -175,6 +174,12 @@ class StudySearchService
       end
     end
     results
+  end
+
+  # deal with ontology id formatting inconsistencies
+  def self.convert_id_format(id)
+    parts = id.split(/[_:]/)
+    [parts.join('_'), parts.join(':')]
   end
 
   # take a term and match to a possible search facet/filter

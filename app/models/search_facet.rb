@@ -17,8 +17,8 @@ class SearchFacet
   field :ontology_urls, type: Array, default: []
   field :data_type, type: String
   field :is_array_based, type: Boolean
-  field :big_query_id_column, type: String
-  field :big_query_name_column, type: String
+  field :big_query_id_column, type: String # BQ column or CellMetadatum name to source ontology ids
+  field :big_query_name_column, type: String # BQ column or CellMetadatum name to source ontology labels
   field :big_query_conversion_column, type: String # for converting numeric columns with units, like organism_age
   field :convention_name, type: String
   field :convention_version, type: String
@@ -28,7 +28,6 @@ class SearchFacet
   field :visible, type: Boolean, default: true # default visibility (false will not show in UI but can be queried via API)
   field :is_mongo_based, type: Boolean, default: false # controls whether to source data from Mongo or BQ
   field :is_presence_facet, type: Boolean, default: true # doesn't display filter values, just Y
-  field :metadatum_name, type: String # name of CellMetadatum for mongo-based facets
 
   DATA_TYPES = %w(string number boolean)
   BQ_DATA_TYPES = %w(STRING FLOAT64 BOOL)
@@ -374,7 +373,31 @@ class SearchFacet
 
   # for presence-based facets that are only checking if a study has the matching metadata column
   def filter_for_presence
-    [{ id: identifier, name: identifier }.with_indifferent_access]
+    [{ id: identifier, name: }.with_indifferent_access]
+  end
+
+  # get a list of facet filter values directly from a CellMetadatum object
+  # also handles numeric & array-based data
+  def filters_from_metadatum(metadatum)
+    if is_numeric?
+      vals = metadatum.concatenate_data_arrays(metadatum.name, 'annotations')
+      minmax = RequestUtils.get_minmax(vals)
+      minmax.compact.empty? ? [] : [{ MIN: minmax.first.to_f, MAX: minmax.last.to_f }]
+    else
+      ids = metadatum.values.map { |i| i.gsub(/:/, '_') } # deal with ontology id format issues
+      values = CellMetadatum.find_by(study_id: metadatum.study_id, name: big_query_name_column).values
+      # deal with array-based annotations
+      if is_array_based
+        ids = ids.map { |i| i.split('|') }.flatten
+        values = values.map { |v| v.split('|') }.flatten
+      end
+      list = ids.map.with_index do |id, index|
+        next if id.blank?
+
+        { id:, name: values[index] }
+      end
+      list.compact
+    end
   end
 
   # retrieve unique values from BigQuery and format an array of hashes with :name and :id values to populate :filters
@@ -383,6 +406,28 @@ class SearchFacet
     log_message = "Updating#{public_only ? ' public' : nil} filter values for SearchFacet: #{name} using id: " \
                   "#{big_query_id_column} and name: #{big_query_name_column}"
     Rails.logger.info log_message
+
+    if is_mongo_based
+      filter_map = []
+      query = public_only ? { public: true, detached: false } : { detached: false }
+      study_ids = Study.where(query).pluck(:id)
+      study_file_ids = StudyFile.where(:study_id.in => study_ids, use_metadata_convention: true).pluck(:id)
+      metadata = associated_metadata(query: { :study_id.in => study_ids, :study_file_id.in => study_file_ids })
+      metadata.each do |metadatum|
+        new_filters = filters_from_metadatum(metadatum)
+        if is_numeric?
+          next if new_filters.empty?
+
+          filter_map << { MIN: new_filters.first.to_f, MAX: new_filters.last.to_f }
+          minmax = filter_map.map(&:values).flatten.minmax
+          filter_map = [{ MIN: minmax.first.to_f, MAX: minmax.last.to_f }]
+        else
+          filter_map += new_filters
+        end
+      end
+      return filter_map.uniq
+    end
+
     if public_only
       accessions = Study.where(public: true).pluck(:accession)
       query_string = generate_bq_query_string(accessions: accessions)
@@ -398,6 +443,15 @@ class SearchFacet
       ErrorTracker.report_exception(e, nil, { query_string: query_string, public_only: public_only })
       []
     end
+  end
+
+  # find all matching CellMetadum objects for a given facet
+  # can scope query to matching values array if needed or by a sub-query if provided
+  def associated_metadata(values: [], query: {})
+    annotation_type = is_numeric? ? 'numeric' : 'group'
+    matches = CellMetadatum.where(name: big_query_id_column, annotation_type:)
+    matches.where(:values.in => values) unless is_presence_facet && values.empty?
+    query.any? ? matches.where(query) : matches
   end
 
   # update cached filters in place with new values, updating both public-only and regular list
