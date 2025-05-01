@@ -322,12 +322,12 @@ export async function renderPathwayExpression(studyAccession, cluster, annotatio
 
   const annotationLabels = getEligibleLabels()
 
+  const loadingCls = 'pathway-loading-expression'
+  writeLoadingIndicator(loadingCls)
+
   if (label === '') {
     return
   }
-
-  const loadingCls = 'pathway-loading-expression'
-  writeLoadingIndicator(loadingCls)
 
   /** After invisible dot plot renders, color each gene by expression metrics */
   function backgroundDotPlotDrawCallback(dotPlot) {
