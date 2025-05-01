@@ -27,7 +27,7 @@ class SearchFacet
   field :max, type: Float # maximum allowed value for number-based facets
   field :visible, type: Boolean, default: true # default visibility (false will not show in UI but can be queried via API)
   field :is_mongo_based, type: Boolean, default: false # controls whether to source data from Mongo or BQ
-  field :is_presence_facet, type: Boolean, default: true # doesn't display filter values, just Y
+  field :is_presence_facet, type: Boolean, default: false # doesn't display filter values, just Y
 
   DATA_TYPES = %w(string number boolean)
   BQ_DATA_TYPES = %w(STRING FLOAT64 BOOL)
