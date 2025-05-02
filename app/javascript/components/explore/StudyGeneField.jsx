@@ -41,9 +41,9 @@ function getIsPartialPathwayMatch(query, allGenes) {
 }
 
 /** Parse gene name from heterogeneous array  */
-function getQueriesFromSearchOptions(newQueryArray, speciesList) {
+function getQueriesFromSearchOptions(newQueryArray, speciesList, selectedAnnotation) {
   let newQueries
-  if (newQueryArray[0]?.isGene === true || !getIsEligibleForPathwayExplore(speciesList)) {
+  if (newQueryArray[0]?.isGene === true || !getIsEligibleForPathwayExplore(speciesList, selectedAnnotation)) {
     // Query is a gene
     newQueries = newQueryArray.map(g => g.value)
   } else if (newQueryArray.length === 0) {
@@ -64,19 +64,20 @@ function getQueriesFromSearchOptions(newQueryArray, speciesList) {
 }
 
 /** Indicate whether pathway view should be available for this study */
-function getIsEligibleForPathwayExplore(speciesList) {
+function getIsEligibleForPathwayExplore(speciesList, selectedAnnotation) {
   const isEligibleForPathwayExplore = (
     speciesList.length === 1 && speciesList[0] === 'Homo sapiens' &&
+    selectedAnnotation.type === 'group' &&
     getFeatureFlagsWithDefaults()?.show_pathway_expression
   )
   return isEligibleForPathwayExplore
 }
 
 /** Collapse search options to query array */
-function getQueryArrayFromSearchOptions(searchOptions, speciesList) {
+function getQueryArrayFromSearchOptions(searchOptions, speciesList, selectedAnnotation) {
   let queryArray = []
 
-  if (!getIsEligibleForPathwayExplore(speciesList)) {
+  if (!getIsEligibleForPathwayExplore(speciesList, selectedAnnotation)) {
     return searchOptions
   }
 
@@ -98,18 +99,21 @@ function getQueryArrayFromSearchOptions(searchOptions, speciesList) {
 * @param allGenes String array of valid genes in the study
 * @param speciesList String array of species scientific names
 */
-export default function StudyGeneField({ queries, queryFn, allGenes, speciesList, isLoading=false }) {
+export default function StudyGeneField({
+  queries, queryFn, allGenes, speciesList, selectedAnnotation, isLoading=false
+}) {
   const [inputText, setInputText] = useState('')
 
-  const includePathways = getIsEligibleForPathwayExplore(speciesList)
+  console.log('selectedAnnotation', selectedAnnotation)
+  const includePathways = getIsEligibleForPathwayExplore(speciesList, selectedAnnotation)
   const rawSuggestions = getAutocompleteSuggestions(inputText, allGenes, includePathways)
-  const searchOptions = getSearchOptions(rawSuggestions, speciesList)
+  const searchOptions = getSearchOptions(rawSuggestions, speciesList, selectedAnnotation)
 
 
   let enteredQueryArray = []
   if (inputText.length === 0 && queries && queries.length > 0) {
-    const queriesSearchOptions = getSearchOptions(queries, speciesList)
-    enteredQueryArray = getQueryArrayFromSearchOptions(queriesSearchOptions, speciesList)
+    const queriesSearchOptions = getSearchOptions(queries, speciesList, selectedAnnotation)
+    enteredQueryArray = getQueryArrayFromSearchOptions(queriesSearchOptions, speciesList, selectedAnnotation)
   } else {
     enteredQueryArray = searchOptions
   }
@@ -130,7 +134,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
 
     const newNotPresentQueries = new Set([])
     if (newQueryArray) {
-      if (!getIsEligibleForPathwayExplore(speciesList)) {
+      if (!getIsEligibleForPathwayExplore(speciesList, selectedAnnotation)) {
         newQueryArray.map(g => g.value).forEach(query => {
           // if an entered gene is not in the valid gene options for the study
           const isInvalidQuery = getIsInvalidQuery(query, allGenes)
@@ -139,7 +143,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
           }
         })
       } else {
-        const newQueries = getQueriesFromSearchOptions(newQueryArray, speciesList)
+        const newQueries = getQueriesFromSearchOptions(newQueryArray, speciesList, selectedAnnotation)
         newQueries.forEach(query => {
           // if an entered gene is not in the valid gene options for the study
           const isInvalidQuery = getIsInvalidQuery(query, allGenes)
@@ -154,7 +158,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
     if (newNotPresentQueries.size > 0) {
       setShowNotPresentGeneChoice(true)
     } else if (newQueryArray && newQueryArray.length) {
-      const newQueries = getQueriesFromSearchOptions(newQueryArray, speciesList)
+      const newQueries = getQueriesFromSearchOptions(newQueryArray, speciesList, selectedAnnotation)
       const queries = newQueries
       if (queries.length > window.MAX_GENE_SEARCH) {
         log('search-too-many-genes', { numGenes: queries.length })
@@ -179,7 +183,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
         return queryArray
       }
     }
-    const searchOptions = getSearchOptions(inputTextValues, speciesList)
+    const searchOptions = getSearchOptions(inputTextValues, speciesList, selectedAnnotation)
     const queryOptions = searchOptions[0].options
     const newQueryArray = queryArray.concat(queryOptions)
     setInputText('')
@@ -227,7 +231,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
   useEffect(() => {
     if (queries.join(',') !== queryArray.map(opt => opt.value).join(',')) {
       // the genes have been updated elsewhere -- resync
-      const queriesSearchOptions = getSearchOptions(queries, speciesList)
+      const queriesSearchOptions = getSearchOptions(queries, speciesList, selectedAnnotation)
       const newQueryArray = getQueryArrayFromSearchOptions(queriesSearchOptions, speciesList)
       setQueryArray(newQueryArray)
       setInputText('')
@@ -377,8 +381,8 @@ function filterSearchOptions(rawGeneOptions, rawPathwayOptions) {
 }
 
 /** takes an array of gene name strings, and returns options suitable for react-select */
-function getSearchOptions(rawSuggestions, speciesList) {
-  if (!getIsEligibleForPathwayExplore(speciesList)) {
+function getSearchOptions(rawSuggestions, speciesList, selectedAnnotation) {
+  if (!getIsEligibleForPathwayExplore(speciesList, selectedAnnotation)) {
     return rawSuggestions.map(rawSuggestion => {
       const geneName = rawSuggestion
       return { label: geneName, value: geneName, isGene: true }

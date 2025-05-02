@@ -23,7 +23,7 @@ import useResizeEffect from '~/hooks/useResizeEffect'
 import LoadingSpinner from '~/lib/LoadingSpinner'
 import { log } from '~/lib/metrics-api'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
-import ExploreDisplayPanelManager from './ExploreDisplayPanelManager'
+import ExploreDisplayPanelManager, {getSelectedClusterAndAnnot} from './ExploreDisplayPanelManager'
 import OverlayTrigger from 'react-bootstrap/lib/OverlayTrigger'
 import Tooltip from 'react-bootstrap/lib/Tooltip'
 import PlotTabs from './PlotTabs'
@@ -32,22 +32,6 @@ import {
 } from '~/lib/cell-faceting'
 import { getIsPathway } from '~/lib/search-utils'
 
-/** Get the selected clustering and annotation, or their defaults */
-export function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
-  if (!exploreInfo) {return [null, null]}
-  const annotList = exploreInfo.annotationList
-  let selectedCluster
-  let selectedAnnot
-  if (exploreParams?.cluster) {
-    selectedCluster = exploreParams.cluster
-    selectedAnnot = exploreParams.annotation
-  } else {
-    selectedCluster = annotList.default_cluster
-    selectedAnnot = annotList.default_annotation
-  }
-
-  return [selectedCluster, selectedAnnot]
-}
 
 /** Determine if current annotation has one-vs-rest or pairwise DE */
 function getHasComparisonDe(exploreInfo, exploreParams, comparison) {
@@ -539,6 +523,9 @@ export default function ExploreDisplayTabs({
     queries = exploreParams.genes
   }
 
+  console.log('in ExploreDisplayTabs')
+  const [_, selectedAnnotation] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
+
   return (
     <>
       {/* Render top content for Explore view, i.e. gene search box and plot tabs */}
@@ -550,7 +537,9 @@ export default function ExploreDisplayTabs({
               queryFn={queryFn}
               allGenes={exploreInfo ? exploreInfo.uniqueGenes : []}
               isLoading={!exploreInfo}
-              speciesList={exploreInfo ? exploreInfo.taxonNames : []}/>
+              speciesList={exploreInfo ? exploreInfo.taxonNames : []}
+              selectedAnnotation={selectedAnnotation}
+            />
             { // show if this is gene search || gene list
               (isGene || isGeneList || hasIdeogramOutputs || isPathway) &&
                 <OverlayTrigger placement="top" overlay={

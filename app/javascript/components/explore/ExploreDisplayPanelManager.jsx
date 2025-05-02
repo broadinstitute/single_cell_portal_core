@@ -25,7 +25,8 @@ import BookmarkManager from '~/components/bookmarks/BookmarkManager'
 import { EXPRESSION_SORT_OPTIONS } from '~/components/visualization/PlotDisplayControls'
 
 /** Get the selected clustering and annotation, or their defaults */
-function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
+export function getSelectedClusterAndAnnot(exploreInfo, exploreParams) {
+  if (!exploreInfo) {return [null, null]}
   const annotList = exploreInfo.annotationList
   let selectedCluster
   let selectedAnnot
