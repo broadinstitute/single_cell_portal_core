@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Popover, OverlayTrigger } from 'react-bootstrap'
-import { manageDrawPathway } from '~/lib/pathway-expression'
+import { manageDrawPathway, writeLoadingIndicator } from '~/lib/pathway-expression'
 import { getIdentifierForAnnotation, naturalSort } from '~/lib/cluster-utils'
 import { round } from '~/lib/metrics-perf'
 
@@ -136,6 +136,7 @@ export default function Pathway({
   moveDescription()
   document.addEventListener('ideogramDrawPathway', configurePathwayTooltips)
   document.addEventListener('ideogramDrawPathway', updatePathwayOntologies)
+  document.addEventListener('ideogramDrawPathway', writeLoadingIndicator)
 
   /** Upon clicking a pathway node, show new pathway and expression overlay */
   function handlePathwayNodeClick(event, pathwayId) {

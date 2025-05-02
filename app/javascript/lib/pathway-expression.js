@@ -32,6 +32,8 @@ window.onerror = function(error) {
   }
 }
 
+const loadingCls = 'pathway-loading-expression'
+
 /**
  * Get mean, percent, and color per gene, by annotation label
  *
@@ -279,7 +281,7 @@ function writePathwayAnnotationLabelMenu(label, dotPlotMetrics) {
 }
 
 /** Update pathway header with SCP label menu, info icon */
-function writePathwayExpressionHeader(loadingCls, dotPlotMetrics, label, pathwayGenes) {
+function writePathwayExpressionHeader(dotPlotMetrics, label, pathwayGenes) {
   // Remove "Loading expression...", as load is done
   document.querySelector(`.${loadingCls}`)?.remove()
 
@@ -288,9 +290,12 @@ function writePathwayExpressionHeader(loadingCls, dotPlotMetrics, label, pathway
 }
 
 /** Add "Loading expression..." to pathway header while dot plot metrics are being fetched */
-function writeLoadingIndicator(loadingCls) {
+export function writeLoadingIndicator() {
   document.querySelector('.pathway-label-menu-container')?.remove()
   const headerLink = document.querySelector('._ideoPathwayHeader a')
+  if (!headerLink) {
+    return
+  }
   const style = 'color: #777; font-style: italic; margin-left: 10px;'
   const loading = `<span class="${loadingCls}" style="${style}">Loading expression...</span>`
   document.querySelector(`.${loadingCls}`)?.remove()
@@ -322,9 +327,6 @@ export async function renderPathwayExpression(studyAccession, cluster, annotatio
 
   const annotationLabels = getEligibleLabels()
 
-  const loadingCls = 'pathway-loading-expression'
-  writeLoadingIndicator(loadingCls)
-
   if (label === '') {
     return
   }
@@ -353,11 +355,11 @@ export async function renderPathwayExpression(studyAccession, cluster, annotatio
 
     allDotPlotMetrics = mergeDotPlotMetrics(dotPlotMetrics, allDotPlotMetrics)
 
-    writePathwayExpressionHeader(loadingCls, allDotPlotMetrics, label, pathwayGenes)
+    writePathwayExpressionHeader(allDotPlotMetrics, label, pathwayGenes)
 
     colorPathwayGenesByExpression(label, allDotPlotMetrics)
 
-    if (numRenders <= dotPlotGeneBatches.length) {
+    if (numRenders < dotPlotGeneBatches.length - 1) {
       numRenders += 1
       // Future optimization: render background dot plot one annotation at a time.  This would
       // speed up initial pathway expression overlay rendering, and increase the practical limit
