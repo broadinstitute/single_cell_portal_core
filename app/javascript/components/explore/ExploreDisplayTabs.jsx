@@ -523,7 +523,7 @@ export default function ExploreDisplayTabs({
     queries = exploreParams.genes
   }
 
-  console.log('in ExploreDisplayTabs')
+  // eslint-disable-next-line no-unused-vars
   const [_, selectedAnnotation] = getSelectedClusterAndAnnot(exploreInfo, exploreParams)
 
   return (

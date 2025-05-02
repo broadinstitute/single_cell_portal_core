@@ -64,7 +64,7 @@ function getQueriesFromSearchOptions(newQueryArray, speciesList, selectedAnnotat
 }
 
 /** Indicate whether pathway view should be available for this study */
-function getIsEligibleForPathwayExplore(speciesList, selectedAnnotation) {
+export function getIsEligibleForPathwayExplore(speciesList, selectedAnnotation) {
   const isEligibleForPathwayExplore = (
     speciesList.length === 1 && speciesList[0] === 'Homo sapiens' &&
     selectedAnnotation.type === 'group' &&
@@ -104,11 +104,9 @@ export default function StudyGeneField({
 }) {
   const [inputText, setInputText] = useState('')
 
-  console.log('selectedAnnotation', selectedAnnotation)
   const includePathways = getIsEligibleForPathwayExplore(speciesList, selectedAnnotation)
   const rawSuggestions = getAutocompleteSuggestions(inputText, allGenes, includePathways)
   const searchOptions = getSearchOptions(rawSuggestions, speciesList, selectedAnnotation)
-
 
   let enteredQueryArray = []
   if (inputText.length === 0 && queries && queries.length > 0) {
@@ -232,7 +230,7 @@ export default function StudyGeneField({
     if (queries.join(',') !== queryArray.map(opt => opt.value).join(',')) {
       // the genes have been updated elsewhere -- resync
       const queriesSearchOptions = getSearchOptions(queries, speciesList, selectedAnnotation)
-      const newQueryArray = getQueryArrayFromSearchOptions(queriesSearchOptions, speciesList)
+      const newQueryArray = getQueryArrayFromSearchOptions(queriesSearchOptions, speciesList, selectedAnnotation)
       setQueryArray(newQueryArray)
       setInputText('')
       setNotPresentQueries(new Set([]))
