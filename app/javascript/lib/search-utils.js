@@ -182,9 +182,9 @@ function getPathwaySuggestions(inputText, maxPathwaySuggestions) {
  *
  * @param {String} inputString String typed by user into text input
  * @param {Array<String>} targets List of strings to match against
- * @param {Integer} numSuggestions Number of suggestions to show
+ * @param {Boolean} includePathways Whether include pathway suggestions
  */
-export function getAutocompleteSuggestions(inputText, targets, numSuggestions=NUM_SUGGESTIONS) {
+export function getAutocompleteSuggestions(inputText, targets, includePathways) {
   // Autocomplete when user starts typing
   if (!targets?.length || !inputText) {
     return []
@@ -203,7 +203,7 @@ export function getAutocompleteSuggestions(inputText, targets, numSuggestions=NU
       .sort((a, b) => {return a.localeCompare(b)})
 
   let topMatches = prefixMatches
-  if (prefixMatches.length < numSuggestions) {
+  if (prefixMatches.length < NUM_SUGGESTIONS) {
     // Get similarly-named genes, as measured by Dice coefficient (`rating`)
     const similar = stringSimilarity.findBestMatch(inputText, targets)
     const similarMatches =
@@ -220,10 +220,13 @@ export function getAutocompleteSuggestions(inputText, targets, numSuggestions=NU
 
   if (exactMatch) {topMatches.unshift(exactMatch)} // Put any exact match first
 
-  const maxPathwaySuggestions = numSuggestions - prefixMatches.length
-  const pathwaySuggestions = getPathwaySuggestions(inputText, maxPathwaySuggestions)
+  const maxPathwaySuggestions = NUM_SUGGESTIONS - prefixMatches.length
+  let pathwaySuggestions = []
+  if (includePathways) {
+    pathwaySuggestions = getPathwaySuggestions(inputText, maxPathwaySuggestions)
+  }
 
-  const topGeneMatches = topMatches.slice(0, numSuggestions)
+  const topGeneMatches = topMatches.slice(0, NUM_SUGGESTIONS)
 
   topMatches = topGeneMatches.concat(pathwaySuggestions)
 

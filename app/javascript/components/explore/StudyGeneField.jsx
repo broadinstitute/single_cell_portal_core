@@ -101,7 +101,8 @@ function getQueryArrayFromSearchOptions(searchOptions, speciesList) {
 export default function StudyGeneField({ queries, queryFn, allGenes, speciesList, isLoading=false }) {
   const [inputText, setInputText] = useState('')
 
-  const rawSuggestions = getAutocompleteSuggestions(inputText, allGenes)
+  const includePathways = getIsEligibleForPathwayExplore(speciesList)
+  const rawSuggestions = getAutocompleteSuggestions(inputText, allGenes, includePathways)
   const searchOptions = getSearchOptions(rawSuggestions, speciesList)
 
 
@@ -354,7 +355,7 @@ export default function StudyGeneField({ queries, queryFn, allGenes, speciesList
 /** Last filtering applied before showing selectable autocomplete options */
 function finalFilterOptions(option, rawInput) {
   const input = rawInput.toLowerCase()
-  const label = option.label.toLowerCase()
+  const label = 'label' in option ? option.label.toLowerCase() : option.toLowerCase()
   const isPathway = option.data.isGene === false
   return isPathway || label.includes(input) // partial match
 }
