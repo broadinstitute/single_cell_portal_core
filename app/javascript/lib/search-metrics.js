@@ -202,9 +202,16 @@ function detectSearchedGenesElsewhere(searchedGenes) {
 
 /** log a search from the study explore tab */
 export function logStudyGeneSearch(genes, trigger, speciesList, otherProps) {
+  let searchType = 'gene'
+
+  const pathwayRegEx = /^WP\d+$/
+  if (genes.length === 1 && pathwayRegEx.test(genes[0])) {
+    searchType = 'pathway'
+  }
+
   // Properties logged for all gene searches from Study Overview
   const logProps = {
-    type: 'gene',
+    type: searchType,
     context: 'study',
     genes,
     numGenes: genes.length,
