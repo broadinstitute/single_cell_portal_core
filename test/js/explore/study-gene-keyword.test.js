@@ -5,6 +5,8 @@ import '@testing-library/jest-dom/extend-expect'
 
 import StudyGeneField, { getIsInvalidQuery, getIsEligibleForPathwayExplore } from 'components/explore/StudyGeneField'
 import * as UserProvider from '~/providers/UserProvider'
+import { logStudyGeneSearch } from '~/lib/search-metrics'
+import * as MetricsApi from '~/lib/metrics-api'
 import { interestingNames, interactionCacheCsn1s1 } from './../visualization/pathway.test-data'
 
 describe('Search query display text', () => {
@@ -121,5 +123,34 @@ describe('Search query display text', () => {
     expect(isHumanGroupAnnotationEligible).toBe(true)
   })
 
+  it('distinguishes pathway from gene search types in analytics loggging', async () => {
+    const fakeLog = jest.spyOn(MetricsApi, 'log')
+    fakeLog.mockImplementation(() => { })
+
+    let queries = ['PTEN']
+    const trigger = 'click'
+    const speciesList = ['Homo sapiens']
+
+    logStudyGeneSearch(queries, trigger, speciesList)
+
+    expect(fakeLog).toHaveBeenCalledWith(
+      'search',
+      expect.objectContaining({
+        type: 'gene'
+      })
+    )
+
+    queries = ['WP1234']
+
+    logStudyGeneSearch(queries, trigger, speciesList)
+
+    expect(fakeLog).toHaveBeenCalledWith(
+      'search',
+      expect.objectContaining({
+        type: 'pathway'
+      })
+    )
+
+  })
 })
 
