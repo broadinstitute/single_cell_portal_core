@@ -3,6 +3,7 @@ import { Popover, OverlayTrigger } from 'react-bootstrap'
 import { manageDrawPathway, writeLoadingIndicator } from '~/lib/pathway-expression'
 import { getIdentifierForAnnotation, naturalSort } from '~/lib/cluster-utils'
 import { round } from '~/lib/metrics-perf'
+import { log } from '~/lib/metrics-api'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
@@ -80,6 +81,17 @@ function handleGeneNodeHover(event, geneName) {
   node.setAttribute('data-toggle', 'tooltip')
   node.setAttribute('data-html', 'true')
   node.setAttribute('data-original-title', content)
+
+  const pathwayId = window.Ideogram.pathwayJson.pathway.id
+  const pathwayName = window.Ideogram.pathwayJson.pathway.name
+
+  log('pathway-node-tooltip', {
+    pathway: pathwayId,
+    pathwayName,
+    name: geneName,
+    nodeType: 'gene'
+  })
+
   return ''
 }
 
@@ -141,6 +153,14 @@ export default function Pathway({
   /** Upon clicking a pathway node, show new pathway and expression overlay */
   function handlePathwayNodeClick(event, pathwayId) {
     queryFn([pathwayId])
+
+    const pathwayName = window.Ideogram.pathwayJson.pathway.name
+
+    log('pathway-node-click', {
+      pathway: pathwayId,
+      pathwayName,
+      nodeType: 'pathway'
+    })
   }
 
   const dimensionString = JSON.stringify(dimensions)
