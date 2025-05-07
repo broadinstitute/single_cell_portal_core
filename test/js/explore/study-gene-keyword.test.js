@@ -123,7 +123,7 @@ describe('Search query display text', () => {
     expect(isHumanGroupAnnotationEligible).toBe(true)
   })
 
-  it('distinguishes pathway from gene search types in analytics loggging', async () => {
+  it('distinguishes pathway from gene search types in analytics logging', async () => {
     const fakeLog = jest.spyOn(MetricsApi, 'log')
     fakeLog.mockImplementation(() => { })
 
