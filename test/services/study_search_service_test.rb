@@ -3,6 +3,7 @@ require 'test_helper'
 class StudySearchServiceTest < ActiveSupport::TestCase
 
   before(:all) do
+    SearchFacet.destroy_all
     @user = FactoryBot.create(:user, test_array: @@users_to_clean)
     @metadata_study = FactoryBot.create(:detached_study,
                                         name_prefix: 'Study Search Service Test',
