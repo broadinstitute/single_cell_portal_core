@@ -3,7 +3,7 @@ import React from 'react'
 import { render, waitFor, screen, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 
-import StudyGeneField, { getIsInvalidQuery } from 'components/explore/StudyGeneField'
+import StudyGeneField, { getIsInvalidQuery, getIsEligibleForPathwayExplore } from 'components/explore/StudyGeneField'
 import * as UserProvider from '~/providers/UserProvider'
 import { interestingNames, interactionCacheCsn1s1 } from './../visualization/pathway.test-data'
 
@@ -67,7 +67,10 @@ describe('Search query display text', () => {
       })
 
     const { container } = render(
-      <StudyGeneField queries={[]} queryFn={() => {}} allGenes={['PTEN']} speciesList={['Homo sapiens']} />
+      <StudyGeneField
+        queries={[]} queryFn={() => {}} allGenes={['PTEN']}
+        speciesList={['Homo sapiens']} selectedAnnotation={{ type: 'group' }}
+      />
     )
 
     // Find the input field inside react-select
@@ -97,5 +100,26 @@ describe('Search query display text', () => {
     const pathwayIsInvalid = getIsInvalidQuery('CSN1S1', ['PTEN'])
     expect(pathwayIsInvalid).toBe(false)
   })
+
+  it('determines if view is eligible for pathway exploration', async () => {
+    jest
+      .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
+      .mockReturnValue({
+        show_pathway_expression: true
+      })
+
+    // Confirm mouse is not eligible
+    const isMouseEligible = getIsEligibleForPathwayExplore(['Mus musculus'], { type: 'group' })
+    expect(isMouseEligible).toBe(false)
+
+    // Confirm numeric annotation is not eligible
+    const isNumericAnnotationEligible = getIsEligibleForPathwayExplore(['Homo sapiens'], { type: 'numeric' })
+    expect(isNumericAnnotationEligible).toBe(false)
+
+    // Confirm group annotation for human is eligible
+    const isHumanGroupAnnotationEligible = getIsEligibleForPathwayExplore(['Homo sapiens'], { type: 'group' })
+    expect(isHumanGroupAnnotationEligible).toBe(true)
+  })
+
 })
 
