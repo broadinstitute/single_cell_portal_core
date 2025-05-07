@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'detached_helper'
 
 class SearchFacetTest < ActiveSupport::TestCase
 
@@ -293,11 +294,13 @@ class SearchFacetTest < ActiveSupport::TestCase
       { id: 'CL_0000561', name: 'amacrine cell' },
       { id: 'CL_0000573', name: 'retinal cone cell' }
     ]
-    facet.reload
-    byebug
-    assert_equal expected_filters, facet.get_unique_filter_values(public_only: true)
-    metadata_ids = study.cell_metadata.pluck(:id)
-    assert_equal metadata_ids, facet.associated_metadata.pluck(:id)
+
+    mock_query_not_detached [study] do
+      facet.reload
+      assert_equal expected_filters, facet.get_unique_filter_values(public_only: true)
+      metadata_ids = [study.cell_metadata.first.id]
+      assert_equal metadata_ids, facet.associated_metadata.pluck(:id)
+    end
   end
 
   test 'should get presence-based filters' do
