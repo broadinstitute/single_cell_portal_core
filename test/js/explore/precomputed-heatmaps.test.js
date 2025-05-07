@@ -68,7 +68,7 @@ describe('correctly routes to precomputed heatmap if no clusters present', () =>
     render(<MockRouter><ExploreView studyAccession='SCP101'/></MockRouter>)
     await waitForElementToBeRemoved(() => screen.getByTestId('explore-spinner'))
     // should set the geneList and the heatmapFit to 'both'
-    expect(routerNav).toHaveBeenLastCalledWith('?geneList=time_varying_genes&heatmapFit=both#study-visualize', { replace: true })
+    expect(routerNav).toHaveBeenLastCalledWith('?geneList=time_varying_genes&heatmapFit=both', { replace: true })
     // the heatmap tab should have the description displayed
     expect(screen.getByText('genes varying over time (SCP4 staging)')).toBeInTheDocument()
   })

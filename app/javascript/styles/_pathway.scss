@@ -1,0 +1,67 @@
+.scaled-mean-header {
+  margin-top: 4px;
+}
+
+.gradient-bar {
+  width: 150px;
+  height: 14px;
+  border-radius: 10px;
+  background: linear-gradient(to right, #0000BB, #CC0088, #FF0000);
+}
+
+.tick {
+  display: flex;
+  justify-content: space-between;
+  width: 150px;
+  font-size: 12px;
+}
+
+.percent-bars {
+  float: right;
+  margin-top: -50px;
+  margin-right: 10px;
+}
+
+@media only screen and (max-width:1300px) {
+  .percent-bars {
+    margin-top: 0px;
+    float: inherit;
+  }
+
+  .pathway-description {
+    margin-top: 50px;
+  }
+}
+
+.percent-bar {
+  width: 100px;
+  height: 8px;
+  margin-top: 2px;
+  border-radius: 3px;
+  border: 1px solid #AAA;
+}
+
+.red-bar { background: linear-gradient(to right, #FFF, #FF0000); }
+.blue-bar { background: linear-gradient(to right, #FFF, #0000BB); }
+
+.percent-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 100px;
+  font-size: 12px;
+}
+
+.pathway-overlay-legend {
+  // display: flex;
+  // justify-content: space-between;
+  height: 80px;
+}
+
+.pathway-description {
+  overflow: scroll;
+}
+
+.pathway-info-container {
+  float: right;
+  margin-right: 10px;
+}

@@ -8,7 +8,18 @@ import {
   pathwayContainerHtml, dotPlotMetrics, manyPathwayGenes
 } from './pathway-expression.test-data.js'
 
+import { interestingNames } from './../visualization/pathway.test-data'
+
 describe('Expression overlay for pathway diagram', () => {
+  beforeAll(() => {
+    // Mock Ideogram cache of gene names ranked by global interest
+    window.Ideogram = {
+      geneCache: {
+        interestingNames
+      }
+    }
+  })
+
   it('gets objects containing e.g. DOM ID for genes in pathway ', () => {
     jest
       .spyOn(UserProvider, 'getFeatureFlagsWithDefaults')
@@ -22,9 +33,9 @@ describe('Expression overlay for pathway diagram', () => {
     // const containerDom = document.querySelector('#_ideogramPathwayContainer')
     // console.log('containerDom', containerDom)
     const ranks = ['CSN2', 'NR3C1', 'EGFR', 'PRL']
-    const pathwayGenes = getPathwayGenes(ranks)
+    const pathwayGenes = getPathwayGenes().filter(g => ranks.includes(g.name))
     expect(pathwayGenes).toHaveLength(4)
-    expect(pathwayGenes[0]).toEqual({ domId: 'e8c90', name: 'CSN2' })
+    expect(pathwayGenes[0]).toEqual({ domId: 'c2df9', name: 'EGFR' })
   })
 
   it('colors pathway genes by expression', () => {
@@ -37,13 +48,15 @@ describe('Expression overlay for pathway diagram', () => {
     const body = document.querySelector('body')
     body.insertAdjacentHTML('beforeend', pathwayContainerHtml)
     const ranks = ['CSN2', 'NR3C1', 'EGFR', 'PRL']
-    const pathwayGenes = getPathwayGenes(ranks)
+    const pathwayGenes = getPathwayGenes().filter(g => ranks.includes(g.name))
+
     const annotationLabel = 'LC2'
 
-    colorPathwayGenesByExpression(pathwayGenes, dotPlotMetrics, annotationLabel)
+    colorPathwayGenesByExpression(annotationLabel, dotPlotMetrics)
 
     const egfrDomId = pathwayGenes.find(g => g.name === 'EGFR').domId
     const egfrRectNode = document.querySelector(`#${egfrDomId} rect`)
+
     const egfrStyle = getComputedStyle(egfrRectNode)
     const egfrColor = egfrStyle.fill
 

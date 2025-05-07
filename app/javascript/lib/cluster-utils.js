@@ -96,13 +96,40 @@ export function getAnnotationForIdentifier(identifier) {
   return annotation
 }
 
+/** Intuitively order an array of strings, which might include numeric strings */
+export function naturalSort(array) {
+  const collator = new Intl.Collator(undefined, { numeric: true, ignorePunctuation: true });
+  return array.sort(collator.compare)
+}
+
+/**
+ * Get annotation labels that have > 1 cell in the labeled group, if possible
+ */
+export function getEligibleLabels(exploreParamsWithDefaults, exploreInfo) {
+  const rawAnnotLabels = getAnnotationValues(
+    exploreParamsWithDefaults?.annotation,
+    exploreInfo?.annotationList
+  )
+
+  let annotationLabels = naturalSort(rawAnnotLabels)
+
+  /** TODO (SCP-5760): Propagate these window.SCP values via React */
+  const countsByLabel = window.SCP.countsByLabel
+  if (countsByLabel) {
+    annotationLabels = annotationLabels.filter(label => countsByLabel[label] > 0)
+  }
+
+  return annotationLabels
+}
 
 /** extracts default parameters from an annotationList of the type returned by the explore API */
 export function getDefaultClusterParams(annotationList, spatialGroups) {
   const defaultCluster = annotationList.default_cluster
+  const defaultAnnotation = annotationList.default_annotation
   const clusterParams = {
     cluster: defaultCluster,
-    annotation: annotationKeyProperties(annotationList.default_annotation),
+    annotation: defaultAnnotation,
+    label: naturalSort(defaultAnnotation.values)[0], // Consider naturally sorting labels
     subsample: getDefaultSubsampleForCluster(annotationList, annotationList.default_cluster),
     spatialGroups: getDefaultSpatialGroupsForCluster(defaultCluster, spatialGroups)
   }
@@ -186,5 +213,6 @@ export function getShownAnnotation(annotation, annotationList) {
       shownAnnotation.id = matchedAnnotation.id
     }
   }
+
   return shownAnnotation
 }

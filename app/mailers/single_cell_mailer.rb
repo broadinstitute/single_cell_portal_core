@@ -318,4 +318,22 @@ class SingleCellMailer < ApplicationMailer
       format.html { render layout: 'nightly_admin_report' }
     end
   end
+
+  def data_retention_policy_report
+    @report = SummaryStatsUtils.data_retention_report
+
+    dev_email_config = AdminConfiguration.find_by(config_type: 'QA Dev Email')
+    # if QA Dev email is configured, use that over individual admin emails
+    if dev_email_config.present?
+      emails = [dev_email_config.value]
+    else
+      emails = User.where(admin: true).map(&:email)
+    end
+
+    @report_date = Date.today.to_s
+
+    mail(to: emails, subject: "[Single Cell Portal Admin Notification] Data Retention Policy Report #{@report_date}") do |format|
+      format.html { render layout: 'nightly_admin_report' }
+    end
+  end
 end

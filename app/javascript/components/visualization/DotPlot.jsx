@@ -209,6 +209,7 @@ function RawDotPlot({
         subsample
       )
       logFetchMorpheusDataset(perfTimes, cluster, annotation, genes)
+
       return dataset
     }
     if (annotation.name) {

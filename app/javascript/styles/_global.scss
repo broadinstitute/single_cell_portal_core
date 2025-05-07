@@ -546,6 +546,10 @@ h6,
   width: 18%;
 }
 
+.col-md-3-5 {
+  width: 27%;
+}
+
 @media (min-width: 768px) {
   #view-options .col-sm-4,
   #view-options .col-md-3,
@@ -801,9 +805,10 @@ ul.pager li.dimmed {
 }
 
 .dot-plot-legend-container {
-  margin-top: 1em;
   width: 400px;
+  margin-top: 1em;
   height: 70px;
+
   text {
     font-size: 0.9em;
   }

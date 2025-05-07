@@ -43,6 +43,15 @@ function updateExploreParams(newOptions, wasUserSpecified=true) {
   const search = location.search
   const currentParams = buildExploreParamsFromQuery(search)
   const mergedOpts = Object.assign({}, currentParams, newOptions)
+
+  if (newOptions.pathway && newOptions.pathway !== '') {
+    mergedOpts.genes = []
+  }
+
+  if (newOptions.genes?.length > 0) {
+    mergedOpts.pathway = ''
+  }
+
   if (wasUserSpecified) {
     // this is just default params being fetched from the server, so don't change the url
     Object.keys(newOptions).forEach(key => {
@@ -62,7 +71,7 @@ function updateExploreParams(newOptions, wasUserSpecified=true) {
   // view options settings should not add history entries
   // e.g. when a user hits 'back', it shouldn't undo their cluster selection,
   // it should take them to the page they were on before they came to the explore tab
-  navigate(`${query}#study-visualize`, { replace: true })
+  navigate(query, { replace: true })
 }
 
 /** converts query string parameters into the dataParams object */
@@ -90,6 +99,7 @@ function buildExploreParamsFromQuery(query) {
   })
   exploreParams.cluster = queryParams.cluster ? queryParams.cluster : ''
   exploreParams.annotation = annotation
+  exploreParams.label = queryParams.label ? queryParams.label : ''
   exploreParams.subsample = queryParams.subsample ? queryParams.subsample : ''
   exploreParams.consensus = queryParams.consensus ? queryParams.consensus : null
   if (queryParams.spatialGroups === SPATIAL_GROUPS_EMPTY) {
@@ -98,6 +108,8 @@ function buildExploreParamsFromQuery(query) {
     exploreParams.spatialGroups = queryParams.spatialGroups ? queryParams.spatialGroups.split(',') : []
   }
   exploreParams.genes = geneParamToArray(queryParams.genes)
+  exploreParams.pathway = queryParams.pathway ? queryParams.pathway : ''
+
   exploreParams.geneList = queryParams.geneList ? queryParams.geneList : ''
   exploreParams.heatmapRowCentering = queryParams.heatmapRowCentering ?
     queryParams.heatmapRowCentering :
@@ -117,7 +129,7 @@ function buildExploreParamsFromQuery(query) {
       exploreParams.expressionFilter = filterArray
     }
   }
-  exploreParams.expressionSort = queryParams.expressionSort
+  exploreParams.expressionSort = queryParams.expressionSort ? queryParams.expressionSort : ''
   exploreParams.hiddenTraces = queryParams.hiddenTraces ? queryParams.hiddenTraces.split(',') : []
   exploreParams.isSplitLabelArrays = queryParams.isSplitLabelArrays === 'true' ? true : null
 
@@ -131,8 +143,10 @@ function buildQueryFromParams(exploreParams) {
   const querySafeOptions = {
     cluster: exploreParams.cluster,
     annotation: getIdentifierForAnnotation(exploreParams.annotation),
+    label: exploreParams.label,
     subsample: exploreParams.subsample,
     genes: geneArrayToParam(exploreParams.genes),
+    pathway: exploreParams.pathway,
     consensus: exploreParams.consensus,
     geneList: exploreParams.geneList,
     spatialGroups: exploreParams.spatialGroups.join(','),
@@ -165,7 +179,7 @@ function buildQueryFromParams(exploreParams) {
 
 /** controls list in which query string params are rendered into URL bar */
 const PARAM_LIST_ORDER = [
-  'geneList', 'genes', 'cluster', 'spatialGroups', 'annotation', 'subsample', 'consensus',
+  'geneList', 'genes', 'pathway', 'cluster', 'spatialGroups', 'annotation', 'subsample', 'consensus',
   'tab', 'scatterColor', 'distributionPlot', 'distributionPoints',
   'heatmapFit', 'heatmapRowCentering', 'trackFileName', 'ideogramFileId', 'expressionFilter', 'expressionSort',
   'isSplitLabelArrays', 'hiddenTraces', 'facets'
