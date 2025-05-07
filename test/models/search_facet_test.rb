@@ -250,4 +250,68 @@ class SearchFacetTest < ActiveSupport::TestCase
     assert_not organ_facet.filters_match?('foo')
     assert organ_facet.filters_match?('heart', filter_list: :filters_with_external)
   end
+
+  test 'should find associated metadata and get unique filter values' do
+    user = FactoryBot.create(:user, test_array: @@users_to_clean)
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Search facet associated metadata test',
+                              public: true,
+                              user:,
+                              test_array: @@studies_to_clean)
+    FactoryBot.create(:metadata_file,
+                      name: 'metadata.txt',
+                      study:,
+                      use_metadata_convention: true,
+                      annotation_input: [
+                        {
+                          name: 'cell_type',
+                          type: 'group',
+                          values: %w[CL_0000236 CL_0000561 CL_0000573]
+                        },
+                        {
+                          name: 'cell_type__ontology_label',
+                          type: 'group',
+                          values: [
+                            'B cell', 'amacrine cell', 'retinal cone cell'
+                          ]
+                        }
+                      ])
+    facet = SearchFacet.create(name: 'Cell type', identifier: 'cell_type', is_mongo_based: true,
+                               ontology_urls: [
+                                 {
+                                   name: 'Cell Ontology',
+                                   url: 'https://www.ebi.ac.uk/ols/api/ontologies/cl',
+                                   browser_url: 'https://www.ebi.ac.uk/ols/ontologies/cl'
+                                 }
+                               ],
+                               data_type: 'string', is_ontology_based: true, is_array_based: false,
+                               big_query_id_column: 'cell_type',
+                               big_query_name_column: 'cell_type__ontology_label',
+                               convention_name: 'Alexandria Metadata Convention', convention_version: '2.2.0')
+    expected_filters = [
+      { id: 'CL_0000236', name: 'B cell' },
+      { id: 'CL_0000561', name: 'amacrine cell' },
+      { id: 'CL_0000573', name: 'retinal cone cell' }
+    ]
+    facet.reload
+    byebug
+    assert_equal expected_filters, facet.get_unique_filter_values(public_only: true)
+    metadata_ids = study.cell_metadata.pluck(:id)
+    assert_equal metadata_ids, facet.associated_metadata.pluck(:id)
+  end
+
+  test 'should get presence-based filters' do
+    identifier = 'has_morphology'
+    name = 'Has morphology'
+    facet = SearchFacet.create(
+      name:, identifier:, is_presence_facet: true, is_mongo_based: true, big_query_name_column: 'bil_url',
+      big_query_id_column: 'bil_url', data_type: 'string', convention_name: 'Alexandria Metadata Convention',
+      convention_version: '2.2.0'
+    )
+    expected_filter = [{ id: identifier, name: }.with_indifferent_access]
+    assert_equal expected_filter, facet.filter_for_presence
+    facet.update_filter_values!
+    facet.reload
+    assert_equal expected_filter, facet.filter_for_presence
+  end
 end

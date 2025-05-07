@@ -43,9 +43,9 @@ class SearchFacet
   }.with_indifferent_access.freeze
   TIME_UNITS = TIME_MULTIPLIERS.keys.freeze
 
-  validates_presence_of :name, :identifier, :data_type, :convention_name, :convention_version
-  validates :big_query_id_column, :big_query_name_column, presence: true, unless: :is_mongo_based
-  validates_uniqueness_of :big_query_id_column, scope: [:convention_name, :convention_version], unless: :is_mongo_based
+  validates_presence_of :name, :identifier, :data_type, :big_query_id_column, :big_query_name_column, :convention_name,
+                        :convention_version
+  validates_uniqueness_of :big_query_id_column, scope: [:convention_name, :convention_version]
   validate :ensure_ontology_url_format, if: proc {|attributes| attributes[:is_ontology_based]}
   before_validation :set_data_type_and_array, on: :create,
                     if: proc {|attr| (![true, false].include?(attr[:is_array_based]) || attr[:data_type].blank?) && attr[:big_query_id_column].present?}
