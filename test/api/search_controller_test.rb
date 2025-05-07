@@ -576,9 +576,9 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
       is_mongo_based: true, is_presence_facet: true, convention_name: 'alexandria_convention', data_type: 'string',
       convention_version: '3.0.0', visible: true
     )
-    facets = SearchFacet.all.map { |db_facet| { db_facet: }}.reduce({}, :merge)
+    facets = SearchFacet.all.map { |db_facet| { db_facet: } }
     mongo_facets, bq_facets = Api::V1::SearchController.divide_facets_by_source(facets)
-    assert_equal mongo_facets.first.identifier, morph_facet.identifier
+    assert_equal mongo_facets.first[:db_facet].identifier, morph_facet.identifier
     assert_equal SearchFacet.count - 1, bq_facets.count
   end
 end
