@@ -88,7 +88,7 @@ function handleGeneNodeHover(event, geneName) {
   log('pathway-node-tooltip', {
     pathway: pathwayId,
     pathwayName,
-    name: geneName,
+    nodeName: geneName,
     nodeType: 'gene'
   })
 
