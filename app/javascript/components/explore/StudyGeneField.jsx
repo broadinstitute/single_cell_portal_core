@@ -182,7 +182,14 @@ export default function StudyGeneField({
       }
     }
     const searchOptions = getSearchOptions(inputTextValues, speciesList, selectedAnnotation)
-    const queryOptions = searchOptions[0].options
+
+    let queryOptions
+    if (getIsEligibleForPathwayExplore(speciesList, selectedAnnotation)) {
+      queryOptions = searchOptions[0].options
+    } else {
+      queryOptions = searchOptions
+    }
+
     const newQueryArray = queryArray.concat(queryOptions)
     setInputText('')
     setQueryArray(newQueryArray)
