@@ -567,4 +567,18 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
       end
     end
   end
+
+  test 'should divide facets by data source' do
+    identifier = 'has_morphology'
+    column = 'bil_url'
+    morph_facet = SearchFacet.create!(
+      name: identifier.humanize, identifier:, big_query_id_column: column, big_query_name_column: column,
+      is_mongo_based: true, is_presence_facet: true, convention_name: 'alexandria_convention', data_type: 'string',
+      convention_version: '3.0.0', visible: true
+    )
+    facets = SearchFacet.all.map { |db_facet| { db_facet: } }
+    mongo_facets, bq_facets = Api::V1::SearchController.divide_facets_by_source(facets)
+    assert_equal mongo_facets.first[:db_facet].identifier, morph_facet.identifier
+    assert_equal SearchFacet.count - 1, bq_facets.count
+  end
 end
