@@ -556,9 +556,11 @@ function getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting) {
     }
   })
 
-  return allRelevanceSortedFacets
+  const facetsToFetch = allRelevanceSortedFacets
     .map(annot => annot.annotation)
     .slice(fetchOffset, fetchOffset + 5)
+
+  return facetsToFetch
 }
 
 /** Log metrics to Mixpanel if fully loaded, return next perfTime object to pass in chain */
@@ -633,6 +635,16 @@ export async function initCellFaceting(
 
   let allRelevanceSortedFacets =
     sortAnnotationsByRelevance(eligibleAnnots)
+      .filter(annot => {
+        if (!prevCellFaceting) {
+          return true
+        }
+
+        const prevAnnotFacets = prevCellFaceting.facets.map(f => f.annotation)
+
+        // Omit null facets detected in prior calls of `initCellFaceting`
+        return (prevAnnotFacets.includes(annot.identifier))
+      })
       .map(annot => {
         const facet = { annotation: annot.identifier, type: annot.type }
         if (annot.type) {
@@ -694,6 +706,7 @@ export async function initCellFaceting(
 
   // Below line is worth keeping, but only uncomment to debug in development
   // window.SCP.cellFaceting = cellFaceting
+
   return cellFaceting
 }
 
