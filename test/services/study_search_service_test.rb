@@ -18,7 +18,7 @@ class StudySearchServiceTest < ActiveSupport::TestCase
                                            name: 'cell_type',
                                            type: 'group',
                                            values: [
-                                             'B cell', 'amacrine cell', 'retinal cone cell'
+                                             'B cell', 'amacrine cell', 'retinal cone cell', 'bipolar neuron'
                                            ]
                                          }
                                        ])
