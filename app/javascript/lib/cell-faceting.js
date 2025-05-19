@@ -350,7 +350,7 @@ export function getMinMaxValues(filters) {
 /** Omit any filters that match 0 cells in the current clustering */
 function trimNullFilters(cellFaceting) {
   const filterCountsByFacet = cellFaceting.filterCounts
-  const annotationFacets = cellFaceting.facets.map(facet => facet.annotation)
+  const facets = cellFaceting.facets.map(facet => facet.annotation)
   const nonzeroFiltersByFacet = {} // filters to remove, as they match no cells
   const nonzeroFilterCountsByFacet = {}
   const originalFacets = cellFaceting.rawFacets.facets
@@ -359,14 +359,15 @@ function trimNullFilters(cellFaceting) {
 
   const filterableCells = cellFaceting.filterableCells
 
-  for (let i = 0; i < annotationFacets.length; i++) {
-    const facet = annotationFacets[i]
+  for (let i = 0; i < facets.length; i++) {
+    const facet = facets[i]
     const sourceFacet = originalFacets.find(f => f.annotation === facet)
     let facetHasNullFilter = false
     const isGroupFacet = facet.includes('--group--')
     let nullFilterIndex
 
     const countsByFilter = filterCountsByFacet[facet]
+
     const nonzeroFilters = []
     let defaultSelection = []
     const nonzeroFilterCounts = {}
@@ -424,7 +425,7 @@ function trimNullFilters(cellFaceting) {
 
   if (!hasAnyNullFilters) {return cellFaceting}
 
-  cellFaceting.cellsByFacet = getCellsByFacet(filterableCells, annotationFacets)
+  cellFaceting.cellsByFacet = getCellsByFacet(filterableCells, facets)
   cellFaceting.filterableCells = filterableCells
   cellFaceting.filterCounts = nonzeroFilterCountsByFacet
 
@@ -438,8 +439,17 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
   for (let i = 0; i < annotationFacets.length; i++) {
     const facet = annotationFacets[i]
     const facetCrossfilter = cellsByFacet[facet]
-    // Set counts for each filter in facet
-    const rawFilterCounts = facetCrossfilter.group().top(Infinity)
+
+    let rawFilterCounts
+    try {
+      // Set counts for each filter in facet
+      rawFilterCounts = facetCrossfilter.group().top(Infinity)
+    } catch (e) {
+      // Handles edge case when facet is in `annotationFacets`, but not `facetCrossfilter`,
+      // e.g. `cell_enrichment--numeric--study` in SCP3040
+      console.warn(e)
+      continue
+    }
     let countsByFilter
 
     if (facet.includes('--group--')) {
@@ -488,6 +498,7 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
 
   return filterCounts
 }
+
 
 /** Get crossfilter-initialized cells by facet */
 function getCellsByFacet(filterableCells, annotationFacets) {
