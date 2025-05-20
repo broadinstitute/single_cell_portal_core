@@ -606,6 +606,22 @@ function getFilterableAnnotationsForClusterAndStudy(annotations, clusterName) {
   return annots
 }
 
+/** Omit annotations that are CELLxGENE term IDs */
+function getIsCellxGeneTermId(annotName) {
+  const isCellxGeneTermId = [
+    'disease_ontology_term_id',
+    'cell_type_ontology_term_id',
+    'library_preparation_protocol_term_id',
+    'sex_ontology_term_id',
+    'protocol_URL',
+    'tissue_ontology_term_id',
+    'assay_ontology_term_id',
+    'development_stage_ontology_term_id'
+  ].includes(annotName)
+
+  return isCellxGeneTermId
+}
+
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
 export async function initCellFaceting(
   selectedCluster, selectedAnnot, studyAccession, allAnnots, prevCellFaceting, subsample=null
@@ -629,7 +645,8 @@ export async function initCellFaceting(
           !(annot.type === 'group' && annot.values.length <= 1) &&
           !annot.identifier.endsWith('invalid') &&
           !annot.identifier.endsWith('user') &&
-          !(annot.type === 'numeric' && shouldHideNumericCellFiltering)
+          !(annot.type === 'numeric' && shouldHideNumericCellFiltering) &&
+          !(getIsCellxGeneTermId(annot.name))
         )
       })
 
