@@ -203,7 +203,7 @@ function getExpressionSort(exploreInfo, exploreParams) {
  *  */
 export default function ExploreDisplayPanelManager({
   studyAccession, exploreInfo, setExploreInfo, exploreParams, updateExploreParams, clearExploreParams,
-  exploreParamsWithDefaults, routerLocation, searchGenes, countsByLabelForDe, setShowUpstreamDifferentialExpressionPanel,
+  exploreParamsWithDefaults, routerLocation, queryFn, countsByLabelForDe, setShowUpstreamDifferentialExpressionPanel,
   setShowDifferentialExpressionPanel, showUpstreamDifferentialExpressionPanel, togglePanel, shownTab,
   showDifferentialExpressionPanel, setIsCellSelecting, currentPointsSelected, isCellSelecting, deGenes,
   setDeGenes, setShowDeGroupPicker,
@@ -572,7 +572,7 @@ export default function ExploreDisplayPanelManager({
             <DifferentialExpressionPanel
               deGroup={deGroup}
               deGenes={deGenes}
-              searchGenes={searchGenes}
+              searchGenes={queryFn}
               exploreParamsWithDefaults={exploreParamsWithDefaults}
               exploreInfo={exploreInfo}
               clusterName={exploreParamsWithDefaults.cluster}
