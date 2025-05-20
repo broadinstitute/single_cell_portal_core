@@ -170,7 +170,7 @@ module Api
 
       def index
         @viewable = Study.viewable(current_api_user)
-        @search_type = params[:type].to_sym
+        @search_type = params[:type]&.to_sym || :study # handle empty type
 
         # filter results by branding group, if specified
         if @selected_branding_group.present?
