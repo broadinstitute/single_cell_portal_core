@@ -1,4 +1,4 @@
-import { allAnnots, facetData } from './cell-faceting.test-data'
+import { allAnnots, facetData, facetData2, facetData3} from './cell-faceting.test-data'
 import * as ScpApi from 'lib/scp-api'
 
 import {
@@ -7,6 +7,10 @@ import {
 
 // Test functionality to filter cells shown in plots across annotation facets
 describe('Cell faceting', () => {
+  afterEach(() => {
+    jest.clearAllMocks()
+  })
+
   it('filters cells by group filters in annotation facets', async () => {
     // To manually test:
     // 1. In ExploreDisplayTabs.jsx, uncomment the line `// window.SCP.updateFilteredCells = updateFilteredCells`
@@ -54,6 +58,83 @@ describe('Cell faceting', () => {
       selections, cellsByFacet, facets, filterableCells, facets
     )[0]
     expect(newFilteredCells).toHaveLength(33)
+  })
+
+  it('handles null filters', async () => {
+    const fetchAnnotationFacets = jest.spyOn(ScpApi, 'fetchAnnotationFacets')
+
+    const facetDataTrimmed = JSON.parse(JSON.stringify(facetData))
+    facetDataTrimmed.cells = facetDataTrimmed.cells.slice(0, 99)
+
+    const facetData3WithNull = JSON.parse(JSON.stringify(facetData3))
+    facetData3WithNull.cells = facetData3WithNull.cells.map(cellsArray => {
+      cellsArray[0] = null
+      return cellsArray
+    })
+
+    // pass in a clone of the response since it may get modified by the cache operations
+    fetchAnnotationFacets
+      .mockImplementationOnce(() => Promise.resolve(
+        facetDataTrimmed
+      ))
+      .mockImplementationOnce(() => Promise.resolve(
+        facetData2
+      ))
+      .mockImplementationOnce(() => Promise.resolve(
+        facetData3WithNull
+      ))
+
+    // Test client-side cell faceting setup functionality
+    const selectedCluster = 'All Cells UMAP'
+    const selectedAnnot = { name: 'donor_id', type: 'group', scope: 'study' }
+    const studyAccession = 'SCP152'
+
+    const prevCellFaceting = await initCellFaceting(
+      selectedCluster, selectedAnnot, studyAccession, allAnnots
+    )
+
+    const prevFilterableCells = prevCellFaceting.filterableCells
+
+    const prevExpectedFilterableCells98 = {
+      'allCellsIndex': 98,
+      'facetIndex': [1, 1, 0, 0, 0]
+    }
+
+    expect(prevFilterableCells[98]).toMatchObject(prevExpectedFilterableCells98)
+
+    const prevCellFaceting2 = await initCellFaceting(
+      selectedCluster, selectedAnnot, studyAccession, allAnnots, prevCellFaceting
+    )
+    const prevFilterableCells2 = prevCellFaceting2.filterableCells
+
+    const prev2ExpectedFilterableCells98 = {
+      'allCellsIndex': 98,
+      'facetIndex': [1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+    }
+    expect(prevFilterableCells2[98]).toMatchObject(prev2ExpectedFilterableCells98)
+
+    const cellFaceting = await initCellFaceting(
+      selectedCluster, selectedAnnot, studyAccession, allAnnots, prevCellFaceting2
+    )
+    const cellsByFacet = cellFaceting.cellsByFacet
+    const facets = cellFaceting.facets
+    const filterableCells = cellFaceting.filterableCells
+
+    const expectedFilterableCells98 = {
+      'allCellsIndex': 98,
+      'facetIndex': [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 5.71, 0, 0, 0]
+    }
+    expect(filterableCells[98]).toMatchObject(expectedFilterableCells98)
+
+    // Test actual cell faceting
+    const selections = {
+      'cell_type__ontology_label--group--study': ['epithelial cell'],
+      'General_Celltype--group--study': ['LC1', 'LC2']
+    }
+    const newFilteredCells = filterCells(
+      selections, cellsByFacet, facets, filterableCells, facets
+    )[0]
+    expect(newFilteredCells).toHaveLength(31)
   })
 
   it('filters cells by numeric filters', async () => {
@@ -177,7 +258,6 @@ describe('Cell faceting', () => {
     const filterCellsResult = filterCells(
       selections, cellsByFacet, facets, filterableCells, facets
     )
-    console.log('filterCellsResult', filterCellsResult)
     // All cells in this example are neurons,
     expect(filterCellsResult[0]).toHaveLength(2)
   })
