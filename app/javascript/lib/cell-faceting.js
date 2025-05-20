@@ -350,7 +350,7 @@ export function getMinMaxValues(filters) {
 /** Omit any filters that match 0 cells in the current clustering */
 function trimNullFilters(cellFaceting) {
   const filterCountsByFacet = cellFaceting.filterCounts
-  const annotationFacets = cellFaceting.facets.map(facet => facet.annotation)
+  const facets = cellFaceting.facets.map(facet => facet.annotation)
   const nonzeroFiltersByFacet = {} // filters to remove, as they match no cells
   const nonzeroFilterCountsByFacet = {}
   const originalFacets = cellFaceting.rawFacets.facets
@@ -359,14 +359,15 @@ function trimNullFilters(cellFaceting) {
 
   const filterableCells = cellFaceting.filterableCells
 
-  for (let i = 0; i < annotationFacets.length; i++) {
-    const facet = annotationFacets[i]
+  for (let i = 0; i < facets.length; i++) {
+    const facet = facets[i]
     const sourceFacet = originalFacets.find(f => f.annotation === facet)
     let facetHasNullFilter = false
     const isGroupFacet = facet.includes('--group--')
     let nullFilterIndex
 
     const countsByFilter = filterCountsByFacet[facet]
+
     const nonzeroFilters = []
     let defaultSelection = []
     const nonzeroFilterCounts = {}
@@ -424,7 +425,7 @@ function trimNullFilters(cellFaceting) {
 
   if (!hasAnyNullFilters) {return cellFaceting}
 
-  cellFaceting.cellsByFacet = getCellsByFacet(filterableCells, annotationFacets)
+  cellFaceting.cellsByFacet = getCellsByFacet(filterableCells, facets)
   cellFaceting.filterableCells = filterableCells
   cellFaceting.filterCounts = nonzeroFilterCountsByFacet
 
@@ -438,6 +439,7 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
   for (let i = 0; i < annotationFacets.length; i++) {
     const facet = annotationFacets[i]
     const facetCrossfilter = cellsByFacet[facet]
+
     // Set counts for each filter in facet
     const rawFilterCounts = facetCrossfilter.group().top(Infinity)
     let countsByFilter
@@ -488,6 +490,7 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
 
   return filterCounts
 }
+
 
 /** Get crossfilter-initialized cells by facet */
 function getCellsByFacet(filterableCells, annotationFacets) {
@@ -545,9 +548,11 @@ function getFacetsToFetch(allRelevanceSortedFacets, prevCellFaceting) {
     }
   })
 
-  return allRelevanceSortedFacets
+  const facetsToFetch = allRelevanceSortedFacets
     .map(annot => annot.annotation)
     .slice(fetchOffset, fetchOffset + 5)
+
+  return facetsToFetch
 }
 
 /** Log metrics to Mixpanel if fully loaded, return next perfTime object to pass in chain */
@@ -593,6 +598,22 @@ function getFilterableAnnotationsForClusterAndStudy(annotations, clusterName) {
   return annots
 }
 
+/** Omit annotations that are CELLxGENE term IDs */
+function getIsCellxGeneTermId(annotName) {
+  const isCellxGeneTermId = [
+    'disease_ontology_term_id',
+    'cell_type_ontology_term_id',
+    'library_preparation_protocol_term_id',
+    'sex_ontology_term_id',
+    'protocol_URL',
+    'tissue_ontology_term_id',
+    'assay_ontology_term_id',
+    'development_stage_ontology_term_id'
+  ].includes(annotName)
+
+  return isCellxGeneTermId
+}
+
 /** Get 5 default annotation facets: 1 for selected, and 4 others */
 export async function initCellFaceting(
   selectedCluster, selectedAnnot, studyAccession, allAnnots, prevCellFaceting, subsample=null
@@ -616,12 +637,23 @@ export async function initCellFaceting(
           !(annot.type === 'group' && annot.values.length <= 1) &&
           !annot.identifier.endsWith('invalid') &&
           !annot.identifier.endsWith('user') &&
-          !(annot.type === 'numeric' && shouldHideNumericCellFiltering)
+          !(annot.type === 'numeric' && shouldHideNumericCellFiltering) &&
+          !(getIsCellxGeneTermId(annot.name))
         )
       })
 
   let allRelevanceSortedFacets =
     sortAnnotationsByRelevance(eligibleAnnots)
+      .filter(annot => {
+        if (!prevCellFaceting) {
+          return true
+        }
+
+        const prevAnnotFacets = prevCellFaceting.facets.map(f => f.annotation)
+
+        // Omit null facets detected in prior calls of `initCellFaceting`
+        return (prevAnnotFacets.includes(annot.identifier))
+      })
       .map(annot => {
         const facet = { annotation: annot.identifier, type: annot.type }
         if (annot.type) {
@@ -683,6 +715,7 @@ export async function initCellFaceting(
 
   // Below line is worth keeping, but only uncomment to debug in development
   // window.SCP.cellFaceting = cellFaceting
+
   return cellFaceting
 }
 
