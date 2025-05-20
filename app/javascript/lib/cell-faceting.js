@@ -440,16 +440,8 @@ function getFilterCounts(annotationFacets, cellsByFacet, facets, selection) {
     const facet = annotationFacets[i]
     const facetCrossfilter = cellsByFacet[facet]
 
-    let rawFilterCounts
-    try {
-      // Set counts for each filter in facet
-      rawFilterCounts = facetCrossfilter.group().top(Infinity)
-    } catch (e) {
-      // Handles edge case when facet is in `annotationFacets`, but not `facetCrossfilter`,
-      // e.g. `cell_enrichment--numeric--study` in SCP3040
-      console.warn(e)
-      continue
-    }
+    // Set counts for each filter in facet
+    const rawFilterCounts = facetCrossfilter.group().top(Infinity)
     let countsByFilter
 
     if (facet.includes('--group--')) {
