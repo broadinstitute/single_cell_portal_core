@@ -58,7 +58,8 @@ class ExpressionFileInfo
                                 'MERFISH', # spatial transcriptomic
                                 'NanoString CosMx', #spatial transcriptomic
                                 'osmFISH', # spatial transcriptomic
-                                'Parse Evercode Whole Transcriptome v3', # Similar to SPLiT-seq; https://broadinstitute.zendesk.com/agent/tickets/328801
+                                'Parse Evercode WT v3', # Similar to SPLiT-seq; https://broadinstitute.zendesk.com/agent/tickets/328801
+                                'Parse Evercode WT Mini v3', # Similar to SPLiT-seq; https://broadinstitute.zendesk.com/agent/tickets/328801
                                 'Patch-seq', # multimodal: scRNAseq, electrophys, morphology
                                 'PIP-seq', # scRNA-seq, https://www.nature.com/articles/s41587-023-01685-z
                                 'scATAC-seq/Fluidigm', # scATAC-seq
