@@ -362,9 +362,9 @@ export default function StudyGeneField({
 }
 
 /** Last filtering applied before showing selectable autocomplete options */
-function finalFilterOptions(option, rawInput) {
+export function finalFilterOptions(option, rawInput) {
   const input = rawInput.toLowerCase()
-  const label = 'label' in option ? option.label.toLowerCase() : option.toLowerCase()
+  const label = 'label' in option ? option.label?.toLowerCase() : option.toLowerCase()
   const isPathway = option.data.isGene === false
   return isPathway || label.includes(input) // partial match
 }
