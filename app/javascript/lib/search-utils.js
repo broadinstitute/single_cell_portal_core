@@ -39,8 +39,11 @@ function getPathwayIdsByName() {
 
   const pathwayCache = window.Ideogram.interactionCache
 
-  // Lower-quality pathways
-  const omittedPathways = ['WP1984', 'WP615', 'WP5096']
+  // Lower-quality or buggy pathways
+  const omittedPathways = [
+    'WP1984', 'WP615', 'WP5096',
+    'WP5520', 'WP5522', 'WP5523'
+  ]
 
   const pathwayIdsByName = {}
   const pathwayEntries = Object.entries(pathwayCache)
