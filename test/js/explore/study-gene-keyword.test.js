@@ -3,7 +3,9 @@ import React from 'react'
 import { render, waitFor, screen, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 
-import StudyGeneField, { getIsInvalidQuery, getIsEligibleForPathwayExplore } from 'components/explore/StudyGeneField'
+import StudyGeneField, {
+  getIsInvalidQuery, getIsEligibleForPathwayExplore, finalFilterOptions
+} from 'components/explore/StudyGeneField'
 import * as UserProvider from '~/providers/UserProvider'
 import { logStudyGeneSearch } from '~/lib/search-metrics'
 import * as MetricsApi from '~/lib/metrics-api'
@@ -151,6 +153,23 @@ describe('Search query display text', () => {
       })
     )
 
+  })
+
+  it('handles unexpected pathway data structures', () => {
+    // This tests pathway autocomplete handling for edge-case issues in
+    // upstreams WikiPathway data, which can occur upon upgrading Ideogram.js library
+    // to a new version that updates interactions cache data.  The resulting bug
+    // breaks the Explore page when the search box autocompletes an affected gene
+    // (e.g. TCF4) -- a low incidence, high severity bug.
+
+    const rawInput = 'TCF4'
+    const option = {
+      label: undefined,
+      value: 'WP5523',
+      data: { value: 'WP5523', isGene: false }
+    }
+    const isPathway = finalFilterOptions(option, rawInput)
+    expect(isPathway).toBe(true)
   })
 })
 
