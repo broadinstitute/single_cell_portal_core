@@ -157,18 +157,21 @@ class SummaryStatsUtilsTest < ActiveSupport::TestCase
   end
 
   test 'should get data retention policy report' do
+    expected_studies = Study.where(detached: false, firecloud_project: FireCloudClient::PORTAL_NAMESPACE)
     client_mock = Minitest::Mock.new
     bucket_mock = Minitest::Mock.new
-    created_at = DateTime.now.in_time_zone - 1.day
-    bucket_mock.expect :nil?, false
     file_mock = Minitest::Mock.new
-    2.times do
-      bucket_mock.expect :next?, false
-      file_mock.expect :next?, false
+    created_at = DateTime.now.in_time_zone - 1.day
+    expected_studies.each do |study|
+      bucket_mock.expect :nil?, false
+      2.times do
+        bucket_mock.expect :next?, false
+        file_mock.expect :next?, false
+      end
+      file_mock.expect :any?, true
+      bucket_mock.expect :files, file_mock
+      client_mock.expect :get_workspace_bucket, bucket_mock, [study.bucket_id]
     end
-    file_mock.expect :any?, true
-    bucket_mock.expect :files, file_mock
-    client_mock.expect :get_workspace_bucket, bucket_mock, [String]
     FireCloudClient.stub :new, client_mock do
       SummaryStatsUtils.stub :bytes_and_last_created_for,
                              [250.gigabytes, created_at],

@@ -130,8 +130,6 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
     end
     puts "After #{seconds_slept} seconds, " + (example_files.values.map { |e| "#{e[:name]} is #{e[:object].parse_status}"}).join(", ") + '.'
 
-    study.reload
-
     example_files.values.each do |e|
       e[:object].reload # address potential race condition between parse_status setting to 'failed' and DeleteQueueJob executing
       assert_equal 'failed', e[:object].parse_status, "Incorrect parse_status for #{e[:name]}"
@@ -140,6 +138,8 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
       assert cached_file.present?, "Did not find cached file at #{e[:cache_location]} in #{study.bucket_id}"
     end
 
+    sleep(5)
+    study.reload
     assert_equal 0, study.cell_metadata.size
     assert_equal 0, study.genes.size
     assert_equal 0, study.cluster_groups.size
