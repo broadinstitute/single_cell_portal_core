@@ -168,7 +168,7 @@ class SummaryStatsUtilsTest < ActiveSupport::TestCase
     end
     file_mock.expect :any?, true
     bucket_mock.expect :files, file_mock
-    client_mock.expect :get_workspace_bucket, bucket_mock, [@study.bucket_id]
+    client_mock.expect :get_workspace_bucket, bucket_mock, [String]
     FireCloudClient.stub :new, client_mock do
       SummaryStatsUtils.stub :bytes_and_last_created_for,
                              [250.gigabytes, created_at],

@@ -3,6 +3,7 @@ require 'test_helper'
 class StudySearchServiceTest < ActiveSupport::TestCase
 
   before(:all) do
+    SearchFacet.destroy_all
     @user = FactoryBot.create(:user, test_array: @@users_to_clean)
     @metadata_study = FactoryBot.create(:detached_study,
                                         name_prefix: 'Study Search Service Test',
@@ -17,7 +18,7 @@ class StudySearchServiceTest < ActiveSupport::TestCase
                                            name: 'cell_type',
                                            type: 'group',
                                            values: [
-                                             'B cell', 'amacrine cell', 'retinal cone cell'
+                                             'B cell', 'amacrine cell', 'retinal cone cell', 'bipolar neuron'
                                            ]
                                          }
                                        ])
@@ -47,6 +48,10 @@ class StudySearchServiceTest < ActiveSupport::TestCase
                                        big_query_id_column: 'cell_type',
                                        big_query_name_column: 'cell_type__ontology_label',
                                        convention_name: 'Alexandria Metadata Convention', convention_version: '2.2.0')
+  end
+
+  after(:all) do
+    SearchFacet.destroy_all
   end
 
   test 'should generate query for keyword search' do
@@ -123,5 +128,20 @@ class StudySearchServiceTest < ActiveSupport::TestCase
     terms_with_escapes = %w[foo foo$ foo. foo/]
     expected_escapes = /(foo|foo\$|foo\.|foo\/)/i
     assert_equal expected_escapes, StudySearchService.escape_terms_for_regex(term_list: terms_with_escapes)
+  end
+
+  test 'should perform mongo-based search when specified' do
+    filter = @filters.sample
+    results = StudySearchService.perform_mongo_facet_search(@search_facet, [filter])
+    safe_result = results.first.with_indifferent_access
+    assert_equal @metadata_study.accession, safe_result[:study_accession]
+    assert_equal filter[:name], safe_result[@search_facet.identifier]
+  end
+
+  test 'should convert ontology id to multiple formats' do
+    id = @filters.sample[:id]
+    converted = StudySearchService.convert_id_format(id)
+    assert_includes converted, id
+    assert_includes converted, id.gsub(/_/, ':')
   end
 end

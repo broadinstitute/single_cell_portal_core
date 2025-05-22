@@ -380,7 +380,7 @@ GEM
     puma (5.6.9)
       nio4r (~> 2.0)
     racc (1.8.1)
-    rack (2.2.13)
+    rack (2.2.14)
     rack-brotli (1.1.0)
       brotli (>= 0.1.7)
       rack (>= 1.4)
@@ -479,8 +479,12 @@ GEM
     sdoc (2.1.0)
       rdoc (>= 5.0)
     secure_headers (6.3.2)
-    sentry-raven (3.1.2)
-      faraday (>= 1.0)
+    sentry-rails (5.23.0)
+      railties (>= 5.0)
+      sentry-ruby (~> 5.23.0)
+    sentry-ruby (5.23.0)
+      bigdecimal
+      concurrent-ruby (~> 1.0, >= 1.0.2)
     signet (0.17.0)
       addressable (~> 2.8)
       faraday (>= 0.17.5, < 3.a)
@@ -626,7 +630,8 @@ DEPENDENCIES
   sass-rails (>= 6)
   sdoc
   secure_headers
-  sentry-raven
+  sentry-rails
+  sentry-ruby
   simplecov
   simplecov-lcov
   stackprof

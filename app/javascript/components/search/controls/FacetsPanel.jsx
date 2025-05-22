@@ -11,7 +11,7 @@ import { SearchFacetContext } from '~/providers/SearchFacetProvider'
 
 const defaultFacetIds = ['disease', 'species']
 const moreFacetIds = [
-  'sex', 'race', 'library_preparation_protocol', 'organism_age'
+  'sex', 'race', 'library_preparation_protocol', 'organism_age', 'has_morphology', 'has_electrophysiology'
 ]
 
 /**

@@ -7,7 +7,7 @@ module ErrorTracker
     if %w(development test).include?(Rails.env) || ENV['SENTRY_DSN'].nil?
       Rails.logger.error "Suppressing error reporting to Sentry: #{exception.class.name}:#{exception.message}, context: #{context}"
     else
-      Raven.capture_exception(exception, user: {identifer: extract_user_identifier(user)}, extra: context)
+      Sentry.capture_exception(exception, user: {identifer: extract_user_identifier(user)}, extra: context)
     end
   end
 

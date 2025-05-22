@@ -158,6 +158,30 @@ class StudySearchService
     accessions_to_filters.with_indifferent_access
   end
 
+  # search Mongo for facets that don't use BigQuery to source data
+  # also accounts for presence-based facets like has_morphology
+  def self.perform_mongo_facet_search(facet, filter_values)
+    results = []
+    values = filter_values.map { |entry| [convert_id_format(entry[:id]), entry[:name]] }.flatten
+    matches = facet.associated_metadata(values:)
+    matches.each do |metadata|
+      next if metadata.study.queued_for_deletion
+
+      accession = metadata.study.accession
+      matched_values = facet.is_presence_facet ? [facet.identifier] : values & metadata.values
+      matched_values.map do |val|
+        results << { study_accession: accession, facet.identifier.to_sym => val }
+      end
+    end
+    results
+  end
+
+  # deal with ontology id formatting inconsistencies
+  def self.convert_id_format(id)
+    parts = id.split(/[_:]/)
+    [parts.join('_'), parts.join(':')]
+  end
+
   # take a term and match to a possible search facet/filter
   # will return a single hash with keys as facet names, and values as an array of filter matches
   def self.match_facet_filters_from_terms(term_list)

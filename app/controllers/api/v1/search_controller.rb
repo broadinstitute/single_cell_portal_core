@@ -170,7 +170,7 @@ module Api
 
       def index
         @viewable = Study.viewable(current_api_user)
-        @search_type = params[:type].to_sym
+        @search_type = params[:type]&.to_sym || :study # handle empty type
 
         # filter results by branding group, if specified
         if @selected_branding_group.present?
@@ -238,10 +238,20 @@ module Api
         if @studies.count > 0 && @facets.any?
           sort_type = :facet
           @studies_by_facet = {}
-          @big_query_search = self.class.generate_bq_query_string(@facets)
-          logger.info "Searching BigQuery using facet-based query: #{@big_query_search}"
-          query_results = ApplicationController.big_query_client.dataset(CellMetadatum::BIGQUERY_DATASET).query @big_query_search
-          job_id = query_results.job_gapi.job_reference.job_id
+          mongo_facets, bq_facets = self.class.divide_facets_by_source(@facets)
+          if bq_facets.any?
+            @big_query_search = self.class.generate_bq_query_string(bq_facets)
+            query_results = ApplicationController.big_query_client.dataset(CellMetadatum::BIGQUERY_DATASET).query @big_query_search
+          else
+            query_results = []
+          end
+          # run a query for any mongo-based facets
+          mongo_facets.map do |facet|
+            db_facet = facet[:db_facet]
+            mongo_results = StudySearchService.perform_mongo_facet_search(db_facet, facet[:filters])
+            query_results += mongo_results
+          end
+
           # build up map of study matches by facet & filter value (for adding labels in UI)
           @studies_by_facet = self.class.match_studies_by_facet(query_results, @facets)
           # uniquify result list as one study may match multiple facets/filters
@@ -254,7 +264,7 @@ module Api
           existing_total_matches = @match_by_data['numResults:scp'].to_i
           @match_by_data['numResults:scp:metadata'] = total_metadata_matches.size
           @match_by_data['numResults:scp'] = existing_total_matches + total_metadata_matches.size
-          logger.info "Found #{@convention_accessions.count} matching studies from BQ job #{job_id}: #{@convention_accessions}"
+          logger.info "Found #{@convention_accessions.count} matching studies from query: #{@convention_accessions}"
           @studies = @studies.where(:accession.in => @convention_accessions)
         end
 
@@ -763,6 +773,11 @@ module Api
         else
           matching_facet[:filters].detect { |filter| filter[:id] == search_result[result_key] || filter[:name] == search_result[result_key]}
         end
+      end
+
+      # divide facets into mongo- and bigquery-based
+      def self.divide_facets_by_source(facets)
+        facets.partition { |facet| facet[:db_facet].is_mongo_based }
       end
 
       # properly escape any single quotes in a filter value (double quotes are correctly handled already)
