@@ -18,6 +18,8 @@ DOCKER_IMAGE_NAME="gcr.io/broad-singlecellportal-staging/single-cell-portal"
 DOCKER_IMAGE_VERSION="development"
 PASSENGER_APP_ENV="test"
 NON_DOCKERIZED="false"
+# disable warnings about frozen literals
+export RUBYOPT=--disable-frozen-string-literal
 
 while getopts "k:e:v:d" OPTION; do
 case $OPTION in
