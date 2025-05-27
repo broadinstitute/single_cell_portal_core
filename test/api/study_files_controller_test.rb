@@ -355,4 +355,30 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
       assert ann_data_file.needs_raw_counts_extraction?
     end
   end
+
+  test 'should remove undefined parameters' do
+    params = {
+      name: 'matrix.tsv',
+      upload_file_name: 'matrix.tsv',
+      upload_content_type: 'application/octet-stream',
+      upload_file_size: 1.megabyte,
+      file_type: 'Expression Matrix',
+      this_is_not_an_attribute: 'foo',
+      expression_file_info_attributes: {
+        is_raw_counts: true,
+        biosample_input_type: 'Whole cell',
+        modality: 'Transcriptomic: unbiased',
+        raw_counts_associations: [''],
+        units: 'raw counts',
+        library_preparation_protocol: "10x 5' v3",
+        also_not_an_attribute: 'bar'
+      }
+    }
+    clean_params = Api::V1::StudyFilesController.strip_undefined_params(params).with_indifferent_access
+    assert_equal params[:name], clean_params[:name]
+    assert_equal params[:file_type], clean_params[:file_type]
+    assert_equal params[:expression_file_info_attributes][:units], clean_params[:expression_file_info_attributes][:units]
+    assert_nil clean_params[:this_is_not_an_attribute]
+    assert_nil clean_params[:expression_file_info_attributes][:also_not_an_attribute]
+  end
 end

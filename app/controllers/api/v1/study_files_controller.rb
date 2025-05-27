@@ -331,15 +331,14 @@ module Api
         end
         if safe_file_params[:custom_color_updates]
           parsed_update = JSON.parse(safe_file_params[:custom_color_updates])
-          safe_file_params['cluster_file_info'] = {custom_colors: ClusterFileInfo.merge_color_updates(study_file, parsed_update)}
-          safe_file_params.delete(:custom_color_updates)
+          safe_file_params[:cluster_file_info_attributes] = {
+            custom_colors: ClusterFileInfo.merge_color_updates(study_file, parsed_update)
+          }
         end
 
         # manually check first if species/assembly was supplied by name
         species_name = safe_file_params[:species]
-        safe_file_params.delete(:species)
         assembly_name = safe_file_params[:assembly]
-        safe_file_params.delete(:assembly)
         set_taxon_and_assembly_by_name({species: species_name, assembly: assembly_name})
         # clear the id so that it doesn't get overwritten -- this would be a security hole for existing files
         # and for new files the id will have been set along with creation of the StudyFile object in the `create`
@@ -347,7 +346,7 @@ module Api
         safe_file_params.delete(:_id)
 
         parse_on_upload = safe_file_params[:parse_on_upload]
-        safe_file_params.delete(:parse_on_upload)
+        cleaned_params = self.class.strip_undefined_params(safe_file_params)
 
         # check if the name of the file has changed as we won't be able to tell after we saved
         name_changed = study_file.persisted? && study_file.name != safe_file_params[:name]
@@ -363,7 +362,7 @@ module Api
           fileSize: study_file.upload_file_size
         }, current_api_user)
 
-        study_file.update!(safe_file_params)
+        study_file.update!(cleaned_params)
 
         # invalidate caches first
         study_file.delay.invalidate_cache_by_file_type
@@ -388,7 +387,7 @@ module Api
           end
         end
 
-        if ['Expression Matrix', 'MM Coordinate Matrix'].include?(study_file.file_type) && !safe_file_params[:y_axis_label].blank?
+        if ['Expression Matrix', 'MM Coordinate Matrix'].include?(study_file.file_type) && cleaned_params[:y_axis_label].present?
           # if user is supplying an expression axis label, update default options hash
           study.default_options[:expression_label] = safe_file_params[:y_axis_label]
           study.save
@@ -400,8 +399,8 @@ module Api
           end
         end
 
-        if safe_file_params[:upload].present? && !is_chunked ||
-          safe_file_params[:remote_location].present? ||
+        if cleaned_params[:upload].present? && !is_chunked ||
+          cleaned_params[:remote_location].present? ||
           study_file.needs_raw_counts_extraction?
           complete_upload_process(study_file, parse_on_upload)
         end
@@ -703,6 +702,29 @@ module Api
           render json: {error: "Malformed request: payload must be formatted as {files: [{name: 'filename', file_type: 'file_type'}]}"},
                  status: :bad_request
         end
+      end
+
+      # remove any remaining parameters that aren't defined and can cause UnknownAttribute errors when saving
+      def self.strip_undefined_params(parameters)
+        safe_params = {}
+        transform = parameters.is_a?(ActionController::Parameters) ? :to_unsafe_hash : :with_indifferent_access
+        accessible_params = parameters.send(transform)
+        StudyFile.nested_attributes.keys.map do |association|
+          classname = association.to_s.chomp('_attributes').singularize.camelize
+          next unless Object.const_defined?(classname) && accessible_params[association].present?
+
+          assoc_class = classname.constantize
+          safe_params[association] = {}
+          accessible_params[association].each do |attribute, value|
+            safe_params[association][attribute] = value if assoc_class.fields[attribute.to_s].present?
+          end
+        end
+        accessible_params.each do |param, val|
+          next if param.to_s.ends_with?('_attributes')
+
+          safe_params[param] = val if StudyFile.fields[param.to_s].present?
+        end
+        safe_params
       end
 
       private
