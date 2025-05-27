@@ -332,14 +332,11 @@ module Api
         if safe_file_params[:custom_color_updates]
           parsed_update = JSON.parse(safe_file_params[:custom_color_updates])
           safe_file_params['cluster_file_info'] = {custom_colors: ClusterFileInfo.merge_color_updates(study_file, parsed_update)}
-          safe_file_params.delete(:custom_color_updates)
         end
 
         # manually check first if species/assembly was supplied by name
         species_name = safe_file_params[:species]
-        safe_file_params.delete(:species)
         assembly_name = safe_file_params[:assembly]
-        safe_file_params.delete(:assembly)
         set_taxon_and_assembly_by_name({species: species_name, assembly: assembly_name})
         # clear the id so that it doesn't get overwritten -- this would be a security hole for existing files
         # and for new files the id will have been set along with creation of the StudyFile object in the `create`
@@ -347,7 +344,6 @@ module Api
         safe_file_params.delete(:_id)
 
         parse_on_upload = safe_file_params[:parse_on_upload]
-        safe_file_params.delete(:parse_on_upload)
         cleaned_params = self.class.strip_undefined_params(safe_file_params)
 
         # check if the name of the file has changed as we won't be able to tell after we saved
