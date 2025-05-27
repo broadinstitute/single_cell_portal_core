@@ -348,6 +348,7 @@ module Api
 
         parse_on_upload = safe_file_params[:parse_on_upload]
         safe_file_params.delete(:parse_on_upload)
+        cleaned_params = self.class.strip_undefined_params(safe_file_params)
 
         # check if the name of the file has changed as we won't be able to tell after we saved
         name_changed = study_file.persisted? && study_file.name != safe_file_params[:name]
@@ -703,6 +704,29 @@ module Api
           render json: {error: "Malformed request: payload must be formatted as {files: [{name: 'filename', file_type: 'file_type'}]}"},
                  status: :bad_request
         end
+      end
+
+      # remove any remaining parameters that aren't defined and can cause UnknownAttribute errors when saving
+      def self.strip_undefined_params(parameters)
+        safe_params = {}
+        transform = parameters.is_a?(ActionController::Parameters) ? :to_unsafe_hash : :with_indifferent_access
+        accessible_params = parameters.send(transform)
+        StudyFile.nested_attributes.keys.map do |association|
+          classname = association.to_s.chomp('_attributes').singularize.camelize
+          next unless Object.const_defined?(classname) && accessible_params[association].present?
+
+          assoc_class = classname.constantize
+          safe_params[association] = {}
+          accessible_params[association].each do |attribute, value|
+            safe_params[association][attribute] = value if assoc_class.fields[attribute.to_s].present?
+          end
+        end
+        accessible_params.each do |param, val|
+          next if param.to_s.ends_with?('_attributes')
+
+          safe_params[param] = val if StudyFile.fields[param.to_s].present?
+        end
+        safe_params
       end
 
       private
