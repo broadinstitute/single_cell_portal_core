@@ -331,7 +331,9 @@ module Api
         end
         if safe_file_params[:custom_color_updates]
           parsed_update = JSON.parse(safe_file_params[:custom_color_updates])
-          safe_file_params['cluster_file_info'] = {custom_colors: ClusterFileInfo.merge_color_updates(study_file, parsed_update)}
+          safe_file_params[:cluster_file_info_attributes] = {
+            custom_colors: ClusterFileInfo.merge_color_updates(study_file, parsed_update)
+          }
         end
 
         # manually check first if species/assembly was supplied by name
@@ -360,7 +362,7 @@ module Api
           fileSize: study_file.upload_file_size
         }, current_api_user)
 
-        study_file.update!(safe_file_params)
+        study_file.update!(cleaned_params)
 
         # invalidate caches first
         study_file.delay.invalidate_cache_by_file_type
@@ -385,7 +387,7 @@ module Api
           end
         end
 
-        if ['Expression Matrix', 'MM Coordinate Matrix'].include?(study_file.file_type) && !safe_file_params[:y_axis_label].blank?
+        if ['Expression Matrix', 'MM Coordinate Matrix'].include?(study_file.file_type) && cleaned_params[:y_axis_label].present?
           # if user is supplying an expression axis label, update default options hash
           study.default_options[:expression_label] = safe_file_params[:y_axis_label]
           study.save
@@ -397,8 +399,8 @@ module Api
           end
         end
 
-        if safe_file_params[:upload].present? && !is_chunked ||
-          safe_file_params[:remote_location].present? ||
+        if cleaned_params[:upload].present? && !is_chunked ||
+          cleaned_params[:remote_location].present? ||
           study_file.needs_raw_counts_extraction?
           complete_upload_process(study_file, parse_on_upload)
         end
