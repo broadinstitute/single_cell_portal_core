@@ -74,4 +74,53 @@ class ClusterCacheService
       Rails.logger.error "Error in caching defaults for #{study.accession}: (#{e.class.name}) #{e.message}"
     end
   end
+
+  # set the default annotation for a study to the most relevant annotation available,
+  # such as cell_type__ontology_label or seurat_clusters
+  def self.configure_default_annotation(study)
+    return false if default_annotation_configured?(study)
+
+    best_available = best_available_annotation(study)
+    return false if best_available.nil?
+
+    # use default_options[:annotation] as default_annotation has fallback logic and we want the 'configured' value
+    existing_default = study.default_options[:annotation]
+    return false if best_available == existing_default
+
+    study.default_options[:annotation] = best_available
+    Rails.logger.info "Changing default annotation in #{study.accession} from " \
+                        "#{existing_default.presence || 'unassigned'} to #{best_available}"
+    study.save(validate: false) # prevent validation errors for older studies
+    log_props = {
+      studyAccession: study.accession,
+      default_annotation: best_available,
+      previous_annotation: existing_default
+    }
+    MetricsService.log('study-default-annotation', log_props, study.user)
+  end
+
+  # find the most relevant annotation to display as the default
+  # will prioritize convention-based cell types, then other 'cell type'-like annotations,
+  # followed by clustering algorithms and anything label/categorical in nature
+  def self.best_available_annotation(study)
+    annotations = DifferentialExpressionService.find_eligible_annotations(study)
+    return nil if annotations.empty?
+
+    best_avail = annotations.detect do |a|
+      a[:annotation_name] == 'cell_type__ontology_label' ||
+        a[:annotation_name] =~ DifferentialExpressionService::CELL_TYPE_MATCHER ||
+        a[:annotation_name] =~ DifferentialExpressionService::CLUSTERING_MATCHER ||
+        a[:annotation_name] =~ DifferentialExpressionService::CATEGORY_MATCHER
+    end
+    best_avail.present? ? [best_avail[:annotation_name], 'group', best_avail[:annotation_scope]].join('--') : nil
+  end
+
+  # helper to determine if a user set the default annotation manually by checking HistoryTracker for events
+  def self.default_annotation_configured?(study)
+    study.history_tracks.detect do |track|
+      track.original.dig('default_options', 'annotation').present? &&
+        track.original.dig('default_options', 'annotation') != '' &&
+        track.modified.dig('default_options', 'annotation') != track.original.dig('default_options', 'annotation')
+    end.present?
+  end
 end

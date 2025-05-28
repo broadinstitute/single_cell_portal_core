@@ -38,6 +38,23 @@ class ClusterCacheServiceTest < ActiveSupport::TestCase
       annotation: 'species--group--study'
     }
     @study.update(default_options: defaults)
+
+    @cell_type_study = FactoryBot.create(:detached_study,
+                                         name_prefix: 'Cell type test',
+                                         user: @user,
+                                         test_array: @@studies_to_clean)
+    FactoryBot.create(:metadata_file,
+                      name: 'metadata.txt',
+                      study: @cell_type_study,
+                      cell_input: %w[A B C],
+                      annotation_input: [
+                        { name: 'cell_type__ontology_label', type: 'group', values: ['B cell', 'T cell', 'B cell'] }
+                      ])
+  end
+
+  after(:each) do
+    @study.default_options[:annotation] = 'species--group--study'
+    @study.save
   end
 
   test 'should format request path' do
@@ -111,5 +128,28 @@ class ClusterCacheServiceTest < ActiveSupport::TestCase
     ClusterCacheService.cache_study_defaults(study)
     assert_not Rails.cache.exist?(expected_default_path)
     assert_not Rails.cache.exist?(expected_named_path)
+  end
+
+  test 'should get best available annotation for study' do
+    assert_equal 'Category--group--cluster', ClusterCacheService.best_available_annotation(@study)
+    assert_equal 'cell_type__ontology_label--group--study',
+                 ClusterCacheService.best_available_annotation(@cell_type_study)
+  end
+
+  test 'should detect if default annotation was set' do
+    @study.default_options[:annotation] = 'disease--group--study'
+    @study.save
+    assert ClusterCacheService.default_annotation_configured?(@study)
+    new_study = FactoryBot.create(:detached_study,
+                                  name_prefix: 'Clean History Study',
+                                  user: @user,
+                                  test_array: @@studies_to_clean)
+    assert_not ClusterCacheService.default_annotation_configured?(new_study)
+  end
+
+  test 'should set best available annotation for study' do
+    ClusterCacheService.configure_default_annotation(@cell_type_study)
+    @cell_type_study.reload
+    assert_equal 'cell_type__ontology_label--group--study', @cell_type_study.default_annotation
   end
 end
