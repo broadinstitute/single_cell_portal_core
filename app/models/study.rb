@@ -1837,27 +1837,41 @@ class Study
     end
   end
 
+  ## State tracking methods
+
   def last_public_date
-    history_tracks.where('modified.public': true).order_by(created_at: :desc).first&.created_at
+    history_tracks.where('modified.public': true).order_by(created_at: :desc).last&.created_at
   end
 
   def last_initialized_date
-    history_tracks.where('modified.initialized': true).order_by(created_at: :desc).first&.created_at
+    history_tracks.where('modified.initialized': true).order_by(created_at: :desc).last&.created_at
   end
 
-  # helper to look in history tracks to see if a given field just changed from a specific value
-  def field_changed_from?(field, value)
-    history_tracks.first.modified[field] == value && send(field) != value
+  # find the last time an attribute changed in the history
+  def last_change_for(field)
+    history_tracks.select { |h| h.modified.keys.include?(field.to_s) }.last
   end
 
-  def was_just_published?
-    field_changed_from?(:public, false)
+  # determine if a field changed from a given value
+  def field_changed_from?(history_track, field, value)
+    return false if history_track.nil?
+
+    history_track.original[field] == value && history_track.modified[field] != value
   end
 
-  def was_just_initialized?
-    field_changed_from?(:initialized, false)
+  # helper to determine if a study was just made public
+  def was_just_published?(cutoff: nil)
+    track = last_change_for(:public)
+    field_changed_from?(track, :public, false) && track.created_at >= (cutoff || 1.second.ago)
   end
 
+  # helper to determine if a study was just initialized
+  def was_just_initialized?(cutoff: nil)
+    track = last_change_for(:initialized)
+    field_changed_from?(track, :initialized, false) && track.created_at >= (cutoff || 1.second.ago)
+  end
+
+  # basic Mixpanel props for study state tracking
   def mixpanel_state_props
     {
       studyAccession: accession,
@@ -1875,6 +1889,7 @@ class Study
     MetricsService.log('study-creation', mixpanel_state_props, user)
   end
 
+  # only log state when a study is published/initialized
   def log_study_state
     MetricsService.log('study-state', mixpanel_state_props, user) if was_just_published? || was_just_initialized?
   end
