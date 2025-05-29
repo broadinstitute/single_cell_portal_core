@@ -752,10 +752,11 @@ class Study
   before_validation :set_data_dir, :set_firecloud_workspace_name, on: :create
   after_validation  :assign_accession, on: :create
   # before_save       :verify_default_options
-  after_create      :make_data_dir, :set_default_participant, :check_bucket_read_access
+  after_create      :make_data_dir, :set_default_participant, :check_bucket_read_access, :log_study_creation
   before_destroy    :ensure_cascade_on_associations
   after_destroy     :remove_data_dir
   before_save       :set_readonly_access
+  after_update      :log_study_state
 
   # search definitions
   index({"name" => "text", "description" => "text"}, {background: true})
@@ -1842,6 +1843,40 @@ class Study
 
   def last_initialized_date
     history_tracks.where('modified.initialized': true).order_by(created_at: :desc).first&.created_at
+  end
+
+  # helper to look in history tracks to see if a given field just changed from a specific value
+  def field_changed_from?(field, value)
+    history_tracks.first.modified[field] == value && send(field) != value
+  end
+
+  def was_just_published?
+    field_changed_from?(:public, false)
+  end
+
+  def was_just_initialized?
+    field_changed_from?(:initialized, false)
+  end
+
+  def mixpanel_state_props
+    {
+      studyAccession: accession,
+      created_at:,
+      domain: user.email.split('@').last,
+      numCells: cell_count,
+      public:,
+      last_public_date:,
+      initialized:,
+      last_initialized_date:
+    }
+  end
+
+  def log_study_creation
+    MetricsService.log('study-creation', mixpanel_state_props, user)
+  end
+
+  def log_study_state
+    MetricsService.log('study-state', mixpanel_state_props, user) if was_just_published? || was_just_initialized?
   end
 
   private
