@@ -724,7 +724,7 @@ module Api
 
           safe_params[param] = val if StudyFile.fields[param.to_s].present?
         end
-        safe_params
+        safe_params.with_indifferent_access
       end
 
       private
