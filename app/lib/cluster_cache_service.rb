@@ -106,12 +106,12 @@ class ClusterCacheService
     annotations = DifferentialExpressionService.find_eligible_annotations(study)
     return nil if annotations.empty?
 
-    best_avail = annotations.detect do |a|
-      a[:annotation_name] == 'cell_type__ontology_label' ||
-        a[:annotation_name] =~ DifferentialExpressionService::CELL_TYPE_MATCHER ||
-        a[:annotation_name] =~ DifferentialExpressionService::CLUSTERING_MATCHER ||
-        a[:annotation_name] =~ DifferentialExpressionService::CATEGORY_MATCHER
-    end
+    ontology = annotations.detect { |a| a[:annotation_name] == 'cell_type__ontology_label' }
+    author_cell_type = annotations.detect { |a| a[:annotation_name] =~ /author.*cell.*type/i }
+    clustering = annotations.detect { |a| a[:annotation_name] =~ DifferentialExpressionService::CLUSTERING_MATCHER }
+    category = annotations.detect { |a| a[:annotation_name] =~ DifferentialExpressionService::CATEGORY_MATCHER }
+    best_avail = ontology || author_cell_type || clustering || category
+
     best_avail.present? ? [best_avail[:annotation_name], 'group', best_avail[:annotation_scope]].join('--') : nil
   end
 

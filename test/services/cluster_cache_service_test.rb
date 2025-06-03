@@ -50,6 +50,21 @@ class ClusterCacheServiceTest < ActiveSupport::TestCase
                       annotation_input: [
                         { name: 'cell_type__ontology_label', type: 'group', values: ['B cell', 'T cell', 'B cell'] }
                       ])
+
+    @author_cell_type = FactoryBot.create(:detached_study,
+                                          name_prefix: 'Cell type test',
+                                          user: @user,
+                                          test_array: @@studies_to_clean)
+    FactoryBot.create(:metadata_file,
+                      name: 'metadata.txt',
+                      study: @author_cell_type,
+                      cell_input: %w[A B C],
+                      annotation_input: [
+                        { name: 'author_cell_type', type: 'group', values: ['B cell', 'T cell', 'B cell'] },
+                        { name: 'seurat_clusters', type: 'group', values: %w[0 1 0] },
+                        { name: 'predicted_labels', type: 'group', values: %w[HSC_MPP LMPP HSC_MPP] },
+                        { name: 'species', type: 'group', values: %w[dog cat dog] }
+                      ])
   end
 
   after(:each) do
@@ -134,6 +149,13 @@ class ClusterCacheServiceTest < ActiveSupport::TestCase
     assert_equal 'Category--group--cluster', ClusterCacheService.best_available_annotation(@study)
     assert_equal 'cell_type__ontology_label--group--study',
                  ClusterCacheService.best_available_annotation(@cell_type_study)
+    # test fallback options
+    %w[author_cell_type seurat_clusters predicted_labels].each do |annotation|
+      assert_equal "#{annotation}--group--study",
+                   ClusterCacheService.best_available_annotation(@author_cell_type)
+      @author_cell_type.cell_metadata.find_by(name: annotation).destroy
+      @author_cell_type.reload
+    end
   end
 
   test 'should detect if default annotation was set' do
