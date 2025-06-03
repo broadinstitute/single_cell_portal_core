@@ -225,4 +225,75 @@ class MetricsServiceTest < ActiveSupport::TestCase
 
     puts "#{File.basename(__FILE__)}: #{self.method_name} successful!"
   end
+
+  test 'should report study creation/state changes to Mixpanel' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Mixpanel test study',
+                              public: true,
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    event = 'study-creation'
+    token = "Bearer #{@user.access_token.dig(:access_token)}"
+    create_props = {
+      studyAccession: study.accession,
+      env: 'test',
+      appId: 'single-cell-portal',
+      initialized: false,
+      last_initialized_date: nil,
+      public: true,
+      last_public_date: study.created_at,
+      created_at: study.created_at,
+      numCells: 0,
+      authenticated: true,
+      registeredForTerra: true,
+      logger: 'app-backend',
+      domain: 'test.edu',
+      distinct_id: @user.metrics_uuid,
+      abTests: []
+    }
+    expected_args = {
+      url: 'https://terra-bard-dev.appspot.com/api/event',
+      headers: { 'Content-Type' => 'application/json', 'Authorization' => token },
+      payload: { event:, properties: create_props }.to_json,
+      method: 'POST'
+    }
+    mock = Minitest::Mock.new
+    mock.expect :call, mock, [expected_args]
+    RestClient::Request.stub :execute, mock do
+      MetricsService.log(event, create_props, @user)
+      mock.verify
+    end
+
+    study.update(initialized: true)
+    event = 'study-state'
+    update_props = {
+      studyAccession: study.accession,
+      env: 'test',
+      appId: 'single-cell-portal',
+      initialized: true,
+      last_initialized_date: study.updated_at,
+      public: true,
+      last_public_date: study.created_at,
+      created_at: study.created_at,
+      numCells: 0,
+      authenticated: true,
+      registeredForTerra: true,
+      logger: 'app-backend',
+      domain: 'test.edu',
+      distinct_id: @user.metrics_uuid,
+      abTests: []
+    }
+    expected_args = {
+      url: 'https://terra-bard-dev.appspot.com/api/event',
+      headers: { 'Content-Type' => 'application/json', 'Authorization' => token },
+      payload: { event:, properties: update_props }.to_json,
+      method: 'POST'
+    }
+    mock = Minitest::Mock.new
+    mock.expect :call, mock, [expected_args]
+    RestClient::Request.stub :execute, mock do
+      MetricsService.log(event, update_props, @user)
+      mock.verify
+    end
+  end
 end

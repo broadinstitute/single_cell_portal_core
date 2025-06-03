@@ -123,7 +123,6 @@ class MetricsService
       headers: headers,
       payload: post_body
     }
-
     self.post_to_bard(params, user)
   end
 
