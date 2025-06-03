@@ -108,9 +108,10 @@ class ClusterCacheService
 
     ontology = annotations.detect { |a| a[:annotation_name] == 'cell_type__ontology_label' }
     author_cell_type = annotations.detect { |a| a[:annotation_name] =~ /author.*cell.*type/i }
+    cell_type = annotations.detect { |a| a[:annotation_name] =~ DifferentialExpressionService::CELL_TYPE_MATCHER }
     clustering = annotations.detect { |a| a[:annotation_name] =~ DifferentialExpressionService::CLUSTERING_MATCHER }
     category = annotations.detect { |a| a[:annotation_name] =~ DifferentialExpressionService::CATEGORY_MATCHER }
-    best_avail = ontology || author_cell_type || clustering || category
+    best_avail = ontology || author_cell_type || cell_type || clustering || category
 
     best_avail.present? ? [best_avail[:annotation_name], 'group', best_avail[:annotation_scope]].join('--') : nil
   end
