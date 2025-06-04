@@ -211,4 +211,22 @@ class StudyTest < ActiveSupport::TestCase
     study.public = false
     assert study.valid?
   end
+
+  test 'should determine if a study was just published/initialized' do
+    study = FactoryBot.create(:detached_study,
+                              user: @user,
+                              name_prefix: 'State Test',
+                              public: false,
+                              test_array: @@studies_to_clean)
+    assert_not study.was_just_published?
+    assert_not study.was_just_initialized?
+    study.update(public: true)
+    assert study.was_just_published?
+    assert_equal study.updated_at.to_s, study.last_public_date.to_s
+    assert study.last_change_for(:public).present?
+    study.update(initialized: true)
+    assert study.was_just_initialized?
+    assert_equal study.updated_at.to_s, study.last_initialized_date.to_s
+    assert study.last_change_for(:initialized).present?
+  end
 end

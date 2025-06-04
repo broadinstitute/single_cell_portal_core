@@ -388,7 +388,7 @@ module Api
           end
         end
 
-        if ['Expression Matrix', 'MM Coordinate Matrix'].include?(study_file.file_type) && !safe_file_params[:y_axis_label].blank?
+        if ['Expression Matrix', 'MM Coordinate Matrix'].include?(study_file.file_type) && safe_file_params[:y_axis_label].present?
           # if user is supplying an expression axis label, update default options hash
           study.default_options[:expression_label] = safe_file_params[:y_axis_label]
           study.save
@@ -400,9 +400,9 @@ module Api
           end
         end
 
-        if safe_file_params[:upload].present? && !is_chunked ||
-          safe_file_params[:remote_location].present? ||
-          study_file.needs_raw_counts_extraction?
+        if (safe_file_params[:upload].present? && !is_chunked) ||
+           safe_file_params[:remote_location].present? ||
+           study_file.needs_raw_counts_extraction?
           complete_upload_process(study_file, parse_on_upload)
         end
       end
