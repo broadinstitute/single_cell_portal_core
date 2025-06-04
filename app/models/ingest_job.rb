@@ -557,6 +557,8 @@ class IngestJob
 
   # set the default annotation for the study, if not already set
   def set_default_annotation
+    ClusterCacheService.configure_default_annotation(study)
+    study.reload
     return if study.default_options[:annotation].present?
 
     cell_metadatum = study.cell_metadata.keep_if(&:can_visualize?).first || study.cell_metadata.first

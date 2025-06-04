@@ -5,8 +5,10 @@ class DifferentialExpressionService
   CELL_TYPE_MATCHER = /cell.*type/i
   # possible clustering algorithm results
   CLUSTERING_MATCHER = /(clust|seurat|leiden|louvain|snn_res)/i
+  # any categorical-type labels
+  CATEGORY_MATCHER = /(categor|labels)/i
   # union of all allowed annotations
-  ALLOWED_ANNOTS = Regexp.union(CELL_TYPE_MATCHER, CLUSTERING_MATCHER)
+  ALLOWED_ANNOTS = Regexp.union(CELL_TYPE_MATCHER, CLUSTERING_MATCHER, CATEGORY_MATCHER)
   # specific annotations to exclude from automation
   EXCLUDED_ANNOTS = /(enrichment__cell_type)/i
   # default quota for user-requested DE jobs
@@ -250,7 +252,7 @@ class DifferentialExpressionService
     annotations += metadata.map { |meta| { annotation_name: meta.name, annotation_scope: 'study' } }
     # special gotcha to remove 'cell_type' metadata annotation if 'cell_type__ontology_label' is present
     if annotations.detect { |annot| annot[:annotation_name] == 'cell_type__ontology_label' }.present?
-      annotations.reject! { |annot| annot[:annotation_name] == 'cell_type'}
+      annotations.reject! { |annot| annot[:annotation_name] == 'cell_type' }
     end
     cell_annotations = []
     groups_to_process = study.cluster_groups.select { |cg| cg.cell_annotations.any? }
