@@ -229,4 +229,27 @@ class StudyTest < ActiveSupport::TestCase
     assert_equal study.updated_at.to_s, study.last_initialized_date.to_s
     assert study.last_change_for(:initialized).present?
   end
+
+  test 'should set cell count on AnnData file' do
+    study = FactoryBot.create(:detached_study,
+                              user: @user,
+                              name_prefix: 'AnnData Cell Count Test',
+                              test_array: @@studies_to_clean)
+    cells = %w[A B C D]
+    ann_data_file = FactoryBot.create(:ann_data_file,
+                                      study:,
+                                      name: 'test.h5ad',
+                                      cell_input: cells,
+                                      annotation_input: [
+                                        { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                                      ])
+    study.set_cell_count
+    assert_equal 4, study.cell_count
+    # manually unset cell count and set file to 'parsing' to simulate race condition
+    study.update(cell_count: 0)
+    assert_equal 0, study.cell_count
+    ann_data_file.update(parse_status: 'parsing')
+    study.set_cell_count
+    assert_equal 4, study.cell_count
+  end
 end
