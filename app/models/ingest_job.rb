@@ -1064,9 +1064,29 @@ class IngestJob
         pipeline_args.detect { |c| c == study_file.id.to_s } &&
         (pipeline_args & CORE_ACTIONS).any?
     end
+    if previous_jobs.empty?
+      run = get_ingest_run
+      perftime = (TimeDifference.between(
+        event_timestamp(run.create_time), event_timestamp(run.update_time)
+      ).in_seconds * 1000).to_i
+      status = run.status.state == "FAILED" ? 'failed' : 'success'
+      return {
+        perfTime: perftime,
+        fileName: study_file.name,
+        fileType: study_file.file_type,
+        fileSize: study_file.upload_file_size,
+        studyAccession: study.accession,
+        trigger: study_file.upload_trigger,
+        jobStatus: status,
+        numFilesExtracted: 0,
+        machineType: params_object.machine_type,
+        action: 'unknown',
+        exitCode: exit_code
+      }
+    end
     # get total runtime from initial extract to final parse
-    initial_extract = previous_jobs.last
-    final_parse = previous_jobs.first
+    initial_extract = previous_jobs.min_by(&:create_time)
+    final_parse = previous_jobs.max_by(&:create_time)
     start_time = event_timestamp(initial_extract.create_time)
     end_time = event_timestamp(final_parse.update_time) # update_time is a proxy for last event timestamp
     job_perftime = (TimeDifference.between(start_time, end_time).in_seconds * 1000).to_i
@@ -1081,7 +1101,7 @@ class IngestJob
     if job_status == 'failed'
       first_failure = previous_jobs.reverse.detect { |job| client.job_error(job.name).present? }
       args = client.get_job_command_line(job: first_failure)
-      error_action = args.detect {|c| BatchApiClient::FILE_TYPES_BY_ACTION.keys.include?(c.to_sym) }
+      error_action = args.detect { |c| BatchApiClient::FILE_TYPES_BY_ACTION.keys.include?(c.to_sym) }
       code = client.exit_code_from_task(first_failure.name)
     end
     # count total number of files extracted

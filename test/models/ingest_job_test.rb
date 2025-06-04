@@ -628,6 +628,58 @@ class IngestJobTest < ActiveSupport::TestCase
     end
   end
 
+  test 'should handle not finding upstream jobs in ingestSummary' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Empty Jobs test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    ann_data_file = FactoryBot.create(:ann_data_file, name: 'failed.h5ad', study:)
+    pipeline_name = SecureRandom.uuid
+    dummy_job = Google::Apis::BatchV1::Job.new(
+      name: pipeline_name,
+      create_time: (@now - 1.hour).to_s,
+      update_time: @now.to_s,
+      status: Google::Apis::BatchV1::JobStatus.new(
+        state: 'FAILED',
+        status_events: [
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (@now - 1.hour).to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: @now.to_s)
+        ]
+      )
+    )
+    list_mock = Minitest::Mock.new
+    list_mock.expect :jobs, []
+    mock = Minitest::Mock.new
+    mock.expect :list_jobs, list_mock
+    mock.expect :exit_code_from_task, 1, [pipeline_name]
+    params_object = AnnDataIngestParameters.new(
+      anndata_file: "gs://#{study.bucket_id}/matrix.h5ad", file_size: ann_data_file.upload_file_size
+    )
+    job = IngestJob.new(
+      pipeline_name:, study:, study_file: ann_data_file, user: @user, action: :ingest_anndata, params_object:
+    )
+    expected_props = {
+      perfTime: 3_600_000,
+      fileName: ann_data_file.name,
+      fileType: ann_data_file.file_type,
+      fileSize: ann_data_file.upload_file_size,
+      studyAccession: study.accession,
+      trigger: ann_data_file.upload_trigger,
+      jobStatus: 'failed',
+      numFilesExtracted: 0,
+      machineType: params_object.machine_type,
+      action: 'unknown',
+      exitCode: 1
+    }.with_indifferent_access
+    job.stub :get_ingest_run, dummy_job do
+      ApplicationController.stub :batch_api_client, mock do
+        props = job.anndata_summary_props
+        assert_equal expected_props, props.with_indifferent_access
+        mock.verify
+      end
+    end
+  end
+
   test 'should limit size when reading error logfile for email' do
     job = IngestJob.new(study: @basic_study, study_file: @basic_study_exp_file, user: @user, action: :ingest_expression)
     file_location = @basic_study_exp_file.bucket_location
