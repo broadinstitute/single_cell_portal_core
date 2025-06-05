@@ -319,7 +319,7 @@ class SearchFacet
 
   # know if a facet needs unit conversion
   def must_convert?
-    big_query_conversion_column.present? && unit != 'seconds'
+    is_numeric? && big_query_conversion_column.present? && unit != 'seconds'
   end
 
   # convert a numeric time-based value into seconds, defaulting to declared unit type
@@ -449,8 +449,14 @@ class SearchFacet
   # can scope query to matching values array if needed or by a sub-query if provided
   def associated_metadata(values: [], query: {})
     annotation_type = is_numeric? ? 'numeric' : 'group'
-    matches = CellMetadatum.where(name: big_query_id_column, annotation_type:)
-    matches.where(:values.in => values) unless is_presence_facet && values.empty?
+    base = CellMetadatum.where(name: big_query_id_column, annotation_type:)
+    if is_numeric?
+      unit = values[:unit]
+      # converting to a range allows for direct comparison of minmax values
+      matches = base.where("minmax_by_units.#{unit}": (values[:min]..values[:max]))
+    else
+      matches = base.where(:values.in => values) unless is_presence_facet && values.empty?
+    end
     query.any? ? matches.where(query) : matches
   end
 

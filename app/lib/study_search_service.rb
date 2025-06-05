@@ -162,13 +162,23 @@ class StudySearchService
   # also accounts for presence-based facets like has_morphology
   def self.perform_mongo_facet_search(facet, filter_values)
     results = []
-    values = filter_values.map { |entry| [convert_id_format(entry[:id]), entry[:name]] }.flatten
+    if facet.is_numeric?
+      values = filter_values
+    else
+      values = filter_values.map { |entry| [convert_id_format(entry[:id]), entry[:name]] }.flatten
+    end
     matches = facet.associated_metadata(values:)
     matches.each do |metadata|
       next if metadata.study.queued_for_deletion
 
       accession = metadata.study.accession
-      matched_values = facet.is_presence_facet ? [facet.identifier] : values & metadata.values
+      if facet.is_presence_facet
+        matched_values = [facet.identifier]
+      elsif facet.is_numeric?
+        matched_values = ["#{filter_values[:min]}-#{filter_values[:max]} #{filter_values[:unit]}"]
+      else
+        matched_values = values & metadata.values
+      end
       matched_values.map do |val|
         results << { study_accession: accession, facet.identifier.to_sym => val }
       end
