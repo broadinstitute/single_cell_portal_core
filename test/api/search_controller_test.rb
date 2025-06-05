@@ -2,7 +2,6 @@ require 'api_test_helper'
 require 'user_tokens_helper'
 require 'bulk_download_helper'
 require 'test_helper'
-require 'big_query_helper'
 require 'includes_helper'
 
 class SearchControllerTest < ActionDispatch::IntegrationTest
@@ -39,7 +38,6 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     FactoryBot.create(:metadata_file, name: 'metadata.txt', study: @study, use_metadata_convention: true,
                       cell_input: %w[cellA cellB cellC cellD cellE],
                       annotation_input: )
-    seed_example_bq_data(@study)
     FactoryBot.create(:cluster_file, name: 'cluster_example.txt', study: @study)
     @other_study = FactoryBot.create(:detached_study,
                                      name_prefix: "API Test Study #{@random_seed}",
@@ -76,7 +74,6 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     BrandingGroup.destroy_all
     SearchFacet.destroy_all
     PresetSearch.destroy_all
-    BigQueryClient.clear_bq_table
   end
 
   test 'should get all search facets' do
@@ -566,19 +563,5 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
         mock.verify
       end
     end
-  end
-
-  test 'should divide facets by data source' do
-    identifier = 'has_morphology'
-    column = 'bil_url'
-    morph_facet = SearchFacet.create!(
-      name: identifier.humanize, identifier:, big_query_id_column: column, big_query_name_column: column,
-      is_mongo_based: true, is_presence_facet: true, convention_name: 'alexandria_convention', data_type: 'string',
-      convention_version: '3.0.0', visible: true
-    )
-    facets = SearchFacet.all.map { |db_facet| { db_facet: } }
-    mongo_facets, bq_facets = Api::V1::SearchController.divide_facets_by_source(facets)
-    assert_equal mongo_facets.first[:db_facet].identifier, morph_facet.identifier
-    assert_equal SearchFacet.count - 1, bq_facets.count
   end
 end

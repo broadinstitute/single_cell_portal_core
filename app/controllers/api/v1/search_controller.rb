@@ -238,20 +238,7 @@ module Api
         if @studies.count > 0 && @facets.any?
           sort_type = :facet
           @studies_by_facet = {}
-          mongo_facets, bq_facets = self.class.divide_facets_by_source(@facets)
-          if bq_facets.any?
-            @big_query_search = self.class.generate_bq_query_string(bq_facets)
-            query_results = ApplicationController.big_query_client.dataset(CellMetadatum::BIGQUERY_DATASET).query @big_query_search
-          else
-            query_results = []
-          end
-          # run a query for any mongo-based facets
-          mongo_facets.map do |facet|
-            db_facet = facet[:db_facet]
-            mongo_results = StudySearchService.perform_mongo_facet_search(db_facet, facet[:filters])
-            query_results += mongo_results
-          end
-
+          query_results = StudySearchService.perform_mongo_facet_search(@facets)
           # build up map of study matches by facet & filter value (for adding labels in UI)
           @studies_by_facet = self.class.match_studies_by_facet(query_results, @facets)
           # uniquify result list as one study may match multiple facets/filters
@@ -312,10 +299,10 @@ module Api
           @studies = @studies.sort_by do |study|
             if study.is_a? Study
               # combine text hits with metadata match totals to get real weight
-              metadata_weight = @metadata_matches.dig(study.accession, :facet_search_weight).to_i
-              -(study.search_weight(@term_list)[:total] + metadata_weight)
+              metadata_weight = @metadata_matches&.dig(study.accession, :facet_search_weight).to_i || 0
+              [-(study.search_weight(@term_list)[:total] + metadata_weight), 0]
             else
-              -study[:term_search_weight]
+              [-study[:term_search_weight], 1] # external studies are always weighted lower
             end
           end
         when :accession
@@ -333,9 +320,11 @@ module Api
         when :facet
           @studies = @studies.sort_by do |study|
             accession = self.class.get_study_attribute(study, :accession)
-            metadata_weight = @metadata_matches.present? ?
-                                @metadata_matches.dig(accession, :facet_search_weight).to_i : 0
-            -(@studies_by_facet[accession][:facet_search_weight] + metadata_weight)
+            metadata_weight = @metadata_matches&.dig(accession, :facet_search_weight)&.to_i || 0
+            [
+              -(@studies_by_facet[accession][:facet_search_weight] + metadata_weight), # sort by facet weight
+              study.is_a?(Study) ? 0 : 1 # prioritize SCP results over external
+            ]
           end
         when :recent
           @studies = @studies.sort_by { |study| self.class.get_study_attribute(study, :created_at) }.reverse
@@ -771,7 +760,10 @@ module Api
           match.delete(:name)
           match
         else
-          matching_facet[:filters].detect { |filter| filter[:id] == search_result[result_key] || filter[:name] == search_result[result_key]}
+          matching_facet[:filters].detect do |filter|
+            filters = search_result[result_key].is_a?(Array) ? search_result[result_key] : [search_result[result_key]]
+            filters.include?(filter[:id]) || filters.include?(filter[:name])
+          end
         end
       end
 

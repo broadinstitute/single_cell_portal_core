@@ -30,8 +30,6 @@ class SearchFacet
   field :is_presence_facet, type: Boolean, default: false # doesn't display filter values, just Y
 
   DATA_TYPES = %w(string number boolean)
-  BQ_DATA_TYPES = %w(STRING FLOAT64 BOOL)
-  BQ_TO_FACET_TYPES = Hash[BQ_DATA_TYPES.zip(DATA_TYPES)]
 
   # Time multipliers, from https://github.com/broadinstitute/scp-ingest-pipeline/blob/master/ingest/validation/validate_metadata.py#L785
   TIME_MULTIPLIERS = {
@@ -47,8 +45,7 @@ class SearchFacet
                         :convention_version
   validates_uniqueness_of :big_query_id_column, scope: [:convention_name, :convention_version]
   validate :ensure_ontology_url_format, if: proc {|attributes| attributes[:is_ontology_based]}
-  before_validation :set_data_type_and_array, on: :create,
-                    if: proc {|attr| (![true, false].include?(attr[:is_array_based]) || attr[:data_type].blank?) && attr[:big_query_id_column].present?}
+  validates :data_type, inclusion: { in: DATA_TYPES }
   after_create :update_filter_values!
 
   swagger_schema :SearchFacet do
@@ -247,27 +244,6 @@ class SearchFacet
     end
   end
 
-  def self.big_query_dataset
-    ApplicationController.big_query_client.dataset(CellMetadatum::BIGQUERY_DATASET)
-  end
-
-  # retrieve table schema definition
-  def self.get_table_schema(table_name: CellMetadatum::BIGQUERY_TABLE, column_name: nil)
-    begin
-      query_string = "SELECT column_name, data_type, is_nullable FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='#{table_name}'"
-      schema = big_query_dataset.query(query_string)
-      if column_name.present?
-        schema.detect { |column| column[:column_name] == column_name }
-      else
-        schema
-      end
-    rescue => e
-      Rails.logger.error "Error retrieving table schema for #{CellMetadatum::BIGQUERY_TABLE}: #{e.class.name}:#{e.message}"
-      ErrorTracker.report_exception(e, nil, { query_string: query_string})
-      []
-    end
-  end
-
   # update all search facet filters after BQ update
   def self.update_all_facet_filters
     azul_facets = AzulSearchService.get_all_facet_filters
@@ -406,43 +382,24 @@ class SearchFacet
     log_message = "Updating#{public_only ? ' public' : nil} filter values for SearchFacet: #{name} using id: " \
                   "#{big_query_id_column} and name: #{big_query_name_column}"
     Rails.logger.info log_message
+    filter_map = []
+    query = public_only ? { public: true, detached: false } : { detached: false }
+    study_ids = Study.where(query).pluck(:id)
+    study_file_ids = StudyFile.where(:study_id.in => study_ids, use_metadata_convention: true).pluck(:id)
+    metadata = associated_metadata(query: { :study_id.in => study_ids, :study_file_id.in => study_file_ids })
+    metadata.each do |metadatum|
+      new_filters = filters_from_metadatum(metadatum)
+      if is_numeric?
+        next if new_filters.empty?
 
-    if is_mongo_based
-      filter_map = []
-      query = public_only ? { public: true, detached: false } : { detached: false }
-      study_ids = Study.where(query).pluck(:id)
-      study_file_ids = StudyFile.where(:study_id.in => study_ids, use_metadata_convention: true).pluck(:id)
-      metadata = associated_metadata(query: { :study_id.in => study_ids, :study_file_id.in => study_file_ids })
-      metadata.each do |metadatum|
-        new_filters = filters_from_metadatum(metadatum)
-        if is_numeric?
-          next if new_filters.empty?
-
-          filter_map << { MIN: new_filters.first.to_f, MAX: new_filters.last.to_f }
-          minmax = filter_map.map(&:values).flatten.minmax
-          filter_map = [{ MIN: minmax.first.to_f, MAX: minmax.last.to_f }]
-        else
-          filter_map += new_filters
-        end
+        filter_map << { MIN: new_filters.first.to_f, MAX: new_filters.last.to_f }
+        minmax = filter_map.map(&:values).flatten.minmax
+        filter_map = [{ MIN: minmax.first.to_f, MAX: minmax.last.to_f }]
+      else
+        filter_map += new_filters
       end
-      return filter_map.uniq
     end
-
-    if public_only
-      accessions = Study.where(public: true).pluck(:accession)
-      query_string = generate_bq_query_string(accessions: accessions)
-    else
-      query_string = generate_bq_query_string
-    end
-    begin
-      Rails.logger.info "Executing query: #{query_string}"
-      results = SearchFacet.big_query_dataset.query(query_string)
-      is_numeric? ? results.first : results.to_a
-    rescue => e
-      Rails.logger.error "Error retrieving unique values for #{CellMetadatum::BIGQUERY_TABLE}: #{e.class.name}:#{e.message}"
-      ErrorTracker.report_exception(e, nil, { query_string: query_string, public_only: public_only })
-      []
-    end
+    filter_map.uniq
   end
 
   # find all matching CellMetadum objects for a given facet
@@ -502,52 +459,7 @@ class SearchFacet
     end
   end
 
-  # return the correct query string for updating filter values from BQ based on facet type
-  # can filter by list of accessions for public-only studies
-  def generate_bq_query_string(accessions: [])
-    if is_array_based
-      generate_array_query(accessions: accessions)
-    elsif is_numeric?
-      generate_minmax_query
-    else
-      generate_non_array_query(accessions: accessions)
-    end
-  end
-
-  # generate a single query to get DISTINCT values from an array-based column, preserving order
-  # can filter by list of accessions for public-only studies
-  def generate_array_query(accessions: [])
-    "SELECT DISTINCT id, name FROM(SELECT id_col AS id, name_col as name FROM #{CellMetadatum::BIGQUERY_TABLE}, " \
-    "UNNEST(#{big_query_id_column}) AS id_col WITH OFFSET id_pos, UNNEST(#{big_query_name_column}) AS name_col " \
-    "WITH OFFSET name_pos WHERE id_pos = name_pos #{accessions.any? ? "AND #{format_accession_list(accessions)}" : nil}) " \
-    'WHERE id IS NOT NULL ORDER BY LOWER(name)'
-  end
-
-  # generate query string to retrieve distinct values for non-array based facets
-  # can filter by list of accessions for public-only studies
-  def generate_non_array_query(accessions: [])
-    "SELECT DISTINCT #{big_query_id_column} AS id, #{big_query_name_column} AS name FROM #{CellMetadatum::BIGQUERY_TABLE} " \
-    "WHERE #{big_query_id_column} IS NOT NULL #{accessions.any? ? "AND #{format_accession_list(accessions)} " : nil}" \
-    "ORDER BY LOWER(#{big_query_name_column})"
-  end
-
-  # generate a minmax query string to set bounds for numeric facets
-  def generate_minmax_query
-    "SELECT MIN(#{big_query_id_column}) AS MIN, MAX(#{big_query_id_column}) AS MAX FROM #{CellMetadatum::BIGQUERY_TABLE}"
-  end
-
   private
-
-  # determine if this facet references array-based data in BQ as data_type will look like "ARRAY<STRING>"
-  def set_data_type_and_array
-    return true if is_mongo_based
-
-    column_schema = SearchFacet.get_table_schema(column_name: big_query_id_column)
-    detected_type = column_schema[:data_type]
-    self.is_array_based = detected_type.include?('ARRAY')
-    item_type = BQ_DATA_TYPES.detect { |d| detected_type.match(d).present? }
-    self.data_type = BQ_TO_FACET_TYPES[item_type]
-  end
 
   # custom validator for checking ontology_urls array
   def ensure_ontology_url_format
@@ -572,11 +484,5 @@ class SearchFacet
   def url_valid?(url)
     url = URI.parse(url) rescue false
     url.kind_of?(URI::HTTP) || url.kind_of?(URI::HTTPS)
-  end
-
-  # format a WHERE clause using an array of study accessions
-  # will quote each accession with single quotes and join with commas, wrapping clause in parentheses
-  def format_accession_list(accessions)
-    "study_accession IN (#{accessions.map { |acc| "\'#{acc}\'" }.join(', ')})"
   end
 end

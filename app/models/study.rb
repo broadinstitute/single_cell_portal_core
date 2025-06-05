@@ -1825,18 +1825,6 @@ class Study
     Rails.logger.info "Workspace #{firecloud_project}/#{firecloud_workspace} successfully removed."
   end
 
-  # helper method that mimics DeleteQueueJob.delete_convention_data
-  # referenced from ensure_cascade_on_associations to prevent orphaned rows in BQ on manual deletes
-  def delete_convention_data
-    if self.metadata_file.present? && self.metadata_file.use_metadata_convention
-      Rails.logger.info "Removing convention data for #{self.accession} from BQ"
-      bq_dataset = ApplicationController.big_query_client.dataset CellMetadatum::BIGQUERY_DATASET
-      bq_dataset.query "DELETE FROM #{CellMetadatum::BIGQUERY_TABLE} WHERE study_accession = '#{self.accession}' AND file_id = '#{self.metadata_file.id}'"
-      Rails.logger.info "BQ cleanup for #{self.accession} completed"
-      SearchFacet.delay.update_all_facet_filters
-    end
-  end
-
   ## State tracking methods
 
   def last_public_date
@@ -2226,8 +2214,6 @@ class Study
   # only pertains to "parsed" data as other records will be cleaned up via callbacks
   # provides much better performance to study.destroy while ensuring cleanup consistency
   def ensure_cascade_on_associations
-    # ensure all BQ data is cleaned up first
-    self.delete_convention_data
     self.study_files.each do |file|
       DataArray.where(study_id: self.id, study_file_id: file.id).delete_all
     end

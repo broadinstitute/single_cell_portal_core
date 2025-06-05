@@ -117,13 +117,12 @@ class StudySearchService
       # in order to maintain the same behavior as normal facets, we run each facet separately and get matching accessions
       # this gives us an array of arrays of matching accessions; now find the intersection (:&)
       filters = terms.values.map { |keywords| escape_terms_for_regex(term_list: keywords) }
-      accessions_by_filter = filters.map {|filter| base_studies.any_of({ name: filter }, { description: filter })
-                                                               .where(:accession.nin => accessions)
-                                                               .pluck(:accession) }
-
+      accessions_by_filter = filters.map do |filter|
+        base_studies.any_of({ name: filter }, { description: filter })
+                    .where(:accession.nin => accessions).pluck(:accession)
+      end
       studies = base_studies.where(:accession.in => accessions_by_filter.inject(:&))
-      return { studies: studies, results_matched_by_data: {} }
-
+      { studies: studies, results_matched_by_data: {} }
     else
       # no matching query case, so perform normal text-index search
       studies = base_studies.any_of({ :$text => { :$search => terms } }, { :accession.in => accessions })
@@ -160,30 +159,44 @@ class StudySearchService
 
   # search Mongo for facets that don't use BigQuery to source data
   # also accounts for presence-based facets like has_morphology
-  def self.perform_mongo_facet_search(facet, filter_values)
-    results = []
-    if facet.is_numeric?
-      values = filter_values
-    else
-      values = filter_values.map { |entry| [convert_id_format(entry[:id]), entry[:name]] }.flatten
-    end
-    matches = facet.associated_metadata(values:)
-    matches.each do |metadata|
-      next if metadata.study.queued_for_deletion
-
-      accession = metadata.study.accession
-      if facet.is_presence_facet
-        matched_values = [facet.identifier]
-      elsif facet.is_numeric?
-        matched_values = ["#{filter_values[:min]}-#{filter_values[:max]} #{filter_values[:unit]}"]
+  def self.perform_mongo_facet_search(facets)
+    all_facets = facets.map { |f| f[:db_facet].identifier }
+    studies_to_facets = {}
+    facets.each do |facet|
+      db_facet = facet[:db_facet]
+      filter_values = facet[:filters]
+      if db_facet.is_numeric?
+        values = filter_values
       else
-        matched_values = values & metadata.values
+        values = filter_values.map { |entry| [convert_id_format(entry[:id]), entry[:name]] }.flatten
       end
-      matched_values.map do |val|
-        results << { study_accession: accession, facet.identifier.to_sym => val }
+      matches = db_facet.associated_metadata(values:)
+      matches.each do |metadata|
+        next if metadata.study.queued_for_deletion
+
+        accession = metadata.study.accession
+        facet_id = db_facet.identifier
+        if db_facet.is_presence_facet
+          matched_values = [facet_id]
+        elsif db_facet.is_numeric?
+          matched_values = ["#{filter_values[:min]}-#{filter_values[:max]} #{filter_values[:unit]}"]
+        else
+          matched_values = values & metadata.values
+        end
+        matched_values.map do |val|
+          studies_to_facets[accession] ||= {}
+          studies_to_facets[accession][facet_id.to_sym] ||= []
+          studies_to_facets[accession][facet_id.to_sym] << val
+        end
       end
     end
-    results
+    # filter out studies that don't match all facets
+    union = studies_to_facets.select do |_, matched_facets|
+      matched_facets.keys.map(&:to_s).sort == all_facets.sort
+    end
+    union.map do |accession, matches|
+      { study_accession: accession }.merge(matches)
+    end
   end
 
   # deal with ontology id formatting inconsistencies
