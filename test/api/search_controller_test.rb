@@ -29,13 +29,15 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     @author = FactoryBot.create(:author, study: @study, last_name: 'Doe', first_name: 'john', institution: 'MIT')
     # add top-level metadata for results
     annotation_input = [
-      { name: 'disease', type: 'group', values: Array.new(5, 'PATO_0000461') },
+      { name: 'disease', type: 'group', values: Array.new(5, 'MONDO_0000001') },
       { name: 'disease__ontology_label', type: 'group', values: Array.new(5, 'disease or disorder') },
       { name: 'species', type: 'group', values: Array.new(5, 'NCBITaxon_9606') },
       { name: 'species__ontology_label', type: 'group', values: Array.new(5, 'Homo sapiens') },
       { name: 'library_preparation_protocol__ontology_label', type: 'group', values: Array.new(5, 'Seq-Well') },
       { name: 'organ__ontology_label', type: 'group', values: Array.new(5, 'milk') },
       { name: 'sex', type: 'group', values: Array.new(5, 'female') },
+      { name: 'organism_age', type: 'numeric', values: [1, 3, 7, 12, 51] },
+      { name: 'organism_age__unit_label', type: 'group', values: Array.new(5, 'year') }
     ]
     FactoryBot.create(:metadata_file, name: 'metadata.txt', study: @study, use_metadata_convention: true,
                       cell_input: %w[cellA cellB cellC cellD cellE],
@@ -66,6 +68,7 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
 
   # reset known commonly used objects to initial states to prevent failures breaking other tests
   teardown do
+    # Study.where(name: /Search Promotion Test/).destroy_all
     OmniAuth.config.mock_auth[:google_oauth2] = nil
     reset_user_tokens
     @other_study.study_detail.update!(full_description: '')
@@ -167,7 +170,7 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     # check top-level metadata results
     source_study = Study.find_by(accession: result_accession)
     result_study = json['studies'].first
-    source_study.cell_metadata.each do |meta|
+    source_study.cell_metadata.where(:name.in => Api::V1::StudySearchResultsObjects::COHORT_METADATA).each do |meta|
       truncated_name = meta.name.chomp('__ontology_label')
       assert_equal meta.values, result_study.dig('metadata', truncated_name)
     end
@@ -194,6 +197,7 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'should return search results using numeric facets' do
+    CellMetadatum.where(name: 'organism_age').map(&:set_minmax_by_units!) # ensure minmax values are set
     facet = SearchFacet.find_by(identifier: 'organism_age')
     facet.update_filter_values! # in case there is a race condition with parsing & facet updates
     # loop through 3 different units (days, months, years) to run a numeric-based facet query with conversion
@@ -472,7 +476,6 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     execute_http_request(:get, api_v1_search_path(type: 'study', terms: study_name))
     assert_response :success
     assert_equal study_name, json['studies'].first['name']
-    studies.map(&:destroy)
   end
 
   test 'should reorder results for exact name match' do
