@@ -40,6 +40,7 @@ class SearchFacet
       hours: 3600
   }.with_indifferent_access.freeze
   TIME_UNITS = TIME_MULTIPLIERS.keys.freeze
+  NEED_MINMAX_BY_UNITS = %w(organism_age).freeze # list of facets that need minmax_by_units set
 
   validates_presence_of :name, :identifier, :data_type, :big_query_id_column, :big_query_name_column, :convention_name,
                         :convention_version
@@ -376,27 +377,27 @@ class SearchFacet
     end
   end
 
-  # retrieve unique values from BigQuery and format an array of hashes with :name and :id values to populate :filters
+  # retrieve unique values from Mongo and format an array of hashes with :name and :id values to populate :filters
   # can specify 'public only' to return filters for public studies
   def get_unique_filter_values(public_only: false)
     log_message = "Updating#{public_only ? ' public' : nil} filter values for SearchFacet: #{name} using id: " \
                   "#{big_query_id_column} and name: #{big_query_name_column}"
     Rails.logger.info log_message
     filter_map = []
-    query = public_only ? { public: true, detached: false } : { detached: false }
-    study_ids = Study.where(query).pluck(:id)
+    study_ids = public_only ? Study.where(public: true).pluck(:id) : Study.pluck(:id)
     study_file_ids = StudyFile.where(:study_id.in => study_ids, use_metadata_convention: true).pluck(:id)
-    metadata = associated_metadata(query: { :study_id.in => study_ids, :study_file_id.in => study_file_ids })
+    values = is_numeric? ? {} : []
+    metadata = associated_metadata(values:, query: { :study_id.in => study_ids, :study_file_id.in => study_file_ids })
     metadata.each do |metadatum|
-      new_filters = filters_from_metadatum(metadatum)
       if is_numeric?
-        next if new_filters.empty?
+        new_filters = metadatum.minmax_by_units[unit]
+        next if new_filters.blank?
 
         filter_map << { MIN: new_filters.first.to_f, MAX: new_filters.last.to_f }
         minmax = filter_map.map(&:values).flatten.minmax
         filter_map = [{ MIN: minmax.first.to_f, MAX: minmax.last.to_f }]
       else
-        filter_map += new_filters
+        filter_map += filters_from_metadatum(metadatum)
       end
     end
     filter_map.uniq
@@ -404,15 +405,17 @@ class SearchFacet
 
   # find all matching CellMetadum objects for a given facet
   # can scope query to matching values array if needed or by a sub-query if provided
-  def associated_metadata(values: [], query: {})
+  def associated_metadata(values:, query: {})
     annotation_type = is_numeric? ? 'numeric' : 'group'
     base = CellMetadatum.where(name: big_query_id_column, annotation_type:)
     if is_numeric?
-      unit = values[:unit]
+      unit = values[:unit] || 'years'
+      min = (values[:min] || 0).to_f
+      max = (values[:max] || 1_000).to_f
       # converting to a range allows for direct comparison of minmax values
-      matches = base.where("minmax_by_units.#{unit}": (values[:min]..values[:max]))
+      matches = base.where("minmax_by_units.#{unit}": (min..max))
     else
-      matches = base.where(:values.in => values) unless is_presence_facet && values.empty?
+      matches = is_presence_facet || values.empty? ? base : base.where(:values.in => values)
     end
     query.any? ? matches.where(query) : matches
   end
@@ -440,7 +443,8 @@ class SearchFacet
       end
       return false if values.empty? # found no results, meaning an error occurred
 
-      update(min: values[:MIN], max: values[:MAX])
+      minmax_vals = values.first
+      update(min: minmax_vals[:MIN], max: minmax_vals[:MAX])
     else
       values = get_unique_filter_values(public_only: false)
       merged_values = values.dup

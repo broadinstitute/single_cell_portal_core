@@ -98,17 +98,16 @@ class CellMetadatum
   # this allows for range queries performantly
   def set_minmax_by_units!
     facet = SearchFacet.find_by(identifier: name)
-    return unless is_numeric? && facet.present?
+    return unless is_numeric? && SearchFacet::NEED_MINMAX_BY_UNITS.include?(facet&.identifier)
 
     minmax_vals = {}
-    units_name = name + '__unit_label'
     # there should only ever be one unit label for a given cell metadatum
-    units_meta = study.cell_metadata.by_name_and_type(units_name, 'group')
+    units_meta = CellMetadatum.find_by(name: "#{name}__unit_label", annotation_type: 'group', study_id:, study_file_id:)
     return unless units_meta.present? && units_meta.values.size == 1
 
     unit = units_meta.values.first.pluralize
     time_units = SearchFacet::TIME_MULTIPLIERS.keys
-    minmax = cell_annotations.values.try(:minmax)
+    minmax = RequestUtils.get_minmax(cell_annotations.values)
     return unless minmax.present? && minmax.all? { |v| v.is_a?(Numeric) }
 
     time_units.each do |conversion_unit|
