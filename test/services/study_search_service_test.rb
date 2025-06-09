@@ -136,7 +136,7 @@ class StudySearchServiceTest < ActiveSupport::TestCase
     results = StudySearchService.perform_mongo_facet_search(facets)
     safe_result = results.first.with_indifferent_access
     assert_equal @metadata_study.accession, safe_result[:study_accession]
-    assert_equal filter[:name], safe_result[@search_facet.identifier]
+    assert_equal filter[:name], safe_result[@search_facet.identifier].first
   end
 
   test 'should convert ontology id to multiple formats' do

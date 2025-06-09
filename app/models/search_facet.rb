@@ -438,8 +438,10 @@ class SearchFacet
       if external_facet[:is_numeric] && external_facet[:unit] == unit
         Rails.logger.info "Merging #{external_facet} into '#{name}' facet filters"
         # cast values to floats to get around nil comparison issue
-        values[:MIN] = external_facet[:min] if values[:MIN].to_f > external_facet[:min].to_f
-        values[:MAX] = external_facet[:max] if values[:MAX].to_f < external_facet[:max].to_f
+        existing_minmax = values.first || { MIN: Float::INFINITY, MAX: -Float::INFINITY }
+        existing_minmax[:MIN] = external_facet[:min] if existing_minmax[:MIN].to_f > external_facet[:min].to_f
+        existing_minmax[:MAX] = external_facet[:max] if existing_minmax[:MAX].to_f < external_facet[:max].to_f
+        values = [existing_minmax]
       end
       return false if values.empty? # found no results, meaning an error occurred
 
