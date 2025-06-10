@@ -112,15 +112,12 @@ class ClusterCacheService
     clustering = annotations.detect { |a| a[:annotation_name] =~ DifferentialExpressionService::CLUSTERING_MATCHER }
     category = annotations.detect { |a| a[:annotation_name] =~ DifferentialExpressionService::CATEGORY_MATCHER }
     best_annotations = [ontology, author_cell_type, cell_type, clustering, category].compact
-    best_avail = best_annotations.first
+    default_cluster = study.default_cluster
 
     # ensure cluster-based annotations are valid for the default cluster
-    default_cluster = study.default_cluster
-    if best_avail[:annotation_scope] == 'cluster' && !default_cluster.id != best_avail[:cluster_group_id]
-      best_avail = best_annotations.detect do |annot|
-        annot[:annotation_scope] == 'study' ||
-          (annot[:annotation_scope] == 'cluster' && default_cluster.id == annot[:cluster_group_id])
-      end
+    best_avail = best_annotations.detect do |annot|
+      annot[:annotation_scope] == 'study' ||
+        (annot[:annotation_scope] == 'cluster' && default_cluster&.id == annot[:cluster_group_id])
     end
 
     best_avail ? [best_avail[:annotation_name], 'group', best_avail[:annotation_scope]].join('--') : nil
