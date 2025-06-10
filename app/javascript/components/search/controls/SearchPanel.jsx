@@ -3,6 +3,7 @@ import React, { useContext, useEffect } from 'react'
 import KeywordSearch from './KeywordSearch'
 import FacetsPanel from './FacetsPanel'
 import DownloadButton from './download/DownloadButton'
+import OptionsControl from './OptionsControl'
 import { StudySearchContext } from '~/providers/StudySearchProvider'
 
 /** helper method as, for unknown reasons, clicking the bootstrap modal auto-scrolls the page down */
@@ -24,9 +25,11 @@ export default function SearchPanel({
 
   let searchButtons = <></>
   let downloadButtons = <></>
+  let optionsControl = <></>
 
   searchButtons = <FacetsPanel/>
   downloadButtons = <DownloadButton searchResults={searchState.results}/>
+  optionsControl = <OptionsControl searchState={searchState} />
 
   useEffect(() => {
     // if a search isn't already happening, and searchOnLoad is specified, perform one
@@ -40,6 +43,7 @@ export default function SearchPanel({
     <div id='search-panel' style={{ display: 'flex' }}>
       { searchButtons }
       <KeywordSearch keywordPrompt={keywordPrompt}/>
+      { optionsControl }
       { downloadButtons }
     </div>
   )

@@ -153,6 +153,7 @@ export function buildParamsFromQuery(query, preset) {
     page: queryParams.page ? parseInt(queryParams.page) : 1,
     terms: queryParams.terms ? queryParams.terms : '',
     facets: buildFacetsFromQueryString(queryParams.facets),
+    external: queryParams.external ? queryParams.external : '',
     preset: preset ? preset : queryString.preset_search,
     order: queryParams.order
   }
