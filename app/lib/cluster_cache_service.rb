@@ -111,9 +111,19 @@ class ClusterCacheService
     cell_type = annotations.detect { |a| a[:annotation_name] =~ DifferentialExpressionService::CELL_TYPE_MATCHER }
     clustering = annotations.detect { |a| a[:annotation_name] =~ DifferentialExpressionService::CLUSTERING_MATCHER }
     category = annotations.detect { |a| a[:annotation_name] =~ DifferentialExpressionService::CATEGORY_MATCHER }
-    best_avail = ontology || author_cell_type || cell_type || clustering || category
+    best_annotations = [ontology, author_cell_type, cell_type, clustering, category].compact
+    best_avail = best_annotations.first
 
-    best_avail.present? ? [best_avail[:annotation_name], 'group', best_avail[:annotation_scope]].join('--') : nil
+    # ensure cluster-based annotations are valid for the default cluster
+    default_cluster = study.default_cluster
+    if best_avail[:annotation_scope] == 'cluster' && !default_cluster.id != best_avail[:cluster_group_id]
+      best_avail = best_annotations.detect do |annot|
+        annot[:annotation_scope] == 'study' ||
+          (annot[:annotation_scope] == 'cluster' && default_cluster.id == annot[:cluster_group_id])
+      end
+    end
+
+    best_avail ? [best_avail[:annotation_name], 'group', best_avail[:annotation_scope]].join('--') : nil
   end
 
   # helper to determine if a user set the default annotation manually by checking HistoryTracker for events
