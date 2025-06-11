@@ -53,7 +53,7 @@ export default function DownloadButton({ searchResults={} }) {
   return (
     <>
       <OverlayTrigger placement='top' overlay={<Tooltip id='download-tooltip'>{hint}</Tooltip>}>
-        <span style={{ 'marginLeft': 'auto' }} > {downloadButton} </span>
+        <span style={{ 'marginLeft': '10px' }} > {downloadButton} </span>
       </OverlayTrigger>
       { showModal &&
         <DownloadSelectionModal

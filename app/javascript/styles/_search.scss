@@ -83,7 +83,7 @@ nav.search-links, #search-panel {
       border: none;
     }
   }
-  #download-button {
+  #download-button, #options-button {
     background-color: white;
     vertical-align: top;
     display: inline-block;
@@ -391,5 +391,35 @@ span.text-search {
   }
   :hover {
     background-color: inherit;
+  }
+}
+
+#search-options-popover {
+  ul {
+    list-style-type: none;
+    padding-left: 5px;
+  }
+
+  ul.facet-filter-list {
+    max-height: 300px;
+    overflow-y: auto;
+    label {
+      display: inline-block;
+      white-space: nowrap;
+    }
+    input {
+      font-size: 2em;
+      vertical-align: middle;
+      margin-top: 0px;
+      margin-right: 12px;
+    }
+    label span {
+      vertical-align: middle;
+    }
+  }
+
+  li {
+    width: 100%;
+    margin-bottom: 0.5em;
   }
 }

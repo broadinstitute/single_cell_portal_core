@@ -43,7 +43,7 @@ export default function SearchSelectionProvider(props) {
   const [selection, setSelection] = useState(
     appliedSelection ?
       appliedSelection :
-      { terms: '', facets: {} })
+      { terms: '', facets: {}, external: '' })
   selection.updateSelection = updateSelection
   selection.updateFacet = updateFacet
   selection.performSearch = performSearch
