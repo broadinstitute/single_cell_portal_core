@@ -277,11 +277,10 @@ module Api
         # convert to array to allow appending external search results (Azul, TDR, etc.)
         @studies = @studies.to_a
 
-        # perform Azul search if there are facets/terms provided by user and they requested HCA results
+        # perform Azul search if there are facets/terms provided by user, and they requested HCA results
         # run this before inferred search so that they are weighted and sorted correctly
         # skip if user is searching inside a collection or they are performing global gene search
         include_azul = params[:external] == 'hca' && @search_type == :study && @selected_branding_group.nil?
-        puts "include_azul: #{include_azul}"
         if (@facets.present? || @term_list.present?) && include_azul
           begin
             azul_results = ::AzulSearchService.append_results_to_studies(@studies,
