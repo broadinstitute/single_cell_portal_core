@@ -1,39 +1,21 @@
 import React, { useState } from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faWrench } from '@fortawesome/free-solid-svg-icons'
-import { Popover, OverlayTrigger } from 'react-bootstrap'
 
-export default function OptionsControl({searchState}) {
-  const [isChecked, setIsChecked] = useState(false)
-  const [showOptions, setShowOptions] = useState(false)
+export default function OptionsControl({searchContext, searchProp, value, label}) {
+  const defaultChecked = searchContext.params[searchProp] === value
+  const [isChecked, setIsChecked] = useState(defaultChecked)
 
-  function toggleExternal(checked) {
-    const newExternal = checked ? 'hca' : null
+  /** toggle state of checkbox */
+  function toggleCheckbox(checked) {
     setIsChecked(checked)
-    searchState.updateSearch({ external: newExternal })
+    searchContext.updateSearch({ [searchProp] : checked ? value : null })
   }
 
-  const optionsContent = <Popover data-analytics-name='search-options-popover'
-                                  id='search-options-popover'>
-    <ul className='facet-filter-list'>
-      <li>
-          <input type="checkbox" checked={isChecked} onChange={() => {toggleExternal(!isChecked)}} />
-          Include HCA results
-      </li>
-    </ul>
-  </Popover>
-
-  const optionsButton = <OverlayTrigger
-    trigger={['click']}
-    placement='bottom'
-    animation={false}
-    overlay={optionsContent}>
-    <button type="button" id="options-button" className="btn btn-default" aria-label='Options'>
-      <span><FontAwesomeIcon icon={faWrench} className='icon-left' /> Options</span>
-    </button>
-  </OverlayTrigger>
-
   return (
-    <span style={{ 'marginLeft': 'auto' }} > {optionsButton} </span>
+    <span className={`facet option-control ${isChecked ? 'active' : ''}` } id={`options-control-${searchProp}`}>
+      <a>
+        <input type="checkbox" checked={isChecked} onChange={() => {toggleCheckbox(!isChecked)}}/>
+          <span className='inner-label' onClick={() => {toggleCheckbox(!isChecked)}} >{ label }</span>
+      </a>
+  </span>
   )
 }

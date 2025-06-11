@@ -335,8 +335,6 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
       assert_includes json['matching_accessions'], accession,
                       "Did not find expected accessions after inferred search, expected #{inferred_accessions} but found #{json['matching_accessions']}"
     end
-    # inferred match will be the last study, but given the number of Azul results present it will note be rendered
-    # as it is likely 20+ pages deep
     assert_equal @other_study.accession, json['matching_accessions'].last
            "Did not mark last search results as inferred_match: #{json['matching_accessions'].last} != #{@other_study.accession}"
   end
@@ -369,23 +367,21 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     # update other_study to match one filter from facets; should not be inferred since it doesn't meet both criteria
     facet_query = "species:#{HOMO_SAPIENS_FILTER[:id]}#{FACET_DELIM}disease:#{NO_DISEASE_FILTER[:id]}"
     @other_study.study_detail.update(full_description: HOMO_SAPIENS_FILTER[:name])
-    AzulSearchService.stub :get_results, {} do
-      execute_http_request(:get, api_v1_search_path(type: 'study', facets: facet_query))
-      assert_response :success
-      assert_equal @convention_accessions, json['matching_accessions'],
-                   "Did not find expected accessions before inferred search, expected #{@convention_accessions} but found #{json['matching_accessions']}"
+    execute_http_request(:get, api_v1_search_path(type: 'study', facets: facet_query))
+    assert_response :success
+    assert_equal @convention_accessions, json['matching_accessions'],
+                 "Did not find expected accessions before inferred search, expected #{@convention_accessions} but found #{json['matching_accessions']}"
 
-      # update to match both filters; should be inferred
-      double_facet_name = "#{HOMO_SAPIENS_FILTER[:name]} #{NO_DISEASE_FILTER[:name]}"
-      @other_study.study_detail.update(full_description: double_facet_name)
-      execute_http_request(:get, api_v1_search_path(type: 'study', facets: facet_query))
-      assert_response :success
-      inferred_accessions = @convention_accessions + [@other_study.accession]
-      assert_equal inferred_accessions, json['matching_accessions'],
-                   "Did not find expected accessions after inferred search, expected #{inferred_accessions} but found #{json['matching_accessions']}"
-      inferred_study = json['studies'].last
-      assert inferred_study['inferred_match'], "Did not correctly mark #{@other_study.accession} as inferred"
-    end
+    # update to match both filters; should be inferred
+    double_facet_name = "#{HOMO_SAPIENS_FILTER[:name]} #{NO_DISEASE_FILTER[:name]}"
+    @other_study.study_detail.update(full_description: double_facet_name)
+    execute_http_request(:get, api_v1_search_path(type: 'study', facets: facet_query))
+    assert_response :success
+    inferred_accessions = @convention_accessions + [@other_study.accession]
+    assert_equal inferred_accessions, json['matching_accessions'],
+                 "Did not find expected accessions after inferred search, expected #{inferred_accessions} but found #{json['matching_accessions']}"
+    inferred_study = json['studies'].last
+    assert inferred_study['inferred_match'], "Did not correctly mark #{@other_study.accession} as inferred"
   end
 
   test 'should run preset search' do
@@ -506,33 +502,49 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'should support all sorting options' do
-    # use Azul mocks for faster tests
-    # TODO: migrate all other search tests to use Azul mocks (SCP-4328)
-    tcell_json = File.open(Rails.root.join('test/test_data/azul/human_tcell.json')).read
-    human_tcell_response = JSON.parse(tcell_json).with_indifferent_access
-    mock_azul_facets = {
-      genusSpecies: {
-        is: ['Homo sapiens']
-      }
-    }.with_indifferent_access
-
-    # test all 3 sorting options
     ['recent', 'popular', 'foo', nil].each do |sort_order|
-      mock = Minitest::Mock.new
-      mock.expect :format_query_from_facets, mock_azul_facets, [Array]
-      mock.expect :merge_query_objects, mock_azul_facets, [Hash, nil]
-      mock.expect :projects, human_tcell_response, [], query: Hash
-      ApplicationController.stub :hca_azul_client, mock do
-        facet_query = "species:#{HOMO_SAPIENS_FILTER[:id]}"
-        execute_http_request(:get,
-                             api_v1_search_path(
-                               type: 'study',
-                               facets: facet_query,
-                               order: sort_order.to_s
-                             ))
+      facet_query = "species:#{HOMO_SAPIENS_FILTER[:id]}"
+      execute_http_request(:get,
+                           api_v1_search_path(
+                             type: 'study',
+                             facets: facet_query,
+                             order: sort_order.to_s
+                           ))
+      assert_response :success
+    end
+  end
+
+  test 'should query Azul when requested' do
+    facet_query = "species:#{HOMO_SAPIENS_FILTER[:id]}"
+    species_facet = SearchFacet.find_by(identifier: 'species')
+    facet = {
+      id: species_facet.identifier,
+      filters: [HOMO_SAPIENS_FILTER],
+      db_facet: species_facet
+    }
+    mock = Minitest::Mock.new
+    mock.expect(:get_results, {}, [[facet], []])
+    AzulSearchService.stub(:append_results_to_studies, mock) do
+      assert_raises MockExpectationError do
+        execute_http_request(:get, api_v1_search_path(type: 'study', facets: facet_query))
         assert_response :success
         mock.verify
       end
+    end
+    studies_by_facet = {
+      @study.accession => {
+        disease: [HOMO_SAPIENS_FILTER],
+        facet_search_weight: 1
+      }
+    }.with_indifferent_access
+    positive_mock = Minitest::Mock.new
+    positive_mock.expect :[], [@study], [:studies]
+    positive_mock.expect :[], studies_by_facet, [:facet_map]
+    positive_mock.expect :[], {}, [:results_matched_by_data]
+    AzulSearchService.stub(:append_results_to_studies, positive_mock) do
+      execute_http_request(:get, api_v1_search_path(type: 'study', facets: facet_query, external: 'hca'))
+      assert_response :success
+      positive_mock.verify
     end
   end
 end

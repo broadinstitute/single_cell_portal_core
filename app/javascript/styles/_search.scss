@@ -394,32 +394,6 @@ span.text-search {
   }
 }
 
-#search-options-popover {
-  ul {
-    list-style-type: none;
-    padding-left: 5px;
-  }
-
-  ul.facet-filter-list {
-    max-height: 300px;
-    overflow-y: auto;
-    label {
-      display: inline-block;
-      white-space: nowrap;
-    }
-    input {
-      font-size: 2em;
-      vertical-align: middle;
-      margin-top: 0px;
-      margin-right: 12px;
-    }
-    label span {
-      vertical-align: middle;
-    }
-  }
-
-  li {
-    width: 100%;
-    margin-bottom: 0.5em;
-  }
+.option-control a span.inner-label {
+  margin-left: 10px;
 }
