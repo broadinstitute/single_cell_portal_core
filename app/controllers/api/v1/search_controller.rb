@@ -238,20 +238,7 @@ module Api
         if @studies.count > 0 && @facets.any?
           sort_type = :facet
           @studies_by_facet = {}
-          mongo_facets, bq_facets = self.class.divide_facets_by_source(@facets)
-          if bq_facets.any?
-            @big_query_search = self.class.generate_bq_query_string(bq_facets)
-            query_results = ApplicationController.big_query_client.dataset(CellMetadatum::BIGQUERY_DATASET).query @big_query_search
-          else
-            query_results = []
-          end
-          # run a query for any mongo-based facets
-          mongo_facets.map do |facet|
-            db_facet = facet[:db_facet]
-            mongo_results = StudySearchService.perform_mongo_facet_search(db_facet, facet[:filters])
-            query_results += mongo_results
-          end
-
+          query_results = StudySearchService.perform_mongo_facet_search(@facets)
           # build up map of study matches by facet & filter value (for adding labels in UI)
           @studies_by_facet = self.class.match_studies_by_facet(query_results, @facets)
           # uniquify result list as one study may match multiple facets/filters
@@ -312,10 +299,10 @@ module Api
           @studies = @studies.sort_by do |study|
             if study.is_a? Study
               # combine text hits with metadata match totals to get real weight
-              metadata_weight = @metadata_matches.dig(study.accession, :facet_search_weight).to_i
-              -(study.search_weight(@term_list)[:total] + metadata_weight)
+              metadata_weight = @metadata_matches&.dig(study.accession, :facet_search_weight).to_i || 0
+              [-(study.search_weight(@term_list)[:total] + metadata_weight), 0]
             else
-              -study[:term_search_weight]
+              [-study[:term_search_weight], 1] # external studies are always weighted lower
             end
           end
         when :accession
@@ -333,9 +320,11 @@ module Api
         when :facet
           @studies = @studies.sort_by do |study|
             accession = self.class.get_study_attribute(study, :accession)
-            metadata_weight = @metadata_matches.present? ?
-                                @metadata_matches.dig(accession, :facet_search_weight).to_i : 0
-            -(@studies_by_facet[accession][:facet_search_weight] + metadata_weight)
+            metadata_weight = @metadata_matches&.dig(accession, :facet_search_weight)&.to_i || 0
+            [
+              -(@studies_by_facet[accession][:facet_search_weight] + metadata_weight), # sort by facet weight
+              study.is_a?(Study) ? 0 : 1 # prioritize SCP results over external
+            ]
           end
         when :recent
           @studies = @studies.sort_by { |study| self.class.get_study_attribute(study, :created_at) }.reverse
@@ -576,120 +565,6 @@ module Api
         [reordered, match_data]
       end
 
-      # generate query string for BQ
-      # array-based columns need to set up data in WITH clauses to allow for a single UNNEST(column_name) call,
-      # otherwise UNNEST() is called multiple times for each user-supplied filter value and could impact performance
-      def self.generate_bq_query_string(facets)
-        base_query = "SELECT DISTINCT study_accession"
-        from_clause = " FROM #{CellMetadatum::BIGQUERY_TABLE}"
-        where_clauses = []
-        with_clauses = []
-        or_facets = [['cell_type', 'cell_type__custom'], ['organ', 'organ_region']]
-        leading_or_facets = or_facets.map(&:first)
-        trailing_or_facets = or_facets.map(&:last)
-        or_grouped_where_clause = nil
-        # sort the facets so that OR'ed facets will be next to each other, the 99 is just
-        # an arbitrary large-ish number to make sure the non-or-grouped facets are sorted together
-        sorted_facets = facets.sort_by {|facet| or_facets.flatten.find_index(facet[:id]) || 99}
-        sorted_facets.each_with_index do |facet_obj, index|
-          query_elements = get_query_elements_for_facet(facet_obj)
-          from_clause += ", #{query_elements[:from]}" if query_elements[:from]
-          base_query += ", #{query_elements[:select]}" if query_elements[:select]
-          with_clauses << query_elements[:with] if query_elements[:with]
-          or_group_index = leading_or_facets.find_index(facet_obj[:id])
-          next_facet_id = sorted_facets[index + 1].try(:[], :id)
-
-          # this block handles 3 cases: (1) regular AND (2) leading OR (3) trailing OR
-          if or_group_index && trailing_or_facets[or_group_index] == next_facet_id
-             # we're at the start of a pair of facets that should be grouped by OR
-             or_grouped_where_clause = "(#{query_elements[:where]} OR "
-          else
-            if or_grouped_where_clause
-              # we're on the second of a pair of facets that should be grouped by OR
-              where_clauses << or_grouped_where_clause + "#{query_elements[:where]})"
-              or_grouped_where_clause = nil
-            else
-              # we're on a regular AND facet
-              where_clauses << query_elements[:where]
-            end
-          end
-        end
-        # prepend WITH clauses before base_query (if needed), then add FROM and dependent WHERE clauses
-        # all facets are treated as AND clauses
-        with_statement = with_clauses.any? ? "WITH #{with_clauses.join(", ")} " : ""
-        with_statement + base_query + from_clause + " WHERE " + where_clauses.join(" AND ")
-      end
-
-      def self.get_query_elements_for_facet(facet_obj)
-        query_elements = {
-          where: nil,
-          with: nil,
-          from: nil,
-          select: nil,
-          display_where: nil
-        }
-        # get the facet instance in order to run query
-        search_facet = facet_obj[:db_facet]
-        column_name = search_facet.big_query_id_column
-        if search_facet.is_array_based?
-          # if facet is array-based, we need to format an array of filter values selected by user
-          # and add this as a WITH clause, then add two UNNEST() calls for both the BQ array column
-          # and the user filters to optimize the query
-          # example query:
-          # WITH disease_filters AS (SELECT['MONDO_0000001', 'MONDO_0006052'] as disease_value)
-          # FROM cell_metadata.alexandria_convention, disease_filters, UNNEST(disease_filters.disease_value) AS disease_val
-          # WHERE (disease_val IN UNNEST(disease))
-          facet_id = search_facet.identifier
-          filter_arr_name = "#{facet_id}_filters"
-          filter_val_name = "#{facet_id}_value"
-          filter_where_val = "#{facet_id}_val"
-          filter_values = facet_obj[:filters].map { |filter| sanitize_filter_value(filter[:id]) }
-          query_elements[:with] = "#{filter_arr_name} AS (SELECT#{filter_values} as #{filter_val_name})"
-          query_elements[:from] = "#{filter_arr_name}, UNNEST(#{filter_arr_name}.#{filter_val_name}) AS #{filter_where_val}"
-          query_elements[:where] = "(#{filter_where_val} IN UNNEST(#{column_name}))"
-          query_elements[:select] = "#{filter_where_val}"
-          # to maximize XDSS queries, also check __ontology_label columns since Azul doesn't support IDs
-          if search_facet.is_ontology_based? && search_facet.big_query_name_column.present?
-            label_values = facet_obj[:filters].map { |filter| filter[:name] }
-            label_column = search_facet.big_query_name_column
-            label_filter_arr_name = "#{facet_id}_label_filters"
-            label_filter_val_name = "#{facet_id}_label_value"
-            label_filter_where_val = "#{facet_id}_label_val"
-            query_elements[:with] += ", #{label_filter_arr_name} AS (SELECT#{label_values} as #{label_filter_val_name})"
-            query_elements[:from] += ", #{label_filter_arr_name}, UNNEST(#{label_filter_arr_name}.#{label_filter_val_name}) AS #{label_filter_where_val}"
-            # reconstitute where clause to use OR to match on either ID or label
-            query_elements[:where] = "((#{filter_where_val} IN UNNEST(#{column_name})) OR (#{label_filter_where_val} IN UNNEST(#{label_column})))"
-            query_elements[:select] += ", #{label_filter_where_val}"
-          end
-        elsif search_facet.is_numeric?
-          # run a range query (e.g. WHERE organism_age BETWEEN 20 and 60)
-          query_elements[:select] = "#{column_name}"
-          query_on = column_name
-          min_value = facet_obj[:filters][:min]
-          max_value = facet_obj[:filters][:max]
-          unit = facet_obj[:filters][:unit]
-          if search_facet.must_convert?
-            query_on = search_facet.big_query_conversion_column
-            min_value = search_facet.calculate_time_in_seconds(base_value: min_value, unit_label: unit)
-            max_value = search_facet.calculate_time_in_seconds(base_value: max_value, unit_label: unit)
-          end
-          query_elements[:where] = "#{query_on} BETWEEN #{min_value} AND #{max_value}"
-        else
-          query_elements[:select] = "#{column_name}"
-          # for non-array columns we can pass an array of quoted values and call IN directly
-          filter_values = facet_obj[:filters].map { |filter| sanitize_filter_value(filter[:id]) }
-          main_query = "#{column_name} IN ('#{filter_values.join('\',\'')}')"
-          query_elements[:where] = main_query
-          # to maximize XDSS queries, also check __ontology_label columns since Azul doesn't support IDs
-          if search_facet.is_ontology_based? && search_facet.big_query_name_column.present?
-            label_values = facet_obj[:filters].map { |filter| sanitize_filter_value(filter[:name]) }
-            extra_query = "#{search_facet.big_query_name_column} IN ('#{label_values.join('\',\'')}')"
-            query_elements[:where] = "(#{main_query} OR #{extra_query})"
-          end
-        end
-        query_elements
-      end
-
       # convert a list of facet filters into a keyword search for inferred matching
       # treats each facet separately so we can find intersection across all
       def self.convert_filters_for_inferred_search(facets:)
@@ -771,13 +646,11 @@ module Api
           match.delete(:name)
           match
         else
-          matching_facet[:filters].detect { |filter| filter[:id] == search_result[result_key] || filter[:name] == search_result[result_key]}
+          matching_facet[:filters].detect do |filter|
+            filters = search_result[result_key].is_a?(Array) ? search_result[result_key] : [search_result[result_key]]
+            filters.include?(filter[:id]) || filters.include?(filter[:name])
+          end
         end
-      end
-
-      # divide facets into mongo- and bigquery-based
-      def self.divide_facets_by_source(facets)
-        facets.partition { |facet| facet[:db_facet].is_mongo_based }
       end
 
       # properly escape any single quotes in a filter value (double quotes are correctly handled already)

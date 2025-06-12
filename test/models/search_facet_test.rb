@@ -10,7 +10,31 @@ class SearchFacetTest < ActiveSupport::TestCase
                                public: true,
                                user: @user,
                                test_array: @@studies_to_clean)
+
+    annotation_input = [
+      { name: 'disease', type: 'group',
+        values: %w[MONDO_0005109 MONDO_0018076 PATO_0000461 MONDO_0100096 MONDO_0005812] },
+      { name: 'disease__ontology_label', type: 'group', values: [
+        'HIV infectious disease', 'tuberculosis', 'normal', 'COVID-19', 'influenza'
+      ] },
+      { name: 'species', type: 'group',
+        values: %w[NCBITaxon_9606 NCBITaxon_9606 NCBITaxon_10090 NCBITaxon_9606 NCBITaxon_10090] },
+      { name: 'species__ontology_label', type: 'group', values: [
+        'Homo sapiens', 'Homo sapiens', 'Mus musculus', 'Homo sapiens', 'Mus musculus'
+      ] },
+      { name: 'cell_type', type: 'group', values: %w[CL_0000236 CL_0000236 CL_0000561 CL_0000561 CL_0000573] },
+      { name: 'cell_type__ontology_label', type: 'group',
+        values: ['B cell', 'B cell', 'amacrine cell', 'amacrine cell', 'retinal cone cell'] },
+      { name: 'library_preparation_protocol__ontology_label', type: 'group', values: Array.new(5, 'Seq-Well') },
+      { name: 'organ__ontology_label', type: 'group', values: Array.new(5, 'milk') },
+      { name: 'sex', type: 'group', values: Array.new(5, 'female') },
+      { name: 'organism_age', type: 'numeric', values: [1, 3, 7, 12, 51] },
+      { name: 'organism_age__unit_label', type: 'group', values: Array.new(5, 'year') }
+    ]
+    FactoryBot.create(:metadata_file, name: 'metadata.txt', study: @study, use_metadata_convention: true,
+                      cell_input: %w[cellA cellB cellC cellD cellE], annotation_input:)
     TestDataPopulator.create_sample_search_facets
+    @study.cell_metadata.find_by(name: 'organism_age', annotation_type: 'numeric').set_minmax_by_units!
     @search_facet = SearchFacet.find_by(identifier: 'species')
     @search_facet.update_filter_values!
 
@@ -19,11 +43,6 @@ class SearchFacetTest < ActiveSupport::TestCase
       { id: 'NCBITaxon_9606', name: 'Homo sapiens' },
       { id: 'NCBITaxon_10090', name: 'Mus musculus' }
     ]
-
-    # mock schema for number_of_reads column in BigQuery
-    @column_schema = [{ column_name: 'number_of_reads', data_type: 'FLOAT64', is_nullable: 'YES' }]
-    # mock minmax query for organism_age query
-    @minmax_results = [{ MIN: rand(10) + 1, MAX: rand(100) + 10 }]
   end
 
   after(:all) do
@@ -34,41 +53,8 @@ class SearchFacetTest < ActiveSupport::TestCase
   # should return expected filters list
   # mocks call to BigQuery to avoid unnecessary overhead
   test 'should update filters list' do
-    # mock call to BQ, until a better library can be found
-    mock = Minitest::Mock.new
-    mock.expect :query, @filter_results, [String]
-
-    SearchFacet.stub :big_query_dataset, mock do
-      filters = @search_facet.get_unique_filter_values
-      mock.verify
-      assert_equal @filter_results, filters
-    end
-  end
-
-  # should generate correct kind of query for DISTINCT filters based on array/non-array columns
-  # generate_query_string_by_type should return the correct query string in each case, based on facet type
-  test 'should generate correct distinct queries' do
-    non_array_query = @search_facet.generate_bq_query_string
-    non_array_match = /DISTINCT #{@search_facet.big_query_id_column}/
-    assert_match non_array_match, non_array_query, "Non-array query did not contain correct DISTINCT clause: #{non_array_query}"
-    array_facet = SearchFacet.find_by(identifier: 'disease')
-    array_query = array_facet.generate_bq_query_string
-    array_match = /SELECT DISTINCT id.*UNNEST\(#{array_facet.big_query_id_column}\) AS id_col WITH OFFSET id_pos.*WHERE id_pos = name_pos/
-    assert_match array_match, array_query, "Array query did not correctly unnest column or match offset positions: #{array_query}"
-    numeric_facet = SearchFacet.find_by(identifier: 'organism_age')
-    numeric_query = numeric_facet.generate_bq_query_string
-    numeric_match = /MIN\(#{numeric_facet.big_query_id_column}\).*MAX\(#{numeric_facet.big_query_id_column}\)/
-    assert_match numeric_match, numeric_query, "MinMax query did not contain MIN or MAX calls for correct columns: #{numeric_query}"
-  end
-
-  test 'should generate correct distinct queries for public-only studies' do
-    public_studies = Study.where(public: true).pluck(:accession)
-    public_query = "study_accession IN (#{public_studies.map { |acc| "\'#{acc}\'" }.join(', ')})"
-    non_array_query = @search_facet.generate_bq_query_string(accessions: public_studies)
-    assert_match public_query, non_array_query, "Non-array query did not contain correct DISTINCT clause: #{non_array_query}"
-    array_facet = SearchFacet.find_by(identifier: 'disease')
-    array_query = array_facet.generate_bq_query_string(accessions: public_studies)
-    assert_match public_query, array_query, "Array query did not correctly unnest column or match offset positions: #{array_query}"
+    filters = @search_facet.get_unique_filter_values
+    assert_equal @filter_results, filters
   end
 
   # should validate search facet correctly, especially links to external ontologies
@@ -76,7 +62,7 @@ class SearchFacetTest < ActiveSupport::TestCase
     assert @search_facet.valid?, "Testing search facet did not validate: #{@search_facet.errors.full_messages}"
     invalid_facet = SearchFacet.new
     assert_not invalid_facet.valid?, 'Did not correctly find validation errors on empty facet'
-    expected_error_count = 7
+    expected_error_count = 8
     invalid_facet_error_count = invalid_facet.errors.size
     assert_equal expected_error_count, invalid_facet_error_count,
            "Did not find correct number of errors; expected #{expected_error_count} but found #{invalid_facet_error_count}"
@@ -90,48 +76,15 @@ class SearchFacetTest < ActiveSupport::TestCase
                  'contains an invalid URL: not a url'
   end
 
-  test 'should set data_type and is_array_based on create' do
-    mock = Minitest::Mock.new
-    mock.expect :query, @column_schema, [String]
-
-    SearchFacet.stub :big_query_dataset, mock do
-      reads_facet = SearchFacet.create(
-        name: 'Number of Reads',
-        identifier: 'number_of_reads',
-        big_query_id_column: 'number_of_reads',
-        big_query_name_column: 'number_of_reads',
-        is_ontology_based: false,
-        convention_name: 'Alexandria Metadata Convention',
-        convention_version: '1.1.3'
-      )
-      mock.verify
-      assert_equal 'number', reads_facet.data_type,
-                   "Did not correctly set facet data_type, expected 'number' but found '#{reads_facet.data_type}'"
-      assert_not reads_facet.is_array_based?,
-                   "Did not correctly set is_array_based, expected false but found #{reads_facet.is_array_based?}"
-      assert reads_facet.is_numeric?, "Did not correctly return true for is_numeric? with data_type: #{reads_facet.data_type}"
-
-    end
-  end
-
   test 'should set minmax values for numeric facets' do
-    mock = Minitest::Mock.new
-    mock.expect :query, @minmax_results, [String]
-
-    SearchFacet.stub :big_query_dataset, mock do
-      age_facet = SearchFacet.find_by(identifier: 'organism_age')
-      age_facet.update_filter_values!
-      mock.verify
-      assert age_facet.must_convert?,
-             "Did not correctly return true for must_convert? with conversion column: #{age_facet.big_query_conversion_column}"
-      minmax_query = age_facet.generate_minmax_query
-      minmax_match = /SELECT MIN\(#{age_facet.big_query_id_column}\).*MAX\(#{age_facet.big_query_id_column}\)/
-      assert_match minmax_match, minmax_query, "Minmax query improperly formed: #{minmax_query}"
-      assert_equal @minmax_results.first[:MIN], age_facet.min,
-                   "Did not set minimum value; expected #{@minmax_results.first[:MIN]} but found #{age_facet.min}"
-      assert_equal @minmax_results.first[:MAX], age_facet.max,
-                   "Did not set minimum value; expected #{@minmax_results.first[:MAX]} but found #{age_facet.max}"
-    end
+    age_facet = SearchFacet.find_by(identifier: 'organism_age')
+    age_facet.update_filter_values!
+    assert age_facet.must_convert?,
+           "Did not correctly return true for must_convert? with conversion column: #{age_facet.big_query_conversion_column}"
+    assert_equal 1, age_facet.min,
+                 "Did not set minimum value; expected 1 but found #{age_facet.min}"
+    assert_equal 51, age_facet.max,
+                 "Did not set minimum value; expected 51 but found #{age_facet.max}"
   end
 
   test 'should convert time values between units' do
@@ -153,24 +106,18 @@ class SearchFacetTest < ActiveSupport::TestCase
   end
 
   test 'should merge external facet filters when updating' do
-    mock = Minitest::Mock.new
-    filters = [
-      { id: 'MONDO_0005109', name: 'HIV infectious disease' },
-      { id: 'MONDO_0018076', name: 'tuberculosis' }
-    ]
-    mock.expect :query, filters, [String]
     azul_diseases = AzulSearchService.get_all_facet_filters['disease']
-    SearchFacet.stub :big_query_dataset, mock do
-      disease_facet = SearchFacet.find_by(identifier: 'disease')
-      disease_facet.update_filter_values!(azul_diseases)
-      mock.verify
-      disease_facet.reload
-      assert disease_facet.filters_with_external.any?
-      expected_diseases = %w[normal COVID-19 influenza]
-      expected_diseases.each do |disease_name|
-        filter_value = { id: disease_name, name: disease_name }.with_indifferent_access
-        assert_includes disease_facet.filters_with_external, filter_value
-      end
+    disease_facet = SearchFacet.find_by(identifier: 'disease')
+    disease_facet.update_filter_values!(azul_diseases)
+    disease_facet.reload
+    assert disease_facet.filters_with_external.any?
+    expected_diseases = [
+      { id: 'PATO_0000461', name: 'normal' },
+      { id: 'MONDO_0005109', name: 'HIV infectious disease' },
+      { id: 'MONDO_0100096', name: 'COVID-19' }
+    ]
+    expected_diseases.each do |filter|
+      assert_includes disease_facet.filters_with_external, filter.with_indifferent_access
     end
   end
 
@@ -209,24 +156,15 @@ class SearchFacetTest < ActiveSupport::TestCase
   end
 
   test 'should find all filter matches' do
-    mock = Minitest::Mock.new
-    filters = [
-      { id: 'MONDO_0005109', name: 'HIV infectious disease' },
-      { id: 'MONDO_0018076', name: 'tuberculosis' }
-    ]
-    mock.expect :query, filters, [String]
     azul_diseases = AzulSearchService.get_all_facet_filters['disease']
     disease_keyword = 'cancer'
     cancers = azul_diseases[:filters].select { |d| d.match?(disease_keyword) }
-    SearchFacet.stub :big_query_dataset, mock do
-      disease_facet = SearchFacet.find_by(identifier: 'disease')
-      disease_facet.update_filter_values!(azul_diseases)
-      mock.verify
-      disease_facet.reload
-      assert_empty disease_facet.find_filter_matches(disease_keyword)
-      assert_equal cancers.sort,
-                   disease_facet.find_filter_matches(disease_keyword, filter_list: :filters_with_external).sort
-    end
+    disease_facet = SearchFacet.find_by(identifier: 'disease')
+    disease_facet.update_filter_values!(azul_diseases)
+    disease_facet.reload
+    assert_empty disease_facet.find_filter_matches(disease_keyword)
+    assert_equal cancers.sort,
+                 disease_facet.find_filter_matches(disease_keyword, filter_list: :filters_with_external).sort
   end
 
   test 'should determine if a filter matches' do
@@ -294,12 +232,12 @@ class SearchFacetTest < ActiveSupport::TestCase
       { id: 'CL_0000561', name: 'amacrine cell' },
       { id: 'CL_0000573', name: 'retinal cone cell' }
     ]
-
+    values = expected_filters.map { |f| [f[:id], f[:name]] }.flatten
     mock_query_not_detached [study] do
       facet.reload
       assert_equal expected_filters, facet.get_unique_filter_values(public_only: true)
-      metadata_ids = [study.cell_metadata.first.id]
-      assert_equal metadata_ids, facet.associated_metadata.pluck(:id)
+      metadata_ids = CellMetadatum.where(name: 'cell_type').pluck(:id)
+      assert_equal metadata_ids, facet.associated_metadata(values:).pluck(:id)
     end
   end
 

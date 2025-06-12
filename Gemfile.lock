@@ -193,8 +193,6 @@ GEM
       activesupport (>= 6.1)
     google-apis-batch_v1 (0.27.0)
       google-apis-core (>= 0.11.0, < 2.a)
-    google-apis-bigquery_v2 (0.54.0)
-      google-apis-core (>= 0.11.0, < 2.a)
     google-apis-core (0.11.0)
       addressable (~> 2.5, >= 2.5.1)
       googleauth (>= 0.16.2, < 2.a)
@@ -210,12 +208,6 @@ GEM
       google-apis-core (>= 0.11.0, < 2.a)
     google-apis-storage_v1 (0.19.0)
       google-apis-core (>= 0.9.0, < 2.a)
-    google-cloud-bigquery (1.43.1)
-      concurrent-ruby (~> 1.0)
-      google-apis-bigquery_v2 (~> 0.1)
-      google-cloud-core (~> 1.6)
-      googleauth (>= 0.16.2, < 2.a)
-      mini_mime (~> 1.0)
     google-cloud-core (1.6.0)
       google-cloud-env (~> 1.0)
       google-cloud-errors (~> 1.0)
@@ -587,7 +579,6 @@ DEPENDENCIES
   gibberish
   google-apis-batch_v1
   google-apis-lifesciences_v2beta
-  google-cloud-bigquery
   google-cloud-storage
   googleauth
   irb

@@ -2,7 +2,6 @@ require 'api_test_helper'
 require 'user_tokens_helper'
 require 'bulk_download_helper'
 require 'test_helper'
-require 'big_query_helper'
 require 'includes_helper'
 
 class SearchControllerTest < ActionDispatch::IntegrationTest
@@ -30,16 +29,19 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     @author = FactoryBot.create(:author, study: @study, last_name: 'Doe', first_name: 'john', institution: 'MIT')
     # add top-level metadata for results
     annotation_input = [
-      { name: 'disease__ontology_label', type: 'group', values: Array.new(5, "disease or disorder") },
-      { name: 'species__ontology_label', type: 'group', values: Array.new(5, "Homo sapiens") },
-      { name: 'library_preparation_protocol__ontology_label', type: 'group', values: Array.new(5, "Seq-Well") },
-      { name: 'organ__ontology_label', type: 'group', values: Array.new(5, "milk") },
-      { name: 'sex', type: 'group', values: Array.new(5, "female") },
+      { name: 'disease', type: 'group', values: Array.new(5, 'MONDO_0000001') },
+      { name: 'disease__ontology_label', type: 'group', values: Array.new(5, 'disease or disorder') },
+      { name: 'species', type: 'group', values: Array.new(5, 'NCBITaxon_9606') },
+      { name: 'species__ontology_label', type: 'group', values: Array.new(5, 'Homo sapiens') },
+      { name: 'library_preparation_protocol__ontology_label', type: 'group', values: Array.new(5, 'Seq-Well') },
+      { name: 'organ__ontology_label', type: 'group', values: Array.new(5, 'milk') },
+      { name: 'sex', type: 'group', values: Array.new(5, 'female') },
+      { name: 'organism_age', type: 'numeric', values: [1, 3, 7, 12, 51] },
+      { name: 'organism_age__unit_label', type: 'group', values: Array.new(5, 'year') }
     ]
     FactoryBot.create(:metadata_file, name: 'metadata.txt', study: @study, use_metadata_convention: true,
                       cell_input: %w[cellA cellB cellC cellD cellE],
                       annotation_input: )
-    seed_example_bq_data(@study)
     FactoryBot.create(:cluster_file, name: 'cluster_example.txt', study: @study)
     @other_study = FactoryBot.create(:detached_study,
                                      name_prefix: "API Test Study #{@random_seed}",
@@ -66,6 +68,7 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
 
   # reset known commonly used objects to initial states to prevent failures breaking other tests
   teardown do
+    # Study.where(name: /Search Promotion Test/).destroy_all
     OmniAuth.config.mock_auth[:google_oauth2] = nil
     reset_user_tokens
     @other_study.study_detail.update!(full_description: '')
@@ -76,7 +79,6 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     BrandingGroup.destroy_all
     SearchFacet.destroy_all
     PresetSearch.destroy_all
-    BigQueryClient.clear_bq_table
   end
 
   test 'should get all search facets' do
@@ -168,7 +170,7 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     # check top-level metadata results
     source_study = Study.find_by(accession: result_accession)
     result_study = json['studies'].first
-    source_study.cell_metadata.each do |meta|
+    source_study.cell_metadata.where(:name.in => Api::V1::StudySearchResultsObjects::COHORT_METADATA).each do |meta|
       truncated_name = meta.name.chomp('__ontology_label')
       assert_equal meta.values, result_study.dig('metadata', truncated_name)
     end
@@ -195,6 +197,7 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'should return search results using numeric facets' do
+    CellMetadatum.where(name: 'organism_age').map(&:set_minmax_by_units!) # ensure minmax values are set
     facet = SearchFacet.find_by(identifier: 'organism_age')
     facet.update_filter_values! # in case there is a race condition with parsing & facet updates
     # loop through 3 different units (days, months, years) to run a numeric-based facet query with conversion
@@ -366,21 +369,23 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     # update other_study to match one filter from facets; should not be inferred since it doesn't meet both criteria
     facet_query = "species:#{HOMO_SAPIENS_FILTER[:id]}#{FACET_DELIM}disease:#{NO_DISEASE_FILTER[:id]}"
     @other_study.study_detail.update(full_description: HOMO_SAPIENS_FILTER[:name])
-    execute_http_request(:get, api_v1_search_path(type: 'study', facets: facet_query))
-    assert_response :success
-    assert_equal @convention_accessions, json['matching_accessions'],
-                 "Did not find expected accessions before inferred search, expected #{@convention_accessions} but found #{json['matching_accessions']}"
+    AzulSearchService.stub :get_results, {} do
+      execute_http_request(:get, api_v1_search_path(type: 'study', facets: facet_query))
+      assert_response :success
+      assert_equal @convention_accessions, json['matching_accessions'],
+                   "Did not find expected accessions before inferred search, expected #{@convention_accessions} but found #{json['matching_accessions']}"
 
-    # update to match both filters; should be inferred
-    double_facet_name = "#{HOMO_SAPIENS_FILTER[:name]} #{NO_DISEASE_FILTER[:name]}"
-    @other_study.study_detail.update(full_description: double_facet_name)
-    execute_http_request(:get, api_v1_search_path(type: 'study', facets: facet_query))
-    assert_response :success
-    inferred_accessions = @convention_accessions + [@other_study.accession]
-    assert_equal inferred_accessions, json['matching_accessions'],
-                 "Did not find expected accessions after inferred search, expected #{inferred_accessions} but found #{json['matching_accessions']}"
-    inferred_study = json['studies'].last
-    assert inferred_study['inferred_match'], "Did not correctly mark #{@other_study.accession} as inferred"
+      # update to match both filters; should be inferred
+      double_facet_name = "#{HOMO_SAPIENS_FILTER[:name]} #{NO_DISEASE_FILTER[:name]}"
+      @other_study.study_detail.update(full_description: double_facet_name)
+      execute_http_request(:get, api_v1_search_path(type: 'study', facets: facet_query))
+      assert_response :success
+      inferred_accessions = @convention_accessions + [@other_study.accession]
+      assert_equal inferred_accessions, json['matching_accessions'],
+                   "Did not find expected accessions after inferred search, expected #{inferred_accessions} but found #{json['matching_accessions']}"
+      inferred_study = json['studies'].last
+      assert inferred_study['inferred_match'], "Did not correctly mark #{@other_study.accession} as inferred"
+    end
   end
 
   test 'should run preset search' do
@@ -444,43 +449,6 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     # clean up
     api_test_study.update(public: true)
     @user.update(api_access_token: valid_token)
-  end
-
-  test 'should construct query elements for facets' do
-    non_array_facet = {
-      id: 'species',
-      filters: [
-        { id: 'NCBITaxon_9606', name: 'Homo sapiens' },
-        { id: 'Gallus gallus', name: 'Gallus gallus' }
-      ],
-      db_facet: SearchFacet.find_by(identifier: 'species')
-    }
-    expected_where = "(species IN ('NCBITaxon_9606','Gallus gallus') OR" \
-                     " species__ontology_label IN ('Homo sapiens','Gallus gallus'))"
-    query_elements = Api::V1::SearchController.get_query_elements_for_facet(non_array_facet)
-    assert_equal expected_where, query_elements[:where]
-    array_facet = {
-      id: 'disease',
-      filters: [
-        { id: 'MONDO_0005109', name: 'HIV infectious disease' },
-        { id: 'Alzheimer disease', name: 'Alzheimer disease' }
-      ],
-      db_facet: SearchFacet.find_by(identifier: 'disease')
-    }
-    # assemble expected query elements
-    # both disease and disease__ontology_label should have corresponding with/from/where clauses using UNNEST
-    array_with = 'disease_filters AS (SELECT["MONDO_0005109", "Alzheimer disease"] as disease_value), ' \
-                 'disease_label_filters AS (SELECT["HIV infectious disease", "Alzheimer disease"] ' \
-                 'as disease_label_value)'
-    array_from = 'disease_filters, UNNEST(disease_filters.disease_value) AS disease_val, disease_label_filters, ' \
-                 'UNNEST(disease_label_filters.disease_label_value) AS disease_label_val'
-    array_where = '((disease_val IN UNNEST(disease)) OR (disease_label_val IN UNNEST(disease__ontology_label)))'
-    array_select = 'disease_val, disease_label_val'
-    array_query_elements = Api::V1::SearchController.get_query_elements_for_facet(array_facet)
-    assert_equal array_with, array_query_elements[:with]
-    assert_equal array_from, array_query_elements[:from]
-    assert_equal array_where, array_query_elements[:where]
-    assert_equal array_select, array_query_elements[:select]
   end
 
   test 'should escape quotes in facet filter values' do
@@ -566,19 +534,5 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
         mock.verify
       end
     end
-  end
-
-  test 'should divide facets by data source' do
-    identifier = 'has_morphology'
-    column = 'bil_url'
-    morph_facet = SearchFacet.create!(
-      name: identifier.humanize, identifier:, big_query_id_column: column, big_query_name_column: column,
-      is_mongo_based: true, is_presence_facet: true, convention_name: 'alexandria_convention', data_type: 'string',
-      convention_version: '3.0.0', visible: true
-    )
-    facets = SearchFacet.all.map { |db_facet| { db_facet: } }
-    mongo_facets, bq_facets = Api::V1::SearchController.divide_facets_by_source(facets)
-    assert_equal mongo_facets.first[:db_facet].identifier, morph_facet.identifier
-    assert_equal SearchFacet.count - 1, bq_facets.count
   end
 end
