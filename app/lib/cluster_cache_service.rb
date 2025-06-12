@@ -106,14 +106,24 @@ class ClusterCacheService
     annotations = DifferentialExpressionService.find_eligible_annotations(study)
     return nil if annotations.empty?
 
-    ontology = annotations.detect { |a| a[:annotation_name] == 'cell_type__ontology_label' }
-    author_cell_type = annotations.detect { |a| a[:annotation_name] =~ /author.*cell.*type/i }
-    cell_type = annotations.detect { |a| a[:annotation_name] =~ DifferentialExpressionService::CELL_TYPE_MATCHER }
-    clustering = annotations.detect { |a| a[:annotation_name] =~ DifferentialExpressionService::CLUSTERING_MATCHER }
-    category = annotations.detect { |a| a[:annotation_name] =~ DifferentialExpressionService::CATEGORY_MATCHER }
-    best_avail = ontology || author_cell_type || cell_type || clustering || category
+    # ordered by priority, so the first match is the best one
+    matchers = [
+      'cell_type__ontology_label', /author.*cell.*type/i, DifferentialExpressionService::CELL_TYPE_MATCHER,
+      DifferentialExpressionService::CLUSTERING_MATCHER, DifferentialExpressionService::CATEGORY_MATCHER
+    ]
+    best_annotations = matchers.map do |matcher|
+      comparison = matcher.is_a?(Regexp) ? :=~ : :==
+      annotations.detect { |annot| annot[:annotation_name].send(comparison, matcher) }
+    end
 
-    best_avail.present? ? [best_avail[:annotation_name], 'group', best_avail[:annotation_scope]].join('--') : nil
+    # ensure cluster-based annotations are valid for the default cluster
+    default_cluster = study.default_cluster
+    best_avail = best_annotations.compact.detect do |annot|
+      annot[:annotation_scope] == 'study' ||
+        (annot[:annotation_scope] == 'cluster' && default_cluster&.id == annot[:cluster_group_id])
+    end
+
+    best_avail ? [best_avail[:annotation_name], 'group', best_avail[:annotation_scope]].join('--') : nil
   end
 
   # helper to determine if a user set the default annotation manually by checking HistoryTracker for events
