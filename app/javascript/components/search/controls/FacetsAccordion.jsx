@@ -7,7 +7,6 @@ import FacetControl from './FacetControl'
  * Expandable sections for facets in "More facets" popup
  */
 export default function FacetsAccordion(props) {
-
   return (
     <PanelGroup accordion id='facets-accordion'>
       {

@@ -72,7 +72,7 @@ export default function FacetsPanel() {
       }
       <CombinedFacetControl controlDisplayName="cell type" facetIds={['cell_type', 'cell_type__custom']}/>
       <MoreFacetsButton facets={moreFacets} />
-        <OptionsButton />
+      <OptionsButton />
       <Modal
         show={showSearchHelpModal}
         onHide={() => closeModal(setShowSearchHelpModal)}

@@ -15,7 +15,6 @@ export default function MoreFacetsButton(props) {
   const searchContext = useContext(StudySearchContext)
   const [show, setShow] = useState(false)
 
-
   const { node, handleButtonClick } = useCloseableModal(show, setShow)
 
   const numFacetsApplied = props.facets.filter(facet => {
@@ -23,6 +22,7 @@ export default function MoreFacetsButton(props) {
     return facets[facet.id] && facets[facet.id].length
   }).length
   const facetCountString = numFacetsApplied > 0 ? `(${numFacetsApplied})` : ''
+
   return (
     <span
       id='more-facets-button'
@@ -33,7 +33,7 @@ export default function MoreFacetsButton(props) {
         <FontAwesomeIcon className="icon-left" icon={faSlidersH}/>
           More facets { facetCountString }
       </a>
-      {show && <FacetsAccordion facets={props.facets} setShow={setShow}/>}
+      {show && <FacetsAccordion facets={props.facets} setShow={setShow} />}
     </span>
   )
 }
