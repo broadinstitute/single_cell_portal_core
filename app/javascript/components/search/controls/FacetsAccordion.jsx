@@ -17,9 +17,6 @@ export default function FacetsAccordion(props) {
           )
         })
       }
-      {
-        props.optionsControls.map((control) => { return control })
-      }
     </PanelGroup>
   )
 }

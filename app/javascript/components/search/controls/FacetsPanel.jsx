@@ -8,6 +8,7 @@ import FacetControl from './FacetControl'
 import CombinedFacetControl from './CombinedFacetControl'
 import MoreFacetsButton from './MoreFacetsButton'
 import { SearchFacetContext } from '~/providers/SearchFacetProvider'
+import OptionsButton from '~/components/search/controls/OptionsButton'
 
 const defaultFacetIds = ['disease', 'species']
 const moreFacetIds = [
@@ -71,6 +72,7 @@ export default function FacetsPanel() {
       }
       <CombinedFacetControl controlDisplayName="cell type" facetIds={['cell_type', 'cell_type__custom']}/>
       <MoreFacetsButton facets={moreFacets} />
+        <OptionsButton />
       <Modal
         show={showSearchHelpModal}
         onHide={() => closeModal(setShowSearchHelpModal)}

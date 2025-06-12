@@ -11,11 +11,11 @@ export default function OptionsControl({searchContext, searchProp, value, label}
   }
 
   return (
-    <span className={`facet option-control ${isChecked ? 'active' : ''}` } id={`options-control-${searchProp}`}>
-      <a>
+    <li id={`options-control-${searchProp}`} key={`options-control-${searchProp}`}>
+      <label>
         <input type="checkbox" checked={isChecked} onChange={() => {toggleCheckbox(!isChecked)}}/>
-          <span className='inner-label' onClick={() => {toggleCheckbox(!isChecked)}} >{ label }</span>
-      </a>
-  </span>
+          <span onClick={() => {toggleCheckbox(!isChecked)}} >{ label }</span>
+      </label>
+    </li>
   )
 }

@@ -5,7 +5,6 @@ import { faSlidersH } from '@fortawesome/free-solid-svg-icons'
 import FacetsAccordion from './FacetsAccordion'
 import { StudySearchContext } from '~/providers/StudySearchProvider'
 import useCloseableModal from '~/hooks/closeableModal'
-import OptionsControl from '~/components/search/controls/OptionsControl'
 
 /**
  * Component for "More facets" button.  Clicking shows facets accordion box.
@@ -24,10 +23,6 @@ export default function MoreFacetsButton(props) {
     return facets[facet.id] && facets[facet.id].length
   }).length
   const facetCountString = numFacetsApplied > 0 ? `(${numFacetsApplied})` : ''
-  const azulResults = <OptionsControl
-    searchContext={searchContext} searchProp='external' value='hca' label='Include HCA results'/>
-  const optionsControls = [azulResults]
-
   return (
     <span
       id='more-facets-button'
@@ -38,7 +33,7 @@ export default function MoreFacetsButton(props) {
         <FontAwesomeIcon className="icon-left" icon={faSlidersH}/>
           More facets { facetCountString }
       </a>
-      {show && <FacetsAccordion facets={props.facets} setShow={setShow} optionsControls={optionsControls}/>}
+      {show && <FacetsAccordion facets={props.facets} setShow={setShow}/>}
     </span>
   )
 }
