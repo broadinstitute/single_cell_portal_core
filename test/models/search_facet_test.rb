@@ -43,6 +43,19 @@ class SearchFacetTest < ActiveSupport::TestCase
       { id: 'NCBITaxon_9606', name: 'Homo sapiens' },
       { id: 'NCBITaxon_10090', name: 'Mus musculus' }
     ]
+
+    SearchFacet.create(name: 'Cell type', identifier: 'cell_type', is_mongo_based: true,
+                       ontology_urls: [
+                         {
+                           name: 'Cell Ontology',
+                           url: 'https://www.ebi.ac.uk/ols/api/ontologies/cl',
+                           browser_url: 'https://www.ebi.ac.uk/ols/ontologies/cl'
+                         }
+                       ],
+                       data_type: 'string', is_ontology_based: true, is_array_based: false,
+                       big_query_id_column: 'cell_type',
+                       big_query_name_column: 'cell_type__ontology_label',
+                       convention_name: 'Alexandria Metadata Convention', convention_version: '2.2.0')
   end
 
   after(:all) do
@@ -158,6 +171,7 @@ class SearchFacetTest < ActiveSupport::TestCase
   test 'should find all filter matches' do
     azul_diseases = AzulSearchService.get_all_facet_filters['disease']
     disease_keyword = 'cancer'
+    skip 'Azul search service not available' unless azul_diseases
     cancers = azul_diseases[:filters].select { |d| d.match?(disease_keyword) }
     disease_facet = SearchFacet.find_by(identifier: 'disease')
     disease_facet.update_filter_values!(azul_diseases)
@@ -215,18 +229,7 @@ class SearchFacetTest < ActiveSupport::TestCase
                           ]
                         }
                       ])
-    facet = SearchFacet.create(name: 'Cell type', identifier: 'cell_type', is_mongo_based: true,
-                               ontology_urls: [
-                                 {
-                                   name: 'Cell Ontology',
-                                   url: 'https://www.ebi.ac.uk/ols/api/ontologies/cl',
-                                   browser_url: 'https://www.ebi.ac.uk/ols/ontologies/cl'
-                                 }
-                               ],
-                               data_type: 'string', is_ontology_based: true, is_array_based: false,
-                               big_query_id_column: 'cell_type',
-                               big_query_name_column: 'cell_type__ontology_label',
-                               convention_name: 'Alexandria Metadata Convention', convention_version: '2.2.0')
+    facet = SearchFacet.find_by(identifier: 'cell_type')
     expected_filters = [
       { id: 'CL_0000236', name: 'B cell' },
       { id: 'CL_0000561', name: 'amacrine cell' },
@@ -254,5 +257,17 @@ class SearchFacetTest < ActiveSupport::TestCase
     facet.update_filter_values!
     facet.reload
     assert_equal expected_filter, facet.filter_for_presence
+  end
+
+  test 'should sort and uniquify filters properly' do
+    facet = SearchFacet.find_by(identifier: 'cell_type')
+    facet.update_filter_values!
+    assert facet.filters.first[:name] == 'amacrine cell'
+    external_filters = { filters: ['b cell', 'B cell', 'amacrine cell', 'Amacrine Cell', 'T cell'] }
+    facet.update_filter_values!(external_filters)
+    facet.reload
+    assert_equal 1, facet.filters_with_external.select { |f| f[:name] == 'amacrine cell' }.count
+    assert_equal 1, facet.filters_with_external.select { |f| f[:name] == 'T cell' }.count
+    assert_equal 'T cell', facet.filters_with_external.last[:name]
   end
 end

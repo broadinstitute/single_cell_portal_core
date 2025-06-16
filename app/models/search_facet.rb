@@ -400,10 +400,14 @@ class SearchFacet
         filter_map += filters_from_metadatum(metadatum)
       end
     end
-    filter_map.uniq
+    return filter_map if is_numeric?
+
+    filter_map.uniq { |filter| [filter[:id].downcase, filter[:name].downcase] }.reject do |filter|
+      filter[:id].blank? || filter[:name].blank?
+    end
   end
 
-  # find all matching CellMetadum objects for a given facet
+  # find all matching CellMetadatum objects for a given facet
   # can scope query to matching values array if needed or by a sub-query if provided
   def associated_metadata(values:, query: {})
     annotation_type = is_numeric? ? 'numeric' : 'group'
@@ -458,9 +462,9 @@ class SearchFacet
       end
       return false if values.empty? # found no results, meaning an error occurred
 
-      values.sort_by! { |f| f[:name] }
-      merged_values.sort_by! { |f| f[:name] }
-      public_values = get_unique_filter_values(public_only: true)
+      values.sort_by! { |f| f[:name].downcase }
+      merged_values.sort_by! { |f| f[:name].downcase }
+      public_values = get_unique_filter_values(public_only: true).sort_by { |f| f[:name].downcase }
       update(filters: values, public_filters: public_values, filters_with_external: merged_values)
     end
   end
