@@ -65,6 +65,14 @@ module Api
             key :type, :string
           end
           parameter do
+            key :name, :external
+            key :in, :query
+            key :description, 'External search services to query in addition to SCP'
+            key :required, false
+            key :type, :string
+            key :enum, %w[hca]
+          end
+          parameter do
             key :name, :page
             key :in, :query
             key :description, 'Page number for pagination control'
@@ -269,10 +277,11 @@ module Api
         # convert to array to allow appending external search results (Azul, TDR, etc.)
         @studies = @studies.to_a
 
-        # perform Azul search if there are facets/terms provided by user
+        # perform Azul search if there are facets/terms provided by user, and they requested HCA results
         # run this before inferred search so that they are weighted and sorted correctly
         # skip if user is searching inside a collection or they are performing global gene search
-        if (@facets.present? || @term_list.present?) && (@selected_branding_group.nil? && @search_type == :study)
+        include_azul = params[:external] == 'hca' && @search_type == :study && @selected_branding_group.nil?
+        if (@facets.present? || @term_list.present?) && include_azul
           begin
             azul_results = ::AzulSearchService.append_results_to_studies(@studies,
                                                                          selected_facets: @facets,
