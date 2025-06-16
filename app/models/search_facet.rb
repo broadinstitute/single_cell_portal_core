@@ -402,7 +402,7 @@ class SearchFacet
     end
     return filter_map if is_numeric?
 
-    filter_map.uniq { |filter| [filter[:id].downcase, filter[:name].downcase] }.reject do |filter|
+    filter_map.uniq { |filter| [filter[:id]&.downcase, filter[:name]&.downcase] }.reject do |filter|
       filter[:id].blank? || filter[:name].blank?
     end
   end
@@ -456,7 +456,7 @@ class SearchFacet
       merged_values = values.dup
       if external_facet[:filters]
         Rails.logger.info "Merging #{external_facet[:filters]} into '#{name}' facet filters"
-        external_facet[:filters].each do |filter|
+        external_facet[:filters].uniq(&:downcase).each do |filter|
           merged_values << { id: filter, name: filter } unless filters_include?(filter)
         end
       end
