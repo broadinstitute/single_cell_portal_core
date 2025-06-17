@@ -32,6 +32,7 @@ class SearchFacetPopulatorTest < ActiveSupport::TestCase
                         identifier: "disease",
                         is_ontology_based: true,
                         is_array_based: false,
+                        data_type: 'string',
                         big_query_id_column: 'disease',
                         big_query_name_column: 'disease__ontology_label',
                         convention_name: 'Alexandria Metadata Convention',

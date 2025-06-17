@@ -1314,18 +1314,18 @@ class Study
 
   # helper method to get number of unique single cells
   def set_cell_count
-    cell_count = self.all_cells_array.size
-    Rails.logger.info "Setting cell count in #{self.name} to #{cell_count}"
-    self.update(cell_count: cell_count)
-    Rails.logger.info "Cell count set for #{self.name}"
+    cells = all_cells_array.size
+    Rails.logger.info "Setting cell count in #{accession} to #{cells}"
+    self.update(cell_count: cells)
+    Rails.logger.info "Cell count set for #{accession}"
   end
 
   # helper method to set the number of unique genes in this study
   def set_gene_count
-    gene_count = self.unique_genes.size
-    Rails.logger.info "Setting gene count in #{self.name} to #{gene_count}"
-    self.update(gene_count: gene_count)
-    Rails.logger.info "Gene count set for #{self.name}"
+    genes = unique_genes.size
+    Rails.logger.info "Setting gene count in #{accession} to #{genes}"
+    self.update(gene_count: genes)
+    Rails.logger.info "Gene count set for #{accession}"
   end
 
   # get all unique gene names for a study; leverage index on Gene model to improve performance
@@ -1399,10 +1399,11 @@ class Study
   # return an array of all single cell names in study, will check for main list of cells or concatenate all
   # cell lists from individual expression matrices
   def all_cells_array
-    if self.metadata_file&.parsed? # nil-safed via &
+    metadata_file&.reload # refresh association for checking parsed state
+    if metadata_file&.parsed? || (metadata_file&.is_viz_anndata? && has_cell_metadata?)
       query = {
-        name: 'All Cells', array_type: 'cells', linear_data_type: 'Study', linear_data_id: self.id,
-        study_id: self.id, study_file_id: self.metadata_file.id, cluster_group_id: nil, subsample_annotation: nil,
+        name: 'All Cells', array_type: 'cells', linear_data_type: 'Study', linear_data_id: id,
+        study_id: id, study_file_id: metadata_file.id, cluster_group_id: nil, subsample_annotation: nil,
         subsample_threshold: nil
       }
       DataArray.concatenate_arrays(query)
@@ -1825,18 +1826,6 @@ class Study
     Rails.logger.info "Workspace #{firecloud_project}/#{firecloud_workspace} successfully removed."
   end
 
-  # helper method that mimics DeleteQueueJob.delete_convention_data
-  # referenced from ensure_cascade_on_associations to prevent orphaned rows in BQ on manual deletes
-  def delete_convention_data
-    if self.metadata_file.present? && self.metadata_file.use_metadata_convention
-      Rails.logger.info "Removing convention data for #{self.accession} from BQ"
-      bq_dataset = ApplicationController.big_query_client.dataset CellMetadatum::BIGQUERY_DATASET
-      bq_dataset.query "DELETE FROM #{CellMetadatum::BIGQUERY_TABLE} WHERE study_accession = '#{self.accession}' AND file_id = '#{self.metadata_file.id}'"
-      Rails.logger.info "BQ cleanup for #{self.accession} completed"
-      SearchFacet.delay.update_all_facet_filters
-    end
-  end
-
   ## State tracking methods
 
   def last_public_date
@@ -2226,8 +2215,6 @@ class Study
   # only pertains to "parsed" data as other records will be cleaned up via callbacks
   # provides much better performance to study.destroy while ensuring cleanup consistency
   def ensure_cascade_on_associations
-    # ensure all BQ data is cleaned up first
-    self.delete_convention_data
     self.study_files.each do |file|
       DataArray.where(study_id: self.id, study_file_id: file.id).delete_all
     end

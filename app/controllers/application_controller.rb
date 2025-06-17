@@ -32,10 +32,6 @@ class ApplicationController < ActionController::Base
     @@batch_api_client ||= BatchApiClient.new
   end
 
-  def self.big_query_client
-    @@big_query_client ||= BigQueryClient.new.client
-  end
-
   # getter for FireCloudClient instance
   def self.firecloud_client
     @@firecloud_client ||= FireCloudClient.new

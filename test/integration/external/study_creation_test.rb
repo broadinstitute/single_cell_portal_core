@@ -1,5 +1,4 @@
 require 'integration_test_helper'
-require 'big_query_helper'
 require 'test_helper'
 require 'includes_helper'
 
@@ -43,7 +42,6 @@ class StudyCreationTest < ActionDispatch::IntegrationTest
     sleep 1
     study = Study.find_by(name: "Test Study #{@random_seed}")
     assert study.present?, "Study did not successfully save"
-    initial_bq_row_count = get_bq_row_count(study)
 
     example_files = {
       expression: {
@@ -132,8 +130,6 @@ class StudyCreationTest < ActionDispatch::IntegrationTest
     assert_equal 2, cluster_annot_count, "did not find correct number of cluster annotations"
     assert_equal 3, study_file_count, "did not find correct number of study files"
     assert_equal 1, share_count, "did not find correct number of study shares"
-
-    assert_equal initial_bq_row_count + 30, get_bq_row_count(study)
 
     # check that the cluster_group set the point count
     cluster_group = study.cluster_groups.first

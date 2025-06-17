@@ -898,7 +898,7 @@ export async function fetchSearch(type, searchParams, mock=false) {
 export function buildSearchQueryString(type, searchParams) {
   const facetsParam = buildFacetQueryString(searchParams.facets)
 
-  const params = ['page', 'order', 'terms', 'preset', 'genes', 'genePage']
+  const params = ['page', 'order', 'terms', 'external', 'preset', 'genes', 'genePage']
   let otherParamString = params.map(param => {
     return searchParams[param] ? `&${param}=${searchParams[param]}` : ''
   }).join('')

@@ -12,10 +12,6 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
     case object.class.name
 
     when 'Study'
-      # first check if we have convention metadata to delete
-      if object.metadata_file.present?
-        delete_convention_data(study: object, metadata_file: object.metadata_file)
-      end
       # mark for deletion, rename study to free up old name for use, and restrict access by removing owner
       new_name = "DELETE-#{object.data_dir}"
       # set various attributes to hide study while it is queued for deletion
@@ -70,8 +66,6 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
         end
         remove_file_from_bundle
       when 'Metadata'
-        delete_convention_data(study:, metadata_file: object)
-
         # clean up all subsampled data, as it is now invalid and will be regenerated
         # once a user adds another metadata file
         ClusterGroup.where(study_id: study.id).each do |cluster_group|
@@ -84,7 +78,6 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
         reset_default_annotation(study:)
       when 'AnnData'
         unless object.is_reference_anndata?
-          delete_convention_data(study:, metadata_file: object)
           # delete user annotations first as we lose associations later
           delete_user_annotations(study:, study_file: object)
           delete_parsed_data(object.id, study.id, ClusterGroup, CellMetadatum, Gene, DataArray)
@@ -262,15 +255,6 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
     )
     cursor.delete_all if cursor.exists?
     study.cluster_groups.update_all(indexed: false)
-  end
-
-  # delete convention data from BQ if a user deletes a convention metadata file, or a study that contains convention data
-  def delete_convention_data(study:, metadata_file:)
-    bq_dataset = ApplicationController.big_query_client.dataset CellMetadatum::BIGQUERY_DATASET
-    if metadata_file.use_metadata_convention
-      bq_dataset.query "DELETE FROM #{CellMetadatum::BIGQUERY_TABLE} WHERE study_accession = '#{study.accession}' AND file_id = '#{metadata_file.id}'"
-      SearchFacet.delay.update_all_facet_filters
-    end
   end
 
   # remove DE outputs when deleting study files

@@ -174,4 +174,29 @@ class ClusterCacheServiceTest < ActiveSupport::TestCase
     @cell_type_study.reload
     assert_equal 'cell_type__ontology_label--group--study', @cell_type_study.default_annotation
   end
+
+  test 'should ensure best available annotation is valid for default cluster' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Cluster annotation test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    FactoryBot.create(:metadata_file,
+                      name: 'metadata.txt',
+                      study:,
+                      cell_input: %w[A B C],
+                      annotation_input: [
+                        { name: 'predicted_labels', type: 'group', values: %w[HSC_MPP LMPP HSC_MPP] }
+                      ])
+    cluster_1 = FactoryBot.create(
+      :cluster_file, name: 'cluster1.txt', study:, cell_input: { x: [1, 4, 6], y: [7, 5, 3], cells: %w[A B C] }
+    )
+    cluster_2 = FactoryBot.create(
+      :cluster_file, name: 'cluster2.txt', study:, cell_input: { x: [2, 3, 4], y: [4, 1, 3], cells: %w[A B C] },
+      annotation_input: [{ name: 'seurat_labels', type: 'group', values: %w[0 0 1] }]
+    )
+    study.update(default_options: { cluster: cluster_1.name })
+    assert_equal 'predicted_labels--group--study', ClusterCacheService.best_available_annotation(study)
+    study.update(default_options: { cluster: cluster_2.name })
+    assert_equal 'seurat_labels--group--cluster', ClusterCacheService.best_available_annotation(study)
+  end
 end

@@ -132,10 +132,11 @@ class StudySearchServiceTest < ActiveSupport::TestCase
 
   test 'should perform mongo-based search when specified' do
     filter = @filters.sample
-    results = StudySearchService.perform_mongo_facet_search(@search_facet, [filter])
+    facets = [{ db_facet: @search_facet, filters: [filter] }]
+    results = StudySearchService.perform_mongo_facet_search(facets)
     safe_result = results.first.with_indifferent_access
     assert_equal @metadata_study.accession, safe_result[:study_accession]
-    assert_equal filter[:name], safe_result[@search_facet.identifier]
+    assert_equal filter[:name], safe_result[@search_facet.identifier].first
   end
 
   test 'should convert ontology id to multiple formats' do

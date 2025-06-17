@@ -1,7 +1,6 @@
 require 'integration_test_helper'
 require 'api_test_helper'
 require 'user_tokens_helper'
-require 'big_query_helper'
 require 'test_helper'
 require 'includes_helper'
 require 'detached_helper'
@@ -222,52 +221,6 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
     get download_file_path(accession: study.accession, study_name: study.url_safe_name, filename: 'file.txt')
     assert_response 302,
                     "Did not attempt to redirect on a download from a detached study, expected 302 but found #{response.code}"
-  end
-
-  # ensure data removal from BQ on metadata delete
-  test 'should delete data from bigquery' do
-    study = FactoryBot.create(:detached_study,
-                              user: @user,
-                              name_prefix: 'Validation BQ Delete Study',
-                              public: false,
-                              test_array: @@studies_to_clean)
-    metadata_file = FactoryBot.create(:metadata_file,
-                                      study:,
-                                      name: 'convention.metadata.txt',
-                                      use_metadata_convention: true,
-                                      generation: '123456789',
-                                      status: 'uploaded')
-    seed_example_bq_data(study)
-    mock_not_detached study, :find_by do
-      initial_bq_row_count = get_bq_row_count(study)
-      assert initial_bq_row_count > 0, "wrong number of BQ rows found to test deletion capability"
-
-      mock = Minitest::Mock.new
-      mock.expect :execute_gcloud_method, true, [:workspace_file_exists?, Integer, String, String]
-      mock.expect :execute_gcloud_method, true, [:delete_workspace_file, Integer, String, String]
-
-      ApplicationController.stub :firecloud_client, mock do
-        # request delete
-        puts 'Requesting delete for metadata file'
-        delete api_v1_study_study_file_path(study_id: study.id, id: metadata_file.id),
-               as: :json, headers: { Authorization: "Bearer #{@user.api_access_token['access_token']}" }
-        assert_response 204, 'Did not correctly respond 204 to delete request'
-        seconds_slept = 0
-        sleep_increment = 10
-        max_seconds_to_sleep = 60
-        while (bq_row_count = get_bq_row_count(study)) != 0
-          puts "#{seconds_slept} seconds after requesting file deletion, bq_row_count is #{bq_row_count}."
-          if seconds_slept >= max_seconds_to_sleep
-            raise "Even #{seconds_slept} seconds after requesting file deletion, not all records have been deleted from bigquery."
-          end
-          sleep(sleep_increment)
-          seconds_slept += sleep_increment
-        end
-        puts "#{seconds_slept} seconds after requesting file deletion, bq_row_count is #{bq_row_count}."
-        assert get_bq_row_count(study) == 0
-        mock.verify
-      end
-    end
   end
 
   test 'should allow files with spaces in names' do

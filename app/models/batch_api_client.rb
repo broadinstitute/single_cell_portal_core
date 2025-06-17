@@ -516,10 +516,7 @@ class BatchApiClient
         ]
       end
       if study_file.use_metadata_convention
-        command_line += [
-          '--validate-convention', '--bq-dataset', CellMetadatum::BIGQUERY_DATASET,
-          '--bq-table', CellMetadatum::BIGQUERY_TABLE
-        ]
+        command_line += ['--validate-convention']
       end
     when 'ingest_cluster'
       # skip if parent file is AnnData as params_object will format command line
