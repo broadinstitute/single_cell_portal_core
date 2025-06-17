@@ -38,6 +38,18 @@ class DotPlotServiceTest < ActiveSupport::TestCase
     assert_not DotPlotService.study_eligible?(empty_study)
   end
 
+  test 'should determine if cluster has been processed' do
+    assert_not DotPlotService.cluster_processed?(@study, @cluster_group)
+    DotPlotGene.create(
+      study: @study,
+      study_file: @expression_file,
+      cluster_group: @cluster_group,
+      gene_symbol: 'Pten',
+      exp_scores: {}
+    )
+    assert DotPlotService.cluster_processed?(@study, @cluster_group)
+  end
+
   test 'should run preprocess expression job' do
     assert DotPlotService.run_preprocess_expression_job(@study, @cluster_group, @metadata_file, @expression_file)
   end
