@@ -617,6 +617,7 @@ class IngestJob
     case action
     when :ingest_cell_metadata
       study.create_all_cluster_cell_indices!
+      study.cell_metadata.where(:name.in => SearchFacet::NEED_MINMAX_BY_UNITS).map(&:set_minmax_by_units!)
     when :ingest_cluster
       cluster = ClusterGroup.find_by(study:, study_file:, name: cluster_name_by_file_type)
       cluster.create_all_cell_indices!

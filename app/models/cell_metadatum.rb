@@ -30,6 +30,7 @@ class CellMetadatum
   field :annotation_type, type: String
   field :values, type: Array
   field :is_differential_expression_enabled, default: false
+  field :minmax_by_units, type: Hash, default: {} # for search-based minmax queries
 
   index({ name: 1, annotation_type: 1, study_id: 1 }, { unique: true, background: true })
   index({ study_id: 1 }, { unique: false, background: true })
@@ -87,6 +88,39 @@ class CellMetadatum
 
   def is_ontology_labels?
     self.name.end_with?('__ontology_label')
+  end
+
+  def is_numeric?
+    annotation_type == 'numeric'
+  end
+
+  # for search-based numeric metadata (e.g. organism_age), compute minmax values for each unit
+  # this allows for range queries performantly
+  def set_minmax_by_units!
+    facet = SearchFacet.find_by(identifier: name)
+    return unless is_numeric? && SearchFacet::NEED_MINMAX_BY_UNITS.include?(facet&.identifier)
+
+    minmax_vals = {}
+    # there should only ever be one unit label for a given cell metadatum
+    units_meta = CellMetadatum.find_by(name: "#{name}__unit_label", annotation_type: 'group', study_id:, study_file_id:)
+    return unless units_meta.present? && units_meta.values.size == 1
+
+    unit = units_meta.values.first.pluralize
+    time_units = SearchFacet::TIME_MULTIPLIERS.keys
+    minmax = RequestUtils.get_minmax(cell_annotations.values)
+    return unless minmax.present? && minmax.all? { |v| v.is_a?(Numeric) }
+
+    time_units.each do |conversion_unit|
+      minmax_vals[conversion_unit] = [
+        facet.convert_time_between_units(
+          base_value: minmax.first, original_unit: unit, new_unit: conversion_unit
+        ).to_f,
+        facet.convert_time_between_units(
+          base_value: minmax.last, original_unit: unit, new_unit: conversion_unit
+        ).to_f
+      ]
+    end
+    update!(minmax_by_units: minmax_vals)
   end
 
   ##
