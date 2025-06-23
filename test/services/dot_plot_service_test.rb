@@ -50,6 +50,15 @@ class DotPlotServiceTest < ActiveSupport::TestCase
     assert DotPlotService.cluster_processed?(@study, @cluster_group)
   end
 
+  test 'should get processed matrices for study' do
+    assert_includes DotPlotService.study_processed_matrices(@study), @expression_file
+    empty_study = FactoryBot.create(:detached_study,
+                                    name_prefix: 'Empty DotPlot',
+                                    user: @user,
+                                    test_array: @@studies_to_clean)
+    assert_empty DotPlotService.study_processed_matrices(empty_study)
+  end
+
   test 'should run preprocess expression job' do
     assert DotPlotService.run_preprocess_expression_job(@study, @cluster_group, @metadata_file, @expression_file)
   end
