@@ -18,6 +18,16 @@ import LoadingSpinner from '~/lib/LoadingSpinner'
  */
 const ResultsPanel = ({ studySearchState, studyComponent, noResultsDisplay, bookmarks }) => {
   const results = studySearchState.results
+  const hcaMessage = <a
+    className='hca-link'
+    onClick={() => studySearchState.updateSearch({ external: 'hca' })}
+    data-analytics-event='search-hca-empty-results'>
+    Search HCA Data Portal?
+  </a>
+
+  const emptyResultMessage =  <div>
+    No results found. { studySearchState?.params?.external === "" ? hcaMessage : null }
+  </div>
 
   let panelContent
   if (studySearchState.isError) {
@@ -47,7 +57,7 @@ const ResultsPanel = ({ studySearchState, studyComponent, noResultsDisplay, book
       </>
     )
   } else {
-    noResultsDisplay = noResultsDisplay ? noResultsDisplay : <div> No results found. </div>
+    noResultsDisplay = noResultsDisplay ? noResultsDisplay : emptyResultMessage
     panelContent = (
       <>
         <SearchQueryDisplay terms={results.termList} facets={results.facets} />
