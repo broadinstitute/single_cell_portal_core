@@ -45,7 +45,7 @@ module Api
               key :description, 'Type of plot data requested'
               key :required, true
               key :type, :string
-              key :enum, %w(violin heatmap morpheus)
+              key :enum, %w(violin heatmap morpheus dotplot)
             end
             parameter do
               key :name, :cluster
@@ -117,6 +117,8 @@ module Api
             render_heatmap
           when 'morpheus'
             render_morpheus_json
+          when 'dotplot'
+            render_dotplot
           else
             render json: { error: "Unknown expression data type: #{data_type}" }, status: :bad_request
           end
@@ -174,12 +176,23 @@ module Api
           render json: expression_data, status: :ok
         end
 
+        def render_dotplot
+          if @cluster.nil?
+            render json: { error: 'Requested cluster not found' }, status: :not_found and return
+          end
+
+          expression_data = ExpressionVizService.load_precomputed_dot_plot_data(
+            @study, @cluster, annotation: @annotation, genes: @genes
+          )
+          render json: expression_data, status: :ok
+        end
+
         private
 
         # enforce a limit on number of genes allowed for visualization requests
         # see StudySearchService::MAX_GENE_SEARCH
         def check_gene_limit
-          return true if params[:genes].blank?
+          return true if params[:genes].blank? || params[:data_type] == 'dotplot'
 
           # render 422 if more than MAX_GENE_SEARCH as request fails internal validation
           num_genes = params[:genes].split(',').size
@@ -194,7 +207,11 @@ module Api
         end
 
         def set_genes
-          @genes = RequestUtils.get_genes_from_param(@study, params[:genes])
+          if params[:data_type] == 'dotplot'
+            @genes = params[:genes].split(',').map(&:strip).reject(&:empty?)
+          else
+            @genes = RequestUtils.get_genes_from_param(@study, params[:genes])
+          end
         end
 
         def set_selected_annotation

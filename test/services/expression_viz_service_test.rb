@@ -57,6 +57,27 @@ class ExpressionVizServiceTest < ActiveSupport::TestCase
                                      name: 'AGPAT2',
                                      study_file: @basic_study_exp_file,
                                      expression_input: [['A', 0],['B', 0],['C', 8]])
+    cluster_group = @basic_study.cluster_groups.find_by(name: @basic_study_cluster_file.name)
+    DotPlotGene.create(
+      study: @basic_study,
+      study_file: @basic_study_exp_file,
+      cluster_group:,
+      gene_symbol: 'PTEN',
+      exp_scores: {
+        'species--group--study' => { dog: [0.75, 0.666], cat: [3, 0.333] },
+        'disease--group--study' => { none: [1.5, 0.666], measles: [1.5, 0.333] }
+      }
+    )
+    DotPlotGene.create(
+      study: @basic_study,
+      study_file: @basic_study_exp_file,
+      cluster_group:,
+      gene_symbol: 'AGPAT2',
+      exp_scores: {
+        'species--group--study' => { dog: [4, 0.666], cat: [0, 0.333] },
+        'disease--group--study' => { none: [0, 0.666], measles: [8, 0.333] }
+      }
+    )
     defaults = {
         cluster: 'cluster_1.txt',
         annotation: 'species--group--study'
@@ -390,6 +411,26 @@ class ExpressionVizServiceTest < ActiveSupport::TestCase
         assert_equal exp_score.to_f,
                      data_score,
                      "expected #{exp_score} for #{cell} in #{gene['name']} but found #{data_score}"
+      end
+    end
+  end
+
+  test 'should load precomputed dot plot data' do
+    genes = @basic_study.genes.map(&:name)
+    cluster = @basic_study.default_cluster
+    annotation = { name: 'species', scope: 'study', values: %w[dog cat] }
+    dot_plot_data = ExpressionVizService.load_precomputed_dot_plot_data(@basic_study, cluster, annotation:, genes:)
+    assert dot_plot_data.present?
+    assert_equal annotation[:name], dot_plot_data[:annotation_name]
+    assert_equal annotation[:values], dot_plot_data[:values]
+    assert_equal 2, dot_plot_data[:genes].keys.count
+    genes.each do |gene_symbol|
+      assert dot_plot_data[:genes].key?(gene_symbol), "Expected #{gene_symbol} to be present in dot plot data"
+      gene_data = dot_plot_data[:genes][gene_symbol]
+      matching_gene = DotPlotGene.find_by(gene_symbol:, study: @basic_study, cluster_group: cluster)
+      source_data = matching_gene.exp_scores["#{annotation[:name]}--group--#{annotation[:scope]}"]
+      annotation[:values].each_with_index do |value, index|
+        assert_equal source_data[value], gene_data[index]
       end
     end
   end
