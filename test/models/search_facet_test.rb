@@ -270,4 +270,24 @@ class SearchFacetTest < ActiveSupport::TestCase
     assert_equal 1, facet.filters_with_external.select { |f| f[:name] == 'T cell' }.count
     assert_equal 'T cell', facet.filters_with_external.last[:name]
   end
+
+  test 'should skip metadata if ids or values blank when getting unique filters' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Search facet empty metadata test',
+                              public: true,
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    FactoryBot.create(:metadata_file,
+                      name: 'metadata.txt',
+                      study:,
+                      use_metadata_convention: true,
+                      annotation_input: [
+                        { name: 'cell_type', type: 'group', values: %w[CL_0000236 CL_0000561 CL_0000573] }
+                      ])
+    metadatum = study.cell_metadata.find_by(name: 'cell_type')
+    facet = SearchFacet.find_by(identifier: 'cell_type')
+    assert_empty facet.filters_from_metadatum(metadatum)
+    facet.update_filter_values! # should not raise an error
+    assert facet.filters.any?
+  end
 end
