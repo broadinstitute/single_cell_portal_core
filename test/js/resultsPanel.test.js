@@ -56,7 +56,9 @@ describe('<StudyResultsContainer/> rendering>', () => {
     expect(container.getElementsByClassName('loading-panel')).toHaveLength(0)
     expect(container.getElementsByClassName('error-panel')).toHaveLength(0)
     expect(container.getElementsByClassName('results-header')).toHaveLength(0)
-    expect(container.textContent).toContain('Search HCA Data Portal?')
+    expect(container.textContent).toContain(
+      'Broadening your search to include the Human Cell Atlas Data Portal may return more results'
+    )
   })
   it('should not render message about HCA if already requested', () => {
     const studySearchState = {

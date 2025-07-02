@@ -518,6 +518,20 @@ h6,
   font-size: 14px;
 }
 
+.alert.alert-warning {
+  color: $warning-color;
+  border: none;
+  border-left: 6px solid $warning-icon-color;
+  border-radius: 0px;
+  background: $warning-bg;
+  a {
+    text-decoration: underline;
+    font-weight: bold;
+  }
+  margin-top: 1em;
+  font-size: 14px;
+}
+
 /* Slightly override container settings, e.g. for cluster validation errors */
 .alert.alert-danger ul {
   color: $danger-color;
