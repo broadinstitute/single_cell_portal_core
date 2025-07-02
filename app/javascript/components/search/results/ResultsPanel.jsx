@@ -1,6 +1,6 @@
 import React from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
+import { faInfoCircle, faExclamationCircle } from '@fortawesome/free-solid-svg-icons'
 
 import StudyResults from './StudyResults'
 import StudySearchResult from './StudySearchResult'
@@ -18,6 +18,21 @@ import LoadingSpinner from '~/lib/LoadingSpinner'
  */
 const ResultsPanel = ({ studySearchState, studyComponent, noResultsDisplay, bookmarks }) => {
   const results = studySearchState.results
+  const hcaMessage = <div className='flexbox alert alert-warning'>
+    <div className="">
+      <FontAwesomeIcon icon={faExclamationCircle} className="fa-lg fa-fw icon-left"/>
+    </div>
+    <p>Broadening your search to include the <a
+      className='hca-link'
+      onClick={() => studySearchState.updateSearch({ external: 'hca' })}
+      data-analytics-event='search-hca-empty-results'>
+      Human Cell Atlas Data Portal
+    </a> may return more results.</p>
+  </div>
+
+  const emptyResultMessage =  <div>
+    No results found. { studySearchState?.params?.external === "" ? hcaMessage : null }
+  </div>
 
   let panelContent
   if (studySearchState.isError) {
@@ -47,7 +62,7 @@ const ResultsPanel = ({ studySearchState, studyComponent, noResultsDisplay, book
       </>
     )
   } else {
-    noResultsDisplay = noResultsDisplay ? noResultsDisplay : <div> No results found. </div>
+    noResultsDisplay = noResultsDisplay ? noResultsDisplay : emptyResultMessage
     panelContent = (
       <>
         <SearchQueryDisplay terms={results.termList} facets={results.facets} />

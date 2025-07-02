@@ -362,7 +362,10 @@ class SearchFacet
       minmax.compact.empty? ? [] : [{ MIN: minmax.first.to_f, MAX: minmax.last.to_f }]
     else
       ids = metadatum.values.map { |i| i.gsub(/:/, '_') } # deal with ontology id format issues
-      values = CellMetadatum.find_by(study_id: metadatum.study_id, name: big_query_name_column).values
+      values = CellMetadatum.find_by(study_id: metadatum.study_id, name: big_query_name_column)&.values
+      # some non-required convention entries like cell_type may not have ontology labels so return if either are blank
+      return [] if ids.blank? || values.blank?
+
       # deal with array-based annotations
       if is_array_based
         ids = ids.map { |i| i.split('|') }.flatten

@@ -472,4 +472,16 @@ class ExpressionVizService
       ]
     }
   end
+
+  # load precomputed dot plot data for a given study and cluster and gene set
+  def self.load_precomputed_dot_plot_data(study, cluster_group, annotation: {}, genes: [])
+    data = { annotation_name: annotation[:name], values: annotation[:values], genes: {} }
+    dot_plot_genes = DotPlotGene.where(study:, cluster_group:, :searchable_gene.in => genes.map(&:downcase))
+    dot_plot_genes.map do |gene|
+      data[:genes][gene.gene_symbol] = gene.scores_by_annotation(
+        annotation[:name], annotation[:scope], annotation[:values]
+      )
+    end
+    data
+  end
 end

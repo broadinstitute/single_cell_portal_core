@@ -40,4 +40,39 @@ describe('<StudyResultsContainer/> rendering>', () => {
     expect(container.getElementsByClassName('error-panel')).toHaveLength(0)
     expect(container.getElementsByClassName('results-header')).toHaveLength(1)
   })
+  it('should render message about HCA when no results found', () => {
+    const studySearchState = {
+      isError: false,
+      isLoaded: true,
+      params: { external: '' },
+      results: {
+        studies: [],
+        facets: {}
+      }
+    }
+    const { container } = render(
+      <ResultsPanel studySearchState={studySearchState}/>
+    )
+    expect(container.getElementsByClassName('loading-panel')).toHaveLength(0)
+    expect(container.getElementsByClassName('error-panel')).toHaveLength(0)
+    expect(container.getElementsByClassName('results-header')).toHaveLength(0)
+    expect(container.textContent).toContain(
+      'Broadening your search to include the Human Cell Atlas Data Portal may return more results'
+    )
+  })
+  it('should not render message about HCA if already requested', () => {
+    const studySearchState = {
+      isError: false,
+      isLoaded: true,
+      params: { external: 'hca' },
+      results: {
+        studies: [],
+        facets: { cell_type: 'CL_0000548' }
+      }
+    }
+    const { container } = render(
+      <ResultsPanel studySearchState={studySearchState} />
+    )
+    expect(container.textContent).not.toContain('Search HCA Data Portal?')
+  })
 })

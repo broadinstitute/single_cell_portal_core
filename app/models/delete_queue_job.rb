@@ -35,8 +35,10 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
       # now remove all child objects first to free them up to be re-used.
       case file_type
       when 'Cluster'
+        cluster_group = ClusterGroup.find_by(study:, study_file_id: object.id)
         delete_differential_expression_results(study:, study_file: object)
         delete_parsed_data(object.id, study.id, ClusterGroup, DataArray)
+        delete_dot_plot_data(study.id, query: { cluster_group_id: cluster_group&.id })
         delete_user_annotations(study:, study_file: object)
         reset_default_cluster(study:)
         reset_default_annotation(study:)
@@ -45,6 +47,7 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
         remove_file_from_bundle
       when 'Expression Matrix'
         delete_parsed_data(object.id, study.id, Gene, DataArray)
+        delete_dot_plot_data(study.id, query: { study_file_id: object.id })
         delete_differential_expression_results(study:, study_file: object)
         study.set_gene_count
       when 'MM Coordinate Matrix'
@@ -73,6 +76,7 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
         end
         delete_differential_expression_results(study:, study_file: object)
         delete_parsed_data(object.id, study.id, CellMetadatum, DataArray)
+        delete_dot_plot_data(study.id)
         delete_cell_index_arrays(study)
         study.update(cell_count: 0)
         reset_default_annotation(study:)
@@ -81,6 +85,7 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
           # delete user annotations first as we lose associations later
           delete_user_annotations(study:, study_file: object)
           delete_parsed_data(object.id, study.id, ClusterGroup, CellMetadatum, Gene, DataArray)
+          delete_dot_plot_data(study.id)
           delete_fragment_files(study:, study_file: object)
           delete_differential_expression_results(study:, study_file: object)
           # reset default options/counts
@@ -337,5 +342,13 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
       cluster_group.delete
       data_arrays.delete_all
     end
+  end
+
+  # delete preprocessed dot plot data for a study with a specific query
+  # if a user deletes processed expression/metadata file, all data is cleaned up
+  # if a user delete a cluster file, only matching entries are removed
+  def delete_dot_plot_data(study_id, query: nil)
+    dot_query = query.blank? ? { study_id: } : { study_id:, **query }
+    DotPlotGene.where(dot_query).delete_all
   end
 end

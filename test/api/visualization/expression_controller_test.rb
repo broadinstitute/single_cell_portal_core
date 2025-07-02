@@ -97,6 +97,39 @@ class ExpressionControllerTest < ActionDispatch::IntegrationTest
     assert_equal 400, response.status # 400 since study is not visualizable
   end
 
+  test 'should render precomputed dotplot data' do
+    cluster = @basic_study.cluster_groups.first
+    exp_scores = @basic_study.cell_metadata.map do |metadata|
+      {
+        metadata.annotation_select_value => metadata.values.map do |value|
+          { value => [rand.round(3), rand.round(3)] }
+        end.reduce({}, :merge)
+      }
+    end.reduce({}, :merge)
+    genes = %w[PTEN AGPAT2 PHEX FARSA GAD1 EGFR CLDN4]
+    genes.each do |gene_symbol|
+      DotPlotGene.create(
+        study: @basic_study,
+        study_file: @basic_study_exp_file,
+        cluster_group: cluster,
+        gene_symbol:,
+        exp_scores:
+      )
+    end
+    sign_in_and_update @user
+    annotation = @basic_study.cell_metadata.where(annotation_type: 'group').sample
+    execute_http_request(:get, api_v1_study_expression_path(@basic_study, 'dotplot', {
+      cluster: cluster.name,
+      annotation_name: annotation.name,
+      annotation_type: 'group',
+      annotation_scope: 'study',
+      genes: genes.join(',')
+    }), user: @user)
+    assert_equal 200, response.status
+    gene_entry = json.dig('genes', genes.sample)
+    assert_equal exp_scores[annotation.annotation_select_value].values, gene_entry
+  end
+
   test 'should query by gene ID' do
     gene_id = @basic_study.genes.first.gene_id
     sign_in_and_update @user
