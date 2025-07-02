@@ -21,18 +21,19 @@ class FeatureAnnouncementTest< ActiveSupport::TestCase
     FeatureAnnouncement.update_all(published: true, archived: false)
   end
 
-  test 'should set slug on save until published' do
+  test 'should set slug on save when published' do
     feature = FeatureAnnouncement.create(
       title: 'Unpublished Feature',
       content: '<p>This is the content.</p>',
       doc_link: 'https://singlecell.zendesk.com/hc/en-us',
+      created_at: Date.today.in_time_zone - 1.day,
       published: false,
       archived: false
     )
-    assert_equal "#{@today}-unpublished-feature", feature.slug
+    assert_equal "unpublished-#{feature.id}", feature.slug
     feature.update(title: 'Announcing a New Feature!!')
     feature.reload
-    assert_equal "#{@today}-announcing-a-new-feature", feature.slug
+    assert_equal "unpublished-#{feature.id}", feature.slug
     feature.update(published: true)
     feature.reload
     assert_equal "#{@today}-announcing-a-new-feature", feature.slug

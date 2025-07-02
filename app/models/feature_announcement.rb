@@ -70,9 +70,19 @@ class FeatureAnnouncement
   private
 
   def set_slug
-    if new_record? || title_changed? && !published
-      today = created_at.nil? ? Time.zone.today : created_at
-      self.slug = "#{today.strftime('%F')}-#{title.downcase.gsub(/[^a-zA-Z0-9]+/, '-').chomp('-')}"
+    if published
+      published_date = history[:published] || Date.today
+      # determine if we have an existing title slug we need to preserve
+      # this prevents published links from breaking when the title changes
+      # NOTE: unpublishing a feature will always break any published links
+      if new_record? || slug&.starts_with?('unpublished-')
+        title_entry = title.downcase.gsub(/[^a-zA-Z0-9]+/, '-')
+      else
+        title_entry = slug.split('-')[3..].join('-')
+      end
+      self.slug = "#{published_date.strftime('%F')}-#{title_entry.chomp('-')}"
+    else
+      self.slug = "unpublished-#{id}"
     end
   end
 end
