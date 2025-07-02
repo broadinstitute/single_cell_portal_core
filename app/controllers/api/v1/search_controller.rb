@@ -399,7 +399,7 @@ module Api
         end
 
         @matching_accessions = @studies.map { |study| self.class.get_study_attribute(study, :accession) }
-
+        logger.info "studies_by_facet: #{@studies_by_facet}"
         logger.info "Final list of matching studies: #{@matching_accessions}"
         @results = @studies.paginate(page: params[:page], per_page: Study.per_page)
         if params[:export].present?
@@ -672,7 +672,9 @@ module Api
         else
           matching_facet[:filters].detect do |filter|
             filters = search_result[result_key].is_a?(Array) ? search_result[result_key] : [search_result[result_key]]
-            filters.include?(filter[:id]) || filters.include?(filter[:name])
+            filters.include?(filter[:id]) ||
+              filters.include?(filter[:name]) ||
+              filters.include?(filter[:id].gsub(/_/, ':')) # handle malformed IDs
           end
         end
       end

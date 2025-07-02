@@ -132,6 +132,7 @@ module Api
           facet_data = @studies_by_facet&.[](study.accession) || {}
           text_to_facet = @metadata_matches&.[](study.accession) || {}
           facet_matches = Api::V1::StudySearchResultsObjects.merge_facet_matches(facet_data, text_to_facet)
+          inferred = @inferred_accessions&.include?(study.accession)
           [
             'SCP',
             study.accession,
@@ -148,7 +149,7 @@ module Api
             metadata[:sex].join(COMMA_SPACE),
             metadata[:library_preparation_protocol].join(COMMA_SPACE),
             Api::V1::StudySearchResultsObjects.facet_results_as_text(facet_matches),
-            term_matches[:terms].keys.join(COMMA_SPACE)
+            inferred ? "inferred text match on #{@inferred_terms.join(COMMA_SPACE)}" : term_matches[:terms].keys.join(COMMA_SPACE)
           ]
         else
           [

@@ -7,6 +7,7 @@ import _flatten from 'lodash/flatten'
 import { getDisplayNameForFacet } from '~/providers/SearchFacetProvider'
 import { SearchSelectionContext } from '~/providers/SearchSelectionProvider'
 import BookmarkManager from '~/components/bookmarks/BookmarkManager'
+import ResultsExport from '~/components/search/results/ResultsExport'
 
 /** joins texts by wrapping them in a span with itemClass className, and then
  * inserting spans with the joinText
@@ -88,7 +89,7 @@ export const ClearAllButton = () => {
 /** displays a summary of an executed search.
  * e.g. (Text contains (stomach)) AND (Metadata contains (organ: brain))
  */
-export default function SearchQueryDisplay({ terms, facets, bookmarks }) {
+export default function SearchQueryDisplay({ terms, facets, bookmarks, studySearchState }) {
   const hasFacets = facets && facets.length > 0
   const hasTerms = terms && terms.length > 0
   if (!hasFacets && !hasTerms) {
@@ -133,6 +134,7 @@ export default function SearchQueryDisplay({ terms, facets, bookmarks }) {
       <FontAwesomeIcon icon={faSearch}/>: <span className="query-text">
         {termsDisplay}{facetsDisplay}
       </span> <ClearAllButton/>
+      <ResultsExport studySearchState={studySearchState} />
       <BookmarkManager bookmarks={bookmarks} />
     </div>
   )

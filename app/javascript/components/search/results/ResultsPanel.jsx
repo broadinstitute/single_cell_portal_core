@@ -46,7 +46,11 @@ const ResultsPanel = ({ studySearchState, studyComponent, noResultsDisplay, book
   } else if (results.studies && results.studies.length > 0) {
     panelContent = (
       <>
-        { <SearchQueryDisplay terms={results.termList} facets={results.facets} bookmarks={bookmarks}/> }
+        { <SearchQueryDisplay terms={results.termList}
+                              facets={results.facets}
+                              bookmarks={bookmarks}
+                              studySearchState={studySearchState}/> }
+        { }
         <StudyResults
           results={results}
           StudyComponent={studyComponent ? studyComponent : StudySearchResult}
