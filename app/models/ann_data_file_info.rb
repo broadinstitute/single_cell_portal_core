@@ -126,7 +126,14 @@ class AnnDataFileInfo
   # also supports finding values as both strings and symbols (for data_type values)
   def find_fragment(**attrs)
     data_fragments.detect do |fragment|
-      !{ **attrs }.map { |k, v| fragment[k] == v || fragment[k] == v.send(transform_for(v)) }.include?(false)
+      !{ **attrs }.map do |k, v|
+        safe_v = v.send(transform_for(v))
+        safe_k = k.send(transform_for(k))
+        fragment[k] == v ||
+          fragment[k] == safe_v ||
+          fragment[safe_k] == v ||
+          fragment[safe_k] == safe_v
+      end.include?(false)
     end
   end
 

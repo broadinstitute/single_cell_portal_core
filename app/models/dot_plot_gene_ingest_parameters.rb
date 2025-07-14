@@ -5,6 +5,8 @@ class DotPlotGeneIngestParameters
   include ActiveModel::Model
   include Parameterizable
 
+  PARAMETER_NAME = '--ingest-dot-plot-genes'
+
   # cell_metadata_file: metadata file to source annotations
   # cluster_file: clustering file with cells to use as control list for filtering and optional annotations
   # cluster_group_id: BSON ID of ClusterGroup object for associations
