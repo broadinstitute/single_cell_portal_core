@@ -394,8 +394,11 @@ class IngestJob
         set_study_state_after_ingest
         study_file.invalidate_cache_by_file_type # clear visualization caches for file
         log_to_mixpanel
-        if action == :differential_expression
+        case action.to_sym
+        when :differential_expression
           subject = "Differential expression analysis for #{study_file.file_type} file: '#{study_file.upload_file_name}' has completed processing"
+        when :ingest_dot_plot_genes
+          subject = "Dot plot gene metrics for #{study_file.file_type} file: '#{study_file.upload_file_name}' parse has completed"
         else
           subject = "#{study_file.file_type} file: '#{study_file.upload_file_name}' has completed parsing"
         end
