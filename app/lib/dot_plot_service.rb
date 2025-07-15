@@ -1,27 +1,81 @@
-# frozen_string_literal: true
-
 # service that handles preprocessing expression/annotation data to speed up dot plot rendering
 class DotPlotService
-  # main handler for launching ingest job to process expression data
+  # main handler for launching ingest job to process expression data into DotPlotGene objects
+  # since the study can have only one processed matrix/metadata file, this will only run if the study is eligible
   #
   # * *params*
   #   - +study+ (Study) => the study that owns the data
-  #   - +cluster_group+ (ClusterGroup) => the cluster to source cell names from
-  #   - +annotation_file+ (StudyFile) => the StudyFile containing annotation data
-  #   - +expression_file+ (StudyFile) => the StudyFile to source data from
+  #   - +cluster_group+ (ClusterGroup) => the cluster to set associations for
+  #   - +user+ (User) => the user that will run the job
   #
   # * *yields*
   #   - (IngestJob) => the job that will be run to process the data
-  def self.run_preprocess_expression_job(study, cluster_group, annotation_file, expression_file)
-    study_eligible?(study) # method stub, waiting for scp-ingest-pipeline implementation
+  def self.run_process_dot_plot_genes(study, cluster_group, user)
+    validate_study(study, cluster_group)
+    expression_file = study_processed_matrices(study)&.first
+    metadata_file = study.metadata_file
+    validate_source_data(expression_file, metadata_file)
+    params_object = create_params_object(cluster_group, expression_file, metadata_file)
+    if params_object.valid?
+      job = IngestJob.new(
+        study:, study_file: expression_file, user:, action: :ingest_dot_plot_genes, params_object:
+      )
+      job.delay.push_remote_and_launch_ingest
+      true
+    else
+      raise ArgumentError, "job parameters failed to validate: #{params_object.errors.full_messages.join(', ')}"
+    end
+  end
+
+  # create DotPlotGeneIngestParameters object based on the provided files
+  #
+  # * *params*
+  #   - +cluster_group+ (ClusterGroup) => the cluster group to associate with
+  #   - +expression_file+ (StudyFile) => the expression matrix file to process
+  #   - +metadata_file+ (StudyFile) => the metadata file to source annotations
+  #
+  # * *returns*
+  #   - (DotPlotGeneIngestParameters) => a parameters object with the necessary file paths and metadata
+  def self.create_params_object(cluster_group, expression_file, metadata_file)
+    params = {
+      cluster_group_id: cluster_group.id,
+      cluster_file: RequestUtils.cluster_file_url(cluster_group)
+    }
+    case expression_file.file_type
+    when 'Expression Matrix'
+      params[:matrix_file_type] = 'dense'
+      params[:matrix_file_path] = expression_file.gs_url
+      params[:cell_metadata_file] = metadata_file.gs_url
+    when 'MM Coordinate Matrix'
+      params[:matrix_file_type] = 'mtx'
+      genes_file = expression_file.bundled_files.detect { |f| f.file_type == '10X Genes File' }
+      barcodes_file = expression_file.bundled_files.detect { |f| f.file_type == '10X Barcodes File' }
+      params[:matrix_file_path] = expression_file.gs_url
+      params[:cell_metadata_file] = metadata_file.gs_url
+      params[:gene_file] = genes_file.gs_url
+      params[:barcode_file] = barcodes_file.gs_url
+    when 'AnnData'
+      params[:matrix_file_type] = 'mtx' # extracted expression for AnnData is in MTX format
+      params[:cell_metadata_file] = RequestUtils.data_fragment_url(metadata_file, 'metadata')
+      params[:matrix_file_path] = RequestUtils.data_fragment_url(
+        expression_file, 'matrix', file_type_detail: 'processed'
+      )
+      params[:gene_file] = RequestUtils.data_fragment_url(
+        expression_file, 'features', file_type_detail: 'processed'
+      )
+      params[:barcode_file] = RequestUtils.data_fragment_url(
+        expression_file, 'barcodes', file_type_detail: 'processed'
+      )
+    end
+    DotPlotGeneIngestParameters.new(**params)
   end
 
   # determine study eligibility - can only have one processed matrix and be able to visualize clusters
   #
   # * *params*
-  #   - +study+ (Study) the study that owns the data
+  #   - +study+ (Study) => the study that owns the data
   # * *returns*
-  #   - (Boolean) true if the study is eligible for dot plot visualization
+  #   - (Boolean) => true if the study is eligible for dot plot visualization
   def self.study_eligible?(study)
     processed_matrices = study_processed_matrices(study)
     study.can_visualize_clusters? && study.has_expression_data? && processed_matrices.size == 1
@@ -29,11 +83,11 @@ class DotPlotService
 
   # check if the given study/cluster has already been preprocessed
   # * *params*
-  #   - +study+ (Study) the study that owns the data
-  #   - +cluster_group+ (ClusterGroup) the cluster to check for processed data
+  #   - +study+ (Study) => the study that owns the data
+  #   - +cluster_group+ (ClusterGroup) => the cluster to check for processed data
   #
   # * *returns*
-  #   - (Boolean) true if the study/cluster has already been processed
+  #   - (Boolean) => true if the study/cluster has already been processed
   def self.cluster_processed?(study, cluster_group)
     DotPlotGene.where(study:, cluster_group:).exists?
   end
@@ -41,67 +95,41 @@ class DotPlotService
   # get processed expression matrices for a study
   #
   # * *params*
-  #   - +study+ (Study) the study to get matrices for
+  #   - +study+ (Study) => the study to get matrices for
   #
   # * *returns*
-  #   - (Array<StudyFile>) an array of processed expression matrices for the study
+  #   - (Array<StudyFile>) => an array of processed expression matrices for the study
   def self.study_processed_matrices(study)
     study.expression_matrices.select do |matrix|
       matrix.is_viz_anndata? || !matrix.is_raw_counts_file?
     end
   end
 
-  # seeding method for testing purposes, will be removed once pipeline is in place
-  # data is random and not representative of actual expression data
-  def self.seed_dot_plot_genes(study)
-    return false unless study_eligible?(study)
+  # validate the study for dot plot preprocessing
+  #
+  # * *params*
+  #   - +study+ (Study) => the study to validate
+  #
+  # * *raises*
+  #   - (ArgumentError) => if the study is invalid or does not qualify for dot plot visualization
+  def self.validate_study(study, cluster_group)
+    raise ArgumentError, 'Invalid study' unless study.present? && study.is_a?(Study)
+    raise ArgumentError, 'Study does not qualify for dot plot visualization' unless study_eligible?(study)
+    raise ArgumentError, 'Study has already been processed' if cluster_processed?(study, cluster_group)
+  end
 
-    DotPlotGene.where(study_id: study.id).delete_all
-    puts "Seeding dot plot genes for #{study.accession}"
-    expression_matrix = study.expression_matrices.first
-    print 'assembling genes and annotations...'
-    genes = Gene.where(study:, study_file: expression_matrix).pluck(:name)
-    annotations = AnnotationVizService.available_metadata_annotations(
-      study, annotation_type: 'group'
-    ).reject { |a| a[:scope] == 'invalid' }
-    puts " done. Found #{genes.size} genes and #{annotations.size} study-wide annotations."
-    study.cluster_groups.each do |cluster_group|
-      next if cluster_processed?(study, cluster_group)
-
-      cluster_annotations = ClusterVizService.available_annotations_by_cluster(
-        cluster_group, 'group'
-      ).reject { |a| a[:scope] == 'invalid' }
-      all_annotations = annotations + cluster_annotations
-      puts "Processing #{cluster_group.name} with #{all_annotations.size} annotations."
-      documents = []
-      genes.each do |gene|
-        exp_scores = all_annotations.map do |annotation|
-          {
-            "#{annotation[:name]}--#{annotation[:type]}--#{annotation[:scope]}" => annotation[:values].map do |value|
-              { value => [rand.round(3), rand.round(3)] }
-            end.reduce({}, :merge)
-          }
-        end.reduce({}, :merge)
-        documents << DotPlotGene.new(
-          study:, study_file: expression_matrix, cluster_group:, gene_symbol: gene, searchable_gene: gene.downcase,
-          exp_scores:
-        ).attributes
-        if documents.size == 1000
-          DotPlotGene.collection.insert_many(documents)
-          count = DotPlotGene.where(study_id: study.id, cluster_group_id: cluster_group.id).size
-          puts "Inserted #{count}/#{genes.size} DotPlotGenes for #{cluster_group.name}."
-          documents.clear
-        end
-      end
-      DotPlotGene.collection.insert_many(documents)
-      count = DotPlotGene.where(study_id: study.id, cluster_group_id: cluster_group.id).size
-      puts "Inserted #{count}/#{genes.size} DotPlotGenes for #{cluster_group.name}."
-      puts "Finished processing #{cluster_group.name}"
-    end
-    puts "Seeding complete for #{study.accession}, #{DotPlotGene.where(study_id: study.id).size} DotPlotGenes created."
-    true
-  rescue StandardError => e
-    puts "Error seeding DotPlotGenes in #{study.accession}: #{e.message}"
-    false
+  # validate required data is present for processing
+  #
+  # * *params*
+  #   - +expression_file+ (StudyFile) => the expression matrix file to process
+  #   - +metadata_file+ (StudyFile) => the metadata file to source annotations
+  #
+  # * *raises*
+  #   - (ArgumentError) => if the source data is not fully parsed or MTX bundled is not completed
+  def self.validate_source_data(expression_file, metadata_file)
+    raise ArgumentError, 'Missing required files' unless expression_file.present? && metadata_file.present?
+    raise ArgumentError, 'Source data not fully parsed' unless expression_file.parsed? && metadata_file.parsed?
+    raise ArgumentError, 'MTX bundled not completed' if expression_file.should_bundle? &&
+                                                        !expression_file.has_completed_bundle?
   end
 end

@@ -131,7 +131,7 @@ class DifferentialExpressionService
                                            de_type: 'rest', group1: nil, group2: nil, machine_type: nil, dry_run: nil)
     validate_study(study)
     validate_annotation(cluster_group, study, annotation_name, annotation_scope, group1:, group2:)
-    cluster_url = cluster_file_url(cluster_group)
+    cluster_url = RequestUtils.cluster_file_url(cluster_group)
     study_file = cluster_group.study_file
     metadata_url = study_file.is_viz_anndata? ?
                      RequestUtils.data_fragment_url(study_file, 'metadata') :
@@ -478,23 +478,6 @@ class DifferentialExpressionService
   #   - (String)
   def self.encode_filename(values)
     values.map { |val| val.gsub(/\+/, 'pos').gsub(/\W/, '_') }.join('--')
-  end
-
-  # return a GS URL for a requested ClusterGroup, depending on file type
-  #
-  # * *params*
-  #   - +cluster_group+ (ClusterGroup) => Clustering object to source name/file from
-  #
-  # * *returns*
-  #   - (String)
-  def self.cluster_file_url(cluster_group)
-    study_file = cluster_group.study_file
-    if study_file.is_viz_anndata?
-      data_frag = study_file.ann_data_file_info.find_fragment(data_type: :cluster, name: cluster_group.name)
-      RequestUtils.data_fragment_url(study_file, 'cluster', file_type_detail: data_frag[:obsm_key_name])
-    else
-      study_file.gs_url
-    end
   end
 
   # retrieve the weekly user quota value
