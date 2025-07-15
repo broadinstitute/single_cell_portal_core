@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 # class to hold parameters specific to ingest job for computing dot plot gene metrics
 class DotPlotGeneIngestParameters
   include ActiveModel::Model

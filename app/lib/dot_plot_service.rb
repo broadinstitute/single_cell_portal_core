@@ -1,10 +1,7 @@
-# frozen_string_literal: true
-
 # service that handles preprocessing expression/annotation data to speed up dot plot rendering
 class DotPlotService
   # main handler for launching ingest job to process expression data into DotPlotGene objects
-  # since the study can have only one processed matrix, this will only run if the study is eligible
-  # and we do not need to specify which matrix/metadata file to process
+  # since the study can have only one processed matrix/metadata file, this will only run if the study is eligible
   #
   # * *params*
   #   - +study+ (Study) => the study that owns the data
@@ -40,35 +37,37 @@ class DotPlotService
   # * *returns*
   #   - (DotPlotGeneIngestParameters) => a parameters object with the necessary file paths and metadata
   def self.create_params_object(cluster_group, expression_file, metadata_file)
-    params = DotPlotGeneIngestParameters.new(
+    params = {
       cluster_group_id: cluster_group.id,
-      cluster_file: RequestUtils.cluster_file_url(cluster_group),
-      matrix_file_type: expression_file.file_type == 'Expression Matrix' ? 'dense' : 'mtx'
-    )
+      cluster_file: RequestUtils.cluster_file_url(cluster_group)
+    }
     case expression_file.file_type
     when 'Expression Matrix'
-      params.matrix_file_path = expression_file.gs_url
-      params.cell_metadata_file = metadata_file.gs_url
+      params[:matrix_file_type] = 'dense'
+      params[:matrix_file_path] = expression_file.gs_url
+      params[:cell_metadata_file] = metadata_file.gs_url
     when 'MM Coordinate Matrix'
+      params[:matrix_file_type] = 'mtx'
       genes_file = expression_file.bundled_files.detect { |f| f.file_type == '10X Genes File' }
       barcodes_file = expression_file.bundled_files.detect { |f| f.file_type == '10X Barcodes File' }
-      params.matrix_file_path = expression_file.gs_url
-      params.cell_metadata_file = metadata_file.gs_url
-      params.gene_file = genes_file.gs_url
-      params.barcode_file = barcodes_file.gs_url
+      params[:matrix_file_path] = expression_file.gs_url
+      params[:cell_metadata_file] = metadata_file.gs_url
+      params[:gene_file] = genes_file.gs_url
+      params[:barcode_file] = barcodes_file.gs_url
     when 'AnnData'
-      params.cell_metadata_file = RequestUtils.data_fragment_url(metadata_file, 'metadata')
-      params.matrix_file_path = RequestUtils.data_fragment_url(
+      params[:matrix_file_type] = 'mtx' # extracted expression for AnnData is in MTX format
+      params[:cell_metadata_file] = RequestUtils.data_fragment_url(metadata_file, 'metadata')
+      params[:matrix_file_path] = RequestUtils.data_fragment_url(
         expression_file, 'matrix', file_type_detail: 'processed'
       )
-      params.gene_file = RequestUtils.data_fragment_url(
+      params[:gene_file] = RequestUtils.data_fragment_url(
         expression_file, 'features', file_type_detail: 'processed'
       )
-      params.barcode_file = RequestUtils.data_fragment_url(
+      params[:barcode_file] = RequestUtils.data_fragment_url(
         expression_file, 'barcodes', file_type_detail: 'processed'
       )
     end
-    params
+    DotPlotGeneIngestParameters.new(**params)
   end
 
   # determine study eligibility - can only have one processed matrix and be able to visualize clusters
