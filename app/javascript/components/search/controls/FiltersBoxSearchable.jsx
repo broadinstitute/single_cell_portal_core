@@ -44,12 +44,12 @@ export default function FiltersBoxSearchable({ facet, selection, setSelection, s
    */
   async function searchFilters(terms) {
     const apiData = await fetchFacetFilters(facet.id, terms)
-    const matchingFilters = apiData.filters
-    const hasResults = apiData.query !== '' && matchingFilters.length > 0
+    const newFilters = apiData.filters
+    const hasResults = apiData.query !== '' && newFilters.length > 0
 
     setHasFilterSearchResults(hasResults)
 
-    setMatchingFilters(matchingFilters)
+    setMatchingFilters(newFilters)
   }
 
   /**
