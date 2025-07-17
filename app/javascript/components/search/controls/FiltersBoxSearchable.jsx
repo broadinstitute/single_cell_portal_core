@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faExternalLinkAlt, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
+import { faExternalLinkAlt, faSearch, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import pluralize from 'pluralize'
 import _find from 'lodash/find'
 import _remove from 'lodash/remove'
 
-import { fetchFacetFilters } from '~/lib/scp-api'
 import FiltersBox from './FiltersBox'
-import FiltersSearchBar from './FiltersSearchBar'
+import FormControl from 'react-bootstrap/lib/FormControl'
+import Button from 'react-bootstrap/lib/Button'
 
 /**
  * Component for filter search and filter lists
@@ -15,6 +15,7 @@ import FiltersSearchBar from './FiltersSearchBar'
 export default function FiltersBoxSearchable({ facet, selection, setSelection, show, setShow, hideControls }) {
   // State that is specific to FiltersBox
   const [matchingFilters, setMatchingFilters] = useState(facet.filters)
+  const [searchText, setSearchText] = useState('')
   const [hasFilterSearchResults, setHasFilterSearchResults] = useState(false)
 
   /*
@@ -42,13 +43,18 @@ export default function FiltersBoxSearchable({ facet, selection, setSelection, s
    * For example, among the many filters in the "Disease" facet, search
    * for filters matching the term "tuberculosis".
    */
-  async function searchFilters(terms) {
-    const apiData = await fetchFacetFilters(facet.id, terms)
-    const newFilters = apiData.filters
-    const hasResults = apiData.query !== '' && newFilters.length > 0
+  function searchFilters(terms) {
+    // const apiData = await fetchFacetFilters(facet.id, terms)
+    // const newFilters = apiData.filters
+    const lcTerms = terms.split(' ').map(text => text.toLowerCase())
+    const newFilters = facet.filters.filter(facetFilter => {
+      return lcTerms.some(lcTerm => {
+        return facetFilter.name.toLowerCase().includes(lcTerm)
+      })
+    })
+    const hasResults = newFilters.length > 0
 
     setHasFilterSearchResults(hasResults)
-
     setMatchingFilters(newFilters)
   }
 
@@ -98,10 +104,30 @@ export default function FiltersBoxSearchable({ facet, selection, setSelection, s
         show && <div className={componentName} id={componentId}>
           { showSearchBar && (
             <>
-              <FiltersSearchBar
-                filtersBoxId={componentId}
-                searchFilters={searchFilters}
-              />
+              <div className='filters-search-bar'>
+                <div>
+                  <FormControl
+                    id={`filters-search-bar-${facet.id}`}
+                    type='text'
+                    autoComplete='false'
+                    placeholder='Search for a filter'
+                    value={searchText}
+                    onChange={e => {
+                      setSearchText(e.target.value)
+                      searchFilters(e.target.value)
+                    }
+                  }
+                  />
+                  <div className="input-group-append">
+                    <Button
+                      className='search-button'
+                      aria-label='Search'
+                    >
+                      <FontAwesomeIcon icon={faSearch}/>
+                    </Button>
+                  </div>
+                </div>
+              </div>
               { selectedFilterBadges }
               <div className='filters-box-header'>
                 <span className='default-filters-list-name'>
