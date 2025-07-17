@@ -16,14 +16,13 @@ function FilterCheckboxes(props) {
     }
     props.setSelection(newSelection)
   }
-  const uniqueId = Math.random().toString(36).substr(2, 8)
 
   return (
     <ul className="facet-filter-list">
       {
         props.filters.map(filter => {
           return (
-            <li key={`li-${filter.id}-${uniqueId}`}>
+            <li key={`li-${filter.id}`}>
               <label htmlFor={filter.id}>
                 <input
                   type='checkbox'
