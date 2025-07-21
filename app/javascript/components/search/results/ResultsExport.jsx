@@ -5,6 +5,7 @@ import { faFileExport } from '@fortawesome/free-solid-svg-icons'
 import { exportSearchResultsText } from '~/lib/scp-api'
 
 export default function ResultsExport({ studySearchState }) {
+  const hasResults = studySearchState?.results?.studies && studySearchState.results.studies.length > 0
   const [exporting, setExporting] = useState(false)
 
   /** export results to a file */
@@ -18,7 +19,8 @@ export default function ResultsExport({ studySearchState }) {
   return (
     <Button
       onClick={async () => {await exportResults()}}
-      disabled={exporting}
+      disabled={exporting || !hasResults}
+      data-testid="export-search-results-tsv"
       data-analytics-name="export-search-results-tsv"
       data-original-title="Export search results to TSV file"
       data-toggle="tooltip"
