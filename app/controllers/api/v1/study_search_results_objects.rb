@@ -8,6 +8,13 @@ module Api
       # list of metadata names to include in cohort responses
       COHORT_METADATA = %w[disease__ontology_label organ__ontology_label species__ontology_label sex
                            library_preparation_protocol__ontology_label].freeze
+      # headers for TSV text export of search results
+      TEXT_HEADERS = [
+        'Study source', 'Accession', 'Name', 'Description', 'Public', 'Detached', 'Cell count', 'Gene count',
+        'Study URL', 'Disease', 'Organ', 'Species', 'Sex', 'Library preparation protocol', 'Facet matches',
+        'Term matches'
+      ].freeze
+      COMMA_SPACE = ', '.freeze
 
       def search_results_obj
         response_obj = {
@@ -110,6 +117,79 @@ module Api
           cohort_entries[display_name] = metadatum&.values&.sort || []
         end
         cohort_entries
+      end
+
+      def results_text_export
+        lines = [TEXT_HEADERS.join("\t")]
+        @studies.each { |study| lines << study_text_export(study).join("\t") }
+        lines.join("\n")
+      end
+
+      def study_text_export(study)
+        if study.is_a?(Study)
+          metadata = cohort_metadata(study).with_indifferent_access
+          term_matches = study.search_weight(@term_list || [])
+          facet_data = @studies_by_facet&.[](study.accession) || {}
+          text_to_facet = @metadata_matches&.[](study.accession) || {}
+          facet_matches = Api::V1::StudySearchResultsObjects.merge_facet_matches(facet_data, text_to_facet)
+          inferred = @inferred_accessions&.include?(study.accession)
+          [
+            'SCP',
+            study.accession,
+            study.name,
+            study.description,
+            study.public,
+            study.detached,
+            study.cell_count,
+            study.gene_count,
+            result_url_for(study),
+            metadata[:disease].join(COMMA_SPACE),
+            metadata[:organ].join(COMMA_SPACE),
+            metadata[:species].join(COMMA_SPACE),
+            metadata[:sex].join(COMMA_SPACE),
+            metadata[:library_preparation_protocol].join(COMMA_SPACE),
+            Api::V1::StudySearchResultsObjects.facet_results_as_text(facet_matches),
+            inferred ? "inferred text match on #{@inferred_terms.join(COMMA_SPACE)}" : term_matches[:terms].keys.join(COMMA_SPACE)
+          ]
+        else
+          [
+            study[:hca_result] ? 'HCA' : 'TDR',
+            study[:accession],
+            study[:name],
+            study[:description].gsub(/\n/, ''),
+            true,
+            false,
+            0,
+            0,
+            result_url_for(study),
+            study.dig(:metadata, :disease).join(COMMA_SPACE),
+            study.dig(:metadata, :organ).join(COMMA_SPACE),
+            study.dig(:metadata, :species).join(COMMA_SPACE),
+            study.dig(:metadata, :sex).join(COMMA_SPACE),
+            study.dig(:metadata, :library_preparation_protocol).join(COMMA_SPACE),
+            Api::V1::StudySearchResultsObjects.facet_results_as_text(@studies_by_facet[study[:accession]]),
+            nil
+          ]
+        end
+      end
+
+      # returns a URL for the study, either SCP or HCA
+      def result_url_for(study)
+        if study.is_a?(Study)
+          view_study_url(accession: study.accession, study_name: study.url_safe_name)
+        else
+          "https://data.humancellatlas.org/explore/projects/#{study[:hca_project_id]}"
+        end
+      end
+
+      # flatten facet matches into a text string for export
+      def self.facet_results_as_text(facets)
+        entries = []
+        facets.delete(:facet_search_weight)
+        facets.each do |facet_name, filters|
+          entries << "#{facet_name}:#{filters.map { |f| f[:name] }.join('|')}"
+        end
+        entries.join(COMMA_SPACE)
       end
 
       # merge in multiple facet match data objects into a single merged entity for a given study

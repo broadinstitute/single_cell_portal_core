@@ -510,6 +510,34 @@ export async function downloadBucketFile(bucketId, filePath) {
   document.body.removeChild(element)
 }
 
+export async function exportSearchResultsText(searchParams, mock=false) {
+  searchParams.export = 'tsv'
+  const path = `/search?${buildSearchQueryString('study', searchParams)}`
+  const init = {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${getOAuthToken()}`
+    }
+  }
+  const [searchResults, perfTimes] = await scpApi(path, init, mock, false, false)
+  const fileName = searchResults.headers.get('Content-Disposition').split('"')[1]
+  const dataBlob = await searchResults.blob()
+
+  // Create an element with an anchor link and connect this to the blob
+  const element = document.createElement('a')
+  element.href = URL.createObjectURL(dataBlob)
+
+  // name the file and indicate it should download
+  element.download = fileName
+
+  // Simulate clicking the link resulting in downloading the file
+  document.body.appendChild(element)
+  element.click()
+
+  // Cleanup
+  document.body.removeChild(element)
+}
+
 /**
  * Returns initial content for the "Explore" tab in Study Overview
  *
@@ -898,7 +926,7 @@ export async function fetchSearch(type, searchParams, mock=false) {
 export function buildSearchQueryString(type, searchParams) {
   const facetsParam = buildFacetQueryString(searchParams.facets)
 
-  const params = ['page', 'order', 'terms', 'external', 'preset', 'genes', 'genePage']
+  const params = ['page', 'order', 'terms', 'external', 'export', 'preset', 'genes', 'genePage']
   let otherParamString = params.map(param => {
     return searchParams[param] ? `&${param}=${searchParams[param]}` : ''
   }).join('')

@@ -547,4 +547,16 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
       positive_mock.verify
     end
   end
+
+  test 'should return text results when requested' do
+    other_matches = Study.viewable(@user).any_of({ description: /#{HOMO_SAPIENS_FILTER[:name]}/ },
+                                                 { description: /#{NO_DISEASE_FILTER[:name]}/ }).pluck(:accession)
+    facet_query = "species:#{HOMO_SAPIENS_FILTER[:id]}#{FACET_DELIM}disease:#{NO_DISEASE_FILTER[:id]}"
+    execute_http_request(:get, api_v1_search_path(type: 'study', facets: facet_query, export: 'tsv'))
+    assert_response :success
+    lines = json.split(/\n/)[1..]
+    all_accessions = (@convention_accessions + other_matches.map(&:accession)).flatten.uniq.sort
+    found_accessions = lines.map { |l| l.split(/\t/)[1] }.flatten.uniq.sort
+    assert_equal all_accessions, found_accessions
+  end
 end
