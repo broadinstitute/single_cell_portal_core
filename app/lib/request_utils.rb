@@ -154,6 +154,24 @@ class RequestUtils
     "#{url}.#{ext}.gz"
   end
 
+  # return a GS URL for a requested ClusterGroup, depending on file type
+  #
+  # * *params*
+  #   - +cluster_group+ (ClusterGroup) => Clustering object to source name/file from
+  #
+  # * *returns*
+  #   - (String)
+  def self.cluster_file_url(cluster_group)
+    study_file = cluster_group.study_file
+    if study_file.is_viz_anndata?
+      data_frag = study_file.ann_data_file_info.find_fragment(data_type: :cluster, name: cluster_group.name)
+      safe_frag = data_frag.with_indifferent_access
+      data_fragment_url(study_file, 'cluster', file_type_detail: safe_frag[:obsm_key_name])
+    else
+      study_file.gs_url
+    end
+  end
+
   # extracts an array of genes from a comma-delimited string list of gene names
   def self.get_genes_from_param(study, gene_param)
     terms = RequestUtils.sanitize_search_terms(gene_param).split(',')

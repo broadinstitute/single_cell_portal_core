@@ -195,6 +195,31 @@ class RequestUtilsTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test 'should construct cluster file url' do
+    anndata_file = FactoryBot.create(:ann_data_file,
+                                     name: 'anndata.h5ad',
+                                     study: @private_study,
+                                     cell_input: %w[A B C D],
+                                     coordinate_input: [
+                                       { umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                     ])
+    cluster_group_umap = ClusterGroup.find_by(study_file: anndata_file, name: 'umap')
+    expected_url = "gs://#{@private_study.bucket_id}/_scp_internal/anndata_ingest/" \
+                   "#{@private_study.accession}_#{anndata_file.id}/h5ad_frag.cluster.X_umap.tsv.gz"
+    assert_equal expected_url, RequestUtils.cluster_file_url(cluster_group_umap)
+    cluster_file = FactoryBot.create(:cluster_file,
+                                     name: 'cluster.tsv.gz',
+                                     study: @private_study,
+                                     cell_input: {
+                                       x: [1, 2, 3],
+                                       y: [1, 2, 3],
+                                       cells: %w[A B C]
+                                     })
+    expected_cluster_url = "gs://#{@private_study.bucket_id}/cluster.tsv.gz"
+    cluster_group = ClusterGroup.find_by(study_file: cluster_file, name: 'cluster.tsv.gz')
+    assert_equal expected_cluster_url, RequestUtils.cluster_file_url(cluster_group)
+  end
+
   test 'should properly format incorrect study url' do
     identifier = "#{@public_study.accession}/#{@public_study.url_safe_name}"
     base_path = "/single_cell/study/#{identifier}"

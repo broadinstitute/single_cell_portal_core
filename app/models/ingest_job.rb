@@ -15,7 +15,7 @@ class IngestJob
   # valid ingest actions to perform
   VALID_ACTIONS = %i[
     ingest_expression ingest_cluster ingest_cell_metadata ingest_anndata ingest_differential_expression ingest_subsample
-    differential_expression render_expression_arrays
+    ingest_dot_plot_genes differential_expression render_expression_arrays
   ].freeze
 
   # Mappings between actions & models (for cleaning up data on re-parses)
@@ -24,7 +24,8 @@ class IngestJob
     ingest_cluster: ClusterGroup,
     ingest_cell_metadata: CellMetadatum,
     ingest_differential_expression: DifferentialExpressionResult,
-    ingest_subsample: ClusterGroup
+    ingest_subsample: ClusterGroup,
+    ingest_dot_plot_genes: DotPlotGene
   }.freeze
 
   # non-standard job actions where data is not being read from a file to insert into MongoDB
@@ -37,7 +38,7 @@ class IngestJob
 
   # jobs that need parameters objects in order to launch correctly
   PARAMS_OBJ_REQUIRED = %i[
-    differential_expression render_expression_arrays image_pipeline ingest_anndata
+    differential_expression render_expression_arrays image_pipeline ingest_anndata ingest_dot_plot_genes
   ].freeze
 
   # Name of pipeline submission running in GCP (from [BatchApiClient#run_job])
@@ -393,8 +394,11 @@ class IngestJob
         set_study_state_after_ingest
         study_file.invalidate_cache_by_file_type # clear visualization caches for file
         log_to_mixpanel
-        if action == :differential_expression
+        case action.to_sym
+        when :differential_expression
           subject = "Differential expression analysis for #{study_file.file_type} file: '#{study_file.upload_file_name}' has completed processing"
+        when :ingest_dot_plot_genes
+          subject = "Dot plot gene metrics for #{study_file.file_type} file: '#{study_file.upload_file_name}' parse has completed"
         else
           subject = "#{study_file.file_type} file: '#{study_file.upload_file_name}' has completed parsing"
         end
@@ -415,8 +419,11 @@ class IngestJob
       log_error_messages
       log_to_mixpanel # log before queuing file for deletion to preserve properties
       # don't delete files or notify users if this is a 'special action', like DE or image pipeline jobs
-      if action == :differential_expression
+      case action.to_sym
+      when :differential_expression
         subject = "Error: Differential expression analysis for #{study_file.file_type} file: '#{study_file.upload_file_name}' has failed processing"
+      when :ingest_dot_plot_genes
+        subject = "Error: Dot plot gene metrics for #{study_file.file_type} file: '#{study_file.upload_file_name}' parse has failed"
       else
         subject = "Error: #{study_file.file_type} file: '#{study_file.upload_file_name}' parse has failed"
       end
@@ -450,12 +457,16 @@ class IngestJob
   # in case of subsampling, only subsampled data cleanup is run and all other data is left in place
   # this reduces churn for study owners as full-resolution data is still valid
   def handle_ingest_failure(email_subject)
-    if action.to_sym == :ingest_subsample
+    case action.to_sym
+    when :ingest_subsample
       study_file.update(parse_status: 'parsed') # reset parse flag
       cluster_name = cluster_name_by_file_type
       cluster = ClusterGroup.find_by(name: cluster_name, study:, study_file:)
       cluster.find_subsampled_data_arrays&.delete_all
       cluster.update(subsampled: false, is_subsampling: false)
+    when :ingest_dot_plot_genes
+      cluster = params_object.cluster_group
+      DotPlotGene.where(study_id: study.id, cluster_group_id: cluster.id, study_file_id: study_file.id).delete_all
     else
       create_study_file_copy
       study_file.update(parse_status: 'failed')
@@ -1144,6 +1155,7 @@ class IngestJob
   def skip_anndata_summary?
     study_file.has_anndata_summary? ||
       action == :differential_expression ||
+      action == :ingest_dot_plot_genes ||
       should_retry? ||
       (!failed? && action == :ingest_anndata)
   end
@@ -1254,6 +1266,13 @@ class IngestJob
       complete_pipeline_runtime = TimeDifference.between(*get_image_pipeline_timestamps).humanize
       message << "Image Pipeline image rendering completed for \"#{params_object.cluster}\""
       message << "Complete runtime (data cache & image rendering): #{complete_pipeline_runtime}"
+    when :ingest_dot_plot_genes
+      cluster_group = params_object.cluster_group
+      genes = DotPlotGene.where(study:, study_file:, cluster_group:).count
+      message << "Dot plot gene preprocessing completed for cluster: #{cluster_group.name}"
+      message << "Total genes created: #{genes}"
+    else
+      message << "Ingest job completed for #{study_file.upload_file_name}"
     end
     message
   end

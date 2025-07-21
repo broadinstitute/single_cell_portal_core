@@ -143,6 +143,8 @@ class Study
     end
   end
 
+  has_many :dot_plot_genes, dependent: :delete_all
+
   has_many :study_shares, dependent: :destroy do
     def can_edit
       where(permission: 'Edit').map(&:email)

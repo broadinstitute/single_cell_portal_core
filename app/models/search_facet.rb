@@ -405,7 +405,8 @@ class SearchFacet
     end
     return filter_map if is_numeric?
 
-    filter_map.uniq { |filter| [filter[:id]&.downcase, filter[:name]&.downcase] }.reject do |filter|
+    # some filters will have the same ontology id but different label, so take the first to prevent duplicates
+    filter_map.uniq { |filter| [filter[:id]&.downcase] }.reject do |filter|
       filter[:id].blank? || filter[:name].blank?
     end
   end

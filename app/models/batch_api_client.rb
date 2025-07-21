@@ -21,7 +21,8 @@ class BatchApiClient
     ingest_differential_expression: ['Differential Expression'],
     render_expression_arrays: %w[Cluster],
     image_pipeline: %w[Cluster],
-    ingest_anndata: %w[AnnData]
+    ingest_anndata: %w[AnnData],
+    ingest_dot_plot_genes: ['Expression Matrix', 'MM Coordinate Matrix', 'AnnData']
   }.freeze
 
   # default GCE machine_type
