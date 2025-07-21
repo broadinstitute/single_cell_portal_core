@@ -44,8 +44,6 @@ export default function FiltersBoxSearchable({ facet, selection, setSelection, s
    * for filters matching the term "tuberculosis".
    */
   function searchFilters(terms) {
-    // const apiData = await fetchFacetFilters(facet.id, terms)
-    // const newFilters = apiData.filters
     const lcTerms = terms.split(' ').map(text => text.toLowerCase())
     const newFilters = facet.filters.filter(facetFilter => {
       return lcTerms.some(lcTerm => {
