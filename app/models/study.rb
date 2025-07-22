@@ -1308,6 +1308,23 @@ class Study
     end
   end
 
+  # non-spatial cluster groups
+  def standard_cluster_groups
+    cluster_groups.reject(&:is_spatial)
+  end
+
+  def default_cluster_order
+    default_options[:cluster_order].presence
+  end
+
+  def spatial_cluster_groups
+    cluster_groups.select(&:is_spatial)
+  end
+
+  def default_spatial_order
+    default_options[:spatial_order].presence
+  end
+
   ###
   #
   # INSTANCE VALUE SETTERS & GETTERS

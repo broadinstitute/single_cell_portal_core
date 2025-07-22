@@ -202,6 +202,15 @@ hr.divider {
   }
 }
 
+li.cluster-order {
+  cursor: pointer;
+  padding: 4px;
+}
+
+li.cluster-order:hover {
+  background-color: #f4f4f4;
+}
+
 .large-checkbox {
   width: 24px;
   height: 24px;

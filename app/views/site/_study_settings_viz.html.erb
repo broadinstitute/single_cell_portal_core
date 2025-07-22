@@ -36,9 +36,35 @@
         </div>
       </div>
       <div class="form-group row">
-        <div class="col-sm-6">
+        <% if @study.standard_cluster_groups.any? %>
+          <div class="col-sm-4">
+            <%= opts.label :cluster_order, "Drag to specify order of clustering menu" %>
+            <ul class="multi-checkbox" id="cluster-order-list">
+              <% @study.default_cluster_order.each do |cluster| %>
+                <li class="cluster-order">
+                  <%= cluster %>
+                  <%= opts.hidden_field :cluster_order, multiple: true, value: cluster %>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+        <% if @study.spatial_cluster_groups.any? %>
+          <div class="col-sm-4">
+            <%= opts.label :spatial_order, "Drag to specify order of spatial menu" %>
+            <ul class="multi-checkbox" id="spatial-order-list">
+              <% @study.default_spatial_order.each do |cluster| %>
+                <li class="cluster-order">
+                  <%= cluster %>
+                  <%= opts.hidden_field :spatial_order, multiple: true, value: cluster %>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+        <div class="col-sm-4">
           <% if @viz_override_annotations.any? %>
-            <%= opts.label :override_viz_limit_annotations, "Add undisplayed annotations (>200 or single value) to dropdown" %><br />
+            <%= opts.label :override_viz_limit_annotations, "Show undisplayed annotations (>200 or single value)" %><br />
             <%= render partial: '/layouts/multiselect_checkbox_field', locals: {
               form: opts, options: @viz_override_annotations, overrides: @study.override_viz_limit_annotations
             } %>
@@ -95,6 +121,8 @@
             });
           })
         });
+        $("#cluster-order-list").sortable();
+        $("#spatial-order-list").sortable();
       </script>
     <% end %>
     <% if @study.has_gene_lists? %>
