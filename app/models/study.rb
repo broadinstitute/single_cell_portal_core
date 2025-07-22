@@ -1314,7 +1314,7 @@ class Study
   end
 
   def default_cluster_order
-    default_options[:cluster_order].presence
+    default_options[:cluster_order] || []
   end
 
   def spatial_cluster_groups
@@ -1322,7 +1322,7 @@ class Study
   end
 
   def default_spatial_order
-    default_options[:spatial_order].presence
+    default_options[:spatial_order] || []
   end
 
   ###

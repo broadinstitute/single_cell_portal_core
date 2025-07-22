@@ -696,7 +696,7 @@ class SiteController < ApplicationController
                                                        :deliver_emails, :cluster_point_size, :cluster_point_alpha,
                                                        :cluster_point_border, :precomputed_heatmap_label,
                                                        :expression_sort, override_viz_limit_annotations: [],
-                                                       cluster_order: []],
+                                                       cluster_order: [], spatial_order: []],
                                   study_shares_attributes: [:id, :_destroy, :email, :permission],
                                   study_detail_attributes: [:id, :full_description],
                                   reviewer_access_attributes: [:id, :expires_at],
