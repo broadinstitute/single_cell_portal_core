@@ -22,6 +22,10 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
                       study: @study,
                       name: 'cluster_example.txt',
                       upload_file_size: 1.megabyte)
+    FactoryBot.create(:cluster_file,
+                      study: @study,
+                      name: 'cluster_example_2.txt',
+                      upload_file_size: 1.megabyte)
     detail = @study.build_study_detail
     detail.full_description = '<p>This is the description.</p>'
     detail.save!
@@ -240,6 +244,24 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
       @study.reload
       assert @study.authors.empty?
       assert @study.publications.empty?
+    end
+  end
+
+  test 'should reorder clusterings based on study settings' do
+    assert_equal %w[cluster_example.txt cluster_example_2.txt], @study.default_cluster_order
+    mock_not_detached @study, :find_by do
+      study_params = {
+        study: {
+          default_options: {
+            cluster_order: %w[cluster_example_2.txt cluster_example.txt]
+          }
+        }
+      }.with_indifferent_access
+      patch update_study_settings_path(accession: @study.accession, study_name: @study.url_safe_name),
+            params: study_params, xhr: true
+      assert_response :success
+      @study.reload
+      assert_equal %w[cluster_example_2.txt cluster_example.txt], @study.default_cluster_order
     end
   end
 

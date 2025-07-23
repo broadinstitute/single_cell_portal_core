@@ -1308,6 +1308,22 @@ class Study
     end
   end
 
+  def standard_cluster_groups
+    cluster_groups.reject(&:spatial?)
+  end
+
+  def default_cluster_order
+    default_options[:cluster_order] || standard_cluster_groups.map(&:name)
+  end
+
+  def spatial_cluster_groups
+    cluster_groups.select(&:spatial?)
+  end
+
+  def default_spatial_order
+    default_options[:spatial_order] || spatial_cluster_groups.map(&:name)
+  end
+
   ###
   #
   # INSTANCE VALUE SETTERS & GETTERS
