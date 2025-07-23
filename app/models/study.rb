@@ -1309,7 +1309,7 @@ class Study
   end
 
   def standard_cluster_groups
-    cluster_groups.reject(&:is_spatial)
+    cluster_groups.reject(&:spatial?)
   end
 
   def default_cluster_order
@@ -1317,7 +1317,7 @@ class Study
   end
 
   def spatial_cluster_groups
-    cluster_groups.select(&:is_spatial)
+    cluster_groups.select(&:spatial?)
   end
 
   def default_spatial_order

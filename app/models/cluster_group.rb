@@ -97,7 +97,9 @@ class ClusterGroup
     end
   end
 
-  delegate :is_spatial, to: :study_file
+  def spatial?
+    study_file&.is_spatial
+  end
 
   def is_3d?
     self.cluster_type == '3d'
