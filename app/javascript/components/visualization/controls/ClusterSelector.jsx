@@ -10,7 +10,6 @@ import Select from '~/lib/InstrumentedSelect'
 /** takes the server response and returns cluster options suitable for react-select */
 function getClusterOptions(annotationList, spatialGroups) {
   const clusterList = annotationList.clusters ? annotationList.clusters : []
-  console.log(`ClusterSelector: clusterList: ${JSON.stringify(clusterList)}`)
   if (spatialGroups && spatialGroups.length) {
     // return two option groups, one non-spatial and one spatial
     const spatialGroupNames = spatialGroups.map(group => group.name)

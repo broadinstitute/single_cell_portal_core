@@ -13,7 +13,7 @@ class ClusterVizService
 
   # helper method to load all possible cluster groups for a study
   def self.load_cluster_group_options(study)
-    study.default_cluster_order || study.standard_cluster_groups.map(&:name)
+    study.default_cluster_order
   end
 
   # helper method to load all available cluster_group-specific annotations
