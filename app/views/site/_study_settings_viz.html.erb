@@ -39,27 +39,17 @@
         <% if @study.standard_cluster_groups.any? %>
           <div class="col-sm-4">
             <%= opts.label :cluster_order, "Drag to specify order of clustering menu" %>
-            <ul class="multi-checkbox" id="cluster-order-list">
-              <% @study.default_cluster_order.each do |cluster| %>
-                <li class="cluster-order">
-                  <%= cluster %>
-                  <%= opts.hidden_field :cluster_order, multiple: true, value: cluster %>
-                </li>
-              <% end %>
-            </ul>
+            <%= render partial: '/layouts/cluster_order_fields', locals: {
+              form: opts, cluster_order: @study.default_cluster_order, param_name: :cluster_order
+            } %>
           </div>
         <% end %>
         <% if @study.spatial_cluster_groups.any? %>
           <div class="col-sm-4">
             <%= opts.label :spatial_order, "Drag to specify order of spatial menu" %>
-            <ul class="multi-checkbox" id="spatial-order-list">
-              <% @study.default_spatial_order.each do |cluster| %>
-                <li class="cluster-order">
-                  <%= cluster %>
-                  <%= opts.hidden_field :spatial_order, multiple: true, value: cluster %>
-                </li>
-              <% end %>
-            </ul>
+            <%= render partial: '/layouts/cluster_order_fields', locals: {
+              form: opts, cluster_order: @study.default_spatial_order, param_name: :spatial_order
+            } %>
           </div>
         <% end %>
         <div class="col-sm-4">
@@ -72,14 +62,14 @@
         </div>
       </div>
       <div class="form-group row">
-        <div class="col-sm-3">
+        <div class="col-sm-4">
           <%= opts.label :expression_sort, 'Expression ordering' %>&nbsp
           <span class="fas fa-question-circle" data-toggle="popover" data-placement="right" data-html="true"
                 data-content='Specify which cells to bring to the front of expression-based scatter plots based on expression value.  <a href="https://singlecell.zendesk.com/hc/en-us/articles/31772258040475" target="_blank">Learn more</a>.'>
           </span> <br />
           <%= opts.select :expression_sort, options_for_select(%w[high low unsorted], @study.default_expression_sort), { include_blank: true }, class: 'form-control' %>
         </div>
-        <div class="col-sm-9">
+        <div class="col-sm-8">
           <%= opts.label :expression_label, 'Expression axis label' %>&nbsp;<span class="fas fa-question-circle" data-toggle="tooltip" data-placement="right" title='This is displayed as the axis label for box & scatter plots showing expression values.  This label is global to all expression values.'></span> <br />
           <%= opts.text_field :expression_label, value: @study.default_options[:expression_label], placeholder: @study.default_expression_label, class: 'form-control' %>
         </div>
@@ -121,8 +111,6 @@
             });
           })
         });
-        $("#cluster-order-list").sortable();
-        $("#spatial-order-list").sortable();
       </script>
     <% end %>
     <% if @study.has_gene_lists? %>

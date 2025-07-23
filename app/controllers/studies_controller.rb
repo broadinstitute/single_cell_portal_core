@@ -1039,7 +1039,8 @@ class StudiesController < ApplicationController
     params.require(:study_default_options).permit(:cluster, :annotation, :color_profile, :expression_label,
                                                   :cluster_point_size, :cluster_point_alpha, :cluster_point_border,
                                                   :precomputed_heatmap_label, :expression_sort,
-                                                  override_viz_limit_annotations: [])
+                                                  override_viz_limit_annotations: [], cluster_order: [],
+                                                  spatial_order: [])
   end
 
   def set_file_types
