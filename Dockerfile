@@ -1,5 +1,5 @@
 # use SCP base Rails image, configure only project-specific items here
-FROM gcr.io/broad-singlecellportal-staging/rails-baseimage:3.0.0
+FROM gcr.io/broad-singlecellportal-staging/rails-baseimage:3.0.1
 
 # Set ruby version
 RUN bash -lc 'rvm --default use ruby-3.4.2'
@@ -8,8 +8,6 @@ RUN bash -lc 'rvm rvmrc warning ignore /home/app/webapp/Gemfile'
 # Set up project dir, install gems, set up script to migrate database and precompile static assets on run
 RUN mkdir /home/app/webapp
 RUN sudo chown app:app /home/app/webapp # fix permission issues in local development on MacOSX
-RUN gem update --system
-RUN gem install bundler
 COPY Gemfile /home/app/webapp/Gemfile
 COPY Gemfile.lock /home/app/webapp/Gemfile.lock
 WORKDIR /home/app/webapp
