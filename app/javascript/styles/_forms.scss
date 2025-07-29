@@ -188,27 +188,26 @@ hr.divider {
   ul.multi-checkbox {
     padding-inline-start: 0;
     padding: 4px;
-    max-height: 90px;
+    max-height: 145px;
     overflow-y: scroll;
     background-color: white;
     border-radius: 4px;
     li {
       list-style-type: none;
+      padding: .275em;
       width: 100%;
       input[type='checkbox'] {
-        margin-right: 4px;
+        margin: 0 4px 0 0;
       }
     }
   }
 }
 
 li.cluster-order {
-  cursor: pointer;
-  padding: 4px;
+  cursor: grab;
 }
-
-li.cluster-order:hover {
-  background-color: #f4f4f4;
+li.cluster-order:active {
+  cursor: grabbing;
 }
 
 .large-checkbox {
