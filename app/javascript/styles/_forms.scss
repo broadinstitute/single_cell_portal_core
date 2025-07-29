@@ -200,14 +200,14 @@ hr.divider {
         margin: 0 4px 0 0;
       }
     }
-    li:hover {
-      background-color: #f4f4f4;
-    }
   }
 }
 
 li.cluster-order {
-  cursor: pointer;
+  cursor: grab;
+}
+li.cluster-order:active {
+  cursor: grabbing;
 }
 
 .large-checkbox {
