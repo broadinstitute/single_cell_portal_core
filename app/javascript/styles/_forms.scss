@@ -188,12 +188,13 @@ hr.divider {
   ul.multi-checkbox {
     padding-inline-start: 0;
     padding: 4px;
-    max-height: 90px;
+    max-height: 150px;
     overflow-y: scroll;
     background-color: white;
     border-radius: 4px;
     li {
       list-style-type: none;
+      padding: 3px;
       width: 100%;
       input[type='checkbox'] {
         margin-right: 4px;
@@ -204,7 +205,7 @@ hr.divider {
 
 li.cluster-order {
   cursor: pointer;
-  padding: 4px;
+  padding: 4px !important;
 }
 
 li.cluster-order:hover {
