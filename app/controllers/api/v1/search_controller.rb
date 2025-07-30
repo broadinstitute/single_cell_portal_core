@@ -29,10 +29,10 @@ module Api
           parameter do
             key :name, :type
             key :in, :query
-            key :description, 'Type of query to perform (study- or cell-based)'
+            key :description, 'Type of query to perform (study- or gene-based)'
             key :required, true
             key :type, :string
-            key :enum, ['study', 'cell']
+            key :enum, %w[study gene]
           end
           parameter do
             key :name, :facets
@@ -93,6 +93,14 @@ module Api
             key :reqired, false
             key :type, :string
             key :enum, [:recent, :popular]
+          end
+          parameter do
+            key :name, :export
+            key :in, :query
+            key :description, 'Export results as a file'
+            key :required, false
+            key :type, :string
+            key :enum, %w[tsv]
           end
           response 200 do
             key :description, 'Search parameters, Studies and StudyFiles'
@@ -391,10 +399,17 @@ module Api
         end
 
         @matching_accessions = @studies.map { |study| self.class.get_study_attribute(study, :accession) }
-
+        logger.info "studies_by_facet: #{@studies_by_facet}"
         logger.info "Final list of matching studies: #{@matching_accessions}"
         @results = @studies.paginate(page: params[:page], per_page: Study.per_page)
-        render json: search_results_obj, status: 200
+        if params[:export].present?
+          send_data results_text_export,
+                    filename: "scp_search_results_#{Time.now.strftime('%Y%m%d_%H%M%S')}.#{params[:export]}",
+                    status: :ok,
+                    x_sendfile: true
+        else
+          render json: search_results_obj, status: 200
+        end
       end
 
       swagger_path '/search/facets' do
@@ -657,7 +672,9 @@ module Api
         else
           matching_facet[:filters].detect do |filter|
             filters = search_result[result_key].is_a?(Array) ? search_result[result_key] : [search_result[result_key]]
-            filters.include?(filter[:id]) || filters.include?(filter[:name])
+            filters.include?(filter[:id]) ||
+              filters.include?(filter[:name]) ||
+              filters.include?(filter[:id].gsub(/_/, ':')) # handle malformed IDs
           end
         end
       end

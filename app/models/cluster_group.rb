@@ -97,6 +97,10 @@ class ClusterGroup
     end
   end
 
+  def spatial?
+    study_file&.is_spatial
+  end
+
   def is_3d?
     self.cluster_type == '3d'
   end
