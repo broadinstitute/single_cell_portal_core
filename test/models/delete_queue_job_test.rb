@@ -287,4 +287,24 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
     study.reload
     assert_empty study.expression_matrix_cells(matrix, matrix_type: 'raw')
   end
+
+  test 'should update cluster order when deleting cluster file' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Cluster Order Update Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    cell_input = { x: [1, 2, 3], y: [4, 5, 6], cells: %w[A B C] }
+    1.upto(3) do |i|
+      FactoryBot.create(:cluster_file, name: "cluster_#{i}.txt", study:, cell_input:)
+    end
+    assert_equal 3, study.cluster_groups.count
+    study.default_options[:cluster_order] = study.default_cluster_order
+    study.save!
+
+    file = study.cluster_groups.first.study_file
+    DeleteQueueJob.new(file).perform
+    study.reload
+    assert_equal %w[cluster_2.txt cluster_3.txt], study.default_cluster_order,
+                 'Did not update cluster order after deleting a cluster file'
+  end
 end
