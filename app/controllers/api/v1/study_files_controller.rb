@@ -384,7 +384,11 @@ module Api
               study.default_options[:cluster] = study_file.name
               study.save
             end
+            # handle cluster order updates in background to reduce ui blocking
+            @study.delay.update_cluster_order(cluster, action: :remove)
             cluster.update(name: study_file.name)
+            cluster.reload
+            @study.delay.update_cluster_order(cluster, action: :append)
           end
         end
 
