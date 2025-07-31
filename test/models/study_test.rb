@@ -274,5 +274,11 @@ class StudyTest < ActiveSupport::TestCase
     study.update_cluster_order(new_cluster, action: :append)
     study.reload
     assert_equal [cluster.name, new_cluster.name], study.default_cluster_order
+
+    # test renaming cluster directly
+    new_name = 'Renamed Cluster'
+    cluster.update(name: new_name)
+    study.reload
+    assert_equal [new_name, new_cluster.name], study.default_cluster_order
   end
 end
