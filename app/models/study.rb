@@ -275,6 +275,8 @@ class Study
   field :default_options, type: Hash, default: {} # extensible hash where we can put arbitrary values as 'defaults'
   field :external_identifier, type: String # ID from external service, used for tracking via ImportService
   field :imported_from, type: String # Human-readable tag for external service that study was imported from, e.g. HCA
+  field :cloud_project, type: String, default: ENV['GOOGLE_CLOUD_PROJECT'] # name of cloud-based project where storage bucket lives
+  field :terra_study, type: Boolean # legacy handler for telling if a study was created in Terra originally
   ##
   #
   # SWAGGER DEFINITIONS
@@ -1884,6 +1886,21 @@ class Study
   def log_study_state
     MetricsService.log('study-state', mixpanel_state_props, user) if was_just_published? || was_just_initialized?
   end
+
+  def set_terra_cloud_project
+    workspace = ApplicationController.firecloud_client.get_workspace(firecloud_project, firecloud_workspace)
+    return false unless workspace
+
+    cloud_project = workspace.dig('workspace', 'googleProject')
+    return false unless cloud_project
+
+    Rails.logger.info "Setting cloud project #{cloud_project} for study #{accession}"
+    self.cloud_project = cloud_project
+    self.terra_study = true
+    save!(validate: false) # skip validations to avoid issues with older studies
+  end
+
+  handle_asynchronously :set_terra_cloud_project
 
   private
 

@@ -7,11 +7,6 @@ module StorageProvider
     include ::ApiHelpers
 
     attr_accessor :project, :service, :service_account_credentials
-
-    GOOGLE_SCOPES = %w[email profile https://www.googleapis.com/auth/devstorage.read_only].freeze
-
-    RETRY_BACKOFF_DENYLIST = %i[generate_signed_url generate_api_url].freeze
-
     ACL_ROLES = %w[reader writer owner].freeze
 
     # Default constructor for GcsClient
@@ -190,61 +185,6 @@ module StorageProvider
       end
     end
 
-    # retrieve single file in a GCP bucket of a workspace and download locally to portal.  will perform a chunked download
-    # on files larger that 50 MB
-    #
-    # * *params*
-    #   - +bucket_id+ (String) => ID of workspace GCP bucket
-    #   - +filename+ (String) => name of file
-    #   - +destination+ (String) => destination path for downloaded file
-    #   - +opts+ (Hash) => extra options for signed_url
-    #
-    # * *return*
-    #   - +File+ object
-    def download_bucket_file(bucket_id, filename, destination, opts: {})
-      file = bucket_file(bucket_id, filename)
-      # create a valid path by combining destination directory and filename, making sure no double / exist
-      end_path = [destination, filename].join('/').gsub(/\/\//, '/')
-      # gotcha in case file is in a subdirectory
-      if filename.include?('/')
-        path_parts = filename.split('/')
-        path_parts.pop
-        directory = File.join(destination, path_parts)
-        FileUtils.mkdir_p directory
-      end
-      # determine if a chunked download is needed
-      if file.size > 50.megabytes
-        Rails.logger.info "Performing chunked download for #{filename} from #{bucket_id}"
-        # we need to determine whether or not this file has been gzipped - if so, we have to make a copy and unset the
-        # gzip content-encoding as we cannot do range requests on gzipped data
-        if file.content_encoding == 'gzip'
-          new_file = file.copy file.name + '.tmp'
-          new_file.content_encoding = nil
-          remote = new_file
-        else
-          remote = file
-        end
-        size_range = 0..remote.size
-        local = File.new(end_path, 'wb')
-        size_range.each_slice(50.megabytes) do |range|
-          range_req = range.first..range.last
-          merged_opts = opts.merge(range: range_req)
-          buffer = remote.download merged_opts
-          buffer.rewind
-          local.write buffer.read
-        end
-        if file.content_encoding == 'gzip'
-          # clean up the temp copy
-          remote.delete
-        end
-        Rails.logger.info "Chunked download for #{filename} from #{bucket_id} complete"
-        # return newly-opened file (will need to check content type before attempting to parse)
-        local
-      else
-        file.download end_path, **opts
-      end
-    end
-
     # read the contents of a file in a workspace bucket into memory
     #
     # * *params*
@@ -284,11 +224,7 @@ module StorageProvider
     #   - +String+ signed URL
     def generate_api_url(bucket_id, filename)
       file = bucket_file(bucket_id, filename)
-      if file
-        file.api_url
-      else
-        ''
-      end
+      file&.api_url || ''
     end
 
     # extract a status code from an error GCS call

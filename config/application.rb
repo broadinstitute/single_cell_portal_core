@@ -54,5 +54,13 @@ module SingleCellPortal
     # Google OAuth2 Scopes
     # basic scopes are user profile, email, and openid, and do not require user consent to request during auth handshake
     BASIC_GOOGLE_SCOPES = %w(email profile userinfo.email userinfo.profile openid)
+    # additional scopes require user consent to request during auth handshake
+    ADDITIONAL_GOOGLE_SCOPES = %w(https://www.googleapis.com/auth/devstorage.read_only)
+    # all scopes that can be requested by the application
+    ALL_GOOGLE_SCOPES = (BASIC_GOOGLE_SCOPES + ADDITIONAL_GOOGLE_SCOPES).freeze
+
+    # Configured storage client for this application
+    # can be overridden via environment variable
+    config.storage_client = ENV['STORAGE_CLIENT'] || 'StorageProvider::Gcs'
   end
 end
