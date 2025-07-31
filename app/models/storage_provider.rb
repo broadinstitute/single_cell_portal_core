@@ -25,7 +25,7 @@ module StorageProvider
   # * *returns*
   #   - (Various) => result of the API call to create the bucket
   def load_study_bucket(bucket_id)
-    StorageService.call_client(self, :bucket, bucket_id)
+    StorageService.call_client(self, :get_bucket, bucket_id)
   end
 
   # load all files from a study bucket

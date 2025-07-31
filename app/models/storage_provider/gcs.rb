@@ -28,6 +28,12 @@ module StorageProvider
       self.service = Google::Cloud::Storage.new(**storage_attr)
     end
 
+    # list available GCS buckets in the project
+    #
+    # * *returns*
+    #   - +Array<Google::Cloud::Storage::Bucket>+ => array of GCS buckets in the project
+    delegate :buckets, to: :service
+
     # create a GCS bucket
     #
     # * *params*
@@ -45,7 +51,17 @@ module StorageProvider
     #
     # * *return*
     #   - +Google::Cloud::Storage::Bucket+ object
-    delegate :bucket, to: :service
+    def get_bucket(bucket_id)
+      service.bucket(bucket_id)
+    end
+
+    # delete a GCS bucket
+    #
+    # * *params*
+    #   - +bucket_id+ (String) => ID of GCS bucket
+    def delete_bucket(bucket_id)
+      get_bucket(bucket_id)&.delete
+    end
 
     # update the ACL of a GCS bucket
     #
@@ -59,7 +75,7 @@ module StorageProvider
     def update_bucket_acl(bucket_id, email, role)
       raise ArgumentError unless ACL_ROLES.include?(role)
 
-      study_bucket = bucket(bucket_id)
+      study_bucket = get_bucket(bucket_id)
       acl_method = "add_#{role}".to_sym
       study_bucket.send(acl_method, email)
     end
@@ -70,7 +86,7 @@ module StorageProvider
     #   - +bucket_id+ (String) => ID of GCS bucket
     #   - +terminal_storage_class+ (Symbol) => storage class to use for terminal files, e.g. 'NEARLINE', 'ARCHIVE'
     def enable_bucket_autoclass(bucket_id, terminal_storage_class: 'ARCHIVE')
-      study_bucket = bucket(bucket_id)
+      study_bucket = get_bucket(bucket_id)
       study_bucket.update_autoclass(enabled: true, terminal_storage_class:)
     end
 
@@ -83,7 +99,7 @@ module StorageProvider
     # * *return*
     #   - +Google::Cloud::Storage::File::List+
     def bucket_files(bucket_id, opts: {})
-      study_bucket = bucket(bucket_id)
+      study_bucket = get_bucket(bucket_id)
       study_bucket.files(**opts)
     end
 
@@ -96,7 +112,7 @@ module StorageProvider
     # * *return*
     #   - +Google::Cloud::Storage::File+
     def bucket_file(bucket_id, filename)
-      study_bucket = bucket(bucket_id)
+      study_bucket = get_bucket(bucket_id)
       study_bucket.file filename
     end
 
@@ -126,12 +142,10 @@ module StorageProvider
     # * *return*
     #   - +Boolean+
     def bucket_file_exists?(bucket_id, filename)
-      begin
-        file = bucket_file(bucket_id, filename)
-        file.present?
-      rescue Google::Apis::Error
-        false
-      end
+      file = bucket_file(bucket_id, filename)
+      file.present?
+    rescue Google::Apis::Error
+      false
     end
 
     # add a file to a workspace bucket
@@ -145,7 +159,7 @@ module StorageProvider
     # * *return*
     #   - +Google::Cloud::Storage::File+
     def create_bucket_file(bucket_id, filepath, filename, opts: {})
-      study_bucket = bucket(bucket_id)
+      study_bucket = get_bucket(bucket_id)
       study_bucket.create_file(filepath, filename, **opts)
     end
 
@@ -174,15 +188,7 @@ module StorageProvider
     #   - +Boolean+ indication of file deletion
     def delete_bucket_file(bucket_id, filename)
       file = bucket_file(bucket_id, filename)
-      begin
-        file.delete
-      rescue => e
-        ErrorTracker.report_exception(
-          e, issuer_object, { method_name: :delete_bucket_file, params: [bucket_id, filename] }
-        )
-        Rails.logger.info("failed to delete workspace file #{filename} with error #{e.message}")
-        false
-      end
+      file.delete
     end
 
     # read the contents of a file in a workspace bucket into memory
@@ -224,7 +230,7 @@ module StorageProvider
     #   - +String+ signed URL
     def generate_api_url(bucket_id, filename)
       file = bucket_file(bucket_id, filename)
-      file&.api_url || ''
+      file.api_url
     end
 
     # extract a status code from an error GCS call

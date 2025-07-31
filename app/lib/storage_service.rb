@@ -7,7 +7,7 @@ class StorageService
   ALLOWED_CLIENTS = [StorageProvider::Gcs].freeze
 
   # exceptions that will be handled and reported
-  HANDLED_EXCEPTIONS = [RuntimeError, RestClient::Exception, Google::Apis::ClientError].freeze
+  HANDLED_EXCEPTIONS = [RuntimeError, RestClient::Exception, Google::Cloud::Error, Google::Apis::ClientError].freeze
 
   # load the configured storage client for the application, specific to a given study
   # the client class can be set in application.rb or via STORAGE_CLIENT environment variable
@@ -41,13 +41,11 @@ class StorageService
       raise ArgumentError, "#{client.class} not one of allowed clients: #{ALLOWED_CLIENTS.join(', ')}"
     end
 
-    begin
-      client.send(client_method, *args, **kwargs)
-    rescue *HANDLED_EXCEPTIONS => e
-      log_message("Error calling #{client_method} on #{client.class}: #{e.class} - #{e.message}", level: :error)
-      ErrorTracker.report_exception(e, client.issuer, client, client_method:, args:, kwargs:)
-      raise e
-    end
+    client.send(client_method, *args, **kwargs)
+  rescue *HANDLED_EXCEPTIONS => e
+    log_message("Error calling #{client_method} on #{client.class}: #{e.class} - #{e.message}", level: :error)
+    ErrorTracker.report_exception(e, client.issuer, client, client_method:, args:, kwargs:)
+    raise e
   end
 
   # create a storage bucket for a given study and assign all acls and autoclasses
