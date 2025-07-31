@@ -516,7 +516,7 @@ export async function exportSearchResultsText(searchParams, mock=false) {
   const init = {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${getOAuthToken()}`
+      Authorization: `Bearer ${getAccessToken()}`
     }
   }
   const [searchResults, perfTimes] = await scpApi(path, init, mock, false, false)
