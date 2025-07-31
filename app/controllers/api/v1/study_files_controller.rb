@@ -385,7 +385,6 @@ module Api
               study.save
             end
             cluster.update(name: study_file.name)
-            cluster.reload
           end
         end
 
