@@ -28,6 +28,17 @@ module StorageProvider
     StorageService.call_client(self, :get_bucket, bucket_id)
   end
 
+  # create a storage bucket for a given study
+  #
+  # * *params*
+  #   - +bucket_id+ (String) => ID of bucket
+  #
+  # * *returns*
+  #   - (Various) => result of the API call to create the bucket
+  def delete_study_bucket(bucket_id)
+    StorageService.call_client(self, :delete_bucket, bucket_id)
+  end
+
   # load all files from a study bucket
   #
   # * *params*

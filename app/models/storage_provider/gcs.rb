@@ -63,21 +63,34 @@ module StorageProvider
       get_bucket(bucket_id)&.delete
     end
 
+    # retrieve the ACL of a GCS bucket
+    #
+    # * *params*
+    #   - +bucket_id+ (String) => ID of GCS bucket
+    #
+    # * *return*
+    #   - +Google::Cloud::Storage::Acl+ object representing the bucket's ACL
+    def get_bucket_acl(bucket_id)
+      study_bucket = get_bucket(bucket_id)
+      study_bucket.acl
+    end
+
     # update the ACL of a GCS bucket
     #
     # * *params*
     #   - +bucket_id+ (String) => ID of GCS bucket
     #   - +email+ (String) => email of user to update ACL for
     #   - +role+ (Symbol) => role to assign to user, e.g. :owner, :reader, :writer
+    #   - +delete+ (Boolean) => whether to delete the ACL entry instead of updating it
     #
     # * *return*
     #   - (String) => updated entity
-    def update_bucket_acl(bucket_id, email, role)
-      raise ArgumentError unless ACL_ROLES.include?(role)
+    def update_bucket_acl(bucket_id, email, role, delete: false)
+      raise ArgumentError unless ACL_ROLES.include?(role.to_s)
 
-      study_bucket = get_bucket(bucket_id)
-      acl_method = "add_#{role}".to_sym
-      study_bucket.send(acl_method, email)
+      bucket_acl = get_bucket_acl(bucket_id)
+      acl_method = delete ? :delete : "add_#{role}".to_sym
+      bucket_acl.send(acl_method, "user-#{email}")
     end
 
     # turn on the autoclass feature for a GCS bucket
@@ -114,22 +127,6 @@ module StorageProvider
     def bucket_file(bucket_id, filename)
       study_bucket = get_bucket(bucket_id)
       study_bucket.file filename
-    end
-
-    # retrieve all files in a GCP directory
-    #
-    # * *params*
-    #   - +bucket_id+ (String) => ID of workspace GCP bucket
-    #   - +directory+ (String) => name of directory in bucket
-    #   - +opts+ (Hash) => hash of optional parameters
-    #
-    # * *return*
-    #   - +Google::Cloud::Storage::File::List+
-    def bucket_directory_files(bucket_id, directory, opts: {})
-      # makes sure directory ends with '/', otherwise append to prevent spurious matches
-      directory += '/' unless directory.last == '/'
-      opts.merge!(prefix: directory)
-      bucket_files(bucket_id, **opts)
     end
 
     # check if a study_file in a GCP bucket of a workspace exists
@@ -211,13 +208,13 @@ module StorageProvider
     # * *params*
     #   - +bucket_id+ (String) => ID of workspace GCP bucket
     #   - +filename+ (String) => name of file
-    #   - +opts+ (Hash) => extra options for signed_url
+    #   - +...+ (Hash) => extra options for signed_url, such as expires: or :headers
     #
     # * *return*
     #   - +String+ signed URL
-    def generate_signed_url(bucket_id, filename, opts: {})
+    def generate_signed_url(bucket_id, filename, ...)
       file = bucket_file(bucket_id, filename)
-      file.signed_url(**opts)
+      file.signed_url(...)
     end
 
     # generate an api url to directly load a file from GCS via client-side JavaScript
@@ -243,7 +240,7 @@ module StorageProvider
     def extract_status_code(error)
       return 500 if error.is_a?(RuntimeError)
 
-      error.try(:http_code) || error.try(:code) || 500
+      error.try(:status_code) || error.try(:code) || 500
     end
   end
 end
