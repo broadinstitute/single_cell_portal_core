@@ -252,4 +252,33 @@ class StudyTest < ActiveSupport::TestCase
     study.set_cell_count
     assert_equal 4, study.cell_count
   end
+
+  test 'should update cluster order' do
+    study = FactoryBot.create(:detached_study,
+                              user: @user,
+                              name_prefix: 'Cluster Order Test',
+                              test_array: @@studies_to_clean)
+    assert_empty study.default_cluster_order
+    cell_input = {
+      x: [1, 4, 6],
+      y: [7, 5, 3],
+      cells: %w(A B C)
+    }
+    FactoryBot.create(:cluster_file, name: 'cluster_example.txt', study:, cell_input:)
+    cluster = study.cluster_groups.first
+    study.update_cluster_order(cluster, action: :append)
+    study.reload
+    assert_equal [cluster.name], study.default_cluster_order
+    FactoryBot.create(:cluster_file, name: 'cluster_2_example.txt', study:, cell_input:)
+    new_cluster = study.cluster_groups.last
+    study.update_cluster_order(new_cluster, action: :append)
+    study.reload
+    assert_equal [cluster.name, new_cluster.name], study.default_cluster_order
+
+    # test renaming cluster directly
+    new_name = 'Renamed Cluster'
+    cluster.update(name: new_name)
+    study.reload
+    assert_equal [new_name, new_cluster.name], study.default_cluster_order
+  end
 end
