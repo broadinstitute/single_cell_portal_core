@@ -59,11 +59,11 @@ module StorageProvider
     test 'should update bucket acl' do
       email = 'user@example.net'
       role = :reader
-      updated_entity = @client.update_bucket_acl(@bucket_name, email, role)
+      updated_entity = @client.update_bucket_acl(@bucket_name, email, role:)
       assert_equal "user-#{email}", updated_entity, 'Updated entity does not match expected format'
       acl = @client.get_bucket_acl(@bucket_name)
       assert acl.readers.detect { |entry| entry == "user-#{email}" }, 'ACL entry not found'
-      @client.update_bucket_acl(@bucket_name, email, role, delete: true)
+      @client.update_bucket_acl(@bucket_name, email, role:, delete: true)
       updated_acl = @client.get_bucket_acl(@bucket_name)
       assert updated_acl.readers.detect { |entry| entry == "user-#{email}" }.nil?
     end

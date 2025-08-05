@@ -85,8 +85,8 @@ module StorageProvider
     #
     # * *return*
     #   - (String) => updated entity
-    def update_bucket_acl(bucket_id, email, role, delete: false)
-      raise ArgumentError unless ACL_ROLES.include?(role.to_s)
+    def update_bucket_acl(bucket_id, email, role: nil, delete: false)
+      raise ArgumentError unless ACL_ROLES.include?(role.to_s) || (role.nil? && delete)
 
       bucket_acl = get_bucket_acl(bucket_id)
       acl_method = delete ? :delete : "add_#{role}".to_sym

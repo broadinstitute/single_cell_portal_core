@@ -39,6 +39,31 @@ module StorageProvider
     StorageService.call_client(self, :delete_bucket, bucket_id)
   end
 
+  # retrieve the ACL of a storage bucket
+  #
+  # * *params*
+  #   - +bucket_id+ (String) => ID of study bucket
+  #
+  # * *return*
+  #   - +Various+ object representing the bucket's ACL
+  def get_study_bucket_acl(bucket_id)
+    StorageService.call_client(self, :get_bucket_acl, bucket_id)
+  end
+
+  # update the ACL of a storage bucket
+  #
+  # * *params*
+  #   - +bucket_id+ (String) => ID of storage bucket
+  #   - +email+ (String) => email of user to update ACL for
+  #   - +role+ (Symbol) => role to assign to user, e.g. :owner, :reader, :writer
+  #   - +delete+ (Boolean) => whether to delete the ACL entry instead of updating it
+  #
+  # * *return*
+  #   - (String) => updated entity
+  def update_study_bucket_acl(bucket_id, email, role: nil, delete: false)
+    StorageService.call_client(self, :update_bucket_acl, bucket_id, email, role:, delete:)
+  end
+
   # load all files from a study bucket
   #
   # * *params*

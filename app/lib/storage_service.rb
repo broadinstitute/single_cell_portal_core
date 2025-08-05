@@ -4,19 +4,16 @@ class StorageService
   extend Loggable
 
   # API clients that can use StorageService
-  # Minitest::Mock is included here to facilitate testing
-  ALLOWED_CLIENTS = [StorageProvider::Gcs, Minitest::Mock].freeze
+  ALLOWED_CLIENTS = [StorageProvider::Gcs].freeze
 
   # exceptions that will be handled and reported
-  HANDLED_EXCEPTIONS = [RuntimeError, RestClient::Exception, Google::Cloud::Error, Google::Apis::ClientError].freeze
+  HANDLED_EXCEPTIONS = [RuntimeError, Google::Cloud::Error, Google::Apis::Error].freeze
 
   # load the configured storage client for the application, specific to a given study
   # the client class can be set in application.rb or via STORAGE_CLIENT environment variable
   def self.load_client(study: nil)
     configured_client = Rails.configuration.storage_client
-    unless const_defined?(configured_client) && ALLOWED_CLIENTS.map(&:to_s).include?(configured_client)
-      raise ArgumentError, "#{configured_client} not one of allowed clients: #{ALLOWED_CLIENTS.join(', ')}"
-    end
+    validate_client(configured_client)
 
     # if study is provided, use its cloud project; otherwise use the configured project or environment variable
     project = study&.cloud_project || ENV['GOOGLE_CLOUD_PROJECT']
@@ -38,9 +35,7 @@ class StorageService
   #   - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
   #   - any exception from the client method, which will be logged and reported
   def self.call_client(client, client_method, *args, **kwargs)
-    unless ALLOWED_CLIENTS.map(&:to_s).include?(client.class.name)
-      raise ArgumentError, "#{client.class} not one of allowed clients: #{ALLOWED_CLIENTS.join(', ')}"
-    end
+    validate_client(client.class.name)
 
     client.send(client_method, *args, **kwargs)
   rescue *HANDLED_EXCEPTIONS => e
@@ -63,13 +58,9 @@ class StorageService
   #   - any exception from the client method, which will be logged and reported
   def self.create_study_bucket(client, study)
     bucket_id = study.bucket_id
-    call_client(client, :create_study_bucket, bucket_id)
-    call_client(client, :enable_bucket_autoclass, bucket_id) if client.respond_to?(:enable_bucket_autoclass)
-    call_client(client, :update_bucket_acl, bucket_id, study.user.email, :writer)
-    study.study_shares.each do |share|
-      role = share.permission == 'Edit' ? :writer : :reader
-      call_client(client, :update_bucket_acl, bucket_id, share.email, role)
-    end
+    client.create_study_bucket(bucket_id)
+    client.enable_bucket_autoclass(bucket_id) if client.respond_to?(:enable_bucket_autoclass)
+    set_study_bucket_acl(client, study)
   end
 
   # remove a storage bucket for a given study and delete all files in it
@@ -83,8 +74,94 @@ class StorageService
   #   - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
   #   - any exception from the client method, which will be logged and reported
   def self.remove_study_bucket(client, study)
-    files = call_client(client, :bucket_files, study.bucket_id)
+    files = client.load_study_bucket_files(study.bucket_id)
     Parallel.map(files, in_threads: 10, &:delete)
-    call_client(client, :delete_bucket, study.bucket_id)
+    client.delete_study_bucket(study.bucket_id)
+  end
+
+  # update the ACLs for a study bucket based on the study's shares
+  #
+  # * *params*
+  #   - +client+ (StorageProvider) => storage client to use for updating the ACLs
+  #   - +study+ (Study) => study for which to update the bucket ACLs
+  #
+  # * *raises*
+  #   - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
+  #   - any exception from the client method, which will be logged and reported
+  def self.set_study_bucket_acl(client, study)
+    existing_acl = client.get_study_bucket_acl(study.bucket_id)
+    client.update_study_bucket_acl(study.bucket_id, study.user.email, role: :writer)
+    study.study_shares.each do |share|
+      user_acl = "user-#{share.email}"
+      role = share.permission == 'Edit' ? 'writer' : 'reader'
+      acl_method = role.pluralize
+      next if existing_acl.send(acl_method).include?(user_acl)
+
+      client.update_study_bucket_acl(study.bucket_id, share.email, role:)
+    end
+  end
+
+  # remove a user's share from a study bucket
+  #
+  # * *params*
+  #   - +client+ (StorageProvider) => storage client to use for updating the ACLs
+  #   - +study+ (Study) => study for which to update the bucket ACLs
+  #   - +share+ (StudyShare) => share to remove
+  #
+  # * *raises*
+  #   - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
+  #   - any exception from the client method, which will be logged and reported
+  def self.remove_user_share(client, study, share)
+    client.update_study_bucket_acl(study.bucket_id, share.email, role: nil, delete: true)
+  end
+
+  # generate a signed URL for downloading a study file
+  #
+  # * *params*
+  #  - +client+ (StorageProvider) => storage client to use for generating the signed URL
+  #  - +study+ (Study) => study for which the file is stored
+  #  - +study_file+ (StudyFile) => file to download
+  #
+  # * *returns*
+  # - +String+ => signed URL for downloading the file via browser
+  #
+  # * *raises*
+  # - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
+  # - any exception from the client method, which will be logged and reported
+  def self.download_study_file(client, study, study_file)
+    file_location = study_file.bucket_location
+    call_client(client, :download_bucket_file, study.bucket_id, file_location, expires: 15)
+  end
+
+  # generate a media URL for streaming a study file
+  #
+  # * *params*
+  #  - +client+ (StorageProvider) => storage client to use for generating the signed URL
+  #  - +study+ (Study) => study for which the file is stored
+  #  - +study_file+ (StudyFile) => file to download
+  #
+  # * *returns*
+  # - +String+ => signed URL for downloading the file via browser
+  #
+  # * *raises*
+  # - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
+  # - any exception from the client method, which will be logged and reported
+  def self.stream_study_file(client, study, study_file)
+    file_location = study_file.bucket_location
+    call_client(client, :stream_bucket_file, study.bucket_id, file_location)
+  end
+
+  # validate that the client is one of the allowed client classes
+  # will allow mocking in tests via Rails.env.test? check
+  #
+  # * *params*
+  #   - +client_class+ (String, Symbol) => name of the client to validate
+  #
+  # * *raises*
+  #   - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
+  def self.validate_client(client_class)
+    unless const_defined?(client_class) && (ALLOWED_CLIENTS.map(&:to_s).include?(client_class) || Rails.env.test?)
+      raise ArgumentError, "#{client_class} not one of allowed clients: #{ALLOWED_CLIENTS.join(', ')}"
+    end
   end
 end
