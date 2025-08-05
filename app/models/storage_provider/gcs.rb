@@ -58,7 +58,7 @@ module StorageProvider
     # * *return*
     #   - +Google::Cloud::Storage::Bucket+ object
     def get_bucket(bucket_id)
-      service.bucket(bucket_id)
+      storage.bucket(bucket_id)
     end
 
     # delete a GCS bucket

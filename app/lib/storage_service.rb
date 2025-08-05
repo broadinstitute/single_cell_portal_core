@@ -84,6 +84,24 @@ class StorageService
     client.delete_study_bucket(study.bucket_id)
   end
 
+  # determine if a bucket study bucket exists
+  #
+  # * *params*
+  #   - +client+ (StorageProvider) => storage client to use for checking the bucket existence
+  #   - +study+ (Study) => study for which to check the bucket existence
+  #
+  # * *returns*
+  #   - +Boolean+ => true if the bucket exists, false otherwise
+  #
+  # * *raises*
+  #   - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
+  #   - any exception from the client method, which will be logged and reported
+  def self.study_bucket_exists?(client, study)
+    client.bucket_exists?(study.bucket_id)
+  rescue *HANDLED_EXCEPTIONS
+    false
+  end
+
   # update the ACLs for a study bucket based on the study's shares
   #
   # * *params*

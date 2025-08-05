@@ -12,7 +12,7 @@ module StorageProvider
   #   - +bucket_id+ (String) => ID of bucket
   #
   # * *returns*
-  #   - (Various) => result of the API call to create the bucket
+  #   - +Various+ => result of the API call to create the bucket
   def create_study_bucket(bucket_id)
     StorageService.call_client(self, :create_bucket, bucket_id)
   end
@@ -23,9 +23,21 @@ module StorageProvider
   #   - +bucket_id+ (String) => ID of bucket
   #
   # * *returns*
-  #   - (Various) => result of the API call to create the bucket
+  #   - +Various+ => result of the API call to create the bucket
   def load_study_bucket(bucket_id)
     StorageService.call_client(self, :get_bucket, bucket_id)
+  end
+
+  # check if a storage bucket exists for a given study
+  #
+  # * *params*
+  #   - +bucket_id+ (String) => ID of bucket
+  #
+  # * *returns*
+  #   - +Boolean+ => true if the bucket exists, false otherwise
+  def bucket_exists?(bucket_id)
+    # skip call_client to avoid unnecessary error logging
+    get_bucket(bucket_id).present?
   end
 
   # create a storage bucket for a given study
@@ -34,7 +46,7 @@ module StorageProvider
   #   - +bucket_id+ (String) => ID of bucket
   #
   # * *returns*
-  #   - (Various) => result of the API call to create the bucket
+  #   - +Various+ => result of the API call to create the bucket
   def delete_study_bucket(bucket_id)
     StorageService.call_client(self, :delete_bucket, bucket_id)
   end
@@ -59,7 +71,7 @@ module StorageProvider
   #   - +delete+ (Boolean) => whether to delete the ACL entry instead of updating it
   #
   # * *return*
-  #   - (String) => updated entity
+  #   - +String+ => updated entity
   def update_study_bucket_acl(bucket_id, email, role: nil, delete: false)
     StorageService.call_client(self, :update_bucket_acl, bucket_id, email, role:, delete:)
   end
@@ -71,7 +83,7 @@ module StorageProvider
   #   - +opts+ (Hash) => extra options for the bucket_files method, such as prefix for filtering
   #
   # * *returns*
-  #   - (Various) => list of files in the bucket
+  #   - +Various+ => list of files in the bucket
   def load_study_bucket_files(bucket_id, **opts)
     StorageService.call_client(self, :bucket_files, bucket_id, **opts)
   end
@@ -84,7 +96,7 @@ module StorageProvider
   #   - +opts+ (Hash) => extra options for generate_signed_url
   #
   # * *returns*
-  #   - (String) => signed URL for downloading the file via browser
+  #   - +String+ => signed URL for downloading the file via browser
   def download_bucket_file(bucket_id, filepath, opts: {})
     StorageService.call_client(self, :generate_signed_url, bucket_id, filepath, opts)
   end
@@ -96,7 +108,7 @@ module StorageProvider
   #   - +filepath+ (String) => path to file in bucket
   #
   # * *returns*
-  #   - (String) => media URL for streaming the file
+  #   - +String+ => media URL for streaming the file
   def stream_bucket_file(bucket_id, filepath)
     StorageService.call_client(self, :generate_api_url, bucket_id, filepath)
   end
