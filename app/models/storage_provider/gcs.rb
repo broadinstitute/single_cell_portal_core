@@ -6,8 +6,14 @@ module StorageProvider
     include ::GoogleServiceClient
     include ::ApiHelpers
 
-    attr_accessor :project, :service, :service_account_credentials
+    attr_accessor :project, :storage, :service_account_credentials
+
     ACL_ROLES = %w[reader writer owner].freeze
+    GOOGLE_SCOPES = %w[
+      https://www.googleapis.com/auth/userinfo.profile
+      https://www.googleapis.com/auth/userinfo.email
+      https://www.googleapis.com/auth/devstorage.read_only
+    ].freeze
 
     # Default constructor for GcsClient
     #
@@ -16,7 +22,7 @@ module StorageProvider
     #   - +service_account_credentials+: (Path) => Absolute filepath to service account credentials
     # * *return*
     #   - +StorageProvider::GcsClient+
-    def initialize(project = self.class.compute_project, service_account_credentials = self.class.get_primary_keyfile)
+    def initialize(project: self.class.compute_project, service_account_credentials: self.class.get_primary_keyfile)
       storage_attr = {
         project_id: project,
         timeout: 3600,
@@ -25,14 +31,14 @@ module StorageProvider
 
       self.project = project
       self.service_account_credentials = service_account_credentials
-      self.service = Google::Cloud::Storage.new(**storage_attr)
+      self.storage = Google::Cloud::Storage.new(**storage_attr)
     end
 
     # list available GCS buckets in the project
     #
     # * *returns*
     #   - +Array<Google::Cloud::Storage::Bucket>+ => array of GCS buckets in the project
-    delegate :buckets, to: :service
+    delegate :buckets, to: :storage
 
     # create a GCS bucket
     #
@@ -42,7 +48,7 @@ module StorageProvider
     #
     # * *return*
     #   - +Google::Cloud::Storage::Bucket+ object
-    delegate :create_bucket, to: :service
+    delegate :create_bucket, to: :storage
 
     # retrieve a GCS bucket
     #

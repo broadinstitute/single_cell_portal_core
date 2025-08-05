@@ -58,8 +58,11 @@ class StorageService
   #   - any exception from the client method, which will be logged and reported
   def self.create_study_bucket(client, study)
     bucket_id = study.bucket_id
+    log_message "Creating study bucket #{bucket_id} for study #{study.accession}"
     client.create_study_bucket(bucket_id)
+    log_message "Enabling autoclass on study bucket #{bucket_id} for study #{study.accession}"
     client.enable_bucket_autoclass(bucket_id) if client.respond_to?(:enable_bucket_autoclass)
+    log_message "Setting ACLs on study bucket #{bucket_id} for study #{study.accession}"
     set_study_bucket_acl(client, study)
   end
 
@@ -74,8 +77,10 @@ class StorageService
   #   - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
   #   - any exception from the client method, which will be logged and reported
   def self.remove_study_bucket(client, study)
+    log_message "Removing all files from study bucket #{study.bucket_id} for study #{study.accession}"
     files = client.load_study_bucket_files(study.bucket_id)
     Parallel.map(files, in_threads: 10, &:delete)
+    log_message "Deleting study bucket #{study.bucket_id} for study #{study.accession}"
     client.delete_study_bucket(study.bucket_id)
   end
 
@@ -90,6 +95,7 @@ class StorageService
   #   - any exception from the client method, which will be logged and reported
   def self.set_study_bucket_acl(client, study)
     existing_acl = client.get_study_bucket_acl(study.bucket_id)
+    log_message "Assigning writer acl for study owner in #{study.accession}"
     client.update_study_bucket_acl(study.bucket_id, study.user.email, role: :writer)
     study.study_shares.each do |share|
       user_acl = "user-#{share.email}"
@@ -97,6 +103,7 @@ class StorageService
       acl_method = role.pluralize
       next if existing_acl.send(acl_method).include?(user_acl)
 
+      log_message "Assigning #{role} acl for share #{share.id} in #{study.accession}"
       client.update_study_bucket_acl(study.bucket_id, share.email, role:)
     end
   end
@@ -112,6 +119,7 @@ class StorageService
   #   - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
   #   - any exception from the client method, which will be logged and reported
   def self.remove_user_share(client, study, share)
+    log_message "Removing acl for share #{share.id} in #{study.accession}"
     client.update_study_bucket_acl(study.bucket_id, share.email, role: nil, delete: true)
   end
 
