@@ -12,7 +12,7 @@ module GoogleServiceClient
   # * *return*
   #   - +DateTime+ timestamp of new access token expiration
   def refresh_access_token!
-    return nil unless respond_to?(:access_token) && respond_to?(:expires_at)
+    return valid_access_token unless respond_to?(:access_token) && respond_to?(:expires_at)
 
     Rails.logger.info "#{self.class.name} token expired, refreshing access token"
     # determine if token source is a regular Google account (User) or a service account

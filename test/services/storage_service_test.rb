@@ -30,6 +30,14 @@ class StorageServiceTest < ActiveSupport::TestCase
     assert_equal @study.cloud_project, client.project
   end
 
+  test 'should instantiate public access client for study' do
+    client = StorageService.load_client(study: @study, public_access: true)
+    configured_class = Rails.configuration.storage_client.constantize
+    assert client.is_a?(configured_class)
+    assert_equal @study.cloud_project, client.project
+    assert_equal client.service_account_credentials, client.class.get_read_only_keyfile
+  end
+
   test 'should call client method' do
     mock = Minitest::Mock.new
     mock.expect(:buckets, [Google::Cloud::Storage::Bucket])
@@ -126,7 +134,7 @@ class StorageServiceTest < ActiveSupport::TestCase
                 role: nil, delete: true
     run_test_for_clients(mock) do
       client = StorageService.load_client(study: @study)
-      StorageService.remove_user_share(client, @study, new_share)
+      StorageService.remove_bucket_user_share(client, @study, new_share)
       mock.verify
       new_share.destroy
     end

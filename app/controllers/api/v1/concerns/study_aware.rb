@@ -11,6 +11,14 @@ module Api
           end
         end
 
+        def set_storage_client
+          @storage_client = StorageService.load_client(study: @study)
+        end
+
+        def set_public_storage_client
+          @public_storage_client = StorageService.load_client(study: @study, public_access: true)
+        end
+
         ##
         # Permission checks
         ##

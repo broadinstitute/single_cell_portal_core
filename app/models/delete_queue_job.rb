@@ -19,8 +19,11 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
       # validate: false is used to prevent validations from blocking update
       object.assign_attributes(public: false, name: new_name, url_safe_name: new_name, firecloud_workspace: new_name)
       object.save(validate: false)
+      unless object.terra_study
+        client = StorageService.load_client(study: object)
+        StorageService.remove_study_bucket(client, object)
+      end
     when 'StudyFile'
-
       file_type = object.file_type
       study = object.study
       # remove all nested documents if present to avoid validation issues later

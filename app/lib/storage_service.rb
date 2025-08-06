@@ -1,7 +1,6 @@
 # main handler for storage service operations using vendor-specific clients
 class StorageService
   extend ServiceAccountManager
-  extend Loggable
 
   # API clients that can use StorageService
   ALLOWED_CLIENTS = [StorageProvider::Gcs].freeze
@@ -11,13 +10,16 @@ class StorageService
 
   # load the configured storage client for the application, specific to a given study
   # the client class can be set in application.rb or via STORAGE_CLIENT environment variable
-  def self.load_client(study: nil)
+  def self.load_client(study: nil, public_access: false)
     configured_client = Rails.configuration.storage_client
     validate_client(configured_client)
 
     # if study is provided, use its cloud project; otherwise use the configured project or environment variable
     project = study&.cloud_project || ENV['GOOGLE_CLOUD_PROJECT']
-    const_get(configured_client).new(project)
+    client_class = configured_client.constantize
+    creds_method = public_access ? :get_read_only_keyfile : :get_primary_keyfile
+    service_account_credentials = client_class.send(creds_method)
+    client_class.new(project:, service_account_credentials:)
   end
 
   # generic handler to call an underlying client method and forward all positional/keyword params
@@ -39,7 +41,7 @@ class StorageService
 
     client.send(client_method, *args, **kwargs)
   rescue *HANDLED_EXCEPTIONS => e
-    log_message("Error calling #{client_method} on #{client.class}: #{e.class} - #{e.message}", level: :error)
+    Rails.logger.info("Error calling #{client_method} on #{client.class}: #{e.class} - #{e.message}", level: :error)
     ErrorTracker.report_exception(e, client.issuer, client, client_method:, args:, kwargs:)
     raise e
   end
@@ -58,11 +60,11 @@ class StorageService
   #   - any exception from the client method, which will be logged and reported
   def self.create_study_bucket(client, study)
     bucket_id = study.bucket_id
-    log_message "Creating study bucket #{bucket_id} for study #{study.accession}"
+    Rails.logger.info "Creating study bucket #{bucket_id} for study #{study.accession}"
     client.create_study_bucket(bucket_id)
-    log_message "Enabling autoclass on study bucket #{bucket_id} for study #{study.accession}"
+    Rails.logger.info "Enabling autoclass on study bucket #{bucket_id} for study #{study.accession}"
     client.enable_bucket_autoclass(bucket_id) if client.respond_to?(:enable_bucket_autoclass)
-    log_message "Setting ACLs on study bucket #{bucket_id} for study #{study.accession}"
+    Rails.logger.info "Setting ACLs on study bucket #{bucket_id} for study #{study.accession}"
     set_study_bucket_acl(client, study)
   end
 
@@ -77,10 +79,10 @@ class StorageService
   #   - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
   #   - any exception from the client method, which will be logged and reported
   def self.remove_study_bucket(client, study)
-    log_message "Removing all files from study bucket #{study.bucket_id} for study #{study.accession}"
+    Rails.logger.info "Removing all files from study bucket #{study.bucket_id} for study #{study.accession}"
     files = client.load_study_bucket_files(study.bucket_id)
     Parallel.map(files, in_threads: 10, &:delete)
-    log_message "Deleting study bucket #{study.bucket_id} for study #{study.accession}"
+    Rails.logger.info "Deleting study bucket #{study.bucket_id} for study #{study.accession}"
     client.delete_study_bucket(study.bucket_id)
   end
 
@@ -112,18 +114,32 @@ class StorageService
   #   - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
   #   - any exception from the client method, which will be logged and reported
   def self.set_study_bucket_acl(client, study)
-    existing_acl = client.get_study_bucket_acl(study.bucket_id)
-    log_message "Assigning writer acl for study owner in #{study.accession}"
+    Rails.logger.info "Assigning writer acl for study owner in #{study.accession}"
     client.update_study_bucket_acl(study.bucket_id, study.user.email, role: :writer)
     study.study_shares.each do |share|
-      user_acl = "user-#{share.email}"
-      role = share.permission == 'Edit' ? 'writer' : 'reader'
-      acl_method = role.pluralize
-      next if existing_acl.send(acl_method).include?(user_acl)
-
-      log_message "Assigning #{role} acl for share #{share.id} in #{study.accession}"
-      client.update_study_bucket_acl(study.bucket_id, share.email, role:)
+      add_bucket_user_share(client, study, share)
     end
+  end
+
+  # set a user's share ACL for a study bucket
+  #
+  # * *params*
+  #   - +client+ (StorageProvider) => storage client to use for updating the ACLs
+  #   - +study+ (Study) => study for which to update the bucket ACLs
+  #   - +share+ (StudyShare) => share to set ACL for
+  #
+  # * *raises*
+  #   - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
+  #   - any exception from the client method, which will be logged and reported
+  def self.add_bucket_user_share(client, study, share)
+    existing_acl = client.get_study_bucket_acl(study.bucket_id)
+    user_acl = "user-#{share.email}"
+    role = share.permission == 'Edit' ? 'writer' : 'reader'
+    acl_method = role.pluralize
+    return if existing_acl.send(acl_method).include?(user_acl)
+
+    Rails.logger.info "Assigning #{role} acl for #{share.email} in #{study.accession}"
+    client.update_study_bucket_acl(study.bucket_id, email, role:)
   end
 
   # remove a user's share from a study bucket
@@ -136,8 +152,8 @@ class StorageService
   # * *raises*
   #   - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
   #   - any exception from the client method, which will be logged and reported
-  def self.remove_user_share(client, study, share)
-    log_message "Removing acl for share #{share.id} in #{study.accession}"
+  def self.remove_bucket_user_share(client, study, share)
+    Rails.logger.info "Removing acl for share #{share.id} in #{study.accession}"
     client.update_study_bucket_acl(study.bucket_id, share.email, role: nil, delete: true)
   end
 
@@ -147,6 +163,7 @@ class StorageService
   #  - +client+ (StorageProvider) => storage client to use for generating the signed URL
   #  - +study+ (Study) => study for which the file is stored
   #  - +study_file+ (StudyFile) => file to download
+  #  - +expires+ (Integer) => number of seconds until the signed URL expires (default: 15)
   #
   # * *returns*
   # - +String+ => signed URL for downloading the file via browser
@@ -154,9 +171,9 @@ class StorageService
   # * *raises*
   # - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
   # - any exception from the client method, which will be logged and reported
-  def self.download_study_file(client, study, study_file)
+  def self.download_study_file(client, study, study_file, expires: 15)
     file_location = study_file.bucket_location
-    call_client(client, :download_bucket_file, study.bucket_id, file_location, expires: 15)
+    call_client(client, :download_bucket_file, study.bucket_id, file_location, expires:)
   end
 
   # generate a media URL for streaming a study file
@@ -175,6 +192,40 @@ class StorageService
   def self.stream_study_file(client, study, study_file)
     file_location = study_file.bucket_location
     call_client(client, :stream_bucket_file, study.bucket_id, file_location)
+  end
+
+  # upload a study file to the study bucket, compressing it if needed
+  # and scheduling a cleanup job to remove old versions
+  #
+  # * *params*
+  #   - +client+ (StorageProvider) => storage client to use for uploading the file
+  #   - +study+ (Study) => study for which the file is being uploaded
+  #   - +study_file+ (StudyFile) => file to upload
+  #
+  # * *raises*
+  #   - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
+  #   - any exception from the client method, which will be logged and reported
+  def self.upload_study_file(client, study, study_file)
+    identifier = "#{study_file.bucket_location}:#{study_file.id}"
+    Rails.logger.info "Uploading #{identifier} to bucket #{study.bucket_id}"
+    was_gzipped = FileParseService.compress_file_for_upload(file)
+    opts = was_gzipped ? { content_encoding: 'gzip' } : {}
+    remote_file = client.create_study_bucket_file(
+      study.bucket_id, study_file.local_file_path, study_file.bucket_location, opts:
+    )
+    # store generation tag to know whether a file has been updated in GCP
+    Rails.logger.info "Updating #{identifier} with generation tag: #{remote_file.generation} after successful upload"
+    study_file.update(generation: remote_file.generation)
+    Rails.logger.info "Upload of #{identifier} complete, scheduling cleanup job"
+    # schedule the upload cleanup job to run in two minutes
+    run_at = 2.minutes.from_now
+    Delayed::Job.enqueue(UploadCleanupJob.new(study, study_file, 0), run_at:)
+    Rails.logger.info "cleanup job for #{identifier} scheduled for #{run_at}"
+  rescue => e
+    ErrorTracker.report_exception(e, study.user, study, study_file, client)
+    Rails.logger.error "Unable to upload #{identifier} to study bucket #{study.bucket_id}; #{e.message}"
+    # notify admin of failure so they can push the file and relaunch parse
+    SingleCellMailer.notify_admin_upload_fail(study_file, e).deliver_now
   end
 
   # validate that the client is one of the allowed client classes

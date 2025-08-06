@@ -759,7 +759,7 @@ class Study
   after_create      :make_data_dir, :set_default_participant, :check_bucket_read_access, :log_study_creation
   before_destroy    :ensure_cascade_on_associations
   after_destroy     :remove_data_dir
-  before_save       :set_readonly_access
+  before_save       :set_readonly_access, if: proc { |study| study.terra_study }
   after_update      :log_study_state
 
   # search definitions
@@ -884,6 +884,11 @@ class Study
   # always run :check_bucket_read_access in the background at lower priority
   # can be invoked in the foreground with :check_bucket_read_access_without_delay
   handle_asynchronously :check_bucket_read_access, priority: 10
+
+  # load a contextual StorageProvider client for accessing this study's bucket
+  def storage_provider
+    StorageService.load_client(study: self)
+  end
 
   # check if a user has permission do download data from this study (either is public and user is signed in, user is an admin, or user has a direct share)
   def can_download?(user)
@@ -1958,10 +1963,10 @@ class Study
     validate_name_and_url
 
     unless errors.any?
+      client = storage_provider
       begin
         bucket_name = "#{accession}-#{SecureRandom.hex(6)}"
         self.bucket_id = bucket_name
-        client = StorageService.load_client(study: self)
         StorageService.create_study_bucket(client, self)
         Rails.logger.info "Study: #{accession} successfully created bucket #{bucket_name} and configured acl"
       rescue *StorageService::HANDLED_EXCEPTIONS => e

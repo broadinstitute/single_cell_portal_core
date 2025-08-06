@@ -3,6 +3,7 @@ module Api
     class StudyFilesController < ApiBaseController
       before_action :authenticate_api_user!
       before_action :set_study
+      before_action :set_storage_client
       before_action :check_study_edit_permission
       before_action :set_study_file, except: [:index, :create, :bundle]
 
@@ -452,8 +453,8 @@ module Api
           else
             # make sure we bundle non-parseable files if appropriate
             FileParseService.create_bundle_from_file_options(study_file, @study)
-            # send data to FireCloud only if upload was performed
-            @study.delay.send_to_firecloud(study_file) unless study_file.remote_location.present?
+            # push to bucket if upload was performed
+            StorageService.upload_study_file(@storage_client, @study, study_file)
           end
         end
       end

@@ -88,6 +88,20 @@ module StorageProvider
     StorageService.call_client(self, :bucket_files, bucket_id, **opts)
   end
 
+  # upload a file to a study bucket
+  #
+  # * *params*
+  #   - +bucket_id+ (String) => ID of bucket
+  #   - +filepath+ (String) => path to file local file
+  #   - +filename+ (String) => Name/path to use for the file in the bucket
+  #   - +opts+ (Hash) => extra options for create_file
+  #
+  # * *returns*
+  #  - +Various+ => result of the API call to upload the file
+  def create_study_bucket_file(bucket_id, filepath, filename, **opts)
+    StorageService.call_client(self, :create_file, bucket_id, filepath, filename, opts)
+  end
+
   # allow a file download via signed url
   #
   # * *params*

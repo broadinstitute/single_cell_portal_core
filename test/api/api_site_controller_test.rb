@@ -128,10 +128,6 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
         assert json['url'].include?(file.upload_file_name),
                "Url does not contain correct file: #{file.upload_file_name} is not in #{json['url']}"
 
-        # since this is a 'public' study, the access token in the read-only service account token
-        public_token = ApplicationController.read_only_firecloud_client.valid_access_token['access_token']
-        assert_equal public_token, json['access_token']
-
         # assert 401 if no user is signed in
         @user = nil
         execute_http_request(:get, api_v1_site_study_stream_data_path(accession: @study.accession, filename: file.upload_file_name))

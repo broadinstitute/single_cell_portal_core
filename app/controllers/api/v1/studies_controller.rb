@@ -9,6 +9,7 @@ module Api
       before_action :set_study_id_param
       before_action :authenticate_api_user!
       before_action :set_study, except: [:index, :create]
+      before_action :set_storage_client, except: [:index, :create]
       before_action :check_study_detached, except: [:index, :create]
       before_action :check_study_edit_permission, except: [:index, :create, :generate_manifest]
       before_action :check_study_view_permission, only: [:generate_manifest]
@@ -415,8 +416,8 @@ module Api
           # set queued_for_deletion manually - gotcha due to race condition on page reloading and how quickly delayed_job can process jobs
           @study.update(queued_for_deletion: true)
 
-          if params[:workspace] == 'persist'
-            @study.update(firecloud_workspace: nil)
+          if params[:workspace] == 'persist' || @study.detached || !@study.terra_study
+            @study.update(firecloud_workspace: SecureRandom.uuid)
           else
             begin
               ApplicationController.firecloud_client.delete_workspace(@study.firecloud_project, @study.firecloud_workspace)
@@ -428,8 +429,7 @@ module Api
             end
           end
 
-          # queue jobs to delete study caches & study itself
-          CacheRemovalJob.new(@study.accession).delay(queue: :cache).perform
+          # queue job to delete study
           DeleteQueueJob.new(@study).delay.perform
 
           # revoke all study_shares

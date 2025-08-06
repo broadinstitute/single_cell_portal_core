@@ -138,8 +138,8 @@ class StudyShare
   before_save					:clean_email
   after_create				:send_notification
   after_update				:check_updated_permissions
-  validate						:set_firecloud_acl, on: [:create, :update]
-  before_destroy			:revoke_firecloud_acl
+  validate            :set_bucket_acl, on: [:create, :update]
+  before_destroy			:revoke_bucket_acl
 
   # use the share email as an ID for forms
   def email_as_id
@@ -200,39 +200,46 @@ class StudyShare
   end
 
   # set FireCloud workspace ACLs on share saving, raise validation error on fail and halt execution
-  def set_firecloud_acl
+  def set_bucket_acl
     # in case of new study creation, automatically return true as we will create shares after study workspace is created
     # also ignore test environment, and any study that is not a Terra-based study
-    return true if (self.new_record? && self.study.new_record?) || !study.terra_study || Rails.env.test?
+    return true if (new_record? && study.new_record?) || Rails.env.test? || permission == 'Reviewer'
 
-    # do not set ACLs for Reviewer shares (they have no FireCloud permissions)
-    unless permission == 'Reviewer'
-      # set acls only if a new share or if the permission has changed
-      if (new_record? && !study.new_record?) || (!new_record? && permission_changed?)
-        Rails.logger.info "#{Time.zone.now}: Creating FireCloud ACLs for study #{study.name} - share #{email}, permission: #{permission}"
-        begin
+    # set acls only if a new share or if the permission has changed
+    if (new_record? && !study.new_record?) || (!new_record? && permission_changed?)
+      Rails.logger.info "#{Time.zone.now}: Creating Bucket ACLs for study #{study.accession} - share #{email}, permission: #{permission}"
+      begin
+        if study.terra_study
           acl = ApplicationController.firecloud_client.create_workspace_acl(email, FIRECLOUD_ACL_MAP[permission])
           ApplicationController.firecloud_client.update_workspace_acl(firecloud_project, study.firecloud_workspace, acl)
-        rescue RestClient::Exception => e
-          ErrorTracker.report_exception(e, nil, study, self)
-          errors.add(:base, "Could not create a share for #{email} to workspace #{firecloud_workspace} due to: #{e.message}")
+        else
+          client = StorageService.load_client(study:)
+          StorageService.add_bucket_user_share(client, study, self)
         end
+      rescue RestClient::Exception => e
+        ErrorTracker.report_exception(e, nil, study, self)
+        errors.add(:base, "Could not create a share for #{email} to study #{study.accession} due to: #{e.message}")
       end
     end
   end
 
   # revoke FireCloud workspace access on share deletion, will email owner on fail to manually remove sharing as we can't do a validation on destroy
-  def revoke_firecloud_acl
+  def revoke_bucket_acl
     return true if Rails.env.test? || !study.terra_study # ignore in test environment or non-Terra studies
 
     begin
       unless permission == 'Reviewer'
-        acl = ApplicationController.firecloud_client.create_workspace_acl(email, 'NO ACCESS')
-        ApplicationController.firecloud_client.update_workspace_acl(firecloud_project, firecloud_workspace, acl)
+        if study.terra_study
+          acl = ApplicationController.firecloud_client.create_workspace_acl(email, 'NO ACCESS')
+          ApplicationController.firecloud_client.update_workspace_acl(firecloud_project, firecloud_workspace, acl)
+        else
+          client = StorageService.load_client(study:)
+          StorageService.remove_bucket_user_share(client, study, self)
+        end
       end
     rescue RestClient::Exception => e
       ErrorTracker.report_exception(e, nil, study, self)
-      Rails.logger.error "Could not remove share for #{email} to workspace #{firecloud_workspace} due to: #{e.message}"
+      Rails.logger.error "Could not remove share for #{email} to study #{study.accession} due to: #{e.message}"
       SingleCellMailer.share_delete_fail(study, email).deliver_now
     end
   end

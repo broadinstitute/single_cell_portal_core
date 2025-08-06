@@ -254,7 +254,7 @@ class StudiesController < ApplicationController
       # delete firecloud workspace so it can be reused (unless specified by user), and raise error if unsuccessful
       # if successful, we're clear to queue the study for deletion
       # if a study is detached, then force the 'persist' option as it will fail otherwise
-      if params[:workspace] == 'persist' || @study.detached?
+      if params[:workspace] == 'persist' || @study.detached? || !@study.terra_study
         @study.update(firecloud_workspace: SecureRandom.uuid)
       else
         begin
@@ -269,8 +269,7 @@ class StudiesController < ApplicationController
         end
       end
 
-      # queue jobs to delete study caches & study itself
-      CacheRemovalJob.new(@study.accession).delay(queue: :cache).perform
+      # queue job to delete study
       DeleteQueueJob.new(@study).delay.perform
 
       # notify users of deletion before removing shares & owner
