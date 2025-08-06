@@ -74,6 +74,8 @@ class ClusterGroup
       'cell_annotations.type' => %w(group numeric)
   }
 
+  before_update :update_cluster_in_study_options
+
   # method to return a single data array of values for a given data array name, annotation name, and annotation value
   # gathers all matching data arrays and orders by index, then concatenates into single array
   # can also load subsample arrays by supplying optional subsample_threshold
@@ -95,6 +97,10 @@ class ClusterGroup
         data_array.values
       end
     end
+  end
+
+  def spatial?
+    study_file&.is_spatial
   end
 
   def is_3d?
@@ -160,6 +166,21 @@ class ClusterGroup
     else
       true
     end
+  end
+
+  # whenever a cluster is updated, we need to update the study default_options ordering to reflect this
+  def update_cluster_in_study_options
+    return unless name_changed?
+
+    study = self.study
+    list_name = spatial? ? :spatial_order : :cluster_order
+    return unless study.present? && study.default_options[list_name].present?
+
+    old_name, new_name = name_change
+    idx = study.default_options[list_name].index(old_name)
+    idx ? study.default_options[list_name][idx] = new_name : study.default_options[list_name] << new_name
+    study.save(validate: false) # skip validations to avoid circular dependency issues
+    CacheRemovalJob.new(study.accession).delay.perform
   end
 
   # method used during parsing to generate representative sub-sampled data_arrays for rendering

@@ -23,4 +23,11 @@ class StudySearchResultsObjectsTest < ActiveSupport::TestCase
     expected_names = ['B cell', 'bipolar neuron', 'retinal bipolar neuron', 'retinal cone cell', 'amacrine cell']
     assert_equal expected_names, merged_data[:cell_type].map { |filter| filter[:name]}
   end
+
+  test 'should remove any newlines from result descriptions' do
+    description = "This is a study description.\nIt has newlines.\n\nAnd some more.\r\n\r\nAnd some Windows newlines."
+    cleaned_description = Api::V1::StudySearchResultsObjects.strip_newlines(description)
+    assert_equal 'This is a study description. It has newlines.  And some more.  And some Windows newlines.',
+                 cleaned_description
+  end
 end

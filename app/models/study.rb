@@ -1315,6 +1315,40 @@ class Study
     end
   end
 
+  def standard_cluster_groups
+    cluster_groups.reject(&:spatial?)
+  end
+
+  def default_cluster_order
+    default_options[:cluster_order] || standard_cluster_groups.map(&:name)
+  end
+
+  def spatial_cluster_groups
+    cluster_groups.select(&:spatial?)
+  end
+
+  def default_spatial_order
+    default_options[:spatial_order] || spatial_cluster_groups.map(&:name)
+  end
+
+  # handle updates to the cluster order menus
+  def update_cluster_order(cluster, action:)
+    return nil unless cluster
+
+    list_name = cluster.spatial? ? :spatial_order : :cluster_order
+    case action.to_sym
+    when :append
+      new_list = send("default_#{list_name}").push(cluster.name).uniq
+    when :remove
+      new_list = send("default_#{list_name}").reject { |c| c == cluster.name }
+    else
+      return nil # invalid action
+    end
+    default_options[list_name] = new_list
+    save
+    CacheRemovalJob.new(accession).perform
+  end
+
   ###
   #
   # INSTANCE VALUE SETTERS & GETTERS

@@ -38,6 +38,7 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
       case file_type
       when 'Cluster'
         cluster_group = ClusterGroup.find_by(study:, study_file_id: object.id)
+        study.update_cluster_order(cluster_group, action: :remove)
         delete_differential_expression_results(study:, study_file: object)
         delete_parsed_data(object.id, study.id, ClusterGroup, DataArray)
         delete_dot_plot_data(study.id, query: { cluster_group_id: cluster_group&.id })

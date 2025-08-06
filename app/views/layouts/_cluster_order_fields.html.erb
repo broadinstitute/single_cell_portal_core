@@ -1,0 +1,12 @@
+<% dom_id = param_name.to_s + '_list' %>
+<ul class="multi-checkbox" id="<%= dom_id %>">
+  <% cluster_order.each do |cluster| %>
+    <li class="cluster-order">
+      <%= cluster %>
+      <%= form.hidden_field param_name, multiple: true, value: cluster %>
+    </li>
+  <% end %>
+</ul>
+<script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
+  $("#<%= dom_id %>").sortable();
+</script>

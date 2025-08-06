@@ -544,6 +544,7 @@ class IngestJob
     when 'Cluster'
       set_default_cluster
       set_default_annotation
+      update_cluster_ordering
     when 'AnnData'
       set_default_cluster
       set_default_annotation
@@ -600,6 +601,12 @@ class IngestJob
       cluster = study.cluster_groups.by_name(cluster_name_by_file_type)
       study.default_options[:cluster] = cluster.name if cluster.present?
     end
+  end
+
+  # update the study.default_cluster_order after clustering finishes ingesting
+  def update_cluster_ordering
+    cluster = study.cluster_groups.by_name(cluster_name_by_file_type)
+    study.update_cluster_order(cluster, action: :append)
   end
 
   # set the point count on a cluster group after successful ingest
