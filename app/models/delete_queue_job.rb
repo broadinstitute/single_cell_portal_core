@@ -20,8 +20,7 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
       object.assign_attributes(public: false, name: new_name, url_safe_name: new_name, firecloud_workspace: new_name)
       object.save(validate: false)
       unless object.terra_study
-        client = StorageService.load_client(study: object)
-        StorageService.remove_study_bucket(client, object)
+        StorageService.remove_study_bucket(object.storage_provider, object)
       end
     when 'StudyFile'
       file_type = object.file_type

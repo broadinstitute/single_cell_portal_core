@@ -179,8 +179,7 @@ class ImagePipelineService
   # * *returns*
   #   - (Boolean) => T/F if file is present in bucket
   def self.file_in_bucket?(study_file)
-    ApplicationController.firecloud_client.workspace_file_exists?(
-      study_file.study.bucket_id, study_file.bucket_location
-    )
+    study = study_file.study
+    study.storage_provider.bucket_file_exists?(study.bucket_id, study_file.bucket_location)
   end
 end

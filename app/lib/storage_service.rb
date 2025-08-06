@@ -8,14 +8,14 @@ class StorageService
   # exceptions that will be handled and reported
   HANDLED_EXCEPTIONS = [RuntimeError, Google::Cloud::Error, Google::Apis::Error].freeze
 
-  # load the configured storage client for the application, specific to a given study
+  # load the configured storage client for the application, specific to a given study or cloud project
   # the client class can be set in application.rb or via STORAGE_CLIENT environment variable
-  def self.load_client(study: nil, public_access: false)
+  def self.load_client(study: nil, cloud_project: nil, public_access: false)
     configured_client = Rails.configuration.storage_client
     validate_client(configured_client)
 
     # if study is provided, use its cloud project; otherwise use the configured project or environment variable
-    project = study&.cloud_project || ENV['GOOGLE_CLOUD_PROJECT']
+    project = cloud_project || study&.cloud_project || ENV['GOOGLE_CLOUD_PROJECT']
     client_class = configured_client.constantize
     creds_method = public_access ? :get_read_only_keyfile : :get_primary_keyfile
     service_account_credentials = client_class.send(creds_method)
@@ -79,11 +79,31 @@ class StorageService
   #   - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
   #   - any exception from the client method, which will be logged and reported
   def self.remove_study_bucket(client, study)
-    Rails.logger.info "Removing all files from study bucket #{study.bucket_id} for study #{study.accession}"
-    files = client.load_study_bucket_files(study.bucket_id)
-    Parallel.map(files, in_threads: 10, &:delete)
+    client.delete_study_bucket_files(client, study)
     Rails.logger.info "Deleting study bucket #{study.bucket_id} for study #{study.accession}"
     client.delete_study_bucket(study.bucket_id)
+  end
+
+  # delete specified files from a study bucket
+  # can provide a file age cutoff to only delete files older than a certain date, or prefix to filter files
+  #
+  # * *params*
+  #   - +client+ (StorageProvider) => storage client to use for deleting the files
+  #   - +study+ (Study) => study for which to delete the files
+  #   - +opts+ (Hash) => additional options for loading files, e.g. prefix
+  #
+  # * *raises*
+  #   - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
+  #   - any exception from the client method, which will be logged and reported
+  def self.delete_study_bucket_files(client, study, **opts)
+    Rails.logger.info "Removing all files from study bucket #{study.bucket_id} for study #{study.accession}"
+    age_cutoff = opts.delete(:file_age_cutoff) || nil
+    files = client.load_study_bucket_files(study.bucket_id, **opts)
+    Parallel.map(files, in_threads: 10) do |file|
+      next if age_cutoff && file.created_at.in_time_zone < age_cutoff
+
+      file.delete unless file.empty?
+    end
   end
 
   # determine if a bucket study bucket exists

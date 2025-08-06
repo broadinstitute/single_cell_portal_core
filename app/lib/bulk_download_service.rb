@@ -32,9 +32,10 @@ class BulkDownloadService
     download_objects = study_files.to_a + directory_files
     # Get signed URLs for all files in the requested download objects
     Parallel.map(download_objects, in_threads: 100) do |download_object|
-      client = FireCloudClient.new
-      curl_configs << self.get_single_curl_command(file: download_object, fc_client: client, user: user,
-                                                   study_bucket_map: study_bucket_map, output_pathname_map: output_pathname_map)
+      study = get_study_from_download_object(download_object)
+      curl_configs << get_single_curl_command(
+        file: download_object, client: study&.storage_provider, user:, study_bucket_map:, output_pathname_map:
+      )
     end
     studies = study_files.map(&:study).uniq
     study_manifest_paths = studies.map do |study|
@@ -317,35 +318,35 @@ class BulkDownloadService
   #
   # * *params*
   #   - +file+ (StudyFile, Hash) => file object to be downloaded
-  #   - +fc_client+ (FireCloudClient) => Client to call GCS and generate signed_url
+  #   - +client+ (StorageProvider) => Client to call GCS and generate signed_url
   #   - +user+ (User) => User requesting download
   #   - +study_bucket_map+ => Map of study IDs to bucket names
   #   - +output_pathname_map+ => Map of study file IDs to output pathnames
   #
   # * *return*
   #   - (String) => String representation of single signed URL and output filepath to pass to curl
-  def self.get_single_curl_command(file:, fc_client:, user:, study_bucket_map:, output_pathname_map:)
-    fc_client ||= ApplicationController.firecloud_client
+  def self.get_single_curl_command(file:, client:, user:, study_bucket_map:, output_pathname_map:)
+    client ||= StorageService.load_client
     # if a file is a StudyFile, use bucket_location, otherwise the :name key will contain its location (if DirectoryListing)
-    if file.is_a?(StudyFile)
+    case file.class.name
+    when 'StudyFile'
       file_location = file.bucket_location
       bucket_name = study_bucket_map[file.study_id.to_s]
       output_path = output_pathname_map[file.id.to_s]
-    elsif file.is_a?(Hash)
+    when 'Hash'
       file_location = file[:name]
       bucket_name = study_bucket_map[file[:study_id]]
       output_path = output_pathname_map[file[:name]]
     end
 
     begin
-      signed_url = fc_client.execute_gcloud_method(:generate_signed_url, 0, bucket_name, file_location,
-                                                   expires: 1.day.to_i) # 1 day in seconds, 86400
+      signed_url = client.download_bucket_file(bucket_name, file_location, expires: 1.day.to_i) # 1 day in seconds, 86400
       curl_config = [
           'url="' + signed_url + '"',
           'output="' + output_path + '"'
       ]
     rescue => e
-      ErrorTracker.report_exception(e, user, file, { storage_bucket: bucket_name})
+      ErrorTracker.report_exception(e, user, file, { storage_bucket: bucket_name })
       Rails.logger.error "Error generating signed url for #{output_path}; #{e.message}"
       curl_config = [
           '# Error downloading ' + output_path + '.  ' +
@@ -503,5 +504,17 @@ class BulkDownloadService
     # Hash[] initializes a new Hash from an nested array of two-element arrays, which are created from Array.zip
     # e.g. Hash[[:foo, :bar].zip([1,2])] => {foo: 1, bar: 2}
     Hash[file_types.zip(file_types.map { |type| files.select { |file| file.file_type == type }.count })]
+  end
+
+  # get associated study from a download object
+  def self.get_study_from_download_object(object)
+    case object.class.name
+    when 'StudyFile'
+      object.study
+    when 'Hash'
+      Study.find(object[:study_id])
+    else
+      nil
+    end
   end
 end

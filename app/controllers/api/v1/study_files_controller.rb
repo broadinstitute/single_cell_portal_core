@@ -508,9 +508,10 @@ module Api
 
       # DELETE /single_cell/api/v1/studies/:study_id/study_files/:id
       def destroy
-        if !@study_file.can_delete_safely?
-          render json: {error: 'Requested file is being used in active parse job'}, status: 423 and return
+        unless @study_file.can_delete_safely?
+          render json: { error: 'Requested file is being used in active parse job' }, status: :locked and return
         end
+
         human_data = @study_file.human_data # store this reference for later
         # delete matching caches
         @study_file.invalidate_cache_by_file_type
@@ -518,18 +519,15 @@ module Api
         @study_file.update(queued_for_deletion: true)
         DeleteQueueJob.new(@study_file).delay.perform
         begin
-          # make sure file is in FireCloud first
-          unless human_data || @study_file.generation.blank? || @study_file.remote_location.present?
-            if ApplicationController.firecloud_client.execute_gcloud_method(:workspace_file_exists?, 0, @study.bucket_id, @study_file.bucket_location)
-              ApplicationController.firecloud_client.execute_gcloud_method(:delete_workspace_file, 0, @study.bucket_id, @study_file.bucket_location)
-            end
-          end
+          @storage_client.delete_study_bucket_file(@study.bucket_id, @study_file.bucket_location) if
+            !human_data && @study_file.remote_location.present? && @study_file.generation.present? &&
+            @storage_client.study_bucket_file_exists?(@study.bucket_id, @study_file.bucket_location)
           head 204
-        rescue => e
+        rescue *StorageService::HANDLED_EXCEPTIONS => e
           ErrorTracker.report_exception(e, current_api_user, @study_file, params)
           MetricsService.report_error(e, request, current_api_user, @study)
-          logger.error "Error in deleting #{@study_file.upload_file_name} from workspace: #{@study.firecloud_workspace}; #{e.message}"
-          render json: {error: "Error deleting remote file in bucket: #{e.message}"}, status: 500
+          logger.error "Error in deleting #{@study_file.upload_file_name} from bucket: #{@study.bucket_id}; #{e.message}"
+          render json: { error: "Error deleting remote file in bucket: #{e.message}" }, status: :internal_server_error
         end
       end
 
@@ -542,19 +540,17 @@ module Api
           @study_file, 'cluster', gs_url: false, file_type_detail: @fragment['obsm_key_name']
         )
 
-        # get the remote clustering fragment to be deleted
-        clustering_to_delete = ApplicationController.firecloud_client.get_workspace_file(@study.bucket_id, url)
         begin
-          if clustering_to_delete.present?
+          if @storage_client.study_bucket_file_exists?(@study.bucket_id, url)
             Rails.logger.info "Deleting clustering at #{url}"
             # delete matching caches
             @study_file.invalidate_cache_by_file_type
             CacheRemovalJob.new(@study.accession).delay(queue: :cache).perform
             DeleteQueueJob.new(@fragment, study_file_id).delay.perform
-            ApplicationController.firecloud_client.delete_workspace_file(@study.bucket_id, url)
+            @storage_client.delete_study_bucket_file(@study.bucket_id, url)
             head 204
           end
-        rescue => e
+        rescue *StorageService::HANDLED_EXCEPTIONS => e
           ErrorTracker.report_exception(e, current_api_user, @study_file, params)
           MetricsService.report_error(e, request, current_api_user, @study)
           logger.error "Error in deleting clustering #{@study_file.upload_file_name} - #{e.message}"

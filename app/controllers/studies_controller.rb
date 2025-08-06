@@ -629,19 +629,13 @@ class StudiesController < ApplicationController
         @partial = @study_file.wizard_partial_name
         # delete source file in FireCloud and then remove record
         begin
-          # make sure file is in FireCloud first as user may be aborting the upload
-          unless human_data
-            present = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, @study.bucket_id,
-                                                                   @study_file.upload_file_name)
-            if present
-              ApplicationController.firecloud_client.execute_gcloud_method(:delete_workspace_file, 0, @study.bucket_id,
-                                                           @study_file.upload_file_name)
-            end
-          end
-        rescue => e
+          @study.storage_provider.delete_study_bucket_file(@study.bucket_id, @study_file.upload_file_name) if
+            !human_data &&
+            @study.storage_provider.study_bucket_file_exists?(@study.bucket_id, @study_file.upload_file_name)
+        rescue *StorageService::HANDLED_EXCEPTIONS => e
           ErrorTracker.report_exception(e, current_user, @study, params)
           MetricsService.report_error(e, request, current_user, @study)
-          logger.error "Error in deleting #{@study_file.upload_file_name} from workspace: #{@study.firecloud_workspace}; #{e.message}"
+          logger.error "Error in deleting #{@study_file.upload_file_name} from bucket: #{@study.bucket_id}; #{e.message}"
           redirect_to merge_default_redirect_params(request.referrer, scpbr: params[:scpbr]),
                       alert: "We were unable to delete #{@study_file.upload_file_name} due to an error: " \
                              "#{view_context.simple_format(e.message)}.  Please try again later.  #{SCP_SUPPORT_EMAIL}"

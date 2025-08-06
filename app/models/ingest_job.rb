@@ -64,6 +64,8 @@ class IngestJob
   validates :action, inclusion: VALID_ACTIONS
   validates :params_object, presence: true, if: -> { PARAMS_OBJ_REQUIRED.include? action.to_sym }
 
+  delegate :storage_provider, to: :study
+
   # Push a file to a workspace bucket in the background and then launch an ingest run and queue polling
   # Can also clear out existing data if necessary (in case of a re-parse)
   #
@@ -84,7 +86,7 @@ class IngestJob
         Rails.logger.info "Data cleanup for #{file_identifier} complete, now beginning Ingest"
       end
       # first check if file is already in bucket (in case user is syncing)
-      remote = ApplicationController.firecloud_client.get_workspace_file(study.bucket_id, study_file.bucket_location)
+      remote = storage_provider.load_study_bucket_file(study.bucket_id, study_file.bucket_location)
       if remote.nil?
         is_pushed = poll_for_remote
       else
@@ -136,10 +138,9 @@ class IngestJob
     file_identifier = "#{study_file.bucket_location}:#{study_file.id}"
     while !is_pushed && attempts <= MAX_ATTEMPTS
       Rails.logger.info "Preparing to push #{file_identifier} to #{study.bucket_id}"
-      study.send_to_firecloud(study_file)
+      StorageService.upload_study_file(storage_provider, study.bucket_id, study_file)
       Rails.logger.info "Polling for upload of #{file_identifier}, attempt #{attempts}"
-      remote = ApplicationController.firecloud_client.get_workspace_file(study.bucket_id, study_file.bucket_location)
-      if remote.present?
+      if storage_provider.study_bucket_file_exists?(study.bucket_id, study_file.bucket_location)
         is_pushed = true
       else
         interval = 30 * attempts
@@ -472,9 +473,9 @@ class IngestJob
       study_file.update(parse_status: 'failed')
       DeleteQueueJob.new(study_file).delay.perform
       unless persist_on_fail
-        ApplicationController.firecloud_client.delete_workspace_file(study.bucket_id, study_file.bucket_location)
+        storage_provider.delete_study_bucket_file(study.bucket_id, study_file.bucket_location)
         study_file.bundled_files.each do |bundled_file|
-          ApplicationController.firecloud_client.delete_workspace_file(study.bucket_id, bundled_file.bucket_location)
+          storage_provider.delete_study_bucket_file(study.bucket_id, bundled_file.bucket_location)
         end
       end
     end
@@ -797,9 +798,7 @@ class IngestJob
       [cluster.name, info_obj.annotation_name, 'manifest']
     )
     manifest_path = "_scp_internal/differential_expression/#{manifest_basename}.tsv"
-    raw_manifest = ApplicationController.firecloud_client.execute_gcloud_method(
-      :read_workspace_file, 0, study.bucket_id, manifest_path
-    )
+    raw_manifest = storage_provider.read_study_bucket_file(study.bucket_id, manifest_path)
     raw_manifest.read.split("\n").map { |line| line.split("\t") }
   end
 
@@ -889,22 +888,20 @@ class IngestJob
   #   - (Boolean) => True/False on success of file copy action
   def create_study_file_copy
     begin
-      ApplicationController.firecloud_client.execute_gcloud_method(:copy_workspace_file, 0,
-                                                                   study.bucket_id,
-                                                                   study_file.bucket_location,
-                                                                   study_file.parse_fail_bucket_location)
+      storage_provider.copy_study_bucket_file(
+        study.bucket_id, study_file.bucket_location, study_file.parse_fail_bucket_location
+      )
       if study_file.is_bundled? && study_file.is_bundle_parent?
         study_file.bundled_files.each do |file|
           # put in same directory as parent file for ease of debugging
           bundled_file_location = "parse_logs/#{study_file.id}/#{file.upload_file_name}"
-          ApplicationController.firecloud_client.execute_gcloud_method(:copy_workspace_file, 0,
-                                                                       study.bucket_id,
-                                                                       file.bucket_location,
-                                                                       bundled_file_location)
+          storage_provider.copy_study_bucket_file(
+            study.bucket_id, file.bucket_location, bundled_file_location
+          )
         end
       end
       true
-    rescue => e
+    rescue *StorageService::HANDLED_EXCEPTIONS => e
       ErrorTracker.report_exception(e, user, study_file, { action: :create_study_file_copy})
       false
     end
@@ -937,9 +934,9 @@ class IngestJob
   # * *returns*
   #   - (String) => Contents of file
   def read_parse_logfile(filepath, delete_on_read: true, range: nil)
-    if ApplicationController.firecloud_client.workspace_file_exists?(study.bucket_id, filepath)
-      file_contents = ApplicationController.firecloud_client.execute_gcloud_method(:read_workspace_file, 0, study.bucket_id, filepath)
-      ApplicationController.firecloud_client.execute_gcloud_method(:delete_workspace_file, 0, study.bucket_id, filepath) if delete_on_read
+    if storage_provider.study_bucket_file_exists?(study.bucket_id, filepath)
+      file_contents = storage_provider.read_study_bucket_file(study.bucket_id, filepath)
+      storage_provider.delete_study_bucket_file(study.bucket_id, filepath) if delete_on_read
       # read file range manually since GCS download requests don't honor range parameter apparently
       range.present? ? file_contents.read[range] : file_contents.read
     end

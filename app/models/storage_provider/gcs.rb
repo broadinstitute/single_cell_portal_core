@@ -109,23 +109,23 @@ module StorageProvider
       study_bucket.update_autoclass(enabled: true, terminal_storage_class:)
     end
 
-    # retrieve all files in a GCP bucket of a workspace
+    # retrieve all files in a GCP bucket
     #
     # * *params*
-    #   - +bucket_id+ (String) => ID of workspace GCP bucket
+    #   - +bucket_id+ (String) => ID of GCP bucket
     #   - +opts+ (Hash) => hash of optional parameters
     #
     # * *return*
     #   - +Google::Cloud::Storage::File::List+
-    def bucket_files(bucket_id, opts: {})
+    def bucket_files(bucket_id, **opts)
       study_bucket = get_bucket(bucket_id)
       study_bucket.files(**opts)
     end
 
-    # retrieve single study_file in a GCP bucket of a workspace
+    # retrieve single study_file in a GCP bucket
     #
     # * *params*
-    #   - +bucket_id+ (String) => ID of workspace GCP bucket
+    #   - +bucket_id+ (String) => ID of GCP bucket
     #   - +filename+ (String) => name of file
     #
     # * *return*
@@ -135,11 +135,10 @@ module StorageProvider
       study_bucket.file filename
     end
 
-    # check if a study_file in a GCP bucket of a workspace exists
-    # this method should ideally be used outside of :execute_gcloud_method to avoid unnecessary retries
+    # check if a study_file in a GCP bucket exists
     #
     # * *params*
-    #   - +bucket_id+ (String) => ID of workspace GCP bucket
+    #   - +bucket_id+ (String) => ID of study GCP bucket
     #   - +filename+ (String) => name of file
     #
     # * *return*
@@ -151,40 +150,40 @@ module StorageProvider
       false
     end
 
-    # add a file to a workspace bucket
+    # add a file to a bucket
     #
     # * *params*
-    #   - +bucket_id+ (String) => ID of workspace GCP bucket
+    #   - +bucket_id+ (String) => ID of study GCP bucket
     #   - +filepath+ (String) => path to file
     #   - +filename+ (String) => name of file
     #   - +opts+ (Hash) => extra options for create_file
     #
     # * *return*
     #   - +Google::Cloud::Storage::File+
-    def create_bucket_file(bucket_id, filepath, filename, opts: {})
+    def create_bucket_file(bucket_id, filepath, filename, **opts)
       study_bucket = get_bucket(bucket_id)
       study_bucket.create_file(filepath, filename, **opts)
     end
 
-    # copy a file to a new location in a workspace bucket
+    # copy a file to a new location in a bucket
     #
     # * *params*
-    #   - +bucket_id+ (String) => ID of workspace GCP bucket
+    #   - +bucket_id+ (String) => ID of GCP bucket
     #   - +filename+ (String) => name of target file
     #   - +destination_name+ (String) => destination of new file
     #   - +opts+ (Hash) => extra options for create_file
     #
     # * *return*
     #   - +Google::Cloud::Storage::File+
-    def copy_bucket_file(bucket_id, filename, destination_name, opts: {})
+    def copy_bucket_file(bucket_id, filename, destination_name, **opts)
       file = bucket_file(bucket_id, filename)
       file.copy(destination_name, **opts)
     end
 
-    # delete a file to a workspace bucket
+    # delete a file in a bucket
     #
     # * *params*
-    #   - +bucket_id+ (String) => ID of workspace GCP bucket
+    #   - +bucket_id+ (String) => ID of GCP bucket
     #   - +filename+ (String) => name of file
     #
     # * *return*
@@ -194,14 +193,14 @@ module StorageProvider
       file.delete
     end
 
-    # read the contents of a file in a workspace bucket into memory
+    # read the contents of a file in a bucket into memory
     #
     # * *params*
-    #   - +bucket_id+ (String) => ID of workspace GCP bucket
+    #   - +bucket_id+ (String) => ID of GCP bucket
     #   - +filename+ (String) => name of file
     #
     # * *return*
-    #   - +StringIO+ contents of workspace file
+    #   - +StringIO+ contents of file
     def read_bucket_file(bucket_id, filename)
       file = bucket_file(bucket_id, filename)
       file_contents = file.download
@@ -212,7 +211,7 @@ module StorageProvider
     # generate a signed url to download a file that isn't public (set at study level)
     #
     # * *params*
-    #   - +bucket_id+ (String) => ID of workspace GCP bucket
+    #   - +bucket_id+ (String) => ID of GCP bucket
     #   - +filename+ (String) => name of file
     #   - +...+ (Hash) => extra options for signed_url, such as expires: or :headers
     #
@@ -226,7 +225,7 @@ module StorageProvider
     # generate an api url to directly load a file from GCS via client-side JavaScript
     #
     # * *params*
-    #   - +bucket_id+ (String) => ID of workspace GCP bucket
+    #   - +bucket_id+ (String) => ID of GCP bucket
     #   - +filename+ (String) => name of file
     #
     # * *return*

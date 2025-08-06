@@ -268,17 +268,19 @@ class ApplicationController < ActionController::Base
   # generate a signed URL for a file and redirect to object in GCS
   # will account for @download_quota and redirect as necessary
   def execute_file_download(study)
+    if params[:filename].blank?
+      redirect_to merge_default_redirect_params(view_study_path(accession: study.accession, study_name: study.url_safe_name), scpbr: params[:scpbr]),
+                  alert: "We are unable to process your download in #{study.accession} because there is no file name provided.  #{SCP_SUPPORT_EMAIL}" and return
+    end
+
     begin
       # get filesize and make sure the user is under their quota
-      requested_file = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, params[:filename])
-      if params[:filename].blank?
-        redirect_to merge_default_redirect_params(view_study_path(accession: study.accession, study_name: study.url_safe_name), scpbr: params[:scpbr]),
-                      alert: "We are unable to process your download in #{study.accession} because there is no file name provided.  #{SCP_SUPPORT_EMAIL}" and return
-      end
+      client = StorageService.load_client(study:)
+      requested_file = client.load_study_bucket_file(study.bucket_id, params[:filename])
       if requested_file.present?
         filesize = requested_file.size
         if !DownloadQuotaService.download_exceeds_quota?(current_user, filesize)
-          @signed_url = ApplicationController.firecloud_client.execute_gcloud_method(:generate_signed_url, 0, study.bucket_id, params[:filename], expires: 15)
+          @signed_url = StorageService.download_study_file(client, @study, requested_file.bucket_location)
           DownloadQuotaService.increment_user_quota(current_user, filesize)
         else
           redirect_to merge_default_redirect_params(view_study_path(accession: study.accession, study_name: study.url_safe_name), scpbr: params[:scpbr]),
@@ -298,7 +300,7 @@ class ApplicationController < ActionController::Base
         redirect_to merge_default_redirect_params(view_study_path(accession: study.accession, study_name: study.url_safe_name), scpbr: params[:scpbr]),
                     alert: "#{study.accession}:#{params[:filename]} could not be found.  Please contact the study owner if you require access to this file.  #{SCP_SUPPORT_EMAIL}" and return
       end
-    rescue => e
+    rescue *StorageService::HANDLED_EXCEPTIONS => e
       ErrorTracker.report_exception(e, current_user, @study, params)
       MetricsService.report_error(e, request, current_user, @study)
       logger.error "#{Time.zone.now}: error generating signed url for #{params[:filename]}; #{e.message}."
