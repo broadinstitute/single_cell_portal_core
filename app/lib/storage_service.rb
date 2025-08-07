@@ -41,7 +41,7 @@ class StorageService
 
     client.send(client_method, *args, **kwargs)
   rescue *HANDLED_EXCEPTIONS => e
-    Rails.logger.info("Error calling #{client_method} on #{client.class}: #{e.class} - #{e.message}", level: :error)
+    Rails.logger.error "Error calling #{client_method} on #{client.class}: #{e.class} - #{e.message}"
     ErrorTracker.report_exception(e, client.issuer, client, client_method:, args:, kwargs:)
     raise e
   end
@@ -61,7 +61,7 @@ class StorageService
   def self.create_study_bucket(client, study)
     bucket_id = study.bucket_id
     Rails.logger.info "Creating study bucket #{bucket_id} for study #{study.accession}"
-    client.create_study_bucket(bucket_id)
+    client.create_study_bucket(bucket_id, location: client.location)
     Rails.logger.info "Enabling autoclass on study bucket #{bucket_id} for study #{study.accession}"
     client.enable_bucket_autoclass(bucket_id) if client.respond_to?(:enable_bucket_autoclass)
     Rails.logger.info "Setting ACLs on study bucket #{bucket_id} for study #{study.accession}"
@@ -79,7 +79,7 @@ class StorageService
   #   - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
   #   - any exception from the client method, which will be logged and reported
   def self.remove_study_bucket(client, study)
-    client.delete_study_bucket_files(client, study)
+    delete_study_bucket_files(client, study)
     Rails.logger.info "Deleting study bucket #{study.bucket_id} for study #{study.accession}"
     client.delete_study_bucket(study.bucket_id)
   end
@@ -159,7 +159,7 @@ class StorageService
     return if existing_acl.send(acl_method).include?(user_acl)
 
     Rails.logger.info "Assigning #{role} acl for #{share.email} in #{study.accession}"
-    client.update_study_bucket_acl(study.bucket_id, email, role:)
+    client.update_study_bucket_acl(study.bucket_id, share.email, role:)
   end
 
   # remove a user's share from a study bucket
@@ -228,10 +228,10 @@ class StorageService
   def self.upload_study_file(client, study, study_file)
     identifier = "#{study_file.bucket_location}:#{study_file.id}"
     Rails.logger.info "Uploading #{identifier} to bucket #{study.bucket_id}"
-    was_gzipped = FileParseService.compress_file_for_upload(file)
+    was_gzipped = FileParseService.compress_file_for_upload(study_file)
     opts = was_gzipped ? { content_encoding: 'gzip' } : {}
     remote_file = client.create_study_bucket_file(
-      study.bucket_id, study_file.local_file_path, study_file.bucket_location, opts:
+      study.bucket_id, study_file.upload.path, study_file.bucket_location, **opts
     )
     # store generation tag to know whether a file has been updated in GCP
     Rails.logger.info "Updating #{identifier} with generation tag: #{remote_file.generation} after successful upload"

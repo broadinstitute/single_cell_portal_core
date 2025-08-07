@@ -72,12 +72,16 @@ class StorageServiceTest < ActiveSupport::TestCase
   end
 
   test 'should get study bucket' do
-    mock = Minitest::Mock.new
-    mock.expect :get_bucket, Google::Cloud::Storage::Bucket, [@study.bucket_id]
-    run_test_for_clients(mock) do
-      client = StorageService.load_client(study: @study)
-      StorageService.call_client(client, :load_study_bucket, @study.bucket_id)
-      mock.verify
+    client = StorageService.load_client(study: @study)
+    client.stub :get_bucket, Google::Cloud::Storage::Bucket do
+      client.load_study_bucket(@study.bucket_id)
+    end
+  end
+
+  test 'should check if study bucket exists' do
+    client = StorageService.load_client(study: @study)
+    client.stub :get_bucket, Google::Cloud::Storage::Bucket do
+      assert client.bucket_exists?(@study.bucket_id)
     end
   end
 
@@ -86,6 +90,7 @@ class StorageServiceTest < ActiveSupport::TestCase
     files = []
     20.times do
       file_mock = Minitest::Mock.new
+      file_mock.expect :empty?, false
       file_mock.expect :delete, nil
       files << file_mock
     end
@@ -140,6 +145,52 @@ class StorageServiceTest < ActiveSupport::TestCase
     end
   end
 
+  test 'should list files in study bucket' do
+    client = StorageService.load_client(study: @study)
+    client.stub :bucket_files, Google::Cloud::Storage::File::List do
+      client.load_study_bucket_files(@study.bucket_id)
+    end
+  end
+
+  test 'should get file in study bucket' do
+    client = StorageService.load_client(study: @study)
+    client.stub :bucket_file, Google::Cloud::Storage::File do
+      client.load_study_bucket_file(@study.bucket_id, @study_file.upload_file_name)
+    end
+  end
+
+  test 'should check if study file exists in bucket' do
+    client = StorageService.load_client(study: @study)
+    client.stub :bucket_file_exists?, true do
+      assert client.study_bucket_file_exists?(@study.bucket_id, @study_file.upload_file_name)
+    end
+  end
+
+  test 'should upload file to study bucket' do
+    file_mock = Minitest::Mock.new
+    2.times { file_mock.expect :generation, '1234567890' }
+    mock = Minitest::Mock.new
+    mock.expect :create_study_bucket_file,
+                file_mock,
+                [@study.bucket_id, @study_file.upload.path, @study_file.upload_file_name]
+    run_test_for_clients(mock) do
+      FileParseService.stub :compress_file_for_upload, false do
+        Delayed::Job.stub :enqueue, true do
+          client = StorageService.load_client(study: @study)
+          StorageService.upload_study_file(client, @study, @study_file)
+          mock.verify
+        end
+      end
+    end
+  end
+
+  test 'should copy a file in study bucket' do
+    client = StorageService.load_client(study: @study)
+    client.stub :copy_bucket_file, Google::Cloud::Storage::File do
+      assert client.copy_study_bucket_file(@study.bucket_id, @study_file.upload_file_name, 'new_file.txt')
+    end
+  end
+
   test 'should generate signed URL for study file' do
     mock = Minitest::Mock.new
     filepath = 'path/to/file.txt'
@@ -161,6 +212,20 @@ class StorageServiceTest < ActiveSupport::TestCase
       client = StorageService.load_client(study: @study)
       StorageService.stream_study_file(client, @study, @study_file)
       mock.verify
+    end
+  end
+
+  test 'should delete study file from bucket' do
+    client = StorageService.load_client(study: @study)
+    client.stub :delete_bucket_file, true do
+      assert client.delete_study_bucket_file(@study.bucket_id, @study_file.bucket_location)
+    end
+  end
+
+  test 'should read a study file into memory from bucket' do
+    client = StorageService.load_client(study: @study)
+    client.stub :read_bucket_file, StringIO do
+      assert client.read_study_bucket_file(@study.bucket_id, @study_file.bucket_location)
     end
   end
 

@@ -180,6 +180,6 @@ class ImagePipelineService
   #   - (Boolean) => T/F if file is present in bucket
   def self.file_in_bucket?(study_file)
     study = study_file.study
-    study.storage_provider.bucket_file_exists?(study.bucket_id, study_file.bucket_location)
+    study.storage_provider.study_bucket_file_exists?(study.bucket_id, study_file.bucket_location)
   end
 end

@@ -754,7 +754,7 @@ class StudyFile
   end
 
   def api_url
-    api_url = StorageService.stream_study_file(study.storage_provider, study.bucket_id, bucket_location)
+    api_url = study.storage_provider.stream_bucket_file(study.bucket_id, bucket_location)
     api_url + '?alt=media'
   end
 

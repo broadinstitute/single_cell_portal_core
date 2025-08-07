@@ -57,7 +57,7 @@ module StorageProvider
     end
 
     test 'should update bucket acl' do
-      email = 'user@example.net'
+      email = 'user@test.com'
       role = :reader
       updated_entity = @client.update_bucket_acl(@bucket_name, email, role:)
       assert_equal "user-#{email}", updated_entity, 'Updated entity does not match expected format'

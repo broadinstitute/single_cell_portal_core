@@ -80,7 +80,7 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
     organs = %w[brain brain heart brain heart heart brain]
     raw_matrix = FactoryBot.create(:expression_file,
                                    name: 'raw.txt',
-                                   study: study,
+                                   study:,
                                    expression_file_info: {
                                      is_raw_counts: true,
                                      units: 'raw counts',
@@ -98,11 +98,11 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
 
     cluster_file_1 = FactoryBot.create(:cluster_file,
                                        name: 'cluster_diffexp_1.txt',
-                                       study: study,
+                                       study:,
                                        cell_input: {
                                          x: coordinates,
                                          y: coordinates,
-                                         cells: cells
+                                         cells:
                                        },
                                        annotation_input: [
                                          { name: 'species', type: 'group', values: species }
@@ -110,42 +110,42 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
 
     cluster_file_2 = FactoryBot.create(:cluster_file,
                                        name: 'cluster_diffexp_2.txt',
-                                       study: study,
+                                       study:,
                                        cell_input: {
                                          x: coordinates,
                                          y: coordinates,
-                                         cells: cells
+                                         cells:
                                        },
                                        annotation_input: [
                                          { name: 'disease', type: 'group', values: diseases }
                                        ])
 
-    cluster_1 = ClusterGroup.find_by(study: study, study_file: cluster_file_1)
-    cluster_2 = ClusterGroup.find_by(study: study, study_file: cluster_file_2)
+    cluster_1 = ClusterGroup.find_by(study:, study_file: cluster_file_1)
+    cluster_2 = ClusterGroup.find_by(study:, study_file: cluster_file_2)
 
     metadata_file = FactoryBot.create(:metadata_file,
                                       name: 'metadata.txt',
                                       cell_input: cells,
-                                      study: study,
+                                      study:,
                                       annotation_input: [
                                         { name: 'category', type: 'group', values: categories },
                                         { name: 'organ', type: 'group', values: organs }
                                       ])
 
     DifferentialExpressionResult.create(
-      study: study, cluster_group: cluster_1, annotation_name: 'species',
+      study:, cluster_group: cluster_1, annotation_name: 'species',
       annotation_scope: 'cluster', matrix_file_id: raw_matrix.id
     )
     DifferentialExpressionResult.create(
-      study: study, cluster_group: cluster_2, annotation_name: 'disease',
+      study:, cluster_group: cluster_2, annotation_name: 'disease',
       annotation_scope: 'cluster', matrix_file_id: raw_matrix.id
     )
     DifferentialExpressionResult.create(
-      study: study, cluster_group: cluster_1, annotation_name: 'category',
+      study:, cluster_group: cluster_1, annotation_name: 'category',
       annotation_scope: 'study', matrix_file_id: raw_matrix.id
     )
     DifferentialExpressionResult.create(
-      study: study, cluster_group: cluster_2, annotation_name: 'organ',
+      study:, cluster_group: cluster_2, annotation_name: 'organ',
       annotation_scope: 'study', matrix_file_id: raw_matrix.id
     )
 
@@ -154,22 +154,22 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
       file_mock = Minitest::Mock.new
       file_mock.expect :present?, true
       file_mock.expect :delete, true
-      mock.expect :get_workspace_file, file_mock, [study.bucket_id, String]
+      mock.expect :load_study_bucket_file, file_mock, [study.bucket_id, String]
     end
 
-    ApplicationController.stub :firecloud_client, mock do
+    StorageService.stub :load_client, mock do
       # test deletion of cluster file
       DeleteQueueJob.new(cluster_file_1).perform
-      assert_not DifferentialExpressionResult.where(study: study, cluster_group: cluster_1).any?
-      assert DifferentialExpressionResult.where(study: study, cluster_group: cluster_2).any?
+      assert_not DifferentialExpressionResult.where(study:, cluster_group: cluster_1).any?
+      assert DifferentialExpressionResult.where(study:, cluster_group: cluster_2).any?
 
       # test deletion of metadata file
       DeleteQueueJob.new(metadata_file).perform
-      assert_not DifferentialExpressionResult.where(study: study, annotation_scope: 'study').any?
+      assert_not DifferentialExpressionResult.where(study:, annotation_scope: 'study').any?
 
       # test deletion of matrix file
       DeleteQueueJob.new(raw_matrix).perform
-      assert_not DifferentialExpressionResult.where(study: study).any?
+      assert_not DifferentialExpressionResult.where(study:).any?
 
       # assert all delete calls have been made, should be 8 total
       mock.verify

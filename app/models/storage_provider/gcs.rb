@@ -15,6 +15,8 @@ module StorageProvider
       https://www.googleapis.com/auth/devstorage.read_only
     ].freeze
 
+    COMPUTE_REGION = 'us-central1'.freeze
+
     # Default constructor for GcsClient
     #
     # * *params*
@@ -32,6 +34,14 @@ module StorageProvider
       self.project = project
       self.service_account_credentials = service_account_credentials
       self.storage = Google::Cloud::Storage.new(**storage_attr)
+    end
+
+    # default location for GCS buckets
+    #
+    # * *return*
+    #   - +String+ => GCP region
+    def location
+      COMPUTE_REGION
     end
 
     # list available GCS buckets in the project

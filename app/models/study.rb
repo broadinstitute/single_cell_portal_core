@@ -706,7 +706,7 @@ class Study
   ###
 
   # custom validator since we need everything to pass in a specific order (otherwise we get orphaned FireCloud workspaces)
-  validate :initialize_with_new_workspace, on: :create, if: Proc.new {|study| !study.use_existing_workspace && !study.detached}
+  validate :initialize_with_new_bucket, on: :create, if: Proc.new {|study| !study.use_existing_workspace && !study.detached}
   validate :initialize_with_existing_workspace, on: :create, if: Proc.new {|study| study.use_existing_workspace}
 
   # populate specific errors for associations since they share the same form
@@ -746,7 +746,7 @@ class Study
   validates_presence_of   :name, on: :update
   validates_uniqueness_of :url_safe_name, on: :update, message: ": The name you provided tried to create a public URL (%{value}) that is already assigned.  Please rename your study to a different value."
   validate :prevent_firecloud_attribute_changes, on: :update
-  validates_presence_of :firecloud_project, :firecloud_workspace
+  validates_presence_of :firecloud_project, :firecloud_workspace, if: proc { |study| !study.detached && study.terra_study }
   validates_uniqueness_of :external_identifier, allow_blank: true
   validates :cell_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :enforce_embargo_max_length
@@ -754,9 +754,9 @@ class Study
   # callbacks
   before_validation :set_url_safe_name
   before_validation :set_data_dir, :set_firecloud_workspace_name, on: :create
-  after_validation  :assign_accession, on: :create
-  # before_save       :verify_default_options
-  after_create      :make_data_dir, :set_default_participant, :check_bucket_read_access, :log_study_creation
+  before_validation :assign_accession, on: :create
+  before_validation :set_bucket_id, on: :create
+  after_create      :make_data_dir, :check_bucket_read_access, :log_study_creation
   before_destroy    :ensure_cascade_on_associations
   after_destroy     :remove_data_dir
   before_save       :set_readonly_access, if: proc { |study| study.terra_study }
@@ -1783,25 +1783,6 @@ class Study
     end
   end
 
-  # set the 'default_participant' entity in workspace data to allow users to upload sample information
-  def set_default_participant
-    return if detached # skip if study is detached, which is common in test environment
-
-    begin
-      path = Rails.root.join('data', self.data_dir, 'default_participant.tsv')
-      entity_file = File.new(path, 'w+')
-      entity_file.write "entity:participant_id\ndefault_participant"
-      entity_file.close
-      upload = File.open(entity_file.path)
-      ApplicationController.firecloud_client.import_workspace_entities_file(self.firecloud_project, self.firecloud_workspace, upload)
-      Rails.logger.info "#{Time.zone.now}: created default_participant for #{self.firecloud_workspace}"
-      File.delete(path)
-    rescue => e
-      ErrorTracker.report_exception(e, user, self)
-      Rails.logger.error "Unable to set default participant: #{e.message}"
-    end
-  end
-
   # set the study_accession for this study
   def assign_accession
     next_accession = StudyAccession.next_available
@@ -1810,6 +1791,14 @@ class Study
     end
     self.accession = next_accession
     StudyAccession.create(accession: next_accession, study_id: self.id)
+  end
+
+  def set_bucket_id
+    return nil if terra_study
+
+    # 6-character slug added to accession to prevent name collisions during CI
+    # also no uppercase characters allowed in bucket names
+    self.bucket_id = "#{accession}-#{SecureRandom.hex(6)}".downcase
   end
 
   # set access for the readonly service account if a study is public
@@ -1855,18 +1844,25 @@ class Study
     if Rails.env.production?
       return
     end
-    Rails.logger.info "Removing workspace #{firecloud_project}/#{firecloud_workspace} in #{Rails.env} environment"
+
     begin
-      ApplicationController.firecloud_client.delete_workspace(firecloud_project, firecloud_workspace) unless detached
+      entity = "#{firecloud_project}/#{firecloud_workspace}"
+      if terra_study
+        Rails.logger.info "Removing workspace #{entity} in #{Rails.env} environment"
+        ApplicationController.firecloud_client.delete_workspace(firecloud_project, firecloud_workspace) unless detached
+      else
+        entity = bucket_id
+        StorageService.remove_study_bucket(storage_provider, self) unless detached
+      end
       DeleteQueueJob.new(self.metadata_file).delay.perform if self.metadata_file.present?
       destroy
     rescue => e
-      Rails.logger.error "Error in removing #{firecloud_project}/#{firecloud_workspace}"
+      Rails.logger.error "Error in removing #{entity}"
       Rails.logger.error "#{e.class.name}:"
       Rails.logger.error "#{e.message}"
       destroy # ensure deletion of study, even if workspace is orphaned
     end
-    Rails.logger.info "Workspace #{firecloud_project}/#{firecloud_workspace} successfully removed."
+    Rails.logger.info "Workspace #{entity} successfully removed."
   end
 
   ## State tracking methods
@@ -1992,21 +1988,20 @@ class Study
 
   # automatically create a FireCloud workspace on study creation after validating name & url_safe_name
   # will raise validation errors if creation, bucket or ACL assignment fail for any reason and deletes workspace on validation fail
-  def initialize_with_new_workspace
+  def initialize_with_new_bucket
     Rails.logger.info "Study: #{accession} creating storage bucket"
     validate_name_and_url
 
     unless errors.any?
       client = storage_provider
       begin
-        bucket_name = "#{accession}-#{SecureRandom.hex(6)}"
-        self.bucket_id = bucket_name
         StorageService.create_study_bucket(client, self)
-        Rails.logger.info "Study: #{accession} successfully created bucket #{bucket_name} and configured acl"
+        Rails.logger.info "Study: #{accession} successfully created bucket #{bucket_id} and configured acl"
       rescue *StorageService::HANDLED_EXCEPTIONS => e
+        StudyAccession.find_by(study_id: id)&.delete # free up accession on fail
         ErrorTracker.report_exception(e, user, self)
         # delete workspace on any fail as this amounts to a validation fail
-        Rails.logger.info "Error creating bucket #{bucket_name}: #{e.message}"
+        Rails.logger.info "Error creating bucket #{bucket_id}: #{e.message}"
         StorageService.remove_study_bucket(client, self) if StorageService.study_bucket_exists?(client, self)
         errors.add(:bucket_id, "could not be assigned: #{e.message}")
         false

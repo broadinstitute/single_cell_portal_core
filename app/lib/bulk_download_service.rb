@@ -328,15 +328,15 @@ class BulkDownloadService
   def self.get_single_curl_command(file:, client:, user:, study_bucket_map:, output_pathname_map:)
     client ||= StorageService.load_client
     # if a file is a StudyFile, use bucket_location, otherwise the :name key will contain its location (if DirectoryListing)
-    case file.class.name
-    when 'StudyFile'
+    if file.is_a?(StudyFile)
       file_location = file.bucket_location
       bucket_name = study_bucket_map[file.study_id.to_s]
       output_path = output_pathname_map[file.id.to_s]
-    when 'Hash'
-      file_location = file[:name]
-      bucket_name = study_bucket_map[file[:study_id]]
-      output_path = output_pathname_map[file[:name]]
+    else
+      safe_file = file.with_indifferent_access
+      file_location = safe_file[:name]
+      bucket_name = study_bucket_map[safe_file[:study_id]]
+      output_path = output_pathname_map[safe_file[:name]]
     end
 
     begin
@@ -508,13 +508,6 @@ class BulkDownloadService
 
   # get associated study from a download object
   def self.get_study_from_download_object(object)
-    case object.class.name
-    when 'StudyFile'
-      object.study
-    when 'Hash'
-      Study.find(object[:study_id])
-    else
-      nil
-    end
+    object.is_a?(StudyFile) ? object.study : Study.find(object.with_indifferent_access[:study_id])
   end
 end
