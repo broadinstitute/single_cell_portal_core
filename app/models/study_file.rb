@@ -754,7 +754,7 @@ class StudyFile
   end
 
   def api_url
-    api_url = ApplicationController.firecloud_client.execute_gcloud_method(:generate_api_url, 0, self.study.bucket_id, self.bucket_location)
+    api_url = study.storage_provider.stream_bucket_file(study.bucket_id, bucket_location)
     api_url + '?alt=media'
   end
 

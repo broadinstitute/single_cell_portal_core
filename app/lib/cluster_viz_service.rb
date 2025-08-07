@@ -13,8 +13,7 @@ class ClusterVizService
 
   # helper method to load all possible cluster groups for a study
   def self.load_cluster_group_options(study)
-    non_spatial_file_ids = study.clustering_files.where(is_spatial: false).pluck(:id)
-    ClusterGroup.where(study: study, :study_file_id.in => non_spatial_file_ids).pluck(:name)
+    study.default_cluster_order
   end
 
   # helper method to load all available cluster_group-specific annotations
@@ -57,9 +56,21 @@ class ClusterVizService
                                    .pluck(:id, :name)
                                    .map{ |a| [a[0].to_s, a[1]] }.to_h
     # now return an array of objects with names and associated cluster names
-    spatial_file_info.map do |cluster|
+    spatial_clusters = spatial_file_info.map do |cluster|
       associated_cluster_names = cluster[1].map{ |id| associated_clusters[id] }
       { name: cluster[0], associated_clusters: associated_cluster_names }
+    end
+
+    # now that the spatial clusters are loaded, check if the study has a default spatial order
+    if study.default_spatial_order.any?
+      new_spatial_order = []
+      study.default_spatial_order.each do |name|
+        entry = spatial_clusters.detect { |sc| sc[:name] == name }
+        new_spatial_order << entry if entry
+      end
+      new_spatial_order
+    else
+      spatial_clusters
     end
   end
 

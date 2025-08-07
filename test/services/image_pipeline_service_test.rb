@@ -53,29 +53,36 @@ class ImagePipelineServiceTest < ActiveSupport::TestCase
   end
 
   test 'should launch image pipeline job' do
+    storage_mock = Minitest::Mock.new
+    storage_mock.expect :study_bucket_file_exists?, true, [@study.bucket_id, String]
     job_mock = Minitest::Mock.new
     job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
     mock = Minitest::Mock.new
     mock.expect(:delay, job_mock)
     IngestJob.stub :new, mock do
-      ApplicationController.firecloud_client.stub :workspace_file_exists?, true do
+      StorageService.stub :load_client, storage_mock do
         ImagePipelineService.run_image_pipeline_job(@study, @cluster_file, data_cache_perftime: 120_000)
+        mock.verify
+        storage_mock.verify
       end
     end
   end
 
   test 'should launch render expression arrays job for all matrix types' do
     [@dense_matrix, @sparse_matrix].each do |matrix_file|
+      storage_mock = Minitest::Mock.new
+      2.times { storage_mock.expect :study_bucket_file_exists?, true, [@study.bucket_id, String] }
       job_mock = Minitest::Mock.new
       job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
       mock = Minitest::Mock.new
       mock.expect(:delay, job_mock)
       IngestJob.stub :new, mock do
-        ApplicationController.firecloud_client.stub :workspace_file_exists?, true do
+        StorageService.stub :load_client, storage_mock do
           job_launched = ImagePipelineService.run_render_expression_arrays_job(@study, @cluster_file, matrix_file)
           assert job_launched, "failed to launch job for #{matrix_file.name} (#{matrix_file.file_type})"
           mock.verify
           job_mock.verify
+          storage_mock.verify
         end
       end
     end
@@ -113,15 +120,18 @@ class ImagePipelineServiceTest < ActiveSupport::TestCase
     # use mock to suppress error logging
     assert_raise ArgumentError do
       mock = Minitest::Mock.new
-      mock.expect :workspace_file_exists?, false, [String, String]
-      ApplicationController.stub :firecloud_client, mock do
+      mock.expect :study_bucket_file_exists?, false, [String, String]
+      StorageService.stub :load_client, mock do
         ImagePipelineService.run_render_expression_arrays_job(@study, @cluster_file, @dense_matrix)
+        mock.verify
       end
     end
   end
 
   test 'should create image pipeline parameters object' do
-    ApplicationController.firecloud_client.stub :workspace_file_exists?, true do
+    storage_mock = Minitest::Mock.new
+    storage_mock.expect :study_bucket_file_exists?, true, [@study.bucket_id, String]
+    StorageService.stub :load_client, storage_mock do
       params = ImagePipelineService.create_image_pipeline_parameters_object(@study, @cluster_file, 120_000)
       assert params.valid?
       assert_equal @cluster_file.name, params.cluster
@@ -130,12 +140,15 @@ class ImagePipelineServiceTest < ActiveSupport::TestCase
       assert_equal Rails.env.to_s, params.environment
       assert_equal 7, params.cores
       assert_equal ImagePipelineParameters::PARAM_DEFAULTS[:docker_image], params.docker_image
+      storage_mock.verify
     end
   end
 
   test 'should create expression array parameters object' do
     [@dense_matrix, @sparse_matrix].each do |matrix_file|
-      ApplicationController.firecloud_client.stub :workspace_file_exists?, true do
+      storage_mock = Minitest::Mock.new
+      2.times { storage_mock.expect :study_bucket_file_exists?, true, [@study.bucket_id, String] }
+      StorageService.stub :load_client, storage_mock do
         params = ImagePipelineService.create_expression_parameters_object(@cluster_file, matrix_file)
         assert params.valid?, "failed to validate parameters for #{matrix_file.name} (#{matrix_file.file_type})"
         assert_equal params.cluster_file, @cluster_file.gs_url
@@ -143,6 +156,7 @@ class ImagePipelineServiceTest < ActiveSupport::TestCase
         assert_equal RenderExpressionArraysParameters::MACHINE_TYPES[:medium], params.machine_type
         expected_matrix_type = matrix_file.file_type == 'Expression Matrix' ? 'dense' : 'mtx'
         assert_equal expected_matrix_type, params.matrix_file_type
+        storage_mock.verify
       end
     end
   end

@@ -10,7 +10,7 @@ FactoryBot.define do
       test_array { nil }
     end
     # https://github.com/thoughtbot/factory_bot/blob/main/GETTING_STARTED.md#sequences
-    sequence(:email) { |n| "test.user.#{n}@test.edu" }
+    sequence(:email) { |n| "testuser#{n}@test.com" }
     uid { rand(10000..99999) }
     password { "test_password" }
     metrics_uuid { SecureRandom.uuid }

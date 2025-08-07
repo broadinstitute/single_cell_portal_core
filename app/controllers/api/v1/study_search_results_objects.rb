@@ -137,7 +137,7 @@ module Api
             'SCP',
             study.accession,
             study.name,
-            study.description,
+            Api::V1::StudySearchResultsObjects.strip_newlines(study.description),
             study.public,
             study.detached,
             study.cell_count,
@@ -156,7 +156,7 @@ module Api
             study[:hca_result] ? 'HCA' : 'TDR',
             study[:accession],
             study[:name],
-            study[:description].gsub(/\n/, ''),
+            Api::V1::StudySearchResultsObjects.strip_newlines(study[:description]),
             true,
             false,
             0,
@@ -180,6 +180,11 @@ module Api
         else
           "https://data.humancellatlas.org/explore/projects/#{study[:hca_project_id]}"
         end
+      end
+
+      # deal with very old or external descriptions which may have newlines in them
+      def self.strip_newlines(text)
+        text.to_s.gsub(/\n/, ' ').gsub(/\r/, '').strip
       end
 
       # flatten facet matches into a text string for export

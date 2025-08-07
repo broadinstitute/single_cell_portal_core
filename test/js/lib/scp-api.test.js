@@ -3,7 +3,7 @@
 import CacheMock from 'browser-cache-mock';
 import 'isomorphic-fetch';
 
-import scpApi, { fetchSearch, fetchFacetFilters, setupRenewalForReadOnlyToken, setUpRenewalForUserAccessToken } from 'lib/scp-api'
+import scpApi, { fetchSearch, exportSearchResultsText, fetchFacetFilters, setupRenewalForReadOnlyToken, setUpRenewalForUserAccessToken } from 'lib/scp-api'
 import * as ServiceWorkerCache from 'lib/service-worker-cache'
 import * as SCPContextProvider from '~/providers/SCPContextProvider'
 import { getTokenExpiry } from '../upload-wizard/upload-wizard-test-utils'
@@ -39,7 +39,7 @@ describe('JavaScript client for SCP REST API', () => {
   })
 
   // Note: tests that mock global.fetch must be cleared after every test
-  afterEach(() => {
+  beforeEach(() => {
     // Restores all mocks back to their original value
     jest.restoreAllMocks()
     jest.spyOn(global, 'setTimeout').mockReset()
@@ -218,6 +218,41 @@ describe('JavaScript client for SCP REST API', () => {
     process.nextTick(() => {
       done()
     })
+  })
+
+  it('uses user access token for exportSearchResultsText', async () => {
+    const mockSuccessResponse = "test response"
+    const exportFilename = 'scp_search_results_2025-01-01.tsv'
+    const mockFetchPromise = Promise.resolve({
+      ok: true,
+      headers: new Headers(
+        {
+          'Content-Disposition': `attachment; filename="${exportFilename}"`,
+          'Content-Type': 'application/octet-stream'
+        }
+      ),
+      blob: () => {
+        return mockSuccessResponse
+      }
+    })
+    jest.spyOn(global, 'fetch').mockImplementation(() => mockFetchPromise)
+
+    window.SCP = {
+      userAccessToken: 'ya11.b.foo_bar-baz'
+    }
+
+    const params = {type: 'study', page: 1, terms: 'spatial', facets: {}}
+    await exportSearchResultsText(params)
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer ya11.b.foo_bar-baz'
+        }
+      })
+    )
   })
 
 })

@@ -145,11 +145,11 @@ class RequestUtilsTest < ActionDispatch::IntegrationTest
     # user exploring an SCP study they learned about in a scientific journal
 
     mock = ::Minitest::Mock.new
-    mock.expect :call, nil, []
+    mock.expect :valid_access_token, Hash
 
     sign_out @user
 
-    ApplicationController.read_only_firecloud_client.stub :valid_access_token, mock do
+    StorageService.stub :load_client, mock do
       RequestUtils.get_read_access_token(@public_study, @user)
       mock.verify
     end
@@ -160,11 +160,11 @@ class RequestUtilsTest < ActionDispatch::IntegrationTest
     # user exploring others' studies
 
     mock = ::Minitest::Mock.new
-    mock.expect :call, nil, []
+    mock.expect :valid_access_token, Hash
 
     sign_in @user
 
-    ApplicationController.read_only_firecloud_client.stub :valid_access_token, mock do
+    StorageService.stub :load_client, mock do
       RequestUtils.get_read_access_token(@public_study, @user)
       mock.verify
     end

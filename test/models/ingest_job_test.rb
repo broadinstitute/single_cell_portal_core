@@ -689,12 +689,12 @@ class IngestJobTest < ActiveSupport::TestCase
     [nil, (0...100)].each do |range|
       output = StringIO.new(SecureRandom.alphanumeric(output_length))
       mock = Minitest::Mock.new
-      mock.expect :workspace_file_exists?, true, [@basic_study.bucket_id, file_location]
-      mock.expect :execute_gcloud_method, output, [:read_workspace_file, 0, @basic_study.bucket_id, file_location]
-      ApplicationController.stub :firecloud_client, mock do
-        contents = job.read_parse_logfile(file_location, delete_on_read: false, range: range)
+      mock.expect :study_bucket_file_exists?, true, [@basic_study.bucket_id, file_location]
+      mock.expect :read_study_bucket_file, output, [@basic_study.bucket_id, file_location]
+      StorageService.stub :load_client, mock do
+        contents = job.read_parse_logfile(file_location, delete_on_read: false, range:)
         mock.verify
-        expected_size = range.present? ? range.last: output_length
+        expected_size = range.present? ? range.last : output_length
         assert_equal expected_size, contents.size
         # ensure correct bytes are returned
         output.rewind
@@ -842,8 +842,8 @@ class IngestJobTest < ActiveSupport::TestCase
     manifest = File.open(
       Rails.root.join('test', 'test_data', 'differential_expression', 'All_Cells_UMAP--General_Celltype--manifest.tsv')
     )
-    mock.expect(:execute_gcloud_method, manifest, [:read_workspace_file, 0, study.bucket_id, String])
-    ApplicationController.stub :firecloud_client, mock do
+    mock.expect :read_study_bucket_file, manifest, [study.bucket_id, String]
+    StorageService.stub :load_client, mock do
       job.create_author_differential_expression_results
       mock.verify
 
@@ -876,19 +876,13 @@ class IngestJobTest < ActiveSupport::TestCase
 
     error_log = "parse_logs/#{cluster_file.id}/user_log.txt"
     mock = Minitest::Mock.new
-    mock.expect :workspace_file_exists?, true, [study.bucket_id, error_log]
-    mock.expect(
-      :execute_gcloud_method,
-      StringIO.new("error"),
-      [:read_workspace_file, 0, study.bucket_id, error_log]
-    )
-    mock.expect :execute_gcloud_method, true,
-                [:delete_workspace_file, 0, study.bucket_id, error_log]
-
+    mock.expect :study_bucket_file_exists?, true, [study.bucket_id, error_log]
+    mock.expect :read_study_bucket_file, StringIO.new("error"), [study.bucket_id, error_log]
+    mock.expect :delete_study_bucket_file, true, [study.bucket_id, error_log]
     batch_mock = Minitest::Mock.new
     batch_mock.expect :get_job, Google::Apis::BatchV1::Job, [pipeline_name]
     batch_mock.expect :get_job_command_line, %w[foo bar bing baz], [], job: Google::Apis::BatchV1::Job
-    ApplicationController.stub :firecloud_client, mock do
+    StorageService.stub :load_client, mock do
       ApplicationController.stub :batch_api_client, batch_mock do
         job.handle_ingest_failure('parse failure')
         cluster_file.reload
@@ -913,22 +907,17 @@ class IngestJobTest < ActiveSupport::TestCase
     )
     error_log = "parse_logs/#{failed_file.id}/user_log.txt"
     mock = Minitest::Mock.new
-    mock.expect :execute_gcloud_method, true,
-                [:copy_workspace_file, 0, study.bucket_id, failed_file.bucket_location, failed_file.parse_fail_bucket_location]
-    mock.expect :delete_workspace_file, true, [study.bucket_id, failed_file.bucket_location]
-    mock.expect :workspace_file_exists?, true, [study.bucket_id, error_log]
-    mock.expect(
-      :execute_gcloud_method,
-      StringIO.new("error"),
-      [:read_workspace_file, 0, study.bucket_id, error_log]
-    )
-    mock.expect :execute_gcloud_method, true,
-                [:delete_workspace_file, 0, study.bucket_id, error_log]
-
+    mock.expect :copy_study_bucket_file,
+                true,
+                [study.bucket_id, failed_file.bucket_location, failed_file.parse_fail_bucket_location]
+    mock.expect :delete_study_bucket_file, true, [study.bucket_id, failed_file.bucket_location]
+    mock.expect :study_bucket_file_exists?, true, [study.bucket_id, error_log]
+    mock.expect :read_study_bucket_file, StringIO.new("error"), [study.bucket_id, error_log]
+    mock.expect :delete_study_bucket_file, true, [study.bucket_id, error_log]
     batch_mock = Minitest::Mock.new
     batch_mock.expect :get_job, Google::Apis::BatchV1::Job, [pipeline_name]
     batch_mock.expect :get_job_command_line, %w[foo bar bing baz], [], job: Google::Apis::BatchV1::Job
-    ApplicationController.stub :firecloud_client, mock do
+    StorageService.stub :load_client, mock do
       ApplicationController.stub :batch_api_client, batch_mock do
         failed_job.handle_ingest_failure('parse failure')
         mock.verify
@@ -1059,14 +1048,20 @@ class IngestJobTest < ActiveSupport::TestCase
 
     email_mock = Minitest::Mock.new
     email_mock.expect :deliver_now, true
+    log_mock = Minitest::Mock.new
+    logpath = "parse_logs/#{study_file.id}/log.txt"
+    log_mock.expect :study_bucket_file_exists?, false, [study.bucket_id, logpath]
     ApplicationController.stub :batch_api_client, mock do
       SingleCellMailer.stub :notify_admin_parse_fail, email_mock do
-        job.poll_for_completion
-        # ensure that parse_status flag is reset after failure
-        study_file.reload
-        assert study_file.parsed?
-        mock.verify
-        email_mock.verify
+        StorageService.stub :load_client, log_mock do
+          job.poll_for_completion
+          # ensure that parse_status flag is reset after failure
+          study_file.reload
+          assert study_file.parsed?
+          mock.verify
+          email_mock.verify
+          log_mock.verify
+        end
       end
     end
   end
@@ -1143,18 +1138,16 @@ class IngestJobTest < ActiveSupport::TestCase
         args[:action] == :ingest_anndata &&
         args[:params_object].machine_type == 'n2d-highmem-16'
     end
-    terra_mock = Minitest::Mock.new
-    terra_mock.expect :get_workspace_file,
+    storage_mock = Minitest::Mock.new
+    storage_mock.expect :load_study_bucket_file,
                       Google::Cloud::Storage::File.new,
                       [bucket, study_file.bucket_location]
-    terra_mock.expect :workspace_file_exists?,
-                      false,
-                      [bucket, String]
+    storage_mock.expect :study_bucket_file_exists?, false, [bucket, String]
     job.stub :get_ingest_run, dummy_job do
       ApplicationController.stub :batch_api_client, client_mock do
-        ApplicationController.stub :firecloud_client, terra_mock do
+        StorageService.stub :load_client, storage_mock do
           job.poll_for_completion
-          terra_mock.verify
+          storage_mock.verify
           client_mock.verify
         end
       end

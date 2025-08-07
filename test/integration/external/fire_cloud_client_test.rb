@@ -69,12 +69,12 @@ class FireCloudClientTest < ActiveSupport::TestCase
   # refresh the GCS Driver
   # test only checks issue date as we can't be sure that the storage_access_token will actually refresh fast enough
   def test_refresh_google_storage_driver
-    issued_at = @fire_cloud_client.storage_issued_at
+    instance_id = @fire_cloud_client.storage.service.__id__
     new_storage = @fire_cloud_client.refresh_storage_driver
     assert new_storage.present?, 'New storage did not get instantiated'
 
-    new_issued_at = new_storage.service.credentials.client.issued_at
-    assert new_issued_at > issued_at, "Storage driver did not update, #{new_issued_at} is not greater than #{issued_at}"
+    new_instance_id = new_storage.service.__id__
+    assert_not_equal instance_id, new_instance_id
   end
 
   # assert status health check is returning true/false

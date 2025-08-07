@@ -183,7 +183,7 @@ class BulkDownloadControllerTest < ActionDispatch::IntegrationTest
         auth_code = json['auth_code']
         all_files = study_files + files
         mock = generate_signed_urls_mock(all_files, parent_study: @basic_study)
-        FireCloudClient.stub :new, mock do
+        StorageService.stub :load_client, mock do
           execute_http_request(:get,
                                api_v1_bulk_download_generate_curl_config_path(
                                  auth_code: auth_code,
@@ -313,14 +313,14 @@ class BulkDownloadControllerTest < ActionDispatch::IntegrationTest
 
       # mock all calls to external services, including Google Cloud Storage, HCA Azul, and Terra Data Repo
       gcs_mock = Minitest::Mock.new
-      gcs_mock.expect :execute_gcloud_method, mock_signed_url,
-                      [:generate_signed_url, 0, @basic_study.bucket_id, 'metadata.txt'], expires: 1.day.to_i
+      gcs_mock.expect :download_bucket_file, mock_signed_url,
+                      [@basic_study.bucket_id, 'metadata.txt'], expires: 1.day.to_i
       azul_mock = Minitest::Mock.new
       azul_mock.expect :project_manifest_link, mock_manifest_response, [hca_project_id]
       azul_mock.expect :files, mock_files_response, [], query: Hash
 
       # stub all service clients to interpolate mocks
-      FireCloudClient.stub :new, gcs_mock do
+      StorageService.stub :load_client, gcs_mock do
         ApplicationController.stub :hca_azul_client, azul_mock do
           # gotcha because we've stubbed Study.where in mock_query_not_detached and this wll cause
           # BulkDownloadController.load_study_files to return the wrong studies, so we have to override that here

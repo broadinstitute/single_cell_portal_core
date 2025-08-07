@@ -3,6 +3,7 @@ module Api
     class StudySharesController < ApiBaseController
       before_action :authenticate_api_user!
       before_action :set_study
+      before_action :set_storage_client
       before_action :check_study_permission
       before_action :set_study_share, except: [:index, :create]
 

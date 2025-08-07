@@ -96,7 +96,7 @@ class AnnotationVizService
       default_cluster: study.default_cluster&.name,
       default_annotation: AnnotationVizService.get_selected_annotation(study, annot_name: '_default'),
       annotations: AnnotationVizService.available_annotations(study, cluster: nil, current_user: user),
-      clusters: study.cluster_groups.pluck(:name),
+      clusters: ClusterVizService.load_cluster_group_options(study),
       subsample_thresholds: subsample_thresholds
     }
   end

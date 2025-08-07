@@ -44,14 +44,14 @@ def assign_url_mock!(mock, study_file, parent_study: nil)
     params << "#{param}=#{SecureRandom.uuid}"
   end
   mock_signed_url += params.join('&')
-  mock.expect :execute_gcloud_method, mock_signed_url, [:generate_signed_url, 0, String, String], **expires
+  mock.expect :download_bucket_file, mock_signed_url, [String, String], **expires
 end
 
 def assign_get_file_mock!(mock)
   file_mock = Minitest::Mock.new
   file_mock.expect :present?, true
   file_mock.expect :size, 1.megabyte
-  mock.expect :execute_gcloud_method, file_mock, [:get_workspace_file, 0, String, String]
+  mock.expect :load_study_bucket_file, file_mock, [String, String]
 end
 
 # helper to mock all calls to Terra orchestration API when saving a new study & creating workspace

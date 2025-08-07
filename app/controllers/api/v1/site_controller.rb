@@ -6,6 +6,8 @@ module Api
                                                     :get_study_analysis_config, :submit_study_analysis, :get_study_submissions,
                                                     :get_study_submission, :sync_submission_outputs]
       before_action :set_study, except: [:studies, :check_terra_tos_acceptance, :analyses, :get_analysis, :renew_user_access_token]
+      before_action :set_storage_client, only: [:download_data, :stream_data]
+      before_action :set_public_storage_client, only: [:stream_data]
       before_action :set_analysis_configuration, only: [:get_analysis, :get_study_analysis_config]
       before_action :check_study_detached, only: [:download_data, :stream_data, :get_study_analysis_config,
                                                   :submit_study_analysis, :get_study_submissions,
@@ -293,8 +295,7 @@ module Api
           if @study_file.present?
             filesize = @study_file.upload_file_size
             if !DownloadQuotaService.download_exceeds_quota?(current_api_user, filesize)
-              @signed_url = ApplicationController.firecloud_client.execute_gcloud_method(:generate_signed_url, 0, @study.bucket_id,
-                                                                         @study_file.bucket_location, expires: 60)
+              @signed_url = StorageService.download_study_file(@storage_client, @study, @study_file, expires: 60)
               DownloadQuotaService.increment_user_quota(current_api_user, filesize)
               redirect_to @signed_url
             else
@@ -380,7 +381,7 @@ module Api
               DownloadQuotaService.increment_user_quota(current_api_user, filesize)
               # determine which token to return to use with the media url
               if @study.public?
-                token = ApplicationController.read_only_firecloud_client.valid_access_token['access_token']
+                token = @public_storage_client.valid_access_token['access_token']
               elsif @study.has_bucket_access?(current_api_user)
                 token = current_api_user.api_access_token
               else
