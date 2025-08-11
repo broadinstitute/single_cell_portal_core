@@ -4,6 +4,7 @@ require 'user_helper'
 require 'test_helper'
 require 'includes_helper'
 require 'detached_helper'
+require 'user_helper'
 
 class StudyValidationTest < ActionDispatch::IntegrationTest
 
@@ -12,7 +13,7 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
     StudyCleanupTools.destroy_all_studies_and_workspaces
     User.destroy_all
     @user = gcs_bucket_test_user
-    @sharing_user = FactoryBot.create(:user, test_array: @@users_to_clean)
+    @sharing_user = gcs_bucket_sharing_user
     @random_seed = SecureRandom.uuid
     @study = FactoryBot.create(:study,
                                name_prefix: 'Main Validation Study',

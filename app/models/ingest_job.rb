@@ -138,7 +138,7 @@ class IngestJob
     file_identifier = "#{study_file.bucket_location}:#{study_file.id}"
     while !is_pushed && attempts <= MAX_ATTEMPTS
       Rails.logger.info "Preparing to push #{file_identifier} to #{study.bucket_id}"
-      StorageService.upload_study_file(storage_provider, study.bucket_id, study_file)
+      StorageService.upload_study_file(storage_provider, study, study_file)
       Rails.logger.info "Polling for upload of #{file_identifier}, attempt #{attempts}"
       if storage_provider.study_bucket_file_exists?(study.bucket_id, study_file.bucket_location)
         is_pushed = true

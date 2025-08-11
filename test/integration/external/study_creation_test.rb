@@ -1,12 +1,13 @@
 require 'integration_test_helper'
 require 'test_helper'
 require 'includes_helper'
+require 'user_helper'
 
 class StudyCreationTest < ActionDispatch::IntegrationTest
 
   before(:all) do
-    @user = FactoryBot.create(:user, test_array: @@users_to_clean)
-    @sharing_user = FactoryBot.create(:user, test_array: @@users_to_clean)
+    @user = gcs_bucket_test_user
+    @sharing_user = gcs_bucket_sharing_user
     @random_seed = SecureRandom.uuid
   end
 

@@ -241,7 +241,7 @@ class StorageService
     run_at = 2.minutes.from_now
     Delayed::Job.enqueue(UploadCleanupJob.new(study, study_file, 0), run_at:)
     Rails.logger.info "cleanup job for #{identifier} scheduled for #{run_at}"
-  rescue => e
+  rescue *HANDLED_EXCEPTIONS => e
     ErrorTracker.report_exception(e, study.user, study, study_file, client)
     Rails.logger.error "Unable to upload #{identifier} to study bucket #{study.bucket_id}; #{e.message}"
     # notify admin of failure so they can push the file and relaunch parse

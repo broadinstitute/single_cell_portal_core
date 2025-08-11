@@ -1,10 +1,11 @@
 require 'test_helper'
 require 'detached_helper'
+require 'user_helper'
 
 module ImportServiceConfig
   class HcaTest < ActiveSupport::TestCase
     before(:all) do
-      @user = FactoryBot.create(:user, test_array: @@users_to_clean)
+      @user = gcs_bucket_test_user
       @branding_group = FactoryBot.create(:branding_group, user_list: [@user])
       @user_id = @user.id
       @branding_group_id = @branding_group.id

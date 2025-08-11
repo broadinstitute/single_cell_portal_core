@@ -16,3 +16,12 @@ def gcs_bucket_test_user
     TosAcceptance.create(email: user.email) unless TosAcceptance.accepted?(user)
   end
 end
+
+def gcs_bucket_sharing_user
+  User.find_or_create_by(email: 'user1@example.net') do |user|
+    user.uid = rand(10000..99999)
+    user.password = SecureRandom.uuid
+    user.metrics_uuid = SecureRandom.uuid
+    TosAcceptance.create(email: user.email) unless TosAcceptance.accepted?(user)
+  end
+end

@@ -12,7 +12,7 @@ class FileParseService
   #   - (Hash) => Status object with http status_code and optional error message
   def self.run_parse_job(study_file, study, user, reparse: false, persist_on_fail: false, obsm_key: nil)
     logger = Rails.logger
-    logger.info "#{Time.zone.now}: Parsing #{study_file.name} as #{study_file.file_type} in study #{study.name}"
+    logger.info "#{Time.zone.now}: Parsing #{study_file.accession} as #{study_file.file_type} in study #{study.name}"
     do_anndata_file_ingest = FeatureFlaggable.feature_flags_for_instances(user, study)['ingest_anndata_file']
     if !study_file.parseable?
       return {
