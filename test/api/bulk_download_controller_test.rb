@@ -138,9 +138,9 @@ class BulkDownloadControllerTest < ActionDispatch::IntegrationTest
         bucket_id = @basic_study.bucket_id
         file_location = file.bucket_location
         url = "https://www.googleapis.com/storage/v1/b/#{bucket_id}/#{file_location}"
-        mock.expect :execute_gcloud_method, url, [:generate_signed_url, 0, bucket_id, file_location, Hash]
+        mock.expect :download_bucket_file, url, [bucket_id, file_location, Hash]
       end
-      FireCloudClient.stub :new, mock do
+      StorageService.stub :load_client, mock do
         execute_http_request(:post,
                              api_v1_bulk_download_auth_code_path,
                              request_payload: @auth_code_params,

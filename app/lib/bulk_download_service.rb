@@ -34,7 +34,7 @@ class BulkDownloadService
     Parallel.map(download_objects, in_threads: 100) do |download_object|
       study = get_study_from_download_object(download_object)
       curl_configs << get_single_curl_command(
-        file: download_object, client: study&.storage_provider, user:, study_bucket_map:, output_pathname_map:
+        file: download_object, client: study&.storage_provider, study_bucket_map:, output_pathname_map:
       )
     end
     studies = study_files.map(&:study).uniq
@@ -319,13 +319,12 @@ class BulkDownloadService
   # * *params*
   #   - +file+ (StudyFile, Hash) => file object to be downloaded
   #   - +client+ (StorageProvider) => Client to call GCS and generate signed_url
-  #   - +user+ (User) => User requesting download
   #   - +study_bucket_map+ => Map of study IDs to bucket names
   #   - +output_pathname_map+ => Map of study file IDs to output pathnames
   #
   # * *return*
   #   - (String) => String representation of single signed URL and output filepath to pass to curl
-  def self.get_single_curl_command(file:, client:, user:, study_bucket_map:, output_pathname_map:)
+  def self.get_single_curl_command(file:, client:, study_bucket_map:, output_pathname_map:)
     client ||= StorageService.load_client
     # if a file is a StudyFile, use bucket_location, otherwise the :name key will contain its location (if DirectoryListing)
     if file.is_a?(StudyFile)
@@ -339,20 +338,20 @@ class BulkDownloadService
       output_path = output_pathname_map[safe_file[:name]]
     end
 
-    begin
+    # begin
       signed_url = client.download_bucket_file(bucket_name, file_location, expires: 1.day.to_i) # 1 day in seconds, 86400
       curl_config = [
           'url="' + signed_url + '"',
           'output="' + output_path + '"'
       ]
-    rescue => e
-      ErrorTracker.report_exception(e, user, file, { storage_bucket: bucket_name })
-      Rails.logger.error "Error generating signed url for #{output_path}; #{e.message}"
-      curl_config = [
-          '# Error downloading ' + output_path + '.  ' +
-              'Did you delete the file in the bucket and not sync it in Single Cell Portal?'
-      ]
-    end
+    # rescue => e
+    #   ErrorTracker.report_exception(e, user, file, { storage_bucket: bucket_name })
+    #   Rails.logger.error "Error generating signed url for #{output_path}; #{e.message}"
+    #   curl_config = [
+    #       '# Error downloading ' + output_path + '.  ' +
+    #           'Did you delete the file in the bucket and not sync it in Single Cell Portal?'
+    #   ]
+    # end
     curl_config.join("\n")
   end
 
