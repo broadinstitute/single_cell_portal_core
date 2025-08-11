@@ -46,7 +46,7 @@ class ReportsServiceTest < ActiveSupport::TestCase
     basic_study_row = report_data.select {|r| r[:id] == @basic_study.id}.first
     assert_equal @basic_study.accession, basic_study_row[:accession]
     assert_equal @user.email, basic_study_row[:owner_email]
-    assert_equal 'test.com', basic_study_row[:owner_domain]
+    assert_equal 'test.edu', basic_study_row[:owner_domain]
     assert_equal true, basic_study_row[:metadata_convention]
     assert_equal true, basic_study_row[:has_raw_counts]
     assert_nil basic_study_row[:last_initialized]

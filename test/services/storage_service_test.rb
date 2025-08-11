@@ -90,7 +90,7 @@ class StorageServiceTest < ActiveSupport::TestCase
     files = []
     20.times do
       file_mock = Minitest::Mock.new
-      file_mock.expect :empty?, false
+      file_mock.expect :size, Integer
       file_mock.expect :delete, nil
       files << file_mock
     end

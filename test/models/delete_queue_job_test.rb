@@ -1,9 +1,10 @@
 require 'test_helper'
+require 'user_tokens_helper'
 
 class DeleteQueueJobTest < ActiveSupport::TestCase
 
   before(:all) do
-    @user = FactoryBot.create(:user, test_array: @@users_to_clean)
+    @user = gcs_bucket_test_user
     @basic_study = FactoryBot.create(:detached_study,
                                      name_prefix: 'DeleteQueue Test',
                                      user: @user,

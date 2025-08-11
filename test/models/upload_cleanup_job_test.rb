@@ -1,9 +1,10 @@
 require 'test_helper'
+require 'user_tokens_helper'
 
 class UploadCleanupJobTest < ActiveSupport::TestCase
 
   before(:all) do
-    @user = FactoryBot.create(:user, test_array: @@users_to_clean)
+    @user = gcs_bucket_test_user
     @study = FactoryBot.create(:study, user: @user, name_prefix: 'UploadCleanupJob Test', test_array: @@studies_to_clean)
   end
 

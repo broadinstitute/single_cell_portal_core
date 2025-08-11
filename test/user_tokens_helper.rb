@@ -6,3 +6,13 @@ def reset_user_tokens
     user.update_last_access_at!
   end
 end
+
+# since GCS buckets only allow a small number of "test" emails, we need to reuse one for simplicity
+def gcs_bucket_test_user
+  User.find_or_create_by(email: 'user@example.net') do |user|
+    user.uid = rand(10000..99999)
+    user.password = SecureRandom.uuid
+    user.metrics_uuid = SecureRandom.uuid
+    TosAcceptance.create(email: user.email) unless TosAcceptance.accepted?(user)
+  end
+end

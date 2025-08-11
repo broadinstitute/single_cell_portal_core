@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'user_tokens_helper'
 
 class SummaryStatsUtilsTest < ActiveSupport::TestCase
 
@@ -8,7 +9,7 @@ class SummaryStatsUtilsTest < ActiveSupport::TestCase
     @one_week_ago = @today - 1.week
     @one_month_ago = @today - 1.month
     # create some users
-    @user = FactoryBot.create(:admin_user, test_array: @@users_to_clean)
+    @user = gcs_bucket_test_user
     FactoryBot.create(:user, test_array: @@users_to_clean)
     FactoryBot.create(:api_user, test_array: @@users_to_clean)
     # create testing study with file in the bucket

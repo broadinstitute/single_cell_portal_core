@@ -102,7 +102,7 @@ class StorageService
     Parallel.map(files, in_threads: 10) do |file|
       next if age_cutoff && file.created_at.in_time_zone < age_cutoff
 
-      file.delete unless file.empty?
+      file.delete unless file.size == 0
     end
   end
 

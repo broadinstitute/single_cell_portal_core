@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'user_tokens_helper'
 
 class ImportServiceTest < ActiveSupport::TestCase
   before(:all) do
@@ -63,7 +64,7 @@ class ImportServiceTest < ActiveSupport::TestCase
 
   # this is a true integration test that will create a GCP bucket, then pull file from remote location and push
   test 'should copy file to bucket' do
-    user = FactoryBot.create(:user, test_array: @@users_to_clean)
+    user = gcs_bucket_test_user
     study = FactoryBot.create(:study,
                               name_prefix: 'ImportService test',
                               public: false,

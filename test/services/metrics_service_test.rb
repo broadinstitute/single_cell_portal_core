@@ -247,7 +247,7 @@ class MetricsServiceTest < ActiveSupport::TestCase
       authenticated: true,
       registeredForTerra: true,
       logger: 'app-backend',
-      domain: 'test.com',
+      domain: 'test.edu',
       distinct_id: @user.metrics_uuid,
       abTests: []
     }
