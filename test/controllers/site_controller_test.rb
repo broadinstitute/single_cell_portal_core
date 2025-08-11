@@ -118,7 +118,7 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
     mock_not_detached @study, :find_by do
       file = @study.study_files.sample
       public_mock = generate_download_file_mock([file])
-      ApplicationController.stub :firecloud_client, public_mock do
+      StorageService.stub :load_client, public_mock do
         get download_file_path(accession: @study.accession, study_name: @study.url_safe_name, filename: file.upload_file_name)
         assert_response 302
         # since this is an external redirect, we cannot call follow_redirect! but instead have to get the location header
@@ -128,7 +128,7 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
       end
 
       private_mock = generate_download_file_mock([file])
-      ApplicationController.stub :firecloud_client, private_mock do
+      StorageService.stub :load_client, private_mock do
         # set to private, validate study owner/admin can still access
         # note that download_file_path and download_private_file_path both resolve to the same method and enforce the same
         # restrictions; both paths are preserved for legacy redirects from published papers
@@ -167,8 +167,8 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
       file_mock = Minitest::Mock.new
       file_mock.expect :present?, true
       file_mock.expect :size, file.upload_file_size
-      mock.expect :execute_gcloud_method, file_mock, [:get_workspace_file, 0, String, String]
-      ApplicationController.stub :firecloud_client, mock do
+      mock.expect :load_study_bucket_file, file_mock, [String, String]
+      StorageService.stub :load_client, mock do
         download = download_file_path(
           accession: @study.accession, study_name: @study.url_safe_name, filename: file.upload_file_name
         )

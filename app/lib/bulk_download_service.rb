@@ -338,20 +338,20 @@ class BulkDownloadService
       output_path = output_pathname_map[safe_file[:name]]
     end
 
-    # begin
+    begin
       signed_url = client.download_bucket_file(bucket_name, file_location, expires: 1.day.to_i) # 1 day in seconds, 86400
       curl_config = [
           'url="' + signed_url + '"',
           'output="' + output_path + '"'
       ]
-    # rescue => e
-    #   ErrorTracker.report_exception(e, user, file, { storage_bucket: bucket_name })
-    #   Rails.logger.error "Error generating signed url for #{output_path}; #{e.message}"
-    #   curl_config = [
-    #       '# Error downloading ' + output_path + '.  ' +
-    #           'Did you delete the file in the bucket and not sync it in Single Cell Portal?'
-    #   ]
-    # end
+    rescue *StorageService::HANDLED_EXCEPTIONS => e
+      ErrorTracker.report_exception(e, user, file, { storage_bucket: bucket_name })
+      Rails.logger.error "Error generating signed url for #{output_path}; #{e.message}"
+      curl_config = [
+          '# Error downloading ' + output_path + '.  ' +
+              'Did you delete the file in the bucket and not sync it in Single Cell Portal?'
+      ]
+    end
     curl_config.join("\n")
   end
 

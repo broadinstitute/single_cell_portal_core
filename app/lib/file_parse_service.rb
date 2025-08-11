@@ -204,12 +204,10 @@ class FileParseService
 
   # clean up any cached study file copies that failed to ingest, including log files older than provided age limit
   def self.delete_ingest_artifacts(study, file_age_cutoff)
-    begin
-      # get all remote files under the 'parse_logs' folder
-      study.storage_provider.delete_study_bucket_files(study.bucket_id, prefix: 'parse_logs', file_age_cutoff:)
-    rescue *StorageService::HANDLED_EXCEPTIONS => e
-      ErrorTracker.report_exception(e, nil, study)
-    end
+    # get all remote files under the 'parse_logs' folder
+    StorageService.delete_study_bucket_files(study.storage_provider, study, prefix: 'parse_logs', file_age_cutoff:)
+  rescue *StorageService::HANDLED_EXCEPTIONS => e
+    ErrorTracker.report_exception(e, nil, study)
   end
 
   # gzip a local file on server (if necessary) in preparation for pushing to GCS bucket

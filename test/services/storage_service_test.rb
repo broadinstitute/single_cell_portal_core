@@ -1,10 +1,11 @@
 require 'test_helper'
+require 'user_helper'
 
 class StorageServiceTest < ActiveSupport::TestCase
   TESTING_CLIENTS = [StorageProvider::Gcs].freeze
 
   before(:all) do
-    @user = FactoryBot.create(:user, test_array: @@users_to_clean)
+    @user = gcs_bucket_test_user
     @study = FactoryBot.create(:detached_study,
                                name_prefix: 'Storage Service Test',
                                public: true,
@@ -50,7 +51,11 @@ class StorageServiceTest < ActiveSupport::TestCase
 
   test 'should create study bucket and set acls' do
     mock = Minitest::Mock.new
-    mock.expect :create_study_bucket, Google::Cloud::Storage::Bucket, [@study.bucket_id]
+    mock.expect :location, StorageProvider::Gcs::COMPUTE_REGION
+    mock.expect :create_study_bucket,
+                Google::Cloud::Storage::Bucket,
+                [@study.bucket_id],
+                **{ location: StorageProvider::Gcs::COMPUTE_REGION }
     mock.expect :enable_bucket_autoclass, Google::Cloud::Storage::Bucket, [@study.bucket_id]
     bucket_acl_mock = Minitest::Mock.new
     bucket_acl_mock.expect :writers, []

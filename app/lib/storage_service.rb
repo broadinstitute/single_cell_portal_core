@@ -100,9 +100,9 @@ class StorageService
     age_cutoff = opts.delete(:file_age_cutoff) || nil
     files = client.load_study_bucket_files(study.bucket_id, **opts)
     Parallel.map(files, in_threads: 10) do |file|
-      next if age_cutoff && file.created_at.in_time_zone < age_cutoff
+      next if file.size == 0 || age_cutoff && file.created_at.in_time_zone > age_cutoff
 
-      file.delete unless file.size == 0
+      file.delete
     end
   end
 

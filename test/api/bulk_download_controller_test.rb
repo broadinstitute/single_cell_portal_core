@@ -1,6 +1,6 @@
 require 'api_test_helper'
 require 'test_helper'
-require 'user_tokens_helper'
+require 'user_helper'
 require 'bulk_download_helper'
 require 'includes_helper'
 require 'detached_helper'
@@ -81,7 +81,7 @@ class BulkDownloadControllerTest < ActionDispatch::IntegrationTest
     mock_query_not_detached [study] do
       files = study.study_files.by_type(['Expression Matrix', 'Metadata'])
       mock = generate_signed_urls_mock(files)
-      FireCloudClient.stub :new, mock do
+      StorageService.stub :load_client, mock do
         execute_http_request(:post,
                              api_v1_bulk_download_auth_code_path,
                              request_payload: @auth_code_params,
@@ -132,14 +132,9 @@ class BulkDownloadControllerTest < ActionDispatch::IntegrationTest
 
   test 'single-study bulk download should include all study files' do
     study = @basic_study
+    study.reload
     mock_query_not_detached [study] do
-      mock = Minitest::Mock.new
-      @basic_study.study_files.each do |file|
-        bucket_id = @basic_study.bucket_id
-        file_location = file.bucket_location
-        url = "https://www.googleapis.com/storage/v1/b/#{bucket_id}/#{file_location}"
-        mock.expect :download_bucket_file, url, [bucket_id, file_location, Hash]
-      end
+      mock = generate_signed_urls_mock(study.study_files)
       StorageService.stub :load_client, mock do
         execute_http_request(:post,
                              api_v1_bulk_download_auth_code_path,
@@ -149,8 +144,7 @@ class BulkDownloadControllerTest < ActionDispatch::IntegrationTest
         auth_code = json['auth_code']
 
         execute_http_request(:get, api_v1_bulk_download_generate_curl_config_path(
-          auth_code: auth_code, accessions: study.accession)
-        )
+          auth_code: auth_code, accessions: study.accession))
         assert_response :success
 
         study.study_files.each do |study_file|
@@ -207,7 +201,7 @@ class BulkDownloadControllerTest < ActionDispatch::IntegrationTest
       dir_files = @files.values.flatten
       all_files = study_files + dir_files
       all_dirs_mock = generate_signed_urls_mock(all_files, parent_study: @basic_study)
-      FireCloudClient.stub :new, all_dirs_mock do
+      StorageService.stub :load_client, all_dirs_mock do
         execute_http_request(:get,
                              api_v1_bulk_download_generate_curl_config_path(
                                auth_code: auth_code,
@@ -246,7 +240,7 @@ class BulkDownloadControllerTest < ActionDispatch::IntegrationTest
         @basic_study_expression_file, @basic_study_metadata_file, @basic_study_cluster_file, new_study.study_files.first
       ]
       mock = generate_signed_urls_mock(all_files)
-      FireCloudClient.stub :new, mock do
+      StorageService.stub :load_client, mock do
         execute_http_request(:get, api_v1_bulk_download_generate_curl_config_path(
           auth_code: auth_code, accessions: [@basic_study.accession, new_study.accession])
         )

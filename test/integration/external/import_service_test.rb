@@ -1,5 +1,5 @@
 require 'test_helper'
-require 'user_tokens_helper'
+require 'user_helper'
 
 class ImportServiceTest < ActiveSupport::TestCase
   before(:all) do
