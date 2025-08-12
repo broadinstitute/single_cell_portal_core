@@ -152,30 +152,26 @@ module ImportServiceConfig
 
     test 'should import from service' do
       skip_if_api_down
-      study_name = '1-3-million-brain-cells-from-e18-mice'
       access_url = @configuration.file_access_info
       file_mock = ::Minitest::Mock.new
       file_mock.expect :generation, '123456789'
       # for study to save, we need to mock all Terra orchestration API calls for creating workspace & setting acls
-      fc_client_mock = ::Minitest::Mock.new
-      owner_group = { groupEmail: 'sa-owner-group@firecloud.org' }.with_indifferent_access
-      assign_workspace_mock!(fc_client_mock, owner_group, study_name)
-      AdminConfiguration.stub :find_or_create_ws_user_group!, owner_group do
-        ImportService.stub :copy_file_to_bucket, file_mock do
-          ApplicationController.stub :firecloud_client, fc_client_mock do
-            @configuration.stub :taxon_from, Taxon.new(common_name: 'human') do
-              study, study_file = @configuration.import_from_service
-              file_mock.verify
-              fc_client_mock.verify
-              assert study.persisted?
-              assert study_file.persisted?
-              assert_equal study.external_identifier, @attributes[:study_id]
-              assert_equal study_file.external_identifier, @attributes[:file_id]
-              # trim off query params to prevent test failures when catalog/version updates
-              trimmed_access_url = access_url.split('?').first
-              trimmed_external_url = study_file.external_link_url.split('?').first
-              assert_equal trimmed_external_url, trimmed_access_url
-            end
+      storage_service_mock = ::Minitest::Mock.new
+      assign_bucket_mock!(storage_service_mock)
+      ImportService.stub :copy_file_to_bucket, file_mock do
+        StorageService.stub :load_client, storage_service_mock do
+          @configuration.stub :taxon_from, Taxon.new(common_name: 'human') do
+            study, study_file = @configuration.import_from_service
+            file_mock.verify
+            storage_service_mock.verify
+            assert study.persisted?
+            assert study_file.persisted?
+            assert_equal study.external_identifier, @attributes[:study_id]
+            assert_equal study_file.external_identifier, @attributes[:file_id]
+            # trim off query params to prevent test failures when catalog/version updates
+            trimmed_access_url = access_url.split('?').first
+            trimmed_external_url = study_file.external_link_url.split('?').first
+            assert_equal trimmed_external_url, trimmed_access_url
           end
         end
       end

@@ -136,27 +136,4 @@ class StudyCreationTest < ActionDispatch::IntegrationTest
     cluster_group = study.cluster_groups.first
     assert_equal 30, cluster_group.points
   end
-
-  # new studies in PORTAL_NAMESPACE should have workspace owners set to SA owner group, not SA directly
-  test 'should assign service account owner group as workspace owner' do
-    study_name = "Workspace Owner #{@random_seed}"
-    study_params = {
-      study: {
-        name: study_name,
-        user_id: @user.id
-      }
-    }
-    post studies_path, params: study_params
-    follow_redirect!
-    study = Study.find_by(name: study_name)
-    assert study.present?, "Study did not successfully save"
-    sa_owner_group = AdminConfiguration.find_or_create_ws_user_group!
-    group_email = sa_owner_group['groupEmail']
-    workspace_acl = ApplicationController.firecloud_client.get_workspace_acl(study.firecloud_project, study.firecloud_workspace)
-    group_acl = workspace_acl['acl'][group_email]
-    assert group_acl['accessLevel'] == 'OWNER', "Did not correctly set #{group_email} to 'OWNER'; #{group_acl}"
-
-    # clean up
-    study.destroy_and_remove_workspace
-  end
 end

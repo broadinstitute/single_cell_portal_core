@@ -276,7 +276,7 @@ class Study
   field :external_identifier, type: String # ID from external service, used for tracking via ImportService
   field :imported_from, type: String # Human-readable tag for external service that study was imported from, e.g. HCA
   field :cloud_project, type: String, default: ENV['GOOGLE_CLOUD_PROJECT'] # name of cloud-based project where storage bucket lives
-  field :terra_study, type: Boolean # legacy handler for telling if a study was created in Terra originally
+  field :terra_study, type: Boolean, default: false # legacy handler for telling if a study was created in Terra originally
   ##
   #
   # SWAGGER DEFINITIONS
@@ -875,7 +875,7 @@ class Study
   # if a user should have access, but doesn't (403 response) then a FastPass request is issued to speed up the process
   # this is mainly used as a proxy for synchronizing service account bucket access faster in non-default projects
   def check_bucket_read_access(user: nil)
-    return nil if detached # exit for studies with no workspace
+    return nil if detached || !terra_study # exit for studies with no workspace
 
     client = user ? FireCloudClient.new(user:) : FireCloudClient.new
     client.check_bucket_read_access(firecloud_project, firecloud_workspace)
@@ -1924,15 +1924,16 @@ class Study
 
   def set_terra_cloud_project
     workspace = ApplicationController.firecloud_client.get_workspace(firecloud_project, firecloud_workspace)
-    return false unless workspace
-
     cloud_project = workspace.dig('workspace', 'googleProject')
-    return false unless cloud_project
-
     Rails.logger.info "Setting cloud project #{cloud_project} for study #{accession}"
     self.cloud_project = cloud_project
     self.terra_study = true
     save!(validate: false) # skip validations to avoid issues with older studies
+  rescue => e
+    Rails.logger.error "Error setting cloud project for study #{accession}: #{e.class}:#{e.message}"
+    ErrorTracker.report_exception(e, nil, self)
+    self.terra_study = false
+    save!(validate: false)
   end
 
   handle_asynchronously :set_terra_cloud_project

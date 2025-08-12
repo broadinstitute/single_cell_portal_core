@@ -125,7 +125,7 @@ module StorageProvider
   # * *returns*
   #  - +Various+ => result of the API call to upload the file
   def create_study_bucket_file(bucket_id, filepath, filename, **opts)
-    StorageService.call_client(self, :create_file, bucket_id, filepath, filename, **opts)
+    StorageService.call_client(self, :create_bucket_file, bucket_id, filepath, filename, **opts)
   end
 
   # copy a file to a new location in a bucket
