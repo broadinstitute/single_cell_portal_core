@@ -172,6 +172,7 @@ class StudyTest < ActiveSupport::TestCase
     study = FactoryBot.create(:detached_study,
                               name_prefix: 'Bucket Read Access Test',
                               user: @user,
+                              terra_study: true,
                               test_array: @@studies_to_clean)
     mock = Minitest::Mock.new
     mock.expect :check_bucket_read_access,

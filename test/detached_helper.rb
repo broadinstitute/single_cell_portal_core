@@ -72,6 +72,7 @@ end
 
 # helper to assign mocks for creating a study bucket
 def assign_bucket_mock!(mock)
+  mock.expect :location, String
   mock.expect :create_study_bucket, Google::Cloud::Storage::Bucket, [String], **{ location: String }
   mock.expect :enable_bucket_autoclass, String, [String]
   mock.expect :update_study_bucket_acl, String, [String, String], **{ role: Symbol }
