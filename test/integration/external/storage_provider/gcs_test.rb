@@ -115,7 +115,7 @@ module StorageProvider
 
     test 'should delete a file from bucket' do
       filename = 'cluster_example_2.txt'
-      File.open(Rails.root.join(file_to_delete = "test/test_data/#{filename}"))
+      file_to_delete = File.open(Rails.root.join("test/test_data/#{filename}"))
       @client.create_bucket_file(@bucket_name, file_to_delete, filename)
       assert @client.bucket_file_exists?(@bucket_name, filename), 'File should exist before deletion'
       @client.delete_bucket_file(@bucket_name, filename)
