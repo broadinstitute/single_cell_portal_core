@@ -179,6 +179,19 @@ module StorageProvider
     StorageService.call_client(self, :generate_api_url, bucket_id, filepath)
   end
 
+  # retrieve single file in a study bucket and localize to portal.  Performs chunked downloads on files > 50 MB
+  #
+  # * *params*
+  #   - +bucket_id+ (String) => ID of study bucket
+  #   - +filename+ (String) => name of file
+  #   - +destination+ (String) => destination path for downloaded file
+  #   - +opts+ (Hash) => extra options for download
+  #
+  # * *return*
+  #   - +File+ object
+  def localize_study_bucket_file(bucket_id, filename, destination, **opts)
+    StorageService.call_client(self, :localize_bucket_file, bucket_id, filename, destination, **opts)
+  end
   # read the contents of a file in a bucket into memory
   #
   # * *params*

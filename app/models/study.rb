@@ -934,6 +934,8 @@ class Study
 
   # check if a user has access to a study via a user group
   def user_in_group_share?(user, *permissions)
+    return false unless terra_study
+
     # check if api status is ok, otherwise exit without checking to prevent UI hanging on repeated calls
     if user.registered_for_firecloud && ApplicationController.firecloud_client.services_available?(FireCloudClient::SAM_SERVICE, FireCloudClient::RAWLS_SERVICE, FireCloudClient::THURLOE_SERVICE)
       group_shares = self.study_shares.keep_if {|share| share.is_group_share?}.select {|share| permissions.include?(share.permission)}.map(&:email)
@@ -1697,33 +1699,6 @@ class Study
   # MISCELLANOUS METHODS
   #
   ###
-
-  # check if all files for this study are still present in the bucket
-  # does not check generation tags for consistency - this is just a presence check
-  def verify_all_remotes
-    missing = []
-    files = self.study_files.where(queued_for_deletion: false, human_data: false, :parse_status.ne => 'parsing', status: 'uploaded')
-    directories = self.directory_listings.are_synced
-    all_locations = files.map(&:bucket_location)
-    all_locations += directories.map {|dir| dir.files.map {|file| file['name']}}.flatten
-    remotes = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_files, 0, self.bucket_id)
-    if remotes.next?
-      remotes = [] # don't use bucket list of files, instead verify each file individually
-    end
-    all_locations.each do |file_location|
-      match = self.verify_remote_file(remotes: remotes, file_location: file_location)
-      if match.nil?
-        missing << {filename: file_location, study: self.name, owner: self.user.email, reason: "File missing from bucket: #{self.bucket_id}"}
-      end
-    end
-    missing
-  end
-
-  # quick check to see if a single file is still in the study's bucket
-  # can use cached list of bucket files, or check bucket directly
-  def verify_remote_file(remotes:, file_location:)
-    remotes.any? ? remotes.detect {|remote| remote.name == file_location} : ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, self.bucket_id, file_location)
-  end
 
   # get the max date for a data embargo
   def max_embargo

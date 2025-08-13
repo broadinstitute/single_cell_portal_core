@@ -247,7 +247,7 @@ class StudyFileTest < ActiveSupport::TestCase
     mock.expect :content_type, 'text/tab-separated-values'
     mock.expect :size, 1.megabyte
     mock.expect :generation, '1234567890'
-    ApplicationController.firecloud_client.stub :execute_gcloud_method, mock do
+    @study.storage_provider.stub :load_study_bucket_file, mock do
       study_file = StudyFile.create!(
         study: @study, file_type: 'Cluster', name: 'Testing Cluster', remote_location: 'cluster_example.tsv'
       )

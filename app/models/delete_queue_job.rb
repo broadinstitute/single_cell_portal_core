@@ -327,7 +327,11 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
   # delete all AnnData "fragment" files upon study file deletion
   def delete_fragment_files(study:, study_file:)
     prefix = "_scp_internal/anndata_ingest/#{study.accession}_#{study_file.id}"
-    remotes = ApplicationController.firecloud_client.get_workspace_files(study.bucket_id, prefix:)
+    if study.terra_study
+      remotes = ApplicationController.firecloud_client.get_workspace_files(study.bucket_id, prefix:)
+    else
+      remotes = StorageService.load_study_bucket_files(study.storage_provider, study.bucket_id, prefix:)
+    end
     remotes.each(&:delete)
   end
 

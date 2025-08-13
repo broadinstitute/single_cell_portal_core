@@ -190,6 +190,60 @@ module StorageProvider
       file.copy(destination_name, **opts)
     end
 
+    # retrieve single file in a GCS bucket and localize to portal.  Performs chunked downloads on files > 50 MB
+    #
+    # * *params*
+    #   - +bucket_id+ (String) => ID of GCS bucket
+    #   - +filename+ (String) => name of file
+    #   - +destination+ (String) => destination path for downloaded file
+    #   - +opts+ (Hash) => extra options for download
+    #
+    # * *return*
+    #   - +File+ object
+    def localize_bucket_file(bucket_id, filename, destination, **opts)
+      file = bucket_file(bucket_id, filename)
+      # create a valid path by combining destination directory and filename, making sure no double / exist
+      end_path = [destination, filename].join('/').gsub(/\/\//, '/')
+      # gotcha in case file is in a subdirectory
+      if filename.include?('/')
+        path_parts = filename.split('/')
+        path_parts.pop
+        directory = File.join(destination, path_parts)
+        FileUtils.mkdir_p directory
+      end
+      # determine if a chunked download is needed
+      if file.size > 50.megabytes
+        Rails.logger.info "Performing chunked download for #{filename} from #{bucket_id}"
+        # we need to determine whether or not this file has been gzipped - if so, we have to make a copy and unset the
+        # gzip content-encoding as we cannot do range requests on gzipped data
+        if file.content_encoding == 'gzip'
+          new_file = file.copy file.name + '.tmp'
+          new_file.content_encoding = nil
+          remote = new_file
+        else
+          remote = file
+        end
+        size_range = 0..remote.size
+        local = File.new(end_path, 'wb')
+        size_range.each_slice(50.megabytes) do |range|
+          range_req = range.first..range.last
+          merged_opts = opts.merge(range: range_req)
+          buffer = remote.download merged_opts
+          buffer.rewind
+          local.write buffer.read
+        end
+        if file.content_encoding == 'gzip'
+          # clean up the temp copy
+          remote.delete
+        end
+        Rails.logger.info "Chunked download for #{filename} from #{bucket_id} complete"
+        # return newly-opened file (will need to check content type before attempting to parse)
+        local
+      else
+        file.download end_path, **opts
+      end
+    end
+
     # delete a file in a bucket
     #
     # * *params*

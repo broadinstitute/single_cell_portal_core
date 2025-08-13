@@ -63,29 +63,6 @@ class SummaryStatsUtils
       { count: user_count, description: "Count of returning users from #{one_week_ago} to #{today}" }
     end
 
-    # perform a sanity check to look for any missing files in remote storage
-    # returns a list of all missing files for entire portal for use in nightly_server_report
-    def storage_sanity_check
-      missing_files = []
-      valid_accessions = Study.where(queued_for_deletion: false, detached: false).pluck(:accession)
-      valid_accessions.each do |accession|
-        study = Study.find_by(accession: accession)
-        begin
-          study_missing = study.verify_all_remotes
-          missing_files += study_missing if study_missing.any?
-        rescue => e
-          # check if the bucket or the workspace is missing and mark study accordingly
-          study.set_study_detached_state(e)
-          ErrorTracker.report_exception(e, nil, {})
-          Rails.logger.error  "Error in retrieving remotes for #{study.name}: #{e.message}"
-          missing_files << {
-            filename: 'N/A', study: study.name, owner: study.user&.email, reason: "Error retrieving remotes: #{e.message}"
-          }
-        end
-      end
-      missing_files
-    end
-
     # disk usage stats
     def disk_usage
       stat = ::Sys::Filesystem.stat(Rails.root.to_s)

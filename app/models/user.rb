@@ -225,24 +225,10 @@ class User
     end
   end
 
-  # get an access token that can be used to stream a GCS storage object directly to the client
-  # uses SAM pet service accounts to issue token on user's behalf by adding the
-  # https://www.googleapis.com/auth/devstorage.read_only scope to the token
-  # will return nil if user is not registered for Terra as API call would return 401
-  # since workspaces can now be in a different GCP project, we need to source that from the workspace JSON
+  # use valid access token for storage object requests as we have the dev_storage.read_only scope
   def token_for_storage_object(study)
-    if self.refresh_token.present? && self.registered_for_firecloud
-      begin
-        workspace = ApplicationController.firecloud_client.get_workspace(study.firecloud_project, study.firecloud_workspace)
-        project_name = workspace.dig('workspace', 'googleProject') || FireCloudClient::PORTAL_NAMESPACE
-        client = FireCloudClient.new(user: self, project: project_name)
-        client.get_pet_service_account_token(project_name)
-      rescue RestClient::Exception
-        # returning nil here will be caught at the UI level and show an error message
-        # see UserProvider.js -> getReadOnlyToken() and userHasTerraProfile()
-        nil
-      end
-    end
+    issuer = study.public ? StorageService.load_client(study:, public_access: true) : self
+    issuer.valid_access_token
   end
 
   ###
@@ -450,7 +436,10 @@ class User
     self.get_billing_projects[:Owner].include?(billing_project)
   end
 
+  # @deprecated this needs to be refactored to use groups directly outside of Terra
   def add_to_portal_user_group
+    return true
+
     user_group_config = AdminConfiguration.find_by(config_type: 'Portal FireCloud User Group')
     if user_group_config.present?
       group_name = user_group_config.value

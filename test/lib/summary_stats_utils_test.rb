@@ -64,16 +64,6 @@ class SummaryStatsUtilsTest < ActiveSupport::TestCase
     assert_equal 0, studies_created
   end
 
-  test 'should verify all remote files' do
-    files_missing = SummaryStatsUtils.storage_sanity_check
-    missing_csv = files_missing.detect {|entry| entry[:filename] == 'foo.csv'}
-    reason = "File missing from bucket: #{@study.bucket_id}"
-    assert missing_csv.present?, "Did not find expected missing file of 'foo.csv'"
-    assert missing_csv[:study] == @study.name
-    assert missing_csv[:owner] == @study.user.email
-    assert missing_csv[:reason] == reason
-  end
-
   test 'should get disk usage stats' do
     disk_usage_keys = [:total_space, :space_used, :space_free, :percent_used, :mount_point]
     disk_usage = SummaryStatsUtils.disk_usage
