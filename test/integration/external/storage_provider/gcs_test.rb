@@ -85,7 +85,7 @@ module StorageProvider
 
     test 'should upload a file to bucket' do
       filename = 'workspace_samples.tsv'
-      uploaded_file = @client.create_bucket_file(@bucket_name, "test/test_data/#{filename}", filename)
+      uploaded_file = @client.create_bucket_file(@bucket_name, File.open(Rails.root.join("test/test_data/#{filename}")), filename)
       assert uploaded_file.present?, 'File upload failed'
       assert_equal filename, uploaded_file.name, 'Uploaded file name does not match expected name'
     end
@@ -115,7 +115,7 @@ module StorageProvider
 
     test 'should delete a file from bucket' do
       filename = 'cluster_example_2.txt'
-      file_to_delete = "test/test_data/#{filename}"
+      File.open(Rails.root.join(file_to_delete = "test/test_data/#{filename}"))
       @client.create_bucket_file(@bucket_name, file_to_delete, filename)
       assert @client.bucket_file_exists?(@bucket_name, filename), 'File should exist before deletion'
       @client.delete_bucket_file(@bucket_name, filename)
