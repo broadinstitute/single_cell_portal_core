@@ -1717,30 +1717,11 @@ class Study
   #
   ###
 
-  # shortcut method to send an uploaded file straight to firecloud from parser
+  # @deprecated use StorageService.upload_study_file directly instead
+  # shortcut method to send an uploaded file straight to storage bucket from parser
   # will compress plain text files before uploading to reduce storage/egress charges
   def send_to_firecloud(file)
-    begin
-      Rails.logger.info "Uploading #{file.bucket_location}:#{file.id} to Terra workspace: #{firecloud_workspace}"
-      was_gzipped = FileParseService.compress_file_for_upload(file)
-      opts = was_gzipped ? { content_encoding: 'gzip' } : {}
-      remote_file = ApplicationController.firecloud_client.execute_gcloud_method(
-        :create_workspace_file, 0, bucket_id, file.upload.path, file.bucket_location, opts
-      )
-      # store generation tag to know whether a file has been updated in GCP
-      Rails.logger.info "Updating #{file.bucket_location}:#{file.id} with generation tag: #{remote_file.generation} after successful upload"
-      file.update(generation: remote_file.generation)
-      Rails.logger.info "Upload of #{file.bucket_location}:#{file.id} complete, scheduling cleanup job"
-      # schedule the upload cleanup job to run in two minutes
-      run_at = 2.minutes.from_now
-      Delayed::Job.enqueue(UploadCleanupJob.new(file.study, file, 0), run_at:)
-      Rails.logger.info "cleanup job for #{file.bucket_location}:#{file.id} scheduled for #{run_at}"
-    rescue => e
-      ErrorTracker.report_exception(e, user, self, file)
-      Rails.logger.error "Unable to upload '#{file.bucket_location}:#{file.id} to study bucket #{bucket_id}; #{e.message}"
-      # notify admin of failure so they can push the file and relaunch parse
-      SingleCellMailer.notify_admin_upload_fail(file, e).deliver_now
-    end
+    StorageService.upload_study_file(storage_provider, self, file)
   end
 
   ###

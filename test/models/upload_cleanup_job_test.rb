@@ -75,7 +75,9 @@ class UploadCleanupJobTest < ActiveSupport::TestCase
 
     # clean up
     @study_file.update(remote_location: nil)
-    @study.storage_provider.delete_study_bucket_file(@study.bucket_id, @study_file.bucket_location)
+    if @study.storage_provider.study_bucket_file_exists?(@study.bucket_id, @study_file.bucket_location)
+      @study.storage_provider.delete_study_bucket_file(@study.bucket_id, @study_file.bucket_location)
+    end
     @study_file.destroy
   end
 end

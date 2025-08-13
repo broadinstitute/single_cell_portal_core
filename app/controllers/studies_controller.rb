@@ -478,7 +478,7 @@ class StudiesController < ApplicationController
   # for files that don't need parsing, send directly to firecloud on upload completion
   def send_to_firecloud
     @study_file = StudyFile.find_by(study_id: params[:id], upload_file_name: params[:file])
-    @study.delay.send_to_firecloud(@study_file)
+    StorageService.upload_study_file(@study.storage_provider, @study, @study_file)
     changes = ["Study file added: #{@study_file.upload_file_name}"]
     if @study.study_shares.any?
       SingleCellMailer.share_update_notification(@study, changes, current_user).deliver_now

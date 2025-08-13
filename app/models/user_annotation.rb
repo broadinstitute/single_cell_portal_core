@@ -414,7 +414,7 @@ class UserAnnotation
         # push to FC
 
         Rails.logger.info "#{Time.zone.now}: new source file for #{cluster.name} in study: #{cluster.study.name} successfully created, pushing to FireCloud"
-        study.send_to_firecloud(study_file)
+        StorageService.upload_study_file(study.storage_provider, study, study_file)
 
         # queue jobs to delete annotation caches & annotation itself
         cache_key = self.cache_removal_key

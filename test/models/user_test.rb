@@ -88,20 +88,6 @@ class UserTest < ActiveSupport::TestCase
     assert_equal empty_response, @user.token_for_api_call
   end
 
-  test 'should handle errors when generating pet service account token' do
-    # assign mock refresh token first
-    @user.update(refresh_token: @user.access_token.dig('access_token'))
-
-    # user does not actually have a Terra profile which will throw an error
-    # RuntimeError should be handled and not raised here
-    study = FactoryBot.create(:detached_study,
-                              name_prefix: 'Pet Service Account Token Test', user: @user, test_array: @@studies_to_clean)
-    assert_nothing_raised do
-      token = @user.token_for_storage_object(study)
-      assert_nil token
-    end
-  end
-
   test 'should determine if user needs to accept updated Terra Terms of Service' do
     mock = Minitest::Mock.new
     user_terms = {

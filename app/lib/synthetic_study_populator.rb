@@ -136,7 +136,7 @@ class SyntheticStudyPopulator
           # make sure we still create needed bundled for unparsed files (e.g. bam/bai files)
           FileParseService.create_bundle_from_file_options(study_file, study)
           unless study.detached
-            study.send_to_firecloud(study_file)
+            StorageService.upload_study_file(study.storage_provider, study, study_file)
           end
         end
       ensure

@@ -247,7 +247,9 @@ class StudyFileTest < ActiveSupport::TestCase
     mock.expect :content_type, 'text/tab-separated-values'
     mock.expect :size, 1.megabyte
     mock.expect :generation, '1234567890'
-    @study.storage_provider.stub :load_study_bucket_file, mock do
+    provider_mock = Minitest::Mock.new
+    provider_mock.expect :load_study_bucket_file, mock, [@study.bucket_id, 'cluster_example.tsv']
+    StorageService.stub :load_client, provider_mock do
       study_file = StudyFile.create!(
         study: @study, file_type: 'Cluster', name: 'Testing Cluster', remote_location: 'cluster_example.tsv'
       )
@@ -258,6 +260,7 @@ class StudyFileTest < ActiveSupport::TestCase
       assert_equal '1234567890', study_file.generation
       assert_equal 'bucket', study_file.upload_trigger
       mock.verify
+      provider_mock.verify
     end
   end
 end

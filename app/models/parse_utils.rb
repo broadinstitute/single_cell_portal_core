@@ -298,7 +298,7 @@ class ParseUtils
       if remote.nil?
         begin
           Rails.logger.info "Preparing to upload ordinations file: #{coordinate_file.upload_file_name}:#{coordinate_file.id} to FireCloud"
-          study.send_to_firecloud(coordinate_file)
+          StorageService.upload_study_file(study.storage_provider, study, coordinate_file)
         rescue => e
           ErrorTracker.report_exception(e, user, study, coordinate_file, { opts: opts})
           Rails.logger.info "Cluster file: #{coordinate_file.upload_file_name}:#{coordinate_file.id} failed to upload to FireCloud due to #{e.message}"
@@ -482,7 +482,7 @@ class ParseUtils
       if remote.nil?
         begin
           Rails.logger.info "Preparing to upload gene list file: #{marker_file.upload_file_name}:#{marker_file.id} to FireCloud"
-          study.send_to_firecloud(marker_file)
+          StorageService.upload_study_file(study.storage_provider, study, marker_file)
         rescue => e
           ErrorTracker.report_exception(e, user, study, marker_file, { opts: opts})
           Rails.logger.info "Gene List file: #{marker_file.upload_file_name}:#{marker_file.id} failed to upload to FireCloud due to #{e.message}"
