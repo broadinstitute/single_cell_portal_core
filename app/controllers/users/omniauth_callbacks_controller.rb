@@ -48,7 +48,7 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
   # then raise a SecurityError and halt execution
   def self.validate_scopes_from_params(params)
     requested_scopes = params[:scope].split
-    configured_scopes = SingleCellPortal::Application::BASIC_GOOGLE_SCOPES
+    configured_scopes = SingleCellPortal::Application::ALL_GOOGLE_SCOPES
     requested_scopes.each do |scope|
       # trim auth URL off of name for comparison
       scope_name = scope.starts_with?('https://www.googleapis.com/auth/') ? scope.split('/').last : scope

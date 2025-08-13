@@ -1,25 +1,7 @@
 <% content_for(:html_title) { 'New study - Single Cell Portal' } %>
 
 <h1>New study</h1>
-<div class="bs-callout bs-callout-default" id="firecloud-disclaimer">
-  <h4>Data file storage & workspaces</h4>
-  <p>All uploaded data files for studies are stored in <%= link_to 'Terra', 'https://app.terra.bio/', target: :_blank,
-                                                                   rel: 'noopener noreferrer' %> workspaces.
-    If you do not already have a Terra account, you will receive an invitation email after you create your study.
-    While you can interact with your uploaded files directly through Single Cell Portal, you must register for Terra
-    before you can access files in your Terra workspace.  You will also receive an email
-    that Single Cell Portal service account has shared the study workspace with you.</p>
-  <p>You may also create a study based on an existing workspace you already own.  Simply select <strong>"Yes"</strong>
-    under <strong>"Use existing workspace?"</strong> and then provide the name in the text box.</p>
-  <h4>Billing projects</h4>
-  <p>You must select a billing project when creating your study.  You may use the default project, but you will not be
-    allowed to run any computes in your workspace.  If you wish to run computes, then you must
-    <%= scp_link_to 'create a billing project', billing_projects_path %> (using a Google billing account that you own)
-    before creating this study.  <strong>By selecting a project for your study other than the default project, you
-    will be granting Single Cell Portal access to your billing project</strong>.</p>
-  <p class="text-danger"><strong><i class="fas fa-fw fa-exclamation-triangle"></i> You cannot change the billing project
-    of a workspace once it has been created.</strong></p>
-  <br/>
+<div class="bs-callout bs-callout-default">
   <h4>Required file format & ontologies</h4>
   <p>Studies must have a metadata file specifying: <strong>species</strong>, <strong>disease</strong>, <strong>organ</strong>,
     <strong>library_preparation_protocol</strong>, <strong>sex</strong>, <strong>cell name</strong>, <strong>biosample_id</strong>,
@@ -41,7 +23,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h4 class="text-center">Creating study and provisioning workspace... Please wait<br/></h4>
+        <h4 class="text-center">Creating study and provisioning storage... Please wait<br/></h4>
       </div>
       <div class="modal-body">
         <div class="spinner-target" id="create-study-spinner"></div>

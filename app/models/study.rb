@@ -1778,7 +1778,7 @@ class Study
 
   # set access for the readonly service account if a study is public
   def set_readonly_access(grant_access=true, manual_set=false)
-    unless Rails.env.test? || self.queued_for_deletion || self.detached
+    unless Rails.env.test? || self.queued_for_deletion || self.detached || !terra_study
       if manual_set || self.public_changed? || self.new_record?
         if self.firecloud_workspace.present? && self.firecloud_project.present? && ApplicationController.read_only_firecloud_client.present?
           access_level = self.public? ? 'READER' : 'NO ACCESS'
@@ -1801,15 +1801,20 @@ class Study
     # forbidden, does not have storage.buckets.get access => resulting from 403 when accessing bucket as ACLs
     # have been revoked pending delete
     if /(nil\:NilClass|does not have storage.buckets.get access|forbidden)/.match(error.message)
-      Rails.logger.error "Marking #{self.name} as 'detached' due to error reading bucket files; #{error.class.name}: #{error.message}"
-      self.update(detached: true)
+      Rails.logger.error "Marking #{accession} as 'detached' due to error reading bucket files; #{error.class.name}: #{error.message}"
+      update(detached: true)
     else
       # check if workspace is still available, otherwise mark detached
       begin
-        ApplicationController.firecloud_client.get_workspace(self.firecloud_project, self.firecloud_workspace)
-      rescue RestClient::Exception => e
-        Rails.logger.error "Marking #{self.name} as 'detached' due to missing workspace: #{self.firecloud_project}/#{self.firecloud_workspace}"
-        self.update(detached: true)
+        if terra_study
+          ApplicationController.firecloud_client.get_workspace(self.firecloud_project, self.firecloud_workspace)
+        else
+          storage_provider.load_study_bucket(bucket_id)
+        end
+      rescue *StorageService::HANDLED_EXCEPTIONS
+        entity = terra_study ? "#{firecloud_project}/#{firecloud_workspace}" : bucket_id
+        Rails.logger.error "Marking #{accession} as 'detached' due to missing workspace or bucket: #{entity}"
+        update(detached: true)
       end
     end
   end

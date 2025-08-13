@@ -55,7 +55,7 @@ module SingleCellPortal
     # basic scopes are user profile, email, and openid, and do not require user consent to request during auth handshake
     BASIC_GOOGLE_SCOPES = %w(email profile userinfo.email userinfo.profile openid)
     # additional scopes require user consent to request during auth handshake
-    ADDITIONAL_GOOGLE_SCOPES = %w(https://www.googleapis.com/auth/devstorage.read_only)
+    ADDITIONAL_GOOGLE_SCOPES = %w(devstorage.read_only)
     # all scopes that can be requested by the application
     ALL_GOOGLE_SCOPES = (BASIC_GOOGLE_SCOPES + ADDITIONAL_GOOGLE_SCOPES).freeze
 

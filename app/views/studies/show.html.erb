@@ -53,6 +53,7 @@
                                     class: 'btn btn-primary', id: 'study-accession-link' %>
                   </td>
                 </tr>
+                <% if @study.terra_study %>
                 <tr>
                   <td>Terra Project & Workspace</td>
                   <td><%= @study.firecloud_project %>/<%= @study.firecloud_workspace %></td>
@@ -63,6 +64,7 @@
                                    rel: 'noopener noreferrer' %>
                   </td>
                 </tr>
+                <% end %>
                 <tr>
                   <td>Google Storage Bucket</td>
                   <td><%= @study.bucket_id %></td>

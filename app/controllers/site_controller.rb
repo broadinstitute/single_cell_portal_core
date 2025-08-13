@@ -749,7 +749,7 @@ class SiteController < ApplicationController
 
   # check compute permissions for study
   def check_compute_permissions
-    if !user_signed_in? || !@study.can_compute?(current_user)
+    if @study.terra_study && (!user_signed_in? || !@study.can_compute?(current_user))
       @alert = "You do not have permission to perform that action.  #{SCP_SUPPORT_EMAIL}"
       respond_to do |format|
         format.js {render action: :notice}
