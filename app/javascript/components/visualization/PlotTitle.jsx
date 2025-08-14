@@ -54,7 +54,7 @@ export function getTitleTexts(cluster, genes, consensus, subsample, isCorrelated
 
 /** Renders a plot title for scatter plots */
 export default function PlotTitle({
-  titleTexts, isCorrelatedScatter, correlation
+  titleTexts, isCorrelatedScatter, correlation, numPoints
 }) {
   const tooltipText =
     `If this value looks different than what you expect given the plot,
@@ -63,7 +63,9 @@ export default function PlotTitle({
   const [titleText, detailText] = titleTexts
 
   return <h5 className="plot-title">
-    <span className="cluster-title">{titleText} </span>
+    <span className="cluster-title">{titleText} </span> { numPoints &&
+    <span className='badge badge-inverse cluster-cell-count'>{numPoints} cells</span>
+  }
     <span className="detail"> {detailText} </span>
     { isCorrelatedScatter && !!correlation &&
     <>

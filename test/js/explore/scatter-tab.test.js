@@ -187,9 +187,9 @@ describe('getNewContextMap correctly assigns contexts', () => {
 
     expect(plotTitles).toHaveLength(4)
     const expectedTitles = [
-      'farsa expression clusterA',
+      'farsa expression 130 cells clusterA',
       'clusterA',
-      'farsa expression spatialClusterA',
+      'farsa expression 130 cells spatialClusterA',
       'spatialClusterA'
     ]
     plotTitles.forEach((titleEl, index) => {
