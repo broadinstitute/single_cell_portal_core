@@ -605,7 +605,9 @@ function RawScatterPlot({
       <PlotTitle
         titleTexts={titleTexts}
         isCorrelatedScatter={isCorrelatedScatter}
-        correlation={bulkCorrelation}/>
+        correlation={bulkCorrelation}
+        numPoints={scatterData?.numPoints}
+      />
       { hasMissingAnnot &&
         <div className="alert-warning text-center error-boundary">
           "{cluster}" does not have the requested annotation {loadedAnnotation !== '----' && loadedAnnotation}
