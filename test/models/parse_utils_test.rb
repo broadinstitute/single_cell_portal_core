@@ -23,9 +23,11 @@ class ParseUtilsTest < ActiveSupport::TestCase
     # add mocks to skip pushing file to bucket
     file_mock = Minitest::Mock.new
     file_mock.expect :nil?, true
+    2.times { file_mock.expect :generation, '1234567890' }
     mock = Minitest::Mock.new
     mock.expect :load_study_bucket_file, file_mock, [@basic_study.bucket_id, gene_list.bucket_location]
-
+    mock.expect :create_study_bucket_file, file_mock,
+                [@basic_study.bucket_id, String, String], **{ content_encoding: 'gzip' }
     StorageService.stub :load_client, mock do
       ParseUtils.initialize_precomputed_scores(@basic_study, gene_list, @user)
       precomputed_score = @basic_study.precomputed_scores.find_by(name: gene_list_name)

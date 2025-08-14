@@ -365,7 +365,7 @@ class ParseUtils
         Rails.logger.info "Parsing #{marker_file.name}:#{marker_file.id} as application/gzip"
         file = Zlib::GzipReader.open(@file_location)
       else
-        Rails.logger.info "#Parsing #{marker_file.name}:#{marker_file.id} as text/plain"
+        Rails.logger.info "Parsing #{marker_file.name}:#{marker_file.id} as text/plain"
         file = File.open(@file_location, 'rb')
       end
 

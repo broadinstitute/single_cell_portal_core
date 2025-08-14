@@ -164,7 +164,7 @@ module StorageProvider
     #
     # * *params*
     #   - +bucket_id+ (String) => ID of study GCP bucket
-    #   - +filepath+ (String) => path to file
+    #   - +filepath+ (String, File) => File object or path to file
     #   - +filename+ (String) => name of file
     #   - +opts+ (Hash) => extra options for create_file
     #
