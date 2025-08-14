@@ -1,9 +1,10 @@
 require 'integration_test_helper'
 require 'api_test_helper'
-require 'user_tokens_helper'
+require 'user_helper'
 require 'test_helper'
 require 'includes_helper'
 require 'detached_helper'
+require 'user_helper'
 
 class StudyValidationTest < ActionDispatch::IntegrationTest
 
@@ -11,8 +12,8 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
     # make sure all studies/users have been removed as dangling references can sometimes cause false negatives/failures
     StudyCleanupTools.destroy_all_studies_and_workspaces
     User.destroy_all
-    @user = FactoryBot.create(:admin_user, test_array: @@users_to_clean)
-    @sharing_user = FactoryBot.create(:user, test_array: @@users_to_clean)
+    @user = gcs_bucket_test_user
+    @sharing_user = gcs_bucket_sharing_user
     @random_seed = SecureRandom.uuid
     @study = FactoryBot.create(:study,
                                name_prefix: 'Main Validation Study',
@@ -133,7 +134,7 @@ class StudyValidationTest < ActionDispatch::IntegrationTest
       e[:object].reload # address potential race condition between parse_status setting to 'failed' and DeleteQueueJob executing
       assert_equal 'failed', e[:object].parse_status, "Incorrect parse_status for #{e[:name]}"
       # check that file is cached in parse_logs/:id folder in the study bucket
-      cached_file = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, e[:cache_location])
+      cached_file = study.storage_provider.get_study_bucket_file(study.bucket_id, e[:cache_location])
       assert cached_file.present?, "Did not find cached file at #{e[:cache_location]} in #{study.bucket_id}"
     end
 

@@ -23,10 +23,11 @@ class HcaAzulClient
   # Default headers for API requests
   DEFAULT_HEADERS = {
     'Accept' => 'application/json',
-    'Content-Type' => 'application/json',
     'x-app-id' => 'single-cell-portal',
     'x-domain-id' => "#{ENV['HOSTNAME']}"
   }.freeze
+
+  DEFAULT_NON_GET_HEADERS = DEFAULT_HEADERS.deep_dup.merge({ 'Content-Type' => 'application/json' }).freeze
 
   # Ignore stop words, as well as the term cell or cells as they are too common in Azul
   IGNORED_WORDS = (StudySearchService::STOP_WORDS + %w[cell cells]).uniq.freeze
@@ -104,7 +105,8 @@ class HcaAzulClient
   # * *raises*
   #   - (RestClient::Exception) => if HTTP request fails for any reason
   def execute_http_request(http_method, path, payload = nil)
-    response = RestClient::Request.execute(method: http_method, url: path, payload:, headers: DEFAULT_HEADERS)
+    headers = http_method.to_s.downcase == 'get' ? DEFAULT_HEADERS : DEFAULT_NON_GET_HEADERS
+    response = RestClient::Request.execute(method: http_method, url: path, payload:, headers:)
     # handle response using helper
     handle_response(response)
   end

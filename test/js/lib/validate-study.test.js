@@ -56,27 +56,18 @@ function createSelect(displayLabel, id, value, attrs={}) {
 
 /** Create new study form DOM elements */
 function createStudyForm(
-  name, project, workspace, useExistingWorkspace, isPublic, embargo
+  name, isPublic, embargo
 ) {
   const form = document.createElement('form')
 
   const nameInput = createTextInput('Name', 'name', name)
   form.appendChild(nameInput)
 
-  const projectMenu = createSelect('Terra billing project', 'firecloud_project', project)
-  form.appendChild(projectMenu)
-
   const embargoInput = createInput('Data release date', 'embargo', embargo, { type: 'date', max: MAX_DATE })
   form.appendChild(embargoInput)
 
   const isPublicInput = createSelect('Public', 'public', isPublic)
   form.appendChild(isPublicInput)
-
-  const useExistingMenu = createSelect('Use existing workspace?', 'use_existing_workspace', useExistingWorkspace)
-  form.appendChild(useExistingMenu)
-
-  const workspaceInput = createTextInput('Existing Terra workspace', 'firecloud_workspace', workspace)
-  form.appendChild(workspaceInput)
 
   return form
 }
@@ -85,12 +76,9 @@ describe('Validation of new studies, using client-side functions', () => {
 
   it('shows no errors for valid study', () => {
     const name = 'Test study'
-    const project = 'Default project'
-    const workspace = ''
-    const useExistingWorkspace = '0'
     const isPublic = '1'
     const embargo = ''
-    const studyForm = createStudyForm(name, project, workspace, useExistingWorkspace, isPublic, embargo)
+    const studyForm = createStudyForm(name, isPublic, embargo)
 
     // Helpful debug (keep uncommented, but don't remove):
     // console.log('studyForm.innerHTML', studyForm.innerHTML)
@@ -107,12 +95,9 @@ describe('Validation of new studies, using client-side functions', () => {
     const excessiveDate = futureDate.toISOString().split('T')[0] // 3 years from today
 
     const name = 'Test study'
-    const project = 'Default project'
-    const workspace = ''
-    const useExistingWorkspace = '0'
     const isPublic = '1'
     const embargo = excessiveDate
-    const studyForm = createStudyForm(name, project, workspace, useExistingWorkspace, isPublic, embargo)
+    const studyForm = createStudyForm(name, isPublic, embargo)
 
     // Helpful debug (keep uncommented, but don't remove):
     // console.log('studyForm.innerHTML', studyForm.innerHTML)
@@ -128,12 +113,9 @@ describe('Validation of new studies, using client-side functions', () => {
     const sameDay = today.toISOString().split('T')[0] // 3 years from today
 
     const name = 'Test study'
-    const project = 'Default project'
-    const workspace = ''
-    const useExistingWorkspace = '0'
     const isPublic = '1'
     const embargo = sameDay
-    const studyForm = createStudyForm(name, project, workspace, useExistingWorkspace, isPublic, embargo)
+    const studyForm = createStudyForm(name, isPublic, embargo)
 
     // Helpful debug (keep uncommented, but don't remove):
     // console.log('studyForm.innerHTML', studyForm.innerHTML)
@@ -144,33 +126,13 @@ describe('Validation of new studies, using client-side functions', () => {
     expect(errors[0].innerHTML.includes('If embargoed, date must be')).toEqual(true)
   })
 
-  it('shows error when using existing workspace, but no workspace provided', () => {
-    const name = 'Test study'
-    const project = 'Default project'
-    const workspace = ''
-    const useExistingWorkspace = '1' // "Yes"
-    const isPublic = '1'
-    const embargo = ''
-    const studyForm = createStudyForm(name, project, workspace, useExistingWorkspace, isPublic, embargo)
-
-    // Helpful debug (keep uncommented, but don't remove):
-    // console.log('studyForm.innerHTML', studyForm.innerHTML)
-
-    validateStudy(studyForm)
-    const errors = studyForm.querySelectorAll('.validation-error')
-    expect(errors).toHaveLength(1)
-    const expectedMessage = 'Enter a workspace name, or set "Use existing workspace?" to "No".'
-    expect(errors[0].innerHTML).toEqual(expectedMessage)
-  })
-
   it('shows multiple errors when warranted', () => {
+    const today = new Date()
+    const sameDay = today.toISOString().split('T')[0] // 3 years from today
     const name = '' // Error: no study name
-    const project = 'Default project'
-    const workspace = '' // Error: need workspace when using existing workspace
-    const useExistingWorkspace = '1'
     const isPublic = '1'
-    const embargo = ''
-    const studyForm = createStudyForm(name, project, workspace, useExistingWorkspace, isPublic, embargo)
+    const embargo = sameDay
+    const studyForm = createStudyForm(name, isPublic, embargo)
 
     // Helpful debug (keep uncommented, but don't remove):
     // console.log('studyForm.innerHTML', studyForm.innerHTML)

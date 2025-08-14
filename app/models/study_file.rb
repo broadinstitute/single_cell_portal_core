@@ -754,7 +754,7 @@ class StudyFile
   end
 
   def api_url
-    api_url = ApplicationController.firecloud_client.execute_gcloud_method(:generate_api_url, 0, self.study.bucket_id, self.bucket_location)
+    api_url = StorageService.get_api_url(study.storage_provider, study, self)
     api_url + '?alt=media'
   end
 
@@ -1518,11 +1518,9 @@ class StudyFile
     # first sanitize remote_location to remove gs:// or bucket_id
     trimmed_path = self.remote_location.gsub(%r{(gs://)?#{study.bucket_id}/?}, '')
     self.remote_location = trimmed_path
-    remote = ApplicationController.firecloud_client.execute_gcloud_method(
-      :get_workspace_file, 0, study.bucket_id, self.remote_location
-    )
+    remote = study.storage_provider.get_study_bucket_file(study.bucket_id, remote_location)
     if remote.nil?
-      errors.add(:remote_location, "is invalid - no file found at #{self.remote_location}")
+      errors.add(:remote_location, "is invalid - no file found at #{remote_location}")
     else
       self.status = 'uploaded'
       self.upload_file_name = remote.name.split('/').last

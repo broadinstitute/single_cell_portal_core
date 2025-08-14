@@ -1,9 +1,10 @@
 require 'test_helper'
+require 'user_helper'
 
 class DeleteQueueJobTest < ActiveSupport::TestCase
 
   before(:all) do
-    @user = FactoryBot.create(:user, test_array: @@users_to_clean)
+    @user = gcs_bucket_test_user
     @basic_study = FactoryBot.create(:detached_study,
                                      name_prefix: 'DeleteQueue Test',
                                      user: @user,
@@ -80,7 +81,7 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
     organs = %w[brain brain heart brain heart heart brain]
     raw_matrix = FactoryBot.create(:expression_file,
                                    name: 'raw.txt',
-                                   study: study,
+                                   study:,
                                    expression_file_info: {
                                      is_raw_counts: true,
                                      units: 'raw counts',
@@ -98,11 +99,11 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
 
     cluster_file_1 = FactoryBot.create(:cluster_file,
                                        name: 'cluster_diffexp_1.txt',
-                                       study: study,
+                                       study:,
                                        cell_input: {
                                          x: coordinates,
                                          y: coordinates,
-                                         cells: cells
+                                         cells:
                                        },
                                        annotation_input: [
                                          { name: 'species', type: 'group', values: species }
@@ -110,42 +111,42 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
 
     cluster_file_2 = FactoryBot.create(:cluster_file,
                                        name: 'cluster_diffexp_2.txt',
-                                       study: study,
+                                       study:,
                                        cell_input: {
                                          x: coordinates,
                                          y: coordinates,
-                                         cells: cells
+                                         cells:
                                        },
                                        annotation_input: [
                                          { name: 'disease', type: 'group', values: diseases }
                                        ])
 
-    cluster_1 = ClusterGroup.find_by(study: study, study_file: cluster_file_1)
-    cluster_2 = ClusterGroup.find_by(study: study, study_file: cluster_file_2)
+    cluster_1 = ClusterGroup.find_by(study:, study_file: cluster_file_1)
+    cluster_2 = ClusterGroup.find_by(study:, study_file: cluster_file_2)
 
     metadata_file = FactoryBot.create(:metadata_file,
                                       name: 'metadata.txt',
                                       cell_input: cells,
-                                      study: study,
+                                      study:,
                                       annotation_input: [
                                         { name: 'category', type: 'group', values: categories },
                                         { name: 'organ', type: 'group', values: organs }
                                       ])
 
     DifferentialExpressionResult.create(
-      study: study, cluster_group: cluster_1, annotation_name: 'species',
+      study:, cluster_group: cluster_1, annotation_name: 'species',
       annotation_scope: 'cluster', matrix_file_id: raw_matrix.id
     )
     DifferentialExpressionResult.create(
-      study: study, cluster_group: cluster_2, annotation_name: 'disease',
+      study:, cluster_group: cluster_2, annotation_name: 'disease',
       annotation_scope: 'cluster', matrix_file_id: raw_matrix.id
     )
     DifferentialExpressionResult.create(
-      study: study, cluster_group: cluster_1, annotation_name: 'category',
+      study:, cluster_group: cluster_1, annotation_name: 'category',
       annotation_scope: 'study', matrix_file_id: raw_matrix.id
     )
     DifferentialExpressionResult.create(
-      study: study, cluster_group: cluster_2, annotation_name: 'organ',
+      study:, cluster_group: cluster_2, annotation_name: 'organ',
       annotation_scope: 'study', matrix_file_id: raw_matrix.id
     )
 
@@ -154,22 +155,22 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
       file_mock = Minitest::Mock.new
       file_mock.expect :present?, true
       file_mock.expect :delete, true
-      mock.expect :get_workspace_file, file_mock, [study.bucket_id, String]
+      mock.expect :get_study_bucket_file, file_mock, [study.bucket_id, String]
     end
 
-    ApplicationController.stub :firecloud_client, mock do
+    StorageService.stub :load_client, mock do
       # test deletion of cluster file
       DeleteQueueJob.new(cluster_file_1).perform
-      assert_not DifferentialExpressionResult.where(study: study, cluster_group: cluster_1).any?
-      assert DifferentialExpressionResult.where(study: study, cluster_group: cluster_2).any?
+      assert_not DifferentialExpressionResult.where(study:, cluster_group: cluster_1).any?
+      assert DifferentialExpressionResult.where(study:, cluster_group: cluster_2).any?
 
       # test deletion of metadata file
       DeleteQueueJob.new(metadata_file).perform
-      assert_not DifferentialExpressionResult.where(study: study, annotation_scope: 'study').any?
+      assert_not DifferentialExpressionResult.where(study:, annotation_scope: 'study').any?
 
       # test deletion of matrix file
       DeleteQueueJob.new(raw_matrix).perform
-      assert_not DifferentialExpressionResult.where(study: study).any?
+      assert_not DifferentialExpressionResult.where(study:).any?
 
       # assert all delete calls have been made, should be 8 total
       mock.verify
@@ -200,8 +201,8 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
     assert_equal 'tsne', study.default_cluster.name
     mock = Minitest::Mock.new
     prefix = "_scp_internal/anndata_ingest/#{study.accession}_#{study_file.id}"
-    mock.expect(:get_workspace_files, [], [study.bucket_id], prefix:)
-    ApplicationController.stub :firecloud_client, mock do
+    mock.expect(:get_study_bucket_files, [], [study.bucket_id], prefix:)
+    StorageService.stub :load_client, mock do
       DeleteQueueJob.new(study_file).perform
       study.reload
       assert_equal 0, study.cluster_groups.size
@@ -286,5 +287,25 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
     DeleteQueueJob.prepare_file_for_retry(matrix, :ingest_anndata)
     study.reload
     assert_empty study.expression_matrix_cells(matrix, matrix_type: 'raw')
+  end
+
+  test 'should update cluster order when deleting cluster file' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Cluster Order Update Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    cell_input = { x: [1, 2, 3], y: [4, 5, 6], cells: %w[A B C] }
+    1.upto(3) do |i|
+      FactoryBot.create(:cluster_file, name: "cluster_#{i}.txt", study:, cell_input:)
+    end
+    assert_equal 3, study.cluster_groups.count
+    study.default_options[:cluster_order] = study.default_cluster_order
+    study.save!
+
+    file = study.cluster_groups.first.study_file
+    DeleteQueueJob.new(file).perform
+    study.reload
+    assert_equal %w[cluster_2.txt cluster_3.txt], study.default_cluster_order,
+                 'Did not update cluster order after deleting a cluster file'
   end
 end

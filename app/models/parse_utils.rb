@@ -95,11 +95,11 @@ class ParseUtils
     begin
       @file_location = coordinate_file.local_location
       # before anything starts, check if file has been uploaded locally or needs to be pulled down from FireCloud first
-      if !coordinate_file.is_local?
+      unless coordinate_file.is_local?
         # make sure data dir exists first
         study.make_data_dir
-        ApplicationController.firecloud_client.execute_gcloud_method(:download_workspace_file, 0, study.bucket_id, coordinate_file.bucket_location,
-                                                                     study.data_store_path, verify: :none)
+        study.storage_provider.localize_study_bucket_file(study.bucket_id, coordinate_file.bucket_location,
+                                                          study.data_store_path, verify: :none)
         @file_location = File.join(study.data_store_path, coordinate_file.bucket_location)
       end
 
@@ -290,7 +290,7 @@ class ParseUtils
       # now that parsing is complete, we can move file into storage bucket and delete local (unless we downloaded from FireCloud to begin with)
       destination = coordinate_file.bucket_location
       begin
-        remote = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, destination)
+        remote = study.storage_provider.get_study_bucket_file(study.bucket_id, destination)
       rescue => e
         ErrorTracker.report_exception(e, user, study, coordinate_file, { opts: opts})
         Rails.logger.error "Error retrieving remote: #{e.message}"
@@ -298,7 +298,7 @@ class ParseUtils
       if remote.nil?
         begin
           Rails.logger.info "Preparing to upload ordinations file: #{coordinate_file.upload_file_name}:#{coordinate_file.id} to FireCloud"
-          study.send_to_firecloud(coordinate_file)
+          StorageService.upload_study_file(study.storage_provider, study, coordinate_file)
         rescue => e
           ErrorTracker.report_exception(e, user, study, coordinate_file, { opts: opts})
           Rails.logger.info "Cluster file: #{coordinate_file.upload_file_name}:#{coordinate_file.id} failed to upload to FireCloud due to #{e.message}"
@@ -338,11 +338,11 @@ class ParseUtils
     begin
       @file_location = marker_file.upload.path
       # before anything starts, check if file has been uploaded locally or needs to be pulled down from FireCloud first
-      if !marker_file.is_local?
+      unless marker_file.is_local?
         # make sure data dir exists first
         study.make_data_dir
-        ApplicationController.firecloud_client.execute_gcloud_method(:download_workspace_file, 0, study.bucket_id, marker_file.bucket_location,
-                                                                     study.data_store_path, verify: :none)
+        study.storage_provider.localize_study_bucket_file(study.bucket_id, marker_file.bucket_location,
+                                                          study.data_store_path, verify: :none)
         @file_location = File.join(study.data_store_path, marker_file.bucket_location)
       end
 
@@ -365,7 +365,7 @@ class ParseUtils
         Rails.logger.info "Parsing #{marker_file.name}:#{marker_file.id} as application/gzip"
         file = Zlib::GzipReader.open(@file_location)
       else
-        Rails.logger.info "#Parsing #{marker_file.name}:#{marker_file.id} as text/plain"
+        Rails.logger.info "Parsing #{marker_file.name}:#{marker_file.id} as text/plain"
         file = File.open(@file_location, 'rb')
       end
 
@@ -474,7 +474,7 @@ class ParseUtils
       # now that parsing is complete, we can move file into storage bucket and delete local (unless we downloaded from FireCloud to begin with)
       destination = marker_file.bucket_location
       begin
-        remote = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, destination)
+        remote = study.storage_provider.get_study_bucket_file(study.bucket_id, destination)
       rescue => e
         ErrorTracker.report_exception(e, user, study, marker_file, { opts: opts})
         Rails.logger.error "Error retrieving remote: #{e.message}"
@@ -482,7 +482,7 @@ class ParseUtils
       if remote.nil?
         begin
           Rails.logger.info "Preparing to upload gene list file: #{marker_file.upload_file_name}:#{marker_file.id} to FireCloud"
-          study.send_to_firecloud(marker_file)
+          StorageService.upload_study_file(study.storage_provider, study, marker_file)
         rescue => e
           ErrorTracker.report_exception(e, user, study, marker_file, { opts: opts})
           Rails.logger.info "Gene List file: #{marker_file.upload_file_name}:#{marker_file.id} failed to upload to FireCloud due to #{e.message}"
@@ -547,9 +547,8 @@ class ParseUtils
 
   # delete a file from the bucket on fail
   def self.delete_remote_file_on_fail(study_file, study)
-    remote = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, study_file.bucket_location)
-    if remote.present?
-      ApplicationController.firecloud_client.execute_gcloud_method(:delete_workspace_file, 0, study.bucket_id, study_file.bucket_location)
+    if study.storage_provider.study_bucket_file_exists?(study.bucket_id, study_file.bucket_location)
+      study.storage_provider.get_study_bucket_file(study.bucket_id, study_file.bucket_location)
     end
   end
 

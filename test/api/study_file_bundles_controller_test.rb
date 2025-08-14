@@ -1,5 +1,5 @@
 require 'api_test_helper'
-require 'user_tokens_helper'
+require 'user_helper'
 require 'test_helper'
 require 'includes_helper'
 require 'detached_helper'

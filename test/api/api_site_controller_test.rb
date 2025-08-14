@@ -1,5 +1,5 @@
 require 'api_test_helper'
-require 'user_tokens_helper'
+require 'user_helper'
 require 'test_helper'
 require 'includes_helper'
 require 'detached_helper'
@@ -87,9 +87,8 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
       file = @study.study_files.first
       mock_url = "https://storage.googleapis.com/#{@study.bucket_id}/#{file.upload_file_name}"
       mock = Minitest::Mock.new
-      mock.expect :execute_gcloud_method, mock_url,
-                  [:generate_signed_url, 0, @study.bucket_id, file.bucket_location], expires: Integer
-      ApplicationController.stub :firecloud_client, mock do
+      mock.expect :signed_url_for_bucket_file, mock_url, [@study.bucket_id, file.bucket_location], expires: Integer
+      StorageService.stub :load_client, mock do
         execute_http_request(:get, api_v1_site_study_download_data_path(accession: @study.accession, filename: file.upload_file_name))
         assert_response 302, "Did not correctly redirect to file: #{response.code}"
 
@@ -119,18 +118,14 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
       file = @study.study_files.first
       mock_url = "https://www.googleapis.com/storage/v1/b/#{@study.bucket_id}/o/#{file.upload_file_name}?alt=media"
       mock = Minitest::Mock.new
-      mock.expect :execute_gcloud_method, mock_url, [:generate_api_url, 0, @study.bucket_id, file.bucket_location]
-      ApplicationController.stub :firecloud_client, mock do
+      mock.expect :api_url_for_bucket_file, mock_url, [@study.bucket_id, file.bucket_location]
+      @study.stub :storage_provider, mock do
         execute_http_request(:get, api_v1_site_study_stream_data_path(accession: @study.accession, filename: file.upload_file_name))
         assert_response :success
         assert_equal file.upload_file_name, json['filename'],
                      "Incorrect file was returned; #{file.upload_file_name} != #{json['filename']}"
         assert json['url'].include?(file.upload_file_name),
                "Url does not contain correct file: #{file.upload_file_name} is not in #{json['url']}"
-
-        # since this is a 'public' study, the access token in the read-only service account token
-        public_token = ApplicationController.read_only_firecloud_client.valid_access_token['access_token']
-        assert_equal public_token, json['access_token']
 
         # assert 401 if no user is signed in
         @user = nil

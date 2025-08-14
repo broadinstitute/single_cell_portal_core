@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'user_helper'
 
 class SummaryStatsUtilsTest < ActiveSupport::TestCase
 
@@ -8,7 +9,7 @@ class SummaryStatsUtilsTest < ActiveSupport::TestCase
     @one_week_ago = @today - 1.week
     @one_month_ago = @today - 1.month
     # create some users
-    @user = FactoryBot.create(:admin_user, test_array: @@users_to_clean)
+    @user = gcs_bucket_test_user
     FactoryBot.create(:user, test_array: @@users_to_clean)
     FactoryBot.create(:api_user, test_array: @@users_to_clean)
     # create testing study with file in the bucket
@@ -61,16 +62,6 @@ class SummaryStatsUtilsTest < ActiveSupport::TestCase
     # exercise cutoff date
     studies_created = SummaryStatsUtils.daily_study_creation_count(end_date: @one_week_ago)
     assert_equal 0, studies_created
-  end
-
-  test 'should verify all remote files' do
-    files_missing = SummaryStatsUtils.storage_sanity_check
-    missing_csv = files_missing.detect {|entry| entry[:filename] == 'foo.csv'}
-    reason = "File missing from bucket: #{@study.bucket_id}"
-    assert missing_csv.present?, "Did not find expected missing file of 'foo.csv'"
-    assert missing_csv[:study] == @study.name
-    assert missing_csv[:owner] == @study.user.email
-    assert missing_csv[:reason] == reason
   end
 
   test 'should get disk usage stats' do

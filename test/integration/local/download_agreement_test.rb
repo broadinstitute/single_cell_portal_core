@@ -38,7 +38,7 @@ class DownloadAgreementTest < ActionDispatch::IntegrationTest
   test 'should enforce download agreement' do
     mock_not_detached @study, :find_by do
       mock = generate_download_file_mock([@exp_matrix])
-      ApplicationController.stub :firecloud_client, mock do
+      StorageService.stub :load_client, mock do
         # ensure normal download works
         get download_file_path(accession: @study.accession,
                                study_name: @study.url_safe_name,
@@ -54,7 +54,7 @@ class DownloadAgreementTest < ActionDispatch::IntegrationTest
 
     mock_query_not_detached [@study] do
       mock = generate_signed_urls_mock([@exp_matrix])
-      FireCloudClient.stub :new, mock do
+      StorageService.stub :load_client, mock do
         # test bulk download, first by generating and saving user totat.
         totat = @user.create_totat(30, api_v1_bulk_download_generate_curl_config_path)
         execute_http_request(:get,
@@ -95,7 +95,7 @@ class DownloadAgreementTest < ActionDispatch::IntegrationTest
 
     mock_not_detached @study, :find_by do
       mock = generate_download_file_mock([@exp_matrix])
-      ApplicationController.stub :firecloud_client, mock do
+      StorageService.stub :load_client, mock do
         get download_file_path(accession: @study.accession,
                                study_name: @study.url_safe_name,
                                filename: @exp_matrix.upload_file_name)
@@ -109,7 +109,7 @@ class DownloadAgreementTest < ActionDispatch::IntegrationTest
 
     mock_query_not_detached [@study] do
       mock = generate_signed_urls_mock([@exp_matrix])
-      FireCloudClient.stub :new, mock do
+      StorageService.stub :load_client, mock do
         totat = @user.create_totat(30, api_v1_bulk_download_generate_curl_config_path)
         execute_http_request(:get,
                              api_v1_bulk_download_generate_curl_config_path(accessions: [@study.accession],

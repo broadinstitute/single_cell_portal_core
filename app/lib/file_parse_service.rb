@@ -12,7 +12,7 @@ class FileParseService
   #   - (Hash) => Status object with http status_code and optional error message
   def self.run_parse_job(study_file, study, user, reparse: false, persist_on_fail: false, obsm_key: nil)
     logger = Rails.logger
-    logger.info "#{Time.zone.now}: Parsing #{study_file.name} as #{study_file.file_type} in study #{study.name}"
+    logger.info "#{Time.zone.now}: Parsing #{study_file.upload_file_name} as #{study_file.file_type} in study #{study.accession}"
     do_anndata_file_ingest = FeatureFlaggable.feature_flags_for_instances(user, study)['ingest_anndata_file']
     if !study_file.parseable?
       return {
@@ -56,12 +56,12 @@ class FileParseService
           job = IngestJob.new(study:, study_file:, user:, action: :ingest_expression, reparse:, persist_on_fail:)
           job.delay.push_remote_and_launch_ingest
         else
-          study.delay.send_to_firecloud(study_file) if study_file.is_local?
+          StorageService.delay.upload_study_file(study.storage_provider, study, study_file) if study_file.is_local?
           return self.missing_bundled_file(study_file)
         end
       when /10X/
         # push immediately to avoid race condition when initiating parse
-        study.delay.send_to_firecloud(study_file) if study_file.is_local?
+        StorageService.delay.upload_study_file(study.storage_provider, study, study_file) if study_file.is_local?
         study_file.reload
         if study_file.has_completed_bundle?
           bundle = study_file.study_file_bundle
@@ -204,19 +204,10 @@ class FileParseService
 
   # clean up any cached study file copies that failed to ingest, including log files older than provided age limit
   def self.delete_ingest_artifacts(study, file_age_cutoff)
-    begin
-      # get all remote files under the 'parse_logs' folder
-      remotes = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_files, 0, study.bucket_id, prefix: 'parse_logs')
-      remotes.each do |remote|
-        creation_date = remote.created_at.in_time_zone
-        if remote.size > 0 && creation_date < file_age_cutoff
-          Rails.logger.info "Deleting #{remote.name} from #{study.bucket_id}"
-          remote.delete
-        end
-      end
-    rescue => e
-      ErrorTracker.report_exception(e, nil, study)
-    end
+    # get all remote files under the 'parse_logs' folder
+    StorageService.delete_study_bucket_files(study.storage_provider, study, prefix: 'parse_logs', file_age_cutoff:)
+  rescue *StorageService::HANDLED_EXCEPTIONS => e
+    ErrorTracker.report_exception(e, nil, study)
   end
 
   # gzip a local file on server (if necessary) in preparation for pushing to GCS bucket

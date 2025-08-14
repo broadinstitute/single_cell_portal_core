@@ -15,6 +15,8 @@ class StudySyncService
   # * *returns*
   #   - (Array<StudyShare>) => any updated StudyShare records
   def self.update_shares_from_acl(study)
+    return [] unless study.terra_study
+
     study_ws = "#{study.firecloud_project}/#{study.firecloud_workspace}"
     Rails.logger.info "setting shares for #{study.accession} based on #{study_ws} acl"
     updated_permissions = []
@@ -97,8 +99,7 @@ class StudySyncService
   # * *returns*
   #   - (Google::Cloud::Storage::File::List)
   def self.get_file_batch(study, token: nil, batch_size: BATCH_SIZE)
-    ApplicationController.firecloud_client.execute_gcloud_method(
-      :get_workspace_files, 0,
+    study.storage_provider.get_study_bucket_files(
       study.bucket_id, delimiter: '_scp_internal', token:, max: batch_size
     )
   end
@@ -310,8 +311,9 @@ class StudySyncService
   # * *returns*
   #   - (Array<StudyFile) => array of StudyFile entries where remote file is missing
   def self.find_orphaned_files(study)
+    storage_provider = study.storage_provider
     study.study_files.valid.reject do |study_file|
-      ApplicationController.firecloud_client.workspace_file_exists?(study.bucket_id, study_file.bucket_location)
+      storage_provider.bucket_file_exists?(study.bucket_id, study_file.bucket_location)
     end
   end
 
@@ -328,7 +330,7 @@ class StudySyncService
     return false unless study_file.is_a?(StudyFile) && study_file.study.present? && study_file.parseable?
 
     study = study_file.study
-    file = ApplicationController.firecloud_client.get_workspace_file(study.bucket_id, study_file.bucket_location)
+    file = study.storage_provider.get_study_bucket_file(study.bucket_id, study_file.bucket_location)
     return false unless gzipped?(file) && study_file.remote_location.present? # skip uncompressed & SCP UI uploaded files
 
     # at this point, we know the file is gzipped, and was not uploaded through the SCP UI

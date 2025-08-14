@@ -22,6 +22,10 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
                       study: @study,
                       name: 'cluster_example.txt',
                       upload_file_size: 1.megabyte)
+    FactoryBot.create(:cluster_file,
+                      study: @study,
+                      name: 'cluster_example_2.txt',
+                      upload_file_size: 1.megabyte)
     detail = @study.build_study_detail
     detail.full_description = '<p>This is the description.</p>'
     detail.save!
@@ -114,7 +118,7 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
     mock_not_detached @study, :find_by do
       file = @study.study_files.sample
       public_mock = generate_download_file_mock([file])
-      ApplicationController.stub :firecloud_client, public_mock do
+      StorageService.stub :load_client, public_mock do
         get download_file_path(accession: @study.accession, study_name: @study.url_safe_name, filename: file.upload_file_name)
         assert_response 302
         # since this is an external redirect, we cannot call follow_redirect! but instead have to get the location header
@@ -124,7 +128,7 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
       end
 
       private_mock = generate_download_file_mock([file])
-      ApplicationController.stub :firecloud_client, private_mock do
+      StorageService.stub :load_client, private_mock do
         # set to private, validate study owner/admin can still access
         # note that download_file_path and download_private_file_path both resolve to the same method and enforce the same
         # restrictions; both paths are preserved for legacy redirects from published papers
@@ -163,8 +167,8 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
       file_mock = Minitest::Mock.new
       file_mock.expect :present?, true
       file_mock.expect :size, file.upload_file_size
-      mock.expect :execute_gcloud_method, file_mock, [:get_workspace_file, 0, String, String]
-      ApplicationController.stub :firecloud_client, mock do
+      mock.expect :get_study_bucket_file, file_mock, [String, String]
+      StorageService.stub :load_client, mock do
         download = download_file_path(
           accession: @study.accession, study_name: @study.url_safe_name, filename: file.upload_file_name
         )
@@ -240,6 +244,24 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
       @study.reload
       assert @study.authors.empty?
       assert @study.publications.empty?
+    end
+  end
+
+  test 'should reorder clusterings based on study settings' do
+    assert_equal %w[cluster_example.txt cluster_example_2.txt], @study.default_cluster_order
+    mock_not_detached @study, :find_by do
+      study_params = {
+        study: {
+          default_options: {
+            cluster_order: %w[cluster_example_2.txt cluster_example.txt]
+          }
+        }
+      }.with_indifferent_access
+      patch update_study_settings_path(accession: @study.accession, study_name: @study.url_safe_name),
+            params: study_params, xhr: true
+      assert_response :success
+      @study.reload
+      assert_equal %w[cluster_example_2.txt cluster_example.txt], @study.default_cluster_order
     end
   end
 

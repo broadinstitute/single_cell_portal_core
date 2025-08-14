@@ -128,13 +128,13 @@ class BulkDownloadServiceTest < ActiveSupport::TestCase
 
     # mock call to GCS
     mock = Minitest::Mock.new
-    mock.expect :execute_gcloud_method, signed_url, [:generate_signed_url, Integer, String, String], **@expires
+    mock.expect :signed_url_for_bucket_file, signed_url, [String, String], **@expires
     directory.files.each do |directory_file|
       url = "https://storage.googleapis.com/#{@study.bucket_id}/#{directory_file[:name]}"
-      mock.expect :execute_gcloud_method, url, [:generate_signed_url, Integer, String, String],  **@expires
+      mock.expect :signed_url_for_bucket_file, url, [String, String], **@expires
     end
 
-    FireCloudClient.stub :new, mock do
+    StorageService.stub :load_client, mock do
       configuration = BulkDownloadService.generate_curl_configuration(study_files: [study_file], user: @user,
                                                                       directory_files: directory_file_list,
                                                                       study_bucket_map: bucket_map,
@@ -171,9 +171,9 @@ class BulkDownloadServiceTest < ActiveSupport::TestCase
 
     # mock call to GCS
     mock = Minitest::Mock.new
-    mock.expect :execute_gcloud_method, signed_url, [:generate_signed_url, Integer, String, String], **@expires
+    mock.expect :signed_url_for_bucket_file, signed_url, [String, String], **@expires
 
-    FireCloudClient.stub :new, mock do
+    StorageService.stub :load_client, mock do
       configuration = BulkDownloadService.generate_curl_configuration(study_files: [study_file], user: @user,
                                                                       directory_files: [],
                                                                       study_bucket_map: bucket_map,

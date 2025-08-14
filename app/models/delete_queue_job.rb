@@ -19,8 +19,10 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
       # validate: false is used to prevent validations from blocking update
       object.assign_attributes(public: false, name: new_name, url_safe_name: new_name, firecloud_workspace: new_name)
       object.save(validate: false)
+      unless object.terra_study
+        StorageService.remove_study_bucket(object.storage_provider, object)
+      end
     when 'StudyFile'
-
       file_type = object.file_type
       study = object.study
       # remove all nested documents if present to avoid validation issues later
@@ -36,6 +38,7 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
       case file_type
       when 'Cluster'
         cluster_group = ClusterGroup.find_by(study:, study_file_id: object.id)
+        study.update_cluster_order(cluster_group, action: :remove)
         delete_differential_expression_results(study:, study_file: object)
         delete_parsed_data(object.id, study.id, ClusterGroup, DataArray)
         delete_dot_plot_data(study.id, query: { cluster_group_id: cluster_group&.id })
@@ -324,7 +327,11 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
   # delete all AnnData "fragment" files upon study file deletion
   def delete_fragment_files(study:, study_file:)
     prefix = "_scp_internal/anndata_ingest/#{study.accession}_#{study_file.id}"
-    remotes = ApplicationController.firecloud_client.get_workspace_files(study.bucket_id, prefix:)
+    if study.terra_study
+      remotes = ApplicationController.firecloud_client.get_workspace_files(study.bucket_id, prefix:)
+    else
+      remotes = study.storage_provider.get_study_bucket_files(study.bucket_id, prefix:)
+    end
     remotes.each(&:delete)
   end
 

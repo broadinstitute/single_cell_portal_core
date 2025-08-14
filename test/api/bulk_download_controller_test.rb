@@ -1,6 +1,6 @@
 require 'api_test_helper'
 require 'test_helper'
-require 'user_tokens_helper'
+require 'user_helper'
 require 'bulk_download_helper'
 require 'includes_helper'
 require 'detached_helper'
@@ -81,7 +81,7 @@ class BulkDownloadControllerTest < ActionDispatch::IntegrationTest
     mock_query_not_detached [study] do
       files = study.study_files.by_type(['Expression Matrix', 'Metadata'])
       mock = generate_signed_urls_mock(files)
-      FireCloudClient.stub :new, mock do
+      StorageService.stub :load_client, mock do
         execute_http_request(:post,
                              api_v1_bulk_download_auth_code_path,
                              request_payload: @auth_code_params,
@@ -132,15 +132,10 @@ class BulkDownloadControllerTest < ActionDispatch::IntegrationTest
 
   test 'single-study bulk download should include all study files' do
     study = @basic_study
+    study.reload
     mock_query_not_detached [study] do
-      mock = Minitest::Mock.new
-      @basic_study.study_files.each do |file|
-        bucket_id = @basic_study.bucket_id
-        file_location = file.bucket_location
-        url = "https://www.googleapis.com/storage/v1/b/#{bucket_id}/#{file_location}"
-        mock.expect :execute_gcloud_method, url, [:generate_signed_url, 0, bucket_id, file_location, Hash]
-      end
-      FireCloudClient.stub :new, mock do
+      mock = generate_signed_urls_mock(study.study_files)
+      StorageService.stub :load_client, mock do
         execute_http_request(:post,
                              api_v1_bulk_download_auth_code_path,
                              request_payload: @auth_code_params,
@@ -149,8 +144,7 @@ class BulkDownloadControllerTest < ActionDispatch::IntegrationTest
         auth_code = json['auth_code']
 
         execute_http_request(:get, api_v1_bulk_download_generate_curl_config_path(
-          auth_code: auth_code, accessions: study.accession)
-        )
+          auth_code: auth_code, accessions: study.accession))
         assert_response :success
 
         study.study_files.each do |study_file|
@@ -183,7 +177,7 @@ class BulkDownloadControllerTest < ActionDispatch::IntegrationTest
         auth_code = json['auth_code']
         all_files = study_files + files
         mock = generate_signed_urls_mock(all_files, parent_study: @basic_study)
-        FireCloudClient.stub :new, mock do
+        StorageService.stub :load_client, mock do
           execute_http_request(:get,
                                api_v1_bulk_download_generate_curl_config_path(
                                  auth_code: auth_code,
@@ -207,7 +201,7 @@ class BulkDownloadControllerTest < ActionDispatch::IntegrationTest
       dir_files = @files.values.flatten
       all_files = study_files + dir_files
       all_dirs_mock = generate_signed_urls_mock(all_files, parent_study: @basic_study)
-      FireCloudClient.stub :new, all_dirs_mock do
+      StorageService.stub :load_client, all_dirs_mock do
         execute_http_request(:get,
                              api_v1_bulk_download_generate_curl_config_path(
                                auth_code: auth_code,
@@ -246,7 +240,7 @@ class BulkDownloadControllerTest < ActionDispatch::IntegrationTest
         @basic_study_expression_file, @basic_study_metadata_file, @basic_study_cluster_file, new_study.study_files.first
       ]
       mock = generate_signed_urls_mock(all_files)
-      FireCloudClient.stub :new, mock do
+      StorageService.stub :load_client, mock do
         execute_http_request(:get, api_v1_bulk_download_generate_curl_config_path(
           auth_code: auth_code, accessions: [@basic_study.accession, new_study.accession])
         )
@@ -313,14 +307,14 @@ class BulkDownloadControllerTest < ActionDispatch::IntegrationTest
 
       # mock all calls to external services, including Google Cloud Storage, HCA Azul, and Terra Data Repo
       gcs_mock = Minitest::Mock.new
-      gcs_mock.expect :execute_gcloud_method, mock_signed_url,
-                      [:generate_signed_url, 0, @basic_study.bucket_id, 'metadata.txt'], expires: 1.day.to_i
+      gcs_mock.expect :signed_url_for_bucket_file, mock_signed_url,
+                      [@basic_study.bucket_id, 'metadata.txt'], expires: 1.day.to_i
       azul_mock = Minitest::Mock.new
       azul_mock.expect :project_manifest_link, mock_manifest_response, [hca_project_id]
       azul_mock.expect :files, mock_files_response, [], query: Hash
 
       # stub all service clients to interpolate mocks
-      FireCloudClient.stub :new, gcs_mock do
+      StorageService.stub :load_client, gcs_mock do
         ApplicationController.stub :hca_azul_client, azul_mock do
           # gotcha because we've stubbed Study.where in mock_query_not_detached and this wll cause
           # BulkDownloadController.load_study_files to return the wrong studies, so we have to override that here

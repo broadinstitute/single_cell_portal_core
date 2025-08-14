@@ -44,7 +44,7 @@ class TestDataPopulator
         print "Adding #{attributes[:name]} to #{study.accession}... "
         study_file = StudyFile.create!(attributes)
         puts "done, pushing file to bucket #{study.bucket_id}"
-        study.send_to_firecloud(study_file)
+        StorageService.upload_study_file(study.storage_provider, study, study_file)
       end
     end
     study.reload # refresh study state on return

@@ -57,35 +57,6 @@ export function validateEmbargo(embargoInput) {
   return issues
 }
 
-/** Ensure a billing project is selected */
-function validateBillingProject(input) {
-  const issues = []
-
-  const billingProject = input.value
-  if (billingProject === '') {
-    const msg = 'Pick a billing project from above menu.'
-    issues.push(['error', 'missing-billing-project', msg])
-  }
-
-  return issues
-}
-
-/** Ensure a workspace is selected, if using existing workspace */
-function validateWorkspace(input, studyForm) {
-  const issues = []
-
-  const workspace = input.value
-  const useExistingWorkspace =
-    studyForm.querySelector('#study_use_existing_workspace').value === '1'
-
-  if (useExistingWorkspace && workspace === '') {
-    const msg = 'Enter a workspace name, or set "Use existing workspace?" to "No".'
-    issues.push(['error', 'missing-workspace', msg])
-  }
-
-  return issues
-}
-
 /** Add or remove error classes from field elements around given element */
 function updateErrorState(element, addOrRemove) {
   const fieldDiv = element.closest('[class^="col-md"]')
@@ -160,9 +131,7 @@ export function validateStudy(studyForm) {
 
   const validateFns = {
     'name': validateName,
-    'firecloud_project': validateBillingProject, // "Terra billing project"
-    'embargo': validateEmbargo, // "Data release date"
-    'firecloud_workspace': validateWorkspace // "Existing Terra workspace"
+    'embargo': validateEmbargo // "Data release date"
   }
 
   const fields = Object.keys(validateFns)

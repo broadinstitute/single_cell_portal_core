@@ -76,19 +76,17 @@ class FileParseServiceTest < ActiveSupport::TestCase
   test 'should clean up ingest artifacts after one month' do
     file_mock = Minitest::Mock.new
     two_months_ago = DateTime.now - 2.months
-    file_mock.expect :size, 1024
     file_mock.expect :created_at, two_months_ago
-    file_mock.expect :name, 'file.txt'
+    file_mock.expect :size, 1024
     file_mock.expect :delete, true
-    bucket_mock = Minitest::Mock.new
-    bucket_mock.expect :execute_gcloud_method,
+    client_mock = Minitest::Mock.new
+    client_mock.expect :get_study_bucket_files,
                        [file_mock],
-                       [:get_workspace_files, Integer, String],
-                       prefix: 'parse_logs'
-
-    ApplicationController.stub :firecloud_client, bucket_mock do
-      FileParseService.delete_ingest_artifacts(@basic_study, 30.days.ago)
-      bucket_mock.verify
+                       [@basic_study.bucket_id], **{ prefix: 'parse_logs' }
+    file_age_cutoff = 30.days.ago
+    StorageService.stub :load_client, client_mock do
+      FileParseService.delete_ingest_artifacts(@basic_study, file_age_cutoff)
+      client_mock.verify
       file_mock.verify
     end
   end
@@ -98,7 +96,7 @@ class FileParseServiceTest < ActiveSupport::TestCase
                                       name: 'clusterA.txt',
                                       study: @basic_study,
                                       cell_input: {
-                                        x: [1, 4 ,6],
+                                        x: [1, 4, 6],
                                         y: [7, 5, 3],
                                         cells: ['A', 'B', 'C']
                                       },
@@ -195,10 +193,10 @@ class FileParseServiceTest < ActiveSupport::TestCase
       file_mock = Minitest::Mock.new
       file_mock.expect :present?, true
       file_mock.expect :delete, true
-      result_mock.expect :get_workspace_file, file_mock, [study.bucket_id, file]
+      result_mock.expect :get_study_bucket_file, file_mock, [study.bucket_id, file]
     end
     IngestJob.stub :new, delay_mock do
-      ApplicationController.stub :firecloud_client, result_mock do
+      StorageService.stub :load_client, result_mock do
         study.stub :detached, false do
           FileParseService.run_parse_job(de_file, study, @user)
           delay_mock.verify

@@ -24,12 +24,16 @@ class UploadCleanupJob < Struct.new(:study, :study_file, :retry_count)
     else
       if !study_file.is_local?
         Rails.logger.error "error in UploadCleanupJob for #{study.accession}:#{study_file.bucket_location}:#{study_file.id}; file no longer present"
-        SingleCellMailer.admin_notification('File missing on cleanup', nil, "<p>The study file #{study_file.upload_file_name} was missing from the local file system at the time of cleanup job execution.  Please check #{study.firecloud_project}/#{study.firecloud_workspace} to ensure the upload occurred.</p>")
+        SingleCellMailer.admin_notification('File missing on cleanup',
+                                            nil,
+                                            "<p>The study file #{study_file.upload_file_name} was missing from " \
+                                              "the local file system at the time of cleanup job execution.  Please " \
+                                              "check #{study.google_bucket_url} to ensure the upload occurred.</p>")
       else
         begin
           # check workspace bucket for existence of remote file
           Rails.logger.info "performing UploadCleanupJob for #{study_file.bucket_location}:#{study_file.id} in '#{study.accession}', attempt ##{attempt}"
-          remote_file = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, study.bucket_id, study_file.bucket_location)
+          remote_file = study.storage_provider.get_study_bucket_file(study.bucket_id, study_file.bucket_location)
           if remote_file.present?
             # check generation tags to make sure we're in sync
             Rails.logger.info "remote file located for #{study_file.bucket_location}:#{study_file.id}, checking generation tag"
@@ -67,7 +71,7 @@ class UploadCleanupJob < Struct.new(:study, :study_file, :retry_count)
           else
             ErrorTracker.report_exception(e, nil, study, study_file, { retry_count: attempt})
             Rails.logger.error "terminal error in UploadCleanupJob for #{study.accession}:#{study_file.bucket_location}:#{study_file.id}; #{e.message}"
-            message = "<p>The following failure occurred when attempting to clean up #{study.firecloud_project}/#{study.firecloud_workspace}:#{study_file.bucket_location}</p>"
+            message = "<p>The following failure occurred when attempting to clean up #{study.bucket_id}:#{study_file.bucket_location}</p>"
             message += "<hr /><p>#{e.class.name}: #{e.message}</p>"
             SingleCellMailer.admin_notification('UploadCleanupJob failure', nil, message).deliver_now
           end
@@ -85,14 +89,15 @@ class UploadCleanupJob < Struct.new(:study, :study_file, :retry_count)
     failed_uploads = StudyFile.where(:status.in => ['uploading', nil], generation: nil, :created_at.lte => date_threshold,
                                      human_fastq_url: nil, :parse_status.in => ['unparsed', nil])
     failed_uploads.each do |study_file|
+      study = study_file.study
       # final sanity check - see if there is a file in the bucket of the same size
       # this might happen if the post-upload action to update 'status' fails for some reason
-      remote_file = ApplicationController.firecloud_client.get_workspace_file(study_file.study.bucket_id, study_file.bucket_location)
+      remote_file = study.storage_provider.get_study_bucket_file(study.bucket_id, study_file.bucket_location)
       if remote_file.present? && remote_file.size == study_file.upload_file_size
         study_file.update(status: 'uploaded', generation: remote_file.generation.to_s)
         next
       else
-        Rails.logger.info "Deleting failed upload for #{study_file.upload_file_name}:#{study_file.id} from #{study_file.study.accession}"
+        Rails.logger.info "Deleting failed upload for #{study_file.upload_file_name}:#{study_file.id} from #{study.accession}"
         study_file.remove_local_copy if study_file.is_local?
         begin
           study = study_file.study

@@ -1,9 +1,10 @@
 require 'test_helper'
+require 'user_helper'
 
 class UploadCleanupJobTest < ActiveSupport::TestCase
 
   before(:all) do
-    @user = FactoryBot.create(:user, test_array: @@users_to_clean)
+    @user = gcs_bucket_test_user
     @study = FactoryBot.create(:study, user: @user, name_prefix: 'UploadCleanupJob Test', test_array: @@studies_to_clean)
   end
 
@@ -42,15 +43,15 @@ class UploadCleanupJobTest < ActiveSupport::TestCase
   test 'should only run cleanup job 3 times on error' do
     File.open(Rails.root.join('test', 'test_data', 'table_1.xlsx')) do |file|
       @study_file = StudyFile.create!(study_id: @study.id, file_type: 'Other', upload: file)
-      @study.send_to_firecloud(@study_file)
+      StorageService.upload_study_file(@study.storage_provider, @study, @study_file)
     end
 
-    remote = ApplicationController.firecloud_client.get_workspace_file(@study.bucket_id, @study_file.bucket_location)
+    remote = @study.storage_provider.get_study_bucket_file(@study.bucket_id, @study_file.bucket_location)
     assert remote.present?, "File did not push to study bucket, no remote found"
 
     # to cause errors in UploadCleanupJobs, remove file from bucket as this will cause UploadCleanupJob to retry later
     remote.delete
-    new_remote = ApplicationController.firecloud_client.get_workspace_file(@study.bucket_id, @study_file.bucket_location)
+    new_remote = @study.storage_provider.get_study_bucket_file(@study.bucket_id, @study_file.bucket_location)
     refute new_remote.present?, "Delete did not succeed, found remote: #{new_remote}"
 
     # now find delayed_job instance for UploadCleanupJob for this file for each retry and assert only 3 attempts are made
@@ -74,7 +75,9 @@ class UploadCleanupJobTest < ActiveSupport::TestCase
 
     # clean up
     @study_file.update(remote_location: nil)
-    ApplicationController.firecloud_client.delete_workspace_file(@study.bucket_id, @study_file.bucket_location)
+    if @study.storage_provider.study_bucket_file_exists?(@study.bucket_id, @study_file.bucket_location)
+      @study.storage_provider.delete_study_bucket_file(@study.bucket_id, @study_file.bucket_location)
+    end
     @study_file.destroy
   end
 end

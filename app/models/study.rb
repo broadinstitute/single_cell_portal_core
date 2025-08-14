@@ -275,6 +275,8 @@ class Study
   field :default_options, type: Hash, default: {} # extensible hash where we can put arbitrary values as 'defaults'
   field :external_identifier, type: String # ID from external service, used for tracking via ImportService
   field :imported_from, type: String # Human-readable tag for external service that study was imported from, e.g. HCA
+  field :cloud_project, type: String, default: ENV['GOOGLE_CLOUD_PROJECT'] # name of cloud-based project where storage bucket lives
+  field :terra_study, type: Boolean, default: false # legacy handler for telling if a study was created in Terra originally
   ##
   #
   # SWAGGER DEFINITIONS
@@ -704,7 +706,7 @@ class Study
   ###
 
   # custom validator since we need everything to pass in a specific order (otherwise we get orphaned FireCloud workspaces)
-  validate :initialize_with_new_workspace, on: :create, if: Proc.new {|study| !study.use_existing_workspace && !study.detached}
+  validate :initialize_with_new_bucket, on: :create, if: Proc.new {|study| !study.use_existing_workspace && !study.detached}
   validate :initialize_with_existing_workspace, on: :create, if: Proc.new {|study| study.use_existing_workspace}
 
   # populate specific errors for associations since they share the same form
@@ -744,7 +746,7 @@ class Study
   validates_presence_of   :name, on: :update
   validates_uniqueness_of :url_safe_name, on: :update, message: ": The name you provided tried to create a public URL (%{value}) that is already assigned.  Please rename your study to a different value."
   validate :prevent_firecloud_attribute_changes, on: :update
-  validates_presence_of :firecloud_project, :firecloud_workspace
+  validates_presence_of :firecloud_project, :firecloud_workspace, if: proc { |study| !study.detached && study.terra_study }
   validates_uniqueness_of :external_identifier, allow_blank: true
   validates :cell_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :enforce_embargo_max_length
@@ -752,12 +754,12 @@ class Study
   # callbacks
   before_validation :set_url_safe_name
   before_validation :set_data_dir, :set_firecloud_workspace_name, on: :create
-  after_validation  :assign_accession, on: :create
-  # before_save       :verify_default_options
-  after_create      :make_data_dir, :set_default_participant, :check_bucket_read_access, :log_study_creation
+  before_validation :assign_accession, on: :create
+  before_validation :set_bucket_id, on: :create
+  after_create      :make_data_dir, :check_bucket_read_access, :log_study_creation
   before_destroy    :ensure_cascade_on_associations
   after_destroy     :remove_data_dir
-  before_save       :set_readonly_access
+  before_save       :set_readonly_access, if: proc { |study| study.terra_study }
   after_update      :log_study_state
 
   # search definitions
@@ -873,7 +875,7 @@ class Study
   # if a user should have access, but doesn't (403 response) then a FastPass request is issued to speed up the process
   # this is mainly used as a proxy for synchronizing service account bucket access faster in non-default projects
   def check_bucket_read_access(user: nil)
-    return nil if detached # exit for studies with no workspace
+    return nil if detached || !terra_study # exit for studies with no workspace
 
     client = user ? FireCloudClient.new(user:) : FireCloudClient.new
     client.check_bucket_read_access(firecloud_project, firecloud_workspace)
@@ -882,6 +884,11 @@ class Study
   # always run :check_bucket_read_access in the background at lower priority
   # can be invoked in the foreground with :check_bucket_read_access_without_delay
   handle_asynchronously :check_bucket_read_access, priority: 10
+
+  # load a contextual StorageProvider client for accessing this study's bucket
+  def storage_provider
+    StorageService.load_client(study: self)
+  end
 
   # check if a user has permission do download data from this study (either is public and user is signed in, user is an admin, or user has a direct share)
   def can_download?(user)
@@ -927,6 +934,8 @@ class Study
 
   # check if a user has access to a study via a user group
   def user_in_group_share?(user, *permissions)
+    return false unless terra_study
+
     # check if api status is ok, otherwise exit without checking to prevent UI hanging on repeated calls
     if user.registered_for_firecloud && ApplicationController.firecloud_client.services_available?(FireCloudClient::SAM_SERVICE, FireCloudClient::RAWLS_SERVICE, FireCloudClient::THURLOE_SERVICE)
       group_shares = self.study_shares.keep_if {|share| share.is_group_share?}.select {|share| permissions.include?(share.permission)}.map(&:email)
@@ -1308,6 +1317,40 @@ class Study
     end
   end
 
+  def standard_cluster_groups
+    cluster_groups.reject(&:spatial?)
+  end
+
+  def default_cluster_order
+    default_options[:cluster_order] || standard_cluster_groups.map(&:name)
+  end
+
+  def spatial_cluster_groups
+    cluster_groups.select(&:spatial?)
+  end
+
+  def default_spatial_order
+    default_options[:spatial_order] || spatial_cluster_groups.map(&:name)
+  end
+
+  # handle updates to the cluster order menus
+  def update_cluster_order(cluster, action:)
+    return nil unless cluster
+
+    list_name = cluster.spatial? ? :spatial_order : :cluster_order
+    case action.to_sym
+    when :append
+      new_list = send("default_#{list_name}").push(cluster.name).uniq
+    when :remove
+      new_list = send("default_#{list_name}").reject { |c| c == cluster.name }
+    else
+      return nil # invalid action
+    end
+    default_options[list_name] = new_list
+    save
+    CacheRemovalJob.new(accession).perform
+  end
+
   ###
   #
   # INSTANCE VALUE SETTERS & GETTERS
@@ -1657,33 +1700,6 @@ class Study
   #
   ###
 
-  # check if all files for this study are still present in the bucket
-  # does not check generation tags for consistency - this is just a presence check
-  def verify_all_remotes
-    missing = []
-    files = self.study_files.where(queued_for_deletion: false, human_data: false, :parse_status.ne => 'parsing', status: 'uploaded')
-    directories = self.directory_listings.are_synced
-    all_locations = files.map(&:bucket_location)
-    all_locations += directories.map {|dir| dir.files.map {|file| file['name']}}.flatten
-    remotes = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_files, 0, self.bucket_id)
-    if remotes.next?
-      remotes = [] # don't use bucket list of files, instead verify each file individually
-    end
-    all_locations.each do |file_location|
-      match = self.verify_remote_file(remotes: remotes, file_location: file_location)
-      if match.nil?
-        missing << {filename: file_location, study: self.name, owner: self.user.email, reason: "File missing from bucket: #{self.bucket_id}"}
-      end
-    end
-    missing
-  end
-
-  # quick check to see if a single file is still in the study's bucket
-  # can use cached list of bucket files, or check bucket directly
-  def verify_remote_file(remotes:, file_location:)
-    remotes.any? ? remotes.detect {|remote| remote.name == file_location} : ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, self.bucket_id, file_location)
-  end
-
   # get the max date for a data embargo
   def max_embargo
     start_date = persisted? ? created_at.to_date : Date.today
@@ -1701,30 +1717,11 @@ class Study
   #
   ###
 
-  # shortcut method to send an uploaded file straight to firecloud from parser
+  # @deprecated use StorageService.upload_study_file directly instead
+  # shortcut method to send an uploaded file straight to storage bucket from parser
   # will compress plain text files before uploading to reduce storage/egress charges
   def send_to_firecloud(file)
-    begin
-      Rails.logger.info "Uploading #{file.bucket_location}:#{file.id} to Terra workspace: #{firecloud_workspace}"
-      was_gzipped = FileParseService.compress_file_for_upload(file)
-      opts = was_gzipped ? { content_encoding: 'gzip' } : {}
-      remote_file = ApplicationController.firecloud_client.execute_gcloud_method(
-        :create_workspace_file, 0, bucket_id, file.upload.path, file.bucket_location, opts
-      )
-      # store generation tag to know whether a file has been updated in GCP
-      Rails.logger.info "Updating #{file.bucket_location}:#{file.id} with generation tag: #{remote_file.generation} after successful upload"
-      file.update(generation: remote_file.generation)
-      Rails.logger.info "Upload of #{file.bucket_location}:#{file.id} complete, scheduling cleanup job"
-      # schedule the upload cleanup job to run in two minutes
-      run_at = 2.minutes.from_now
-      Delayed::Job.enqueue(UploadCleanupJob.new(file.study, file, 0), run_at:)
-      Rails.logger.info "cleanup job for #{file.bucket_location}:#{file.id} scheduled for #{run_at}"
-    rescue => e
-      ErrorTracker.report_exception(e, user, self, file)
-      Rails.logger.error "Unable to upload '#{file.bucket_location}:#{file.id} to study bucket #{bucket_id}; #{e.message}"
-      # notify admin of failure so they can push the file and relaunch parse
-      SingleCellMailer.notify_admin_upload_fail(file, e).deliver_now
-    end
+    StorageService.upload_study_file(storage_provider, self, file)
   end
 
   ###
@@ -1742,25 +1739,6 @@ class Study
     end
   end
 
-  # set the 'default_participant' entity in workspace data to allow users to upload sample information
-  def set_default_participant
-    return if detached # skip if study is detached, which is common in test environment
-
-    begin
-      path = Rails.root.join('data', self.data_dir, 'default_participant.tsv')
-      entity_file = File.new(path, 'w+')
-      entity_file.write "entity:participant_id\ndefault_participant"
-      entity_file.close
-      upload = File.open(entity_file.path)
-      ApplicationController.firecloud_client.import_workspace_entities_file(self.firecloud_project, self.firecloud_workspace, upload)
-      Rails.logger.info "#{Time.zone.now}: created default_participant for #{self.firecloud_workspace}"
-      File.delete(path)
-    rescue => e
-      ErrorTracker.report_exception(e, user, self)
-      Rails.logger.error "Unable to set default participant: #{e.message}"
-    end
-  end
-
   # set the study_accession for this study
   def assign_accession
     next_accession = StudyAccession.next_available
@@ -1771,9 +1749,17 @@ class Study
     StudyAccession.create(accession: next_accession, study_id: self.id)
   end
 
+  # 6-character slug added to accession to prevent name collisions during CI
+  # also no uppercase characters allowed in bucket names
+  def set_bucket_id
+    return nil if terra_study
+
+    self.bucket_id = "#{accession}-#{SecureRandom.hex(6)}".downcase
+  end
+
   # set access for the readonly service account if a study is public
   def set_readonly_access(grant_access=true, manual_set=false)
-    unless Rails.env.test? || self.queued_for_deletion || self.detached
+    unless Rails.env.test? || self.queued_for_deletion || self.detached || !terra_study
       if manual_set || self.public_changed? || self.new_record?
         if self.firecloud_workspace.present? && self.firecloud_project.present? && ApplicationController.read_only_firecloud_client.present?
           access_level = self.public? ? 'READER' : 'NO ACCESS'
@@ -1796,15 +1782,20 @@ class Study
     # forbidden, does not have storage.buckets.get access => resulting from 403 when accessing bucket as ACLs
     # have been revoked pending delete
     if /(nil\:NilClass|does not have storage.buckets.get access|forbidden)/.match(error.message)
-      Rails.logger.error "Marking #{self.name} as 'detached' due to error reading bucket files; #{error.class.name}: #{error.message}"
-      self.update(detached: true)
+      Rails.logger.error "Marking #{accession} as 'detached' due to error reading bucket files; #{error.class.name}: #{error.message}"
+      update(detached: true)
     else
       # check if workspace is still available, otherwise mark detached
       begin
-        ApplicationController.firecloud_client.get_workspace(self.firecloud_project, self.firecloud_workspace)
-      rescue RestClient::Exception => e
-        Rails.logger.error "Marking #{self.name} as 'detached' due to missing workspace: #{self.firecloud_project}/#{self.firecloud_workspace}"
-        self.update(detached: true)
+        if terra_study
+          ApplicationController.firecloud_client.get_workspace(self.firecloud_project, self.firecloud_workspace)
+        else
+          storage_provider.load_study_bucket(bucket_id)
+        end
+      rescue *StorageService::HANDLED_EXCEPTIONS
+        entity = terra_study ? "#{firecloud_project}/#{firecloud_workspace}" : bucket_id
+        Rails.logger.error "Marking #{accession} as 'detached' due to missing workspace or bucket: #{entity}"
+        update(detached: true)
       end
     end
   end
@@ -1814,18 +1805,25 @@ class Study
     if Rails.env.production?
       return
     end
-    Rails.logger.info "Removing workspace #{firecloud_project}/#{firecloud_workspace} in #{Rails.env} environment"
+
     begin
-      ApplicationController.firecloud_client.delete_workspace(firecloud_project, firecloud_workspace) unless detached
+      entity = "#{firecloud_project}/#{firecloud_workspace}"
+      if terra_study
+        Rails.logger.info "Removing workspace #{entity} in #{Rails.env} environment"
+        ApplicationController.firecloud_client.delete_workspace(firecloud_project, firecloud_workspace) unless detached
+      else
+        entity = bucket_id
+        StorageService.remove_study_bucket(storage_provider, self) unless detached
+      end
       DeleteQueueJob.new(self.metadata_file).delay.perform if self.metadata_file.present?
       destroy
     rescue => e
-      Rails.logger.error "Error in removing #{firecloud_project}/#{firecloud_workspace}"
+      Rails.logger.error "Error in removing #{entity}"
       Rails.logger.error "#{e.class.name}:"
       Rails.logger.error "#{e.message}"
       destroy # ensure deletion of study, even if workspace is orphaned
     end
-    Rails.logger.info "Workspace #{firecloud_project}/#{firecloud_workspace} successfully removed."
+    Rails.logger.info "Workspace #{entity} successfully removed."
   end
 
   ## State tracking methods
@@ -1885,6 +1883,22 @@ class Study
     MetricsService.log('study-state', mixpanel_state_props, user) if was_just_published? || was_just_initialized?
   end
 
+  def set_terra_cloud_project
+    workspace = ApplicationController.firecloud_client.get_workspace(firecloud_project, firecloud_workspace)
+    cloud_project = workspace.dig('workspace', 'googleProject')
+    Rails.logger.info "Setting cloud project #{cloud_project} for study #{accession}"
+    self.cloud_project = cloud_project
+    self.terra_study = true
+    save!(validate: false) # skip validations to avoid issues with older studies
+  rescue => e
+    Rails.logger.error "Error setting cloud project for study #{accession}: #{e.class}:#{e.message}"
+    ErrorTracker.report_exception(e, nil, self)
+    self.terra_study = false
+    save!(validate: false)
+  end
+
+  handle_asynchronously :set_terra_cloud_project
+
   private
 
   ###
@@ -1936,215 +1950,33 @@ class Study
 
   # automatically create a FireCloud workspace on study creation after validating name & url_safe_name
   # will raise validation errors if creation, bucket or ACL assignment fail for any reason and deletes workspace on validation fail
-  def initialize_with_new_workspace
-    Rails.logger.info "#{Time.zone.now}: Study: #{self.name} creating FireCloud workspace"
+  def initialize_with_new_bucket
+    Rails.logger.info "Study: #{accession} creating storage bucket"
     validate_name_and_url
 
-    # check if project is valid to use
-    if self.firecloud_project != FireCloudClient::PORTAL_NAMESPACE
-      client = FireCloudClient.new(user: self.user, project: self.firecloud_project)
-      projects = client.get_billing_projects.map {|project| project['projectName']}
-      unless projects.include?(self.firecloud_project)
-        errors.add(:firecloud_project, ' is not a project you are a member of.  Please choose another project.')
-      end
-    end
-
-    unless self.errors.any?
+    unless errors.any?
+      client = storage_provider
       begin
-        # create workspace
-        if self.firecloud_project == FireCloudClient::PORTAL_NAMESPACE
-          workspace = ApplicationController.firecloud_client.create_workspace(self.firecloud_project, self.firecloud_workspace, true)
-        else
-          workspace = client.create_workspace(self.firecloud_project, self.firecloud_workspace)
-        end
-        Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace creation successful"
-
-        # wait until after workspace creation to set service account permissions
-        Rails.logger.info "#{Time.zone.now}: Study: #{self.name} checking service account permissions"
-        has_access = set_service_account_permissions
-        if !has_access
-          errors.add(:firecloud_workspace, ": We encountered an error when attempting to set service account permissions.  Please try again, or chose a different project.")
-        else
-          Rails.logger.info "#{Time.zone.now}: Study: #{self.name} service account permissions ok"
-        end
-
-        ws_name = workspace['name']
-        # validate creation
-        unless ws_name == self.firecloud_workspace
-          # delete workspace on validation fail
-          ApplicationController.firecloud_client.delete_workspace(self.firecloud_project, self.firecloud_workspace)
-          errors.add(:firecloud_workspace, ' was not created properly (workspace name did not match or was not created).  Please try again later.')
-          return false
-        end
-        Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace validation successful"
-        # set bucket_id
-        bucket = workspace['bucketName']
-        self.bucket_id = bucket
-        if self.bucket_id.nil?
-          # delete workspace on validation fail
-          ApplicationController.firecloud_client.delete_workspace(self.firecloud_project, self.firecloud_workspace)
-          errors.add(:firecloud_workspace, ' was not created properly (storage bucket was not set).  Please try again later.')
-          return false
-        end
-        Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud bucket assignment successful"
-
-        # if user has no project acls, then we set specific workspace-level acls
-        if self.firecloud_project == FireCloudClient::PORTAL_NAMESPACE
-          # set workspace acl
-          study_owner = self.user.email
-          workspace_permission = 'WRITER'
-          can_compute = true
-          # if study project is in the compute denylist, revoke compute permission
-          if Rails.env.production? && FireCloudClient::COMPUTE_DENYLIST.include?(self.firecloud_project)
-            can_compute = false
-          end
-          acl = ApplicationController.firecloud_client.create_workspace_acl(study_owner, workspace_permission, true, can_compute)
-          ApplicationController.firecloud_client.update_workspace_acl(self.firecloud_project, self.firecloud_workspace, acl)
-          # validate acl
-          ws_acl = ApplicationController.firecloud_client.get_workspace_acl(self.firecloud_project, ws_name)
-          unless ws_acl['acl'][study_owner]['accessLevel'] == workspace_permission && ws_acl['acl'][study_owner]['canCompute'] == can_compute
-            # delete workspace on validation fail
-            ApplicationController.firecloud_client.delete_workspace(self.firecloud_project, self.firecloud_workspace)
-            errors.add(:firecloud_workspace, ' was not created properly (permissions do not match).  Please try again later.')
-            return false
-          end
-        end
-        Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace acl assignment successful"
-        if self.study_shares.any?
-          Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace acl assignment for shares starting"
-          self.study_shares.each do |share|
-            begin
-              acl = ApplicationController.firecloud_client.create_workspace_acl(share.email, StudyShare::FIRECLOUD_ACL_MAP[share.permission], true, false)
-              ApplicationController.firecloud_client.update_workspace_acl(self.firecloud_project, self.firecloud_workspace, acl)
-              Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace acl assignment for shares #{share.email} successful"
-            rescue RestClient::Exception => e
-              ErrorTracker.report_exception(e, user, self, acl)
-              errors.add(:study_shares, "Could not create a share for #{share.email} to workspace #{self.firecloud_workspace} due to: #{e.message}")
-              return false
-            end
-          end
-        end
-
-      rescue => e
+        StorageService.create_study_bucket(client, self)
+        Rails.logger.info "Study: #{accession} successfully created bucket #{bucket_id} and configured ACL"
+      rescue *StorageService::HANDLED_EXCEPTIONS => e
+        StudyAccession.find_by(study_id: id)&.delete # free up accession on fail
         ErrorTracker.report_exception(e, user, self)
         # delete workspace on any fail as this amounts to a validation fail
-        Rails.logger.info "#{Time.zone.now}: Error creating workspace: #{e.message}"
-        # delete firecloud workspace unless error is 409 Conflict (workspace already taken)
-        if e.message.include?("Workspace #{self.firecloud_project}/#{self.firecloud_workspace} already exists")
-          errors.add(:firecloud_workspace, ' - there is already an existing workspace using this name.  Please choose another name for your study.')
-          errors.add(:name, ' - you must choose a different name for your study.')
-          self.firecloud_workspace = nil
-        else
-          # ensure workspace exists before trying to delete
-          if ApplicationController.firecloud_client.workspace_exists?(firecloud_project, firecloud_workspace)
-            ApplicationController.firecloud_client.delete_workspace(firecloud_project, firecloud_workspace)
-          end
-          error_message = ApplicationController.firecloud_client.parse_error_message(e)
-          errors.add(:firecloud_workspace, " creation failed: #{error_message}")
-        end
-        return false
+        Rails.logger.info "Error creating bucket #{bucket_id}: #{e.message}"
+        StorageService.remove_study_bucket(client, self) if StorageService.study_bucket_exists?(client, self)
+        errors.add(:bucket_id, "could not be assigned: #{e.message}")
+        false
       end
     end
   end
 
-  # validator to use existing FireCloud workspace
+  # @deprecated using existing workspaces is no longer supported
+  # future work needed to allow users to bring their own projects/buckets
   def initialize_with_existing_workspace
-    Rails.logger.info "#{Time.zone.now}: Study: #{self.name} using FireCloud workspace: #{self.firecloud_workspace}"
-    validate_name_and_url
-    # check if workspace is already being used
-    if Study.where(firecloud_workspace: self.firecloud_workspace).exists?
-      errors.add(:firecloud_workspace, ': The workspace you provided is already in use by another study.  Please use another workspace.')
-      return false
-    end
-
-    # check if project is valid to use
-    if self.firecloud_project != FireCloudClient::PORTAL_NAMESPACE
-      client = FireCloudClient.new(user: self.user, project: self.firecloud_project)
-      projects = client.get_billing_projects.map {|project| project['projectName']}
-      unless projects.include?(self.firecloud_project)
-        errors.add(:firecloud_project, ' is not a project you are a member of.  Please choose another project.')
-      end
-    end
-
-    Rails.logger.info "#{Time.zone.now}: Study: #{self.name} checking service account permissions"
-    has_access = set_service_account_permissions
-    if !has_access
-      errors.add(:firecloud_workspace, ": We encountered an error when attempting to set service account permissions.  Please try again, or chose a different project.")
-    else
-      Rails.logger.info "#{Time.zone.now}: Study: #{self.name} service account permissions ok"
-    end
-    unless self.errors.any?
-      begin
-        workspace = ApplicationController.firecloud_client.get_workspace(self.firecloud_project, self.firecloud_workspace)
-        study_owner = self.user.email
-        # set acls if using default project
-        if self.firecloud_project == FireCloudClient::PORTAL_NAMESPACE
-          workspace_permission = 'WRITER'
-          can_compute = true
-          # if study project is in the compute denylist, revoke compute permission
-          if Rails.env.production? && FireCloudClient::COMPUTE_DENYLIST.include?(self.firecloud_project)
-            can_compute = false
-            Rails.logger.info "#{Time.zone.now}: Study: #{self.name} removing compute permissions"
-            compute_acl = ApplicationController.firecloud_client.create_workspace_acl(self.user.email, workspace_permission, true, can_compute)
-            ApplicationController.firecloud_client.update_workspace_acl(self.firecloud_project, self.firecloud_workspace, compute_acl)
-          end
-          acl = ApplicationController.firecloud_client.get_workspace_acl(self.firecloud_project, self.firecloud_workspace)
-          # first check workspace authorization domain
-          auth_domain = workspace['workspace']['authorizationDomain']
-          unless auth_domain.empty?
-            errors.add(:firecloud_workspace, ': The workspace you provided is restricted.  We currently do not allow use of restricted workspaces.  Please use another workspace.')
-            return false
-          end
-          # check permissions, falling back to project-level permissions if needed
-          is_project_owner = false
-          if acl['acl'][study_owner].nil? || acl['acl'][study_owner]['accessLevel'] == 'READER'
-            Rails.logger.info "checking project-level permissions for user_id:#{self.user.id} in #{self.firecloud_project}"
-            is_project_owner = self.user.is_billing_project_owner?(self.firecloud_project)
-            unless is_project_owner
-              errors.add(:firecloud_workspace, ': You do not have write permission for the workspace you provided.  Please use another workspace.')
-              return false
-            end
-            Rails.logger.info "project-level permissions check successful"
-          end
-          # check compute permissions (only if not project owner, as compute is inherited and not present at the workspace level)
-          if !is_project_owner && acl['acl'][study_owner]['canCompute'] != can_compute
-            errors.add(:firecloud_workspace, ': There was an error setting the permissions on your workspace (compute permissions were not set correctly).  Please try again.')
-            return false
-          end
-          Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace acl check successful"
-          # set bucket_id, it is nested lower since we had to get an existing workspace
-        end
-
-        bucket = workspace['workspace']['bucketName']
-        self.bucket_id = bucket
-        if self.bucket_id.nil?
-          # delete workspace on validation fail
-          errors.add(:firecloud_workspace, ' was not created properly (storage bucket was not set).  Please try again later.')
-          return false
-        end
-        Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud bucket assignment successful"
-        if self.study_shares.any?
-          Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace acl assignment for shares starting"
-          self.study_shares.each do |share|
-            begin
-              acl = ApplicationController.firecloud_client.create_workspace_acl(share.email, StudyShare::FIRECLOUD_ACL_MAP[share.permission], true, false)
-              ApplicationController.firecloud_client.update_workspace_acl(self.firecloud_project, self.firecloud_workspace, acl)
-              Rails.logger.info "#{Time.zone.now}: Study: #{self.name} FireCloud workspace acl assignment for shares #{share.email} successful"
-            rescue RestClient::Exception => e
-              ErrorTracker.report_exception(e, user, self, acl)
-              errors.add(:study_shares, "Could not create a share for #{share.email} to workspace #{self.firecloud_workspace} due to: #{e.message}")
-              return false
-            end
-          end
-        end
-      rescue => e
-        ErrorTracker.report_exception(e, self.user, self)
-        # delete workspace on any fail as this amounts to a validation fail
-        Rails.logger.info "#{Time.zone.now}: Error assigning workspace: #{e.message}"
-        error_message = ApplicationController.firecloud_client.parse_error_message(e)
-        errors.add(:firecloud_workspace, " assignment failed: #{error_message}; Please check the workspace in question and try again.")
-        return false
-      end
+    if use_existing_workspace
+      errors.add(:use_existing_workspace, 'is no longer a supported feature')
+      false
     end
   end
 

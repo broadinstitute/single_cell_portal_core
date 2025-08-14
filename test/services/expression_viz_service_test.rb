@@ -204,8 +204,8 @@ class ExpressionVizServiceTest < ActiveSupport::TestCase
                                       annotation: annotation)
     mock = Minitest::Mock.new
     api_url = "https://www.googleapis.com/storage/v1/b/#{study.bucket_id}/o/#{filename}"
-    mock.expect :execute_gcloud_method, api_url, [:generate_api_url, Integer, study.bucket_id, filename]
-    ApplicationController.stub :firecloud_client, mock do
+    mock.expect :api_url_for_bucket_file, api_url, [study.bucket_id, filename]
+    StorageService.stub :load_client, mock do
       ideogram_output = ExpressionVizService.get_infercnv_ideogram_files(study)
       mock.verify
       assert_equal 1, ideogram_output.size

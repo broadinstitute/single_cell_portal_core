@@ -67,52 +67,6 @@ class StudyTest < ActiveSupport::TestCase
                  "Did not load correct expression data from #{lower_case}; expected #{expected_scores} but found #{gene_3['scores']}"
   end
 
-  test 'should skip permission and group check during firecloud service outage' do
-    # assert that under normal conditions user has compute permissions
-    # use mocks globally for orchestration calls as we only need to test logic for skipping upstream call
-    user = @study.user
-    workspace_acl = {
-      acl: { user.email => { accessLevel: 'WRITER', canCompute: true, canShare: true, pending: false } }
-    }.with_indifferent_access
-    ok_status_mock = Minitest::Mock.new
-    ok_status_mock.expect :services_available?, true, @services_args
-    ok_status_mock.expect :get_workspace_acl,
-                          workspace_acl,
-                          [@study.firecloud_project, @study.firecloud_workspace]
-    ApplicationController.stub :firecloud_client, ok_status_mock do
-      compute_permission = @study.can_compute?(user)
-      assert compute_permission,
-             "Did not correctly get compute permissions for #{user.email}, can_compute? should be true but found #{compute_permission}"
-      ok_status_mock.verify
-    end
-
-    group_mock = Minitest::Mock.new
-    group_mock.expect :get_user_groups, @user_groups
-    services_mock = Minitest::Mock.new
-    services_mock.expect :services_available?, true, @services_args
-    FireCloudClient.stub :new, group_mock do
-      ApplicationController.stub :firecloud_client, services_mock do
-        in_group_share = @study.user_in_group_share?(user, 'Reviewer')
-        group_mock.verify
-        services_mock.verify
-        assert in_group_share, "Did not correctly pick up group share, expected true but found #{in_group_share}"
-      end
-    end
-
-    outage_status_mock = Minitest::Mock.new
-    outage_status_mock.expect :services_available?, false, @services_args
-    outage_status_mock.expect :services_available?, false, @services_args
-    ApplicationController.stub :firecloud_client, outage_status_mock do
-      compute_in_outage = @study.can_compute?(user)
-      group_share_in_outage = @study.user_in_group_share?(user, 'Reviewer')
-
-      # only verify once, as we expect :services_available? was called twice now
-      outage_status_mock.verify
-      refute compute_in_outage, "Should not have compute permissions in outage, but can_compute? is #{compute_in_outage}"
-      refute group_share_in_outage, "Should not have group share in outage, but user_in_group_share? is #{group_share_in_outage}"
-    end
-  end
-
   test 'should default to first available annotation' do
     user = FactoryBot.create(:user, test_array: @@users_to_clean)
     study = FactoryBot.create(:detached_study,
@@ -172,6 +126,7 @@ class StudyTest < ActiveSupport::TestCase
     study = FactoryBot.create(:detached_study,
                               name_prefix: 'Bucket Read Access Test',
                               user: @user,
+                              terra_study: true,
                               test_array: @@studies_to_clean)
     mock = Minitest::Mock.new
     mock.expect :check_bucket_read_access,
@@ -251,5 +206,34 @@ class StudyTest < ActiveSupport::TestCase
     ann_data_file.update(parse_status: 'parsing')
     study.set_cell_count
     assert_equal 4, study.cell_count
+  end
+
+  test 'should update cluster order' do
+    study = FactoryBot.create(:detached_study,
+                              user: @user,
+                              name_prefix: 'Cluster Order Test',
+                              test_array: @@studies_to_clean)
+    assert_empty study.default_cluster_order
+    cell_input = {
+      x: [1, 4, 6],
+      y: [7, 5, 3],
+      cells: %w(A B C)
+    }
+    FactoryBot.create(:cluster_file, name: 'cluster_example.txt', study:, cell_input:)
+    cluster = study.cluster_groups.first
+    study.update_cluster_order(cluster, action: :append)
+    study.reload
+    assert_equal [cluster.name], study.default_cluster_order
+    FactoryBot.create(:cluster_file, name: 'cluster_2_example.txt', study:, cell_input:)
+    new_cluster = study.cluster_groups.last
+    study.update_cluster_order(new_cluster, action: :append)
+    study.reload
+    assert_equal [cluster.name, new_cluster.name], study.default_cluster_order
+
+    # test renaming cluster directly
+    new_name = 'Renamed Cluster'
+    cluster.update(name: new_name)
+    study.reload
+    assert_equal [new_name, new_cluster.name], study.default_cluster_order
   end
 end

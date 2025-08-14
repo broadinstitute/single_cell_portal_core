@@ -12,6 +12,8 @@ module GoogleServiceClient
   # * *return*
   #   - +DateTime+ timestamp of new access token expiration
   def refresh_access_token!
+    return valid_access_token unless respond_to?(:access_token) && respond_to?(:expires_at)
+
     Rails.logger.info "#{self.class.name} token expired, refreshing access token"
     # determine if token source is a regular Google account (User) or a service account
     token_source = self.respond_to?(:user) && self.user.present? ? self.user : self.class
@@ -24,7 +26,6 @@ module GoogleServiceClient
       'expires_in' => new_token['expires_in'],
       'expires_at' => self.expires_at
     }
-
   end
 
   # check if an access_token is expired
@@ -32,6 +33,8 @@ module GoogleServiceClient
   # * *return*
   #   - +Boolean+ of token expiration
   def access_token_expired?
+    return false unless respond_to?(:expires_at)
+
     Time.zone.now >= self.expires_at
   end
 
@@ -40,7 +43,11 @@ module GoogleServiceClient
   # * *return*
   #   - +Hash+ of access token
   def valid_access_token
-    self.access_token_expired? ? self.refresh_access_token! : self.access_token
+    if respond_to?(:expires_at)
+      access_token_expired? ? refresh_access_token! : access_token
+    else
+      self.class.generate_access_token(service_account_credentials)
+    end
   end
 
   ##
@@ -52,7 +59,7 @@ module GoogleServiceClient
   # * *return*
   #   - +JSON+ object of storage driver instance attributes
   def storage_attributes
-    JSON.parse self.storage.to_json
+    JSON.parse storage.to_json
   end
 
   # get storage driver access token
@@ -60,7 +67,7 @@ module GoogleServiceClient
   # * *return*
   #   - +String+ access token
   def storage_access_token
-    self.storage.service.credentials.client.access_token
+    storage.service.credentials.client.access_token
   end
 
   # get storage driver issue timestamp
@@ -68,7 +75,7 @@ module GoogleServiceClient
   # * *return*
   #   - +DateTime+ issue timestamp
   def storage_issued_at
-    self.storage.service.credentials.client.issued_at
+    storage.service.credentials.client.issued_at
   end
 
   # get issuer of storage credentials
@@ -76,7 +83,7 @@ module GoogleServiceClient
   # * *return*
   #   - +String+ of issuer email
   def storage_issuer
-    self.storage.service.credentials.issuer
+    storage.service.credentials.issuer
   end
 
   # get issuer of access_token
@@ -84,7 +91,7 @@ module GoogleServiceClient
   # * *return*
   #   - +String+ of access_token issuer email
   def issuer
-    self.respond_to?(:user) && self.user.present? ? self.user.email : self.storage_issuer
+    respond_to?(:user) && user.present? ? user.email : storage_issuer
   end
 
   # get issuer object of access_token (either instance of User, or email of service account)
@@ -92,6 +99,6 @@ module GoogleServiceClient
   # * *return*
   #   - +User+ of access_token issuer or +String+ of service account email
   def issuer_object
-    self.user.nil? ? self.storage_issuer : self.user
+    respond_to?(:user) && user.present? ? user : storage_issuer
   end
 end

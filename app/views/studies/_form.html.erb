@@ -16,20 +16,7 @@
 			<%= f.label :name %><br/>
 			<%= f.text_field :name, class: 'form-control', autocomplete: 'off' %>
 		</div>
-    <div class="col-md-4">
-      <%= f.label :firecloud_project, 'Terra billing project' %><br />
-      <% if @study.new_record? %>
-        <%= f.select :firecloud_project, options_for_select(@projects, @study.firecloud_project),
-                     {include_blank: 'Please select a billing project'}, class: 'form-control' %>
-      <% else %>
-        <%= f.text_field :firecloud_project, class: 'form-control', readonly: true,
-                         title: 'You may not change the project of an existing study', data: {toggle: 'tooltip'} %>
-      <% end %>
-
-    </div>
-  </div>
-  <div class="form-group row">
-		<div class="col-md-3">
+    <div class="col-md-2">
       <%= f.label :embargo, 'Data release date' %>&nbsp;
       <span class='fas fa-question-circle' data-toggle='tooltip' data-placement='right'
             title='Setting a data release date will prevent downloads for everyone except study owners & shared users,
@@ -37,31 +24,13 @@
             of <%= Study.max_embargo_text %> from date of creation for public studies.'
       ></span>
       <br />
-			<%= f.date_field :embargo, class: 'form-control', max: f.object.max_embargo %>
-		</div>
-		<div class="col-md-2">
-			<%= f.label :public %><br />
-			<%= f.select :public, options_for_select([['Yes', 1],['No', 0]], @study.public? ? 1: 0), {}, {class: 'form-control'} %>
-		</div>
-      <% if @study.new_record? %>
-      <div class="col-md-3">
-        <%= f.label :use_existing_workspace, 'Use existing workspace?' %><br/>
-        <%= f.select :use_existing_workspace, options_for_select([['Yes',1],['No',0]],
-                                                                 @study.use_existing_workspace ? ['Yes', 1] : ['No', 0]),
-                     {}, {class: 'form-control'} %>
-      </div>
-      <div class="col-md-4">
-        <%= f.label :firecloud_workspace, 'Existing Terra workspace' %><br />
-        <%= f.text_field :firecloud_workspace, class: 'form-control', disabled: !@study.use_existing_workspace %>
-      </div>
-      <% else %>
-        <div class="col-md-4">
-          <%= f.label :firecloud_workspace, 'Terra workspace' %><br />
-          <%= f.text_field :firecloud_workspace, class: 'form-control', readonly: true, title: 'You may not change the workspace of an existing study', data: {toggle: 'tooltip'} %>
-        </div>
-      <% end %>
-
-	</div>
+      <%= f.date_field :embargo, class: 'form-control', max: f.object.max_embargo %>
+    </div>
+    <div class="col-md-2">
+      <%= f.label :public %><br />
+      <%= f.select :public, options_for_select([['Yes', 1],['No', 0]], @study.public? ? 1: 0), {}, {class: 'form-control'} %>
+    </div>
+  </div>
   <% if current_user.available_branding_groups.any? %>
     <div class="form-group">
       <div class="row">
