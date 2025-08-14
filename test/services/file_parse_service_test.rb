@@ -80,7 +80,7 @@ class FileParseServiceTest < ActiveSupport::TestCase
     file_mock.expect :size, 1024
     file_mock.expect :delete, true
     client_mock = Minitest::Mock.new
-    client_mock.expect :load_study_bucket_files,
+    client_mock.expect :get_study_bucket_files,
                        [file_mock],
                        [@basic_study.bucket_id], **{ prefix: 'parse_logs' }
     file_age_cutoff = 30.days.ago
@@ -193,7 +193,7 @@ class FileParseServiceTest < ActiveSupport::TestCase
       file_mock = Minitest::Mock.new
       file_mock.expect :present?, true
       file_mock.expect :delete, true
-      result_mock.expect :load_study_bucket_file, file_mock, [study.bucket_id, file]
+      result_mock.expect :get_study_bucket_file, file_mock, [study.bucket_id, file]
     end
     IngestJob.stub :new, delay_mock do
       StorageService.stub :load_client, result_mock do

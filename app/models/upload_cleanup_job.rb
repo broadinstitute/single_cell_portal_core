@@ -33,7 +33,7 @@ class UploadCleanupJob < Struct.new(:study, :study_file, :retry_count)
         begin
           # check workspace bucket for existence of remote file
           Rails.logger.info "performing UploadCleanupJob for #{study_file.bucket_location}:#{study_file.id} in '#{study.accession}', attempt ##{attempt}"
-          remote_file = study.storage_provider.load_study_bucket_file(study.bucket_id, study_file.bucket_location)
+          remote_file = study.storage_provider.get_study_bucket_file(study.bucket_id, study_file.bucket_location)
           if remote_file.present?
             # check generation tags to make sure we're in sync
             Rails.logger.info "remote file located for #{study_file.bucket_location}:#{study_file.id}, checking generation tag"
@@ -92,7 +92,7 @@ class UploadCleanupJob < Struct.new(:study, :study_file, :retry_count)
       study = study_file.study
       # final sanity check - see if there is a file in the bucket of the same size
       # this might happen if the post-upload action to update 'status' fails for some reason
-      remote_file = study.storage_provider.load_study_bucket_file(study.bucket_id, study_file.bucket_location)
+      remote_file = study.storage_provider.get_study_bucket_file(study.bucket_id, study_file.bucket_location)
       if remote_file.present? && remote_file.size == study_file.upload_file_size
         study_file.update(status: 'uploaded', generation: remote_file.generation.to_s)
         next

@@ -128,10 +128,10 @@ class BulkDownloadServiceTest < ActiveSupport::TestCase
 
     # mock call to GCS
     mock = Minitest::Mock.new
-    mock.expect :download_bucket_file, signed_url, [String, String], **@expires
+    mock.expect :signed_url_for_bucket_file, signed_url, [String, String], **@expires
     directory.files.each do |directory_file|
       url = "https://storage.googleapis.com/#{@study.bucket_id}/#{directory_file[:name]}"
-      mock.expect :download_bucket_file, url, [String, String], **@expires
+      mock.expect :signed_url_for_bucket_file, url, [String, String], **@expires
     end
 
     StorageService.stub :load_client, mock do
@@ -171,7 +171,7 @@ class BulkDownloadServiceTest < ActiveSupport::TestCase
 
     # mock call to GCS
     mock = Minitest::Mock.new
-    mock.expect :download_bucket_file, signed_url, [String, String], **@expires
+    mock.expect :signed_url_for_bucket_file, signed_url, [String, String], **@expires
 
     StorageService.stub :load_client, mock do
       configuration = BulkDownloadService.generate_curl_configuration(study_files: [study_file], user: @user,

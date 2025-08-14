@@ -204,7 +204,7 @@ class ExpressionVizServiceTest < ActiveSupport::TestCase
                                       annotation: annotation)
     mock = Minitest::Mock.new
     api_url = "https://www.googleapis.com/storage/v1/b/#{study.bucket_id}/o/#{filename}"
-    mock.expect :stream_bucket_file, api_url, [study.bucket_id, filename]
+    mock.expect :api_url_for_bucket_file, api_url, [study.bucket_id, filename]
     StorageService.stub :load_client, mock do
       ideogram_output = ExpressionVizService.get_infercnv_ideogram_files(study)
       mock.verify

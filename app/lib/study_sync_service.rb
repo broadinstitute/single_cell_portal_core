@@ -99,7 +99,7 @@ class StudySyncService
   # * *returns*
   #   - (Google::Cloud::Storage::File::List)
   def self.get_file_batch(study, token: nil, batch_size: BATCH_SIZE)
-    study.storage_provider.load_study_bucket_files(
+    study.storage_provider.get_study_bucket_files(
       study.bucket_id, delimiter: '_scp_internal', token:, max: batch_size
     )
   end
@@ -330,7 +330,7 @@ class StudySyncService
     return false unless study_file.is_a?(StudyFile) && study_file.study.present? && study_file.parseable?
 
     study = study_file.study
-    file = study.storage_provider.load_study_bucket_file(study.bucket_id, study_file.bucket_location)
+    file = study.storage_provider.get_study_bucket_file(study.bucket_id, study_file.bucket_location)
     return false unless gzipped?(file) && study_file.remote_location.present? # skip uncompressed & SCP UI uploaded files
 
     # at this point, we know the file is gzipped, and was not uploaded through the SCP UI

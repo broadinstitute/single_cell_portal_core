@@ -339,7 +339,7 @@ class BulkDownloadService
     end
 
     begin
-      signed_url = client.download_bucket_file(bucket_name, file_location, expires: 1.day.to_i) # 1 day in seconds, 86400
+      signed_url = client.signed_url_for_bucket_file(bucket_name, file_location, expires: 1.day.to_i) # 1 day in seconds, 86400
       curl_config = [
           'url="' + signed_url + '"',
           'output="' + output_path + '"'

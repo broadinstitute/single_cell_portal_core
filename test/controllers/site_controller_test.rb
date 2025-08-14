@@ -167,7 +167,7 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
       file_mock = Minitest::Mock.new
       file_mock.expect :present?, true
       file_mock.expect :size, file.upload_file_size
-      mock.expect :load_study_bucket_file, file_mock, [String, String]
+      mock.expect :get_study_bucket_file, file_mock, [String, String]
       StorageService.stub :load_client, mock do
         download = download_file_path(
           accession: @study.accession, study_name: @study.url_safe_name, filename: file.upload_file_name

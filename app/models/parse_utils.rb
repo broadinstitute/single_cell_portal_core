@@ -290,7 +290,7 @@ class ParseUtils
       # now that parsing is complete, we can move file into storage bucket and delete local (unless we downloaded from FireCloud to begin with)
       destination = coordinate_file.bucket_location
       begin
-        remote = study.storage_provider.load_study_bucket_file(study.bucket_id, destination)
+        remote = study.storage_provider.get_study_bucket_file(study.bucket_id, destination)
       rescue => e
         ErrorTracker.report_exception(e, user, study, coordinate_file, { opts: opts})
         Rails.logger.error "Error retrieving remote: #{e.message}"
@@ -474,7 +474,7 @@ class ParseUtils
       # now that parsing is complete, we can move file into storage bucket and delete local (unless we downloaded from FireCloud to begin with)
       destination = marker_file.bucket_location
       begin
-        remote = study.storage_provider.load_study_bucket_file(study.bucket_id, destination)
+        remote = study.storage_provider.get_study_bucket_file(study.bucket_id, destination)
       rescue => e
         ErrorTracker.report_exception(e, user, study, marker_file, { opts: opts})
         Rails.logger.error "Error retrieving remote: #{e.message}"
@@ -548,7 +548,7 @@ class ParseUtils
   # delete a file from the bucket on fail
   def self.delete_remote_file_on_fail(study_file, study)
     if study.storage_provider.study_bucket_file_exists?(study.bucket_id, study_file.bucket_location)
-      study.storage_provider.load_study_bucket_file(study.bucket_id, study_file.bucket_location)
+      study.storage_provider.get_study_bucket_file(study.bucket_id, study_file.bucket_location)
     end
   end
 

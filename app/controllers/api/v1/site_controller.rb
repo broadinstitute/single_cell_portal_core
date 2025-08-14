@@ -295,7 +295,7 @@ module Api
           if @study_file.present?
             filesize = @study_file.upload_file_size
             if !DownloadQuotaService.download_exceeds_quota?(current_api_user, filesize)
-              @signed_url = StorageService.download_study_file(@storage_client, @study, @study_file, expires: 60)
+              @signed_url = StorageService.get_signed_url(@storage_client, @study, @study_file, expires: 60)
               DownloadQuotaService.increment_user_quota(current_api_user, filesize)
               redirect_to @signed_url
             else

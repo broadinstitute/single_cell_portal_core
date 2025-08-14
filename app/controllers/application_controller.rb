@@ -276,11 +276,11 @@ class ApplicationController < ActionController::Base
     begin
       # get filesize and make sure the user is under their quota
       client = StorageService.load_client(study:)
-      requested_file = client.load_study_bucket_file(study.bucket_id, params[:filename])
+      requested_file = client.get_study_bucket_file(study.bucket_id, params[:filename])
       if requested_file.present?
         filesize = requested_file.size
         if !DownloadQuotaService.download_exceeds_quota?(current_user, filesize)
-          @signed_url = client.download_bucket_file(@study.bucket_id, params[:filename], expires: 15)
+          @signed_url = client.signed_url_for_bucket_file(@study.bucket_id, params[:filename], expires: 15)
           DownloadQuotaService.increment_user_quota(current_user, filesize)
         else
           redirect_to merge_default_redirect_params(view_study_path(accession: study.accession, study_name: study.url_safe_name), scpbr: params[:scpbr]),

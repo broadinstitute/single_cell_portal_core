@@ -98,7 +98,7 @@ class StorageService
   def self.delete_study_bucket_files(client, study, **opts)
     Rails.logger.info "Removing all files from study bucket #{study.bucket_id} for study #{study.accession}"
     age_cutoff = opts.delete(:file_age_cutoff) || nil
-    files = client.load_study_bucket_files(study.bucket_id, **opts)
+    files = client.get_study_bucket_files(study.bucket_id, **opts)
     Parallel.map(files, in_threads: 10) do |file|
       next if file.size == 0 || age_cutoff && file.created_at.in_time_zone > age_cutoff
 
@@ -191,9 +191,9 @@ class StorageService
   # * *raises*
   # - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
   # - any exception from the client method, which will be logged and reported
-  def self.download_study_file(client, study, study_file, expires: 15)
+  def self.get_signed_url(client, study, study_file, expires: 15)
     file_location = study_file.bucket_location
-    call_client(client, :download_bucket_file, study.bucket_id, file_location, expires:)
+    call_client(client, :signed_url_for_bucket_file, study.bucket_id, file_location, expires:)
   end
 
   # generate a media URL for streaming a study file
@@ -209,9 +209,9 @@ class StorageService
   # * *raises*
   # - +ArgumentError+ if client is not one of ALLOWED_CLIENTS
   # - any exception from the client method, which will be logged and reported
-  def self.stream_study_file(client, study, study_file)
+  def self.get_api_url(client, study, study_file)
     file_location = study_file.bucket_location
-    call_client(client, :stream_bucket_file, study.bucket_id, file_location)
+    call_client(client, :api_url_for_bucket_file, study.bucket_id, file_location)
   end
 
   # upload a study file to the study bucket, compressing it if needed
@@ -240,7 +240,7 @@ class StorageService
     # schedule the upload cleanup job to run in two minutes
     run_at = 2.minutes.from_now
     Delayed::Job.enqueue(UploadCleanupJob.new(study, study_file, 0), run_at:)
-    Rails.logger.info "cleanup job for #{identifier} scheduled for #{run_at}"
+    Rails.logger.info "Cleanup job for #{identifier} scheduled for #{run_at}"
   rescue *HANDLED_EXCEPTIONS => e
     ErrorTracker.report_exception(e, study.user, study, study_file, client)
     Rails.logger.error "Unable to upload #{identifier} to study bucket #{study.bucket_id}; #{e.message}"

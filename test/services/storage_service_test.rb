@@ -101,7 +101,7 @@ class StorageServiceTest < ActiveSupport::TestCase
     end
     file_list_mock.expect :to_a, files
     mock = Minitest::Mock.new
-    mock.expect :load_study_bucket_files, file_list_mock, [@study.bucket_id]
+    mock.expect :get_study_bucket_files, file_list_mock, [@study.bucket_id]
     mock.expect :delete_study_bucket, nil, [@study.bucket_id]
     run_test_for_clients(mock) do
       client = StorageService.load_client(study: @study)
@@ -153,14 +153,14 @@ class StorageServiceTest < ActiveSupport::TestCase
   test 'should list files in study bucket' do
     client = StorageService.load_client(study: @study)
     client.stub :bucket_files, Google::Cloud::Storage::File::List do
-      client.load_study_bucket_files(@study.bucket_id)
+      client.get_study_bucket_files(@study.bucket_id)
     end
   end
 
   test 'should get file in study bucket' do
     client = StorageService.load_client(study: @study)
     client.stub :bucket_file, Google::Cloud::Storage::File do
-      client.load_study_bucket_file(@study.bucket_id, @study_file.upload_file_name)
+      client.get_study_bucket_file(@study.bucket_id, @study_file.upload_file_name)
     end
   end
 
@@ -200,22 +200,22 @@ class StorageServiceTest < ActiveSupport::TestCase
     mock = Minitest::Mock.new
     filepath = 'path/to/file.txt'
     signed_url = "https://storage.googleapis.com/#{@study.bucket_id}/#{filepath}"
-    mock.expect :download_bucket_file, signed_url, [@study.bucket_id, @study_file.upload_file_name], expires: 15
+    mock.expect :signed_url_for_bucket_file, signed_url, [@study.bucket_id, @study_file.upload_file_name], expires: 15
     run_test_for_clients(mock) do
       client = StorageService.load_client(study: @study)
-      StorageService.download_study_file(client, @study, @study_file)
+      StorageService.get_signed_url(client, @study, @study_file)
       mock.verify
     end
   end
 
   test 'should generate media URL for study file' do
     mock = Minitest::Mock.new
-    mock.expect :stream_bucket_file,
+    mock.expect :api_url_for_bucket_file,
                 "https://www.googleapis.com/storage/v1/b/#{@study.bucket_id}/o/path/to/file.txt",
                 [@study.bucket_id, @study_file.upload_file_name]
     run_test_for_clients(mock) do
       client = StorageService.load_client(study: @study)
-      StorageService.stream_study_file(client, @study, @study_file)
+      StorageService.get_api_url(client, @study, @study_file)
       mock.verify
     end
   end

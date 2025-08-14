@@ -307,7 +307,7 @@ class BulkDownloadControllerTest < ActionDispatch::IntegrationTest
 
       # mock all calls to external services, including Google Cloud Storage, HCA Azul, and Terra Data Repo
       gcs_mock = Minitest::Mock.new
-      gcs_mock.expect :download_bucket_file, mock_signed_url,
+      gcs_mock.expect :signed_url_for_bucket_file, mock_signed_url,
                       [@basic_study.bucket_id, 'metadata.txt'], expires: 1.day.to_i
       azul_mock = Minitest::Mock.new
       azul_mock.expect :project_manifest_link, mock_manifest_response, [hca_project_id]

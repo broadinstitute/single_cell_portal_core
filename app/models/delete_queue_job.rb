@@ -330,7 +330,7 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
     if study.terra_study
       remotes = ApplicationController.firecloud_client.get_workspace_files(study.bucket_id, prefix:)
     else
-      remotes = study.storage_provider.load_study_bucket_files(study.bucket_id, prefix:)
+      remotes = study.storage_provider.get_study_bucket_files(study.bucket_id, prefix:)
     end
     remotes.each(&:delete)
   end

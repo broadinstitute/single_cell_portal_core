@@ -1749,11 +1749,11 @@ class Study
     StudyAccession.create(accession: next_accession, study_id: self.id)
   end
 
+  # 6-character slug added to accession to prevent name collisions during CI
+  # also no uppercase characters allowed in bucket names
   def set_bucket_id
     return nil if terra_study
 
-    # 6-character slug added to accession to prevent name collisions during CI
-    # also no uppercase characters allowed in bucket names
     self.bucket_id = "#{accession}-#{SecureRandom.hex(6)}".downcase
   end
 
@@ -1958,7 +1958,7 @@ class Study
       client = storage_provider
       begin
         StorageService.create_study_bucket(client, self)
-        Rails.logger.info "Study: #{accession} successfully created bucket #{bucket_id} and configured acl"
+        Rails.logger.info "Study: #{accession} successfully created bucket #{bucket_id} and configured ACL"
       rescue *StorageService::HANDLED_EXCEPTIONS => e
         StudyAccession.find_by(study_id: id)&.delete # free up accession on fail
         ErrorTracker.report_exception(e, user, self)

@@ -25,7 +25,7 @@ class ParseUtilsTest < ActiveSupport::TestCase
     file_mock.expect :nil?, true
     2.times { file_mock.expect :generation, '1234567890' }
     mock = Minitest::Mock.new
-    mock.expect :load_study_bucket_file, file_mock, [@basic_study.bucket_id, gene_list.bucket_location]
+    mock.expect :get_study_bucket_file, file_mock, [@basic_study.bucket_id, gene_list.bucket_location]
     mock.expect :create_study_bucket_file, file_mock,
                 [@basic_study.bucket_id, String, String], **{ content_encoding: 'gzip' }
     StorageService.stub :load_client, mock do

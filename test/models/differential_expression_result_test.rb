@@ -247,7 +247,7 @@ class DifferentialExpressionResultTest < ActiveSupport::TestCase
       file_mock = Minitest::Mock.new
       file_mock.expect :present?, true
       file_mock.expect :delete, true
-      mock.expect :load_study_bucket_file, file_mock, [@study.bucket_id, file]
+      mock.expect :get_study_bucket_file, file_mock, [@study.bucket_id, file]
     end
     StorageService.stub :load_client, mock do
       @study.stub :detached, false do

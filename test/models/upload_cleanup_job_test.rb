@@ -46,12 +46,12 @@ class UploadCleanupJobTest < ActiveSupport::TestCase
       StorageService.upload_study_file(@study.storage_provider, @study, @study_file)
     end
 
-    remote = @study.storage_provider.load_study_bucket_file(@study.bucket_id, @study_file.bucket_location)
+    remote = @study.storage_provider.get_study_bucket_file(@study.bucket_id, @study_file.bucket_location)
     assert remote.present?, "File did not push to study bucket, no remote found"
 
     # to cause errors in UploadCleanupJobs, remove file from bucket as this will cause UploadCleanupJob to retry later
     remote.delete
-    new_remote = @study.storage_provider.load_study_bucket_file(@study.bucket_id, @study_file.bucket_location)
+    new_remote = @study.storage_provider.get_study_bucket_file(@study.bucket_id, @study_file.bucket_location)
     refute new_remote.present?, "Delete did not succeed, found remote: #{new_remote}"
 
     # now find delayed_job instance for UploadCleanupJob for this file for each retry and assert only 3 attempts are made

@@ -85,7 +85,7 @@ module StorageProvider
   #
   # * *returns*
   #   - +Various+ => list of files in the bucket
-  def load_study_bucket_files(bucket_id, **opts)
+  def get_study_bucket_files(bucket_id, **opts)
     StorageService.call_client(self, :bucket_files, bucket_id, **opts)
   end
 
@@ -97,7 +97,7 @@ module StorageProvider
   #
   # * *returns*
   #  - +Various+ => result of the API call to upload the file
-  def load_study_bucket_file(bucket_id, remote_file)
+  def get_study_bucket_file(bucket_id, remote_file)
     StorageService.call_client(self, :bucket_file, bucket_id, remote_file)
   end
 
@@ -163,7 +163,7 @@ module StorageProvider
   #
   # * *returns*
   #   - +String+ => signed URL for downloading the file via browser
-  def download_bucket_file(bucket_id, filepath, **opts)
+  def signed_url_for_bucket_file(bucket_id, filepath, **opts)
     StorageService.call_client(self, :generate_signed_url, bucket_id, filepath, **opts)
   end
 
@@ -175,7 +175,7 @@ module StorageProvider
   #
   # * *returns*
   #   - +String+ => media URL for streaming the file
-  def stream_bucket_file(bucket_id, filepath)
+  def api_url_for_bucket_file(bucket_id, filepath)
     StorageService.call_client(self, :generate_api_url, bucket_id, filepath)
   end
 

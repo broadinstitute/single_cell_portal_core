@@ -86,7 +86,7 @@ class IngestJob
         Rails.logger.info "Data cleanup for #{file_identifier} complete, now beginning Ingest"
       end
       # first check if file is already in bucket (in case user is syncing)
-      remote = storage_provider.load_study_bucket_file(study.bucket_id, study_file.bucket_location)
+      remote = storage_provider.get_study_bucket_file(study.bucket_id, study_file.bucket_location)
       if remote.nil?
         is_pushed = poll_for_remote
       else

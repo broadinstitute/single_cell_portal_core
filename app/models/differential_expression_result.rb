@@ -235,7 +235,7 @@ class DifferentialExpressionResult
 
     identifier = "#{study.accession}:#{annotation_name}--group--#{annotation_scope}"
     bucket_files.each do |filepath|
-      remote = study.storage_provider.load_study_bucket_file(study.bucket_id, filepath)
+      remote = study.storage_provider.get_study_bucket_file(study.bucket_id, filepath)
       if remote.present?
         Rails.logger.info "Removing DE output #{identifier} at #{filepath}"
         remote.delete
@@ -244,7 +244,7 @@ class DifferentialExpressionResult
 
     if is_author_de
       filepath = manifest_bucket_path
-      remote = study.storage_provider.load_study_bucket_file(study.bucket_id, filepath)
+      remote = study.storage_provider.get_study_bucket_file(study.bucket_id, filepath)
       Rails.logger.info "Removing manifest for #{identifier} at #{filepath}"
       remote.delete if remote.present?
     end

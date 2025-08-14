@@ -248,7 +248,7 @@ class StudyFileTest < ActiveSupport::TestCase
     mock.expect :size, 1.megabyte
     mock.expect :generation, '1234567890'
     provider_mock = Minitest::Mock.new
-    provider_mock.expect :load_study_bucket_file, mock, [@study.bucket_id, 'cluster_example.tsv']
+    provider_mock.expect :get_study_bucket_file, mock, [@study.bucket_id, 'cluster_example.tsv']
     StorageService.stub :load_client, provider_mock do
       study_file = StudyFile.create!(
         study: @study, file_type: 'Cluster', name: 'Testing Cluster', remote_location: 'cluster_example.tsv'

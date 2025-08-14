@@ -1139,7 +1139,7 @@ class IngestJobTest < ActiveSupport::TestCase
         args[:params_object].machine_type == 'n2d-highmem-16'
     end
     storage_mock = Minitest::Mock.new
-    storage_mock.expect :load_study_bucket_file,
+    storage_mock.expect :get_study_bucket_file,
                       Google::Cloud::Storage::File.new,
                       [bucket, study_file.bucket_location]
     storage_mock.expect :study_bucket_file_exists?, false, [bucket, String]
