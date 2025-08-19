@@ -99,7 +99,7 @@
                   <th>Name</th>
                   <th>Type</th>
                   <th>Points</th>
-                  <th>Annotations</th>
+                  <th>Annotation options</th>
                 </tr>
               </thead>
               <tbody>
@@ -108,7 +108,7 @@
                     <td><%= cluster.name %></td>
                     <td><%= cluster.cluster_type %></td>
                     <td><%= cluster.points %></td>
-                    <td><%= cluster.cell_annotations.size %></td>
+                    <td><%= render partial: '/layouts/cluster_default_annot_form', locals: { study: @study, cluster: } %></td>
                   </tr>
                 <% end %>
               </tbody>

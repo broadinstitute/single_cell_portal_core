@@ -1,0 +1,18 @@
+<div class="form-group row">
+  <%= form_with model: cluster,
+                url: api_v1_study_cluster_path(study_id: study.accession, cluster_name: cluster.name),
+                data: { remote: true } do |form| %>
+    <div class="col-sm-9">
+      <%= form.fields_for :default_options do |f| %>
+        <% f.select :annotation,
+                    AnnotationVizService.default_annotation_options_for(study, cluster),
+                    { include_blank: 'Specify default annotation', selected: cluster.default_annotation },
+                    class: 'form-control cluster-default-annotation-select'
+        %>
+      <% end %>
+    </div>
+    <div class="col-sm-3">
+      <%= form.submit 'Save', class: 'btn btn-sm btn-success' %>
+    </div>
+  <% end %>
+</div>

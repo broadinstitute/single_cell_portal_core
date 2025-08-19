@@ -34,6 +34,7 @@ class ClusterGroup
 
   # denotes when image_pipeline has been run for this cluster_group
   field :has_image_cache, type: Boolean, default: false
+  field :default_options, type: Hash, default: {}
 
   validates_uniqueness_of :name, scope: :study_id
   validates_presence_of :name, :cluster_type
@@ -166,6 +167,11 @@ class ClusterGroup
     else
       true
     end
+  end
+
+  # cluster-specific default annotation that will override study default annotation when rendering
+  def default_annotation
+    default_options[:annotation]
   end
 
   # whenever a cluster is updated, we need to update the study default_options ordering to reflect this

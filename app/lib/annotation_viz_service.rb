@@ -31,7 +31,7 @@ class AnnotationVizService
         default_annot = study.default_annotation(nil)
       elsif cluster.present?
         # get the default annotation for the cluster
-        default_annot = study.default_annotation(cluster)
+        default_annot = cluster.default_annotation.presence || study.default_annotation(cluster)
       else
         # get the default annotation for the default cluster
         default_annot = study.default_annotation
@@ -94,7 +94,9 @@ class AnnotationVizService
     ]
     {
       default_cluster: study.default_cluster&.name,
-      default_annotation: AnnotationVizService.get_selected_annotation(study, annot_name: '_default'),
+      default_annotation: AnnotationVizService.get_selected_annotation(
+        study, cluster: study.default_cluster, annot_name: '_default'
+      ),
       annotations: AnnotationVizService.available_annotations(study, cluster: nil, current_user: user),
       clusters: ClusterVizService.load_cluster_group_options(study),
       subsample_thresholds: subsample_thresholds
@@ -160,8 +162,16 @@ class AnnotationVizService
         type: annot.annotation_type,
         values: sanitize_values_array(annot_values_array, annot.annotation_type),
         scope: is_viewable ? 'study' : 'invalid',
+        identifier: "#{annot.name}--#{annot.annotation_type}--study",
         is_differential_expression_enabled: annot.is_differential_expression_enabled
       }
+    end
+  end
+
+  # form select options for setting cluster-specific default annotations
+  def self.default_annotation_options_for(study, cluster)
+    available_annotations(study, cluster:).reject { |a| a[:scope] == 'invalid' }.map do |annotation|
+      ["#{annotation[:name]} (#{annotation[:scope]})", annotation[:identifier]]
     end
   end
 

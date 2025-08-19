@@ -39,6 +39,7 @@ class ClusterVizService
         # mark non-plottable annotations as 'invalid' so they show up in the dropdown but are not selectable
         scope: cluster.can_visualize_cell_annotation?(annot) ? 'cluster' : 'invalid',
         cluster_name: cluster.name,
+        identifier: [annot[:name], annot[:type], 'cluster'].join('--'),
         is_differential_expression_enabled: annot[:is_differential_expression_enabled]
       }
     end

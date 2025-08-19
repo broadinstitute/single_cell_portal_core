@@ -15,6 +15,7 @@ module Api
 
         before_action :set_current_api_user!
         before_action :set_study
+        before_action :set_cluster
         before_action :check_study_view_permission
         before_action :validate_cache_request
         before_action :check_api_cache!
@@ -126,25 +127,28 @@ module Api
         end
 
         def show
-          cluster = nil
-          if params[:cluster_name] == '_default' || params[:cluster_name].empty?
-            cluster = @study.default_cluster
-            if cluster.nil?
-              render json: { error: 'No default cluster exists' }, status: 404 and return
-            end
-          else
-            cluster_name = params[:cluster_name]
-            cluster = @study.cluster_groups.find_by(name: cluster_name)
-            if cluster.nil?
-              render json: { error: "No cluster named #{cluster_name} could be found"}, status: 404 and return
-            end
+          if @cluster.nil?
+            render json: { error: cluster_error_message }, status: :not_found and return
           end
+
           begin
-            viz_data = self.class.get_cluster_viz_data(@study, cluster, params)
+            viz_data = self.class.get_cluster_viz_data(@study, @cluster, params)
           rescue ArgumentError => e
-            render json: { error: e.message }, status: 404 and return
+            render json: { error: e.message }, status: :not_found and return
           end
           render json: viz_data
+        end
+
+        def update
+          if @cluster.nil?
+            render json: { error: cluster_error_message }, status: :not_found and return
+          end
+
+          if @cluster.update(cluster_option_params)
+            render json: @cluster.default_options, status: :ok
+          else
+            render json: @cluster.errors, status: :unprocessable_entity
+          end
         end
 
         # packages up a bunch of calls to rendering service endpoints for a response object
@@ -285,6 +289,27 @@ module Api
             title: data[:external_link_title],
             description: data[:external_link_description]
           }
+        end
+
+        def set_cluster
+          @cluster = nil
+          if params[:cluster_name] == '_default' || params[:cluster_name].empty?
+            @cluster = @study.default_cluster
+          else
+            @cluster = @study.cluster_groups.find_by(name: params[:cluster_name])
+          end
+        end
+
+        def cluster_error_message
+          if params[:cluster_name] == '_default'
+            'No default cluster exists'
+          else
+            "No cluster named '#{params[:cluster_name]}' could be found"
+          end
+        end
+
+        def cluster_option_params
+          params.require(:cluster_group).permit(default_options: [:annotation])
         end
       end
     end

@@ -59,7 +59,7 @@ Rails.application.routes.draw do
             end
             resources :expression, controller: 'visualization/expression', only: [:show], param: :data_type
             resources :clusters, controller: 'visualization/clusters',
-                      only: [:show, :index],
+                      only: [:show, :index, :update],
                       param: :cluster_name,
                       constraints: { cluster_name: /[^\/]+/ } # needed to allow '.' in cluster names
             get 'annotations/facets', to: 'visualization/annotations#facets'
