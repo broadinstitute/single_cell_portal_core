@@ -1,0 +1,36 @@
+<div class="modal fade" id="cluster-defaults-modal" role="dialog" aria-labelledby="cluster-defaults-modal" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4>Clusters <span class="badge" id="cluster-count"><%= @study.cluster_groups.count %></span></h4>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table class="table table-condensed" id="clusters">
+            <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Points</th>
+              <th>Default annotation</th>
+            </tr>
+            </thead>
+            <tbody>
+            <% @study.cluster_groups.each do |cluster| %>
+              <tr>
+                <td><%= truncate(cluster.name, length: 30) %></td>
+                <td><%= cluster.cluster_type %></td>
+                <td><%= cluster.points %></td>
+                <td><%= render partial: '/layouts/cluster_default_annot_form', locals: { study: @study, cluster: } %></td>
+              </tr>
+            <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="close" data-dismiss="modal">×</button>
+      </div>
+    </div>
+  </div>
+</div>

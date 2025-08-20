@@ -13,7 +13,7 @@
           <%= opts.select :cluster, options_for_select(@study.cluster_groups.map(&:name), @default_cluster.name), {}, class: 'form-control' %>
         </div>
         <div class="col-sm-4">
-          <%= opts.label :annotation, 'Default annotation' %><br />
+          <%= opts.label :annotation, 'Default annotation' %> <%= link_to 'Set cluster-specific defaults?', '#study-settings', id: 'cluster-defaults-modal-open' %><br />
           <%= opts.select :annotation, grouped_options_for_select(@default_cluster_annotations, @study.default_annotation), {},class: 'form-control' %>
         </div>
         <div class="col-sm-4">
@@ -74,7 +74,11 @@
           <%= opts.text_field :expression_label, value: @study.default_options[:expression_label], placeholder: @study.default_expression_label, class: 'form-control' %>
         </div>
       </div>
+      <%= render partial: 'study_cluster_defaults_modal' %>
       <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
+        $('#cluster-defaults-modal-open').click(function() {
+          $('#cluster-defaults-modal').modal('show')
+        })
         $('#study_default_options_annotation').change(function() {
           var annotType = $(this).val().split('--')[1];
           var colorProfile = $('#study_default_options_color_profile');
