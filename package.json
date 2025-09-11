@@ -105,7 +105,7 @@
     "prop-types": "^15.7.2",
     "react-select-event": "^5.3.0",
     "stylelint-prettier": "^1.1.2",
-    "vite": "^4.5.14",
+    "vite": "^5.4.20",
     "vite-plugin-ruby": "^3.0.5"
   }
 }
