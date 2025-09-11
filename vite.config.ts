@@ -37,7 +37,8 @@ export default defineConfig({
   ],
   'resolve': {
     'alias': {
-      'lib/assets/metadata_schemas/alexandria_convention/alexandria_convention_schema.json': 'lib/assets/metadata_schemas/alexandria_convention/alexandria_convention_schema.json'
+        // need to use relative path to lib/javascript/lib/validation otherwise JSON will not load
+      'lib/assets/metadata_schemas/alexandria_convention/alexandria_convention_schema.json': '../../../../lib/assets/metadata_schemas/alexandria_convention/alexandria_convention_schema.json'
     }
   },
   'build': {
