@@ -22,7 +22,8 @@ class BatchApiClient
     render_expression_arrays: %w[Cluster],
     image_pipeline: %w[Cluster],
     ingest_anndata: %w[AnnData],
-    ingest_dot_plot_genes: ['Expression Matrix', 'MM Coordinate Matrix', 'AnnData']
+    ingest_dot_plot_genes: ['Expression Matrix', 'MM Coordinate Matrix', 'AnnData'],
+    scvi_label_transfer: %w[AnnData]
   }.freeze
 
   # default GCE machine_type
@@ -131,7 +132,7 @@ class BatchApiClient
     study = study_file.study
     labels = job_labels(action:, study:, study_file:, user:, params_object:)
     machine_type = job_machine_type(params_object)
-    instance_policy = create_instance_policy(machine_type:)
+    instance_policy = create_instance_policy(machine_type:, add_gpu: params_object&.add_gpu)
     allocation_policy = create_allocation_policy(instance_policy:, labels:)
     container = create_container(study_file:, user_metrics_uuid: user.metrics_uuid, action:, params_object:)
     task_group = create_task_group(action:, machine_type:, container:, labels: {})
@@ -355,7 +356,8 @@ class BatchApiClient
   def create_container(study_file:, action:, user_metrics_uuid:, params_object: nil)
     Google::Apis::BatchV1::Container.new(
       commands: format_command_line(study_file:, action:, user_metrics_uuid:, params_object:),
-      image_uri: image_uri_for_job(params_object)
+      image_uri: image_uri_for_job(params_object),
+      options: params_object&.add_gpu ? '--gpus all' : ''
     )
   end
 
@@ -424,13 +426,20 @@ class BatchApiClient
   # * *params*
   #   - +machine_type+ (String) => GCP VM machine type (defaults to 'n2d-highmem-4': 4 CPU, 32GB RAM)
   #   - +boot_disk_size_gb+ (Integer) => Size of boot disk for VM, in gigabytes (defaults to 100GB)
+  #   - +add_gpu+ (Boolean) => Add GPU support (defaults to false)
   #
   # * *return*
   #   - (Google::Apis::BatchV1::InstancePolicy)
-  def create_instance_policy(machine_type: DEFAULT_MACHINE_TYPE, boot_disk_size_gb: 300)
+  def create_instance_policy(machine_type: DEFAULT_MACHINE_TYPE, boot_disk_size_gb: 300, add_gpu: false)
+    accelerator = Google::Apis::BatchV1::Accelerator.new(
+      count: 1,
+      install_gpu_drivers: true,
+      type: 'nvidia-tesla-t4'
+    )
     Google::Apis::BatchV1::InstancePolicy.new(
       machine_type:,
       boot_disk: Google::Apis::BatchV1::Disk.new(size_gb: boot_disk_size_gb),
+      accelerators: add_gpu ? [accelerator] : []
     )
   end
 
@@ -542,6 +551,8 @@ class BatchApiClient
     when 'image_pipeline'
       # image_pipeline is node-based, so python command line to this point no longer applies
       command_line = %w[node expression-scatter-plots.js]
+    when 'scvi_label_transfer'
+      command_line = %w[python multiome_label_transfer.py]
     end
     # add optional command line arguments based on file type and action
     if params_object.present?
