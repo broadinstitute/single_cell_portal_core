@@ -328,7 +328,7 @@ class BatchApiClient
     runnables = []
     # gotcha due to Docker not configuring the nvidia container toolkit properly
     # this results in GPUs not being available for Docker
-    if action == :scvi_label_transfer
+    if container.options.include?('nvidia')
       runnables << Google::Apis::BatchV1::Runnable.new(
         script: Google::Apis::BatchV1::Script.new(
           text: 'sudo nvidia-ctk runtime configure --runtime=docker; sudo systemctl restart docker'
