@@ -135,7 +135,7 @@ class BatchApiClient
     labels = job_labels(action:, study:, study_file:, user:, params_object:)
     machine_type = job_machine_type(params_object)
     instance_policy = create_instance_policy(machine_type:, add_gpu:)
-    allocation_policy = create_allocation_policy(instance_policy:, labels:)
+    allocation_policy = create_allocation_policy(instance_policy:, labels:, add_gpu:)
     container = create_container(study_file:, user_metrics_uuid: user.metrics_uuid, action:, params_object:, add_gpu:)
     task_group = create_task_group(action:, machine_type:, container:, labels: {})
     job = create_job(task_group:, allocation_policy:, labels:)

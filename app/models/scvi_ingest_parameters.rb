@@ -21,7 +21,7 @@ class ScviIngestParameters
   }.freeze
 
   # values that are available as methods but not as attributes (and not passed to command line)
-  NON_ATTRIBUTE_PARAMS = %i[accession machine_type docker_image add_gpu].freeze
+  NON_ATTRIBUTE_PARAMS = %i[accession machine_type docker_image].freeze
 
   attr_accessor(*PARAM_DEFAULTS.keys)
 
