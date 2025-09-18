@@ -250,7 +250,7 @@ class BatchApiClient
   # * *return*
   #   - (Array<String>) => CLI arguments as array
   def get_job_command_line(name: nil, job: nil)
-    get_job_task_spec(name:, job:).runnables.first.container.commands
+    get_job_task_spec(name:, job:).runnables.detect { |r| r.container.present? }.container.commands
   end
 
   # get the environment from the Batch job
@@ -325,21 +325,34 @@ class BatchApiClient
   # * *returns*
   #   - (Google::Apis::BatchV1::TaskGroup)
   def create_task_group(action:, machine_type:, container:, labels: {})
-    runnable = Google::Apis::BatchV1::Runnable.new(
+    runnables = []
+    # gotcha due to Docker not configuring the nvidia container toolkit properly
+    # this results in GPUs not being available for Docker
+    if action == :scvi_label_transfer
+      runnables << Google::Apis::BatchV1::Runnable.new(
+        script: Google::Apis::BatchV1::Script.new(
+          text: 'sudo nvidia-ctk runtime configure --runtime=docker; sudo systemctl restart docker'
+        ),
+        environment: Google::Apis::BatchV1::Environment.new(
+          variables: set_environment_variables(action:)
+        ),
+        labels:
+      )
+    end
+    runnables << Google::Apis::BatchV1::Runnable.new(
       container:,
       environment: Google::Apis::BatchV1::Environment.new(
         variables: set_environment_variables(action:)
       ),
       labels:
     )
-    task = Google::Apis::BatchV1::TaskSpec.new(
-      max_retry_count: 0,
-      runnables: [runnable],
-      compute_resource: create_compute_resource(machine_type)
-    )
     Google::Apis::BatchV1::TaskGroup.new(
       task_count: 1,
-      task_spec: task
+      task_spec: Google::Apis::BatchV1::TaskSpec.new(
+        max_retry_count: 0,
+        runnables:,
+        compute_resource: create_compute_resource(machine_type)
+      )
     )
   end
 
@@ -357,7 +370,7 @@ class BatchApiClient
     Google::Apis::BatchV1::Container.new(
       commands: format_command_line(study_file:, action:, user_metrics_uuid:, params_object:),
       image_uri: image_uri_for_job(params_object),
-      options: params_object&.add_gpu ? '--privileged' : ''
+      options: params_object&.add_gpu ? '--runtime nvidia' : ''
     )
   end
 
