@@ -118,8 +118,10 @@ class BatchApiClient
   #   - +user+ (User) => User performing ingest action
   #   - +action+ (String) => Action that is being performed, maps to Ingest pipeline action
   #     (e.g. 'ingest_cell_metadata', 'subsample')
-  #   - +params_object+ (Class) => Class containing parameters for Batch job (like DifferentialExpressionParameters)
-  #                                must include Parameterizable concern for to_options_array support
+  #   - +params_object+ (Parameterizable) => Class containing parameters for Batch job
+  #                     (like DifferentialExpressionParameters) that includes Parameterizable module
+  #
+  #   - +add_gpu+ (Boolean) => T/F for configuring GPU support in Batch job
   #
   # * *returns*
   #   - (Google::Apis::BatchV1::Job)
@@ -128,13 +130,13 @@ class BatchApiClient
   #   - [Google::Apis::ServerError] An error occurred on the server and the request can be retried
   #   - [Google::Apis::ClientError] The request is invalid and should not be retried without modification
   #   - [Google::Apis::AuthorizationError] Authorization is required
-  def run_job(study_file:, user:, action:, params_object: nil)
+  def run_job(study_file:, user:, action:, params_object: nil, add_gpu: false)
     study = study_file.study
     labels = job_labels(action:, study:, study_file:, user:, params_object:)
     machine_type = job_machine_type(params_object)
-    instance_policy = create_instance_policy(machine_type:, add_gpu: params_object&.add_gpu)
-    allocation_policy = create_allocation_policy(instance_policy:, labels:, add_gpu: params_object&.add_gpu)
-    container = create_container(study_file:, user_metrics_uuid: user.metrics_uuid, action:, params_object:)
+    instance_policy = create_instance_policy(machine_type:, add_gpu:)
+    allocation_policy = create_allocation_policy(instance_policy:, labels:)
+    container = create_container(study_file:, user_metrics_uuid: user.metrics_uuid, action:, params_object:, add_gpu:)
     task_group = create_task_group(action:, machine_type:, container:, labels: {})
     job = create_job(task_group:, allocation_policy:, labels:)
     Rails.logger.info "Request object sent to Google Batch API, excluding 'environment' parameters:"
@@ -363,14 +365,15 @@ class BatchApiClient
   #   - +action+ (String/Symbol) => Action to perform on ingest
   #   - +params_object+ (Class) => Class containing parameters for Batch job (like DifferentialExpressionParameters)
   #                                must implement :to_options_array method
+  #   - +add_gpu+ (Boolean) => T/F for configuring GPU support in Batch job
   #
   # * *returns*
   #   - (Google::Apis::BatchV1::Container)
-  def create_container(study_file:, action:, user_metrics_uuid:, params_object: nil)
+  def create_container(study_file:, action:, user_metrics_uuid:, params_object: nil, add_gpu: false)
     Google::Apis::BatchV1::Container.new(
       commands: format_command_line(study_file:, action:, user_metrics_uuid:, params_object:),
       image_uri: image_uri_for_job(params_object),
-      options: params_object&.add_gpu ? '--runtime nvidia' : ''
+      options: add_gpu ? '--runtime nvidia' : ''
     )
   end
 
@@ -410,7 +413,7 @@ class BatchApiClient
   # * *params*
   #   - +instance_policy+ (Google::Apis::BatchV1::InstancePolicy)
   #   - +labels+ (Hash) => labels to apply to job and all compute resources
-  #   - +add_gpu+ (Boolean) => Add GPU support (defaults to false)
+  #   - +add_gpu+ (Boolean) => T/F for configuring GPU support in Batch job
   #
   # * *returns*
   #   - (Google::Apis::BatchV1::AllocationPolicy)
@@ -441,7 +444,7 @@ class BatchApiClient
   # * *params*
   #   - +machine_type+ (String) => GCP VM machine type (defaults to 'n2d-highmem-4': 4 CPU, 32GB RAM)
   #   - +boot_disk_size_gb+ (Integer) => Size of boot disk for VM, in gigabytes (defaults to 100GB)
-  #   - +add_gpu+ (Boolean) => Add GPU support (defaults to false)
+  #   - +add_gpu+ (Boolean) => T/F for configuring GPU support in Batch job
   #
   # * *return*
   #   - (Google::Apis::BatchV1::InstancePolicy)

@@ -5,7 +5,6 @@ class ScviIngestParameters
   # accession: Study accession to run job in
   # docker_image: published GCR image of SCVI/SCANVI Docker image
   # machine_type: GCE machine type (must be n1 for GPU support)
-  # add_gpu: True to add GPU accelerator to GCE VM
   # atac_file: ATAC-seq AnnData file
   # gex_file: Gene expression AnnData file
   # ref_file: reference AnnData file for label transfer
@@ -15,7 +14,6 @@ class ScviIngestParameters
     accession: nil,
     docker_image: 'gcr.io/broad-singlecellportal-staging/scvi-scanvi:1.0.0-1.2-1757952158',
     machine_type: 'n1-highmem-8',
-    add_gpu: true,
     atac_file: nil,
     gex_file: nil,
     ref_file: nil,
