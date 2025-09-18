@@ -133,7 +133,7 @@ class BatchApiClient
     labels = job_labels(action:, study:, study_file:, user:, params_object:)
     machine_type = job_machine_type(params_object)
     instance_policy = create_instance_policy(machine_type:, add_gpu: params_object&.add_gpu)
-    allocation_policy = create_allocation_policy(instance_policy:, labels:)
+    allocation_policy = create_allocation_policy(instance_policy:, labels:, add_gpu: params_object&.add_gpu)
     container = create_container(study_file:, user_metrics_uuid: user.metrics_uuid, action:, params_object:)
     task_group = create_task_group(action:, machine_type:, container:, labels: {})
     job = create_job(task_group:, allocation_policy:, labels:)
@@ -357,7 +357,7 @@ class BatchApiClient
     Google::Apis::BatchV1::Container.new(
       commands: format_command_line(study_file:, action:, user_metrics_uuid:, params_object:),
       image_uri: image_uri_for_job(params_object),
-      options: params_object&.add_gpu ? '--gpus all' : ''
+      options: params_object&.add_gpu ? '--privileged' : ''
     )
   end
 
@@ -397,15 +397,17 @@ class BatchApiClient
   # * *params*
   #   - +instance_policy+ (Google::Apis::BatchV1::InstancePolicy)
   #   - +labels+ (Hash) => labels to apply to job and all compute resources
+  #   - +add_gpu+ (Boolean) => Add GPU support (defaults to false)
   #
   # * *returns*
   #   - (Google::Apis::BatchV1::AllocationPolicy)
-  def create_allocation_policy(instance_policy:, labels: {})
+  def create_allocation_policy(instance_policy:, labels: {}, add_gpu: false)
     instances = Google::Apis::BatchV1::InstancePolicyOrTemplate.new(
       policy: instance_policy,
       location: Google::Apis::BatchV1::LocationPolicy.new(
         allowed_locations: ["regions/#{DEFAULT_COMPUTE_REGION}"]
-      )
+      ),
+      install_gpu_drivers: add_gpu
     )
     Google::Apis::BatchV1::AllocationPolicy.new(
       labels:,
@@ -433,12 +435,13 @@ class BatchApiClient
   def create_instance_policy(machine_type: DEFAULT_MACHINE_TYPE, boot_disk_size_gb: 300, add_gpu: false)
     accelerator = Google::Apis::BatchV1::Accelerator.new(
       count: 1,
-      install_gpu_drivers: true,
       type: 'nvidia-tesla-t4'
     )
     Google::Apis::BatchV1::InstancePolicy.new(
       machine_type:,
-      boot_disk: Google::Apis::BatchV1::Disk.new(size_gb: boot_disk_size_gb),
+      boot_disk: Google::Apis::BatchV1::Disk.new(
+        size_gb: boot_disk_size_gb
+      ),
       accelerators: add_gpu ? [accelerator] : []
     )
   end
@@ -468,6 +471,13 @@ class BatchApiClient
       'SENTRY_DSN' => ENV['SENTRY_DSN'],
       'BARD_HOST_URL' => Rails.application.config.bard_host_url
     }
+    # scvi jobs do not need MongoDB connectivity
+    if action == :scvi_label_transfer
+      vars.delete('MONGODB_PASSWORD')
+      vars.delete('MONGODB_USERNAME')
+      vars.delete('DATABASE_HOST')
+      vars.delete('DATABASE_NAME')
+    end
     if action == :image_pipeline
       vars.merge({
                    # For staging runs
