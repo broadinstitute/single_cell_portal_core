@@ -10,15 +10,15 @@ class ImportServiceTest < ActiveSupport::TestCase
   end
 
   # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
-  # test 'should call API client method' do
-  #   client = NemoClient.new
-  #   nemo_file = ImportService.call_api_client(client, :file, @nemo_attributes[:file_id])
-  #   assert_equal 'BI006_marm028_Munchkin_M1_rxn1.4.bam.bai', nemo_file['file_name']
-  #   assert_equal 'bam', nemo_file['file_format']
-  #   assert_raises ArgumentError do
-  #     ImportService.call_api_client(FireCloudClient.new, :api_available?)
-  #   end
-  # end
+  test 'should call API client method' do
+    client = NemoClient.new
+    nemo_file = ImportService.call_api_client(client, :file, @nemo_attributes[:file_id])
+    assert_equal 'BI006_marm028_Munchkin_M1_rxn1.4.bam.bai', nemo_file['file_name']
+    assert_equal 'bam', nemo_file['file_format']
+    assert_raises ArgumentError do
+      ImportService.call_api_client(FireCloudClient.new, :api_available?)
+    end
+  end
 
   test 'should call import from external service' do
     mock = Minitest::Mock.new
