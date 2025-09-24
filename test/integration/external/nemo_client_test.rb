@@ -15,7 +15,7 @@ class NemoClientTest < ActiveSupport::TestCase
     }
   end
 
-  # skip a test if Azul is not up ; prevents unnecessary build failures due to releases/maintenance
+  # skip a test if Nemo API is not up ; prevents unnecessary build failures due to releases/maintenance
   def skip_if_api_down
     unless @nemo_is_ok
       puts @skip_message; skip

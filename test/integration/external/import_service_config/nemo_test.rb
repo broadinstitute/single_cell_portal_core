@@ -48,7 +48,6 @@ module ImportServiceConfig
       assert_equal @branding_group, @configuration.branding_group
     end
 
-    # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
     test 'should traverse associations to set ids' do
       config = ImportServiceConfig::Nemo.new(file_id: @attributes[:file_id])
       config.traverse_associations!
@@ -100,7 +99,6 @@ module ImportServiceConfig
       assert_equal [{"name"=>"human", "cv_term_id"=>"NCBI:txid9606"}], study['taxa']
     end
 
-    # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
     test 'should load file analog' do
       file = @configuration.load_file
       assert_equal 'human_var_scVI_VLMC.h5ad', file['file_name']
@@ -113,7 +111,6 @@ module ImportServiceConfig
       assert_equal 'ecker_sn_mCseq_proj', collection['short_name']
     end
 
-    # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
     test 'should extract association ids' do
       file = @configuration.load_file
       study = @configuration.load_study
@@ -130,7 +127,6 @@ module ImportServiceConfig
       assert_equal 'Drop-seq', @configuration.find_library_prep('drop-seq')
     end
 
-    # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
     test 'should populate study and study_file' do
       scp_study = @configuration.populate_study
       assert_equal 'Human variation study (10x), GRU', scp_study.name
@@ -152,7 +148,6 @@ module ImportServiceConfig
       assert scp_study_file.ann_data_file_info.find_fragment(data_type: :expression).present?
     end
 
-    # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
     test 'should import all from service' do
       access_url = 'gs://nemo-public/other/grant/u01_lein/lein/transcriptome/sncell/10x_v3/' \
                    'human/processed/counts/human_var_scVI_VLMC.h5ad'

@@ -9,7 +9,6 @@ class ImportServiceTest < ActiveSupport::TestCase
     }
   end
 
-  # TODO: SCP-5565 Check with NeMO re API, update and re-enable this test
   test 'should call API client method' do
     client = NemoClient.new
     nemo_file = ImportService.call_api_client(client, :file, @nemo_attributes[:file_id])
@@ -40,7 +39,6 @@ class ImportServiceTest < ActiveSupport::TestCase
     bucket = ImportService.load_public_bucket bucket_id
     assert bucket.present?
     bucket.is_a?(Google::Cloud::Storage::Bucket)
-    assert bucket.lazy? # skip_lookup: true
   end
 
   test 'should get public file from bucket' do
@@ -51,7 +49,6 @@ class ImportServiceTest < ActiveSupport::TestCase
     assert file.is_a?(Google::Cloud::Storage::File)
     assert_equal filepath, file.name
     assert_equal bucket_id, file.bucket
-    assert file.lazy? # skip_lookup: true
   end
 
   test 'should parse gs URL' do
