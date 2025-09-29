@@ -283,9 +283,9 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     )
     assert result.present?
     @basic_study.reload
-    assert DifferentialExpressionService.results_exist?(@basic_study, annotation)
-    no_results = { annotation_name: 'foo', annotation_scope: 'cluster', cluster_group_id: cluster.id }
-    assert_not DifferentialExpressionService.results_exist?(@basic_study, no_results)
+    assert DifferentialExpressionService.results_exist?(@basic_study, cluster, annotation)
+    no_results = { annotation_name: 'foo', annotation_scope: 'cluster' }
+    assert_not DifferentialExpressionService.results_exist?(@basic_study, cluster, no_results)
   end
 
   test 'should find eligible annotations' do
