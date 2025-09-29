@@ -14,9 +14,8 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
                                public: true,
                                user: @user,
                                test_array: @@studies_to_clean)
-    @study_file = FactoryBot.create(:cluster_file,
-                               name: 'clusterA.txt',
-                               study: @study)
+    @study_file = FactoryBot.create(:cluster_file, name: 'clusterA.txt', study: @study)
+    @other_study_file = FactoryBot.create(:cluster_file, name: 'clusterB.txt', study: @study)
   end
 
   setup do
@@ -175,7 +174,8 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
 
     @study_file.reload
     # check that the new annotation colors were added, and the previous ones remain
-    assert_equal annot2_color_hash.merge(annot1_color_hash), @study_file.cluster_file_info.custom_colors_as_hash.with_indifferent_access
+    assert_equal annot2_color_hash.merge(annot1_color_hash),
+                 @study_file.cluster_file_info.custom_colors_as_hash.with_indifferent_access
 
     updated_annot2_color_hash = {
       'annotation1': {
@@ -190,7 +190,24 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
 
     @study_file.reload
     # confirm the annotation1 colors were completely replaced, and annotation2 colors were preserved
-    assert_equal updated_annot2_color_hash.merge(annot2_color_hash), @study_file.cluster_file_info.custom_colors_as_hash.with_indifferent_access
+    assert_equal updated_annot2_color_hash.merge(annot2_color_hash),
+                 @study_file.cluster_file_info.custom_colors_as_hash.with_indifferent_access
+
+    # test global update
+    study_file_attributes[:study_file][:global_color_update] = true
+
+    # since the update happens in the background, just confirm delay was called with the right params
+    update_mock = Minitest::Mock.new
+    update_hash = { cluster_file_info: { custom_color_updates: updated_annot2_color_hash } }.with_indifferent_access
+    update_mock.expect :update, true, [update_hash]
+    @study.stub :clustering_files, [@other_study_file] do
+      @other_study_file.stub :delay, update_mock do
+        execute_http_request(:patch, api_v1_study_study_file_path(study_id: @study.id, id: @study_file.id),
+                             request_payload: study_file_attributes)
+        assert_response :success
+        update_mock.verify
+      end
+    end
   end
 
   test 'should create and update AnnData file' do

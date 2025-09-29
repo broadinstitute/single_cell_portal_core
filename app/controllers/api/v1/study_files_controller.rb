@@ -336,7 +336,7 @@ module Api
           }
           safe_file_params.delete(:custom_color_updates)
           if safe_file_params[:global_color_update]
-            @study.clustering_files.reject { |f| f.id.to_s == safe_file_params[:id] }.each do |file|
+            @study.clustering_files.reject { |f| f.id.to_s == params[:id] }.each do |file|
               update_params = {
                 'cluster_file_info' => { custom_colors: ClusterFileInfo.merge_color_updates(file, parsed_update) }
               }
