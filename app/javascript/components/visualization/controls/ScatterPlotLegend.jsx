@@ -6,7 +6,7 @@ import {
   faTimes,
   faSearch,
   faFileUpload,
-  faGlobe, faGlobeAmericas
+  faGlobe, faGlobeAmericas, faFileDownload
 } from '@fortawesome/free-solid-svg-icons'
 import Modal from 'react-bootstrap/lib/Modal'
 import { HexColorPicker, HexColorInput } from 'react-colorful'
@@ -268,6 +268,28 @@ export default function ScatterPlotLegend({
     setShowColorControls(false)
   }
 
+  function exportColors() {
+    const colorMap = Object.keys(customColors).length > 0 ? customColors : refColorMap
+    const lines = Object.entries(colorMap).map(([label, color]) => {
+      return `${label}\t${color}\n`
+    })
+
+    // Create an element with an anchor link and connect this to the blob
+    const element = document.createElement('a')
+    const colorExport = new Blob(lines, { type: 'text/plain' })
+    element.href = URL.createObjectURL(colorExport)
+
+    // name the file and indicate it should download
+    element.download = `${name}_color_map.tsv`
+
+    // Simulate clicking the link resulting in downloading the file
+    document.body.appendChild(element)
+    element.click()
+
+    // Cleanup
+    document.body.removeChild(element)
+  }
+
   /** collect general information when a user's mouse enters the legend  */
   function logMouseEnter() {
     log('hover:scatterlegend', { numLabels })
@@ -356,6 +378,16 @@ export default function ScatterPlotLegend({
     fileReader.readAsText(file)
   }
 
+  const globalSwitch =
+    <label htmlFor="global-color-update"
+           data-toggle="tooltip"
+           className="color-update-toggle"
+           title="Apply color changes globally for this annotation">
+      <span className={globalColorUpdate ? 'text-info' : 'text-muted'} onClick={handleToggleGlobalColor}>Global&nbsp;
+        <i className={`fa fa-fw ${toggleClassName}`}></i>
+      </span>
+    </label>
+
   return (
     <div
       className={`scatter-legend ${filteredClass}`}
@@ -412,7 +444,7 @@ export default function ScatterPlotLegend({
                   <a role="button" className="pull-right" data-analytics-name="legend-color-picker-cancel" onClick={cancelColors}>
                     Cancel
                   </a><br/>
-                  &nbsp;
+                  {globalSwitch}
                   <a role="button" className="pull-right" data-analytics-name="legend-color-picker-reset" onClick={resetColors}>
                     Reset to defaults
                   </a>
@@ -421,25 +453,29 @@ export default function ScatterPlotLegend({
             }
             { !showColorControls &&
               <>
-                <a role="button" data-analytics-name="legend-color-picker-show" onClick={() => setShowColorControls(true)}>
+                <a role="button"
+                   className='customize-color-palette'
+                   data-analytics-name="legend-color-picker-show"
+                   onClick={() => setShowColorControls(true)}
+                >
                   Customize <FontAwesomeIcon icon={faPalette}/>
                 </a>
-                <label htmlFor="global-color-update"
-                       data-toggle="tooltip"
-                       className="color-update-toggle"
-                       title="Apply color changes globally to all clusters">
-                  <span className={globalColorUpdate ? 'text-info' : 'text-muted'} onClick={handleToggleGlobalColor}>global&nbsp;
-                    <i className={`fa fa-fw ${toggleClassName}`}></i>
-                  </span>
-                </label>
+                {globalSwitch}
                 <label htmlFor="color-manifest-upload"
                        data-toggle="tooltip"
                        className="icon-button"
-                       title="Upload a file of annotation labels to color hex codes">
+                       title="Upload a manifest of annotation labels to color hex codes">
                   <input id="color-manifest-upload"
                          type="file"
                          onChange={e => readColorManifest(e.target.files[0])}/>
                   <FontAwesomeIcon className="action fa-lg" icon={faFileUpload} />
+                </label>
+                <label htmlFor="color-manifest-export"
+                       data-toggle="tooltip"
+                       title="Export current color manifest"
+                       onClick={exportColors}
+                >
+                  <FontAwesomeIcon className="action fa-lg" icon={faFileDownload} />
                 </label>
               </>
       }
