@@ -64,7 +64,7 @@ class DifferentialExpressionService
                                               skip_existing: false)
     study = Study.find_by(accession: study_accession)
     validate_study(study)
-    eligible_annotations = find_eligible_annotations(study, skip_existing:)
+    eligible_annotations = find_eligible_annotations(study)
     raise ArgumentError, "#{study_accession} does not have any eligible annotations" if eligible_annotations.empty?
 
     log_message "#{study_accession} has annotations eligible for DE; validating inputs"
@@ -76,6 +76,8 @@ class DifferentialExpressionService
         begin
           # skip if this is a cluster-based annotation and is not available on this cluster object
           next if annotation[:annotation_scope] == 'cluster' && annotation[:cluster_group_id] != cluster_group.id
+
+          next if skip_existing && results_exist?(study, cluster_group, annotation)
 
           annotation_params = annotation.deep_dup # make a copy so we don't lose the association next time we check
           annotation_params.delete(:cluster_group_id)
@@ -240,11 +242,10 @@ class DifferentialExpressionService
   #
   # * *params*
   #   - +study+        (Study) => Associated study object
-  #   - +skip_existing+   (Boolean) => Skip annotations that already have DE results
   #
   # * *returns*
   #   - (Array<Hash>) => Array of annotation objects available for DE
-  def self.find_eligible_annotations(study, skip_existing: false)
+  def self.find_eligible_annotations(study)
     annotations = []
     metadata = study.cell_metadata.where(annotation_type: 'group').select do |meta|
       annotation_eligible?(meta.name) && meta.can_visualize?
@@ -275,11 +276,7 @@ class DifferentialExpressionService
         cluster_group_id: annot[:cluster_group_id]
       }
     end
-    if skip_existing
-      annotations.reject { |annotation| results_exist?(study, annotation) }
-    else
-      annotations
-    end
+    annotations
   end
 
   # match an annotation name against any potentially valid annotations for DE analysis
@@ -308,25 +305,21 @@ class DifferentialExpressionService
     DifferentialExpressionResult.find_by(study:, cluster_group:, annotation_name:, annotation_scope:)
   end
 
-  # determine if a study already has DE results for an annotation, taking scope into account
-  # cluster-based annotations must match to the specified cluster in the annotation object
-  # for study-wide annotations, return true if any results exist, regardless of cluster as this indicates that DE
-  # was already invoked on this annotation, and all valid results should already exist (barring errors)
-  # missing entries can still be backfilled with :run_differential_expression_job manually
+  # determine if a study already has DE results for a given annotation/cluster combination
   #
   # * *params*
   #   - +study+      (Study) => study to run DE jobs in
+  #   - +cluster_group+ (ClusterGroup) => clustering object
   #   - +annotation+ (Hash) => annotation object
   #
   # * *returns*
   #   - (Boolean)
-  def self.results_exist?(study, annotation)
-    ids = annotation[:scope] == 'cluster' ? [annotation[:cluster_group_id]] : study.cluster_groups.pluck(:id)
+  def self.results_exist?(study, cluster_group, annotation)
     DifferentialExpressionResult.where(
-      :study => study,
-      :cluster_group_id.in => ids,
-      :annotation_name => annotation[:annotation_name],
-      :annotation_scope => annotation[:annotation_scope]
+      study:,
+      cluster_group:,
+      annotation_name: annotation[:annotation_name],
+      annotation_scope: annotation[:annotation_scope]
     ).exists?
   end
 
@@ -355,14 +348,13 @@ class DifferentialExpressionService
   #
   # * *params*
   #   - +study+ (Study) => study to check eligibility for differential expression jobs
-  #   - +skip_existing+   (Boolean) => Skip annotations that already have DE results
   #
   # * *returns*
   #   - (Boolean)
-  def self.study_eligible?(study, skip_existing: false)
+  def self.study_eligible?(study)
     begin
       validate_study(study)
-      find_eligible_annotations(study, skip_existing:).any? &&
+      find_eligible_annotations(study).any? &&
         study.has_raw_counts_matrices? &&
         !study_has_author_de?(study)
     rescue ArgumentError
