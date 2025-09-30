@@ -355,13 +355,14 @@ export default function ScatterPlotLegend({
     setLabelsToShow(labels)
   }
 
-  // handle clicking global color update toggle
+  /** handle clicking global color update toggle */
   function handleToggleGlobalColor() {
     const toggleClass = toggleClassName === 'fa-toggle-on' ? 'fa-toggle-off' : 'fa-toggle-on'
     setGlobalColorUpdate(!globalColorUpdate)
     setToggleClassName(toggleClass)
   }
 
+  /** read uploaded manifest and apply colors to current scatter plot */
   function readColorManifest(file) {
     const colorUpdate = {}
     const fileReader = new FileReader()
