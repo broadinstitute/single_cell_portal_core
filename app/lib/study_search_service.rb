@@ -199,6 +199,29 @@ class StudySearchService
     end
   end
 
+  def self.filter_results_by_data_type(studies, data_types)
+    return studies if data_types.empty?
+
+    matches = data_types.index_with { [] }
+    # note: this has to be updated if a new data_type is added
+    matchers = {
+      raw_counts: :has_raw_counts_matrices?,
+      diff_exp: :has_differential_expression_results?,
+      spatial: :has_spatial_clustering?
+    }
+
+    studies.each do |study|
+      data_types.each do |data_type|
+        matches[data_type] << study.accession if study.send(matchers[data_type])
+      end
+    end
+
+    # find the intersection of all matches by data types
+    study_matches = matches.values
+    accessions = study_matches[0].intersection(*study_matches[1..])
+    studies.where(:accession.in => accessions)
+  end
+
   # deal with ontology id formatting inconsistencies
   def self.convert_id_format(id)
     parts = id.split(/[_:]/)

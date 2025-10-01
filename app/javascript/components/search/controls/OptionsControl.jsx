@@ -1,13 +1,21 @@
 import React, { useState } from 'react'
 
-export default function OptionsControl({searchContext, searchProp, value, label}) {
+/** checkbox control for adding optional parameters to search query */
+export default function OptionsControl({ searchContext, searchProp, value, label, multiple = false }) {
   const defaultChecked = searchContext.params[searchProp] === value
   const [isChecked, setIsChecked] = useState(defaultChecked)
+
 
   /** toggle state of checkbox */
   function toggleCheckbox(checked) {
     setIsChecked(checked)
-    searchContext.updateSearch({ [searchProp] : checked ? value : null })
+    if (multiple) {
+      const existingOpts = searchContext.params[searchProp]?.split(',').filter(o => o !== '') || []
+      const newOpts = checked ? existingOpts.concat(value) : existingOpts.filter(v => v !== value)
+      searchContext.updateSearch({ [searchProp] : newOpts.join(',') })
+    } else {
+      searchContext.updateSearch({ [searchProp] : checked ? value : null })
+    }
   }
 
   return (
