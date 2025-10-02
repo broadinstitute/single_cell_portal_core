@@ -3,6 +3,7 @@ require 'user_tokens_helper'
 require 'bulk_download_helper'
 require 'test_helper'
 require 'includes_helper'
+require 'detached_helper'
 
 class SearchControllerTest < ActionDispatch::IntegrationTest
 
@@ -558,5 +559,58 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     all_accessions = (@convention_accessions + other_matches.map(&:accession)).flatten.uniq.sort
     found_accessions = lines.map { |l| l.split(/\t/)[1] }.flatten.uniq.sort
     assert_equal all_accessions, found_accessions
+  end
+
+  test 'should find studies based on available data types' do
+    search_study = FactoryBot.create(:detached_study,
+                                     name_prefix: "Raw Counts Search Study #{@random_seed}",
+                                     public: true,
+                                     user: @user,
+                                     test_array: @@studies_to_clean)
+    detail = search_study.build_study_detail
+    detail.full_description = '<p>This is the description.</p>'
+    detail.save!
+    cells = %w[cellA cellB cellC cellD cellE cellF cellG]
+    FactoryBot.create(
+      :metadata_file, name: 'metadata.txt', study: search_study, use_metadata_convention: true, cell_input: cells,
+      annotation_input: [{ name: 'species', type: 'group', values: %w[dog cat dog dog cat cat cat] }]
+    )
+    coordinates = 1.upto(7).to_a
+    cluster_file = FactoryBot.create(
+      :cluster_file, name: 'cluster_diffexp.txt', study: search_study,
+      cell_input: { x: coordinates, y: coordinates, cells: }
+    )
+
+    %w[raw_counts diff_exp spatial].each do |data_type|
+      execute_http_request(:get, api_v1_search_path(type: 'study', data_types: data_type))
+      assert_response :success
+      assert_empty json['studies']
+    end
+
+    # create raw counts matrix
+    exp_matrix = FactoryBot.create(:expression_file,
+                                   name: 'matrix.tsv',
+                                   study: search_study)
+    exp_matrix.build_expression_file_info(
+      is_raw_counts: true, units: 'raw counts', library_preparation_protocol: "10x 5' v3",
+      modality: 'Transcriptomic: unbiased', biosample_input_type: 'Whole cell'
+    )
+    exp_matrix.save
+    # create DE results
+    DifferentialExpressionResult.create(
+      study: search_study, cluster_group: cluster_file.cluster_groups.first, annotation_name: 'species',
+      annotation_scope: 'study', matrix_file_id: exp_matrix.id
+    )
+    # create spatial cluster
+    FactoryBot.create(
+      :cluster_file, name: 'spatial.txt', study: search_study, is_spatial: true,
+      cell_input: { x: coordinates, y: coordinates, cells: }
+    )
+
+    %w[raw_counts diff_exp spatial].each do |data_type|
+      execute_http_request(:get, api_v1_search_path(type: 'study', data_types: data_type))
+      assert_response :success
+      assert_equal search_study.accession, json['studies'].first['accession']
+    end
   end
 end

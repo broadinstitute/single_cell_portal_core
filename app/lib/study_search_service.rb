@@ -210,7 +210,8 @@ class StudySearchService
       spatial: :has_spatial_clustering?
     }
 
-    studies.each do |study|
+    # run matching in parallel to reduce UI blocking
+    Parallel.map(studies, in_threads: 10) do |study|
       data_types.each do |data_type|
         matches[data_type] << study.accession if study.send(matchers[data_type])
       end

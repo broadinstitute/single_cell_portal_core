@@ -405,7 +405,6 @@ module Api
         end
 
         @matching_accessions = @studies.map { |study| self.class.get_study_attribute(study, :accession) }
-        logger.info "studies_by_facet: #{@studies_by_facet}"
         logger.info "Final list of matching studies: #{@matching_accessions}"
         @results = @studies.paginate(page: params[:page], per_page: Study.per_page)
         if params[:export].present?

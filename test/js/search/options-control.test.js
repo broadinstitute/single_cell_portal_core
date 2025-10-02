@@ -38,4 +38,24 @@ describe('OptionsControl component', () => {
     expect(checkbox).toBeChecked()
     expect(searchContext.updateSearch).toHaveBeenCalledWith({ 'external': 'hca' })
   })
+
+  it('merges multiple option controls into same parameter', () => {
+    const searchContext = {
+      params: { 'data_types': 'raw_counts' },
+      updateSearch: jest.fn()
+    }
+    const { getByText } = render(
+      <>
+        <OptionsControl
+          searchContext={searchContext} searchProp='data_types' value='raw_counts'
+          label='Has raw counts' multiple={true}
+        />
+        <OptionsControl
+          searchContext={searchContext} searchProp='data_types' value='spatial' label='Has spatial' multiple={true}
+        />
+      </>
+    )
+    fireEvent.click(getByText('Has spatial'))
+    expect(searchContext.updateSearch).toHaveBeenCalledWith({ 'data_types': 'raw_counts,spatial' })
+  })
 })
