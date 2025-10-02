@@ -226,7 +226,7 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
                  "Did not return correct array of matching accessions, expected #{expected_accessions} but found #{matching_accessions}"
 
     assert_equal @random_seed, json['studies'].first['term_matches'].first
-    assert_equal 2, json['match_by_data']['numResults:scp:text']
+    assert_equal expected_accessions.count, json['match_by_data']['numResults:scp:text']
 
     # test exact phrase
     search_phrase = '"API Test Study"'
@@ -571,7 +571,7 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     detail.save!
     cells = %w[cellA cellB cellC cellD cellE cellF cellG]
     FactoryBot.create(
-      :metadata_file, name: 'metadata.txt', study: search_study, use_metadata_convention: true, cell_input: cells,
+      :metadata_file, name: 'metadata.txt', study: search_study, cell_input: cells,
       annotation_input: [{ name: 'species', type: 'group', values: %w[dog cat dog dog cat cat cat] }]
     )
     coordinates = 1.upto(7).to_a
