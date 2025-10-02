@@ -6,7 +6,7 @@ import {
   faTimes,
   faSearch,
   faFileUpload,
-  faGlobe, faGlobeAmericas, faFileDownload
+  faGlobe, faFileDownload
 } from '@fortawesome/free-solid-svg-icons'
 import Modal from 'react-bootstrap/lib/Modal'
 import { HexColorPicker, HexColorInput } from 'react-colorful'
