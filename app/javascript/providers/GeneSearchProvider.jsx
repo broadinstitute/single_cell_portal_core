@@ -128,6 +128,7 @@ export function buildParamsFromQuery(query, preset) {
     genes: cleanGeneParams,
     terms: queryParams.terms ? queryParams.terms : '',
     external: queryParams.external ? queryParams.external : '',
+    data_types: queryParams.data_types ? queryParams.data_types : '',
     facets: buildFacetsFromQueryString(queryParams.facets),
     preset: preset ? preset : queryString.preset_search
   }
