@@ -68,6 +68,7 @@ nav.search-links, #search-panel {
       width: 100%;
       box-sizing: border-box;
       display: inline-block;
+      user-select: none;
     }
     &.active > a, &.selected > a {
       background-color: $action-color;
