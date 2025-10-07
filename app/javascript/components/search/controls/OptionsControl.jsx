@@ -13,7 +13,7 @@ export default function OptionsControl({ searchContext, searchProp, value, label
   /** set the default state for this option checkbox */
   function isDefaultChecked() {
     if (multiple) {
-      return getExistingOpts().filter(v => v === value).length > 0
+      return getExistingOpts().includes(value)
     } else {
       return searchContext.params[searchProp] === value
     }
