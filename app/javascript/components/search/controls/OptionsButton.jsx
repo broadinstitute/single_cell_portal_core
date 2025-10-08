@@ -10,19 +10,24 @@ export default function OptionsButton() {
   const searchContext = useContext(StudySearchContext)
   const [showOptions, setShowOptions] = useState(false)
   const configuredOptions = [
-    { searchProp: 'external', value: 'hca', label: 'Include HCA results' }
+    { searchProp: 'external', value: 'hca', label: 'Include HCA results' },
+    { searchProp: 'data_types', value: 'raw_counts', label: 'Has raw counts', multiple: true },
+    { searchProp: 'data_types', value: 'diff_exp', label: 'Has differential expression', multiple: true },
+    { searchProp: 'data_types', value: 'spatial', label: 'Has spatial data', multiple: true }
   ]
 
   const optionsPopover = <Popover data-analytics-name='search-options-menu' id='search-options-menu'>
     <ul className="facet-filter-list">
       {
-        configuredOptions.map((option) => {
+        configuredOptions.map((option, index) => {
         return <OptionsControl
-          key={option.searchProp}
+          key={`${option.searchProp}-${index}`}
           searchContext={searchContext}
           searchProp={option.searchProp}
           value={option.value}
-          label={option.label}/>
+          label={option.label}
+          multiple={option.multiple}
+        />
         })
       }
     </ul>

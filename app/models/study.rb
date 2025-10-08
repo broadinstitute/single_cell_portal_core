@@ -1062,6 +1062,14 @@ class Study
     end.any?
   end
 
+  def has_differential_expression_results?
+    differential_expression_results.any?
+  end
+
+  def has_spatial_clustering?
+    spatial_cluster_groups.any?
+  end
+
   # check if study has any files that can be streamed from the bucket for visualization
   # this includes BAM, BED, inferCNV Ideogram annotations, Image files, and DE files
   #

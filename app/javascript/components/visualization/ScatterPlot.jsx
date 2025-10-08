@@ -143,13 +143,14 @@ function RawScatterPlot({
   }, [editedCustomColors])
 
   /** Save any changes to the legend colors */
-  async function saveCustomColors(newColors) {
+  async function saveCustomColors(newColors, globalColorUpdate = false) {
     const colorObj = {}
     // read the annotation name off of scatterData to ensure it's the real name, and not '' or '_default'
     colorObj[scatterData?.annotParams?.name] = newColors
     const newFileObj = {
       _id: scatterData?.clusterFileId,
-      custom_color_updates: colorObj
+      custom_color_updates: colorObj,
+      global_color_update: globalColorUpdate
     }
     setIsLoading(true)
     try {

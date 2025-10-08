@@ -15,7 +15,7 @@ class HcaAzulClient
   MANIFEST_FORMATS = %w[compact full terra.bdbag terra.pfb curl].freeze
 
   # maximum number of results to return
-  MAX_RESULTS = 100
+  MAX_RESULTS = 80
 
   # maximum length of query string (in characters) for requests
   MAX_QUERY_LENGTH = 8192
@@ -23,7 +23,6 @@ class HcaAzulClient
   # Default headers for API requests
   DEFAULT_HEADERS = {
     'Accept' => 'application/json',
-    'Content-Type' => 'application/json',
     'x-app-id' => 'single-cell-portal',
     'x-domain-id' => "#{ENV['HOSTNAME']}"
   }.freeze
@@ -104,9 +103,21 @@ class HcaAzulClient
   # * *raises*
   #   - (RestClient::Exception) => if HTTP request fails for any reason
   def execute_http_request(http_method, path, payload = nil)
-    response = RestClient::Request.execute(method: http_method, url: path, payload:, headers: DEFAULT_HEADERS)
+    response = RestClient::Request.execute(method: http_method, url: path, payload:, headers: set_headers(http_method))
     # handle response using helper
     handle_response(response)
+  end
+
+  # set HTTP headers based on method
+  # GET requests do not support the Content-Type header, but all PUT/POST/PATCH requests do
+  #
+  # * *params*
+  #   - +http_method+ (String, Symbol) => HTTP method, e.g. :get, :post
+  #
+  # * *returns*
+  #   - (Hash) => HTTP headers object
+  def set_headers(http_method)
+    http_method.to_sym == :get ? DEFAULT_HEADERS : DEFAULT_HEADERS.merge('Content-Type' => 'application/json')
   end
 
   # FROM SCP-4592: Temporarily disable automatic retries while we investigate the rise in 503 errors from Azul

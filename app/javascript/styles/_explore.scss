@@ -73,6 +73,14 @@
   .violin-title {
     margin-left: 110px;
   }
+
+  .color-update-toggle {
+    font-weight: normal;
+  }
+
+  .customize-color-palette {
+    margin-right: 1em;
+  }
 }
 
 .popover-badge {
@@ -204,7 +212,7 @@
   margin-left: 4px;
 }
 
-#gene-list-upload {
+#gene-list-upload, #color-manifest-upload {
   display: none;
 }
 

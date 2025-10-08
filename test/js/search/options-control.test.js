@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, fireEvent } from '@testing-library/react'
+import { render, fireEvent, screen } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 
 import OptionsControl from '~/components/search/controls/OptionsControl'
@@ -7,15 +7,28 @@ import OptionsControl from '~/components/search/controls/OptionsControl'
 describe('OptionsControl component', () => {
   it('renders with default checked state', () => {
     const searchContext = {
-      params: { 'external': 'hca' },
+      params: { 'external': 'hca', 'data_types': 'raw_counts,spatial' },
       updateSearch: jest.fn()
     }
     const { getByText, getByRole } = render(
-      <OptionsControl searchContext={searchContext} searchProp='external' value='hca' label='Include HCA results' />
+      <>
+        <OptionsControl searchContext={searchContext} searchProp='external' value='hca' label='Include HCA results' />
+        <OptionsControl
+          searchContext={searchContext} searchProp='data_types' value='raw_counts'
+          label='Has raw counts' multiple={true}
+        />
+        <OptionsControl
+          searchContext={searchContext} searchProp='data_types' value='spatial' label='Has spatial' multiple={true}
+        />
+      </>
     )
 
     expect(getByText('Include HCA results')).toBeInTheDocument()
-    expect(getByRole('checkbox')).toBeChecked()
+    expect(getByText('Has raw counts')).toBeInTheDocument()
+    expect(getByText('Has spatial')).toBeInTheDocument()
+    expect(screen.getByTestId('options-checkbox-external-hca')).toBeChecked()
+    expect(screen.getByTestId('options-checkbox-data_types-raw_counts')).toBeChecked()
+    expect(screen.getByTestId('options-checkbox-data_types-spatial')).toBeChecked()
   })
 
   it('toggles checkbox state on click', () => {
@@ -37,5 +50,25 @@ describe('OptionsControl component', () => {
 
     expect(checkbox).toBeChecked()
     expect(searchContext.updateSearch).toHaveBeenCalledWith({ 'external': 'hca' })
+  })
+
+  it('merges multiple option controls into same parameter', () => {
+    const searchContext = {
+      params: { 'data_types': 'raw_counts' },
+      updateSearch: jest.fn()
+    }
+    const { getByText } = render(
+      <>
+        <OptionsControl
+          searchContext={searchContext} searchProp='data_types' value='raw_counts'
+          label='Has raw counts' multiple={true}
+        />
+        <OptionsControl
+          searchContext={searchContext} searchProp='data_types' value='spatial' label='Has spatial' multiple={true}
+        />
+      </>
+    )
+    fireEvent.click(getByText('Has spatial'))
+    expect(searchContext.updateSearch).toHaveBeenCalledWith({ 'data_types': 'raw_counts,spatial' })
   })
 })

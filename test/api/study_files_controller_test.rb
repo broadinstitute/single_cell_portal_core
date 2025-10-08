@@ -7,6 +7,7 @@ require 'detached_helper'
 class StudyFilesControllerTest < ActionDispatch::IntegrationTest
 
   before(:all) do
+    Delayed::Worker.delay_jobs = false # run all .delay calls synchronously
     @user = FactoryBot.create(:api_user, test_array: @@users_to_clean)
     @other_user = FactoryBot.create(:api_user, test_array: @@users_to_clean)
     @study = FactoryBot.create(:detached_study,
@@ -14,9 +15,12 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
                                public: true,
                                user: @user,
                                test_array: @@studies_to_clean)
-    @study_file = FactoryBot.create(:cluster_file,
-                               name: 'clusterA.txt',
-                               study: @study)
+    @study_file = FactoryBot.create(:cluster_file, name: 'clusterA.txt', study: @study)
+    @other_study_file = FactoryBot.create(:cluster_file, name: 'clusterB.txt', study: @study)
+  end
+
+  after(:all) do
+    Delayed::Worker.delay_jobs = true # restore background job processing
   end
 
   setup do
@@ -175,7 +179,8 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
 
     @study_file.reload
     # check that the new annotation colors were added, and the previous ones remain
-    assert_equal annot2_color_hash.merge(annot1_color_hash), @study_file.cluster_file_info.custom_colors_as_hash.with_indifferent_access
+    assert_equal annot2_color_hash.merge(annot1_color_hash),
+                 @study_file.cluster_file_info.custom_colors_as_hash.with_indifferent_access
 
     updated_annot2_color_hash = {
       'annotation1': {
@@ -190,7 +195,21 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
 
     @study_file.reload
     # confirm the annotation1 colors were completely replaced, and annotation2 colors were preserved
-    assert_equal updated_annot2_color_hash.merge(annot2_color_hash), @study_file.cluster_file_info.custom_colors_as_hash.with_indifferent_access
+    assert_equal updated_annot2_color_hash.merge(annot2_color_hash),
+                 @study_file.cluster_file_info.custom_colors_as_hash.with_indifferent_access
+
+    # test global update
+    study_file_attributes[:study_file][:global_color_update] = true
+
+    assert_nil @other_study_file.cluster_file_info
+    execute_http_request(:patch, api_v1_study_study_file_path(study_id: @study.id, id: @study_file.id),
+                         request_payload: study_file_attributes)
+    assert_response :success
+    # sleep 3 # let Delayed::Job process update in background
+    @other_study_file.reload
+    assert_equal updated_annot2_color_hash,
+                 @other_study_file.cluster_file_info.custom_colors_as_hash.with_indifferent_access
+
   end
 
   test 'should create and update AnnData file' do

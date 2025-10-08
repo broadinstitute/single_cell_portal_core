@@ -4,7 +4,7 @@ class NemoClient
 
   attr_accessor :api_root, :username, :password
 
-  BASE_URL = 'https://beta-assets.nemoarchive.org/api'.freeze
+  BASE_URL = 'https://assets.nemoarchive.org/api'.freeze
 
   DEFAULT_HEADERS = {
     'Accept' => 'application/json',
@@ -12,7 +12,7 @@ class NemoClient
   }.freeze
 
   # types of available entities
-  ENTITY_TYPES = %w[collection file grant project publication sample subject].freeze
+  ENTITY_TYPES = %w[collection file grant project sample subject].freeze
 
   # identifier format validator
   IDENTIFIER_FORMAT = /nemo:[a-z]{3}-[a-z0-9]{7}$/
@@ -21,10 +21,8 @@ class NemoClient
   #
   # * *return*
   #   - +NemoClient+ object
-  def initialize(api_root: BASE_URL, username: ENV['NEMO_API_USERNAME'], password: ENV['NEMO_API_PASSWORD'])
+  def initialize(api_root: BASE_URL)
     self.api_root = api_root.chomp('/')
-    self.username = username
-    self.password = password
   end
 
   # submit a request to NeMO API
@@ -68,12 +66,6 @@ class NemoClient
     end
   end
 
-  # add basic HTTP auth header
-  # TODO: remove after public release of API
-  def authorization_header
-    { Authorization: "Basic #{Base64.encode64("#{username}:#{password}")}" }
-  end
-
   # sub-handler for making external HTTP request
   # does not have error handling, this is done by process_api_request
   # allows for some methods to implement their own error handling (like health checks)
@@ -89,8 +81,7 @@ class NemoClient
   # * *raises*
   #   - (RestClient::Exception) => if HTTP request fails for any reason
   def execute_http_request(http_method, path, payload = nil)
-    headers = authorization_header.merge(DEFAULT_HEADERS)
-    response = RestClient::Request.execute(method: http_method, url: path, payload:, headers:)
+    response = RestClient::Request.execute(method: http_method, url: path, payload:, headers: DEFAULT_HEADERS)
     # handle response using helper
     handle_response(response)
   end
@@ -192,17 +183,6 @@ class NemoClient
   #   - (Hash) => File metadata
   def project(identifier)
     fetch_entity(:project, identifier)
-  end
-
-  # get information about a publication
-  #
-  # * *params*
-  #   - +identifier+ (String) => sample identifier
-  #
-  # * *returns*
-  #   - (Hash) => publication metadata
-  def publication(identifier)
-    fetch_entity(:publication, identifier)
   end
 
   # get information about a sample

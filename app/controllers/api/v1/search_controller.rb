@@ -282,8 +282,13 @@ module Api
           sort_type = params[:order].to_sym
         end
 
+        result_types = params[:data_types]&.split(',')&.map(&:to_sym) || []
+        @studies = StudySearchService.filter_results_by_data_type(@studies, result_types)
+
         # convert to array to allow appending external search results (Azul, TDR, etc.)
         @studies = @studies.to_a
+
+        # filter results by file type, if requested
 
         # perform Azul search if there are facets/terms provided by user, and they requested HCA results
         # run this before inferred search so that they are weighted and sorted correctly
@@ -391,6 +396,7 @@ module Api
               # only show results where we found a hit in gene search
               @inferred_studies = Study.where(:id.in => new_genes[:study_ids])
             end
+            @inferred_studies = StudySearchService.filter_results_by_data_type(@inferred_studies, result_types)
             @inferred_accessions = @inferred_studies.pluck(:accession)
             logger.info "Found #{@inferred_accessions.count} inferred matches: #{@inferred_accessions}"
             @matching_accessions += @inferred_accessions
@@ -399,7 +405,6 @@ module Api
         end
 
         @matching_accessions = @studies.map { |study| self.class.get_study_attribute(study, :accession) }
-        logger.info "studies_by_facet: #{@studies_by_facet}"
         logger.info "Final list of matching studies: #{@matching_accessions}"
         @results = @studies.paginate(page: params[:page], per_page: Study.per_page)
         if params[:export].present?

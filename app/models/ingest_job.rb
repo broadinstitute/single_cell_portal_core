@@ -750,7 +750,7 @@ class IngestJob
 
   # determine if differential expression should be run for study, and submit available jobs (skipping existing results)
   def launch_differential_expression_jobs
-    if DifferentialExpressionService.study_eligible?(study, skip_existing: true)
+    if DifferentialExpressionService.study_eligible?(study)
       Rails.logger.info "#{study.accession} is eligible for differential expression, launching available jobs"
       DifferentialExpressionService.run_differential_expression_on_all(study.accession, skip_existing: true)
     end
