@@ -1,10 +1,10 @@
 import React, { useState, useContext } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCogs } from '@fortawesome/free-solid-svg-icons'
-import { Popover, OverlayTrigger } from 'react-bootstrap'
 import { StudySearchContext } from '~/providers/StudySearchProvider'
 
 import OptionsControl from '~/components/search/controls/OptionsControl'
+import useCloseableModal from '~/hooks/closeableModal'
 
 export default function OptionsButton() {
   const searchContext = useContext(StudySearchContext)
@@ -16,31 +16,36 @@ export default function OptionsButton() {
     { searchProp: 'data_types', value: 'spatial', label: 'Has spatial data', multiple: true }
   ]
 
-  const optionsPopover = <Popover data-analytics-name='search-options-menu' id='search-options-menu'>
-    <ul className="facet-filter-list">
+  const { node, _, handleButtonClick } = useCloseableModal(showOptions, setShowOptions)
+
+  const optionsMenu = <div data-analytics-name='search-options-menu' id='search-options-menu'>
+    <ul>
       {
         configuredOptions.map((option, index) => {
-        return <OptionsControl
-          key={`${option.searchProp}-${index}`}
-          searchContext={searchContext}
-          searchProp={option.searchProp}
-          value={option.value}
-          label={option.label}
-          multiple={option.multiple}
-        />
+          return <OptionsControl
+            key={`${option.searchProp}-${index}`}
+            searchContext={searchContext}
+            searchProp={option.searchProp}
+            value={option.value}
+            label={option.label}
+            multiple={option.multiple}
+          />
         })
       }
     </ul>
-  </Popover>
+  </div>
 
   return (
-    <OverlayTrigger trigger={['click']} placement='bottom' animation={false} overlay={optionsPopover}>
-    <span id="search-options-button" data-testid="search-options-button"
-          className={`facet ${showOptions ? 'active' : ''}`}>
-      <a onClick={() => setShowOptions(!showOptions)}>
+    <span
+      ref={node}
+      id="search-options-button"
+      data-testid="search-options-button"
+      className={`facet ${showOptions ? 'active' : ''}`}
+    >
+      <a onClick={handleButtonClick}>
         <FontAwesomeIcon className="icon-left" icon={faCogs}/>Options
       </a>
+      { showOptions && optionsMenu}
     </span>
-    </OverlayTrigger>
   )
 }
