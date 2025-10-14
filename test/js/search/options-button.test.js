@@ -17,7 +17,7 @@ describe('OptionsButton component', () => {
     // Initially, options should not be visible
     expect(queryByText('Include HCA results')).not.toBeInTheDocument()
 
-    // Click to show options and confirm button i
+    // Click to show options and confirm button is active
     fireEvent.click(getByText('Options'))
     configuredOptions.map(option => {
       expect(getByText(option.label)).toBeInTheDocument()
