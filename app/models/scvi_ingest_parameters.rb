@@ -12,7 +12,7 @@ class ScviIngestParameters
   # file_size: size of input file for machine scaling
   PARAM_DEFAULTS = {
     accession: nil,
-    docker_image: 'gcr.io/broad-singlecellportal-staging/scvi-scanvi:1.0.0-1.2-1758225942',
+    docker_image: 'us.gcr.io/broad-gotc-prod/scvi-scanvi:1.0.0-1.2-1760025671',
     machine_type: 'n1-highmem-8',
     atac_file: nil,
     gex_file: nil,
