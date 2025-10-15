@@ -163,9 +163,16 @@ class HcaAzulClientTest < ActiveSupport::TestCase
     assert_equal keys, file.keys.sort & keys
   end
 
-  # TODO: SCP-5564
-  #   - Fix "Global bulk download breaks in default use"
-  #   - Re-enable this test
+  test 'should format object for query string' do
+    query_object = { 'foo' => { 'bar' => 'baz' } }
+    expected_response = '%7B%22foo%22+%3A+%7B%22bar%22+%3A+%22baz%22%7D%7D'
+    formatted_query = @hca_azul_client.format_hash_as_query_string(query_object)
+    assert_equal expected_response, formatted_query
+    # assert we can get back to original object, but as JSON (removing whitespace that breaks comparison)
+    query_as_json = CGI.unescape(formatted_query).gsub(/\s/, '')
+    assert_equal query_object.to_json, query_as_json
+  end
+
   test 'should get HCA metadata tsv link' do
     skip_if_api_down
     manifest_info = @hca_azul_client.project_manifest_link(@project_id)

@@ -162,8 +162,10 @@ module Api
         end
 
         @study_file_info = ::BulkDownloadService.get_download_info(valid_accessions)
-        hca_file_info = ::AzulSearchService.get_file_summary_info(hca_accessions)
-        @study_file_info += hca_file_info if hca_file_info.any?
+        if hca_accessions.present?
+          hca_file_info = ::AzulSearchService.get_file_summary_info(hca_accessions)
+          @study_file_info += hca_file_info if hca_file_info.any?
+        end
 
         render json: @study_file_info
       end
