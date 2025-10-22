@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 export default function OptionsControl({ searchContext, searchProp, value, label, multiple = false }) {
   const defaultChecked = isDefaultChecked()
   const [isChecked, setIsChecked] = useState(defaultChecked)
+  const optionId = `options-control-${searchProp}-${value}`
 
   /** return existing url query params for this option */
   function getExistingOpts() {
@@ -12,11 +13,7 @@ export default function OptionsControl({ searchContext, searchProp, value, label
 
   /** set the default state for this option checkbox */
   function isDefaultChecked() {
-    if (multiple) {
-      return getExistingOpts().includes(value)
-    } else {
-      return searchContext.params[searchProp] === value
-    }
+    return multiple ? getExistingOpts().includes(value) : searchContext.params[searchProp] === value
   }
 
   /** toggle state of checkbox */
@@ -32,14 +29,9 @@ export default function OptionsControl({ searchContext, searchProp, value, label
   }
 
   return (
-    <li id={`options-control-${searchProp}`} key={`options-control-${searchProp}`}>
-      <label>
-        <input data-testid={`options-checkbox-${searchProp}-${value}`}
-               type="checkbox"
-               checked={isChecked}
-               onChange={() => {toggleCheckbox(!isChecked)}}/>
-        <span onClick={() => {toggleCheckbox(!isChecked)}} >{ label }</span>
-      </label>
+    <li id={optionId} key={optionId} onClick={() => {toggleCheckbox(!isChecked)}}>
+      <input data-testid={`options-checkbox-${searchProp}-${value}`} type="checkbox" checked={isChecked} readOnly />
+      { label }
     </li>
   )
 }

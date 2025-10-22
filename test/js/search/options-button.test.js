@@ -1,8 +1,8 @@
 import React from 'react'
-import { render, fireEvent } from '@testing-library/react'
+import { render, fireEvent, screen } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 
-import OptionsButton from '~/components/search/controls/OptionsButton'
+import OptionsButton, { configuredOptions } from '~/components/search/controls/OptionsButton'
 
 describe('OptionsButton component', () => {
   it('renders the options button with correct icon and text', () => {
@@ -17,9 +17,12 @@ describe('OptionsButton component', () => {
     // Initially, options should not be visible
     expect(queryByText('Include HCA results')).not.toBeInTheDocument()
 
-    // Click to show options
+    // Click to show options and confirm button is active
     fireEvent.click(getByText('Options'))
-    expect(getByText('Include HCA results')).toBeInTheDocument()
+    configuredOptions.map(option => {
+      expect(getByText(option.label)).toBeInTheDocument()
+    })
+    expect(screen.getByTestId('search-options-button')).toHaveClass('active')
 
     // Click again to hide options
     fireEvent.click(getByText('Options'))
