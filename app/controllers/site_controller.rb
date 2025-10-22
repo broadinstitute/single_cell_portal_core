@@ -23,7 +23,7 @@ class SiteController < ApplicationController
                                                   :terms_of_service, :log_action, :get_taxon, :get_taxon_assemblies,
                                                   :covid19, :record_download_acceptance, :reviewer_access,
                                                   :validate_reviewer_access]
-  before_action :check_study_detached, only: [:download_file, :update_study_settings, :get_fastq_files]
+  before_action :check_study_detached, only: [:download_file, :update_study_settings]
   before_action :set_reviewer_access, only: [:reviewer_access, :validate_reviewer_access]
   COLORSCALE_THEMES = %w(Greys YlGnBu Greens YlOrRd Bluered RdBu Reds Blues Picnic Rainbow Portland Jet Hot Blackbody Earth Electric Viridis Cividis)
 
@@ -216,47 +216,6 @@ class SiteController < ApplicationController
   # render the 'Create Annotations' form (must be done via ajax to get around page caching issues)
   def show_user_annotations_form
 
-  end
-
-  ###
-  #
-  # WORKFLOW METHODS
-  #
-  ###
-
-  # method to populate an array with entries corresponding to all fastq files for a study (both owner defined as study_files
-  # and extra fastq's that happen to be in the bucket)
-  def get_fastq_files
-    @fastq_files = []
-    file_list = []
-
-    #
-    selected_entries = params[:selected_entries].split(',').map(&:strip)
-    selected_entries.each do |entry|
-      class_name, entry_name = entry.split('--')
-      case class_name
-        when 'directorylisting'
-          directory = @study.directory_listings.are_synced.detect {|d| d.name == entry_name}
-          if !directory.nil?
-            directory.files.each do |file|
-              entry = file
-              entry[:gs_url] = directory.gs_url(file[:name])
-              file_list << entry
-            end
-          end
-        when 'studyfile'
-          study_file = @study.study_files.by_type('Fastq').detect {|f| f.name == entry_name}
-          if !study_file.nil?
-            file_list << {name: study_file.bucket_location, size: study_file.upload_file_size, generation: study_file.generation, gs_url: study_file.gs_url}
-          end
-        else
-          nil # this is called when selection is cleared out
-      end
-    end
-    # now that we have the complete list, populate the table with sample pairs (if present)
-    populate_rows(@fastq_files, file_list)
-
-    render json: @fastq_files.to_json
   end
 
   ###
