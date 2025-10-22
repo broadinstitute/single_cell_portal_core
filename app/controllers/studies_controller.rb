@@ -15,14 +15,14 @@ class StudiesController < ApplicationController
   respond_to :html, :js, :json
 
   before_action :set_study, except: [:index, :new, :create, :download_private_file]
-  before_action :set_file_types, only: [:sync_study, :sync_submission_outputs, :sync_study_file, :sync_orphaned_study_file,
+  before_action :set_file_types, only: [:sync_study, :sync_study_file, :sync_orphaned_study_file,
                                         :update_study_file_from_sync]
   before_action :check_edit_permissions, except: [:index, :new, :create, :download_private_file, :generate_manifest]
   before_action do
     authenticate_user!
     check_access_settings
   end
-  before_action :check_study_detached, only: [:edit, :update, :initialize_study, :sync_study, :sync_submission_outputs]
+  before_action :check_study_detached, only: [:edit, :update, :initialize_study, :sync_study]
   helper_method :visible_unsynced_files, :hidden_unsynced_files
   ###
   #
@@ -115,86 +115,6 @@ class StudiesController < ApplicationController
   def sync_next_file_batch
     sync_file_batch
     render action: :sync_study
-  end
-
-  # sync outputs from a specific submission
-  def sync_submission_outputs
-    @synced_study_files = @study.study_files.valid
-    @synced_directories = @study.directory_listings.to_a
-    @unsynced_files = []
-    @orphaned_study_files = []
-    @unsynced_primary_data_dirs = []
-    @unsynced_other_dirs = []
-    configuration_name = params[:configuration_name]
-    configuration_namespace = params[:configuration_namespace]
-    begin
-      # indication of whether or not we have custom sync code to run, defaults to false
-      @special_sync = false
-      configuration = ApplicationController.firecloud_client.get_workspace_configuration(@study.firecloud_project, @study.firecloud_workspace,
-                                                                         configuration_namespace, configuration_name)
-      submission = ApplicationController.firecloud_client.get_workspace_submission(@study.firecloud_project, @study.firecloud_workspace,
-                                                                   params[:submission_id])
-      # get method identifiers to load analysis_configuration object
-      method_name = configuration['methodRepoMethod']['methodName']
-      method_namespace = configuration['methodRepoMethod']['methodNamespace']
-      method_snapshot = configuration['methodRepoMethod']['methodVersion']
-      @analysis_configuration = AnalysisConfiguration.find_by(namespace: method_namespace, name: method_name, snapshot: method_snapshot)
-      if @analysis_configuration.present?
-        @special_sync = true
-      end
-      submission['workflows'].each do |workflow|
-        workflow = ApplicationController.firecloud_client.get_workspace_submission_workflow(@study.firecloud_project, @study.firecloud_workspace,
-                                                                            params[:submission_id], workflow['workflowId'])
-        workflow['outputs'].each do |output_name, outputs|
-          # try to copy each 'output' to the special output path if the object is a file
-          # if the output is not a file, then we exit silently rather than throwing an error
-          if outputs.is_a?(Array)
-            outputs.each do |output_file|
-              file_location = output_file.gsub(/gs\:\/\/#{@study.bucket_id}\//, '')
-              # get google instance of file
-              remote_file = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, @study.bucket_id, file_location)
-              if remote_file.present?
-                process_workflow_output(output_name, output_file, remote_file, workflow, params[:submission_id], configuration)
-              end
-            end
-          elsif outputs.is_a?(String)
-            file_location = outputs.gsub(/gs\:\/\/#{@study.bucket_id}\//, '')
-            # get google instance of file
-            remote_file = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, @study.bucket_id, file_location)
-            if remote_file.present?
-              process_workflow_output(output_name, outputs, remote_file, workflow, params[:submission_id], configuration)
-            end
-          else
-            next # optional outputs can be nil so ignore
-          end
-        end
-        metadata = AnalysisMetadatum.find_by(study_id: @study.id, submission_id: params[:submission_id])
-        if metadata.nil?
-          metadata_attr = {
-              name: submission['methodConfigurationName'],
-              submitter: submission['submitter'],
-              submission_id: params[:submission_id],
-              study_id: @study.id,
-              version: '4.6.1'
-          }
-          begin
-            AnalysisMetadatum.create(metadata_attr)
-          rescue => e
-            ErrorTracker.report_exception(e, current_user, @study, params, { analysis_metadata: metadata_attr})
-            MetricsService.report_error(e, request, current_user, @study)
-            logger.error "Unable to create analysis metadatum for #{params[:submission_id]}: #{e.class.name}:: #{e.message}"
-          end
-        end
-      end
-      @available_files = @unsynced_files.map {|f| {name: f.name, generation: f.generation, size: f.upload_file_size}}
-      render action: :sync_study
-    rescue => e
-      ErrorTracker.report_exception(e, current_user, @study, params)
-      MetricsService.report_error(e, request, current_user, @study)
-      redirect_to merge_default_redirect_params(request.referrer, scpbr: params[:scpbr]),
-                  alert: "We were unable to sync the outputs from submission #{params[:submission_id]} due to the " \
-                         "following error: #{e.message}.  #{SCP_SUPPORT_EMAIL}"
-    end
   end
 
   # PATCH/PUT /studies/1
