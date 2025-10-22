@@ -10,6 +10,9 @@ class DotPlotService
   #
   # * *yields*
   #   - (IngestJob) => the job that will be run to process the data
+  #
+  # * *raises*
+  #   - (ArgumentError) => study/cluster is not eligible, invalid parameters
   def self.run_process_dot_plot_genes(study, cluster_group, user)
     validate_study(study, cluster_group)
     expression_file = study_processed_matrices(study)&.first
@@ -24,6 +27,22 @@ class DotPlotService
       true
     else
       raise ArgumentError, "job parameters failed to validate: #{params_object.errors.full_messages.join(', ')}"
+    end
+  end
+
+  # process all qualifying clusters/genes in a give study
+  #
+  # * *params*
+  #   - +study+ (Study) => the study that owns the data
+  #   - +user+ (User) => the user that will run the job
+  #
+  # * *yields*
+  #   - (IngestJob) => the job that will be run to process the data
+  def self.process_all_study_data(study, user)
+    requested_user = user || study.user
+    clusters = study.cluster_groups.reject { |cluster| cluster_processed?(study, cluster) }
+    clusters.each do |cluster|
+      run_process_dot_plot_genes(study, cluster, requested_user)
     end
   end
 
