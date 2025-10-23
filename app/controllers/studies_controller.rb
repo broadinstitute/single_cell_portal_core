@@ -1080,40 +1080,6 @@ class StudiesController < ApplicationController
   #
   ###
 
-  def process_workflow_output(output_name, file_url, remote_gs_file, workflow, submission_id, submission_config)
-    path_parts = file_url.split('/')
-    basename = path_parts.last
-    new_location = "outputs_#{@study.id}_#{submission_id}/#{basename}"
-    # check if file has already been synced first
-    # we can only do this by md5 hash as the filename and generation will be different
-    existing_file = ApplicationController.firecloud_client.execute_gcloud_method(:get_workspace_file, 0, @study.bucket_id, new_location)
-    unless existing_file.present? && existing_file.md5 == remote_gs_file.md5 && StudyFile.where(study_id: @study.id, upload_file_name: new_location).exists?
-      # now copy the file to a new location for syncing, marking as default type of 'Analysis Output'
-      new_file = remote_gs_file.copy new_location
-      unsynced_output = StudyFile.new(study_id: @study.id, name: new_file.name, upload_file_name: new_file.name,
-                                      upload_content_type: new_file.content_type, upload_file_size: new_file.size,
-                                      generation: new_file.generation, remote_location: new_file.name,
-                                      options: {submission_id: params[:submission_id]})
-      unsynced_output.build_expression_file_info
-      # process output according to analysis_configuration output parameters and associations (if present)
-      workflow_parts = output_name.split('.')
-      call_name = workflow_parts.shift
-      param_name = workflow_parts.join('.')
-      if @special_sync # only process outputs from 'registered' analyses
-        Rails.logger.info "Processing output #{output_name}:#{file_url} in #{params[:submission_id]}/#{workflow['workflowId']}"
-        # find matching output analysis_parameter
-        output_param = @analysis_configuration.analysis_parameters.outputs.detect {|param| param.parameter_name == param_name && param.call_name == call_name}
-        # set declared file type
-        unsynced_output.file_type = output_param.output_file_type
-        # process any direct attribute assignments or associations
-        output_param.analysis_output_associations.each do |association|
-          unsynced_output = association.process_output_file(unsynced_output, submission_config, @study)
-        end
-      end
-      @unsynced_files << unsynced_output
-    end
-  end
-
   # match filenames that start with a . or have a /. in their path
   HIDDEN_FILE_REGEX = /\/\.|^\./
   def visible_unsynced_files

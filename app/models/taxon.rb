@@ -28,12 +28,6 @@ class Taxon
 
   before_destroy :remove_study_file_associations
 
-  # Constants for scoping values for AnalysisParameter inputs/outputs
-  ASSOCIATED_MODEL_METHOD = %w(common_name scientific_name ncbi_taxid)
-  ASSOCIATED_MODEL_DISPLAY_METHOD = %w(common_name scientific_name ncbi_taxid)
-  OUTPUT_ASSOCIATION_ATTRIBUTE = %w(study_file_id)
-  ASSOCIATION_FILTER_ATTRIBUTE = %w(common_name scientific_name)
-
   swagger_schema :Taxon do
     key :required, [:common_name, :scientific_name, :ncbi_taxid]
     key :name, 'Taxon'

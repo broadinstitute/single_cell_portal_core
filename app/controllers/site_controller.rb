@@ -434,11 +434,6 @@ class SiteController < ApplicationController
     end
   end
 
-  # load list of available workflows
-  def load_available_workflows
-    AnalysisConfiguration.available_analyses
-  end
-
   # handle updates to reviewer access settings
   def manage_reviewer_access(study, access_settings)
     return if access_settings.blank?

@@ -168,11 +168,6 @@ resource.save!
 api_user = User.create!(email:'testing.user.2@gmail.com', password:'someotherpassword', metrics_uuid: SecureRandom.uuid,
              api_access_token: { access_token: 'test-api-token-2', expires_in: 3600, expires_at: Time.zone.now + 1.hour })
 
-# Analysis Configuration seeds
-AnalysisConfiguration.create!(namespace: 'single-cell-portal', name: 'split-cluster', snapshot: 1, user_id: user.id,
-                             configuration_namespace: 'single-cell-portal', configuration_name: 'split-cluster',
-                             configuration_snapshot: 2, description: 'This is a test description.')
-
 # SearchFacet seeds
 # These facets represent 3 of the main types: String-based (both for array- and non-array columns), and numeric
 SearchFacet.create!(name: 'Species', identifier: 'species',

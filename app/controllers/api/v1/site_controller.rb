@@ -538,31 +538,6 @@ module Api
         end
       end
 
-      swagger_path '/site/analyses' do
-        operation :get do
-          key :tags, [
-              'Site'
-          ]
-          key :summary, 'Find all available analysis configurations'
-          key :description, 'Returns all available analyses configured in SCP'
-          key :operationId, 'site_get_analyses_path'
-          response 200 do
-            key :description, 'Array of AnalysisConfigurations'
-            schema do
-              key :type, :array
-              key :title, 'Array'
-              items do
-                key :title, 'AnalysisConfigurationList'
-                key :'$ref', :AnalysisConfigurationList
-              end
-            end
-          end
-          response 406 do
-            key :description, ApiBaseController.not_acceptable
-          end
-        end
-      end
-
       private
 
       ##
