@@ -216,9 +216,6 @@ class Study
   has_many :user_annotations
   has_many :user_data_arrays
 
-  # HCA metadata object
-  has_many :analysis_metadata, dependent: :delete_all
-
   # Study Accession
   has_one :study_accession
 
