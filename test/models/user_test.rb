@@ -163,4 +163,27 @@ class UserTest < ActiveSupport::TestCase
       end
     end
   end
+
+  test 'should correctly find user if profile has capital letters' do
+    seed = (rand * 10000).floor
+    uid = '1234567890'
+    email = "joe.smith#{seed}@gmail.com"
+    mock = Minitest::Mock.new
+    mock.expect :info, { email: "Joe.Smith#{seed}@gmail.com" }.with_indifferent_access
+    mock.expect :provider, 'google_oauth2'
+    mock.expect :uid, uid
+    refresh_token = SecureRandom.hex(12)
+    creds_mock = Minitest::Mock.new
+    2.times do
+      creds_mock.expect :refresh_token, refresh_token
+      mock.expect :credentials, creds_mock
+    end
+    FactoryBot.create(:user, email:, uid:, test_array: @@users_to_clean)
+    from_omni = User.from_omniauth(mock)
+    assert from_omni.persisted? # key issue is that user accounts are not saved which leads to login loop
+    assert_equal email, from_omni.email
+    assert_equal uid, from_omni.uid
+    mock.verify
+    creds_mock.verify
+  end
 end
