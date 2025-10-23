@@ -108,7 +108,7 @@ class DotPlotService
   # * *returns*
   #   - (Boolean) => true if the study/cluster has already been processed
   def self.cluster_processed?(study, cluster_group)
-    DotPlotGene.where(study:, cluster_group:).exists?
+    cluster_group.has_dot_plot_genes || DotPlotGene.where(study:, cluster_group:).exists?
   end
 
   # get processed expression matrices for a study

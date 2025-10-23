@@ -529,6 +529,8 @@ class IngestJob
       set_anndata_file_info
       launch_anndata_subparse_jobs if study_file.is_viz_anndata?
       launch_differential_expression_jobs if study_file.is_viz_anndata?
+    when :ingest_dot_plot_genes
+      set_has_dot_plot_genes
     end
     set_study_initialized
   end
@@ -831,6 +833,12 @@ class IngestJob
       Rails.logger.info "Preprocessing dot plot data for #{study.accession}"
       DotPlotService.process_all_study_data(study, AdminConfiguration.qa_emails)
     end
+  end
+
+  # set flag to denote cluster has been processed for dot plot genes
+  def set_has_dot_plot_genes
+    cluster_group = ClusterGroup.find(params_object.cluster_group_id)
+    cluster_group.update(has_dot_plot_genes: true)
   end
 
   # set appropriate flags for AnnDataFileInfo entries

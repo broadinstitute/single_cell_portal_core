@@ -131,7 +131,8 @@ module Api
           if default_cluster.present?
             cluster = {
               numPoints: default_cluster.points,
-              isSubsampled: default_cluster.subsampled?
+              isSubsampled: default_cluster.subsampled?,
+              hasDotPlotGenes: default_cluster.has_dot_plot_genes
             }
           else
             cluster = nil
