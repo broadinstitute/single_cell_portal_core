@@ -56,15 +56,6 @@ class StudyFile
   BULK_DOWNLOAD_TYPES = ['Expression', 'Metadata', 'Cluster', 'Coordinate Labels', 'Fastq', 'BAM', 'BED', 'Documentation',
                          'Other', 'Analysis Output', 'Ideogram Annotations', 'None'].freeze
 
-  # Constants for scoping values for AnalysisParameter inputs/outputs
-  ASSOCIATED_MODEL_METHOD = %w(gs_url name upload_file_name bucket_location).freeze
-  ASSOCIATED_MODEL_DISPLAY_METHOD = %w(name upload_file_name bucket_location).freeze
-  OUTPUT_ASSOCIATION_ATTRIBUTE = %w(taxon_id genome_assembly_id study_file_bundle_id).freeze
-  ANALYSIS_PARAMETER_FILTERS = {
-      'file_type' => STUDY_FILE_TYPES.dup,
-      'taxon_id' => Taxon.all.map {|t| [t.common_name, t.id.to_s]}
-  }.freeze
-
   # associations
   belongs_to :study, index: true
   has_many :cluster_groups, dependent: :destroy

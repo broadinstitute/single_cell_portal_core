@@ -14,24 +14,19 @@
   <% end %>
   <%= f.hidden_field :id, value: @user.id %>
   <div class="form-group row">
-    <div class="col-md-6">
+    <div class="col-md-4">
       <%= f.label :email %><br/>
       <%= f.text_field :email, class: 'form-control', disabled: true %>
     </div>
-    <div class="col-md-3">
-      <%= f.label :admin, "Admin Access <i class='fas fa-question-circle'></i>".html_safe, title: 'Grant administrative access.  Admins have access to all site functionality and can view all studies.', data: {toggle: 'tooltip'} %><br/>
-      <%= f.select :admin, options_for_select([['Yes',1],['No',0]], @user.admin? ? 1 : 0), {}, class: 'form-control' %>
-    </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
       <%= f.label :reporter, "Reporter Access <i class='fas fa-question-circle'></i>".html_safe, title: 'Grant access to reports section.  Admins have access by default.', data: {toggle: 'tooltip'} %><br/>
       <%= f.select :reporter, options_for_select([['Yes',1],['No',0]], @user.reporter? ? 1 : 0), {}, class: 'form-control' %>
     </div>
-  </div>
-  <div class="form-group row">
-    <div class="col-md-12">
+    <div class="col-md-6">
+      <label></label><br />
       <%= link_to "<i class='fas fa-edit'></i> Feature Flags".html_safe,
                   edit_feature_flag_option_path(class_name: 'user', id: @user.id), class: 'btn btn-primary',
-                  data: { toggle: 'tooltip', placement: 'right' }, title: "Edit feature flags for #{@user.email}"
+                  data: { toggle: 'tooltip' }, title: "Edit feature flags for #{@user.email}"
       %>
       <%= link_to quota_exemption_button(@user, size: nil) %>
     </div>

@@ -66,14 +66,6 @@ class ClusterGroup
   # fixed values to subsample at
   SUBSAMPLE_THRESHOLDS = [MAX_THRESHOLD, 20000, 10000, 1000].freeze
 
-  # Constants for scoping values for AnalysisParameter inputs/outputs
-  ASSOCIATED_MODEL_METHOD = %w(name)
-  ASSOCIATED_MODEL_DISPLAY_METHOD = %w(name)
-  OUTPUT_ASSOCIATION_ATTRIBUTE = %w(study_file_id)
-  ANALYSIS_PARAMETER_FILTERS = {
-      'cell_annotations.type' => %w(group numeric)
-  }
-
   before_update :update_cluster_in_study_options
 
   # method to return a single data array of values for a given data array name, annotation name, and annotation value

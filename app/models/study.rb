@@ -25,11 +25,6 @@ class Study
   # prefix for FireCloud workspaces, defaults to blank in production
   REQUIRED_ATTRIBUTES = %w(name)
 
-  # Constants for scoping values for AnalysisParameter inputs/outputs
-  ASSOCIATED_MODEL_METHOD = %w(bucket_id firecloud_project firecloud_workspace url_safe_name workspace_url google_bucket_url gs_url)
-  ASSOCIATED_MODEL_DISPLAY_METHOD = %w(name url_safe_name bucket_id firecloud_project firecloud_workspace workspace_url google_bucket_url gs_url)
-  OUTPUT_ASSOCIATION_ATTRIBUTE = %w(id)
-
   MAX_EMBARGO = 2.years.freeze
   ###
   #
@@ -220,9 +215,6 @@ class Study
   # User annotations are per study
   has_many :user_annotations
   has_many :user_data_arrays
-
-  # HCA metadata object
-  has_many :analysis_metadata, dependent: :delete_all
 
   # Study Accession
   has_one :study_accession
@@ -2271,7 +2263,6 @@ class Study
     UserAnnotation.where(study_id: self.id).delete_all
     UserAnnotationShare.where(study_id: self.id).delete_all
     UserDataArray.where(study_id: self.id).delete_all
-    AnalysisMetadatum.where(study_id: self.id).delete_all
     StudyFileBundle.where(study_id: self.id).delete_all
   end
 

@@ -1,21 +1,6 @@
 class CellMetadatum
   include Mongoid::Document
 
-  # Constants for scoping values for AnalysisParameter inputs/outputs
-  ASSOCIATED_MODEL_METHOD = %w(name annotation_type)
-  ASSOCIATED_MODEL_DISPLAY_METHOD = %w(name annotation_type)
-  OUTPUT_ASSOCIATION_ATTRIBUTE = %w(study_file_id)
-  ANALYSIS_PARAMETER_FILTERS = {
-      'annotation_type' => %w(group numeric)
-  }
-
-  # Name of BigQuery dataset/table in which to run inserts/deletes/queries for 'convention' metadata
-  # Production dataset name is 'cell_metadata', whereas all other environments append "_#{environment}"
-  # to the end of the dataset name.  This prevents comingling data from different environments in one table
-  # For now, table is only 'alexandria_convention'
-  BIGQUERY_DATASET = "cell_metadata#{Rails.env != 'production' ? "_#{Rails.env}" : nil}"
-  BIGQUERY_TABLE = 'alexandria_convention'
-
   # range to determine whether a group annotation is "useful" to visualize
   # an annotation must have 2-200 different groups.  only 1 label is not informative,
   # and over 200 is difficult to comprehend and slows down rendering once the group count
