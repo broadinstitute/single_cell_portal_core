@@ -27,18 +27,11 @@ class SingleCellMailer < ApplicationMailer
   end
 
   def notify_admin_upload_fail(study_file, error)
-    dev_email_config = AdminConfiguration.find_by(config_type: 'QA Dev Email')
-    # if QA Dev email is configured, use that over individual admin emails
-    if dev_email_config.present?
-      emails = [dev_email_config.value]
-    else
-      emails = User.where(admin: true).map(&:email)
-    end
     @study = study_file.study
     @study_file = study_file
     @error = error
     @user = @study.user
-    mail(to: emails, subject: "[Single Cell Portal ERROR] FireCloud auto-upload fail in #{@study.accession}") do |format|
+    mail(to: AdminConfiguration.qa_emails, subject: "[Single Cell Portal ERROR] Terra auto-upload fail in #{@study.accession}") do |format|
       format.html
     end
   end
@@ -48,10 +41,8 @@ class SingleCellMailer < ApplicationMailer
   def notify_user_upload_fail(study_file, study, user)
     @study_file = study_file
     @study = study
-    dev_email_config = AdminConfiguration.find_by(config_type: 'QA Dev Email')
-    dev_email = dev_email_config.present? ? dev_email_config.value : nil
     title = "#{study_file.upload_file_name} did not finish uploading"
-    mail(to: user.email, bcc: dev_email, subject: "[Single Cell Portal Notifier] #{title}")
+    mail(to: user.email, bcc: AdminConfiguration.qa_emails, subject: "[Single Cell Portal Notifier] #{title}")
   end
 
   def notify_user_parse_complete(email, title, message, study)
@@ -67,31 +58,20 @@ class SingleCellMailer < ApplicationMailer
   end
 
   def notify_admin_parse_fail(user_email, title, contents)
-    dev_email_config = AdminConfiguration.find_by(config_type: 'QA Dev Email')
-    if dev_email_config.present?
-      dev_email = dev_email_config.value
-      @contents = contents
-      @user_email = user_email
-      mail(to: dev_email, subject: "[Single Cell Portal Admin Notification] #{title}")
-    end
+    @contents = contents
+    @user_email = user_email
+    mail(to: AdminConfiguration.qa_emails, subject: "[Single Cell Portal Admin Notification] #{title}")
   end
 
   # alert email to admins when ingest job fails to launch, usually because file does not push to bucket
   def notify_admin_parse_launch_fail(study, study_file, corresponding_user, ingest_action, error)
-    dev_email_config = AdminConfiguration.find_by(config_type: 'QA Dev Email')
-    # if QA Dev email is configured, use that over individual admin emails
-    if dev_email_config.present?
-      emails = [dev_email_config.value]
-    else
-      emails = User.where(admin: true).map(&:email)
-    end
     @user = corresponding_user
     @study = study
     @study_file = study_file
     @error = error
     @action = ingest_action
     title = 'Ingest Pipeline Launch Failure'
-    mail(to: emails, subject: "[Single Cell Portal Admin Notification] #{title}")
+    mail(to: AdminConfiguration.qa_emails, subject: "[Single Cell Portal Admin Notification] #{title}")
   end
 
   def daily_disk_status
@@ -322,17 +302,9 @@ class SingleCellMailer < ApplicationMailer
   def data_retention_policy_report
     @report = SummaryStatsUtils.data_retention_report
 
-    dev_email_config = AdminConfiguration.find_by(config_type: 'QA Dev Email')
-    # if QA Dev email is configured, use that over individual admin emails
-    if dev_email_config.present?
-      emails = [dev_email_config.value]
-    else
-      emails = User.where(admin: true).map(&:email)
-    end
-
     @report_date = Date.today.to_s
-
-    mail(to: emails, subject: "[Single Cell Portal Admin Notification] Data Retention Policy Report #{@report_date}") do |format|
+    title = "[Single Cell Portal Admin Notification] Data Retention Policy Report #{@report_date}"
+    mail(to: AdminConfiguration.qa_emails, subject: title) do |format|
       format.html { render layout: 'nightly_admin_report' }
     end
   end

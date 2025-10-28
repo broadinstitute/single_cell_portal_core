@@ -45,6 +45,7 @@ class IngestJobTest < ActiveSupport::TestCase
 
   after(:all) do
     Delayed::Job.delete_all # remove any unneeded jobs that will pollute logs with errors later
+    FeatureFlag.destroy_all
   end
 
   test 'should hold ingest until other matrix validates' do
@@ -855,6 +856,54 @@ class IngestJobTest < ActiveSupport::TestCase
       expected_pairwise_keys = cell_types.dup - ['T cells']
       assert_equal expected_pairwise_keys, de_result.pairwise_comparisons.keys
       assert_not_includes de_result.pairwise_comparisons['B cells'], 'CSN1S1 macrophages'
+    end
+  end
+
+  test 'should launch dot plot preprocess job if eligible' do
+    FeatureFlag.create(name: 'dot_plot_preprocessing', default_value: false)
+    cells = %w[A B C D E]
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Dot Plot Automation Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    assert_not DotPlotService.study_eligible?(study)
+
+    FactoryBot.create(
+      :expression_file,
+      name: 'dense.txt', file_type: 'Expression Matrix', parse_status: 'parsed', study:,
+      expression_input: { 'PTEN' => [['A', 0], ['B', 3], ['C', 1.5]] }
+    )
+    FactoryBot.create(
+      :cluster_file,
+      name: 'cluster.txt', study:, parse_status: 'parsed',
+      cell_input: { x: [1, 4, 6, 8, 9], y: [7, 5, 3, 2, 1], cells: }
+    )
+    FactoryBot.create(
+      :metadata_file,
+      name: 'metadata.txt', study:, parse_status: 'parsed', cell_input: cells,
+      annotation_input: [
+        { name: 'cell_type__ontology_label', type: 'group', values: ['B cell', 'B cell', 'T cell', 'B cell', 'T cell'] }
+      ]
+    )
+
+    # since feature flag is off, job should not launch
+    # stubbing the error will ensure this isn't called
+    DotPlotService.stub(:process_all_study_data, -> { raise 'This should not have been called' }) do
+      job = IngestJob.new(study:)
+      job.launch_dot_plot_preprocess_job
+    end
+
+    # set flag and retry
+    study.set_flag_option('dot_plot_preprocessing', true)
+    job = IngestJob.new(study:)
+    job_mock = Minitest::Mock.new
+    job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new)
+    mock = Minitest::Mock.new
+    mock.expect(:delay, job_mock)
+    IngestJob.stub :new, mock do
+      job.launch_dot_plot_preprocess_job
+      mock.verify
+      job_mock.verify
     end
   end
 

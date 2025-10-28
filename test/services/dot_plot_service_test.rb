@@ -145,4 +145,21 @@ class DotPlotServiceTest < ActiveSupport::TestCase
       assert DotPlotService.run_process_dot_plot_genes(@study, @cluster_group, @user)
     end
   end
+
+  test 'should run preprocess job on all study data' do
+    cells = %w[D E F]
+    FactoryBot.create(:cluster_file,
+                      name: 'cluster_2.txt',
+                      study: @study,
+                      cell_input: { x: cells, y: cells })
+    job_mock = Minitest::Mock.new
+    2.times { job_mock.expect(:push_remote_and_launch_ingest, Delayed::Job.new) }
+    mock = Minitest::Mock.new
+    2.times { mock.expect(:delay, job_mock) }
+    IngestJob.stub :new, mock do
+      DotPlotService.process_all_study_data(@study, @user)
+      mock.verify
+      job_mock.verify
+    end
+  end
 end
