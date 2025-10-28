@@ -11,6 +11,7 @@ json.set! :donor_count, study.donor_count
 json.set! :data_types, study.data_types
 json.set! :diseases, study.diseases
 json.set! :species, study.species_list
+json.set! :data_custodians, study.data_custodians
 if study.detached?
   json.set! :study_files, 'Unavailable (cannot load study workspace or bucket)'
 else

@@ -610,6 +610,14 @@ class Study
         key :type, :string
       end
     end
+    property :data_custodians do
+      key :type, :array
+      key :description, 'Study data custodian emails'
+      items do
+        key :title, 'email'
+        key :type, :string
+      end
+    end
     property :study_files do
       key :type, :array
       key :description, 'Available StudyFiles for download/streaming'
@@ -1585,6 +1593,11 @@ class Study
   # rollup of either species__ontology_label values or expressed_taxon_names
   def species_list
     cell_metadata.by_name_and_type('species__ontology_label', 'group')&.values || expressed_taxon_names&.compact || []
+  end
+
+  # contact emails for questions about study data.  will only use corresponding authors (if present) or help email
+  def data_custodians
+    authors.corresponding.pluck(:email).presence || ['scp-support@broadinstitute.zendesk.com']
   end
 
   ###

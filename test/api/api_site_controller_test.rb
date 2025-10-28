@@ -32,6 +32,7 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
                                        study: @study,
                                        cell_input: ['A', 'B', 'C'],
                                        annotation_input:)
+    @author = FactoryBot.create(:author, study: @study, corresponding: true)
     StudyShare.create!(email: 'fake.email@gmail.com', permission: 'Reviewer', study: @study)
     StudyFile.create(study: @study, name: 'SRA Study for housing fastq data', description: 'SRA Study for housing fastq data',
                      file_type: 'Fastq', status: 'uploaded', human_fastq_url: 'https://www.ncbi.nlm.nih.gov/sra/ERX4159348[accn]')
@@ -73,6 +74,7 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
       assert_equal %w[Drop-seq], json['data_types']
       assert_equal %w[cat dog], json['species'].sort
       assert_equal %w[measles normal], json['diseases'].sort
+      assert_equal [@auhor.email], json['data_custodians']
       assert_equal 2, json['donor_count']
       assert json['study_files'].size == expected_files,
              "Did not find correct number of files, expected #{expected_files} but found #{json['study_files'].size}"
