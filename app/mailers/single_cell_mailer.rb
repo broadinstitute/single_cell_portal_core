@@ -31,7 +31,7 @@ class SingleCellMailer < ApplicationMailer
     @study_file = study_file
     @error = error
     @user = @study.user
-    mail(to: AdminConfiguration.qa_emails, subject: "[Single Cell Portal ERROR] FireCloud auto-upload fail in #{@study.accession}") do |format|
+    mail(to: AdminConfiguration.qa_emails, subject: "[Single Cell Portal ERROR] Terra auto-upload fail in #{@study.accession}") do |format|
       format.html
     end
   end
