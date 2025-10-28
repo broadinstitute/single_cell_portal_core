@@ -497,6 +497,14 @@ class Study
       key :type, :string
       key :description, 'Name of Study'
     end
+    property :url do
+      key :type, :string
+      key :description, 'fully-qualified URL of Study to view'
+    end
+    property :api_url do
+      key :type, :string
+      key :description, 'fully-qualified URL of Study in API'
+    end
     property :description do
       key :type, :string
       key :description, 'HTML description blob for Study'
@@ -534,6 +542,10 @@ class Study
       key :type, :string
       key :description, 'Name of Study'
     end
+    property :url do
+      key :type, :string
+      key :description, 'fully-qualified URL of Study'
+    end
     property :description do
       key :type, :string
       key :description, 'Plain text description blob for Study'
@@ -567,6 +579,36 @@ class Study
       key :format, :integer
       key :default, 0
       key :description, 'Number of unique gene names in Study (set from Expression Matrix or 10X Genes File)'
+    end
+    property :donor_count do
+      key :type, :number
+      key :format, :integer
+      key :default, 0
+      key :description, 'Number of unique donor ids in Study'
+    end
+    property :data_types do
+      key :type, :array
+      key :description, 'Study data types, e.g. library preparation protocol'
+      items do
+        key :title, 'data_type'
+        key :type, :string
+      end
+    end
+    property :diseases do
+      key :type, :array
+      key :description, 'Study diseases'
+      items do
+        key :title, 'disease'
+        key :type, :string
+      end
+    end
+    property :species do
+      key :type, :array
+      key :description, 'Study species'
+      items do
+        key :title, 'taxon_name'
+        key :type, :string
+      end
     end
     property :study_files do
       key :type, :array
@@ -1134,6 +1176,14 @@ class Study
     self.google_bucket_url + "/#{submission_id}"
   end
 
+  def study_url
+    "#{RequestUtils.get_base_url}/single_cell/study/#{accession}/#{url_safe_name}"
+  end
+
+  def api_url
+    "#{RequestUtils.get_base_url}/single_cell/api/v1/site/studies/#{accession}"
+  end
+
   ###
   #
   # DEFAULT OPTIONS METHODS
@@ -1515,6 +1565,26 @@ class Study
       end
     end
     options
+  end
+
+  # number of unique donor_id entries, if present
+  def donor_count
+    cell_metadata.by_name_and_type('donor_id', 'group')&.values&.count || 0
+  end
+
+  # array of unique disease__ontology_label values, if present
+  def diseases
+    cell_metadata.by_name_and_type('disease__ontology_label', 'group')&.values || []
+  end
+
+  # array of unique library_preparation_protocol__ontology_label values, if present
+  def data_types
+    cell_metadata.by_name_and_type('library_preparation_protocol__ontology_label', 'group')&.values || []
+  end
+
+  # rollup of either species__ontology_label values or expressed_taxon_names
+  def species_list
+    cell_metadata.by_name_and_type('species__ontology_label', 'group')&.values || expressed_taxon_names&.compact || []
   end
 
   ###

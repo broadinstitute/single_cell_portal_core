@@ -1,11 +1,16 @@
 json.set! :accession, study.accession
 json.set! :name, study.name
+json.set! :url, study.study_url
 json.set! :description, study.description
 json.set! :full_description, study.full_description
 json.set! :public, study.public
 json.set! :detached, study.detached
 json.set! :cell_count, study.cell_count
 json.set! :gene_count, study.gene_count
+json.set! :donor_count, study.donor_count
+json.set! :data_types, study.data_types
+json.set! :diseases, study.diseases
+json.set! :species, study.species_list
 if study.detached?
   json.set! :study_files, 'Unavailable (cannot load study workspace or bucket)'
 else

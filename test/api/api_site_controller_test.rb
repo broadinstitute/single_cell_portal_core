@@ -21,7 +21,17 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
                                       generation: '123456789',
                                       upload_file_size: 1.megabyte,
                                       parse_status: 'parsed')
-
+    annotation_input = [
+      { name: 'species__ontology_label', type: 'group', values: %w[dog cat dog] },
+      { name: 'disease__ontology_label', type: 'group', values: %w[normal normal measles] },
+      { name: 'donor_id', type: 'group', values: %w[donor_1 donor_2 donor_1] },
+      { name: 'library_preparation_protocol__ontology_label', type: 'group', values: %w[Drop-seq Drop-seq Drop-seq] }
+    ]
+    @metadata_file = FactoryBot.create(:metadata_file,
+                                       name: 'metadata.txt',
+                                       study: @study,
+                                       cell_input: ['A', 'B', 'C'],
+                                       annotation_input:)
     StudyShare.create!(email: 'fake.email@gmail.com', permission: 'Reviewer', study: @study)
     StudyFile.create(study: @study, name: 'SRA Study for housing fastq data', description: 'SRA Study for housing fastq data',
                      file_type: 'Fastq', status: 'uploaded', human_fastq_url: 'https://www.ncbi.nlm.nih.gov/sra/ERX4159348[accn]')
@@ -59,6 +69,11 @@ class ApiSiteControllerTest < ActionDispatch::IntegrationTest
       expected_resources = @study.external_resources.count
       execute_http_request(:get, api_v1_site_study_view_path(accession: @study.accession))
       assert_response :success
+      assert_equal @study.study_url, json['url']
+      assert_equal %w[Drop-seq], json['data_types']
+      assert_equal %w[cat dog], json['species'].sort
+      assert_equal %w[measles normal], json['diseases'].sort
+      assert_equal 2, json['donor_count']
       assert json['study_files'].size == expected_files,
              "Did not find correct number of files, expected #{expected_files} but found #{json['study_files'].size}"
       assert json['external_resources'].size == expected_resources,

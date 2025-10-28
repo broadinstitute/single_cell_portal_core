@@ -1,5 +1,7 @@
 json.set! :accession, study.accession
 json.set! :name, study.name
+json.set! :url, study.study_url
+json.set! :api_url, study.api_url
 json.set! :description, study.description
 json.set! :public, study.public
 json.set! :detached, study.detached
