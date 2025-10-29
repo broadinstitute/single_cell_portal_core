@@ -120,18 +120,22 @@ class User
     uid = access_token.uid
     # create bogus password, Devise will never use it to authenticate
     password = Devise.friendly_token[0,20]
-    user = User.find_by(email: data['email'])
+    # gotcha to downcase email as Devise does this by default, but it will break the query if the user profile has
+    # any capitalization in it.  this mismatch leads to an infinite login loop as the user successfully authenticates
+    # but SCP can't find/create a user account
+    safe_email = data['email'].downcase
+    user = User.find_by(email: safe_email)
     if user.nil?
-      user = User.create(email: data["email"],
-                         password: password,
+      user = User.create(email: safe_email,
+                         password:,
                          password_confirmation: password,
-                         uid: uid,
-                         provider: provider)
+                         uid:,
+                         provider:)
     end
-    user.update(uid: uid) if user.uid.nil?
+    user.update(uid:) if user.uid.nil?
     # update provider so we can track whether this user has authenticated with basic or extended scopes
     # basic scopes will show up as "google", extended (i.e. cloud-billing.readonly) will show up as "google_billing"
-    user.update(provider: provider)
+    user.update(provider:)
     # store refresh token
     if access_token.credentials.refresh_token.present?
       user.update(refresh_token: access_token.credentials.refresh_token)

@@ -26,7 +26,7 @@ class ExternalResource
     property :resource_links_type do
       key :type, :string
       key :description, 'Class of object this ExternalResource belongs to'
-      key :enum, ['Study', 'AnalysisConfiguration']
+      key :enum, ['Study']
     end
     property :url do
       key :type, :string

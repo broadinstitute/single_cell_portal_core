@@ -37,22 +37,6 @@ class SummaryStatsUtilsTest < ActiveSupport::TestCase
     assert_equal 0, user_stats[:active]
   end
 
-  test 'should get analysis submission counts' do
-    # manually insert a submission to check
-    AnalysisSubmission.create!(submitter: User.first.email, submission_id: SecureRandom.uuid, analysis_name: 'test-analysis',
-                               submitted_on: @now, firecloud_project: FireCloudClient::PORTAL_NAMESPACE,
-                               firecloud_workspace: 'test-workspace')
-    submission_count = SummaryStatsUtils.analysis_submission_count
-    assert_equal 1, submission_count
-
-    # exercise cutoff date
-    submission_count = SummaryStatsUtils.analysis_submission_count(start_date: @one_month_ago, end_date: @one_week_ago)
-    assert_equal 0, submission_count
-
-    # clean up
-    AnalysisSubmission.destroy_all
-  end
-
   test 'should get study creation counts' do
     expected_study_count = Study.count
     studies_created = SummaryStatsUtils.daily_study_creation_count

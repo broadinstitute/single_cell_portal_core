@@ -108,7 +108,6 @@ module Api
           StudyShare,
           StudyFileBundle,
           Taxon,
-          AnalysisConfiguration,
           Publication,
           ExternalResource,
           UserAnnotation,

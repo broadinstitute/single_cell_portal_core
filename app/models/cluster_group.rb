@@ -35,6 +35,9 @@ class ClusterGroup
   # denotes when image_pipeline has been run for this cluster_group
   field :has_image_cache, type: Boolean, default: false
 
+  # denotes when ingest_dot_plot_genes has been run for this cluster_group
+  field :has_dot_plot_genes, type: Boolean, default: false
+
   validates_uniqueness_of :name, scope: :study_id
   validates_presence_of :name, :cluster_type
   validates_format_of :name, with: ValidationTools::URL_PARAM_SAFE,
@@ -65,14 +68,6 @@ class ClusterGroup
 
   # fixed values to subsample at
   SUBSAMPLE_THRESHOLDS = [MAX_THRESHOLD, 20000, 10000, 1000].freeze
-
-  # Constants for scoping values for AnalysisParameter inputs/outputs
-  ASSOCIATED_MODEL_METHOD = %w(name)
-  ASSOCIATED_MODEL_DISPLAY_METHOD = %w(name)
-  OUTPUT_ASSOCIATION_ATTRIBUTE = %w(study_file_id)
-  ANALYSIS_PARAMETER_FILTERS = {
-      'cell_annotations.type' => %w(group numeric)
-  }
 
   before_update :update_cluster_in_study_options
 
