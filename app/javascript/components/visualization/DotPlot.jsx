@@ -11,6 +11,7 @@ import { withErrorBoundary } from '~/lib/ErrorBoundary'
 import LoadingSpinner, { morpheusLoadingSpinner } from '~/lib/LoadingSpinner'
 import { fetchServiceWorkerCache } from '~/lib/service-worker-cache'
 import { getSCPContext } from '~/providers/SCPContextProvider'
+import '~/lib/dot-plot-precompute-patch'
 
 export const dotPlotColorScheme = {
   // Blue, purple, red.  These red and blue hues are accessible, per WCAG.
@@ -262,11 +263,30 @@ export function renderDotPlot({
   target, dataset, annotationName, annotationValues,
   setShowError, setErrorContent, genes, drawCallback
 }) {
+  console.log('in renderDotPlot, dataset', dataset)
+
   const $target = $(target)
   $target.empty()
 
-  // Collapse by mean
-  const tools = [{
+  // Check if dataset is pre-computed dot plot data
+  // Pre-computed data has structure: { annotation_name, values, genes }
+  let processedDataset = dataset
+  let isPrecomputed = false
+
+  if (dataset && dataset.annotation_name && dataset.values && dataset.genes) {
+    // This is pre-computed dot plot data - convert it using the patch
+    console.log('Detected pre-computed dot plot data, converting...')
+    processedDataset = window.createMorpheusDotPlot(dataset)
+    isPrecomputed = true
+    console.log('Converted dataset:', processedDataset)
+    console.log('Dataset series count:', processedDataset.getSeriesCount())
+    for (let i = 0; i < processedDataset.getSeriesCount(); i++) {
+      console.log(`  Series ${i} name:`, processedDataset.getName(i))
+    }
+  }
+
+  // Collapse by mean (only for non-precomputed data)
+  const tools = isPrecomputed ? [] : [{
     name: 'Collapse',
     params: {
       collapse_method: 'Mean',
@@ -282,7 +302,7 @@ export function renderDotPlot({
 
   const config = {
     shape: 'circle',
-    dataset,
+    dataset: processedDataset,
     el: $target,
     menu: null,
     error: morpheusErrorHandler($target, setShowError, setErrorContent),
@@ -293,6 +313,16 @@ export function renderDotPlot({
     tabManager: morpheusTabManager($target),
     tools,
     loadedCallback: () => logMorpheusPerfTime(target, 'dotplot', genes)
+  }
+
+  // For pre-computed data, tell Morpheus to display series 0 for color
+  // and use series 1 for sizing (which happens automatically with shape: 'circle')
+  if (isPrecomputed) {
+    config.symmetricColorScheme = false
+    // Tell Morpheus which series to use for coloring the heatmap
+    config.seriesIndex = 0 // Display series 0 (Mean Expression) for colors
+    // Explicitly set the size series
+    config.sizeBySeriesIndex = 1 // Use series 1 (__count) for sizing
   }
 
   // Load annotations if specified
@@ -320,11 +350,33 @@ export function renderDotPlot({
 
 
   config.colorScheme = dotPlotColorScheme
+  
+  // For precomputed data, configure the sizer to use the __count series
+  if (isPrecomputed && processedDataset) {
+    // The color scheme should already have a sizer - we just need to configure it
+    config.sizeBy = {
+      seriesName: '__count',
+      min: 0,
+      max: 100
+    }
+  }
 
   patchServiceWorkerCache()
 
   config.drawCallback = function() {
     const dotPlot = this
+    
+    // Debug for precomputed data
+    if (isPrecomputed) {
+      console.log('Dot plot instance:', dotPlot)
+      console.log('Dot plot project:', dotPlot.project)
+      console.log('Dot plot options:', dotPlot.options)
+      if (dotPlot.heatMapElementCanvas) {
+        console.log('HeatMapElementCanvas:', dotPlot.heatMapElementCanvas)
+        console.log('Shape:', dotPlot.heatMapElementCanvas.shape)
+      }
+    }
+    
     if (drawCallback) {drawCallback(dotPlot)}
   }
 
