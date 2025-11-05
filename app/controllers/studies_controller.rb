@@ -44,7 +44,6 @@ class StudiesController < ApplicationController
     @primary_data = @study.directory_listings.primary_data
     @other_data = @study.directory_listings.non_primary_data
     @allow_downloads = !@study.detached
-    @analysis_metadata = @study.analysis_metadata.to_a
     # load study default options
     set_study_default_options
   end
