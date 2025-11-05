@@ -360,13 +360,12 @@ export function renderDotPlot({
       max: 75
     }
 
-    // Use fixed color scheme for precomputed data
-    // Since we've already normalized per-gene to 0-1, we need scalingMode: 'fixed'
-    // to prevent Morpheus from rescaling based on global min/max
+    // Use relative color scheme for raw expression values
+    // This will scale colors based on the actual data range across all genes and cell types
     config.colorScheme = {
       colors: ['#0000BB', '#CC0088', '#FF0000'],
       values: [0, 0.5, 1],
-      scalingMode: 'fixed'
+      scalingMode: 'relative'
     }
   }
 

@@ -67,58 +67,24 @@
         geneNames.forEach((gene, i) => {
           const geneData = data.genes[gene]
           
-          // Find min and max mean expression for this gene across all cell types
-          // Exclude zeros (no expression) from min/max calculation for better color scaling
-          let minExpr = Infinity
-          let maxExpr = -Infinity
-          geneData.forEach(values => {
-            const meanExpression = values[0]
-            // Only include non-zero values in min/max calculation
-            if (meanExpression > 0) {
-              if (meanExpression < minExpr) {
-                minExpr = meanExpression
-              }
-              if (meanExpression > maxExpr) {
-                maxExpr = meanExpression
-              }
-            }
-          })
-          
-          // Handle edge cases
-          if (minExpr === Infinity) {
-            // All values are zero
-            minExpr = 0
-            maxExpr = 0
-          }
-          const range = maxExpr - minExpr
-          const normalizedRange = range === 0 ? 0 : 1 / range
-          
-          // Debug: Log normalization for first gene and UBC
+          // Debug: Log values for first gene and UBC
           if (i === 0 || gene === 'UBC') {
-            console.log(`Gene ${gene}: min=${minExpr}, max=${maxExpr}, range=${range} (zeros excluded from min/max)`)
+            console.log(`Gene ${gene}: using raw mean expression values (zeros converted to NaN)`)
           }
           
           geneData.forEach((values, j) => {
             const meanExpression = values[0]
             const percentExpressing = values[1]
             
-            // Normalize mean expression to 0-1 range per-gene
-            // Zero values map to 0 (blue), non-zero values scale between min and max
-            let normalizedMeanExpression
-            if (meanExpression === 0) {
-              normalizedMeanExpression = 0
-            } else if (range === 0) {
-              normalizedMeanExpression = 0.5
-            } else {
-              normalizedMeanExpression = (meanExpression - minExpr) * normalizedRange
-            }
-            
-            // Debug: Log normalized values for first gene and UBC
+            // Debug: Log values for first gene and UBC
             if ((i === 0 || gene === 'UBC') && j < 3) {
-              console.log(`  ${gene}[${j}]: raw=${meanExpression}, normalized=${normalizedMeanExpression}, %expr=${percentExpressing}`)
+              console.log(`  ${gene}[${j}]: raw=${meanExpression}, %expr=${percentExpressing}`)
             }
             
-            dataset.setValue(i, j, normalizedMeanExpression, 0) // Normalized mean expression (0-1) for color
+            // Use raw mean expression values, but convert zeros to NaN
+            // This excludes them from Morpheus color scaling while preserving actual values
+            const expressionValue = meanExpression === 0 ? NaN : meanExpression
+            dataset.setValue(i, j, expressionValue, 0) // Raw mean expression for color (zeros as NaN)
             // Scale percent expressing to 0-100 range for better sizing
             dataset.setValue(i, j, percentExpressing * 100, 1) // Percent expressing (0-100) for size
           })
