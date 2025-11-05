@@ -1,6 +1,7 @@
 /**
  * Monkeypatch for Morpheus to accept pre-computed dot plot data
- * [percent_expressing, scaled_mean_expression]
+ * Data format: [mean_expression, percent_expressing]
+ * Mean expression values are normalized per-gene (per-row) to 0-1 range for proper color scaling
  */
 
 (function() {
@@ -30,20 +31,18 @@
         const nCols = cellTypes.length
 
         // Create dataset with Float32 data type
+        // The dataset name becomes the first series name by default
         const dataset = new window.morpheus.Dataset({
-          name: `Dot Plot - ${ data.annotation_name || 'Expression'}`,
+          name: 'Mean Expression',
           rows: nRows,
           columns: nCols,
           dataType: 'Float32'
         })
 
-        // First series is mean expression (for color)
-        dataset.setName('Mean Expression', 0)
-
         // Add second series for the size metric (percent expressing)
-        // Morpheus uses '__count' for sizing in dot plots
+        // Morpheus uses 'percent' for sizing in dot plots
         dataset.addSeries({
-          name: '__count',
+          name: 'percent',
           dataType: 'Float32'
         })
 
@@ -62,21 +61,68 @@
         })
 
         // Fill in the data
-        // Series 0: scaled mean expression (for color)
-        // Series 1: percent expressing (for size)
+        // Series 0: mean expression (for color) - will be normalized per-gene (row)
+        // Series 1: percent expressing (for size) - will be scaled to 0-100
+        // Data format: values[0] = mean_expression, values[1] = percent_expressing
         geneNames.forEach((gene, i) => {
           const geneData = data.genes[gene]
-          geneData.forEach((values, j) => {
-            dataset.setValue(i, j, values[1], 0) // Mean expression
-            // Percent expressing should be between 0 and 1
-            // Morpheus expects __count to be the actual count/percent value
-            const percentExpressing = values[0]
-            // Scale to 0-100 range for better sizing
-            dataset.setValue(i, j, percentExpressing * 100, 1) // Percent expressing (0-100)
+          
+          // Find min and max mean expression for this gene across all cell types
+          // Exclude zeros (no expression) from min/max calculation for better color scaling
+          let minExpr = Infinity
+          let maxExpr = -Infinity
+          geneData.forEach(values => {
+            const meanExpression = values[0]
+            // Only include non-zero values in min/max calculation
+            if (meanExpression > 0) {
+              if (meanExpression < minExpr) {
+                minExpr = meanExpression
+              }
+              if (meanExpression > maxExpr) {
+                maxExpr = meanExpression
+              }
+            }
           })
-        })
-
-        // Debug: log a sample to verify data
+          
+          // Handle edge cases
+          if (minExpr === Infinity) {
+            // All values are zero
+            minExpr = 0
+            maxExpr = 0
+          }
+          const range = maxExpr - minExpr
+          const normalizedRange = range === 0 ? 0 : 1 / range
+          
+          // Debug: Log normalization for first gene and UBC
+          if (i === 0 || gene === 'UBC') {
+            console.log(`Gene ${gene}: min=${minExpr}, max=${maxExpr}, range=${range} (zeros excluded from min/max)`)
+          }
+          
+          geneData.forEach((values, j) => {
+            const meanExpression = values[0]
+            const percentExpressing = values[1]
+            
+            // Normalize mean expression to 0-1 range per-gene
+            // Zero values map to 0 (blue), non-zero values scale between min and max
+            let normalizedMeanExpression
+            if (meanExpression === 0) {
+              normalizedMeanExpression = 0
+            } else if (range === 0) {
+              normalizedMeanExpression = 0.5
+            } else {
+              normalizedMeanExpression = (meanExpression - minExpr) * normalizedRange
+            }
+            
+            // Debug: Log normalized values for first gene and UBC
+            if ((i === 0 || gene === 'UBC') && j < 3) {
+              console.log(`  ${gene}[${j}]: raw=${meanExpression}, normalized=${normalizedMeanExpression}, %expr=${percentExpressing}`)
+            }
+            
+            dataset.setValue(i, j, normalizedMeanExpression, 0) // Normalized mean expression (0-1) for color
+            // Scale percent expressing to 0-100 range for better sizing
+            dataset.setValue(i, j, percentExpressing * 100, 1) // Percent expressing (0-100) for size
+          })
+        }) // Debug: log a sample to verify data
         if (geneNames.length > 0) {
           console.log('Sample dot plot data for gene', geneNames[0], ':')
           console.log('  Mean expression (series 0):', dataset.getValue(0, 0, 0))
@@ -153,20 +199,20 @@
     const OriginalHeatMap = window.morpheus.HeatMap
     window.morpheus.HeatMap = function(options) {
       const heatmap = new OriginalHeatMap(options)
-      
+
       // Check if this is a precomputed dot plot dataset
       if (options.dataset && options.dataset._isDotPlot) {
         console.log('Patching HeatMap for precomputed dot plot')
-        
+
         // Force the heatmap to use series 1 for sizing
         if (heatmap.heatMapElementCanvas) {
           heatmap.heatMapElementCanvas.sizeBySeriesIndex = 1
         }
       }
-      
+
       return heatmap
     }
-    
+
     // Copy static properties
     Object.setPrototypeOf(window.morpheus.HeatMap, OriginalHeatMap)
     window.morpheus.HeatMap.prototype = OriginalHeatMap.prototype

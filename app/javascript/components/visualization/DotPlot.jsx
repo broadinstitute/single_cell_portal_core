@@ -16,9 +16,9 @@ import '~/lib/dot-plot-precompute-patch'
 export const dotPlotColorScheme = {
   // Blue, purple, red.  These red and blue hues are accessible, per WCAG.
   colors: ['#0000BB', '#CC0088', '#FF0000'],
-
   // TODO: Incorporate expression units, once such metadata is available.
-  values: [0, 0.5, 1]
+  values: [0, 0.5, 1],
+  scalingMode: 'relative'
 }
 
 /**
@@ -295,7 +295,7 @@ export function renderDotPlot({
       collapse_to_fields: [annotationName],
       pass_expression: '>',
       pass_value: '0',
-      percentile: '100',
+      percentile: '75',
       compute_percent: true
     }
   }]
@@ -306,9 +306,6 @@ export function renderDotPlot({
     el: $target,
     menu: null,
     error: morpheusErrorHandler($target, setShowError, setErrorContent),
-    colorScheme: {
-      scalingMode: 'relative'
-    },
     focus: null,
     tabManager: morpheusTabManager($target),
     tools,
@@ -326,9 +323,9 @@ export function renderDotPlot({
   }
 
   // Load annotations if specified
-  config.columnSortBy = [
-    { field: annotationName, order: 0 }
-  ]
+  // config.columnSortBy = [
+  //   { field: annotationName, order: 0 }
+  // ]
   config.columns = [
     { field: annotationName, display: 'text' }
   ]
@@ -349,15 +346,27 @@ export function renderDotPlot({
   config.columnColorModel = annotColorModel
 
 
-  config.colorScheme = dotPlotColorScheme
-  
+  // Set color scheme (will be overridden for precomputed data below)
+  if (!isPrecomputed) {
+    config.colorScheme = dotPlotColorScheme
+  }
+
   // For precomputed data, configure the sizer to use the __count series
   if (isPrecomputed && processedDataset) {
     // The color scheme should already have a sizer - we just need to configure it
     config.sizeBy = {
-      seriesName: '__count',
+      seriesName: 'percent',
       min: 0,
-      max: 100
+      max: 75
+    }
+
+    // Use fixed color scheme for precomputed data
+    // Since we've already normalized per-gene to 0-1, we need scalingMode: 'fixed'
+    // to prevent Morpheus from rescaling based on global min/max
+    config.colorScheme = {
+      colors: ['#0000BB', '#CC0088', '#FF0000'],
+      values: [0, 0.5, 1],
+      scalingMode: 'fixed'
     }
   }
 
@@ -365,7 +374,7 @@ export function renderDotPlot({
 
   config.drawCallback = function() {
     const dotPlot = this
-    
+
     // Debug for precomputed data
     if (isPrecomputed) {
       console.log('Dot plot instance:', dotPlot)
@@ -374,13 +383,30 @@ export function renderDotPlot({
       if (dotPlot.heatMapElementCanvas) {
         console.log('HeatMapElementCanvas:', dotPlot.heatMapElementCanvas)
         console.log('Shape:', dotPlot.heatMapElementCanvas.shape)
+        console.log('Color scheme:', dotPlot.heatMapElementCanvas.colorScheme)
+        console.log('Series index for color:', dotPlot.heatMapElementCanvas.getColorScheme().seriesIndex)
+        
+        // Check actual data values
+        const dataset = dotPlot.project.getSortedFilteredDataset()
+        console.log('Dataset row count:', dataset.getRowCount())
+        console.log('Dataset column count:', dataset.getColumnCount())
+        console.log('Dataset series count:', dataset.getSeriesCount())
+        
+        // Sample some values
+        if (dataset.getRowCount() > 0 && dataset.getColumnCount() > 0) {
+          console.log('Sample values (row 0, all columns, series 0):')
+          for (let j = 0; j < Math.min(5, dataset.getColumnCount()); j++) {
+            console.log(`  [0,${j},0] =`, dataset.getValue(0, j, 0))
+          }
+        }
       }
     }
-    
+
     if (drawCallback) {drawCallback(dotPlot)}
   }
 
   // Instantiate dot plot and embed in DOM element
+  console.log('Dot plot config:', config)
   delete window.dotPlot
   window.dotPlot = new window.morpheus.HeatMap(config)
 }
