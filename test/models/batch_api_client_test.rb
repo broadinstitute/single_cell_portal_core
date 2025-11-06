@@ -424,4 +424,35 @@ class BatchApiClientTest < ActiveSupport::TestCase
     standard_error = RuntimeError.new('this is the error')
     assert_equal 'RuntimeError: this is the error', @client.parse_error_message(standard_error)
   end
+
+  test 'should configure GPU support for required components' do
+    action = :scvi_label_transfer
+
+    # container
+    params_object = ScviIngestParameters.new(
+      gex_file: 'gs://test-bucket/gex.h5ad',
+      atac_file: 'gs://test-bucket/atac.h5ad',
+      ref_file: 'gs://test-bucket/ref.h5ad',
+      accession: 'SCP1234'
+    )
+    container = @client.create_container(
+      study_file: @ann_data_file, action:, user_metrics_uuid: @user.metrics_uuid,
+      params_object:, add_gpu: true
+    )
+    assert container.options == '--runtime nvidia'
+
+    # instance policy
+    instance_policy = @client.create_instance_policy(machine_type: params_object.machine_type, add_gpu: true)
+    assert instance_policy.accelerators.first.type == 'nvidia-tesla-t4'
+
+    # task group (picks up GPU support from container)
+    task = @client.create_task_group(action:, machine_type: params_object.machine_type, container:)
+    script = task.task_spec.runnables.first.script
+    assert script.present?
+    assert script.text.include?('nvidia-ctk runtime configure')
+
+    # allocation policy
+    allocation = @client.create_allocation_policy(instance_policy:, add_gpu: true)
+    assert allocation.instances.first.install_gpu_drivers
+  end
 end

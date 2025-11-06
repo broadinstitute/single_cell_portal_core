@@ -107,6 +107,12 @@ class AdminConfiguration
     end
   end
 
+  # get the configured QA Dev email option, or fallback to admin user emails
+  def self.qa_emails
+    qa_config = AdminConfiguration.find_by(config_type: 'QA Dev Email')
+    qa_config.present? ? qa_config.value : User.where(admin: true).map(&:email)
+  end
+
   # display value formatted by type
   def display_value
     case self.value_type

@@ -409,7 +409,7 @@ class AdminConfigurationsController < ApplicationController
   end
 
   def user_params
-    params.require(:user).permit(:id, :admin, :reporter)
+    params.require(:user).permit(:id, :reporter)
   end
 
   # parameters for service account profile

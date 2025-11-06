@@ -29,12 +29,6 @@ class SummaryStatsUtils
       { total: total_users, active: active_users }
     end
 
-    # get a count of all submissions launch from the portal in a given 2 week period
-    # defaults to a time period of the last two weeks from right now
-    def analysis_submission_count(start_date: DateTime.now - 2.weeks, end_date: DateTime.now)
-      AnalysisSubmission.where(submitted_on: (start_date..end_date), submitted_from_portal: true).count
-    end
-
     # get a count of all studies created on the requested day
     def daily_study_creation_count(end_date: Time.zone.today)
       Study.where(created_at: (end_date..(end_date + 1.day))).count

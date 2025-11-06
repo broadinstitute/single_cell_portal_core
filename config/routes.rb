@@ -156,30 +156,10 @@ Rails.application.routes.draw do
     # show a list for display and linking
     get :collections, to: 'branding_groups#list_navigate', as: :collection_list_navigate
 
-    # analysis configurations
-    get 'analysis_configurations/load_associated_model', to: 'analysis_configurations#load_associated_model',
-        as: :load_associated_model
-    get 'analysis_configurations/load_associated_model_filter_types', to: 'analysis_configurations#load_associated_model_filter_types',
-        as: :load_associated_model_filter_types
-    get 'analysis_configurations/load_associated_model_filter_values', to: 'analysis_configurations#load_associated_model_filter_values',
-        as: :load_associated_model_filter_values
-    resources :analysis_configurations, except: [:edit] do
-      member do
-        put 'reset_analysis_parameters', to: 'analysis_configurations#reset_analysis_parameters', as: :reset_analysis_parameters
-        match 'analysis_parameters/:analysis_parameter_id', via: [:post, :put, :patch],
-              to: 'analysis_configurations#update_analysis_parameter', as: :update_analysis_parameter
-        delete 'analysis_parameters/:analysis_parameter_id', to: 'analysis_configurations#destroy_analysis_parameter',
-               as: :destroy_analysis_parameter
-        get 'submission_preview', to: 'analysis_configurations#submission_preview', as: :submission_preview
-        post 'submission_preview', to: 'analysis_configurations#load_study_for_submission_preview', as: :load_study_for_submission_preview
-      end
-    end
-
     # study reporter actions
     get 'reports', to: 'reports#index', as: :reports
     get 'reports/report_request', to: 'reports#report_request', as: :report_request
     post 'reports/report_request', to: 'reports#submit_report_request', as: :submit_report_request
-    get 'reports/export_submission_report', to: 'reports#export_submission_report', as: :export_submission_report
 
     # firecloud billing project actions
     get 'billing_projects', to: 'billing_projects#index', as: :billing_projects
@@ -204,7 +184,6 @@ Rails.application.routes.draw do
         get 'upload', to: 'studies#initialize_study', as: :initialize
         get 'sync', to: 'studies#sync_study', as: :sync
         get 'sync_batch', to: 'studies#sync_next_file_batch', as: :sync_next_file_batch
-        get 'sync/:submission_id', to: 'studies#sync_submission_outputs', as: :sync_submission_outputs
         patch 'upload', to: 'studies#do_upload'
         get 'resume_upload', to: 'studies#resume_upload'
         patch 'update_status', to: 'studies#update_status'
@@ -266,27 +245,6 @@ Rails.application.routes.draw do
     # user annotation actions
     get 'study/:accession/:study_name/show_user_annotations_form', to: 'site#show_user_annotations_form', as: :show_user_annotations_form
 
-    # workflow actions
-    get 'study/:accession/:study_name/get_fastq_files', to: 'site#get_fastq_files', as: :get_fastq_files
-    get 'study/:accession/:study_name/workspace_samples', to: 'site#get_workspace_samples', as: :get_workspace_samples
-    get 'study/:accession/:study_name/submissions', to: 'site#get_workspace_submissions', as: :get_workspace_submissions
-    post 'study/:accession/:study_name/submissions', to: 'site#create_workspace_submission', as: :create_workspace_submission
-    get 'study/:accession/:study_name/submissions/:submission_id', to: 'site#get_submission_workflow', as: :get_submission_workflow
-    get 'study/:accession/:study_name/submissions/:submission_id/metadata', to: 'site#get_submission_metadata',
-        as: :get_submission_metadata
-    get 'study/:accession/:study_name/submissions/:submission_id/metadata_export', to: 'site#export_submission_metadata',
-        as: :export_submission_metadata
-    delete 'study/:accession/:study_name/submissions/:submission_id', to: 'site#abort_submission_workflow',
-           as: :abort_submission_workflow
-    delete 'study/:accession/:study_name/submissions/:submission_id/outputs', to: 'site#delete_submission_files',
-           as: :delete_submission_files
-    get 'study/:accession/:study_name/submissions/:submission_id/outputs', to: 'site#get_submission_outputs', as: :get_submission_outputs
-    get 'study/:accession/:study_name/submissions/:submission_id/errors', to: 'site#get_submission_errors', as: :get_submission_errors
-    post 'study/:accession/:study_name/workspace_samples', to: 'site#update_workspace_samples', as: :update_workspace_samples
-    post 'study/:accession/:study_name/delete_workspace_samples', to: 'site#delete_workspace_samples', as: :delete_workspace_samples
-    get 'view_workflow_wdl', to: 'site#view_workflow_wdl', as: :view_workflow_wdl
-    get 'workflow_options', to: 'site#get_workflow_options', as: :get_workflow_options
-    get 'analysis_configuration', to: 'site#get_analysis_configuration', as: :get_analysis_configuration
     get 'genome_assemblies', to: 'site#get_taxon_assemblies', as: :get_taxon_assemblies
     get 'taxon', to: 'site#get_taxon', as: :get_taxon
 

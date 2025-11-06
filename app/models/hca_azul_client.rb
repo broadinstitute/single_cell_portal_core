@@ -15,7 +15,7 @@ class HcaAzulClient
   MANIFEST_FORMATS = %w[compact full terra.bdbag terra.pfb curl].freeze
 
   # maximum number of results to return
-  MAX_RESULTS = 100
+  MAX_RESULTS = 75
 
   # maximum length of query string (in characters) for requests
   MAX_QUERY_LENGTH = 8192
@@ -23,7 +23,6 @@ class HcaAzulClient
   # Default headers for API requests
   DEFAULT_HEADERS = {
     'Accept' => 'application/json',
-    'Content-Type' => 'application/json',
     'x-app-id' => 'single-cell-portal',
     'x-domain-id' => "#{ENV['HOSTNAME']}"
   }.freeze
@@ -104,9 +103,21 @@ class HcaAzulClient
   # * *raises*
   #   - (RestClient::Exception) => if HTTP request fails for any reason
   def execute_http_request(http_method, path, payload = nil)
-    response = RestClient::Request.execute(method: http_method, url: path, payload:, headers: DEFAULT_HEADERS)
+    response = RestClient::Request.execute(method: http_method, url: path, payload:, headers: set_headers(http_method))
     # handle response using helper
     handle_response(response)
+  end
+
+  # set HTTP headers based on method
+  # GET requests do not support the Content-Type header, but all PUT/POST/PATCH requests do
+  #
+  # * *params*
+  #   - +http_method+ (String, Symbol) => HTTP method, e.g. :get, :post
+  #
+  # * *returns*
+  #   - (Hash) => HTTP headers object
+  def set_headers(http_method)
+    http_method.to_sym == :get ? DEFAULT_HEADERS : DEFAULT_HEADERS.merge('Content-Type' => 'application/json')
   end
 
   # FROM SCP-4592: Temporarily disable automatic retries while we investigate the rise in 503 errors from Azul
@@ -173,8 +184,9 @@ class HcaAzulClient
   #   - (ArgumentError) => if catalog is not in self.all_catalogs
   def projects(catalog: nil, query: {}, size: MAX_RESULTS)
     base_path = "#{api_root}/index/projects?size=#{size}"
+    base_path += "&filters=#{format_hash_as_query_string(query)}"
     path = append_catalog(base_path, catalog)
-    process_api_request(:post, path, payload: create_query_filters(query))
+    process_api_request(:get, path)
   end
 
   # simulate OR logic by splitting project queries on facet and joining results
@@ -269,10 +281,10 @@ class HcaAzulClient
   #   - (Hash) => List of files matching query
   def files(catalog: nil, query: {}, size: MAX_RESULTS)
     base_path = "#{api_root}/index/files?size=#{size}"
-    payload = create_query_filters(query)
+    base_path += "&filters=#{format_hash_as_query_string(query)}"
     path = append_catalog(base_path, catalog)
     # make API request, but fold in project information to each result so that this is preserved for later use
-    raw_results = process_api_request(:post, path, payload:)['hits']
+    raw_results = process_api_request(:get, path)['hits']
     results = []
     raw_results.each do |result|
       files = result['files']
@@ -391,6 +403,19 @@ class HcaAzulClient
       end
     end
     merged_query
+  end
+
+  # take a Hash/JSON object and format as a query string parameter
+  #
+  # * *params*
+  #   - +query_params+ (Hash) => Hash of query parameters
+  #
+  # * *returns*
+  #   - (String) => URL-encoded string version of query parameters
+  def format_hash_as_query_string(query_params)
+    # replace Ruby => assignment operators with JSON standard colons (:)
+    sanitized_params = query_params.to_s.gsub(/=>/, ':')
+    CGI.escape(sanitized_params)
   end
 
   # create a query filter object to use in a request body

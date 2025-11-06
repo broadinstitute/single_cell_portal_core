@@ -22,7 +22,8 @@ class BatchApiClient
     render_expression_arrays: %w[Cluster],
     image_pipeline: %w[Cluster],
     ingest_anndata: %w[AnnData],
-    ingest_dot_plot_genes: ['Expression Matrix', 'MM Coordinate Matrix', 'AnnData']
+    ingest_dot_plot_genes: ['Expression Matrix', 'MM Coordinate Matrix', 'AnnData'],
+    scvi_label_transfer: %w[AnnData]
   }.freeze
 
   # default GCE machine_type
@@ -117,8 +118,10 @@ class BatchApiClient
   #   - +user+ (User) => User performing ingest action
   #   - +action+ (String) => Action that is being performed, maps to Ingest pipeline action
   #     (e.g. 'ingest_cell_metadata', 'subsample')
-  #   - +params_object+ (Class) => Class containing parameters for Batch job (like DifferentialExpressionParameters)
-  #                                must include Parameterizable concern for to_options_array support
+  #   - +params_object+ (Parameterizable) => Class containing parameters for Batch job
+  #                     (like DifferentialExpressionParameters) that includes Parameterizable module
+  #
+  #   - +add_gpu+ (Boolean) => T/F for configuring GPU support in Batch job
   #
   # * *returns*
   #   - (Google::Apis::BatchV1::Job)
@@ -127,13 +130,13 @@ class BatchApiClient
   #   - [Google::Apis::ServerError] An error occurred on the server and the request can be retried
   #   - [Google::Apis::ClientError] The request is invalid and should not be retried without modification
   #   - [Google::Apis::AuthorizationError] Authorization is required
-  def run_job(study_file:, user:, action:, params_object: nil)
+  def run_job(study_file:, user:, action:, params_object: nil, add_gpu: false)
     study = study_file.study
     labels = job_labels(action:, study:, study_file:, user:, params_object:)
     machine_type = job_machine_type(params_object)
-    instance_policy = create_instance_policy(machine_type:)
-    allocation_policy = create_allocation_policy(instance_policy:, labels:)
-    container = create_container(study_file:, user_metrics_uuid: user.metrics_uuid, action:, params_object:)
+    instance_policy = create_instance_policy(machine_type:, add_gpu:)
+    allocation_policy = create_allocation_policy(instance_policy:, labels:, add_gpu:)
+    container = create_container(study_file:, user_metrics_uuid: user.metrics_uuid, action:, params_object:, add_gpu:)
     task_group = create_task_group(action:, machine_type:, container:, labels: {})
     job = create_job(task_group:, allocation_policy:, labels:)
     Rails.logger.info "Request object sent to Google Batch API, excluding 'environment' parameters:"
@@ -249,7 +252,7 @@ class BatchApiClient
   # * *return*
   #   - (Array<String>) => CLI arguments as array
   def get_job_command_line(name: nil, job: nil)
-    get_job_task_spec(name:, job:).runnables.first.container.commands
+    get_job_task_spec(name:, job:).runnables.detect { |r| r.container.present? }.container.commands
   end
 
   # get the environment from the Batch job
@@ -324,21 +327,34 @@ class BatchApiClient
   # * *returns*
   #   - (Google::Apis::BatchV1::TaskGroup)
   def create_task_group(action:, machine_type:, container:, labels: {})
-    runnable = Google::Apis::BatchV1::Runnable.new(
+    runnables = []
+    # gotcha due to Docker not configuring the nvidia container toolkit properly
+    # this results in GPUs not being available for Docker
+    if container.options.include?('nvidia')
+      runnables << Google::Apis::BatchV1::Runnable.new(
+        script: Google::Apis::BatchV1::Script.new(
+          text: 'sudo nvidia-ctk runtime configure --runtime=docker; sudo systemctl restart docker'
+        ),
+        environment: Google::Apis::BatchV1::Environment.new(
+          variables: set_environment_variables(action:)
+        ),
+        labels:
+      )
+    end
+    runnables << Google::Apis::BatchV1::Runnable.new(
       container:,
       environment: Google::Apis::BatchV1::Environment.new(
         variables: set_environment_variables(action:)
       ),
       labels:
     )
-    task = Google::Apis::BatchV1::TaskSpec.new(
-      max_retry_count: 0,
-      runnables: [runnable],
-      compute_resource: create_compute_resource(machine_type)
-    )
     Google::Apis::BatchV1::TaskGroup.new(
       task_count: 1,
-      task_spec: task
+      task_spec: Google::Apis::BatchV1::TaskSpec.new(
+        max_retry_count: 0,
+        runnables:,
+        compute_resource: create_compute_resource(machine_type)
+      )
     )
   end
 
@@ -349,13 +365,15 @@ class BatchApiClient
   #   - +action+ (String/Symbol) => Action to perform on ingest
   #   - +params_object+ (Class) => Class containing parameters for Batch job (like DifferentialExpressionParameters)
   #                                must implement :to_options_array method
+  #   - +add_gpu+ (Boolean) => T/F for configuring GPU support in Batch job
   #
   # * *returns*
   #   - (Google::Apis::BatchV1::Container)
-  def create_container(study_file:, action:, user_metrics_uuid:, params_object: nil)
+  def create_container(study_file:, action:, user_metrics_uuid:, params_object: nil, add_gpu: false)
     Google::Apis::BatchV1::Container.new(
       commands: format_command_line(study_file:, action:, user_metrics_uuid:, params_object:),
-      image_uri: image_uri_for_job(params_object)
+      image_uri: image_uri_for_job(params_object),
+      options: add_gpu ? '--runtime nvidia' : ''
     )
   end
 
@@ -395,15 +413,17 @@ class BatchApiClient
   # * *params*
   #   - +instance_policy+ (Google::Apis::BatchV1::InstancePolicy)
   #   - +labels+ (Hash) => labels to apply to job and all compute resources
+  #   - +add_gpu+ (Boolean) => T/F for configuring GPU support in Batch job
   #
   # * *returns*
   #   - (Google::Apis::BatchV1::AllocationPolicy)
-  def create_allocation_policy(instance_policy:, labels: {})
+  def create_allocation_policy(instance_policy:, labels: {}, add_gpu: false)
     instances = Google::Apis::BatchV1::InstancePolicyOrTemplate.new(
       policy: instance_policy,
       location: Google::Apis::BatchV1::LocationPolicy.new(
         allowed_locations: ["regions/#{DEFAULT_COMPUTE_REGION}"]
-      )
+      ),
+      install_gpu_drivers: add_gpu
     )
     Google::Apis::BatchV1::AllocationPolicy.new(
       labels:,
@@ -424,13 +444,21 @@ class BatchApiClient
   # * *params*
   #   - +machine_type+ (String) => GCP VM machine type (defaults to 'n2d-highmem-4': 4 CPU, 32GB RAM)
   #   - +boot_disk_size_gb+ (Integer) => Size of boot disk for VM, in gigabytes (defaults to 100GB)
+  #   - +add_gpu+ (Boolean) => T/F for configuring GPU support in Batch job
   #
   # * *return*
   #   - (Google::Apis::BatchV1::InstancePolicy)
-  def create_instance_policy(machine_type: DEFAULT_MACHINE_TYPE, boot_disk_size_gb: 300)
+  def create_instance_policy(machine_type: DEFAULT_MACHINE_TYPE, boot_disk_size_gb: 300, add_gpu: false)
+    accelerator = Google::Apis::BatchV1::Accelerator.new(
+      count: 1,
+      type: 'nvidia-tesla-t4'
+    )
     Google::Apis::BatchV1::InstancePolicy.new(
       machine_type:,
-      boot_disk: Google::Apis::BatchV1::Disk.new(size_gb: boot_disk_size_gb),
+      boot_disk: Google::Apis::BatchV1::Disk.new(
+        size_gb: boot_disk_size_gb
+      ),
+      accelerators: add_gpu ? [accelerator] : []
     )
   end
 
@@ -459,6 +487,13 @@ class BatchApiClient
       'SENTRY_DSN' => ENV['SENTRY_DSN'],
       'BARD_HOST_URL' => Rails.application.config.bard_host_url
     }
+    # scvi jobs do not need MongoDB connectivity
+    if action == :scvi_label_transfer
+      vars.delete('MONGODB_PASSWORD')
+      vars.delete('MONGODB_USERNAME')
+      vars.delete('DATABASE_HOST')
+      vars.delete('DATABASE_NAME')
+    end
     if action == :image_pipeline
       vars.merge({
                    # For staging runs
@@ -542,6 +577,8 @@ class BatchApiClient
     when 'image_pipeline'
       # image_pipeline is node-based, so python command line to this point no longer applies
       command_line = %w[node expression-scatter-plots.js]
+    when 'scvi_label_transfer'
+      command_line = %w[python multiome_label_transfer.py]
     end
     # add optional command line arguments based on file type and action
     if params_object.present?

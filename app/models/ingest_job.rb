@@ -405,9 +405,7 @@ class IngestJob
         message = generate_success_email_array
         if special_action?
           # don't email users for 'special actions' like DE or image pipeline, instead notify admins
-          qa_config = AdminConfiguration.find_by(config_type: 'QA Dev Email')
-          email = qa_config.present? ? qa_config.value : User.find_by(admin: true)&.email
-          SingleCellMailer.notify_user_parse_complete(email, subject, message, study).deliver_now unless email.blank?
+          SingleCellMailer.notify_user_parse_complete(AdminConfiguration.qa_emails, subject, message, study).deliver_now unless email.blank?
         elsif action != :ingest_anndata # don't email users on "extract" AnnData jobs
           SingleCellMailer.notify_user_parse_complete(user.email, subject, message, study).deliver_now
         end
@@ -501,16 +499,19 @@ class IngestJob
         SearchFacet.delay.update_all_facet_filters
       end
       launch_differential_expression_jobs
+      launch_dot_plot_preprocess_job
       create_cell_name_indexes
     when :ingest_expression
       set_anndata_file_info if study_file.is_anndata?
       study.delay.set_gene_count
+      launch_dot_plot_preprocess_job
       launch_differential_expression_jobs
     when :ingest_cluster
       set_cluster_point_count
       set_study_default_options
       set_anndata_file_info if study_file.is_anndata?
       launch_subsample_jobs
+      launch_dot_plot_preprocess_job
       launch_differential_expression_jobs
       create_cell_name_indexes
     when :ingest_subsample
@@ -528,6 +529,8 @@ class IngestJob
       set_anndata_file_info
       launch_anndata_subparse_jobs if study_file.is_viz_anndata?
       launch_differential_expression_jobs if study_file.is_viz_anndata?
+    when :ingest_dot_plot_genes
+      set_has_dot_plot_genes
     end
     set_study_initialized
   end
@@ -821,6 +824,21 @@ class IngestJob
     Rails.logger.info "Setting image_pipeline flags in #{study.accession} for cluster: #{study_file.name}"
     cluster_group = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id)
     cluster_group.update(has_image_cache: true) if cluster_group.present?
+  end
+
+  # preprocess all dot plot gene entries for a qualifying study
+  # will check feature flag first to allow for selective automation & runtime configuration
+  def launch_dot_plot_preprocess_job
+    if DotPlotService.study_eligible?(study) && study.feature_flag_for('dot_plot_preprocessing')
+      Rails.logger.info "Preprocessing dot plot data for #{study.accession}"
+      DotPlotService.process_all_study_data(study, AdminConfiguration.qa_emails)
+    end
+  end
+
+  # set flag to denote cluster has been processed for dot plot genes
+  def set_has_dot_plot_genes
+    cluster_group = ClusterGroup.find(params_object.cluster_group_id)
+    cluster_group.update(has_dot_plot_genes: true)
   end
 
   # set appropriate flags for AnnDataFileInfo entries

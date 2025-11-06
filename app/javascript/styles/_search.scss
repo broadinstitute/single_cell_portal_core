@@ -68,6 +68,7 @@ nav.search-links, #search-panel {
       width: 100%;
       box-sizing: border-box;
       display: inline-block;
+      user-select: none;
     }
     &.active > a, &.selected > a {
       background-color: $action-color;
@@ -395,33 +396,33 @@ span.text-search {
 }
 
 #search-options-menu {
+  border: 1px solid #aaa;
+  background: #fff;
+  position: absolute;
+  z-index: 9000;
+  border-radius: 5px;
+  padding-top: 10px;
+  padding-right: 5px;
+  margin-top: 2px;
+
   ul {
     list-style-type: none;
-    padding-left: 0px;
-  }
-
-  ul.facet-filter-list {
-    max-height: 300px;
-    overflow-y: auto;
     margin-bottom: 0;
-    label {
-      display: inline-block;
-      white-space: nowrap;
-    }
-    input {
-      font-size: 2em;
-      vertical-align: middle;
-      margin-top: 0px;
-      margin-right: 12px;
-    }
-    label span {
+
+    li {
+      padding: 0 0.8em;
+      margin-bottom: 0.8em;
+      cursor: pointer;
       vertical-align: middle;
       font-weight: normal;
-    }
-  }
 
-  li {
-    width: 100%;
-    margin-bottom: 0.5em;
+      input {
+        font-size: 2em;
+        vertical-align: top;
+        margin-top: 4px;
+        margin-right: 12px;
+        cursor: pointer;
+      }
+    }
   }
 }

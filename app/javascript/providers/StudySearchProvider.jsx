@@ -18,6 +18,7 @@ const emptySearch = {
     terms: '',
     facets: {},
     external: '',
+    data_types: '',
     page: 1,
     preset_search: undefined,
     order: undefined
@@ -75,12 +76,12 @@ export function useContextStudySearch() {
   return useContext(StudySearchContext)
 }
 
-/** Merges the external parameter into the searchParams object */
-export function mergeExternalParam(searchParams, newParams) {
-  if (Object.keys(newParams).length === 1 && Object.keys(newParams)[0] === 'external') {
-    return newParams.external
+/** Merges any optional parameter into the searchParams object */
+export function mergeOptionalParam(searchParams, newParams, paramName) {
+  if (Object.keys(newParams).length === 1 && Object.keys(newParams)[0] === paramName) {
+    return newParams[paramName]
   } else {
-    return searchParams.external
+    return searchParams[paramName]
   }
 }
 
@@ -107,7 +108,8 @@ export function PropsStudySearchProvider(props) {
     // reset the page to 1 for new searches, unless otherwise specified
     search.page = newParams.page ? newParams.page : 1
     search.preset = undefined // for now, exclude preset from the page URL--it's in the component props instead
-    search.external = mergeExternalParam(searchParams, newParams)
+    search.external = mergeOptionalParam(searchParams, newParams, 'external')
+    search.data_types = mergeOptionalParam(searchParams, newParams, 'data_types')
     const mergedParams = Object.assign(buildGeneParamsFromQuery(window.location.search), search)
     const queryString = buildSearchQueryString('study', mergedParams)
     navigate(`?${queryString}`)
@@ -165,6 +167,7 @@ export function buildParamsFromQuery(query, preset) {
     terms: queryParams.terms ? queryParams.terms : '',
     facets: buildFacetsFromQueryString(queryParams.facets),
     external: queryParams.external ? queryParams.external : '',
+    data_types: queryParams.data_types ? queryParams.data_types : '',
     preset: preset ? preset : queryString.preset_search,
     order: queryParams.order
   }
