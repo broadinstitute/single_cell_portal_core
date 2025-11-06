@@ -751,7 +751,7 @@ export async function fetchMorpheusJson(
   annotationScope,
   subsample,
   mock=false,
-  isPrecomputed=true
+  usePrecomputed=true
 ) {
   let geneString = genes
   if (Array.isArray(genes)) {
@@ -765,7 +765,7 @@ export async function fetchMorpheusJson(
     subsample,
     genes: geneString
   }
-  const endpoint = isPrecomputed ? 'dotplot' : 'morpheus'
+  const endpoint = usePrecomputed ? 'dotplot' : 'morpheus'
   const apiUrl = `/studies/${studyAccession}/expression/${endpoint}${stringifyQuery(paramObj)}`
   // don't camelcase the keys since those can be cluster names,
   // so send false for the 4th argument

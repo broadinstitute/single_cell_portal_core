@@ -203,7 +203,7 @@ function RawDotPlot({
     async function getDataset() {
       const flags = getFeatureFlagsWithDefaults()
       const usePrecomputed = flags?.dot_plot_preprocessing_frontend || false
-      
+
       const [dataset, perfTimes] = await fetchMorpheusJson(
         studyAccession,
         genes,
@@ -212,7 +212,8 @@ function RawDotPlot({
         annotation.type,
         annotation.scope,
         subsample,
-        usePrecomputed
+        false, // mock
+        usePrecomputed // isPrecomputed
       )
       logFetchMorpheusDataset(perfTimes, cluster, annotation, genes)
 
@@ -268,8 +269,6 @@ export function renderDotPlot({
   target, dataset, annotationName, annotationValues,
   setShowError, setErrorContent, genes, drawCallback
 }) {
-  console.log('in renderDotPlot, dataset', dataset)
-
   const $target = $(target)
   $target.empty()
 
@@ -280,14 +279,8 @@ export function renderDotPlot({
 
   if (dataset && dataset.annotation_name && dataset.values && dataset.genes) {
     // This is pre-computed dot plot data - convert it using the patch
-    console.log('Detected pre-computed dot plot data, converting...')
     processedDataset = window.createMorpheusDotPlot(dataset)
     isPrecomputed = true
-    console.log('Converted dataset:', processedDataset)
-    console.log('Dataset series count:', processedDataset.getSeriesCount())
-    for (let i = 0; i < processedDataset.getSeriesCount(); i++) {
-      console.log(`  Series ${i} name:`, processedDataset.getName(i))
-    }
   }
 
   // Collapse by mean (only for non-precomputed data)
@@ -378,39 +371,10 @@ export function renderDotPlot({
 
   config.drawCallback = function() {
     const dotPlot = this
-
-    // Debug for precomputed data
-    if (isPrecomputed) {
-      console.log('Dot plot instance:', dotPlot)
-      console.log('Dot plot project:', dotPlot.project)
-      console.log('Dot plot options:', dotPlot.options)
-      if (dotPlot.heatMapElementCanvas) {
-        console.log('HeatMapElementCanvas:', dotPlot.heatMapElementCanvas)
-        console.log('Shape:', dotPlot.heatMapElementCanvas.shape)
-        console.log('Color scheme:', dotPlot.heatMapElementCanvas.colorScheme)
-        console.log('Series index for color:', dotPlot.heatMapElementCanvas.getColorScheme().seriesIndex)
-        
-        // Check actual data values
-        const dataset = dotPlot.project.getSortedFilteredDataset()
-        console.log('Dataset row count:', dataset.getRowCount())
-        console.log('Dataset column count:', dataset.getColumnCount())
-        console.log('Dataset series count:', dataset.getSeriesCount())
-        
-        // Sample some values
-        if (dataset.getRowCount() > 0 && dataset.getColumnCount() > 0) {
-          console.log('Sample values (row 0, all columns, series 0):')
-          for (let j = 0; j < Math.min(5, dataset.getColumnCount()); j++) {
-            console.log(`  [0,${j},0] =`, dataset.getValue(0, j, 0))
-          }
-        }
-      }
-    }
-
     if (drawCallback) {drawCallback(dotPlot)}
   }
 
   // Instantiate dot plot and embed in DOM element
-  console.log('Dot plot config:', config)
   delete window.dotPlot
   window.dotPlot = new window.morpheus.HeatMap(config)
 }

@@ -24,7 +24,6 @@
     window.morpheus.DotPlotConverter = {
 
       createDataset(data) {
-        console.log('in patch createDataset with data:', data)
         const cellTypes = data.values
         const geneNames = Object.keys(data.genes)
         const nRows = geneNames.length
@@ -66,21 +65,11 @@
         // Data format: values[0] = mean_expression, values[1] = percent_expressing
         geneNames.forEach((gene, i) => {
           const geneData = data.genes[gene]
-          
-          // Debug: Log values for first gene and UBC
-          if (i === 0 || gene === 'UBC') {
-            console.log(`Gene ${gene}: using raw mean expression values (zeros converted to NaN)`)
-          }
-          
+
           geneData.forEach((values, j) => {
             const meanExpression = values[0]
             const percentExpressing = values[1]
-            
-            // Debug: Log values for first gene and UBC
-            if ((i === 0 || gene === 'UBC') && j < 3) {
-              console.log(`  ${gene}[${j}]: raw=${meanExpression}, %expr=${percentExpressing}`)
-            }
-            
+
             // Use raw mean expression values, but convert zeros to NaN
             // This excludes them from Morpheus color scaling while preserving actual values
             const expressionValue = meanExpression === 0 ? NaN : meanExpression
@@ -88,15 +77,7 @@
             // Scale percent expressing to 0-100 range for better sizing
             dataset.setValue(i, j, percentExpressing * 100, 1) // Percent expressing (0-100) for size
           })
-        }) // Debug: log a sample to verify data
-        if (geneNames.length > 0) {
-          console.log('Sample dot plot data for gene', geneNames[0], ':')
-          console.log('  Mean expression (series 0):', dataset.getValue(0, 0, 0))
-          console.log('  Percent expressing (series 1):', dataset.getValue(0, 0, 1))
-          console.log('  Dataset has', dataset.getSeriesCount(), 'series')
-          console.log('  Series 0 name:', dataset.getName(0))
-          console.log('  Series 1 name:', dataset.getName(1))
-        }
+        })
 
         return dataset
       },
@@ -168,8 +149,6 @@
 
       // Check if this is a precomputed dot plot dataset
       if (options.dataset && options.dataset._isDotPlot) {
-        console.log('Patching HeatMap for precomputed dot plot')
-
         // Force the heatmap to use series 1 for sizing
         if (heatmap.heatMapElementCanvas) {
           heatmap.heatMapElementCanvas.sizeBySeriesIndex = 1
