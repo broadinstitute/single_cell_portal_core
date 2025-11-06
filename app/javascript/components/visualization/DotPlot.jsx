@@ -11,6 +11,7 @@ import { withErrorBoundary } from '~/lib/ErrorBoundary'
 import LoadingSpinner, { morpheusLoadingSpinner } from '~/lib/LoadingSpinner'
 import { fetchServiceWorkerCache } from '~/lib/service-worker-cache'
 import { getSCPContext } from '~/providers/SCPContextProvider'
+import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
 import '~/lib/dot-plot-precompute-patch'
 
 export const dotPlotColorScheme = {
@@ -200,6 +201,9 @@ function RawDotPlot({
   useEffect(() => {
     /** Fetch Morpheus data for dot plot */
     async function getDataset() {
+      const flags = getFeatureFlagsWithDefaults()
+      const usePrecomputed = flags?.dot_plot_preprocessing_frontend || false
+      
       const [dataset, perfTimes] = await fetchMorpheusJson(
         studyAccession,
         genes,
@@ -207,7 +211,8 @@ function RawDotPlot({
         annotation.name,
         annotation.type,
         annotation.scope,
-        subsample
+        subsample,
+        usePrecomputed
       )
       logFetchMorpheusDataset(perfTimes, cluster, annotation, genes)
 
