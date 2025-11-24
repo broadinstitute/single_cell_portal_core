@@ -750,7 +750,8 @@ export async function fetchMorpheusJson(
   annotationType,
   annotationScope,
   subsample,
-  mock=false
+  mock=false,
+  usePrecomputed=true
 ) {
   let geneString = genes
   if (Array.isArray(genes)) {
@@ -764,7 +765,8 @@ export async function fetchMorpheusJson(
     subsample,
     genes: geneString
   }
-  const apiUrl = `/studies/${studyAccession}/expression/morpheus${stringifyQuery(paramObj)}`
+  const endpoint = usePrecomputed ? 'dotplot' : 'morpheus'
+  const apiUrl = `/studies/${studyAccession}/expression/${endpoint}${stringifyQuery(paramObj)}`
   // don't camelcase the keys since those can be cluster names,
   // so send false for the 4th argument
   const [violin, perfTimes] = await scpApi(apiUrl, defaultInit(), mock, false)

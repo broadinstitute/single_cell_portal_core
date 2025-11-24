@@ -11,13 +11,15 @@ import { withErrorBoundary } from '~/lib/ErrorBoundary'
 import LoadingSpinner, { morpheusLoadingSpinner } from '~/lib/LoadingSpinner'
 import { fetchServiceWorkerCache } from '~/lib/service-worker-cache'
 import { getSCPContext } from '~/providers/SCPContextProvider'
+import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
+import '~/lib/dot-plot-precompute-patch'
 
 export const dotPlotColorScheme = {
   // Blue, purple, red.  These red and blue hues are accessible, per WCAG.
   colors: ['#0000BB', '#CC0088', '#FF0000'],
-
   // TODO: Incorporate expression units, once such metadata is available.
-  values: [0, 0.5, 1]
+  values: [0, 0.5, 1],
+  scalingMode: 'relative'
 }
 
 /**
@@ -199,6 +201,9 @@ function RawDotPlot({
   useEffect(() => {
     /** Fetch Morpheus data for dot plot */
     async function getDataset() {
+      const flags = getFeatureFlagsWithDefaults()
+      const usePrecomputed = flags?.dot_plot_preprocessing_frontend || false
+
       const [dataset, perfTimes] = await fetchMorpheusJson(
         studyAccession,
         genes,
@@ -206,7 +211,9 @@ function RawDotPlot({
         annotation.name,
         annotation.type,
         annotation.scope,
-        subsample
+        subsample,
+        false, // mock
+        usePrecomputed // isPrecomputed
       )
       logFetchMorpheusDataset(perfTimes, cluster, annotation, genes)
 
@@ -265,8 +272,19 @@ export function renderDotPlot({
   const $target = $(target)
   $target.empty()
 
-  // Collapse by mean
-  const tools = [{
+  // Check if dataset is pre-computed dot plot data
+  // Pre-computed data has structure: { annotation_name, values, genes }
+  let processedDataset = dataset
+  let isPrecomputed = false
+
+  if (dataset && dataset.annotation_name && dataset.values && dataset.genes) {
+    // This is pre-computed dot plot data - convert it using the patch
+    processedDataset = window.createMorpheusDotPlot(dataset)
+    isPrecomputed = true
+  }
+
+  // Collapse by mean (only for non-precomputed data)
+  const tools = isPrecomputed ? [] : [{
     name: 'Collapse',
     params: {
       collapse_method: 'Mean',
@@ -275,30 +293,37 @@ export function renderDotPlot({
       collapse_to_fields: [annotationName],
       pass_expression: '>',
       pass_value: '0',
-      percentile: '100',
+      percentile: '75',
       compute_percent: true
     }
   }]
 
   const config = {
     shape: 'circle',
-    dataset,
+    dataset: processedDataset,
     el: $target,
     menu: null,
     error: morpheusErrorHandler($target, setShowError, setErrorContent),
-    colorScheme: {
-      scalingMode: 'relative'
-    },
     focus: null,
     tabManager: morpheusTabManager($target),
     tools,
     loadedCallback: () => logMorpheusPerfTime(target, 'dotplot', genes)
   }
 
+  // For pre-computed data, tell Morpheus to display series 0 for color
+  // and use series 1 for sizing (which happens automatically with shape: 'circle')
+  if (isPrecomputed) {
+    config.symmetricColorScheme = false
+    // Tell Morpheus which series to use for coloring the heatmap
+    config.seriesIndex = 0 // Display series 0 (Mean Expression) for colors
+    // Explicitly set the size series
+    config.sizeBySeriesIndex = 1 // Use series 1 (__count) for sizing
+  }
+
   // Load annotations if specified
-  config.columnSortBy = [
-    { field: annotationName, order: 0 }
-  ]
+  // config.columnSortBy = [
+  //   { field: annotationName, order: 0 }
+  // ]
   config.columns = [
     { field: annotationName, display: 'text' }
   ]
@@ -319,7 +344,28 @@ export function renderDotPlot({
   config.columnColorModel = annotColorModel
 
 
-  config.colorScheme = dotPlotColorScheme
+  // Set color scheme (will be overridden for precomputed data below)
+  if (!isPrecomputed) {
+    config.colorScheme = dotPlotColorScheme
+  }
+
+  // For precomputed data, configure the sizer to use the __count series
+  if (isPrecomputed && processedDataset) {
+    // The color scheme should already have a sizer - we just need to configure it
+    config.sizeBy = {
+      seriesName: 'percent',
+      min: 0,
+      max: 75
+    }
+
+    // Use relative color scheme for raw expression values
+    // This will scale colors based on the actual data range across all genes and cell types
+    config.colorScheme = {
+      colors: ['#0000BB', '#CC0088', '#FF0000'],
+      values: [0, 0.5, 1],
+      scalingMode: 'relative'
+    }
+  }
 
   patchServiceWorkerCache()
 
