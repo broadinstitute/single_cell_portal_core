@@ -11,25 +11,25 @@ export const PRECOMPUTED_DOT_PLOT_DATA = {
       [2.5, 0.95], // T cells: [mean_expression, percent_expressing]
       [0.1, 0.05], // B cells
       [0.3, 0.15], // NK cells
-      [0.0, 0.0]   // Monocytes
+      [0.0, 0.0] // Monocytes
     ],
     'CD79A': [
-      [0.2, 0.1],  // T cells
+      [0.2, 0.1], // T cells
       [3.1, 0.98], // B cells
       [0.1, 0.05], // NK cells
-      [0.0, 0.0]   // Monocytes
+      [0.0, 0.0] // Monocytes
     ],
     'NKG7': [
       [1.2, 0.65], // T cells
       [0.3, 0.15], // B cells
       [2.8, 0.92], // NK cells
-      [0.5, 0.25]  // Monocytes
+      [0.5, 0.25] // Monocytes
     ],
     'UBC': [
       [1.926, 0.9237], // T cells
-      [2.081, 0.969],  // B cells
+      [2.081, 0.969], // B cells
       [2.012, 0.7749], // NK cells
-      [3.394, 0.95]    // Monocytes (highest)
+      [3.394, 0.95] // Monocytes (highest)
     ]
   }
 }

@@ -182,6 +182,17 @@ function patchServiceWorkerCache() {
   }
 }
 
+/**
+ * Determines whether to use preprocessed dot plot data
+ * @param {Object} flags - Feature flags object
+ * @param {Object} exploreInfo - Explore info containing cluster data
+ * @returns {boolean} - True if both feature flag is enabled AND cluster has dot plot genes
+ */
+export function shouldUsePreprocessedData(flags, exploreInfo) {
+  const hasDotPlotGenes = exploreInfo?.cluster?.hasDotPlotGenes || false
+  return (flags?.dot_plot_preprocessing_frontend && hasDotPlotGenes) || false
+}
+
 /** Renders a Morpheus-powered dot plot for the given URL paths and annotation
   * Note that this has a lot in common with Heatmap.js.  they are separate for now
   * as their display capabilities may diverge (esp. since DotPlot is used in global gene search)
@@ -193,7 +204,7 @@ function patchServiceWorkerCache() {
   */
 function RawDotPlot({
   studyAccession, genes=[], cluster, annotation={},
-  subsample, annotationValues, setMorpheusData
+  subsample, annotationValues, setMorpheusData, exploreInfo
 }) {
   const [graphId] = useState(_uniqueId('dotplot-'))
   const { ErrorComponent, showError, setShowError, setErrorContent } = useErrorMessage()
@@ -202,7 +213,7 @@ function RawDotPlot({
     /** Fetch Morpheus data for dot plot */
     async function getDataset() {
       const flags = getFeatureFlagsWithDefaults()
-      const usePrecomputed = flags?.dot_plot_preprocessing_frontend || false
+      const usePreprocessed = shouldUsePreprocessedData(flags, exploreInfo)
 
       const [dataset, perfTimes] = await fetchMorpheusJson(
         studyAccession,
@@ -213,7 +224,7 @@ function RawDotPlot({
         annotation.scope,
         subsample,
         false, // mock
-        usePrecomputed // isPrecomputed
+        usePreprocessed // isPrecomputed
       )
       logFetchMorpheusDataset(perfTimes, cluster, annotation, genes)
 
