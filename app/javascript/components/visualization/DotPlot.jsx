@@ -202,7 +202,7 @@ function RawDotPlot({
     /** Fetch Morpheus data for dot plot */
     async function getDataset() {
       const flags = getFeatureFlagsWithDefaults()
-      const usePrecomputed = flags?.dot_plot_preprocessing_frontend || false
+      const usePreprocessed = flags?.dot_plot_preprocessing_frontend || false
 
       const [dataset, perfTimes] = await fetchMorpheusJson(
         studyAccession,
@@ -213,7 +213,7 @@ function RawDotPlot({
         annotation.scope,
         subsample,
         false, // mock
-        usePrecomputed // isPrecomputed
+        usePreprocessed // isPrecomputed
       )
       logFetchMorpheusDataset(perfTimes, cluster, annotation, genes)
 

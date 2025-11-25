@@ -133,18 +133,18 @@ describe('DotPlot Integration with Feature Flag', () => {
   describe('Feature flag integration', () => {
     it('uses feature flag value to determine endpoint', () => {
       // When flag is true
-      let usePrecomputed = FEATURE_FLAGS_ENABLED.dot_plot_preprocessing_frontend
-      expect(usePrecomputed).toBe(true)
+      let usePreprocessed = FEATURE_FLAGS_ENABLED.dot_plot_preprocessing_frontend
+      expect(usePreprocessed).toBe(true)
 
       // When flag is false
-      usePrecomputed = FEATURE_FLAGS_DISABLED.dot_plot_preprocessing_frontend
-      expect(usePrecomputed).toBe(false)
+      usePreprocessed = FEATURE_FLAGS_DISABLED.dot_plot_preprocessing_frontend
+      expect(usePreprocessed).toBe(false)
     })
 
     it('defaults to false when flag is undefined', () => {
       const flags = {}
-      const usePrecomputed = flags?.dot_plot_preprocessing_frontend || false
-      expect(usePrecomputed).toBe(false)
+      const usePreprocessed = flags?.dot_plot_preprocessing_frontend || false
+      expect(usePreprocessed).toBe(false)
     })
   })
 
