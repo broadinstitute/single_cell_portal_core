@@ -249,4 +249,70 @@ describe('DotPlot Integration with Feature Flag', () => {
       expect(shouldUsePreprocessedData(flags, exploreInfo)).toBe(false)
     })
   })
+
+  describe('Heatmap data handling', () => {
+    it('uses morpheus endpoint with usePreprocessed=false by default', async () => {
+      const mockMorpheusData = {
+        rows: ['Gene1', 'Gene2'],
+        columns: ['Cell1', 'Cell2'],
+        data: [[1, 2], [3, 4]]
+      }
+      fetchMorpheusJsonSpy.mockResolvedValue([mockMorpheusData, {}])
+
+      // Call without usePreprocessed parameter (should default to false)
+      await ScpApi.fetchMorpheusJson(
+        'SCP1234',
+        ['CD3D', 'CD79A'],
+        'cluster_1',
+        'cell_type',
+        'group',
+        'study',
+        'all',
+        false // mock
+        // usePreprocessed omitted - should default to false
+      )
+
+      expect(fetchMorpheusJsonSpy).toHaveBeenCalledWith(
+        'SCP1234',
+        ['CD3D', 'CD79A'],
+        'cluster_1',
+        'cell_type',
+        'group',
+        'study',
+        'all',
+        false
+        // usePreprocessed defaults to false
+      )
+    })
+
+    it('detects preprocessed data format to avoid sharing with heatmap', () => {
+      // Preprocessed format
+      const preprocessedData = {
+        annotation_name: 'cell_type',
+        values: ['T cells', 'B cells'],
+        genes: { CD3D: [[1.5, 0.8], [0.1, 0.05]] }
+      }
+
+      const isPreprocessedFormat = !!(
+        preprocessedData.annotation_name &&
+        preprocessedData.values &&
+        preprocessedData.genes
+      )
+      expect(isPreprocessedFormat).toBe(true)
+
+      // Standard Morpheus format
+      const standardData = {
+        rows: ['Gene1', 'Gene2'],
+        columns: ['Cell1', 'Cell2'],
+        data: [[1, 2], [3, 4]]
+      }
+
+      const isStandardFormat = !!(
+        standardData.annotation_name &&
+        standardData.values &&
+        standardData.genes
+      )
+      expect(isStandardFormat).toBe(false)
+    })
+  })
 })

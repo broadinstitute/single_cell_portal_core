@@ -10,7 +10,6 @@ import { renderHeatmap, refitHeatmap } from '~/lib/morpheus-heatmap'
 import { withErrorBoundary } from '~/lib/ErrorBoundary'
 import LoadingSpinner, { morpheusLoadingSpinner } from '~/lib/LoadingSpinner'
 
-
 /** renders a morpheus powered heatmap for the given params
   * @param genes {Array[String]} array of gene names
   * @param cluster {string} the name of the cluster, or blank/null for the study's default
@@ -20,14 +19,39 @@ import LoadingSpinner, { morpheusLoadingSpinner } from '~/lib/LoadingSpinner'
  */
 function RawHeatmap({
   studyAccession, genes=[], cluster, annotation={}, subsample, heatmapFit, heatmapRowCentering,
-  morpheusData
+  morpheusData, isVisible=true
 }) {
   const [graphId] = useState(_uniqueId('heatmap-'))
+  const [dataset, setDataset] = useState(morpheusData)
   const morpheusHeatmap = useRef(null)
   const { ErrorComponent, setShowError, setErrorContent } = useErrorMessage()
+
+  // Fetch dataset if not provided via morpheusData prop, but only when tab is visible
+  useEffect(() => {
+    async function fetchDataset() {
+      if (isVisible && !morpheusData && cluster && annotation.name && genes.length > 0) {
+        const [data] = await fetchMorpheusJson(
+          studyAccession,
+          genes,
+          cluster,
+          annotation.name,
+          annotation.type,
+          annotation.scope,
+          subsample,
+          false, // mock
+          false // usePreprocessed - always use full morpheus data for heatmaps
+        )
+        setDataset(data)
+      } else if (morpheusData) {
+        setDataset(morpheusData)
+      }
+    }
+    fetchDataset()
+  }, [isVisible, studyAccession, genes.join(','), cluster, annotation.name, annotation.type, annotation.scope, subsample, morpheusData])
+
   // we can't render until we know what the cluster is, since morpheus requires the annotation name
   // so don't try until we've received this, unless we're showing a Gene List
-  const canRender = !!cluster && !!morpheusData
+  const canRender = !!cluster && !!dataset
 
   useEffect(() => {
     if (canRender) {
@@ -39,7 +63,7 @@ function RawHeatmap({
       setShowError(false)
       morpheusHeatmap.current = renderHeatmap({
         target,
-        dataset: morpheusData,
+        dataset,
         annotationCellValuesURL: '',
         annotationName: annotation.name,
         fit: heatmapFit,
@@ -53,7 +77,7 @@ function RawHeatmap({
   }, [
     studyAccession,
     genes.join(','),
-    morpheusData,
+    dataset,
     cluster,
     annotation.name,
     annotation.scope,

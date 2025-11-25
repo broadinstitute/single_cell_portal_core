@@ -676,6 +676,7 @@ export default function ExploreDisplayTabs({
                   studyAccession={studyAccession}
                   {... exploreParamsWithDefaults}
                   morpheusData={morpheusData}
+                  isVisible={shownTab === 'heatmap'}
                   dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
                 />
               </div>

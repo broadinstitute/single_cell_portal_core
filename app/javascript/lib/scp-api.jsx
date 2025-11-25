@@ -751,7 +751,7 @@ export async function fetchMorpheusJson(
   annotationScope,
   subsample,
   mock=false,
-  usePreprocessed=true
+  usePreprocessed=false
 ) {
   let geneString = genes
   if (Array.isArray(genes)) {
