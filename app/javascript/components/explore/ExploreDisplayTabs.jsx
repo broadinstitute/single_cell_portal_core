@@ -660,6 +660,7 @@ export default function ExploreDisplayTabs({
                 <DotPlot
                   studyAccession={studyAccession}
                   {... exploreParamsWithDefaults}
+                  exploreInfo={exploreInfo}
                   annotationValues={getAnnotationValues(
                     exploreParamsWithDefaults?.annotation,
                     exploreParamsWithDefaults?.annotationList?.annotations

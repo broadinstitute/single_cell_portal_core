@@ -89,9 +89,9 @@ const mockMorpheus = {
     }
   },
   // Mock JsonDatasetReader to prevent prototype errors
-  JsonDatasetReader: function() {},
+  JsonDatasetReader() {},
   // Mock HeatMap to prevent prototype errors
-  HeatMap: function() {}
+  HeatMap() {}
 }
 
 // Add prototypes

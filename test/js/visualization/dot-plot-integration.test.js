@@ -4,6 +4,7 @@
 
 import '@testing-library/jest-dom/extend-expect'
 import * as ScpApi from 'lib/scp-api'
+import { shouldUsePreprocessedData } from 'components/visualization/DotPlot'
 
 import {
   PRECOMPUTED_DOT_PLOT_DATA,
@@ -188,6 +189,64 @@ describe('DotPlot Integration with Feature Flag', () => {
       expect(sizeByConfig.seriesName).toBe('percent')
       expect(sizeByConfig.min).toBe(0)
       expect(sizeByConfig.max).toBe(75)
+    })
+  })
+
+  describe('shouldUsePreprocessedData', () => {
+    it('returns true when both flag is enabled and cluster has dot plot genes', () => {
+      const flags = { dot_plot_preprocessing_frontend: true }
+      const exploreInfo = { cluster: { hasDotPlotGenes: true } }
+
+      expect(shouldUsePreprocessedData(flags, exploreInfo)).toBe(true)
+    })
+
+    it('returns false when flag is enabled but cluster does not have dot plot genes', () => {
+      const flags = { dot_plot_preprocessing_frontend: true }
+      const exploreInfo = { cluster: { hasDotPlotGenes: false } }
+
+      expect(shouldUsePreprocessedData(flags, exploreInfo)).toBe(false)
+    })
+
+    it('returns false when flag is disabled but cluster has dot plot genes', () => {
+      const flags = { dot_plot_preprocessing_frontend: false }
+      const exploreInfo = { cluster: { hasDotPlotGenes: true } }
+
+      expect(shouldUsePreprocessedData(flags, exploreInfo)).toBe(false)
+    })
+
+    it('returns false when both flag is disabled and cluster does not have dot plot genes', () => {
+      const flags = { dot_plot_preprocessing_frontend: false }
+      const exploreInfo = { cluster: { hasDotPlotGenes: false } }
+
+      expect(shouldUsePreprocessedData(flags, exploreInfo)).toBe(false)
+    })
+
+    it('returns false when flag is undefined', () => {
+      const flags = {}
+      const exploreInfo = { cluster: { hasDotPlotGenes: true } }
+
+      expect(shouldUsePreprocessedData(flags, exploreInfo)).toBe(false)
+    })
+
+    it('returns false when exploreInfo is undefined', () => {
+      const flags = { dot_plot_preprocessing_frontend: true }
+      const exploreInfo = undefined
+
+      expect(shouldUsePreprocessedData(flags, exploreInfo)).toBe(false)
+    })
+
+    it('returns false when cluster is undefined', () => {
+      const flags = { dot_plot_preprocessing_frontend: true }
+      const exploreInfo = {}
+
+      expect(shouldUsePreprocessedData(flags, exploreInfo)).toBe(false)
+    })
+
+    it('returns false when hasDotPlotGenes is undefined', () => {
+      const flags = { dot_plot_preprocessing_frontend: true }
+      const exploreInfo = { cluster: {} }
+
+      expect(shouldUsePreprocessedData(flags, exploreInfo)).toBe(false)
     })
   })
 })
