@@ -23,11 +23,23 @@
      */
     window.morpheus.DotPlotConverter = {
 
-      createDataset(data) {
-        const cellTypes = data.values
-        const geneNames = Object.keys(data.genes)
+      createDataset(data, geneOrder = null) {
+        // Sort labels naturally
+        const labels = [...data.values].sort((a, b) => {
+          return a.localeCompare(b, 'en', { numeric: true, ignorePunctuation: true })
+        })
+
+        // Create a mapping from original index to sorted index
+        const originalToSortedIndex = {}
+        data.values.forEach((label, originalIndex) => {
+          const sortedIndex = labels.indexOf(label)
+          originalToSortedIndex[originalIndex] = sortedIndex
+        })
+
+        // Use provided gene order if available, otherwise fall back to Object.keys
+        const geneNames = geneOrder || Object.keys(data.genes)
         const nRows = geneNames.length
-        const nCols = cellTypes.length
+        const nCols = labels.length
 
         // Create dataset with Float32 data type
         // The dataset name becomes the first series name by default
@@ -51,12 +63,12 @@
           rowIds.setValue(i, gene)
         })
 
-        // Set up column metadata (cell types)
+        // Set up column metadata (labels, e.g. cell types) in natural order
         const colIds = dataset.getColumnMetadata().add('id')
-        const cellTypeMetadata = dataset.getColumnMetadata().add(data.annotation_name || 'Cell Type')
-        cellTypes.forEach((cellType, j) => {
-          colIds.setValue(j, cellType)
-          cellTypeMetadata.setValue(j, cellType)
+        const labelMetadata = dataset.getColumnMetadata().add(data.annotation_name || 'Label')
+        labels.forEach((label, j) => {
+          colIds.setValue(j, label)
+          labelMetadata.setValue(j, label)
         })
 
         // Fill in the data
@@ -66,16 +78,18 @@
         geneNames.forEach((gene, i) => {
           const geneData = data.genes[gene]
 
-          geneData.forEach((values, j) => {
+          // Map data from original order to sorted order
+          geneData.forEach((values, originalIndex) => {
+            const sortedIndex = originalToSortedIndex[originalIndex]
             const meanExpression = values[0]
             const percentExpressing = values[1]
 
             // Use raw mean expression values, but convert zeros to NaN
             // This excludes them from Morpheus color scaling while preserving actual values
             const expressionValue = meanExpression === 0 ? NaN : meanExpression
-            dataset.setValue(i, j, expressionValue, 0) // Raw mean expression for color (zeros as NaN)
+            dataset.setValue(i, sortedIndex, expressionValue, 0) // Raw mean expression for color (zeros as NaN)
             // Scale percent expressing to 0-100 range for better sizing
-            dataset.setValue(i, j, percentExpressing * 100, 1) // Percent expressing (0-100) for size
+            dataset.setValue(i, sortedIndex, percentExpressing * 100, 1) // Percent expressing (0-100) for size
           })
         })
 
@@ -134,9 +148,11 @@
 
     /**
      * Helper to create dot plot directly from your data object
+     * @param {Object} data - The preprocessed dot plot data
+     * @param {Array} geneOrder - Optional array of gene names in the desired order
      */
-    window.createMorpheusDotPlot = function(data) {
-      const dataset = window.morpheus.DotPlotConverter.createDataset(data)
+    window.createMorpheusDotPlot = function(data, geneOrder = null) {
+      const dataset = window.morpheus.DotPlotConverter.createDataset(data, geneOrder)
       return window.morpheus.DotPlotConverter.configureDotPlot(dataset)
     }
 
