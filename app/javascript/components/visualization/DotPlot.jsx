@@ -249,7 +249,12 @@ function RawDotPlot({
           setShowError,
           genes
         })
-        setMorpheusData(dataset)
+        // Only share dataset with Heatmap if it's not preprocessed dot plot data
+        // Preprocessed data has a different format that Heatmap can't consume
+        const isPreprocessedFormat = !!(dataset?.annotation_name && dataset?.values && dataset?.genes)
+        if (!isPreprocessedFormat) {
+          setMorpheusData(dataset)
+        }
       })
     }
   }, [
