@@ -18,12 +18,12 @@ import {
   getParsedHeaderLines, parseLine, ParseException,
   validateUniqueCellNamesWithinFile, validateMetadataLabelMatches,
   validateGroupColumnCounts, timeOutCSFV, validateUnique,
-  validateRequiredMetadataColumns, validateAlphanumericAndUnderscores
+  validateRequiredMetadataColumns, validateAlphanumericAndUnderscores,
+  getOntologyShortNameLc, getLabelSuffixForOntology, fixTaxonIdIssues
 } from './shared-validation'
 import { parseDifferentialExpressionFile } from './validate-differential-expression'
 import { parseAnnDataFile } from './validate-anndata'
 import { fetchOntologies, getOntologyBasedProps } from '~/lib/validation/ontology-validation'
-import { getOntologyShortNameLc, getLabelSuffixForOntology } from './shared-validation'
 
 /**
  * Gzip decompression requires reading the whole file, given the current
@@ -247,7 +247,7 @@ export async function parseMetadataFile(chunker, mimeType, fileOptions) {
 }
 
 /** validate all ontology-based convention terms in a given line */
-export function validateConventionTerms(headers, line, ontologies, knownErrors) {
+export async function validateConventionTerms(headers, line, ontologies, knownErrors) {
   let issues = []
   const metadataHeaders = headers[0]
   for (let i = 0; i < metadataHeaders.length; i++) {
@@ -260,7 +260,9 @@ export function validateConventionTerms(headers, line, ontologies, knownErrors) 
       issues = issues.concat(validateOntologyTerm(header, ontologyId, label, ontologies, knownErrors))
     }
   }
-  return issues
+  // fallback for any taxon IDs not found
+  const filteredIssues = await fixTaxonIdIssues(issues)
+  return filteredIssues
 }
 
 /** validate a single ontology ID against stored ontologies and return issues */
@@ -293,7 +295,7 @@ export function validateOntologyTerm(prop, ontologyId, label, ontologies, knownE
     errorIdentifier = `${ontologyId}-invalid-id`
     issue = [
       'error', 'ontology:label-lookup-error', msg,
-      { subtype: 'ontology:invalid-id' }
+      { subtype: 'ontology:invalid-id', id: ontologyId, label }
     ]
   } else {
     const validLabels = ontology[ontologyId]

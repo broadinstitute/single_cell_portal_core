@@ -17,7 +17,7 @@ import { metadataSchema } from './shared-validation'
 // TODO: Replace "development" with "main" after next ingest release
 const ONTOLOGY_BASE_URL =
   'https://raw.githubusercontent.com/broadinstitute/scp-ingest-pipeline/' +
-  'development/ingest/validation/ontologies/'
+  'main/ingest/validation/ontologies/'
 
 /** Quickly retrieve current version cache key for ontologies */
 async function fetchOntologyCacheVersion() {
@@ -169,7 +169,7 @@ export function getOntologyBasedProps() {
  */
 export function getAcceptedOntologies(key, metadataSchema) {
   // E.g. "ontology_browser_url": "https://www.ebi.ac.uk/ols/ontologies/mondo,https://www.ebi.ac.uk/ols/ontologies/pato"
-  const olsUrls = metadataSchema.properties[key].ontology
+  const olsUrls = metadataSchema.properties[key]?.ontology
 
   const acceptedOntologies =
     olsUrls?.split(',').map(url => url.split('/').slice(-1)[0].toUpperCase())
@@ -179,4 +179,27 @@ export function getAcceptedOntologies(key, metadataSchema) {
   }
 
   return acceptedOntologies
+}
+
+/**
+ * fetch a remote ontology term from OLS for NCBI taxon IDs
+ * @param termId {String} ontology term ID, e.g. "NCBITaxon_9606"
+ * @returns {Object, null} JSON of ontology term, if found
+ */
+export async function fetchOlsOntologyTerm(termId) {
+  const noMatch = {}
+  noMatch[termId] = 'No match'
+  try {
+    const ontologyName = termId.split('_')[0].toLowerCase()
+    const purlIri = `http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252F${termId}`
+    const termUrl = `https://www.ebi.ac.uk/ols4/api/ontologies/${ontologyName}/terms/${purlIri}?lang=en`
+    const rawTerm = await fetch(termUrl)
+    if (rawTerm.ok) {
+      return rawTerm.json()
+    } else {
+      return noMatch
+    }
+  } catch (error) {
+    return noMatch
+  }
 }

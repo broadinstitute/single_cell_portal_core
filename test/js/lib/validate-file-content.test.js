@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 
 import ValidateFile from 'lib/validation/validate-file'
-import { fetchOntologies } from 'lib/validation/ontology-validation'
+import { fetchOntologies, fetchOlsOntologyTerm } from 'lib/validation/ontology-validation'
 import { validateConventionTerms, validateOntologyTerm } from 'lib/validation/validate-file-content'
 import {
   REQUIRED_CONVENTION_COLUMNS, getOntologyShortNameLc, getLabelSuffixForOntology
@@ -641,5 +641,15 @@ describe('validates file contents against minified ontologies', () => {
     expect("__ontology_label").toEqual(getLabelSuffixForOntology(efoId))
     const uoId = "UO_0000036"
     expect("_label").toEqual(getLabelSuffixForOntology(uoId))
+  })
+
+  it('gets remote term from OLS', async () => {
+    const termId = "NCBITaxon_197152"
+    const olsTerm = await fetchOlsOntologyTerm(termId)
+    expect(olsTerm.label).toBe('Cloeon dipterum')
+    const missingTerm = await fetchOlsOntologyTerm('NCBITaxon_foo')
+    expect(missingTerm).toBe({ 'NCBITaxon_foo': 'no match' })
+    const missingOntology = await fetchOlsOntologyTerm('foo_197152')
+    expect(missingOntology).toBe({ 'foo_197152': 'no match' })
   })
 })
