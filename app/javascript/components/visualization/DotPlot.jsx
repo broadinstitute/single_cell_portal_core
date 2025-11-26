@@ -388,6 +388,33 @@ export function renderDotPlot({
 
   patchServiceWorkerCache()
 
+  /** Adjust dot plot height to ensure legend remains visible */
+  function adjustDotPlotHeight() {
+    if (!dimensions?.height) {return}
+
+    const dotPlotElement = $target[0]
+    const dotPlotHeight = dotPlotElement.scrollHeight // Use scrollHeight to get full content height
+    const totalNeededHeight = dotPlotHeight + LEGEND_HEIGHT
+
+    console.log('dotPlotHeight:', dotPlotHeight,
+      'totalNeededHeight:', totalNeededHeight,
+      'availableHeight:', dimensions.height)
+
+    // If total height exceeds available space, shrink the dot plot
+    // This ensures the legend remains visible without scrolling
+    if (totalNeededHeight > dimensions.height) {
+      const adjustedHeight = dimensions.height - LEGEND_HEIGHT
+      if (adjustedHeight > 100) { // Ensure minimum reasonable height
+        $target.css('height', `${adjustedHeight}px`)
+        $target.css('overflow-y', 'auto')
+      }
+    } else {
+      // Reset height if there's enough space
+      $target.css('height', '')
+      $target.css('overflow-y', '')
+    }
+  }
+
   config.drawCallback = function() {
     const dotPlot = this
 
@@ -395,26 +422,21 @@ export function renderDotPlot({
     // Use setTimeout to ensure Morpheus has fully rendered and layout is complete
     if (dimensions?.height) {
       setTimeout(() => {
-        const dotPlotElement = $target[0]
-        const dotPlotHeight = dotPlotElement.offsetHeight
-        const totalNeededHeight = dotPlotHeight + LEGEND_HEIGHT
-
-        console.log('dotPlotHeight:', dotPlotHeight,
-          'totalNeededHeight:', totalNeededHeight,
-          'availableHeight:', dimensions.height)
-
-        // If total height exceeds available space, shrink the dot plot
-        // This ensures the legend remains visible without scrolling
-        if (totalNeededHeight > dimensions.height) {
-          const adjustedHeight = dimensions.height - LEGEND_HEIGHT
-          if (adjustedHeight > 100) { // Ensure minimum reasonable height
-            $target.css('height', `${adjustedHeight}px`)
-            $target.css('overflow-y', 'auto')
-            // Notify Morpheus of the size change
-            dotPlot.resized()
-          }
-        }
+        adjustDotPlotHeight()
+        // Notify Morpheus of any size changes
+        dotPlot.resized()
       }, 100) // Wait 100ms for Morpheus to complete layout
+
+      // Also listen for window resize events to re-adjust height
+      const resizeHandler = () => {
+        adjustDotPlotHeight()
+        dotPlot.resized()
+      }
+
+      // Remove any existing listener to avoid duplicates
+      $(window).off('resize.dotplot')
+      // Add new listener
+      $(window).on('resize.dotplot', resizeHandler)
     }
 
     if (drawCallback) {drawCallback(dotPlot)}
