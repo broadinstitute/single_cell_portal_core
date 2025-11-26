@@ -7,7 +7,7 @@ import ValidateFile from 'lib/validation/validate-file'
 import { fetchOntologies, fetchOlsOntologyTerm } from 'lib/validation/ontology-validation'
 import { validateConventionTerms, validateOntologyTerm } from 'lib/validation/validate-file-content'
 import {
-  REQUIRED_CONVENTION_COLUMNS, getOntologyShortNameLc, getLabelSuffixForOntology
+  REQUIRED_CONVENTION_COLUMNS, getOntologyShortNameLc, getLabelSuffixForOntology, fixTaxonIdIssues
 } from 'lib/validation/shared-validation'
 import { getLogProps } from 'lib/validation/log-validation'
 import ValidationMessage from 'components/validation/ValidationMessage'
@@ -648,8 +648,19 @@ describe('validates file contents against minified ontologies', () => {
     const olsTerm = await fetchOlsOntologyTerm(termId)
     expect(olsTerm.label).toBe('Cloeon dipterum')
     const missingTerm = await fetchOlsOntologyTerm('NCBITaxon_foo')
-    expect(missingTerm).toBe({ 'NCBITaxon_foo': 'no match' })
+    expect(missingTerm).toMatchObject({ 'NCBITaxon_foo': 'Not found' })
     const missingOntology = await fetchOlsOntologyTerm('foo_197152')
-    expect(missingOntology).toBe({ 'foo_197152': 'no match' })
+    expect(missingOntology).toMatchObject({ 'foo_197152': 'Not found' })
+  })
+
+  it('filters out extended ontolgy issues', async () => {
+    const issues = [
+      [
+        'error', 'ontology:label-lookup-error', 'Invalid ontology ID: NCBITaxon_197152',
+        { id: 'NCBITaxon_197152', label: 'Cloeon dipterum', subtype: 'ontology:invalid-id' }
+      ]
+    ]
+    const filtered = await fixTaxonIdIssues(issues)
+    expect(filtered).toHaveLength(0)
   })
 })

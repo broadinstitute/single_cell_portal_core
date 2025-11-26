@@ -188,12 +188,17 @@ export function getAcceptedOntologies(key, metadataSchema) {
  */
 export async function fetchOlsOntologyTerm(termId) {
   const noMatch = {}
-  noMatch[termId] = 'No match'
+  noMatch[termId] = 'Not found'
   try {
     const ontologyName = termId.split('_')[0].toLowerCase()
-    const purlIri = `http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252F${termId}`
-    const termUrl = `https://www.ebi.ac.uk/ols4/api/ontologies/${ontologyName}/terms/${purlIri}?lang=en`
+    const purlIri = `http://purl.obolibrary.org/obo/${termId}`
+    // purl IRI values must be double-encoded, to match behavior in:
+    // https://github.com/broadinstitute/scp-ingest-pipeline/blob/development/ingest/validation/validate_metadata.py#L348
+    const termUrl = `https://www.ebi.ac.uk/ols4/api/ontologies/${ontologyName}/` +
+                            `terms/${encodeURIComponent(encodeURIComponent(purlIri))}?lang=en`
+    console.debug(`termUrl: ${termUrl}`)
     const rawTerm = await fetch(termUrl)
+    console.debug(`rawTerm: ${JSON.stringify(rawTerm)}`)
     if (rawTerm.ok) {
       return rawTerm.json()
     } else {
