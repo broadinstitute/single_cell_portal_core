@@ -423,14 +423,11 @@ export function renderDotPlot({
     if (dimensions?.height) {
       setTimeout(() => {
         adjustDotPlotHeight()
-        // Notify Morpheus of any size changes
-        dotPlot.resized()
       }, 100) // Wait 100ms for Morpheus to complete layout
 
       // Also listen for window resize events to re-adjust height
       const resizeHandler = () => {
         adjustDotPlotHeight()
-        dotPlot.resized()
       }
 
       // Remove any existing listener to avoid duplicates
