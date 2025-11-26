@@ -204,7 +204,7 @@ export function shouldUsePreprocessedData(flags, exploreInfo) {
   */
 function RawDotPlot({
   studyAccession, genes=[], cluster, annotation={},
-  subsample, annotationValues, setMorpheusData, exploreInfo
+  subsample, annotationValues, setMorpheusData, exploreInfo, dimensions
 }) {
   const [graphId] = useState(_uniqueId('dotplot-'))
   const { ErrorComponent, showError, setShowError, setErrorContent } = useErrorMessage()
@@ -247,7 +247,8 @@ function RawDotPlot({
           annotationValues,
           setErrorContent,
           setShowError,
-          genes
+          genes,
+          dimensions
         })
         // Only share dataset with Heatmap if it's not preprocessed dot plot data
         // Preprocessed data has a different format that Heatmap can't consume
@@ -283,8 +284,9 @@ export default DotPlot
 /** Render Morpheus dot plot */
 export function renderDotPlot({
   target, dataset, annotationName, annotationValues,
-  setShowError, setErrorContent, genes, drawCallback
+  setShowError, setErrorContent, genes, drawCallback, dimensions
 }) {
+  const LEGEND_HEIGHT = 70 // Height of DotPlotLegend in pixels
   const $target = $(target)
   $target.empty()
 
@@ -388,6 +390,33 @@ export function renderDotPlot({
 
   config.drawCallback = function() {
     const dotPlot = this
+
+    // After rendering, check if dot plot + legend will fit in available dimensions
+    // Use setTimeout to ensure Morpheus has fully rendered and layout is complete
+    if (dimensions?.height) {
+      setTimeout(() => {
+        const dotPlotElement = $target[0]
+        const dotPlotHeight = dotPlotElement.offsetHeight
+        const totalNeededHeight = dotPlotHeight + LEGEND_HEIGHT
+
+        console.log('dotPlotHeight:', dotPlotHeight,
+          'totalNeededHeight:', totalNeededHeight,
+          'availableHeight:', dimensions.height)
+
+        // If total height exceeds available space, shrink the dot plot
+        // This ensures the legend remains visible without scrolling
+        if (totalNeededHeight > dimensions.height) {
+          const adjustedHeight = dimensions.height - LEGEND_HEIGHT
+          if (adjustedHeight > 100) { // Ensure minimum reasonable height
+            $target.css('height', `${adjustedHeight}px`)
+            $target.css('overflow-y', 'auto')
+            // Notify Morpheus of the size change
+            dotPlot.resized()
+          }
+        }
+      }, 100) // Wait 100ms for Morpheus to complete layout
+    }
+
     if (drawCallback) {drawCallback(dotPlot)}
   }
 
