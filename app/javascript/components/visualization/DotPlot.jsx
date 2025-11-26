@@ -400,11 +400,6 @@ export function renderDotPlot({
     const dotPlotHeight = dotPlotElement.scrollHeight // Use scrollHeight to get full content height
     const totalNeededHeight = dotPlotHeight + legendHeight
 
-    console.log('dotPlotHeight:', dotPlotHeight,
-      'legendHeight:', legendHeight,
-      'totalNeededHeight:', totalNeededHeight,
-      'availableHeight:', dimensions.height)
-
     // If total height exceeds available space, shrink the dot plot
     // This ensures the legend remains visible without scrolling
     if (totalNeededHeight > dimensions.height) {
