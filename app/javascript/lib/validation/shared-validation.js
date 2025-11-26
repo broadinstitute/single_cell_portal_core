@@ -329,7 +329,7 @@ export function getLabelSuffixForOntology(indentifier) {
 export async function fixTaxonIdIssues(issues) {
   // fallback for any taxon IDs not found
   const invalidIds = findInvalidIds(issues)
-  if (Object.keys(invalidIds).length) {
+  if (Object.keys(invalidIds).length > 0) {
     let filteredIssues = issues
     const promises = []
     Object.entries(invalidIds).map(async ([termId, label]) => {
@@ -342,7 +342,7 @@ export async function fixTaxonIdIssues(issues) {
       const matchingIssue = issues.find(issue => {return issue[3]?.id === termId})
       const label = matchingIssue[3].label
       if (olsTerm && olsTerm.label === label) {
-        filteredIssues = issues.filter(issue => {return issue[3]?.id !== termId})
+        filteredIssues = filteredIssues.filter(issue => {return issue[3]?.id !== termId})
       }
     })
     return filteredIssues

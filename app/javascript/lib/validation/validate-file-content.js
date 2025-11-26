@@ -243,11 +243,12 @@ export async function parseMetadataFile(chunker, mimeType, fileOptions) {
     // add other line-by-line validations here
     }
   })
-  return { issues, delimiter, numColumns: headers[0].length }
+  const filteredIssues = await fixTaxonIdIssues(issues)
+  return { issues: filteredIssues, delimiter, numColumns: headers[0].length }
 }
 
 /** validate all ontology-based convention terms in a given line */
-export async function validateConventionTerms(headers, line, ontologies, knownErrors) {
+export function validateConventionTerms(headers, line, ontologies, knownErrors) {
   let issues = []
   const metadataHeaders = headers[0]
   for (let i = 0; i < metadataHeaders.length; i++) {
@@ -260,9 +261,7 @@ export async function validateConventionTerms(headers, line, ontologies, knownEr
       issues = issues.concat(validateOntologyTerm(header, ontologyId, label, ontologies, knownErrors))
     }
   }
-  // fallback for any taxon IDs not found
-  const filteredIssues = await fixTaxonIdIssues(issues)
-  return filteredIssues
+  return issues
 }
 
 /** validate a single ontology ID against stored ontologies and return issues */
