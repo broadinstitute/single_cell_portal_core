@@ -295,7 +295,8 @@ export function renderDotPlot({
 
   if (dataset && dataset.annotation_name && dataset.values && dataset.genes) {
     // This is pre-computed dot plot data - convert it using the patch
-    processedDataset = window.createMorpheusDotPlot(dataset)
+    // Pass genes array to preserve the original gene order
+    processedDataset = window.createMorpheusDotPlot(dataset, genes)
     isPrecomputed = true
   }
 

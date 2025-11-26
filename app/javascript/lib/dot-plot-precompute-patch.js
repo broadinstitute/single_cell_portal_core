@@ -23,9 +23,10 @@
      */
     window.morpheus.DotPlotConverter = {
 
-      createDataset(data) {
+      createDataset(data, geneOrder = null) {
         const cellTypes = data.values
-        const geneNames = Object.keys(data.genes)
+        // Use provided gene order if available, otherwise fall back to Object.keys
+        const geneNames = geneOrder || Object.keys(data.genes)
         const nRows = geneNames.length
         const nCols = cellTypes.length
 
@@ -134,9 +135,11 @@
 
     /**
      * Helper to create dot plot directly from your data object
+     * @param {Object} data - The preprocessed dot plot data
+     * @param {Array} geneOrder - Optional array of gene names in the desired order
      */
-    window.createMorpheusDotPlot = function(data) {
-      const dataset = window.morpheus.DotPlotConverter.createDataset(data)
+    window.createMorpheusDotPlot = function(data, geneOrder = null) {
+      const dataset = window.morpheus.DotPlotConverter.createDataset(data, geneOrder)
       return window.morpheus.DotPlotConverter.configureDotPlot(dataset)
     }
 
