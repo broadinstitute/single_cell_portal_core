@@ -286,7 +286,6 @@ export function renderDotPlot({
   target, dataset, annotationName, annotationValues,
   setShowError, setErrorContent, genes, drawCallback, dimensions
 }) {
-  const LEGEND_HEIGHT = 70 // Height of DotPlotLegend in pixels
   const $target = $(target)
   $target.empty()
 
@@ -392,18 +391,24 @@ export function renderDotPlot({
   function adjustDotPlotHeight() {
     if (!dimensions?.height) {return}
 
+    // Get the actual height of the legend dynamically
+    // Use getBoundingClientRect() for SVG elements instead of offsetHeight
+    const legendElement = document.querySelector('.dot-plot-legend-container')
+    const legendHeight = legendElement ? legendElement.getBoundingClientRect().height : 70 // Fallback to 70px
+
     const dotPlotElement = $target[0]
     const dotPlotHeight = dotPlotElement.scrollHeight // Use scrollHeight to get full content height
-    const totalNeededHeight = dotPlotHeight + LEGEND_HEIGHT
+    const totalNeededHeight = dotPlotHeight + legendHeight
 
     console.log('dotPlotHeight:', dotPlotHeight,
+      'legendHeight:', legendHeight,
       'totalNeededHeight:', totalNeededHeight,
       'availableHeight:', dimensions.height)
 
     // If total height exceeds available space, shrink the dot plot
     // This ensures the legend remains visible without scrolling
     if (totalNeededHeight > dimensions.height) {
-      const adjustedHeight = dimensions.height - LEGEND_HEIGHT
+      const adjustedHeight = dimensions.height - legendHeight
       if (adjustedHeight > 100) { // Ensure minimum reasonable height
         $target.css('height', `${adjustedHeight}px`)
         $target.css('overflow-y', 'auto')
