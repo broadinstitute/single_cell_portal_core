@@ -131,7 +131,6 @@ export function checkOntologyIdFormat(key, ontologyIds) {
 /** Validate author's annotation labels and IDs match those in ontologies */
 export async function checkOntologyLabelsAndIds(key, ontologies, groups) {
   const [ids, idIndexes, labels, labelIndexes] = groups
-  console.log(`groups: ${JSON.stringify(groups)}`)
   const issues = []
 
   // Determine unique (ontology ID, ontology label) pairs
