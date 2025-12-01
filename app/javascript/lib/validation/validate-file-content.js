@@ -18,12 +18,12 @@ import {
   getParsedHeaderLines, parseLine, ParseException,
   validateUniqueCellNamesWithinFile, validateMetadataLabelMatches,
   validateGroupColumnCounts, timeOutCSFV, validateUnique,
-  validateRequiredMetadataColumns, validateAlphanumericAndUnderscores
+  validateRequiredMetadataColumns, validateAlphanumericAndUnderscores,
+  getOntologyShortNameLc, getLabelSuffixForOntology, fixTaxonIdIssues
 } from './shared-validation'
 import { parseDifferentialExpressionFile } from './validate-differential-expression'
 import { parseAnnDataFile } from './validate-anndata'
 import { fetchOntologies, getOntologyBasedProps } from '~/lib/validation/ontology-validation'
-import { getOntologyShortNameLc, getLabelSuffixForOntology } from './shared-validation'
 
 /**
  * Gzip decompression requires reading the whole file, given the current
@@ -243,7 +243,8 @@ export async function parseMetadataFile(chunker, mimeType, fileOptions) {
     // add other line-by-line validations here
     }
   })
-  return { issues, delimiter, numColumns: headers[0].length }
+  const filteredIssues = await fixTaxonIdIssues(issues)
+  return { issues: filteredIssues, delimiter, numColumns: headers[0].length }
 }
 
 /** validate all ontology-based convention terms in a given line */
@@ -293,7 +294,7 @@ export function validateOntologyTerm(prop, ontologyId, label, ontologies, knownE
     errorIdentifier = `${ontologyId}-invalid-id`
     issue = [
       'error', 'ontology:label-lookup-error', msg,
-      { subtype: 'ontology:invalid-id' }
+      { subtype: 'ontology:invalid-id', id: ontologyId, label }
     ]
   } else {
     const validLabels = ontology[ontologyId]

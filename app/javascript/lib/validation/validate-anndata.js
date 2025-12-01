@@ -4,7 +4,7 @@ import { getOAuthToken } from '~/lib/scp-api'
 import {
   validateUnique, validateRequiredMetadataColumns,
   validateAlphanumericAndUnderscores, getOntologyShortNameLc,
-  metadataSchema, REQUIRED_CONVENTION_COLUMNS
+  metadataSchema, REQUIRED_CONVENTION_COLUMNS, fixTaxonIdIssues
 } from './shared-validation'
 import { fetchOntologies, getOntologyBasedProps, getAcceptedOntologies } from './ontology-validation'
 
@@ -131,7 +131,6 @@ export function checkOntologyIdFormat(key, ontologyIds) {
 /** Validate author's annotation labels and IDs match those in ontologies */
 export async function checkOntologyLabelsAndIds(key, ontologies, groups) {
   const [ids, idIndexes, labels, labelIndexes] = groups
-
   const issues = []
 
   // Determine unique (ontology ID, ontology label) pairs
@@ -158,7 +157,7 @@ export async function checkOntologyLabelsAndIds(key, ontologies, groups) {
       const msg = `Invalid ontology ID: ${id}`
       issues.push([
         'error', 'ontology:label-lookup-error', msg,
-        { subtype: 'ontology:invalid-id' }
+        { subtype: 'ontology:invalid-id', id, label }
       ])
     } else {
       const validLabels = ontology[id]
@@ -252,7 +251,7 @@ async function validateOntologyLabelsAndIds(hdf5File) {
     }
   }
 
-  return issues
+  return await fixTaxonIdIssues(issues)
 }
 
 
