@@ -204,7 +204,7 @@ export function shouldUsePreprocessedData(flags, exploreInfo) {
   */
 function RawDotPlot({
   studyAccession, genes=[], cluster, annotation={},
-  subsample, annotationValues, setMorpheusData, exploreInfo
+  subsample, annotationValues, setMorpheusData, exploreInfo, dimensions
 }) {
   const [graphId] = useState(_uniqueId('dotplot-'))
   const { ErrorComponent, showError, setShowError, setErrorContent } = useErrorMessage()
@@ -247,7 +247,8 @@ function RawDotPlot({
           annotationValues,
           setErrorContent,
           setShowError,
-          genes
+          genes,
+          dimensions
         })
         // Only share dataset with Heatmap if it's not preprocessed dot plot data
         // Preprocessed data has a different format that Heatmap can't consume
@@ -283,7 +284,7 @@ export default DotPlot
 /** Render Morpheus dot plot */
 export function renderDotPlot({
   target, dataset, annotationName, annotationValues,
-  setShowError, setErrorContent, genes, drawCallback
+  setShowError, setErrorContent, genes, drawCallback, dimensions
 }) {
   const $target = $(target)
   $target.empty()
@@ -386,8 +387,55 @@ export function renderDotPlot({
 
   patchServiceWorkerCache()
 
+  /** Adjust dot plot height to ensure legend remains visible */
+  function adjustDotPlotHeight() {
+    if (!dimensions?.height) {return}
+
+    // Get the actual height of the legend dynamically
+    // Use getBoundingClientRect() for SVG elements instead of offsetHeight
+    const legendElement = document.querySelector('.dot-plot-legend-container')
+    const legendHeight = legendElement ? legendElement.getBoundingClientRect().height : 70 // Fallback to 70px
+
+    const dotPlotElement = $target[0]
+    const dotPlotHeight = dotPlotElement.scrollHeight // Use scrollHeight to get full content height
+    const totalNeededHeight = dotPlotHeight + legendHeight
+
+    // If total height exceeds available space, shrink the dot plot
+    // This ensures the legend remains visible without scrolling
+    if (totalNeededHeight > dimensions.height) {
+      const adjustedHeight = dimensions.height - legendHeight
+      if (adjustedHeight > 100) { // Ensure minimum reasonable height
+        $target.css('height', `${adjustedHeight}px`)
+        $target.css('overflow-y', 'auto')
+      }
+    } else {
+      // Reset height if there's enough space
+      $target.css('height', '')
+      $target.css('overflow-y', '')
+    }
+  }
+
   config.drawCallback = function() {
     const dotPlot = this
+
+    // After rendering, check if dot plot + legend will fit in available dimensions
+    // Use setTimeout to ensure Morpheus has fully rendered and layout is complete
+    if (dimensions?.height) {
+      setTimeout(() => {
+        adjustDotPlotHeight()
+      }, 100) // Wait 100ms for Morpheus to complete layout
+
+      // Also listen for window resize events to re-adjust height
+      const resizeHandler = () => {
+        adjustDotPlotHeight()
+      }
+
+      // Remove any existing listener to avoid duplicates
+      $(window).off('resize.dotplot')
+      // Add new listener
+      $(window).on('resize.dotplot', resizeHandler)
+    }
+
     if (drawCallback) {drawCallback(dotPlot)}
   }
 

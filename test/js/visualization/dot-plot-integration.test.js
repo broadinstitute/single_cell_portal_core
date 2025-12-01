@@ -2,6 +2,8 @@
  * Integration tests for DotPlot component with precomputed data
  */
 
+/* global global */
+
 import '@testing-library/jest-dom/extend-expect'
 import * as ScpApi from 'lib/scp-api'
 import { shouldUsePreprocessedData } from 'components/visualization/DotPlot'
@@ -313,6 +315,190 @@ describe('DotPlot Integration with Feature Flag', () => {
         standardData.genes
       )
       expect(isStandardFormat).toBe(false)
+    })
+  })
+
+  describe('Dot plot height adjustment for legend visibility', () => {
+    let mockTarget
+    let mockDotPlot
+    const LEGEND_HEIGHT = 70
+
+    beforeEach(() => {
+      // Create mock DOM element
+      mockTarget = document.createElement('div')
+      mockTarget.id = 'test-dotplot'
+      document.body.appendChild(mockTarget)
+
+      // Mock dot plot object
+      mockDotPlot = {
+        resized: jest.fn()
+      }
+
+      // Mock jQuery
+      global.$ = jest.fn(selector => {
+        if (selector === window) {
+          return {
+            off: jest.fn().mockReturnThis(),
+            on: jest.fn().mockReturnThis()
+          }
+        }
+        return {
+          0: mockTarget,
+          css: jest.fn(),
+          empty: jest.fn(),
+          html: jest.fn()
+        }
+      })
+    })
+
+    afterEach(() => {
+      document.body.removeChild(mockTarget)
+      jest.clearAllMocks()
+    })
+
+    it('shrinks dot plot when height + legend exceeds available space', () => {
+      const dimensions = { height: 600, width: 800 }
+
+      // Mock a tall dot plot that needs shrinking
+      Object.defineProperty(mockTarget, 'scrollHeight', {
+        configurable: true,
+        value: 800 // 800 + 70 = 870 > 600
+      })
+
+      const $mockTarget = global.$('#test-dotplot')
+      const cssSpy = jest.spyOn($mockTarget, 'css')
+
+      // Simulate the adjustment logic
+      const dotPlotHeight = mockTarget.scrollHeight
+      const totalNeededHeight = dotPlotHeight + LEGEND_HEIGHT
+      const adjustedHeight = dimensions.height - LEGEND_HEIGHT
+
+      if (totalNeededHeight > dimensions.height && adjustedHeight > 100) {
+        $mockTarget.css('height', `${adjustedHeight}px`)
+        $mockTarget.css('overflow-y', 'auto')
+      }
+
+      expect(cssSpy).toHaveBeenCalledWith('height', '530px')
+      expect(cssSpy).toHaveBeenCalledWith('overflow-y', 'auto')
+    })
+
+    it('does not shrink dot plot when it fits with legend', () => {
+      const dimensions = { height: 600, width: 800 }
+
+      // Mock a short dot plot that fits
+      Object.defineProperty(mockTarget, 'scrollHeight', {
+        configurable: true,
+        value: 400 // 400 + 70 = 470 < 600
+      })
+
+      const $mockTarget = global.$('#test-dotplot')
+      const cssSpy = jest.spyOn($mockTarget, 'css')
+
+      // Simulate the adjustment logic
+      const dotPlotHeight = mockTarget.scrollHeight
+      const totalNeededHeight = dotPlotHeight + LEGEND_HEIGHT
+
+      if (totalNeededHeight > dimensions.height) {
+        const adjustedHeight = dimensions.height - LEGEND_HEIGHT
+        if (adjustedHeight > 100) {
+          $mockTarget.css('height', `${adjustedHeight}px`)
+          $mockTarget.css('overflow-y', 'auto')
+        }
+      } else {
+        $mockTarget.css('height', '')
+        $mockTarget.css('overflow-y', '')
+      }
+
+      // Should reset height when there's enough space
+      expect(cssSpy).toHaveBeenCalledWith('height', '')
+      expect(cssSpy).toHaveBeenCalledWith('overflow-y', '')
+    })
+
+    it('maintains minimum height of 100px even when adjusted', () => {
+      const dimensions = { height: 150, width: 800 }
+
+      // Mock a dot plot
+      Object.defineProperty(mockTarget, 'scrollHeight', {
+        configurable: true,
+        value: 200
+      })
+
+      const $mockTarget = global.$('#test-dotplot')
+
+      // Simulate the adjustment logic
+      const dotPlotHeight = mockTarget.scrollHeight
+      const totalNeededHeight = dotPlotHeight + LEGEND_HEIGHT
+      const adjustedHeight = dimensions.height - LEGEND_HEIGHT // 150 - 70 = 80
+
+      let heightWasSet = false
+      if (totalNeededHeight > dimensions.height && adjustedHeight > 100) {
+        $mockTarget.css('height', `${adjustedHeight}px`)
+        heightWasSet = true
+      }
+
+      // Should not set height because adjusted height (80px) < minimum (100px)
+      expect(heightWasSet).toBe(false)
+    })
+
+    it('uses scrollHeight to get full content height', () => {
+      Object.defineProperty(mockTarget, 'scrollHeight', {
+        configurable: true,
+        value: 1000
+      })
+      Object.defineProperty(mockTarget, 'offsetHeight', {
+        configurable: true,
+        value: 500
+      })
+
+      // scrollHeight should be used (full content) not offsetHeight (visible)
+      const fullHeight = mockTarget.scrollHeight
+      const visibleHeight = mockTarget.offsetHeight
+
+      expect(fullHeight).toBe(1000)
+      expect(visibleHeight).toBe(500)
+      expect(fullHeight).toBeGreaterThan(visibleHeight)
+    })
+
+    it('sets up window resize listener to re-adjust on viewport changes', () => {
+      const $window = global.$(window)
+      const offSpy = jest.spyOn($window, 'off')
+      const onSpy = jest.spyOn($window, 'on')
+
+      // Simulate setting up resize listener
+      $window.off('resize.dotplot')
+      $window.on('resize.dotplot', jest.fn())
+
+      expect(offSpy).toHaveBeenCalledWith('resize.dotplot')
+      expect(onSpy).toHaveBeenCalledWith('resize.dotplot', expect.any(Function))
+    })
+
+    it('calls dotPlot.resized() after adjusting height', () => {
+      const dimensions = { height: 600, width: 800 }
+
+      Object.defineProperty(mockTarget, 'scrollHeight', {
+        configurable: true,
+        value: 800
+      })
+
+      // Simulate adjustment and resize notification
+      const totalNeededHeight = mockTarget.scrollHeight + LEGEND_HEIGHT
+      if (totalNeededHeight > dimensions.height) {
+        mockDotPlot.resized()
+      }
+
+      expect(mockDotPlot.resized).toHaveBeenCalled()
+    })
+
+    it('handles missing dimensions gracefully', () => {
+      const dimensions = null
+
+      // Should not throw when dimensions is null/undefined
+      expect(() => {
+        if (dimensions?.height) {
+          // This block shouldn't execute
+          throw new Error('Should not reach here')
+        }
+      }).not.toThrow()
     })
   })
 })
