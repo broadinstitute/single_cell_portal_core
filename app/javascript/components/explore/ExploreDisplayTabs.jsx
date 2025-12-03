@@ -660,6 +660,7 @@ export default function ExploreDisplayTabs({
                 <DotPlot
                   studyAccession={studyAccession}
                   {... exploreParamsWithDefaults}
+                  exploreInfo={exploreInfo}
                   annotationValues={getAnnotationValues(
                     exploreParamsWithDefaults?.annotation,
                     exploreParamsWithDefaults?.annotationList?.annotations
@@ -675,6 +676,7 @@ export default function ExploreDisplayTabs({
                   studyAccession={studyAccession}
                   {... exploreParamsWithDefaults}
                   morpheusData={morpheusData}
+                  isVisible={shownTab === 'heatmap'}
                   dimensions={getPlotDimensions({ showViewOptionsControls, showDifferentialExpressionTable })}
                 />
               </div>

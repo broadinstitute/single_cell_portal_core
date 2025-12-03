@@ -4,10 +4,10 @@ import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 
 import ValidateFile from 'lib/validation/validate-file'
-import { fetchOntologies } from 'lib/validation/ontology-validation'
+import { fetchOntologies, fetchOlsOntologyTerm } from 'lib/validation/ontology-validation'
 import { validateConventionTerms, validateOntologyTerm } from 'lib/validation/validate-file-content'
 import {
-  REQUIRED_CONVENTION_COLUMNS, getOntologyShortNameLc, getLabelSuffixForOntology
+  REQUIRED_CONVENTION_COLUMNS, getOntologyShortNameLc, getLabelSuffixForOntology, fixTaxonIdIssues
 } from 'lib/validation/shared-validation'
 import { getLogProps } from 'lib/validation/log-validation'
 import ValidationMessage from 'components/validation/ValidationMessage'
@@ -641,5 +641,26 @@ describe('validates file contents against minified ontologies', () => {
     expect("__ontology_label").toEqual(getLabelSuffixForOntology(efoId))
     const uoId = "UO_0000036"
     expect("_label").toEqual(getLabelSuffixForOntology(uoId))
+  })
+
+  it('gets remote term from OLS', async () => {
+    const termId = "NCBITaxon_197152"
+    const olsTerm = await fetchOlsOntologyTerm(termId)
+    expect(olsTerm.label).toBe('Cloeon dipterum')
+    const missingTerm = await fetchOlsOntologyTerm('NCBITaxon_foo')
+    expect(missingTerm).toMatchObject({ 'NCBITaxon_foo': 'Not found' })
+    const missingOntology = await fetchOlsOntologyTerm('foo_197152')
+    expect(missingOntology).toMatchObject({ 'foo_197152': 'Not found' })
+  })
+
+  it('filters out extended ontolgy issues', async () => {
+    const issues = [
+      [
+        'error', 'ontology:label-lookup-error', 'Invalid ontology ID: NCBITaxon_197152',
+        { id: 'NCBITaxon_197152', label: 'Cloeon dipterum', subtype: 'ontology:invalid-id' }
+      ]
+    ]
+    const filtered = await fixTaxonIdIssues(issues)
+    expect(filtered).toHaveLength(0)
   })
 })

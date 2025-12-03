@@ -1,7 +1,11 @@
 class MakeAllFacetsMongoBased < Mongoid::Migration
   def self.up
     SearchFacet.update_all(is_mongo_based: true)
-    CellMetadatum.where(name: 'organism_age').map(&:set_minmax_by_units!)
+    # Only process CellMetadatum records that have a valid study association
+    CellMetadatum.where(name: 'organism_age').each do |cell_metadatum|
+      next if cell_metadatum.study.nil?
+      cell_metadatum.set_minmax_by_units!
+    end
   end
 
   def self.down

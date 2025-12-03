@@ -11,13 +11,15 @@ import { withErrorBoundary } from '~/lib/ErrorBoundary'
 import LoadingSpinner, { morpheusLoadingSpinner } from '~/lib/LoadingSpinner'
 import { fetchServiceWorkerCache } from '~/lib/service-worker-cache'
 import { getSCPContext } from '~/providers/SCPContextProvider'
+import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
+import '~/lib/dot-plot-precompute-patch'
 
 export const dotPlotColorScheme = {
   // Blue, purple, red.  These red and blue hues are accessible, per WCAG.
   colors: ['#0000BB', '#CC0088', '#FF0000'],
-
   // TODO: Incorporate expression units, once such metadata is available.
-  values: [0, 0.5, 1]
+  values: [0, 0.5, 1],
+  scalingMode: 'relative'
 }
 
 /**
@@ -180,6 +182,17 @@ function patchServiceWorkerCache() {
   }
 }
 
+/**
+ * Determines whether to use preprocessed dot plot data
+ * @param {Object} flags - Feature flags object
+ * @param {Object} exploreInfo - Explore info containing cluster data
+ * @returns {boolean} - True if both feature flag is enabled AND cluster has dot plot genes
+ */
+export function shouldUsePreprocessedData(flags, exploreInfo) {
+  const hasDotPlotGenes = exploreInfo?.cluster?.hasDotPlotGenes || false
+  return (flags?.dot_plot_preprocessing_frontend && hasDotPlotGenes) || false
+}
+
 /** Renders a Morpheus-powered dot plot for the given URL paths and annotation
   * Note that this has a lot in common with Heatmap.js.  they are separate for now
   * as their display capabilities may diverge (esp. since DotPlot is used in global gene search)
@@ -191,7 +204,7 @@ function patchServiceWorkerCache() {
   */
 function RawDotPlot({
   studyAccession, genes=[], cluster, annotation={},
-  subsample, annotationValues, setMorpheusData
+  subsample, annotationValues, setMorpheusData, exploreInfo, dimensions
 }) {
   const [graphId] = useState(_uniqueId('dotplot-'))
   const { ErrorComponent, showError, setShowError, setErrorContent } = useErrorMessage()
@@ -199,6 +212,9 @@ function RawDotPlot({
   useEffect(() => {
     /** Fetch Morpheus data for dot plot */
     async function getDataset() {
+      const flags = getFeatureFlagsWithDefaults()
+      const usePreprocessed = shouldUsePreprocessedData(flags, exploreInfo)
+
       const [dataset, perfTimes] = await fetchMorpheusJson(
         studyAccession,
         genes,
@@ -206,7 +222,9 @@ function RawDotPlot({
         annotation.name,
         annotation.type,
         annotation.scope,
-        subsample
+        subsample,
+        false, // mock
+        usePreprocessed // isPrecomputed
       )
       logFetchMorpheusDataset(perfTimes, cluster, annotation, genes)
 
@@ -229,9 +247,15 @@ function RawDotPlot({
           annotationValues,
           setErrorContent,
           setShowError,
-          genes
+          genes,
+          dimensions
         })
-        setMorpheusData(dataset)
+        // Only share dataset with Heatmap if it's not preprocessed dot plot data
+        // Preprocessed data has a different format that Heatmap can't consume
+        const isPreprocessedFormat = !!(dataset?.annotation_name && dataset?.values && dataset?.genes)
+        if (!isPreprocessedFormat) {
+          setMorpheusData(dataset)
+        }
       })
     }
   }, [
@@ -260,13 +284,25 @@ export default DotPlot
 /** Render Morpheus dot plot */
 export function renderDotPlot({
   target, dataset, annotationName, annotationValues,
-  setShowError, setErrorContent, genes, drawCallback
+  setShowError, setErrorContent, genes, drawCallback, dimensions
 }) {
   const $target = $(target)
   $target.empty()
 
-  // Collapse by mean
-  const tools = [{
+  // Check if dataset is pre-computed dot plot data
+  // Pre-computed data has structure: { annotation_name, values, genes }
+  let processedDataset = dataset
+  let isPrecomputed = false
+
+  if (dataset && dataset.annotation_name && dataset.values && dataset.genes) {
+    // This is pre-computed dot plot data - convert it using the patch
+    // Pass genes array to preserve the original gene order
+    processedDataset = window.createMorpheusDotPlot(dataset, genes)
+    isPrecomputed = true
+  }
+
+  // Collapse by mean (only for non-precomputed data)
+  const tools = isPrecomputed ? [] : [{
     name: 'Collapse',
     params: {
       collapse_method: 'Mean',
@@ -275,30 +311,37 @@ export function renderDotPlot({
       collapse_to_fields: [annotationName],
       pass_expression: '>',
       pass_value: '0',
-      percentile: '100',
+      percentile: '75',
       compute_percent: true
     }
   }]
 
   const config = {
     shape: 'circle',
-    dataset,
+    dataset: processedDataset,
     el: $target,
     menu: null,
     error: morpheusErrorHandler($target, setShowError, setErrorContent),
-    colorScheme: {
-      scalingMode: 'relative'
-    },
     focus: null,
     tabManager: morpheusTabManager($target),
     tools,
     loadedCallback: () => logMorpheusPerfTime(target, 'dotplot', genes)
   }
 
+  // For pre-computed data, tell Morpheus to display series 0 for color
+  // and use series 1 for sizing (which happens automatically with shape: 'circle')
+  if (isPrecomputed) {
+    config.symmetricColorScheme = false
+    // Tell Morpheus which series to use for coloring the heatmap
+    config.seriesIndex = 0 // Display series 0 (Mean Expression) for colors
+    // Explicitly set the size series
+    config.sizeBySeriesIndex = 1 // Use series 1 (__count) for sizing
+  }
+
   // Load annotations if specified
-  config.columnSortBy = [
-    { field: annotationName, order: 0 }
-  ]
+  // config.columnSortBy = [
+  //   { field: annotationName, order: 0 }
+  // ]
   config.columns = [
     { field: annotationName, display: 'text' }
   ]
@@ -319,12 +362,80 @@ export function renderDotPlot({
   config.columnColorModel = annotColorModel
 
 
-  config.colorScheme = dotPlotColorScheme
+  // Set color scheme (will be overridden for precomputed data below)
+  if (!isPrecomputed) {
+    config.colorScheme = dotPlotColorScheme
+  }
+
+  // For precomputed data, configure the sizer to use the __count series
+  if (isPrecomputed && processedDataset) {
+    // The color scheme should already have a sizer - we just need to configure it
+    config.sizeBy = {
+      seriesName: 'percent',
+      min: 0,
+      max: 75
+    }
+
+    // Use relative color scheme for raw expression values
+    // This will scale colors based on the actual data range across all genes and cell types
+    config.colorScheme = {
+      colors: ['#0000BB', '#CC0088', '#FF0000'],
+      values: [0, 0.5, 1],
+      scalingMode: 'relative'
+    }
+  }
 
   patchServiceWorkerCache()
 
+  /** Adjust dot plot height to ensure legend remains visible */
+  function adjustDotPlotHeight() {
+    if (!dimensions?.height) {return}
+
+    // Get the actual height of the legend dynamically
+    // Use getBoundingClientRect() for SVG elements instead of offsetHeight
+    const legendElement = document.querySelector('.dot-plot-legend-container')
+    const legendHeight = legendElement ? legendElement.getBoundingClientRect().height : 70 // Fallback to 70px
+
+    const dotPlotElement = $target[0]
+    const dotPlotHeight = dotPlotElement.scrollHeight // Use scrollHeight to get full content height
+    const totalNeededHeight = dotPlotHeight + legendHeight
+
+    // If total height exceeds available space, shrink the dot plot
+    // This ensures the legend remains visible without scrolling
+    if (totalNeededHeight > dimensions.height) {
+      const adjustedHeight = dimensions.height - legendHeight
+      if (adjustedHeight > 100) { // Ensure minimum reasonable height
+        $target.css('height', `${adjustedHeight}px`)
+        $target.css('overflow-y', 'auto')
+      }
+    } else {
+      // Reset height if there's enough space
+      $target.css('height', '')
+      $target.css('overflow-y', '')
+    }
+  }
+
   config.drawCallback = function() {
     const dotPlot = this
+
+    // After rendering, check if dot plot + legend will fit in available dimensions
+    // Use setTimeout to ensure Morpheus has fully rendered and layout is complete
+    if (dimensions?.height) {
+      setTimeout(() => {
+        adjustDotPlotHeight()
+      }, 100) // Wait 100ms for Morpheus to complete layout
+
+      // Also listen for window resize events to re-adjust height
+      const resizeHandler = () => {
+        adjustDotPlotHeight()
+      }
+
+      // Remove any existing listener to avoid duplicates
+      $(window).off('resize.dotplot')
+      // Add new listener
+      $(window).on('resize.dotplot', resizeHandler)
+    }
+
     if (drawCallback) {drawCallback(dotPlot)}
   }
 

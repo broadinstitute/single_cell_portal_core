@@ -4,6 +4,7 @@
 
 // Ultimately sourced from: scp-ingest-pipeline/schemas
 import * as _schema from 'lib/assets/metadata_schemas/alexandria_convention/alexandria_convention_schema.json';
+import { fetchOlsOntologyTerm } from '~/lib/validation/ontology-validation'
 
 export const metadataSchema = _schema
 export const REQUIRED_CONVENTION_COLUMNS = metadataSchema.required.filter(c => c !== 'CellID')
@@ -322,4 +323,44 @@ export function getOntologyShortNameLc(identifier) {
 export function getLabelSuffixForOntology(indentifier) {
   const shortName = getOntologyShortNameLc(indentifier)
   return shortName === 'uo' ? '_label' : '__ontology_label'
+}
+
+/** attempt to rectify invalid taxon ID issues, if present */
+export async function fixTaxonIdIssues(issues) {
+  // fallback for any taxon IDs not found
+  const invalidIds = findInvalidIds(issues)
+  if (Object.keys(invalidIds).length > 0) {
+    let filteredIssues = issues
+    const promises = []
+    Object.entries(invalidIds).map(async ([termId, label]) => {
+      const promise = fetchOlsOntologyTerm(termId)
+      promises.push(promise)
+    })
+    const results= await Promise.all(promises)
+    results.map(olsTerm => {
+      const termId = olsTerm?.short_form || Object.keys(olsTerm)[0]
+      const matchingIssue = issues.find(issue => {return issue[3]?.id === termId})
+      const label = matchingIssue[3].label
+      if (olsTerm && olsTerm.label === label) {
+        filteredIssues = filteredIssues.filter(issue => {return issue[3]?.id !== termId})
+      }
+    })
+    return filteredIssues
+  } else {
+    return issues
+  }
+}
+
+
+/** find instances of 'ontology:invalid-id' errors */
+export function findInvalidIds(issues) {
+  const invalidIds = {}
+  for (let i = 0; i < issues.length; i++) {
+    const issue = issues[i]
+    if (issue[3]?.subtype === 'ontology:invalid-id' && issue[3].id.toLowerCase().startsWith('ncbi')) {
+      const invalidId = issue[3].id
+      invalidIds[invalidId] = issue[3].label
+    }
+  }
+  return invalidIds
 }
