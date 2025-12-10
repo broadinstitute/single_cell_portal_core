@@ -47,7 +47,7 @@ module ImportServiceConfig
     def id_from; end
 
     def file_access_info
-      load_file&.[]('url')
+      load_file&.[]('azul_url')
     end
 
     def study_default_settings
