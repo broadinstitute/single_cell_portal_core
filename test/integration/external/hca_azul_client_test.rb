@@ -150,7 +150,7 @@ class HcaAzulClientTest < ActiveSupport::TestCase
     files = ApplicationController.hca_azul_client.files(size: 1)
     assert_equal 1, files.size
     file = files.first
-    keys = %w[name format size url fileSource].sort
+    keys = %w[name format size azul_url accessible fileSource].sort
     assert_equal keys, file.keys.sort & keys
   end
 
@@ -159,7 +159,7 @@ class HcaAzulClientTest < ActiveSupport::TestCase
     files = ApplicationController.hca_azul_client.files(query: @query_json, size: 1)
     assert_equal 1, files.size
     file = files.first
-    keys = %w[name format size url fileSource].sort
+    keys = %w[name format size azul_url accessible fileSource].sort
     assert_equal keys, file.keys.sort & keys
   end
 
