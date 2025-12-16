@@ -106,7 +106,7 @@ class BulkDownloadService
           file_output_path = RequestUtils.format_path_for_os(
             "#{shortname}/#{file_entry['name']}", os
           )
-          file_config = "--location\nurl=\"#{file_entry['url']}\"\noutput=\"#{file_output_path}\""
+          file_config = "--location\nurl=\"#{file_entry['azul_url']}\"\noutput=\"#{file_output_path}\""
           azul_file_configs << file_config
         end
       end
