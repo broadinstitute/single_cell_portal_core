@@ -24,24 +24,29 @@ function RawHeatmap({
   const [graphId] = useState(_uniqueId('heatmap-'))
   const [dataset, setDataset] = useState(morpheusData)
   const morpheusHeatmap = useRef(null)
-  const { ErrorComponent, setShowError, setErrorContent } = useErrorMessage()
+  const { ErrorComponent, showError, setShowError, setError } = useErrorMessage()
 
   // Fetch dataset if not provided via morpheusData prop, but only when tab is visible
   useEffect(() => {
     async function fetchDataset() {
       if (isVisible && !morpheusData && cluster && annotation.name && genes.length > 0) {
-        const [data] = await fetchMorpheusJson(
-          studyAccession,
-          genes,
-          cluster,
-          annotation.name,
-          annotation.type,
-          annotation.scope,
-          subsample,
-          false, // mock
-          false // usePreprocessed - always use full morpheus data for heatmaps
-        )
-        setDataset(data)
+        try {
+          const [data] = await fetchMorpheusJson(
+            studyAccession,
+            genes,
+            cluster,
+            annotation.name,
+            annotation.type,
+            annotation.scope,
+            subsample,
+            false, // mock
+            false // usePreprocessed - always use full morpheus data for heatmaps
+          )
+          setDataset(data)
+        } catch (error) {
+          setError(error.message)
+          setShowError(true)
+        }
       } else if (morpheusData) {
         setDataset(morpheusData)
       }
@@ -70,7 +75,7 @@ function RawHeatmap({
         rowCentering: heatmapRowCentering,
         sortColumns: true,
         setShowError,
-        setErrorContent,
+        setError,
         genes
       })
     }
@@ -92,7 +97,7 @@ function RawHeatmap({
     <div>
       <div className="plot">
         { ErrorComponent }
-        <LoadingSpinner isLoading={!canRender}>
+        <LoadingSpinner isLoading={!canRender && !showError}>
           <div id={graphId} className="heatmap-graph" style={{ minWidth: '80vw' }}></div>
         </LoadingSpinner>
       </div>

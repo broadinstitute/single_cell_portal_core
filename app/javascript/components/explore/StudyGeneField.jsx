@@ -98,9 +98,11 @@ function getQueryArrayFromSearchOptions(searchOptions, speciesList, selectedAnno
 * @param queryFn Function to call to execute the API search
 * @param allGenes String array of valid genes in the study
 * @param speciesList String array of species scientific names
+* @param isLoading boolean flag for disabling search while loading
+* @param disableGeneQueryLimit boolean flag for allowing searches larger than 50 genes for preprocessed data
 */
 export default function StudyGeneField({
-  queries, queryFn, allGenes, speciesList, selectedAnnotation, isLoading=false
+  queries, queryFn, allGenes, speciesList, selectedAnnotation, isLoading=false, disableGeneQueryLimit = false
 }) {
   const [inputText, setInputText] = useState('')
 
@@ -158,7 +160,7 @@ export default function StudyGeneField({
     } else if (newQueryArray && newQueryArray.length) {
       const newQueries = getQueriesFromSearchOptions(newQueryArray, speciesList, selectedAnnotation)
       const queries = newQueries
-      if (queries.length > window.MAX_GENE_SEARCH) {
+      if (queries.length > window.MAX_GENE_SEARCH && !disableGeneQueryLimit) {
         log('search-too-many-genes', { numGenes: queries.length })
         setShowTooManyGenesModal(true)
       } else {
