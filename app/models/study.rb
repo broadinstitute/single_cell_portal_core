@@ -267,6 +267,7 @@ class Study
   field :default_options, type: Hash, default: {} # extensible hash where we can put arbitrary values as 'defaults'
   field :external_identifier, type: String # ID from external service, used for tracking via ImportService
   field :imported_from, type: String # Human-readable tag for external service that study was imported from, e.g. HCA
+  field :duos_dataset_id, type: String
   ##
   #
   # SWAGGER DEFINITIONS
@@ -1663,6 +1664,41 @@ class Study
     taxons = self.study_files.where(:file_type.in => StudyFile::TAXON_REQUIRED_TYPES).map(&:taxon)
     taxons.compact!
     taxons.uniq
+  end
+
+  # DUOS metadata methods
+
+  def study_url
+    "#{RequestUtils.get_base_url}/single_cell/study/#{accession}/#{url_safe_name}"
+  end
+
+  def api_url
+    "#{RequestUtils.get_base_url}/single_cell/api/v1/site/studies/#{accession}"
+  end
+
+  # number of unique donor_id entries, if present
+  def donor_count
+    cell_metadata.by_name_and_type('donor_id', 'group')&.values&.count || 0
+  end
+
+  # array of unique disease__ontology_label values, if present
+  def diseases
+    cell_metadata.by_name_and_type('disease__ontology_label', 'group')&.values || []
+  end
+
+  # array of unique library_preparation_protocol__ontology_label values, if present
+  def data_types
+    cell_metadata.by_name_and_type('library_preparation_protocol__ontology_label', 'group')&.values || []
+  end
+
+  # rollup of either species__ontology_label values or expressed_taxon_names
+  def species_list
+    cell_metadata.by_name_and_type('species__ontology_label', 'group')&.values || expressed_taxon_names&.compact || []
+  end
+
+  # contact emails for questions about study data.  will only use corresponding authors (if present) or help email
+  def data_custodians
+    authors.corresponding.pluck(:email).presence || ['scp-support@broadinstitute.zendesk.com']
   end
 
   ###
