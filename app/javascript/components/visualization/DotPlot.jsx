@@ -325,7 +325,7 @@ export function renderDotPlot({
     focus: null,
     tabManager: morpheusTabManager($target),
     tools,
-    loadedCallback: () => logMorpheusPerfTime(target, 'dotplot', genes)
+    loadedCallback: () => logMorpheusPerfTime(target, 'dotplot', genes, isPrecomputed)
   }
 
   // For pre-computed data, tell Morpheus to display series 0 for color
@@ -466,14 +466,14 @@ export function morpheusTabManager($target) {
 }
 
 /** Log render performance timing for Morpheus dot plots and heatmaps */
-export function logMorpheusPerfTime(target, plotType, genes) {
+export function logMorpheusPerfTime(target, plotType, genes, isPrecomputed) {
   const graphId = target.slice(1) // e.g. #dotplot-1 -> dotplot-1
   performance.measure(graphId, `perfTimeStart-${graphId}`)
   const perfTime = Math.round(
     performance.getEntriesByName(graphId)[0].duration
   )
 
-  log(`plot:${plotType}`, { perfTime, genes })
+  log(`plot:${plotType}`, { perfTime, genes, isPrecomputed })
 }
 
 /** Log performance of loading JSON datasets for Morpheus */
