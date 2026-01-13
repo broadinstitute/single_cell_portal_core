@@ -101,8 +101,8 @@ class DuosClient
   # * *raises*
   #   - (RestClient::Exception) => if HTTP request fails for any reason
   def execute_http_request(http_method, path, payload = nil)
-    response = RestClient::Request.execute(method: http_method, url: path, payload:, headers: get_default_headers)
-    # handle response using helper
+    url = [api_root, path].join('/')
+    response = RestClient::Request.execute(method: http_method, url:, payload:, headers: get_default_headers)
     handle_response(response)
   end
 
@@ -113,7 +113,7 @@ class DuosClient
   # * *returns*
   #   - (Boolean) => T/F if NeMO is responding to requests
   def api_available?
-    path = "#{api_root}/status"
+    path = 'status'
     begin
       status = execute_http_request(:get, path)&.with_indifferent_access
       status && status[:ok]
@@ -124,51 +124,60 @@ class DuosClient
     end
   end
 
-  def register_study(study)
+  # register a study in DUOS as a public dataset
+  def create_dataset(study)
     study_data = schema_from(study)
-    api_path = '/api/dataset/v3'
+    api_path = 'api/dataset/v3'
     process_api_request(:post, api_path, payload: study_data)
   end
 
-  def update_study(study, **fields)
+  # update a DUOS dataset using an SCP study
+  def update_dataset(study, **fields)
     study_data = update_schema_from(study, **fields)
-    api_path = '/api/dataset/v3'
+    api_path = 'api/dataset/v3'
     process_api_request(:put, api_path, payload: study_data)
   end
 
   # delete a dataset in DUOS for non-production endpoints
-  def delete_study(study)
+  def delete_dataset(study)
     return false if Rails.env.production? || study.duos_dataset_id.blank?
 
-    api_path = "/api/dataset/#{study.duos_dataset_id}"
+    api_path = "api/dataset/#{study.duos_dataset_id}"
     process_api_request(:delete, api_path)
   end
 
-  # handle a study redaction (production, set to private, otherwise delete the study)
-  def redact_study(study)
+  # handle a study redaction
+  # in production, set to publicVisibility to false
+  # otherwise delete the study
+  def redact_dataset(study)
     if Rails.env.production?
-      update_study(study, publicVisibility: false)
+      update_dataset(study, publicVisibility: false)
     else
-      delete_study(study)
+      delete_dataset(study)
     end
   end
 
   # register service account with DUOS
   def register
-    api_path = '/api/user'
+    api_path = 'api/user'
     process_api_request(:post, api_path)
   end
 
   # retrieve DUOS registration for service account
   def registration
-    api_path = '/api/user/me'
+    api_path = 'api/user/me'
     process_api_request(:get, api_path)
   end
 
   # accept DUOS terms of service for service account
   def accept_tos
-    api_path = '/api/sam/register/self/tos'
+    api_path = 'api/sam/register/self/tos'
     process_api_request(:post, api_path)
+  end
+
+  # monkey-patch of issuer method since we're not loading the GCS SDK
+  def issuer
+    self.class.load_service_account_creds(service_account_credentials)&.issuer
   end
 
   # construct a DUOS schema object for registering a dataset
