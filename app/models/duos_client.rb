@@ -32,13 +32,16 @@ class DuosClient
     npu: false
   }.freeze
 
+  # identifier to append to every description
+  PLATFORM_ID = "(Platform: Single Cell Portal)".freeze
+
   # initialize new client and generate access token for auth
   #
   # * *params*
   #   - +service_account_key+: (String, Pathname) => Path to service account JSON keyfile
   # * *return*
   #   - +DuosClient+ object
-  def initialize(service_account = self.class.get_read_only_keyfile)
+  def initialize(service_account = self.class.get_primary_keyfile)
     sub_host = Rails.env.production? ? 'prod' : 'dev'
     self.service_account_credentials = service_account
     self.access_token = self.class.generate_access_token(service_account)
@@ -79,13 +82,27 @@ class DuosClient
                                       issuer,
                                       {
                                         method: http_method, url: path, payload:, retry_count:
-                                      }
-        )
+                                      })
         error_message = parse_response_body(e.message)
         Rails.logger.error "Retry count exceeded when requesting '#{path}' - #{error_message}"
         raise e
       end
     end
+  end
+
+  # set headers correctly for requests
+  # will change Content-Type to multipart for payload POST/PUT requests
+  #
+  # * *params*
+  #   - +multipart+ (Boolean)
+  #
+  # * *returns*
+  #   - (Hash)
+  def headers_for_request(multipart: false)
+    headers = get_default_headers
+    headers['Content-Type'] = 'multipart/form-data' if multipart
+
+    headers
   end
 
   # sub-handler for making external HTTP request
@@ -102,7 +119,8 @@ class DuosClient
   #   - (RestClient::Exception) => if HTTP request fails for any reason
   def execute_http_request(http_method, path, payload = nil)
     url = [api_root, path].join('/')
-    response = RestClient::Request.execute(method: http_method, url:, payload:, headers: get_default_headers)
+    headers = headers_for_request(multipart: payload.present?)
+    response = RestClient::Request.execute(method: http_method, url:, payload:, headers:)
     handle_response(response)
   end
 
@@ -125,20 +143,45 @@ class DuosClient
   end
 
   # register a study in DUOS as a public dataset
+  #
+  # * *params*
+  #   - +study+ (Study)
+  #
+  # * *returns*
+  #   - (Hash) DUOS dataset registration of study
   def create_dataset(study)
     study_data = schema_from(study)
     api_path = 'api/dataset/v3'
-    process_api_request(:post, api_path, payload: study_data)
+    process_api_request(:post, api_path, payload: study_data.to_json)
   end
 
   # update a DUOS dataset using an SCP study
+  #
+  # * *params*
+  #   - +study+ (Study)
+  #   - +fields+ (Array<Hash<) array of key/value pairs to update in DUOS
+  #              see https://consent.dsde-dev.broadinstitute.org/#/Dataset/put_api_dataset_v3__datasetId_
+  #
+  # * *returns*
+  #   - (Hash) DUOS dataset registration of updated study
+  #
+  # * *raises*
+  #   - (ArgumentError) if study is not registered in DUOS
   def update_dataset(study, **fields)
+    raise ArgumentError, "#{study.accession} has no DUOS dataset ID" if study.duos_dataset_id.blank?
+
     study_data = update_schema_from(study, **fields)
-    api_path = 'api/dataset/v3'
-    process_api_request(:put, api_path, payload: study_data)
+    api_path = "api/dataset/v3/#{study.duos_dataset_id}"
+    process_api_request(:put, api_path, payload: study_data.to_json)
   end
 
   # delete a dataset in DUOS for non-production endpoints
+  #
+  # * *params*
+  #   - +study+ (Study)
+  #
+  # * *returns*
+  #   - (Boolean)
   def delete_dataset(study)
     return false if Rails.env.production? || study.duos_dataset_id.blank?
 
@@ -158,24 +201,60 @@ class DuosClient
   end
 
   # register service account with DUOS
+  #
+  # * *returns*
+  #   - (Hash) SAM user registration of service account
   def register
     api_path = 'api/user'
     process_api_request(:post, api_path)
   end
 
   # retrieve DUOS registration for service account
+  #
+  # * *returns*
+  #   - (Hash) SAM user registration of service account
   def registration
     api_path = 'api/user/me'
     process_api_request(:get, api_path)
   end
 
+  # check if a client is registered
+  #
+  # *returns*
+  #  - (Boolean)
+  def registered?
+    api_path = 'api/user/me'
+    registration = execute_http_request(:get, api_path)&.with_indifferent_access
+    registration && registration[:userId].present?
+  rescue RestClient::ExceptionWithResponse
+    false
+  end
+
   # accept DUOS terms of service for service account
+  #
+  # * *returns*
+  #  - (Boolean)
   def accept_tos
     api_path = 'api/sam/register/self/tos'
     process_api_request(:post, api_path)
   end
 
+  # determine if the client needs to accept new terms
+  #
+  # * *returns*
+  #  - (Boolean)
+  def tos_accepted?
+    api_path = 'api/sam/register/self/diagnostics'
+    status = execute_http_request(:get, api_path)&.with_indifferent_access
+    status && status[:tosAccepted]
+  rescue RestClient::ExceptionWithResponse
+    false
+  end
+
   # monkey-patch of issuer method since we're not loading the GCS SDK
+  #
+  # * *returns*
+  #  - (String) service account email
   def issuer
     self.class.load_service_account_creds(service_account_credentials)&.issuer
   end
@@ -190,18 +269,19 @@ class DuosClient
   #   - (Hash) => DUOS dataset schema object
   def schema_from(study)
     consent_values = CONSENT_VALUES.merge(
-      consentGroupName: formatted_study_name(study), numberOfParticipants: study.donor_count, url: study.study_url
+      consentGroupName: duos_study_name(study), numberOfParticipants: study.donor_count, url: study.study_url
     )
-    {
-      studyName: formatted_study_name(study),
-      studyDescription: "#{study.description} (Platform: Single Cell Portal)",
+    dataset = {
+      studyName: duos_study_name(study),
+      studyDescription: duos_study_description(study),
       dataTypes: study.data_types,
       publicVisibility: study.public,
       phenotypeIndication: study.diseases.join(', '),
       species: study.species_list.join(', '),
       dataCustodianEmail: study.data_custodians,
       consentGroups: consent_values
-    }.merge(ANVIL_VALUES).with_indifferent_access
+    }.merge(ANVIL_VALUES)
+    { dataset: }.with_indifferent_access
   end
 
   # construct and update schema object with a list of fields to modify
@@ -213,13 +293,14 @@ class DuosClient
   # * *returns*
   #   - (Hash) => DUOS dataset update schema object
   def update_schema_from(study, **fields)
-    {
-      studyName: formatted_study_name(study),
+    dataset = {
+      studyName: duos_study_name(study),
       dacId: study.duos_dataset_id,
       properties: fields.map do |field_name, value|
         { propertyName: field_name.to_s, propertyValue: value }
       end
-    }.with_indifferent_access
+    }
+    { dataset: }.with_indifferent_access
   end
 
   # version of study name with accession prepended
@@ -229,7 +310,18 @@ class DuosClient
   #
   # * *returns*
   #   - (String)
-  def formatted_study_name(study)
+  def duos_study_name(study)
     "#{study.accession} - #{study.name}"
+  end
+
+  # version of study description with the DUOS platform appended
+  #
+  # * *params*
+  #   - +study+ (Study)
+  #
+  # * *returns*
+  #   - (String)
+  def duos_study_description(study)
+    "#{study.description} #{PLATFORM_ID}"
   end
 end
