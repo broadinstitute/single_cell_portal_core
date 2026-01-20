@@ -26,7 +26,11 @@ class DuosClientTest < ActiveSupport::TestCase
     FactoryBot.create(:metadata_file, name: 'metadata.txt', study: @study, use_metadata_convention: true,
                       cell_input: %w[cellA cellB cellC cellD cellE],
                       annotation_input: )
-    FactoryBot.create(:cluster_file, name: 'cluster_example.txt', study: @study)
+    @author = FactoryBot.create(:author, study: @study, corresponding: true)
+  end
+
+  after(:all) do
+    Author.delete_all
   end
 
   test 'should instantiate client' do
@@ -37,7 +41,7 @@ class DuosClientTest < ActiveSupport::TestCase
 
   test 'should format name for DUOS correctly' do
     formatted_name = @client.duos_study_name(@study)
-    expected_name = "#{@study.accession} #{@study.name}"
+    expected_name = "#{@study.accession} - #{@study.name}"
     assert_equal expected_name, formatted_name
   end
 
@@ -51,5 +55,11 @@ class DuosClientTest < ActiveSupport::TestCase
     duos_data = @client.schema_from(@study)
     assert duos_data.dig(:dataset, :studyName).start_with?(@study.accession)
     assert duos_data.dig(:dataset, :studyDescription).include?(DuosClient::PLATFORM_ID)
+    assert_equal 'Homo sapiens', duos_data.dig(:dataset, :species)
+    assert_equal 'HIV infectious disease', duos_data.dig(:dataset, :phenotypeIndication)
+    assert_equal ['Seq-Well'], duos_data.dig(:dataset, :dataTypes)
+    participant_count = duos_data.dig(:dataset, :consentGroups).first[:numberOfParticipants]
+    assert_equal 5, participant_count
+    assert_equal @author.email, duos_data.dig(:dataset, :dataCustodianEmail).first
   end
 end

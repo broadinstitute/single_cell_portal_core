@@ -279,7 +279,7 @@ class DuosClient
       phenotypeIndication: study.diseases.join(', '),
       species: study.species_list.join(', '),
       dataCustodianEmail: study.data_custodians,
-      consentGroups: consent_values
+      consentGroups: [consent_values]
     }.merge(ANVIL_VALUES)
     { dataset: }.with_indifferent_access
   end
