@@ -56,6 +56,22 @@ class DuosClientTest < ActiveSupport::TestCase
     assert client.api_root.start_with?('https://consent.dsde-')
   end
 
+  test 'should get headers for request' do
+    headers = @duos_client.headers_for_request
+    assert headers['Authorization'] == "Bearer #{@duos_client.access_token['access_token']}"
+    assert headers['Accept'] == 'application/json'
+    assert headers['Content-Type'] == 'application/json'
+
+    headers = @duos_client.headers_for_request(multipart: true)
+    assert headers['Content-Type'] == 'multipart/form-data'
+  end
+
+  test 'should determine if request should be multipart' do
+    assert_not @duos_client.is_multipart?(:get, nil)
+    assert @duos_client.is_multipart?(:post, { foo: 'bar', file: 'data' })
+    assert @duos_client.is_multipart?(:put, { foo: 'bar', file: 'data' })
+  end
+
   test 'should confirm API is available' do
     skip_if_api_down
     assert @duos_client.api_available?
@@ -114,24 +130,57 @@ class DuosClientTest < ActiveSupport::TestCase
     assert_equal @author.email, duos_data.dig(:dataset, :dataCustodianEmail).first
   end
 
-  test 'should create/update/redact study' do
+  test 'should load dataset JSON schema from DUOS' do
+    schema = @client.dataset_schema
+    assert schema['title'] == 'Dataset Registration Schema'
+    assert schema['$schema'] == 'https://json-schema.org/draft/2019-09/schema'
+    assert schema['version'].is_a?(Integer)
+  end
+
+  test 'should validate schema' do
+    duos_data = @duos_client.schema_from(@study)
+    assert @duos_client.validate_schema(duos_data).empty?
+    assert @duos_client.validate_schema({ foo: 'bar' }).first['error'].present?
+  end
+
+  test 'should extract ids from dataset' do
+    study_id = rand(1000..9999)
+    dataset_id = rand(1000..9999)
+    dataset = {
+      studyName: @study.name,
+      studyDescription: @study.description,
+      studyId: study_id,
+      consentGroups: [{ datasetId: dataset_id, consentGroupName: @study.name }]
+    }
+    ids = @duos_client.identifiers_from_dataset(dataset)
+    assert_equal study_id, ids[:duos_study_id]
+    assert_equal dataset_id, ids[:duos_dataset_id]
+  end
+
+  test 'should run full integration on study' do
     skip_if_api_down
     # create dataset
-    dataset = @duos_client.create_dataset(@study)&.first&.with_indifferent_access # DUOS returns array of datasets
+    dataset = @duos_client.create_dataset(@study)
     assert dataset.present?
     assert_equal @duos_client.duos_study_name(@study), dataset[:studyName]
     assert_equal @duos_client.duos_study_description(@study), dataset[:studyDescription]
-    # update dataset, making sure to update study with new dataset ID first
-    @study.update(duos_dataset_id: dataset['datasetId'])
+    # load DUOS entities
+    ids = @duos_client.identifiers_from_dataset(dataset)
+    assert @duos_client.study(ids[:duos_study_id]).present?
+    assert @duos_client.dataset(ids[:duos_dataset_id]).present?
+    # update dataset, making sure to update study with new identifiers first
+    @study.update(**ids)
+    @study.update(public: false)
     @study.reload
-    updated_dataset = @duos_client.update_dataset(@study, publicVisibility: false)&.with_indifferent_access
+    updated_dataset = @duos_client.update_dataset(@study)
     assert updated_dataset.present?
-    visibility = updated_dataset[:properties].detect { |k, _| k == 'publicVisibility' }
-    assert_not visibility['propertyValue']
+    updated_dataset[:publicVisibility]
+    assert_not updated_dataset[:publicVisibility]
     # redact dataset
     assert @duos_client.redact_dataset
-    assert_raises RestClient::NotFound do
+    assert_raises Faraday::ResourceNotFound do
       @duos_client.dataset(@study.duos_dataset_id)
+      @duos_client.study(@study.duos_study_id)
     end
   end
 end

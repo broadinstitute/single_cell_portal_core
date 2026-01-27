@@ -10,7 +10,7 @@ class DuosRegistrationService
   end
 
   # determine if study is eligible for registering as a dataset in DUOS
-  # must meet all of the following criteria:
+  # must meet all the following criteria:
   # * public
   # * initialized
   # * has all required metadata for DUOS
@@ -32,7 +32,7 @@ class DuosRegistrationService
     study.public && study.initialized && study.duos_dataset_id.blank? && has_required
   end
 
-  # metadata values reqiored for DUOS dataset registration
+  # metadata values required for DUOS dataset registration
   #
   # * *params*
   #   - +study+ (Study)
@@ -48,6 +48,15 @@ class DuosRegistrationService
     }
   end
 
+  # get a list of accessions for studies eligible for DUOS registration
+  #
+  # * *returns*
+  #   - (Array<String>) list of study accessions
+  def self.eligible_studies
+    studies = Study.where(public: true, initialized: true, duos_dataset_id: nil, duos_study_id: nil)
+    studies.select { |study| study_eligible?(study) }.map(&:accession)
+  end
+
   # register a study as a new dataset in DUOS
   #
   #
@@ -60,11 +69,10 @@ class DuosRegistrationService
     raise ArgumentError, "#{study.accession} is not eligible for DUOS registration" unless study_eligible?(study)
 
     begin
-      dataset = client.create_dataset(study)&.first # DUOS returns array of datasets
-      duos_study_id = dataset[:studyId]
-      duos_dataset_id = dataset[:consentGroups].first[:datasetId]
-      study.update(duos_dataset_id:, duos_study_id:)
-      Rails.logger.info "Registered #{study.accession} in DUOS as study: #{duos_study_id}, dataset: #{duos_dataset_id}"
+      dataset = client.create_dataset(study)
+      ids = client.identifiers_from_dataset(dataset)
+      study.update(**ids)
+      Rails.logger.info "Registered #{study.accession} in DUOS as #{ids}"
       dataset
     rescue ArgumentError => e
       Rails.logger.error "Cannot validate #{study.accession} for DUOS: #{e.message}"
@@ -85,6 +93,7 @@ class DuosRegistrationService
   #   - (Boolean)
   def self.redact_dataset(study)
     client.redact_dataset(study)
+    study.update(duos_dataset_id: nil, duos_study_id: nil)
     Rails.logger.info "Redacted #{study.accession} in DUOS"
     true
   rescue Faraday::Error => e

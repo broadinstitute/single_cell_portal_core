@@ -360,7 +360,7 @@ class DuosClient
   #
   # * *returns*
   #   - (Hash) DUOS dataset schema object
-  def schema_from(study, transform: true)
+  def schema_from(study)
     consent_values = CONSENT_VALUES.merge(
       consentGroupName: duos_study_name(study), numberOfParticipants: study.donor_count, url: study.study_url
     )
@@ -410,5 +410,19 @@ class DuosClient
   #   - (String)
   def duos_study_description(study)
     "#{study.description} #{PLATFORM_ID}"
+  end
+
+  # extract DUOS identifiers from a dataset registration object
+  #
+  # * *params*
+  #   - +duos_dataset+ (Hash) DUOS dataset registration object
+  #
+  # * *returns*
+  #   - (Hash) with :duos_study_id and :duos_dataset
+  def identifiers_from_dataset(duos_dataset)
+    {
+      duos_study_id: duos_dataset.dig(:studyId),
+      duos_dataset_id: duos_dataset.dig(:consentGroups)&.first&.[](:datasetId)
+    }
   end
 end
