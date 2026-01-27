@@ -121,10 +121,10 @@ class HcaAzulClientTest < ActiveSupport::TestCase
     homo_sapiens_json = File.open(Rails.root.join('test/test_data/azul/species_homo_sapiens.json')).read
     species_response = JSON.parse(homo_sapiens_json).with_indifferent_access
     mock = Minitest::Mock.new
-    mock.expect(:code, 200)
+    mock.expect(:try, 200, [:code])
     mock.expect(:body, species_response) # body is called twice in ApiHelpers#handle_response
     mock.expect(:body, species_response)
-    mock.expect(:code, 200)
+    mock.expect(:try, 200, [:code])
     mock.expect(:body, disease_response)
     mock.expect(:body, disease_response)
     RestClient::Request.stub :execute, mock do

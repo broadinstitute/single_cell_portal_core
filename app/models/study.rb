@@ -268,6 +268,7 @@ class Study
   field :external_identifier, type: String # ID from external service, used for tracking via ImportService
   field :imported_from, type: String # Human-readable tag for external service that study was imported from, e.g. HCA
   field :duos_dataset_id, type: Integer
+  field :duos_study_id, type: Integer
   ##
   #
   # SWAGGER DEFINITIONS

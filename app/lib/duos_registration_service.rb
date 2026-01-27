@@ -61,11 +61,16 @@ class DuosRegistrationService
 
     begin
       dataset = client.create_dataset(study)&.first # DUOS returns array of datasets
-      study.update(duos_dataset_id: dataset[:datasetId])
-      Rails.logger.info "Registered #{study.accession} in DUOS as dataset: #{dataset[:datasetId]}"
+      duos_study_id = dataset[:studyId]
+      duos_dataset_id = dataset[:consentGroups].first[:datasetId]
+      study.update(duos_dataset_id:, duos_study_id:)
+      Rails.logger.info "Registered #{study.accession} in DUOS as study: #{duos_study_id}, dataset: #{duos_dataset_id}"
       dataset
+    rescue ArgumentError => e
+      Rails.logger.error "Cannot validate #{study.accession} for DUOS: #{e.message}"
     rescue Faraday::Error => e
-      Rails.logger.error "Unable to register #{study.accession} in DUOS: #{e.message} (#{e.try(:http_body)})"
+      Rails.logger.error "Unable to register #{study.accession} in DUOS: #{e.message} (#{e.try(:response_body)})"
+      ErrorTracker.report_exception(e, client.issuer, { study: })
       nil
     end
   end
@@ -83,7 +88,8 @@ class DuosRegistrationService
     Rails.logger.info "Redacted #{study.accession} in DUOS"
     true
   rescue Faraday::Error => e
-    Rails.logger.error "Unable to redact #{study.accession} in DUOS: (#{e.message}) #{e.try(:http_body)}"
+    Rails.logger.error "Unable to redact #{study.accession} in DUOS: (#{e.message}) #{e.try(:response_body)}"
+    ErrorTracker.report_exception(e, client.issuer, { study: })
     false
   end
 end

@@ -94,7 +94,7 @@ module ApiHelpers
     '?' + opts.reject {|k,v| k.blank? || v.blank?}.to_a.map {|k,v| "#{uri_encode(k)}=#{uri_encode(v)}"}.join('&')
   end
 
-  # handle a RestClient::Response object
+  # handle a RestClient::Response or Faraday::Response object
   #
   # * *params*
   #   - +response+ (String) => an RestClient response object
@@ -106,7 +106,9 @@ module ApiHelpers
       if ok?(response_code(response))
         response.body.present? ? parse_response_body(response.body) : true # blank body
       else
-        parse_response_body(response.body) || response.try(:message) || response.try(:reason_phrase)
+        parse_response_body(response.try(:body)) if response.respond_to?(:body)
+
+        response.try(:message) || response.try(:reason_phrase)
       end
     rescue
       # don't report, just return
@@ -123,7 +125,7 @@ module ApiHelpers
   #   - +Hash+ if response body is JSON, or +String+ of original body
   def parse_response_body(response_body)
     begin
-      JSON.parse(response_body)
+      JSON.parse(response_body).with_indifferent_access
     rescue
       response_body
     end

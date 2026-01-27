@@ -5,7 +5,7 @@ class DuosClient
   include GoogleServiceClient
   include ApiHelpers
 
-  attr_accessor :access_token, :api_root, :expires_at, :service_account_credentials
+  attr_accessor :access_token, :api_root, :expires_at, :service_account_credentials, :duos_user_id
 
   GOOGLE_SCOPES = %w(email profile).freeze
 
@@ -47,6 +47,10 @@ class DuosClient
     self.access_token = self.class.generate_access_token(service_account)
     self.expires_at = Time.zone.now + self.access_token['expires_in']
     self.api_root = "https://consent.dsde-#{sub_host}.broadinstitute.org"
+
+    if registered?
+      self.duos_user_id = registration[:userId]
+    end
   end
 
   # submit a request to DUOS API
@@ -71,9 +75,9 @@ class DuosClient
     rescue Faraday::Error => e
       current_retry = retry_count + 1
       context = " encountered when requesting '#{path}', attempt ##{current_retry}"
-      log_message = "#{e.message}: #{e.http_body}; #{context}"
+      log_message = "#{e.message}: #{e.response_body}; #{context}"
       Rails.logger.error log_message
-      if should_retry?(e.http_code) && retry_count < ApiHelpers::MAX_RETRY_COUNT
+      if should_retry?(e.response_status) && retry_count < ApiHelpers::MAX_RETRY_COUNT
         retry_time = retry_interval_for(current_retry)
         sleep(retry_time)
         process_api_request(http_method, path, payload:, retry_count: current_retry)
@@ -127,6 +131,7 @@ class DuosClient
       f.request :multipart if multipart
       f.request :url_encoded
       f.adapter Faraday.default_adapter
+      f.response :raise_error, include_request: true # raise exceptions on 4xx/5xx responses to mimic RestClient
     end
 
     response = conn.send(http_method) do |req|
@@ -142,8 +147,16 @@ class DuosClient
     handle_response(response)
   end
 
+  # determine if request is a multipart form submission
+  #
+  # * *params*
+  #   - +http_method+ (String, Symbol) HTTP method, e.g. :get, :post
+  #   - +payload+ (Hash) request body
+  #
+  # * *returns*
+  #   - (Boolean)
   def is_multipart?(http_method, payload)
-    payload && %i[post put].include?(http_method)
+    payload && %i[post put].include?(http_method.to_sym)
   end
 
   # API endpoints
@@ -159,7 +172,7 @@ class DuosClient
       status && status[:ok]
     rescue Faraday::Error => e
       Rails.logger.error "DUOS service unavailable: #{e.message}"
-      ErrorTracker.report_exception(e, nil, { method: :get, url: path, code: e.http_code })
+      ErrorTracker.report_exception(e, nil, { method: :get, url: path, code: e.status })
       false
     end
   end
@@ -171,10 +184,18 @@ class DuosClient
   #
   # * *returns*
   #   - (Hash) DUOS dataset registration of study
+  #
+  # * *raises*
+  #   - (ArgumentError) if dataset schema is invalid
   def create_dataset(study)
     study_data = schema_from(study)
+    validator = validate_dataset(study_data)
+    if validator.any?
+      raise ArgumentError, "DUOS dataset schema validation failed: #{validator.first[:error]}"
+    end
+
     api_path = 'api/dataset/v3'
-    process_api_request(:post, api_path, payload: study_data)
+    process_api_request(:post, api_path, payload: { dataset: study_data.to_json })
   end
 
   # get a DUOS dataset by ID
@@ -193,44 +214,66 @@ class DuosClient
   #
   # * *params*
   #   - +study+ (Study)
-  #   - +fields+ (Array<Hash<) array of key/value pairs to update in DUOS
-  #              see https://consent.dsde-dev.broadinstitute.org/#/Dataset/put_api_dataset_v3__datasetId_
   #
   # * *returns*
   #   - (Hash) DUOS dataset registration of updated study
   #
   # * *raises*
-  #   - (ArgumentError) if study is not registered in DUOS
-  def update_dataset(study, **fields)
-    raise ArgumentError, "#{study.accession} has no DUOS dataset ID" if study.duos_dataset_id.blank?
+  #   - (ArgumentError) if study is not registered in DUOS or dataset schema is invalid
+  def update_dataset(study)
+    raise ArgumentError, "#{study.accession} has no DUOS study ID" if study.duos_study_id.blank?
 
-    study_data = update_schema_from(study, **fields)
-    api_path = "api/dataset/v3/#{study.duos_dataset_id}"
-    process_api_request(:put, api_path, payload: study_data)
+    study_data = schema_from(study)
+    validator = validate_dataset(study_data)
+    if validator.any?
+      raise ArgumentError, "DUOS dataset schema validation failed: #{validator.first[:error]}"
+    end
+
+    api_path = "api/dataset/study/#{study.duos_study_id}"
+    process_api_request(:put, api_path, payload: { dataset: study_data.to_json })
   end
 
-  # delete a dataset in DUOS for non-production endpoints
+  # get a DUOS study by ID
+  #
+  # * *params*
+  #   - +dataset_id+ (Integer) DUOS dataset id
+  #
+  # * *returns*
+  #   - (Hash) DUOS dataset registration
+  def study(study_id)
+    api_path = "api/dataset/study/#{study_id}"
+    process_api_request(:get, api_path)
+  end
+
+  # delete a study in DUOS for non-production endpoints
+  # removes associated dataset as well
   #
   # * *params*
   #   - +study+ (Study)
   #
   # * *returns*
   #   - (Boolean)
-  def delete_dataset(study)
-    return false if Rails.env.production? || study.duos_dataset_id.blank?
+  #
+  # * *raises*
+  #   - (RuntimeError) if operation is attempted in production or study has no DUOS study id
+  def delete_study(study)
+    raise 'Operation not permitted' if Rails.env.production? || study.duos_study_id.blank?
 
-    api_path = "api/dataset/#{study.duos_dataset_id}"
+    api_path = "api/dataset/study/#{study.duos_study_id}"
     process_api_request(:delete, api_path)
   end
 
   # handle a study redaction
   # in production, set to publicVisibility to false
   # otherwise delete the study
+  #
+  # * *params*
+  #   - +study+ (Study)
   def redact_dataset(study)
     if Rails.env.production?
-      update_dataset(study, publicVisibility: false)
+      update_dataset(study)
     else
-      delete_dataset(study)
+      delete_study(study)
     end
   end
 
@@ -266,7 +309,7 @@ class DuosClient
   # *returns*
   #  - (Boolean)
   def registered?
-    registration&.[]('userId').present?
+    registration&.[](:userId).present?
   rescue Faraday::Error
     false
   end
@@ -285,7 +328,7 @@ class DuosClient
   # * *returns*
   #  - (Boolean)
   def tos_accepted?
-    sam_diagnostics&.[]('tosAccepted')
+    sam_diagnostics&.[](:tosAccepted)
   rescue Faraday::Error
     false
   end
@@ -307,6 +350,8 @@ class DuosClient
     process_api_request(:get, api_path)
   end
 
+  # Schema/formatter methods
+
   # construct a DUOS schema object for registering a dataset
   # from https://consent.dsde-prod.broadinstitute.org/#/Schema/getDatasetRegistrationSchemaV1
   #
@@ -315,12 +360,12 @@ class DuosClient
   #
   # * *returns*
   #   - (Hash) DUOS dataset schema object
-  def schema_from(study)
+  def schema_from(study, transform: true)
     consent_values = CONSENT_VALUES.merge(
       consentGroupName: duos_study_name(study), numberOfParticipants: study.donor_count, url: study.study_url
     )
     dataset = {
-      dataSubmitterUserId: registration['userId'],
+      dataSubmitterUserId: duos_user_id,
       studyName: duos_study_name(study),
       studyDescription: duos_study_description(study),
       dataTypes: study.data_types,
@@ -331,33 +376,18 @@ class DuosClient
       piName: study.data_custodians.first,
       consentGroups: [consent_values]
     }.merge(ANVIL_VALUES).with_indifferent_access
-    {
-      dataset: dataset.to_json
-    }.with_indifferent_access
   end
 
+  # use JSON schema to validate dataset object
+  #
+  # * *params*
+  #   - +dataset+ (Hash) DUOS dataset object
+  #
+  # * *returns*
+  #   - (Enumerator) of validation errors, if any
   def validate_dataset(dataset)
     schema = JSONSchemer.schema(dataset_schema)
     schema.validate(dataset)
-  end
-
-  # construct and update schema object with a list of fields to modify
-  #
-  # * *params*
-  #   - +study+ (Study)
-  #   - +fields+ (Hash) multiple key/value pairs of field names to values to update
-  #
-  # * *returns*
-  #   - (Hash) DUOS dataset update schema object
-  def update_schema_from(study, **fields)
-    dataset = {
-      studyName: duos_study_name(study),
-      dacId: study.duos_dataset_id,
-      properties: fields.map do |field_name, value|
-        { propertyName: field_name.to_s, propertyValue: value }
-      end
-    }
-    { dataset: }.with_indifferent_access
   end
 
   # version of study name with accession prepended
