@@ -55,15 +55,10 @@ class DuosRegistrationServiceTest < ActiveSupport::TestCase
     accession = @accessions.sample
     study = Study.find_by(accession:)
     required = DuosRegistrationService.required_metadata(study)
-    assert required.is_a?(Hash)
-    assert required.key?(:diseases)
-    assert required.key?(:species)
-    assert required.key?(:donor_count)
-    assert required.key?(:data_types)
-    assert required[:diseases].any?
-    assert required[:species].any?
-    assert required[:donor_count] > 0
-    assert required[:data_types].any?
+    assert required[:diseases] == ['HIV infectious disease']
+    assert required[:species] == ['Homo sapiens']
+    assert required[:donor_count] == 5
+    assert required[:data_types] == %w[Seq-Well]
   end
 
   test 'should register dataset in DUOS' do
