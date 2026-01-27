@@ -7,7 +7,7 @@ class DuosClient
 
   attr_accessor :access_token, :api_root, :expires_at, :service_account_credentials
 
-  GOOGLE_SCOPES = %w(openid email profile).freeze
+  GOOGLE_SCOPES = %w(email profile).freeze
 
   # hard-coded responses for ANVIL fields
   ANVIL_VALUES = {
@@ -38,7 +38,7 @@ class DuosClient
   # initialize new client and generate access token for auth
   #
   # * *params*
-  #   - +service_account_key+: (String, Pathname) => Path to service account JSON keyfile
+  #   - +service_account_key+: (String, Pathname) Path to service account JSON keyfile
   # * *return*
   #   - +DuosClient+ object
   def initialize(service_account = self.class.get_primary_keyfile)
@@ -52,23 +52,23 @@ class DuosClient
   # submit a request to DUOS API
   #
   # * *params*
-  #   - +http_method+ (String, Symbol) => HTTP method, e.g. :get, :post
-  #   - +path+ (String) => Relative URL path for API request being made
-  #   - +payload+ (Hash) => request body
-  #   - +retry_count+ (Integer) => Counter for tracking request retries
+  #   - +http_method+ (String, Symbol) HTTP method, e.g. :get, :post
+  #   - +path+ (String) Relative URL path for API request being made
+  #   - +payload+ (Hash) request body
+  #   - +retry_count+ (Integer) Counter for tracking request retries
   #
   # * *returns*
-  #   - (Hash) => Parsed response body, if present
+  #   - (Hash) Parsed response body, if present
   #
   # * *raises*
-  #   - (RestClient::Exception) => if HTTP request fails for any reason
+  #   - (Faraday::Error) if HTTP request fails for any reason
   def process_api_request(http_method, path, payload: nil, retry_count: 0)
     # Log API call for auditing/tracking purposes
     Rails.logger.info "DUOS API request (#{http_method.to_s.upcase}) #{path}"
     # process request
     begin
       execute_http_request(http_method, path, payload)
-    rescue RestClient::Exception => e
+    rescue Faraday::Error => e
       current_retry = retry_count + 1
       context = " encountered when requesting '#{path}', attempt ##{current_retry}"
       log_message = "#{e.message}: #{e.http_body}; #{context}"
@@ -106,22 +106,44 @@ class DuosClient
   end
 
   # sub-handler for making external HTTP request
+  # has special handling for mutlipart form posts using Faraday instead of RestClient
   #
   # * *params*
-  #   - +http_method+ (String, Symbol) => HTTP method, e.g. :get, :post
-  #   - +path+ (String) => Relative URL path for API request being made
-  #   - +payload+ (Hash) => Hash representation of request body
+  #   - +http_method+ (String, Symbol) HTTP method, e.g. :get, :post
+  #   - +path+ (String) Relative URL path for API request being made
+  #   - +payload+ (Hash) Hash representation of request body
   #
   # * *returns*
-  #   - (Hash) => Parsed response body, if present
+  #   - (Hash) Parsed response body, if present
   #
   # * *raises*
-  #   - (RestClient::Exception) => if HTTP request fails for any reason
+  #   - (Faraday::Error) if HTTP request fails for any reason
   def execute_http_request(http_method, path, payload = nil)
     url = [api_root, path].join('/')
-    headers = headers_for_request(multipart: payload.present?)
-    response = RestClient::Request.execute(method: http_method, url:, payload:, headers:)
+    multipart = is_multipart?(http_method, payload)
+    headers = headers_for_request(multipart:)
+
+    conn = Faraday.new(url:) do |f|
+      f.request :multipart if multipart
+      f.request :url_encoded
+      f.adapter Faraday.default_adapter
+    end
+
+    response = conn.send(http_method) do |req|
+      headers.each { |key, value| req.headers[key] = value }
+      if multipart
+        req.body = payload.transform_values do |value|
+          value.is_a?(String) ? value : Faraday::UploadIO.new(StringIO.new(value.to_s), 'text/plain')
+        end
+      else
+        req.body = payload
+      end
+    end
     handle_response(response)
+  end
+
+  def is_multipart?(http_method, payload)
+    payload && %i[post put].include?(http_method)
   end
 
   # API endpoints
@@ -129,13 +151,13 @@ class DuosClient
   # basic health check
   #
   # * *returns*
-  #   - (Boolean) => T/F if NeMO is responding to requests
+  #   - (Boolean) T/F if NeMO is responding to requests
   def api_available?
     path = 'status'
     begin
       status = execute_http_request(:get, path)&.with_indifferent_access
       status && status[:ok]
-    rescue RestClient::ExceptionWithResponse => e
+    rescue Faraday::Error => e
       Rails.logger.error "DUOS service unavailable: #{e.message}"
       ErrorTracker.report_exception(e, nil, { method: :get, url: path, code: e.http_code })
       false
@@ -152,7 +174,19 @@ class DuosClient
   def create_dataset(study)
     study_data = schema_from(study)
     api_path = 'api/dataset/v3'
-    process_api_request(:post, api_path, payload: study_data.to_json)
+    process_api_request(:post, api_path, payload: study_data)
+  end
+
+  # get a DUOS dataset by ID
+  #
+  # * *params*
+  #   - +dataset_id+ (Integer) DUOS dataset id
+  #
+  # * *returns*
+  #   - (Hash) DUOS dataset registration
+  def dataset(dataset_id)
+    api_path = "api/dataset/v2/#{dataset_id}"
+    process_api_request(:get, api_path)
   end
 
   # update a DUOS dataset using an SCP study
@@ -172,7 +206,7 @@ class DuosClient
 
     study_data = update_schema_from(study, **fields)
     api_path = "api/dataset/v3/#{study.duos_dataset_id}"
-    process_api_request(:put, api_path, payload: study_data.to_json)
+    process_api_request(:put, api_path, payload: study_data)
   end
 
   # delete a dataset in DUOS for non-production endpoints
@@ -203,13 +237,13 @@ class DuosClient
   # register service account with DUOS
   #
   # * *returns*
-  #   - (Hash) SAM user registration of service account
+  #   - (Hash) Sam user registration of service account
   def register
     api_path = 'api/user'
     process_api_request(:post, api_path)
   end
 
-  # retrieve DUOS registration for service account
+  # retrieve DUOS registration for service account, like user ID and roles
   #
   # * *returns*
   #   - (Hash) SAM user registration of service account
@@ -218,15 +252,22 @@ class DuosClient
     process_api_request(:get, api_path)
   end
 
+  # retrieve Sam-enabled statuses for service account
+  #
+  # * *returns*
+  #   - (Hash) Sam status info of service account
+  def sam_diagnostics
+    api_path = 'api/sam/register/self/diagnostics'
+    process_api_request(:get, api_path)
+  end
+
   # check if a client is registered
   #
   # *returns*
   #  - (Boolean)
   def registered?
-    api_path = 'api/user/me'
-    registration = execute_http_request(:get, api_path)&.with_indifferent_access
-    registration && registration[:userId].present?
-  rescue RestClient::ExceptionWithResponse
+    registration&.[]('userId').present?
+  rescue Faraday::Error
     false
   end
 
@@ -244,10 +285,8 @@ class DuosClient
   # * *returns*
   #  - (Boolean)
   def tos_accepted?
-    api_path = 'api/sam/register/self/diagnostics'
-    status = execute_http_request(:get, api_path)&.with_indifferent_access
-    status && status[:tosAccepted]
-  rescue RestClient::ExceptionWithResponse
+    sam_diagnostics&.[]('tosAccepted')
+  rescue Faraday::Error
     false
   end
 
@@ -259,6 +298,15 @@ class DuosClient
     self.class.load_service_account_creds(service_account_credentials)&.issuer
   end
 
+  # retrieve a dataset registration JSON schema
+  #
+  # * *returns*
+  #   - (Hash)
+  def dataset_schema
+    api_path = 'schemas/dataset-registration/v1'
+    process_api_request(:get, api_path)
+  end
+
   # construct a DUOS schema object for registering a dataset
   # from https://consent.dsde-prod.broadinstitute.org/#/Schema/getDatasetRegistrationSchemaV1
   #
@@ -266,12 +314,13 @@ class DuosClient
   #   - +study+ (Study)
   #
   # * *returns*
-  #   - (Hash) => DUOS dataset schema object
+  #   - (Hash) DUOS dataset schema object
   def schema_from(study)
     consent_values = CONSENT_VALUES.merge(
       consentGroupName: duos_study_name(study), numberOfParticipants: study.donor_count, url: study.study_url
     )
     dataset = {
+      dataSubmitterUserId: registration['userId'],
       studyName: duos_study_name(study),
       studyDescription: duos_study_description(study),
       dataTypes: study.data_types,
@@ -279,9 +328,17 @@ class DuosClient
       phenotypeIndication: study.diseases.join(', '),
       species: study.species_list.join(', '),
       dataCustodianEmail: study.data_custodians,
+      piName: study.data_custodians.first,
       consentGroups: [consent_values]
-    }.merge(ANVIL_VALUES)
-    { dataset: }.with_indifferent_access
+    }.merge(ANVIL_VALUES).with_indifferent_access
+    {
+      dataset: dataset.to_json
+    }.with_indifferent_access
+  end
+
+  def validate_dataset(dataset)
+    schema = JSONSchemer.schema(dataset_schema)
+    schema.validate(dataset)
   end
 
   # construct and update schema object with a list of fields to modify
@@ -291,7 +348,7 @@ class DuosClient
   #   - +fields+ (Hash) multiple key/value pairs of field names to values to update
   #
   # * *returns*
-  #   - (Hash) => DUOS dataset update schema object
+  #   - (Hash) DUOS dataset update schema object
   def update_schema_from(study, **fields)
     dataset = {
       studyName: duos_study_name(study),

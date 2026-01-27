@@ -103,14 +103,14 @@ module ApiHelpers
   #   - +Hash+ if response body is JSON, or +String+ of original body
   def handle_response(response)
     begin
-      if ok?(response.code)
+      if ok?(response_code(response))
         response.body.present? ? parse_response_body(response.body) : true # blank body
       else
-        response.message || parse_response_body(response.body)
+        parse_response_body(response.body) || response.try(:message) || response.try(:reason_phrase)
       end
     rescue
       # don't report, just return
-      response.message
+      response.try(:message) || response.try(:reason_phrase)
     end
   end
 
@@ -153,5 +153,9 @@ module ApiHelpers
   #   - +String+ => URI-encoded parameter
   def uri_encode(parameter)
     CGI.escapeURIComponent(parameter.to_s)
+  end
+
+  def response_code(response)
+    response.try(:code) || response.try(:status) || response.try(:http_code)
   end
 end

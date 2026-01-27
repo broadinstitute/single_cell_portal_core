@@ -1,6 +1,10 @@
 # service containing business logic for managing Study registrations as datasets in DUOS
 class DuosRegistrationService
 
+  # API client
+  #
+  # * *returns*
+  #   - (DuosClient)
   def self.client
     @client ||= DuosClient.new
   end
@@ -10,6 +14,12 @@ class DuosRegistrationService
   # * public
   # * initialized
   # * has all required metadata for DUOS
+  #
+  # * *params*
+  #   - +study+ (Study)
+  #
+  # * *returns*
+  #   - (Boolean)
   def self.study_eligible?(study)
     has_required = required_metadata(study).map do |field, value|
       if field == :donor_count
@@ -22,6 +32,13 @@ class DuosRegistrationService
     study.public && study.initialized && study.duos_dataset_id.blank? && has_required
   end
 
+  # metadata values reqiored for DUOS dataset registration
+  #
+  # * *params*
+  #   - +study+ (Study)
+  #
+  # * *returns*
+  #   - (Hash)
   def self.required_metadata(study)
     {
       diseases: study.diseases,
@@ -31,6 +48,14 @@ class DuosRegistrationService
     }
   end
 
+  # register a study as a new dataset in DUOS
+  #
+  #
+  # * *params*
+  #   - +study+ (Study)
+  #
+  # * *returns*
+  #   - (Hash) DUOS dataset registration object
   def self.register_dataset(study)
     raise ArgumentError, "#{study.accession} is not eligible for DUOS registration" unless study_eligible?(study)
 
@@ -39,18 +64,26 @@ class DuosRegistrationService
       study.update(duos_dataset_id: dataset[:datasetId])
       Rails.logger.info "Registered #{study.accession} in DUOS as dataset: #{dataset[:datasetId]}"
       dataset
-    rescue RestClient::ExceptionWithResponse => e
+    rescue Faraday::Error => e
       Rails.logger.error "Unable to register #{study.accession} in DUOS: #{e.message} (#{e.try(:http_body)})"
-      false
+      nil
     end
   end
 
+  # redact a DUOS dataset registration
+  # in non-production environments, this is a deletion, otherwise publicVisiblity is set to false
+  #
+  # * *params*
+  #   - +study+ (Study)
+  #
+  # * *returns*
+  #   - (Boolean)
   def self.redact_dataset(study)
     client.redact_dataset(study)
     Rails.logger.info "Redacted #{study.accession} in DUOS"
     true
-  rescue RestClient::ExceptionWithResponse => e
-    Rails.logger.error "Unable to redact #{study.accession} in DUOS: #{e.message} (#{e.try(:http_body)})"
+  rescue Faraday::Error => e
+    Rails.logger.error "Unable to redact #{study.accession} in DUOS: (#{e.message}) #{e.try(:http_body)}"
     false
   end
 end

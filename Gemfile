@@ -90,6 +90,8 @@ gem 'benchmark'
 gem 'drb'
 gem 'reline'
 gem 'irb'
+gem 'json_schemer'
+gem 'faraday-multipart', require: 'faraday/multipart'
 
 group :development, :test do
   # Access an IRB console on exception pages or by using <%= console %> in views
