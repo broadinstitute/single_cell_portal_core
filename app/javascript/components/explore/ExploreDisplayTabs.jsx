@@ -11,7 +11,7 @@ import PlotUtils from '~/lib/plot'
 const getPlotDimensions = PlotUtils.getPlotDimensions
 import ScatterPlot from '~/components/visualization/ScatterPlot'
 import StudyViolinPlot from '~/components/visualization/StudyViolinPlot'
-import DotPlot from '~/components/visualization/DotPlot'
+import DotPlot, { shouldUsePreprocessedData } from '~/components/visualization/DotPlot'
 import Heatmap from '~/components/visualization/Heatmap'
 import Pathway from '~/components/visualization/Pathway'
 import GeneListHeatmap from '~/components/visualization/GeneListHeatmap'
@@ -279,6 +279,9 @@ export default function ExploreDisplayTabs({
   const referencePlotDataParams = _clone(exploreParams)
   referencePlotDataParams.genes = []
 
+  // disable 50-gene query limit if study has preprocessed dotplot data
+  const disableGeneQueryLimit = shouldUsePreprocessedData(flags, exploreInfo)
+
   // TODO (SCP-5760): Refactor pathway diagrams into independent component where
   // React state can be propagated conventionally, then remove this
   window.SCP.exploreParamsWithDefaults = exploreParamsWithDefaults
@@ -539,6 +542,7 @@ export default function ExploreDisplayTabs({
               isLoading={!exploreInfo}
               speciesList={exploreInfo ? exploreInfo.taxonNames : []}
               selectedAnnotation={selectedAnnotation}
+              disableGeneQueryLimit={disableGeneQueryLimit}
             />
             { // show if this is gene search || gene list
               (isGene || isGeneList || hasIdeogramOutputs || isPathway) &&

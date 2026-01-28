@@ -2,8 +2,9 @@
 class StudySearchService
 
   MAX_GENE_SEARCH = 50
-  MAX_GENE_SEARCH_MSG = "For performance reasons, gene search is limited to #{MAX_GENE_SEARCH} genes. Please use " \
-                        'multiple searches to view more genes.'.freeze
+  MAX_GENE_SEARCH_MSG = "For performance reasons, gene search is limited to #{MAX_GENE_SEARCH} genes, except for  " \
+                        'pre-processed dot plots (where available). ' \
+                        'Please use multiple searches to view more genes.'.freeze
 
   # list of common 'stop words' to scrub from term-based search requests
   # these are unhelpful in search contexts as they artificially inflate irrelevant results
