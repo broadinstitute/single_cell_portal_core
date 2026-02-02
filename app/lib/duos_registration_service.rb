@@ -1,6 +1,14 @@
 # service containing business logic for managing Study registrations as datasets in DUOS
 class DuosRegistrationService
 
+  # pointer to DUOS UI for auto-completing URLs
+  #
+  # * *returns*
+  #   - (String) DUOS UI base URL, based on environment
+  def self.duos_ui_url
+    Rails.env.production? ? 'https://duos.org' : 'https://duos-k8s.dsde-dev.broadinstitute.org/'
+  end
+
   # API client
   #
   # * *returns*

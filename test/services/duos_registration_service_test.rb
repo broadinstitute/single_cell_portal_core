@@ -40,6 +40,16 @@ class DuosRegistrationServiceTest < ActiveSupport::TestCase
     assert client.is_a?(DuosClient)
   end
 
+  test 'should point to correct DUOS url' do
+    url = DuosRegistrationService.duos_ui_url
+    parsed_url = URI.parse(url)
+    assert parsed_url.is_a?(URI::HTTPS)
+    accession = @accessions.sample
+    study = Study.find_by(accession:)
+    study.duos_study_id = 1234
+    assert study.duos_study_url.starts_with?(url)
+  end
+
   test 'should identify eligible studies for DUOS registration' do
     eligible_accessions = DuosRegistrationService.eligible_studies
     expected_accessions = Study.where(duos_dataset_id: nil, duos_study_id: nil).pluck(:accession)

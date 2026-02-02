@@ -1702,6 +1702,10 @@ class Study
     authors.corresponding.pluck(:email).presence || ['scp-support@broadinstitute.zendesk.com']
   end
 
+  def duos_study_url
+    "#{DuosRegistrationService.duos_ui_url}/studies/#{duos_study_id}"
+  end
+
   ###
   #
   # DELETE METHODS
