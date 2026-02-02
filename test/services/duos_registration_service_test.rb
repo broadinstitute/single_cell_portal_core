@@ -98,6 +98,9 @@ class DuosRegistrationServiceTest < ActiveSupport::TestCase
     mock.expect :redact_study, true, [study]
     DuosRegistrationService.stub :client, mock do
       assert DuosRegistrationService.redact_study(study)
+      study.reload
+      assert_nil study.duos_dataset_id
+      assert_nil study.duos_study_id
       mock.verify
     end
   end
