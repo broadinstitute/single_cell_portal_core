@@ -101,7 +101,6 @@ class DuosRegistrationService
   #   - (Boolean)
   def self.redact_study(study)
     client.redact_study(study)
-    study.update(duos_dataset_id: nil, duos_study_id: nil)
     Rails.logger.info "Redacted #{study.accession} in DUOS"
     true
   rescue Faraday::Error => e
