@@ -92,7 +92,7 @@ class DuosRegistrationService
   end
 
   # redact a DUOS dataset registration
-  # in non-production environments, this is a deletion, otherwise publicVisiblity is set to false
+  # in non-production environments, this is a deletion, otherwise publicVisibility is set to false
   #
   # * *params*
   #   - +study+ (Study)
@@ -100,7 +100,13 @@ class DuosRegistrationService
   # * *returns*
   #   - (Boolean)
   def self.redact_study(study)
-    client.redact_study(study)
+    if Rails.env.production?
+      client.update_study(study.duos_study_id, publicVisibility: false)
+    else
+      client.delete_study(study.duos_study_id)
+      study.update(duos_dataset_id: nil, duos_study_id: nil)
+    end
+
     Rails.logger.info "Redacted #{study.accession} in DUOS"
     true
   rescue Faraday::Error => e

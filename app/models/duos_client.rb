@@ -245,20 +245,6 @@ class DuosClient
     process_api_request(:delete, api_path)
   end
 
-  # handle a study redaction
-  # in production, set to publicVisibility to false
-  # otherwise delete the study
-  #
-  # * *params*
-  #   - +study+ (Study)
-  def redact_study(study)
-    if Rails.env.production?
-      update_study(study.duos_study_id, publicVisibility: false)
-    else
-      delete_study(study.duos_study_id)
-    end
-  end
-
   # register service account with DUOS
   #
   # * *returns*

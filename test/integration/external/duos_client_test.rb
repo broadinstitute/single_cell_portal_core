@@ -167,8 +167,8 @@ class DuosClientTest < ActiveSupport::TestCase
     updated_dataset = @duos_client.update_study(@study.duos_study_id, publicVisibility: false)
     assert updated_dataset.present?
     assert_not updated_dataset[:publicVisibility]
-    # redact dataset
-    assert @duos_client.redact_study(@study)
+    # delete dataset
+    assert @duos_client.delete_study(@study.duos_study_id)
     assert_raises Faraday::ResourceNotFound do
       @duos_client.study(@study.duos_study_id)
     end
