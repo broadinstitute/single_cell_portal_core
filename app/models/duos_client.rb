@@ -60,18 +60,19 @@ class DuosClient
   #   - +path+ (String) Relative URL path for API request being made
   #   - +payload+ (Hash) request body
   #   - +retry_count+ (Integer) Counter for tracking request retries
+  #   - +multipart+ (Boolean) T/F if the request is a multipart form post
   #
   # * *returns*
   #   - (Hash) Parsed response body, if present
   #
   # * *raises*
   #   - (Faraday::Error) if HTTP request fails for any reason
-  def process_api_request(http_method, path, payload: nil, retry_count: 0)
+  def process_api_request(http_method, path, payload: nil, retry_count: 0, multipart: false)
     # Log API call for auditing/tracking purposes
     Rails.logger.info "DUOS API request (#{http_method.to_s.upcase}) #{path}"
     # process request
     begin
-      execute_http_request(http_method, path, payload)
+      execute_http_request(http_method, path, payload, multipart:)
     rescue Faraday::Error => e
       current_retry = retry_count + 1
       context = " encountered when requesting '#{path}', attempt ##{current_retry}"
@@ -80,7 +81,7 @@ class DuosClient
       if should_retry?(e.response_status) && retry_count < ApiHelpers::MAX_RETRY_COUNT
         retry_time = retry_interval_for(current_retry)
         sleep(retry_time)
-        process_api_request(http_method, path, payload:, retry_count: current_retry)
+        process_api_request(http_method, path, payload:, retry_count: current_retry, multipart:)
       else
         ErrorTracker.report_exception(e,
                                       issuer,
@@ -116,15 +117,15 @@ class DuosClient
   #   - +http_method+ (String, Symbol) HTTP method, e.g. :get, :post
   #   - +path+ (String) Relative URL path for API request being made
   #   - +payload+ (Hash) Hash representation of request body
+  #   - +multipart+ (Boolean) T/F if the request is a multipart form post
   #
   # * *returns*
   #   - (Hash) Parsed response body, if present
   #
   # * *raises*
   #   - (Faraday::Error) if HTTP request fails for any reason
-  def execute_http_request(http_method, path, payload = nil)
+  def execute_http_request(http_method, path, payload = nil, multipart: false)
     url = [api_root, path].join('/')
-    multipart = is_multipart?(http_method, payload)
     headers = headers_for_request(multipart:)
 
     conn = Faraday.new(url:) do |f|
@@ -145,18 +146,6 @@ class DuosClient
       end
     end
     handle_response(response)
-  end
-
-  # determine if request is a multipart form submission
-  #
-  # * *params*
-  #   - +http_method+ (String, Symbol) HTTP method, e.g. :get, :post
-  #   - +payload+ (Hash) request body
-  #
-  # * *returns*
-  #   - (Boolean)
-  def is_multipart?(http_method, payload)
-    payload && %i[post put].include?(http_method.to_sym)
   end
 
   # API endpoints
@@ -195,10 +184,11 @@ class DuosClient
     end
 
     api_path = 'api/dataset/v3'
-    process_api_request(:post, api_path, payload: { dataset: study_data.to_json })
+    process_api_request(:post, api_path, payload: { dataset: study_data.to_json }, multipart: true)
   end
 
   # get a DUOS dataset by ID
+  # belongs to a DUOS study
   #
   # * *params*
   #   - +dataset_id+ (Integer) DUOS dataset id
@@ -210,56 +200,48 @@ class DuosClient
     process_api_request(:get, api_path)
   end
 
-  # update a DUOS dataset using an SCP study
-  #
-  # * *params*
-  #   - +study+ (Study)
-  #
-  # * *returns*
-  #   - (Hash) DUOS dataset registration of updated study
-  #
-  # * *raises*
-  #   - (ArgumentError) if study is not registered in DUOS or dataset schema is invalid
-  def update_dataset(study)
-    raise ArgumentError, "#{study.accession} has no DUOS study ID" if study.duos_study_id.blank?
-
-    study_data = schema_from(study)
-    validator = validate_dataset(study_data)
-    if validator.any?
-      raise ArgumentError, "DUOS dataset schema validation failed: #{validator.first[:error]}"
-    end
-
-    api_path = "api/dataset/study/#{study.duos_study_id}"
-    process_api_request(:put, api_path, payload: { dataset: study_data.to_json })
-  end
-
   # get a DUOS study by ID
+  # has many DUOS datasets
   #
   # * *params*
-  #   - +dataset_id+ (Integer) DUOS dataset id
+  #   - +study_id+ (Integer) DUOS study id
   #
   # * *returns*
-  #   - (Hash) DUOS dataset registration
+  #   - (Hash) DUOS study registration
   def study(study_id)
-    api_path = "api/dataset/study/#{study_id}"
+    api_path = "api/dataset/study/registration/#{study_id}"
     process_api_request(:get, api_path)
   end
 
-  # delete a study in DUOS for non-production endpoints
-  # removes associated dataset as well
+  # update a DUOS study and all associated datasets
   #
   # * *params*
-  #   - +study+ (Study)
+  #   - +duos_study_id+ (Integer)
+  #   - +fields+ (Hash) DUOS fields to update
+  #
+  # * *returns*
+  #   - (Hash) DUOS dataset registration of updated study
+  def update_study(duos_study_id, **fields)
+    api_path = "api/dataset/study/#{duos_study_id}"
+    study_data = {}.merge(fields)
+    process_api_request(:patch, api_path, payload: study_data.to_json)
+  end
+
+  # delete a study in DUOS for non-production endpoints
+  # removes associated datasets as well
+  #
+  # * *params*
+  #   - +duos_study_id+ (Integer)
   #
   # * *returns*
   #   - (Boolean)
   #
   # * *raises*
-  #   - (RuntimeError) if operation is attempted in production or study has no DUOS study id
-  def delete_study(study)
-    raise 'Operation not permitted' if Rails.env.production? || study.duos_study_id.blank?
+  #   - (RuntimeError) if operation is attempted in production
+  def delete_study(duos_study_id)
+    raise 'Operation not permitted' if Rails.env.production?
 
-    api_path = "api/dataset/study/#{study.duos_study_id}"
+    api_path = "api/dataset/study/#{duos_study_id}"
     process_api_request(:delete, api_path)
   end
 
@@ -269,11 +251,11 @@ class DuosClient
   #
   # * *params*
   #   - +study+ (Study)
-  def redact_dataset(study)
+  def redact_study(study)
     if Rails.env.production?
-      update_dataset(study)
+      update_study(study.duos_study_id, publicVisibility: false)
     else
-      delete_study(study)
+      delete_study(study.duos_study_id)
     end
   end
 
@@ -364,7 +346,7 @@ class DuosClient
     consent_values = CONSENT_VALUES.merge(
       consentGroupName: duos_study_name(study), numberOfParticipants: study.donor_count, url: study.study_url
     )
-    dataset = {
+    {
       dataSubmitterUserId: duos_user_id,
       studyName: duos_study_name(study),
       studyDescription: duos_study_description(study),
@@ -421,8 +403,8 @@ class DuosClient
   #   - (Hash) with :duos_study_id and :duos_dataset
   def identifiers_from_dataset(duos_dataset)
     {
-      duos_study_id: duos_dataset.dig(:studyId),
-      duos_dataset_id: duos_dataset.dig(:consentGroups)&.first&.[](:datasetId)
+      duos_study_id: duos_dataset[:studyId],
+      duos_dataset_id: duos_dataset[:consentGroups]&.first&.[](:datasetId)
     }
   end
 end

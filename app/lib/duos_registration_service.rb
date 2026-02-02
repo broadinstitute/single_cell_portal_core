@@ -65,7 +65,7 @@ class DuosRegistrationService
   #
   # * *returns*
   #   - (Hash) DUOS dataset registration object
-  def self.register_dataset(study)
+  def self.register_study(study)
     raise ArgumentError, "#{study.accession} is not eligible for DUOS registration" unless study_eligible?(study)
 
     begin
@@ -91,8 +91,8 @@ class DuosRegistrationService
   #
   # * *returns*
   #   - (Boolean)
-  def self.redact_dataset(study)
-    client.redact_dataset(study)
+  def self.redact_study(study)
+    client.redact_study(study)
     study.update(duos_dataset_id: nil, duos_study_id: nil)
     Rails.logger.info "Redacted #{study.accession} in DUOS"
     true

@@ -125,7 +125,8 @@ module ApiHelpers
   #   - +Hash+ if response body is JSON, or +String+ of original body
   def parse_response_body(response_body)
     begin
-      JSON.parse(response_body).with_indifferent_access
+      body = JSON.parse(response_body)
+      body.is_a?(Hash) ? body.with_indifferent_access : body
     rescue
       response_body
     end

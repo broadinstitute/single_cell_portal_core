@@ -71,7 +71,7 @@ class DuosRegistrationServiceTest < ActiveSupport::TestCase
                 { duos_dataset_id: 1234, duos_study_id: 5678 },
                 [dataset]
     DuosRegistrationService.stub :client, mock do
-      registration = DuosRegistrationService.register_dataset(study)
+      registration = DuosRegistrationService.register_study(study)
       assert registration.is_a?(Hash)
       study.reload
       assert_equal 1234, study.duos_dataset_id
@@ -85,9 +85,9 @@ class DuosRegistrationServiceTest < ActiveSupport::TestCase
     study = Study.find_by(accession:)
     study.update(duos_dataset_id: 1234, duos_study_id: 5678)
     mock = Minitest::Mock.new
-    mock.expect :redact_dataset, true, [study]
+    mock.expect :redact_study, true, [study]
     DuosRegistrationService.stub :client, mock do
-      assert DuosRegistrationService.redact_dataset(study)
+      assert DuosRegistrationService.redact_study(study)
       study.reload
       assert_nil study.duos_dataset_id
       assert_nil study.duos_study_id

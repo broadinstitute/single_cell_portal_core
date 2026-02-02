@@ -26,16 +26,12 @@ class DuosClientTest < ActiveSupport::TestCase
                       cell_input: %w[cellA cellB cellC cellD cellE],
                       annotation_input: )
     @author = FactoryBot.create(:author, study: @study, corresponding: true)
-    client = DuosClient.new
-    @duos_available = client.api_available?
-  end
-
-  setup do
     @duos_client = DuosClient.new
+    @duos_available = @duos_client.api_available?
   end
 
   teardown do
-    @study.update(duos_dataset_id: nil)
+    @study.update(duos_dataset_id: nil, duos_study_id: nil)
     @study.reload
   end
 
@@ -66,12 +62,6 @@ class DuosClientTest < ActiveSupport::TestCase
     assert headers['Content-Type'] == 'multipart/form-data'
   end
 
-  test 'should determine if request should be multipart' do
-    assert_not @duos_client.is_multipart?(:get, nil)
-    assert @duos_client.is_multipart?(:post, { foo: 'bar', file: 'data' })
-    assert @duos_client.is_multipart?(:put, { foo: 'bar', file: 'data' })
-  end
-
   test 'should confirm API is available' do
     skip_if_api_down
     assert @duos_client.api_available?
@@ -87,7 +77,7 @@ class DuosClientTest < ActiveSupport::TestCase
 
   test 'should get user id' do
     skip_if_api_down
-    assert @duos_client.user_id.is_a?(Integer)
+    assert @duos_client.duos_user_id.is_a?(Integer)
   end
 
   test 'should get Sam diagnostic info' do
@@ -120,18 +110,18 @@ class DuosClientTest < ActiveSupport::TestCase
 
   test 'should format schema for DUOS' do
     duos_data = @duos_client.schema_from(@study)
-    assert duos_data.dig(:dataset, :studyName).start_with?(@study.accession)
-    assert duos_data.dig(:dataset, :studyDescription).include?(DuosClient::PLATFORM_ID)
-    assert_equal 'Homo sapiens', duos_data.dig(:dataset, :species)
-    assert_equal 'HIV infectious disease', duos_data.dig(:dataset, :phenotypeIndication)
-    assert_equal ['Seq-Well'], duos_data.dig(:dataset, :dataTypes)
-    participant_count = duos_data.dig(:dataset, :consentGroups).first[:numberOfParticipants]
+    assert duos_data[:studyName].start_with?(@study.accession)
+    assert duos_data[:studyDescription].include?(DuosClient::PLATFORM_ID)
+    assert_equal 'Homo sapiens', duos_data[:species]
+    assert_equal 'HIV infectious disease', duos_data[:phenotypeIndication]
+    assert_equal ['Seq-Well'], duos_data[:dataTypes]
+    participant_count = duos_data[:consentGroups].first[:numberOfParticipants]
     assert_equal 5, participant_count
-    assert_equal @author.email, duos_data.dig(:dataset, :dataCustodianEmail).first
+    assert_equal @author.email, duos_data[:dataCustodianEmail].first
   end
 
   test 'should load dataset JSON schema from DUOS' do
-    schema = @client.dataset_schema
+    schema = @duos_client.dataset_schema
     assert schema['title'] == 'Dataset Registration Schema'
     assert schema['$schema'] == 'https://json-schema.org/draft/2019-09/schema'
     assert schema['version'].is_a?(Integer)
@@ -139,8 +129,8 @@ class DuosClientTest < ActiveSupport::TestCase
 
   test 'should validate schema' do
     duos_data = @duos_client.schema_from(@study)
-    assert @duos_client.validate_schema(duos_data).empty?
-    assert @duos_client.validate_schema({ foo: 'bar' }).first['error'].present?
+    assert_not @duos_client.validate_dataset(duos_data).any?
+    assert @duos_client.validate_dataset({ foo: 'bar' }).first['error'].present?
   end
 
   test 'should extract ids from dataset' do
@@ -166,21 +156,24 @@ class DuosClientTest < ActiveSupport::TestCase
     assert_equal @duos_client.duos_study_description(@study), dataset[:studyDescription]
     # load DUOS entities
     ids = @duos_client.identifiers_from_dataset(dataset)
+    puts "-- DUOS IDs for #{@study.accession}: #{ids} --"
+    sleep(5) # brief pause to allow DUOS to finalize entries otherwise we get a 40x error
     assert @duos_client.study(ids[:duos_study_id]).present?
     assert @duos_client.dataset(ids[:duos_dataset_id]).present?
-    # update dataset, making sure to update study with new identifiers first
+    # update DUOS study, making sure to update study with new identifiers first
     @study.update(**ids)
     @study.update(public: false)
     @study.reload
-    updated_dataset = @duos_client.update_dataset(@study)
+    updated_dataset = @duos_client.update_study(@study.duos_study_id, publicVisibility: false)
     assert updated_dataset.present?
-    updated_dataset[:publicVisibility]
     assert_not updated_dataset[:publicVisibility]
     # redact dataset
-    assert @duos_client.redact_dataset
+    assert @duos_client.redact_study(@study)
     assert_raises Faraday::ResourceNotFound do
-      @duos_client.dataset(@study.duos_dataset_id)
       @duos_client.study(@study.duos_study_id)
+    end
+    assert_raises Faraday::ServerError do
+      @duos_client.dataset(@study.duos_dataset_id) # this raises a 500 error after deletion
     end
   end
 end
