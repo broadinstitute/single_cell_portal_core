@@ -1,0 +1,117 @@
+# service containing business logic for managing Study registrations as datasets in DUOS
+class DuosRegistrationService
+
+  # pointer to DUOS UI for auto-completing URLs
+  #
+  # * *returns*
+  #   - (String) DUOS UI base URL, based on environment
+  def self.duos_ui_url
+    Rails.env.production? ? 'https://duos.org' : 'https://duos-k8s.dsde-dev.broadinstitute.org/'
+  end
+
+  # API client
+  #
+  # * *returns*
+  #   - (DuosClient)
+  def self.client
+    @client ||= DuosClient.new
+  end
+
+  # determine if study is eligible for registering as a dataset in DUOS
+  # must meet all the following criteria:
+  # * public
+  # * initialized
+  # * has all required metadata for DUOS
+  #
+  # * *params*
+  #   - +study+ (Study)
+  #
+  # * *returns*
+  #   - (Boolean)
+  def self.study_eligible?(study)
+    has_required = required_metadata(study).map do |field, value|
+      if field == :donor_count
+        value > 0
+      else
+        value.any?
+      end
+    end.flatten.uniq == [true]
+
+    study.public && study.initialized && study.duos_dataset_id.blank? && has_required
+  end
+
+  # metadata values required for DUOS dataset registration
+  #
+  # * *params*
+  #   - +study+ (Study)
+  #
+  # * *returns*
+  #   - (Hash)
+  def self.required_metadata(study)
+    {
+      diseases: study.diseases,
+      species: study.species_list,
+      donor_count: study.donor_count,
+      data_types: study.data_types
+    }
+  end
+
+  # get a list of accessions for studies eligible for DUOS registration
+  #
+  # * *returns*
+  #   - (Array<String>) list of study accessions
+  def self.eligible_studies
+    studies = Study.where(public: true, initialized: true, duos_dataset_id: nil, duos_study_id: nil)
+    studies.select { |study| study_eligible?(study) }.map(&:accession)
+  end
+
+  # register a study as a new dataset in DUOS
+  #
+  #
+  # * *params*
+  #   - +study+ (Study)
+  #
+  # * *returns*
+  #   - (Hash) DUOS dataset registration object
+  def self.register_study(study)
+    raise ArgumentError, "#{study.accession} is not eligible for DUOS registration" unless study_eligible?(study)
+
+    begin
+      dataset = client.create_dataset(study)
+      ids = client.identifiers_from_dataset(dataset)
+      study.update(**ids)
+      Rails.logger.info "Registered #{study.accession} in DUOS as #{ids}"
+      dataset
+    rescue ArgumentError => e
+      Rails.logger.error "Cannot validate #{study.accession} for DUOS: #{e.message}"
+    rescue Faraday::Error => e
+      Rails.logger.error "Unable to register #{study.accession} in DUOS: #{e.message} (#{e.try(:response_body)})"
+      ErrorTracker.report_exception(e, client.issuer, { study: })
+      nil
+    end
+  end
+
+  # redact a DUOS dataset registration
+  # in non-production environments, this is a deletion, otherwise publicVisibility is set to false
+  #
+  # * *params*
+  #   - +study+ (Study)
+  #
+  # * *returns*
+  #   - (Boolean)
+  def self.redact_study(study)
+    if Rails.env.production?
+      client.update_study(study.duos_study_id, publicVisibility: false)
+    else
+      client.delete_study(study.duos_study_id)
+      study.update(duos_dataset_id: nil, duos_study_id: nil)
+    end
+
+    Rails.logger.info "Redacted #{study.accession} in DUOS"
+    true
+  rescue Faraday::Error => e
+    Rails.logger.error "Unable to redact #{study.accession} in DUOS: (#{e.message}) #{e.try(:response_body)}"
+    ErrorTracker.report_exception(e, client.issuer, { study: })
+    false
+  end
+end

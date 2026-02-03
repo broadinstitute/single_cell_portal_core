@@ -94,7 +94,7 @@ module ApiHelpers
     '?' + opts.reject {|k,v| k.blank? || v.blank?}.to_a.map {|k,v| "#{uri_encode(k)}=#{uri_encode(v)}"}.join('&')
   end
 
-  # handle a RestClient::Response object
+  # handle a RestClient::Response or Faraday::Response object
   #
   # * *params*
   #   - +response+ (String) => an RestClient response object
@@ -103,14 +103,16 @@ module ApiHelpers
   #   - +Hash+ if response body is JSON, or +String+ of original body
   def handle_response(response)
     begin
-      if ok?(response.code)
+      if ok?(response_code(response))
         response.body.present? ? parse_response_body(response.body) : true # blank body
       else
-        response.message || parse_response_body(response.body)
+        parse_response_body(response.try(:body)) if response.respond_to?(:body)
+
+        response.try(:message) || response.try(:reason_phrase)
       end
     rescue
       # don't report, just return
-      response.message
+      response.try(:message) || response.try(:reason_phrase)
     end
   end
 
@@ -123,7 +125,8 @@ module ApiHelpers
   #   - +Hash+ if response body is JSON, or +String+ of original body
   def parse_response_body(response_body)
     begin
-      JSON.parse(response_body)
+      body = JSON.parse(response_body)
+      body.is_a?(Hash) ? body.with_indifferent_access : body
     rescue
       response_body
     end
@@ -153,5 +156,9 @@ module ApiHelpers
   #   - +String+ => URI-encoded parameter
   def uri_encode(parameter)
     CGI.escapeURIComponent(parameter.to_s)
+  end
+
+  def response_code(response)
+    response.try(:code) || response.try(:status) || response.try(:http_code)
   end
 end

@@ -19,11 +19,13 @@ class PresetSearchesControllerTest < ActionDispatch::IntegrationTest
     PresetSearch.destroy_all
   end
 
-  def setup
+  setup do
+    OmniAuth.config.test_mode = true
     sign_in_and_update @user
   end
 
   teardown do
+    OmniAuth.config.test_mode = false
     OmniAuth.config.mock_auth[:google_oauth2] = nil
   end
 
