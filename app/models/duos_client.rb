@@ -18,7 +18,7 @@ class DuosClient
   # hard-coded responses for consentGroup fields
   CONSENT_VALUES = {
     accessManagement: 'open',
-    dataLocation: 'Not Determined',
+    dataLocation: 'Other',
     generalResearchUse: false,
     diseaseSpecificUse: [],
     fileTypes: [],
