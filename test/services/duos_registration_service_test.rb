@@ -52,7 +52,9 @@ class DuosRegistrationServiceTest < ActiveSupport::TestCase
 
   test 'should identify eligible studies for DUOS registration' do
     eligible_accessions = DuosRegistrationService.eligible_studies
-    expected_accessions = Study.where(duos_dataset_id: nil, duos_study_id: nil).pluck(:accession)
+    expected_accessions = Study.where(
+      duos_dataset_id: nil, duos_study_id: nil, initialized: true, public: true
+    ).pluck(:accession)
     assert_equal expected_accessions.size, eligible_accessions.size
     assert_equal expected_accessions.sort, eligible_accessions.sort
     eligible_accessions.each do |accession|
@@ -95,7 +97,7 @@ class DuosRegistrationServiceTest < ActiveSupport::TestCase
     study = Study.find_by(accession:)
     study.update(duos_dataset_id: 1234, duos_study_id: 5678)
     mock = Minitest::Mock.new
-    mock.expect :redact_study, true, [study]
+    mock.expect :delete_study, true, [study.duos_study_id]
     DuosRegistrationService.stub :client, mock do
       assert DuosRegistrationService.redact_study(study)
       study.reload

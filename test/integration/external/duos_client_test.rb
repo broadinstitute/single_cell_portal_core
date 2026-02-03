@@ -128,9 +128,11 @@ class DuosClientTest < ActiveSupport::TestCase
   end
 
   test 'should validate schema' do
-    duos_data = @duos_client.schema_from(@study)
-    assert_not @duos_client.validate_dataset(duos_data).any?
-    assert @duos_client.validate_dataset({ foo: 'bar' }).first['error'].present?
+    RequestUtils.stub :get_base_url, 'https://localhost:3000/single_cell' do
+      duos_data = @duos_client.schema_from(@study)
+      assert_not @duos_client.validate_dataset(duos_data).any?
+      assert @duos_client.validate_dataset({ foo: 'bar' }).first['error'].present?
+    end
   end
 
   test 'should extract ids from dataset' do
@@ -150,30 +152,32 @@ class DuosClientTest < ActiveSupport::TestCase
   test 'should run full integration on study' do
     skip_if_api_down
     # create dataset
-    dataset = @duos_client.create_dataset(@study)
-    assert dataset.present?
-    assert_equal @duos_client.duos_study_name(@study), dataset[:studyName]
-    assert_equal @duos_client.duos_study_description(@study), dataset[:studyDescription]
-    # load DUOS entities
-    ids = @duos_client.identifiers_from_dataset(dataset)
-    puts "-- DUOS IDs for #{@study.accession}: #{ids} --"
-    sleep(5) # brief pause to allow DUOS to finalize entries otherwise we get a 40x error
-    assert @duos_client.study(ids[:duos_study_id]).present?
-    assert @duos_client.dataset(ids[:duos_dataset_id]).present?
-    # update DUOS study, making sure to update study with new identifiers first
-    @study.update(**ids)
-    @study.update(public: false)
-    @study.reload
-    updated_dataset = @duos_client.update_study(@study.duos_study_id, publicVisibility: false)
-    assert updated_dataset.present?
-    assert_not updated_dataset[:publicVisibility]
-    # delete dataset
-    assert @duos_client.delete_study(@study.duos_study_id)
-    assert_raises Faraday::ResourceNotFound do
-      @duos_client.study(@study.duos_study_id)
-    end
-    assert_raises Faraday::ServerError do
-      @duos_client.dataset(@study.duos_dataset_id) # this raises a 500 error after deletion
+    RequestUtils.stub :get_base_url, 'https://localhost:3000/single_cell' do
+      dataset = @duos_client.create_dataset(@study)
+      assert dataset.present?
+      assert_equal @duos_client.duos_study_name(@study), dataset[:studyName]
+      assert_equal @duos_client.duos_study_description(@study), dataset[:studyDescription]
+      # load DUOS entities
+      ids = @duos_client.identifiers_from_dataset(dataset)
+      puts "-- DUOS IDs for #{@study.accession}: #{ids} --"
+      sleep(5) # brief pause to allow DUOS to finalize entries otherwise we get a 40x error
+      assert @duos_client.study(ids[:duos_study_id]).present?
+      assert @duos_client.dataset(ids[:duos_dataset_id]).present?
+      # update DUOS study, making sure to update study with new identifiers first
+      @study.update(**ids)
+      @study.update(public: false)
+      @study.reload
+      updated_dataset = @duos_client.update_study(@study.duos_study_id, publicVisibility: false)
+      assert updated_dataset.present?
+      assert_not updated_dataset[:publicVisibility]
+      # delete dataset
+      assert @duos_client.delete_study(@study.duos_study_id)
+      assert_raises Faraday::ResourceNotFound do
+        @duos_client.study(@study.duos_study_id)
+      end
+      assert_raises Faraday::ServerError do
+        @duos_client.dataset(@study.duos_dataset_id) # this raises a 500 error after deletion
+      end
     end
   end
 end
