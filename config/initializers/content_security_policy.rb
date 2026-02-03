@@ -68,11 +68,7 @@ SecureHeaders::Configuration.default do |config|
     allowed_connect_sources.push('ws://localhost:3036')
     allowed_connect_sources.push('ws://127.0.0.1:3036')
   end
-  # For appcues
-  allowed_connect_sources.push('https://*.appcues.com')
-  allowed_connect_sources.push('https://*.appcues.net')
-  allowed_connect_sources.push('wss://*.appcues.net')
-  allowed_connect_sources.push('wss://*.appcues.com')
+
   config.csp = {
     # "meta" values. these will shape the header, but the values are not included in the header.
     preserve_schemes: true, # default: false. Schemes are removed from host sources to save bytes and discourage mixed content.
@@ -81,7 +77,7 @@ SecureHeaders::Configuration.default do |config|
     # directive values: these values will directly translate into source directives
     default_src: %w('self'),
     block_all_mixed_content: true, # see http://www.w3.org/TR/mixed-content/
-    frame_src: %w('self' https://*.appcues.com), # if child-src isn't supported, the value for frame-src will be set.
+    frame_src: %w('self'), # if child-src isn't supported, the value for frame-src will be set.
     font_src: %w('self' data: https://fonts.googleapis.com https://fonts.google.com https://fonts.gstatic.com ),
     form_action: %w('self' https://accounts.google.com),
     connect_src: allowed_connect_sources,
@@ -92,9 +88,8 @@ SecureHeaders::Configuration.default do |config|
     script_src: %w('self' blob: 'unsafe-eval' 'unsafe-inline' 'strict-dynamic' https://cdn.plot.ly https://cdn.datatables.net
                      https://www.google-analytics.com https://cdnjs.cloudflare.com https://maxcdn.bootstrapcdn.com
                      https://use.fontawesome.com https://js-agent.newrelic.com https://bam.nr-data.net
-                     https://*.appcues.com https://*.appcues.net https://*.soe.ucsc.edu),
-    style_src: %w('self' blob: https://maxcdn.bootstrapcdn.com
-                      https://*.appcues.com https://*.appcues.net https://fonts.googleapis.com https://fonts.google.com 'unsafe-inline'),
+                     https://*.soe.ucsc.edu),
+    style_src: %w('self' blob: https://maxcdn.bootstrapcdn.com https://fonts.googleapis.com https://fonts.google.com 'unsafe-inline'),
     upgrade_insecure_requests: true # see https://www.w3.org/TR/upgrade-insecure-requests/
   }
 
