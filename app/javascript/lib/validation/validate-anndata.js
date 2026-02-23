@@ -273,12 +273,19 @@ async function validateOntologyIdFormat(hdf5File) {
 }
 
 /** Parse AnnData file, and return an array of issues, along with file parsing info */
-export async function parseAnnDataFile(fileOrUrl, remoteProps) {
+export async function parseAnnDataFile(fileOrUrl, remoteProps, conventionRequired) {
   let issues = []
 
   const hdf5File = await getHdf5File(fileOrUrl, remoteProps)
 
   const headers = await getAnnDataHeaders(hdf5File)
+  const uniqueIssues = validateUnique(headers)
+  const alphanumericAndUnderscoreIssues = validateAlphanumericAndUnderscores(headers)
+  // if convention bypass is granted, do not validate anything else
+  if (!conventionRequired) {
+    issues = issues.concat(uniqueIssues, alphanumericAndUnderscoreIssues)
+    return { issues }
+  }
 
   const requiredMetadataIssues = validateRequiredMetadataColumns([headers], true)
   let ontologyIdFormatIssues = []
@@ -296,8 +303,8 @@ export async function parseAnnDataFile(fileOrUrl, remoteProps) {
   }
 
   issues = issues.concat(
-    validateUnique(headers),
-    validateAlphanumericAndUnderscores(headers),
+    uniqueIssues,
+    alphanumericAndUnderscoreIssues,
     requiredMetadataIssues,
     ontologyIdFormatIssues,
     ontologyLabelAndIdIssues

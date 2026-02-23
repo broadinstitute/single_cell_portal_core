@@ -307,8 +307,18 @@ module Api
           study_file.build_ann_data_file_info if study_file.ann_data_file_info.blank?
 
           safe_file_params = study_file.ann_data_file_info.merge_form_data(study_file_params.to_unsafe_hash)
-          # override to enforce metadata convention for all AnnData parsing
-          safe_file_params[:use_metadata_convention] = true
+          # use feature flag state for metadata convention, checking if either study or user has value configured
+          # otherwise default to true for backwards compatibility
+          convention_flag = FeatureFlag.find_by(name: 'convention_required')
+          flag_configured = study.flag_configured?('convention_required') ||
+                            current_api_user.flag_configured?('convention_required')
+          if convention_flag && flag_configured
+            safe_file_params[:use_metadata_convention] = FeatureFlaggable.merged_value_for(
+              convention_flag.name, current_api_user, study
+            )
+          else
+            safe_file_params[:use_metadata_convention] = true
+          end
         else
           safe_file_params = study_file_params
         end

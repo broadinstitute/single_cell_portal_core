@@ -365,6 +365,7 @@ GEM
     omniauth-rails_csrf_protection (1.0.0)
       actionpack (>= 4.2)
       omniauth (~> 2.0)
+    openssl (3.3.0)
     orm_adapter (0.5.0)
     os (1.1.4)
     ostruct (0.6.1)
@@ -616,6 +617,7 @@ DEPENDENCIES
   observer
   omniauth-google-oauth2
   omniauth-rails_csrf_protection
+  openssl
   ostruct
   parallel
   puma

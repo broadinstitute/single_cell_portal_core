@@ -19,7 +19,7 @@ export default function FileUploadControl({
   file, allFiles, updateFile,
   allowedFileExts=['*'],
   validationIssues={},
-  bucketName, isAnnDataExperience
+  bucketName, isAnnDataExperience, conventionRequired
 }) {
   const [fileValidation, setFileValidation] = useState({
     validating: false, issues: {}, fileName: null
@@ -72,7 +72,9 @@ export default function FileUploadControl({
     }
 
     setFileValidation({ validating: true, issues: {}, fileName: selectedFile.name })
-    const [issues, notes] = await ValidateFile.validateLocalFile(selectedFile, file, allFiles, allowedFileExts, isAnnDataExperience)
+    const [issues, notes] = await ValidateFile.validateLocalFile(
+      selectedFile, file, allFiles, allowedFileExts, isAnnDataExperience, conventionRequired
+    )
     setFileValidation({ validating: false, issues, fileName: selectedFile.name, notes })
     if (issues.errors.length === 0) {
       updateFile(file._id, {
@@ -133,7 +135,7 @@ export default function FileUploadControl({
     setFileValidation({ validating: true, issues: {}, fileName: trimmedPath })
     try {
       const issues = await ValidateFile.validateRemoteFile(
-        bucketName, trimmedPath, fileType, fileOptions, isAnnDataExperience
+        bucketName, trimmedPath, fileType, fileOptions, isAnnDataExperience, conventionRequired
       )
       setFileValidation({ validating: false, issues, fileName: trimmedPath })
 
