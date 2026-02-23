@@ -9,6 +9,7 @@ import {
 } from './node-web-api'
 
 const BASE_URL = 'https://github.com/broadinstitute/single_cell_portal_core/raw/development/test/test_data/anndata'
+const CONVENTION_REQUIRED = true
 
 describe('Client-side file validation for AnnData', () => {
   beforeAll(() => {
@@ -38,20 +39,20 @@ describe('Client-side file validation for AnnData', () => {
       'species__ontology_label'
     ]
     const remoteProps = { url }
-    const hdf5File = await getHdf5File(url, remoteProps)
+    const hdf5File = await getHdf5File(url, remoteProps, CONVENTION_REQUIRED)
     const headers = await getAnnDataHeaders(hdf5File)
     expect(headers).toEqual(expectedHeaders)
   })
 
   it('Reports AnnData with valid headers as valid', async () => {
     const url = `${BASE_URL}/valid.h5ad`
-    const parseResults = await parseAnnDataFile(url)
+    const parseResults = await parseAnnDataFile(url, {}, CONVENTION_REQUIRED)
     expect(parseResults.issues).toHaveLength(0)
   })
 
   it('Reports AnnData with invalid headers as invalid', async () => {
     const url = `${BASE_URL}/invalid_header_no_species.h5ad`
-    const parseResults = await parseAnnDataFile(url)
+    const parseResults = await parseAnnDataFile(url, {}, CONVENTION_REQUIRED)
 
     expect(parseResults.issues).toHaveLength(1)
 
@@ -82,7 +83,7 @@ describe('Client-side file validation for AnnData', () => {
 
   it('Parses AnnData rows and reports invalid ontology IDs', async () => {
     const url = `${BASE_URL}/invalid_disease_id.h5ad`
-    const parseResults = await parseAnnDataFile(url)
+    const parseResults = await parseAnnDataFile(url, {}, CONVENTION_REQUIRED)
 
     expect(parseResults.issues).toHaveLength(1)
 

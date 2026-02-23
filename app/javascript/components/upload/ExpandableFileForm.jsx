@@ -10,7 +10,8 @@ import Button from 'react-bootstrap/lib/Button'
 /** renders its children inside an expandable form with a header for file selection */
 export default function ExpandableFileForm({
   file, allFiles, updateFile, allowedFileExts, validationMessages, bucketName,
-  saveFile, deleteFile, isInitiallyExpanded, isAnnDataExperience, isLastClustering = false, children
+  saveFile, deleteFile, isInitiallyExpanded, isAnnDataExperience, isLastClustering = false,
+  conventionRequired = false, children
 }) {
   const [expanded, setExpanded] = useState(isInitiallyExpanded || file.status === 'new')
 
@@ -52,7 +53,8 @@ export default function ExpandableFileForm({
               allowedFileExts={allowedFileExts}
               validationMessages={validationMessages}
               bucketName={bucketName}
-              isAnnDataExperience={isAnnDataExperience} />
+              isAnnDataExperience={isAnnDataExperience}
+              conventionRequired={conventionRequired}/>
           </div>}
           <SaveDeleteButtons {...{
             file, updateFile, saveFile, deleteFile, validationMessages, isAnnDataExperience, allFiles, isLastClustering

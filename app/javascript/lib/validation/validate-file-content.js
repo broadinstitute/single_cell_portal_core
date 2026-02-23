@@ -418,7 +418,7 @@ export async function validateGzipEncoding(file, fileType) {
  */
 async function parseFile(
   file, fileType, fileOptions={},
-  sizeProps={}, remoteProps={}, isAnnDataExperience
+  sizeProps={}, remoteProps={}, isAnnDataExperience, conventionRequired
 ) {
   const startTime = performance.now()
 
@@ -469,7 +469,7 @@ async function parseFile(
     }
 
     if (fileType === 'AnnData') {
-      const { issues } = await parseAnnDataFile(file, remoteProps)
+      const { issues } = await parseAnnDataFile(file, remoteProps, conventionRequired)
       parseResult.issues = parseResult.issues.concat(issues)
     } else if (parseFunctions[fileType]) {
       let ignoreLastLine = false
