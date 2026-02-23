@@ -37,6 +37,10 @@ class StudyTest < ActiveSupport::TestCase
     @services_args = [String, String, String]
   end
 
+  teardown do
+    @user.update(organizational_email: @user.email)
+  end
+
   after(:all) do
     Study.where(firecloud_workspace: 'bucket-read-check-test').delete_all
   end
@@ -280,5 +284,20 @@ class StudyTest < ActiveSupport::TestCase
     cluster.update(name: new_name)
     study.reload
     assert_equal [new_name, new_cluster.name], study.default_cluster_order
+  end
+
+  test 'should enforce organizational email requirement' do
+    @study.public = false
+    assert @study.valid?
+
+    @user.update(organizational_email: nil)
+    @study.public = true
+    assert @study.valid?
+
+    @study.public = false
+    assert_not @study.valid?
+    assert @study.errors.messages_for(:base).first.starts_with?(
+      'You must have an organizational email associated with your account'
+    )
   end
 end
