@@ -1,5 +1,6 @@
 # service containing business logic for managing Study registrations as datasets in DUOS
 class DuosRegistrationService
+  extend Loggable
 
   # pointer to DUOS UI for auto-completing URLs
   #
@@ -84,13 +85,14 @@ class DuosRegistrationService
       dataset = client.create_dataset(study)
       ids = client.identifiers_from_dataset(dataset)
       study.update(**ids)
-      Rails.logger.info "Registered #{study.accession} in DUOS as #{ids}"
+      log_message "Registered #{study.accession} in DUOS as #{ids}"
       dataset
     rescue ArgumentError => e
-      Rails.logger.error "Cannot validate #{study.accession} for DUOS: #{e.message}"
+      log_message "Cannot validate #{study.accession} for DUOS: #{e.message}", level: :error
       nil
     rescue Faraday::Error => e
-      Rails.logger.error "Unable to register #{study.accession} in DUOS: #{e.message} (#{e.try(:response_body)})"
+      log_message "Unable to register #{study.accession} in DUOS: #{e.message} (#{e.try(:response_body)})",
+                  level: :error
       ErrorTracker.report_exception(e, client.issuer, { study: })
       SingleCellMailer.duos_error(study, e, 'register').deliver_now
       nil
@@ -113,10 +115,10 @@ class DuosRegistrationService
       study.update(duos_dataset_id: nil, duos_study_id: nil)
     end
 
-    Rails.logger.info "Redacted #{study.accession} in DUOS"
+    log_message "Redacted #{study.accession} in DUOS"
     true
   rescue Faraday::Error => e
-    Rails.logger.error "Unable to redact #{study.accession} in DUOS: (#{e.message}) #{e.try(:response_body)}"
+    log_message "Unable to redact #{study.accession} in DUOS: (#{e.message}) #{e.try(:response_body)}", level: :error
     ErrorTracker.report_exception(e, client.issuer, { study: })
     SingleCellMailer.duos_error(study, e, 'redact').deliver_now
     false
