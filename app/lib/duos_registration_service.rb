@@ -14,7 +14,11 @@ class DuosRegistrationService
   # * *returns*
   #   - (DuosClient)
   def self.client
-    @client ||= DuosClient.new
+    duos_client = @client ||= DuosClient.new
+    if duos_client.access_token_expired?
+      duos_client.refresh_access_token!
+    end
+    duos_client
   end
 
   # determine if study is eligible for registering as a dataset in DUOS
@@ -84,9 +88,11 @@ class DuosRegistrationService
       dataset
     rescue ArgumentError => e
       Rails.logger.error "Cannot validate #{study.accession} for DUOS: #{e.message}"
+      nil
     rescue Faraday::Error => e
       Rails.logger.error "Unable to register #{study.accession} in DUOS: #{e.message} (#{e.try(:response_body)})"
       ErrorTracker.report_exception(e, client.issuer, { study: })
+      SingleCellMailer.duos_error(study, e, 'register').deliver_now
       nil
     end
   end
@@ -112,6 +118,7 @@ class DuosRegistrationService
   rescue Faraday::Error => e
     Rails.logger.error "Unable to redact #{study.accession} in DUOS: (#{e.message}) #{e.try(:response_body)}"
     ErrorTracker.report_exception(e, client.issuer, { study: })
+    SingleCellMailer.duos_error(study, e, 'redact').deliver_now
     false
   end
 end

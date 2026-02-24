@@ -33,7 +33,10 @@ class DuosClient
   }.freeze
 
   # identifier to append to every description
-  PLATFORM_ID = "(Platform: Single Cell Portal)".freeze
+  PLATFORM_ID = '(Platform: Single Cell Portal)'.freeze
+
+  # content for tags to use in creating data library
+  TAG_CONTENT = { tags: [PLATFORM_ID] }.freeze
 
   # initialize new client and generate access token for auth
   #
@@ -342,7 +345,8 @@ class DuosClient
       species: study.species_list.join(', '),
       dataCustodianEmail: study.data_custodians,
       piName: study.data_custodians.first,
-      consentGroups: [consent_values]
+      consentGroups: [consent_values],
+      data: TAG_CONTENT
     }.merge(ANVIL_VALUES).with_indifferent_access
   end
 
