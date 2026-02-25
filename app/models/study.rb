@@ -742,6 +742,9 @@ class Study
   validates_uniqueness_of :external_identifier, allow_blank: true
   validates :cell_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :enforce_embargo_max_length
+  validate :check_user_org_on_private
+
+  ###
 
   # callbacks
   before_validation :set_url_safe_name
@@ -2006,6 +2009,16 @@ class Study
 
     unless embargo <= start_date + MAX_EMBARGO
       errors.add(:embargo, "cannot be longer than two years from date of creation (#{start_date.to_date.strftime('%m/%d/%Y')}) for public studies")
+    end
+  end
+
+  def check_user_org_on_private
+    return true if public
+
+    if public_changed? && !public && user.organizational_email.blank?
+      errors.add(:base,
+                 'You must have an organizational email associated with your account to create private studies. ' \
+                   'Please update your organizational information in your profile settings.')
     end
   end
 

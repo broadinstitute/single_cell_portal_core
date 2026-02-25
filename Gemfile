@@ -111,6 +111,7 @@ group :development, :test do
   gem 'flamegraph'
   gem 'stackprof' # ruby 2.1+ only
   gem 'memory_profiler'
+  gem 'openssl'
 end
 
 group :test do

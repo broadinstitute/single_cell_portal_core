@@ -30,7 +30,7 @@ class AnnDataFileInfo
   field :has_metadata, type: Boolean, default: false
   field :has_raw_counts, type: Boolean, default: false
   field :has_expression, type: Boolean, default: false
-  # controls whether or not to ingest data (true: should not ingest data, this is like an 'Other' file)
+  # controls whether to ingest data (true: should not ingest data, this is like an 'Other' file)
   field :reference_file, type: Boolean, default: true
   # location of raw count data, either .raw attribute or in layers[{name}]
   field :raw_location, type: String, default: ''

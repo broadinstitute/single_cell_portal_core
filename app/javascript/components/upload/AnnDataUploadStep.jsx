@@ -18,6 +18,7 @@ export default {
 
 /** Renders a form for uploading one or more AnnData files */
 function AnnDataUploadStep({
+  serverState,
   formState,
   addNewFile,
   updateFile,
@@ -27,6 +28,8 @@ function AnnDataUploadStep({
   deleteFileFromForm
 }) {
   const AnnDataFile = formState.files.filter(AnnDataFileFilter)
+  const featureFlagState = serverState.feature_flags
+  const conventionRequired = featureFlagState && featureFlagState.convention_required
   useEffect(() => {
     if (AnnDataFile.length === 0) {
       addNewFile(DEFAULT_NEW_ANNDATA_FILE)
@@ -55,7 +58,8 @@ function AnnDataUploadStep({
         annDataFileTypes={['AnnData']}
         bucketName={formState.study.bucket_id}
         isInitiallyExpanded={true}
-        isAnnDataExperience={isAnnDataExperience}/>
+        isAnnDataExperience={isAnnDataExperience}
+        conventionRequired={conventionRequired}/>
     })}
   </div>
 }
