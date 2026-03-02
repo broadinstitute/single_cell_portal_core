@@ -7,7 +7,7 @@ class DuosRegistrationService
   # * *returns*
   #   - (String) DUOS UI base URL, based on environment
   def self.duos_ui_url
-    Rails.env.production? ? 'https://duos.org' : 'https://duos-k8s.dsde-dev.broadinstitute.org/'
+    Rails.env.production? ? 'https://duos.org' : 'https://duos-k8s.dsde-dev.broadinstitute.org'
   end
 
   # API client

@@ -1100,7 +1100,11 @@ class Study
 
   # helper to determine if a study has any publications/external resources to link to from the study overview page
   def has_sidebar_content?
-    publications.any? || external_resources.any? || authors.corresponding.any?
+    publications.any? || authors.corresponding.any? || has_resource_links?
+  end
+
+  def has_resource_links?
+    external_resources.any? || duos_study_id.present?
   end
 
   ###

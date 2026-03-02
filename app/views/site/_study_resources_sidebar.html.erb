@@ -33,7 +33,7 @@
       <br/><br/>
     <% end %>
   <% end %>
-  <% if @study.external_resources.any? %>
+  <% if @study.has_resource_links? %>
     <h5>Resources</h5>
     <% @study.external_resources.each do |resource| %>
       <p>
@@ -43,6 +43,15 @@
           <%= resource.title %> <span class="fas fa-external-link-alt"></span>
         <% end %>
 
+      </p>
+    <% end %>
+    <% if @study.duos_study_id.present? %>
+      <p>
+        <%= link_to image_tag('duos-logo.svg', alt: 'DUOS logo', class: 'duos-logo'),
+            @study.duos_study_url,
+            class: 'navigation-form external-resource-link',
+            target: :_blank, rel: 'noopener', title: "View study in DUOS",
+            data: { toggle: 'tooltip', 'analytics-name' => 'duos-link' } %>
       </p>
     <% end %>
   <% end %>
