@@ -118,6 +118,8 @@ class DuosClientTest < ActiveSupport::TestCase
     participant_count = duos_data[:consentGroups].first[:numberOfParticipants]
     assert_equal 5, participant_count
     assert_equal @author.email, duos_data[:dataCustodianEmail].first
+    assert_equal DuosClient::TAG_CONTENT.with_indifferent_access,
+                 duos_data[:data].with_indifferent_access
   end
 
   test 'should load dataset JSON schema from DUOS' do

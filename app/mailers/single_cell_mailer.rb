@@ -308,4 +308,16 @@ class SingleCellMailer < ApplicationMailer
       format.html { render layout: 'nightly_admin_report' }
     end
   end
+
+  def duos_error(study, error, action)
+    @study = study
+    @action = action
+    client = DuosClient.new
+    error_content = error.try(:body) || error.try(:response_body) || error.try(:reason_phrase) || error.try(:message) || error.to_s
+    @error_message = client.parse_response_body(error_content)
+    mail(to: AdminConfiguration.qa_emails,
+         subject: "[Single Cell Portal Admin Notification] DUOS #{action} error for #{@study.accession}") do |format|
+      format.html { render layout: 'nightly_admin_report' }
+    end
+  end
 end
