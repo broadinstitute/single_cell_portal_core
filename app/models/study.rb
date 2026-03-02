@@ -1702,11 +1702,15 @@ class Study
 
   # contact emails for questions about study data.  will only use corresponding authors (if present) or help email
   def data_custodians
-    authors.corresponding.pluck(:email).presence || ['scp-support@broadinstitute.zendesk.com']
+    authors.corresponding.pluck(:email).presence || [ApplicationController::SCP_ZENDESK]
   end
 
   def duos_study_url
     "#{DuosRegistrationService.duos_ui_url}/studies/#{duos_study_id}"
+  end
+
+  def redaction_contact_emails
+    [user.email, user.organizational_email, authors.corresponding.pluck(:email)].flatten.compact.uniq
   end
 
   ###
@@ -1938,6 +1942,11 @@ class Study
   def was_just_initialized?(cutoff: nil)
     track = last_change_for(:initialized)
     field_changed_from?(track, :initialized, false) && track.created_at >= (cutoff || 1.second.ago)
+  end
+
+  def redacted?
+    last_public_change = last_change_for(:public)
+    !public && field_changed_from?(last_public_change, :public, true)
   end
 
   # basic Mixpanel props for study state tracking

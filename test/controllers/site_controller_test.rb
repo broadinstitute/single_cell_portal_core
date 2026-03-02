@@ -273,4 +273,21 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
     assert_select '#home-page-link', 1
     HomePageLink.delete_all
   end
+
+  test 'should load study redaction page' do
+    # should redirect to study if not redacted
+    get redacted_study_path(accession: @study.accession)
+    follow_redirect!
+    assert_equal view_study_path(accession: @study.accession, study_name: @study.url_safe_name),
+                 path,
+                 'Did not redirect to home page for non-redacted study'
+    Study.stub :find_by, @study do
+      @study.stub :redacted?, true do
+        get redacted_study_path(accession: @study.accession)
+        assert_response :success
+        assert_equal redacted_study_path(accession: @study.accession), path
+        assert_select '#redaction-notice', 1, 'Redacted study message not found on page'
+      end
+    end
+  end
 end

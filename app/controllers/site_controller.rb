@@ -19,7 +19,7 @@ class SiteController < ApplicationController
                                      :reviewer_access, :validate_reviewer_access]
   before_action :set_cluster_group, only: [:study, :show_user_annotations_form]
   before_action :set_selected_annotation, only: [:show_user_annotations_form]
-  before_action :check_view_permissions, except: [:index, :legacy_study, :get_viewable_studies, :privacy_policy,
+  before_action :check_view_permissions, except: [:index, :legacy_study, :redacted_study, :get_viewable_studies, :privacy_policy,
                                                   :terms_of_service, :log_action, :get_taxon, :get_taxon_assemblies,
                                                   :covid19, :record_download_acceptance, :reviewer_access,
                                                   :validate_reviewer_access]
@@ -150,6 +150,13 @@ class SiteController < ApplicationController
     # normally we would do this in React but the tab display is in the Rails HTML view
     # we need to check server-side since we have to account for @study.can_visualize? as well
     @explore_tab_default = @study.can_visualize?
+  end
+
+  # show a landing page for a redacted study
+  def redacted_study
+    unless @study.redacted?
+      redirect_to view_study_path(accession: @study.accession, study_name: @study.url_safe_name) and return
+    end
   end
 
   def record_download_acceptance
@@ -383,6 +390,8 @@ class SiteController < ApplicationController
         end
       elsif !user_signed_in?
         authenticate_user!
+      elsif @study.redacted? && !@study.can_view?(current_user)
+        redirect_to merge_default_redirect_params(redacted_study_path(@study.accession), scpbr: params[:scpbr]) and return
       elsif user_signed_in? && !@study.can_view?(current_user)
         alert = "You do not have permission to perform that action.  #{SCP_SUPPORT_EMAIL}"
         redirect_to merge_default_redirect_params(site_path, scpbr: params[:scpbr]), alert: alert and return

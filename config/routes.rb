@@ -234,6 +234,7 @@ Rails.application.routes.draw do
 
     # data viewing actions
     get 'study/:identifier', to: 'site#legacy_study', as: :legacy_study
+    get 'redacted/:accession', to: 'site#redacted_study', as: :redacted_study
     get 'study/:accession/:study_name', to: 'site#study', as: :view_study
     get 'study/:accession/:study_name/edit_study_description', to: 'site#edit_study_description', as: :edit_study_description
     match 'study/:accession/:study_name/update_settings', to: 'site#update_study_settings', via: [:post, :patch], as: :update_study_settings
