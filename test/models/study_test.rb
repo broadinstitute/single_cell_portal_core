@@ -300,4 +300,21 @@ class StudyTest < ActiveSupport::TestCase
       'You must have an organizational email associated with your account'
     )
   end
+
+  test 'should determine if study has resource links' do
+    study = FactoryBot.create(:detached_study,
+                              user: @user,
+                              name_prefix: 'Resource Link Test',
+                              test_array: @@studies_to_clean)
+    assert_not study.has_resource_links?
+    ext_resource = study.external_resources.build(url: 'https://www.google.com', title: 'Google')
+    ext_resource.save!
+    assert study.has_resource_links?
+    ext_resource.destroy
+    study.reload
+    assert_not study.has_resource_links?
+    duos_study_id = rand(1000..9999)
+    study.update(duos_study_id:)
+    assert study.has_resource_links?
+  end
 end

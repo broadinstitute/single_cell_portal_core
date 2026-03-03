@@ -1,6 +1,9 @@
 <html lang="en">
   <body>
-    <p>The following error occurred when trying to <strong><%= @action %></strong> <%= @study.accession %> in DUOS:</p>
+    <p>The following error occurred when trying to <strong><%= @action %></strong>
+      <%= link_to @study.accession, view_study_url(accession: @study.accession, study_name: @study.url_safe_name) %>
+      in DUOS</p>.
+    <p>This error occurred in the '<%= Rails.env %>' environment.</p>
     <pre>
       <%= @error_message %>
     </pre>
