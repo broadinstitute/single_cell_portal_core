@@ -111,7 +111,7 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
     get view_study_path(accession: @study.accession, study_name: @study.url_safe_name)
     assert_response 302
     follow_redirect!
-    assert_equal site_path, path
+    assert_equal redacted_study_path(@study.accession), path
   end
 
   test 'should control access to files in private studies' do
