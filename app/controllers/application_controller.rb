@@ -2,9 +2,10 @@ class ApplicationController < ActionController::Base
   include RealIpLogger
 
   # Error modal contact message
+  SCP_ZENDESK = 'scp-support@broadinstitute.zendesk.com'.freeze
   SCP_SUPPORT_EMAIL = "If this error persists, please contact support at:<br /><br />" \
-                      "<a href='mailto:scp-support@broadinstitute.zendesk.com' data-analytics-name='scp-support-email' " \
-                      "class='no-wrap'>scp-support@broadinstitute.zendesk.com</a>"
+                      "<a href='mailto:#{SCP_ZENDESK}' data-analytics-name='scp-support-email' " \
+                      "class='no-wrap'>#{SCP_ZENDESK}</a>"
 
   ###
   #

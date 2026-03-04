@@ -501,11 +501,13 @@ class IngestJob
       launch_differential_expression_jobs
       launch_dot_plot_preprocess_job
       create_cell_name_indexes
+      register_duos_study
     when :ingest_expression
       set_anndata_file_info if study_file.is_anndata?
       study.delay.set_gene_count
       launch_dot_plot_preprocess_job
       launch_differential_expression_jobs
+      register_duos_study
     when :ingest_cluster
       set_cluster_point_count
       set_study_default_options
@@ -514,9 +516,11 @@ class IngestJob
       launch_dot_plot_preprocess_job
       launch_differential_expression_jobs
       create_cell_name_indexes
+      register_duos_study
     when :ingest_subsample
       set_subsampling_flags
       create_cell_name_indexes
+      register_duos_study
     when :differential_expression
       create_differential_expression_results
     when :ingest_differential_expression
@@ -839,6 +843,12 @@ class IngestJob
   def set_has_dot_plot_genes
     cluster_group = ClusterGroup.find(params_object.cluster_group_id)
     cluster_group.update(has_dot_plot_genes: true)
+  end
+
+  # register eligible studies in DUOS
+  def register_duos_study
+    study.reload
+    DuosRegistrationService.register_study(study) if DuosRegistrationService.study_eligible?(study)
   end
 
   # set appropriate flags for AnnDataFileInfo entries

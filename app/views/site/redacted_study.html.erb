@@ -1,0 +1,23 @@
+<h3 id="redaction-notice"><%= @study.accession %> has been redacted by the owner.</h3>
+<p>
+  If you are seeing this notice and are attempting to access this study, please contact the study owner(s) for more
+  information.
+</p>
+<p>
+  Click to view contact: <% @study.redaction_contact_emails.each do |email| %>
+    <%= link_to '#',
+                class: 'corresponding-study-owner',
+                data: {
+                  email: Base64.encode64(email), placement: 'top',
+                },
+                title: "Send email to contact" do %>
+    <% end %>
+    &nbsp;
+  <% end %>
+</p>
+
+<script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
+  $('.corresponding-study-owner').each( function(index) {
+    window.SCP.renderComponent(this, 'AuthorEmailPopup', { dataEl: this })
+  })
+</script>
