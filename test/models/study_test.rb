@@ -39,6 +39,7 @@ class StudyTest < ActiveSupport::TestCase
 
   teardown do
     @user.update(organizational_email: @user.email)
+    @study.update(public: true) unless @study.public
   end
 
   after(:all) do
@@ -284,6 +285,12 @@ class StudyTest < ActiveSupport::TestCase
     cluster.update(name: new_name)
     study.reload
     assert_equal [new_name, new_cluster.name], study.default_cluster_order
+  end
+
+  test 'should indicate study is redacted' do
+    assert_not @study.redacted?
+    @study.update(public: false)
+    assert @study.redacted?
   end
 
   test 'should enforce organizational email requirement' do
