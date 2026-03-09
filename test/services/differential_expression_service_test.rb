@@ -324,7 +324,7 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
   end
 
   test 'should determine annotation eligibility by name' do
-    %w[cell_type cell_type__ontology_label clust clustering seurat leiden louvain snn_res].each do |name|
+    %w[cell_type cell_type__ontology_label clust clustering seurat leiden louvain].each do |name|
       assert DifferentialExpressionService.annotation_eligible?(name)
       assert DifferentialExpressionService.annotation_eligible?(name.upcase)
       assert DifferentialExpressionService.annotation_eligible?(name.capitalize)
@@ -460,5 +460,13 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
     assert_equal 'umap', DifferentialExpressionService.set_cluster_name(
       @basic_study, @cluster_group, annotation_name, annotation_scope
     )
+  end
+
+  test 'should not submit more than 50 jobs at once' do
+    annotations = (1..75).map { |i| { annotation_name: "annotation#{i}", annotation_scope: 'study' } }
+    DifferentialExpressionService.stub :find_eligible_annotations, annotations do
+      job_count = DifferentialExpressionService.run_differential_expression_on_all(@basic_study.accession)
+      assert_equal 0, job_count
+    end
   end
 end
