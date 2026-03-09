@@ -369,6 +369,8 @@ module Api
             CacheRemovalJob.new(@study.accession).perform
             ClusterCacheService.delay(queue: :cache).cache_study_defaults(@study)
           end
+          # handle DUOS updates if necessary
+          DuosRegistrationService.handle_study_update(@study)
           render :show
         else
           render json: {errors: @study.errors}, status: :unprocessable_entity

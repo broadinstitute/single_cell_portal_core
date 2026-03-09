@@ -138,6 +138,9 @@ class StudiesController < ApplicationController
         # if user updates a study, invalidate all caches
         CacheRemovalJob.new(@study.accession).delay(queue: :cache).perform
 
+        # handle DUOS updates if necessary
+        DuosRegistrationService.handle_study_update(@study)
+
         changes = @study.previous_changes.delete_if {|k,v| k == 'updated_at'}.keys.map {|k| k.humanize.capitalize}
         if @share_changes == true
           changes << 'Study shares'
