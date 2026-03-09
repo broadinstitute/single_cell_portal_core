@@ -67,7 +67,7 @@ class DifferentialExpressionService
     eligible_annotations = find_eligible_annotations(study)
     cluster_count = study.cluster_groups.count
     total_jobs = cluster_count * eligible_annotations.count
-    if total_jobs.count > 50
+    if total_jobs > 50
       log_message "Warning: #{study_accession} has #{eligible_annotations.count} annotations and #{cluster_count} " \
         "clusters resulting in #{total_jobs}, exiting without submitting"
       return 0
