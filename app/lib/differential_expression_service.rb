@@ -4,7 +4,7 @@ class DifferentialExpressionService
   # possible cell type analogs
   CELL_TYPE_MATCHER = /cell.*type/i
   # possible clustering algorithm results
-  CLUSTERING_MATCHER = /(clust|seurat|leiden|louvain|snn_res)/i
+  CLUSTERING_MATCHER = /(clust|seurat|leiden|louvain)/i
   # any categorical-type labels
   CATEGORY_MATCHER = /(categor|labels)/i
   # union of all allowed annotations
