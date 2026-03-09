@@ -4,7 +4,7 @@ class DifferentialExpressionService
   # possible cell type analogs
   CELL_TYPE_MATCHER = /cell.*type/i
   # possible clustering algorithm results
-  CLUSTERING_MATCHER = /(clust|seurat|leiden|louvain|snn_res)/i
+  CLUSTERING_MATCHER = /(clust|seurat|leiden|louvain)/i
   # any categorical-type labels
   CATEGORY_MATCHER = /(categor|labels)/i
   # union of all allowed annotations
@@ -65,6 +65,11 @@ class DifferentialExpressionService
     study = Study.find_by(accession: study_accession)
     validate_study(study)
     eligible_annotations = find_eligible_annotations(study)
+    if eligible_annotations.count > 50
+      log_message "Warning: #{study_accession} has #{eligible_annotations.count} eligible annotations, " \
+        'exiting without submitting'
+      return 0
+    end
     raise ArgumentError, "#{study_accession} does not have any eligible annotations" if eligible_annotations.empty?
 
     log_message "#{study_accession} has annotations eligible for DE; validating inputs"
