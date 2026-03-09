@@ -461,4 +461,12 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
       @basic_study, @cluster_group, annotation_name, annotation_scope
     )
   end
+
+  test 'should not submit more than 50 jobs at once' do
+    annotations = (1..75).map { |i| { annotation_name: "annotation#{i}", annotation_scope: 'study' } }
+    DifferentialExpressionService.stub :find_eligible_annotations, annotations do
+      job_count = DifferentialExpressionService.run_differential_expression_on_all(@basic_study.accession)
+      assert_equal 0, job_count
+    end
+  end
 end
