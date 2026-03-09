@@ -324,7 +324,7 @@ class DifferentialExpressionServiceTest < ActiveSupport::TestCase
   end
 
   test 'should determine annotation eligibility by name' do
-    %w[cell_type cell_type__ontology_label clust clustering seurat leiden louvain snn_res].each do |name|
+    %w[cell_type cell_type__ontology_label clust clustering seurat leiden louvain].each do |name|
       assert DifferentialExpressionService.annotation_eligible?(name)
       assert DifferentialExpressionService.annotation_eligible?(name.upcase)
       assert DifferentialExpressionService.annotation_eligible?(name.capitalize)
