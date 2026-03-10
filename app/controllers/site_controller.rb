@@ -103,6 +103,7 @@ class SiteController < ApplicationController
         if @study.update(study_params)
           # invalidate caches as a precaution
           CacheRemovalJob.new(@study.accession).perform
+          DuosRegistrationService.handle_study_update(@study)
           if @study.initialized?
             @cluster = @study.default_cluster
             @options = ClusterVizService.load_cluster_group_options(@study)

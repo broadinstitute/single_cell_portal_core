@@ -108,6 +108,8 @@ class DuosRegistrationService
   # * *returns*
   #   - (Boolean)
   def self.redact_study(study)
+    return nil unless study_registered?(study)
+
     if Rails.env.production?
       client.update_study(study.duos_study_id, publicVisibility: false)
     else
@@ -122,5 +124,39 @@ class DuosRegistrationService
     ErrorTracker.report_exception(e, client.issuer, { study: })
     SingleCellMailer.duos_error(study, e, 'redact').deliver_now
     false
+  end
+
+  # helper to determine if a study is registered in DUOS
+  # checks for presence of duos_study_id and makes API call to confirm registration
+  #
+  # * *params*
+  #   - +study+ (Study)
+  #
+  # * *returns*
+  #   - (Boolean)
+  def self.study_registered?(study)
+    return false if study.duos_study_id.blank?
+
+    client.study(study.duos_study_id)
+    true
+  rescue Faraday::ResourceNotFound
+    false
+  end
+
+  # helper to call on study update and deletion to manage study state in DUOS
+  #
+  # * *params*
+  #   - +study+ (Study)
+  #
+  # * *returns*
+  #   - (Hash) DUOS dataset registration object, if updated, otherwise nil
+  def self.handle_study_update(study)
+    return nil unless study_registered?(study)
+
+    if study.public
+      client.update_study(study.duos_study_id, publicVisibility: true)
+    elsif study.redacted?
+      redact_study(study)
+    end
   end
 end
