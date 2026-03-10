@@ -65,9 +65,11 @@ class DifferentialExpressionService
     study = Study.find_by(accession: study_accession)
     validate_study(study)
     eligible_annotations = find_eligible_annotations(study)
-    if eligible_annotations.count > 50
-      log_message "Warning: #{study_accession} has #{eligible_annotations.count} eligible annotations, " \
-        'exiting without submitting'
+    cluster_count = study.cluster_groups.count
+    total_jobs = cluster_count * eligible_annotations.count
+    if total_jobs > 50
+      log_message "Warning: #{study_accession} has #{eligible_annotations.count} annotations and #{cluster_count} " \
+        "clusters resulting in #{total_jobs}, exiting without submitting"
       return 0
     end
     raise ArgumentError, "#{study_accession} does not have any eligible annotations" if eligible_annotations.empty?
