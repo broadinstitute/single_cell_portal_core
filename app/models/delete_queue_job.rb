@@ -19,6 +19,8 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
       # validate: false is used to prevent validations from blocking update
       object.assign_attributes(public: false, name: new_name, url_safe_name: new_name, firecloud_workspace: new_name)
       object.save(validate: false)
+      # handle DUOS updates if necessary
+      DuosRegistrationService.redact_study(object)
     when 'StudyFile'
 
       file_type = object.file_type

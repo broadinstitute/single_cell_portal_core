@@ -31,6 +31,14 @@ class DuosRegistrationServiceTest < ActiveSupport::TestCase
     end
   end
 
+  teardown do
+    @accessions.each do |accession|
+      study = Study.find_by(accession:)
+      study.update(public: true, duos_study_id: nil, duos_dataset_id: nil)
+      study.reload
+    end
+  end
+
   after(:all) do
     Author.delete_all
   end
@@ -97,6 +105,7 @@ class DuosRegistrationServiceTest < ActiveSupport::TestCase
     study = Study.find_by(accession:)
     study.update(duos_dataset_id: 1234, duos_study_id: 5678)
     mock = Minitest::Mock.new
+    mock.expect :study, Hash, [study.duos_study_id]
     mock.expect :delete_study, true, [study.duos_study_id]
     DuosRegistrationService.stub :client, mock do
       assert DuosRegistrationService.redact_study(study)
@@ -104,6 +113,34 @@ class DuosRegistrationServiceTest < ActiveSupport::TestCase
       assert_nil study.duos_dataset_id
       assert_nil study.duos_study_id
       mock.verify
+    end
+  end
+
+  test 'should determine if a study is registered in DUOS' do
+    accession = @accessions.sample
+    study = Study.find_by(accession:)
+    assert_not DuosRegistrationService.study_registered?(study)
+    study.update(duos_dataset_id: 1234, duos_study_id: 5678)
+    mock_client = Minitest::Mock.new
+    mock_client.expect :study, Hash, [study.duos_study_id]
+    DuosRegistrationService.stub :client, mock_client do
+      assert DuosRegistrationService.study_registered?(study)
+      mock_client.verify
+    end
+    assert_not DuosRegistrationService.study_registered?(Study.new)
+  end
+
+  test 'should handle study updates' do
+    accession = @accessions.sample
+    study = Study.find_by(accession:)
+    study.update(duos_dataset_id: 2345, duos_study_id: 6789, public: false)
+    mock_client = Minitest::Mock.new
+    mock_client.expect :study, Hash, [study.duos_study_id]
+    mock_client.expect :study, Hash, [study.duos_study_id]
+    mock_client.expect :delete_study, true, [study.duos_study_id]
+    DuosRegistrationService.stub :client, mock_client do
+      assert DuosRegistrationService.handle_study_update(study)
+      mock_client.verify
     end
   end
 end
