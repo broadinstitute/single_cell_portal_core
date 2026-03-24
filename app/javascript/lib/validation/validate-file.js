@@ -30,7 +30,8 @@ function validateFileName(file, studyFile, allStudyFiles, allowedFileExts=['*'])
   if (otherNames.includes(file.name) ||
     otherUploadFileNames.includes(file.name) ||
     otherLocalFileNames.includes(file.name)) {
-    const msg = `A file named ${file.name} already exists in your study`
+    const msg = `A file named ${file.name} already exists in your study.  If you recently deleted ` +
+      `this file and are reusing it, please refresh the page to clear it from the cache.`
     issues.push(['error', 'filename:duplicate', msg])
   }
 

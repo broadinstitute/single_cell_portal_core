@@ -307,4 +307,8 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
     assert_equal %w[cluster_2.txt cluster_3.txt], study.default_cluster_order,
                  'Did not update cluster order after deleting a cluster file'
   end
+
+  test 'should delete bundled files when removing parent' do
+
+  end
 end

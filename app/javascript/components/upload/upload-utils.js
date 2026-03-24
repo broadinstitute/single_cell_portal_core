@@ -238,7 +238,8 @@ function validateNameUniqueness(file, allFiles, validationMessages) {
   const allOtherNames = allOtherFiles.map(f => f.name)
   // require 'isDirty' so we only show the error on the file being updated
   if (file.name && allOtherNames.includes(file.name) && file.isDirty) {
-    validationMessages.fileName = `A file named ${file.name} already exists in your study`
+    validationMessages.fileName = `A file named ${file.name} already exists in your study.  If you recently deleted ` +
+    `this file and are reusing it, please refresh the page to clear it from the cache.`
   }
 }
 
