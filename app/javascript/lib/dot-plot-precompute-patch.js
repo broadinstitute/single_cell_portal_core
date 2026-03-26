@@ -82,9 +82,9 @@
           let geneData = data.genes[gene]
           if (!geneData) {
             geneData = []
-            // If gene is missing from data, fill with zeros
+            // If gene is missing from data, fill with NaN and 0 cells expressing
             for (let j = 0; j < nCols; j++) {
-              geneData.push([0.0, 0.0])
+              geneData.push([NaN, 0])
             }
           }
           // Map data from original order to sorted order
