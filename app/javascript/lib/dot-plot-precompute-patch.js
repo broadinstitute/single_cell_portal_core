@@ -76,8 +76,17 @@
         // Series 1: percent expressing (for size) - will be scaled to 0-100
         // Data format: values[0] = mean_expression, values[1] = percent_expressing
         geneNames.forEach((gene, i) => {
-          const geneData = data.genes[gene]
-
+          // gotcha for pathway diagrams and precomputed dot plots
+          // this is because the pathway diagram may contain genes that were not included in the dot plot data
+          // (e.g. because they were not expressed)
+          let geneData = data.genes[gene]
+          if (!geneData) {
+            geneData = []
+            // If gene is missing from data, fill with zeros
+            for (let j = 0; j < nCols; j++) {
+              geneData.push([0.0, 0.0])
+            }
+          }
           // Map data from original order to sorted order
           geneData.forEach((values, originalIndex) => {
             const sortedIndex = originalToSortedIndex[originalIndex]
