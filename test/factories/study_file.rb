@@ -116,6 +116,10 @@ FactoryBot.define do
                             study_file: file
           )
         end
+        # create study_file bundle
+        cluster_file = StudyFile.find(evaluator.cluster.study_file_id)
+        bundle = StudyFileBundle.initialize_from_parent(file.study, cluster_file)
+        bundle.add_files(file)
       end
     end
     factory :ideogram_output do
