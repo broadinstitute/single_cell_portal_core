@@ -74,7 +74,7 @@ class HcaAzulClientTest < ActiveSupport::TestCase
     end
     status = @hca_azul_client.service_information
     assert status['up']
-    expected_keys = %w[api_endpoints elasticsearch up]
+    expected_keys = %w[api_endpoints opensearch up]
     assert_equal expected_keys, status.keys.sort
   end
 
