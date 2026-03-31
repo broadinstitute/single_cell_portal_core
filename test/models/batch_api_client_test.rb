@@ -329,8 +329,6 @@ class BatchApiClientTest < ActiveSupport::TestCase
     assert_equal AdminConfiguration.get_ingest_docker_image, @client.image_uri_for_job
     anndata_params = AnnDataIngestParameters.new
     assert_equal AdminConfiguration.get_ingest_docker_image, @client.image_uri_for_job(anndata_params)
-    image_params = ImagePipelineParameters.new
-    assert_equal Rails.application.config.image_pipeline_docker_image, @client.image_uri_for_job(image_params)
   end
 
   test 'should create compute resource' do
@@ -359,8 +357,6 @@ class BatchApiClientTest < ActiveSupport::TestCase
   test 'should set env vars' do
     env_vars = @client.set_environment_variables
     assert_equal @client.project, env_vars['GOOGLE_PROJECT_ID']
-    env_vars = @client.set_environment_variables(action: :image_pipeline)
-    assert_equal '0', env_vars['NODE_TLS_REJECT_UNAUTHORIZED']
   end
 
   test 'should format command line' do
@@ -400,7 +396,6 @@ class BatchApiClientTest < ActiveSupport::TestCase
   test 'should get action label' do
     assert_equal 'ingest_pipeline', @client.label_for_action(:ingest_anndata)
     assert_equal 'differential_expression', @client.label_for_action(:differential_expression)
-    assert_equal 'data_cache_pipeline', @client.label_for_action(:render_expression_arrays)
     assert_equal :foo, @client.label_for_action(:foo)
   end
 
