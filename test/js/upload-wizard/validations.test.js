@@ -33,7 +33,9 @@ describe('upload file validation name checks', () => {
       _id: '11'
     }, file]
     const msgs = validateFile({ file, allFiles, allowedFileExts: ['.txt'] })
-    expect(msgs.fileName).toEqual('A file named bar.txt already exists in your study')
+    const expectedMsg = 'A file named bar.txt already exists in your study.  If you recently deleted this file' +
+      ' and are reusing it, please refresh the page to clear it from the cache.'
+    expect(msgs.fileName).toEqual(expectedMsg)
   })
 
 
