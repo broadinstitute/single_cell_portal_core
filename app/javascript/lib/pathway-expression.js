@@ -21,6 +21,7 @@ import { renderDotPlot } from '~/components/visualization/DotPlot'
 import { getEligibleLabels } from '~/lib/cluster-utils'
 import { fetchMorpheusJson } from '~/lib/scp-api'
 import { getFeatureFlagsWithDefaults } from '~/providers/UserProvider'
+import { shouldUsePreprocessedData } from '~/components/visualization/DotPlot'
 
 // Denoise DevTools console log by not showing error that lacks user impact
 window.onerror = function(error) {
@@ -83,7 +84,7 @@ window.SCP.renderBackgroundDotPlotRegister = {}
 export async function renderBackgroundDotPlot(
   studyAccession, genes=[], cluster, annotation={},
   subsample, annotationValues, drawCallback,
-  topContainerSelector
+  topContainerSelector, usePreprocessed
 ) {
   const graphId = 'background-dot-plot'
   document.querySelector(`#${graphId}`)?.remove()
@@ -122,7 +123,9 @@ export async function renderBackgroundDotPlot(
       annotation.name,
       annotation.type,
       annotation.scope,
-      subsample
+      subsample,
+      false, // mock flag
+      usePreprocessed
     )
     dataset = results[0]
 
@@ -317,6 +320,8 @@ function mergeDotPlotMetrics(newMetrics, oldMetrics) {
 
 /** Color pathway gene nodes by expression */
 export async function renderPathwayExpression(studyAccession, cluster, annotation, label, labels) {
+  const flags = getFeatureFlagsWithDefaults()
+  const usePreprocessed = shouldUsePreprocessedData(flags, window.SCP?.exploreInfo)
   let allDotPlotMetrics = {}
 
   const pathwayGenes = getPathwayGenes()
@@ -337,10 +342,9 @@ export async function renderPathwayExpression(studyAccession, cluster, annotatio
     // the second render is for collapsed label-x-gene metrics (dotplot)
 
     numDraws += 1
-    if (numDraws === 1) {return}
+    if (numDraws === 1 && !usePreprocessed) {return}
 
     const dotPlotMetrics = getDotPlotMetrics(dotPlot)
-
     if (!dotPlotMetrics) {
       // Occurs upon resizing window, artifact of internal Morpheus handling
       // of pre-dot-plot heatmap matrix.  No user-facing impact.
@@ -367,7 +371,7 @@ export async function renderPathwayExpression(studyAccession, cluster, annotatio
       renderBackgroundDotPlot(
         studyAccession, dotPlotGeneBatches[numRenders], cluster, annotation,
         'All', annotationLabels, backgroundDotPlotDrawCallback,
-        '#_ideogramPathwayContainer'
+        '#_ideogramPathwayContainer', usePreprocessed
       )
     }
   }
@@ -378,7 +382,7 @@ export async function renderPathwayExpression(studyAccession, cluster, annotatio
   renderBackgroundDotPlot(
     studyAccession, dotPlotGeneBatches[0], cluster, annotation,
     'All', annotationLabels, backgroundDotPlotDrawCallback,
-    '#_ideogramPathwayContainer'
+    '#_ideogramPathwayContainer', usePreprocessed
   )
 }
 

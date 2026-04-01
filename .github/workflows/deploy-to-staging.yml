@@ -25,7 +25,7 @@ jobs:
       group: staging-deployment
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Configure gcloud
         uses: ./.github/actions/setup-gcloud
         with:

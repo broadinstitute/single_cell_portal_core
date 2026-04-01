@@ -113,7 +113,12 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
       if object.is_bundle_parent?
         object.bundled_files.each do |file|
           Rails.logger.info "Deleting bundled file #{file.upload_file_name} from #{study.name} due to parent deletion: #{object.upload_file_name}"
-          DeleteQueueJob.new(file).perform
+          # remove file from bucket since no API call was made to do this
+          study = file.study
+          if ApplicationController.firecloud_client.workspace_file_exists?(study.bucket_id, file.bucket_location)
+            ApplicationController.firecloud_client.delete_workspace_file(study.bucket_id, file.bucket_location)
+          end
+          DeleteQueueJob.new(file).delay.perform
         end
         object.study_file_bundle.destroy
       end

@@ -14,8 +14,12 @@ jobs:
     runs-on: self-hosted
 
     steps:
+      - name: Set up node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Configure gcloud
         uses: ./.github/actions/setup-gcloud
         with:

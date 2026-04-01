@@ -307,4 +307,40 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
     assert_equal %w[cluster_2.txt cluster_3.txt], study.default_cluster_order,
                  'Did not update cluster order after deleting a cluster file'
   end
+
+  test 'should delete bundled files when removing parent' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'Bundle Delete Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    cell_input = { x: [1, 2, 3], y: [4, 5, 6], cells: %w[A B C] }
+    cluster_file = FactoryBot.create(:cluster_file, name: "cluster.txt", study:, cell_input:, status: 'uploaded')
+    cluster = ClusterGroup.find_by(study:, study_file: cluster_file)
+    label_input = {
+      x: [1, 2, 3],
+      y: [4, 5, 6],
+      text: ['Group 1', 'Group 2', 'Group 3']
+    }
+    label_file = FactoryBot.create(
+      :coordinate_label_file, name: 'labels.txt', status: 'uploaded', study:, cluster:, label_input:
+    )
+    label_file.reload
+    cluster_file.reload
+    bundle = cluster_file.study_file_bundle
+    assert bundle.valid?
+    assert bundle.completed?
+    mock = Minitest::Mock.new
+    mock.expect(:workspace_file_exists?, true, [study.bucket_id, String])
+    mock.expect(:delete_workspace_file, true, [study.bucket_id, String])
+    ApplicationController.stub :firecloud_client, mock do
+      DeleteQueueJob.new(cluster_file).perform
+      sleep(5) # ensure any delayed jobs have completed
+      cluster_file.reload
+      label_file.reload
+      assert cluster_file.queued_for_deletion, 'Cluster file was not queued for deletion'
+      assert label_file.queued_for_deletion, 'Bundled label file was not queued for deletion'
+      assert_not StudyFileBundle.where(id: bundle.id).exists?, 'StudyFileBundle was not deleted'
+      mock.verify
+    end
+  end
 end
