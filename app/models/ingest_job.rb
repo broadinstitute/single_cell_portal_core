@@ -15,7 +15,7 @@ class IngestJob
   # valid ingest actions to perform
   VALID_ACTIONS = %i[
     ingest_expression ingest_cluster ingest_cell_metadata ingest_anndata ingest_differential_expression ingest_subsample
-    ingest_dot_plot_genes differential_expression render_expression_arrays
+    ingest_dot_plot_genes differential_expression
   ].freeze
 
   # Mappings between actions & models (for cleaning up data on re-parses)
@@ -31,14 +31,14 @@ class IngestJob
   # non-standard job actions where data is not being read from a file to insert into MongoDB
   # these jobs usually process files and write objects back to the bucket, and as such have special pre/post-processing
   # steps that need to be accounted for
-  SPECIAL_ACTIONS = %i[differential_expression render_expression_arrays image_pipeline].freeze
+  SPECIAL_ACTIONS = %i[differential_expression].freeze
 
   # main processes that extract or ingest data for core visualizations (scatter, violin, dot, etc)
   CORE_ACTIONS = %w[ingest_anndata ingest_expression ingest_cell_metadata ingest_cluster]
 
   # jobs that need parameters objects in order to launch correctly
   PARAMS_OBJ_REQUIRED = %i[
-    differential_expression render_expression_arrays image_pipeline ingest_anndata ingest_dot_plot_genes
+    differential_expression ingest_anndata ingest_dot_plot_genes
   ].freeze
 
   # Name of pipeline submission running in GCP (from [BatchApiClient#run_job])
@@ -525,10 +525,6 @@ class IngestJob
       create_differential_expression_results
     when :ingest_differential_expression
       create_author_differential_expression_results
-    when :render_expression_arrays
-      launch_image_pipeline_job
-    when :image_pipeline
-      set_has_image_cache
     when :ingest_anndata
       set_anndata_file_info
       launch_anndata_subparse_jobs if study_file.is_viz_anndata?
@@ -817,19 +813,6 @@ class IngestJob
     raw_manifest.read.split("\n").map { |line| line.split("\t") }
   end
 
-  # launch an image pipeline job once :render_expression_arrays completes
-  def launch_image_pipeline_job
-    Rails.logger.info "Launching image_pipeline job in #{study.accession} for cluster file: #{study_file.name}"
-    ImagePipelineService.run_image_pipeline_job(study, study_file, user:, data_cache_perftime: get_total_runtime_ms)
-  end
-
-  # set flags to denote when a cluster has image data
-  def set_has_image_cache
-    Rails.logger.info "Setting image_pipeline flags in #{study.accession} for cluster: #{study_file.name}"
-    cluster_group = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id)
-    cluster_group.update(has_image_cache: true) if cluster_group.present?
-  end
-
   # preprocess all dot plot gene entries for a qualifying study
   # will check feature flag first to allow for selective automation & runtime configuration
   def launch_dot_plot_preprocess_job
@@ -1066,14 +1049,6 @@ class IngestJob
       if params_object.de_type == 'pairwise'
         job_props.merge!( { pairwiseGroups: [params_object.group1, params_object.group2]})
       end
-    when :image_pipeline
-      data_cache_perftime =  params_object.data_cache_perftime
-      job_props.merge!(
-        {
-          'perfTime:dataCache' => data_cache_perftime,
-          'perfTime:full' => data_cache_perftime + job_perftime
-        }
-      )
     when :ingest_anndata
       job_props.merge!(
         {
@@ -1291,16 +1266,6 @@ class IngestJob
       if params_object.de_type == 'pairwise'
         message << "Pairwise selections: #{params_object.group1} vs. #{params_object.group2}"
       end
-    when :render_expression_arrays
-      matrix_name = params_object.matrix_file_path.split('/').last
-      matrix = study.expression_matrices.find_by(name: matrix_name)
-      genes = Gene.where(study_id: study.id, study_file_id: matrix.id).count
-      message << "Image Pipeline data pre-rendering completed for \"#{params_object.cluster_name}\""
-      message << "Gene-level files created: #{genes}"
-    when :image_pipeline
-      complete_pipeline_runtime = TimeDifference.between(*get_image_pipeline_timestamps).humanize
-      message << "Image Pipeline image rendering completed for \"#{params_object.cluster}\""
-      message << "Complete runtime (data cache & image rendering): #{complete_pipeline_runtime}"
     when :ingest_dot_plot_genes
       cluster_group = params_object.cluster_group
       genes = DotPlotGene.where(study:, study_file:, cluster_group:).count

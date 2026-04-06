@@ -19,8 +19,6 @@ class BatchApiClient
     ingest_subsample: %w[Cluster AnnData],
     differential_expression: %w[Cluster AnnData],
     ingest_differential_expression: ['Differential Expression'],
-    render_expression_arrays: %w[Cluster],
-    image_pipeline: %w[Cluster],
     ingest_anndata: %w[AnnData],
     ingest_dot_plot_genes: ['Expression Matrix', 'MM Coordinate Matrix', 'AnnData'],
     scvi_label_transfer: %w[AnnData]
@@ -470,8 +468,6 @@ class BatchApiClient
   #   - +GOOGLE_PROJECT_ID+: Name of the GCP project this pipeline is running in
   #   - +SENTRY_DSN+: Sentry Data Source Name (DSN); URL to send Sentry logs to
   #   - +BARD_HOST_URL+: URL for Bard host that proxies Mixpanel
-  #   - +NODE_TLS_REJECT_UNAUTHORIZED+: Configure node behavior for self-signed certificates (for :image_pipeline)
-  #   - +STAGING_INTERNAL_IP+: Bypasses firewall for staging runs (for :image_pipeline)
   #
   # * *params*
   #   - +action+ (Symbol) => ingest action being performed
@@ -494,18 +490,7 @@ class BatchApiClient
       vars.delete('DATABASE_HOST')
       vars.delete('DATABASE_NAME')
     end
-    if action == :image_pipeline
-      vars.merge({
-                   # For staging runs
-                   'NODE_TLS_REJECT_UNAUTHORIZED' => '0',
-
-                   # For staging runs.  More context is in "Networking" section at:
-                   # https://github.com/broadinstitute/single_cell_portal_core/pull/1632
-                   'STAGING_INTERNAL_IP' => ENV['APP_INTERNAL_IP']
-                 })
-    else
-      vars
-    end
+    vars
   end
 
   # Determine command line to pass to ingest based off of file & action requested
@@ -574,9 +559,6 @@ class BatchApiClient
         '--differential-expression-file', study_file.gs_url, '--study-accession', study.accession,
         '--method', de_info.computational_method, action_cli_opt
       ]
-    when 'image_pipeline'
-      # image_pipeline is node-based, so python command line to this point no longer applies
-      command_line = %w[node expression-scatter-plots.js]
     when 'scvi_label_transfer'
       command_line = %w[python multiome_label_transfer.py]
     end
@@ -686,8 +668,6 @@ class BatchApiClient
       'ingest_pipeline'
     when /differential/
       'differential_expression'
-    when 'render_expression_arrays'
-      'data_cache_pipeline'
     else
       action
     end
