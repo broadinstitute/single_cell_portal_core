@@ -4,16 +4,17 @@ class ImportServiceTest < ActiveSupport::TestCase
   before(:all) do
     @nemo_attributes = {
       file_id: 'nemo:alc-t6a5pxv',
-      project_id: 'nemo:grn-gyy3k8j',
+      project_id: 'nemo:std-5jvcwm1',
       study_id: 'nemo:col-f3yvj88'
     }
   end
 
   test 'should call API client method' do
     client = NemoClient.new
-    nemo_file = ImportService.call_api_client(client, :file, @nemo_attributes[:file_id])
-    assert_equal 'BI006_marm028_Munchkin_M1_rxn1.4.bam.bai', nemo_file['file_name']
-    assert_equal 'bam', nemo_file['file_format']
+    nemo_project = ImportService.call_api_client(client, :project, @nemo_attributes[:project_id])
+    assert_equal 'DNA methylation profiling of genomic DNA in individual mouse brain cell nuclei (RS1.1)',
+                 nemo_project['title']
+    assert_equal 'biccn', nemo_project['program']
     assert_raises ArgumentError do
       ImportService.call_api_client(FireCloudClient.new, :api_available?)
     end
