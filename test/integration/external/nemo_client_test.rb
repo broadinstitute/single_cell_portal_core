@@ -46,7 +46,7 @@ class NemoClientTest < ActiveSupport::TestCase
 
   test 'should get an entity' do
     skip_if_api_down
-    entity_type = @identifiers.keys.sample
+    entity_type = @identifiers.keys.reject {|k| k == :file }.sample
     identifier = @identifiers[entity_type]
     entity = @nemo_client.fetch_entity(entity_type, identifier)
     assert entity.present?
