@@ -1,6 +1,5 @@
-<div id="usage-stats-page"></div>
-<script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
-  window.SCP.renderComponent('usage-stats-page', 'StudyUsageInfo', {
-    study: <%= @study.to_json.html_safe %>
-  })
-</script>
+<%= react_component(
+  'StudyUsageInfo',
+  props: { study: @study.as_json },
+  id: 'study-usage-react-root'
+) %>

@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
+import ReactOnRails from 'react-on-rails/client'
 import morpheus from 'morpheus-app'
 import { Spinner } from 'spin.js'
 
@@ -84,6 +85,12 @@ document.addEventListener('DOMContentLoaded', () => {
 const componentsToExport = {
   HomePageContent, ExploreView, UploadWizard, ValidationMessage, ClusterAssociationSelect,
   RawAssociationSelect, AuthorEmailPopup, MyStudiesPage, StudyUsageInfo
+}
+
+try {
+  ReactOnRails.getComponent('StudyUsageInfo')
+} catch {
+  ReactOnRails.register({ StudyUsageInfo })
 }
 
 /** helper to render React components from non-react portions of the app
