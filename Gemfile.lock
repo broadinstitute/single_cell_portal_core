@@ -428,7 +428,7 @@ GEM
       ffi (~> 1.0)
     rdoc (6.6.3.1)
       psych (>= 4.0.0)
-    react_on_rails (16.7.0.rc.0)
+    react_on_rails (17.0.0.rc.1)
       addressable
       connection_pool
       execjs (~> 2.5)
@@ -494,7 +494,7 @@ GEM
     sentry-ruby (5.23.0)
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.0.2)
-    shakapacker (10.1.0.rc.1)
+    shakapacker (10.1.0)
       activesupport (>= 5.2)
       package_json
       rack-proxy (>= 0.6.1)
@@ -641,7 +641,7 @@ DEPENDENCIES
   rack-brotli
   rack-mini-profiler
   rails (= 6.1.7.9)
-  react_on_rails (= 16.7.0.rc.0)
+  react_on_rails (= 17.0.0.rc.1)
   reline
   rest-client
   rubocop
@@ -653,7 +653,7 @@ DEPENDENCIES
   secure_headers
   sentry-rails
   sentry-ruby
-  shakapacker (= 10.1.0.rc.1)
+  shakapacker (= 10.1.0)
   simplecov
   simplecov-lcov
   stackprof
