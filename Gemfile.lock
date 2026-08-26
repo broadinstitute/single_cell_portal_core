@@ -137,7 +137,7 @@ GEM
     crass (1.0.6)
     csv (3.3.2)
     daemons (1.4.0)
-    date (3.4.1)
+    date (3.5.1)
     declarative (0.0.20)
     delayed_job (4.1.10)
       activesupport (>= 3.0, < 8.0)
@@ -323,12 +323,12 @@ GEM
     naturally (2.2.1)
     net-http (0.9.1)
       uri (>= 0.11.1)
-    net-imap (0.5.7)
+    net-imap (0.6.6)
       date
       net-protocol
     net-pop (0.1.2)
       net-protocol
-    net-protocol (0.2.2)
+    net-protocol (0.3.0)
       timeout
     net-smtp (0.5.0)
       net-protocol
@@ -524,7 +524,7 @@ GEM
     tilt (2.0.10)
     time_difference (0.5.0)
       activesupport
-    timeout (0.4.3)
+    timeout (0.6.1)
     trailblazer-option (0.1.2)
     truncate_html (0.9.3)
     tzinfo (2.0.6)
