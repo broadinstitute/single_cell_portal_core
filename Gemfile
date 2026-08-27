@@ -4,7 +4,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby '3.4.8'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '6.1.7.9'
+gem 'rails', '7.0.10'
 # Use SCSS for stylesheets
 gem 'sass-rails', '>= 6'
 # Use CoffeeScript for .coffee assets and views
@@ -33,7 +33,7 @@ gem 'minitest'
 gem 'minitest-rails'
 gem 'minitest-reporters'
 
-gem 'devise'
+gem 'devise', '~> 4.9'
 gem 'omniauth-google-oauth2'
 gem 'omniauth-rails_csrf_protection'
 gem 'googleauth'
