@@ -288,7 +288,7 @@ class ApplicationController < ActionController::Base
         # redirect directly to file to trigger download
         # validate that the signed_url is in fact the correct URL - it must be a GCS lin
         if is_valid_signed_url?(@signed_url)
-          redirect_to @signed_url
+          redirect_to @signed_url, allow_other_host: true and return
         else
           redirect_to merge_default_redirect_params(view_study_path(accession: study.accession, study_name: study.url_safe_name), scpbr: params[:scpbr]),
                       alert: "We are unable to process your download for #{study.accession}:#{params[:filename]}.  Please try again later.  #{SCP_SUPPORT_EMAIL}" and return

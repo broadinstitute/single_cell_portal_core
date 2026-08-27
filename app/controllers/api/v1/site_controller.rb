@@ -286,7 +286,7 @@ module Api
               @signed_url = ApplicationController.firecloud_client.execute_gcloud_method(:generate_signed_url, 0, @study.bucket_id,
                                                                          @study_file.bucket_location, expires: 60)
               DownloadQuotaService.increment_user_quota(current_api_user, filesize)
-              redirect_to @signed_url
+              redirect_to @signed_url, allow_other_host: true and return
             else
               alert = 'You have exceeded your current daily download quota.  You must wait until tomorrow to download this file.'
               render json: {error: alert}, status: 403
