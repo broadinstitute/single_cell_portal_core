@@ -88,7 +88,7 @@ class StudiesController < ApplicationController
     initialize_wizard_files
     # check if study has been properly initialized yet, set to true if not
     if !@cluster_ordinations.last.new_record? && !@processed_matrix_files.last.new_record? && !@metadata_file.new_record? && !@study.initialized?
-      @study.update(initialized: true)
+      @study.update_attributes(initialized: true)
     end
   end
 
