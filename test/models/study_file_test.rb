@@ -81,6 +81,7 @@ class StudyFileTest < ActiveSupport::TestCase
   end
 
   test 'expression file data validates' do
+    @study.reload
     # note that we don't (and shouldn't) actually *save* anything in this test,
     # so we use throwaway objects and ids.
     invalid_study_file = StudyFile.new(
@@ -184,7 +185,7 @@ class StudyFileTest < ActiveSupport::TestCase
   end
 
   test 'should find associated raw/processed matrix files' do
-    matrix = FactoryBot.create(:study_file, name: 'matrix.txt', file_type: 'Expression Matrix', study: @study)
+    matrix = FactoryBot.create(:study_file, name: 'new_matrix.txt', file_type: 'Expression Matrix', study: @study)
     matrix.build_expression_file_info(is_raw_counts: false, library_preparation_protocol: 'MARS-seq',
                                       modality: 'Transcriptomic: unbiased', biosample_input_type: 'Whole cell',
                                       raw_counts_associations: [@expression_matrix.id.to_s])

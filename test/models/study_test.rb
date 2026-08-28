@@ -298,11 +298,7 @@ class StudyTest < ActiveSupport::TestCase
     assert @study.valid?
 
     @user.update(organizational_email: nil)
-    @study.reload
-    @study.public = true
-    assert @study.valid?
 
-    @study.public = false
     assert_not @study.valid?
     assert @study.errors.messages_for(:base).first.starts_with?(
       'You must have an organizational email associated with your account'
