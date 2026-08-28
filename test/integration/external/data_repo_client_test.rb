@@ -97,7 +97,7 @@ class DataRepoClientTest < ActiveSupport::TestCase
       items: [
         {
           id: SecureRandom.uuid, name: 'My Dataset', description: 'This is the description',
-          createdDate: Time.zone.now.to_s(:db), profileId: SecureRandom.uuid
+          createdDate: Time.zone.now.to_fs(:db), profileId: SecureRandom.uuid
         }
       ]
     }.with_indifferent_access

@@ -298,6 +298,7 @@ class StudyTest < ActiveSupport::TestCase
     assert @study.valid?
 
     @user.update(organizational_email: nil)
+    @study.reload
     @study.public = true
     assert @study.valid?
 

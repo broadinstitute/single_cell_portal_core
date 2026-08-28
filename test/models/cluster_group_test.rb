@@ -28,6 +28,11 @@ class ClusterGroupTest < ActiveSupport::TestCase
     @cluster = @study.cluster_groups.first
   end
 
+  before(:each) do
+    @study.reload
+    @cluster.reload
+  end
+
   test 'should not visualize unique group annotations over 100' do
     annotation_values = []
     300.times { annotation_values << SecureRandom.uuid }
