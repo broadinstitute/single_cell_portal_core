@@ -38,7 +38,7 @@ class ReviewerAccess
 
   # user-readable timestamp
   def expiration_date
-    expires_at.to_s(:long)
+    expires_at.to_fs(:long)
   end
 
   # check if access has expired (date-inclusive)

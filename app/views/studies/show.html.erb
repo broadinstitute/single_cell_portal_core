@@ -10,7 +10,7 @@
   <label>Owner:</label> <%= @study.user.email %>
 </p>
 <% if @study.embargo_active? %>
-  <p class="lead text-danger">Data release date: <%= @study.embargo.to_s(:long) %></p>
+  <p class="lead text-danger">Data release date: <%= @study.embargo.to_fs(:long) %></p>
 <% end %>
 
 <%= @study.description.html_safe %>
@@ -360,7 +360,7 @@
               <%= study_share.permission %><br />
               <span class="help-block share-description"><%= StudyShare::PERMISSION_DESCRIPTION_MAP[study_share.permission] %></span>
             </td>
-            <td><%= study_share.updated_at.to_s(:long) %></td>
+            <td><%= study_share.updated_at.to_fs(:long) %></td>
           </tr>
           <% end %>
         <% end %>
@@ -394,7 +394,7 @@
                             target: :_blank, rel: 'noopener noreferrer' %></td>
             <td><%= resource.description %></td>
             <td><%= get_boolean_label(resource.publication_url) %></td>
-            <td><%= resource.updated_at.to_s(:long) %></td>
+            <td><%= resource.updated_at.to_fs(:long) %></td>
           </tr>
         <% end %>
         </tbody>
