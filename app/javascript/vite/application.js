@@ -1,5 +1,6 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
+import ReactDOM from 'react-dom/client'
+import ReactOnRails from 'react-on-rails/client'
 import morpheus from 'morpheus-app'
 import { Spinner } from 'spin.js'
 
@@ -86,6 +87,14 @@ const componentsToExport = {
   RawAssociationSelect, AuthorEmailPopup, MyStudiesPage, StudyUsageInfo
 }
 
+const componentRoots = new WeakMap()
+
+try {
+  ReactOnRails.getComponent('StudyUsageInfo')
+} catch {
+  ReactOnRails.register({ StudyUsageInfo })
+}
+
 /** helper to render React components from non-react portions of the app
  * @param {String|Element} target - the html element to render on, can be either an element or an id
  * @param {String} componentName - the component to render -- must be included in the `componentsToExport` above
@@ -96,9 +105,12 @@ function renderComponent(target, componentName, props) {
   if (typeof target === 'string' || target instanceof String) {
     targetEl = document.getElementById(target)
   }
-  ReactDOM.unmountComponentAtNode(targetEl)
-  ReactDOM.render(React.createElement(componentsToExport[componentName], props),
-    targetEl)
+  let root = componentRoots.get(targetEl)
+  if (!root) {
+    root = ReactDOM.createRoot(targetEl)
+    componentRoots.set(targetEl, root)
+  }
+  root.render(React.createElement(componentsToExport[componentName], props))
 }
 
 
