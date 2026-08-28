@@ -20,10 +20,10 @@ class ScviIngestParametersTest < ActiveSupport::TestCase
     invalid_params = ScviIngestParameters.new
     assert_not invalid_params.valid?
     @defaults.keys.each do |key|
-      assert invalid_params.errors.key?(key)
+      assert_includes invalid_params.errors.keys, key
     end
     invalid_params.machine_type = 'foo'
     assert_not invalid_params.valid?
-    assert invalid_params.errors.key?(:machine_type)
+    assert_includes invalid_params.errors.keys, :machine_type
   end
 end
