@@ -160,10 +160,10 @@ GEM
     delayed_job_mongoid (3.0.0)
       delayed_job (>= 3.0, < 5)
       mongoid (>= 5.0)
-    devise (4.8.1)
+    devise (5.0.4)
       bcrypt (~> 3.0)
       orm_adapter (~> 0.1)
-      railties (>= 4.1.0)
+      railties (>= 7.0)
       responders
       warden (~> 1.2.3)
     digest-crc (0.6.4)
@@ -614,7 +614,7 @@ DEPENDENCIES
   daemons
   delayed_job
   delayed_job_mongoid
-  devise (= 4.8.1)
+  devise
   drb
   exponential-backoff
   factory_bot_rails
