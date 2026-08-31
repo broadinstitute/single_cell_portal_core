@@ -35,7 +35,7 @@ module SingleCellPortal
     # Docker image for image pipeline jobs
     config.image_pipeline_docker_image = 'gcr.io/broad-singlecellportal-staging/image-pipeline:0.1.0_c2b090043'
 
-    config.autoload_lib(ignore: %w(assets tasks))
+    config.autoload_paths << Rails.root.join('lib')
 
     # for all non-prod environments, use the development mixpanel API
     config.mixpanel_service_account = 'scp_terra_dev.f25a4f.mp-service-account'
