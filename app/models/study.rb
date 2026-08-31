@@ -702,25 +702,25 @@ class Study
   validate :initialize_with_existing_workspace, on: :create, if: Proc.new {|study| study.use_existing_workspace}
 
   # populate specific errors for associations since they share the same form
-  validate do |study|
-    %i[study_shares authors publications].each do |association_name|
-      study.send(association_name).each_with_index do |model, index|
-        next if model.valid?
+  # validate do |study|
+  #   %i[study_shares authors publications].each do |association_name|
+  #     study.send(association_name).each_with_index do |model, index|
+  #       next if model.valid?
 
-        model.errors.full_messages.each do |msg|
-          indicator = "#{index + 1}#{(index + 1).ordinal}"
-          errors.add(:base, "#{indicator} #{model.class} Error - #{msg}")
-        end
-        errors.delete(association_name) if errors[association_name].present?
-      end
-    end
-    # get errors for reviewer_access, if any
-    if study.reviewer_access.present? && !study.reviewer_access.valid?
-      study.reviewer_access.errors.full_messages.each do |msg|
-        errors.add(:base, msg)
-      end
-    end
-  end
+  #       model.errors.full_messages.each do |msg|
+  #         indicator = "#{index + 1}#{(index + 1).ordinal}"
+  #         errors.add(:base, "#{indicator} #{model.class} Error - #{msg}")
+  #       end
+  #       errors.delete(association_name) if errors[association_name].present?
+  #     end
+  #   end
+  #   # get errors for reviewer_access, if any
+  #   if study.reviewer_access.present? && !study.reviewer_access.valid?
+  #     study.reviewer_access.errors.full_messages.each do |msg|
+  #       errors.add(:base, msg)
+  #     end
+  #   end
+  # end
 
   # XSS protection
   validate :strip_unsafe_characters_from_description

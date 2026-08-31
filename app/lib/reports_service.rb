@@ -77,8 +77,7 @@ class ReportsService
       expression_files = StudyFile.where(file_type: /Matrix/, queued_for_deletion: false, study_id: study_id)
                                   .pluck('expression_file_info.is_raw_counts')
       expression_files.each do |is_raw_counts|
-        # mongoid plucks nested fields as {"is_raw_counts"=>true} objects rather than plain values
-        study_hash[study_id][:has_raw_counts] ||= is_raw_counts.present? ? is_raw_counts['is_raw_counts'] : false
+        study_hash[study_id][:has_raw_counts] ||= is_raw_counts # account for nil by casting to boolean
       end
 
       # count DE results

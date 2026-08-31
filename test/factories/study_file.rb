@@ -76,7 +76,7 @@ FactoryBot.define do
         # }
         expression_input { {} }
       end
-      after(:create) do |file, evaluator|
+      after(:build) do |file, evaluator|
         if evaluator.expression_input.any?
           cells = evaluator.expression_input.values.map { |vals| vals.map(&:first) }.flatten.uniq
           FactoryBot.create(:data_array,
@@ -179,7 +179,7 @@ FactoryBot.define do
         has_raw_counts { expression_input.any? && cell_input.any? }
         reference_file { cell_input.empty? && coordinate_input.empty? && annotation_input.empty? && expression_input.empty? }
       end
-      after(:create) do |file, evaluator|
+      after(:build) do |file, evaluator|
         file.build_ann_data_file_info
         file.ann_data_file_info.reference_file = evaluator.reference_file
         evaluator.annotation_input.each do |annotation|
@@ -235,13 +235,15 @@ FactoryBot.define do
                               cell_input: axes_and_cells,
                               cluster_type: "#{axes.keys.size}d",
                               study_file: file)
+            next if file.ann_data_file_info.data_fragments.detect { |fragment| fragment[:obsm_key_name] == "X_#{name}" }.present?
+
             file.ann_data_file_info.data_fragments << {
               _id: BSON::ObjectId.new.to_s, data_type: :cluster, obsm_key_name: "X_#{name}", name:
             }.with_indifferent_access
           end
         end
         # gotcha to save updates to ann_data_file_info
-        file.ann_data_file_info.save
+        file.ann_data_file_info.save!
       end
     end
     factory :differential_expression_file do

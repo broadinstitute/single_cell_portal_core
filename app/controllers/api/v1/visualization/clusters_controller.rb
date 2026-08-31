@@ -280,10 +280,11 @@ module Api
           else
             data = study_file.attributes
           end
+          safe_data = data.with_indifferent_access
           {
-            url: data[:external_link_url],
-            title: data[:external_link_title],
-            description: data[:external_link_description]
+            url: safe_data[:external_link_url],
+            title: safe_data[:external_link_title],
+            description: safe_data[:external_link_description]
           }
         end
       end
