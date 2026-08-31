@@ -4,7 +4,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby '3.4.8'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '7.1.6'
+gem 'rails', '7.2.3.2'
 # Use SCSS for stylesheets
 gem 'sass-rails', '>= 6'
 # Use CoffeeScript for .coffee assets and views
