@@ -136,10 +136,11 @@ GEM
       marcel (~> 1.0.0)
       mini_mime (>= 0.1.3)
       ssrf_filter (~> 1.0)
-    carrierwave-mongoid (1.3.0)
+    carrierwave-mongoid (1.5.0)
       carrierwave (>= 0.8, < 3)
-      mongoid (>= 3.0, < 8.0)
+      mongoid (>= 3.0, < 10.0)
       mongoid-grid_fs (>= 1.3, < 3.0)
+    cgi (0.5.2)
     coffee-rails (5.0.0)
       coffee-script (>= 2.2.0)
       railties (>= 5.2.0)
@@ -148,6 +149,7 @@ GEM
       execjs
     coffee-script-source (1.12.2)
     concurrent-ruby (1.3.4)
+    connection_pool (3.0.2)
     crass (1.0.6)
     csv (3.3.2)
     daemons (1.4.0)
@@ -155,11 +157,10 @@ GEM
     declarative (0.0.20)
     delayed_job (4.1.10)
       activesupport (>= 3.0, < 8.0)
-    delayed_job_mongoid (2.3.1)
+    delayed_job_mongoid (3.0.0)
       delayed_job (>= 3.0, < 5)
-      mongoid (>= 3.0, < 8)
-      mongoid-compatibility (>= 0.4.0)
-    devise (4.8.0)
+      mongoid (>= 5.0)
+    devise (4.8.1)
       bcrypt (~> 3.0)
       orm_adapter (~> 0.1)
       railties (>= 4.1.0)
@@ -285,7 +286,6 @@ GEM
     marcel (1.0.4)
     memoist (0.16.2)
     memory_profiler (1.0.0)
-    method_source (1.1.0)
     mime-types (3.3.1)
       mime-types-data (~> 3.2015)
     mime-types-data (3.2021.0225)
@@ -295,9 +295,9 @@ GEM
     minitest (5.25.5)
     minitest-hooks (1.5.0)
       minitest (> 5.3)
-    minitest-rails (6.1.0)
-      minitest (~> 5.10)
-      railties (~> 6.1.0)
+    minitest-rails (7.2.0)
+      minitest (~> 5.20)
+      railties (>= 7.2.0, < 8.0.0)
     minitest-reporters (1.4.3)
       ansi
       builder
@@ -305,18 +305,19 @@ GEM
       ruby-progressbar
     mongo (2.18.1)
       bson (>= 4.14.1, < 5.0.0)
-    mongoid (7.5.1)
-      activemodel (>= 5.1, < 7.1, != 7.0.0)
-      mongo (>= 2.10.5, < 3.0.0)
-      ruby2_keywords (~> 0.0.5)
+    mongoid (9.1.0)
+      activemodel (>= 5.1, < 8.2, != 7.0.0)
+      concurrent-ruby (>= 1.0.5, < 2.0)
+      mongo (>= 2.18.0, < 3.0.0)
+      ostruct
     mongoid-compatibility (0.5.1)
       activesupport
       mongoid (>= 2.0)
     mongoid-encrypted-fields (2.0.0)
       mongoid (>= 5)
-    mongoid-grid_fs (2.4.0)
+    mongoid-grid_fs (2.6.0)
       mime-types (>= 1.0, < 4.0)
-      mongoid (>= 3.0, < 8.0)
+      mongoid (>= 3.0, < 10.0)
     mongoid-history (0.8.3)
       activesupport
       easy_diff
@@ -406,6 +407,8 @@ GEM
       rack (~> 2.2, >= 2.2.4)
     rack-proxy (0.6.5)
       rack
+    rack-session (1.0.2)
+      rack (< 3)
     rack-test (2.2.0)
       rack (>= 1.3)
     rackup (1.0.1)
@@ -439,7 +442,9 @@ GEM
       irb (~> 1.13)
       rackup (>= 1.0.0)
       rake (>= 12.2)
-      thor (~> 1.0)
+      thor (~> 1.0, >= 1.2.2)
+      tsort (>= 0.2)
+      zeitwerk (~> 2.6)
     rainbow (3.1.1)
     rake (13.2.1)
     rb-fsevent (0.10.4)
@@ -484,7 +489,6 @@ GEM
     ruby-vips (2.3.0)
       ffi (~> 1.12)
       logger
-    ruby2_keywords (0.0.5)
     ruby_native_statistics (0.10.1)
     rubyzip (2.3.0)
     sass-rails (6.0.0)
@@ -500,6 +504,7 @@ GEM
     sdoc (2.1.0)
       rdoc (>= 5.0)
     secure_headers (6.3.2)
+    securerandom (0.4.1)
     sentry-rails (5.23.0)
       railties (>= 5.0)
       sentry-ruby (~> 5.23.0)
@@ -545,6 +550,7 @@ GEM
     timeout (0.6.1)
     trailblazer-option (0.1.2)
     truncate_html (0.9.3)
+    tsort (0.2.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     uber (0.1.0)
@@ -608,7 +614,7 @@ DEPENDENCIES
   daemons
   delayed_job
   delayed_job_mongoid
-  devise
+  devise (= 4.8.1)
   drb
   exponential-backoff
   factory_bot_rails

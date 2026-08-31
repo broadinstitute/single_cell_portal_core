@@ -33,7 +33,7 @@ gem 'minitest'
 gem 'minitest-rails'
 gem 'minitest-reporters'
 
-gem 'devise'
+gem 'devise', '4.8.1'
 gem 'omniauth-google-oauth2'
 gem 'omniauth-rails_csrf_protection'
 gem 'googleauth'
