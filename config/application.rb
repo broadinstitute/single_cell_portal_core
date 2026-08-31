@@ -22,7 +22,8 @@ Bundler.require(*Rails.groups)
 module SingleCellPortal
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version
-    config.load_defaults 6.1
+    config.load_defaults 7.2
+    config.active_support.cache_format_version = 7.0
 
     config.time_zone = 'Eastern Time (US & Canada)'
 

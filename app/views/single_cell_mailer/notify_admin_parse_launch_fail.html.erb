@@ -11,7 +11,7 @@
   <li>Bucket:  <%= link_to @study.google_bucket_url, @study.google_bucket_url %></li>
   <li>File: <%= @study_file.upload_file_name %></li>
   <li>File Type: <%= @study_file.file_type %></li>
-  <li>Uploaded/synced on: <%= @study_file.created_at.to_s(:db) %></li>
+  <li>Uploaded/synced on: <%= @study_file.created_at.to_fs(:db) %></li>
   <li>File still local? <%= @study_file.is_local? %></li>
 </ul>
 

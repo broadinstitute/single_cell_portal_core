@@ -1,4 +1,5 @@
 # use SCP base Rails image, configure only project-specific items here
+# This image is based on the broad-singlecellportal-staging/rails-baseimage
 FROM gcr.io/broad-singlecellportal-staging/rails-baseimage:3.1.0
 
 # Set ruby version
