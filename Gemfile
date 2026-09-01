@@ -78,7 +78,7 @@ gem 'net-smtp'
 gem 'net-imap'
 gem 'net-pop'
 gem 'exponential-backoff'
-gem 'concurrent-ruby', '1.3.4'
+gem 'concurrent-ruby'
 # gems removed from stdlib in 3.4
 gem 'bigdecimal'
 gem 'mutex_m'

@@ -407,12 +407,12 @@ module ApplicationHelper
   def nonced_vite_client_tag(*args, &block)
     tag_content = vite_client_tag(*args, &block)
     nonce = _content_security_policy_nonce(:script)
-    tag_content&.gsub('module"', 'module" nonce="' + nonce + '"')&.gsub('localhost', 'https://localhost')&.html_safe
+    tag_content&.gsub('module"', 'module" nonce="' + nonce + '"')&.html_safe
   end
 
   def nonced_vite_react_refresh_tag(*args, &block)
     tag_content = vite_react_refresh_tag(*args, &block)
     nonce = _content_security_policy_nonce(:script)
-    tag_content&.gsub('module"', 'module" nonce="' + nonce + '"')&.gsub('localhost', 'https://localhost')&.html_safe
+    tag_content&.gsub('module"', 'module" nonce="' + nonce + '"')&.html_safe
   end
 end
