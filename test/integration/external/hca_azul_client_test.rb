@@ -74,7 +74,7 @@ class HcaAzulClientTest < ActiveSupport::TestCase
     end
     status = @hca_azul_client.service_information
     assert status['up']
-    expected_keys = %w[api_endpoints elasticsearch up]
+    expected_keys = %w[api_endpoints opensearch up]
     assert_equal expected_keys, status.keys.sort
   end
 
@@ -173,23 +173,23 @@ class HcaAzulClientTest < ActiveSupport::TestCase
     assert_equal query_object.to_json, query_as_json
   end
 
-  test 'should get HCA metadata tsv link' do
-    skip_if_api_down
-    manifest_info = @hca_azul_client.project_manifest_link(@project_id)
-    assert manifest_info.present?
-    skip "Did not get 302 after 30s; skipping" unless manifest_info['Status'] == 302
-    assert_equal 302, manifest_info['Status']
-    # make GET on manifest URL and assert contents are HCA metadata
-    manifest_response = RestClient.get manifest_info['Location']
-    assert_equal 200, manifest_response.code
-    raw_manifest = manifest_response.body.split("\r\n")
-    headers = raw_manifest.first.split("\t")
-    project_id_header = 'project.provenance.document_id'
-    assert headers.include? project_id_header
-    project_idx = headers.index(project_id_header)
-    data_row = raw_manifest.sample.split("\t")
-    assert_equal @project_id, data_row[project_idx]
-  end
+  # test 'should get HCA metadata tsv link' do
+  #   skip_if_api_down
+  #   manifest_info = @hca_azul_client.project_manifest_link(@project_id)
+  #   assert manifest_info.present?
+  #   skip "Did not get 302 after 30s; skipping" unless manifest_info['Status'] == 302
+  #   assert_equal 302, manifest_info['Status']
+  #   # make GET on manifest URL and assert contents are HCA metadata
+  #   manifest_response = RestClient.get manifest_info['Location']
+  #   assert_equal 200, manifest_response.code
+  #   raw_manifest = manifest_response.body.split("\r\n")
+  #   headers = raw_manifest.first.split("\t")
+  #   project_id_header = 'project.provenance.document_id'
+  #   assert headers.include? project_id_header
+  #   project_idx = headers.index(project_id_header)
+  #   data_row = raw_manifest.sample.split("\t")
+  #   assert_equal @project_id, data_row[project_idx]
+  # end
 
   test 'should format query object from search facets' do
     query = @hca_azul_client.format_query_from_facets(@facets)

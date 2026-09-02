@@ -79,10 +79,10 @@ Rails.application.configure do
   # config.action_cable.disable_request_forgery_protection = true
   if ENV['NOT_DOCKERIZED']
     config.action_controller.default_url_options = { :host => 'localhost', protocol: 'https', port: 3000 }
-    config.action_controller.asset_host = 'localhost:3000'
+    config.action_controller.asset_host = 'https://localhost:3000'
   else
     config.action_controller.default_url_options = { :host => 'localhost', protocol: 'https' }
-    config.action_controller.asset_host = 'localhost'
+    config.action_controller.asset_host = 'https://localhost'
   end
 
   config.action_mailer.default_url_options = { :host => 'localhost', protocol: 'https' }

@@ -9,7 +9,7 @@ runs:
   steps:
     - name: Detect changes to Dockerfile
       id: changed-dockerfile
-      uses: tj-actions/changed-files@v44.3.0
+      uses: tj-actions/changed-files@v47.0.5
       with:
         files: Dockerfile
     - name: Rebuild local image if Dockerfile changed

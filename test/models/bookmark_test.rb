@@ -33,7 +33,7 @@ class BookmarkTest < ActiveSupport::TestCase
     errors = invalid_view.errors.full_messages
     assert_equal 2, errors.count
     errors.each do |error|
-      assert error.match(/(Name|Path) is already taken/)
+      assert error.match(/(Name|Path) has already been taken/)
     end
     invalid_view.name = nil
     invalid_view.path = nil

@@ -1,10 +1,10 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '3.4.2'
+ruby '3.4.8'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '6.1.7.9'
+gem 'rails', '7.2.3.2'
 # Use SCSS for stylesheets
 gem 'sass-rails', '>= 6'
 # Use CoffeeScript for .coffee assets and views
@@ -15,7 +15,7 @@ gem 'coffee-rails'
 # Use jquery as the JavaScript library
 gem 'jquery-rails'
 # Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder
-gem 'jbuilder', '~> 2.7'
+gem 'jbuilder', '~> 2.15'
 # bundle exec rake doc:rails generates the API under doc/api.
 gem 'sdoc', group: :doc
 
@@ -32,8 +32,7 @@ gem 'bootsnap', require: false
 gem 'minitest'
 gem 'minitest-rails'
 gem 'minitest-reporters'
-
-gem 'devise'
+gem 'devise', '~> 4.9'
 gem 'omniauth-google-oauth2'
 gem 'omniauth-rails_csrf_protection'
 gem 'googleauth'
@@ -79,7 +78,7 @@ gem 'net-smtp'
 gem 'net-imap'
 gem 'net-pop'
 gem 'exponential-backoff'
-gem 'concurrent-ruby', '1.3.4'
+gem 'concurrent-ruby'
 # gems removed from stdlib in 3.4
 gem 'bigdecimal'
 gem 'mutex_m'

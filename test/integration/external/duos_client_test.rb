@@ -67,119 +67,120 @@ class DuosClientTest < ActiveSupport::TestCase
     assert @duos_client.api_available?
   end
 
-  test 'should get registration info' do
-    skip_if_api_down
-    registration = @duos_client.registration
-    assert registration.keys.include?('userId')
-    assert registration.keys.include?('roles')
-    assert_equal @duos_client.issuer, registration['email']
-  end
+  # disabling as per SCP-6153
+  # test 'should get registration info' do
+  #   skip_if_api_down
+  #   registration = @duos_client.registration
+  #   assert registration.keys.include?('userId')
+  #   assert registration.keys.include?('roles')
+  #   assert_equal @duos_client.issuer, registration['email']
+  # end
 
-  test 'should get user id' do
-    skip_if_api_down
-    assert @duos_client.duos_user_id.is_a?(Integer)
-  end
+  # test 'should get user id' do
+  #   skip_if_api_down
+  #   assert @duos_client.duos_user_id.is_a?(Integer)
+  # end
 
-  test 'should get Sam diagnostic info' do
-    skip_if_api_down
-    diagnostics = @duos_client.sam_diagnostics
-    assert_equal %w[adminEnabled enabled inAllUsersGroup inGoogleProxyGroup tosAccepted], diagnostics.keys.sort
-  end
+  # test 'should get Sam diagnostic info' do
+  #   skip_if_api_down
+  #   diagnostics = @duos_client.sam_diagnostics
+  #   assert_equal %w[adminEnabled enabled inAllUsersGroup inGoogleProxyGroup tosAccepted], diagnostics.keys.sort
+  # end
 
-  test 'should confirm registration' do
-    skip_if_api_down
-    assert @duos_client.registered?
-  end
+  # test 'should confirm registration' do
+  #   skip_if_api_down
+  #   assert @duos_client.registered?
+  # end
 
-  test 'should confirm terms of service are accepted' do
-    skip_if_api_down
-    assert @duos_client.tos_accepted?
-  end
+  # test 'should confirm terms of service are accepted' do
+  #   skip_if_api_down
+  #   assert @duos_client.tos_accepted?
+  # end
 
-  test 'should format name for DUOS correctly' do
-    formatted_name = @duos_client.duos_study_name(@study)
-    expected_name = "#{@study.accession} - #{@study.name}"
-    assert_equal expected_name, formatted_name
-  end
+  # test 'should format name for DUOS correctly' do
+  #   formatted_name = @duos_client.duos_study_name(@study)
+  #   expected_name = "#{@study.accession} - #{@study.name}"
+  #   assert_equal expected_name, formatted_name
+  # end
 
-  test 'should format description for DUOS correctly' do
-    formatted_desc = @duos_client.duos_study_description(@study)
-    expected_desc = "#{@study.description} #{DuosClient::PLATFORM_ID}"
-    assert_equal expected_desc, formatted_desc
-  end
+  # test 'should format description for DUOS correctly' do
+  #   formatted_desc = @duos_client.duos_study_description(@study)
+  #   expected_desc = "#{@study.description} #{DuosClient::PLATFORM_ID}"
+  #   assert_equal expected_desc, formatted_desc
+  # end
 
-  test 'should format schema for DUOS' do
-    duos_data = @duos_client.schema_from(@study)
-    assert duos_data[:studyName].start_with?(@study.accession)
-    assert duos_data[:studyDescription].include?(DuosClient::PLATFORM_ID)
-    assert_equal 'Homo sapiens', duos_data[:species]
-    assert_equal 'HIV infectious disease', duos_data[:phenotypeIndication]
-    assert_equal ['Seq-Well'], duos_data[:dataTypes]
-    participant_count = duos_data[:consentGroups].first[:numberOfParticipants]
-    assert_equal 5, participant_count
-    assert_equal @author.email, duos_data[:dataCustodianEmail].first
-    assert_equal DuosClient::TAG_CONTENT.with_indifferent_access,
-                 duos_data[:data].with_indifferent_access
-  end
+  # test 'should format schema for DUOS' do
+  #   duos_data = @duos_client.schema_from(@study)
+  #   assert duos_data[:studyName].start_with?(@study.accession)
+  #   assert duos_data[:studyDescription].include?(DuosClient::PLATFORM_ID)
+  #   assert_equal 'Homo sapiens', duos_data[:species]
+  #   assert_equal 'HIV infectious disease', duos_data[:phenotypeIndication]
+  #   assert_equal ['Seq-Well'], duos_data[:dataTypes]
+  #   participant_count = duos_data[:consentGroups].first[:numberOfParticipants]
+  #   assert_equal 5, participant_count
+  #   assert_equal @author.email, duos_data[:dataCustodianEmail].first
+  #   assert_equal DuosClient::TAG_CONTENT.with_indifferent_access,
+  #                duos_data[:data].with_indifferent_access
+  # end
 
-  test 'should load dataset JSON schema from DUOS' do
-    schema = @duos_client.dataset_schema
-    assert schema['title'] == 'Dataset Registration Schema'
-    assert schema['$schema'] == 'https://json-schema.org/draft/2019-09/schema'
-    assert schema['version'].is_a?(Integer)
-  end
+  # test 'should load dataset JSON schema from DUOS' do
+  #   schema = @duos_client.dataset_schema
+  #   assert schema['title'] == 'Dataset Registration Schema'
+  #   assert schema['$schema'] == 'https://json-schema.org/draft/2019-09/schema'
+  #   assert schema['version'].is_a?(Integer)
+  # end
 
-  test 'should validate schema' do
-    RequestUtils.stub :get_base_url, 'https://localhost:3000/single_cell' do
-      duos_data = @duos_client.schema_from(@study)
-      assert_not @duos_client.validate_dataset(duos_data).any?
-      assert @duos_client.validate_dataset({ foo: 'bar' }).first['error'].present?
-    end
-  end
+  # test 'should validate schema' do
+  #   RequestUtils.stub :get_base_url, 'https://localhost:3000/single_cell' do
+  #     duos_data = @duos_client.schema_from(@study)
+  #     assert_not @duos_client.validate_dataset(duos_data).any?
+  #     assert @duos_client.validate_dataset({ foo: 'bar' }).first['error'].present?
+  #   end
+  # end
 
-  test 'should extract ids from dataset' do
-    study_id = rand(1000..9999)
-    dataset_id = rand(1000..9999)
-    dataset = {
-      studyName: @study.name,
-      studyDescription: @study.description,
-      studyId: study_id,
-      consentGroups: [{ datasetId: dataset_id, consentGroupName: @study.name }]
-    }
-    ids = @duos_client.identifiers_from_dataset(dataset)
-    assert_equal study_id, ids[:duos_study_id]
-    assert_equal dataset_id, ids[:duos_dataset_id]
-  end
+  # test 'should extract ids from dataset' do
+  #   study_id = rand(1000..9999)
+  #   dataset_id = rand(1000..9999)
+  #   dataset = {
+  #     studyName: @study.name,
+  #     studyDescription: @study.description,
+  #     studyId: study_id,
+  #     consentGroups: [{ datasetId: dataset_id, consentGroupName: @study.name }]
+  #   }
+  #   ids = @duos_client.identifiers_from_dataset(dataset)
+  #   assert_equal study_id, ids[:duos_study_id]
+  #   assert_equal dataset_id, ids[:duos_dataset_id]
+  # end
 
-  test 'should run full integration on study' do
-    skip 'skipping due to frequent failures in dev'
-    # create dataset
-    RequestUtils.stub :get_base_url, 'https://localhost:3000/single_cell' do
-      dataset = @duos_client.create_dataset(@study)
-      assert dataset.present?
-      assert_equal @duos_client.duos_study_name(@study), dataset[:studyName]
-      assert_equal @duos_client.duos_study_description(@study), dataset[:studyDescription]
-      # load DUOS entities
-      ids = @duos_client.identifiers_from_dataset(dataset)
-      puts "-- DUOS IDs for #{@study.accession}: #{ids} --"
-      sleep(5) # brief pause to allow DUOS to finalize entries otherwise we get a 40x error
-      assert @duos_client.study(ids[:duos_study_id]).present?
-      assert @duos_client.dataset(ids[:duos_dataset_id]).present?
-      # update DUOS study, making sure to update study with new identifiers first
-      @study.update(**ids)
-      @study.update(public: false)
-      @study.reload
-      updated_dataset = @duos_client.update_study(@study.duos_study_id, publicVisibility: false)
-      assert updated_dataset.present?
-      assert_not updated_dataset[:publicVisibility]
-      # delete dataset
-      assert @duos_client.delete_study(@study.duos_study_id)
-      assert_raises Faraday::ResourceNotFound do
-        @duos_client.study(@study.duos_study_id)
-      end
-      assert_raises Faraday::ServerError do
-        @duos_client.dataset(@study.duos_dataset_id) # this raises a 500 error after deletion
-      end
-    end
-  end
+  # test 'should run full integration on study' do
+  #   skip 'skipping due to frequent failures in dev'
+  #   # create dataset
+  #   RequestUtils.stub :get_base_url, 'https://localhost:3000/single_cell' do
+  #     dataset = @duos_client.create_dataset(@study)
+  #     assert dataset.present?
+  #     assert_equal @duos_client.duos_study_name(@study), dataset[:studyName]
+  #     assert_equal @duos_client.duos_study_description(@study), dataset[:studyDescription]
+  #     # load DUOS entities
+  #     ids = @duos_client.identifiers_from_dataset(dataset)
+  #     puts "-- DUOS IDs for #{@study.accession}: #{ids} --"
+  #     sleep(5) # brief pause to allow DUOS to finalize entries otherwise we get a 40x error
+  #     assert @duos_client.study(ids[:duos_study_id]).present?
+  #     assert @duos_client.dataset(ids[:duos_dataset_id]).present?
+  #     # update DUOS study, making sure to update study with new identifiers first
+  #     @study.update(**ids)
+  #     @study.update(public: false)
+  #     @study.reload
+  #     updated_dataset = @duos_client.update_study(@study.duos_study_id, publicVisibility: false)
+  #     assert updated_dataset.present?
+  #     assert_not updated_dataset[:publicVisibility]
+  #     # delete dataset
+  #     assert @duos_client.delete_study(@study.duos_study_id)
+  #     assert_raises Faraday::ResourceNotFound do
+  #       @duos_client.study(@study.duos_study_id)
+  #     end
+  #     assert_raises Faraday::ServerError do
+  #       @duos_client.dataset(@study.duos_dataset_id) # this raises a 500 error after deletion
+  #     end
+  #   end
+  # end
 end

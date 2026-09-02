@@ -3,6 +3,7 @@ import rubyPlugin from 'vite-plugin-ruby'
 import react from '@vitejs/plugin-react'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
 import { readFileSync } from 'fs'
+import { resolve } from 'path'
 
 // Match latest non-draft at https://github.com/broadinstitute/single_cell_portal_core/releases
 const version = readFileSync('version.txt', { encoding: 'utf8' })
@@ -37,7 +38,8 @@ export default defineConfig({
   ],
   'resolve': {
     'alias': {
-      'lib/assets/metadata_schemas/alexandria_convention/alexandria_convention_schema.json': 'lib/assets/metadata_schemas/alexandria_convention/alexandria_convention_schema.json'
+      'lib/assets/metadata_schemas/alexandria_convention/alexandria_convention_schema.json':
+        resolve(import.meta.dirname, 'lib/assets/metadata_schemas/alexandria_convention/alexandria_convention_schema.json')
     }
   },
   'build': {
@@ -57,7 +59,7 @@ export default defineConfig({
   },
   'server': {
     'hmr': {
-      'host': '127.0.0.1',
+      'host': 'localhost',
       'protocol': 'ws',
       'timeout': 1.0
     },

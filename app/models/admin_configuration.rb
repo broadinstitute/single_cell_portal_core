@@ -216,7 +216,7 @@ class AdminConfiguration
 
   # sends an email to all site administrators on startup notifying them of portal restart
   def self.restart_notification
-    current_time = Time.zone.now.to_s(:long)
+    current_time = Time.zone.now.to_fs(:long)
     locked_jobs = Delayed::Job.where(:locked_by.nin => [nil]).count
     message = "<p>The Single Cell Portal was restarted at #{current_time}.</p><p>There are currently #{locked_jobs} jobs waiting to be restarted.</p>"
     SingleCellMailer.admin_notification('Portal restart', nil, message).deliver_now
@@ -238,7 +238,7 @@ class AdminConfiguration
       pid = pid_str.split(':').last
       # check if current job worker has matching pid; if not, then the job is orphaned and should be unlocked
       unless pids[worker] == pid
-        Rails.logger.info "#{Time.zone.now}: Restarting orphaned process #{job.id} initially queued on #{job.created_at.to_s(:long)}"
+        Rails.logger.info "#{Time.zone.now}: Restarting orphaned process #{job.id} initially queued on #{job.created_at.to_fs(:long)}"
         job.update(locked_by: nil, locked_at: nil)
         job_count += 1
       end

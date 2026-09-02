@@ -81,11 +81,11 @@ class StudyFileTest < ActiveSupport::TestCase
   end
 
   test 'expression file data validates' do
+    @study.reload
     # note that we don't (and shouldn't) actually *save* anything in this test,
     # so we use throwaway objects and ids.
-    blank_study = Study.new(data_dir: 'tmp')
     invalid_study_file = StudyFile.new(
-      study: blank_study,
+      study: @study,
       file_type: 'Expression Matrix',
       name: 'test_exp_validate',
       upload_file_name: 'matrix.txt',
@@ -96,7 +96,7 @@ class StudyFileTest < ActiveSupport::TestCase
         is_raw_counts: true
       )
     )
-    assert_equal false, invalid_study_file.valid?
+    assert_not invalid_study_file.valid?
     expected_errors = {
       base: [
         'Units is not included in the list',
@@ -107,10 +107,10 @@ class StudyFileTest < ActiveSupport::TestCase
     assert_equal(expected_errors, invalid_study_file.errors.messages)
 
     valid_study_file = StudyFile.new(
-      study: blank_study,
+      study: @study,
       file_type: 'Expression Matrix',
-      name: 'test_exp_validate',
-      upload_file_name: 'matrix.txt',
+      name: 'test_exp_should_validate',
+      upload_file_name: 'other_matrix.txt',
       taxon_id: Taxon.new.id,
       expression_file_info: ExpressionFileInfo.new(
         units: 'raw counts',
@@ -120,7 +120,7 @@ class StudyFileTest < ActiveSupport::TestCase
         is_raw_counts: true
       )
     )
-    assert_equal true, valid_study_file.valid?
+    assert valid_study_file.valid?
   end
 
   test 'should enforce raw counts associations' do
@@ -185,7 +185,7 @@ class StudyFileTest < ActiveSupport::TestCase
   end
 
   test 'should find associated raw/processed matrix files' do
-    matrix = FactoryBot.create(:study_file, name: 'matrix.txt', file_type: 'Expression Matrix', study: @study)
+    matrix = FactoryBot.create(:study_file, name: 'new_matrix.txt', file_type: 'Expression Matrix', study: @study)
     matrix.build_expression_file_info(is_raw_counts: false, library_preparation_protocol: 'MARS-seq',
                                       modality: 'Transcriptomic: unbiased', biosample_input_type: 'Whole cell',
                                       raw_counts_associations: [@expression_matrix.id.to_s])
