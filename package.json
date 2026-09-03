@@ -32,7 +32,7 @@
     "core-js": "^3.6.4",
     "crossfilter2": "^1.5.4",
     "exifreader": "4.40.1",
-    "fflate": "^0.7.3",
+    "fflate": "^0.7.5",
     "hdf5-indexed-reader": "1.0.1",
     "ideogram": "1.53.0",
     "jquery": "3.5.1",
