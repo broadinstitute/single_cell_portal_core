@@ -123,7 +123,7 @@ Rails.application.configure do
       end
     end
   end
-  # ActionMailer::Base.register_interceptor(DeveloperMailInterceptor)
+  ActionMailer::Base.register_interceptor(DeveloperMailInterceptor)
 
   # CUSTOM CONFIGURATION
 
