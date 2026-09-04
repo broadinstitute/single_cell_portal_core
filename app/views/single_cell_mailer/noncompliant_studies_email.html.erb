@@ -1,0 +1,8 @@
+<%= @message.html_safe %>
+<p>
+  The studies in question are: <%= @study_accessions.map { |acc| link_to(acc, legacy_study_url(acc)) }.join(', ').html_safe %>
+<p>
+<p>
+  Regards,<br />
+  The Single Cell Portal Team
+</p>

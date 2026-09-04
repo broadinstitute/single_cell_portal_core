@@ -25,6 +25,22 @@ class SingleCellMailer < ApplicationMailer
       users_email(email_batch, email_params[:from], email_params[:subject], email_params[:contents]).deliver
     end
   end
+  
+  def noncompliant_studies_email(user, email_params)
+    @message = email_params[:contents]
+    @study_accessions = Study.noncompliant_studies(user:).map(&:accession)
+    mail(to: user.email, reply_to: ApplicationController::SCP_ZENDESK, subject: "[Single Cell Portal Notifier] #{email_params[:subject]}") do |format|
+      format.html
+    end
+  end
+
+  # sequential email to users with noncompliant private studies
+  def batch_noncompliant_studies_email(email_params)
+    users = Study.noncompliant_studies.pluck(:user).uniq
+    users.each do |user|
+      noncompliant_studies_email(user, email_params).deliver
+    end
+  end
 
   def notify_admin_upload_fail(study_file, error)
     @study = study_file.study

@@ -696,6 +696,10 @@ class Study
   # VALIDATIONS & CALLBACKS
   #
   ###
+  
+  # check user organizational email before attempting to create workspace
+  validate :check_user_org_on_private
+
 
   # custom validator since we need everything to pass in a specific order (otherwise we get orphaned FireCloud workspaces)
   validate :initialize_with_new_workspace, on: :create, if: Proc.new {|study| !study.use_existing_workspace && !study.detached}
@@ -742,7 +746,6 @@ class Study
   validates_uniqueness_of :external_identifier, allow_blank: true
   validates :cell_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :enforce_embargo_max_length
-  validate :check_user_org_on_private
 
   ###
 
@@ -804,6 +807,16 @@ class Study
       group_shares = check_groups ? user.user_groups : []
       intersection = owned + shares + group_shares
       Study.in(:_id => intersection)
+    end
+  end
+
+  # list of studies that are noncompliant (private and more than 1 year old)
+  # can scope to single user if need be
+  def self.noncompliant_studies(user: nil)
+    if user
+      self.where(user_id: user._id, detached: false, public: false, :created_at.lt => SummaryStatsUtils.private_study_cutoff)
+    else
+      self.where(detached: false, public: false, :created_at.lt => SummaryStatsUtils.private_study_cutoff)
     end
   end
 

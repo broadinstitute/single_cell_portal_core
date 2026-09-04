@@ -127,6 +127,8 @@ Rails.application.routes.draw do
     get 'admin/deployment' , to: 'admin_configurations#view_deployment', as: :view_deployment
     post 'admin/deployment', to: 'admin_configurations#create_deployment_notification', as: :create_deployment_notification
     delete 'admin/deployment', to: 'admin_configurations#delete_deployment_notification', as: :delete_deployment_notification
+    get 'admin/noncompliant_studies', to: 'admin_configurations#noncompliant_studies', as: :noncompliant_studies
+    post 'admin/noncompliant_studies', to: 'admin_configurations#contact_noncompliant_study_owners', as: :contact_noncompliant_study_owners
     resources :admin_configurations, path: 'admin'
     resources :preset_searches
 
