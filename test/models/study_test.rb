@@ -321,4 +321,25 @@ class StudyTest < ActiveSupport::TestCase
     study.update(duos_study_id:)
     assert study.has_resource_links?
   end
+
+  test 'should find noncompliant private studies' do
+    study = FactoryBot.create(
+      :detached_study, user: @user, created_at: 400.days.ago, name_prefix: 'Noncompliant Study One Test',
+      public: false, test_array: @@studies_to_clean
+    )
+    other_user = FactoryBot.create(:user, test_array: @@users_to_clean)
+    other_study = FactoryBot.create(
+      :detached_study, user: other_user, created_at: 400.days.ago, name_prefix: 'Noncompliant Study Two Test',
+      public: false, test_array: @@studies_to_clean
+    )
+
+    
+    noncompliant_studies = Study.noncompliant_studies
+    assert_includes noncompliant_studies.to_a, study
+    assert_includes noncompliant_studies.to_a, other_study
+
+    user_noncompliant_studies = Study.noncompliant_studies(user: other_user)
+    assert_includes user_noncompliant_studies.to_a, other_study
+    assert_not_includes user_noncompliant_studies.to_a, study
+  end
 end

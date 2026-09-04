@@ -813,11 +813,9 @@ class Study
   # list of studies that are noncompliant (private and more than 1 year old)
   # can scope to single user if need be
   def self.noncompliant_studies(user: nil)
-    if user
-      self.where(user_id: user._id, detached: false, public: false, :created_at.lt => SummaryStatsUtils.private_study_cutoff)
-    else
-      self.where(detached: false, public: false, :created_at.lt => SummaryStatsUtils.private_study_cutoff)
-    end
+    base_query = self.where(public: false, :created_at.lt => SummaryStatsUtils.private_study_cutoff)
+    # use merge to combine Mongoid criteria objects to prevent chaining
+    user.present? ? base_query.merge(self.where(user_id: user._id)) : base_query
   end
 
   # check if a give use can edit study
