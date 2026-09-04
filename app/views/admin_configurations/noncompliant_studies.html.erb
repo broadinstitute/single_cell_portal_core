@@ -1,0 +1,44 @@
+<h1>Contact non-compliant study owners 
+  <span class="badge"><%= @noncompliant_studies.count %> studies</span>
+  <span class="badge"><%= @study_owners.count %> users</span>
+  </h1>
+<div class="bs-callout bs-callout-default">
+  <h4>Instructions</h4>
+  <p>Use this form to send an email to all study owners that have private studies more than 1 year old. To send a test message to yourself
+    first, use the <strong>To email</strong> field.  Each qualified study owner will have a list of noncompliant studies appended to this message.</p>
+</div>
+<%= form_for(:email, url: contact_noncompliant_study_owners_path, html: {class: 'form', id: 'noncompliant-study-email' }) do |f| %>
+  
+  <div class="form-group row">
+    <div class="col-md-8">
+      <%= f.label :subject %><br />
+      <%= f.text_field :subject, value: "Regarding your private Single Cell Portal study",class: 'form-control' %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :to, 'To Email' %><br />
+      <%= f.text_field :to, class: 'form-control' %>
+    </div>
+  </div>
+  <div class="form-group row">
+    <div class="col-md-12">
+      <%= f.text_area :contents, value: @default_email %>
+    </div>
+  </div>
+  <div class="form-group row">
+    <div class="col-md-12">
+      <%= f.button type: 'submit', class: 'btn btn-lg btn-success', id: 'deliver-noncompliant-study-email' do %>
+        <i class='fas fa-fw fa-envelope'></i> Deliver email
+      <% end %>
+    </div>
+  </div>
+<% end %>
+<p><%= link_to "<i class='fas fa-fw fa-chevron-left'></i> Back".html_safe, admin_configurations_path, class: 'btn btn-warning' %></p>
+
+<script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
+
+    var ckEditor = ClassicEditor
+        .create( document.querySelector( '#email_contents' ),
+            fullCKEditorConfig
+        );
+
+</script>

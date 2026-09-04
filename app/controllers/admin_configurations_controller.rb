@@ -360,6 +360,25 @@ class AdminConfigurationsController < ApplicationController
     end
   end
 
+  def noncompliant_studies
+    @noncompliant_studies = Study.noncompliant_studies
+    @study_owners = @noncompliant_studies.map(&:user).uniq
+    @default_email = render_to_string(partial: 'noncompliant_study_email')
+  end
+
+  def contact_noncompliant_study_owners
+    if noncompliant_study_email_params[:to].present?
+      user = User.find_by(email: noncompliant_study_email_params[:to])
+      studies = Study.noncompliant_studies(user:)
+      SingleCellMailer.noncompliant_studies_email(user, noncompliant_study_email_params).deliver_now
+      notice = "Email sent to #{noncompliant_study_email_params[:to]}."
+    else
+      SingleCellMailer.delay.batch_noncompliant_study_owners_email(noncompliant_study_email_params)
+      notice = "Email queued for delivery to all noncompliant study owners."
+    end
+    redirect_to admin_configurations_path, notice:
+  end
+
   ###
   #
   # DEPLOYMENT METHODS
@@ -422,6 +441,11 @@ class AdminConfigurationsController < ApplicationController
   # parameters for sending user emails
   def users_email_params
     params.require(:email).permit(:subject, :from, :contents, :preview)
+  end
+
+  # parameters for sending noncompliant study emails
+  def noncompliant_study_email_params
+    params.require(:email).permit(:subject, :to, :contents)
   end
 
   def readonly_settings_params

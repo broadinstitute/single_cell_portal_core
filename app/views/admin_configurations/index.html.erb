@@ -47,7 +47,7 @@
           <h3>Other tasks</h3>
           <div class="well well-lg">
             <div class="form-group row">
-              <div class="col-md-5">
+              <div class="col-md-4">
                 <%= select_tag :admin_action, options_for_select(@administrative_tasks), include_blank: 'Please select a task...', class: 'form-control' %>
                 <%= hidden_field_tag :action_method %>
                 <div id="task-descriptions">
@@ -56,11 +56,12 @@
                   <% end %>
                 </div>
               </div>
-              <div class="col-md-2">
+              <div class="col-md-1">
                 <%= link_to 'Execute task', '#/', id: 'perform-admin-task', class: 'btn btn-default' %>
               </div>
-              <div class="col-md-5 text-right">
+              <div class="col-md-7 text-right">
                 <%= link_to 'Email all users', compose_users_email_path, id: 'email-all-users', class: 'btn btn-primary' %>
+                <%= link_to 'Email noncompliant studies', contact_noncompliant_study_owners_path, id: 'email-noncompliant-study-owners', class: 'btn btn-warning' %>
                 <%= link_to "<span class='fas fa-exclamation-circle'></span> MANAGE TERRA ACCESS".html_safe, '#', class: 'btn btn-danger panic', id: 'show-panic-modal' %>
               </div>
             </div>
