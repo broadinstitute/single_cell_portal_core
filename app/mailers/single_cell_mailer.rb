@@ -27,6 +27,9 @@ class SingleCellMailer < ApplicationMailer
   end
   
   def noncompliant_studies_email(user, email_params)
+    # check feature flag status to prevent sending emails before feature is enabled
+    return false unless Rails.env.test? || user.feature_flag_for('non_compliant_study_emails')
+
     @message = email_params[:contents]
     @study_accessions = Study.noncompliant_studies(user:).map(&:accession)
     mail(to: user.email, reply_to: ApplicationController::SCP_ZENDESK, subject: "[Single Cell Portal Notifier] #{email_params[:subject]}") do |format|
