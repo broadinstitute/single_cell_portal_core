@@ -282,7 +282,7 @@ module Api
       private
 
       def set_publication
-        @publication = Publication.find_by(id: params[:id])
+        @publication = @study.publications.find_by(id: params[:id])
         if @publication.nil?
           head 404 and return
         end

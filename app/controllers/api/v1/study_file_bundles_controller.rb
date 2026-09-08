@@ -238,7 +238,7 @@ module Api
       end
 
       def set_study_file_bundle
-        @study_file_bundle = StudyFileBundle.find_by(id: params[:id])
+        @study_file_bundle = @study.study_file_bundles.find_by(id: params[:id])
         if @study_file_bundle.nil?
           head 404 and return
         end
