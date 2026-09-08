@@ -92,9 +92,14 @@ class SummaryStatsUtils
       }
     end
 
+    # duration for private study cutoff
+    def private_study_lifespan
+      1.year
+    end
+
     # rolling date cutoff for private studies
     def private_study_cutoff
-      1.year.ago.to_date
+      private_study_lifespan.ago.to_date
     end
 
     # determine if this is a private study over 1 year old

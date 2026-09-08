@@ -4,7 +4,7 @@
   </h1>
 <div class="bs-callout bs-callout-default">
   <h4>Instructions</h4>
-  <p>Use this form to send an email to all study owners that have private studies more than 1 year old. To send a test message to yourself
+  <p>Use this form to send an email to all study owners that have private studies more than <%= SummaryStatsUtils.private_study_lifespan.inspect %> old. To send a test message to yourself
     first, use the <strong>To email</strong> field.  Each qualified study owner will have a list of noncompliant studies appended to this message.</p>
 </div>
 <%= form_for(:email, url: contact_noncompliant_study_owners_path, html: {class: 'form', id: 'noncompliant-study-email' }) do |f| %>
