@@ -226,7 +226,7 @@ class ApplicationController < ActionController::Base
         invalid_permission: "You either do not have permission to perform that action, or #{study.accession} does not exist.",
         not_authenticated: "You must be signed in to download data from #{study.accession}.",
         detached: "We were unable to complete your request as #{study.accession} is detached from the workspace (maybe the workspace was deleted?)",
-        embargoed: "You may not download any data from #{study.accession} until #{study.embargo.try(:to_s, :long)}."
+        embargoed: "You may not download any data from #{study.accession} until #{study.embargo.try(:to_fs, :long)}."
     }
     # store redirect_url and message for later
     redirect_parameters = {}
