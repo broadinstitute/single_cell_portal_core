@@ -303,7 +303,7 @@ module Api
       end
 
       def set_study_share
-        @study_share = StudyShare.find_by(id: params[:id])
+        @study_share = @study.study_shares.find_by(id: params[:id])
         if @study_share.nil?
           head 404 and return
         end

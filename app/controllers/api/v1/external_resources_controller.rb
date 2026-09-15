@@ -282,7 +282,7 @@ module Api
       private
 
       def set_external_resource
-        @external_resource = ExternalResource.find_by(id: params[:id])
+        @external_resource = @study.external_resources.find_by(id: params[:id])
         if @external_resource.nil?
           head 404 and return
         end
