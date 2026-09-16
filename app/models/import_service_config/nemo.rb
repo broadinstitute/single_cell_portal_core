@@ -144,7 +144,7 @@ module ImportServiceConfig
       species_name = client.extract_associated_id(subject, :taxa, attribute: :name)
       sex_idx = subject['subject_attributes'].index {|attr| attr['name'] == 'sex'}
       sex = client.extract_associated_id(subject, :subject_attributes, index: sex_idx, attribute: :value) if sex_idx
-      taxon_id = subject['taxa']&.first&.[]('cv_term_id').split('NCBI:txid')&.last
+      taxon_id = client.extract_associated_id(subject, :taxa, attribute: :cv_term_id).split('NCBI:txid')&.last
       organ_label = client.extract_associated_id(sample, :anatomical_regions, attribute: :region_name)
       organ = client.extract_associated_id(sample, :anatomical_regions, attribute: :cv_term_id)
       { 
