@@ -119,6 +119,41 @@ module ImportServiceConfig
       study_file
     end
 
+    # traverse associations in API to retrive sample- and subject-level data to export as annotation data
+    #
+    # * *returns*
+    #  - (Array<Hash>) => array of hashes with annotation data for study_file
+    def annotation_data_for_file
+      file = load_file
+      if file['sample'].blank?
+        ids = client.extract_associated_ids(file, :parent_files)
+        samples = []
+        ids.each do |parent_file_id|
+          parent_file = client.file(parent_file_id)
+          samples << client.extract_associated_id(parent_file, :sample)
+        end
+        samples.uniq!
+        sample_id = samples.first
+      else
+        sample_id = client.extract_associated_id(file, :sample)
+      end
+      sample = client.sample(sample_id)
+      library_name = sample['libraries']&.first&.[]('technique') || ''
+      subject_id = client.extract_associated_id(sample, :subjects)
+      subject = client.subject(subject_id)
+      species_name = client.extract_associated_id(subject, :taxa, attribute: :name)
+      sex_idx = subject['subject_attributes'].index {|attr| attr['name'] == 'sex'}
+      sex = client.extract_associated_id(subject, :subject_attributes, index: sex_idx, attribute: :value) if sex_idx
+      taxon_id = subject['taxa']&.first&.[]('cv_term_id').split('NCBI:txid')&.last
+      organ_label = client.extract_associated_id(sample, :anatomical_regions, attribute: :region_name)
+      organ = client.extract_associated_id(sample, :anatomical_regions, attribute: :cv_term_id)
+      { 
+        library_preparation_protocol: find_library_prep(library_name),
+        species__ontology_label: species_name, sex:, species: "NCBITaxon_#{taxon_id}",
+        organ__ontology_label: organ_label, organ: organ.gsub(/\:/, '_')
+      }.reject { |_, v| v.blank? }.with_indifferent_access
+    end
+
     # main business logic of populating SCP models for NeMO data
     #
     # * *returns*
