@@ -289,7 +289,7 @@ module Api
       end
 
       def set_directory_listing
-        @directory_listing = DirectoryListing.find_by(id: params[:id])
+        @directory_listing = @study.directory_listings.find_by(id: params[:id])
         if @directory_listing.nil?
           head 404 and return
         end
