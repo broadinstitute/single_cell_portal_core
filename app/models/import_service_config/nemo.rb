@@ -138,7 +138,7 @@ module ImportServiceConfig
         sample_id = client.extract_associated_id(file, :sample)
       end
       sample = client.sample(sample_id)
-      library_name = sample['libraries']&.first&.[]('technique') || ''
+      library_name = client.extract_associated_id(sample, :libraries, attribute: :technique)
       subject_id = client.extract_associated_id(sample, :subjects)
       subject = client.subject(subject_id)
       species_name = client.extract_associated_id(subject, :taxa, attribute: :name)
