@@ -5,3 +5,5 @@ json.set! :public, study.public
 json.set! :detached, study.detached
 json.set! :cell_count, study.cell_count
 json.set! :gene_count, study.gene_count
+json.set! :created_at, study.created_at
+json.set! :updated_at, study.updated_at
