@@ -2991,7 +2991,7 @@
     "@types/babel__core" "^7.20.5"
     react-refresh "^0.18.0"
 
-"@xmldom/xmldom@^0.9.9":
+"@xmldom/xmldom@^0.9.10":
   version "0.9.12"
   resolved "https://registry.yarnpkg.com/@xmldom/xmldom/-/xmldom-0.9.12.tgz#1f84c07cb95ccf28202299f77b5fd7fc257151e8"
   integrity sha512-5AXjrcMClTryPe9LgZrygpB1lj7s0S9E0+W+AHaVKAVyHanafK86iPSvG5xHVSp/jC+VH1UXu0TAEmY279xH7A==
@@ -5315,12 +5315,12 @@ execa@^4.0.0:
     signal-exit "^3.0.2"
     strip-final-newline "^2.0.0"
 
-exifreader@4.40.1:
-  version "4.40.1"
-  resolved "https://registry.yarnpkg.com/exifreader/-/exifreader-4.40.1.tgz#4b0554645f9409e00a4dbb7943f2adc297b534a1"
-  integrity sha512-Xavsts17ZYZoxUsUn+HCvGf8LB2ry7/pLSk2bYhXPGNLKciQDOxsY2EoytnKWfGmBRm4yvHVkw8RWsG5J8s3pA==
+exifreader@4.41.1:
+  version "4.41.1"
+  resolved "https://registry.yarnpkg.com/exifreader/-/exifreader-4.41.1.tgz#82acf3865ea74602c8a065e68a3e0cd637274783"
+  integrity sha512-cHEtwlt6OmqEnWO906/ZURHym4gzRJ2VNQObeSEqhoBRk9oPFoHyPsrermUZ4JHE4T4o46mLbcJfF3r9PPVXdg==
   optionalDependencies:
-    "@xmldom/xmldom" "^0.9.9"
+    "@xmldom/xmldom" "^0.9.10"
 
 exit@^0.1.2:
   version "0.1.2"
