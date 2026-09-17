@@ -132,7 +132,7 @@ class NemoClient
   # * *returns*
   #   - (String) NeMO API identifier in nemo:[a-z]{3}-[a-z0-9]{7}$ form
   def extract_associated_id(entity, association, index: 0, attribute: nil)
-    associated_entity = entity[association.to_s]
+    associated_entity = entity.with_indifferent_access[association]
     entity = associated_entity.is_a?(Array) ? associated_entity[index] : associated_entity
     entity_id_from_url(entity, attribute:)
   end
@@ -147,7 +147,7 @@ class NemoClient
   # * *returns*
   #   - (Array) of NeMO API identifiers in nemo:[a-z]{3}-[a-z0-9]{7}$ form
   def extract_associated_ids(entity, association, attribute: nil)
-    associated_entities = entity[association.to_s]
+    associated_entities = entity.with_indifferent_access[association]
     entities = associated_entities.is_a?(Array) ? associated_entities : [associated_entities]
     entities.map do |associated_entity|
       entity_id_from_url(associated_entity, attribute:)
@@ -163,7 +163,7 @@ class NemoClient
   # * *returns*
   #  - (String) NeMO API identifier in nemo:[a-z]{3}-[a-z0-9]{7}$ form
   def entity_id_from_url(entity, attribute: nil)
-    reference = attribute ? entity&.[](attribute.to_s) : entity
+    reference = attribute ? entity.with_indifferent_access[attribute] : entity
     reference&.split('/')&.last
   end
 
