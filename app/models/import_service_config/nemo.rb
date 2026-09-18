@@ -119,6 +119,51 @@ module ImportServiceConfig
       study_file
     end
 
+    # use the API to find an associated sample ID for a given file, either directly or via parent files
+    # 
+    # * *returns*
+    #   - (String) => sample ID in nemo:smp-[a-z0-9]{7}$ form, or nil if no sample association is found
+    def sample_id_from_file
+      file = load_file
+      if file['sample'].present?
+        client.extract_associated_id(file, :sample)
+      elsif file['parent_files'].present?
+        ids = client.extract_associated_ids(file, :parent_files)
+        samples = ids.map do |parent_file_id|
+          parent_file = client.file(parent_file_id)
+          client.extract_associated_id(parent_file, :sample)
+        end
+        samples.uniq.first # there should only ever be one sample for an analysis h5ad file
+      else
+        nil
+      end
+    end
+
+    # traverse associations in API to retrive sample- and subject-level data to export as annotation data
+    #
+    # * *returns*
+    #   - (Hash) => annotation data for study_file, or nil if no associated sample is found
+    def annotation_data_for_file
+      sample_id = sample_id_from_file
+      return nil unless sample_id
+
+      sample = client.sample(sample_id)
+      library_name = client.extract_associated_id(sample, :libraries, attribute: :technique)
+      subject_id = client.extract_associated_id(sample, :subjects)
+      subject = client.subject(subject_id)
+      species_name = client.extract_associated_id(subject, :taxa, attribute: :name)
+      sex_idx = subject['subject_attributes'].index {|attr| attr['name'] == 'sex'}
+      sex = client.extract_associated_id(subject, :subject_attributes, index: sex_idx, attribute: :value) if sex_idx
+      taxon_id = client.extract_associated_id(subject, :taxa, attribute: :cv_term_id).split('NCBI:txid')&.last
+      organ_label = client.extract_associated_id(sample, :anatomical_regions, attribute: :region_name)
+      organ = client.extract_associated_id(sample, :anatomical_regions, attribute: :cv_term_id)
+      { 
+        library_preparation_protocol__ontology_label: find_library_prep(library_name),
+        organ: organ.gsub(/\:/, '_'), organ__ontology_label: organ_label, sex:, 
+        species: "NCBITaxon_#{taxon_id}", species__ontology_label: species_name, 
+      }.reject { |_, v| v.blank? }.with_indifferent_access
+    end
+
     # main business logic of populating SCP models for NeMO data
     #
     # * *returns*

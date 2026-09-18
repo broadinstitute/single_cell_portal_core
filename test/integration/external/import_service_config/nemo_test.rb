@@ -48,13 +48,12 @@ module ImportServiceConfig
       assert_equal @branding_group, @configuration.branding_group
     end
 
-    # TODO: re-enable when NeMO API supports file endpoint again (currently returns 500)
-    # test 'should traverse associations to set ids' do
-    #   config = ImportServiceConfig::Nemo.new(file_id: @attributes[:file_id])
-    #   config.traverse_associations!
-    #   assert_equal @attributes[:study_id], config.study_id
-    #   assert_equal 'nemo:grn-gyy3k8j', config.project_id
-    # end
+    test 'should traverse associations to set ids' do
+      config = ImportServiceConfig::Nemo.new(file_id: @attributes[:file_id])
+      config.traverse_associations!
+      assert_equal @attributes[:study_id], config.study_id
+      assert_equal 'nemo:grn-gyy3k8j', config.project_id
+    end
 
     test 'should load defaults' do
       study_defaults = {
@@ -100,12 +99,12 @@ module ImportServiceConfig
       assert_equal [{"name"=>"human", "cv_term_id"=>"NCBI:txid9606"}], study['taxa']
     end
 
-    # test 'should load file analog' do
-    #   file = @configuration.load_file
-    #   assert_equal 'human_var_scVI_VLMC.h5ad', file['file_name']
-    #   assert_equal 'h5ad', file['file_format']
-    #   assert_equal 'counts', file['data_type']
-    # end
+    test 'should load file analog' do
+      file = @configuration.load_file
+      assert_equal 'human_var_scVI_VLMC.h5ad', file['file_name']
+      assert_equal 'h5ad', file['file_format']
+      assert_equal 'counts', file['data_type']
+    end
 
     test 'should load collection analog' do
       collection = @configuration.load_collection
@@ -113,9 +112,9 @@ module ImportServiceConfig
     end
 
     test 'should extract association ids' do
-      # file = @configuration.load_file
+      file = @configuration.load_file
       study = @configuration.load_study
-      # assert_equal @attributes[:study_id], @configuration.id_from(file, :collections)
+      assert_equal @attributes[:study_id], @configuration.id_from(file, :collections)
       assert_equal 'nemo:grn-gyy3k8j', @configuration.id_from(study, :projects)
     end
 
@@ -128,6 +127,30 @@ module ImportServiceConfig
       assert_equal 'Drop-seq', @configuration.find_library_prep('drop-seq')
     end
 
+    test 'should get sample id from file' do
+      file_id = 'nemo:fil-xoawyq2'
+      config = ImportServiceConfig::Nemo.new(file_id:)
+      expected_sample_id = 'nemo:smp-ixjgr17'
+      assert_equal expected_sample_id, config.sample_id_from_file
+    end
+
+    test 'should get annotation data from file' do
+      file_id = 'nemo:fil-xoawyq2'
+      config = ImportServiceConfig::Nemo.new(file_id:)
+      annotation_data = config.annotation_data_for_file
+      expected_data = {
+        library_preparation_protocol__ontology_label: "10x 3' v3",
+        organ: 'UBERON_0001904',
+        organ__ontology_label: 'habenula',
+        sex: 'male',
+        species: 'NCBITaxon_10090',
+        species__ontology_label: 'house mouse'
+      }
+      expected_data.each do |key, value|
+        assert_equal value, annotation_data[key]
+      end
+    end
+
     test 'should populate study and study_file' do
       scp_study = @configuration.populate_study
       assert_equal 'Human variation study (10x), GRU', scp_study.name
@@ -137,43 +160,43 @@ module ImportServiceConfig
       assert_equal @branding_group_id, scp_study.branding_group_ids.first
       assert_equal @configuration.service_name, scp_study.imported_from
       # populate StudyFile, using above study
-      # scp_study_file = @configuration.populate_study_file(scp_study.id)
-      # assert scp_study_file.use_metadata_convention
-      # assert_equal 'human_var_scVI_VLMC.h5ad', scp_study_file.upload_file_name
-      # assert_equal "10x 3' v3", scp_study_file.expression_file_info.library_preparation_protocol
-      # assert_equal @configuration.service_name, scp_study_file.imported_from
-      # assert_not scp_study_file.ann_data_file_info.reference_file
-      # @configuration.obsm_keys.each do |obsm_key_name|
-      #   assert scp_study_file.ann_data_file_info.find_fragment(data_type: :cluster, obsm_key_name:).present?
-      # end
-      # assert scp_study_file.ann_data_file_info.find_fragment(data_type: :expression).present?
+      scp_study_file = @configuration.populate_study_file(scp_study.id)
+      assert scp_study_file.use_metadata_convention
+      assert_equal 'human_var_scVI_VLMC.h5ad', scp_study_file.upload_file_name
+      assert_equal "10x 3' v3", scp_study_file.expression_file_info.library_preparation_protocol
+      assert_equal @configuration.service_name, scp_study_file.imported_from
+      assert_not scp_study_file.ann_data_file_info.reference_file
+      @configuration.obsm_keys.each do |obsm_key_name|
+        assert scp_study_file.ann_data_file_info.find_fragment(data_type: :cluster, obsm_key_name:).present?
+      end
+      assert scp_study_file.ann_data_file_info.find_fragment(data_type: :expression).present?
     end
 
-    # test 'should import all from service' do
-    #   access_url = 'gs://nemo-public/other/grant/u01_lein/lein/transcriptome/sncell/10x_v3/' \
-    #                'human/processed/counts/human_var_scVI_VLMC.h5ad'
-    #   file_mock = ::Minitest::Mock.new
-    #   file_mock.expect :generation, '123456789'
-    #   # for study to save, we need to mock all Terra orchestration API calls for creating workspace & setting acls
-    #   fc_client_mock = ::Minitest::Mock.new
-    #   owner_group = { groupEmail: 'sa-owner-group@firecloud.org' }.with_indifferent_access
-    #   assign_workspace_mock!(fc_client_mock, owner_group, 'human-variation-study-10x-gru')
-    #   AdminConfiguration.stub :find_or_create_ws_user_group!, owner_group do
-    #     ImportService.stub :copy_file_to_bucket, file_mock do
-    #       ApplicationController.stub :firecloud_client, fc_client_mock do
-    #         @configuration.stub :taxon_from, Taxon.new(common_name: 'human') do
-    #           study, study_file = @configuration.import_from_service
-    #           file_mock.verify
-    #           fc_client_mock.verify
-    #           assert study.persisted?
-    #           assert study_file.persisted?
-    #           assert_equal study.external_identifier, @attributes[:study_id]
-    #           assert_equal study_file.external_identifier, @attributes[:file_id]
-    #           assert_equal study_file.external_link_url, access_url
-    #         end
-    #       end
-    #     end
-    #   end
-    # end
+    test 'should import all from service' do
+      access_url = 'gs://nemo-public/other/grant/u01_lein/lein/transcriptome/sncell/10x_v3/' \
+                   'human/processed/counts/human_var_scVI_VLMC.h5ad'
+      file_mock = ::Minitest::Mock.new
+      file_mock.expect :generation, '123456789'
+      # for study to save, we need to mock all Terra orchestration API calls for creating workspace & setting acls
+      fc_client_mock = ::Minitest::Mock.new
+      owner_group = { groupEmail: 'sa-owner-group@firecloud.org' }.with_indifferent_access
+      assign_workspace_mock!(fc_client_mock, owner_group, 'human-variation-study-10x-gru')
+      AdminConfiguration.stub :find_or_create_ws_user_group!, owner_group do
+        ImportService.stub :copy_file_to_bucket, file_mock do
+          ApplicationController.stub :firecloud_client, fc_client_mock do
+            @configuration.stub :taxon_from, Taxon.new(common_name: 'human') do
+              study, study_file = @configuration.import_from_service
+              file_mock.verify
+              fc_client_mock.verify
+              assert study.persisted?
+              assert study_file.persisted?
+              assert_equal study.external_identifier, @attributes[:study_id]
+              assert_equal study_file.external_identifier, @attributes[:file_id]
+              assert_equal study_file.external_link_url, access_url
+            end
+          end
+        end
+      end
+    end
   end
 end
