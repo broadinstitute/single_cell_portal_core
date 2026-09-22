@@ -134,11 +134,18 @@ module ImportServiceConfig
       assert_equal expected_sample_id, config.sample_id_from_file
     end
 
+    test 'should get remote efo ontology data' do
+      efo_entries = @configuration.efo_ontology_entries
+      assert efo_entries.any?
+      assert_equal efo_entries["experimental factor"], "EFO_0000001"
+    end
+
     test 'should get annotation data from file' do
       file_id = 'nemo:fil-xoawyq2'
       config = ImportServiceConfig::Nemo.new(file_id:)
       annotation_data = config.annotation_data_for_file
       expected_data = {
+        library_preparation_protocol: 'EFO_0009922',
         library_preparation_protocol__ontology_label: "10x 3' v3",
         organ: 'UBERON_0001904',
         organ__ontology_label: 'habenula',

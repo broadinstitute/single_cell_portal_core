@@ -157,8 +157,10 @@ module ImportServiceConfig
       taxon_id = client.extract_associated_id(subject, :taxa, attribute: :cv_term_id).split('NCBI:txid')&.last
       organ_label = client.extract_associated_id(sample, :anatomical_regions, attribute: :region_name)
       organ = client.extract_associated_id(sample, :anatomical_regions, attribute: :cv_term_id)
+      lib_name = find_library_prep(library_name)
+      library_preparation_protocol = efo_ontology_entries[lib_name]
       { 
-        library_preparation_protocol__ontology_label: find_library_prep(library_name),
+        library_preparation_protocol:, library_preparation_protocol__ontology_label: lib_name,
         organ: organ.gsub(/\:/, '_'), organ__ontology_label: organ_label, sex:, 
         species: "NCBITaxon_#{taxon_id}", species__ontology_label: species_name, 
       }.reject { |_, v| v.blank? }.with_indifferent_access
