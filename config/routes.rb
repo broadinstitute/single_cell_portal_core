@@ -233,6 +233,9 @@ Rails.application.routes.draw do
     post 'profile/:id/firecloud_profile', to: 'profiles#update_firecloud_profile', as: :update_user_firecloud_profile
     get 'profile/:id/accept_tos', to: 'profiles#accept_tos', as: :accept_tos
     post 'profile/:id/accept_tos', to: 'profiles#record_tos_action', as: :record_tos_action
+    get 'profile/:id/products', to: 'profiles#list_products', as: :list_products
+    post 'profile/:id/products', to: 'profiles#purchase_product', as: :purchase_product
+    get 'profile/:id/purchases', to: 'profiles#list_purchases', as: :list_purchases
 
     # data viewing actions
     get 'study/:identifier', to: 'site#legacy_study', as: :legacy_study

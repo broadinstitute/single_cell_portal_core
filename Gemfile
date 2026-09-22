@@ -79,6 +79,8 @@ gem 'net-imap'
 gem 'net-pop'
 gem 'exponential-backoff'
 gem 'concurrent-ruby'
+gem 'stripe'
+
 # gems removed from stdlib in 3.4
 gem 'bigdecimal'
 gem 'mutex_m'
@@ -89,7 +91,6 @@ gem 'benchmark'
 gem 'drb'
 gem 'reline'
 gem 'irb'
-gem 'json_schemer'
 gem 'faraday-multipart', require: 'faraday/multipart'
 
 group :development, :test do

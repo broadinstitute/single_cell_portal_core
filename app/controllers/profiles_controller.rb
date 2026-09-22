@@ -132,6 +132,18 @@ class ProfilesController < ApplicationController
     end
   end
 
+  def list_products
+    
+  end
+
+  def purchase_product
+    
+  end
+
+  def list_purchases
+    
+  end
+
   private
 
   # set the requested user account
