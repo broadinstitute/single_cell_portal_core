@@ -7,9 +7,9 @@ class ProfilesController < ApplicationController
   #
   ##
 
-  before_action :set_user
+  before_action :set_user, except: :complete_purchase
   before_action :set_toggle_id, only: [:update, :update_study_subscription, :update_share_subscription]
-  before_action do
+  before_action except: :complete_purchase do
     authenticate_user!
     check_profile_access
   end
@@ -32,6 +32,11 @@ class ProfilesController < ApplicationController
       MetricsService.report_error(e, request, current_user)
       logger.info "#{Time.zone.now}: unable to retrieve FireCloud profile for #{current_user.email}: #{e.message}"
     end
+
+    # list available Stripe products
+    client = StripeApiClient.new
+    @products = client.products
+    @private_studies = @studies.where(detached: false, queued_for_deletion: false, public: false)
   end
 
   def update
@@ -132,16 +137,14 @@ class ProfilesController < ApplicationController
     end
   end
 
-  def list_products
-    
-  end
-
   def purchase_product
-    
-  end
-
-  def list_purchases
-    
+    client = StripeApiClient.new
+    study = @user.studies.find_by(accession: product_params[:study_accession])
+    checkout_session = client.create_private_study_checkout(
+      product_params[:product_id], @user, study, successful_purchase_path(@user.id)
+    )
+    puts "got checkout_session.url: #{checkout_session.url}"
+    redirect_to checkout_session.url, status: :see_other, allow_other_host: true and return
   end
 
   private
@@ -194,5 +197,9 @@ class ProfilesController < ApplicationController
 
   def tos_params
     params.require(:tos).permit(:action, :organization, :organizational_email)
+  end
+
+  def product_params
+    params.require(:product).permit(:product_id, :study_accession)
   end
 end

@@ -90,7 +90,7 @@ Rails.application.routes.draw do
             post 'studies/:accession/differential_expression', to: 'site#submit_differential_expression', as: :site_study_submit_differential_expression
             get 'studies/:accession/renew_read_only_access_token', to: 'site#renew_read_only_access_token', as: :site_renew_read_only_access_token
             get 'renew_user_access_token', to: 'site#renew_user_access_token', as: :site_renew_user_access_token
-
+            post 'complete_purchase', to: 'site#complete_purchase', as: :site_complete_stripe_purchase
           end
           scope :search do
             get 'facets', to: 'search#facets', as: :search_facets
@@ -233,9 +233,8 @@ Rails.application.routes.draw do
     post 'profile/:id/firecloud_profile', to: 'profiles#update_firecloud_profile', as: :update_user_firecloud_profile
     get 'profile/:id/accept_tos', to: 'profiles#accept_tos', as: :accept_tos
     post 'profile/:id/accept_tos', to: 'profiles#record_tos_action', as: :record_tos_action
-    get 'profile/:id/products', to: 'profiles#list_products', as: :list_products
     post 'profile/:id/products', to: 'profiles#purchase_product', as: :purchase_product
-    get 'profile/:id/purchases', to: 'profiles#list_purchases', as: :list_purchases
+    get 'profile/:id/purchase', to: 'profiles#successful_purchase', as: :successful_purchase
 
     # data viewing actions
     get 'study/:identifier', to: 'site#legacy_study', as: :legacy_study

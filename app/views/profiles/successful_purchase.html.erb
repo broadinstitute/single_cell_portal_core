@@ -1,0 +1,7 @@
+<% content_for(:html_title) { 'Successful purchase - Single Cell Portal' } %>
+<h2>Thank you for your purchase!</h2>
+<p>
+  Your order will be completed shortly, and we will contact you with any followup.  If you have any questions, please email us at 
+  <%= link_to ApplicationController::SCP_ZENDESK, "mailto:#{ApplicationController::SCP_ZENDESK}" %>.
+</p>
+<p><%= scp_link_to "<span class='fas fa-chevron-left'></span> Back".html_safe, view_profile_path(@user.id), class: 'btn btn-warning' %></p>

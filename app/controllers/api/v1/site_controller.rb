@@ -3,9 +3,9 @@ module Api
     class SiteController < ApiBaseController
       before_action :set_current_api_user!
       before_action :authenticate_api_user!, only: [:download_data, :stream_data, :submit_differential_expression]
-      before_action :set_study, except: [:studies, :check_terra_tos_acceptance, :renew_user_access_token]
+      before_action :set_study, except: [:studies, :check_terra_tos_acceptance, :renew_user_access_token, :complete_purchase]
       before_action :check_study_detached, only: [:download_data, :stream_data, :renew_read_only_access_token]
-      before_action :check_study_view_permission, except: [:studies, :check_terra_tos_acceptance, :renew_user_access_token]
+      before_action :check_study_view_permission, except: [:studies, :check_terra_tos_acceptance, :renew_user_access_token, :complete_purchase]
       before_action :set_study_file, only: [:download_data, :stream_data]
       before_action :check_download_agreement, only: [:download_data, :stream_data]
       before_action :get_download_quota, only: [:download_data, :stream_data]
@@ -536,6 +536,50 @@ module Api
           # job parameters failed to validate
           render json: { error: e.message}, status: 422 and return
         end
+      end
+
+      # Stripe API webhook endpoint
+      # registers events from Stripe to complete purchase lifecycle and grant exemptions for study owners
+      def complete_purchase
+        client = StripeApiClient.new
+        payload = request.body.read
+        event = nil
+
+        begin
+          event = Stripe::Event.construct_from(
+            JSON.parse(payload, symbolize_names: true)
+          )
+        rescue JSON::ParserError => e
+          # Invalid payload
+          ErrorTracker.report_exception(e, nil)
+          Rails.logger.error "Webhook error while parsing Stripe event request. #{e.message}"
+          head 400 and return
+        end
+
+        # Handle the event
+        case event.type
+        when 'checkout.session.completed', 'checkout.session.async_payment_succeeded'
+          checkout_session = client.checkout_session(event.data.object.id)
+          purchase = Purchase.find_or_create_by(
+            checkout_session_id: checkout_session.id, customer_email: checkout_session.customer_email,
+            payment_intent_id: checkout_session.payment_intent
+          )
+          purchase.paid = checkout_session.payment_status == 'paid'
+          purchase.study_accession = checkout_session.metadata.study_accession
+          purchase.save!
+        when 'payment_intent.succeeded'
+          payment_id = event.data.object.id
+          payment_intent = client.payment_intent(payment_id)
+          Rails.logger.info "Registering successful payment for #{payment_id}"
+          purchase = Purchase.find_or_create_by(
+            payment_intent_id: payment_id, customer_email: payment_intent.receipt_email,
+            checkout_session_id: payment_intent.payment_details.order_reference
+          )
+          purchase.update(paid: payment_intent.status == 'succeeded')
+        else
+          puts "Unhandled event type: #{event.type}"
+        end
+        head 200
       end
 
       private
