@@ -10,9 +10,6 @@
     <li role="presentation" class="profile-nav" id="profile-terra-nav">
       <a href="#profile-terra" data-toggle="tab">Terra Profile</a>
     </li>
-    <li role="presentation" class="profile-nav" id="list-products-nav">
-      <a href="#list-products" data-toggle="tab">Available Products</a>
-    </li>
   </ul>
 
   <div class="tab-content top-pad">
@@ -160,31 +157,6 @@
         </div>
       <% end %>
     </div>
-    <div class="tab-pane" id="list-products" role="tabpanel">
-      <h3>Available products</h3>
-      <p class="help-block">
-        Use the form below to browse available products for your SCP studies.  You will be redirected to our payment platform to 
-        complete any purchases, and then return here once you have completed the transaction.
-      </p>
-      <%= form_for :product, url: purchase_product_path(@user.id) do |f| %>
-        <div class="form-group row">
-          <div class="col-md-6">
-            <%= f.label :product_id, 'Product' %>
-            <%= f.select :product_id, options_for_select(@products.map {|p| ["#{p.name}: #{p.description}", p.id]}), 
-            { include_blank: true }, class: 'form-control' %>
-          </div>
-          <div class="col-md-3">
-            <%= f.label :study_accession, 'Associated Study' %>
-            <%= f.select :study_accession, options_from_collection_for_select(@private_studies, :accession, :accession), {}, class: 'form-control' %>
-          </div>
-          <div class="col-md-3">
-            <br />
-            <%= f.submit 'Start purchase', class: 'btn btn-success' %>
-          </div>
-        </div>
-      <% end %>
-    </div>
-  </div>
 </div>
 
 <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">

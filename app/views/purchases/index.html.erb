@@ -1,0 +1,58 @@
+<% content_for(:html_title) { 'Purchases - Single Cell Portal' } %>
+
+<h1>Purchase history</h1>
+
+<div class="table-responsive">
+  <div class="well">
+    <table class="table table-striped" id="purchases">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Associated Study</th>
+          <th>Price</th>
+          <th>Payment Status</th>
+          <th>Sale Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @purchases.each do |purchase| %>
+          <tr>
+            <td><%= purchase.name %></td>
+            <td><%= link_to purchase.study_accession, legacy_study_path(identifier: purchase.study_accession ) %></td>
+            <td><%= number_to_currency(purchase.amount) %></td>
+            <td><span class="label label-<%= purchase.paid? ? 'success' : 'warning' %>"><%= purchase.payment_status %></span></td>
+            <td><%= purchase.sale_date.to_fs(:db) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
+    $('#purchases').dataTable({
+      order: [[3, 'desc']],
+    });
+  </script>
+</div>
+<h2>Available products</h2>
+<p class="help-block">
+  Use the form below to select available products for your SCP studies.  You will be redirected to our payment platform to 
+  complete any purchases, and then return here once you have completed the transaction.
+</p>
+<%= form_for :product, url: create_stripe_checkout_path, data: { turbo: false } do |f| %>
+  <div class="row">
+    <div class="col-md-6">
+      <%= f.label :product_id, 'Product' %>
+      <%= f.select :product_id, options_for_select(@products.map {|p| ["#{p.name}: #{p.description}", p.id]}), 
+          { include_blank: true }, class: 'form-control' %>
+    </div>
+    <div class="col-md-2">
+      <%= f.label :study_accession, 'Associated Study' %>
+      <%= f.select :study_accession, options_from_collection_for_select(@private_studies, :accession, :accession), {}, class: 'form-control' %>
+    </div>
+    <div class="col-md-4">
+      <br />
+      <%= f.submit 'Begin purchase', class: 'btn btn-success' %>
+    </div>
+  </div>
+<% end %>

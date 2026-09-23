@@ -10,7 +10,7 @@ class StripeApiClient
   # * *returns*
   #   - (Array<Stripe::Product>)
   def products
-    @client.v1.products.list.data
+    @client.v1.products.list.data.reject {|p| p.description.include?('created by Stripe CLI') }
   end
 
   # get a single product
