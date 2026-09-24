@@ -14,10 +14,10 @@ class Purchase
   field :sale_date, type: DateTime
   field :payment_status, type: String, default: 'unpaid'
 
-  validates_presence_of :name, :checkout_session_id, :payment_intent_id, :customer_email
-  validates_uniqueness_of :study_accession, scope: [:name, :checkout_session_id]
-  validates_uniqueness_of :checkout_session_id, :payment_intent_id
-  validates_inclusion_of :payment_status, in: Purchase::PAYMENT_STATUSES
+  validates :name, :checkout_session_id, :payment_intent_id, :customer_email, presence: true
+  validates :study_accession, uniqueness: { scope: [:name, :checkout_session_id] }
+  validates :checkout_session_id, :payment_intent_id, uniqueness: true
+  validates :payment_status, inclusion: { in: Purchase::PAYMENT_STATUSES }
 
   def stripe_client
     @stripe_client ||= StripeApiClient.new
@@ -45,49 +45,30 @@ class Purchase
     payment_status == 'paid'
   end
 
-  # find or initialize from Stripe::Checkout::Session or Stripe::PaymentIntent object
+  # find or initialize from Stripe::Checkout::Session object
   # 
   # * *params*
-  #   - +object+ (Stripe::Checkout::Session, Stripe::PaymentIntent) => Stripe object to use for initialization
+  #   - +object+ (Stripe::Checkout::Session)
   #   
   # * *returns*
   #   - (Purchase)
-  def self.find_or_intialize_from(object)
-    existing = Purchase.any_of( {checkout_session_id: object.id }, { payment_intent_id: object.id } )
-    if existing.exists?
-      return existing.first
-    end
+  def self.find_or_intialize_from(checkout)
+    raise TypeError, "incompatible object type: #{checkout.class}" unless checkout.is_a?(Stripe::Checkout::Session)
 
-    case object.class.name
-    when 'Stripe::Checkout::Session'
-      purchased_item = object.line_items.data.first
-      Purchase.new(
-        name: purchased_item.description,
-        amount: object.amount_total / 100.0, # amount is provided in cents
-        checkout_session_id: object.id,
-        payment_intent_id: object.payment_intent,
-        customer_email: object.customer_email,
-        study_accession: object.metadata.study_accession,
-        sale_date: Time.at(object.created).in_time_zone,
-        payment_status: payment_status_from(object)
-      )
-    when 'Stripe::PaymentIntent'
-      purchase = Purchase.new(
-        amount: object.amount / 100.0, # amount is provided in cents
-        checkout_session_id: object.payment_details.order_reference,
-        payment_intent_id: object.id,
-        customer_email: object.receipt_email,
-        sale_date: Time.at(object.created).in_time_zone,
-        payment_status: payment_status_from(object)
-      )
-      checkout = purchase.checkout_session
-      purchased_item = checkout.line_items.data.first
-      purchase.name = purchased_item.description
-      purchase.study_accession = checkout.metadata.study_accession
-      purchase
-    else
-      raise TypeError, "source object is incompatible type: #{object.class.name}, must be one of #{SUPPORTED_CLASSES.join(', ')}"
-    end
+    registered_purchase = Purchase.find_by(checkout_session_id: checkout.id)
+    return registered_purchase if registered_purchase
+
+    purchased_item = checkout.line_items.data.first
+    Purchase.new(
+      name: purchased_item.description,
+      amount: checkout.amount_total / 100.0, # amount is provided in cents
+      checkout_session_id: checkout.id,
+      payment_intent_id: checkout.payment_intent,
+      customer_email: checkout.customer_email,
+      study_accession: checkout.metadata.study_accession,
+      sale_date: Time.at(checkout.created).in_time_zone,
+      payment_status: payment_status_from(checkout)
+    )
   end
 
   def self.payment_status_from(object)

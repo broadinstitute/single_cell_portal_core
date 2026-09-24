@@ -2,7 +2,7 @@
 # encapsulates business logic for cleaner interface to Stripe SDK
 class StripeApiClient
   def initialize
-    @client = Stripe::StripeClient.new(ENV['STRIPE_API_KEY'])
+    @client = Stripe::StripeClient.new(ENV['STRIPE_API_KEY'] || "apikey")
   end
 
   # list available products
@@ -10,7 +10,7 @@ class StripeApiClient
   # * *returns*
   #   - (Array<Stripe::Product>)
   def products
-    @client.v1.products.list.data.reject {|p| p.description.include?('created by Stripe CLI') }
+    @client.v1.products.list.data.reject {|p| p.description.include?('Stripe CLI') }
   end
 
   # get a single product
@@ -82,7 +82,12 @@ class StripeApiClient
       ],
       customer_email: user.email,
       metadata: {
-        study_accession: study.accession
+        study_accession: study.accession # stores in checkout_session object
+      },
+      payment_intent_data: {
+        metadata: {
+          study_accession: study.accession # stores in transaction
+        }
       },
       mode: 'payment',
       success_url: "#{RequestUtils.get_base_url}#{success_path}"

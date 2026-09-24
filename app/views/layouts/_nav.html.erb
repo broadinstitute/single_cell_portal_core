@@ -85,8 +85,10 @@
                                 class: 'check-upload', id: 'my-annotations' %></li>
             <li><%= scp_link_to "<span class='fas fa-book fa-fw'></span> My studies".html_safe, studies_path, class: 'check-upload',
                                 id: 'my-studies' %></li>
-            <li><%= scp_link_to "<span class='fas fa-shopping-cart fa-fw'></span> My purchases".html_safe, purchases_path,
+            <% if current_user.feature_flag_for('enable_purchases_ux') %>
+              <li><%= scp_link_to "<span class='fas fa-shopping-cart fa-fw'></span> My purchases".html_safe, purchases_path,
                                 class: 'check-upload', id: 'my-purchases' %></li>
+            <% end %>
             <li><%= scp_link_to "<span class='fas fa-dollar-sign fa-fw'></span> My billing projects".html_safe, billing_projects_path,
                                 class: 'check-upload', id: 'my-firecloud-projects' %></li>
             <li><%= scp_link_to "<span class='fas fa-plus fa-fw'></span> Create study".html_safe, new_study_path,

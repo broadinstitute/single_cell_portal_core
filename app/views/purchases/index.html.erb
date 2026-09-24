@@ -30,7 +30,7 @@
 
   <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
     $('#purchases').dataTable({
-      order: [[3, 'desc']],
+      order: [[4, 'desc']],
     });
   </script>
 </div>
@@ -39,20 +39,16 @@
   Use the form below to select available products for your SCP studies.  You will be redirected to our payment platform to 
   complete any purchases, and then return here once you have completed the transaction.
 </p>
-<%= form_for :product, url: create_stripe_checkout_path, data: { turbo: false } do |f| %>
-  <div class="row">
-    <div class="col-md-6">
-      <%= f.label :product_id, 'Product' %>
-      <%= f.select :product_id, options_for_select(@products.map {|p| ["#{p.name}: #{p.description}", p.id]}), 
-          { include_blank: true }, class: 'form-control' %>
-    </div>
-    <div class="col-md-2">
-      <%= f.label :study_accession, 'Associated Study' %>
-      <%= f.select :study_accession, options_from_collection_for_select(@private_studies, :accession, :accession), {}, class: 'form-control' %>
-    </div>
-    <div class="col-md-4">
-      <br />
-      <%= f.submit 'Begin purchase', class: 'btn btn-success' %>
-    </div>
-  </div>
+  <% @products.each do |product| %>
+    <%= form_for :product, url: create_stripe_checkout_path, html: { class: 'form-inline', id: "product-#{product.id}" }, data: { turbo: false } do |f| %>
+      <%= f.hidden_field :product_id, value: product.id %>    
+      <div class="form-group">
+        <strong><%= product.name %>:&nbsp;</strong> 
+        <span class="text-muted"><%= product.description %></span>
+        <%= f.select :study_accession, options_from_collection_for_select(@private_studies, :accession, :accession), {}, class: 'form-control' %>
+      </div>
+      <div class="form-group">
+        <%= f.submit 'Begin purchase', class: 'btn btn-success' %>
+      </div>
+    <% end %>
 <% end %>
