@@ -10,31 +10,31 @@
 usage=$(
 cat <<EOF
 $0 [OPTION]
--n VALUE	set the name of the docker container (defaults to 'single_cell')
--e VALUE	set the environment (defaults to 'development'. Running in 'production' will cause container to spawn headlessly)
--d VALUE	set the project directory to mount inside Docker container (defaults to current working directory: `pwd`)
--D VALUE	set the docker image version to use when booting the container (defaults to 'latest')
--m VALUE	set the MONGO_LOCALHOST variable, used to connect to MongoDB from portal
--M VALUE	set the MONGO_INTERNAL_IP variable, used to connect to MongoDB from ingest pipeline runs
--r VALUE	set the maximum allowable RAM to be allocated to portal (defaults to 12GB)
--N VALUE 	set the PORTAL_NAMESPACE environment variable (default FireCloud project, defaults to 'single-cell-portal')
--s VALUE	set the SECRET_KEY_BASE variable, used for secure cookies (auto-generates by default)
--k VALUE	set the SERVICE_ACCOUNT_KEY variable, necessary for making authenticated API calls to FireCloud & GCP (no default)
--K VALUE	set the READ_ONLY_SERVICE_ACCOUNT_KEY variable, used only for read access to GCS (no default)
--p VALUE	set the PROD_DATABASE_PASSWORD variable, used in production only (no default value)
--h VALUE	set the PROD_HOSTNAME variable (used for callbacks, defaults to 'portals.broadinstitute.org')
--u VALUE	set the SENDGRID_USERNAME variable (used for emails)
--P VALUE	set the SENDGRID_PASSWORD variable (used for emails)
--o VALUE	set the OAUTH_CLIENT_ID variable (for Google OAuth2)
--S VALUE	set the OAUTH_CLIENT_SECRET variable (for Google OAuth2)
--y VALUE	set the SENTRY_DSN variable (for Sentry error reporting, no default)
--Y VALUE	set the SENTRY_AUTH_TOKEN variable (for Sentry error reporting, no default)
--g VALUE 	set the GA_TRACKING_ID variable for tracking usage via Google Analytics (no default)
--a VALUE 	set the APP_INTERNAL_IP variable (so staging Image Pipeline can access staging SCP web server, if enabled)
--v VALUE	set the version of the single_cell_portal Docker image to use (defaults to latest)
--t VALUE	set the path to a specific test suite file to run (if booting in test mode only)
--R VALUE	set the regular expression or exact name to run only matching tests specified in -t (if booting in test mode only)
--H COMMAND	print this text
+-n VALUE  set the name of the docker container (defaults to 'single_cell')
+-e VALUE  set the environment (defaults to 'development'. Running in 'production' will cause container to spawn headlessly)
+-d VALUE  set the project directory to mount inside Docker container (defaults to current working directory: `pwd`)
+-D VALUE  set the docker image version to use when booting the container (defaults to 'latest')
+-m VALUE  set the MONGO_LOCALHOST variable, used to connect to MongoDB from portal
+-M VALUE  set the MONGO_INTERNAL_IP variable, used to connect to MongoDB from ingest pipeline runs
+-r VALUE  set the maximum allowable RAM to be allocated to portal (defaults to 12GB)
+-N VALUE  set the PORTAL_NAMESPACE environment variable (default FireCloud project, defaults to 'single-cell-portal')
+-s VALUE  set the SECRET_KEY_BASE variable, used for secure cookies (auto-generates by default)
+-k VALUE  set the SERVICE_ACCOUNT_KEY variable, necessary for making authenticated API calls to FireCloud & GCP (no default)
+-K VALUE  set the READ_ONLY_SERVICE_ACCOUNT_KEY variable, used only for read access to GCS (no default)
+-p VALUE  set the PROD_DATABASE_PASSWORD variable, used in production only (no default value)
+-h VALUE  set the PROD_HOSTNAME variable (used for callbacks, defaults to 'portals.broadinstitute.org')
+-u VALUE  set the SENDGRID_USERNAME variable (used for emails)
+-P VALUE  set the SENDGRID_PASSWORD variable (used for emails)
+-o VALUE  set the OAUTH_CLIENT_ID variable (for Google OAuth2)
+-S VALUE  set the OAUTH_CLIENT_SECRET variable (for Google OAuth2)
+-y VALUE  set the SENTRY_DSN variable (for Sentry error reporting, no default)
+-Y VALUE  set the SENTRY_AUTH_TOKEN variable (for Sentry error reporting, no default)
+-g VALUE  set the GA_TRACKING_ID variable for tracking usage via Google Analytics (no default)
+-a VALUE  set the APP_INTERNAL_IP variable (so staging Image Pipeline can access staging SCP web server, if enabled)
+-v VALUE  set the version of the single_cell_portal Docker image to use (defaults to latest)
+-t VALUE  set the path to a specific test suite file to run (if booting in test mode only)
+-R VALUE  set the regular expression or exact name to run only matching tests specified in -t (if booting in test mode only)
+-H COMMAND  print this text
 EOF
 )
 
@@ -60,151 +60,123 @@ DOCKER_IMAGE_VERSION='development'
 
 while getopts "n:N:e:d:D:m:M:r:s:k:K:f:F:p:h:u:P:H:o:S:y:g:t:R:w:W:A:a:" OPTION; do
 case $OPTION in
-	n)
-		CONTAINER_NAME="$OPTARG"
-		;;
-	e)
-		PASSENGER_APP_ENV="$OPTARG"
-		;;
-	d)
-		PROJECT_DIR="$OPTARG"
-		;;
-	D)
-		DOCKER_IMAGE_VERSION="$OPTARG"
-		;;
-	m)
-  	MONGO_LOCALHOST="$OPTARG"
-  	;;
+  n)
+    CONTAINER_NAME="$OPTARG"
+    ;;
+  e)
+    PASSENGER_APP_ENV="$OPTARG"
+    ;;
+  d)
+    PROJECT_DIR="$OPTARG"
+    ;;
+  D)
+    DOCKER_IMAGE_VERSION="$OPTARG"
+    ;;
+  m)
+    MONGO_LOCALHOST="$OPTARG"
+    ;;
   M)
-  	MONGO_INTERNAL_IP="$OPTARG"
-  	;;
-	r)
-		MAX_RAM="$OPTARG"
-		;;
-	s)
-		SECRET_KEY_BASE="$OPTARG"
-		;;
-	k)
-		SERVICE_ACCOUNT_KEY="$OPTARG"
-		;;
-	K)
-		READ_ONLY_SERVICE_ACCOUNT_KEY="$OPTARG"
-		;;
-	p)
-		PROD_DATABASE_PASSWORD="$OPTARG"
-		;;
-	h)
-		PROD_HOSTNAME="$OPTARG"
-		;;
-	N)
-		PORTAL_NAMESPACE="$OPTARG"
-		;;
-	u)
-		SENDGRID_USERNAME="$OPTARG"
-		;;
-	P)
-		SENDGRID_PASSWORD="$OPTARG"
-		;;
-	o)
-		OAUTH_CLIENT_ID="$OPTARG"
-		;;
-	S)
-		OAUTH_CLIENT_SECRET="$OPTARG"
-		;;
-	y)
-		SENTRY_DSN="$OPTARG"
-		;;
-	g)
-	 	GA_TRACKING_ID="$OPTARG"
-	 	;;
+    MONGO_INTERNAL_IP="$OPTARG"
+    ;;
+  r)
+    MAX_RAM="$OPTARG"
+    ;;
+  s)
+    SECRET_KEY_BASE="$OPTARG"
+    ;;
+  k)
+    SERVICE_ACCOUNT_KEY="$OPTARG"
+    ;;
+  K)
+    READ_ONLY_SERVICE_ACCOUNT_KEY="$OPTARG"
+    ;;
+  p)
+    PROD_DATABASE_PASSWORD="$OPTARG"
+    ;;
+  h)
+    PROD_HOSTNAME="$OPTARG"
+    ;;
+  N)
+    PORTAL_NAMESPACE="$OPTARG"
+    ;;
+  u)
+    SENDGRID_USERNAME="$OPTARG"
+    ;;
+  P)
+    SENDGRID_PASSWORD="$OPTARG"
+    ;;
+  o)
+    OAUTH_CLIENT_ID="$OPTARG"
+    ;;
+  S)
+    OAUTH_CLIENT_SECRET="$OPTARG"
+    ;;
+  y)
+    SENTRY_DSN="$OPTARG"
+    ;;
+  g)
+     GA_TRACKING_ID="$OPTARG"
+     ;;
   a)
-		APP_INTERNAL_IP="$OPTARG"
-		;;
-	H)
-		echo "$usage"
-		exit 0
-		;;
-	t)
-		TEST_FILEPATH="$OPTARG"
-		;;
-	R)
-		TEST_REGEX="$OPTARG"
-		;;
-	*)
-		echo "unrecognized option"
-		echo "$usage"
-		;;
-	esac
+    APP_INTERNAL_IP="$OPTARG"
+    ;;
+  H)
+    echo "$usage"
+    exit 0
+    ;;
+  t)
+    TEST_FILEPATH="$OPTARG"
+    ;;
+  R)
+    TEST_REGEX="$OPTARG"
+    ;;
+  *)
+    echo "unrecognized option"
+    echo "$usage"
+    ;;
+  esac
 done
 
 echo "### BOOTING PORTAL IN '$PASSENGER_APP_ENV' MODE WITH DOCKER IMAGE VERSION $DOCKER_IMAGE_VERSION"
 
+# construct base environment variable string
+BASE_ENV_VARS="-e PASSENGER_APP_ENV=$PASSENGER_APP_ENV -e MONGO_LOCALHOST=$MONGO_LOCALHOST -e MONGO_INTERNAL_IP=$MONGO_INTERNAL_IP \
+ -e PROD_DATABASE_PASSWORD=$PROD_DATABASE_PASSWORD -e GCP_NETWORK_NAME=$GCP_NETWORK_NAME -e GCP_SUB_NETWORK_NAME=$GCP_SUB_NETWORK_NAME \
+ -e SERVICE_ACCOUNT_KEY=$SERVICE_ACCOUNT_KEY -e READ_ONLY_SERVICE_ACCOUNT_KEY=$READ_ONLY_SERVICE_ACCOUNT_KEY -e PORTAL_NAMESPACE=$PORTAL_NAMESPACE \
+ -e SECRET_KEY_BASE=$SECRET_KEY_BASE -e PROD_HOSTNAME=$PROD_HOSTNAME -e SENDGRID_USERNAME=$SENDGRID_USERNAME \
+ -e SENDGRID_PASSWORD=$SENDGRID_PASSWORD -e OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID -e OAUTH_CLIENT_SECRET=$OAUTH_CLIENT_SECRET \
+ -e SENTRY_DSN=$SENTRY_DSN -e SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN -e GA_TRACKING_ID=$GA_TRACKING_ID \
+ -e GOOGLE_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT -e MIXPANEL_SECRET=$MIXPANEL_SECRET -e GOOGLE_PROJECT_NUMBER=$GOOGLE_PROJECT_NUMBER \
+ -e STRIPE_API_KEY=$STRIPE_API_KEY -e STRIPE_WEBHOOK_SECRET=$STRIPE_WEBHOOK_SECRET -e NEMO_API_USERNAME=$NEMO_API_USERNAME -e NEMO_API_PASSWORD=$NEMO_API_PASSWORD"
+ 
 if [[ "$PASSENGER_APP_ENV" = "production" || "$PASSENGER_APP_ENV" = "staging" ]]
 then
-	# generate random secret key for secure cookies
-	docker run -d --name "$CONTAINER_NAME" -p 80:80 -p 443:443 -h "$PROD_HOSTNAME" -v "$PROJECT_DIR:/home/app/webapp:delegated" \
-	    --mount type=volume,dst=/home/app/webapp/node_modules \
-	    -v "$PROJECT_DIR/data:/home/app/webapp/data:rw" -v "$PROJECT_DIR/log/nginx:/var/log/nginx:rw" -e PASSENGER_APP_ENV="$PASSENGER_APP_ENV" \
-	    -e MONGO_LOCALHOST="$MONGO_LOCALHOST" -e MONGO_INTERNAL_IP="$MONGO_INTERNAL_IP" -e PROD_DATABASE_PASSWORD="$PROD_DATABASE_PASSWORD" \
-	    -e GCP_NETWORK_NAME=$GCP_NETWORK_NAME -e GCP_SUB_NETWORK_NAME=$GCP_SUB_NETWORK_NAME -e SERVICE_ACCOUNT_KEY="$SERVICE_ACCOUNT_KEY" \
-	    -e READ_ONLY_SERVICE_ACCOUNT_KEY="$READ_ONLY_SERVICE_ACCOUNT_KEY" -e PORTAL_NAMESPACE="$PORTAL_NAMESPACE" \
-	    -e SECRET_KEY_BASE="$SECRET_KEY_BASE" -e PROD_HOSTNAME="$PROD_HOSTNAME" -e SENDGRID_USERNAME="$SENDGRID_USERNAME" \
-	    -e SENDGRID_PASSWORD="$SENDGRID_PASSWORD" -e OAUTH_CLIENT_ID="$OAUTH_CLIENT_ID" -e OAUTH_CLIENT_SECRET="$OAUTH_CLIENT_SECRET" \
-	    -e SENTRY_DSN="$SENTRY_DSN" -e SENTRY_AUTH_TOKEN="$SENTRY_AUTH_TOKEN" -e GA_TRACKING_ID="$GA_TRACKING_ID" \
-	    -e GOOGLE_CLOUD_PROJECT="$GOOGLE_CLOUD_PROJECT" -e MIXPANEL_SECRET="$MIXPANEL_SECRET" \
-	    -e APP_INTERNAL_IP="$APP_INTERNAL_IP" -e GOOGLE_PROJECT_NUMBER="$GOOGLE_PROJECT_NUMBER" \
-	    -e NEMO_API_USERNAME="$NEMO_API_USERNAME" -e NEMO_API_PASSWORD="$NEMO_API_PASSWORD" $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_VERSION
-elif [[ "$PASSENGER_APP_ENV" = "pentest" ]]
-then
-	docker run -d --name "$CONTAINER_NAME" -p 80:80 -p 443:443 -h "$PROD_HOSTNAME" -v "$PROJECT_DIR:/home/app/webapp:delegated" \
-	    --mount type=volume,dst=/home/app/webapp/node_modules \
-	    -v "$PROJECT_DIR/log/nginx:/var/log/nginx:rw" -v "$PROJECT_DIR/data:/home/app/webapp/data:rw" \
-	    -v "$PROJECT_DIR/single-cell-$PASSENGER_APP_ENV.broadinstitute.org.crt:/etc/pki/tls/certs/localhost.crt" \
-	    -v "$PROJECT_DIR/single-cell-$PASSENGER_APP_ENV.broadinstitute.org.key:/etc/pki/tls/private/localhost.key" -m "$MAX_RAM" \
-	    -e PASSENGER_APP_ENV="$PASSENGER_APP_ENV" -e MONGO_LOCALHOST="$MONGO_LOCALHOST" -e MONGO_INTERNAL_IP="$MONGO_INTERNAL_IP" \
-	    -e GCP_NETWORK_NAME=$GCP_NETWORK_NAME -e GCP_SUB_NETWORK_NAME=$GCP_SUB_NETWORK_NAME -e PROD_DATABASE_PASSWORD="$PROD_DATABASE_PASSWORD" \
-	    -e SERVICE_ACCOUNT_KEY="$SERVICE_ACCOUNT_KEY" -e READ_ONLY_SERVICE_ACCOUNT_KEY="$READ_ONLY_SERVICE_ACCOUNT_KEY" \
-	    -e PORTAL_NAMESPACE="$PORTAL_NAMESPACE" -e READ_ONLY_GOOGLE_CLOUD_KEYFILE_JSON="$READ_ONLY_GOOGLE_CLOUD_KEYFILE_JSON" \
-	    -e SECRET_KEY_BASE="$SECRET_KEY_BASE" -e PROD_HOSTNAME="$PROD_HOSTNAME" -e SENDGRID_USERNAME="$SENDGRID_USERNAME" \
-	    -e SENDGRID_PASSWORD="$SENDGRID_PASSWORD" -e OAUTH_CLIENT_ID="$OAUTH_CLIENT_ID" -e OAUTH_CLIENT_SECRET="$OAUTH_CLIENT_SECRET" \
-	    -e SENTRY_DSN="$SENTRY_DSN" -e SENTRY_AUTH_TOKEN="$SENTRY_AUTH_TOKEN" -e GA_TRACKING_ID="$GA_TRACKING_ID" \
-      -e MIXPANEL_SECRET="$MIXPANEL_SECRET" -e GOOGLE_CLOUD_PROJECT="$GOOGLE_CLOUD_PROJECT" \
-	    -e GOOGLE_PROJECT_NUMBER="$GOOGLE_PROJECT_NUMBER" -e NEMO_API_USERNAME="$NEMO_API_USERNAME" -e NEMO_API_PASSWORD="$NEMO_API_PASSWORD" \
-	    $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_VERSION
+  # generate random secret key for secure cookies
+  docker run -d --name "$CONTAINER_NAME" -p 80:80 -p 443:443 -h "$PROD_HOSTNAME" -v "$PROJECT_DIR:/home/app/webapp:delegated" \
+    --mount type=volume,dst=/home/app/webapp/node_modules -v "$PROJECT_DIR/data:/home/app/webapp/data:rw" \
+	-v "$PROJECT_DIR/log/nginx:/var/log/nginx:rw" $BASE_ENV_VARS -e APP_INTERNAL_IP="$APP_INTERNAL_IP" $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_VERSION
 elif [[ "$PASSENGER_APP_ENV" = "test" ]]
 then
-	# used only to run specific unit tests
-	if [ "$TEST_FILEPATH" != "" ]
+  # used only to run specific unit tests
+  if [ "$TEST_FILEPATH" != "" ]
   then
     EXTRA_ARGS="-t $TEST_FILEPATH"
     if [ "$TEST_REGEX" != "" ]
     then
       EXTRA_ARGS=$EXTRA_ARGS" -R $TEST_REGEX"
     fi
-	fi
+  fi
 
-	docker run --rm -t --name single_cell_test -h localhost -v "$PROJECT_DIR:/home/app/webapp:consistent" \
-	--mount type=volume,dst=/home/app/webapp/node_modules \
-	-e PASSENGER_APP_ENV="$PASSENGER_APP_ENV" -e MONGO_LOCALHOST="$MONGO_LOCALHOST" -e MONGO_INTERNAL_IP="$MONGO_INTERNAL_IP" -e BURP_PROXY \
-	-e PROD_DATABASE_PASSWORD="$PROD_DATABASE_PASSWORD" -e GCP_NETWORK_NAME=$GCP_NETWORK_NAME -e GCP_SUB_NETWORK_NAME=$GCP_SUB_NETWORK_NAME \
-	-e SERVICE_ACCOUNT_KEY="$SERVICE_ACCOUNT_KEY" -e READ_ONLY_SERVICE_ACCOUNT_KEY="$READ_ONLY_SERVICE_ACCOUNT_KEY"  -e PORTAL_NAMESPACE="$PORTAL_NAMESPACE" \
-	-e SECRET_KEY_BASE="$SECRET_KEY_BASE" -e GA_TRACKING_ID="$GA_TRACKING_ID" -e GOOGLE_CLOUD_KEYFILE_JSON="$GOOGLE_CLOUD_KEYFILE_JSON" \
-	-e GOOGLE_PRIVATE_KEY="$GOOGLE_PRIVATE_KEY" -e GOOGLE_CLIENT_EMAIL="$GOOGLE_CLIENT_EMAIL" -e GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
-	-e GOOGLE_CLOUD_PROJECT="$GOOGLE_CLOUD_PROJECT" -e CODECOV_TOKEN="$CODECOV_TOKEN" -e RAILS_LOG_TO_STDOUT="$RAILS_LOG_TO_STDOUT" \
-	-e CI="$CI" -e MIXPANEL_SECRET="$MIXPANEL_SECRET" -e GOOGLE_PROJECT_NUMBER="$GOOGLE_PROJECT_NUMBER" \
-	-e NEMO_API_USERNAME="$NEMO_API_USERNAME" -e NEMO_API_PASSWORD="$NEMO_API_PASSWORD" $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_VERSION bin/run_tests.sh $EXTRA_ARGS
+  docker run --rm -t --name single_cell_test -h localhost -v "$PROJECT_DIR:/home/app/webapp:consistent" \
+    --mount type=volume,dst=/home/app/webapp/node_modules $BASE_ENV_VARS \
+    -e BURP_PROXY -e GOOGLE_CLOUD_KEYFILE_JSON="$GOOGLE_CLOUD_KEYFILE_JSON" -e GOOGLE_PRIVATE_KEY="$GOOGLE_PRIVATE_KEY" \
+	-e GOOGLE_CLIENT_EMAIL="$GOOGLE_CLIENT_EMAIL" -e GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
+    -e CODECOV_TOKEN="$CODECOV_TOKEN" -e RAILS_LOG_TO_STDOUT="$RAILS_LOG_TO_STDOUT" -e CI="$CI"  \
+    $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_VERSION bin/run_tests.sh $EXTRA_ARGS
 else
-	docker run --rm -it --name "$CONTAINER_NAME" -p 80:80 -p 443:443 -p 587:587 -h localhost -v "$PROJECT_DIR:/home/app/webapp:delegated" \
-	--mount type=volume,dst=/home/app/webapp/node_modules \
-	-v "$PROJECT_DIR/log/nginx:/var/log/nginx:delegated" -e PASSENGER_APP_ENV=$PASSENGER_APP_ENV -e MONGO_LOCALHOST="$MONGO_LOCALHOST" \
-	-e PROD_DATABASE_PASSWORD="$PROD_DATABASE_PASSWORD" -e PORTAL_NAMESPACE=$PORTAL_NAMESPACE \
-	-e SERVICE_ACCOUNT_KEY=$SERVICE_ACCOUNT_KEY -e READ_ONLY_SERVICE_ACCOUNT_KEY=$READ_ONLY_SERVICE_ACCOUNT_KEY \
-	-e MONGO_INTERNAL_IP="$MONGO_INTERNAL_IP" -e GCP_NETWORK_NAME=$GCP_NETWORK_NAME -e GCP_SUB_NETWORK_NAME=$GCP_SUB_NETWORK_NAME \
-	-e READ_ONLY_GOOGLE_CLOUD_KEYFILE_JSON="$READ_ONLY_GOOGLE_CLOUD_KEYFILE_JSON" -e SENDGRID_USERNAME=$SENDGRID_USERNAME \
-	-e SENDGRID_PASSWORD=$SENDGRID_PASSWORD -e SECRET_KEY_BASE=$SECRET_KEY_BASE -e OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID \
-	-e OAUTH_CLIENT_SECRET=$OAUTH_CLIENT_SECRET -e SENTRY_DSN=$SENTRY_DSN -e SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN \
-	-e GA_TRACKING_ID=$GA_TRACKING_ID	-e GOOGLE_CLOUD_KEYFILE_JSON="$GOOGLE_CLOUD_KEYFILE_JSON" \
-	-e GOOGLE_PRIVATE_KEY="$GOOGLE_PRIVATE_KEY" -e GOOGLE_CLIENT_EMAIL="$GOOGLE_CLIENT_EMAIL" -e GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID"  \
-	-e GOOGLE_CLOUD_PROJECT="$GOOGLE_CLOUD_PROJECT" -e MIXPANEL_SECRET="$MIXPANEL_SECRET" -e GOOGLE_PROJECT_NUMBER="$GOOGLE_PROJECT_NUMBER" \
-	-e NEMO_API_USERNAME="$NEMO_API_USERNAME" -e NEMO_API_PASSWORD="$NEMO_API_PASSWORD" $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_VERSION
+  docker run --rm -it --name "$CONTAINER_NAME" -p 80:80 -p 443:443 -p 587:587 -h localhost -v "$PROJECT_DIR:/home/app/webapp:delegated" \
+    --mount type=volume,dst=/home/app/webapp/node_modules -v "$PROJECT_DIR/log/nginx:/var/log/nginx:delegated"  $BASE_ENV_VARS \
+    -e READ_ONLY_GOOGLE_CLOUD_KEYFILE_JSON="$READ_ONLY_GOOGLE_CLOUD_KEYFILE_JSON" -e GOOGLE_CLOUD_KEYFILE_JSON="$GOOGLE_CLOUD_KEYFILE_JSON" \
+    -e GOOGLE_PRIVATE_KEY="$GOOGLE_PRIVATE_KEY" -e GOOGLE_CLIENT_EMAIL="$GOOGLE_CLIENT_EMAIL" -e GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID"  \
+    $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_VERSION
 fi
