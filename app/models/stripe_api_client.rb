@@ -2,7 +2,7 @@
 # encapsulates business logic for cleaner interface to Stripe SDK
 class StripeApiClient
   def initialize
-    @client = Stripe::StripeClient.new(ENV['STRIPE_API_KEY'] || "apikey")
+    @client = Stripe::StripeClient.new(ENV['STRIPE_API_KEY'])
   end
 
   # list available products
