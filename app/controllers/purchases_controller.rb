@@ -7,7 +7,7 @@ class PurchasesController < ApplicationController
   def index
     @purchases = Purchase.where(customer_email: current_user.email)
     @products = @stripe_client.products
-    @private_studies = Study.where(user_id: current_user.id, detached: false, queued_for_deletion: false, public: false).reject {|s| s.has_purchases? }
+    @private_studies = Study.where(user_id: current_user.id, queued_for_deletion: false, public: false).reject {|s| s.has_purchases? }
   end
 
   # create a new checkout session and redirect user to Stripe platform to complete purchase

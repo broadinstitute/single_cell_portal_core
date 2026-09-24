@@ -24,6 +24,25 @@ class StripeApiClient
     @client.v1.products.retrieve(product_id)
   end
 
+    # list available prices
+  #
+  # * *returns*
+  #   - (Array<Stripe::Price>)
+  def prices
+    @client.v1.prices.list.data
+  end
+
+  # get a single price
+  #
+  # * *params*
+  #   - +product_id+ (String)
+  #   
+  # * *returns*
+  #   - (Stripe::Price)
+  def price(price_id)
+    @client.v1.prices.retrieve(price_id)
+  end
+
   # list available checkout sessions
   #
   # * *returns*
