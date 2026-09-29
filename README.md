@@ -73,13 +73,6 @@ environment variable when deploying your instance (see [Running the Container](#
 Note - while the Sentry DSN is stored with secrets and may appear as one, it is not a secret and Sentry's
 official stance is that [the Sentry DSN does not need to be kept private](https://github.com/getsentry/sentry-docs/pull/3123/files).
 
-#### [Google Analytics](https://analytics.google.com)
-
-The Single Cell Portal is configured to report web traffic to Google Analytics.  You will first need to set up an account
-on Google Analytics, and then to enable simply set the <code>GA_TRACKING_ID</code> environment variable when deploying
-(see [Running the Container](#running-the-container) and [DOCKER RUN COMMAND ENVIRONMENT VARIABLES](#docker-run-command-environment-variables)
-for more detail).
-
 ## LOCAL DEVELOPMENT OR DEPLOYING A PRIVATE INSTANCE
 
 If you are not part of the Single Cell Portal development team and are trying to use the portal locally or deploying a
@@ -275,6 +268,21 @@ OAUTH_CLIENT_SECRET variables are necessary for allowing Google user authenticat
 [Google Analytics](https://analytics.google.com)
 * **DOCKER_IMAGE_NAME**: This is the name of the Docker image the portal runs on, which is gcr.io/broad-singlecellportal-staging/single-cell-portal
 * **DOCKER_IMAGE_VERSION** The version tag of the above Docker image.  Defaults to 'development', but can be overridden with `-D [tag]`
+
+## [Stripe Integration](https://docs.stripe.com/api)
+
+Broad Institute deployments of Single Cell Portal integrate with Stripe for collecting user payments (still in alpha).  This is only required 
+if the associated feature flag `enable_purchases_ux` is enabled (either globally or for your user account).  Broad Institute team members can 
+access the associated Stripe account and integrate using the supplied credentials.  For local development, you will need the 
+[Stripe CLI](https://docs.stripe.com/stripe-cli) installed and authenticated.  Be sure to add the `STRIPE_API_KEY` and `STRIPE_WEBHOOK_SECRET` to 
+your GSM config for `scp-config-json`.  The API key can be found on the Stripe sandbox dashboard, and the webhook secret under the 
+"Developers" > "Webhooks" menu, or can be found when running the command below (it may be different for your machine).
+
+Then, to allow end-to-end integration of test purchases, run the following command:
+```
+stripe listen --all-snapshot --forward-to https://localhost:3000/single_cell/api/v1/stripe/event_webhook
+```
+This will listen and forward all events from our Stripe sandbox so that your local server can register purchases.
 * ****
 
 ### INGEST PIPELINE AND NETWORK ENVIRONMENT VARIABLES

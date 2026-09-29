@@ -1118,6 +1118,10 @@ class Study
     external_resources.any? || duos_study_id.present?
   end
 
+  def has_purchases?
+    Purchase.where(study_accession: accession, customer_email: user&.email).exists?
+  end
+
   ###
   #
   # DATA PATHS & URLS
