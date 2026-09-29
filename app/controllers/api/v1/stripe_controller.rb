@@ -11,7 +11,7 @@ module Api
         webhook_signature = ENV['STRIPE_WEBHOOK_SECRET']
 
         begin
-          if webhook_signature
+          if webhook_signature.present?
             signature = request.env['HTTP_STRIPE_SIGNATURE']
             event = Stripe::Webhook.construct_event(
               payload, signature, webhook_signature
