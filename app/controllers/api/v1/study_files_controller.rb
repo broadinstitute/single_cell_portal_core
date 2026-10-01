@@ -370,6 +370,11 @@ module Api
         parse_on_upload = safe_file_params[:parse_on_upload]
         safe_file_params.delete(:parse_on_upload)
 
+        # gotcha for removing raw_location parameter, if present
+        # this can happen sometimes due to form validation reloads
+        safe_file_params.delete(:raw_location)
+        safe_file_params[:expression_file_info_attributes]&.delete(:raw_location)
+
         # check if the name of the file has changed as we won't be able to tell after we saved
         name_changed = study_file.persisted? && study_file.name != safe_file_params[:name]
         # log the name properties to help with understanding SCP-4159
