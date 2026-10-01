@@ -15,7 +15,7 @@ class HcaAzulClient
   MANIFEST_FORMATS = %w[compact full terra.bdbag terra.pfb curl].freeze
 
   # maximum number of results to return
-  MAX_RESULTS = 75
+  MAX_RESULTS = 50
 
   # maximum length of query string (in characters) for requests
   MAX_QUERY_LENGTH = 8192

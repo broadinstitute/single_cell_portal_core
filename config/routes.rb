@@ -90,7 +90,6 @@ Rails.application.routes.draw do
             post 'studies/:accession/differential_expression', to: 'site#submit_differential_expression', as: :site_study_submit_differential_expression
             get 'studies/:accession/renew_read_only_access_token', to: 'site#renew_read_only_access_token', as: :site_renew_read_only_access_token
             get 'renew_user_access_token', to: 'site#renew_user_access_token', as: :site_renew_user_access_token
-
           end
           scope :search do
             get 'facets', to: 'search#facets', as: :search_facets
@@ -102,6 +101,9 @@ Rails.application.routes.draw do
             get 'summary', to: 'bulk_download#summary', as: :bulk_download_summary
             post 'drs_info', to: 'bulk_download#drs_info', as: :bulk_download_drs_info
             get 'generate_curl_config', to: 'bulk_download#generate_curl_config', as: :bulk_download_generate_curl_config
+          end
+          scope :stripe do
+            post 'event_webhook', to: 'stripe#event_webhook', as: :stripe_event_webhook
           end
         end
       end
@@ -233,6 +235,10 @@ Rails.application.routes.draw do
     post 'profile/:id/firecloud_profile', to: 'profiles#update_firecloud_profile', as: :update_user_firecloud_profile
     get 'profile/:id/accept_tos', to: 'profiles#accept_tos', as: :accept_tos
     post 'profile/:id/accept_tos', to: 'profiles#record_tos_action', as: :record_tos_action
+
+    get 'purchases/success', to: 'purchases#successful_purchase', as: :successful_purchase
+    post 'purchases', to: 'purchases#create_stripe_checkout', as: :create_stripe_checkout
+    get 'purchases', to: 'purchases#index', as: :purchases
 
     # data viewing actions
     get 'study/:identifier', to: 'site#legacy_study', as: :legacy_study
