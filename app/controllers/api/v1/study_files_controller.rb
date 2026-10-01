@@ -5,6 +5,7 @@ module Api
       before_action :set_study
       before_action :check_study_edit_permission
       before_action :set_study_file, except: [:index, :create, :bundle]
+      before_action :check_read_only_mode!, except: [:index, :show]
 
       respond_to :json
 

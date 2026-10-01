@@ -6,6 +6,7 @@ class AbTestsController < ApplicationController
   end
 
   before_action :set_ab_test, except: :create
+  before_action :check_read_only_mode!
 
   def create
     @feature_flag.build_ab_test.save! if @feature_flag.ab_test.nil?

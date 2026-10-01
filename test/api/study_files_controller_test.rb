@@ -30,6 +30,7 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
   teardown do
     OmniAuth.config.mock_auth[:google_oauth2] = nil
     reset_user_tokens
+    FeatureFlag.where(name: 'read_only_mode').destroy_all
   end
 
   test 'should get index' do
@@ -373,5 +374,21 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
       assert ann_data_file.is_raw_counts_file?
       assert ann_data_file.needs_raw_counts_extraction?
     end
+  end
+
+  test 'should enforce read-only mode for study files' do
+    FeatureFlag.create(name: 'read_only_mode', default_value: true)
+    @user.reload
+    study_file_attributes = {
+      study_file: {
+        upload_file_name: 'info.txt',
+        file_type: 'Other'
+      }
+    }
+    execute_http_request(:post, api_v1_study_study_files_path(study_id: @study.id),
+                          request_payload: study_file_attributes)
+    assert_response :forbidden
+    @study.reload
+    assert_not @study.study_files.any? { |f| f.upload_file_name == 'info.txt' }
   end
 end

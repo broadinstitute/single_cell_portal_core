@@ -11,6 +11,11 @@ class FileParseService
   # * *returns*
   #   - (Hash) => Status object with http status_code and optional error message
   def self.run_parse_job(study_file, study, user, reparse: false, persist_on_fail: false, obsm_key: nil)
+    # check read-only mode before continuing
+    if user.feature_flag_for('read_only_mode')
+      raise "Read-only mode is enabled"
+    end
+    
     logger = Rails.logger
     logger.info "#{Time.zone.now}: Parsing #{study_file.name} as #{study_file.file_type} in study #{study.name}"
     do_anndata_file_ingest = FeatureFlaggable.feature_flags_for_instances(user, study)['ingest_anndata_file']

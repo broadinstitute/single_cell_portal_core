@@ -6,6 +6,7 @@ class FeatureFlagOptionsController < ApplicationController
   end
 
   before_action :set_feature_flaggable_instance, only: %i[edit update]
+  before_action :check_read_only_mode!, except: [:index, :find]
 
   # map of FeatureFlaggable models to string attribute names that can be used to find an instance
   # if you make a new model FeatureFlaggable, add an entry for that model here so that feature flags can be configured
