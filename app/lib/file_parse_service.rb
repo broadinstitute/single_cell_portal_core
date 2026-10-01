@@ -12,7 +12,8 @@ class FileParseService
   #   - (Hash) => Status object with http status_code and optional error message
   def self.run_parse_job(study_file, study, user, reparse: false, persist_on_fail: false, obsm_key: nil)
     # check read-only mode before continuing
-    if user.feature_flag_for('read_only_mode')
+    read_only_mode = user&.feature_flag_for('read_only_mode') || FeatureFlag.find_by(name: 'read_only_mode')&.default_value
+    if read_only_mode
       raise "Read-only mode is enabled"
     end
     
