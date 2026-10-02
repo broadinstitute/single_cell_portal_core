@@ -491,7 +491,7 @@ GEM
       ffi (~> 1.12)
       logger
     ruby_native_statistics (0.10.1)
-    rubyzip (2.3.0)
+    rubyzip (3.7.0)
     sass-rails (6.0.0)
       sassc-rails (~> 2.1, >= 2.1.1)
     sassc (2.4.0)
