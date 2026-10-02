@@ -11,6 +11,7 @@ class AdminConfigurationsController < ApplicationController
     authenticate_user!
     authenticate_admin
   end
+  before_action :check_read_only_mode!, except: [:index, :show]
 
   ###
   #

@@ -9,6 +9,7 @@ class UserAnnotationsController < ApplicationController
   before_action :set_user_annotation, only: [:edit, :update, :destroy]
   before_action :authenticate_user!
   before_action :check_permission, except: [:index, :find_annotation]
+  before_action :check_read_only_mode!, except: [:index, :find_annotation, :download_user_annotation]
 
   ###
   #

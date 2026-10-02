@@ -52,8 +52,15 @@
         </ul>
       </li>
       <li class="left-border-0-5">
+        <% if read_only_mode? %>
+          <li class="disabled">
+            <%= scp_link_to "<span class='fas fa-plus fa-fw'></span> Create study".html_safe, '#',
+                            class: 'check-upload', 'data-analytics-name' => 'prominent-create-study-button', 'aria-disabled' => true %>
+          </li>
+        <% else %>
         <%= scp_link_to "<span class='fas fa-plus fa-fw'></span> Create study".html_safe, new_study_path,
                         class: 'check-upload', 'data-analytics-name' => 'prominent-create-study-button' %>
+        <% end %>
       </li>
       <% if user_signed_in? %>
         <li class="dropdown"><%= scp_link_to "#{current_user.email.split('@').first} <span class='caret'></span>".html_safe,
@@ -91,8 +98,10 @@
             <% end %>
             <li><%= scp_link_to "<span class='fas fa-dollar-sign fa-fw'></span> My billing projects".html_safe, billing_projects_path,
                                 class: 'check-upload', id: 'my-firecloud-projects' %></li>
-            <li><%= scp_link_to "<span class='fas fa-plus fa-fw'></span> Create study".html_safe, new_study_path,
-                                class: 'check-upload' %></li>
+            <% unless read_only_mode? %>
+              <li><%= scp_link_to "<span class='fas fa-plus fa-fw'></span> Create study".html_safe, new_study_path,
+                                  class: 'check-upload' %></li>
+            <% end %>
             <% if current_user.available_branding_groups.any? %>
               <li role="separator" class="divider"></li>
               <li class="dropdown-header">My collections</li>

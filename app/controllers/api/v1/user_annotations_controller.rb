@@ -7,6 +7,7 @@ module Api
       before_action :authenticate_api_user!
       before_action :set_study
       before_action :check_study_view_permission
+      before_action :check_read_only_mode!
 
       # Define parameters used in API POST endpoint to create user annotations
       swagger_schema :UserAnnotationInput do
