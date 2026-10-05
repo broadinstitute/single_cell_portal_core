@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '3.4.8'
+ruby '3.4.10'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '7.2.3.2'
@@ -79,6 +79,8 @@ gem 'net-imap'
 gem 'net-pop'
 gem 'exponential-backoff'
 gem 'concurrent-ruby'
+gem 'stripe'
+
 # gems removed from stdlib in 3.4
 gem 'bigdecimal'
 gem 'mutex_m'
@@ -89,7 +91,6 @@ gem 'benchmark'
 gem 'drb'
 gem 'reline'
 gem 'irb'
-gem 'json_schemer'
 gem 'faraday-multipart', require: 'faraday/multipart'
 
 group :development, :test do

@@ -10,6 +10,10 @@ class FileParseServiceTest < ActiveSupport::TestCase
                                      test_array: @@studies_to_clean)
   end
 
+  teardown do
+    FeatureFlag.delete_all
+  end
+
   # test detection & automatic creating of study_file_bundle objects based off of study_file.options params
   test 'should create study file bundle from parent' do
     # test MTX bundling from parent
@@ -248,5 +252,32 @@ class FileParseServiceTest < ActiveSupport::TestCase
       delay_mock.verify
       job_mock.verify
     end
+  end
+
+  test 'should enforce read-only mode for file parsing' do
+    FeatureFlag.create(name: 'read_only_mode', default_value: true)
+    @user.reload
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'ReadOnly File Parse Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    study_file = FactoryBot.create(:ann_data_file,
+                                   name: 'data.h5ad',
+                                   reference_file: false,
+                                   study:,
+                                   cell_input: %w[A B C D],
+                                   annotation_input: [
+                                     { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                                   ],
+                                   coordinate_input: [
+                                     { tsne: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                   ],
+                                   expression_input: {
+                                     'phex' => [['A', 0.3], ['B', 1.0], ['C', 0.5], ['D', 0.1]]
+                                   })
+    assert_raises(RuntimeError, 'Read-only mode is enabled') do
+      FileParseService.run_parse_job(study_file, study, study.user)
+    end
+    assert_not DifferentialExpressionResult.where(study:).any?
   end
 end

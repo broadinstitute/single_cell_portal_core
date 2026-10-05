@@ -79,7 +79,7 @@ SecureHeaders::Configuration.default do |config|
     block_all_mixed_content: true, # see http://www.w3.org/TR/mixed-content/
     frame_src: %w('self'), # if child-src isn't supported, the value for frame-src will be set.
     font_src: %w('self' data: https://fonts.googleapis.com https://fonts.google.com https://fonts.gstatic.com ),
-    form_action: %w('self' https://accounts.google.com),
+    form_action: %w('self' https://accounts.google.com https://checkout.stripe.com),
     connect_src: allowed_connect_sources,
     img_src: %w('self' data: blob: https://www.google-analytics.com https://online.swagger.io res.cloudinary.com twemoji.maxcdn.com),
     manifest_src: %w('self'),
