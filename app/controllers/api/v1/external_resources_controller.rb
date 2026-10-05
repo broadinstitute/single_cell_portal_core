@@ -7,6 +7,7 @@ module Api
       before_action :check_study_view_permission
       before_action :check_study_edit_permission, except: [:index]
       before_action :set_external_resource, except: [:index, :create]
+      before_action :check_read_only_mode!, except: [:index, :show]
 
       respond_to :json
 

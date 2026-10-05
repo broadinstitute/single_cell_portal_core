@@ -3,6 +3,7 @@ class PurchasesController < ApplicationController
   before_action :authenticate_user!
   before_action :set_stripe_client, except: :successful_purchase
   before_action :check_feature_flag
+  before_action :check_read_only_mode!, except: [:index, :successful_purchase]
 
   def index
     @purchases = Purchase.where(customer_email: current_user.email)

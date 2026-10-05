@@ -26,6 +26,7 @@ class StudiesControllerTest < ActionDispatch::IntegrationTest
 
   teardown do
     OmniAuth.config.mock_auth[:google_oauth2] = nil
+    FeatureFlag.where(name: 'read_only_mode').destroy_all
   end
 
   test 'should get index' do
@@ -217,6 +218,23 @@ class StudiesControllerTest < ActionDispatch::IntegrationTest
       assert_response :success
       returned_flag = json.dig('feature_flags', @feature_flag.name)
       assert_not returned_flag
+    end
+  end
+
+  test 'should enforce read-only mode' do
+    mock_not_detached @study, :any_of do
+      sign_in_and_update(@user)
+      FeatureFlag.create(name: 'read_only_mode', default_value: true)
+      @user.reload
+      update_attributes = {
+        study: {
+          public: false
+        }
+      }
+      execute_http_request(:patch, api_v1_study_path(id: @study.id.to_s), request_payload: update_attributes, user: @user)
+      assert_response :forbidden
+      @study.reload
+      assert @study.public
     end
   end
 end

@@ -25,6 +25,7 @@ class SiteController < ApplicationController
                                                   :validate_reviewer_access]
   before_action :check_study_detached, only: [:download_file, :update_study_settings]
   before_action :set_reviewer_access, only: [:reviewer_access, :validate_reviewer_access]
+  before_action :check_read_only_mode!, only: [:edit_study_description, :update_study_settings]
   COLORSCALE_THEMES = %w(Greys YlGnBu Greens YlOrRd Bluered RdBu Reds Blues Picnic Rainbow Portland Jet Hot Blackbody Earth Electric Viridis Cividis)
 
   ###

@@ -6,6 +6,7 @@ class BrandingGroupsController < ApplicationController
 
   before_action :authenticate_curator, only: [:show, :edit, :update]
   before_action :authenticate_admin, only: [:index, :create, :destroy]
+  before_action :check_read_only_mode!, except: [:index, :show, :list_navigate]
 
   # GET /branding_groups
   # GET /branding_groups.json
