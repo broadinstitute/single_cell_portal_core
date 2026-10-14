@@ -11,11 +11,12 @@ class Purchase
   field :payment_intent_id, type: String
   field :customer_email, type: String
   field :study_accession, type: String
+  field :download_identifier, type: String
   field :sale_date, type: DateTime
   field :payment_status, type: String, default: 'unpaid'
+  field :fulfilled, type: Boolean, default: false
 
   validates :name, :checkout_session_id, :payment_intent_id, :customer_email, presence: true
-  validates :study_accession, uniqueness: { scope: [:name, :checkout_session_id] }
   validates :checkout_session_id, :payment_intent_id, uniqueness: true
   validates :payment_status, inclusion: { in: Purchase::PAYMENT_STATUSES }
 
@@ -45,6 +46,10 @@ class Purchase
     payment_status == 'paid'
   end
 
+  def self.has_open_purchase?(user, download_identifier)
+    Purchase.where(customer_email: user.email, download_identifier:, payment_status: 'paid', fulfilled: false).exists?
+  end
+
   # find or initialize from Stripe::Checkout::Session object
   # 
   # * *params*
@@ -66,6 +71,7 @@ class Purchase
       payment_intent_id: checkout.payment_intent,
       customer_email: checkout.customer_email,
       study_accession: checkout.metadata.study_accession,
+      download_identifier: checkout.metadata.download_identifier,
       sale_date: Time.at(checkout.created).in_time_zone,
       payment_status: payment_status_from(checkout)
     )

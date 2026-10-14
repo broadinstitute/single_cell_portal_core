@@ -1,0 +1,10 @@
+<div id="title-bar">
+  <%= render partial: 'study_title_bar' %>
+</div>
+<h1>Thank you for your payment!</h1>
+<p>
+  You may now download the file you requested by clicking the button below. 
+</p>
+<p><%= link_to "#{@study_file.upload_file_name} <span class='fas fa-download'></span> #{number_to_human_size(@study_file.upload_file_size, prefix: :si)}".html_safe,
+                  @study_file.download_path, class: "btn btn-primary dl-link #{@study_file.file_type_class}",
+                  data: {filename: @study_file.upload_file_name, "analytics-name": 'file-download:study-single'} %></p>

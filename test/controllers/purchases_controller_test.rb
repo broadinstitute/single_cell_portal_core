@@ -10,51 +10,33 @@ class PurchasesControllerTest < ActionDispatch::IntegrationTest
                                public: false,
                                user: @user,
                                test_array: @@studies_to_clean)
-    @other_study = FactoryBot.create(:detached_study,
-                               name_prefix: 'PurchasesControllerTest Study 2',
-                               public: false,
-                               user: @user,
-                               test_array: @@studies_to_clean)
-    @purchase = Purchase.new(
+    @cluster_file = FactoryBot.create(:cluster_file, name: 'cluster.txt', upload_file_size: 10.gigabytes, study: @study)
+    @purchase = Purchase.create(
+      name: 'Data Egress Charge',
       study_accession: @study.accession,
       customer_email: @user.email,
       checkout_session_id: 'co_test_12345',
       payment_intent_id: 'pi_12345',
+      download_identifier: @cluster_file.id.to_s,
       sale_date: DateTime.now.in_time_zone,
-      amount: 10.00,
-      payment_status: 'paid'
+      amount: 1.20,
+      payment_status: 'paid',
+      fulfilled: true
     )
     FeatureFlag.create(name: 'enable_purchases_ux', default_value: true)
   end
 
   after(:all) do
     FeatureFlag.find_by(name: 'enable_purchases_ux')&.destroy
+    Purchase.destroy_all
   end
 
   test 'should load purchases' do
     sign_in @user
-    mock = Minitest::Mock.new
-    mock.expect :products, [Stripe::Product.new(id: 'prod_1234', default_price: 'price_1234')]
-    StripeApiClient.stub :new, mock do
-      get purchases_path
-      assert_response :success
-      assert_select "select#product_study_accession" do
-        assert_select "option", value: @other_study.accession
-      end
-    end
-  end
-
-  test 'should create checkout session' do
-    sign_in @user
-    session_url = "https://checkout.stripe.com/c/pay/cs_test_12345"
-    mock_session = Minitest::Mock.new
-    mock_session.expect :url, session_url
-    mock = Minitest::Mock.new
-    mock.expect :create_private_study_checkout, mock_session, [String, @user, @other_study, String]
-    StripeApiClient.stub :new, mock do
-      post create_stripe_checkout_path,
-           params: { product: { product_id: 'prod_1234', study_accession: @other_study.accession } }
-      assert_redirected_to session_url
+    get purchases_path
+    assert_response :success
+    assert_select "table#purchases tbody tr" do
+      assert_select "td.study-accession", text: @study.accession
     end
   end
 end

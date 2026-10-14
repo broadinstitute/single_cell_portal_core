@@ -224,6 +224,10 @@ Rails.application.routes.draw do
     # public/private file download links (redirect to signed_urls from Google)
     get 'data/public/:accession/:study_name', to: 'site#download_file', as: :download_file
     get 'data/private/:accession/:study_name', to: 'studies#download_private_file', as: :download_private_file
+    get 'data/egress/:accession/:study_file_id', to: 'site#data_egress_start', as: :data_egress_start
+    post 'data/egress/:accession/:study_file_id', to: 'site#data_egress_checkout', as: :data_egress_checkout
+    get 'data/egress/:accession/:study_file_id/success', to: 'site#data_egress_success', as: :data_egress_success
+
 
     # user account actions
     get 'profile/:id', to: 'profiles#show', as: :view_profile

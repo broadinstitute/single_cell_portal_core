@@ -5,11 +5,14 @@
       <%= link_to "<span class='fas fa-cloud-download-alt'></span> External".html_safe, study_file.download_path, class: 'btn btn-primary',
                   target: :_blank, rel: 'noopener noreferrer', data: {"analytics-name": 'file-download:study-single:external'} %>
   <% else %>
-      <% if study_file.generation && DownloadQuotaService.download_exceeds_quota?(current_user, study_file.upload_file_size) %>
+      <% if study_file.generation && DownloadQuotaService.download_exceeds_quota?(current_user, study_file.upload_file_size) && !current_user.feature_flag_for('enable_purchases_ux') %>
         <span class="btn btn-sm btn-danger disabled-download"
               data-content="This file exceeds your daily download quota of <%= number_to_human_size(@download_quota) %>.
                             <%= DownloadQuotaService::QUOTA_HELP_EMAIL %>"
               data-toggle="popover" data-placement="left"><i class="fas fa-times"></i> Exceeds Quota</span>
+      <% elsif study_file.generation && DownloadQuotaService.download_exceeds_quota?(current_user, study_file.upload_file_size) && current_user.feature_flag_for('enable_purchases_ux') %>
+        <%= link_to "<span class='fas fa-download'></span> Excess Quota".html_safe, data_egress_start_path(accession: study_file.study.accession, study_file_id: study_file.id ), class: 'btn btn-sm btn-warning',
+                    data: { "analytics-name": 'file-download:quota-excess-study-single' } %>
       <% elsif !study_file.generation %>
             <span class="label label-warning no-download-available"
                   title="You will be able to download this file once it has been uploaded to our remote data store.  Check back soon."

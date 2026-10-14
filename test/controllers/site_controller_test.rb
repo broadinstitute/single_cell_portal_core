@@ -41,6 +41,9 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
     # reset public permission
     @study.update(public: true)
     AdminConfiguration.find_by(config_type: 'Daily User Download Quota')&.destroy
+    @user.update(daily_download_quota: 0)
+    FeatureFlag.find_by(name: 'enable_purchases_ux')&.destroy
+    Purchase.destroy_all
   end
 
   test 'should redirect to home page from bare domain' do
@@ -287,6 +290,80 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
         assert_response :success
         assert_equal redacted_study_path(accession: @study.accession), path
         assert_select '#redaction-notice', 1, 'Redacted study message not found on page'
+      end
+    end
+  end
+
+  test 'should create data egress checkout session' do
+    FeatureFlag.create(name: 'enable_purchases_ux', default_value: true)
+    AdminConfiguration.find_or_create_by(
+      config_type: 'Daily User Download Quota', value: '1', value_type: 'Numeric', multiplier: 'gigabyte'
+    )
+    study = FactoryBot.create(:detached_study,
+                               name_prefix: 'Data Egress Study',
+                               public: true,
+                               user: @user,
+                               test_array: @@studies_to_clean)
+    study_file = FactoryBot.create(:study_file,
+                                    study:,
+                                    file_type: 'Other',
+                                    name: 'other.txt',
+                                    upload_file_size: 10.gigabytes)
+    
+    data_egress_params = { 
+      success_path: "/single_cell/data/egress/#{study.accession}/#{study_file.id}/success",
+      accession: study.accession,
+      gb_excess: 9,
+      download_identifier: study_file.id.to_s
+    }
+    mock = Minitest::Mock.new
+    mock_product = Minitest::Mock.new
+    mock_product.expect :name, 'Data Egress Charge'
+    mock_product.expect :nil?, false
+    mock_product.expect :id, 'prod_12345'
+    # since it is not feasible to create a real checkout session in the test environment, 
+    # we will instead have the URL be the success page to simulate a completed checkout session
+    mock_session = Minitest::Mock.new
+    mock_session.expect :url, data_egress_params[:success_path]
+    mock_session.expect :success_url, data_egress_params[:success_path]
+
+    mock.expect :products, [mock_product]
+    mock.expect :create_data_egress_checkout_session, 
+                mock_session,
+                ['prod_12345', @user, Integer, Hash]
+
+    mock_not_detached study, :find_by do
+      StripeApiClient.stub :new, mock do
+        post data_egress_checkout_path(accession: study.accession, study_file_id: study_file.id), params: { data_egress: data_egress_params }
+        assert_response 303
+        follow_redirect!
+        assert_equal data_egress_params[:success_path], path, "Did not redirect to correct success page, expected #{data_egress_params[:success_path]} but found #{path}"
+        # create a purchase record to simulate a completed checkout session
+        purchase = Purchase.create!(
+          name: 'Data Egress Charge',
+          study_accession: study.accession,
+          customer_email: @user.email,
+          checkout_session_id: 'co_test_98765',
+          payment_intent_id: 'pi_98765',
+          download_identifier: study_file.id.to_s,
+          sale_date: DateTime.now.in_time_zone,
+          amount: 1.08,
+          payment_status: 'paid',
+          fulfilled: false
+        )
+        download_mock = generate_download_file_mock([study_file])
+        ApplicationController.stub :firecloud_client, download_mock do
+          get download_file_path(accession: study.accession, study_name: study.url_safe_name, filename: study_file.upload_file_name)
+          assert_response 302
+          signed_url = response.headers['Location']
+          assert signed_url.include?(study_file.upload_file_name), 'Redirect url does not point at requested file'
+          download_mock.verify
+          # verify that the purchase record is marked as fulfilled
+          purchase.reload
+          assert purchase.fulfilled?, 'Purchase record was not marked as fulfilled after download'
+          @user.reload
+          assert_equal 10.gigabytes, @user.daily_download_quota, 'User download quota was not updated correctly after download'
+        end
       end
     end
   end

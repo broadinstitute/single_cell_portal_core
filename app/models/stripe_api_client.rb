@@ -112,4 +112,45 @@ class StripeApiClient
       success_url: "#{RequestUtils.get_base_url}#{success_path}"
     })
   end
+
+  # create a checkout session for a user requesting to download data in excess of their daily quota
+  # this allows the user to keep a private study longer than the cutoff date
+  #
+  # * *params*
+  #   - +product_id+ (String)  => ID of Stripe product
+  #   - +user+ (User)          => User supplying payment
+  #   - +gb_excess+ (Integer)  => GB of data in excess of quota
+  #   - +file_info+ (Hash)     => hash with success_path, accession, and download_identifier (study_file_id or download_request_id)
+  #
+  # * *returns*
+  #   - (Stripe::Checkout::Session) 
+  def create_data_egress_checkout_session(product_id, user, gb_excess, file_info)
+    raise ArgumentError, "Insufficient file information" unless [:success_path, :accession, :download_identifier].all? { |k| file_info.key?(k) }
+
+    success_path = file_info[:success_path]
+    accession = file_info[:accession]
+    download_identifier = file_info[:download_identifier]
+    stripe_product = product(product_id)
+    @client.v1.checkout.sessions.create({
+      line_items: [
+        {
+          price: stripe_product.default_price,
+          quantity: gb_excess
+        }
+      ],
+      customer_email: user.email,
+      metadata: {
+        study_accession: accession,
+        download_identifier: download_identifier
+      },
+      payment_intent_data: {
+        metadata: {
+          study_accession: accession,
+          download_identifier: download_identifier
+        }
+      },
+      mode: 'payment',
+      success_url: "#{RequestUtils.get_base_url}#{success_path}"
+    })
+  end
 end
