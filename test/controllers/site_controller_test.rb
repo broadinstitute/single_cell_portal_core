@@ -44,6 +44,7 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
     @user.update(daily_download_quota: 0)
     FeatureFlag.find_by(name: 'enable_purchases_ux')&.destroy
     Purchase.destroy_all
+    DownloadRequest.destroy_all
   end
 
   test 'should redirect to home page from bare domain' do
@@ -294,7 +295,7 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test 'should create data egress checkout session' do
+  test 'should create data egress checkout session for file' do
     FeatureFlag.create(name: 'enable_purchases_ux', default_value: true)
     AdminConfiguration.find_or_create_by(
       config_type: 'Daily User Download Quota', value: '1', value_type: 'Numeric', multiplier: 'gigabyte'
@@ -343,8 +344,8 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
           name: 'Data Egress Charge',
           study_accession: study.accession,
           customer_email: @user.email,
-          checkout_session_id: 'co_test_98765',
-          payment_intent_id: 'pi_98765',
+          checkout_session_id: "co_test_#{SecureRandom.alphanumeric(24)}",
+          payment_intent_id: "pi_#{SecureRandom.alphanumeric(24)}",
           download_identifier: study_file.id.to_s,
           sale_date: DateTime.now.in_time_zone,
           amount: 1.08,
@@ -363,6 +364,90 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
           assert purchase.fulfilled?, 'Purchase record was not marked as fulfilled after download'
           @user.reload
           assert_equal 10.gigabytes, @user.daily_download_quota, 'User download quota was not updated correctly after download'
+        end
+      end
+    end
+  end
+
+  test 'should create data egress checkout session for bulk download' do
+    FeatureFlag.create(name: 'enable_purchases_ux', default_value: true)
+    AdminConfiguration.find_or_create_by(
+      config_type: 'Daily User Download Quota', value: '1', value_type: 'Numeric', multiplier: 'gigabyte'
+    )
+    study = FactoryBot.create(:detached_study,
+                               name_prefix: 'Data Egress Bulk Study',
+                               public: true,
+                               user: @user,
+                               test_array: @@studies_to_clean)
+    5.times do |i|
+      FactoryBot.create(:study_file,
+                         study:,
+                         file_type: 'Other',
+                         name: "file_#{i}.txt",
+                         upload_file_size: 5.gigabytes)
+    end  
+    # start bulk download process to create DownloadRequest                         
+    get data_egress_start_path(accession: study.accession, download_identifier: 'bulk')
+    assert_response :success
+    @user.reload
+    download_request = DownloadRequest.find_by(user_id: @user.id, auth_code: @user.totat)
+    assert download_request.present?
+    data_egress_params = { 
+      success_path: "/single_cell/data/egress/#{study.accession}/#{download_request.id}/success",
+      accession: study.accession,
+      gb_excess: 24,
+      download_identifier: download_request.id.to_s
+    }
+    mock = Minitest::Mock.new
+    mock_product = Minitest::Mock.new
+    mock_product.expect :name, 'Data Egress Charge'
+    mock_product.expect :nil?, false
+    mock_product.expect :id, 'prod_12345'
+    # since it is not feasible to create a real checkout session in the test environment, 
+    # we will instead have the URL be the success page to simulate a completed checkout session
+    mock_session = Minitest::Mock.new
+    mock_session.expect :url, data_egress_params[:success_path]
+    mock_session.expect :success_url, data_egress_params[:success_path]
+
+    mock.expect :products, [mock_product]
+    mock.expect :create_data_egress_checkout_session, 
+                mock_session,
+                ['prod_12345', @user, Integer, Hash]
+
+   
+    StripeApiClient.stub :new, mock do
+      post data_egress_checkout_path(accession: study.accession, download_identifier: download_request.id), params: { data_egress: data_egress_params }
+      assert_response 303
+      follow_redirect!
+      assert_equal data_egress_params[:success_path], path, "Did not redirect to correct success page, expected #{data_egress_params[:success_path]} but found #{path}"
+      # create a purchase record to simulate a completed checkout session
+      purchase = Purchase.create!(
+        name: 'Data Egress Charge',
+        study_accession: study.accession,
+        customer_email: @user.email,
+        checkout_session_id: "co_test_#{SecureRandom.alphanumeric(24)}",
+        payment_intent_id: "pi_#{SecureRandom.alphanumeric(24)}",
+        download_identifier: download_request.id.to_s,
+        sale_date: DateTime.now.in_time_zone,
+        amount: 2.88,
+        payment_status: 'paid',
+        fulfilled: false
+      )
+      downloads = generate_download_file_mock(study.study_files)
+      mock_query_not_detached [study] do
+        FireCloudClient.stub :new, downloads do
+          Api::V1::BulkDownloadController.stub :load_study_files, study.study_files do
+            get api_v1_bulk_download_generate_curl_config_path(accession: study.accession, download_id: download_request.id, auth_code: download_request.auth_code)
+            assert_response :success
+            study.study_files.each do |file|
+              assert json.include? file.upload_file_name
+            end
+            # verify that the purchase record is marked as fulfilled
+            purchase.reload
+            assert purchase.fulfilled?, 'Purchase record was not marked as fulfilled after download'
+            @user.reload
+            assert_equal 25.gigabytes, @user.daily_download_quota, 'User download quota was not updated correctly after download'
+          end
         end
       end
     end
