@@ -217,15 +217,32 @@ class SiteController < ApplicationController
     execute_file_download(@study); return if performed?
   end
 
+  # custom download page for users requesting to download data in excess of their quota
+  # can be single file, or 'bulk' to access all study data
   def data_egress_start
-    @study_file = @study.study_files.find_by(id: params[:study_file_id])
-    if @study_file.nil?
-      redirect_to merge_default_redirect_params(view_study_path(accession: @study.accession, study_name: @study.url_safe_name), scpbr: params[:scpbr]), 
-                  alert: "The requested file could not be found.  #{SCP_SUPPORT_EMAIL}" and return
+    if params[:download_identifier] == 'bulk'
+      half_hour = 1800 # seconds
+      totat = current_user.create_totat(half_hour, api_v1_bulk_download_generate_curl_config_path)
+      requested_files = @study.study_files
+      requested_bytes = BulkDownloadService.get_requested_bytes(requested_files)
+      @gb_excess = DownloadQuotaService.gb_in_excess_of_quota(current_user, requested_bytes)
+
+      @download_object = DownloadRequest.create!(
+        auth_code: totat[:totat],
+        file_ids: requested_files.pluck(:id),
+        user_id: current_user.id
+      )
+    else
+      @download_object = @study.study_files.find_by(id: params[:download_identifier])
+      @gb_excess = DownloadQuotaService.gb_in_excess_of_quota(current_user, @download_object.upload_file_size)
     end
-    @gb_excess = DownloadQuotaService.gb_in_excess_of_quota(current_user, @study_file.upload_file_size)
-    if @gb_excess == 0
-      redirect_to @study_file.download_path and return
+    
+    # minumum charge allowed by Stripe is $0.50, so 5GB is the least we can charge for
+    @gb_excess = 5 if @gb_excess < 5
+
+    if @download_object.nil?
+      redirect_to merge_default_redirect_params(view_study_path(accession: @study.accession, study_name: @study.url_safe_name), scpbr: params[:scpbr]), 
+                  alert: "The requested data could not be found.  #{SCP_SUPPORT_EMAIL}" and return
     end
   end
 
@@ -240,10 +257,20 @@ class SiteController < ApplicationController
   end
 
   def data_egress_success
-    @study_file = @study.study_files.find_by(id: params[:study_file_id])
-    if @study_file.nil?
+    download = @study.study_files.find_by(id: params[:download_identifier]) || DownloadRequest.find_by(id: params[:download_identifier])
+    if download.is_a?(StudyFile)
+      @download_object = download
+    else
+      @download_object = {
+        auth_code: download.auth_code,
+        time_interval: current_user.totat_info[:valid_seconds],
+        download_id: download.id.to_s
+      } if User.verify_totat(download.auth_code, current_user.totat_info&.[](:operations)) == current_user # ensure this is the correct request for the current user
+    end
+   
+    if @download_object.nil?
       redirect_to merge_default_redirect_params(view_study_path(accession: @study.accession, study_name: @study.url_safe_name), scpbr: params[:scpbr]), 
-                  alert: "The requested file could not be found.  #{SCP_SUPPORT_EMAIL}" and return
+                  alert: "The requested data could not be found.  #{SCP_SUPPORT_EMAIL}" and return
     end
   end
 

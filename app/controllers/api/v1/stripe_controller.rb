@@ -38,7 +38,12 @@ module Api
           checkout_session_id = event.data.object.id
           checkout_session = client.checkout_session(checkout_session_id) # needed to get line_items expansion
           Rails.logger.info "Registering completed checkout session #{checkout_session_id}"
-          purchase = Purchase.find_or_intialize_from(checkout_session)          
+          purchase = Purchase.find_or_intialize_from(checkout_session)
+          if purchase.nil?
+            # no purchase is initialized if the app environment doesn't match
+            # this is only a concern in non-production environments as they share the same sandbox
+            head 200 and return
+          end      
           purchase.payment_status = Purchase.payment_status_from(checkout_session) if purchase.persisted?
           purchase.save
         else

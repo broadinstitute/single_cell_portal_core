@@ -11,7 +11,7 @@
                             <%= DownloadQuotaService::QUOTA_HELP_EMAIL %>"
               data-toggle="popover" data-placement="left"><i class="fas fa-times"></i> Exceeds Quota</span>
       <% elsif study_file.generation && DownloadQuotaService.download_exceeds_quota?(current_user, study_file.upload_file_size) && current_user.feature_flag_for('enable_purchases_ux') %>
-        <%= link_to "<span class='fas fa-download'></span> Excess Quota".html_safe, data_egress_start_path(accession: study_file.study.accession, study_file_id: study_file.id ), class: 'btn btn-sm btn-warning',
+        <%= link_to "<span class='fas fa-download'></span> Excess Quota".html_safe, data_egress_start_path(accession: study_file.study.accession, download_identifier: study_file.id ), class: 'btn btn-sm btn-warning',
                     data: { "analytics-name": 'file-download:quota-excess-study-single' } %>
       <% elsif !study_file.generation %>
             <span class="label label-warning no-download-available"

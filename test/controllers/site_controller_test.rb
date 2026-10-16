@@ -334,7 +334,7 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
 
     mock_not_detached study, :find_by do
       StripeApiClient.stub :new, mock do
-        post data_egress_checkout_path(accession: study.accession, study_file_id: study_file.id), params: { data_egress: data_egress_params }
+        post data_egress_checkout_path(accession: study.accession, download_identifier: study_file.id), params: { data_egress: data_egress_params }
         assert_response 303
         follow_redirect!
         assert_equal data_egress_params[:success_path], path, "Did not redirect to correct success page, expected #{data_egress_params[:success_path]} but found #{path}"

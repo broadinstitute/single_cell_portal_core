@@ -101,11 +101,13 @@ class StripeApiClient
       ],
       customer_email: user.email,
       metadata: {
-        study_accession: study.accession # stores in checkout_session object
+        study_accession: study.accession, # stores in checkout_session object
+        app_env: Rails.env # for registering purchases in correct environments
       },
       payment_intent_data: {
         metadata: {
-          study_accession: study.accession # stores in transaction
+          study_accession: study.accession, # stores in transaction
+          app_env: Rails.env
         }
       },
       mode: 'payment',
@@ -141,12 +143,14 @@ class StripeApiClient
       customer_email: user.email,
       metadata: {
         study_accession: accession,
-        download_identifier: download_identifier
+        download_identifier: download_identifier,
+        app_env: Rails.env # for registering purchases in correct environments
       },
       payment_intent_data: {
         metadata: {
           study_accession: accession,
-          download_identifier: download_identifier
+          download_identifier: download_identifier,
+          app_env: Rails.env
         }
       },
       mode: 'payment',

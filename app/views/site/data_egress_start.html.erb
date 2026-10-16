@@ -1,30 +1,30 @@
 <div id="title-bar">
   <%= render partial: 'study_title_bar' %>
 </div>
-<h1>File Download Exceeds Quota</h1>
-<p>The file you have requested (<%= @study_file.upload_file_name %>) is in excess of your download quota by <%= @gb_excess.round(2) %> GB (rounded up to nearest GB).</p>
+<h1>Data Download Exceeds Quota</h1>
+<p>The data you have requested for download is in excess of your download quota by <%= @gb_excess.round(2) %> GB (rounded up to nearest GB).</p>
   
 <%= form_for :data_egress, url: data_egress_checkout_path do |f| %>
   <%= f.hidden_field :gb_excess, value: @gb_excess %>
-  <%= f.hidden_field :success_path, value: data_egress_success_path(accession: @study.accession, study_file_id: @study_file.id) %>
+  <%= f.hidden_field :success_path, value: data_egress_success_path(accession: @study.accession, download_identifier: @download_object.id) %>
   <%= f.hidden_field :accession, value: @study.accession %>
-  <%= f.hidden_field :download_identifier, value: @study_file.id.to_s %>
+  <%= f.hidden_field :download_identifier, value: @download_object.id.to_s %>
   <div class="row">
     <div class="col-md-12">
       <div class="alert alert-info">
         <h3>Why am I seeing this page?</h3>
         <p>
-          Single Cell Portal allows free downloads of files up to <%= number_to_human_size(DownloadQuotaService.download_quota) %> per day.  As part of an effort to control costs
-          moving forward, we are now asking users to reimburse the cost of downloading files in excess of their quota.  The cost of downloading files is $0.12 per GB (as defined by 
-          <%= link_to "Google Cloud Platform", "https://cloud.google.com/vpc/pricing?hl=en#internetegress", target: :_blank, rel: "noopener noreferrer" %>, rounded up to the nearest GB).  
-          If you are unwilling or unable to pay this fee, you can simply wait until the next day when your quota resets and download the file at no cost.  You can also request a 
-          temporary exemption from the quota by contacting the Single Cell Portal team at <%= mail_to ApplicationController::SCP_ZENDESK %>, though we reserve the right not to 
-          approve all requests.
+          Single Cell Portal allows free downloads of files up to <strong><%= number_to_human_size(DownloadQuotaService.download_quota) %> per day</strong>.  As part of an effort to 
+          control costs moving forward, we are now asking users to reimburse the cost of downloading files in excess of their quota.  The cost of downloading files is $0.12 per GB 
+          (as defined by <%= link_to "Google Cloud Platform", "https://cloud.google.com/vpc/pricing?hl=en#internetegress", target: :_blank, rel: "noopener noreferrer" %>, rounded up to 
+          the nearest GB, with a minumum allowable charge of $0.50).  If you are unwilling or unable to pay this fee, you can simply wait until the next day when your quota resets and 
+          download the file at no cost.  You can also request a temporary exemption from the quota by contacting the Single Cell Portal team at 
+          <%= mail_to ApplicationController::SCP_ZENDESK %>, though we reserve the right not to approve all requests.
         </p>
         <p>
           <strong>Note: You will be redirected to a third-party payment processor (Stripe) to complete your payment.  After your payment is complete, you will be redirected
-          back to Single Cell Portal to download the requested file.  Please use an automatic payment method (like a credit card), otherwise you will not be able to download the file 
-          immediately.</strong>
+          back to Single Cell Portal to download the requested data.  Please use an automatic payment method (such as a credit card), otherwise you will not be able to download the file 
+          until your payment processes.</strong>
         </p>
         <br />
         <%= f.submit "Proceed to Checkout", class: "btn btn-primary" %>

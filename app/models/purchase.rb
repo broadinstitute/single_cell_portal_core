@@ -60,6 +60,10 @@ class Purchase
   def self.find_or_intialize_from(checkout)
     raise TypeError, "incompatible object type: #{checkout.class}" unless checkout.is_a?(Stripe::Checkout::Session)
 
+    # check app environment to ensure we don't register purchases from other instances
+    # this is only a concern in non-prod environments, specifically staging
+    return nil if checkout.metadata.app_env != Rails.env
+
     registered_purchase = Purchase.find_by(checkout_session_id: checkout.id)
     return registered_purchase if registered_purchase
 
