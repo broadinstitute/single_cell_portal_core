@@ -11,6 +11,7 @@
           <th>Associated Study</th>
           <th>Price</th>
           <th>Payment Status</th>
+          <th>Fulfilled</th>
           <th>Sale Date</th>
         </tr>
       </thead>
@@ -21,6 +22,7 @@
             <td class='study-accession'><%= link_to purchase.study_accession, legacy_study_path(identifier: purchase.study_accession ) %></td>
             <td><%= number_to_currency(purchase.amount) %></td>
             <td><span class="label label-<%= purchase.paid? ? 'success' : 'warning' %>"><%= purchase.payment_status %></span></td>
+            <td><span class="purchase-fulfilled fa <%= purchase.fulfilled ? "fa-check text-success" : "fa-times text-danger" %>"></span></td>
             <td><%= purchase.sale_date.to_fs(:db) %></td>
           </tr>
         <% end %>

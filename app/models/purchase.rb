@@ -42,6 +42,10 @@ class Purchase
     Study.find_by(accession: study_accession, user_id: associated_user.id)
   end
 
+  def associated_download    
+    StudyFile.find_by(id: download_identifier) || DownloadRequest.find_by(id: download_identifier)
+  end
+
   def paid?
     payment_status == 'paid'
   end
