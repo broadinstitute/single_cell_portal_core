@@ -176,7 +176,7 @@
               );
             }
           ).catch(error => {
-            if (error.message.startsWith('This download will exceed your daily quota') && <%= current_user.feature_flag_for('enable-purchases-ux') %>) {
+            if (error.message.startsWith('This download will exceed your daily quota') && <%= current_user.feature_flag_for('enable_purchases_ux') %>) {
               $('#download-help-modal .modal-body').html(
                 "<div class='text-center text-danger'>" +
                 "<h4>Download exceeds your daily quota</h4>" +

@@ -17,16 +17,16 @@
   </p>
 
   <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
-    let clipboard = new Clipboard('.btn-copy');
+    let clipboard = new Clipboard('.btn-copy')
     clipboard.on('success', function(event) {
     $('#' + event.trigger.id)
       .attr('title', 'Copied!')
       .tooltip('fixTitle')
       .tooltip('show');
-    });
+    })
 
-    let authCode = "<%= @download_object[:auth_code] %>";
-    let timeInterval =  <%= @download_object[:time_interval] %>; // token expires after this many seconds
+    let authCode = "<%= @download_object[:auth_code] %>"
+    let timeInterval =  <%= @download_object[:time_interval] %> // token expires after this many seconds
     let expiresMinutes = timeInterval / 60;
     let downloadId = "<%= params[:download_identifier] %>"
     const isWindows = !!window.navigator.platform.match(/Win/) // determine client OS for formatting
@@ -41,7 +41,7 @@
       '/single_cell/api/v1/bulk_download/generate_curl_config?' +
       `accessions=${accession}` +
       `&directory=${downloadObjectName}` +
-      `download_id=${downloadId}` +
+      `&download_id=${downloadId}` +
       `&auth_code=${authCode}` +
       `&context=study`
     );
@@ -58,11 +58,12 @@
       downloadCommand += `${curlExec} -K cfg.txt && rm cfg.txt`
     }
 
-    let commandID = 'command-' + authCode;
-    let commandContainer = $('#command-container-all');
-    let countdownValue = '<span class="countdown" id="countdown-' + authCode + '">' + expiresMinutes + '</span>';
+    let commandID = 'command-' + authCode
+    let commandContainer = $('#command-container-all')
+    let countdownValue = '<span class="countdown" id="countdown-' + authCode + '">' + expiresMinutes + '</span>'
 
-    commandContainer.html(
+    $('#get-download-command__all').click(function() {
+      commandContainer.html(
         '<div class="input-group">' +
         '<input id="' + commandID + '" class="form-control curl-download-command" value="' + downloadCommand + '" readonly/>' +
         '<span class="input-group-btn">' +
@@ -75,10 +76,8 @@
         '</div>' +
         '<div style="font-size: 16px">Valid for one use within ' + countdownValue + ' minutes.  Paste into Mac/Linux/Unix terminal and execute to download.<br/><br/>' +
         'If a certificate validation error occurs, adding the "-k" option will skip certificate validation.<br/>  e.g. `curl -k "https://singlecell...."`</div>'
-    );
-
-    
-            
+      )
+    })
   </script>
 <% end %>
 <%= link_to "<i class='fa fa-chevron-left'></i> Back to Study".html_safe, view_study_path(accession: @study.accession, study_name: @study.url_safe_name), class: "btn btn-warning" %>
