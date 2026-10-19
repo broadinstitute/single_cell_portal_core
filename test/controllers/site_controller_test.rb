@@ -413,12 +413,11 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
     mock.expect :create_data_egress_checkout_session, 
                 mock_session,
                 ['prod_12345', @user, Integer, Hash]
-
-   
     StripeApiClient.stub :new, mock do
       post data_egress_checkout_path(accession: study.accession, download_identifier: download_request.id), params: { data_egress: data_egress_params }
       assert_response 303
       follow_redirect!
+      mock.verify
       assert_equal data_egress_params[:success_path], path, "Did not redirect to correct success page, expected #{data_egress_params[:success_path]} but found #{path}"
       # create a purchase record to simulate a completed checkout session
       purchase = Purchase.create!(
@@ -433,7 +432,13 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
         payment_status: 'paid',
         fulfilled: false
       )
-      downloads = generate_download_file_mock(study.study_files)
+      downloads = Minitest::Mock.new
+      study.study_files.each do |file|
+        bucket_id = study.bucket_id
+        file_location = file.bucket_location
+        url = "https://www.googleapis.com/storage/v1/b/#{bucket_id}/#{file_location}"
+        downloads.expect :execute_gcloud_method, url, [:generate_signed_url, Integer, String, String], expires: 1.day.to_i
+      end
       mock_query_not_detached [study] do
         FireCloudClient.stub :new, downloads do
           Api::V1::BulkDownloadController.stub :load_study_files, study.study_files do
@@ -442,6 +447,7 @@ class SiteControllerTest < ActionDispatch::IntegrationTest
             study.study_files.each do |file|
               assert json.include? file.upload_file_name
             end
+            downloads.verify
             # verify that the purchase record is marked as fulfilled
             purchase.reload
             assert purchase.fulfilled?, 'Purchase record was not marked as fulfilled after download'
