@@ -372,13 +372,7 @@ module Api
         # determine quota impact & update user's download quota
         # will throw a RuntimeError if the download exceeds the user's daily quota
         begin
-          requested_bytes = ::BulkDownloadService.get_requested_bytes(files_requested)
-          if ::DownloadQuotaService.download_exceeds_quota?(current_api_user, requested_bytes) &&
-             download_req && Purchase.has_open_purchase?(current_api_user, download_req.id)
-            ::DownloadQuotaService.fulfill_egress_purchase(current_api_user, download_req.id, requested_bytes)
-          else
-            ::BulkDownloadService.update_user_download_quota(user: current_api_user, files: files_requested, directories: directories)
-          end
+          ::BulkDownloadService.update_user_download_quota(user: current_api_user, files: files_requested, directories: directories)
         rescue RuntimeError => e
           render json: { error: e.message }, status: 403 and return
         end

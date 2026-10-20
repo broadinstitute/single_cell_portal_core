@@ -279,13 +279,9 @@ class ApplicationController < ActionController::Base
       end
       if requested_file.present?
         filesize = requested_file.size
-        study_file = StudyFile.find_by(study_id: study.id, upload_file_name: params[:filename])
         if !DownloadQuotaService.download_exceeds_quota?(current_user, filesize)
           @signed_url = ApplicationController.firecloud_client.execute_gcloud_method(:generate_signed_url, 0, study.bucket_id, params[:filename], expires: 15)
           DownloadQuotaService.increment_user_quota(current_user, filesize)
-        elsif DownloadQuotaService.download_exceeds_quota?(current_user, filesize) && Purchase.has_open_purchase?(current_user, study_file.id)
-          @signed_url = ApplicationController.firecloud_client.execute_gcloud_method(:generate_signed_url, 0, study.bucket_id, params[:filename], expires: 15)
-          DownloadQuotaService.fulfill_egress_purchase(current_user, study_file.id, filesize)
         else
           redirect_to merge_default_redirect_params(view_study_path(accession: study.accession, study_name: study.url_safe_name), scpbr: params[:scpbr]),
                       alert: "You have exceeded your current daily download quota.  You must wait until tomorrow to download this file.  #{SCP_SUPPORT_EMAIL}" and return
