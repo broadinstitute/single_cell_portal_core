@@ -133,11 +133,7 @@ class RequestUtils
   # helper method for getting the base url with protocol, hostname, and port
   # e.g. "https://localhost"
   def self.get_base_url
-    if ApplicationController.default_url_options.any?
-      "#{ApplicationController.default_url_options[:protocol]}://#{self.get_hostname}"
-    else
-      "https://localhost:3000" # fallback
-    end
+    "#{ApplicationController.default_url_options[:protocol]}://#{self.get_hostname}"
   end
 
   # construct a GS URL or bucket path to a file extracted from an AnnData file
