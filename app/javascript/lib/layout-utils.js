@@ -135,7 +135,7 @@ export function mitigateStudyOverviewTitleTruncation() {
  * Set global header end width, and mitigate long study titles on narrow screens
  */
 export function adjustGlobalHeader() {
-  const allowedPages = ['site-study', 'site-redacted-study', 'site-data-egress-start', 'site-data-egress-success']
+  const allowedPages = ['site-study', 'site-redacted-study']
   if (!allowedPages.includes(window.SCP.analyticsPageName)) {return}
 
   // Set min-width of container for menus on help, create study, and sign in / username
