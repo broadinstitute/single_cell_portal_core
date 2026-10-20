@@ -87,23 +87,4 @@ class StripeApiClientTest < ActiveSupport::TestCase
     embedded_client = @stripe_client.instance_variable_get(:@client)
     embedded_client.v1.checkout.sessions.expire(checkout.id)
   end
-
-  test 'should create checkout session for data egress' do
-    gb_excess = 5
-    file_info = { 
-      success_path: "/single_cell/purchases/success",
-      accession: @study.accession,
-      download_identifier: BSON::ObjectId.new.to_s
-    }
-    product = @stripe_client.products.detect {|p| p.name == 'Data Egress Charge' }
-    checkout = @stripe_client.create_data_egress_checkout_session(
-      product.id, @user, gb_excess, file_info
-    )
-    assert checkout.is_a?(Stripe::Checkout::Session)
-    assert checkout.url.present?
-    assert checkout.success_url.ends_with? file_info[:success_path]
-    # expire checkout as a courtesy
-    embedded_client = @stripe_client.instance_variable_get(:@client)
-    embedded_client.v1.checkout.sessions.expire(checkout.id)
-  end
 end

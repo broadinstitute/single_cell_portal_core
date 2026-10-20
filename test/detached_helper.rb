@@ -28,7 +28,7 @@ end
 def generate_download_file_mock(study_files, parent_study: nil)
   download_file_mock = Minitest::Mock.new
   study_files.each do |file|
-    assign_get_file_mock!(download_file_mock, file_size: file.upload_file_size || 1.megabyte)
+    assign_get_file_mock!(download_file_mock)
     assign_url_mock!(download_file_mock, file, parent_study:)
   end
   download_file_mock
@@ -47,10 +47,10 @@ def assign_url_mock!(mock, study_file, parent_study: nil)
   mock.expect :execute_gcloud_method, mock_signed_url, [:generate_signed_url, 0, String, String], **expires
 end
 
-def assign_get_file_mock!(mock, file_size:)
+def assign_get_file_mock!(mock)
   file_mock = Minitest::Mock.new
   file_mock.expect :present?, true
-  file_mock.expect :size, file_size
+  file_mock.expect :size, 1.megabyte
   mock.expect :execute_gcloud_method, file_mock, [:get_workspace_file, 0, String, String]
 end
 
