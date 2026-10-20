@@ -2,7 +2,7 @@
   <%= render partial: 'study_title_bar' %>
 </div>
 <h1>Data Download Exceeds Quota</h1>
-<p>The data you have requested for download is in excess of your download quota by <%= @gb_excess.round(2) %> GB (rounded up to nearest GB).</p>
+<p>The data you have requested for download is in excess of your download quota by <%= @gb_excess %> GB.</p>
   
 <%= form_for :data_egress, url: data_egress_checkout_path do |f| %>
   <%= f.hidden_field :gb_excess, value: @gb_excess %>
@@ -19,7 +19,7 @@
           (as defined by <%= link_to "Google Cloud Platform", "https://cloud.google.com/vpc/pricing?hl=en#internetegress", target: :_blank, rel: "noopener noreferrer" %>, rounded up to 
           the nearest GB, with a minumum allowable charge of $0.50).  If you are unwilling or unable to pay this fee, you can simply wait until the next day when your quota resets and 
           download the file at no cost.  You can also request a temporary exemption from the quota by contacting the Single Cell Portal team at 
-          <%= mail_to ApplicationController::SCP_ZENDESK %>, though we reserve the right not to approve all requests.
+          <%= mail_to ApplicationController::SCP_ZENDESK %>, though we may not approve all requests.
         </p>
         <p>
           <strong>Note: You will be redirected to a third-party payment processor (Stripe) to complete your payment.  After your payment is complete, you will be redirected
