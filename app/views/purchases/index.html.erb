@@ -11,6 +11,7 @@
           <th>Associated Study</th>
           <th>Price</th>
           <th>Payment Status</th>
+          <th>Fulfilled</th>
           <th>Sale Date</th>
         </tr>
       </thead>
@@ -18,9 +19,10 @@
         <% @purchases.each do |purchase| %>
           <tr>
             <td><%= purchase.name %></td>
-            <td><%= link_to purchase.study_accession, legacy_study_path(identifier: purchase.study_accession ) %></td>
+            <td class='study-accession'><%= link_to purchase.study_accession, legacy_study_path(identifier: purchase.study_accession ) %></td>
             <td><%= number_to_currency(purchase.amount) %></td>
             <td><span class="label label-<%= purchase.paid? ? 'success' : 'warning' %>"><%= purchase.payment_status %></span></td>
+            <td><span class="purchase-fulfilled fa <%= purchase.fulfilled ? "fa-check text-success" : "fa-times text-danger" %>"></span></td>
             <td><%= purchase.sale_date.to_fs(:db) %></td>
           </tr>
         <% end %>
@@ -34,21 +36,3 @@
     });
   </script>
 </div>
-<h2>Available products</h2>
-<p class="help-block">
-  Use the form below to select available products for your SCP studies.  You will be redirected to our payment platform to 
-  complete any purchases, and then return here once you have completed the transaction.
-</p>
-  <% @products.each do |product| %>
-    <%= form_for :product, url: create_stripe_checkout_path, html: { class: 'form-inline', id: "product-#{product.id}" }, data: { turbo: false } do |f| %>
-      <%= f.hidden_field :product_id, value: product.id %>    
-      <div class="form-group">
-        <strong><%= product.name %>:&nbsp;</strong> 
-        <span class="text-muted"><%= product.description %></span>
-        <%= f.select :study_accession, options_from_collection_for_select(@private_studies, :accession, :accession), {}, class: 'form-control' %>
-      </div>
-      <div class="form-group">
-        <%= f.submit 'Begin purchase', class: 'btn btn-success' %>
-      </div>
-    <% end %>
-<% end %>

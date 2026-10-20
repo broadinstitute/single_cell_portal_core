@@ -11,11 +11,12 @@ class Purchase
   field :payment_intent_id, type: String
   field :customer_email, type: String
   field :study_accession, type: String
+  field :download_identifier, type: String
   field :sale_date, type: DateTime
   field :payment_status, type: String, default: 'unpaid'
+  field :fulfilled, type: Boolean, default: false
 
   validates :name, :checkout_session_id, :payment_intent_id, :customer_email, presence: true
-  validates :study_accession, uniqueness: { scope: [:name, :checkout_session_id] }
   validates :checkout_session_id, :payment_intent_id, uniqueness: true
   validates :payment_status, inclusion: { in: Purchase::PAYMENT_STATUSES }
 
@@ -41,8 +42,16 @@ class Purchase
     Study.find_by(accession: study_accession, user_id: associated_user.id)
   end
 
+  def associated_download    
+    StudyFile.find_by(id: download_identifier) || DownloadRequest.find_by(id: download_identifier)
+  end
+
   def paid?
     payment_status == 'paid'
+  end
+
+  def self.has_open_purchase?(user, download_identifier)
+    Purchase.where(customer_email: user.email, download_identifier:, payment_status: 'paid', fulfilled: false).exists?
   end
 
   # find or initialize from Stripe::Checkout::Session object
@@ -55,6 +64,10 @@ class Purchase
   def self.find_or_intialize_from(checkout)
     raise TypeError, "incompatible object type: #{checkout.class}" unless checkout.is_a?(Stripe::Checkout::Session)
 
+    # check app environment to ensure we don't register purchases from other instances
+    # this is only a concern in non-prod environments, specifically staging
+    return nil if checkout.metadata.app_env != Rails.env
+
     registered_purchase = Purchase.find_by(checkout_session_id: checkout.id)
     return registered_purchase if registered_purchase
 
@@ -66,6 +79,7 @@ class Purchase
       payment_intent_id: checkout.payment_intent,
       customer_email: checkout.customer_email,
       study_accession: checkout.metadata.study_accession,
+      download_identifier: checkout.metadata.download_identifier,
       sale_date: Time.at(checkout.created).in_time_zone,
       payment_status: payment_status_from(checkout)
     )

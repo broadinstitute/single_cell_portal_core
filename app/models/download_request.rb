@@ -38,4 +38,8 @@ class DownloadRequest
     ActiveSupport::JSON.decode(azul_files || '{}')
   end
 
+  def study_files
+    StudyFile.where(:id.in => file_ids.to_a)
+  end
+
 end
