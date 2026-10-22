@@ -456,6 +456,7 @@ class BatchApiClient
       boot_disk: Google::Apis::BatchV1::Disk.new(
         size_gb: boot_disk_size_gb
       ),
+      provisioning_model: :SPOT, # use spot instances for better availability
       accelerators: add_gpu ? [accelerator] : []
     )
   end

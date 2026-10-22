@@ -352,6 +352,7 @@ class BatchApiClientTest < ActiveSupport::TestCase
     policy = @client.create_instance_policy
     assert_equal BatchApiClient::DEFAULT_MACHINE_TYPE, policy.machine_type
     assert_equal 300, policy.boot_disk.size_gb
+    assert_equal :SPOT, policy.provisioning_model
   end
 
   test 'should set env vars' do
