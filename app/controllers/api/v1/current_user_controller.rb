@@ -5,6 +5,7 @@ module Api
       # for security reasons, the methods in this controller should be extremely tightly controlled
 
       before_action :authenticate_api_user!
+      before_action :check_read_only_mode!, only: [:update]
 
       ALLOWABLE_UPDATE_FIELDS = ['feature_flags'].freeze
       # to ensure users can't arbitrarily change their own flags, restrict the list

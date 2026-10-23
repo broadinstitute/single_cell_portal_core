@@ -176,16 +176,8 @@ class DuosClient
   #
   # * *returns*
   #   - (Hash) DUOS dataset registration of study
-  #
-  # * *raises*
-  #   - (ArgumentError) if dataset schema is invalid
   def create_dataset(study)
     study_data = schema_from(study)
-    validator = validate_dataset(study_data)
-    if validator.any?
-      raise ArgumentError, "DUOS dataset schema validation failed: #{validator.first[:error]}"
-    end
-
     api_path = 'api/dataset/v3'
     process_api_request(:post, api_path, payload: { dataset: study_data.to_json }, multipart: true)
   end
@@ -348,18 +340,6 @@ class DuosClient
       consentGroups: [consent_values],
       data: TAG_CONTENT
     }.merge(ANVIL_VALUES).with_indifferent_access
-  end
-
-  # use JSON schema to validate dataset object
-  #
-  # * *params*
-  #   - +dataset+ (Hash) DUOS dataset object
-  #
-  # * *returns*
-  #   - (Enumerator) of validation errors, if any
-  def validate_dataset(dataset)
-    schema = JSONSchemer.schema(dataset_schema)
-    schema.validate(dataset)
   end
 
   # version of study name with accession prepended

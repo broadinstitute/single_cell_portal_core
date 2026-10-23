@@ -5,6 +5,7 @@ module Api
       before_action :authenticate_api_user!
       before_action :set_bookmark, only: %i[update destroy]
       before_action :check_bookmark_permissions, only: %i[update destroy]
+      before_action :check_read_only_mode!, except: :index
 
       respond_to :json
 

@@ -1,5 +1,6 @@
 class ApplicationController < ActionController::Base
   include RealIpLogger
+  include ReadOnlyMode
 
   # Error modal contact message
   SCP_ZENDESK = 'scp-support@broadinstitute.zendesk.com'.freeze

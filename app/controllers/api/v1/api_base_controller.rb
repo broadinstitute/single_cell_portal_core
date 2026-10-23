@@ -7,6 +7,7 @@ module Api
       include Concerns::IngestAware
       include Concerns::StudyAware
       include Concerns::Authenticator
+      include Concerns::ReadOnlyMode
       include Swagger::Blocks
       include ::RealIpLogger
 
