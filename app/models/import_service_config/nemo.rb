@@ -3,7 +3,7 @@ module ImportServiceConfig
   class Nemo
     include ImportServiceConfig
 
-    attr_accessor :project_id
+    attr_accessor :project_id, :grant_id
 
     validates :file_id, :user_id, :branding_group_id, presence: true
 
@@ -28,7 +28,7 @@ module ImportServiceConfig
 
     # name of entity/method to call for loading analog of Study
     def study_method
-      :collection
+      :project
     end
 
     def load_study
@@ -37,11 +37,11 @@ module ImportServiceConfig
 
     # name of entity/method to call for loading analog of a BrandingGroup/Collection
     def collection_method
-      :project
+      :grant
     end
 
     def load_collection
-      super(project_id)
+      super(grant_id)
     end
 
     def id_from_method
@@ -51,8 +51,8 @@ module ImportServiceConfig
     # recursively fetch associations to get other identifiers
     def association_order
       [
-        { method: study_file_method, association: :collections, id: :file_id, assoc_id: :study_id },
-        { method: study_method, association: :projects, id: :study_id, assoc_id: :project_id }
+        { method: study_file_method, association: :projects, id: :file_id, assoc_id: :study_id },
+        { method: study_method, association: :grants, id: :study_id, assoc_id: :grant_id }
       ]
     end
 
@@ -72,13 +72,13 @@ module ImportServiceConfig
 
     # retrieve common species names from associated collection
     def taxon_names
-      load_study&.[]('taxa')&.map { |t| t['name']} || []
+      load_study&.[]('taxa')&.map { |t| t['name']}.presence || load_collection&.[]('taxa')&.map { |t| t['name']}.presence || []
     end
 
     # map attribute names SCP Study attributes onto NeMO attribute names
     def study_mappings
       {
-        name: :name,
+        name: :title,
         description: :description
       }.with_indifferent_access
     end
@@ -158,12 +158,56 @@ module ImportServiceConfig
       organ_label = client.extract_associated_id(sample, :anatomical_regions, attribute: :region_name)
       organ = client.extract_associated_id(sample, :anatomical_regions, attribute: :cv_term_id)
       lib_name = find_library_prep(library_name)
-      library_preparation_protocol = efo_ontology_entries[lib_name]
+      library_preparation_protocol = scp_ontology_entries('efo')[lib_name]
+      # all NeMO entires carry no disease annotation, so every sample is treated
+      # as unaffected/normal per the PATO convention for a missing disease state.
+      disease_label = 'normal'
+      disease = scp_ontology_entries('pato')[disease_label]
       { 
+        biosample_id: sample['sample_name'], donor_id: sample['sample_name'],
+        disease:, disease__ontology_label: disease_label,
         library_preparation_protocol:, library_preparation_protocol__ontology_label: lib_name,
         organ: organ.gsub(/\:/, '_'), organ__ontology_label: organ_label, sex:, 
         species: "NCBITaxon_#{taxon_id}", species__ontology_label: species_name, 
       }.reject { |_, v| v.blank? }.with_indifferent_access
+    end
+
+    # transform annotation data into a tsv manifest to project onto an AnnData file for ingest
+    #
+    # * *returns*
+    #   - (File) => annotation data in tsv file format
+    def annotation_manifest_file
+      return nil unless file_id
+
+      filename = file_id.split(':').last
+      FileUtils.mkdir_p('tmp/uploads/nemo_manifests')
+      outfile = File.open(Rails.root.join('tmp', "uploads", "nemo_manifests", "#{filename}.scp.tsv"), 'w+')
+      annotations = annotation_data_for_file
+      headers = annotations.keys
+      values = annotations.values
+      outfile.write(headers.join("\t") + "\n")
+      outfile.write(values.join("\t") + "\n")
+      outfile.close
+      outfile
+    end
+
+    # walk association_order to populate associated IDs from a starting point
+    # this overwrites the base implementation in order to have fallback queries in cases where
+    # collections/project associations aren't set
+    def traverse_associations!
+      association_order.each do |config|
+        entity_id = send(config[:id])
+        entity = ImportService.call_api_client(client, config[:method], entity_id)
+        associated_id = id_from(entity, config[:association])
+        if associated_id
+          setter = "#{config[:assoc_id]}=" # e.g. self.study_id = 'foo'
+          send(setter, associated_id)
+        else
+          # fallback
+          
+        end
+      end
+      attributes
     end
 
     # main business logic of populating SCP models for NeMO data

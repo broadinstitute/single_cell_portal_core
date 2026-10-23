@@ -170,6 +170,18 @@ class NemoClient
   ##
   # Convenience methods
   ##
+  
+  # run an api-wide search for an entity
+  #
+  # * *params*
+  #   - +entity_type+ (String) => type of entity to search for
+  #   - +query+ (String) => query string
+  def search(entity_type, query: nil)
+    validate_entity_type(entity_type)
+    path = "#{api_root}/search?entity_type=#{uri_encode(entity_type)}"
+    path += "&q=#{uri_encode(query)}" if query
+    process_api_request(:get, path)
+  end
 
   # get information about a collection
   #

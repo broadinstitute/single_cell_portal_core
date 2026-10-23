@@ -18,7 +18,7 @@ module ImportServiceConfig
 
   DEFAULT_OBSM_KEYS = %w[X_umap].freeze
 
-  EFO_ONTOLOGY_URL = "https://github.com/broadinstitute/scp-ingest-pipeline/raw/refs/heads/development/ingest/validation/ontologies/efo.min.tsv.gz"
+  BASE_SCP_ONTOLOGY_URL = "https://github.com/broadinstitute/scp-ingest-pipeline/raw/refs/heads/development/ingest/validation/ontologies/"
 
   attr_accessor :client, :user_id, :file_id, :study_id, :branding_group_id, :obsm_key_names
 
@@ -236,21 +236,21 @@ module ImportServiceConfig
     CONTENT_TYPES_BY_EXT[extension] || 'application/octet-stream'
   end
 
-  # get a hash of EFO ontology labels to ids for matching
-  def efo_ontology_entries
+  # get a hash of ontology labels to ids for matching
+  def scp_ontology_entries(ontology_name)
     begin
       entries = {}
-      raw_data = RestClient.get EFO_ONTOLOGY_URL
+      raw_data = RestClient.get BASE_SCP_ONTOLOGY_URL + "#{ontology_name}.min.tsv.gz"
       gzip_io = StringIO.new(raw_data.body)
       gz = Zlib::GzipReader.new(gzip_io)
-      efo_content = gz.read
+      ontology_content = gz.read
       gz.close
-      lines = efo_content.split("\n")
+      lines = ontology_content.split("\n")
       lines.each do |line|
-        efo_id, label_data = line.split("\t")
+        ontology_id, label_data = line.split("\t")
         labels = label_data.split("||")
         labels.each do |label|
-          entries[label.strip] = efo_id
+          entries[label.strip] = ontology_id
         end
       end
       entries

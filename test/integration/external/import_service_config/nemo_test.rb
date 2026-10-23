@@ -9,9 +9,9 @@ module ImportServiceConfig
       @user_id = @user.id
       @branding_group_id = @branding_group.id
       @attributes = {
-        file_id: 'nemo:drc-jcvnj7k',
-        project_id: 'nemo:std-5jvcwm1',
-        study_id: 'nemo:col-hwmwd2x',
+        file_id: 'nemo:fil-xoawyq2',
+        grant_id: 'nemo:prj-v7tjvn5',
+        study_id: 'nemo:prj-2dst5ot',
         obsm_key_names: %w[X_umap],
         user_id: @user.id,
         branding_group_id: @branding_group.id
@@ -35,7 +35,7 @@ module ImportServiceConfig
 
     test 'should reference correct methods' do
       assert_equal :file, @configuration.study_file_method
-      assert_equal :collection, @configuration.study_method
+      assert_equal :project, @configuration.study_method
       assert_equal :extract_associated_id, @configuration.id_from_method
     end
 
@@ -74,7 +74,7 @@ module ImportServiceConfig
 
     test 'should load attribute mappings' do
       study_file_mappings = @configuration.study_file_mappings
-      %i[name description].each do |attribute|
+      %i[title description].each do |attribute|
         assert_equal attribute, @configuration.study_mappings[attribute]
       end
       assert_equal :file_name, study_file_mappings[:name]
@@ -94,9 +94,9 @@ module ImportServiceConfig
 
     test 'should load study analog' do
       study = @configuration.load_study
-      assert_equal '"Human variation study (10x), GRU"', study['name']
-      assert_equal ["10x chromium 3' v3 sequencing"], study['techniques']
-      assert_equal [{"name"=>"human", "cv_term_id"=>"NCBI:txid9606"}], study['taxa']
+      assert_equal 'DNA methylation profiling of genomic DNA in individual mouse brain cell nuclei (RS1.1)', study['title']
+      assert_includes study['techniques'], "10x chromium 3' v3 sequencing"
+      assert_equal ["epigenome", "transcriptome", "multimodal"], study['modalities']
     end
 
     test 'should load file analog' do
@@ -108,18 +108,16 @@ module ImportServiceConfig
 
     test 'should load collection analog' do
       collection = @configuration.load_collection
-      assert_equal 'ecker_sn_mCseq_proj', collection['short_name']
+      assert_equal 'u19_cemba', collection.dig('grant_info', 'grant_short_name')
     end
 
     test 'should extract association ids' do
       file = @configuration.load_file
-      study = @configuration.load_study
-      assert_equal @attributes[:study_id], @configuration.id_from(file, :collections)
-      assert_equal 'nemo:grn-gyy3k8j', @configuration.id_from(study, :projects)
+      assert_equal 'nemo:col-hwmwd2x', @configuration.id_from(file, :collections)
     end
 
     test 'should load taxon common names' do
-      assert_equal %w[human], @configuration.taxon_names
+      assert_equal ["white-tufted-ear marmoset", "human", "house mouse"], @configuration.taxon_names
     end
 
     test 'should find library preparation protocol' do
@@ -134,10 +132,13 @@ module ImportServiceConfig
       assert_equal expected_sample_id, config.sample_id_from_file
     end
 
-    test 'should get remote efo ontology data' do
-      efo_entries = @configuration.efo_ontology_entries
+    test 'should get remote scp ontology data' do
+      efo_entries = @configuration.scp_ontology_entries('efo')
       assert efo_entries.any?
       assert_equal efo_entries["experimental factor"], "EFO_0000001"
+      ncbi_taxons = @configuration.scp_ontology_entries('ncbitaxon')
+      assert ncbi_taxons.any? 
+      assert_equal ncbi_taxons['Homo sapiens'], 'NCBITaxon_9606'
     end
 
     test 'should get annotation data from file' do
@@ -145,22 +146,40 @@ module ImportServiceConfig
       config = ImportServiceConfig::Nemo.new(file_id:)
       annotation_data = config.annotation_data_for_file
       expected_data = {
+        biosample_id: 'Pool30_Batch3_IVSAOxycodoneStudy1',
+        donor_id: 'Pool30_Batch3_IVSAOxycodoneStudy1',
+        disease: 'PATO_0000461',
+        disease__ontology_label: 'normal',
         library_preparation_protocol: 'EFO_0009922',
         library_preparation_protocol__ontology_label: "10x 3' v3",
         organ: 'UBERON_0001904',
         organ__ontology_label: 'habenula',
         sex: 'male',
         species: 'NCBITaxon_10090',
-        species__ontology_label: 'house mouse'
+        species__ontology_label: 'house mouse',
       }
       expected_data.each do |key, value|
         assert_equal value, annotation_data[key]
       end
     end
 
+    test 'should export annotation data as tsv file' do
+      file_id = 'nemo:fil-xoawyq2'
+      config = ImportServiceConfig::Nemo.new(file_id:)
+      tsv_file = config.annotation_manifest_file
+      assert File.exist?(tsv_file.path)
+      contents = File.open(tsv_file.path).readlines
+      headers = contents.first.split("\t").map(&:strip)
+      values = contents.last.split("\t").map(&:strip)
+      expected_annotations = config.annotation_data_for_file
+      assert_equal expected_annotations.keys.sort, headers.sort
+      assert_equal expected_annotations.values.sort, values.sort
+      File.delete(tsv_file.path)
+    end
+
     test 'should populate study and study_file' do
       scp_study = @configuration.populate_study
-      assert_equal 'Human variation study (10x), GRU', scp_study.name
+      assert_equal 'DNA methylation profiling of genomic DNA in individual mouse brain cell nuclei (RS1.1)', scp_study.name
       assert_not scp_study.public
       assert scp_study.full_description.present?
       assert_equal @user_id, scp_study.user_id
@@ -170,7 +189,7 @@ module ImportServiceConfig
       scp_study_file = @configuration.populate_study_file(scp_study.id)
       assert scp_study_file.use_metadata_convention
       assert_equal 'human_var_scVI_VLMC.h5ad', scp_study_file.upload_file_name
-      assert_equal "10x 3' v3", scp_study_file.expression_file_info.library_preparation_protocol
+      assert_equal "10x 3' v2", scp_study_file.expression_file_info.library_preparation_protocol
       assert_equal @configuration.service_name, scp_study_file.imported_from
       assert_not scp_study_file.ann_data_file_info.reference_file
       @configuration.obsm_keys.each do |obsm_key_name|
@@ -187,7 +206,7 @@ module ImportServiceConfig
       # for study to save, we need to mock all Terra orchestration API calls for creating workspace & setting acls
       fc_client_mock = ::Minitest::Mock.new
       owner_group = { groupEmail: 'sa-owner-group@firecloud.org' }.with_indifferent_access
-      assign_workspace_mock!(fc_client_mock, owner_group, 'human-variation-study-10x-gru')
+      assign_workspace_mock!(fc_client_mock, owner_group, 'dna-methylation-profiling-of-genomic-dna-in-individual-mouse-brain-cell-nuclei-rs1-1')
       AdminConfiguration.stub :find_or_create_ws_user_group!, owner_group do
         ImportService.stub :copy_file_to_bucket, file_mock do
           ApplicationController.stub :firecloud_client, fc_client_mock do
