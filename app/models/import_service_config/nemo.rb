@@ -3,7 +3,7 @@ module ImportServiceConfig
   class Nemo
     include ImportServiceConfig
 
-    attr_accessor :project_id, :grant_id
+    attr_accessor :grant_id
 
     validates :file_id, :user_id, :branding_group_id, presence: true
 
@@ -48,14 +48,6 @@ module ImportServiceConfig
       :extract_associated_id
     end
 
-    # recursively fetch associations to get other identifiers
-    def association_order
-      [
-        { method: study_file_method, association: :projects, id: :file_id, assoc_id: :study_id },
-        { method: study_method, association: :grants, id: :study_id, assoc_id: :grant_id }
-      ]
-    end
-
     # return hash of file access info, like url, sizes, etc
     def file_access_info(protocol: nil)
       urls = load_file&.[]('manifest_file_urls')
@@ -78,7 +70,7 @@ module ImportServiceConfig
     # map attribute names SCP Study attributes onto NeMO attribute names
     def study_mappings
       {
-        name: :title,
+        name: [:title, :short_name], # fallback in case of empty title
         description: :description
       }.with_indifferent_access
     end
@@ -99,7 +91,15 @@ module ImportServiceConfig
     # each config should implement these methods to deal with corner cases in assigning attributes
     # if there are no validation issues, these can simple call the :to_{model} methods as a passthru
     def populate_study
-      to_study
+      scp_study = to_study
+      current_name = scp_study.name
+      grant = load_collection
+      grant_name = grant.dig('grant_info', 'grant_title')
+      filename = load_file&.[]('file_name')
+      scp_study.name = "#{current_name} (#{file_id})"
+      scp_study.description += " from #{filename} in '#{grant_name}'"
+      scp_study.study_detail.full_description = sanitize_attribute(scp_study.description)
+      scp_study
     end
 
     def populate_study_file(scp_study_id)
@@ -167,8 +167,8 @@ module ImportServiceConfig
         biosample_id: sample['sample_name'], donor_id: sample['sample_name'],
         disease:, disease__ontology_label: disease_label,
         library_preparation_protocol:, library_preparation_protocol__ontology_label: lib_name,
-        organ: organ.gsub(/\:/, '_'), organ__ontology_label: organ_label, sex:, 
-        species: "NCBITaxon_#{taxon_id}", species__ontology_label: species_name, 
+        organ: organ.gsub(/\:/, '_'), organ__ontology_label: organ_label, sample_id:, sex:, 
+        species: "NCBITaxon_#{taxon_id}", species__ontology_label: species_name
       }.reject { |_, v| v.blank? }.with_indifferent_access
     end
 
@@ -191,25 +191,6 @@ module ImportServiceConfig
       outfile
     end
 
-    # walk association_order to populate associated IDs from a starting point
-    # this overwrites the base implementation in order to have fallback queries in cases where
-    # collections/project associations aren't set
-    def traverse_associations!
-      association_order.each do |config|
-        entity_id = send(config[:id])
-        entity = ImportService.call_api_client(client, config[:method], entity_id)
-        associated_id = id_from(entity, config[:association])
-        if associated_id
-          setter = "#{config[:assoc_id]}=" # e.g. self.study_id = 'foo'
-          send(setter, associated_id)
-        else
-          # fallback
-          
-        end
-      end
-      attributes
-    end
-
     # main business logic of populating SCP models for NeMO data
     #
     # * *returns*
@@ -221,7 +202,6 @@ module ImportServiceConfig
     def import_from_service
       raise configuration.errors.full_messages.join(', ') unless valid?
 
-      traverse_associations! unless study_id
       study = populate_study
       study_file = populate_study_file(study.id)
       nemo_gs_url = file_access_info(protocol: :gs)&.[]('url')

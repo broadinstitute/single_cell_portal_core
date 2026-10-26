@@ -176,11 +176,51 @@ class NemoClient
   # * *params*
   #   - +entity_type+ (String) => type of entity to search for
   #   - +query+ (String) => query string
-  def search(entity_type, query: nil)
+  #   - +page_size+ (Integer) => number of results per page
+  #   
+  # * *returns*
+  #   - (Array<Hash>) => all search results after iterating through pagination
+  def search(entity_type, query: nil, page_size: 100)
     validate_entity_type(entity_type)
-    path = "#{api_root}/search?entity_type=#{uri_encode(entity_type)}"
+    path = "#{api_root}/search?entity_type=#{uri_encode(entity_type)}&page_size=#{page_size}"
     path += "&q=#{uri_encode(query)}" if query
-    process_api_request(:get, path)
+    results = process_api_request(:get, path)
+    Rails.logger.info "NeMO API: found #{results['total']} potential results, fetching"
+    retrieve_all_results(results)
+  end
+
+  # iterate through paginated results to retrieve all entries
+  # 
+  # * +params+
+  #   - +query_results+ (Hash) => paginated API search results
+  #   
+  # * +returns+
+  #   - (Array<Hash>) => concatenated search results
+  def retrieve_all_results(query_results)
+    all_results = query_results['results']
+    while query_results['next'].present?
+      Rails.logger.info "NeMO API: processing next batch of search results at #{query_results['next']}"
+      query_results = process_api_request(:get, query_results['next'])
+      all_results += query_results['results']
+    end
+    all_results
+  end
+
+  # query for all files in a project that match certain selectors, such as data_type, file_format
+  # 
+  # * +params+
+  #   - +project_name+ (String) => name of NeMO project short name, e.g. scorch_kenny_transcriptome
+  #   - +selectors+ (Hash) => arbitrary number of k/v pairs to refine results by
+  #   
+  # * *returns*
+  #   - (Array<Hash>) => array of all files matching the query
+  def project_files_by_selector(project_name, **selectors)
+    project_files = search('file', query: project_name)
+    project_files.select do |file|
+      !{**selectors}.map do |k, v|
+        file[k] == v
+      end.include?(false)
+    end
   end
 
   # get information about a collection

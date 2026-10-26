@@ -116,6 +116,10 @@ module ImportServiceConfig
           model_attributes[scp_name] ||= {}
           model_attributes[scp_name][embedded_doc_attr] = remote_data[nested_config_name]
         end
+      elsif config_name.is_a?(Array)
+        values = config_name.map {|c| remote_data[c] }
+        value = values.find(&:itself) # built-in method to find first non-nil value
+        model_attributes[scp_name] = value
       else
         model_attributes[scp_name] = remote_data[config_name]
       end

@@ -9,9 +9,9 @@ module ImportServiceConfig
       @user_id = @user.id
       @branding_group_id = @branding_group.id
       @attributes = {
-        file_id: 'nemo:fil-xoawyq2',
-        grant_id: 'nemo:prj-v7tjvn5',
+        file_id: 'nemo:fil-eznvvwk',
         study_id: 'nemo:prj-2dst5ot',
+        grant_id: 'nemo:prj-v7tjvn5',
         obsm_key_names: %w[X_umap],
         user_id: @user.id,
         branding_group_id: @branding_group.id
@@ -48,13 +48,6 @@ module ImportServiceConfig
       assert_equal @branding_group, @configuration.branding_group
     end
 
-    test 'should traverse associations to set ids' do
-      config = ImportServiceConfig::Nemo.new(file_id: @attributes[:file_id])
-      config.traverse_associations!
-      assert_equal @attributes[:study_id], config.study_id
-      assert_equal 'nemo:grn-gyy3k8j', config.project_id
-    end
-
     test 'should load defaults' do
       study_defaults = {
         public: false, user_id: @user_id, branding_group_ids: [@branding_group_id]
@@ -73,10 +66,10 @@ module ImportServiceConfig
     end
 
     test 'should load attribute mappings' do
+      study_mappings = @configuration.study_mappings
+      assert_equal [:title, :short_name], study_mappings[:name]
+      assert_equal :description, study_mappings[:description]
       study_file_mappings = @configuration.study_file_mappings
-      %i[title description].each do |attribute|
-        assert_equal attribute, @configuration.study_mappings[attribute]
-      end
       assert_equal :file_name, study_file_mappings[:name]
       assert_equal :file_name, study_file_mappings[:upload_file_name]
       assert_equal :techniques, study_file_mappings.dig(:expression_file_info, :library_preparation_protocol)
@@ -94,30 +87,34 @@ module ImportServiceConfig
 
     test 'should load study analog' do
       study = @configuration.load_study
-      assert_equal 'DNA methylation profiling of genomic DNA in individual mouse brain cell nuclei (RS1.1)', study['title']
+      assert_equal 'scorch_kenny_transcriptome', study['short_name']
       assert_includes study['techniques'], "10x chromium 3' v3 sequencing"
-      assert_equal ["epigenome", "transcriptome", "multimodal"], study['modalities']
+      assert_equal ["transcriptome"], study['modalities']
     end
 
     test 'should load file analog' do
       file = @configuration.load_file
-      assert_equal 'human_var_scVI_VLMC.h5ad', file['file_name']
+      assert_equal 'ACSVABZC_POOL-16-OXY-NON-INFECTED_Batch4_IVSAOxycodoneStudy1.h5ad', file['file_name']
       assert_equal 'h5ad', file['file_format']
       assert_equal 'counts', file['data_type']
     end
 
     test 'should load collection analog' do
       collection = @configuration.load_collection
-      assert_equal 'u19_cemba', collection.dig('grant_info', 'grant_short_name')
+      assert_equal 'U01DA053629_kenny', collection.dig('grant_info', 'grant_short_name')
     end
 
     test 'should extract association ids' do
       file = @configuration.load_file
-      assert_equal 'nemo:col-hwmwd2x', @configuration.id_from(file, :collections)
+      expected_id = 'nemo:fil-43o57dg'
+      assert_equal expected_id, @configuration.id_from(file, :parent_files, index: 0)
+      config = ImportServiceConfig::Nemo.new(file_id: expected_id)
+      parent_file = config.load_file
+      assert_equal 'nemo:smp-f9xnr0x', config.id_from(parent_file, :sample)
     end
 
     test 'should load taxon common names' do
-      assert_equal ["white-tufted-ear marmoset", "human", "house mouse"], @configuration.taxon_names
+      assert_equal ["house mouse"], @configuration.taxon_names
     end
 
     test 'should find library preparation protocol' do
@@ -179,7 +176,9 @@ module ImportServiceConfig
 
     test 'should populate study and study_file' do
       scp_study = @configuration.populate_study
-      assert_equal 'DNA methylation profiling of genomic DNA in individual mouse brain cell nuclei (RS1.1)', scp_study.name
+      project_name = 'scorch_kenny_transcriptome'
+      expected_name = "#{project_name} (#{@configuration.file_id})"
+      assert_equal expected_name, scp_study.name
       assert_not scp_study.public
       assert scp_study.full_description.present?
       assert_equal @user_id, scp_study.user_id
@@ -188,8 +187,8 @@ module ImportServiceConfig
       # populate StudyFile, using above study
       scp_study_file = @configuration.populate_study_file(scp_study.id)
       assert scp_study_file.use_metadata_convention
-      assert_equal 'human_var_scVI_VLMC.h5ad', scp_study_file.upload_file_name
-      assert_equal "10x 3' v2", scp_study_file.expression_file_info.library_preparation_protocol
+      assert_equal 'ACSVABZC_POOL-16-OXY-NON-INFECTED_Batch4_IVSAOxycodoneStudy1.h5ad', scp_study_file.upload_file_name
+      assert_equal "10x 3' v3", scp_study_file.expression_file_info.library_preparation_protocol
       assert_equal @configuration.service_name, scp_study_file.imported_from
       assert_not scp_study_file.ann_data_file_info.reference_file
       @configuration.obsm_keys.each do |obsm_key_name|
@@ -199,14 +198,14 @@ module ImportServiceConfig
     end
 
     test 'should import all from service' do
-      access_url = 'gs://nemo-public/other/grant/u01_lein/lein/transcriptome/sncell/10x_v3/' \
-                   'human/processed/counts/human_var_scVI_VLMC.h5ad'
+      access_url = 'https://data.nemoarchive.org/scorch/grant/U01DA053629_kenny/Kenny/transcriptome/nuclei/10x_v3/house_mouse/' \
+                   'processed/counts/ACSVABZC_POOL-16-OXY-NON-INFECTED_Batch4_IVSAOxycodoneStudy1.h5ad'
       file_mock = ::Minitest::Mock.new
       file_mock.expect :generation, '123456789'
       # for study to save, we need to mock all Terra orchestration API calls for creating workspace & setting acls
       fc_client_mock = ::Minitest::Mock.new
       owner_group = { groupEmail: 'sa-owner-group@firecloud.org' }.with_indifferent_access
-      assign_workspace_mock!(fc_client_mock, owner_group, 'dna-methylation-profiling-of-genomic-dna-in-individual-mouse-brain-cell-nuclei-rs1-1')
+      assign_workspace_mock!(fc_client_mock, owner_group, 'scorch-kenny-transcriptome-nemo-fil-eznvvwk')
       AdminConfiguration.stub :find_or_create_ws_user_group!, owner_group do
         ImportService.stub :copy_file_to_bucket, file_mock do
           ApplicationController.stub :firecloud_client, fc_client_mock do
