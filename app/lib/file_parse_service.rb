@@ -128,6 +128,10 @@ class FileParseService
               file_size: study_file.upload_file_size, extract_raw_counts: study_file.is_raw_counts_file?,
               raw_location: study_file.ann_data_file_info.raw_location
             )
+            # append manifest info for NeMO files
+            if study_file.external_identifier && study_file.imported_from == 'NeMO'
+              params_object.manifest_file = study_file.manifest_gs_url
+            end
           end
           # TODO extract and parse Raw Exp Data (SCP-4710)
         elsif study_file.is_reference_anndata?

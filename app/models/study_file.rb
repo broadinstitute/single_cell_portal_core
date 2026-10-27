@@ -744,6 +744,14 @@ class StudyFile
     "gs://#{self.study.bucket_id}/#{self.bucket_location}"
   end
 
+  # gs url for sample manifest file (will have been created by ImportServiceConfig::Nemo#import_from_service)
+  def manifest_gs_url
+    return nil unless external_identifier && imported_from == 'NeMO'
+
+    filename = external_identifier.split(':').last + '.scp.tsv'
+    "gs://#{self.study.bucket_id}/#{filename}"
+  end
+
   def api_url
     api_url = ApplicationController.firecloud_client.execute_gcloud_method(:generate_api_url, 0, self.study.bucket_id, self.bucket_location)
     api_url + '?alt=media'

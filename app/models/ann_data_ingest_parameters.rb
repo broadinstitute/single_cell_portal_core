@@ -49,7 +49,8 @@ class AnnDataIngestParameters
     barcode_file: nil,
     subsample: false,
     file_size: 0,
-    machine_type: nil
+    machine_type: nil,
+    manifest_file: nil
   }.freeze
 
   # values that are available as methods but not as attributes (and not passed to command line)

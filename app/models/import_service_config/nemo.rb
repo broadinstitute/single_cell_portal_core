@@ -209,13 +209,16 @@ module ImportServiceConfig
       # the public release but for now leaving this hack in place
       nemo_gs_url&.gsub!(/biccn_unbundled/, 'biccn-unbundled')
       nemo_http_url = file_access_info(protocol: :http)&.[]('url')
-      access_url = nemo_gs_url || nemo_http_url
+      access_url = nemo_http_url || nemo_gs_url
       raise "could not obtain file access info for #{file_id}" if access_url.blank?
 
       download_url = nemo_http_url || nemo_gs_url
       study_file.external_link_url = download_url
       study_file.external_link_title = 'NeMO Download'
-      save_models_and_push_files(study, study_file, access_url)
+      scp_study, scp_study_file = save_models_and_push_files(study, study_file, access_url)
+      file_manifest = annotation_manifest_file
+      ApplicationController.firecloud_client.create_workspace_file(scp_study.bucket_id, file_manifest.path)
+      FileParseService.run_parse_job(scp_study_file, scp_study, study.user)
     end
   end
 end

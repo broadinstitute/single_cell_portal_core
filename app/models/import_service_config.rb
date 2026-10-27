@@ -85,7 +85,7 @@ module ImportServiceConfig
   end
 
   def taxon_from(value, attribute: :common_name)
-    Taxon.find_by(attribute.to_sym => value)
+    Taxon.find_by(attribute.to_sym => value) || Taxon.find_by(aliases: Regexp.new(value)) # use alias fallback
   end
 
   def taxon_names
