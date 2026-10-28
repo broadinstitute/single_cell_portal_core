@@ -5,7 +5,7 @@ module ImportServiceConfig
 
     attr_accessor :grant_id
 
-    validates :file_id, :user_id, :branding_group_id, presence: true
+    validates :file_id, :user_id, presence: true
 
     PREFERRED_TAXONS = %w[human mouse].freeze
 
@@ -172,6 +172,11 @@ module ImportServiceConfig
       }.reject { |_, v| v.blank? }.with_indifferent_access
     end
 
+    def annotation_manifest_filename
+      base_filename = file_id.split(':').last
+      "#{base_filename}.scp.tsv"
+    end
+
     # transform annotation data into a tsv manifest to project onto an AnnData file for ingest
     #
     # * *returns*
@@ -179,9 +184,8 @@ module ImportServiceConfig
     def annotation_manifest_file
       return nil unless file_id
 
-      filename = file_id.split(':').last
       FileUtils.mkdir_p('tmp/uploads/nemo_manifests')
-      outfile = File.open(Rails.root.join('tmp', "uploads", "nemo_manifests", "#{filename}.scp.tsv"), 'w+')
+      outfile = File.open(Rails.root.join('tmp', "uploads", "nemo_manifests", annotation_manifest_filename), 'w+')
       annotations = annotation_data_for_file
       headers = annotations.keys
       values = annotations.values
@@ -200,7 +204,7 @@ module ImportServiceConfig
     #   - (RuntimeError) => if either study or study_file fail to save correctly
     #   - (ArgumentError) => if no file_id is provided
     def import_from_service
-      raise configuration.errors.full_messages.join(', ') unless valid?
+      raise errors.full_messages.join(', ') unless valid?
 
       study = populate_study
       study_file = populate_study_file(study.id)
@@ -217,8 +221,9 @@ module ImportServiceConfig
       study_file.external_link_title = 'NeMO Download'
       scp_study, scp_study_file = save_models_and_push_files(study, study_file, access_url)
       file_manifest = annotation_manifest_file
-      ApplicationController.firecloud_client.create_workspace_file(scp_study.bucket_id, file_manifest.path)
-      FileParseService.run_parse_job(scp_study_file, scp_study, study.user)
+      ApplicationController.firecloud_client.create_workspace_file(scp_study.bucket_id, file_manifest.path, annotation_manifest_filename)
+      FileParseService.run_parse_job(scp_study_file, scp_study, scp_study.user, persist_on_fail: true)
+      [scp_study, scp_study_file]
     end
   end
 end

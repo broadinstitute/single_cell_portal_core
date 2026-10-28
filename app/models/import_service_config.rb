@@ -61,24 +61,6 @@ module ImportServiceConfig
     obsm_key_names || DEFAULT_OBSM_KEYS
   end
 
-  # order of associations to walk for sourcing attributes
-  # should be overwritten in included class
-  def association_order
-    []
-  end
-
-  # walk association_order to populate associated IDs from a starting point
-  def traverse_associations!
-    association_order.each do |config|
-      entity_id = send(config[:id])
-      entity = ImportService.call_api_client(client, config[:method], entity_id)
-      associated_id = id_from(entity, config[:association])
-      setter = "#{config[:assoc_id]}=" # e.g. self.study_id = 'foo'
-      send(setter, associated_id)
-    end
-    attributes
-  end
-
   # extract an ID from an association
   def id_from(entity, ...)
     client.send(id_from_method, entity, ...)
