@@ -9,6 +9,7 @@ module Api
       before_action :set_study_file, only: [:download_data, :stream_data]
       before_action :check_download_agreement, only: [:download_data, :stream_data]
       before_action :get_download_quota, only: [:download_data, :stream_data]
+      before_action :check_read_only_mode!, only: [:submit_differential_expression]
 
       swagger_path '/site/studies' do
         operation :get do

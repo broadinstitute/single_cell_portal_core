@@ -24,6 +24,7 @@ class StudiesController < ApplicationController
   end
   before_action :check_study_detached, only: [:edit, :update, :initialize_study, :sync_study]
   helper_method :visible_unsynced_files, :hidden_unsynced_files
+  before_action :check_read_only_mode!, except: [:index, :show, :download_private_file]
   ###
   #
   # STUDY OBJECT METHODS

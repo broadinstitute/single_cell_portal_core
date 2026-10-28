@@ -14,6 +14,7 @@ class ProfilesController < ApplicationController
     check_profile_access
   end
   before_action :check_firecloud_registration, only: :update_firecloud_profile
+  before_action :check_read_only_mode!, except: [:show, :accept_tos, :record_tos_action]
 
   def show
     @study_shares = StudyShare.where(email: @user.email)

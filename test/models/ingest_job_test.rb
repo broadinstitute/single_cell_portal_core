@@ -1120,6 +1120,94 @@ class IngestJobTest < ActiveSupport::TestCase
     end
   end
 
+  # this test is identical to the OOM check with the exception of the exit code and machine type
+  # this isolates the behavior to see if there is a problem with either case
+  test 'should automatically retry on vm preemption' do
+    study = FactoryBot.create(:detached_study,
+                              name_prefix: 'VM Preemption Test',
+                              user: @user,
+                              test_array: @@studies_to_clean)
+    study_file = FactoryBot.create(:ann_data_file,
+                                   name: 'matrix.h5ad',
+                                   study:,
+                                   upload_file_size: 8.gigabytes,
+                                   cell_input: %w[A B C D],
+                                   coordinate_input: [
+                                     { umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                   ])
+    params_object = AnnDataIngestParameters.new(
+      anndata_file: "gs://#{study.bucket_id}/matrix.h5ad", file_size: study_file.upload_file_size
+    )
+    pipeline_name = SecureRandom.uuid
+    job = IngestJob.new(
+      pipeline_name:, study:, study_file:, user: @user, action: :ingest_anndata, params_object:
+    )
+    bucket = study.bucket_id
+
+    commands = [
+      'python', 'ingest_pipeline.py', '--study-id', study.id.to_s, '--study-file-id',
+      study_file.id.to_s, 'ingest_anndata', '--ingest-anndata', '--anndata-file', params_object.anndata_file,
+      '--obsm-keys', '["X_umap"]', '--extract', '["cluster", "metadata", "processed_expression", "raw_counts"]'
+    ]
+
+    dummy_job = Google::Apis::BatchV1::Job.new(
+      name: pipeline_name,
+      create_time: (@now - 3.minutes).to_s,
+      update_time: @now.to_s,
+      status: Google::Apis::BatchV1::JobStatus.new(
+        state: 'FAILED',
+        status_events: [
+          Google::Apis::BatchV1::StatusEvent.new(event_time: (@now - 3.minutes).to_s),
+          Google::Apis::BatchV1::StatusEvent.new(event_time: @now.to_s)
+        ]
+      )
+    )
+
+    vm_info = {
+      cpu_milli: 8000,
+      memory_mib: 131072,
+      machine_type: 'n2d-highmem-8',
+      boot_disk_size_gb: 300
+    }.with_indifferent_access
+
+    client_mock = Minitest::Mock.new
+    6.times { client_mock.expect :exit_code_from_task, 50001, [pipeline_name] }
+    client_mock.expect :get_job_resources, vm_info, [], job: dummy_job
+    client_mock.expect :get_job_command_line, commands, [], job: dummy_job
+    new_pipeline = Minitest::Mock.new
+    new_op = Google::Apis::BatchV1::Job.new(
+      name: 'vm-preempt-retry',
+      status: Google::Apis::BatchV1::JobStatus.new(state:'RUNNING')
+    )
+    2.times do
+      client_mock.expect :get_job, new_op, [new_op.name]
+      new_pipeline.expect :done?, false, []
+      new_pipeline.expect :failed?, false
+    end
+    client_mock.expect :run_job, new_op do |args|
+      args[:study_file].upload_file_name == study_file.upload_file_name &&
+        args[:study_file].id.to_s == study_file.id.to_s &&
+        args[:action] == :ingest_anndata &&
+        args[:params_object].machine_type == vm_info[:machine_type]
+    end
+    terra_mock = Minitest::Mock.new
+    terra_mock.expect :get_workspace_file,
+                      Google::Cloud::Storage::File.new,
+                      [bucket, study_file.bucket_location]
+    terra_mock.expect :workspace_file_exists?,
+                      false,
+                      [bucket, String]
+    job.stub :get_ingest_run, dummy_job do
+      ApplicationController.stub :batch_api_client, client_mock do
+        ApplicationController.stub :firecloud_client, terra_mock do
+          job.poll_for_completion
+          terra_mock.verify
+          client_mock.verify
+        end
+      end
+    end
+  end
+
   test 'should automatically retry on OOM failure' do
     study = FactoryBot.create(:detached_study,
                               name_prefix: 'OOM Test',
@@ -1168,9 +1256,10 @@ class IngestJobTest < ActiveSupport::TestCase
       boot_disk_size_gb: 300
     }.with_indifferent_access
 
+    # 
     # must mock batch_api_client getting pipeline metadata
     client_mock = Minitest::Mock.new
-    5.times { client_mock.expect :exit_code_from_task, 137, [pipeline_name] }
+    6.times { client_mock.expect :exit_code_from_task, 137, [pipeline_name] }
     client_mock.expect :get_job_resources, vm_info, [], job: dummy_job
     client_mock.expect :get_job_command_line, commands, [], job: dummy_job
     # new pipeline mock is resubmitted job with larger machine_type

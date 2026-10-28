@@ -310,12 +310,34 @@ class IngestJob
     ApplicationController.batch_api_client.exit_code_from_task(pipeline_name)
   end
 
-  # determine if this job should automatically retry due to OOM exception
+  # T/F if job failed to out of memory exception (OOM)
+  #
+  # * *returns*
+  #   - (Boolean)
+  def oom?
+    [137, 139].include?(exit_code)
+  end
+
+  # T/F if job vm was preempted by GCE
+  #
+  # * *returns*
+  #   - (Boolean)
+  def preempted?
+    exit_code == 50001
+  end
+
+  # determine if this job should automatically retry due to OOM exception or task preemption
+  # for OOM, takes into account whether there is another machine_type left to try
   #
   # * *returns*
   #   - (Boolean)
   def should_retry?
-    [137, 139].include?(exit_code)
+    code = exit_code
+    if [137, 139].include?(code)
+      params_object&.next_machine_type&.present?
+    else
+      code == 50001 # exit code for VM preemption
+    end
   end
 
   # Reconstruct the command line from the pipeline actions
@@ -428,12 +450,17 @@ class IngestJob
       handle_ingest_failure(subject) unless (special_action? || should_retry?)
 
       admin_email_content = generate_error_email_body(email_type: :dev)
-      if should_retry? && params_object&.next_machine_type
-        new_machine = params_object.next_machine_type
-        params_object.machine_type = new_machine
-        # run a selective cleanup to allow file to retry ingest on the next machine type
+      if should_retry?
+        if oom? && params_object
+          new_machine = params_object.next_machine_type
+          params_object.machine_type = new_machine
+        else
+          new_machine = BatchApiClient::DEFAULT_MACHINE_TYPE # used for log message only
+        end
+        
+        # run a selective cleanup to allow file to retry ingest on the next machine type (or same machine for preemption)
         # this leaves any prior ingested valid data in place, and only removes data associated with this exact run
-        DeleteQueueJob.prepare_file_for_retry(study_file, action, cluster_name: params_object.try(:name))
+        DeleteQueueJob.prepare_file_for_retry(study_file, action, cluster_name: params_object&.try(:name))
         study_file.update!(parse_status: 'parsing')
         file_identifier = "#{study_file.upload_file_name}:#{study_file.id} (#{study.accession})"
         Rails.logger.info "Retrying #{action} after #{exit_code} failure for #{file_identifier} with machine_type: #{new_machine}"

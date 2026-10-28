@@ -31,7 +31,7 @@
     "camelcase-keys": "^6.1.2",
     "core-js": "^3.6.4",
     "crossfilter2": "^1.5.4",
-    "exifreader": "4.40.1",
+    "exifreader": "4.41.1",
     "fflate": "^0.7.5",
     "hdf5-indexed-reader": "1.0.1",
     "ideogram": "1.53.0",
@@ -82,11 +82,11 @@
     "browser-cache-mock": "^0.1.7",
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.2",
-    "eslint": "^10.9.1",
+    "eslint": "^10.13.0",
     "eslint-config-google": "^0.14.0",
     "eslint-config-prettier": "^6.10.0",
     "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-jest": "^29.16.6",
+    "eslint-plugin-jest": "^29.17.0",
     "eslint-plugin-jsx-a11y": "*",
     "eslint-plugin-prettier": "^5.5.6",
     "eslint-plugin-react": "^7.37.5",
@@ -105,7 +105,7 @@
     "prop-types": "^15.7.2",
     "react-select-event": "^5.3.0",
     "stylelint-prettier": "^1.1.2",
-    "vite": "^7.3.6",
+    "vite": "^7.3.7",
     "vite-plugin-ruby": "^5.2.0"
   }
 }

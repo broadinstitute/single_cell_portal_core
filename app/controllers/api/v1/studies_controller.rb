@@ -12,6 +12,7 @@ module Api
       before_action :check_study_detached, except: [:index, :create]
       before_action :check_study_edit_permission, except: [:index, :create, :generate_manifest]
       before_action :check_study_view_permission, only: [:generate_manifest]
+      before_action :check_read_only_mode!, except: [:index, :show, :usage_stats, :file_info, :generate_manifest]
 
       respond_to :json
 

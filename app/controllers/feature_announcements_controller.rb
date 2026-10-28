@@ -2,6 +2,7 @@ class FeatureAnnouncementsController < ApplicationController
   before_action :authenticate_user!, except: %i[latest view_announcement]
   before_action :authenticate_admin, except: %i[latest view_announcement]
   before_action :set_feature_announcement, only: %i[edit update destroy]
+  before_action :check_read_only_mode!, except: [:index, :show, :latest, :view_announcement]
 
   def latest
     @latest = FeatureAnnouncement.latest.order(created_at: :desc)

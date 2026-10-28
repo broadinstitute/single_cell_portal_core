@@ -415,4 +415,13 @@ module ApplicationHelper
     nonce = _content_security_policy_nonce(:script)
     tag_content&.gsub('module"', 'module" nonce="' + nonce + '"')&.html_safe
   end
+
+  def read_only_mode?
+    if user_signed_in?
+      current_user.feature_flag_for('read_only_mode')
+    else
+      feature_flag = FeatureFlag.find_by(name: 'read_only_mode')
+      feature_flag&.default_value || false
+    end
+  end
 end

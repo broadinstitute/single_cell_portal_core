@@ -4,6 +4,7 @@ class TaxonsController < ApplicationController
     authenticate_user!
     authenticate_admin
   end
+  before_action :check_read_only_mode!, except: [:index, :show, :download_genome_annotation]
 
   # GET /taxons
   # GET /taxons.json

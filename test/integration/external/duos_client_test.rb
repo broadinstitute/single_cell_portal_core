@@ -67,7 +67,7 @@ class DuosClientTest < ActiveSupport::TestCase
     assert @duos_client.api_available?
   end
 
-  # disabling as per SCP-6153
+  # disabling tests again due to instability
   # test 'should get registration info' do
   #   skip_if_api_down
   #   registration = @duos_client.registration
@@ -123,21 +123,6 @@ class DuosClientTest < ActiveSupport::TestCase
   #                duos_data[:data].with_indifferent_access
   # end
 
-  # test 'should load dataset JSON schema from DUOS' do
-  #   schema = @duos_client.dataset_schema
-  #   assert schema['title'] == 'Dataset Registration Schema'
-  #   assert schema['$schema'] == 'https://json-schema.org/draft/2019-09/schema'
-  #   assert schema['version'].is_a?(Integer)
-  # end
-
-  # test 'should validate schema' do
-  #   RequestUtils.stub :get_base_url, 'https://localhost:3000/single_cell' do
-  #     duos_data = @duos_client.schema_from(@study)
-  #     assert_not @duos_client.validate_dataset(duos_data).any?
-  #     assert @duos_client.validate_dataset({ foo: 'bar' }).first['error'].present?
-  #   end
-  # end
-
   # test 'should extract ids from dataset' do
   #   study_id = rand(1000..9999)
   #   dataset_id = rand(1000..9999)
@@ -153,7 +138,7 @@ class DuosClientTest < ActiveSupport::TestCase
   # end
 
   # test 'should run full integration on study' do
-  #   skip 'skipping due to frequent failures in dev'
+  #   # skip 'skipping due to frequent failures in dev'
   #   # create dataset
   #   RequestUtils.stub :get_base_url, 'https://localhost:3000/single_cell' do
   #     dataset = @duos_client.create_dataset(@study)
