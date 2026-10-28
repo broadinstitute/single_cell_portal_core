@@ -73,6 +73,7 @@ class AnnDataIngestParameters
       self.machine_type = ingest_anndata ? assign_machine_type : default_machine_type
     end
     append_raw_counts_extract!
+    check_cluster_extraction!
   end
 
   # get the particular file (either source AnnData or fragment) being processed by this job
@@ -85,6 +86,12 @@ class AnnDataIngestParameters
   def append_raw_counts_extract!
     if @ingest_anndata && @extract_raw_counts && !@extract.include?('raw_counts')
       self.extract << 'raw_counts'
+    end
+  end
+
+  def check_cluster_extraction!
+    if @extract.include?('cluster') && @obsm_keys.blank?
+      self.extract.reject! { |ex| ex == 'cluster' }
     end
   end
 end

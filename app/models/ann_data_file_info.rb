@@ -221,7 +221,7 @@ class AnnDataFileInfo
 
   # create the default cluster data_fragment entries
   def set_default_cluster_fragments!
-    return false if fragments_by_type(:cluster).any? || reference_file
+    return false if fragments_by_type(:cluster).any? || reference_file || study_file.imported_from.present? # don't override settings from ImportServiceConfig
 
     default_obsm_keys = AnnDataIngestParameters::PARAM_DEFAULTS[:obsm_keys]
     default_obsm_keys.each do |obsm_key_name|
