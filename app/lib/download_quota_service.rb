@@ -42,4 +42,39 @@ class DownloadQuotaService
       config_entry.convert_value_by_type
     end
   end
+
+  # return number of GB in excess of quota for a user if they were to download requested bytes
+  def self.gb_in_excess_of_quota(user, requested_bytes)
+    return 0 if user.daily_download_quota.nil?
+
+    # if user is already over quota, only count the requested bytes toward the excess
+    user_quota = user.daily_download_quota >= download_quota ? requested_bytes.to_i : user.daily_download_quota + requested_bytes.to_i
+    excess_bytes = user_quota - download_quota
+    if excess_bytes.positive?
+      (excess_bytes / 1024 / 1024 / 1024.0).ceil # always round up to next GB
+    else
+      0
+    end
+  end  
+
+  # create a checkout session for the user to pay for the excess data egress
+  def self.data_egress_checkout(user, gb_excess, file_info)
+    client = StripeApiClient.new
+    egress_product = client.products.detect { |p| p.name == 'Data Egress Charge' }
+    raise StandardError, 'Data Egress Charge product not found in Stripe' if egress_product.nil?
+
+    client.create_data_egress_checkout_session(
+      egress_product.id, user, gb_excess, file_info
+    )
+  end
+
+  # mark a purchase as fulfilled for a user once they download the requested item
+  # this allows the user to download the requested data
+  def self.fulfill_egress_purchase(user, download_identifier, requested_bytes)
+    purchase = Purchase.find_by(download_identifier:, customer_email: user.email, fulfilled: false)
+
+    # mark the purchase as fulfilled
+    purchase.update(fulfilled: true)
+    increment_user_quota(user, requested_bytes)
+  end
 end
