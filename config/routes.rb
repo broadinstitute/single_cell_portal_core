@@ -230,7 +230,7 @@ Rails.application.routes.draw do
     get 'data/egress/:accession/:download_identifier/success', to: 'site#data_egress_success', as: :data_egress_success
 
     # purchases overview
-    get 'purchases', to: 'purchases#index', as: :purchase
+    get 'purchases', to: 'purchases#index', as: :purchases
 
     # user account actions
     get 'profile/:id', to: 'profiles#show', as: :view_profile
