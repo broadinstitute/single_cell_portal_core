@@ -2,6 +2,19 @@ require 'test_helper'
 
 class DownloadRequestTest < ActiveSupport::TestCase
 
+  before(:all) do
+    @user = FactoryBot.create(:user, test_array: @@users_to_clean)
+    @study = FactoryBot.create(:detached_study,
+                               name_prefix: 'Download Request Test',
+                               user: @user,
+                               test_array: @@studies_to_clean)
+    5.times do |i|
+      FactoryBot.create(
+        :study_file, name: "cluster_#{i}.txt", file_type: 'Cluster', study: @study
+      )
+    end
+  end
+
   test 'should transform azul_file hashes to JSON and back' do
 
     azul_hash = {
@@ -32,6 +45,14 @@ class DownloadRequestTest < ActiveSupport::TestCase
     assert_nil download_req.azul_files
     assert_equal({}, download_req.azul_files_as_hash)
 
+  end
+
+  test 'should load study files' do
+    download = DownloadRequest.create(
+      file_ids: [@study.study_files.pluck(:id)]
+    )
+
+    assert_equal @study.study_files, download.study_files
   end
 end
 
