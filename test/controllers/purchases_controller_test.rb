@@ -11,7 +11,8 @@ class PurchasesControllerTest < ActionDispatch::IntegrationTest
                                user: @user,
                                test_array: @@studies_to_clean)
     @cluster_file = FactoryBot.create(:cluster_file, name: 'cluster.txt', upload_file_size: 10.gigabytes, study: @study)
-    @purchase = Purchase.new(
+    @purchase = Purchase.create(
+      name: 'Data Egress Charge',
       study_accession: @study.accession,
       customer_email: @user.email,
       checkout_session_id: 'co_test_12345',
