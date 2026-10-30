@@ -1,0 +1,83 @@
+<div id="title-bar">
+  <%= render partial: 'study_title_bar' %>
+</div>
+<h1>Thank you for your payment!</h1>
+<% if @download_object.is_a?(StudyFile) %>
+  <p>
+    You may now download the file you requested by clicking the button below. 
+  </p>
+  <p><%= link_to "#{@study_file.upload_file_name} <span class='fas fa-download'></span> #{number_to_human_size(@study_file.upload_file_size, prefix: :si)}".html_safe,
+                    @study_file.download_path, class: "btn btn-primary dl-link #{@study_file.file_type_class}",
+                    data: {filename: @study_file.upload_file_name, "analytics-name": 'file-download:study-single'} %></p>
+<% else %>
+  <p class="lead">To download all files using <code>curl</code>, click the button below to get the download command:</p>
+  <p class="lead command-container text-center" id="command-container-all">
+    <%= link_to "<i class='fas fa-download'></i> Download all study data".html_safe,
+                '#/', class: 'btn btn-default get-download-command', id: 'get-download-command__all' %>
+  </p>
+
+  <script type="text/javascript" nonce="<%= content_security_policy_script_nonce %>">
+    let clipboard = new Clipboard('.btn-copy')
+    clipboard.on('success', function(event) {
+    $('#' + event.trigger.id)
+      .attr('title', 'Copied!')
+      .tooltip('fixTitle')
+      .tooltip('show');
+    })
+
+    let authCode = "<%= @download_object[:auth_code] %>"
+    let timeInterval =  <%= @download_object[:time_interval] %> // token expires after this many seconds
+    let expiresMinutes = timeInterval / 60;
+    let downloadId = "<%= params[:download_identifier] %>"
+    const isWindows = !!window.navigator.platform.match(/Win/) // determine client OS for formatting
+    const curlExec = isWindows ? 'curl.exe' : 'curl'
+    const accession = "<%= @study.accession %>"
+    const curlSecureFlag = "<%= Rails.env.development? ? '-k' : '' %>"
+    const downloadObjectName = 'all' // all study data
+    // Gets a curl configuration ("cfg.txt") containing signed
+    // URLs and output names for all files in the download object.
+    let url = (
+      window.location.origin +
+      '/single_cell/api/v1/bulk_download/generate_curl_config?' +
+      `accessions=${accession}` +
+      `&directory=${downloadObjectName}` +
+      `&download_id=${downloadId}` +
+      `&auth_code=${authCode}` +
+      `&context=study`
+    );
+
+    // This is what the user will run in their terminal to download the data.
+    let downloadCommand = (
+        `${curlExec} &quot;${url}&quot; ${curlSecureFlag} -o cfg.txt; `
+    );
+
+    // depending on OS, format downstream commands to only clean up cfg.txt if curl is successful
+    if (isWindows) {
+      downloadCommand += `${curlExec} -K cfg.txt ; if ($?) { rm cfg.txt }`
+    } else {
+      downloadCommand += `${curlExec} -K cfg.txt && rm cfg.txt`
+    }
+
+    let commandID = 'command-' + authCode
+    let commandContainer = $('#command-container-all')
+    let countdownValue = '<span class="countdown" id="countdown-' + authCode + '">' + expiresMinutes + '</span>'
+
+    $('#get-download-command__all').click(function() {
+      commandContainer.html(
+        '<div class="input-group">' +
+        '<input id="' + commandID + '" class="form-control curl-download-command" value="' + downloadCommand + '" readonly/>' +
+        '<span class="input-group-btn">' +
+        '<button id="copy-button-' + authCode + '" class="btn btn-default btn-copy" data-clipboard-target="#' + commandID + '" data-toggle="tooltip" title="Copy to clipboard">' +
+        '<i class="far fa-copy"></i>' +
+        '</button>' +
+        '<button id="refresh-button-' + authCode + '" class="btn btn-default btn-refresh glyphicon glyphicon-refresh" data-toggle="tooltip" style="top: -0.5px;" title="Refresh download command">' +
+        '</button>' +
+        '</span>' +
+        '</div>' +
+        '<div style="font-size: 16px">Valid for one use within ' + countdownValue + ' minutes.  Paste into Mac/Linux/Unix terminal and execute to download.<br/><br/>' +
+        'If a certificate validation error occurs, adding the "-k" option will skip certificate validation.<br/>  e.g. `curl -k "https://singlecell...."`</div>'
+      )
+    })
+  </script>
+<% end %>
+<%= link_to "<i class='fa fa-chevron-left'></i> Back to Study".html_safe, view_study_path(accession: @study.accession, study_name: @study.url_safe_name), class: "btn btn-warning" %>

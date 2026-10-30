@@ -26,6 +26,8 @@ class SiteController < ApplicationController
   before_action :check_study_detached, only: [:download_file, :update_study_settings]
   before_action :set_reviewer_access, only: [:reviewer_access, :validate_reviewer_access]
   before_action :check_read_only_mode!, only: [:edit_study_description, :update_study_settings]
+  before_action :authenticate_user!, only: [:data_egress_start, :data_egress_checkout, :data_egress_success]
+  before_action :check_purchases_feature_flag, only: [:data_egress_start, :data_egress_checkout]
   COLORSCALE_THEMES = %w(Greys YlGnBu Greens YlOrRd Bluered RdBu Reds Blues Picnic Rainbow Portland Jet Hot Blackbody Earth Electric Viridis Cividis)
 
   ###
@@ -215,6 +217,62 @@ class SiteController < ApplicationController
     execute_file_download(@study); return if performed?
   end
 
+  # custom download page for users requesting to download data in excess of their quota
+  # can be single file, or 'bulk' to access all study data
+  def data_egress_start
+    if params[:download_identifier] == 'bulk'
+      half_hour = 1800 # seconds
+      totat = current_user.create_totat(half_hour, api_v1_bulk_download_generate_curl_config_path)
+      requested_files = @study.study_files
+      requested_bytes = BulkDownloadService.get_requested_bytes(requested_files)
+      @gb_excess = DownloadQuotaService.gb_in_excess_of_quota(current_user, requested_bytes)
+
+      @download_object = DownloadRequest.create!(
+        auth_code: totat[:totat],
+        file_ids: requested_files.pluck(:id),
+        user_id: current_user.id
+      )
+    else
+      @download_object = @study.study_files.find_by(id: params[:download_identifier])
+      @gb_excess = DownloadQuotaService.gb_in_excess_of_quota(current_user, @download_object.upload_file_size)
+    end
+    
+    # minumum charge allowed by Stripe is $0.50, so 5GB is the least we can charge for
+    @gb_excess = 5 if @gb_excess < 5
+
+    if @download_object.nil?
+      redirect_to merge_default_redirect_params(view_study_path(accession: @study.accession, study_name: @study.url_safe_name), scpbr: params[:scpbr]), 
+                  alert: "The requested data could not be found.  #{SCP_SUPPORT_EMAIL}" and return
+    end
+  end
+
+  def data_egress_checkout
+    file_info = {
+      success_path: data_egress_params[:success_path],
+      accession: data_egress_params[:accession],
+      download_identifier: data_egress_params[:download_identifier]
+    }
+    checkout_session = DownloadQuotaService.data_egress_checkout(current_user, data_egress_params[:gb_excess].to_i, file_info)
+    redirect_to checkout_session.url, status: :see_other, allow_other_host: true
+  end
+
+  def data_egress_success
+    download = @study.study_files.find_by(id: params[:download_identifier]) || DownloadRequest.find_by(id: params[:download_identifier])
+    if download.is_a?(StudyFile)
+      @download_object = download
+    else
+      @download_object = {
+        auth_code: download.auth_code,
+        time_interval: current_user.totat_info[:valid_seconds],
+        download_id: download.id.to_s
+      } if User.verify_totat(download.auth_code, current_user.totat_info&.[](:operations)) == current_user # ensure this is the correct request for the current user
+    end
+   
+    if @download_object.nil?
+      redirect_to merge_default_redirect_params(view_study_path(accession: @study.accession, study_name: @study.url_safe_name), scpbr: params[:scpbr]), 
+                  alert: "The requested data could not be found.  #{SCP_SUPPORT_EMAIL}" and return
+    end
+  end
 
   ###
   #
@@ -374,6 +432,10 @@ class SiteController < ApplicationController
     params.require(:reviewer_access).permit(:pin)
   end
 
+  def data_egress_params
+    params.require(:data_egress).permit(:gb_excess, :success_path, :accession, :download_identifier)
+  end
+
   # make sure user has view permissions for selected study
   def check_view_permissions
     unless @study.public?
@@ -458,6 +520,12 @@ class SiteController < ApplicationController
     elsif access_settings['enable'] == 'no'
       logger.info "Disabling reviewer access in #{study.accession}"
       study.reviewer_access.destroy if study.reviewer_access.present?
+    end
+  end
+
+  def check_purchases_feature_flag
+    unless current_user.feature_flag_for('enable_purchases_ux')
+      redirect_to site_path, alert: "The requested feature is not enabled."
     end
   end
 end
