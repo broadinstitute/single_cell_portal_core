@@ -32,7 +32,8 @@ module Parameterizable
   # default constructor
   def initialize(attributes = {})
     self.class::PARAM_DEFAULTS.each do |attribute_name, default|
-      send("#{attribute_name}=", default) if default.present?
+      default_value = default.deep_dup # necessary to avoid overwriting PARAM_DEFAULTS value in-place
+      send("#{attribute_name}=", default_value) if default_value.present?
     end
     super
   end

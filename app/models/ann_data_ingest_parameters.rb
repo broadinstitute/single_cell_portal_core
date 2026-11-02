@@ -29,6 +29,7 @@ class AnnDataIngestParameters
   # matrix_file_type: type of matrix file (should always be 'mtx' when used with :ingest_expression)
   # gene_file: GS URL of extracted 10X features file
   # barcode_file: GS URL of extracted 10X barcodes file
+  # manifest_file: GS URL of additional metadata values (for NeMO ingest)
   PARAM_DEFAULTS = {
     ingest_anndata: true,
     anndata_file: nil,
@@ -91,7 +92,7 @@ class AnnDataIngestParameters
 
   def check_cluster_extraction!
     if @extract&.include?('cluster') && @obsm_keys.blank?
-      self.extract.reject! { |ex| ex == 'cluster' }
+      self.extract = @extract.reject { |ex| ex == 'cluster' }
     end
   end
 end
