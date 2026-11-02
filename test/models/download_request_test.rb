@@ -49,10 +49,10 @@ class DownloadRequestTest < ActiveSupport::TestCase
 
   test 'should load study files' do
     download = DownloadRequest.create(
-      file_ids: [@study.study_files.pluck(:id)]
+      file_ids: @study.study_files.pluck(:id)
     )
-
-    assert_equal @study.study_files, download.study_files
+    
+    assert_equal @study.study_files, download.study_files.to_a
   end
 end
 
