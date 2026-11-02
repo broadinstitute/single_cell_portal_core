@@ -90,7 +90,7 @@ class AnnDataIngestParameters
   end
 
   def check_cluster_extraction!
-    if @extract.include?('cluster') && @obsm_keys.blank?
+    if @extract&.include?('cluster') && @obsm_keys.blank?
       self.extract.reject! { |ex| ex == 'cluster' }
     end
   end

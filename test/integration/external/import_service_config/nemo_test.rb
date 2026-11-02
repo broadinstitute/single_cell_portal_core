@@ -206,6 +206,7 @@ module ImportServiceConfig
       fc_client_mock = ::Minitest::Mock.new
       owner_group = { groupEmail: 'sa-owner-group@firecloud.org' }.with_indifferent_access
       assign_workspace_mock!(fc_client_mock, owner_group, 'scorch-kenny-transcriptome-nemo-fil-eznvvwk')
+      fc_client_mock.expect :create_workspace_file, nil, [String, String, @configuration.annotation_manifest_filename]
       AdminConfiguration.stub :find_or_create_ws_user_group!, owner_group do
         ImportService.stub :copy_file_to_bucket, file_mock do
           ApplicationController.stub :firecloud_client, fc_client_mock do
