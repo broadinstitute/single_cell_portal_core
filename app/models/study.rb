@@ -529,6 +529,16 @@ class Study
       key :default, 0
       key :description, 'Number of unique gene names in Study (set from Expression Matrix or 10X Genes File)'
     end
+    property :created_at do
+      key :type, :string
+      key :format, :date_time
+      key :description, 'Creation timestamp'
+    end
+    property :updated_at do
+      key :type, :string
+      key :format, :date_time
+      key :description, 'Last update timestamp'
+    end
   end
 
   swagger_schema :SiteStudyWithFiles do
