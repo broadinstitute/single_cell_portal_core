@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import _cloneDeep from 'lodash/cloneDeep'
 import _isEqual from 'lodash/isEqual'
 import { navigate, useLocation } from '@reach/router'
-import * as queryString from 'query-string'
+import queryString from 'query-string'
 
 import { fetchSearch, buildSearchQueryString, buildFacetsFromQueryString } from '~/lib/scp-api'
 import { buildParamsFromQuery as buildStudyParamsFromQuery } from '~/providers/StudySearchProvider'

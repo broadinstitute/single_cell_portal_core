@@ -41,7 +41,7 @@ import {
   exploreInfo as exploreInfoDe,
   exploreParams as exploreParamsDe
 } from './explore-tab-de-integration.test-data'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 
 // mock explore info from a study
 const defaultExploreInfo = {

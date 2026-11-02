@@ -1,5 +1,6 @@
 module.exports = {
   verbose: true,
+  testEnvironment: 'jsdom',
   transform: {
     '^.+\\.(js|jsx)$': 'babel-jest'
   },
@@ -10,7 +11,7 @@ module.exports = {
     //
     // TODO (SCP-2705): Transpile Bard client to ease reuse
     // TODO (SCP-2688): Update Bard client docs to note dependents need this line
-    'node_modules/(?!@databiosphere/bard-client)',
+    'node_modules/(?!@databiosphere/bard-client|query-string|decode-uri-component|split-on-first|filter-obj)',
     '\\.png'
   ],
   setupFilesAfterEnv: ['./test/js/setup-tests.js'],

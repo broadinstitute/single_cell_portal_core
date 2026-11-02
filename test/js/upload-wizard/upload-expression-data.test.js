@@ -1,7 +1,7 @@
 const fetch = require('node-fetch')
 import { screen, fireEvent, waitForElementToBeRemoved } from '@testing-library/react'
 import { setMetricsApiMockFlag } from 'lib/metrics-api'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 import selectEvent from 'react-select-event'
 
 import {

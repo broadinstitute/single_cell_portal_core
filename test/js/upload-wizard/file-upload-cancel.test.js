@@ -1,6 +1,6 @@
 import React from 'react'
 import { render, screen, waitForElementToBeRemoved, fireEvent } from '@testing-library/react'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 import _cloneDeep from 'lodash/cloneDeep'
 import { ReactNotifications } from 'react-notifications-component'
 

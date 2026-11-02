@@ -1,6 +1,6 @@
 import React from 'react'
 import { render, waitForElementToBeRemoved, screen, fireEvent } from '@testing-library/react'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 
 import * as ScpApi from 'lib/scp-api'
 import Plotly from 'plotly.js-dist'

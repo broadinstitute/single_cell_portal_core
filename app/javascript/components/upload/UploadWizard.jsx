@@ -11,7 +11,7 @@ import _cloneDeep from 'lodash/cloneDeep'
 import _isMatch from 'lodash/isMatch'
 import { ReactNotifications, Store } from 'react-notifications-component'
 import { Router, useLocation, navigate } from '@reach/router'
-import * as queryString from 'query-string'
+import queryString from 'query-string'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
 

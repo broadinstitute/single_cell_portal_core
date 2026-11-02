@@ -1,7 +1,7 @@
 
 import React from 'react'
 const fetch = require('node-fetch')
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 import { render, screen, waitFor } from '@testing-library/react'
 import igv from '@single-cell-portal/igv'
 import * as IgvUtils from 'lib/igv-utils'

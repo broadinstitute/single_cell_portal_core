@@ -1,5 +1,5 @@
 import { screen, fireEvent } from '@testing-library/react'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 
 import { renderWizardWithStudyOnClusteringStep } from './upload-wizard-test-utils'
 import { ANNDATA_FILE_STUDY } from './file-info-responses'

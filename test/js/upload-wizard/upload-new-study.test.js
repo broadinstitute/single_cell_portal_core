@@ -1,5 +1,5 @@
 import { screen, fireEvent, waitForElementToBeRemoved } from '@testing-library/react'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 import _cloneDeep from 'lodash/cloneDeep'
 import selectEvent from 'react-select-event'
 
