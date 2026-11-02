@@ -427,7 +427,7 @@ class IngestJob
         message = generate_success_email_array
         if special_action?
           # don't email users for 'special actions' like DE or image pipeline, instead notify admins
-          SingleCellMailer.notify_user_parse_complete(AdminConfiguration.qa_emails, subject, message, study).deliver_now unless email.blank?
+          SingleCellMailer.notify_user_parse_complete(AdminConfiguration.qa_emails, subject, message, study).deliver_now unless AdminConfiguration.qa_emails.blank?
         elsif action != :ingest_anndata # don't email users on "extract" AnnData jobs
           SingleCellMailer.notify_user_parse_complete(user.email, subject, message, study).deliver_now
         end
