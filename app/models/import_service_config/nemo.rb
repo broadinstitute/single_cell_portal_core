@@ -184,8 +184,11 @@ module ImportServiceConfig
     def annotation_manifest_file
       return nil unless file_id
 
-      FileUtils.mkdir_p('tmp/uploads/nemo_manifests')
-      outfile = File.open(Rails.root.join('tmp', "uploads", "nemo_manifests", annotation_manifest_filename), 'w+')
+      # ensure tmp dir exists (it might not in CI)
+      FileUtils.mkdir_p(Rails.root.join('tmp')) unless Dir.exist?(Rails.root.join('tmp'))
+
+      FileUtils.mkdir_p(Rails.root.join('tmp', 'uploads', 'nemo_manifests'))
+      outfile = File.open(Rails.root.join('tmp', 'uploads', 'nemo_manifests', annotation_manifest_filename), 'w+')
       annotations = annotation_data_for_file
       headers = annotations.keys
       values = annotations.values
