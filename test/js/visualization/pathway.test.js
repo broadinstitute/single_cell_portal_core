@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 import Plotly from 'plotly.js-dist'
 import jquery from 'jquery'
 import { mockPerformance } from '../mock-performance'

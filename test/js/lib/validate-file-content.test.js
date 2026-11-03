@@ -1,7 +1,7 @@
 import React from 'react'
 const fetch = require('node-fetch')
 import { render, screen } from '@testing-library/react'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 
 import ValidateFile from 'lib/validation/validate-file'
 import { fetchOntologies, fetchOlsOntologyTerm } from 'lib/validation/ontology-validation'

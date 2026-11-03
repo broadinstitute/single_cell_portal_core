@@ -6,7 +6,7 @@ import { CellFilteringPanel, getHasNondefaultSelection } from '~/components/expl
 import {
   annotationList, cellFaceting, cellFilteringSelection, cellFilterCounts
 } from './cell-filtering-panel.test-data'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 
 cellFaceting.filterCounts = cellFilterCounts
 

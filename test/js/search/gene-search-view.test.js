@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react'
 import GeneSearchView from 'components/search/genes/GeneSearchView'
 import { PropsStudySearchProvider } from 'providers/StudySearchProvider'
 import { GeneSearchContext, emptySearch } from 'providers/GeneSearchProvider'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 
 
 describe('Gene search page landing', () => {

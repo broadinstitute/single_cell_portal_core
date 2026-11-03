@@ -8,7 +8,7 @@
 import React from 'react'
 import camelcaseKeys from 'camelcase-keys'
 import _compact from 'lodash/compact'
-import * as queryString from 'query-string'
+import queryString from 'query-string'
 
 import { logJSFetchExceptionToSentry, logJSFetchErrorToSentry } from '~/lib/sentry-logging'
 import { getAccessToken } from '~/providers/UserProvider'

@@ -4,7 +4,7 @@
 
 /* global global */
 
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 import * as ScpApi from 'lib/scp-api'
 import { shouldUsePreprocessedData } from 'components/visualization/DotPlot'
 
