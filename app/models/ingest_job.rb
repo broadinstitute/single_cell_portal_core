@@ -1404,8 +1404,7 @@ class IngestJob
   #  - (String) => String showing annotation information for email
   def get_annotation_message(annotation_source:, cell_annotation: nil)
     max_values = CellMetadatum::GROUP_VIZ_THRESHOLD.max
-    case annotation_source.class
-    when CellMetadatum
+    if annotation_source.is_a? CellMetadatum
       message = "#{annotation_source.name}: #{annotation_source.annotation_type}"
       if annotation_source.values.size <= max_values || annotation_source.annotation_type == 'numeric'
         values = annotation_source.values.any? ? ' (' + annotation_source.values.join(', ') + ')' : ''
@@ -1413,7 +1412,7 @@ class IngestJob
         values = " (List too large for email -- #{annotation_source.values.size} values present, max is #{max_values})"
       end
       message + values
-    when ClusterGroup
+    elsif annotation_source.is_a? ClusterGroup
       message = "#{cell_annotation['name']}: #{cell_annotation['type']}"
       if cell_annotation['values'].size <= max_values || cell_annotation['type'] == 'numeric'
         values = cell_annotation['type'] == 'group' ? ' (' + cell_annotation['values'].join(',') + ')' : ''
@@ -1421,6 +1420,8 @@ class IngestJob
         values = " (List too large for email -- #{cell_annotation['values'].size} values present, max is #{max_values})"
       end
       message + values
+    else
+      Rails.logger.error "Invalid annotation source for email message: #{annotation_source.class.name}"
     end
   end
 

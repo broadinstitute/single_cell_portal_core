@@ -3,9 +3,9 @@ module ImportServiceConfig
   class Nemo
     include ImportServiceConfig
 
-    attr_accessor :project_id
+    attr_accessor :grant_id
 
-    validates :file_id, :user_id, :branding_group_id, presence: true
+    validates :file_id, :user_id, presence: true
 
     PREFERRED_TAXONS = %w[human mouse].freeze
 
@@ -28,7 +28,7 @@ module ImportServiceConfig
 
     # name of entity/method to call for loading analog of Study
     def study_method
-      :collection
+      :project
     end
 
     def load_study
@@ -37,23 +37,15 @@ module ImportServiceConfig
 
     # name of entity/method to call for loading analog of a BrandingGroup/Collection
     def collection_method
-      :project
+      :grant
     end
 
     def load_collection
-      super(project_id)
+      super(grant_id)
     end
 
     def id_from_method
       :extract_associated_id
-    end
-
-    # recursively fetch associations to get other identifiers
-    def association_order
-      [
-        { method: study_file_method, association: :collections, id: :file_id, assoc_id: :study_id },
-        { method: study_method, association: :projects, id: :study_id, assoc_id: :project_id }
-      ]
     end
 
     # return hash of file access info, like url, sizes, etc
@@ -72,13 +64,13 @@ module ImportServiceConfig
 
     # retrieve common species names from associated collection
     def taxon_names
-      load_study&.[]('taxa')&.map { |t| t['name']} || []
+      load_study&.[]('taxa')&.map { |t| t['name']}.presence || load_collection&.[]('taxa')&.map { |t| t['name']}.presence || []
     end
 
     # map attribute names SCP Study attributes onto NeMO attribute names
     def study_mappings
       {
-        name: :name,
+        name: [:title, :short_name], # fallback in case of empty title
         description: :description
       }.with_indifferent_access
     end
@@ -99,7 +91,15 @@ module ImportServiceConfig
     # each config should implement these methods to deal with corner cases in assigning attributes
     # if there are no validation issues, these can simple call the :to_{model} methods as a passthru
     def populate_study
-      to_study
+      scp_study = to_study
+      current_name = scp_study.name
+      grant = load_collection
+      grant_name = grant.dig('grant_info', 'grant_title')
+      filename = load_file&.[]('file_name')
+      scp_study.name = "#{current_name} (#{file_id})"
+      scp_study.description += " from #{filename} in '#{grant_name}'"
+      scp_study.study_detail.full_description = sanitize_attribute(scp_study.description)
+      scp_study
     end
 
     def populate_study_file(scp_study_id)
@@ -158,12 +158,41 @@ module ImportServiceConfig
       organ_label = client.extract_associated_id(sample, :anatomical_regions, attribute: :region_name)
       organ = client.extract_associated_id(sample, :anatomical_regions, attribute: :cv_term_id)
       lib_name = find_library_prep(library_name)
-      library_preparation_protocol = efo_ontology_entries[lib_name]
+      library_preparation_protocol = scp_ontology_entries('efo')[lib_name]
+      # all NeMO entires carry no disease annotation, so every sample is treated
+      # as unaffected/normal per the PATO convention for a missing disease state.
+      disease_label = 'normal'
+      disease = scp_ontology_entries('pato')[disease_label]
       { 
+        biosample_id: sample['sample_name'], donor_id: sample['sample_name'],
+        disease:, disease__ontology_label: disease_label,
         library_preparation_protocol:, library_preparation_protocol__ontology_label: lib_name,
-        organ: organ.gsub(/\:/, '_'), organ__ontology_label: organ_label, sex:, 
-        species: "NCBITaxon_#{taxon_id}", species__ontology_label: species_name, 
+        organ: organ.gsub(/\:/, '_'), organ__ontology_label: organ_label, sample_id:, sex:, 
+        species: "NCBITaxon_#{taxon_id}", species__ontology_label: species_name
       }.reject { |_, v| v.blank? }.with_indifferent_access
+    end
+
+    def annotation_manifest_filename
+      base_filename = file_id.split(':').last
+      "#{base_filename}.scp.tsv"
+    end
+
+    # transform annotation data into a tsv manifest to project onto an AnnData file for ingest
+    #
+    # * *returns*
+    #   - (File) => annotation data in tsv file format
+    def annotation_manifest_file
+      return nil unless file_id
+
+      FileUtils.mkdir_p('tmp/uploads/nemo_manifests')
+      outfile = File.open(Rails.root.join('tmp', "uploads", "nemo_manifests", annotation_manifest_filename), 'w+')
+      annotations = annotation_data_for_file
+      headers = annotations.keys
+      values = annotations.values
+      outfile.write(headers.join("\t") + "\n")
+      outfile.write(values.join("\t") + "\n")
+      outfile.close
+      outfile
     end
 
     # main business logic of populating SCP models for NeMO data
@@ -175,9 +204,8 @@ module ImportServiceConfig
     #   - (RuntimeError) => if either study or study_file fail to save correctly
     #   - (ArgumentError) => if no file_id is provided
     def import_from_service
-      raise configuration.errors.full_messages.join(', ') unless valid?
+      raise errors.full_messages.join(', ') unless valid?
 
-      traverse_associations! unless study_id
       study = populate_study
       study_file = populate_study_file(study.id)
       nemo_gs_url = file_access_info(protocol: :gs)&.[]('url')
@@ -185,13 +213,17 @@ module ImportServiceConfig
       # the public release but for now leaving this hack in place
       nemo_gs_url&.gsub!(/biccn_unbundled/, 'biccn-unbundled')
       nemo_http_url = file_access_info(protocol: :http)&.[]('url')
-      access_url = nemo_gs_url || nemo_http_url
+      access_url = nemo_http_url || nemo_gs_url
       raise "could not obtain file access info for #{file_id}" if access_url.blank?
 
       download_url = nemo_http_url || nemo_gs_url
       study_file.external_link_url = download_url
       study_file.external_link_title = 'NeMO Download'
-      save_models_and_push_files(study, study_file, access_url)
+      scp_study, scp_study_file = save_models_and_push_files(study, study_file, access_url)
+      file_manifest = annotation_manifest_file
+      ApplicationController.firecloud_client.create_workspace_file(scp_study.bucket_id, file_manifest.path, annotation_manifest_filename)
+      FileParseService.run_parse_job(scp_study_file, scp_study, scp_study.user, persist_on_fail: true)
+      [scp_study, scp_study_file]
     end
   end
 end
