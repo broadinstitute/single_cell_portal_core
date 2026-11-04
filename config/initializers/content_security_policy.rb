@@ -76,7 +76,6 @@ SecureHeaders::Configuration.default do |config|
     base_uri: %w('self'),
     # directive values: these values will directly translate into source directives
     default_src: %w('self'),
-    block_all_mixed_content: true, # see http://www.w3.org/TR/mixed-content/
     frame_src: %w('self'), # if child-src isn't supported, the value for frame-src will be set.
     font_src: %w('self' data: https://fonts.googleapis.com https://fonts.google.com https://fonts.gstatic.com ),
     form_action: %w('self' https://accounts.google.com),

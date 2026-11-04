@@ -526,7 +526,8 @@ GEM
       tilt
     sdoc (2.1.0)
       rdoc (>= 5.0)
-    secure_headers (6.3.2)
+    secure_headers (7.3.0)
+      cgi (>= 0.1)
     securerandom (0.4.1)
     sentry-rails (5.23.0)
       railties (>= 5.0)
