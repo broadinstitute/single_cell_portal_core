@@ -3,7 +3,7 @@ module ImportServiceConfig
   class Nemo
     include ImportServiceConfig
 
-    attr_accessor :grant_id
+    attr_accessor :grant_id, :alt_file_url
 
     validates :file_id, :user_id, presence: true
 
@@ -112,6 +112,9 @@ module ImportServiceConfig
         libraries = libs.map { |lib| find_library_prep(lib) }.compact
         study_file.expression_file_info.library_preparation_protocol = libraries.first
       end
+      study_file.expression_file_info.is_raw_counts = true
+      study_file.expression_file_info.units = 'raw counts'
+      study_file.ann_data_file_info.raw_location = '.raw'
       exp_fragment = expression_data_fragment(study_file)
       study_file.ann_data_file_info.data_fragments << exp_fragment
       http_url = file_access_info(protocol: :http)&.[]('url')
@@ -216,7 +219,7 @@ module ImportServiceConfig
       # the public release but for now leaving this hack in place
       nemo_gs_url&.gsub!(/biccn_unbundled/, 'biccn-unbundled')
       nemo_http_url = file_access_info(protocol: :http)&.[]('url')
-      access_url = nemo_http_url || nemo_gs_url
+      access_url = alt_file_url || nemo_http_url || nemo_gs_url
       raise "could not obtain file access info for #{file_id}" if access_url.blank?
 
       download_url = nemo_http_url || nemo_gs_url
