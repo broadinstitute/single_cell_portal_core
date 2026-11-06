@@ -250,8 +250,8 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
     }
 
     execute_http_request(:post,
-                         api_v1_study_study_files_path(study_id: @study.id),
-                         request_payload: ann_data_params)
+                        api_v1_study_study_files_path(study_id: @study.id),
+                        request_payload: ann_data_params)
     assert_response :success
     ann_data = StudyFile.find_by(study_id: @study.id, upload_file_name: 'data.h5ad')
     assert ann_data.present?
@@ -260,6 +260,7 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
     assert_not ann_data.ann_data_file_info.reference_file?
     data_fragments = ann_data.ann_data_file_info.data_fragments
     assert_equal 2, data_fragments.size
+    
     # update file to test ann_data_file_info_attributes form structure
     update_attributes = {
       study_file: {
@@ -291,6 +292,43 @@ class StudyFilesControllerTest < ActionDispatch::IntegrationTest
       assert_equal 'updated', fragment[:description]
     end
     assert_equal 'Single nuclei', ann_data.expression_file_info.biosample_input_type
+
+    # test new cluster registration
+    new_cluster_id = BSON::ObjectId.new.to_s
+    new_cluster_params = {
+      study_file: {
+        file_type: 'AnnData',
+        ann_data_file_info_attributes: {
+          data_fragments:
+            [
+              {
+                _id: new_cluster_id, data_type: 'cluster', name: 'New Cluster', obsm_key_name: 'X_new_cluster'
+              }
+            ].to_json
+        }
+      }
+    }
+
+    # stub the FileParseService to check that the correct arguments are passed in for the new cluster registration
+    args_checker = lambda { |scp_study_file, scp_study, scp_user, persist_on_fail: false, obsm_key:|
+      assert_equal scp_study.id.to_s, @study.id.to_s
+      assert_equal scp_study_file.id.to_s, ann_data.id.to_s
+      assert_equal scp_user.id.to_s, @user.id.to_s
+      assert_equal obsm_key, 'X_new_cluster'
+      {
+        status_code: 204
+      }
+    }
+    
+    FileParseService.stub(:run_parse_job, args_checker) do
+      execute_http_request(:patch,
+                      api_v1_study_study_file_path(study_id: @study.id, id: ann_data.id.to_s),
+                      request_payload: new_cluster_params)
+      assert_response :success
+      ann_data.reload
+      new_cluster = ann_data.ann_data_file_info.data_fragments.find { |fragment| fragment[:_id].to_s == new_cluster_id }
+      assert new_cluster.present? 
+    end
   end
 
   test 'should not reset parse status on update when using bucket path' do
