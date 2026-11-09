@@ -485,26 +485,44 @@ class IngestJob
     case action.to_sym
     when :ingest_subsample
       study_file.update(parse_status: 'parsed') # reset parse flag
-      cluster_name = cluster_name_by_file_type
-      cluster = ClusterGroup.find_by(name: cluster_name, study:, study_file:)
+      cluster = cluster_from_job
       cluster.find_subsampled_data_arrays&.delete_all
       cluster.update(subsampled: false, is_subsampling: false)
     when :ingest_dot_plot_genes
       cluster = params_object.cluster_group
       DotPlotGene.where(study_id: study.id, cluster_group_id: cluster.id, study_file_id: study_file.id).delete_all
     else
-      create_study_file_copy
-      study_file.update(parse_status: 'failed')
-      DeleteQueueJob.new(study_file).delay.perform
-      unless persist_on_fail
-        ApplicationController.firecloud_client.delete_workspace_file(study.bucket_id, study_file.bucket_location)
-        study_file.bundled_files.each do |bundled_file|
-          ApplicationController.firecloud_client.delete_workspace_file(study.bucket_id, bundled_file.bucket_location)
+      if non_default_anndata_clustering
+        study_file.update(parse_status: 'parsed') # reset parse flag
+        cluster = cluster_from_job
+        DeleteQueueJob.limited_clustering_cleanup(study, study_file, cluster)
+      else
+        create_study_file_copy
+        study_file.update(parse_status: 'failed')
+        DeleteQueueJob.new(study_file).delay.perform
+        unless persist_on_fail
+          ApplicationController.firecloud_client.delete_workspace_file(study.bucket_id, study_file.bucket_location)
+          study_file.bundled_files.each do |bundled_file|
+            ApplicationController.firecloud_client.delete_workspace_file(study.bucket_id, bundled_file.bucket_location)
+          end
         end
       end
     end
     user_email_content = generate_error_email_body
     SingleCellMailer.notify_user_parse_fail(user.email, email_subject, user_email_content, study).deliver_now
+  end
+
+  # helper for determining if this was a non-default anndata clustering ingest
+  # will only clean up data related to this job instead of deleting the entire file
+  def non_default_anndata_clustering
+    return false if !study_file.is_viz_anndata? || action.to_sym != :ingest_cluster || study.default_cluster.blank? 
+
+    cluster_from_job&.id != study.default_cluster.id
+  end
+
+  # load clustering object associated with this ingest
+  def cluster_from_job
+    ClusterGroup.find_by(name: cluster_name_by_file_type, study:, study_file:)
   end
 
   # TODO (SCP-4709, SCP-4710) Processed and Raw expression files
@@ -643,7 +661,7 @@ class IngestJob
   # * *yields*
   #   - sets the :points attribute on a ClusterGroup
   def set_cluster_point_count
-    cluster_group = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: cluster_name_by_file_type)
+    cluster_group = cluster_from_job
     if cluster_group.present?
       cluster_group.set_point_count!
       Rails.logger.info "Point count on #{cluster_group.name}:#{cluster_group.id} set to #{cluster_group.points}"
@@ -667,11 +685,10 @@ class IngestJob
       study.create_all_cluster_cell_indices!
       study.cell_metadata.where(:name.in => SearchFacet::NEED_MINMAX_BY_UNITS).map(&:set_minmax_by_units!)
     when :ingest_cluster
-      cluster = ClusterGroup.find_by(study:, study_file:, name: cluster_name_by_file_type)
-      cluster.create_all_cell_indices!
+      cluster_from_job.create_all_cell_indices!
     when :ingest_subsample
       # gotcha to unset the 'indexed' flag as this will block generating new indices
-      cluster = ClusterGroup.find_by(study:, study_file:, name: cluster_name_by_file_type)
+      cluster = cluster_from_job
       cluster.update!(indexed: false)
       cluster.reload
       cluster.create_all_cell_indices!
@@ -703,7 +720,7 @@ class IngestJob
     when 'Cluster'
       # only subsample if ingest_cluster was just run, new cluster is > 1K points, and a metadata file is parsed
       cluster_ingested = action.to_sym == :ingest_cluster
-      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id)
+      cluster = cluster_from_job
       metadata_parsed = study.metadata_file.present? && study.metadata_file.parsed?
       if cluster_ingested && metadata_parsed && cluster.can_subsample? && !cluster.is_subsampling?
         # immediately set cluster.is_subsampling = true to gate race condition if metadata file just finished parsing
@@ -721,7 +738,7 @@ class IngestJob
       # will be handled by the above case.  Again, only subsample for completed clusters > 1K points
       metadata_identifier = "#{study_file.bucket_location}:#{study_file.id}"
       study.study_files.where(file_type: 'Cluster', parse_status: 'parsed').each do |cluster_file|
-        cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: cluster_file.id)
+        cluster = cluster_from_job
         if cluster.can_subsample? && !cluster.is_subsampling?
           # set cluster.is_subsampling = true to avoid future race conditions
           cluster.update(is_subsampling: true)
@@ -770,7 +787,7 @@ class IngestJob
 
   # Set correct subsampling flags on a cluster after job completion
   def set_subsampling_flags
-    cluster_group = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: cluster_name_by_file_type)
+    cluster_group = cluster_from_job
     return false if cluster_group.nil? # can happen during AnnData ingest failures
 
     subsampled = cluster_group.find_subsampled_data_arrays.any?
@@ -1042,7 +1059,7 @@ class IngestJob
         )
       end
     when :ingest_cluster, :ingest_subsample
-      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: cluster_name_by_file_type)
+      cluster = cluster_from_job
       job_props.merge!({metadataFilePresent: study.metadata_file.present?})
       # must make sure cluster is present, as parse failures may result in no data having been stored
       if cluster.present?
@@ -1261,7 +1278,7 @@ class IngestJob
         end
       end
     when :ingest_cluster
-      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: cluster_name_by_file_type)
+      cluster = cluster_from_job
       cluster_type = cluster.cluster_type
       message << "Cluster created: #{cluster.name}, type: #{cluster_type}"
       if cluster.cell_annotations.any?
@@ -1279,7 +1296,7 @@ class IngestJob
         message << 'While subsamples are being computed, you will not be able to remove this cluster file or your metadata file.'
       end
     when :ingest_subsample
-      cluster = ClusterGroup.find_by(study_id: study.id, study_file_id: study_file.id, name: cluster_name_by_file_type)
+      cluster = cluster_from_job
       message << "Subsampling has completed for #{cluster.name}"
       message << "Subsamples generated: #{cluster.subsample_thresholds_required.join(', ')}"
     when :ingest_differential_expression
