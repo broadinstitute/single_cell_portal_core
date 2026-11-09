@@ -343,4 +343,24 @@ class DeleteQueueJobTest < ActiveSupport::TestCase
       mock.verify
     end
   end
+
+  test 'should perform limited clustering clearnup for AnnData' do
+    study = FactoryBot.create(:detached_study,
+                               name_prefix: 'DeleteQueueJob Anndata Cluster Cleanup Test',
+                               user: @user,
+                               test_array: @@studies_to_clean)
+    anndata_file = FactoryBot.create(:ann_data_file,
+                                      study:,
+                                      name: 'clustering.h5ad',
+                                      file_type: 'AnnData',
+                                      cell_input: %w[A B C D],
+                                      coordinate_input: [
+                                        { umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                      ])
+    cluster = study.cluster_groups.first
+    assert cluster.concatenate_data_arrays('text', 'cells').any?
+    DeleteQueueJob.limited_clustering_cleanup(study, anndata_file, cluster)
+    study.reload
+    assert_empty study.cluster_groups
+  end
 end
