@@ -163,7 +163,8 @@ module ImportServiceConfig
       _id: BSON::ObjectId.new.to_s,
       data_type: :expression,
       taxon_id: scp_study_file.taxon_id.to_s,
-      expression_file_info: scp_study_file.expression_file_info.attributes.reject { |k, _| %w[_id units].include? k }
+      raw_location: scp_study_file.ann_data_file_info&.raw_location,
+      expression_file_info: scp_study_file.expression_file_info.attributes.reject { |k, _| %w[_id].include? k }
     }.with_indifferent_access
   end
 
@@ -198,6 +199,8 @@ module ImportServiceConfig
         [study, study_file]
       else
         errors = study_file.errors.full_messages.dup
+        # log erros before running cleanup
+        log_message "could not create study_file: #{errors.join('; ')}"
         # clean up study to allow retries with different file
         ImportService.remove_study_workspace(study)
         file_in_bucket.delete

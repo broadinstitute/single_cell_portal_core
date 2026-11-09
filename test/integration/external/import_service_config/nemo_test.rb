@@ -189,6 +189,9 @@ module ImportServiceConfig
       assert scp_study_file.use_metadata_convention
       assert_equal 'ACSVABZC_POOL-16-OXY-NON-INFECTED_Batch4_IVSAOxycodoneStudy1.h5ad', scp_study_file.upload_file_name
       assert_equal "10x 3' v3", scp_study_file.expression_file_info.library_preparation_protocol
+      assert scp_study_file.expression_file_info.is_raw_counts
+      assert_equal 'raw counts', scp_study_file.expression_file_info.units
+      assert_equal '.raw', scp_study_file.ann_data_file_info.raw_location
       assert_equal @configuration.service_name, scp_study_file.imported_from
       assert_not scp_study_file.ann_data_file_info.reference_file
       @configuration.obsm_keys.each do |obsm_key_name|
