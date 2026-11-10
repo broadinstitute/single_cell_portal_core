@@ -18,10 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Delete merged branch
-    # from the github actions marketplace repo here: https://github.com/pabio/delete-merged-action
-      uses: koj-co/delete-merged-action@master
-      with:
-      # do not delete main, development, or hotfix-release branches
-        branches: "!main, !development, !*hotfix*, *"
+    # from the github actions marketplace repo here: https://github.com/marketplace/actions/delete-merged-branch
+      uses: SvanBoxel/delete-merged-branch@main
       env:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

@@ -1,0 +1,4 @@
+exclude: 
+  - development
+  - main
+  - *hotfix*
