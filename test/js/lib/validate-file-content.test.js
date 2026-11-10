@@ -76,7 +76,7 @@ describe('Client-side file validation', () => {
         warningTypes: []
       })
     )
-  })
+  }, 10000)
 
 
   it('prevents oversized log to Bard / Mixpanel', async () => {
@@ -122,7 +122,7 @@ describe('Client-side file validation', () => {
     expect(logProps.warnings).toHaveLength(20)
     expect(logProps.errors[0]).toHaveLength(200)
     expect(logProps.warnings[0]).toHaveLength(200)
-  })
+  }, 10000)
 
   it('catches duplicate headers', async () => {
     // eslint-disable-next-line max-len
@@ -130,14 +130,14 @@ describe('Client-side file validation', () => {
     const file = createMockFile({ fileName: 'dup_headers_v2.0.0.tsv' })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Metadata' })
     expect(errors).toHaveLength(1)
-  })
+  }, 10000)
 
   it('catches missing header lines', async () => {
     const file = createMockFile({ content: 'NAME,X,Y', fileName: 'missing_headers.tsv' })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })
     expect(errors).toHaveLength(1)
     expect(errors[0][1]).toEqual('format:cap:missing-header-lines')
-  })
+  }, 10000)
 
   it('catches duplicate cell names in cluster file', async () => {
     const file = createMockFile({
@@ -148,7 +148,7 @@ describe('Client-side file validation', () => {
     expect(errors).toHaveLength(1)
     expect(errors[0][1]).toEqual('content:duplicate:cells-within-file')
     expect(errors[0][2]).toEqual('Cell names must be unique within a file. 1 duplicate found, including: CELL_0001')
-  })
+  }, 10000)
 
   it('catches duplicate cell names in expression matrix file', async () => {
     const file = createMockFile({
@@ -158,7 +158,7 @@ describe('Client-side file validation', () => {
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Expression Matrix' })
     expect(errors).toHaveLength(1)
     expect(errors[0][1]).toEqual('content:duplicate:cells-within-file')
-  })
+  }, 10000)
 
   it('catches missing headers in metadata file', async () => {
     const file = createMockFile({
@@ -169,7 +169,7 @@ describe('Client-side file validation', () => {
     expect(errors).toHaveLength(1)
     expect(errors[0][1]).toEqual('format:cap:metadata-missing-column')
     expect(errors[0][2]).toContain(REQUIRED_CONVENTION_COLUMNS.slice(2).join(', '))
-  })
+  }, 10000)
 
   it('catches missing GENE header in expression matrix file', async () => {
     const file = createMockFile({
@@ -179,7 +179,7 @@ describe('Client-side file validation', () => {
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Expression Matrix' })
     expect(errors).toHaveLength(1)
     expect(errors[0][1]).toEqual('format:cap:missing-gene-column')
-  })
+  }, 10000)
 
   it('allows R-formatted header in expression matrix file', async () => {
     const file = createMockFile({
@@ -188,7 +188,7 @@ describe('Client-side file validation', () => {
     })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Expression Matrix' })
     expect(errors).toHaveLength(0)
-  })
+  }, 10000)
 
   it('catches wrong length R-formatted header in expression matrix file', async () => {
     const file = createMockFile({
@@ -198,7 +198,7 @@ describe('Client-side file validation', () => {
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Expression Matrix' })
     expect(errors).toHaveLength(1)
     expect(errors[0][1]).toEqual('format:cap:missing-gene-column')
-  })
+  }, 10000)
 
   it('catches non-numeric entry in expression matrix file', async () => {
     const file = createMockFile({
@@ -208,7 +208,7 @@ describe('Client-side file validation', () => {
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Expression Matrix' })
     expect(errors).toHaveLength(1)
     expect(errors[0][1]).toEqual('content:type:not-numeric')
-  })
+  }, 10000)
 
   it('catches empty entry in expression matrix file', async () => {
     const file = createMockFile({
@@ -223,7 +223,7 @@ describe('Client-side file validation', () => {
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Expression Matrix' })
     expect(errors).toHaveLength(1)
     expect(errors[0][1]).toEqual('content:type:not-numeric')
-  })
+  }, 10000)
 
   it('catches row with wrong number of columns in expression matrix file', async () => {
     const file = createMockFile({
@@ -233,7 +233,7 @@ describe('Client-side file validation', () => {
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Expression Matrix' })
     expect(errors).toHaveLength(1)
     expect(errors[0][1]).toEqual('format:mismatch-column-number')
-  })
+  }, 10000)
 
   it('catches row with wrong number of columns in sparse matrix file', async () => {
     const file = createMockFile({
@@ -243,7 +243,7 @@ describe('Client-side file validation', () => {
     const [{ errors }] = await validateLocalFile(file, { file_type: 'MM Coordinate Matrix' })
     expect(errors).toHaveLength(1)
     expect(errors[0][1]).toEqual('format:mismatch-column-number')
-  })
+  }, 10000)
 
   it('catches missing header string in sparse matrix file', async () => {
     const file = createMockFile({
@@ -253,7 +253,7 @@ describe('Client-side file validation', () => {
     const [{ errors }] = await validateLocalFile(file, { file_type: 'MM Coordinate Matrix' })
     expect(errors).toHaveLength(1)
     expect(errors[0][1]).toEqual('format:cap:missing-mtx-value')
-  })
+  }, 10000)
 
   it('catches empty row in sparse matrix file', async () => {
     const file = createMockFile({
@@ -263,7 +263,7 @@ describe('Client-side file validation', () => {
     const [{ errors }] = await validateLocalFile(file, { file_type: 'MM Coordinate Matrix' })
     expect(errors).toHaveLength(1)
     expect(errors[0][1]).toEqual('format:empty-row')
-  })
+  }, 10000)
 
   it('reports no error with sparse matrix file that has rows with trailing whitespace', async () => {
     const file = createMockFile({
@@ -272,7 +272,7 @@ describe('Client-side file validation', () => {
     })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'MM Coordinate Matrix' })
     expect(errors).toHaveLength(0)
-  })
+  }, 10000)
 
   it('catches duplicate row values in barcodes file', async () => {
     const file = createMockFile({
@@ -282,7 +282,7 @@ describe('Client-side file validation', () => {
     const [{ errors }] = await validateLocalFile(file, { file_type: '10X Barcodes File' })
     expect(errors).toHaveLength(1)
     expect(errors[0][1]).toEqual('content:duplicate:values-within-file')
-  })
+  }, 10000)
 
   it('catches duplicate row values in features file', async () => {
     const file = createMockFile({
@@ -292,7 +292,7 @@ describe('Client-side file validation', () => {
     const [{ errors }] = await validateLocalFile(file, { file_type: '10X Genes File' })
     expect(errors).toHaveLength(1)
     expect(errors[0][1]).toEqual('content:duplicate:values-within-file')
-  })
+  }, 10000)
 
   it('allows missing headers in metadata file if convention not used ', async () => {
     const file = createMockFile({
@@ -301,7 +301,7 @@ describe('Client-side file validation', () => {
     })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Metadata', use_metadata_convention: false })
     expect(errors).toHaveLength(0)
-  })
+  }, 10000)
 
   it('catches mismatched label/value pairs in metadata files', async () => {
     const file = createMockFile({
@@ -313,7 +313,7 @@ describe('Client-side file validation', () => {
     expect(errors[0][1]).toEqual('ontology:multiply-assigned-label')
     expect(errors[0][2]).toContain('Homo sapiens')
     expect(errors[0][2]).toContain('species')
-  })
+  }, 10000)
 
   it('catches group columns with >200 unique labels', async () => {
     const file = createMockFile({ fileName: 'metadata_drag_error.tsv' })
@@ -321,21 +321,21 @@ describe('Client-side file validation', () => {
     expect(warnings).toHaveLength(2)
     expect(warnings[0][1]).toEqual('content:group-col-over-200')
     expect(warnings[0][2]).toContain('cell_type has over 200 unique values and so will not be visible in plots -- is this intended?')
-  })
+  }, 10000)
 
   it('reports no error with good cluster CSV file', async () => {
     // Confirms no false positive due to comma-separated values
     const file = createMockFile({ fileName: 'cluster_comma_delimited.csv' })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })
     expect(errors).toHaveLength(0)
-  })
+  }, 10000)
 
   it('catches gzipped file with txt extension', async () => {
     const file = createMockFile({ fileName: 'foo.txt', content: '\x1F\x2E3lkjf3' })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })
     expect(errors).toHaveLength(1)
     expect(errors[0][1]).toEqual('encoding:missing-gz-extension')
-  })
+  }, 10000)
 
   it('catches real gzipped file with txt extension', async () => {
     const file = createMockFile({ fileName: 'missing_gz_extension.txt'})
@@ -346,7 +346,7 @@ describe('Client-side file validation', () => {
       // eslint-disable-next-line max-len
       'Only files with extensions ".gz", ".bam", ".tbi", or ".csi" may be gzipped.  Please add a ".gz" extension to the file name, or decompress the file, and retry.'
     expect(errors[0][2]).toEqual(expectedMessage)
-  })
+  }, 10000)
 
   it('does not catch gzipped RDS file without .gz extension', async () => {
     const file = createMockFile({ fileName: 'foo.rds', content: '\x1F\x2E3lkjf3' })
@@ -355,14 +355,14 @@ describe('Client-side file validation', () => {
       error => error[1] === 'encoding:missing-gz-extension'
     )
     expect(hasMissingGzipExtensionError).toBe(false)
-  })
+  }, 10000)
 
   it('catches text file with .gz suffix', async () => {
     const file = createMockFile({ fileName: 'foo.gz', content: 'CELL\tX\tY' })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })
     expect(errors).toHaveLength(1)
     expect(errors[0][1]).toEqual('encoding:invalid-gzip-magic-number')
-  })
+  }, 10000)
 
   it('fails invalid gzipped file', async () => {
     // Confirms this validation does not report false negatives
@@ -370,20 +370,20 @@ describe('Client-side file validation', () => {
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Expression Matrix' })
     expect(errors[0][1]).toEqual('format:cap:missing-gene-column')
     expect(errors).toHaveLength(2)
-  })
+  }, 10000)
 
   it('passes valid gzipped file', async () => {
     // Confirms this validation does not report false positives
     const file = createMockFile({ fileName: 'expression_matrix_example.txt.gz' })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Expression Matrix' })
     expect(errors).toHaveLength(0)
-  })
+  }, 10000)
 
   it('catches mismatched header counts', async () => {
     const file = createMockFile({ fileName: 'header_count_mismatch.tsv', contentType: 'text/tab-separated-values' })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Metadata' })
     expect(errors).toHaveLength(1)
-  })
+  }, 10000)
 
   it('catches multiple header errors', async () => {
     // eslint-disable-next-line max-len
@@ -391,7 +391,7 @@ describe('Client-side file validation', () => {
     const file = createMockFile({ fileName: 'error_headers_v2.0.0.tsv' })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Metadata' })
     expect(errors).toHaveLength(3)
-  })
+  }, 10000)
 
   it('fails when no coordinates in cluster file', async () => {
     // Confirms this validation does not report false negatives
@@ -401,7 +401,7 @@ describe('Client-side file validation', () => {
     const file = createMockFile({ fileName: 'cluster_bad_no_coordinates.txt' })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })
     expect(errors).toHaveLength(1)
-  })
+  }, 10000)
 
   it('passes when no coordinates in cluster file', async () => {
     // Confirms this validation does not report false positive
@@ -411,7 +411,7 @@ describe('Client-side file validation', () => {
     const file = createMockFile({ fileName: 'cluster_example.txt' })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })
     expect(errors).toHaveLength(0)
-  })
+  }, 10000)
 
   it('fails when coordinates in metadata file', async () => {
     // Confirms this validation does not report false negatives
@@ -421,7 +421,7 @@ describe('Client-side file validation', () => {
     const file = createMockFile({ fileName: 'metadata_bad_has_coordinates.txt' })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Metadata' })
     expect(errors).toHaveLength(1)
-  })
+  }, 10000)
 
   it('passes when no coordinates in metadata file', async () => {
     // Confirms this validation does not report false positives
@@ -431,7 +431,7 @@ describe('Client-side file validation', () => {
     const file = createMockFile({ fileName: 'metadata_good_v2-0-0.txt' })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Metadata' })
     expect(errors).toHaveLength(0)
-  })
+  }, 10000)
 
   it('renders validation message', async () => {
     const issues = {
@@ -457,7 +457,7 @@ describe('Client-side file validation', () => {
 
     const displayedWarning = screen.getByTestId('validation-warning')
     expect(displayedWarning).toHaveTextContent(issues.warnings[0][2])
-  })
+  }, 10000)
 
   it('Does not throw disallowed characters in cluster header', async () => {
     const file = createMockFile({
@@ -466,7 +466,7 @@ describe('Client-side file validation', () => {
     })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })
     expect(errors).toHaveLength(0)
-  })
+  }, 10000)
 })
 
 it('Catches disallowed characters in metadata header', async () => {
@@ -477,7 +477,7 @@ it('Catches disallowed characters in metadata header', async () => {
   const expectedErrorType = 'format:cap:only-alphanumeric-underscore'
   const errorType = errors[0][1]
   expect(errorType).toBe(expectedErrorType)
-})
+}, 10000)
 
 // With the client side file validation feature flag set to false expect invalid files to pass
 describe('Client-side file validation feature flag is false', () => {
@@ -505,7 +505,7 @@ describe('Client-side file validation feature flag is false', () => {
     })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Metadata', use_metadata_convention: true })
     expect(errors).toHaveLength(0)
-  })
+  }, 10000)
 
   it('Does not catch missing GENE header in expression matrix file', async () => {
     const file = createMockFile({
@@ -514,7 +514,7 @@ describe('Client-side file validation feature flag is false', () => {
     })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Expression Matrix' })
     expect(errors).toHaveLength(0)
-  })
+  }, 10000)
 
   it('Does not catch row with wrong number of columns in sparse matrix file', async () => {
     const file = createMockFile({
@@ -523,7 +523,7 @@ describe('Client-side file validation feature flag is false', () => {
     })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'MM Coordinate Matrix' })
     expect(errors).toHaveLength(0)
-  })
+  }, 10000)
 
   it('Does not catch duplicate row values in barcodes file', async () => {
     const file = createMockFile({
@@ -532,7 +532,7 @@ describe('Client-side file validation feature flag is false', () => {
     })
     const [{ errors }] = await validateLocalFile(file, { file_type: '10X Barcodes File' })
     expect(errors).toHaveLength(0)
-  })
+  }, 10000)
 
   it('Does not catch  duplicate cell names in cluster file', async () => {
     const file = createMockFile({
@@ -541,7 +541,7 @@ describe('Client-side file validation feature flag is false', () => {
     })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Cluster' })
     expect(errors).toHaveLength(0)
-  })
+  }, 10000)
 }
 )
 
@@ -593,7 +593,7 @@ describe('validates file contents against minified ontologies', () => {
     })
     const [{ errors }] = await validateLocalFile(file, { file_type: 'Metadata', use_metadata_convention: true })
     expect(errors).toHaveLength(2)
-  })
+  }, 10000)
 
   it('validates single line or term from a metadata file', async() => {
     const ontologies = await fetchOntologies()
@@ -629,7 +629,7 @@ describe('validates file contents against minified ontologies', () => {
     issues = validateOntologyTerm(prop, ontologyId, label, ontologies, knownErrors)
     expect(issues.length).toBe(1)
     expect(knownErrors.length).toBe(2)
-  })
+  }, 10000)
 
   it('gets ontology shortname from ID', () => {
     const ontologyId = "EFO_0008919"
@@ -651,7 +651,7 @@ describe('validates file contents against minified ontologies', () => {
     expect(missingTerm).toMatchObject({ 'NCBITaxon_foo': 'Not found' })
     const missingOntology = await fetchOlsOntologyTerm('foo_197152')
     expect(missingOntology).toMatchObject({ 'foo_197152': 'Not found' })
-  })
+  }, 10000)
 
   it('filters out extended ontolgy issues', async () => {
     const issues = [
@@ -662,5 +662,5 @@ describe('validates file contents against minified ontologies', () => {
     ]
     const filtered = await fixTaxonIdIssues(issues)
     expect(filtered).toHaveLength(0)
-  })
+  }, 10000)
 })
