@@ -73,6 +73,7 @@ class StripeApiClientTest < ActiveSupport::TestCase
   end
 
   test 'should create checkout session for purchase' do
+    skip 'disabling test as private study product is archived'
     product = @stripe_client.products.detect {|p| p.name == 'Private Study' }
     success_path = "/single_cell/purchases/success"
     checkout = @stripe_client.create_private_study_checkout(
