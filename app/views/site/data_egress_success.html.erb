@@ -6,9 +6,9 @@
   <p>
     You may now download the file you requested by clicking the button below. 
   </p>
-  <p><%= link_to "#{@study_file.upload_file_name} <span class='fas fa-download'></span> #{number_to_human_size(@study_file.upload_file_size, prefix: :si)}".html_safe,
-                    @study_file.download_path, class: "btn btn-primary dl-link #{@study_file.file_type_class}",
-                    data: {filename: @study_file.upload_file_name, "analytics-name": 'file-download:study-single'} %></p>
+  <p><%= link_to "#{@download_object.upload_file_name} <span class='fas fa-download'></span> #{number_to_human_size(@download_object.upload_file_size, prefix: :si)}".html_safe,
+                    @download_object.download_path, class: "btn btn-primary dl-link #{@download_object.file_type_class}",
+                    data: {filename: @download_object.upload_file_name, "analytics-name": 'file-download:study-single'} %></p>
 <% else %>
   <p class="lead">To download all files using <code>curl</code>, click the button below to get the download command:</p>
   <p class="lead command-container text-center" id="command-container-all">

@@ -13,6 +13,7 @@
           <th>Payment Status</th>
           <th>Fulfilled</th>
           <th>Sale Date</th>
+          <th>Access
         </tr>
       </thead>
       <tbody>
@@ -24,6 +25,13 @@
             <td><span class="label label-<%= purchase.paid? ? 'success' : 'warning' %>"><%= purchase.payment_status %></span></td>
             <td><span class="purchase-fulfilled fa <%= purchase.fulfilled ? "fa-check text-success" : "fa-times text-danger" %>"></span></td>
             <td><%= purchase.sale_date.to_fs(:db) %></td>
+            <td>
+              <% if purchase.fulfilled %>
+                <span class="label label-danger">Already accessed</span>
+              <% else %>
+                <%= link_to 'View', data_egress_success_path(accession: purchase.study_accession, download_identifier: purchase.download_identifier) %>
+              <% end %>
+            </td>
           </tr>
         <% end %>
       </tbody>
