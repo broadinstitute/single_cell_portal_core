@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import _cloneDeep from 'lodash/cloneDeep'
 import jquery from 'jquery'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 import Plotly from 'plotly.js-dist'
 
 import { safenLabels } from '~/lib/plot'
@@ -15,7 +15,7 @@ import * as MetricsApi from 'lib/metrics-api'
 import { FILTERED_TRACE_NAME } from 'lib/cluster-utils'
 import * as LayoutUtils from 'lib/layout-utils'
 
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 
 import { BASIC_PLOT_DATA, MANY_LABELS_MOCKS, COUNTS_BY_LABEL, REF_COLOR_MAP } from './scatter-plot.test-data'
 

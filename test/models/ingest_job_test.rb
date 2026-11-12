@@ -1386,4 +1386,44 @@ class IngestJobTest < ActiveSupport::TestCase
     assert_equal ['T cell'], result.pairwise_comparisons['B cell']
     assert_equal ['B cell', 'T cell'], result.one_vs_rest_comparisons
   end
+
+  test 'should load clustering object associated with job' do
+    # normal test
+    study = FactoryBot.create(:detached_study,
+                               name_prefix: 'IngestJob Cluster Load Test',
+                               user: @user,
+                               test_array: @@studies_to_clean)
+    cluster_file = FactoryBot.create(:cluster_file,
+                                      study:,
+                                      name: 'cluster.txt',
+                                      cell_input: {
+                                       x: [1, 4, 6],
+                                       y: [7, 5, 3],
+                                       cells: %w[A B C]
+                                     })
+    cluster = study.cluster_groups.first
+    job = IngestJob.new(study:, study_file: cluster_file, action: :ingest_cluster)
+    assert_equal cluster, job.cluster_from_job
+
+    # anndata test
+    anndata_study = FactoryBot.create(:detached_study,
+                                       name_prefix: 'IngestJob Anndata Cluster Load Test',
+                                       user: @user,
+                                       test_array: @@studies_to_clean)
+    anndata_file = FactoryBot.create(:ann_data_file,
+                                      study: anndata_study,
+                                      name: 'clustering.h5ad',
+                                      file_type: 'AnnData',
+                                      cell_input: %w[A B C D],
+                                      coordinate_input: [
+                                        { umap: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                      ])
+    cluster = anndata_study.cluster_groups.first
+    params_object = AnnDataIngestParameters.new(
+      ingest_cluster: true, name: 'umap', cluster_file: "gs://#{anndata_study.bucket_id}/umap.tsv", ingest_anndata: false,
+      extract: nil, obsm_keys: nil
+    )
+    job = IngestJob.new(study: anndata_study, study_file: anndata_file, action: :ingest_cluster, params_object:)
+    assert_equal cluster, job.cluster_from_job
+  end
 end

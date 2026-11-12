@@ -1,6 +1,6 @@
 import React from 'react'
 import { render, screen, cleanup, fireEvent, waitForElementToBeRemoved, waitFor } from '@testing-library/react'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 
 import { StudyContext } from 'components/upload/upload-utils'
 import FileUploadControl from 'components/upload/FileUploadControl'

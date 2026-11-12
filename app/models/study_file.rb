@@ -744,6 +744,14 @@ class StudyFile
     "gs://#{self.study.bucket_id}/#{self.bucket_location}"
   end
 
+  # gs url for sample manifest file (will have been created by ImportServiceConfig::Nemo#import_from_service)
+  def manifest_gs_url
+    return nil unless external_identifier && imported_from == 'NeMO'
+
+    filename = external_identifier.split(':').last + '.scp.tsv'
+    "gs://#{self.study.bucket_id}/#{filename}"
+  end
+
   def api_url
     api_url = ApplicationController.firecloud_client.execute_gcloud_method(:generate_api_url, 0, self.study.bucket_id, self.bucket_location)
     api_url + '?alt=media'
@@ -1380,42 +1388,43 @@ class StudyFile
   end
 
   # update clustering fragments to be called on updates to study_file
-  def handle_clustering_fragment_updates
-    if !is_reference_anndata? && ann_data_file_info&.data_fragments_changed?
-      if !queued_for_deletion && !parsing? && !name.start_with?("DELETE-")
+  def handle_clustering_fragment_updates    
+    return true if !is_viz_anndata?|| parsing? || queued_for_deletion || name.start_with?("DELETE-")
 
-        # collect the previous data fragment ids to choose the appropriate action for new or existing clusterings
-        prev_ids = {}
-        ann_data_file_info.data_fragments_was.each do |data_frag|
-          prev_ids[data_frag&.[]("_id")] = data_frag
-        end
+    Rails.logger.info "Checking for clustering fragment updates on #{upload_file_name} in #{study.accession}"
+    previous_fragments = history_tracks.last&.tracked_changes&.dig('ann_data_file_info', 'from', 'data_fragments')
+    return true if previous_fragments.blank?
 
-        # going through the obsm key names ensures actions are only being called on clusterings
-        ann_data_file_info.obsm_key_names.each do |fragment|
-          matcher = { data_type: :cluster, obsm_key_name: fragment }
-          cluster_data_fragment = ann_data_file_info.find_fragment(**matcher)
-          curr_id = cluster_data_fragment&.[]("_id")
+    # collect the previous data fragment ids to choose the appropriate action for new or existing clusterings
+    prev_ids = {}
+    previous_fragments.each do |data_frag|
+      prev_ids[data_frag&.[]("_id")] = data_frag
+    end
 
-          # if it's an existing clustering just update don't parse
-          if prev_ids.include? curr_id
-            name = cluster_data_fragment&.[](:name) || fragment # fallback if we can't find data_fragment
+    # going through the obsm key names ensures actions are only being called on clusterings
+    ann_data_file_info.obsm_key_names.each do |fragment|
+      matcher = { data_type: :cluster, obsm_key_name: fragment }
+      cluster_data_fragment = ann_data_file_info.find_fragment(**matcher)
+      curr_id = cluster_data_fragment&.[]("_id")
 
-            if prev_ids[curr_id]["name"] != name
-              @cluster = ClusterGroup.find_by(
-                study_id: study.id, study_file_id: id, name: prev_ids.dig(curr_id, 'name')
-              )
-              # before updating, check if the defaults also need to change
-              if study.default_cluster == @cluster
-                study.default_options[:cluster] = name
-                study.save
-              end
-              @cluster.update(name:)
-            end
-          else
-            persist_on_fail = remote_location.present?
-            FileParseService.run_parse_job(self, study, study.user, persist_on_fail:, obsm_key: fragment)
+      # if it's an existing clustering just update don't parse
+      if prev_ids.include? curr_id
+        name = cluster_data_fragment&.[](:name) || fragment # fallback if we can't find data_fragment
+
+        if prev_ids[curr_id]["name"] != name
+          @cluster = ClusterGroup.find_by(
+            study_id: study.id, study_file_id: id, name: prev_ids.dig(curr_id, 'name')
+          )
+          # before updating, check if the defaults also need to change
+          if study.default_cluster == @cluster
+            study.default_options[:cluster] = name
+            study.save
           end
+          @cluster.update(name:)
         end
+      else
+        persist_on_fail = remote_location.present?
+        FileParseService.run_parse_job(self, study, study.user, persist_on_fail:, obsm_key: fragment)
       end
     end
   end

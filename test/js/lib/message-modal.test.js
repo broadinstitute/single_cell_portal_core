@@ -1,6 +1,6 @@
 import React from 'react'
 import { render, screen, act, fireEvent, waitForElementToBeRemoved } from '@testing-library/react'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 
 import MessageModal, { showMessage } from 'lib/MessageModal'
 

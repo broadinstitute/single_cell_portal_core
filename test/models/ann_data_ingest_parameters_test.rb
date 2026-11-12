@@ -131,4 +131,13 @@ class AnnDataIngestParametersTest < ActiveSupport::TestCase
     params.machine_type = 'n2d-highmem-64'
     assert_nil params.next_machine_type
   end
+
+  test 'should remove cluster extraction if no obsm keys are present' do
+    no_cluster_params = {
+      anndata_file: 'gs://bucket_id/matrix.h5ad',
+      obsm_keys: []
+    }
+    params = AnnDataIngestParameters.new(no_cluster_params)
+    assert_not params.extract.include?('cluster')
+  end
 end

@@ -32,7 +32,7 @@ gem 'bootsnap', require: false
 gem 'minitest'
 gem 'minitest-rails'
 gem 'minitest-reporters'
-gem 'devise', '~> 4.9'
+gem 'devise'
 gem 'omniauth-google-oauth2'
 gem 'omniauth-rails_csrf_protection'
 gem 'googleauth'

@@ -1,5 +1,5 @@
 import { screen, fireEvent, waitForElementToBeRemoved } from '@testing-library/react'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 
 import { SEURAT_DATA_FILE, ANNDATA_FILE } from './file-info-responses'
 import { fireFileSelectionEvent } from '../lib/file-mock-utils'

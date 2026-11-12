@@ -204,14 +204,16 @@ function SaveButton({ file, saveFile, allFiles, validationMessages = {}, isAnnDa
     ['cluster', 'expression'].includes(file?.data_type)
   }
 
+  const useMainSaveButton = isAnnDataExperience && file?.file_type !== 'AnnData'
+
   //  primary save button shown by default as the save button
   let saveButton = <button
     style={{ pointerEvents: saveDisabled ? 'none' : 'auto' }}
     type="button"
     className={file.isDirty ? 'btn btn-primary margin-right' : 'btn terra-secondary-btn margin-right'}
     onClick={() => saveFile(file)}
-    disabled={saveDisabled}
-    aria-disabled={saveDisabled}
+    disabled={saveDisabled || useMainSaveButton}
+    aria-disabled={saveDisabled || useMainSaveButton}
     data-testid="file-save">
     Save {file.uploadSelection && <span>&amp; Upload</span>}
   </button>
@@ -231,11 +233,18 @@ function SaveButton({ file, saveFile, allFiles, validationMessages = {}, isAnnDa
   }
 
   // if saving is disabled, wrap the disabled button in a popover that will show the errors
-  if (saveDisabled) {
+  if (saveDisabled && validationMessageKeys.length > 0) {
     const validationPopup = <Popover id={`save-invalid-${file._id}`} className="tooltip-wide">
       {Object.keys(validationMessages).map(key => <div key={key}>{validationMessages[key]}</div>)}
     </Popover>
     saveButton = <OverlayTrigger trigger={['hover', 'focus']} rootClose placement="left" overlay={validationPopup}>
+      <div>{saveButton}</div>
+    </OverlayTrigger>
+  } else if (useMainSaveButton) { // for AnnData UX, force user to click save in AnnData tab to prevent saving fragments as undefined files
+    const mainSavePopup = <Popover id={`save-invalid-${file._id}`} className="tooltip-wide">
+      {<div key='use-main-save'>Please use save button in AnnData tab</div>}
+    </Popover>
+    saveButton = <OverlayTrigger trigger={['hover', 'focus']} rootClose placement="left" overlay={mainSavePopup}>
       <div>{saveButton}</div>
     </OverlayTrigger>
   } else if (file.isSaving) { // if file is currently saving will show the text "saving" in the button

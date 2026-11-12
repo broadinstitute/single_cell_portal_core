@@ -18,7 +18,7 @@ module ImportServiceConfig
 
   DEFAULT_OBSM_KEYS = %w[X_umap].freeze
 
-  EFO_ONTOLOGY_URL = "https://github.com/broadinstitute/scp-ingest-pipeline/raw/refs/heads/development/ingest/validation/ontologies/efo.min.tsv.gz"
+  BASE_SCP_ONTOLOGY_URL = "https://github.com/broadinstitute/scp-ingest-pipeline/raw/refs/heads/development/ingest/validation/ontologies/"
 
   attr_accessor :client, :user_id, :file_id, :study_id, :branding_group_id, :obsm_key_names
 
@@ -61,31 +61,13 @@ module ImportServiceConfig
     obsm_key_names || DEFAULT_OBSM_KEYS
   end
 
-  # order of associations to walk for sourcing attributes
-  # should be overwritten in included class
-  def association_order
-    []
-  end
-
-  # walk association_order to populate associated IDs from a starting point
-  def traverse_associations!
-    association_order.each do |config|
-      entity_id = send(config[:id])
-      entity = ImportService.call_api_client(client, config[:method], entity_id)
-      associated_id = id_from(entity, config[:association])
-      setter = "#{config[:assoc_id]}=" # e.g. self.study_id = 'foo'
-      send(setter, associated_id)
-    end
-    attributes
-  end
-
   # extract an ID from an association
   def id_from(entity, ...)
     client.send(id_from_method, entity, ...)
   end
 
   def taxon_from(value, attribute: :common_name)
-    Taxon.find_by(attribute.to_sym => value)
+    Taxon.find_by(attribute.to_sym => value) || Taxon.find_by(aliases: Regexp.new(value)) # use alias fallback
   end
 
   def taxon_names
@@ -116,6 +98,10 @@ module ImportServiceConfig
           model_attributes[scp_name] ||= {}
           model_attributes[scp_name][embedded_doc_attr] = remote_data[nested_config_name]
         end
+      elsif config_name.is_a?(Array)
+        values = config_name.map {|c| remote_data[c] }
+        value = values.find(&:itself) # built-in method to find first non-nil value
+        model_attributes[scp_name] = value
       else
         model_attributes[scp_name] = remote_data[config_name]
       end
@@ -177,7 +163,8 @@ module ImportServiceConfig
       _id: BSON::ObjectId.new.to_s,
       data_type: :expression,
       taxon_id: scp_study_file.taxon_id.to_s,
-      expression_file_info: scp_study_file.expression_file_info.attributes.reject { |k, _| %w[_id units].include? k }
+      raw_location: scp_study_file.ann_data_file_info&.raw_location,
+      expression_file_info: scp_study_file.expression_file_info.attributes.reject { |k, _| %w[_id].include? k }
     }.with_indifferent_access
   end
 
@@ -212,6 +199,8 @@ module ImportServiceConfig
         [study, study_file]
       else
         errors = study_file.errors.full_messages.dup
+        # log erros before running cleanup
+        log_message "could not create study_file: #{errors.join('; ')}"
         # clean up study to allow retries with different file
         ImportService.remove_study_workspace(study)
         file_in_bucket.delete
@@ -236,21 +225,21 @@ module ImportServiceConfig
     CONTENT_TYPES_BY_EXT[extension] || 'application/octet-stream'
   end
 
-  # get a hash of EFO ontology labels to ids for matching
-  def efo_ontology_entries
+  # get a hash of ontology labels to ids for matching
+  def scp_ontology_entries(ontology_name)
     begin
       entries = {}
-      raw_data = RestClient.get EFO_ONTOLOGY_URL
+      raw_data = RestClient.get BASE_SCP_ONTOLOGY_URL + "#{ontology_name}.min.tsv.gz"
       gzip_io = StringIO.new(raw_data.body)
       gz = Zlib::GzipReader.new(gzip_io)
-      efo_content = gz.read
+      ontology_content = gz.read
       gz.close
-      lines = efo_content.split("\n")
+      lines = ontology_content.split("\n")
       lines.each do |line|
-        efo_id, label_data = line.split("\t")
+        ontology_id, label_data = line.split("\t")
         labels = label_data.split("||")
         labels.each do |label|
-          entries[label.strip] = efo_id
+          entries[label.strip] = ontology_id
         end
       end
       entries

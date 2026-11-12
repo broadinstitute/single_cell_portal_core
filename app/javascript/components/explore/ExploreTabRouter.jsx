@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { navigate, useLocation } from '@reach/router'
-import * as queryString from 'query-string'
+import queryString from 'query-string'
 
 import { stringifyQuery, geneParamToArray, geneArrayToParam } from '~/lib/scp-api'
 import { getIdentifierForAnnotation, getAnnotationForIdentifier } from '~/lib/cluster-utils'
