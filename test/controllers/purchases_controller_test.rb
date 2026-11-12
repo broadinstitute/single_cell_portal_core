@@ -21,7 +21,7 @@ class PurchasesControllerTest < ActionDispatch::IntegrationTest
       sale_date: DateTime.now.in_time_zone,
       amount: 10.00,
       payment_status: 'paid',
-      fulfilled: true
+      fulfilled: false
     )
     FeatureFlag.create(name: 'enable_purchases_ux', default_value: true)
   end
@@ -38,5 +38,12 @@ class PurchasesControllerTest < ActionDispatch::IntegrationTest
     assert_select "table#purchases tbody tr" do
       assert_select "td.study-accession", text: @study.accession
     end
+  end
+
+  test 'should load purchase if not fulfilled' do
+    sign_in @user
+    get data_egress_success_path(accession: @purchase.study_accession, download_identifier: @purchase.download_identifier)
+    assert_response :success
+    assert_select 'a.dl-link', count: 1
   end
 end
