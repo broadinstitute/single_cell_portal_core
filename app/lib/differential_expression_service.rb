@@ -6,7 +6,7 @@ class DifferentialExpressionService
   # possible clustering algorithm results
   CLUSTERING_MATCHER = /(clust|seurat|leiden|louvain)/i
   # any categorical-type labels
-  CATEGORY_MATCHER = /(categor|labels)/i
+  CATEGORY_MATCHER = /(categor|labels|class)/i
   # union of all allowed annotations
   ALLOWED_ANNOTS = Regexp.union(CELL_TYPE_MATCHER, CLUSTERING_MATCHER, CATEGORY_MATCHER)
   # specific annotations to exclude from automation

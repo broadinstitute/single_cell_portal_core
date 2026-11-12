@@ -1,7 +1,7 @@
 import React from 'react'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import * as ScpApi from 'lib/scp-api'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 
 import ResultsExport from 'components/search/results/ResultsExport'
 

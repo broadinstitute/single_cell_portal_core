@@ -2,7 +2,7 @@ import React from 'react'
 import _cloneDeep from 'lodash/cloneDeep'
 import jquery from 'jquery'
 import { render, screen } from '@testing-library/react'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 import Plotly from 'plotly.js-dist'
 
 import * as ScpApi from 'lib/scp-api'

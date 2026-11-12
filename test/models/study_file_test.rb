@@ -260,4 +260,31 @@ class StudyFileTest < ActiveSupport::TestCase
       mock.verify
     end
   end
+
+  test 'should return manifest file gs url' do
+    study = FactoryBot.create(:detached_study,
+                          name_prefix: 'Manifrst Url Study Test',
+                          user: @user,
+                          test_array: @@studies_to_clean)
+    anndata_file = FactoryBot.create(:ann_data_file,
+                                      name: 'nemo.h5ad',
+                                      study:,
+                                      cell_input: %w[A B C D],
+                                      annotation_input: [
+                                        { name: 'disease', type: 'group', values: %w[cancer cancer normal normal] }
+                                      ],
+                                      coordinate_input: [
+                                        { tsne: { x: [1, 2, 3, 4], y: [5, 6, 7, 8] } }
+                                      ],
+                                      expression_input: {
+                                        'phex' => [['A', 0.3], ['B', 1.0], ['C', 0.5], ['D', 0.1]]
+                                      },
+                                      external_identifier: 'nemo:fil-eznvvwk',
+                                      imported_from: 'NeMO')
+    manifest_url = anndata_file.manifest_gs_url
+    assert manifest_url.present?
+    assert manifest_url.ends_with?('fil-eznvvwk.scp.tsv')
+
+    assert_nil @cluster_file.manifest_gs_url
+  end
 end

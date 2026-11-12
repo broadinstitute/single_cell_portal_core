@@ -1,7 +1,7 @@
 import React from 'react'
 import { render, waitForElementToBeRemoved, screen, fireEvent } from '@testing-library/react'
 import camelcaseKeys from 'camelcase-keys'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 
 import DownloadSelectionModal from 'components/search/controls/download/DownloadSelectionModal'
 import * as ScpApi from 'lib/scp-api'

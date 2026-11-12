@@ -18,12 +18,7 @@ function FakeRouterComponent({ testObj }) {
 /** useExploreTabRouter reads the location.search to merge update params, so we need to mock it
   * here.  We also mock pathname since that is used in metrics-api */
 function mockWindowLocationSearch(searchString) {
-  delete global.window.location
-  global.window = Object.create(window)
-  global.window.location = {
-    search: searchString,
-    pathname: '/single_cell/mock'
-  }
+  window.history.pushState({}, '', `/single_cell/mock${searchString || ''}`)
 }
 
 describe('dataParams are appropriately managed on the url', () => {

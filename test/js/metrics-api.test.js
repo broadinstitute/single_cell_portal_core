@@ -158,25 +158,15 @@ describe('Library for client-side usage analytics', () => {
   })
 
   it('sets tab parameter correctly', () => {
-    delete global.window.location
-    global.window = Object.create(window)
-    global.window.location = {
-      pathname: '/single_cell/study/SCP1234'
-    }
+    window.location.href = 'http://localhost/single_cell/study/SCP1234'
     let enabledTab = getTabProperty()
-    expect(enabledTab).toBeUndefined()
+    expect(enabledTab).toBeFalsy()
 
-    global.window.location = {
-      hash: '#study-visualize',
-      pathname: '/single_cell/study/SCP1234'
-    }
+    window.location.href = 'http://localhost/single_cell/study/SCP1234#study-visualize'
     enabledTab = getTabProperty()
     expect(enabledTab).toEqual('study-visualize')
 
-    global.window.location = {
-      search: '?cluster=foo&genes=bar&tab=distribution',
-      pathname: '/single_cell/study/SCP1234'
-    }
+    window.location.href = 'http://localhost/single_cell/study/SCP1234?cluster=foo&genes=bar&tab=distribution'
     enabledTab = getTabProperty()
     expect(enabledTab).toEqual('distribution')
   })

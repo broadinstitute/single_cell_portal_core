@@ -8,25 +8,8 @@ import * as ServiceWorkerCache from 'lib/service-worker-cache'
 import * as SCPContextProvider from '~/providers/SCPContextProvider'
 import { getTokenExpiry } from '../upload-wizard/upload-wizard-test-utils'
 
-const oldWindowLocation = window.location
-
 describe('JavaScript client for SCP REST API', () => {
-  // mocking of window.location, from https://www.benmvp.com/blog/mocking-window-location-methods-jest-jsdom/
-  delete window.location
-
   beforeAll(() => {
-
-    window.location = Object.defineProperties(
-      {},
-      {
-        ...Object.getOwnPropertyDescriptors(oldWindowLocation),
-        assign: {
-          configurable: true,
-          value: jest.fn(),
-        },
-      },
-    )
-
     window.performance = Object.defineProperties(performance, {
       setResourceTimingBufferSize: {
         value: jest.fn(),
@@ -34,7 +17,7 @@ describe('JavaScript client for SCP REST API', () => {
       }
     })
 
-    jest.useFakeTimers();
+    jest.useFakeTimers({ legacyFakeTimers: true });
     jest.spyOn(global, 'setTimeout');
   })
 
@@ -44,11 +27,6 @@ describe('JavaScript client for SCP REST API', () => {
     jest.restoreAllMocks()
     jest.spyOn(global, 'setTimeout').mockReset()
 
-  })
-
-  afterAll(() => {
-    // restore `window.location` to the `jsdom` `Location` object
-    window.location = oldWindowLocation
   })
 
   it('includes `Authorization: Bearer` in requests when signed in', done => {
@@ -125,7 +103,7 @@ describe('JavaScript client for SCP REST API', () => {
       })
   })
 
-  it('leverages service worker cache on fetch, if cache is enabled', async done => {
+  it('leverages service worker cache on fetch, if cache is enabled', async () => {
 
     const cacheMock = new CacheMock()
     window.caches = {
@@ -176,8 +154,6 @@ describe('JavaScript client for SCP REST API', () => {
         }
       })
     )
-
-    done()
   })
 
   it('sets timer for read only access token renewal', done => {

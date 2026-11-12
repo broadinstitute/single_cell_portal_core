@@ -225,6 +225,16 @@ class DeleteQueueJob < Struct.new(:object, :study_file_id)
     DataArray.where(study:, study_file:, linear_data_type:, :linear_data_id.in => ids).delete_all
   end
 
+  # run a limited cleanup for a single clustering object
+  # used during AnnData ingest when a non-default cluster fails to ingest
+  # prevents deleting the entire study file when only one cluster fails
+  def self.limited_clustering_cleanup(study, study_file, cluster)
+    DataArray.where(study:, study_file:, linear_data_id: cluster.id, linear_data_type: 'ClusterGroup', cluster_name: cluster.name).delete_all
+    DotPlotGene.where(study:, study_file:, cluster_group_id: cluster.id).delete_all
+    DifferentialExpressionResult.where(study:, study_file:, cluster_group_id: cluster.id).delete_all
+    cluster.delete
+  end
+
   private
 
   # remove a study_file from a study_file_bundle, and clean original_file_list up as necessary

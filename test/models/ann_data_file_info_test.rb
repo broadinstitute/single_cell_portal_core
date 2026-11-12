@@ -131,6 +131,7 @@ class AnnDataFileInfoTest < ActiveSupport::TestCase
     study_file_mock = Minitest::Mock.new
     study_file_mock.expect :is_raw_counts_file?, false
     study_file_mock.expect :expression_file_info, nil
+    study_file_mock.expect :imported_from, nil
     ann_data_info = AnnDataFileInfo.new(reference_file: false)
     ann_data_info.stub :study_file, study_file_mock do
       assert ann_data_info.valid?

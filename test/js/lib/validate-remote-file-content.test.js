@@ -2,7 +2,7 @@
  * @fileoverview Tests for client-side file validation (CSFV) for sync
  */
 import fetch, { Headers } from 'node-fetch'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 
 import ValidateFile from 'lib/validation/validate-file'
 

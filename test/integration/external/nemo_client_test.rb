@@ -1,6 +1,8 @@
 require 'test_helper'
+require "active_support/testing/method_call_assertions"
 
 class NemoClientTest < ActiveSupport::TestCase
+  include ActiveSupport::Testing::MethodCallAssertions
   before(:all) do
     @nemo_client = NemoClient.new
     @nemo_is_ok = @nemo_client.api_available?
@@ -139,5 +141,36 @@ class NemoClientTest < ActiveSupport::TestCase
     assert parent_file_ids.present?
     assert parent_file_ids.is_a?(Array)
     assert parent_file_ids.all? {|id| id.match?(/nemo:fil-[a-z0-9]{7}$/) }
+  end
+
+  test 'should search for entities' do
+    skip_if_api_down
+    query = 'scorch_spudich_transcriptome'
+    results = @nemo_client.search('project', query:)
+    assert results.size == 1
+    assert results.first['short_name'] == query
+  end
+
+  test 'should retrieve all search results' do
+    skip_if_api_down
+    query = 'kenny'
+    # there are at least 2 results, so page_size: 1 ensures that the next batch is requested from retrieve_all_results
+    results = @nemo_client.search('project', query:, page_size: 1)
+    assert results.size > 1
+    results.each do |result|
+      assert result['short_name'].starts_with?('scorch_kenny')
+    end
+  end
+
+  test 'should find matching project files by selector' do
+    skip_if_api_down
+    project_name = 'scorch_spudich_transcriptome'
+    anndata_matcher = { data_type: 'counts', file_format: 'h5ad' }.with_indifferent_access
+    files = @nemo_client.project_files_by_selector(project_name, **anndata_matcher)
+    assert files.any?
+    keys = anndata_matcher.keys.map(&:to_s)
+    files.each do |file|
+      assert_equal file.slice(*keys), anndata_matcher
+    end
   end
 end

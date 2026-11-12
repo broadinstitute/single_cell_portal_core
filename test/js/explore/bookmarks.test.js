@@ -6,7 +6,7 @@
 import * as Reach from '@reach/router'
 import React from 'react'
 import { render, fireEvent, screen } from '@testing-library/react'
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 import * as UserProvider from '~/providers/UserProvider'
 import BookmarkManager from 'components/bookmarks/BookmarkManager'
 import * as ScpApi from 'lib/scp-api'

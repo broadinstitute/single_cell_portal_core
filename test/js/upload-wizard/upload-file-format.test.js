@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom/extend-expect'
+import '@testing-library/jest-dom'
 import { formatFileForApi } from 'components/upload/upload-utils'
 import { RAW_COUNTS_FILE, METADATA_FILE } from './file-info-responses'
 
