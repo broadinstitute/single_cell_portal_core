@@ -43,6 +43,8 @@ Rails.application.configure do
 
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
+  config.action_controller.raise_on_missing_callback_actions = false
+
 
   # Mitigate X-Forwarded-Host injection attacks
   config.action_controller.default_url_options = { :host => ENV['PROD_HOSTNAME'], protocol: 'https' }
