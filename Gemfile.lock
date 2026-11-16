@@ -129,17 +129,16 @@ GEM
     bson_ext (1.5.1)
     builder (3.3.0)
     byebug (11.1.3)
-    carrierwave (2.2.7)
-      activemodel (>= 5.0.0)
-      activesupport (>= 5.0.0)
+    carrierwave (3.1.4)
+      activemodel (>= 6.0.0)
+      activesupport (>= 6.0.0)
       addressable (~> 2.6)
-      image_processing (~> 1.1)
-      marcel (~> 1.0.0)
-      mini_mime (>= 0.1.3)
+      image_processing (>= 1.1, < 3)
+      marcel (>= 1.0.0, < 3)
       ssrf_filter (~> 1.0)
-    carrierwave-mongoid (1.5.0)
-      carrierwave (>= 0.8, < 3)
-      mongoid (>= 3.0, < 10.0)
+    carrierwave-mongoid (1.6.0)
+      carrierwave (>= 2.2, < 4)
+      mongoid (>= 7.0, < 10.0)
       mongoid-grid_fs (>= 1.3, < 3.0)
     cgi (0.5.2)
     coffee-rails (5.0.0)
@@ -630,7 +629,7 @@ DEPENDENCIES
   browser
   bson_ext
   byebug
-  carrierwave (~> 2.2)
+  carrierwave (~> 3.0)
   carrierwave-mongoid
   coffee-rails
   concurrent-ruby
