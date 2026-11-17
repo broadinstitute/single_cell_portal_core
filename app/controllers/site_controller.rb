@@ -14,12 +14,14 @@ class SiteController < ApplicationController
 
   respond_to :html, :js, :json
 
-  before_action :set_study, except: [:index, :search, :legacy_study, :get_viewable_studies, :privacy_policy, :terms_of_service,
+  # allow users to view privacy policy even if they haven't accepted the ToS yet
+  before_action :check_tos_acceptance, except: :privacy_policy
+  before_action :set_study, except: [:index, :legacy_study, :privacy_policy, :terms_of_service,
                                      :log_action, :get_taxon, :get_taxon_assemblies, :covid19,
                                      :reviewer_access, :validate_reviewer_access]
   before_action :set_cluster_group, only: [:study, :show_user_annotations_form]
   before_action :set_selected_annotation, only: [:show_user_annotations_form]
-  before_action :check_view_permissions, except: [:index, :legacy_study, :redacted_study, :get_viewable_studies, :privacy_policy,
+  before_action :check_view_permissions, except: [:index, :legacy_study, :redacted_study, :privacy_policy,
                                                   :terms_of_service, :log_action, :get_taxon, :get_taxon_assemblies,
                                                   :covid19, :record_download_acceptance, :reviewer_access,
                                                   :validate_reviewer_access]

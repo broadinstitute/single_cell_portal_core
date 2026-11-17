@@ -218,7 +218,8 @@ module ImportServiceConfig
   # remove illegal characters from an attribute value like :name or :description
   def sanitize_attribute(value)
     stripped = ActionController::Base.helpers.strip_tags(value)
-    stripped.gsub(ATTRIBUTE_SANITIZER, '')
+    plain_text = CGI.unescapeHTML(stripped)   
+    plain_text.gsub(ATTRIBUTE_SANITIZER, '')
   end
 
   def get_file_content_type(extension)
