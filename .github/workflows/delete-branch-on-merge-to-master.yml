@@ -17,6 +17,10 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
+    - name: Set up node
+      uses: actions/setup-node@v6
+      with:
+        node-version: '24'
     - name: Delete merged branch
     # from the github actions marketplace repo here: https://github.com/marketplace/actions/delete-merged-branch
       uses: SvanBoxel/delete-merged-branch@main
