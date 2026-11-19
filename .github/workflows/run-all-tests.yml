@@ -20,6 +20,7 @@ jobs:
     concurrency:
       group: 'Run-All-Tests'
       cancel-in-progress: false
+      queue: max
 
     steps:
       - name: Set up node
