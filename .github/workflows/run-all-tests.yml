@@ -32,10 +32,10 @@ jobs:
           google_cloud_project: 'broad-singlecellportal-staging'
       - name: Get Runner Public IP
         id: ip
-        run: echo "runner_ip=$(curl -s https://api.ipify.org)" >> "$GITHUB_OUTPUT"
+        run: echo "runner_ip=$(curl -s curl -s ipconfig.io)" >> "$GITHUB_OUTPUT"
       - name: Set up firewall rule for database connection
         run: |
-          gcloud compute firewall-rules create allow-db-connection-from-github-actions \
+          gcloud compute firewall-rules create ${{ env.RULE_NAME }} \
             --project=${{env.GOOGLE_CLOUD_PROJECT}} \
             --direction=INGRESS \
             --priority=1000 \
