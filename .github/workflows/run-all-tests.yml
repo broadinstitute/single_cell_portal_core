@@ -39,7 +39,7 @@ jobs:
             --project=${{env.GOOGLE_CLOUD_PROJECT}} \
             --direction=INGRESS \
             --priority=1000 \
-            --network=default \
+            --network=singlecell \
             --action=ALLOW \
             --rules=tcp:27017 \
             --source-ranges=${{ steps.ip.outputs.runner_ip }}/32 \
