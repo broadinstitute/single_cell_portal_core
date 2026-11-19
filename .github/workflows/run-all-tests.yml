@@ -43,7 +43,7 @@ jobs:
             --action=ALLOW \
             --rules=tcp:27017 \
             --source-ranges=${{ steps.ip.outputs.runner_ip }}/32 \
-            --target-tags=allow-db-connection-from-github-actions || echo "Firewall rule already exists"
+            --target-tags=mongodb
       - name: Build image and setup env
         id: build-image-setup-env
         uses: ./.github/actions/docker-build-env-setup
