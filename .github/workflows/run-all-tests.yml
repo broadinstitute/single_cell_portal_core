@@ -19,6 +19,14 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
+      - name: Get system info
+        uses: kenchan0130/actions-system-info@master
+        id: system-info
+      - name: Display system info
+        run: |
+          echo "CPU Cores: ${{ steps.system-info.outputs.cpu-core }}"
+          echo "Total RAM (bytes): ${{ steps.system-info.outputs.totalmem }}"
+          echo "CPU Architecture: ${{ steps.system-info.outputs.architecture }}"
       - name: Set up node
         uses: actions/setup-node@v6
         with:
