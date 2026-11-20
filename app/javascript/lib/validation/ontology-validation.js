@@ -196,9 +196,7 @@ export async function fetchOlsOntologyTerm(termId) {
     // https://github.com/broadinstitute/scp-ingest-pipeline/blob/development/ingest/validation/validate_metadata.py#L348
     const termUrl = `https://www.ebi.ac.uk/ols4/api/ontologies/${ontologyName}/` +
                             `terms/${encodeURIComponent(encodeURIComponent(purlIri))}?lang=en`
-    console.debug(`termUrl: ${termUrl}`)
     const rawTerm = await fetch(termUrl)
-    console.debug(`rawTerm: ${JSON.stringify(rawTerm)}`)
     if (rawTerm.ok) {
       return rawTerm.json()
     } else {
