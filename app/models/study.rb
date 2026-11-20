@@ -743,7 +743,6 @@ class Study
   validates_uniqueness_of :url_safe_name, on: :update, message: ": The name you provided tried to create a public URL (%{value}) that is already assigned.  Please rename your study to a different value."
   validate :prevent_firecloud_attribute_changes, on: :update
   validates_presence_of :firecloud_project, :firecloud_workspace
-  validates_uniqueness_of :external_identifier, allow_blank: true
   validates :cell_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :enforce_embargo_max_length
 
