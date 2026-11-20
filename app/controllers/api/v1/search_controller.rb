@@ -263,9 +263,9 @@ module Api
           @match_by_data ||= {}
           existing_metadata_matches = @metadata_matches.try(:keys) || []
           total_metadata_matches = (existing_metadata_matches + @convention_accessions).uniq
-          existing_total_matches = @match_by_data['numResults:scp'].to_i
-          @match_by_data['numResults:scp:metadata'] = total_metadata_matches.size
-          @match_by_data['numResults:scp'] = existing_total_matches + total_metadata_matches.size
+          existing_total_matches = @match_by_data["numResults:scp"].to_i
+          @match_by_data["numResults:scp:metadata"] = total_metadata_matches.size
+          @match_by_data["numResults:scp"] = existing_total_matches + total_metadata_matches.size
           logger.info "Found #{@convention_accessions.count} matching studies from query: #{@convention_accessions}"
           @studies = @studies.where(:accession.in => @convention_accessions)
         end

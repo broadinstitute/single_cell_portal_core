@@ -51,7 +51,7 @@ jobs:
           payload: |
             channel: "C05JHJ0UA1M"
             text: "Orchestration smoke test: ${{ job.status }}\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            blocks: [
+            blocks:
               - type: "section",
                 text:
                   type: "mrkdwn",
