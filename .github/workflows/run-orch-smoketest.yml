@@ -11,7 +11,7 @@ jobs:
     permissions:
       contents: 'read'
       id-token: 'write'
-    runs-on: self-hosted
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Set up node
