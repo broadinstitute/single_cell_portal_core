@@ -5,16 +5,22 @@ on:
       - development
       - main
   pull_request:
+  workflow_dispatch:
 env:
   DOCKER_IMAGE_NAME: "gcr.io/broad-singlecellportal-staging/single-cell-portal"
   GOOGLE_CLOUD_PROJECT: 'broad-singlecellportal-staging'
+  RULE_NAME: ci-temp-allow-${{ github.run_id }}-${{ github.run_attempt }}
 
 jobs:
   Run-All-Tests:
     permissions:
       contents: 'read'
       id-token: 'write'
-    runs-on: self-hosted
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: 'Run-All-Tests'
+      cancel-in-progress: false
+      queue: max
 
     steps:
       - name: Set up node
@@ -28,6 +34,20 @@ jobs:
         with:
           service_account_email: '839419950053-compute@developer.gserviceaccount.com'
           google_cloud_project: 'broad-singlecellportal-staging'
+      - name: Get Runner Public IP
+        id: ip
+        run: echo "runner_ip=$(curl -s curl -s ipconfig.io)" >> "$GITHUB_OUTPUT"
+      - name: Set up firewall rule for database connection
+        run: |
+          gcloud compute firewall-rules create ${{ env.RULE_NAME }} \
+            --project=${{env.GOOGLE_CLOUD_PROJECT}} \
+            --direction=INGRESS \
+            --priority=1000 \
+            --network=singlecell \
+            --action=ALLOW \
+            --rules=tcp:27017 \
+            --source-ranges=${{ steps.ip.outputs.runner_ip }}/32 \
+            --target-tags=mongodb
       - name: Build image and setup env
         id: build-image-setup-env
         uses: ./.github/actions/docker-build-env-setup
@@ -42,6 +62,12 @@ jobs:
           CI: true
         run: |
           bin/load_env_secrets.sh -p $SCP_CONFIG -s $DEFAULT_SA -r $READONLY_SA -g $GOOGLE_CLOUD_PROJECT -e test -v $DOCKER_IMAGE_TAG -n single-cell-portal-test
+      - name: Delete Temporary Firewall Rule
+        if: always() # Ensures cleanup happens even if previous steps fail
+        run: |
+          gcloud compute firewall-rules delete "${{ env.RULE_NAME }}" \
+            --project="${{ env.GOOGLE_CLOUD_PROJECT }}" \
+            --quiet
       - name: Preserve all test logs
         uses: actions/upload-artifact@v6
         if: always()

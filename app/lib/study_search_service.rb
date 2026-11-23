@@ -74,15 +74,15 @@ class StudySearchService
       matches_by_author = base_studies.where({ :id.in => author_match_study_ids })
 
       results_matched_by_data = {
-        'numResults:scp:accession': matches_by_accession.length,
-        'numResults:scp:text': matches_by_text.length,
-        'numResults:scp:author': matches_by_author.length,
-        'numResults:scp:metadata': metadata_matches.keys.length
-      }
+        "numResults:scp:accession": matches_by_accession.length,
+        "numResults:scp:text": matches_by_text.length,
+        "numResults:scp:author": matches_by_author.length,
+        "numResults:scp:metadata": metadata_matches.keys.length
+    }.with_indifferent_access
 
       studies = base_studies.any_of(matches_by_text, matches_by_accession, matches_by_author, matches_by_metadata)
-      results_matched_by_data['numResults:scp'] = studies.length
-      results_matched_by_data['numResults:total'] = studies.length
+      results_matched_by_data["numResults:scp"] = studies.length
+      results_matched_by_data["numResults:total"] = studies.length
 
       { studies: studies, results_matched_by_data: results_matched_by_data, metadata_matches: metadata_matches }
     when :phrase
@@ -100,17 +100,17 @@ class StudySearchService
 
       # see above for notes on counts
       results_matched_by_data = {
-        'numResults:scp:accession': matches_by_accession.length,
-        'numResults:scp:name': matches_by_name.length,
-        'numResults:scp:description': matches_by_description.length,
-        'numResults:scp:author': matches_by_author.length,
-        'numResults:scp:metadata': metadata_matches.keys.length
-      }
+        "numResults:scp:accession": matches_by_accession.length,
+        "numResults:scp:name": matches_by_name.length,
+        "numResults:scp:description": matches_by_description.length,
+        "numResults:scp:author": matches_by_author.length,
+        "numResults:scp:metadata": metadata_matches.keys.length
+    }.with_indifferent_access
 
       studies = base_studies.any_of(matches_by_name, matches_by_description, matches_by_accession,
                                     matches_by_author, matches_by_metadata)
-      results_matched_by_data['numResults:scp'] = studies.length
-      results_matched_by_data['numResults:total'] = studies.length
+      results_matched_by_data["numResults:scp"] = studies.length
+      results_matched_by_data["numResults:total"] = studies.length
 
       { studies: studies, results_matched_by_data: results_matched_by_data, metadata_matches: metadata_matches }
 
