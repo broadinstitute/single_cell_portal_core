@@ -17,10 +17,10 @@ class BillingProjectsController < ApplicationController
 
   respond_to :html, :js, :json
   before_action :authenticate_user!
-  before_action :check_firecloud_registration, except: :access_request
-  before_action :create_firecloud_client, except: :access_request
-  before_action :check_project_permissions, except: [:index, :create, :access_request]
-  before_action :load_service_account, except: [:new_user, :create_user, :delete_user, :storage_estimate, :access_request]
+  before_action :check_firecloud_registration
+  before_action :create_firecloud_client
+  before_action :check_project_permissions, except: [:index]
+  before_action :load_service_account, except: [:new_user, :create_user, :delete_user, :storage_estimate]
 
   ##
   #

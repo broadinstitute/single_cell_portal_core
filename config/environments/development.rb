@@ -3,10 +3,7 @@ require "active_support/core_ext/integer/time"
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
-  # In the development environment your application's code is reloaded any time
-  # it changes. This slows down response time but is perfect for development
-  # since you don't have to restart the web server when you make code changes.
-  config.cache_classes = false
+  # Make code changes take effect immediately without server restart.
   config.enable_reloading = true
 
   # Do not eager load code on boot.
@@ -15,90 +12,52 @@ Rails.application.configure do
   # Show full error reports.
   config.consider_all_requests_local = false
 
-  # Enable/disable caching. By default caching is disabled.
-  # Run rails dev:cache to toggle caching.
-  if Rails.root.join('tmp', 'caching-dev.txt').exist?
+  # Enable server timing.
+  config.server_timing = true
+
+  # Enable/disable Action Controller caching. By default Action Controller caching is disabled.
+  # Run rails dev:cache to toggle Action Controller caching.
+  if Rails.root.join("tmp/caching-dev.txt").exist?
     config.action_controller.perform_caching = true
     config.action_controller.enable_fragment_cache_logging = true
-
-    config.cache_store = :file_store, "#{root}/tmp/cache"
-    config.public_file_server.headers = {
-      'Cache-Control' => "public, max-age=#{2.days.to_i}"
-    }
+    config.public_file_server.headers = { "cache-control" => "public, max-age=#{2.days.to_i}" }
   else
     config.action_controller.perform_caching = false
-
-    config.cache_store = :null_store
   end
+
+  # Change to :null_store to avoid any caching.
+  config.cache_store = :memory_store
 
   # Don't care if the mailer can't send.
   config.action_mailer.raise_delivery_errors = false
 
+  # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false
+
+  # Set localhost to be used by links generated in mailer templates.
+  config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 
-  # Raise exceptions for disallowed deprecations.
-  config.active_support.disallowed_deprecation = :raise
+  # Highlight code that enqueued background job in logs.
+  config.active_job.verbose_enqueue_logs = true
 
-  # Tell Active Support which deprecation messages to disallow.
-  config.active_support.disallowed_deprecation_warnings = []
-
-  # Debug mode disables concatenation and preprocessing of assets.
-  # This option may cause significant delays in view rendering with a large
-  # number of complex assets.
-  config.assets.debug = true
-
-  # Suppress logger output for asset requests.
-  config.assets.quiet = true
+  # Highlight code that triggered redirect in logs.
+  config.action_dispatch.verbose_redirect_logs = true
 
   # Raises error for missing translations.
   # config.i18n.raise_on_missing_translations = true
 
-  # custom exceptions handling to render responses based on controller
-  # uncaught API errors will now render as JSON responses w/ 500 status
-  # normal controller errors will show normal error page for development mode
-  # lambda allows for inspecting environment, which will include request parameters
-  config.exceptions_app = lambda do |env|
-    if env['action_dispatch.original_path']&.include?('api/v1')
-      Api::V1::ExceptionsController.action(:render_error).call(env)
-    else
-      ActionDispatch::PublicExceptions.new(Rails.public_path)
-    end
-  end
-
   # Annotate rendered view with file names.
-  # config.action_view.annotate_rendered_view_with_filenames = true
+  config.action_view.annotate_rendered_view_with_filenames = true
 
-  # Use an evented file watcher to asynchronously detect changes in source code,
-  # routes, locales, etc. This feature depends on the listen gem.
-  # config.file_watcher = ActiveSupport::EventedFileUpdateChecker
-  # config.reload_classes_only_on_change = false
+  # Raise error when a before_action's only/except options reference missing actions.
+  config.action_controller.raise_on_missing_callback_actions = true
 
-  # Uncomment if you wish to allow Action Cable access from any origin.
-  # config.action_cable.disable_request_forgery_protection = true
-  if ENV['NOT_DOCKERIZED']
-    config.action_controller.default_url_options = { :host => 'localhost', protocol: 'https', port: 3000 }
-    config.action_controller.asset_host = 'https://localhost:3000'
-  else
-    config.action_controller.default_url_options = { :host => 'localhost', protocol: 'https' }
-    config.action_controller.asset_host = 'https://localhost'
-  end
-
-  config.action_mailer.default_url_options = { :host => 'localhost', protocol: 'https' }
-  config.action_mailer.delivery_method = :smtp
-  config.action_mailer.perform_deliveries = true
-  config.action_mailer.raise_delivery_errors = true
-  config.action_mailer.smtp_settings = {
-    address:              'smtp.sendgrid.net',
-    port:                 587,
-    user_name:            ENV['SENDGRID_USERNAME'],
-    password:             ENV['SENDGRID_PASSWORD'],
-    domain:               'localhost',
-    authentication:       'plain',
-    enable_starttls_auto: true
-  }
+  # Apply autocorrection by RuboCop to files generated by `bin/rails generate`.
+  # config.generators.apply_rubocop_autocorrect_after_generate!
+  
   # prevent emails from going to anyone except the developer
   class DeveloperMailInterceptor
     # send all emails to the developer's git email address
@@ -154,8 +113,4 @@ Rails.application.configure do
 
   # Enable profiling and flamegraphs via rack-mini-profiler
   config.profile_performance = false
-
-  # show mongo logs in the console
-  # Mongoid.logger = Logger.new($stdout)
-  # Mongo::Logger.logger = Logger.new($stdout)
 end

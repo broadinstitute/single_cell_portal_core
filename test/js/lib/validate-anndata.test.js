@@ -42,13 +42,13 @@ describe('Client-side file validation for AnnData', () => {
     const hdf5File = await getHdf5File(url, remoteProps, CONVENTION_REQUIRED)
     const headers = await getAnnDataHeaders(hdf5File)
     expect(headers).toEqual(expectedHeaders)
-  })
+  }, 10000)
 
   it('Reports AnnData with valid headers as valid', async () => {
     const url = `${BASE_URL}/valid.h5ad`
     const parseResults = await parseAnnDataFile(url, {}, CONVENTION_REQUIRED)
     expect(parseResults.issues).toHaveLength(0)
-  })
+  }, 10000)
 
   it('Reports AnnData with invalid headers as invalid', async () => {
     const url = `${BASE_URL}/invalid_header_no_species.h5ad`
@@ -62,7 +62,7 @@ describe('Client-side file validation for AnnData', () => {
       'File is missing required obs keys: species'
     ]
     expect(parseResults.issues[0]).toEqual(expectedIssue)
-  })
+  }, 10000)
 
   it('Reports valid ontology IDs as valid', async () => {
     const issues = await checkOntologyIdFormat(
@@ -93,7 +93,7 @@ describe('Client-side file validation for AnnData', () => {
       'Ontology ID "FOO_0000042" is not among accepted ontologies (MONDO, PATO) for key "disease"'
     ]
     expect(parseResults.issues[0]).toEqual(expectedIssue)
-  })
+  }, 10000)
 
   it('validates ontology ids for given column', async () => {
     const ontologies = await fetchOntologies()
@@ -104,7 +104,7 @@ describe('Client-side file validation for AnnData', () => {
     const groups = await getOntologyIdsAndLabels(key, hdf5File)
     let issues = await checkOntologyLabelsAndIds(key, ontologies, groups)
     expect(issues).toHaveLength(0)
-  })
+  }, 10000)
 
   it('finds invalidate ontology entries for a given column', async () => {
     const ontologies = await fetchOntologies()
@@ -115,7 +115,7 @@ describe('Client-side file validation for AnnData', () => {
     const groups = await getOntologyIdsAndLabels(key, hdf5File)
     let issues = await checkOntologyLabelsAndIds(key, ontologies, groups)
     expect(issues).toHaveLength(1)
-  })
+  }, 10000)
 
   it('finds the correct obs group based on name', () => {
     const validGroup = { name: '/obs/cell_type' }

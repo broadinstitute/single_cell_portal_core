@@ -48,7 +48,7 @@ class StudyFile
     'Fastq', 'BAM', 'BED', 'Expression Matrix', 'MM Coordinate Matrix', 'Ideogram Annotations'
   ].freeze
   ASSEMBLY_REQUIRED_TYPES = ['BAM', 'BED', 'Ideogram Annotations'].freeze
-  GZIP_MAGIC_NUMBER = "\x1f\x8b".force_encoding(Encoding::ASCII_8BIT).freeze
+  GZIP_MAGIC_NUMBER = String.new("\x1f\x8b").force_encoding(Encoding::ASCII_8BIT).freeze
   REQUIRED_ATTRIBUTES = %w(file_type name).freeze
   # allowed bulk download file types
   # 'Expression' covers dense & sparse matrix files
@@ -1349,7 +1349,7 @@ class StudyFile
   # strip space from name if the file is a cluster or gene list (will cause problems when rendering)
   def sanitize_name
     if ['Gene List', 'Cluster'].include?(self.file_type)
-      self.name.strip!
+      @name = self.name.strip
     end
   end
 
